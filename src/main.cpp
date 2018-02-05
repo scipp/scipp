@@ -73,17 +73,61 @@ ADSHandle rebin(const ADSHandle &ws) {
   }
 }
 
-class Algorithm {
+class AlgorithmConcept {
 public:
-  void execute() { exec(); }
-
-private:
-  virtual void exec() = 0;
+  virtual ~AlgorithmConcept() = default;
+  virtual std::unique_ptr<AlgorithmConcept> clone() const = 0;
+  virtual ADSHandle exec(const Histogram &in) const = 0;
+  virtual ADSHandle exec(const EventList &in) const = 0;
 };
 
-class Rebin : public Algorithm {
+template <class T> class AlgorithmModel : public AlgorithmConcept {
+public:
+  AlgorithmModel(T const &model) : m_model(model) {}
+  std::unique_ptr<AlgorithmConcept> clone() const override {
+    return std::make_unique<AlgorithmModel<T>>(m_model);
+  }
+
+  ADSHandle exec(const Histogram &in) const override {
+    return m_model.exec(in);
+  }
+  ADSHandle exec(const EventList &in) const override {
+    return m_model.exec(in);
+  }
+
 private:
-  void exec() override {}
+  T m_model;
+};
+
+class Algorithm {
+public:
+  // void execute() { exec(); }
+  // virtual void exec() = 0;
+  template <class T>
+  Algorithm(T object)
+      : m_object(std::make_unique<AlgorithmModel<T>>(std::move(object))) {}
+  Algorithm(const Algorithm &other) : m_object(other.m_object->clone()) {}
+
+  ADSHandle execute(const ADSHandle &ws) {
+    // How to handle multiple arguments and combinatoric explosion?
+    switch (ws.type()) {
+    case ADSType::Histogram:
+      return m_object->exec(ws.cast<Histogram>());
+    case ADSType::EventList:
+      return m_object->exec(ws.cast<EventList>());
+    default:
+      throw std::runtime_error("rebin does not support this type");
+    }
+  }
+
+private:
+  std::unique_ptr<AlgorithmConcept> m_object;
+};
+
+class Rebin {
+public:
+  ADSHandle exec(const Histogram &in) const { return rebin(in); }
+  ADSHandle exec(const EventList &in) const { return rebin(in); }
 };
 
 int main() {
@@ -93,4 +137,7 @@ int main() {
   auto wsEvent = ADSHandle(EventList{10, 20, 30});
   auto result1 = rebin(ws2D);
   auto result2 = rebin(wsEvent);
+  Algorithm alg(Rebin{});
+  auto result3 = alg.execute(ws2D);
+  auto result4 = alg.execute(wsEvent);
 }
