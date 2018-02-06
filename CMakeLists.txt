@@ -10,4 +10,8 @@ if(NOT CMAKE_BUILD_TYPE)
       "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
+add_subdirectory(/home/simon/software/pybind11 ${CMAKE_BINARY_DIR}/pybind11)
+
 add_subdirectory(src)
+
+pybind11_add_module(rebin src/pybind.cpp)
