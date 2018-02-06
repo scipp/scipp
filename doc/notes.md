@@ -3,3 +3,4 @@ Key problems to solve:
 - How can we write generic algorithms without a stiff inheritance tree. Are templates the right way?
 
 - Would it make sense to a have separate ADS section for each workspace type, such that casting can be avoided?
+- The guiding design principle should always be ease of use (intuitive, etc.).

@@ -1,23 +1,6 @@
 #include <vector>
 #include <memory>
 
-class Concept {
-public:
-  virtual ~Concept() = default;
-  virtual std::unique_ptr<Concept> clone() const = 0;
-  // virtual bool compare() = 0;
-};
-
-template <class T> class Model : public Concept {
-public:
-  Model(T const &model) : m_model(model) {}
-  std::unique_ptr<Concept> clone() const override {
-    return std::make_unique<Model<T>>(m_model);
-  }
-
-  T m_model;
-};
-
 using Histogram = std::vector<double>;
 using EventList = std::vector<int>;
 
@@ -29,6 +12,24 @@ template <class T> ADSType getADSType() {
 
 template <> ADSType getADSType<Histogram>() { return ADSType::Histogram; }
 template <> ADSType getADSType<EventList>() { return ADSType::EventList; }
+
+// Concept, Model, and ADSHandle can hold arbitrary type. This is probably not
+// actually relevant here, could be done in different way as well.
+class Concept {
+public:
+  virtual ~Concept() = default;
+  virtual std::unique_ptr<Concept> clone() const = 0;
+};
+
+template <class T> class Model : public Concept {
+public:
+  Model(T const &model) : m_model(model) {}
+  std::unique_ptr<Concept> clone() const override {
+    return std::make_unique<Model<T>>(m_model);
+  }
+
+  T m_model;
+};
 
 class ADSHandle {
 public:
@@ -57,11 +58,9 @@ Histogram rebin(const Histogram &in) {
 
 Histogram rebin(const EventList &in) { return Histogram{1.1, 2.2, 3.3}; }
 
-// template <class T> Histogram rebin(const T &unsupported) {
-//  throw std::runtime_error("rebin does not support this type");
-//}
-
-// How can we avoid writing this for every algorithm?
+// If we hold arbitrary type in ADS, we would need a way to get the actual type
+// such that we can call the right overload. How can we avoid writing this for
+// every algorithm?
 ADSHandle rebin(const ADSHandle &ws) {
   switch (ws.type()) {
   case ADSType::Histogram:
@@ -73,6 +72,8 @@ ADSHandle rebin(const ADSHandle &ws) {
   }
 }
 
+/// AlgorithmConcept, AlgorithmModel, and Algorithm provide a way to have a
+/// unified workspace-type-to-overload resolution without duplicating code.
 class AlgorithmConcept {
 public:
   virtual ~AlgorithmConcept() = default;
@@ -96,20 +97,45 @@ public:
   }
 
 private:
+  // Could handle multiple arguments along the lines of this:
+  /*
+  ADSHandle doExec() {
+    // get all properties, cast, build parameter pack?
+  }
+  template <class... Args>
+  ADSHandle doExec(Args &&... args, Properties &props) {
+    if (props.empty())
+      m_model.exec(args...);
+    else {
+      auto prop = props.pop();
+      switch (prop.type()) {
+      // This leads to a horrible combinatoric explosion.
+      // What if we restrict it to the supported types of m_model? How?
+      case ADSType::Histogram:
+        doExec(args..., prop.cast<Histogram>, props);
+        break;
+      }
+      // other cases here
+    }
+  }
+  */
+
   T m_model;
 };
 
 class Algorithm {
 public:
-  // void execute() { exec(); }
-  // virtual void exec() = 0;
   template <class T>
   Algorithm(T object)
       : m_object(std::make_unique<AlgorithmModel<T>>(std::move(object))) {}
   Algorithm(const Algorithm &other) : m_object(other.m_object->clone()) {}
 
   ADSHandle execute(const ADSHandle &ws) {
-    // How to handle multiple arguments and combinatoric explosion?
+    // How to handle multiple arguments and combinatoric explosion? Multiple
+    // arguments could be supported by converting a vector of properties into a
+    // parameter pack (see doExec above), but would still suffer from
+    // combinatoric explosion (potentially leading to long compile times or
+    // large binaries?).
     switch (ws.type()) {
     case ADSType::Histogram:
       return m_object->exec(ws.cast<Histogram>());
@@ -124,6 +150,9 @@ private:
   std::unique_ptr<AlgorithmConcept> m_object;
 };
 
+// Via the mechanism provided by Algorithm we can now write classes like this,
+// drop them into an Algorithm, and call them by passing any ADSHandle to
+// Algorithm::execute.
 class Rebin {
 public:
   ADSHandle exec(const Histogram &in) const { return rebin(in); }
