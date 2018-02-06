@@ -35,3 +35,7 @@ public:
   bool isMasked()
       const; // Instrument masking, or obtained from link to MaskWorkspace??
 };
+
+// How to support more abstract Histogram workspaces (with Histograms not linked
+// to detector positions)?
+// How to support workspaces with a single data point per spectrum?

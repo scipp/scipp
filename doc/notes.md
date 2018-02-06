@@ -44,6 +44,7 @@ No ADS in C++. pybind11 and Python do everything for us?
   - If directly but not copy, how can we possibly avoid breaking data workspaces that link?
   - If via link, take a copy (if necessary, there might just be a single link), link stays intact, but the flow of logic is not nice (modify one object via another)
   - Forbid changing grouping in existing workspace? This does usually not make sense.
+- Are the `Axis` objects duplicating information that is contained in `Histogram` and the spectrum numbers (if we generalize to more generic spectrum labels)?
 
 # Iterator
 
