@@ -1,1 +1,1 @@
-add_executable(ads-handle main.cpp)
+add_executable(draft1 draft1.cpp)
