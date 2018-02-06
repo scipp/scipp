@@ -11,7 +11,7 @@ Key problems to solve:
 # Draft 1
 
 If we do not have an inheritance tree for workspaces, how can we write generic algorithms?
-`exploration1.cpp` shows a way, client algorithm code is very simple.
+`draft1.cpp` shows a way, client algorithm code is very simple.
 
 - Will this get cumbersome with many properties?
 - Do we need a property system at the algorithm implementation level?
@@ -38,5 +38,15 @@ No ADS in C++. pybind11 and Python do everything for us?
   - Can we eliminate one of these? Either masking should always be stored in workspace, or always we a separate workspace (provided to algorithms by hand, or used automatically when linked).
   - Same for `GroupingWorkspace`: We have grouping information in the workspace, and we have workspaces defining grouping patterns. Eliminate one.
   - If we eliminate the workspaces, provide a different way for users to view that masking/grouping information.
+- Should the instrument be handled in the same way as discussed for masking and grouping above?
+- How do we modify such linked workspaces, such as `MaskWorkspace`?
+  - If directly, should it always takes a copy (break all links)? This would add overhead of copying, and later setting a new link from data workspace to the modified mask workspace.
+  - If directly but not copy, how can we possibly avoid breaking data workspaces that link?
+  - If via link, take a copy (if necessary, there might just be a single link), link stays intact, but the flow of logic is not nice (modify one object via another)
+  - Forbid changing grouping in existing workspace? This does usually not make sense.
+
+# Iterator
+
 - Iterators that provide a unified view of information linked to by workspace, including data, spectrum labels, spectrum definitions, masking.
   - Low-level algorithms to work with iterators?
+- If we link to workspaces from iterators, access should most likely be only `const` (never modify linked workspaces via these iterators, there are *data* iterators).
