@@ -27,3 +27,16 @@ No ADS in C++. pybind11 and Python do everything for us?
 - How can we make any overloaded function into an algorithm? Do we need to?
 - Should we write algorithms always in two parts, a shell that deals with properties, and normal C++ code doing the actual work?
   - Is making this simple part of the workspace scope? My current feeling is that getting the design wrong could make this difficult.
+
+# Draft 4
+
+- What do algorithms actually need? Most do not need, e.g., instrument, or `SpectrumInfo`. Table of L2, etc. might be enough.
+  - See for example discussion at developer meeting on `ConvertUnits` not working for constant-wavelength instruments -- only wavelength is needed.
+  - Can we select the right overload depending on what information is available?
+- We have to avoid duplicating concepts.
+  - Example1: Masking. Currently there is `MaskWorkspace` as well as masking on the instrument/workspace.
+  - Can we eliminate one of these? Either masking should always be stored in workspace, or always we a separate workspace (provided to algorithms by hand, or used automatically when linked).
+  - Same for `GroupingWorkspace`: We have grouping information in the workspace, and we have workspaces defining grouping patterns. Eliminate one.
+  - If we eliminate the workspaces, provide a different way for users to view that masking/grouping information.
+- Iterators that provide a unified view of information linked to by workspace, including data, spectrum labels, spectrum definitions, masking.
+  - Low-level algorithms to work with iterators?
