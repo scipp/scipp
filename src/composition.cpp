@@ -38,27 +38,23 @@ Histograms convertUnits(const Histograms &histograms,
 
 BOOST_TTI_HAS_STATIC_MEMBER_FUNCTION(exec);
 
-template <class T> class Algorithm {
+class Algorithm {
 public:
   // Enabled if T needs only histograms for processing
-  // sizeof(U) is a workaround, because we must use U in the enable_if clause.
-  template <class U>
-  Workspace<U>
-  execute(const Workspace<U> &ws,
-          typename std::enable_if<
-              sizeof(U) &&
-              has_static_member_function_exec<
-                  T, Histograms,
-                  boost::mpl::vector<const Histograms &>>::value>::type * =
-              nullptr) {
+  template <class T, class U>
+  static Workspace<U> execute(
+      const Workspace<U> &ws,
+      typename std::enable_if<has_static_member_function_exec<
+          T, Histograms,
+          boost::mpl::vector<const Histograms &>>::value>::type * = nullptr) {
     auto out(ws);
     out.setHistograms(T::exec(ws.histograms()));
     return out;
   }
 
   // Enabled if T needs histograms and metadata for processing
-  template <class U>
-  Workspace<U> execute(
+  template <class T, class U>
+  static Workspace<U> execute(
       const Workspace<U> &ws,
       typename std::enable_if<has_static_member_function_exec<
           T, Histograms,
@@ -96,23 +92,21 @@ int main() {
   // We would like to call `rebin` on `ws`, which will obviously not work:
   // auto rebinnedWs = rebin(ws);
 
-  // Wrapping in `Algorithm` does what we need:
-  Algorithm<Rebin> alg;
-  auto rebinnedWs = alg.execute(ws);
-  auto rebinnedWs2 = alg.execute(ws2);
+  // Wrapping in `Algorithm::execute` does what we need:
+  auto rebinnedWs = Algorithm::execute<Rebin>(ws);
+  auto rebinnedWs2 = Algorithm::execute<Rebin>(ws2);
 
   // Composition can be handled via templated Algorithm::execute, actual
   // algorithms do not need templates. Note in particular that ws and ws2 are
   // *different types*, nevertheless `Rebin` works with both!
-  Algorithm<ConvertUnits> alg2;
   // ConvertUnits can use SpectrumInfo (detector positions) or
   // IncidentWavelength for unit conversion:
-  auto convertedWs = alg2.execute(rebinnedWs);
-  auto convertedWs2 = alg2.execute(rebinnedWs2);
+  auto convertedWs = Algorithm::execute<ConvertUnits>(rebinnedWs);
+  auto convertedWs2 = Algorithm::execute<ConvertUnits>(rebinnedWs2);
 
   // ConvertUnits cannot deal with std::string as metadata, does not compile:
   // Workspace<std::string> unsupported;
-  // alg2.execute(unsupported);
+  // Algorithm::execute<ConvertUnits>(unsupported);
 }
 
 // TODO
