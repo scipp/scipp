@@ -63,3 +63,14 @@ No ADS in C++. pybind11 and Python do everything for us?
 # Composition (`composition.cpp`)
 
 - Shows how to write algorithms for sub-components.
+- Why not have only one workspace type and check if certain sub fields exist?
+  - Would lead to messy client code, e.g., `ConvertUnits`:
+    ```
+    if (ws.hasSpectrumInfo())
+      convertUnits(ws.histograms(), ws.spectrumInfo());
+    // FIXME make sure we don't have SpectrumInfo as well as wavelength!
+    if (ws.hasFixedWavelength()) // reactors
+      convertUnits(ws.histograms(), ws.wavelength());
+    else
+      throw std::runtime_error("No information for converting units in workspace");
+    ```

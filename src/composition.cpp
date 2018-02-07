@@ -105,8 +105,14 @@ int main() {
   // algorithms do not need templates. Note in particular that ws and ws2 are
   // *different types*, nevertheless `Rebin` works with both!
   Algorithm<ConvertUnits> alg2;
+  // ConvertUnits can use SpectrumInfo (detector positions) or
+  // IncidentWavelength for unit conversion:
   auto convertedWs = alg2.execute(rebinnedWs);
   auto convertedWs2 = alg2.execute(rebinnedWs2);
+
+  // ConvertUnits cannot deal with std::string as metadata, does not compile:
+  // Workspace<std::string> unsupported;
+  // alg2.execute(unsupported);
 }
 
 // TODO
