@@ -38,4 +38,25 @@ public:
 
 // How to support more abstract Histogram workspaces (with Histograms not linked
 // to detector positions)?
+template <class T> class HistogramWorkspace {
+public:
+  // Used by algorithms like Rebin that do not need metadata like positions for
+  // the histograms.
+  HistogramWorkspaceIterator histogramBegin();
+  HistogramWorkspaceIterator histogramEnd();
+
+  // Used by algorithms like ConvertUnits that need to access positions, Q, or
+  // scattering angles for each detector.
+  HistogramWorkspaceIterator<T> begin();
+  HistogramWorkspaceIterator<T> end();
+
+private:
+  std::vector<Histogram> m_histograms;
+  T m_spectrumInfo;
+};
+
+HistogramWorkspace<SpectrumInfo> detectorSpaceWorkspace;
+HistogramWorkspace<QInfo> qSpaceWorkspace;
+HistogramWorkspace<ScatteringAngleInfo> scatteringAngleWorkspace;
+
 // How to support workspaces with a single data point per spectrum?

@@ -4,6 +4,7 @@
 // Part 1 Views
 
 // Support Workspace2D, EventWorkspace, transpose, masking in child classes?
+// Give shape to Y, slice in X?
 // Should this be called Model or View?
 class HistogramView {
 public:
@@ -22,6 +23,8 @@ public:
 
 private:
   const EventWorkspace &m_data;
+  // When calling rebin/convertUnits on a workspace, how to we handle
+  // rebinning/unit-conversion on data like BinEdges in the attached views?
   std::vector<BinEdges> m_binEdges;
 };
 
@@ -44,7 +47,7 @@ class Workspace2D {
 public:
 private:
   std::vector<Histogram> m_histograms;
-  const GroupingWorkspace &m_grouping; // Do not store grouping anywhere else
+  const GroupingWorkspace &m_grouping; // Do NOT store grouping anywhere else
                                        // (ISpectrum, IndexInfo, SpectrumInfo)
 };
 
