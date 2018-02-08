@@ -8,6 +8,7 @@ In contrast, the key problems to address are:
    - instrument
    - mapping from spectra to detectors in instrument
    - masking / region-of-interest
+   - x-uncertainty (SANS special case currently help in `Histogram`)
    - experiment logs
    - sample
    - axes
@@ -71,7 +72,7 @@ The above concepts could be unified in a way similar to the following:
 - Remove the X-axis (keep only the unit).
 - Remove the Y-axis (keep only the unit) and generalize the `SpectrumNumber` to something that can deal with more general data that might be used to label the Y-axis, such as a two-theta value.
 
-Note that while this sounds simple there are a couple of subtleties for each of those items.
+Note that while this sounds simple there are a couple of subtleties attached to each of these items.
 
 ## Supporting a larger variety of workspaces in algorithms
 
@@ -99,7 +100,7 @@ If we were to change this in a new design we need to solve two problems:
 2. The ADS holds workspaces via some sort of type-erased handle.
   Algorithms need the actual type unless they use only API that is common to all workspace types held by the handle.
 
-Solutions:
+Possible solutions:
 
 1. Define operations/operators for items in workspaces, e.g., `DataPoint::operator+()`, `Histogram::operator+()`, and `EventList::operator+()`.
   The part of algorithms dealing with transforming the actual data could then be templated to deal with the various workspace and item types.
@@ -108,6 +109,19 @@ Solutions:
    1. Pass type-erased workspace handle to algorithm, e.g., from `getProperty()`, cast to actual type in algorithm, branch into overloaded or templated algorithm components.
    2. Cast to actual type in algorithm wrapper, pass workspace of actual type to overloaded or templated algorithm entry point.
    3. Make the ADS Python-only, `pybind11` or similar will deal with "casting" and overload resolution automatically.
+
+Requiring different overloads/templates from algorithms supporting similar but distinct workspace types may seem like a big overhead in development effort.
+I believe such an argument actually just highlights an underlying issue:
+Our algorithms are generally too large and do too much.
+Therefore providing overloads sounds like a big task.
+Why do algorithms do too much?
+If we take a closer look, the operation done by many algorithm is actually quite simple.
+Complication is usually just added by dealing with special cases related to slightly different input, creating output workspaces in a correct and complete way, and sanitizing the output.
+Thus the actual issue is a lack of lower-level modularity, and a substantial overhead of converting code into an algorithm.
+Therefore, when considered on a short time scale, adding one big algorithm is quicker than adding three small algorithms (plus optionally a higher-level algorithm using the three smaller ones).
+
+A frequent example of overhead effected by workspaces is actually the `Histogram` type, which, for historical reasons, is a chimera of four different things (combinations of `Histogram::XMode` and `Histogram::YMode`).
+We should probably consider carefully whether this should be changed, yielding four different workspace types in place of a single `Workspace<Histogram>`.
 
 ### Iterators
 
