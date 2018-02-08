@@ -1,33 +1,32 @@
+# Initial thoughts an a new workspace design
+
+## Overview
+
 Adding workspace types that can hold and provide access to a wide variety of data is rather simple.
-In contrast, the key problems to address:
-- How do we aggregate data with its meta data (meta data in the most general sense):
-  - instrument
-  - mapping from spectra to detectors in instrument
-  - masking / region-of-interest
-  - experiment logs
-  - sample
-  - axes
-  - view into data
-  - links to related workspaces
-  - history
-  - tags
-- How can our algorithms support a wider range of workspaces, without adding distinct algorithms for various workspace types?
-  - creating workspaces must be simple
-  - making code into an algorithm should be simple, at least if the algorithm works only on individual spectra, or individual meta data categories 
-  - access via properties and dynamic casting to concrete types may be too cumbersome if more workspaces types are added
-- Overarching design principle should be an intuitive and simple way of using workspaces and writing algorithms.
+In contrast, the key problems to address are:
+1. How do we aggregate data with its meta data (meta data in the most general sense):
+   - instrument
+   - mapping from spectra to detectors in instrument
+   - masking / region-of-interest
+   - experiment logs
+   - sample
+   - axes
+   - view into data
+   - links to related workspaces
+   - history
+   - tags
+2. How can we simplify writing algorithms and minimize the addition of distinct algorithms for an increasing number of workspace types?
+   - A guiding design principle must be ease of use and intuitive ways of writing algorithms.
+   - Creating and maintaining workspaces must be simple.
+     The fact that a workspace is an aggregate of a fair number of components must not interfere with client code doing simple modifications of individual components.
+   - Transforming code into an algorithm should be simple, at least if the algorithm works only on individual spectra, or individual meta-data categories.
+   - Access via properties and dynamic casting to concrete types may be too cumbersome if more workspaces types are added.
 
-Complaints that writing algorithms is too hard (also by power users?). Workspace types are responsible for that, in large parts.
-
-# Definitions
+## Definitions
 
 For brevity and clarity in the discussion to follow we define the following dummy classes, used when referring to *new* workspace types:
 ```c++
-struct DataPoint {
-  double value;
-  double error;
-};
-
+struct DataPoint; // a single value with uncertainty
 struct Histogram; // same or similar to current implementation
 struct EventList; // same or similar to current implementation
 
@@ -36,12 +35,12 @@ struct Workspace {
   std::vector<T> data;
 };
 
-// Workspace<DataPoint> ~ Workspace2D with size 1, as used at reactors
+// Workspace<DataPoint> ~ Workspace2D with x-size 1, as used at reactors
 // Workspace<Histogram> ~ Workspace2D
 // Workspace<EventList> ~ EventWorkspace
 ```
 
-### Duplicate concepts
+## Duplicate concepts
 
 Considered from a general point of view, it turns out that there is a fair amount of duplicate concepts hidden within our workspace types:
 
@@ -60,21 +59,21 @@ Considered from a general point of view, it turns out that there is a fair amoun
    - `MatrixWorkspace::getSpectrum(i).getSpectrumNo()` (also duplicated in `IndexInfo`).
    - `MatrixWorkspace::getAxis(1)`.
 
-There are often slight differences between the diffierent concepts, e.g., (1) masking of bins and masking of spectra/detectors is not the same, or (2) grouping of spectra is not the same as grouping detectors, however we can likely find a common way of expressing these concepts.
+There are often slight differences between the different concepts, e.g., (1) masking of bins and masking of spectra/detectors is not the same, or (2) grouping of spectra is not the same as grouping detectors, however we can likely find a common way of expressing these concepts.
 Eliminating duplication has several advantages:
 - Less code duplication.
 - Less confusion between different representations of the same concept.
 - Less risk of algorithms breaking workspaces by incorrect processing and or propagation of the different instances of the same concept.
 
 The above concepts could be unified in a way similar to the following:
-- Replace masking mechanisms in the workspace/instrument by linking a workspace to a `MaskWorkspace`.
-- Replace grouping mechanisms in the workspace by linking a workspace to a `GroupingWorkspace`.
+- Replace masking mechanisms in the workspace/instrument by linking a workspace to a `Workspace<bool>` (or rather a dedicated new `MaskWorkspace`).
+- Replace grouping mechanisms in the workspace by linking a workspace to a `Workspace<SpectrumDefinition>` (or rather a dedicated new `GroupingWorkspace`).
 - Remove the X-axis (keep only the unit).
 - Remove the Y-axis (keep only the unit) and generalize the `SpectrumNumber` to something that can deal with more general data that might be used to label the Y-axis, such as a two-theta value.
 
 Note that while this sounds simple there are a couple of subtleties for each of those items.
 
-### Key question: How do we handle a larger variety of workspaces in our algorithms?
+## Supporting a larger variety of workspaces in algorithms
 
 Currently Mantid attempts to handle a range of workspaces types via polymorphism.
 The key example is `MatrixWorkspace`, providing a common API for `Workspace2D`, `EventWorkspace`, and others.
@@ -92,11 +91,11 @@ Examples:
 
 #### Considerations
 
-From the shortcomings listed above we can may conclude that providing a common workspace API is not feasible, or that the feasible level of common API is generally not benefical.
+From the shortcomings listed above we may conclude that providing a common workspace API is not feasible, or that the feasible level of common API is generally not beneficial.
 
-If we were to change this a new new design we need to solve two problems:
+If we were to change this in a new design we need to solve two problems:
 
-1. Algorithms should work for a variety of data types. For example, we need to be able to add `Workspace<EventList>`, `Workspace<Histogram>`, and `Workspace<DataPoints>`.
+1. Algorithms should work for a variety of data types. For example, we need to be able provide `Add` for `Workspace<DataPoint>`, `Workspace<Histogram>`, and `Workspace<EventList>` and `Rebin` for the latter two workspace types.
 2. The ADS holds workspaces via some sort of type-erased handle.
   Algorithms need the actual type unless they use only API that is common to all workspace types held by the handle.
 
@@ -121,9 +120,11 @@ This would provide an interface similar to what `ISpectrum` provides, with the a
 
 Such an abstraction could also help to keep code generic in case we choose to encode more than just the item data type in the workspace type.
 One example could by an alternative instrument representation if only L2 and 2-theta tables are available:
+
 ```cpp
 Workspace<Histogram, SpectrumInfo>;
 Workspace<Histogram, L22ThetaTable>;
 ```
+
 We could then implement `Rebin` based on an iterator that does not contain instrument access (since `Rebin` does not need it), keeping the code the same without the need for templating.
 Algorithms that do need instrument access could use iterators with instrument access and would obviously need to be overloaded for the different instrument types.
