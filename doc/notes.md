@@ -74,3 +74,19 @@ No ADS in C++. pybind11 and Python do everything for us?
     else
       throw std::runtime_error("No information for converting units in workspace");
     ```
+
+# Composition 2 (`composition2.cpp`)
+
+Key problem to solve: If we have many more workspace types, we need a way of branching in algorithms.
+The current dynamic casting of the property to EventWorkspace or Workspace2D does not scale!
+If we pass workspaces via a property we cannot use templates.
+- Is this actually a problem? How many distinct data types are there?
+- Worst case might be something like scale, which works for many types:
+  - Histograms
+  - EventLists
+  - constant-wavelength data
+  - single data points
+  - POD types like double or int
+- Most algorithms cover fewer cases?
+- Can a simple helper function that does the mapping from type id to type do the trick?
+

@@ -15,3 +15,4 @@ add_subdirectory(/home/simon/software/pybind11 ${CMAKE_BINARY_DIR}/pybind11)
 add_subdirectory(src)
 
 pybind11_add_module(rebin src/pybind.cpp)
+pybind11_add_module(composition_exports src/composition_exports.cpp)

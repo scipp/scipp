@@ -64,12 +64,24 @@ public:
     out.setHistograms(T::exec(ws.histograms(), ws.metadata()));
     return out;
   }
+
+  // TODO does this suffer from an explosion in the number of execute variants.
+  // Are compile times ok?
+  // TODO how to we get input workspace from property (instead of from
+  // argument)? Lookup table based in type id in ADS? Combinatoric explosion
+  // will kill us (compile times, binary size) if we have several input
+  // workspaces. We actually *know* the types of supported input workspaces,
+  // based on exec variants supported by algorithm, does that help us? Would a
+  // LUT actually work? It would branch to non-existing overloads! Would need to
+  // use a throwing base implementation?
 };
 
 struct Rebin {
   static Histograms exec(const Histograms &histograms) {
     return rebin(histograms);
   }
+  // By providing exec for Histogram (or some other iterator-related helper
+  // item) we can support stacking algorithms via Algorithm.
 };
 
 struct ConvertUnits {
@@ -81,6 +93,20 @@ struct ConvertUnits {
                          const IncidentWavelength &wavelength) {
     return convertUnits(histograms, wavelength);
   }
+
+  // Set all properties except for workspaces?
+  // Basically this implies that all algorithms need to deal with getting the
+  // right properties.
+  // void setProperties(const std::vector<Property> &properties);
+  // Could convert properties automatically in Algorithm based on expected
+  // signature? Wouldn't it just do that automatically with our current property
+  // system?
+  // alg.setProperties(getProperty("TargetUnit"));
+  // void setProperties(const std::string &targetUnit);
+  // Why separate setting properties from exec call with workspace?
+  // - Might be helpful if we want to support stacks/groups?
+  // - exec might have several overloads, dealing with various workspace types.
+  //   Other properties should usually have fixed type?
 };
 
 int main() {

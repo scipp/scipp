@@ -25,6 +25,11 @@ private:
   const EventWorkspace &m_data;
   // When calling rebin/convertUnits on a workspace, how to we handle
   // rebinning/unit-conversion on data like BinEdges in the attached views?
+  // Should BinEdges be part of the data?
+  // In general, can views always be preserved across algorithm calls as long as
+  // they do not contain data? Yes, if modification is in-place? If they do not
+  // contain data, why would we need to attach them to the workspace level, they
+  // could just be created on the fly?
   std::vector<BinEdges> m_binEdges;
 };
 
