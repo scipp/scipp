@@ -142,3 +142,80 @@ Workspace<Histogram, L22ThetaTable>;
 
 We could then implement `Rebin` based on an iterator that does not contain instrument access (since `Rebin` does not need it), keeping the code the same without the need for templating.
 Algorithms that do need instrument access could use iterators with instrument access and would obviously need to be overloaded for the different instrument types.
+
+### Algorithm-workspace interaction classification
+
+To get a better understanding of the required operations on the set of data and meta-data components in an workspace, let us attempt to classify our existing algorithms by subset of components and the type of interaction with the components.
+The goal is the get a better understanding of operations that workspaces must readily support, and to avoid blind spots during the design process.
+
+To begin, let us note that all algorithms need to update the history, but that can be handled in the algorithm wrapper.
+There are a couple of exceptions like `LoadNexusProcessed` and `SaveNexusProcessed`.
+
+The following overview currently glosses over the creation of output workspaces, which must somehow deal with all components, i.e., the classification is based on the required input only.
+In many cases creating outputs could probably be covered by in-place modification (potentially on a copy of the input, unless the user request in-place operation).
+
+#### Categories
+
+##### 1. Data (R)
+
+Algorithms computing a result based on read-only data, without relation to the instrument or experiment.
+Examples: `Fit`, `FFT`.
+
+##### 2. Data (R+W)
+
+Algorithms modifying data, without relation to the instrument or experiment.
+Examples: `Rebin`, `Scale`, `BinaryOperation` (with the exception of operations between non-matching workspaces), `ConvertToHistogram`/`ConvertToPointData` (unless we handle this as different types), `CompressEvents`, `SortEvents`.
+
+##### 3. Single metadata (R+W)
+
+Algorithms modifying a single meta-data component.
+Examples: `MoveInstrumentComponent`, log filtering/editing, masking (unless handled in the current way, which also clears data).
+
+##### 4. Data (R+W) plus single metadata (R)
+
+Algorithms that modify data based on metadata content.
+Examples: `FilterByLogValue`, `RemovePromptPulse`
+
+##### 5. Data (R+W) plus one or more metadata (R+W)
+
+Examples: `ConvertUnits` (modifies data and unit based on instrument), `ExtractSpectra` (filters spectra, implies filtering of bin masking and implicitly the spectrum-detector mapping and spectrum numbers)
+
+##### 6. Data (R) plus one or more metadata (R)
+
+Examples: `Save` algorithms.
+
+##### 7. Data (W) plus metadata (W)
+
+Examples: `Load` algorithms.
+
+##### 8. Complex interaction, potentially with multiple workspaces
+
+Examples: `MergeRuns` and other stitching algorithms
+
+#### Comments
+
+- Categories 1.), 2.), and 3.) could mostly be handled by code that does not know about workspaces.
+  For these, the less coupling there is between components in a workspace, the better.
+  Encapsulation could be very good and algorithm code could very low-level, provided that we find ways to create output workspaces automatically in an algorithm wrapper.
+- Category 4.) is like the previous ones, except that an extra read-only metadata input is required.
+  Probably this can be handled in the same way.
+- Category 5.) feels like the key complexity problem we have in Mantid.
+  Several components in a workspace are modified, while others need to be preserved or copied.
+  Attempting to split such algorithms into several components that each modify only a single component could potentially help us here, i.e., we might be able to move some of these into category 2.), 3.), or 4.).<sup>1</sup>
+- For categories 6.) and 7.) similar comments as for 5.) apply, but here as well we cannot solve all cases in a nice way.
+
+Overall, we are mostly dealing with two types:
+1. Interaction with single components (for all indices).
+2. Interaction with single indices (for all components that are indexable)
+
+implications on property system
+stitching
+ops between worksapaces of different shape / with different spectrum content
+
+<sup>1</sup>For example, an algorithm like `ExtractSpectra` (without the bit that crops histograms) could be implemented as a generic operation on vectors of data or meta data.
+If histograms, bin masking, spectrum-detector mapping, and spectrum numbers were each a separate entity in a workspace we could simply apply the `ExtractSpectra` "algorithm" to each of these individually.
+It is not clear if it would be feasible to handle that automatically.
+Another way would be to group data and metadata on an item level (similar to what `ISpectrum` provides, but with the addition of all other information like bin masking).
+- some algs need only some part
+- not good if information is optional, like masking?
+- can we handle this with iterators?
