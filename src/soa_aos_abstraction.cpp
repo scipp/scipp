@@ -294,21 +294,3 @@ int main() {
   // for (const auto &d : data)
   //   printf("%lf\n", d);
 }
-// Problems:
-// - spectrum number validation
-//   - can we live with having non-unique spectrum numbers?
-//   - would it help and be enough to make all but but data immutable via AOS
-//   accessors?
-// - how can we filter/assemble, without bringing workspace into inconsistent
-//   state?
-//   - what guarantees to we need to make?
-//   - what can we provide psectrum number -> workspace index map if we allow
-//   vector-like access to workspace? is this actually a problem? std::vector
-//   cannot be modified via iterators, must use push_back, insert, operator=,
-//   etc., can just update map (locally, for MPI we do not want update on
-//   push-back, update if used to call algorithm (the current IndexInfo
-//   mechanism turned out messy anyway, maybe that is an indicator that keeping
-//   a globally correct map at all times is not the right way?)
-// - validation of histogram size/type (not an issue if we encode histogram type
-// in the type system, and allow variable sized histograms in a workspace)
-// - MPI??

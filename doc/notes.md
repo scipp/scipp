@@ -8,6 +8,11 @@ Key problems to solve:
 - Workspaces should support chaining multiple algorithms calls, to improve cache use.
 - Workspace types are mirrored in property types? If we add new workspaces we also need to add new properties, unless all workspaces inherit from the same class?
 
+TODO:
+- implications on property system
+- stitching
+- ops between worksapaces of different shape / with different spectrum content
+
 # Draft 1
 
 If we do not have an inheritance tree for workspaces, how can we write generic algorithms?
@@ -90,3 +95,34 @@ If we pass workspaces via a property we cannot use templates.
 - Most algorithms cover fewer cases?
 - Can a simple helper function that does the mapping from type id to type do the trick?
 
+# Structure-of-arrays / array-of-structures abstraction (`soa_aos_abstraction.cpp`)
+
+It would be good if we could hide the implementation details of a workspace.
+Client code should not need to know whether the workspace contains a vector of structures containing all components for each index, or a number of separate vectors for each component.
+
+If we provide array-of-structures access, there may be a number of problems:
+- How can we validate data across the workspace, such as when setting a spectrum numbers.
+  - Allow non-unique spectrum numbers (makes lookup via spectrum numbers problematic).
+  - Make spectrum numbers immutable via workspace items?
+  We have a similar problem if we want to ensure the no two spectra map to the same detector.
+- How can we filter/slice and merge workspaces, without generating an inconsistent state?
+  - What guarantees do we need to make?
+  - In item assignment or `push_back` into a workspace we can check consistency of spectrum numbers, against a local map (local on each rank in an MI run).
+    Keeping a global map up to date would be too expensive and a per-item level with every `push_back`.
+    If we need to use spectrum numbers for item lookup we would thus need to update the maps (spectrum number and global spectrum index) globally.
+    For lookup happening when calling an algorithm this might be an acceptable overhead (although incurring overhead and unnecessary synchronization even if there are no changes).
+    The way `IndexInfo` turned out does not feel like the right thing, so maybe this is indicating that another way, as discussed here, might be a better solution.
+- If data is mutable via workspace items, this would currently support changing histogram types and sizes.
+  Changing sizes might not be an issue since this is on the way of being supported anyway.
+  Changing histogram types, e.g., from point data to histogram data would currently be more problematic, but actually we do not have such checks in place anyway.
+  The best solution might be to split `Histogram` into actual types instead of having a chimera.
+- If masking, grouping, etc. are provided via linked workspaces, how do we handle assignment?
+  We want to share the data.
+  Just COW if using a non-const iterator?
+  We may want to assign data but keep everything else, might need different iterator types for this.
+
+A SOA/SAO abstraction could also pave the way for better imaging support.
+Internally a workspace could store data as a stack of images (one for each TOF).
+But maybe not...:
+- Not clear how to access TOF histogram, need to add stride support in `Histogram`?
+- Would be very inefficient to access as histogram.

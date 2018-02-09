@@ -8,7 +8,7 @@ In contrast, the key problems to address are:
    - instrument
    - mapping from spectra to detectors in instrument
    - masking / region-of-interest
-   - x-uncertainty (SANS special case currently help in `Histogram`)
+   - x-uncertainty (SANS special case currently held in `Histogram`)
    - experiment logs
    - sample
    - axes
@@ -208,14 +208,31 @@ Overall, we are mostly dealing with two types:
 1. Interaction with single components (for all indices).
 2. Interaction with single indices (for all components that are indexable)
 
-implications on property system
-stitching
-ops between worksapaces of different shape / with different spectrum content
+This could imply that we need to support interface workspaces in two ways, as a *structure of arrays* as well as an *array of structures*.
+It would be beneficial if this allowed for hiding the internal data layout of a workspace, since it is just an implementation detail.<sup>2</sup>
+This concept could be further extended to support groups/stacks of workspaces with identical meta data (such as multi-period workspaces) within a single workspace.
 
-<sup>1</sup>For example, an algorithm like `ExtractSpectra` (without the bit that crops histograms) could be implemented as a generic operation on vectors of data or meta data.
+<sup>1</sup> <small>For example, an algorithm like `ExtractSpectra` (without the bit that crops histograms) could be implemented as a generic operation on vectors of data or meta data.
 If histograms, bin masking, spectrum-detector mapping, and spectrum numbers were each a separate entity in a workspace we could simply apply the `ExtractSpectra` "algorithm" to each of these individually.
 It is not clear if it would be feasible to handle that automatically.
 Another way would be to group data and metadata on an item level (similar to what `ISpectrum` provides, but with the addition of all other information like bin masking).
-- some algs need only some part
-- not good if information is optional, like masking?
-- can we handle this with iterators?
+This might be supported by zipping data with metadata when iterating, e.g., as supported by `ranges-v3`.</small>
+
+<sup>2</sup> <small>The same concept could be extended to the `Histogram` level, but making it work well could prove to be difficult.
+Imaging would benefit from storing data as a stack of images (once for each TOF), but still have data accessible as histograms.
+If X is shared by definition, a histogram in the current sense may not be the right implementation anyway.
+A histogram of **images** might be a better way to think about the data, and an efficient implementation of `Rebin` and similar algorithms seems obvious (operations that break the joint binning such as certain unit conversions would imply a transformation into a workspace type containing a vector of histograms).
+This would also get rid of the need to share X data on the level of individual histograms?
+</small>
+
+### Compatibility with existing algorithms and workspaces
+
+Big parts of the discussion above considers workspaces types incompatible with current algorithms, as well as new algorithms that might be incompatible with current workspaces.
+Specific solutions have to be postponed until a design draft is available, but generally speaking we have the following tools at our hand:
+- Begin implementation with
+  - existing workspaces types that are used infrequently and
+  - new workspace types that replace current workarounds.
+  These would not involve refactoring major fractions of our algorithms.
+- Wrap new workspaces in old workspaces or, less likely, old workspaces in new workspaces.
+- Provide converters between old and new workspaces, where applicable (not all new workspace types will have a corresponding old workspace type).
+- Provide new algorithms mainly for new workspace types that have no support or workaround currently.
