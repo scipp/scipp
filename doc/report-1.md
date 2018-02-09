@@ -208,7 +208,7 @@ Overall, we are mostly dealing with two types:
 1. Interaction with single components (for all indices).
 2. Interaction with single indices (for all components that are indexable)
 
-This could imply that we need to support interface workspaces in two ways, as a *structure of arrays* as well as an *array of structures*.
+This could imply that we need to support interfacing workspaces in two ways, as a *structure of arrays* as well as an *array of structures*.
 It would be beneficial if this allowed for hiding the internal data layout of a workspace, since it is just an implementation detail.<sup>2</sup>
 This concept could be further extended to support groups/stacks of workspaces with identical meta data (such as multi-period workspaces) within a single workspace.
 
@@ -229,10 +229,9 @@ This would also get rid of the need to share X data on the level of individual h
 
 Big parts of the discussion above considers workspaces types incompatible with current algorithms, as well as new algorithms that might be incompatible with current workspaces.
 Specific solutions have to be postponed until a design draft is available, but generally speaking we have the following tools at our hand:
-- Begin implementation with
-  - existing workspaces types that are used infrequently and
-  - new workspace types that replace current workarounds.
-  These would not involve refactoring major fractions of our algorithms.
+- Begin implementation with cases that would not involve refactoring major fractions of our algorithms:
+  - Existing workspaces types that are used infrequently.
+  - New workspace types that replace current workarounds.
 - Wrap new workspaces in old workspaces or, less likely, old workspaces in new workspaces.
 - Provide converters between old and new workspaces, where applicable (not all new workspace types will have a corresponding old workspace type).
 - Provide new algorithms mainly for new workspace types that have no support or workaround currently.
