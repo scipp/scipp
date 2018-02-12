@@ -148,6 +148,13 @@ Currently each resulting spectrum is linked to a large group of detector pixels,
 However, since the spectra are not actually corresponding to a phyiscal position the results of such algorithm calls are meaningless.
 If we encode the meaning of a spectrum in the workspace type, such as `Workspace<Histogram, QInfo>`, algorithms that access positions will simply fail, as required (without the need to have code in every algorithm that checks whether spectra correspond to positions).
 
+Similar considerations can be used to justify encoding the presence of masking in a workspace into the workspace type.
+It has been criticized that not all algorithms adhere masking.
+In the current way workspaces handle masking there is no way to enforce this and no way to tell from the outside when masking is ignored.
+If the presence of masking changes the type of a workspace algorithms that do not support masking would simply fail, making it obvious that something is wrong.
+For example, if `SumSpectra` would not support masking it would be impossible to call it with a masked workspace.
+Users could then explicitly call an algorithm that removes the masking before calling `SumSpectra`, ensuring that the result is correct with a well understood meaning.
+
 ### Algorithm-workspace interaction classification
 
 To get a better understanding of the required operations on the set of data and meta-data components in an workspace, let us attempt to classify our existing algorithms by subset of components and the type of interaction with the components.
