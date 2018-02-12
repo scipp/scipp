@@ -143,6 +143,11 @@ Workspace<Histogram, L22ThetaTable>;
 We could then implement `Rebin` based on an iterator that does not contain instrument access (since `Rebin` does not need it), keeping the code the same without the need for templating.
 Algorithms that do need instrument access could use iterators with instrument access and would obviously need to be overloaded for the different instrument types.
 
+Another example would be a workspace containing histograms after conversion to Q by `SofQw`.
+Currently each resulting spectrum is linked to a large group of detector pixels, so access to the instrument such as positions will still work and algorithms can be called without failure.
+However, since the spectra are not actually corresponding to a phyiscal position the results of such algorithm calls are meaningless.
+If we encode the meaning of a spectrum in the workspace type, such as `Workspace<Histogram, QInfo>`, algorithms that access positions will simply fail, as required (without the need to have code in every algorithm that checks whether spectra correspond to positions).
+
 ### Algorithm-workspace interaction classification
 
 To get a better understanding of the required operations on the set of data and meta-data components in an workspace, let us attempt to classify our existing algorithms by subset of components and the type of interaction with the components.
