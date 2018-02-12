@@ -237,6 +237,27 @@ A histogram of **images** might be a better way to think about the data, and an 
 This would also get rid of the need to share X data on the level of individual histograms?
 </small>
 
+### TODO
+
+Iterative initialization.
+Should components like instrument live outside workspaces?
+Could modify instrument, implying changes to all loaded workspaces for that instrument.
+Would not work in current way of thinking in Mantid.
+But: Modifying instrument in workspace is just another level of "iterative initialization", basically we are saying that the instrument we set on the workspace is actually wrong and we have to go back and fix it (load calibration, load masking, ...).
+If we make instrument immutable for a workspace, we could just link it to a instrument ID.
+The actualy instrument could live stand-alone (in something like the IDS?).
+
+```cpp
+void calibratePanels(Instrument &instrument, const Workspace &workspace) {
+  if (instrument != workspace.instrument())
+    throw;
+}
+```
+
+Can we deal with other workspaces linking to the same instrument?
+Can we setup things in a way that all workspaces linking to the same instrument always need the same instrument configuration, i.e., can we ensure that modifying a joint instrument is always the right thing to do, without a copy-on-write mechanism?
+Initially this seems difficult, but it might just be due to our current thinking of the workspace-instrument interaction, given how our current code is structured.
+
 ### Compatibility with existing algorithms and workspaces
 
 Big parts of the discussion above considers workspaces types incompatible with current algorithms, as well as new algorithms that might be incompatible with current workspaces.
