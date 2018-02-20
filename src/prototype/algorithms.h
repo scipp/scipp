@@ -53,3 +53,6 @@ void applyFilterRange(EventList &eventList,
 // TODO
 // - return new workspace
 // - return non-workspace types?
+// - multiple arguments
+// - instrument (or other indexed) input?
+// - selecting input indices, such as for Fit?

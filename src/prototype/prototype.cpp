@@ -60,7 +60,7 @@ struct ConstructAndApply<
     Alg, typename std::enable_if<
              std::is_trivially_default_constructible<Alg>::value>::type,
     Ws, Args...> {
-  static Ws run(const Ws &ws, const Args &... args) {
+  static Ws run(Ws ws, const Args &... args) {
     Alg alg;
     // Alg constructor does not need arguments, pass all arguments to apply.
     return callInstance<Alg>(alg, std::move(ws), args...);
@@ -70,7 +70,7 @@ template <class Alg, class Ws, class... Args>
 struct ConstructAndApply<Alg, typename std::enable_if<std::is_constructible<
                                   Alg, Logs, Args...>::value>::type,
                          Ws, Args...> {
-  static Ws run(const Ws &ws, const Args &... args) {
+  static Ws run(Ws ws, const Args &... args) {
     Alg alg(ws.logs(), args...);
     // Alg constructor consumed the arguments, pass only workspace.
     return callInstance<Alg>(alg, std::move(ws));
