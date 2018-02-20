@@ -20,6 +20,16 @@ struct Scale {
   static void apply(Histogram &histogam, const double factor) {}
   static void apply(DataPoint &dataPoint, const double factor) {}
 };
+
+struct Rebin {
+  Histogram apply(const Histogram &histogram, const BinEdges &binEdges) const {
+    return histogram;
+  }
+  Histogram apply(const EventList &eventList, const BinEdges &binEdges) const {
+    return {};
+  }
+};
+
 // Category 2, option 2
 void scale(Histogram &histogam, const double factor) {}
 void scale(DataPoint &dataPoint, const double factor) {}
