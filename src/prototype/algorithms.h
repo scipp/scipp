@@ -36,9 +36,9 @@ struct ClearLogs {
 // Category 4, option 1
 class FilterByLogValue {
 public:
-  FilterByLogValue(const std::string &name, const double min,
+  FilterByLogValue(const Logs &logs, const std::string &name, const double min,
                    const double max) {}
-  void operator()(EventList &eventList) const {}
+  void apply(EventList &eventList) const {}
 };
 
 // Category 4, option 2
@@ -49,3 +49,7 @@ std::pair<int64_t, int64_t> makeFilterRangeByLogValue(const std::string &name,
 }
 void applyFilterRange(EventList &eventList,
                       const std::pair<int64_t, int64_t> &interval) {}
+
+// TODO
+// - return new workspace
+// - return non-workspace types?
