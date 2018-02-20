@@ -13,6 +13,7 @@ public:
   typename std::vector<Data>::iterator begin() { return m_data.begin(); }
   typename std::vector<Data>::iterator end() { return m_data.end(); }
   Logs &logs() { return m_logs; }
+  const Logs &logs() const { return m_logs; }
   operator Logs &() { return m_logs; }
 
 private:
@@ -55,7 +56,38 @@ Ws call(Ws ws, const Args &... args) {
   return ApplyStatic<Alg, void, Ws, Args...>::run(ws, args...);
 }
 
-// Case 2 : Alg needs constructor arguments, apply is not static
+// Case 2: Constructor needs arguments.
+template <class Alg, class Enable, class Ws, class... Args> struct Construct;
+template <class Alg, class Ws, class... Args>
+struct Construct<Alg,
+                 typename std::enable_if<
+                     std::is_trivially_default_constructible<Alg>::value>::type,
+                 Ws, Args...> {
+  static Alg run(const Ws &ws, const Args &... args) {
+    Alg alg;
+    return alg;
+  }
+};
+template <class Alg, class Ws, class... Args>
+struct Construct<Alg, typename std::enable_if<std::is_constructible<
+                          Alg, Logs, Args...>::value>::type,
+                 Ws, Args...> {
+  static Alg run(const Ws &ws, const Args &... args) {
+    Alg alg(ws.logs(), args...);
+    return alg;
+  }
+};
+
+template <class Alg, class Ws, class... Args>
+Ws callWithConstructor(Ws ws, const Args &... args) {
+  const auto alg = Construct<Alg, void, Ws, Args...>::run(ws, args...);
+  for (auto &item : ws)
+    alg.apply(item);
+  return ws;
+}
+
+// Case 2b : Alg needs constructor arguments, apply is not static, using
+// implicit type cast of Workspace to Logs.
 BOOST_TTI_HAS_MEMBER_FUNCTION(apply);
 template <class Alg, class Enable, class Ws, class... Args> struct Apply;
 template <class Alg, class Ws, class... Args>
@@ -82,4 +114,6 @@ int main() {
   ws = call<ClearLogs>(std::move(ws));
   Workspace<EventList> eventWs;
   eventWs = call2<FilterByLogValue>(std::move(eventWs), "temp1", 274.0, 275.0);
+  eventWs = callWithConstructor<FilterByLogValue>(std::move(eventWs), "temp1",
+                                                  274.0, 275.0);
 }
