@@ -1,0 +1,3 @@
+class SpectrumInfo {};
+
+class SpectrumDefinition {};
