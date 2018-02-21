@@ -73,6 +73,16 @@ struct ConstructAndApply<
     return callInstance<Alg>(alg, std::forward<Ws>(ws), args...);
   }
 };
+template <class Alg, class Ws, class Arg1, class... Args>
+struct ConstructAndApply<Alg, typename std::enable_if<std::is_constructible<
+                                  Alg, Arg1, Args...>::value>::type,
+                         Ws, Arg1, Args...> {
+  static auto run(Ws ws, const Arg1 &arg1, const Args &... args) {
+    Alg alg(arg1, args...);
+    // Alg constructor consumed the arguments, pass only workspace.
+    return callInstance<Alg>(alg, std::forward<Ws>(ws));
+  }
+};
 template <class Alg, class Ws, class... Args>
 struct ConstructAndApply<Alg, typename std::enable_if<std::is_constructible<
                                   Alg, Logs, Args...>::value>::type,
@@ -103,6 +113,5 @@ int main() {
   // type.
   Workspace<Histogram> binned = call<Rebin>(eventWs, BinEdges{});
 
-  // auto fitResult = call<Fit>(binned, Fit::Function{},
-  // Fit::Parameters{});
+  auto fitResult = call<Fit>(binned, Fit::Function{}, Fit::Parameters{});
 }

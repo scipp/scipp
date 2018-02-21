@@ -12,7 +12,7 @@ public:
   class Parameters {};
   class Result {};
   Fit(const Function &function, const Parameters &parameters) {}
-  Result operator()(const Histogram &histogram) const {}
+  Result apply(const Histogram &histogram) const {}
 };
 
 // Category 2, option 1
