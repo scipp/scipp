@@ -38,6 +38,19 @@ TEST(ScaleDataPointWorkspace, replace_not_in_place) {
   ASSERT_EQ(ws[1].value, 1.5);
 }
 
+TEST(ScaleDataPointWorkspace, moved) {
+  Workspace<DataPoint> ws(2);
+  const auto oldAddr = &ws[0];
+
+  auto scaled = call<Scale>(std::move(ws), 1.5);
+
+  ASSERT_EQ(ws.size(), 0);
+  ASSERT_EQ(&scaled[0], oldAddr);
+  ASSERT_EQ(scaled.size(), 2);
+  ASSERT_EQ(scaled[0].value, 1.5);
+  ASSERT_EQ(scaled[1].value, 1.5);
+}
+
 TEST(ScaleDataPointWorkspace, in_place) {
   Workspace<DataPoint> ws(2);
   const auto oldAddr = &ws[0];
@@ -48,4 +61,80 @@ TEST(ScaleDataPointWorkspace, in_place) {
   ASSERT_EQ(ws.size(), 2);
   ASSERT_EQ(ws[0].value, 1.5);
   ASSERT_EQ(ws[1].value, 1.5);
+}
+
+TEST(ScaleDataPointWorkspace, different_workspace_type) {
+  Workspace<DataPoint, QInfo> ws(2);
+  const auto oldAddr = &ws[0];
+
+  ws = call<Scale>(std::move(ws), 1.5);
+
+  ASSERT_EQ(&ws[0], oldAddr);
+  ASSERT_EQ(ws.size(), 2);
+  ASSERT_EQ(ws[0].value, 1.5);
+  ASSERT_EQ(ws[1].value, 1.5);
+}
+
+TEST(ClearLogs, not_in_place) {
+  Workspace<DataPoint> ws(2);
+  ws = call<Scale>(std::move(ws), 1.5);
+
+  auto out = call<ClearLogs>(ws);
+
+  ASSERT_NE(&out[0], &ws[0]);
+  ASSERT_EQ(out.size(), 2);
+  ASSERT_EQ(out[0].value, 1.5);
+  ASSERT_EQ(out[1].value, 1.5);
+}
+
+TEST(ClearLogs, in_place) {
+  Workspace<DataPoint> ws(2);
+  ws = call<Scale>(std::move(ws), 1.5);
+  const auto oldAddr = &ws[0];
+
+  auto out = call<ClearLogs>(std::move(ws));
+
+  ASSERT_EQ(&out[0], oldAddr);
+  ASSERT_EQ(out.size(), 2);
+  ASSERT_EQ(out[0].value, 1.5);
+  ASSERT_EQ(out[1].value, 1.5);
+}
+
+TEST(FilterByLogValue, not_in_place) {
+  Workspace<EventList> ws(2);
+
+  auto out = call<FilterByLogValue>(ws, "temp1", 274.0, 275.0);
+
+  ASSERT_NE(&out[0], &ws[0]);
+  ASSERT_EQ(out.size(), 2);
+}
+
+TEST(FilterByLogValue, in_place) {
+  Workspace<EventList> ws(2);
+  const auto oldAddr = &ws[0];
+
+  auto out = call<FilterByLogValue>(std::move(ws), "temp1", 274.0, 275.0);
+
+  ASSERT_EQ(&out[0], oldAddr);
+  ASSERT_EQ(out.size(), 2);
+}
+
+TEST(Rebin, Histogram) {
+  Workspace<Histogram> ws(2);
+
+  auto binned = call<Rebin>(std::move(ws), BinEdges{});
+
+  ASSERT_EQ(ws.size(), 2);
+  ASSERT_EQ(binned.size(), 2);
+  ASSERT_EQ(typeid(decltype(binned)::value_type), typeid(Histogram));
+}
+
+TEST(Rebin, EventList) {
+  Workspace<EventList> ws(2);
+
+  auto binned = call<Rebin>(ws, BinEdges{});
+
+  ASSERT_EQ(binned.size(), 2);
+  ASSERT_EQ(typeid(decltype(ws)::value_type), typeid(EventList));
+  ASSERT_EQ(typeid(decltype(binned)::value_type), typeid(Histogram));
 }

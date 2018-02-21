@@ -17,6 +17,7 @@ Supported features are:
 # Potential problems
 
 - Functor signatures that are not supported by call wrappers result in template error messages that would probably be too obscure for many developers, unless documented properly.
+  Can we solve this by putting a static assert with a sensible error message in the place of failed instantiation?
 
 # To do
 

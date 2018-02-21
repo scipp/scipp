@@ -63,14 +63,16 @@ struct Apply<
 };
 
 template <class Alg, class Ws, class... Args>
-auto callInstance(const Alg &alg, Ws ws, const Args &... args) {
-  return Apply<Alg, void, typename Ws::value_type, typename Ws::aux_type,
+auto callInstance(const Alg &alg, Ws &&ws, const Args &... args) {
+  return Apply<Alg, void, typename std::remove_reference<Ws>::type::value_type,
+               typename std::remove_reference<Ws>::type::aux_type,
                Args...>::run(alg, std::forward<Ws>(ws), args...);
 }
 template <class Alg, class Ws, class... Args>
-auto callInstance(const Alg &alg, Ws ws, const IndexSet &indexSet,
+auto callInstance(const Alg &alg, Ws &&ws, const IndexSet &indexSet,
                   const Args &... args) {
-  return Apply<Alg, void, typename Ws::value_type, typename Ws::aux_type,
+  return Apply<Alg, void, typename std::remove_reference<Ws>::type::value_type,
+               typename std::remove_reference<Ws>::type::aux_type,
                Args...>::run(alg, std::forward<Ws>(ws), indexSet, args...);
 }
 
@@ -82,7 +84,7 @@ struct ConstructAndApply<
     Alg, typename std::enable_if<
              std::is_trivially_default_constructible<Alg>::value>::type,
     Ws, Args...> {
-  static auto run(Ws ws, const Args &... args) {
+  static auto run(Ws &&ws, const Args &... args) {
     Alg alg;
     // Alg constructor does not need arguments, pass all arguments to apply.
     return callInstance<Alg>(alg, std::forward<Ws>(ws), args...);
@@ -97,7 +99,7 @@ struct ConstructAndApply<Alg, typename std::enable_if<std::is_constructible<
     // Alg constructor consumed the arguments, pass only workspace.
     return callInstance<Alg>(alg, std::forward<Ws>(ws));
   }
-  static auto run(Ws ws, const IndexSet &indexSet, const Arg1 &arg1,
+  static auto run(Ws &&ws, const IndexSet &indexSet, const Arg1 &arg1,
                   const Args &... args) {
     Alg alg(arg1, args...);
     // Alg constructor consumed the arguments, pass only workspace.
@@ -108,7 +110,7 @@ template <class Alg, class Ws, class... Args>
 struct ConstructAndApply<Alg, typename std::enable_if<std::is_constructible<
                                   Alg, Logs, Args...>::value>::type,
                          Ws, Args...> {
-  static auto run(Ws ws, const Args &... args) {
+  static auto run(Ws &&ws, const Args &... args) {
     Alg alg(ws.logs(), args...);
     // Alg constructor consumed the arguments, pass only workspace.
     return callInstance<Alg>(alg, std::forward<Ws>(ws));
