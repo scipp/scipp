@@ -2,6 +2,7 @@
 #define INSTRUMENT_H
 
 class SpectrumInfo {};
+class QInfo {};
 
 class SpectrumDefinition {};
 

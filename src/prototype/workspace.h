@@ -7,7 +7,9 @@
 #include "instrument.h"
 #include "metadata.h"
 
-template <class Data> class Workspace {
+using IndexSet = std::vector<size_t>;
+
+template <class Data, class Instrument = SpectrumInfo> class Workspace {
 public:
   using value_type = Data;
   Workspace() = default;
@@ -19,7 +21,19 @@ public:
       : m_data(other.m_spectrumDefinitions.size()),
         m_spectrumDefinitions(other.m_spectrumDefinitions),
         m_spectrumNumbers(other.m_spectrumNumbers),
-        m_spectrumInfo(other.m_spectrumInfo), m_logs(other.m_logs) {}
+        m_instrument(other.m_instrument), m_logs(other.m_logs) {}
+  template <class OtherData>
+  Workspace(const Workspace<OtherData> &other, const IndexSet &indexSet)
+      : m_data(other.size()),
+        m_spectrumDefinitions(other.size()),
+        m_spectrumNumbers(other.size()),
+        m_instrument(other.m_instrument), m_logs(other.m_logs) {
+    for (size_t i = 0; i < indexSet.size(); ++i) {
+      m_spectrumDefinitions[i] = other.m_spectrumDefinitions[indexSet[i]];
+      m_spectrumNumbers[i] = other.m_spectrumNumbers[indexSet[i]];
+      // TODO similar for m_instrument
+    }
+  }
   typename std::vector<Data>::iterator begin() { return m_data.begin(); }
   typename std::vector<Data>::iterator end() { return m_data.end(); }
   size_t size() const { return m_data.size(); }
@@ -28,13 +42,13 @@ public:
   Logs &logs() { return m_logs; }
   const Logs &logs() const { return m_logs; }
 
-  template <class OtherData> friend class Workspace;
+  template <class OtherData, class Instrument2> friend class Workspace;
 
- private:
+private:
   std::vector<Data> m_data;
   std::vector<SpectrumDefinition> m_spectrumDefinitions;
   std::vector<int32_t> m_spectrumNumbers;
-  SpectrumInfo m_spectrumInfo;
+  Instrument m_instrument;
   Logs m_logs;
 };
 

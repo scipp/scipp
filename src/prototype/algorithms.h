@@ -60,6 +60,12 @@ std::pair<int64_t, int64_t> makeFilterRangeByLogValue(const std::string &name,
 void applyFilterRange(EventList &eventList,
                       const std::pair<int64_t, int64_t> &interval) {}
 
+// Category X
+// how would we handle verification, such as checking instrument compatibility?
+struct Add {
+  Histogram apply(const Histogram &a, const Histogram &b) { return a; }
+};
+
 // TODO
 // - return non-workspace types? (example?)
 // - multiple ws arguments (Add)
