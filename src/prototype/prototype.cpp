@@ -53,30 +53,6 @@ struct Apply<
   }
 };
 
-// As Apply, but output workspace type is different
-template <class Alg, class Enable, class Ws, class... Args> struct ApplyMutate;
-template <class Alg, class Ws, class... Args>
-struct ApplyMutate<Alg,
-                   typename std::enable_if<
-                       !has_function_apply<
-                           Alg, void, boost::mpl::vector<Logs &>>::value>::type,
-                   Ws, Args...> {
-  static auto run(const Alg &alg, const Ws &ws, const Args &... args) {
-    // Merge with Apply, if OutputItemType is void we work in-place?
-    using OutputItemType = decltype(alg.apply(ws[0], args...));
-    Workspace<OutputItemType> out(ws);
-    for (size_t i = 0; i < ws.size(); ++i)
-      out[i] = alg.apply(ws[i], args...);
-    return out;
-  }
-};
-
-template <class Alg, class Ws, class... Args>
-auto callMutate(Ws ws, const Args &... args) {
-  Alg alg;
-  return ApplyMutate<Alg, void, Ws, Args...>::run(alg, ws, args...);
-}
-
 template <class Alg, class Ws, class... Args>
 auto callInstance(const Alg &alg, Ws ws, const Args &... args) {
   return Apply<Alg, void, typename Ws::value_type, typename Ws::aux_type,
@@ -127,6 +103,6 @@ int main() {
   // type.
   Workspace<Histogram> binned = call<Rebin>(eventWs, BinEdges{});
 
-  // auto fitResult = callMutate<Fit>(binned, Fit::Function{},
+  // auto fitResult = call<Fit>(binned, Fit::Function{},
   // Fit::Parameters{});
 }

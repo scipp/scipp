@@ -67,6 +67,7 @@ struct Add {
 };
 
 // TODO
+// - check that we are not accidentially copying inputs.
 // - return non-workspace types? (example?)
 // - multiple ws arguments (Add)
 // - instrument (or other indexed) input (ConvertUnits)
