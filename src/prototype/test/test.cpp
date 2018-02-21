@@ -148,3 +148,21 @@ TEST(Rebin, rebin_subset_via_IndexSet) {
   ASSERT_EQ(typeid(decltype(ws)::value_type), typeid(EventList));
   ASSERT_EQ(typeid(decltype(binned)::value_type), typeid(Histogram));
 }
+
+TEST(Fit, full_workspace) {
+  Workspace<Histogram> ws(3);
+
+  auto fitResult = call<Fit>(ws, Fit::Function{}, Fit::Parameters{});
+
+  ASSERT_EQ(fitResult.size(), 3);
+  ASSERT_EQ(typeid(decltype(fitResult)::value_type), typeid(Fit::Result));
+}
+
+TEST(Fit, subset) {
+  Workspace<Histogram> ws(3);
+
+  auto fitResult = call<Fit>(ws, IndexSet{0}, Fit::Function{}, Fit::Parameters{});
+
+  ASSERT_EQ(fitResult.size(), 1);
+  ASSERT_EQ(typeid(decltype(fitResult)::value_type), typeid(Fit::Result));
+}
