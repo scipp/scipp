@@ -1,42 +1,7 @@
-#include <cstdint>
-
 #include <boost/tti/has_function.hpp>
 
 #include "algorithms.h"
-#include "data.h"
-#include "instrument.h"
-#include "metadata.h"
-
-template <class Data> class Workspace {
-public:
-  using value_type = Data;
-  Workspace() = default;
-
-  // Create with different (or same) data item type. This is in a sense similar
-  // to our current workspace factory creating from a parent?
-  template <class OtherData>
-  explicit Workspace(const Workspace<OtherData> &other)
-      : m_data(other.m_spectrumDefinitions.size()),
-        m_spectrumDefinitions(other.m_spectrumDefinitions),
-        m_spectrumNumbers(other.m_spectrumNumbers),
-        m_spectrumInfo(other.m_spectrumInfo), m_logs(other.m_logs) {}
-  typename std::vector<Data>::iterator begin() { return m_data.begin(); }
-  typename std::vector<Data>::iterator end() { return m_data.end(); }
-  size_t size() const { return m_data.size(); }
-  Data &operator[](const size_t i) { return m_data[i]; }
-  const Data &operator[](const size_t i) const { return m_data[i]; }
-  Logs &logs() { return m_logs; }
-  const Logs &logs() const { return m_logs; }
-
-  template <class OtherData> friend class Workspace;
-
- private:
-  std::vector<Data> m_data;
-  std::vector<SpectrumDefinition> m_spectrumDefinitions;
-  std::vector<int32_t> m_spectrumNumbers;
-  SpectrumInfo m_spectrumInfo;
-  Logs m_logs;
-};
+#include "workspace.h"
 
 // Part 2: Call apply functions
 BOOST_TTI_HAS_FUNCTION(apply);

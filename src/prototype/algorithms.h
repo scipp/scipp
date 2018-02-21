@@ -61,8 +61,12 @@ void applyFilterRange(EventList &eventList,
                       const std::pair<int64_t, int64_t> &interval) {}
 
 // TODO
-// - return new workspace
-// - return non-workspace types?
-// - multiple ws arguments
-// - instrument (or other indexed) input?
-// - selecting input indices, such as for Fit?
+// - return non-workspace types? (example?)
+// - multiple ws arguments (Add)
+// - instrument (or other indexed) input (ConvertUnits)
+// - selecting input indices, such as for Fit or ExtractSpectra?
+// - modify multiple args (ConvertUnits?)
+//
+// - input validation / properties?
+// - multi-part algorithms (transforming multiple components)?
+// - algorithms working with actual workspace types
