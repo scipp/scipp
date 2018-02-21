@@ -18,7 +18,9 @@ public:
 // Category 2
 struct Scale {
   static void apply(Histogram &histogam, const double factor) {}
-  static void apply(DataPoint &dataPoint, const double factor) {}
+  static void apply(DataPoint &dataPoint, const double factor) {
+    dataPoint.value *= factor;
+  }
 };
 
 struct Rebin {

@@ -6,6 +6,8 @@
 class BinEdges {};
 class Histogram {};
 class EventList {};
-class DataPoint {};
+struct DataPoint {
+  double value{1.0};
+};
 
 #endif // DATA_H

@@ -1,5 +1,3 @@
-#include <boost/tti/has_function.hpp>
-
 #include "algorithms.h"
 #include "call_wrappers.h"
 #include "workspace.h"
