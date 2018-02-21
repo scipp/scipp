@@ -13,3 +13,7 @@ Supported features are:
 - Mutating the type of the items in a workspace is supported, e.g., for `Rebin` converting `EventList` to `Histogram`.
 - The workspace type can depend on more than just the data type, e.g., the instrument type (`SpectrumInfo`, `QInfo`, ...).
   Algorithm operating on other meta data or data items are unaffected and work without knowledge of that aspect of the workspace type.
+
+# Problems
+
+- Functor signatures that are not supported by call wrappers result in template error messages that would probably be too obscure for many developers, unless documented properly.

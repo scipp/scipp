@@ -51,12 +51,25 @@ struct Apply<
       out[i] = alg.apply(ws[i], args...);
     return out;
   }
+  static Out run(const Alg &alg, const Ws &ws, const IndexSet &indexSet,
+                 const Args &... args) {
+    Out out(ws, indexSet);
+    for (size_t i = 0; i < indexSet.size(); ++i)
+      out[i] = alg.apply(ws[indexSet[i]], args...);
+    return out;
+  }
 };
 
 template <class Alg, class Ws, class... Args>
 auto callInstance(const Alg &alg, Ws ws, const Args &... args) {
   return Apply<Alg, void, typename Ws::value_type, typename Ws::aux_type,
                Args...>::run(alg, std::forward<Ws>(ws), args...);
+}
+template <class Alg, class Ws, class... Args>
+auto callInstance(const Alg &alg, Ws ws, const IndexSet &indexSet,
+                  const Args &... args) {
+  return Apply<Alg, void, typename Ws::value_type, typename Ws::aux_type,
+               Args...>::run(alg, std::forward<Ws>(ws), indexSet, args...);
 }
 
 // Part 1: Create algorithm instance and forward to call helper.
@@ -82,6 +95,12 @@ struct ConstructAndApply<Alg, typename std::enable_if<std::is_constructible<
     // Alg constructor consumed the arguments, pass only workspace.
     return callInstance<Alg>(alg, std::forward<Ws>(ws));
   }
+  static auto run(Ws ws, const IndexSet &indexSet, const Arg1 &arg1,
+                  const Args &... args) {
+    Alg alg(arg1, args...);
+    // Alg constructor consumed the arguments, pass only workspace.
+    return callInstance<Alg>(alg, std::forward<Ws>(ws), indexSet);
+  }
 };
 template <class Alg, class Ws, class... Args>
 struct ConstructAndApply<Alg, typename std::enable_if<std::is_constructible<
@@ -99,6 +118,11 @@ auto call(Ws &&ws, const Args &... args) {
   return ConstructAndApply<Alg, void, Ws, Args...>::run(std::forward<Ws>(ws),
                                                         args...);
 }
+template <class Alg, class Ws, class... Args>
+auto call(Ws &&ws, const IndexSet &indexSet, const Args &... args) {
+  return ConstructAndApply<Alg, void, Ws, Args...>::run(std::forward<Ws>(ws),
+                                                        indexSet, args...);
+}
 
 int main() {
   // Transform workspace, keeping type (an just copy to output and modify).
@@ -107,11 +131,13 @@ int main() {
   ws = call<Scale>(std::move(ws), 2.3);
   qWs = call<Scale>(std::move(qWs), 2.3);
   ws = call<ClearLogs>(std::move(ws));
-  Workspace<EventList> eventWs;
+  Workspace<EventList> eventWs(5);
   eventWs = call<FilterByLogValue>(std::move(eventWs), "temp1", 274.0, 275.0);
   // Could use auto, this is just to make sure that we are getting the expected
   // type.
   Workspace<Histogram> binned = call<Rebin>(eventWs, BinEdges{});
 
   auto fitResult = call<Fit>(binned, Fit::Function{}, Fit::Parameters{});
+  fitResult =
+      call<Fit>(binned, IndexSet{2, 3}, Fit::Function{}, Fit::Parameters{});
 }

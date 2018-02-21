@@ -14,6 +14,8 @@ public:
   using value_type = Data;
   using aux_type = Instrument;
   Workspace() = default;
+  Workspace(const size_t size)
+      : m_data(size), m_spectrumDefinitions(size), m_spectrumNumbers(size) {}
 
   // Create with different (or same) data item type. This is in a sense similar
   // to our current workspace factory creating from a parent?
@@ -25,10 +27,9 @@ public:
         m_instrument(other.m_instrument), m_logs(other.m_logs) {}
   template <class OtherData>
   Workspace(const Workspace<OtherData> &other, const IndexSet &indexSet)
-      : m_data(other.size()),
-        m_spectrumDefinitions(other.size()),
-        m_spectrumNumbers(other.size()),
-        m_instrument(other.m_instrument), m_logs(other.m_logs) {
+      : m_data(indexSet.size()), m_spectrumDefinitions(indexSet.size()),
+        m_spectrumNumbers(indexSet.size()), m_instrument(other.m_instrument),
+        m_logs(other.m_logs) {
     for (size_t i = 0; i < indexSet.size(); ++i) {
       m_spectrumDefinitions[i] = other.m_spectrumDefinitions[indexSet[i]];
       m_spectrumNumbers[i] = other.m_spectrumNumbers[indexSet[i]];
