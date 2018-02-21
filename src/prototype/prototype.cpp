@@ -35,13 +35,15 @@ struct Apply<
 template <class Alg, class WsItem, class WsAux, class... Args>
 struct Apply<
     Alg, typename std::enable_if<has_function_apply<
-             const Alg, typename std::result_of<decltype(&Alg::apply)(
-                            const Alg, const WsItem &, const Args &...)>::type,
+             const Alg, decltype(std::declval<const Alg>().apply(
+                            std::declval<const WsItem &>(),
+                            std::declval<const Args &>()...)),
              boost::mpl::vector<const WsItem &, const Args &...>>::value>::type,
     WsItem, WsAux, Args...> {
   using Ws = Workspace<WsItem, WsAux>;
-  using Out = Workspace<typename std::result_of<decltype(&Alg::apply)(
-                            const Alg, const WsItem &, const Args &...)>::type,
+  using Out = Workspace<decltype(std::declval<const Alg>().apply(
+                            std::declval<const WsItem &>(),
+                            std::declval<const Args &>()...)),
                         WsAux>;
   static Out run(const Alg &alg, const Ws &ws, const Args &... args) {
     Out out(ws);
@@ -113,13 +115,6 @@ auto call(Ws &&ws, const Args &... args) {
 }
 
 int main() {
-  static_assert(
-      has_function_apply<
-          const Rebin,
-          typename std::result_of<decltype(&Rebin::apply)(
-              const Rebin, const EventList &, const BinEdges &)>::type,
-          boost::mpl::vector<const EventList &, const BinEdges &>>::value,
-      "hmm");
   // Transform workspace, keeping type (an just copy to output and modify).
   Workspace<Histogram> ws;
   Workspace<Histogram, QInfo> qWs;
