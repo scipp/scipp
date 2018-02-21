@@ -69,11 +69,10 @@ struct Add {
 };
 
 // TODO
-// - check that we are not accidentially copying inputs.
 // - return non-workspace types? (example?)
 // - multiple ws arguments (Add)
 // - instrument (or other indexed) input (ConvertUnits)
-// - selecting input indices, such as for Fit or ExtractSpectra?
+// - selecting input indices: do we need this for in-place operation?
 // - modify multiple args (ConvertUnits?)
 //
 // - input validation / properties?

@@ -25,6 +25,10 @@ public:
         m_spectrumDefinitions(other.m_spectrumDefinitions),
         m_spectrumNumbers(other.m_spectrumNumbers),
         m_instrument(other.m_instrument), m_logs(other.m_logs) {}
+
+  // Create with different (or same) data item type and an IndexSet defining
+  // which indices of the input should be carried over to the output. All meta
+  // data such as spectrum numbers and mapping to detectors is carried over.
   template <class OtherData>
   Workspace(const Workspace<OtherData> &other, const IndexSet &indexSet)
       : m_data(indexSet.size()), m_spectrumDefinitions(indexSet.size()),

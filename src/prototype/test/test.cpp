@@ -130,22 +130,22 @@ TEST(Rebin, Histogram) {
 }
 
 TEST(Rebin, EventList) {
-  Workspace<EventList> ws(2);
+  Workspace<EventList> eventWs(2);
 
-  auto binned = call<Rebin>(ws, BinEdges{});
+  auto binned = call<Rebin>(eventWs, BinEdges{});
 
   ASSERT_EQ(binned.size(), 2);
-  ASSERT_EQ(typeid(decltype(ws)::value_type), typeid(EventList));
+  ASSERT_EQ(typeid(decltype(eventWs)::value_type), typeid(EventList));
   ASSERT_EQ(typeid(decltype(binned)::value_type), typeid(Histogram));
 }
 
 TEST(Rebin, rebin_subset_via_IndexSet) {
-  Workspace<EventList> ws(3);
+  Workspace<EventList> eventWs(3);
 
-  auto binned = call<Rebin>(ws, IndexSet{0,2}, BinEdges{});
+  auto binned = call<Rebin>(eventWs, IndexSet{0, 2}, BinEdges{});
 
   ASSERT_EQ(binned.size(), 2);
-  ASSERT_EQ(typeid(decltype(ws)::value_type), typeid(EventList));
+  ASSERT_EQ(typeid(decltype(eventWs)::value_type), typeid(EventList));
   ASSERT_EQ(typeid(decltype(binned)::value_type), typeid(Histogram));
 }
 
@@ -161,7 +161,8 @@ TEST(Fit, full_workspace) {
 TEST(Fit, subset) {
   Workspace<Histogram> ws(3);
 
-  auto fitResult = call<Fit>(ws, IndexSet{0}, Fit::Function{}, Fit::Parameters{});
+  auto fitResult =
+      call<Fit>(ws, IndexSet{0}, Fit::Function{}, Fit::Parameters{});
 
   ASSERT_EQ(fitResult.size(), 1);
   ASSERT_EQ(typeid(decltype(fitResult)::value_type), typeid(Fit::Result));
