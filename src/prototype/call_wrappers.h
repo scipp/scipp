@@ -89,6 +89,11 @@ struct ConstructAndApply<
     // Alg constructor does not need arguments, pass all arguments to apply.
     return callInstance<Alg>(alg, std::forward<Ws>(ws), args...);
   }
+  static auto run(Ws &&ws, const IndexSet &indexSet, const Args &... args) {
+    Alg alg;
+    // Alg constructor does not need arguments, pass all arguments to apply.
+    return callInstance<Alg>(alg, std::forward<Ws>(ws), indexSet, args...);
+  }
 };
 template <class Alg, class Ws, class Arg1, class... Args>
 struct ConstructAndApply<Alg, typename std::enable_if<std::is_constructible<

@@ -138,3 +138,13 @@ TEST(Rebin, EventList) {
   ASSERT_EQ(typeid(decltype(ws)::value_type), typeid(EventList));
   ASSERT_EQ(typeid(decltype(binned)::value_type), typeid(Histogram));
 }
+
+TEST(Rebin, rebin_subset_via_IndexSet) {
+  Workspace<EventList> ws(3);
+
+  auto binned = call<Rebin>(ws, IndexSet{0,2}, BinEdges{});
+
+  ASSERT_EQ(binned.size(), 2);
+  ASSERT_EQ(typeid(decltype(ws)::value_type), typeid(EventList));
+  ASSERT_EQ(typeid(decltype(binned)::value_type), typeid(Histogram));
+}
