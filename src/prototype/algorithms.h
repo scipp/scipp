@@ -15,7 +15,7 @@ public:
   Result apply(const Histogram &histogram) const {}
 };
 
-// Category 2, option 1
+// Category 2
 struct Scale {
   static void apply(Histogram &histogam, const double factor) {}
   static void apply(DataPoint &dataPoint, const double factor) {}
@@ -30,35 +30,18 @@ struct Rebin {
   }
 };
 
-// Category 2, option 2
-void scale(Histogram &histogam, const double factor) {}
-void scale(DataPoint &dataPoint, const double factor) {}
-Histogram rebin(const Histogram &histogram, const BinEdges &binEdges) {
-  return histogram;
-}
-void sortEvents(EventList &eventList) {}
-
 // Category 3
 struct ClearLogs {
   static void apply(Logs &logs) {}
 };
 
-// Category 4, option 1
+// Category 4
 class FilterByLogValue {
 public:
   FilterByLogValue(const Logs &logs, const std::string &name, const double min,
                    const double max) {}
   void apply(EventList &eventList) const {}
 };
-
-// Category 4, option 2
-std::pair<int64_t, int64_t> makeFilterRangeByLogValue(const std::string &name,
-                                                      const double min,
-                                                      const double max) {
-  return {0, 1};
-}
-void applyFilterRange(EventList &eventList,
-                      const std::pair<int64_t, int64_t> &interval) {}
 
 // Category X
 // how would we handle verification, such as checking instrument compatibility?
