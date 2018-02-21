@@ -43,6 +43,20 @@ public:
   void apply(EventList &eventList) const {}
 };
 
+// Category 5
+struct ConvertUnit {
+  // How do we set the unit on the target workspace?
+  ConvertUnit(const Unit &target) {}
+  // Spectrum contains read-only links to instrument?
+  void apply(Spectrum<Histogram> &histogram) const {}
+  void apply(Spectrum<EventList> &eventList) const {}
+  // One option is a separate apply. Is it possible to call more than one in the
+  // call wrapper? How do we define a proper ordering (is that required?)?
+  // As defined currently, this would enable multiple Apply definitions. Should
+  // we just give it another name, such as preApply() and postApply()?
+  void apply(Unit &unit) const {}
+};
+
 // Category X
 // how would we handle verification, such as checking instrument compatibility?
 struct Add {

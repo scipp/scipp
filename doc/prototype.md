@@ -14,6 +14,14 @@ Supported features are:
 - The workspace type can depend on more than just the data type, e.g., the instrument type (`SpectrumInfo`, `QInfo`, ...).
   Algorithm operating on other meta data or data items are unaffected and work without knowledge of that aspect of the workspace type.
 
-# Problems
+# Potential problems
 
 - Functor signatures that are not supported by call wrappers result in template error messages that would probably be too obscure for many developers, unless documented properly.
+
+# To do
+
+- Should we support history in C++?
+  If we have the ADS and property system only in Python, we do not have access to the string values of inputs.
+  Could probably be solved in several ways, but it is not clear whether that is the right way to go.
+- Support logging by having an optional logger argument in the functor constructor?
+- Automatically do threaded execution if `Functor::apply` is const.

@@ -138,6 +138,7 @@ int main() {
   Workspace<Histogram> binned = call<Rebin>(eventWs, BinEdges{});
 
   auto fitResult = call<Fit>(binned, Fit::Function{}, Fit::Parameters{});
+  // Should IndexSet simply be a mask workspace?
   fitResult =
       call<Fit>(binned, IndexSet{2, 3}, Fit::Function{}, Fit::Parameters{});
 }
