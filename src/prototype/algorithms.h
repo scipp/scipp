@@ -45,6 +45,9 @@ public:
 
 // Category 5
 struct ConvertUnit {
+  class Unit {};
+  template <class T>
+  class Spectrum {};
   // How do we set the unit on the target workspace?
   ConvertUnit(const Unit &target) {}
   // Spectrum contains read-only links to instrument?
