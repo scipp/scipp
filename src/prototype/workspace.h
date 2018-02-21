@@ -12,6 +12,7 @@ using IndexSet = std::vector<size_t>;
 template <class Data, class Instrument = SpectrumInfo> class Workspace {
 public:
   using value_type = Data;
+  using aux_type = Instrument;
   Workspace() = default;
 
   // Create with different (or same) data item type. This is in a sense similar
