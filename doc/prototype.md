@@ -26,3 +26,17 @@ Supported features are:
   Could probably be solved in several ways, but it is not clear whether that is the right way to go.
 - Support logging by having an optional logger argument in the functor constructor?
 - Automatically do threaded execution if `Functor::apply` is const.
+- What do we define Python exports for? The `call`-wrapped version of the functors?
+
+# Existing technology
+
+Considerations around support constant-wavelength workspaces, multi-period workspaces, imaging workspaces, parameter scans, and multi-dimensional workspaces show up similarities to what, e.g., [pandas](https://pandas.pydata.org/) does.
+
+Other existing technology that we should investigate (most found [here](https://www.reddit.com/r/cpp/comments/64hzmd/is_there_a_dataframe_library_in_clike_pandas_in/)):
+
+- ROOT's [TNtuple](https://root.cern.ch/doc/master/classTNtuple.html) and [TDataFrame](https://root.cern.ch/doc/master/classROOT_1_1Experimental_1_1TDataFrame.html)
+- [Apache Arrow](https://arrow.apache.org/#)
+- [easyLambda](https://haptork.github.io/easyLambda/)
+
+Investigation does not necessarily imply that we would use such a library.
+However, it is very likely that they solved similar problems that we will be facing, so looking at their solutions and in particular their API could prove valuable.
