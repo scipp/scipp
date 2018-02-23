@@ -5,3 +5,4 @@ add_executable(soa_aos_abstraction soa_aos_abstraction.cpp)
 target_include_directories(soa_aos_abstraction PRIVATE "/home/simon/software/range-v3/include")
 
 add_subdirectory ( prototype )
+add_subdirectory ( prototype2 )
