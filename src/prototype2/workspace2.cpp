@@ -162,8 +162,60 @@ class DataFrame {
 };
 
 using Histogram = DataFrame<BinEdges, Counts, CountStdDevs>;
+
+// missing instrument and meta data
 using Workspace2D = DataFrame<std::vector<SpectrumNumber>,
                               std::vector<Histogram>, SpectrumInfo>;
+// missing instrument and meta data
 using EventWorkspace =
     DataFrame<std::vector<SpectrumNumber>, std::vector<EventList>,
               std::vector<BinEdges>, SpectrumInfo>;
+
+// DetectorInfo is data of different length => workspace cotnains two DataFrame of different length!
+using Instrument = DataFrame<std::vector<DetectorID>, DetectorInfo>;
+
+using Workspace2D =
+    std::tuple<DataFrame<std::vector<SpectrumNumber>, std::vector<Histogram>,
+                         SpectrumInfo>,
+               DataFrame<std::vector<DetectorID>, DetectorInfo>, Logs>;
+// or
+// NO! not same type, cannot be on rows
+using Workspace2D =
+    DataFrame<std::vector<string>{"spectra", "instrument", "logs"},
+              DataFrame<std::vector<SpectrumNumber>, std::vector<Histogram>,
+                        SpectrumInfo>,
+              DataFrame<std::vector<DetectorID>, DetectorInfo>, Logs>;
+
+// could handle multiple workspaces for same instrument like this:
+// single data:
+using Workspace2D = std::tuple<DataFrame<std::vector<SpectrumNumber>,
+                                         std::vector<Histogram>, SpectrumInfo>,
+                               Instrument, Logs>;
+// multiple, sharing instrument:
+// if something inside inner frame needs data/metadata, walk up in the hierarchy
+// until found?
+using Workspace2DMultiPeriod =
+    std::tuple<DataFrame<std::vector<RunIndex>,
+                         DataFrame<std::vector<SpectrumNumber>,
+                                   std::vector<Histogram>, SpectrumInfo>,
+                         Logs>,
+               Instrument>;
+
+// We are now considering SpectrumInfo as data, how can we handle imaging
+// workspace or constant-wavelength workspace where it should be the "axis"?
+// No, SpectrumNumber is the inner axis! (or it could be a 2D bin edge axis)
+
+// operation on any data/meta data:
+// - top level: check if any meta data matches required type
+// - if not, check all columns in all data frames
+//   - if match, iterate over all indices in frame
+// - if multiple inputs are required, they may come from different levels, such
+//   as Logs from top level and EventLists within DataFrame.
+
+// operations with mismatch:
+// - handle like pandas, return union and insert NaNs?
+// - must be done on all level, e.g., mismatching instrument will return
+//   workspace with 2 subframes containing different instruments.
+//   - if instruments match, merge at lower level (not merging logs)
+//   - can we use the same mechanism to have shared BinEdges (avoid the whole
+//     cow_ptr stuff)?
