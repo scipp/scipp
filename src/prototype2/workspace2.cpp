@@ -99,7 +99,11 @@ class Series {
     // lookup via index?? via external helper that builds unordered_map?
 
   private:
-    std::string m_name; // for std::vector<Series> behaving like a table? for TextAxis?
+    std::string m_name; // for std::vector<Series> behaving like a table? for
+                        // TextAxis? if Series is an element in a higher level
+                        // Series, each item would have and Index as well as a
+    // name?! Is this just meta data and should be handled in the same way? Or
+    // as an extra data entry alongside the series?
     Index m_index;
     std::tuple<Data...> m_data;
   // Index can be:
@@ -139,3 +143,27 @@ class Workspace {
 
 // Components of series should be accessible via standard interface. How? Just
 // support all common options by hand? Mixins?
+
+// - Should all meta data just be another data item, except for the top level?
+// - we separate Index from Data...? Isn't it just the same? (can be 1 longer in
+//   case of BinEdges (MD bin edges??)
+
+
+enum class Unit { Counts, PerSecond, Seconds };
+
+template <class Unit> struct VectorWithUnit : public std::vector {};
+
+using BinEdges = VectorWithUnit<Unit::Seconds>;
+using Counts = VectorWithUnit<Unit::Counts>;
+
+template <class Axis, class... Data>
+class DataFrame {
+  // - instead of pandas.DataFrame columns headers, we use *types*
+};
+
+using Histogram = DataFrame<BinEdges, Counts, CountStdDevs>;
+using Workspace2D = DataFrame<std::vector<SpectrumNumber>,
+                              std::vector<Histogram>, SpectrumInfo>;
+using EventWorkspace =
+    DataFrame<std::vector<SpectrumNumber>, std::vector<EventList>,
+              std::vector<BinEdges>, SpectrumInfo>;
