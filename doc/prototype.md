@@ -2,7 +2,7 @@
 
 ## Done
 
-See mainly [`test/test.cpp`](../src/prototype/test/test.cpp).
+See mainly [`test/test.cpp`](../src/prototype/test/test.cpp), [`algorithms.h`](../src/prototype/algorithms.h), and [`workspace.h`](../src/prototype/workspace.h) in `src/prototype/`.
 
 A functor `Alg` with `apply` method defines an algorithm.
 It is invoked with the help of a templated `call` wrapper.
@@ -49,7 +49,7 @@ However, it is very likely that they solved similar problems that we will be fac
 
 ## Done
 
-See mainly `prototype2/data_frame.h` and `prototype2/test/data_frame_test.h`.
+See mainly [`test/data_frame_test.cpp`](../src/prototype2/test/data_frame_test.cpp) and [`data_frame.h`](../src/prototype2/data_frame.h) in `src/prototype2/`.
 
 A couple of levels of nested table-like data structures seem to give a good representation of our workspace types.
 The implemented example shows a type `DataFrame`, similar to `pandas.DataFrame`.
@@ -97,7 +97,7 @@ While the nested table structure feels reasonable, we are running into a massive
 There is an enormous number of resulting histogram and workspace types.
 This causes 2 problems:
 
-1. The `call` wrappers frame the first prototype need to be instantiated for a large number of workspaces types.
+1. The `call` wrappers frame the first prototype need to be instantiated for a large number of workspaces types, for a large number of algorithms.
    This leads to long compile times and large binary sizes.
 2. We need Python exports, i.e., we actually do not know all required types and type combinations at compile time.
    We would thus need to attempt to explicitly instantiate all possible combinations (including all possible *combinations* of types and units, for algorithms working on more than one workspace).
