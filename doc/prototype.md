@@ -2,6 +2,8 @@
 
 ## Done
 
+See mainly [`test/test.cpp`](../src/prototype/test/test.cpp).
+
 A functor `Alg` with `apply` method defines an algorithm.
 It is invoked with the help of a templated `call` wrapper.
 Supported features are:
@@ -46,6 +48,8 @@ Investigation does not necessarily imply that we would use such a library.
 However, it is very likely that they solved similar problems that we will be facing, so looking at their solutions and in particular their API could prove valuable.
 
 ## Done
+
+See mainly `prototype2/data_frame.h` and `prototype2/test/data_frame_test.h`.
 
 A couple of levels of nested table-like data structures seem to give a good representation of our workspace types.
 The implemented example shows a type `DataFrame`, similar to `pandas.DataFrame`.
@@ -95,14 +99,16 @@ This causes 2 problems:
 
 1. The `call` wrappers frame the first prototype need to be instantiated for a large number of workspaces types.
    This leads to long compile times and large binary sizes.
-2. We need Python exports, i.e., we actually do not know all required types and type combinations at runtime.
-   We would thus need to attempt to explicitly instantiate all possible combinations (including combinations of types and units, for algorithms working on more than one workspace).
+2. We need Python exports, i.e., we actually do not know all required types and type combinations at compile time.
+   We would thus need to attempt to explicitly instantiate all possible combinations (including all possible *combinations* of types and units, for algorithms working on more than one workspace).
 
 Even without having tried, I believe the number of types is not manageable.
 We thus need to look for different options:
-- To not store the units in the type.
+- Do not store the units in the type.
   We could use an ID that is checked in for all operations.
   This would make using `boost::units` harder, since it is also based on templates and compile time.
   A proper unit system would be a big advantage, so we should try to find a solution that can make use of an existing units library such as `boost::units`.
 - Even without units, we probably still have too many types.
   We should look into ways of doing type-erasure on intermediate levels of a workspace table structure.
+  - How can we keep the benefits of both worlds, type system in C++, as well as flexible containers (workspaces) assembled from arbitrary types?
+    In C++ we still want to be able to write natural C++-style code, where client code using workspaces can work with types and does not need to rely on casting or cumbersome virtual interfaces.
