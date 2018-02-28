@@ -109,6 +109,16 @@ We thus need to look for different options:
   This would make using `boost::units` harder, since it is also based on templates and compile time.
   A proper unit system would be a big advantage, so we should try to find a solution that can make use of an existing units library such as `boost::units`.
 - Even without units, we probably still have too many types.
+  A [quick test](../src/prototype/test/compile_time_test.cpp) based on prototype 1:
+  - Using a templated workspace type `Workspace<DataPoint, Dummy<N>>`.
+  - Algorithm is agnostic w.r.t. `Dummy<N>`, i.e., it will be instantiated only once.
+  - Call wrappers and workspace constructor are instantiated once for every `N`.
+  - Result for 100 workspace types:
+    - `1.3 seconds` extra compilation time.
+    - `800 kByte` extra binary size.
+
+    Given that the call wrappers will likely become more complicated in an actual implementation this may turn out to be even more.
+
   We should look into ways of doing type-erasure on intermediate levels of a workspace table structure.
   - How can we keep the benefits of both worlds, type system in C++, as well as flexible containers (workspaces) assembled from arbitrary types?
     In C++ we still want to be able to write natural C++-style code, where client code using workspaces can work with types and does not need to rely on casting or cumbersome virtual interfaces.
