@@ -122,3 +122,9 @@ We thus need to look for different options:
   We should look into ways of doing type-erasure on intermediate levels of a workspace table structure.
   - How can we keep the benefits of both worlds, type system in C++, as well as flexible containers (workspaces) assembled from arbitrary types?
     In C++ we still want to be able to write natural C++-style code, where client code using workspaces can work with types and does not need to rely on casting or cumbersome virtual interfaces.
+- If the unit is stored as a field in our `x`, `y`, and `e` arrays we can probably drop the distinction between `Counts` and `Frequencies` since the same information is encoded in the unit.
+  - We lose a little bit of type safety since the unit field could be ignored.
+    Given that currently a lot of our code is using direct access to the `std::vector<double>` within `Histogram`, i.e., bypasses the type system, we would not be considerable worse of that today.
+  - We gain a factor of two in terms of number of workspace types to support.
+  - We have to option to store variances instead of standard deviations in a workspace, the content of the uncertainties vector can be deduced from its unit.
+    - Currently `Histogram` always stores standard deviations, but there is a fair amount of code that temporarily squares the contents, i.e., there is a mismatch between the type and the actual content.
