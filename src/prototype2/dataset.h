@@ -8,19 +8,11 @@ namespace gsl {
 using index = ptrdiff_t;
 }
 
-// Inspired by xarray.Dataset
-
-// std::pair<std::vector<std::string>>, std::vector<std::vector<double>>>
-// data1({"x", "y"}, {});
-// std::pair<std::vector<std::string>>, std::vector<double>> data2({"x"}, {});
-// std::pair<std::vector<std::string>>, std::vector<double>> data3({"y"}, {});
-
-// begin("x") -> iterate x, data1 is vector (potentially with stride), data2 is
-// double, data 3 is fixed double
-
 // need two cases: axis is bin edges, axis is points
 
 enum class Dimension { SpectrumNumber, Run, DetectorId, Tof, Q };
+
+template <class T, class... Ts> class FlatDatasetItem;
 
 template <class... Ts> class FlatDataset {
 public:
@@ -47,18 +39,64 @@ public:
   template <class T> const std::vector<T> &get() const {
     return std::get<std::pair<std::vector<std::string>, std::vector<T>>>(m_data).second;
   }
+  template <class T> std::vector<T> &get() {
+    return std::get<std::pair<std::vector<std::string>, std::vector<T>>>(m_data).second;
+  }
 
   // how to get iterator centered to a certain type?
-  template <class T> const auto &at(const gsl::index i) const {
+  template <class T> auto at(const gsl::index i) {
+    return FlatDatasetItem<T, Ts...>(i, *this);
     // data items fall in three cases:
     // 1. dimensions match those of T => pass reference
     // 2. misses dimension(s) of T => pass const reference
     // 3. has additional dimensions => pass reference to container with stride access
+    // Problem: Dimensions known only at runtime
+    // - Always pass const reference to container with stride access, except T
+    //   which can be non-const?
+    // - Implies that all fields in returned item are wrapped in vector-like :(
+    // - Implicitly convert vector-like to item if size is 1?
+  }
+
+  template <class T> const std::vector<std::string> &dimensions() const {
+    return std::get<std::pair<std::vector<std::string>, std::vector<T>>>(m_data)
+        .first;
   }
 
 private:
   std::map<std::string, gsl::index> m_dimensions;
   std::tuple<std::pair<std::vector<std::string>, std::vector<Ts>>...> m_data;
+};
+
+template <class T, class... Ts> class FlatDatasetItem {
+public:
+  FlatDatasetItem(
+      const gsl::index index,
+      FlatDataset<Ts...> &data)
+      : m_index(index), m_data(data) {}
+
+  T &get() { return m_data.get<T>()[m_index]; }
+
+  template <class U> const U &get() const {
+    if (m_data.template dimensions<U>() == m_data.template dimensions<T>())
+      return m_data.get<U>()[m_index];
+    throw std::runtime_error("TODO");
+    // if dimensions of U match those of T
+    // return get<U>(m_data)[m_index];
+    // if U misses dimension of U
+    // return get<U>(m_data)[remove_dimension(m_index, missing_dims)];
+    // if U has extra dimension
+    // throw -> use different getter return vector-like with stride access?
+
+    // TODO
+    // can we afford to do this check for every item? might be expensive. Can
+    // it be done once in iterator construction? Probably yes, but is there a
+    // way to avoid the cost in indexed access?
+    // Do indexed access via a view? Setup things in view construction!
+  }
+
+private:
+  gsl::index m_index;
+  FlatDataset<Ts...> &m_data;
 };
 
 template <class... Ts> class Dataset {
@@ -69,39 +107,6 @@ public:
     // TODO check that data items sharing dimensions have same length in that
     // dimension.
   }
-
-  /*
-  template <class T> const T &get() const {
-    return std::get<T>(m_data);
-  }
-
-  template <int MaxSize> gsl::index getSize(const gsl::index i) const;
-
-  template <>
-  gsl::index getSize<0>(const gsl::index i) const {
-    return -1;
-  }
-
-  template <>
-  gsl::index getSize<1>(const gsl::index i) const {
-    switch (i) {
-    case 0:
-      return std::get<0>(m_data).size();
-    }
-    return -1;
-  }
-
-  template <>
-  gsl::index getSize<2>(const gsl::index i) const {
-    switch (i) {
-    case 0:
-      return std::get<0>(m_data).size();
-    case 1:
-      return std::get<1>(m_data).size();
-    }
-    return -1;
-  }
-  */
 
   gsl::index size(const Dimension dimension) {
     // TODO need to do this with metaprogramming
@@ -120,11 +125,6 @@ public:
         }
     throw std::runtime_error("Dimension not found");
   }
-
-  // template <Dimension Dim>
-  //  auto operator[](const gsl::index i)
-  //  return tuple of references? (dedicated item later)
-  //  {}
 
 private:
   // Dimensions for each of the data items.
