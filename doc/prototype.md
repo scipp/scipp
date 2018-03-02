@@ -40,6 +40,7 @@ Considerations around support constant-wavelength workspaces, multi-period works
 
 Other existing technology that we should investigate (most found [here](https://www.reddit.com/r/cpp/comments/64hzmd/is_there_a_dataframe_library_in_clike_pandas_in/)):
 
+- [xarray](http://xarray.pydata.org/en/stable/)
 - ROOT's [TNtuple](https://root.cern.ch/doc/master/classTNtuple.html) and [TDataFrame](https://root.cern.ch/doc/master/classROOT_1_1Experimental_1_1TDataFrame.html)
 - [Apache Arrow](https://arrow.apache.org/#)
 - [easyLambda](https://haptork.github.io/easyLambda/)
@@ -128,3 +129,42 @@ We thus need to look for different options:
   - We gain a factor of two in terms of number of workspace types to support.
   - We have to option to store variances instead of standard deviations in a workspace, the content of the uncertainties vector can be deduced from its unit.
     - Currently `Histogram` always stores standard deviations, but there is a fair amount of code that temporarily squares the contents, i.e., there is a mismatch between the type and the actual content.
+
+# Dataset
+
+Partially inspired by `xarray.Dataset`.
+
+```cpp
+// Somehow define dimensions:
+// Spectrum:        x                          x                   x
+// Tof:                              x         x
+Dataset<std::vector<SpectrumNumber>, BinEdges, std::vector<Counts>, SpectrumInfo, Logs> s;
+
+// Access via iterator or index (using the latter for simplicity of examples)
+template <Dimension dim>
+auto at(const gsl::index i) { /*...*/ }
+
+// s.at<Dimension::Spectrum>(i) returns:
+// Dataview<SpectrumNumber &, const BinEdges &, Counts &, SpectrumInfoItem &, const Logs &> 
+
+// s.at<Dimension::Tof>(i) returns:
+// Dataview<const std::vector<SpectrumNumber> &, BinItem &, Counts &, const SpectrumInfo&, const Logs&>
+// - Counts has stride internally? Otherwise need to return it by value
+// - does a non-const BinItem make sense?
+```
+
+How do we access and modify data that may or may not be inside a vector?
+For example, `ConvertUnits` needs to modify `BinEdges`, which may either be a single item in the `Dataset` or a vector holding different `BinEdges` for each spectrum.
+`ConvertUnits` should not need to know about the difference!
+- Generally, we need a way to iterate all objects of a certain type, regardless of how nested they are within vectors. For example, we need to be able to iterate over a `Dataset` such that each iterator position references to a unique writable `Counts` object.
+  This is the reverse of the templated `at` method above, where we specify the dimension.
+  - Could use a flattened structure everywhere: Put all items in `Dataset` into a vector, no nesting supported.
+
+# FlatDataset
+
+A flattened version of `Dataset`, which seems to solve some problems discussed previously.
+The current implementation is just a sketch and probably has some inefficiencies, it merely serves to prove the concept.
+
+- Shape and structure is *not* encoded in type anymore, contrary to examples prototyped above.
+  This may help to drastically reduce the number of distinct workspace types, solving parts of the problems discussed above.
+- Makes iteration easier if the dimension does not matter, cf. discussion above in the section on `Dataset`.
