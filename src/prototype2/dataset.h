@@ -79,10 +79,15 @@ public:
   template <class U> const U &get() const {
     if (m_data.template dimensions<U>() == m_data.template dimensions<T>())
       return m_data.get<U>()[m_index];
+    // Simplest case of dimension mismatch: Dimensionless data such as Logs.
+    if (m_data.template dimensions<U>().size() == 0)
+      return m_data.get<U>()[0];
     throw std::runtime_error("TODO");
     // if dimensions of U match those of T
     // return get<U>(m_data)[m_index];
-    // if U misses dimension of U
+    // if U misses dimension of U (hard if dimension *order* is not same?)
+    // x + Nx*(y + Ny*z)
+    // x + Nx*z
     // return get<U>(m_data)[remove_dimension(m_index, missing_dims)];
     // if U has extra dimension
     // throw -> use different getter return vector-like with stride access?

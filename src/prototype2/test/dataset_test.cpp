@@ -65,11 +65,12 @@ TEST(FlatDataset, indexAccess) {
   s.extendAlongDimension<int>("Spectrum");
   s.extendAlongDimension<Points>("Spectrum");
   s.extendAlongDimension<Counts>("Spectrum");
+
   auto item = s.at<Counts>(5);
   EXPECT_NO_THROW(item.get<Counts>());
   EXPECT_NO_THROW(item.get<Points>());
-  EXPECT_ANY_THROW(item.get<char>());
-  EXPECT_NO_THROW((item.get() = {34,46,78}));
+  EXPECT_NO_THROW(item.get<char>());
+  EXPECT_NO_THROW((item.get() = {34, 46, 78}));
   EXPECT_EQ(item.get().size(), 3);
   EXPECT_EQ(s.get<Counts>()[5].size(), 3);
 }

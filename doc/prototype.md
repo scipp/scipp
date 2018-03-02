@@ -136,7 +136,7 @@ Partially inspired by `xarray.Dataset`.
 
 ```cpp
 // Somehow define dimensions:
-// Spectrum:        x                          x                   x
+// Spectrum:        x                          x                    x
 // Tof:                              x         x
 Dataset<std::vector<SpectrumNumber>, BinEdges, std::vector<Counts>, SpectrumInfo, Logs> s;
 
@@ -168,3 +168,5 @@ The current implementation is just a sketch and probably has some inefficiencies
 - Shape and structure is *not* encoded in type anymore, contrary to examples prototyped above.
   This may help to drastically reduce the number of distinct workspace types, solving parts of the problems discussed above.
 - Makes iteration easier if the dimension does not matter, cf. discussion above in the section on `Dataset`.
+  - Column access agnostic of potential underlying multi-dimensional structure is supported.
+  - Row access based on index defined based on certain column is supported (a lot of details need to be sorted out), providing access also to other columns even if their dimensions do not match.
