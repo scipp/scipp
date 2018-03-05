@@ -62,6 +62,10 @@ public:
         .first;
   }
 
+  gsl::index size(const std::string &dimension) const {
+    return m_dimensions.at(dimension);
+  }
+
 private:
   std::map<std::string, gsl::index> m_dimensions;
   std::tuple<std::pair<std::vector<std::string>, std::vector<Ts>>...> m_data;

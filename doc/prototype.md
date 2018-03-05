@@ -234,6 +234,7 @@ If we do not store data in a workspace as a vector of histograms, how to we pass
 - For variable-length histograms, it seems like having time-of-flight as a dimension of the dataset is not adequate?
   - Iteration over time-of-flight axis would not be sensible, since the axis depends on, e.g., the spectrum number.
   - Could still store all `Counts` and `BinEdges` concatenated in the same vector, but is there any advantage in that?
+- Provide something like a `HistogramView` that behaves like a `Histogram` but is internally just referencing data in a larger dataset?
 
 Client code that does not modify the bin edges can easily ignore the fact that bin edges may be shared.
 Likewise, client code that modifies only bin edges can ignore the factor that multiple spectra may be sharing it.
@@ -249,8 +250,15 @@ How can we provide safe handling of units?
 
 - If units are handled at runtime, we cannot attach units to each single data point.
   Thus, iterators and index-based access is bypassing the unit handling and is thus unsafe.
+  - If we provide operator-overloads for `BinEdges` and `Counts`, units can be checked at runtime.
+    Any custom operation that is not using solely such built-in overloads can break units.
+    Note that using operator overloads is not possible if access is based on ranges or iterators.
+    - If wrapped in `HistogramView`, `HistogramView` can have/check unit.
+    - If we had a unified vector of, e.g., `Counts` for all spectra, updating the unit is in conflict with our common threading over spectra.
+  - Custom operations using iterators or indices into a histogram would bypass units.
+    If client code tries to do the "right thing" and attempts operation with units, they will get a compilation failure, encouraging not using units, i.e., the *opposite* of what we want.
 - If we handle units at compile time, we can correctly handle units in all operations using single data points.
-  However, this brings us back to the problem of a large variety of workspaces types that is too large to handle.
+  However, this brings us back to the problem of a large variety of workspaces types that is probably too large to handle.
 
 ### Iteration
 
