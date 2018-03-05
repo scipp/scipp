@@ -187,7 +187,7 @@ The current implementation is just a sketch and probably has some inefficiencies
 Common dimensions in workspaces could include:
 
 - `SpectrumNumber`.
-- `DetectorID`.
+- `DetectorID` (carried by `DetectorInfo`, but typically no other variable in a dataset).
 - `Q` in (a) one or (b) more dimensions, for equivalents of (a) `MatrixWorkspace` after `SofQW` or (b) `MDHistoWorkspace`.
 - Parameters such as temperature.
 
@@ -244,6 +244,13 @@ However, there are two non-trivial cases:
   - Alternatively we can require an *explicit* conversion to non-shared `BinEdges`.
     For low level algorithms this might actually be the preferred choice?
 - Code that modifies bin edges as well as counts, but does not break sharing (are there any examples for this?).
+
+How can we provide safe handling of units?
+
+- If units are handled at runtime, we cannot attach units to each single data point.
+  Thus, iterators and index-based access is bypassing the unit handling and is thus unsafe.
+- If we handle units at compile time, we can correctly handle units in all operations using single data points.
+  However, this brings us back to the problem of a large variety of workspaces types that is too large to handle.
 
 ### Iteration
 
