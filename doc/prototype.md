@@ -210,6 +210,9 @@ Given that adding a new dimensions will usually add a new variable functioning a
     - Can check when requesting an iterator.
       Need to provide list of required fields in iterator?
       Throw if no matching variable in dataset?
+- Should all variables be type-erased?
+  - Handle access by constructing a typed view, providing direct access to required variables?
+  - Some of the type variety would now be encoded in the view, but the number of required views might be less than the number of required dataset types, given that typically only a small set of variables from a dataset is required in an algorithm?
 
 ### Handling Histograms and time-of-flight data
 
