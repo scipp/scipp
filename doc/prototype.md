@@ -197,10 +197,19 @@ Furthermore, using dimensions we can support within a single workspace:
 
 - Multiple runs / periods.
 - Polarization.
-- Multiple `E_i`, for example for RRM (repetition-rate multiplication) used at spectrometers.
+- Multiple `E_i`, for example, for RRM (repetition-rate multiplication) used at spectrometers.
 
 Due to the flat structure, basic operations that are agnostic to these dimensions can simply iterate over all elements.
 Access via an axis value in a certain dimension can allow for operations such as subtracting "spin-up" from "spin-down".
+
+Given that adding a new dimensions will usually add a new variable functioning as an axis to a dataset, does this *really* solve the issue of combinatoric explosion in the number of workspace types, as discussed above for a nested data structure?
+
+- Should (some) variants of workspaces just be the same type, with optional variables?
+  - Can alleviate issues resulting from a large number of types.
+  - Moving things (back) into runtime checks does not feel like a clean solution.
+    - Can check when requesting an iterator.
+      Need to provide list of required fields in iterator?
+      Throw if no matching variable in dataset?
 
 ### Handling Histograms and time-of-flight data
 
@@ -271,7 +280,7 @@ Considering a over all items given by a set of one or more dimensions.
 
 ### Copy-on-write mechanism
 
-Copy-on-write (COW) sometimes adds complications in client code (see the rather complex interface of `Histogram` and `MatrixWorkspace` dealing with setting up sharing) and puts limitations on threadability.
+Copy-on-write (COW) sometimes adds complications in client code (see the rather complex interface of `Histogram` and `MatrixWorkspace` dealing with setting up and maintaining sharing) and puts limitations on threadability.
 
 - Reduce the use of COW, unless the overhead is too large.
   - Histogram data will not benefit much if we provide means of having a shared X axis.
@@ -286,3 +295,8 @@ A better support of units across Mantid should definitely be part of a design re
 - `BinEdges` and `Counts`, as well as instrument information such as positions in `DetectorInfo` should ideally all handle units.
   - Attaching units to `Counts` removes the need to distinguish between `Counts` and `Frequencies` (`Counts` may not be a good name anymore, this is just a working title, maybe `Values` and `Errors` to replace the current `Counts` and `CountStandardDeviations`?).
 - Angles should have units, to avoid recurring bugs of dealing with radians and degrees.
+
+### Points vs. BinEdges
+
+We need to support "histogram data" as well as "point data".
+Check how [pandas.IntervalIndex](http://pandas.pydata.org/pandas-docs/stable/advanced.html#intervalindex) solves this.
