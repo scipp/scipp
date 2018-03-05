@@ -163,10 +163,111 @@ For example, `ConvertUnits` needs to modify `BinEdges`, which may either be a si
 # FlatDataset
 
 A flattened version of `Dataset`, which seems to solve some problems discussed previously.
+Note that this is a working title to distinguish it from the version above using nested vectors and would be renamed.
 The current implementation is just a sketch and probably has some inefficiencies, it merely serves to prove the concept.
 
+## Key advantages over `Dataset` and other data structures discussed above
+
 - Shape and structure is *not* encoded in type anymore, contrary to examples prototyped above.
-  This may help to drastically reduce the number of distinct workspace types, solving parts of the problems discussed above.
+  - This may help to drastically reduce the number of distinct workspace types, solving parts of the problems discussed above.
+  - Reduces the amount of template meta programming required to make algorithms work in a way similar to what is shown above in prototype 1.
 - Makes iteration easier if the dimension does not matter, cf. discussion above in the section on `Dataset`.
   - Column access agnostic of potential underlying multi-dimensional structure is supported.
   - Row access based on index defined based on certain column is supported (a lot of details need to be sorted out), providing access also to other columns even if their dimensions do not match.
+
+## To do
+
+- Look more into `xarray` and in particular its link to the [Common Data Model](https://www.unidata.ucar.edu/software/thredds/current/netcdf-java/CDM/).
+  - Is this something we should follow more closely?
+
+## Features and details
+
+### Dimensions
+
+Common dimensions in workspaces could include:
+
+- `SpectrumNumber`.
+- `DetectorID`.
+- `Q` in (a) one or (b) more dimensions, for equivalents of (a) `MatrixWorkspace` after `SofQW` or (b) `MDHistoWorkspace`.
+- Parameters such as temperature.
+
+Time-of-flight may be a special case, see below.
+
+Furthermore, using dimensions we can support within a single workspace:
+
+- Multiple runs / periods.
+- Polarization.
+- Multiple `E_i`, for example for RRM (repetition-rate multiplication) used at spectrometers.
+
+Due to the flat structure, basic operations that are agnostic to these dimensions can simply iterate over all elements.
+Access via an axis value in a certain dimension can allow for operations such as subtracting "spin-up" from "spin-down".
+
+### Handling Histograms and time-of-flight data
+
+For non-event neutron-count data or data derived from it, we need to support multiple cases:
+
+1. Variable-length histograms, mimicking something like `std::vector<BinEdges>` and `std::vector<Counts>`, where the vector is over other dimensions such as spectrum numbers.
+2. Fixed-length histograms, which can either use the same as case 1., or a unified multi-dimensional `BinEdges` and `Counts`.
+3. Fixed-length histograms with shared bin edges, which can be implemented similar to 1. or 2.:
+   1. `BinEdges` with `std::vector<Counts>`.
+   2. `BinEdges` with `Counts`, where `BinEdges` has less dimensions than `Counts`.
+4. Imaging data (or other) where we may *not* want time of flight as leading dimension, i.e., a stack of images.
+   Can be supported by case 3.i, with a different ordering of dimensions.
+5. Constant-wavelength data from reactor sources, which are not histograms but store a `Counts` objects as well.
+
+To what extent can we hide the internal differences between these cases?
+What are the problems of the current approach?
+
+- The current way of sharing `BinEdges` is cumbersome.
+  Modifying the `BinEdges` requires manual intervention in client code to preserve sharing.
+- Checking whether `BinEdges` of histograms in a workspace are common is relying on fuzzy checking which can potentially be wrong.
+
+#### Problems to solve
+
+If we do not store data in a workspace as a vector of histograms, how to we pass such data a lower level code?
+
+- Keep `Histogram` (or a modification of it) as a type for handling stand-alone histograms?
+  Use it for setting data into a dataset and extracting from a dataset?
+- Pass ranges instead of objects, similar how the `std::algorithm` library handles things?
+  Modification could be in-place, or with a separate set of input and output iterators/ranges.
+  - Ranges could be generalized to support spreads in iterations, such that we can operate on transposed data on-the-fly, without the need to perform an actual transpose.
+- For variable-length histograms, it seems like having time-of-flight as a dimension of the dataset is not adequate?
+  - Iteration over time-of-flight axis would not be sensible, since the axis depends on, e.g., the spectrum number.
+  - Could still store all `Counts` and `BinEdges` concatenated in the same vector, but is there any advantage in that?
+
+Client code that does not modify the bin edges can easily ignore the fact that bin edges may be shared.
+Likewise, client code that modifies only bin edges can ignore the factor that multiple spectra may be sharing it.
+However, there are two non-trivial cases:
+
+- Code that breaks sharing of bin edges (`ConvertUnits`).
+  - Can probably be handled in an automatic way: If code requests iteration with non-`const` `BinEdges`, we can extend `BinEdges` along the other dimensions, i.e., *implicitly* convert to non-shared `BinEdges`.
+  - Alternatively we can require an *explicit* conversion to non-shared `BinEdges`.
+    For low level algorithms this might actually be the preferred choice?
+- Code that modifies bin edges as well as counts, but does not break sharing (are there any examples for this?).
+
+### Iteration
+
+Joint iteration over all variables in a dataset can be used to hide certain multi-dimensional aspects in case they are not relevant to the client code.
+Considering a over all items given by a set of one or more dimensions.
+
+- For all variables in the dataset that have a matching set of dimensions direct, possibly non-`const`, access to items of these variables can be provided.
+- For all variables that have fewer dimensions, `const` access is provided. For example, iterating over all spectrum numbers can provide a `const` reference to the instrument or the sample logs.
+- For all variables that have more dimensions, possibly non-`const` access can be provided via a slice containing the extra dimensions. For example, if we iterate over the polarization states, at each iterator position we can access the set of all histograms with that polarization state as a slice of the underlying larger block of histograms.
+
+### Copy-on-write mechanism
+
+Copy-on-write (COW) sometimes adds complications in client code (see the rather complex interface of `Histogram` and `MatrixWorkspace` dealing with setting up sharing) and puts limitations on threadability.
+
+- Reduce the use of COW, unless the overhead is too large.
+  - Histogram data will not benefit much if we provide means of having a shared X axis.
+    Operations that copy a workspace while keeping data should maybe just be done in-place if memory overhead is an issue?
+  - Logs can get large and are modified rarely, probably COW is useful here.
+  - Instrument can get large and is modified rarely, probably COW is useful here.
+
+### Units
+
+A better support of units across Mantid should definitely be part of a design replacing existing workspaces.
+
+- `BinEdges` and `Counts`, as well as instrument information such as positions in `DetectorInfo` should ideally all handle units.
+  - Attaching units to `Counts` removes the need to distinguish between `Counts` and `Frequencies` (`Counts` may not be a good name anymore, this is just a working title, maybe `Values` and `Errors` to replace the current `Counts` and `CountStandardDeviations`?).
+- Angles should have units, to avoid recurring bugs of dealing with radians and degrees.
