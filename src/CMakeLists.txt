@@ -6,3 +6,4 @@ target_include_directories(soa_aos_abstraction PRIVATE "/home/simon/software/ran
 
 add_subdirectory ( prototype )
 add_subdirectory ( prototype2 )
+add_subdirectory ( type-erased-prototype )
