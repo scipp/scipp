@@ -17,8 +17,8 @@ template <class T> ColumnType getColumnType() {
   throw std::runtime_error("Type not registered in ADS");
 }
 
-template <> ColumnType getColumnType<Ints>() { return ColumnType::Ints; }
-template <> ColumnType getColumnType<Doubles>() { return ColumnType::Doubles; }
+template <> inline ColumnType getColumnType<Ints>() { return ColumnType::Ints; }
+template <> inline ColumnType getColumnType<Doubles>() { return ColumnType::Doubles; }
 
 
 class ColumnConcept {
