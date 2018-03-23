@@ -35,6 +35,7 @@ class DatasetIterator {
     // Is this very expensive? Is that an issue if we do not iterate the innermost (TOF) index?
     void increment() {
       ++m_index;
+#if 0
       // full multi dimensional version:
       // unknown size since arbitrary dimensions possible (but could be put on stack since it is always small):
       std::vector<gsl::index> index;
@@ -52,6 +53,7 @@ class DatasetIterator {
           i += index[dimension];
         }
       }
+#endif
     }
 
   private:

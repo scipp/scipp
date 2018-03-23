@@ -30,6 +30,7 @@ TEST(DatasetIterator, get) {
   ASSERT_EQ(it.get<double>(), 3.2);
 }
 
+#if 0
 TEST(DatasetIterator, notes) {
   Dataset d(std::vector<double>(1), std::vector<int>(1));
   d.addDimension("tof", 10);
@@ -64,3 +65,4 @@ TEST(DatasetIterator, notes) {
   DatasetIterator<slab<double, Dimension::Spectrum>,
                   slab<const int, Dimension::Spectrum>> it(d, 0);
 }
+#endif
