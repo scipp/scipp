@@ -19,8 +19,8 @@ TEST(Dataset, columns) {
 
 TEST(Dataset, extendAlongDimension) {
   Dataset d(std::vector<double>(1), std::vector<int>(1));
-  d.addDimension("tof", 10);
-  d.extendAlongDimension(ColumnType::Doubles, "tof");
+  d.addDimension(Dimension::Tof, 10);
+  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
 }
 
 TEST(Dataset, get) {
@@ -36,8 +36,8 @@ TEST(Dataset, view_tracks_changes) {
   auto &view = d.get<Doubles>();
   ASSERT_EQ(view.size(), 1);
   view[0] = 1.2;
-  d.addDimension("tof", 3);
-  d.extendAlongDimension(ColumnType::Doubles, "tof");
+  d.addDimension(Dimension::Tof, 3);
+  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
   ASSERT_EQ(view.size(), 3);
   EXPECT_EQ(view[0], 1.2);
   EXPECT_EQ(view[1], 0.0);

@@ -4,6 +4,8 @@
 #include <array>
 #include <vector>
 
+#include "dimension.h"
+
 namespace gsl {
 using index = ptrdiff_t;
 }
@@ -68,32 +70,36 @@ private:
   std::unique_ptr<ColumnConcept> m_object;
 };
 
-enum class Dimension { SpectrumNumber, Run, DetectorId, Tof, Q };
-
 template <class T, class... Ts> class FlatDatasetItem;
 
 class Dataset {
 public:
   template <class... Ts>
   Dataset(Ts &&... columns)
-      : m_data{std::make_pair(std::vector<std::string>{},
+      : m_data{std::make_pair(std::vector<Dimension>{},
                               ColumnHandle(std::forward<Ts>(columns)))...} {}
+
+  //template <class T>
+  //void addColumn(std::string name) {
+  //  m_data.emplace_back(
+  //}
+
   // need:
   // - dimensions
   // - axis lengths
   // - list of applicable dimensions for all Ts
-  void addDimension(const std::string &name, const gsl::index size) {
+  void addDimension(const Dimension id, const gsl::index size) {
     // TODO throw if exists
-    m_dimensions[name] = size;
+    m_dimensions[id] = size;
   }
 
   gsl::index columns() const { return m_data.size(); }
 
-  void extendAlongDimension(const ColumnType column, const std::string &name) {
+  void extendAlongDimension(const ColumnType column, const Dimension id) {
     for (auto &item : m_data) {
       if (item.second.type() == column) {
-        item.first.push_back(name);
-        item.second.resize(item.second.size() * m_dimensions.at(name));
+        item.first.push_back(id);
+        item.second.resize(item.second.size() * m_dimensions.at(id));
         // TODO duplicate from slice 0 to all others.
         return;
       }
@@ -136,8 +142,8 @@ public:
   */
 
 private:
-  std::map<std::string, gsl::index> m_dimensions;
-  std::vector<std::pair<std::vector<std::string>, ColumnHandle>> m_data;
+  std::map<Dimension, gsl::index> m_dimensions;
+  std::vector<std::pair<std::vector<Dimension>, ColumnHandle>> m_data;
 };
 
 #endif // DATASET_H

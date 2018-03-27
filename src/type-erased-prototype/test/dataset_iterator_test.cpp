@@ -13,9 +13,9 @@ TEST(DatasetIterator, construct) {
 
 TEST(DatasetIterator, get) {
   Dataset d(std::vector<double>(1), std::vector<int>(1));
-  d.addDimension("tof", 10);
-  d.extendAlongDimension(ColumnType::Doubles, "tof");
-  d.extendAlongDimension(ColumnType::Ints, "tof");
+  d.addDimension(Dimension::Tof, 10);
+  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
+  d.extendAlongDimension(ColumnType::Ints, Dimension::Tof);
   auto &view = d.get<Doubles>();
   view[0] = 0.2;
   view[3] = 3.2;
