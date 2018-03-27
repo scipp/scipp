@@ -27,7 +27,7 @@ TEST(Dataset, get) {
   Dataset d;
   d.addColumn<double>("name1");
   d.addColumn<int>("name2");
-  auto &view = d.get<double>();
+  auto &view = d.get<Doubles>();
   ASSERT_EQ(view.size(), 1);
   view[0] = 1.2;
   ASSERT_EQ(view[0], 1.2);
@@ -37,7 +37,7 @@ TEST(Dataset, view_tracks_changes) {
   Dataset d;
   d.addColumn<double>("name1");
   d.addColumn<int>("name2");
-  auto &view = d.get<double>();
+  auto &view = d.get<Doubles>();
   ASSERT_EQ(view.size(), 1);
   view[0] = 1.2;
   d.addDimension(Dimension::Tof, 3);

@@ -6,9 +6,9 @@ class Histogram {
 public:
   // should only be usable by Dataset (or factory)!
   Histogram(Dataset &d, const gsl::index i)
-      : m_size(d.get<double>().size()),
-        m_binEdges(d.get<double>().data()), // X always shared in this example
-        m_values(d.get<int>().data() + i * m_size) {}
+      : m_size(d.get<Doubles>().size()),
+        m_binEdges(d.get<Doubles>().data()), // X always shared in this example
+        m_values(d.get<Ints>().data() + i * m_size) {}
   Histogram(const Histogram &other) : m_size(other.m_size), m_binEdges(other.m_binEdges) {
     m_data = std::make_unique<std::vector<int>>(m_size);
     for(gsl::index i=0; i<m_size; ++i)
@@ -37,10 +37,10 @@ TEST(Histogram, copy_copies_data) {
   Histogram hist(d, 1); // should only ever live within Dataset, this
                         // constructor would not be public in the final
                         // implementation!
-  d.get<int>()[2] = 7;
+  d.get<Ints>()[2] = 7;
   ASSERT_EQ(hist.m_values[0], 7);
   auto copy(hist);
-  d.get<int>()[2] = 8;
+  d.get<Ints>()[2] = 8;
   ASSERT_EQ(hist.m_values[0], 8);
   ASSERT_EQ(copy.m_values[0], 7);
 }

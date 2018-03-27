@@ -103,11 +103,11 @@ public:
     throw std::runtime_error("Dataset does not contain such a column");
   }
 
-  template <class T> std::vector<T> &get() {
-    const auto columnType = getColumnType<std::vector<T>>();
+  template <class T> T &get() {
+    const auto columnType = getColumnType<T>();
     for (auto &item : m_data) {
-      if (std::get<ColumnHandle>(item).type() == columnType)
-        return std::get<ColumnHandle>(item).cast<std::vector<T>>();
+      if(std::get<ColumnHandle>(item).type() == columnType)
+        return std::get<ColumnHandle>(item).cast<T>();
     }
     throw std::runtime_error("Dataset does not contain such a column");
   }
