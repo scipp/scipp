@@ -76,6 +76,7 @@ class Dataset {
 public:
   template <class T>
   void addColumn(std::string name) {
+    // TODO prevent duplicate names
     m_data.emplace_back(name, std::vector<Dimension>{},
                         ColumnHandle(std::vector<T>(1)));
   }
@@ -103,11 +104,30 @@ public:
     throw std::runtime_error("Dataset does not contain such a column");
   }
 
+  // TODO need (helper) types for values and errors (instead of std::vector<double>, which
+  // would be duplicate). This is also the reason for T being the column type,
+  // not the element type.
   template <class T> T &get() {
     const auto columnType = getColumnType<T>();
     for (auto &item : m_data) {
+      // TODO check for duplicate column types (can use get based on name in
+      // that case).
       if(std::get<ColumnHandle>(item).type() == columnType)
         return std::get<ColumnHandle>(item).cast<T>();
+    }
+    throw std::runtime_error("Dataset does not contain such a column");
+  }
+
+  const std::map<Dimension, gsl::index> &dimensions() const {
+    return m_dimensions;
+  }
+
+  template <class T>
+  const std::vector<Dimension> &dimensions() const {
+    const auto columnType = getColumnType<T>();
+    for (auto &item : m_data) {
+      if (std::get<ColumnHandle>(item).type() == columnType)
+        return std::get<std::vector<Dimension>>(item);
     }
     throw std::runtime_error("Dataset does not contain such a column");
   }

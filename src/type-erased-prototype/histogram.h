@@ -67,7 +67,7 @@ class Histogram {
 // Histogram convertStdDevToVariance(const Histogram &histogram);
 
 
-// handle unit in Histogram, not in Values, Errors (to get arround threading issues)? What about BinEdges? will lead to out-of-data units if data columns in dataset are modified!
+// handle unit in Histogram, not in Values, Errors (to get arround threading issues)? What about BinEdges? will lead to out-of-date units if data columns in dataset are modified!
 // just check the unit? handle as other values? reference unit in dataset, propagate for stand-alone histograms
 // - how to modify dataset including uit change?
 // h1 *= h2; // unit is global to dataset cannot use on histogram level!

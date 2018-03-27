@@ -13,7 +13,7 @@ TEST(DatasetIterator, construct) {
   ASSERT_THROW(auto it = (DatasetIterator<int, float>(d)), std::runtime_error);
 }
 
-TEST(DatasetIterator, get) {
+TEST(DatasetIterator, single_column) {
   Dataset d;
   d.addColumn<double>("name1");
   d.addColumn<int>("name2");
@@ -24,7 +24,7 @@ TEST(DatasetIterator, get) {
   view[0] = 0.2;
   view[3] = 3.2;
 
-  DatasetIterator<double> it(d, 0);
+  DatasetIterator<double> it(d);
   ASSERT_EQ(it.get<double>(), 0.2);
   it.increment();
   ASSERT_EQ(it.get<double>(), 0.0);
@@ -32,6 +32,57 @@ TEST(DatasetIterator, get) {
   ASSERT_EQ(it.get<double>(), 0.0);
   it.increment();
   ASSERT_EQ(it.get<double>(), 3.2);
+}
+
+TEST(DatasetIterator, multi_column) {
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
+  d.addDimension(Dimension::Tof, 2);
+  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
+  d.extendAlongDimension(ColumnType::Ints, Dimension::Tof);
+  auto &view = d.get<Doubles>();
+  view[0] = 0.2;
+  view[1] = 3.2;
+
+  DatasetIterator<double, int> it(d);
+  ASSERT_EQ(it.get<double>(), 0.2);
+  ASSERT_EQ(it.get<int>(), 0);
+  it.increment();
+  ASSERT_EQ(it.get<double>(), 3.2);
+  ASSERT_EQ(it.get<int>(), 0);
+}
+
+TEST(DatasetIterator, multi_column_mixed_dimension) {
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
+  d.addDimension(Dimension::Tof, 2);
+  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
+  auto &view = d.get<Doubles>();
+  view[0] = 0.2;
+  view[1] = 3.2;
+
+  DatasetIterator<double, int> it(d);
+  ASSERT_EQ(it.get<double>(), 0.2);
+  ASSERT_EQ(it.get<int>(), 0);
+  it.increment();
+  ASSERT_EQ(it.get<double>(), 3.2);
+  // TODO this must fail somewhere, int column does not have Dimension::Tof!
+  //ASSERT_EQ(it.get<int>(), 0);
+}
+
+TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
+  d.addDimension(Dimension::Tof, 2);
+  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
+  auto &view = d.get<Doubles>();
+  view[0] = 0.2;
+  view[1] = 3.2;
+
+  DatasetIterator<Slab<double>, int> it(d);
 }
 
 #if 0
