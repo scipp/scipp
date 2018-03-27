@@ -67,10 +67,10 @@ TEST(DatasetIterator, multi_column_mixed_dimension) {
   ASSERT_NO_THROW(auto it = (DatasetIterator<double, const int>(d)));
   auto it = (DatasetIterator<double, const int>(d));
   ASSERT_EQ(it.get<double>(), 0.2);
-  ASSERT_EQ(it.get<int>(), 0);
+  ASSERT_EQ(it.get<const int>(), 0);
   it.increment();
   ASSERT_EQ(it.get<double>(), 3.2);
-  ASSERT_EQ(it.get<int>(), 0);
+  ASSERT_EQ(it.get<const int>(), 0);
 }
 
 TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {

@@ -75,11 +75,15 @@ class DatasetIterator {
     }
 
   public:
+    template <class T>
+    using column_ref_type = std::conditional_t<
+        std::is_const<T>::value,
+        const std::vector<detail::value_type_t<std::remove_const_t<T>>> &,
+        std::vector<detail::value_type_t<std::remove_const_t<T>>> &>;
     // TODO do we need forward_as_tuple?
     DatasetIterator(Dataset &dataset)
         : m_index(extractExtents(dataset.dimensions())),
-          m_columns(std::pair<LinearSubindex,
-                              std::vector<detail::value_type_t<std::remove_const_t<Ts>>> &>(
+          m_columns(std::pair<LinearSubindex, column_ref_type<Ts>>(
               LinearSubindex(
                   dataset.dimensions(),
                   dataset.dimensions<std::vector<
@@ -110,10 +114,12 @@ class DatasetIterator {
     // get<double> would fail in that case because both value and error are of type double.
     // TODO do not provide non-const version if column is const!
     template <class T> T &get() {
-      // Works as long as all columns share the same dimensions.
-      // Where should we fail if T has extra dimensions? Default iterator: iterate everything (exception: TOF if requested). If not iterating everything: must request slice of columns
-      auto &col =
-          std::get<std::pair<LinearSubindex, std::vector<T> &>>(m_columns);
+      auto &col = std::get<std::pair<
+          LinearSubindex,
+          std::conditional_t<std::is_const<T>::value,
+                             const std::vector<std::remove_const_t<T>> &,
+                             std::vector<std::remove_const_t<T>> &>>>(
+          m_columns);
       return col.second[col.first.get()];
     }
 
@@ -121,9 +127,7 @@ class DatasetIterator {
 
   private:
     MultidimensionalIndex m_index;
-    std::tuple<std::pair<LinearSubindex, std::vector<detail::value_type_t<
-                                             std::remove_const_t<Ts>>> &>...>
-        m_columns;
+    std::tuple<std::pair<LinearSubindex, column_ref_type<Ts>>...> m_columns;
 };
 
 #endif // DATASET_ITERATOR_H
