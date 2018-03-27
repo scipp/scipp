@@ -2,6 +2,7 @@
 #define DATASET_ITERATOR_H
 
 #include <tuple>
+#include <type_traits>
 
 #include "dataset.h"
 
@@ -78,17 +79,36 @@ class DatasetIterator {
     DatasetIterator(Dataset &dataset)
         : m_index(extractExtents(dataset.dimensions())),
           m_columns(std::pair<LinearSubindex,
-                              std::vector<detail::value_type_t<Ts>> &>(
+                              std::vector<detail::value_type_t<std::remove_const_t<Ts>>> &>(
               LinearSubindex(
                   dataset.dimensions(),
                   dataset.dimensions<std::vector<
                       detail::value_type_t<std::remove_const_t<Ts>>>>(),
                   m_index),
               dataset.get<std::vector<
-                  detail::value_type_t<std::remove_const_t<Ts>>>>())...) {}
+                  detail::value_type_t<std::remove_const_t<Ts>>>>())...) {
+      std::set<Dimension> dimensions;
+      for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
+        for (auto dimension :
+             std::get<std::vector<Dimension>>(dataset.m_data[i])) {
+          dimensions.insert(dimension);
+        }
+      }
+
+      std::vector<bool> is_const { std::is_const<Ts>::value... };
+      for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
+        if(is_const[i])
+          continue;
+        if (dimensions.size() !=
+            std::get<std::vector<Dimension>>(dataset.m_data[i]).size())
+          throw std::runtime_error("Columns requested for iteration have "
+                                   "different dimensions");
+      }
+    }
 
     // TODO create special named getters for frequently used types such as value and errors.
     // get<double> would fail in that case because both value and error are of type double.
+    // TODO do not provide non-const version if column is const!
     template <class T> T &get() {
       // Works as long as all columns share the same dimensions.
       // Where should we fail if T has extra dimensions? Default iterator: iterate everything (exception: TOF if requested). If not iterating everything: must request slice of columns
@@ -101,8 +121,9 @@ class DatasetIterator {
 
   private:
     MultidimensionalIndex m_index;
-    std::tuple<std::pair<LinearSubindex,
-                         std::vector<detail::value_type_t<Ts>> &>...> m_columns;
+    std::tuple<std::pair<LinearSubindex, std::vector<detail::value_type_t<
+                                             std::remove_const_t<Ts>>> &>...>
+        m_columns;
 };
 
 #endif // DATASET_ITERATOR_H

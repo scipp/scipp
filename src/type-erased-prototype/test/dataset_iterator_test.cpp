@@ -63,13 +63,14 @@ TEST(DatasetIterator, multi_column_mixed_dimension) {
   view[0] = 0.2;
   view[1] = 3.2;
 
-  DatasetIterator<double, int> it(d);
+  ASSERT_ANY_THROW(auto it = (DatasetIterator<double, int>(d)));
+  ASSERT_NO_THROW(auto it = (DatasetIterator<double, const int>(d)));
+  auto it = (DatasetIterator<double, const int>(d));
   ASSERT_EQ(it.get<double>(), 0.2);
   ASSERT_EQ(it.get<int>(), 0);
   it.increment();
   ASSERT_EQ(it.get<double>(), 3.2);
-  // TODO this must fail somewhere, int column does not have Dimension::Tof!
-  //ASSERT_EQ(it.get<int>(), 0);
+  ASSERT_EQ(it.get<int>(), 0);
 }
 
 TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
@@ -82,7 +83,7 @@ TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
   view[0] = 0.2;
   view[1] = 3.2;
 
-  DatasetIterator<Slab<double>, int> it(d);
+  //DatasetIterator<Slab<double>, int> it(d);
 }
 
 #if 0

@@ -70,7 +70,7 @@ private:
   std::unique_ptr<ColumnConcept> m_object;
 };
 
-template <class T, class... Ts> class FlatDatasetItem;
+template <class... Ts> class DatasetIterator;
 
 class Dataset {
 public:
@@ -156,6 +156,8 @@ public:
     return m_dimensions.at(dimension);
   }
   */
+
+  template <class... Ts> friend class DatasetIterator;
 
 private:
   std::map<Dimension, gsl::index> m_dimensions;
