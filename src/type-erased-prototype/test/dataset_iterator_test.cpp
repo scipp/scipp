@@ -83,7 +83,22 @@ TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
   view[0] = 0.2;
   view[1] = 3.2;
 
-  //DatasetIterator<Slab<double>, int> it(d);
+  // Should fixed dimension be generic, or should we just provide a couple of special cases, in particular for Tof?
+  // Use direct column access otherwise (how to access things like Tof slices?)?
+  // YAGNI? Just support a single fixed dimension, given at compile time?!
+  // We might want to iterate all BinEdges, getting a slab of corresponding
+  // counts (e.g., all spectra for certain polarization)?! That is,
+  // Dimension::Tof and Dimension::SpectrumNumber might be fixed, while
+  // Dimension::Polarization is running. Or Dimension::Tof and
+  // Dimension::Polarization are fixed file Dimension::SpectrumNumber is
+  // running. The latter is more likely to be expressed as "iterate only
+  // SpectrumNumber", how do we handle that in general?
+  // Maybe a better way to say this is: Iterate all dimensions of BinEdges. In
+  // general we do not know which other columns need to be accessed as slabs,
+  // how can we deal with this? Just access all as slab (which may be size 1)?
+  DatasetIterator<Slab<double>, int> it(d, {Dimension::Tof});
+  // it.get<double>(); // Does not compile, since we cannot get a single double.
+  it.get<int>();
 }
 
 #if 0

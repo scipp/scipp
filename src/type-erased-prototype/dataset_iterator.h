@@ -1,6 +1,7 @@
 #ifndef DATASET_ITERATOR_H
 #define DATASET_ITERATOR_H
 
+#include <algorithm>
 #include <tuple>
 #include <type_traits>
 
@@ -12,6 +13,10 @@ namespace detail {
 template <class T> struct value_type { using type = T; };
 template <class T> struct value_type<Slab<T>> { using type = typename Slab<T>::value_type; };
 template <class T> using value_type_t = typename value_type<T>::type;
+
+template <class T> struct is_slab : public std::false_type {};
+template <class T> struct is_slab<Slab<T>> : public std::true_type {};
+template <class T> using is_slab_t = typename is_slab<T>::type;
 }
 
 struct MultidimensionalIndex {
@@ -67,10 +72,15 @@ template <class... Ts>
 class DatasetIterator {
   private:
     std::vector<gsl::index>
-    extractExtents(const std::map<Dimension, gsl::index> &dimensions) {
+    extractExtents(const std::map<Dimension, gsl::index> &dimensions, const std::set<Dimension> &fixedDimensions) {
       std::vector<gsl::index> extents;
-      for (const auto &item : dimensions)
-        extents.push_back(item.second);
+      for (const auto &item : dimensions) {
+        if (fixedDimensions.count(item.first) == 0)
+          extents.push_back(item.second);
+        else
+          extents.push_back(1); // fake extent 1 implies no index incremented in
+                                // this dimension.
+      }
       return extents;
     }
 
@@ -81,21 +91,25 @@ class DatasetIterator {
         const std::vector<detail::value_type_t<std::remove_const_t<T>>> &,
         std::vector<detail::value_type_t<std::remove_const_t<T>>> &>;
     // TODO do we need forward_as_tuple?
-    DatasetIterator(Dataset &dataset)
-        : m_index(extractExtents(dataset.dimensions())),
-          m_columns(std::pair<LinearSubindex, column_ref_type<Ts>>(
+    DatasetIterator(Dataset &dataset,
+                    const std::set<Dimension> &fixedDimensions = {})
+        : m_index(extractExtents(dataset.dimensions(), fixedDimensions)),
+          m_columns(std::tuple<LinearSubindex, column_ref_type<Ts>,
+                               detail::is_slab_t<Ts>>(
               LinearSubindex(
                   dataset.dimensions(),
                   dataset.dimensions<std::vector<
                       detail::value_type_t<std::remove_const_t<Ts>>>>(),
                   m_index),
-              dataset.get<std::vector<
-                  detail::value_type_t<std::remove_const_t<Ts>>>>())...) {
+              dataset.get<
+                  std::vector<detail::value_type_t<std::remove_const_t<Ts>>>>(),
+              detail::is_slab<Ts>{})...) {
       std::set<Dimension> dimensions;
       for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
         for (auto dimension :
              std::get<std::vector<Dimension>>(dataset.m_data[i])) {
-          dimensions.insert(dimension);
+          if (fixedDimensions.count(dimension) == 0)
+            dimensions.insert(dimension);
         }
       }
 
@@ -103,8 +117,12 @@ class DatasetIterator {
       for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
         if(is_const[i])
           continue;
-        if (dimensions.size() !=
-            std::get<std::vector<Dimension>>(dataset.m_data[i]).size())
+        const auto &columnDimensions = std::get<std::vector<Dimension>>(dataset.m_data[i]);
+        std::vector<Dimension> diff;
+        std::set_difference(columnDimensions.begin(), columnDimensions.end(),
+                            fixedDimensions.begin(), fixedDimensions.end(),
+                            std::inserter(diff, diff.begin()));
+        if (dimensions.size() != diff.size())
           throw std::runtime_error("Columns requested for iteration have "
                                    "different dimensions");
       }
@@ -112,22 +130,22 @@ class DatasetIterator {
 
     // TODO create special named getters for frequently used types such as value and errors.
     // get<double> would fail in that case because both value and error are of type double.
-    // TODO do not provide non-const version if column is const!
+    // TODO add get version for Slab.
     template <class T> T &get() {
-      auto &col = std::get<std::pair<
+      auto &col = std::get<std::tuple<
           LinearSubindex,
           std::conditional_t<std::is_const<T>::value,
                              const std::vector<std::remove_const_t<T>> &,
-                             std::vector<std::remove_const_t<T>> &>>>(
-          m_columns);
-      return col.second[col.first.get()];
+                             std::vector<std::remove_const_t<T>> &>,
+          std::false_type>>(m_columns);
+      return std::get<1>(col)[std::get<LinearSubindex>(col).get()];
     }
 
     void increment() { m_index.increment(); }
 
   private:
     MultidimensionalIndex m_index;
-    std::tuple<std::pair<LinearSubindex, column_ref_type<Ts>>...> m_columns;
+    std::tuple<std::tuple<LinearSubindex, column_ref_type<Ts>, detail::is_slab_t<Ts>>...> m_columns;
 };
 
 #endif // DATASET_ITERATOR_H
