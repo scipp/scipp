@@ -20,7 +20,7 @@ TEST(DatasetIterator, get) {
   d.addDimension(Dimension::Tof, 10);
   d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
   d.extendAlongDimension(ColumnType::Ints, Dimension::Tof);
-  auto &view = d.get<Doubles>();
+  auto &view = d.get<double>();
   view[0] = 0.2;
   view[3] = 3.2;
 

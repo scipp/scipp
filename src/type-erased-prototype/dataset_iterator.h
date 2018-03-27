@@ -17,9 +17,8 @@ template <class... Ts>
 class DatasetIterator {
   public:
     DatasetIterator(Dataset &dataset, const gsl::index index = 0)
-        : m_index(index),
-          m_columns(std::forward_as_tuple(
-              dataset.get<std::vector<std::remove_const_t<Ts>>>()...)) {}
+        : m_index(index), m_columns(std::forward_as_tuple(
+                              dataset.get<std::remove_const_t<Ts>>()...)) {}
 
     template <class T> T &get() {
       // Works as long as all columns share the same dimensions.
