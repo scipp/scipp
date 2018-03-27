@@ -3,7 +3,9 @@
 #include "dataset_iterator.h"
 
 TEST(DatasetIterator, construct) {
-  Dataset d(std::vector<double>(1), std::vector<int>(1));
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
   ASSERT_NO_THROW(DatasetIterator<> it(d));
   ASSERT_NO_THROW(DatasetIterator<double> it(d));
   ASSERT_NO_THROW(DatasetIterator<int> it(d));
@@ -12,7 +14,9 @@ TEST(DatasetIterator, construct) {
 }
 
 TEST(DatasetIterator, get) {
-  Dataset d(std::vector<double>(1), std::vector<int>(1));
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
   d.addDimension(Dimension::Tof, 10);
   d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
   d.extendAlongDimension(ColumnType::Ints, Dimension::Tof);

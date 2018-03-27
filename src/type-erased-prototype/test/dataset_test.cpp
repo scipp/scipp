@@ -6,25 +6,27 @@ TEST(Dataset, construct_empty) {
   ASSERT_NO_THROW(Dataset d);
 }
 
-TEST(Dataset, construct) {
-  // TODO different construction mechanism that does not require passing length
-  // 1 vectors.
-  ASSERT_NO_THROW(Dataset d(std::vector<double>(1), std::vector<int>(1)));
-}
+TEST(Dataset, construct) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(Dataset, columns) {
-  Dataset d(std::vector<double>(1), std::vector<int>(1));
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
   ASSERT_EQ(d.columns(), 2);
 }
 
 TEST(Dataset, extendAlongDimension) {
-  Dataset d(std::vector<double>(1), std::vector<int>(1));
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
   d.addDimension(Dimension::Tof, 10);
   d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
 }
 
 TEST(Dataset, get) {
-  Dataset d(std::vector<double>(1), std::vector<int>(1));
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
   auto &view = d.get<Doubles>();
   ASSERT_EQ(view.size(), 1);
   view[0] = 1.2;
@@ -32,7 +34,9 @@ TEST(Dataset, get) {
 }
 
 TEST(Dataset, view_tracks_changes) {
-  Dataset d(std::vector<double>(1), std::vector<int>(1));
+  Dataset d;
+  d.addColumn<double>("name1");
+  d.addColumn<int>("name2");
   auto &view = d.get<Doubles>();
   ASSERT_EQ(view.size(), 1);
   view[0] = 1.2;

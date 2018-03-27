@@ -74,15 +74,11 @@ template <class T, class... Ts> class FlatDatasetItem;
 
 class Dataset {
 public:
-  template <class... Ts>
-  Dataset(Ts &&... columns)
-      : m_data{std::make_pair(std::vector<Dimension>{},
-                              ColumnHandle(std::forward<Ts>(columns)))...} {}
-
-  //template <class T>
-  //void addColumn(std::string name) {
-  //  m_data.emplace_back(
-  //}
+  template <class T>
+  void addColumn(std::string name) {
+    m_data.emplace_back(name, std::vector<Dimension>{},
+                        ColumnHandle(std::vector<T>(1)));
+  }
 
   // need:
   // - dimensions
@@ -97,9 +93,9 @@ public:
 
   void extendAlongDimension(const ColumnType column, const Dimension id) {
     for (auto &item : m_data) {
-      if (item.second.type() == column) {
-        item.first.push_back(id);
-        item.second.resize(item.second.size() * m_dimensions.at(id));
+      if (std::get<ColumnHandle>(item).type() == column) {
+        std::get<std::vector<Dimension>>(item).push_back(id);
+        std::get<ColumnHandle>(item).resize(std::get<ColumnHandle>(item).size() * m_dimensions.at(id));
         // TODO duplicate from slice 0 to all others.
         return;
       }
@@ -110,8 +106,8 @@ public:
   template <class T> T &get() {
     const auto columnType = getColumnType<T>();
     for (auto &item : m_data) {
-      if(item.second.type() == columnType)
-        return item.second.cast<T>();
+      if(std::get<ColumnHandle>(item).type() == columnType)
+        return std::get<ColumnHandle>(item).cast<T>();
     }
     throw std::runtime_error("Dataset does not contain such a column");
   }
@@ -143,7 +139,7 @@ public:
 
 private:
   std::map<Dimension, gsl::index> m_dimensions;
-  std::vector<std::pair<std::vector<Dimension>, ColumnHandle>> m_data;
+  std::vector<std::tuple<std::string, std::vector<Dimension>, ColumnHandle>> m_data;
 };
 
 #endif // DATASET_H
