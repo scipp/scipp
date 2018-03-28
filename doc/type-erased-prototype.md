@@ -93,3 +93,15 @@ We have several options:
     This implies that the elements in our data columns would be vectors, basically the current `HistogramData::HistogramY`, etc.
   - Support columns with non-constant size in a certain dimension, e.g., bin edges and counts that have a different length in the time-of-flight dimension for every point in the spectrum dimension.
     Without having tried, this should be possible without too much trouble (provided that we do not require to *change* the individual lengths) and would only prevent certain operations, such as selecting a time-of-flight slice.
+
+## Example
+
+A typical `Dataset`, equivalent to one of our current workspaces could contain the following columns and dimensions:
+
+- Experiment logs and sample with (typically) no attached dimension.
+- `Dimension::Detector`, applies to columns `DetectorInfo` (or an equivalent representation based on individual independent columns for positions, rotations, ...) and `DetectorIDs`.
+- `Dimension::ScanIndex`, for scanning instrument (sync scan only), applies to `Position` and `Rotation` columns (currently part of `DetectorInfo`) and `ScanIntervals`.
+- `Dimension::Spectrum`, applies to all columns that depend on the spectrum (but not the detector). Key examples are `SpectrumNumbers`, `SpectrumDefinitions` (mapping from spectrum to one or multiple detectors), `SpectrumInfo` (or an equivalent respresentation based in individual independend columns for positions, rotations, ...), `EventLists`, and histogrammed data.
+- `Dimension::Tof`, applies mainly to columns X, Y, and E of histogrammed data, but see also discussion above regarding variable-length histograms (`Tof` is probably a bad name since it may be anything derived from it?).
+- Multiple masking could be supported, e.g., for both `Dimension::Detector` to mask detectors as well as for `Dimension::Spectrum` and `Dimension::Tof` for masking (bins of) spectra.
+  Should we have first-class masking support, i.e., as a feature built into `Dataset` that is handled automatically in many cases?
