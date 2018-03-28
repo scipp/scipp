@@ -93,6 +93,8 @@ We have several options:
     This implies that the elements in our data columns would be vectors, basically the current `HistogramData::HistogramY`, etc.
   - Support columns with non-constant size in a certain dimension, e.g., bin edges and counts that have a different length in the time-of-flight dimension for every point in the spectrum dimension.
     Without having tried, this should be possible without too much trouble (provided that we do not require to *change* the individual lengths) and would only prevent certain operations, such as selecting a time-of-flight slice.
+- For more convenient handling of `Dataset`, it could be beneficial to combine value and error into `struct DataPoint { double value; double error; };`.
+  This avoid difficulties related to handling two separate columns for values and errors, in particular the need to always access two columns at the same time and the need for a mechanism linking a specific value column to its error column.
 
 ## Example
 
@@ -101,7 +103,31 @@ A typical `Dataset`, equivalent to one of our current workspaces could contain t
 - Experiment logs and sample with (typically) no attached dimension.
 - `Dimension::Detector`, applies to columns `DetectorInfo` (or an equivalent representation based on individual independent columns for positions, rotations, ...) and `DetectorIDs`.
 - `Dimension::ScanIndex`, for scanning instrument (sync scan only), applies to `Position` and `Rotation` columns (currently part of `DetectorInfo`) and `ScanIntervals`.
-- `Dimension::Spectrum`, applies to all columns that depend on the spectrum (but not the detector). Key examples are `SpectrumNumbers`, `SpectrumDefinitions` (mapping from spectrum to one or multiple detectors), `SpectrumInfo` (or an equivalent respresentation based in individual independend columns for positions, rotations, ...), `EventLists`, and histogrammed data.
+- `Dimension::Spectrum`, applies to all columns that depend on the spectrum (but not the detector). Key examples are `SpectrumNumbers`, `SpectrumDefinitions` (mapping from spectrum to one or multiple detectors), `SpectrumInfo` (or an equivalent representation based in individual independent columns for positions, rotations, ...), `EventLists`, and histogrammed data.
 - `Dimension::Tof`, applies mainly to columns X, Y, and E of histogrammed data, but see also discussion above regarding variable-length histograms (`Tof` is probably a bad name since it may be anything derived from it?).
 - Multiple masking could be supported, e.g., for both `Dimension::Detector` to mask detectors as well as for `Dimension::Spectrum` and `Dimension::Tof` for masking (bins of) spectra.
   Should we have first-class masking support, i.e., as a feature built into `Dataset` that is handled automatically in many cases?
+
+## Implementing algorithms for Dataset
+
+Relevant section in `xarray` documentation: [ufunc for `xarray.Dataset`](http://xarray.pydata.org/en/stable/computation.html#math-with-datasets), in particular "core dimensions" are relevant for us since many operations such as those based on histograms have time-of-flight as core dimension.
+
+Cases to consider:
+
+- Apply algorithm based on function working on single item of single column?
+- Apply algorithm based on function working on single column.
+- Apply algorithm based on function working on multiple columns.
+- Apply algorithm based on function working on iterator item.
+  - Call wrapper must set unit of column based on that of individual returned items (and check consistency).
+- Apply algorithm based on function working on `Dataset`.
+- In-place operation.
+
+What should algorithm return?
+
+- Work in place as much as possible, adding columns if output is of different type?
+- Return a copy with output replacing existing columns (or added as new columns), relying on copy-on-write for columns to avoid copy overhead?
+- Return a single column (something like `xarray.DataArray`), or a `Dataset` containing only a single column?
+  This would lose the connection to the instrument etc.!
+
+Keep things elementary as long as possible.
+For example, low-level algorithms should not support selecting indices, rather extracting a subset should be a separate step or be provided by the wrapper via a generic selection method.
