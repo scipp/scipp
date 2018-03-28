@@ -21,8 +21,9 @@ template <class T> ColumnType getColumnType() {
 }
 
 template <> inline ColumnType getColumnType<Ints>() { return ColumnType::Ints; }
-template <> inline ColumnType getColumnType<Doubles>() { return ColumnType::Doubles; }
-
+template <> inline ColumnType getColumnType<Doubles>() {
+  return ColumnType::Doubles;
+}
 
 class ColumnConcept {
 public:
@@ -75,8 +76,7 @@ template <class... Ts> class DatasetIterator;
 
 class Dataset {
 public:
-  template <class T>
-  void addColumn(std::string name) {
+  template <class T> void addColumn(std::string name) {
     // TODO prevent duplicate names
     m_data.emplace_back(name, std::vector<Dimension>{},
                         ColumnHandle(std::vector<T>(1)));
@@ -97,7 +97,8 @@ public:
     for (auto &item : m_data) {
       if (std::get<ColumnHandle>(item).type() == column) {
         std::get<std::vector<Dimension>>(item).push_back(id);
-        std::get<ColumnHandle>(item).resize(std::get<ColumnHandle>(item).size() * m_dimensions.at(id));
+        std::get<ColumnHandle>(item)
+            .resize(std::get<ColumnHandle>(item).size() * m_dimensions.at(id));
         // TODO duplicate from slice 0 to all others.
         return;
       }
@@ -105,7 +106,8 @@ public:
     throw std::runtime_error("Dataset does not contain such a column");
   }
 
-  // TODO need (helper) types for values and errors (instead of std::vector<double>, which
+  // TODO need (helper) types for values and errors (instead of
+  // std::vector<double>, which
   // would be duplicate). This is also the reason for T being the column type,
   // not the element type.
   template <class T> T &get() {
@@ -113,7 +115,7 @@ public:
     for (auto &item : m_data) {
       // TODO check for duplicate column types (can use get based on name in
       // that case).
-      if(std::get<ColumnHandle>(item).type() == columnType)
+      if (std::get<ColumnHandle>(item).type() == columnType)
         return std::get<ColumnHandle>(item).cast<T>();
     }
     throw std::runtime_error("Dataset does not contain such a column");
@@ -123,8 +125,7 @@ public:
     return m_dimensions;
   }
 
-  template <class T>
-  const std::vector<Dimension> &dimensions() const {
+  template <class T> const std::vector<Dimension> &dimensions() const {
     const auto columnType = getColumnType<T>();
     for (auto &item : m_data) {
       if (std::get<ColumnHandle>(item).type() == columnType)
@@ -137,7 +138,8 @@ public:
 
 private:
   std::map<Dimension, gsl::index> m_dimensions;
-  std::vector<std::tuple<std::string, std::vector<Dimension>, ColumnHandle>> m_data;
+  std::vector<std::tuple<std::string, std::vector<Dimension>, ColumnHandle>>
+      m_data;
 };
 
 #endif // DATASET_H
