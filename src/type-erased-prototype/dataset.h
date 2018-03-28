@@ -2,6 +2,7 @@
 #define DATASET_H
 
 #include <array>
+#include <memory>
 #include <vector>
 
 #include "dimension.h"

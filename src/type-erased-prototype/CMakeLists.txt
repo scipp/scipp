@@ -1,2 +1,2 @@
-#add_executable(prototype prototype.cpp)
 add_subdirectory ( test )
+add_subdirectory ( benchmark )
