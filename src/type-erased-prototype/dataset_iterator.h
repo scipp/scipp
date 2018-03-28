@@ -21,7 +21,11 @@ template <class T> using is_slab_t = typename is_slab<T>::type;
 
 struct MultidimensionalIndex {
   MultidimensionalIndex(const std::vector<gsl::index> dimension)
-      : index(dimension.size()), dimension(dimension) {}
+      : index(dimension.size()), dimension(dimension), end(dimension) {
+    for (auto &n : end)
+      --n;
+  }
+
   void increment() {
     ++index[0];
     for (gsl::index i = 0; i < index.size(); ++i) {
@@ -33,8 +37,10 @@ struct MultidimensionalIndex {
       }
     }
   }
+
   std::vector<gsl::index> index;
   std::vector<gsl::index> dimension;
+  std::vector<gsl::index> end;
 };
 
 class LinearSubindex {

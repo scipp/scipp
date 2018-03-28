@@ -1,7 +1,7 @@
-set ( BENCH_FILES_SRC
-  dataset_benchmark.cpp
-)
+add_executable ( dataset_benchmark dataset_benchmark.cpp )
+target_include_directories ( dataset_benchmark PRIVATE ".." )
+target_link_libraries ( dataset_benchmark LINK_PRIVATE ${GBENCH_LIBRARIES} )
 
-add_executable ( type_erased_prototype_benchmark ${BENCH_FILES_SRC} )
-target_include_directories ( type_erased_prototype_benchmark PRIVATE ".." )
-target_link_libraries ( type_erased_prototype_benchmark LINK_PRIVATE ${GBENCH_LIBRARIES} )
+add_executable ( dataset_iterator_benchmark dataset_iterator_benchmark.cpp )
+target_include_directories ( dataset_iterator_benchmark PRIVATE ".." )
+target_link_libraries ( dataset_iterator_benchmark LINK_PRIVATE ${GBENCH_LIBRARIES} )

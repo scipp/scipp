@@ -44,3 +44,10 @@ To access data, we have several options:
 2. Use some sort of view to iterate over one or more columns of concrete type.
    Essentially this is a convenience layer on top of option 1.) that acts as if data was stored as an array of structures.
    Furthermore it provides an elegant way of dealing with columns that do not share all their dimensions.
+   - The view/iterator could iterate either all (applicable) dimensions, a specific dimensions, or all but certain dimensions, depending on the needs to the specific client code.
+3. Access a subset of a `Dataset` at a given axis value for a given dimension.
+   This is basically slicing of the `Dataset`.
+   It is currently unclear how this should be handled.
+   The result would be a `Dataset` (implies that a copy of the data is returned) or a view into the `Dataset`.
+   In either case, the result would still be type-erased.
+   For any operation that subsequently needs to convert to concrete column types, this access mode is thus too inefficient if the dimension used for slicing is large, such as for spectrum numbers.

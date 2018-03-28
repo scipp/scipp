@@ -2,6 +2,125 @@
 
 #include "dataset_iterator.h"
 
+TEST(MultidimensionalIndex, end) {
+  const std::vector<gsl::index> volume{3, 1, 2};
+  MultidimensionalIndex i(volume);
+  ASSERT_EQ(i.end, (std::vector<gsl::index>{2, 0, 1}));
+}
+
+TEST(MultidimensionalIndex, increment) {
+  const std::vector<gsl::index> volume{3, 1, 2};
+  MultidimensionalIndex i(volume);
+  ASSERT_EQ(i.index, (std::vector<gsl::index>{0, 0, 0}));
+  i.increment();
+  ASSERT_EQ(i.index, (std::vector<gsl::index>{1, 0, 0}));
+  i.increment();
+  ASSERT_EQ(i.index, (std::vector<gsl::index>{2, 0, 0}));
+  i.increment();
+  ASSERT_EQ(i.index, (std::vector<gsl::index>{0, 0, 1}));
+  i.increment();
+  ASSERT_EQ(i.index, (std::vector<gsl::index>{1, 0, 1}));
+  i.increment();
+  ASSERT_EQ(i.index, (std::vector<gsl::index>{2, 0, 1}));
+}
+
+TEST(LinearSubindex, full_subindex) {
+  const std::vector<gsl::index> volume{3, 1, 2};
+  const std::map<Dimension, gsl::index> extents{
+      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
+  MultidimensionalIndex i(volume);
+
+  LinearSubindex sub(
+      extents, {Dimension::Tof, Dimension::SpectrumNumber, Dimension::Q}, i);
+  gsl::index count{0};
+  while (true) {
+    ASSERT_EQ(sub.get(), count++);
+    if (i.index == i.end)
+      break;
+    i.increment();
+  }
+}
+
+TEST(LinearSubindex, zero_dimensional_subindex) {
+  const std::vector<gsl::index> volume{3, 1, 2};
+  const std::map<Dimension, gsl::index> extents{
+      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
+  MultidimensionalIndex i(volume);
+
+  LinearSubindex sub(extents, {}, i);
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 0);
+}
+
+TEST(LinearSubindex, fast_1_dimensional_subindex) {
+  const std::vector<gsl::index> volume{3, 1, 2};
+  const std::map<Dimension, gsl::index> extents{
+      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
+  MultidimensionalIndex i(volume);
+
+  LinearSubindex sub(extents, {Dimension::Tof}, i);
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 1);
+  i.increment();
+  ASSERT_EQ(sub.get(), 2);
+  i.increment();
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 1);
+  i.increment();
+  ASSERT_EQ(sub.get(), 2);
+}
+
+TEST(LinearSubindex, slow_1_dimensional_subindex) {
+  const std::vector<gsl::index> volume{3, 1, 2};
+  const std::map<Dimension, gsl::index> extents{
+      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
+  MultidimensionalIndex i(volume);
+
+  LinearSubindex sub(extents, {Dimension::Q}, i);
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 1);
+  i.increment();
+  ASSERT_EQ(sub.get(), 1);
+  i.increment();
+  ASSERT_EQ(sub.get(), 1);
+}
+
+TEST(LinearSubindex, flipped_2_dimensional_subindex) {
+  const std::vector<gsl::index> volume{3, 1, 2};
+  const std::map<Dimension, gsl::index> extents{
+      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
+  MultidimensionalIndex i(volume);
+
+  LinearSubindex sub(extents, {Dimension::Q, Dimension::Tof}, i);
+  ASSERT_EQ(sub.get(), 0);
+  i.increment();
+  ASSERT_EQ(sub.get(), 2);
+  i.increment();
+  ASSERT_EQ(sub.get(), 4);
+  i.increment();
+  ASSERT_EQ(sub.get(), 1);
+  i.increment();
+  ASSERT_EQ(sub.get(), 3);
+  i.increment();
+  ASSERT_EQ(sub.get(), 5);
+}
+
 TEST(DatasetIterator, construct) {
   Dataset d;
   d.addColumn<double>("name1");
