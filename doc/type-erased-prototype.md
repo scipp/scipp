@@ -80,7 +80,7 @@ We have several options:
 
 ## Notes
 
-- Units would we stored as a flag of a column.
+- Units would be stored as a flag of a column.
   Operations with such columns would operate on these flags.
   Likewise, if a `Histogram` wrapper as discussed above is provided, it could handle units (this implies that operations with `Histogram` that change the unit cannot be done in-place).
 - The prototype currently accesses columns and iterator elements by type.
