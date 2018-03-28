@@ -133,31 +133,6 @@ public:
     throw std::runtime_error("Dataset does not contain such a column");
   }
 
-  /*
-  // how to get iterator centered to a certain type?
-  template <class T> auto at(const gsl::index i) {
-    return FlatDatasetItem<T, Ts...>(i, *this);
-    // data items fall in three cases:
-    // 1. dimensions match those of T => pass reference
-    // 2. misses dimension(s) of T => pass const reference
-    // 3. has additional dimensions => pass reference to container with stride access
-    // Problem: Dimensions known only at runtime
-    // - Always pass const reference to container with stride access, except T
-    //   which can be non-const?
-    // - Implies that all fields in returned item are wrapped in vector-like :(
-    // - Implicitly convert vector-like to item if size is 1?
-  }
-
-  template <class T> const std::vector<std::string> &dimensions() const {
-    return std::get<std::pair<std::vector<std::string>, std::vector<T>>>(m_data)
-        .first;
-  }
-
-  gsl::index size(const std::string &dimension) const {
-    return m_dimensions.at(dimension);
-  }
-  */
-
   template <class... Ts> friend class DatasetIterator;
 
 private:
