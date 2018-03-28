@@ -25,3 +25,22 @@
    - Could support histograms as the smallest element if we can do without sharing the axis.
      - Some memory overhead.
      - Compute overhead if all histograms have the same axis.
+
+## Dataset overview
+
+A `Dataset` as discussed here contains:
+
+- A number of named dimensions.
+- A number of "columns", i.e., vector-like data.
+  Each column has an associated set of dimensions.
+  This defines the length of the column.
+
+As discussed elsewhere, holding each column with its concrete type is problematic.
+Therefore, columns are type-erased.
+To access data, we have several options:
+
+1. Access individual columns, by requesting a column of a certain type (optionally with a certain name).
+   `Dataset` can then perform a lookup among its columns and cast the matching column to the requested concrete type.
+2. Use some sort of view to iterate over one or more columns of concrete type.
+   Essentially this is a convenience layer on top of option 1.) that acts as if data was stored as an array of structures.
+   Furthermore it provides an elegant way of dealing with columns that do not share all their dimensions.
