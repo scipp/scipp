@@ -13,6 +13,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 set ( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" )
 include( pybind11 )
 include( GoogleTest )
+include( GoogleBenchmark )
 
 add_subdirectory(src)
 
