@@ -78,14 +78,14 @@ public:
       FlatDataset<Ts...> &data)
       : m_index(index), m_data(data) {}
 
-  T &get() { return m_data.get<T>()[m_index]; }
+  T &get() { return m_data.template get<T>()[m_index]; }
 
   template <class U> const U &get() const {
     if (m_data.template dimensions<U>() == m_data.template dimensions<T>())
-      return m_data.get<U>()[m_index];
+      return m_data.template get<U>()[m_index];
     // Simplest case of dimension mismatch: Dimensionless data such as Logs.
     if (m_data.template dimensions<U>().size() == 0)
-      return m_data.get<U>()[0];
+      return m_data.template get<U>()[0];
     throw std::runtime_error("TODO");
     // if dimensions of U match those of T
     // return get<U>(m_data)[m_index];
