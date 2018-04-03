@@ -127,3 +127,7 @@ d.apply(rebin)
 //     Allow getting by type, throw if duplicate?!
 //   - If not, aren't we too restrictive, e.g., for tables? (could use extra dimension if multiple columns of same type are needed??)
 // - should we store Values and Errors as separate columns, or a single column if std::pair<Value, Error>? Is there data without errors?
+
+
+void apply(Dataset &d, const std::function &f);
+// Use signature of f to determine which columns to apply to and which dimensions are core dimensions?

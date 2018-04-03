@@ -95,6 +95,12 @@ We have several options:
     Without having tried, this should be possible without too much trouble (provided that we do not require to *change* the individual lengths) and would only prevent certain operations, such as selecting a time-of-flight slice.
 - For more convenient handling of `Dataset`, it could be beneficial to combine value and error into `struct DataPoint { double value; double error; };`.
   This avoid difficulties related to handling two separate columns for values and errors, in particular the need to always access two columns at the same time and the need for a mechanism linking a specific value column to its error column.
+- Columns that are used as an axis to index into the `Dataset` should *not* be verified on write.
+  This has been implemented for ensuring unique spectrum numbers as part of `IndexInfo`.
+  The result is code that is probably hard to maintain.
+  Instead, do verification lazily, only when an axis is actually used for accessing the `Dataset`.
+  This results in some overhead (and MPI communication), but is does not appear to happen too frequently and should not be an issue for performance.
+- Probably copy-on-write-wrapping each column makes sense.
 
 ## Example
 

@@ -17,7 +17,7 @@ using Ints = std::vector<int>;
 enum class ColumnType { Ints, Doubles };
 
 template <class T> ColumnType getColumnType() {
-  throw std::runtime_error("Type not registered in ADS");
+  throw std::runtime_error(std::string("Type not registered in ADS ") + typeid(T).name());
 }
 
 template <> inline ColumnType getColumnType<Ints>() { return ColumnType::Ints; }
