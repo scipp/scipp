@@ -109,6 +109,9 @@ We have several options:
     - Any operation on `Dataset` that wants to handle units could simply handle it separately?
     - Still link to unit from `Histogram`?
     - Enforce unit column to be zero-dimensional?
+  - Is the dimension effectively the same as a unit?
+    - `Dimension::Tof` could be used to imply that the unit is time-of-flight microseconds, converting the unit could be done by changing the dimension label to, e.g., `Dimension::dSpacing`.
+    - How can we assign a unit to the values of the dependent quantities (which do not have a dimension assigned).
 - Do we need to link columns?
   For example, columns replacing `SpectrumInfo` would need a grouping column and columns replacing `DetectorInfo`.
   How can they access it efficiently?
