@@ -101,6 +101,19 @@ We have several options:
   Instead, do verification lazily, only when an axis is actually used for accessing the `Dataset`.
   This results in some overhead (and MPI communication), but is does not appear to happen too frequently and should not be an issue for performance.
 - Probably copy-on-write-wrapping each column makes sense.
+- To avoid a fair number of complications, columns should ideally not contain any data apart from the individual items.
+  If they do, the operations on single items must probably rely on certain assumptions?
+  - Most prominent example: Unit for bin edges and data points.
+    Where do we store it?
+  - Can the unit be a separate column?
+    - Any operation on `Dataset` that wants to handle units could simply handle it separately?
+    - Still link to unit from `Histogram`?
+    - Enforce unit column to be zero-dimensional?
+- Do we need to link columns?
+  For example, columns replacing `SpectrumInfo` would need a grouping column and columns replacing `DetectorInfo`.
+  How can they access it efficiently?
+  - Store pointer to other columns?
+    Prevent removing columns if there are any references to it.
 
 ## Example
 
@@ -151,3 +164,25 @@ Thus we need to be able to:
 
 Need a way to define mapping from input column to functor argument *without the need to have the algorithm work on the dataset level*?
 Can we translate type -> list of related column Ids?
+
+Do we need to describe algorithms at a higher level (similar to what the current `Algorithm::exec` does, but without being mixed with the lower levels?
+- For simple algorithms without overloads we can provide the automatic way, others just operate on `Dataset`.
+- How can we avoid the requirement to cast to explicit overloads, etc.?
+  - `apply_to_all_columns<Histogram>(&Alg::rebin);` We specify the column type to apply to. This is used to select the overload.
+
+```cpp
+// Apply functor Alg to all matching columns, fails to compile if Alg has overloads.
+apply<Alg>(d);
+
+// Apply functor Alg to all columns containing histograms. Overload selected based on explicit given type.
+apply<Alg, Histogram>(d);
+
+// Apply functor Alg to column identified by name. Overload selected based on type of named column?
+apply<Alg>(d, "my-column");
+
+// Select overload based on runtime content of Dataset
+if (d.contains<BinMask>())
+  apply<Alg, Histogram, const BinMask>(d);
+else
+  apply<Alg, Histogram>(d);
+```
