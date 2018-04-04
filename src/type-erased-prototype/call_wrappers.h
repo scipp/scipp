@@ -79,6 +79,20 @@ struct Apply<
 /*
 template <class Alg, class... Args>
 struct Apply<
+    Alg,
+    typename std::enable_if<has_function_apply<
+        const Alg, void, boost::mpl::vector<int &, Args...>>::value>::type,
+    Args...> {
+  static Dataset run(const Alg &alg, Dataset dataset, const Args &... args) {
+    fprintf(stderr, "using int overload\n");
+    return dataset;
+  }
+};
+*/
+
+/*
+template <class Alg, class... Args>
+struct Apply<
     Alg, typename std::enable_if<has_function_apply<
              const Alg, decltype(std::declval<const Alg>().apply(
                             std::declval<const WsItem &>(),

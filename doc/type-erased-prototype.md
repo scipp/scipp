@@ -137,3 +137,17 @@ What should algorithm return?
 
 Keep things elementary as long as possible.
 For example, low-level algorithms should not support selecting indices, rather extracting a subset should be a separate step or be provided by the wrapper via a generic selection method.
+
+### Requirement for new concepts and working methodology?
+
+A `Dataset` is meant to allow for very generic containers replacing workspaces.
+This has a couple of consequences that may require partially rethinking our algorithm concept.
+
+`Dataset` can contain multiple columns containing data such as histograms.
+For example, someone could decide to store histograms for a sample run and a can run in the same `Dataset` as two different columns.
+Thus we need to be able to:
+- Apply operations and algorithms to all columns (of a given type).
+- Provide a mechanism to select at runtime which columns to apply an algorithm to.
+
+Need a way to define mapping from input column to functor argument *without the need to have the algorithm work on the dataset level*?
+Can we translate type -> list of related column Ids?
