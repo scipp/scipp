@@ -84,9 +84,45 @@ We have several options:
   Operations with such columns would operate on these flags.
   Likewise, if a `Histogram` wrapper as discussed above is provided, it could handle units (this implies that operations with `Histogram` that change the unit cannot be done in-place).
 - The prototype currently accesses columns and iterator elements by type.
-  We may need to use a tag or ID instead.
+  We will probably need to use a tag or ID instead:
+
+  ```cpp
+  // All possible variables given by enum. Need to support also generic
+  // variables such as Double or String.
+  enum class Variable { DetectorPosition, SpectrumPosition };
+
+  // Type for variable is defined at compile time.
+  template <Variable Var> struct variable_type;
+  template <>
+  struct variable_type<DetectorPosition> {
+    using type = std::vector<Eigen::Vector3d>;
+  };
+  template <Variable Var>
+  using variable_type_t = typename variable_type<Var>::type;
+
+  class Dataset {
+  public:
+    // Dataset::get<Variable::DetectorPosition>() returns std::vector<Eigen::Vector3d>.
+    template <Variable Var>
+    const variable_type_t<Var> &get() const;
+    // TODO how can we request const access (also for iterator?).
+    // The natural way does not work since we have a non-type template parameter:
+    // Dataset::get<const Variable::DetectorPosition>();
+  };
+  ```
   Additionally access via a name will probably be provided.
 - We will need to support "axis" columns that are bin edges, i.e., are by 1 longer than the size of the dimension.
+  If we iterate over all dimensions, what should the iteration for bin edges do?
+  - Not possible?
+  - Support iterating "bins", a virtual column providing center, left edge, right edge, and width?
+    ```cpp
+    Dataset d {Variable::BinEdge, Variable::DataPoint};
+    // Full iteration with no core-dimensions, i.e., we are not iterating histograms.
+    // This should fail to compile, since the Variable::BinEdge has a different length!
+    DatasetIterator<Variable::BinEdge, Variable::DataPoint> it(d);
+    // Use this instead (note that Variable::Bin is a virtual variable!)
+    DatasetIterator<Variable::Bin, Variable::DataPoint> it(d);
+    ```
 - The time-of-flight axis in our workspaces can have a different length for each spectrum.
   This is a case that is not supported by `xarray` but we have two choices:
   - Do not handle time-of-flight as a dimension.
@@ -97,8 +133,8 @@ We have several options:
   This avoid difficulties related to handling two separate columns for values and errors, in particular the need to always access two columns at the same time and the need for a mechanism linking a specific value column to its error column.
 - Columns that are used as an axis to index into the `Dataset` should *not* be verified on write.
   This has been implemented for ensuring unique spectrum numbers as part of `IndexInfo`.
-  The result is code that is probably hard to maintain.
-  Instead, do verification lazily, only when an axis is actually used for accessing the `Dataset`.
+  The result is code that is probably hard to maintain, in particular since it required changes outside `IndexInfo`, in particular `ExperimentInfo`, `MatrixWorkspace`, and `ISpectrum`.
+  Instead, do verification lazily only when an axis is actually used for accessing the `Dataset`.
   This results in some overhead (and MPI communication), but is does not appear to happen too frequently and should not be an issue for performance.
 - Probably copy-on-write-wrapping each column makes sense.
 - To avoid a fair number of complications, columns should ideally not contain any data apart from the individual items.
@@ -117,6 +153,11 @@ We have several options:
   How can they access it efficiently?
   - Store pointer to other columns?
     Prevent removing columns if there are any references to it.
+- We should definitely investigate how `Dataset` could support better cache reuse by chaining several operations or algorithms.
+  - At runtime or compile-time?
+  - Do we need things like expression templates to make this work?
+    Does not play nicely with `auto`.
+  - Is it worth the effort, given that we may often be limited by I/O?
 
 ## Example
 
