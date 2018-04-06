@@ -117,6 +117,16 @@ We have several options:
   ```
   Additionally access via a name will probably be provided.
 
+  To facilitate `const` access, the `Variable` tags should be types, not enumerations:
+  ```cpp
+  struct Variable {
+    struct DetectorPosition {};
+    struct SpectrumPosition {};
+  };
+  // Then we can use (avoiding triggering the copy-on-write mechanism):
+  const auto &positions = d.get<const Variable::DetectorPosition>();
+  ```
+
 - We will need to support "axis" variables that are bin edges, i.e., are by 1 longer than the size of the dimension.
   If we iterate over all dimensions, what should the iteration for bin edges do?
   - Not possible?
@@ -289,7 +299,8 @@ d.extend<Variable::Histogram>(Dimension::Polarization);
 auto d_copy(d);
 
 // Get variable by label
-auto &positions = d.get<Variable::DetectorPosition>();
+const auto &positions = d.get<const Variable::DetectorPosition>(); // Dataset keeps sharing
+auto &positions = d.get<Variable::DetectorPosition>(); // triggers copy-on-write
 
 // Slicing and extracting datasets (details unclear currently, but things
 // like this will be supported in one way or another):
@@ -300,6 +311,34 @@ auto signal = d.slice<Variable::Polarization>(Spin::Up)
 // indexed by axis used for slicing:
 auto slices = d.slices<Variable::Polarization>();
 auto signal = slices[Spin::Up] - slices[Spin::Down];
+
+// Slicing into Datasets is inefficient for long axes such as Dimension::Spectrum
+// since variables in Dataset are type-erased. Use typed iterator or view for
+// subset of variables instead:
+DatasetView<Variable::SpectrumNumber, Variable::SpectrumPosition> view(d);
+view->begin().get<VariableSpectrumNumber>() = 17;
+// Could provide named convenience methods for standard variables.
+view->begin()->spectrumNumber() = 17;
+view[42].spectrumPosition() *= -1.0;
+
+// Use DatasetView to operate on variables with different dimensions:
+DatasetView<const Variable::SpectrumMask, Variable::Value, Variable::Error> view(d);
+for (auto &item : view) { // Iterates, e.g, Dimension::Spectrum and Dimension::Tof
+  if (item.get<Variable::SpectrumMask>()) {
+    item.value() = 0.0;
+    item.error() = 0.0;
+  }
+}
+
+// Use "slabs" to iterate only over some dimensions (TODO syntax for
+// defining fixed core dimensions):
+DatasetView<const Variable::SpectrumMask, Slab<Variable::Value>, Slab<Variable::Error>> view(d);
+for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum
+  if (item.get<Variable::SpectrumMask>()) {
+    item.get<Slab<Variable::Value>>() = 0.0;
+    item.get<Slab<Variable::Error>>() = 0.0;
+  }
+}
 
 // Binary operations
 // - Check for matching dimensions (broadcasts if possible, e.g., when adding a single value).
