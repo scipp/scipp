@@ -324,7 +324,7 @@ view[42].spectrumPosition() *= -1.0;
 // Use DatasetView to operate on variables with different dimensions:
 DatasetView<const Variable::SpectrumMask, Variable::Value, Variable::Error> view(d);
 for (auto &item : view) { // Iterates, e.g, Dimension::Spectrum and Dimension::Tof
-  if (item.get<Variable::SpectrumMask>()) {
+  if (item.get<const Variable::SpectrumMask>()) {
     item.value() = 0.0;
     item.error() = 0.0;
   }
@@ -334,7 +334,7 @@ for (auto &item : view) { // Iterates, e.g, Dimension::Spectrum and Dimension::T
 // defining fixed core dimensions):
 DatasetView<const Variable::SpectrumMask, Slab<Variable::Value>, Slab<Variable::Error>> view(d);
 for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum
-  if (item.get<Variable::SpectrumMask>()) {
+  if (item.get<const Variable::SpectrumMask>()) {
     item.get<Slab<Variable::Value>>() = 0.0;
     item.get<Slab<Variable::Error>>() = 0.0;
   }
