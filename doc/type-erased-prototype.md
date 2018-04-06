@@ -72,6 +72,11 @@ We have several options:
    In either case, the result would still be type-erased.
    For any operation that subsequently needs to convert to concrete variable types, this access mode is thus too inefficient if the dimension used for slicing is large, such as for spectrum numbers.
 
+As described in this document, `Dataset` should be able to replace all of our workspace types, with maybe the exception of `MDEventWorkspace`.
+This includes not just `MatrixWorkspace` but also `TableWorkspace`, `PeaksWorkspace`, and `MDHistoWorkspace`.
+`Dataset` would provide a uniform interface in a single type for all of these.
+Furthermore, `Dataset` will cover many other cases that are currently impossible to represent in a single workspace.
+
 ## Details and discussion
 
 - Probably copy-on-write-wrapping each variable makes sense.
