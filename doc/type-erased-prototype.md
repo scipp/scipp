@@ -321,10 +321,11 @@ view->begin().get<VariableSpectrumNumber>() = 17;
 view->begin()->spectrumNumber() = 17;
 view[42].spectrumPosition() *= -1.0;
 
-// Use DatasetView to operate on variables with different dimensions:
+// Use DatasetView to operate on variables with different dimensions, anything
+// that does not share all dimensions must be const:
 DatasetView<const Variable::SpectrumMask, Variable::Value, Variable::Error> view(d);
 for (auto &item : view) { // Iterates, e.g, Dimension::Spectrum and Dimension::Tof
-  if (item.get<const Variable::SpectrumMask>()) {
+  if (item.get<const Variable::SpectrumMask>()) { // Returns the same regardless of the Tof position of the iterator.
     item.value() = 0.0;
     item.error() = 0.0;
   }
@@ -335,7 +336,7 @@ for (auto &item : view) { // Iterates, e.g, Dimension::Spectrum and Dimension::T
 DatasetView<const Variable::SpectrumMask, Slab<Variable::Value>, Slab<Variable::Error>> view(d);
 for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum
   if (item.get<const Variable::SpectrumMask>()) {
-    item.get<Slab<Variable::Value>>() = 0.0;
+    item.get<Slab<Variable::Value>>() = 0.0; // Assigns to everything in Slab of Dimension::Tof.
     item.get<Slab<Variable::Error>>() = 0.0;
   }
 }
