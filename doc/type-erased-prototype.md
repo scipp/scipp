@@ -88,9 +88,6 @@ We have several options:
 
 ## Notes
 
-- Units would be stored as a flag of a variable.
-  Operations with such variables would operate on these flags.
-  Likewise, if a `Histogram` wrapper as discussed above is provided, it could handle units (this implies that operations with `Histogram` that change the unit cannot be done in-place).
 - The prototype currently accesses variables and iterator elements by type.
   We will probably need to use a tag or ID instead:
 
@@ -119,6 +116,7 @@ We have several options:
   };
   ```
   Additionally access via a name will probably be provided.
+
 - We will need to support "axis" variables that are bin edges, i.e., are by 1 longer than the size of the dimension.
   If we iterate over all dimensions, what should the iteration for bin edges do?
   - Not possible?
@@ -131,20 +129,40 @@ We have several options:
     // Use this instead (note that Variable::Bin is a virtual variable!)
     DatasetIterator<Variable::Bin, Variable::DataPoint> it(d);
     ```
+    We may have bin edges in more than one dimension, how do we name those variables and distinguish them (think, e.g., of transposing a workspace containing histograms, yielding a bin-edge axis for the "Y" axis)?
+    - Is `Variable::BinEdge` actually a reasonable name?
+      Should it be `Variable::TofEdge` (and `Variable::TofBin`) instead?
+      This would imply changing variable labes if units are changed, yielding, e.g., `Variable::dSpacingEdge`.
+      How would we handle this generically in client code accessing the edges, given that most code will not care whether it is `Tof` or `dSpace` or anything else?
+      Would it make sense to support `Variable::Point`, `Variable::BinEdge`, and `Variable::Bin` as aliases for whatever the current unit is, e.g., `Variable::Tof`, `Variable::TofEdge`, and `Variable::TofBin`?
+
 - The time-of-flight axis in our workspaces can have a different length for each spectrum.
   This is a case that is not supported by `xarray` but we have two choices:
   - Do not handle time-of-flight as a dimension.
     This implies that the elements in our data variables would be vectors, basically the current `HistogramData::HistogramY`, etc.
   - Support variables with non-constant size in a certain dimension, e.g., bin edges and counts that have a different length in the time-of-flight dimension for every point in the spectrum dimension.
     Without having tried, this should be possible without too much trouble (provided that we do not require to *change* the individual lengths) and would only prevent certain operations, such as selecting a time-of-flight slice.
+    - Need a (hidden?) index variable that provides the start of data for each new histogram.
+      Can we simply use the `Histogram` variable, given that it stores offsets to the underlying data anyway?
+
 - For more convenient handling of `Dataset`, it could be beneficial to combine value and error into `struct DataPoint { double value; double error; };`.
   This avoid difficulties related to handling two separate variables for values and errors, in particular the need to always access two variables at the same time and the need for a mechanism linking a specific value variable to its error variable.
+  - Changes the way of interaction with other libraries such as `numpy` and `gsl`.
+  - Would make vectorization more difficult.
+
 - Variables that are used as an axis to index into the `Dataset` should *not* be verified on write.
   This has been implemented for ensuring unique spectrum numbers as part of `IndexInfo`.
   The result is code that is probably hard to maintain, in particular since it required changes outside `IndexInfo`, in particular `ExperimentInfo`, `MatrixWorkspace`, and `ISpectrum`.
-  Instead, do verification lazily only when an axis is actually used for accessing the `Dataset`.
-  This results in some overhead (and MPI communication), but is does not appear to happen too frequently and should not be an issue for performance.
+  - Instead, do verification lazily only when an axis is actually used for accessing the `Dataset`.
+  - Results in some overhead (and MPI communication), but does not appear to happen too frequently and should not be an issue for performance.
+
 - Probably copy-on-write-wrapping each variable makes sense.
+  - Should be handled all internally, i.e., types used as variables do not need to support this on their own.
+
+- Units could be stored as a flag of a variable?
+  Operations with such variables would operate on these flags.
+  Likewise, if a `Histogram` wrapper as discussed above is provided, it could handle units (see also below).
+
 - To avoid a fair number of complications, variables should ideally not contain any data apart from the individual items.
   If they do, the operations on single items must probably rely on certain assumptions?
   - Most prominent example: Unit for bin edges and data points.
@@ -157,11 +175,16 @@ We have several options:
     - `Dimension::Tof` could be used to imply that the unit is time-of-flight microseconds, converting the unit could be done by changing the dimension label to, e.g., `Dimension::dSpacing`.
       As a consequence, any operation that checks matching dimensions of variables will implicitly ensure matching units.
     - How can we assign a unit to the values of the dependent quantities (which do not have a dimension assigned).
+  - Unit as field in *some* variables (not enforced, user could just add a plain vector, but our common ones should have it).
+    - Operations with histograms will have only const access to the unit, preventing in-place operation with histograms if the unit changes.
+      However, there may just be a handful of unit-changing operations (multiplication, unit conversion, converting errors between standard deviations and variances), so maybe this is not an issue?
+
 - Do we need to link variables?
   For example, variables replacing `SpectrumInfo` would need a grouping variable and variables replacing `DetectorInfo`.
   How can they access it efficiently?
   - Store pointer to other variables?
     Prevent removing variables if there are any references to it.
+
 - We should definitely investigate how `Dataset` could support better cache reuse by chaining several operations or algorithms.
   - At runtime or compile-time?
   - Do we need things like expression templates to make this work?
