@@ -19,7 +19,7 @@ In particular:
    - Does not cover cases where we require flexibility at runtime, such as for generic tables.
 
 1. Why not units in type?
-   - This is not 100% clear yet, but probably this also yields a unmanageably large number of variable types.
+   - Yields a large number of variable types that is probably too large to handle.
    - Requires templating all low-level client code.
 
 1. Why not a nested structure of table-like objects?
@@ -233,9 +233,9 @@ Dataset d;
 // Imagine arbitrary initialization here
 
 // Variables can be added (or removed) at any time.
-std::vector<bool> mask(d.size<Dimension::SpectrumNumber>(), false);
+std::vector<bool> mask(d.size(Dimension::SpectrumNumber), false);
 d.add<Variable::Mask>(mask, Dimension::SpectrumNumber, "ROI");
-d.remove(Variable::EventList>);
+d.remove(Variable::EventList);
 // Note: Certain variables are tied together and are added/removed "atomically",
 // e.g., instrument, detector info, spectrum info, and mapping to detectors.
 
