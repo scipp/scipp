@@ -262,3 +262,49 @@ if (d.contains<BinMask>())
 else
   apply<Alg, Histogram>(d);
 ```
+
+## Interface mock-up
+
+Naming is just for illustration, may be very different in the actual implementation.
+
+```cpp
+Dataset d;
+
+// Imagine arbitrary initialization here
+
+// Variables can be added (or removed) at any time.
+std::vector<bool> mask(d.size<Dimension::SpectrumNumber>(), false);
+d.add<Variable::Mask>(mask, Dimension::SpectrumNumber, "ROI");
+d.remove<Variable::EventList>();
+// Note: Certain variables are tied together and are added/removed "atomically",
+// e.g., instrument, detector info, spectrum info, and mapping to detectors.
+
+// Dimensions can be added at any time.
+// Add axis with new dimension
+d.add<Variable::Polarization>({Spin::Up, Spin::Down}, Dimension::Polarization, "pol");
+// Extend the histogram variable into the new dimension (data zero initialized?).
+d.extend<Variable::Histogram>(Dimension::Polarization);
+
+// Copy constructor. All variables are automatically shared.
+auto d_copy(d);
+
+// Get variable by label
+auto &positions = d.get<Variable::DetectorPosition>();
+
+// Slicing and extracting datasets (details unclear currently, but things
+// like this will be supported in one way or another):
+auto signal = d.slice<Variable::Polarization>(Spin::Up)
+              - d.slice<Variable::Polarization>(Spin::Down);
+// The above could potentially use (read-only) views on the right-hand
+// side and thus avoid copies. Can slice into a "vector" of views,
+// indexed by axis used for slicing:
+auto slices = d.slices<Variable::Polarization>();
+auto signal = slices[Spin::Up] - slices[Spin::Down];
+
+// Binary operations
+// - Check for matching dimensions (broadcasts if possible, e.g., when adding a single value).
+// - Check for matching axis variables (spectrum numbers, bin edges, ...).
+// - Add all non-axis variables.
+// - TODO: Figure out matching details and behavior for missing variables.
+d1 += d2;
+```
