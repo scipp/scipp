@@ -19,10 +19,11 @@ In particular:
    - Does not cover cases where we require flexibility at runtime, such as for generic tables.
 
 1. Why not units in type?
-   - This is not 100% clear yet, but probably this also yields a unmanageably large number of variable types?
+   - This is not 100% clear yet, but probably this also yields a unmanageably large number of variable types.
+   - Requires templating all low-level client code.
 
 1. Why not a nested structure of table-like objects?
-   - Apart from an easier implementation of methods for selecting certain slices from a `Dataset` this does not seem to provide advantages and only increases complexity.
+   - Apart from an easier implementation of methods for selecting certain slices from a `Dataset`, multi-level data structures do not seem to provide advantages and only increases complexity.
 
 1. Why not histograms as the smallest element in a `Dataset`?
    - Cannot handle sharing of the x-axis (bin edges) in an easy way.
@@ -42,9 +43,10 @@ The goal is not to simply copy `xarray`, but rather an attempt to see where solu
 A `Dataset` as discussed here contains:
 
 - A number of named dimensions.
-- A number of "variables", i.e., vector-like data.
+- A number of *variables*, i.e., vector-like data.
   Each variable has an associated set of dimensions.
   This defines the length of the variable.
+  Scalar data (data with zero dimensions) is represented by a vector of length 1.
 
 As in `xarray`, the idea is to provide a number of basic operations for `Dataset`.
 This would probably include basic arithmetic operations as well as "shape" operations such as slicing, extracting, and merging in one or multiple dimensions.
@@ -55,7 +57,7 @@ Therefore, variables are type-erased.
 For operations that are not part of the pre-defined basic set the underlying data needs to be accessed.
 We have several options:
 
-1. Access individual variables, by requesting a variable of a certain type (optionally with a certain name).
+1. Access individual variables, by requesting a specific variable (identified by a tag) of a certain type (optionally with a certain name).
    `Dataset` can then perform a lookup among its variables and cast the matching variable to the requested concrete type.
    - See [`test/dataset_test.cpp`](../src/type-erased-prototype/test/dataset_test.cpp) for examples.
 1. Use some sort of view to iterate over one or more variables of concrete type.
@@ -65,67 +67,61 @@ We have several options:
    - See [`test/dataset_iterator_test.cpp`](../src/type-erased-prototype/test/dataset_iterator_test.cpp) for examples.
 1. Access a subset of a `Dataset` at a given axis value for a given dimension.
    This is basically slicing of the `Dataset`.
-   It is currently unclear how this should be handled and is currently not part of the prototype.
+   It is still unclear how this should be handled in detail and is currently not part of the prototype.
    The result would be a `Dataset` (implies that a copy of the data is returned) or a view into the `Dataset`.
    In either case, the result would still be type-erased.
    For any operation that subsequently needs to convert to concrete variable types, this access mode is thus too inefficient if the dimension used for slicing is large, such as for spectrum numbers.
 
-## Discussion points
+## Details and discussion
 
-1. Providing a set of basic operations for `Dataset` implies that a lot of code should operate with `Dataset`, in contrast to a (hypothetical or real) lower-level abstraction such as `Histogram`.
-   In general, I have the feeling that using datasets requires thinking a bit differently from the current way of working with workspaces, but I have trouble describing why that is.
-   - Is this reasonable?
-   - Does one exclude the other?
-1. Given the importance of histograms in our data reduction we should probably provide a `Histogram` type.
-   As discussed in the FAQ above, storing histograms in `Dataset` has disadvantages.
-   This could be solved by having a lightweight dummy histogram variable for accessing the underlying data.
-   `Dataset` would contain an extra variable containing a new class `Histogram` as shown in [`test/histogram_test.cpp`](../src/type-erased-prototype/test/histogram_test.cpp).
-   Apart from the X axis being `const` this could act very similar to our current `Histogram` class.
-   It can be used to directly modify the data within the `Dataset`.
-   Copying `Histogram` extracts the data into an internal buffer, such that `Histogram` can be used also stand-alone without an attached `Dataset`.
-   - Is this reasonable?
-   - What are the major and minor drawbacks?
+- Probably copy-on-write-wrapping each variable makes sense.
+  - Should be handled all internally, i.e., types used as variables do not need to support this on their own.
 
-## Notes
+- Given the importance of histograms in our data reduction we should provide a `Histogram` type.
+  As discussed in the FAQ above, storing histograms in `Dataset` has disadvantages.
+  This could be solved by having a lightweight dummy histogram variable for accessing the underlying data.
+  `Dataset` would contain an extra variable containing a new class `Histogram` as shown in [`test/histogram_test.cpp`](../src/type-erased-prototype/test/histogram_test.cpp).
+  Apart from the X axis being `const` this could act very similar to our current `Histogram` class.
+  It can be used to directly modify the data within the `Dataset`.
+  Copying `Histogram` extracts the data into an internal buffer, such that `Histogram` can be used also stand-alone without an attached `Dataset`.
+  - Is this reasonable?
+  - What are the major and minor drawbacks?
 
 - The prototype currently accesses variables and iterator elements by type.
   We will probably need to use a tag or ID instead:
 
   ```cpp
-  // All possible variables given by enum. Need to support also generic
-  // variables such as Double or String.
-  enum class Variable { DetectorPosition, SpectrumPosition };
-
-  // Type for variable is defined at compile time.
-  template <Variable Var> struct variable_type;
-  template <>
-  struct variable_type<DetectorPosition> {
-    using type = std::vector<Eigen::Vector3d>;
-  };
-  template <Variable Var>
-  using variable_type_t = typename variable_type<Var>::type;
-
-  class Dataset {
-  public:
-    // Dataset::get<Variable::DetectorPosition>() returns std::vector<Eigen::Vector3d>.
-    template <Variable Var>
-    const variable_type_t<Var> &get() const;
-    // TODO how can we request const access (also for iterator?).
-    // The natural way does not work since we have a non-type template parameter:
-    // Dataset::get<const Variable::DetectorPosition>();
-  };
-  ```
-  Additionally access via a name will probably be provided.
-
-  To facilitate `const` access, the `Variable` tags should be types, not enumerations:
-  ```cpp
+  // Need to support also generic variables such as Double or String.
+  // Cannot use enum since it will not let us specify const access.
+  // enum class Variable { DetectorPosition, SpectrumPosition };
   struct Variable {
     struct DetectorPosition {};
     struct SpectrumPosition {};
   };
-  // Then we can use (avoiding triggering the copy-on-write mechanism):
-  const auto &positions = d.get<const Variable::DetectorPosition>();
+
+  // Type for variable is defined at compile time.
+  template <class Tag> struct variable_type;
+  template <>
+  struct variable_type<Variable::DetectorPosition> {
+    using type = std::vector<Eigen::Vector3d>;
+  };
+  template <>
+  struct variable_type<const Variable::DetectorPosition> {
+    using type = const std::vector<Eigen::Vector3d>;
+  };
+  template <class Tag>
+  using variable_type_t = typename variable_type<Tag>::type;
+
+  class Dataset {
+  public:
+    // Support const-correct access to play nicely with copy-on-write mechanism:
+    // Dataset::get<Variable::DetectorPosition>() returns std::vector<Eigen::Vector3d> &.
+    // Dataset::get<const Variable::DetectorPosition>() returns const std::vector<Eigen::Vector3d> &.
+    template <class Tag>
+    variable_type_t<Tag> &get() conditional_const;
+  };
   ```
+  Additionally access via a name will probably be provided.
 
 - We will need to support "axis" variables that are bin edges, i.e., are by 1 longer than the size of the dimension.
   If we iterate over all dimensions, what should the iteration for bin edges do?
@@ -150,56 +146,70 @@ We have several options:
   This is a case that is not supported by `xarray` but we have two choices:
   - Do not handle time-of-flight as a dimension.
     This implies that the elements in our data variables would be vectors, basically the current `HistogramData::HistogramY`, etc.
+    This does not feel like a good solution to me?
   - Support variables with non-constant size in a certain dimension, e.g., bin edges and counts that have a different length in the time-of-flight dimension for every point in the spectrum dimension.
     Without having tried, this should be possible without too much trouble (provided that we do not require to *change* the individual lengths) and would only prevent certain operations, such as selecting a time-of-flight slice.
     - Need a (hidden?) index variable that provides the start of data for each new histogram.
       Can we simply use the `Histogram` variable, given that it stores offsets to the underlying data anyway?
 
-- For more convenient handling of `Dataset`, it could be beneficial to combine value and error into `struct DataPoint { double value; double error; };`.
+- For more convenient handling of `Dataset`, it might be beneficial to combine value and error into `struct DataPoint { double value; double error; };`.
   This avoid difficulties related to handling two separate variables for values and errors, in particular the need to always access two variables at the same time and the need for a mechanism linking a specific value variable to its error variable.
-  - Changes the way of interaction with other libraries such as `numpy` and `gsl`.
+  There are a couple of non-negligible disadvantages:
+  - Changes/complicates the way of interaction with other libraries such as `numpy` and `gsl`.
   - Would make vectorization more difficult.
 
 - Variables that are used as an axis to index into the `Dataset` should *not* be verified on write.
-  This has been implemented for ensuring unique spectrum numbers as part of `IndexInfo`.
-  The result is code that is probably hard to maintain, in particular since it required changes outside `IndexInfo`, in particular `ExperimentInfo`, `MatrixWorkspace`, and `ISpectrum`.
+  This has been implemented for ensuring unique spectrum numbers as part of `IndexInfo`, which was introduced as part of refactoring for supporting scanning instruments and MPI.
+  The result was code that is probably hard to maintain, in particular since it required changes outside `IndexInfo`, in particular `ExperimentInfo`, `MatrixWorkspace`, and `ISpectrum`.
   - Instead, do verification lazily only when an axis is actually used for accessing the `Dataset`.
   - Results in some overhead (and MPI communication), but does not appear to happen too frequently and should not be an issue for performance.
 
-- Probably copy-on-write-wrapping each variable makes sense.
-  - Should be handled all internally, i.e., types used as variables do not need to support this on their own.
-
-- Units could be stored as a flag of a variable?
-  Operations with such variables would operate on these flags.
-  Likewise, if a `Histogram` wrapper as discussed above is provided, it could handle units (see also below).
+- A dimension in the `Dataset` is effectively the same as a unit.
+  For example,
+  - `Dimension::Tof` could be used to imply that the unit is time-of-flight microseconds, converting the unit could be done by changing the dimension label to, e.g., `Dimension::dSpacing`.
+  - As a consequence, any operation that checks matching dimensions of variables will implicitly ensure matching units.
 
 - To avoid a fair number of complications, variables should ideally not contain any data apart from the individual items.
   If they do, the operations on single items must probably rely on certain assumptions?
-  - Most prominent example: Unit for bin edges and data points.
-    Where do we store it?
-  - Can the unit be a separate variable?
-    - Any operation on `Dataset` that wants to handle units could simply handle it separately?
-    - Still link to unit from `Histogram`?
-    - Enforce unit variable to be zero-dimensional?
-  - Is the dimension effectively the same as a unit?
-    - `Dimension::Tof` could be used to imply that the unit is time-of-flight microseconds, converting the unit could be done by changing the dimension label to, e.g., `Dimension::dSpacing`.
-      As a consequence, any operation that checks matching dimensions of variables will implicitly ensure matching units.
-    - How can we assign a unit to the values of the dependent quantities (which do not have a dimension assigned).
-  - Unit as field in *some* variables (not enforced, user could just add a plain vector, but our common ones should have it).
-    - Operations with histograms will have only const access to the unit, preventing in-place operation with histograms if the unit changes.
-      However, there may just be a handful of unit-changing operations (multiplication, unit conversion, converting errors between standard deviations and variances), so maybe this is not an issue?
 
-- Do we need to link variables?
+- Mantid currently does not handle units for variables such as Y and E in our current Mantid nomenclature, with a partial exception:
+  Distinguishing between "histogram data" and "distribution data", which is effectively the difference between a dimensionless quantity (counts) and the dimensionful frequency (unit is 1/x-unit).
+  Handling units for Y and E would allow us to:
+  - Get rid of the distinction between histogram data distribution data.
+  - Provide a way to distinguish standard deviations and variances.
+  - Allow more general operations that yield different units.
+
+  As mentioned above, storing units in the type (using `boost::units`) is not really feasible.
+  We must thus provide a runtime-equivalent at a higher level.
+  The problem of having the unit at a higher level is that it can be ignored.
+  - This is the same issue that `HistogramData::Histogram` attempted but failed to solve:
+    At a high level `Histogram` knows that it stores standard-deviations and the API can return variances if required.
+    However, low level access is sometimes used to square the internal error values, such that there is a mismatch between the actual content and the "guarentee" that `Histogram` gives.
+    Without storing compile-time quantities this is a problem that cannot be solved, so we will have to live with it.
+
+  There are a couple of options for having units attached to a variable in a `Dataset`:
+  - A variable could be a quantity, basically something like `std::pair<UnitTag, std::vector<double>>`.
+    - Not all variables would need to have a unit, but common ones such as Y and E would.
+  - The unit tag could be a separate variable:
+    - Any operation on `Dataset` that wants to handle units could simply handle it separately?
+    - Enforce unit variable to be zero-dimensional?
+
+  `Variable::Histogram` should link to the unit such that operations with histogram are safe.
+  - The unit link would then handle things like preventing adding a time-of-flight histogram to a d-spacing histogram).
+  - Operations with histograms will have only const access to the unit (since there are many histograms but just one unit in the `Dataset`), preventing in-place operation with histograms if the unit changes.
+    However, there may just be a handful of unit-changing operations (multiplication, unit conversion, converting errors between standard deviations and variances) that would need to be implemented explicitly, so maybe this is not an issue?
+
+- We probably need to link variables together.
   For example, variables replacing `SpectrumInfo` would need a grouping variable and variables replacing `DetectorInfo`.
-  How can they access it efficiently?
   - Store pointer to other variables?
-    Prevent removing variables if there are any references to it.
+  - Prevent removing variables from `Dataset` if there are any references to it from within the same `Dataset` instance.
 
 - We should definitely investigate how `Dataset` could support better cache reuse by chaining several operations or algorithms.
   - At runtime or compile-time?
   - Do we need things like expression templates to make this work?
     Does not play nicely with `auto`.
   - Is it worth the effort, given that we may often be limited by I/O?
+  - Probably not too hard to implement for anything that can operate with a wrapper of a fixed signature.
 
 ## Example
 
@@ -209,69 +219,9 @@ A typical `Dataset`, equivalent to one of our current workspaces could contain t
 - `Dimension::Detector`, applies to variables `DetectorInfo` (or an equivalent representation based on individual independent variables for positions, rotations, ...) and `DetectorIDs`.
 - `Dimension::ScanIndex`, for scanning instrument (sync scan only), applies to `Position` and `Rotation` variables (currently part of `DetectorInfo`) and `ScanIntervals`.
 - `Dimension::Spectrum`, applies to all variables that depend on the spectrum (but not the detector). Key examples are `SpectrumNumbers`, `SpectrumDefinitions` (mapping from spectrum to one or multiple detectors), `SpectrumInfo` (or an equivalent representation based in individual independent variables for positions, rotations, ...), `EventLists`, and histogrammed data.
-- `Dimension::Tof`, applies mainly to variables X, Y, and E of histogrammed data, but see also discussion above regarding variable-length histograms (`Tof` is probably a bad name since it may be anything derived from it?).
+- `Dimension::Tof`, applies mainly to variables X, Y, and E of histogrammed data, but see also discussion above regarding variable-length histograms (`Tof` is probably a bad name since it may be anything derived from it, but see discussion on units above).
 - Multiple masking could be supported, e.g., for both `Dimension::Detector` to mask detectors as well as for `Dimension::Spectrum` and `Dimension::Tof` for masking (bins of) spectra.
   Should we have first-class masking support, i.e., as a feature built into `Dataset` that is handled automatically in many cases?
-
-## Implementing algorithms for Dataset
-
-Relevant section in `xarray` documentation: [ufunc for `xarray.Dataset`](http://xarray.pydata.org/en/stable/computation.html#math-with-datasets), in particular "core dimensions" are relevant for us since many operations such as those based on histograms have time-of-flight as core dimension.
-
-Cases to consider:
-
-- Apply algorithm based on function working on single item of single variable?
-- Apply algorithm based on function working on single variable.
-- Apply algorithm based on function working on multiple variables.
-- Apply algorithm based on function working on iterator item.
-  - Call wrapper must set unit of variable based on that of individual returned items (and check consistency).
-- Apply algorithm based on function working on `Dataset`.
-- In-place operation.
-
-What should algorithm return?
-
-- Work in place as much as possible, adding variables if output is of different type?
-- Return a copy with output replacing existing variables (or added as new variables), relying on copy-on-write for variables to avoid copy overhead?
-- Return a single variable (something like `xarray.DataArray`), or a `Dataset` containing only a single variable?
-  This would lose the connection to the instrument etc.!
-
-Keep things elementary as long as possible.
-For example, low-level algorithms should not support selecting indices, rather extracting a subset should be a separate step or be provided by the wrapper via a generic selection method.
-
-### Requirement for new concepts and working methodology?
-
-A `Dataset` is meant to allow for very generic containers replacing workspaces.
-This has a couple of consequences that may require partially rethinking our algorithm concept.
-
-`Dataset` can contain multiple variables containing data such as histograms.
-For example, someone could decide to store histograms for a sample run and a can run in the same `Dataset` as two different variables.
-Thus we need to be able to:
-- Apply operations and algorithms to all variables (of a given type).
-- Provide a mechanism to select at runtime which variables to apply an algorithm to.
-
-Need a way to define mapping from input variable to functor argument *without the need to have the algorithm work on the dataset level*?
-Can we translate type -> list of related variable Ids?
-
-Do we need to describe algorithms at a higher level (similar to what the current `Algorithm::exec` does, but without being mixed with the lower levels?
-- For simple algorithms without overloads we can provide the automatic way, others just operate on `Dataset`.
-- How can we avoid the requirement to cast to explicit overloads, etc.?
-  - `apply_to_all_variables<Histogram>(&Alg::rebin);` We specify the variable type to apply to. This is used to select the overload.
-
-```cpp
-// Apply functor Alg to all matching variables, fails to compile if Alg has overloads.
-apply<Alg>(d);
-
-// Apply functor Alg to all variables containing histograms. Overload selected based on explicit given type.
-apply<Alg, Histogram>(d);
-
-// Apply functor Alg to variable identified by name. Overload selected based on type of named variable?
-apply<Alg>(d, "my-variable");
-
-// Select overload based on runtime content of Dataset
-if (d.contains<BinMask>())
-  apply<Alg, Histogram, const BinMask>(d);
-else
-  apply<Alg, Histogram>(d);
-```
 
 ## Interface mock-up
 
@@ -285,7 +235,7 @@ Dataset d;
 // Variables can be added (or removed) at any time.
 std::vector<bool> mask(d.size<Dimension::SpectrumNumber>(), false);
 d.add<Variable::Mask>(mask, Dimension::SpectrumNumber, "ROI");
-d.remove<Variable::EventList>();
+d.remove(Variable::EventList>);
 // Note: Certain variables are tied together and are added/removed "atomically",
 // e.g., instrument, detector info, spectrum info, and mapping to detectors.
 
@@ -293,7 +243,7 @@ d.remove<Variable::EventList>();
 // Add axis with new dimension
 d.add<Variable::Polarization>({Spin::Up, Spin::Down}, Dimension::Polarization, "pol");
 // Extend the histogram variable into the new dimension (data zero initialized?).
-d.extend<Variable::Histogram>(Dimension::Polarization);
+d.extend(Variable::Histogram, Dimension::Polarization);
 
 // Copy constructor. All variables are automatically shared.
 auto d_copy(d);
@@ -324,7 +274,7 @@ view[42].spectrumPosition() *= -1.0;
 // Use DatasetView to operate on variables with different dimensions, anything
 // that does not share all dimensions must be const:
 DatasetView<const Variable::SpectrumMask, Variable::Value, Variable::Error> view(d);
-for (auto &item : view) { // Iterates, e.g, Dimension::Spectrum and Dimension::Tof
+for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum and Dimension::Tof
   if (item.get<const Variable::SpectrumMask>()) { // Returns the same regardless of the Tof position of the iterator.
     item.value() = 0.0;
     item.error() = 0.0;
@@ -347,4 +297,64 @@ for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum
 // - Add all non-axis variables.
 // - TODO: Figure out matching details and behavior for missing variables.
 d1 += d2;
+```
+
+## Implementing algorithms for Dataset
+
+Relevant section in `xarray` documentation: [ufunc for `xarray.Dataset`](http://xarray.pydata.org/en/stable/computation.html#math-with-datasets), in particular "core dimensions" are relevant for us since many operations such as those based on histograms have time-of-flight as core dimension.
+
+Cases to consider:
+
+- Apply algorithm based on function working on single item of single variable?
+- Apply algorithm based on function working on single variable.
+- Apply algorithm based on function working on multiple variables.
+- Apply algorithm based on function working on iterator item.
+  - Call wrapper must set unit of variable based on that of individual returned items (and check consistency).
+- Apply algorithm based on function working on `Dataset`.
+- In-place operation.
+
+What should algorithm return?
+
+- Work in place as much as possible, adding variables if output is of different type?
+- Return a copy with output replacing existing variables (or added as new variables), relying on copy-on-write for variables to avoid copy overhead?
+- Return a single variable (something like `xarray.DataArray`), or a `Dataset` containing only a single variable?
+  This would lose the connection to the instrument etc. and does not seem very useful!
+
+Keep things elementary as long as possible.
+For example, low-level algorithms should not support selecting indices, rather extracting a subset should be a separate step or be provided by the wrapper via a generic selection method.
+
+### Requirement for new concepts and working methodology?
+
+A `Dataset` is meant to allow for very generic containers replacing workspaces.
+This has a couple of consequences that may require partially rethinking our algorithm concept.
+
+`Dataset` can contain multiple variables containing data such as histograms.
+For example, someone could decide to store histograms for a sample run and a can run in the same `Dataset` as two different variables.
+Thus we need to be able to:
+- Apply operations and algorithms to all variables (of a given type).
+- Provide a mechanism to select at runtime which variables to apply an algorithm to.
+
+If we want to "automatically" create algorithms from low-level code that does not know about `Dataset`, we need a way to define mapping from input variable to functor argument *without the need to have the algorithm work on the dataset level*?
+Can we translate type -> list of related variable Ids?
+
+Do we need to describe algorithms at a higher level (similar to what the current `Algorithm::exec` does, but without being mixed with the lower levels?
+- For simple algorithms without overloads we can provide the automatic way, others just operate on `Dataset`.
+- How can we avoid the requirement to cast to explicit overloads, etc.?
+  - `apply_to_all_variables<Histogram>(&Alg::rebin);` We specify the variable type to apply to. This is used to select the overload.
+
+```cpp
+// Apply functor Alg to all matching variables, fails to compile if Alg has overloads.
+apply<Alg>(d);
+
+// Apply functor Alg to all variables containing histograms. Overload selected based on explicit given type.
+apply<Alg, Histogram>(d);
+
+// Apply functor Alg to variable identified by name. Overload selected based on type of named variable?
+apply<Alg>(d, "my-variable");
+
+// Select overload based on runtime content of Dataset
+if (d.contains<BinMask>())
+  apply<Alg, Histogram, const BinMask>(d);
+else
+  apply<Alg, Histogram>(d);
 ```
