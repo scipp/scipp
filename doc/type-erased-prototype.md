@@ -216,6 +216,13 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Is it worth the effort, given that we may often be limited by I/O?
   - Probably not too hard to implement for anything that can operate with a wrapper of a fixed signature.
 
+- For variables that do not explicitly store their data (such as variables from `SpectrumInfo`, which compute them based on items in variables from `DetectorInfo`) returning a reference to individual items from the iterators/views is not possible.
+  - For `const` access we can simply return by value.
+    Attempts to assign to a non-`const` reference will result in compilation failure, protecting us from potential bugs due to the slight interface inconsistency.
+  - Non-`const` access is not possible in this way so we need to provide a different solution.
+    However, this case is quite rare and should therefore not be a show stopper.
+    Currently the only example we are aware of is masking in `SpectrumInfo`, which currently masks all associated detectors.
+
 ## Example
 
 A typical `Dataset`, equivalent to one of our current workspaces could contain the following variables and dimensions:
@@ -226,7 +233,12 @@ A typical `Dataset`, equivalent to one of our current workspaces could contain t
 - `Dimension::Spectrum`, applies to all variables that depend on the spectrum (but not the detector). Key examples are `SpectrumNumbers`, `SpectrumDefinitions` (mapping from spectrum to one or multiple detectors), `SpectrumInfo` (or an equivalent representation based in individual independent variables for positions, rotations, ...), `EventLists`, and histogrammed data.
 - `Dimension::Tof`, applies mainly to variables X, Y, and E of histogrammed data, but see also discussion above regarding variable-length histograms (`Tof` is probably a bad name since it may be anything derived from it, but see discussion on units above).
 - Multiple masking could be supported, e.g., for both `Dimension::Detector` to mask detectors as well as for `Dimension::Spectrum` and `Dimension::Tof` for masking (bins of) spectra.
-  Should we have first-class masking support, i.e., as a feature built into `Dataset` that is handled automatically in many cases?
+  - Should we have first-class masking support, i.e., as a feature built into `Dataset` that is handled automatically in many cases?
+    It is not really clear what this means.
+  - Reversible masking has been requested.
+    Can achieve that by taking into account masking variables, e.g., when plotting or fitting data.
+    Only certain operations operate in a way that makes masking irreversible.
+    They key example is `Rebin`, which, when given a `Dataset` containing `Histogram` and `BinMask` variables, could return a `Dataset` without masking since it was irreversibly absorbed into the data.
 
 ## Interface mock-up
 
