@@ -256,3 +256,22 @@ TEST(DatasetIterator, notes) {
                   slab<const int, Dimension::Spectrum>> it(d, 0);
 }
 #endif
+
+template <class Base, class T> struct GetterMixin;
+
+template <class Base> struct GetterMixin<Base, double> {
+  double getDouble() { return 1.5; }
+};
+
+template <class Base> struct GetterMixin<Base, int> {
+  int getInt() { return 1; }
+};
+
+template <class... Ts> struct View : public GetterMixin<View<Ts...>, Ts>... {};
+
+TEST(GetterMixins, compilation_test) {
+  View<double, int> view;
+  // The actual "test" is that the following code compiles:
+  EXPECT_EQ(view.getDouble(), 1.5);
+  EXPECT_EQ(view.getInt(), 1);
+}
