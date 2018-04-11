@@ -161,6 +161,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   This avoid difficulties related to handling two separate variables for values and errors, in particular the need to always access two variables at the same time and the need for a mechanism linking a specific value variable to its error variable.
   There are a couple of non-negligible disadvantages:
   - Changes/complicates the way of interaction with other libraries such as `numpy` and `gsl`.
+    - Vanilla `numpy` does not appear to have good support for arrays of value/error tuples, i.e., this does not appear to be a good solution.
   - Would make vectorization more difficult.
 
 - Variables that are used as an axis to index into the `Dataset` should *not* be verified on write.
@@ -208,6 +209,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   For example, variables replacing `SpectrumInfo` would need a grouping variable and variables replacing `DetectorInfo`.
   - Store pointer to other variables?
   - Prevent removing variables from `Dataset` if there are any references to it from within the same `Dataset` instance.
+  - Link value variables to their error variables and vice versa (unless stored as `DataPoint` variables, see above).
 
 - We should definitely investigate how `Dataset` could support better cache reuse by chaining several operations or algorithms.
   - At runtime or compile-time?
