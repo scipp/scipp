@@ -293,6 +293,9 @@ view[42].spectrumPosition() *= -1.0;
 // Use DatasetView to operate on variables with different dimensions, anything
 // that does not share all dimensions must be const:
 DatasetView<const Variable::SpectrumMask, Variable::Value, Variable::Error> view(d);
+// Note: DatasetView<A, B> and DatasetView<B, A> will be the same type since the
+// order is irrelevant and client code should not be burdened with using a
+// special order of types.
 for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum and Dimension::Tof
   if (item.get<const Variable::SpectrumMask>()) { // Returns the same regardless of the Tof position of the iterator.
     item.value() = 0.0;

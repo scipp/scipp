@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <boost/mpl/at.hpp>
+#include <boost/mpl/sort.hpp>
+#include <boost/mpl/vector_c.hpp>
+
 #include "dataset_iterator.h"
 
 TEST(MultidimensionalIndex, end) {
@@ -274,4 +278,56 @@ TEST(GetterMixins, compilation_test) {
   // The actual "test" is that the following code compiles:
   EXPECT_EQ(view.getDouble(), 1.5);
   EXPECT_EQ(view.getInt(), 1);
+}
+
+template <class T> constexpr int type_to_id();
+template <> constexpr int type_to_id<double>() { return 0; }
+template <> constexpr int type_to_id<int>() { return 1; }
+template <> constexpr int type_to_id<char>() { return 2; }
+
+template <int N> struct id_to_type;
+template <> struct id_to_type<0> { using type = double; };
+template <> struct id_to_type<1> { using type = int; };
+template <> struct id_to_type<2> { using type = char; };
+template <int N> using id_to_type_t = typename id_to_type<N>::type;
+
+template <class Sorted, size_t... Is>
+auto sort_types_impl(std::index_sequence<Is...>) {
+  return std::tuple<
+      id_to_type_t<boost::mpl::at_c<Sorted, Is>::type::value>...>{};
+}
+
+template <class... Ts> auto sort_types() {
+  using Unsorted = boost::mpl::vector_c<int, type_to_id<Ts>()...>;
+  return sort_types_impl<typename boost::mpl::sort<Unsorted>::type>(
+      std::make_index_sequence<sizeof...(Ts)>{});
+}
+
+// Named "Set" because the order of types in the declaration does not matter,
+// yields the same type.
+template <class... Ts> using Set = decltype(sort_types<Ts...>());
+
+TEST(SortTypes, same) {
+  using unsorted1 = boost::mpl::vector_c<int, 4, 3, 1>;
+  using unsorted2 = boost::mpl::vector_c<int, 4, 1, 3>;
+  ASSERT_EQ(typeid(boost::mpl::sort<unsorted1>::type),
+            typeid(boost::mpl::sort<unsorted2>::type));
+}
+
+TEST(SortTypes, different) {
+  using unsorted1 = boost::mpl::vector_c<int, 4, 3, 1>;
+  using unsorted2 = boost::mpl::vector_c<int, 4, 1, 2>;
+  ASSERT_NE(typeid(boost::mpl::sort<unsorted1>::type),
+            typeid(boost::mpl::sort<unsorted2>::type));
+}
+
+TEST(SortTypes, sort) {
+  auto t = sort_types<char, double, int>();
+  ASSERT_EQ(typeid(decltype(t)), typeid(std::tuple<double, int, char>));
+}
+
+TEST(SortTypes, type) {
+  Set<char, double, int> a;
+  Set<double, char, int> b;
+  ASSERT_EQ(typeid(decltype(a)), typeid(decltype(b)));
 }
