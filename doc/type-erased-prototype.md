@@ -326,6 +326,8 @@ for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum
   if (item.get<const Variable::SpectrumMask>()) {
     item.get<Slab<Variable::Value>>() = 0.0; // Assigns to everything in Slab of Dimension::Tof.
     item.get<Slab<Variable::Error>>() = 0.0;
+    // Plural versions of the named accessors might be provided for accessing slabs:
+    item.values() += 1.0;
   }
 }
 
