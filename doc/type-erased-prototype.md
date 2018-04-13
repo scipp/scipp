@@ -317,9 +317,11 @@ for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum and Dimension::
   }
 }
 
-// Use "slabs" to iterate only over some dimensions (TODO syntax for
-// defining fixed core dimensions):
-DatasetView<const Variable::SpectrumMask, Slab<Variable::Value>, Slab<Variable::Error>> view(d);
+// Can exclude some dimensions from iteration. Variables that depend on the
+// excluded dimensions need to be accessed as "slabs" extending into those
+// dimensions.
+DatasetView<const Variable::SpectrumMask, Slab<Variable::Value>,
+            Slab<Variable::Error>> view(d, DoNotIterate::Tof);
 for (auto &item : view) { // Iterates, e.g., Dimension::Spectrum
   if (item.get<const Variable::SpectrumMask>()) {
     item.get<Slab<Variable::Value>>() = 0.0; // Assigns to everything in Slab of Dimension::Tof.
