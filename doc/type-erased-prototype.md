@@ -289,6 +289,12 @@ view->begin().get<VariableSpectrumNumber>() = 17;
 // Could provide named convenience methods for standard variables.
 view->begin()->spectrumNumber() = 17;
 view[42].spectrumPosition() *= -1.0;
+// Providing these convenience methods would allow for generic code, supporting
+// Datasets that store different representations of the same data. Client code
+// would simply template on DatasetView<T> (or just T).
+// If it is not possible to return a reference to the underlying data, e.g.,
+// when it is computed on access, it is returned by value and assignment is not
+// possible (could potentially generate a setter).
 
 // Use DatasetView to operate on variables with different dimensions, anything
 // that does not share all dimensions must be const:
