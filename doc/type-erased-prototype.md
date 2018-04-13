@@ -163,6 +163,14 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Changes/complicates the way of interaction with other libraries such as `numpy` and `gsl`.
     - Vanilla `numpy` does not appear to have good support for arrays of value/error tuples, i.e., this does not appear to be a good solution.
   - Would make vectorization more difficult.
+  - Given the disadvantages of storing values and errors as `DataPoint`, we have the option to keep value and error separate in the `Dataset`, but can nevertheless provide access via `DataPoint` for convenience:
+    ```cpp
+    DatasetView<Variable::DataPoint> view(dataset);
+    // Cannot get by reference, so getter returns by value
+    DataPoint p = view[0].dataPoint();
+    // No reference, i.e., we cannot provide assignment, use setter
+    view[0].setDataPoint(DataPoint(value, error));
+    ```
 
 - Variables that are used as an axis to index into the `Dataset` should *not* be verified on write.
   This has been implemented for ensuring unique spectrum numbers as part of `IndexInfo`, which was introduced as part of refactoring for supporting scanning instruments and MPI.
