@@ -73,7 +73,7 @@ We have several options:
    For any operation that subsequently needs to convert to concrete variable types, this access mode is thus too inefficient if the dimension used for slicing is large, such as for spectrum numbers.
 
 As described in this document, `Dataset` should be able to replace all of our workspace types, with maybe the exception of `MDEventWorkspace`.
-This includes not just `MatrixWorkspace` but also `TableWorkspace`, `PeaksWorkspace`, and `MDHistoWorkspace`.
+This includes not just `MatrixWorkspace` and its child classes but also `TableWorkspace`, `PeaksWorkspace`, and `MDHistoWorkspace`.
 `Dataset` would provide a uniform interface in a single type for all of these.
 Furthermore, `Dataset` will cover many other cases that are currently impossible to represent in a single workspace.
 
@@ -143,7 +143,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
     We may have bin edges in more than one dimension, how do we name those variables and distinguish them (think, e.g., of transposing a workspace containing histograms, yielding a bin-edge axis for the "Y" axis)?
     - Is `Variable::BinEdge` actually a reasonable name?
       Should it be `Variable::TofEdge` (and `Variable::TofBin`) instead?
-      This would imply changing variable labes if units are changed, yielding, e.g., `Variable::dSpacingEdge`.
+      This would imply changing variable labels if units are changed, yielding, e.g., `Variable::dSpacingEdge`.
       How would we handle this generically in client code accessing the edges, given that most code will not care whether it is `Tof` or `dSpace` or anything else?
       Would it make sense to support `Variable::Point`, `Variable::BinEdge`, and `Variable::Bin` as aliases for whatever the current unit is, e.g., `Variable::Tof`, `Variable::TofEdge`, and `Variable::TofBin`?
 
@@ -158,7 +158,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
       Can we simply use the `Histogram` variable, given that it stores offsets to the underlying data anyway?
 
 - For more convenient handling of `Dataset`, it might be beneficial to combine value and error into `struct DataPoint { double value; double error; };`.
-  This avoid difficulties related to handling two separate variables for values and errors, in particular the need to always access two variables at the same time and the need for a mechanism linking a specific value variable to its error variable.
+  This avoids difficulties related to handling two separate variables for values and errors, in particular the need to always access two variables at the same time and the need for a mechanism linking a specific value variable to its error variable.
   There are a couple of non-negligible disadvantages:
   - Changes/complicates the way of interaction with other libraries such as `numpy` and `gsl`.
     - Vanilla `numpy` does not appear to have good support for arrays of value/error tuples, i.e., this does not appear to be a good solution.
@@ -233,6 +233,8 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
     However, this case is quite rare and should therefore not be a show stopper.
     Currently the only example we are aware of is masking in `SpectrumInfo`, which currently masks all associated detectors.
 
+- Monitors can be stored as (a set of) separate variable(s) instead of the current mechanism linking to a separate workspace.
+
 ## Example
 
 A typical `Dataset`, equivalent to one of our current workspaces could contain the following variables and dimensions:
@@ -293,7 +295,7 @@ auto signal = slices[Spin::Up] - slices[Spin::Down];
 // since variables in Dataset are type-erased. Use typed iterator or view for
 // subset of variables instead:
 DatasetView<Variable::SpectrumNumber, Variable::SpectrumPosition> view(d);
-view->begin().get<VariableSpectrumNumber>() = 17;
+view->begin().get<Variable::SpectrumNumber>() = 17;
 // Could provide named convenience methods for standard variables.
 view->begin()->spectrumNumber() = 17;
 view[42].spectrumPosition() *= -1.0;
