@@ -14,6 +14,9 @@ template <class T> struct value_type { using type = T; };
 template <class T> struct value_type<Slab<T>> {
   using type = typename Slab<T>::value_type;
 };
+template <class T> struct value_type<const Slab<T>> {
+  using type = const typename Slab<T>::value_type;
+};
 template <class T> using value_type_t = typename value_type<T>::type;
 
 template <class T> struct is_slab : public std::false_type {};
@@ -94,6 +97,8 @@ private:
 
 public:
   template <class T>
+  using ref_type = variable_type_t<detail::value_type_t<T>> &;
+  template <class T>
   using column_ref_type = std::conditional_t<
       std::is_const<T>::value,
       const std::vector<detail::value_type_t<std::remove_const_t<T>>> &,
@@ -102,16 +107,13 @@ public:
   DatasetIterator(Dataset &dataset,
                   const std::set<Dimension> &fixedDimensions = {})
       : m_index(extractExtents(dataset.dimensions(), fixedDimensions)),
-        m_columns(std::tuple<LinearSubindex, column_ref_type<Ts>,
-                             detail::is_slab_t<Ts>>(
-            LinearSubindex(
-                dataset.dimensions(),
-                dataset.dimensions<std::vector<
-                    detail::value_type_t<std::remove_const_t<Ts>>>>(),
-                m_index),
-            dataset.get<
-                std::vector<detail::value_type_t<std::remove_const_t<Ts>>>>(),
-            detail::is_slab<Ts>{})...) {
+        m_columns(
+            std::tuple<LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
+                LinearSubindex(dataset.dimensions(),
+                               dataset.dimensions<detail::value_type_t<Ts>>(),
+                               m_index),
+                dataset.get<detail::value_type_t<Ts>>(),
+                detail::is_slab<Ts>{})...) {
     std::set<Dimension> dimensions;
     for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
       for (auto dimension :
@@ -142,13 +144,10 @@ public:
   // get<double> would fail in that case because both value and error are of
   // type double.
   // TODO add get version for Slab.
-  template <class T> T &get() {
-    auto &col = std::get<std::tuple<
-        LinearSubindex,
-        std::conditional_t<std::is_const<T>::value,
-                           const std::vector<std::remove_const_t<T>> &,
-                           std::vector<std::remove_const_t<T>> &>,
-        std::false_type>>(m_columns);
+  template <class Tag> element_reference_type_t<Tag> get() {
+    auto &col = std::get<
+        std::tuple<LinearSubindex, variable_type_t<Tag> &, std::false_type>>(
+        m_columns);
     return std::get<1>(col)[std::get<LinearSubindex>(col).get()];
   }
 
@@ -156,8 +155,8 @@ public:
 
 private:
   MultidimensionalIndex m_index;
-  std::tuple<std::tuple<LinearSubindex, column_ref_type<Ts>,
-                        detail::is_slab_t<Ts>>...> m_columns;
+  std::tuple<std::tuple<LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>...>
+      m_columns;
 };
 
 #endif // DATASET_ITERATOR_H

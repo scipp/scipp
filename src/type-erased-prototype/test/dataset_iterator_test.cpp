@@ -127,82 +127,82 @@ TEST(LinearSubindex, flipped_2_dimensional_subindex) {
 
 TEST(DatasetIterator, construct) {
   Dataset d;
-  d.addColumn<double>("name1");
-  d.addColumn<int>("name2");
+  d.add<Variable::Value>("name1");
+  d.add<Variable::Int>("name2");
   ASSERT_NO_THROW(DatasetIterator<> it(d));
-  ASSERT_NO_THROW(DatasetIterator<double> it(d));
-  ASSERT_NO_THROW(DatasetIterator<int> it(d));
-  ASSERT_NO_THROW(auto it = (DatasetIterator<int, double>(d)));
-  ASSERT_THROW(auto it = (DatasetIterator<int, float>(d)), std::runtime_error);
+  ASSERT_NO_THROW(DatasetIterator<Variable::Value> it(d));
+  ASSERT_NO_THROW(DatasetIterator<Variable::Int> it(d));
+  ASSERT_NO_THROW(auto it = (DatasetIterator<Variable::Int, Variable::Value>(d)));
+  ASSERT_THROW(auto it = (DatasetIterator<Variable::Int, Variable::Error>(d)), std::runtime_error);
 }
 
 TEST(DatasetIterator, single_column) {
   Dataset d;
-  d.addColumn<double>("name1");
-  d.addColumn<int>("name2");
+  d.add<Variable::Value>("name1");
+  d.add<Variable::Int>("name2");
   d.addDimension(Dimension::Tof, 10);
-  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
-  d.extendAlongDimension(ColumnType::Ints, Dimension::Tof);
-  auto &view = d.get<Doubles>();
+  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
+  d.extendAlongDimension<Variable::Int>(Dimension::Tof);
+  auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[3] = 3.2;
 
-  DatasetIterator<double> it(d);
-  ASSERT_EQ(it.get<double>(), 0.2);
+  DatasetIterator<Variable::Value> it(d);
+  ASSERT_EQ(it.get<Variable::Value>(), 0.2);
   it.increment();
-  ASSERT_EQ(it.get<double>(), 0.0);
+  ASSERT_EQ(it.get<Variable::Value>(), 0.0);
   it.increment();
-  ASSERT_EQ(it.get<double>(), 0.0);
+  ASSERT_EQ(it.get<Variable::Value>(), 0.0);
   it.increment();
-  ASSERT_EQ(it.get<double>(), 3.2);
+  ASSERT_EQ(it.get<Variable::Value>(), 3.2);
 }
 
 TEST(DatasetIterator, multi_column) {
   Dataset d;
-  d.addColumn<double>("name1");
-  d.addColumn<int>("name2");
+  d.add<Variable::Value>("name1");
+  d.add<Variable::Int>("name2");
   d.addDimension(Dimension::Tof, 2);
-  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
-  d.extendAlongDimension(ColumnType::Ints, Dimension::Tof);
-  auto &view = d.get<Doubles>();
+  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
+  d.extendAlongDimension<Variable::Int>(Dimension::Tof);
+  auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;
 
-  DatasetIterator<double, int> it(d);
-  ASSERT_EQ(it.get<double>(), 0.2);
-  ASSERT_EQ(it.get<int>(), 0);
+  DatasetIterator<Variable::Value, Variable::Int> it(d);
+  ASSERT_EQ(it.get<Variable::Value>(), 0.2);
+  ASSERT_EQ(it.get<Variable::Int>(), 0);
   it.increment();
-  ASSERT_EQ(it.get<double>(), 3.2);
-  ASSERT_EQ(it.get<int>(), 0);
+  ASSERT_EQ(it.get<Variable::Value>(), 3.2);
+  ASSERT_EQ(it.get<Variable::Int>(), 0);
 }
 
 TEST(DatasetIterator, multi_column_mixed_dimension) {
   Dataset d;
-  d.addColumn<double>("name1");
-  d.addColumn<int>("name2");
+  d.add<Variable::Value>("name1");
+  d.add<Variable::Int>("name2");
   d.addDimension(Dimension::Tof, 2);
-  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
-  auto &view = d.get<Doubles>();
+  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
+  auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;
 
-  ASSERT_ANY_THROW(auto it = (DatasetIterator<double, int>(d)));
-  ASSERT_NO_THROW(auto it = (DatasetIterator<double, const int>(d)));
-  auto it = (DatasetIterator<double, const int>(d));
-  ASSERT_EQ(it.get<double>(), 0.2);
-  ASSERT_EQ(it.get<const int>(), 0);
+  ASSERT_ANY_THROW(auto it = (DatasetIterator<Variable::Value, Variable::Int>(d)));
+  ASSERT_NO_THROW(auto it = (DatasetIterator<Variable::Value, const Variable::Int>(d)));
+  auto it = (DatasetIterator<Variable::Value, const Variable::Int>(d));
+  ASSERT_EQ(it.get<Variable::Value>(), 0.2);
+  ASSERT_EQ(it.get<const Variable::Int>(), 0);
   it.increment();
-  ASSERT_EQ(it.get<double>(), 3.2);
-  ASSERT_EQ(it.get<const int>(), 0);
+  ASSERT_EQ(it.get<Variable::Value>(), 3.2);
+  ASSERT_EQ(it.get<const Variable::Int>(), 0);
 }
 
 TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
   Dataset d;
-  d.addColumn<double>("name1");
-  d.addColumn<int>("name2");
+  d.add<Variable::Value>("name1");
+  d.add<Variable::Int>("name2");
   d.addDimension(Dimension::Tof, 2);
-  d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
-  auto &view = d.get<Doubles>();
+  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
+  auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;
 
@@ -219,9 +219,9 @@ TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
   // Maybe a better way to say this is: Iterate all dimensions of BinEdges. In
   // general we do not know which other columns need to be accessed as slabs,
   // how can we deal with this? Just access all as slab (which may be size 1)?
-  DatasetIterator<Slab<double>, int> it(d, {Dimension::Tof});
+  DatasetIterator<Slab<Variable::Value>, Variable::Int> it(d, {Dimension::Tof});
   // it.get<double>(); // Does not compile, since we cannot get a single double.
-  it.get<int>();
+  it.get<Variable::Int>();
 }
 
 #if 0

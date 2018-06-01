@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "dimension.h"
+#include "variable.h"
 
 namespace gsl {
 using index = ptrdiff_t;
@@ -17,7 +18,8 @@ using Ints = std::vector<int>;
 enum class ColumnType { Ints, Doubles };
 
 template <class T> ColumnType getColumnType() {
-  throw std::runtime_error(std::string("Type not registered in ADS ") + typeid(T).name());
+  throw std::runtime_error(std::string("Type not registered in ADS ") +
+                           typeid(T).name());
 }
 
 template <> inline ColumnType getColumnType<Ints>() { return ColumnType::Ints; }
@@ -48,8 +50,8 @@ public:
 class ColumnHandle {
 public:
   template <class T>
-  ColumnHandle(T object)
-      : m_type(getColumnType<T>()),
+  ColumnHandle(uint32_t id, T object)
+      : m_type(id),
         m_object(std::make_unique<ColumnModel<T>>(std::move(object))) {}
   ColumnHandle(const ColumnHandle &other)
       : m_type(other.m_type), m_object(other.m_object->clone()) {}
@@ -65,10 +67,10 @@ public:
     return dynamic_cast<ColumnModel<T> &>(*m_object).m_model;
   }
 
-  ColumnType type() const { return m_type; }
+  uint32_t type() const { return m_type; }
 
 private:
-  ColumnType m_type;
+  const uint32_t m_type;
   std::unique_ptr<ColumnConcept> m_object;
 };
 
@@ -76,10 +78,10 @@ template <class... Ts> class DatasetIterator;
 
 class Dataset {
 public:
-  template <class T> void addColumn(std::string name) {
+  template <class Tag> void add(std::string name) {
     // TODO prevent duplicate names
     m_data.emplace_back(name, std::vector<Dimension>{},
-                        ColumnHandle(std::vector<T>(1)));
+                        ColumnHandle(Tag::type_id, variable_type_t<Tag>(1)));
   }
 
   // need:
@@ -91,11 +93,11 @@ public:
     m_dimensions[id] = size;
   }
 
-  gsl::index columns() const { return m_data.size(); }
+  gsl::index size() const { return m_data.size(); }
 
-  void extendAlongDimension(const ColumnType column, const Dimension id) {
+  template <class Tag> void extendAlongDimension(const Dimension id) {
     for (auto &item : m_data) {
-      if (std::get<ColumnHandle>(item).type() == column) {
+      if (std::get<ColumnHandle>(item).type() == Tag::type_id) {
         std::get<std::vector<Dimension>>(item).push_back(id);
         std::get<ColumnHandle>(item)
             .resize(std::get<ColumnHandle>(item).size() * m_dimensions.at(id));
@@ -110,13 +112,13 @@ public:
   // std::vector<double>, which
   // would be duplicate). This is also the reason for T being the column type,
   // not the element type.
-  template <class T> T &get() {
-    const auto columnType = getColumnType<T>();
+  template <class Tag> variable_type_t<Tag> &get() {
     for (auto &item : m_data) {
       // TODO check for duplicate column types (can use get based on name in
       // that case).
-      if (std::get<ColumnHandle>(item).type() == columnType)
-        return std::get<ColumnHandle>(item).cast<T>();
+      if (std::get<ColumnHandle>(item).type() == Tag::type_id)
+        return std::get<ColumnHandle>(item)
+            .cast<std::remove_const_t<variable_type_t<Tag>>>();
     }
     throw std::runtime_error("Dataset does not contain such a column");
   }
@@ -125,10 +127,9 @@ public:
     return m_dimensions;
   }
 
-  template <class T> const std::vector<Dimension> &dimensions() const {
-    const auto columnType = getColumnType<T>();
+  template <class Tag> const std::vector<Dimension> &dimensions() const {
     for (auto &item : m_data) {
-      if (std::get<ColumnHandle>(item).type() == columnType)
+      if (std::get<ColumnHandle>(item).type() == Tag::type_id)
         return std::get<std::vector<Dimension>>(item);
     }
     throw std::runtime_error("Dataset does not contain such a column");

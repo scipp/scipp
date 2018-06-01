@@ -43,19 +43,22 @@ TEST(CallWrappers, call_DatasetAlgorithm) {
 
 TEST(CallWrappers, call_SingleItemAlgorithm) {
   Dataset d;
-  d.addColumn<double>("name1");
+  d.add<Variable::Value>("name1");
   d = call<SingleItemAlgorithm>(std::move(d));
-  ASSERT_EQ(d.get<Doubles>()[0], 1.5);
+  ASSERT_EQ(d.get<Variable::Value>()[0], 1.5);
 }
 
 TEST(CallWrappers, call_TwoItemAlgorithm) {
   Dataset d;
-  d.addColumn<double>("name1");
-  d.addColumn<int>("name2");
-  d.get<Ints>()[0] = 2;
+  d.add<Variable::Value>("name1");
+  d.add<Variable::Int>("name2");
+  // TODO should not compile if const is removed from int argument.
+  //d.addDimension(Dimension::Tof, 10);
+  //d.extendAlongDimension(ColumnType::Doubles, Dimension::Tof);
+  d.get<Variable::Int>()[0] = 2;
   d = call<SingleItemAlgorithm>(std::move(d));
   d = call<TwoItemAlgorithm>(std::move(d));
-  ASSERT_EQ(d.get<Doubles>()[0], 3.0);
+  ASSERT_EQ(d.get<Variable::Value>()[0], 3.0);
 }
 
 // Begin example of finding overloads at compile time.
@@ -121,7 +124,7 @@ template <class Alg> gsl::index run(Dataset &d) {
 
 TEST(FindOverloads, type_erased) {
   Dataset d;
-  d.addColumn<double>("name1");
+  d.add<Variable::Value>("name1");
   // d.addColumn<int>("name2");
   ASSERT_EQ(run<AlgWithOverloads>(d), 2);
 }
