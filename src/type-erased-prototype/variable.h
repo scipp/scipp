@@ -1,6 +1,10 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <vector>
+
+#include "index.h"
+
 struct Variable {
   // struct DetectorPosition {};
   // struct SpectrumPosition {};
@@ -18,6 +22,9 @@ struct Variable {
   };
   struct Int {
     static const uint32_t type_id = 4;
+  };
+  struct DimensionSize {
+    static const uint32_t type_id = 5;
   };
 };
 
@@ -59,6 +66,13 @@ template <> struct variable_type<const Variable::Int> {
   using type = const std::vector<int64_t>;
 };
 
+template <> struct variable_type<Variable::DimensionSize> {
+  using type = std::vector<gsl::index>;
+};
+template <> struct variable_type<const Variable::DimensionSize> {
+  using type = const std::vector<gsl::index>;
+};
+
 template <> struct element_reference_type<Variable::Value> {
   using type = double &;
 };
@@ -78,6 +92,13 @@ template <> struct element_reference_type<Variable::Int> {
 };
 template <> struct element_reference_type<const Variable::Int> {
   using type = const int64_t &;
+};
+
+template <> struct element_reference_type<Variable::DimensionSize> {
+  using type = gsl::index &;
+};
+template <> struct element_reference_type<const Variable::DimensionSize> {
+  using type = const gsl::index &;
 };
 
 template <class Tag> using variable_type_t = typename variable_type<Tag>::type;

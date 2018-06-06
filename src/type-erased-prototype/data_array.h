@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "cow_ptr.h"
+#include "dimensions.h"
 #include "index.h"
 #include "variable.h"
 
@@ -30,14 +31,26 @@ public:
 class DataArray {
 public:
   template <class T>
-  DataArray(uint32_t id, T object)
-      : m_type(id),
-        m_object(std::make_unique<DataArrayModel<T>>(std::move(object))) {}
+  DataArray(uint32_t id, Dimensions dimensions, T object)
+      : m_type(id), m_dimensions(std::move(dimensions)),
+        m_object(std::make_unique<DataArrayModel<T>>(std::move(object))) {
+    gsl::index volume{1};
+    for (gsl::index dim = 0; dim < m_dimensions.count(); ++dim)
+      volume *= m_dimensions.size(dim);
+    if(volume != m_object->size())
+      throw std::runtime_error("Creating DataArray: data size does not match "
+                               "volume given by dimension extents");
+        }
   DataArray(const DataArray &other)
       : m_type(other.m_type), m_object(other.m_object) {}
 
   gsl::index size() const { return m_object->size(); }
   void resize(const gsl::index size) { m_object.access().resize(size); }
+
+  template <class Tag>
+  bool valueTypeIs() const {
+    return Tag::type_id == m_type;
+  }
 
   uint32_t type() const { return m_type; }
 
@@ -66,18 +79,20 @@ private:
     return dynamic_cast<DataArrayModel<T> &>(m_object.access()).m_model;
   }
 
-  const uint32_t m_type;
+  uint32_t m_type;
+  Dimensions m_dimensions;
   cow_ptr<DataArrayConcept> m_object;
 };
 
-template <class Tag, class... Args> DataArray makeDataArray(Args &&... args) {
-  return DataArray(Tag::type_id,
+template <class Tag, class... Args> DataArray makeDataArray(Dimensions dimensions, Args &&... args) {
+  return DataArray(Tag::type_id, std::move(dimensions),
                    variable_type_t<Tag>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
-DataArray makeDataArray(std::initializer_list<T> values) {
-  return DataArray(Tag::type_id, variable_type_t<Tag>(values));
+DataArray makeDataArray(Dimensions dimensions,std::initializer_list<T> values) {
+  return DataArray(Tag::type_id, std::move(dimensions),
+                   variable_type_t<Tag>(values));
 }
 
 #endif // DATA_ARRAY_H
