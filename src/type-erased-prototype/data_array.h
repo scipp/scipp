@@ -30,14 +30,14 @@ public:
   DataArray(uint32_t id, T object)
       : m_type(id),
         m_object(std::make_unique<DataArrayModel<T>>(std::move(object))) {}
-  DataArray(const DataArray&other)
-      : m_type(other.m_type), m_object(m_object) {}
+  DataArray(const DataArray &other)
+      : m_type(other.m_type), m_object(other.m_object) {}
 
   gsl::index size() const { return m_object->size(); }
   void resize(const gsl::index size) { m_object.access().resize(size); }
 
   template <class T> const T &cast() const {
-    return dynamic_cast<DataArrayModel<T> &>(*m_object).m_model;
+    return dynamic_cast<const DataArrayModel<T> &>(*m_object).m_model;
   }
 
   template <class T> T &cast() {
