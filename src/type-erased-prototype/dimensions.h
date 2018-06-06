@@ -30,7 +30,7 @@ public:
 
 private:
   std::vector<std::pair<Dimension, gsl::index>> m_dims;
-  std::unique_ptr<std::vector<std::pair<Dimension, DataArray>>> m_raggedDims;
+  std::unique_ptr<DataArray> m_raggedDim;
 };
 
 #endif // DIMENSIONS_H

@@ -4,9 +4,7 @@
 Dimensions::Dimensions() = default;
 Dimensions::Dimensions(const Dimensions &other)
     : m_dims(other.m_dims),
-      m_raggedDims(
-          std::make_unique<std::vector<std::pair<Dimension, DataArray>>>(
-              *other.m_raggedDims)) {}
+      m_raggedDim(std::make_unique<DataArray>(*other.m_raggedDim)) {}
 Dimensions::Dimensions(Dimensions &&other) = default;
 Dimensions &Dimensions::operator=(const Dimensions &other) {
   auto copy(other);
@@ -29,9 +27,12 @@ gsl::index Dimensions::size(const gsl::index i) const {
 }
 
 const DataArray &Dimensions::raggedSize(const gsl::index i) const {
-  if (!m_raggedDims)
+  if (!m_raggedDim)
     throw std::runtime_error("No such dimension.");
-  return m_raggedDims->at(i).second;
+  if (m_dims.at(i).second != -1)
+    throw std::runtime_error(
+        "Dimension is not ragged, use size() instead of raggedSize().");
+  return *m_raggedDim;
 }
 
 void Dimensions::add(const Dimension label, const gsl::index size) {
@@ -45,8 +46,7 @@ void Dimensions::add(const Dimension label, const DataArray &raggedSize) {
     throw std::runtime_error("DataArray with sizes information for ragged "
                              "dimension is of wrong type.");
   m_dims.emplace_back(label, -1);
-  if (!m_raggedDims)
-    m_raggedDims =
-        std::make_unique<std::vector<std::pair<Dimension, DataArray>>>();
-  m_raggedDims->emplace_back(label, raggedSize);
+  if (m_raggedDim)
+    throw std::runtime_error("Only one dimension can be ragged.");
+  m_raggedDim = std::make_unique<DataArray>(raggedSize);
 }
