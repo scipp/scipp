@@ -40,7 +40,13 @@ public:
   }
 
   gsl::index size() const { return m_object->size(); }
-  void resize(const gsl::index size) { m_object.access().resize(size); }
+  // Direct resize should not be supported since it will break connection to
+  // Dimensions. Should we support adding dimensions and changing dimension
+  // extent in existing DataArray?
+  // How can we prevent client code from getting mutable reference and resizing
+  // the underlying vector? Never return actual underlying type, instead a
+  // range?
+  // void resize(const gsl::index size) { m_object.access().resize(size); }
 
   const Dimensions &dimensions() const { return m_dimensions; }
 
