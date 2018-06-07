@@ -13,14 +13,17 @@ class DataArray;
 class Dimensions {
 public:
   Dimensions();
-  Dimensions(const Dimension label, const gsl::index size) { add(label, size); }
+  Dimensions(const Dimension label, const gsl::index size);
   Dimensions(const Dimensions &other);
   Dimensions(Dimensions &&other);
+  ~Dimensions();
   Dimensions &operator=(const Dimensions &other);
   Dimensions &operator=(Dimensions &&other);
 
   gsl::index count() const;
+  gsl::index volume() const;
 
+  bool isRagged(const gsl::index i) const;
   Dimension label(const gsl::index i) const;
   gsl::index size(const gsl::index i) const;
 

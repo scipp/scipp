@@ -42,3 +42,17 @@ TEST(DataArray, copy) {
   EXPECT_EQ(data2[0], 1.1);
   EXPECT_EQ(data2[1], 2.2);
 }
+
+TEST(DataArray, ragged) {
+  const auto raggedSize = makeDataArray<Variable::DimensionSize>(
+      Dimensions(Dimension::SpectrumNumber, 2), {2l, 3l});
+  EXPECT_EQ(raggedSize.dimensions().volume(), 2);
+  Dimensions dimensions;
+  dimensions.add(Dimension::Tof, raggedSize);
+  dimensions.add(Dimension::SpectrumNumber, 2);
+  EXPECT_EQ(dimensions.volume(), 5);
+  ASSERT_NO_THROW(
+      makeDataArray<Variable::Value>(dimensions, 5));
+  ASSERT_ANY_THROW(
+      makeDataArray<Variable::Value>(dimensions, 4));
+}

@@ -34,18 +34,15 @@ public:
   DataArray(uint32_t id, Dimensions dimensions, T object)
       : m_type(id), m_dimensions(std::move(dimensions)),
         m_object(std::make_unique<DataArrayModel<T>>(std::move(object))) {
-    gsl::index volume{1};
-    for (gsl::index dim = 0; dim < m_dimensions.count(); ++dim)
-      volume *= m_dimensions.size(dim);
-    if(volume != m_object->size())
+    if (m_dimensions.volume() != m_object->size())
       throw std::runtime_error("Creating DataArray: data size does not match "
                                "volume given by dimension extents");
-        }
-  DataArray(const DataArray &other)
-      : m_type(other.m_type), m_object(other.m_object) {}
+  }
 
   gsl::index size() const { return m_object->size(); }
   void resize(const gsl::index size) { m_object.access().resize(size); }
+
+  const Dimensions &dimensions() const { return m_dimensions; }
 
   template <class Tag>
   bool valueTypeIs() const {
