@@ -19,6 +19,13 @@ Dimensions &Dimensions::operator=(const Dimensions &other) {
 }
 Dimensions &Dimensions::operator=(Dimensions &&other) = default;
 
+bool Dimensions::operator==(const Dimensions &other) const {
+  // Ragged comparison too complex for now.
+  if (m_raggedDim || other.m_raggedDim)
+    return false;
+  return m_dims == other.m_dims;
+}
+
 gsl::index Dimensions::count() const { return m_dims.size(); }
 
 gsl::index Dimensions::volume() const {
@@ -51,6 +58,13 @@ gsl::index Dimensions::volume() const {
   return volume;
 }
 
+bool Dimensions::contains(const Dimension label) const {
+  for (const auto &item : m_dims)
+    if (item.first == label)
+      return true;
+  return false;
+}
+
 bool Dimensions::isRagged(const gsl::index i) const {
   const auto size = m_dims.at(i).second;
   return size == -1;
@@ -66,6 +80,47 @@ gsl::index Dimensions::size(const gsl::index i) const {
     throw std::runtime_error(
         "Dimension is ragged, size() not available, use raggedSize().");
   return size;
+}
+
+gsl::index Dimensions::size(const Dimension label) const {
+  for (const auto &item : m_dims)
+    if (item.first == label) {
+      if (item.second == -1)
+        throw std::runtime_error(
+            "Dimension is ragged, size() not available, use raggedSize().");
+      return item.second;
+    }
+  throw std::runtime_error("Dimension not found.");
+}
+
+/// Return the offset of elements along this dimension in a multi-dimensional
+/// array defined by this.
+gsl::index Dimensions::offset(const Dimension label) const {
+  gsl::index offset{1};
+  for (const auto &item : m_dims) {
+    if (item.second == -1)
+      throw std::runtime_error(
+          "Dimension is ragged, offset() not available.");
+    if (item.first == label) {
+      return offset;
+    }
+    offset *= item.second;
+  }
+  throw std::runtime_error("Dimension not found.");
+}
+
+void Dimensions::resize(const Dimension label, const gsl::index size) {
+  if (size <= 0)
+    throw std::runtime_error("Dimension size must be positive.");
+  for (auto &item : m_dims)
+    if (item.first == label) {
+      if (item.second == -1)
+        throw std::runtime_error(
+            "Dimension is ragged, resize() not available, use resizeRagged().");
+      item.second = size;
+      return;
+    }
+  throw std::runtime_error("Dimension not found.");
 }
 
 const DataArray &Dimensions::raggedSize(const gsl::index i) const {

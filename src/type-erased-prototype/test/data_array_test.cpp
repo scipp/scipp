@@ -51,8 +51,48 @@ TEST(DataArray, ragged) {
   dimensions.add(Dimension::Tof, raggedSize);
   dimensions.add(Dimension::SpectrumNumber, 2);
   EXPECT_EQ(dimensions.volume(), 5);
-  ASSERT_NO_THROW(
-      makeDataArray<Variable::Value>(dimensions, 5));
-  ASSERT_ANY_THROW(
-      makeDataArray<Variable::Value>(dimensions, 4));
+  ASSERT_NO_THROW(makeDataArray<Variable::Value>(dimensions, 5));
+  ASSERT_ANY_THROW(makeDataArray<Variable::Value>(dimensions, 4));
+}
+
+TEST(DataArray, concatenate) {
+  Dimensions dims(Dimension::Tof, 1);
+  const auto a = makeDataArray<Variable::Value>(dims, {1.0});
+  const auto b = makeDataArray<Variable::Value>(dims, {2.0});
+  auto ab = concatenate(Dimension::Tof, a, b);
+  ASSERT_EQ(ab.size(), 2);
+  const auto &data = ab.get<Variable::Value>();
+  EXPECT_EQ(data[0], 1.0);
+  EXPECT_EQ(data[1], 2.0);
+  auto ba = concatenate(Dimension::Tof, b, a);
+  const auto abba = concatenate(Dimension::Q, ab, ba);
+  ASSERT_EQ(abba.size(), 4);
+  EXPECT_EQ(abba.dimensions().count(), 2);
+  const auto &data2 = abba.get<Variable::Value>();
+  EXPECT_EQ(data2[0], 1.0);
+  EXPECT_EQ(data2[1], 2.0);
+  EXPECT_EQ(data2[2], 2.0);
+  EXPECT_EQ(data2[3], 1.0);
+  const auto ababbaba = concatenate(Dimension::Tof, abba, abba);
+  ASSERT_EQ(ababbaba.size(), 8);
+  const auto &data3 = ababbaba.get<Variable::Value>();
+  EXPECT_EQ(data3[0], 1.0);
+  EXPECT_EQ(data3[1], 2.0);
+  EXPECT_EQ(data3[2], 1.0);
+  EXPECT_EQ(data3[3], 2.0);
+  EXPECT_EQ(data3[4], 2.0);
+  EXPECT_EQ(data3[5], 1.0);
+  EXPECT_EQ(data3[6], 2.0);
+  EXPECT_EQ(data3[7], 1.0);
+  const auto abbaabba = concatenate(Dimension::Q, abba, abba);
+  ASSERT_EQ(abbaabba.size(), 8);
+  const auto &data4 = abbaabba.get<Variable::Value>();
+  EXPECT_EQ(data4[0], 1.0);
+  EXPECT_EQ(data4[1], 2.0);
+  EXPECT_EQ(data4[2], 2.0);
+  EXPECT_EQ(data4[3], 1.0);
+  EXPECT_EQ(data4[4], 1.0);
+  EXPECT_EQ(data4[5], 2.0);
+  EXPECT_EQ(data4[6], 2.0);
+  EXPECT_EQ(data4[7], 1.0);
 }

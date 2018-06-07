@@ -20,12 +20,18 @@ public:
   Dimensions &operator=(const Dimensions &other);
   Dimensions &operator=(Dimensions &&other);
 
+  bool operator==(const Dimensions &other) const;
+
   gsl::index count() const;
   gsl::index volume() const;
 
+  bool contains(const Dimension label) const;
   bool isRagged(const gsl::index i) const;
   Dimension label(const gsl::index i) const;
   gsl::index size(const gsl::index i) const;
+  gsl::index size(const Dimension label) const;
+  gsl::index offset(const Dimension label) const;
+  void resize(const Dimension label, const gsl::index size);
 
   const DataArray &raggedSize(const gsl::index i) const;
   void add(const Dimension label, const gsl::index size);
@@ -33,6 +39,8 @@ public:
 
 private:
   std::vector<std::pair<Dimension, gsl::index>> m_dims;
+  // In a Dataset, multiple DataArrays will reference the same ragged size
+  // DataArray. How can we support shape operations without breaking sharing?
   std::unique_ptr<DataArray> m_raggedDim;
 };
 
