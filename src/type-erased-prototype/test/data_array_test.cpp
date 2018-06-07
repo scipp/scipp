@@ -96,3 +96,37 @@ TEST(DataArray, concatenate) {
   EXPECT_EQ(data4[6], 2.0);
   EXPECT_EQ(data4[7], 1.0);
 }
+
+#if 1
+const auto spectrumPosition = makeDataArray<Variable::SpectrumPosition>(
+    detectorPosition, detectorGrouping);
+// dimensions given by linked?
+// why not allow for extra dimensions? does not make sense, would return same data
+// Internally in spectrum-pos variable:
+// DatasetIterator<Variable::DetectorPosition, Variable::DetectorGrouping>
+// does linking via DataArray make sense?
+// should DataArray be able to live on its own, outside Dataset?
+//
+// How to concatenate Variable::SpectrumPosition? Does not make sense, unless
+// DetectorPosition and DetectorGrouping are concatenated.
+//
+// We cannot drive this from Variable::SpectrumPosition, it cannot be the one
+// doing the concatenation of the variables it derives from.(*)
+// Ok if we are a passive observer of DetectorPosition and DetectorGrouping,
+// however this implies that we must ensure that DetectorGrouping and
+// DetectorPosition are under our control, i.e., contained within a Dataset.
+// Basically this imples that DataArray may not exist outside Dataset.
+//
+// (*) Can it? If we make it the owner, even within Dataset it may be ok?
+// Dataset concatenates only SpectrumPosition, which interally deals with
+// DetectorPosition and DetectorGrouping. How can we expose the latter in
+// Dataset?
+// What if there are multiple owners, e.g., for Variable::DimensionSize which
+// is required by all variables making up a histogram?
+//
+// How to concatenate Dataset? In general, we do not want to concatenate all
+// variables, unless an existing dimension gets longer. If dimension is new, we
+// do not want to concatenate variables that are constant in the new dimension.
+// Use pointer comparison, assuming perfect sharing? Do full checks
+// (optionally?)?)?
+#endif

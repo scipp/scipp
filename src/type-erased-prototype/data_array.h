@@ -140,6 +140,8 @@ inline DataArray concatenate(const Dimension dim, const DataArray &a1,
         "Cannot concatenate DataArrays: Dimensions do not match.");
   // TODO check units! How? Need support in DataArray, not in data type itself!
   // TODO names?
+  // TODO what about DataArrays that link to others? Concattenate linked? Will
+  // break sharing and leads to duplicate work in Dataset?!
   auto out(a1);
   out.resize(a1.size() + a2.size());
   auto &dims = out.dimensions();
