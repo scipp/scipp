@@ -69,6 +69,7 @@ TEST(Dataset, get_const) {
   // view[0] = 1.2;
 }
 
+#if 0
 TEST(Dataset, ragged_dimension) {
   Dataset d;
   d.add<Variable::Value>("data");
@@ -111,3 +112,4 @@ TEST(Dataset, ragged_dimension) {
   // Variable::Q Dimension::Q feels redundant, we are simply defining the independent variable Q?
   //Variable intensity(Variable::Value, Dimension::Q, Dimension::DeltaE);
 }
+#endif
