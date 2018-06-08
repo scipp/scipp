@@ -97,7 +97,35 @@ TEST(DataArray, concatenate) {
   EXPECT_EQ(data4[7], 1.0);
 }
 
-#if 1
+#define EXPECT_THROW_MSG(TRY_BLOCK, EXCEPTION_TYPE, MESSAGE) \
+EXPECT_THROW({ \
+  try { \
+    TRY_BLOCK; \
+  } catch (const EXCEPTION_TYPE &e) { \
+    EXPECT_STREQ(MESSAGE, e.what()); \
+    throw; \
+  } \
+}, EXCEPTION_TYPE);
+
+TEST(DataArray, concatenate_fail) {
+  Dimensions dims(Dimension::Tof, 1);
+  auto a = makeDataArray<Variable::Value>(dims, {1.0});
+  auto b = makeDataArray<Variable::Value>(dims, {2.0});
+  auto c = makeDataArray<Variable::Error>(dims, {2.0});
+  a.setName("data");
+  EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, b), std::runtime_error,
+                   "Cannot concatenate DataArrays: Names do not match.");
+  c.setName("data");
+  EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, c), std::runtime_error,
+                   "Cannot concatenate DataArrays: Data types do not match.");
+  auto aa = concatenate(Dimension::Tof, a, a);
+  // TODO better size check, the following should work:
+  // EXPECT_NO_THROW(concatenate(Dimension::Tof, a, aa));
+  EXPECT_THROW_MSG(concatenate(Dimension::Q, a, aa), std::runtime_error,
+                   "Cannot concatenate DataArrays: Dimensions do not match.");
+}
+
+#if 0
 const auto spectrumPosition = makeDataArray<Variable::SpectrumPosition>(
     detectorPosition, detectorGrouping);
 // dimensions given by linked?
@@ -116,6 +144,10 @@ const auto spectrumPosition = makeDataArray<Variable::SpectrumPosition>(
 // however this implies that we must ensure that DetectorGrouping and
 // DetectorPosition are under our control, i.e., contained within a Dataset.
 // Basically this imples that DataArray may not exist outside Dataset.
+// No! It only implies that variables depending on others may not exist outside
+// Dataset?
+// "Virtual" variables?
+// What about Variable::Histogram? It does actually contain some auxiliary data?
 //
 // (*) Can it? If we make it the owner, even within Dataset it may be ok?
 // Dataset concatenates only SpectrumPosition, which interally deals with
@@ -129,4 +161,18 @@ const auto spectrumPosition = makeDataArray<Variable::SpectrumPosition>(
 // do not want to concatenate variables that are constant in the new dimension.
 // Use pointer comparison, assuming perfect sharing? Do full checks
 // (optionally?)?)?
+//
+// Should all links be done via variables *names*? Dependent variables will then
+// automatically get the updated data, e.g., histogram-related variables will
+// see when Variable::DimensionSize has been concatenated?
+//
+// Should dimensions hold their length and be shared?
+//
+// weak_ptr?
+//
+// shared_ptr<cow_ptr>?
+// Use shared_ptr within Dataset such that all variables see the same version?
+// Use cow_ptr when copied to another Dataset.
+// Why not references or pointers to cow_ptr? -> prevent deleting if other
+// variables reference it.
 #endif

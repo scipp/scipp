@@ -44,4 +44,7 @@ private:
   std::unique_ptr<DataArray> m_raggedDim;
 };
 
+Dimensions concatenate(const Dimension dim, const Dimensions &dims1,
+                       const Dimensions &dims2);
+
 #endif // DIMENSIONS_H

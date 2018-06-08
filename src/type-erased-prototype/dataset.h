@@ -6,11 +6,8 @@
 #include <vector>
 
 #include "dimension.h"
+#include "index.h"
 #include "variable.h"
-
-namespace gsl {
-using index = ptrdiff_t;
-}
 
 using Doubles = std::vector<double>;
 using Ints = std::vector<int>;
@@ -93,14 +90,48 @@ public:
     m_dimensions[id] = size;
   }
 
+  void addDimension(const Dimension id, const std::string &sizeVariable) {
+    // sizeVariable must be immutable?
+    m_dimensions[id] = -1;
+    m_raggedDimensions[id] = sizeVariable;
+  }
+
   gsl::index size() const { return m_data.size(); }
 
+  // How can we improve this API?
+  // Should each variable have dimensions, such that we simply add a variable that already has its dimensions?
+  // Just check if the match here?
+  // Also provide a way to add empty variable with list of dimensions?
   template <class Tag> void extendAlongDimension(const Dimension id) {
     for (auto &item : m_data) {
       if (std::get<ColumnHandle>(item).type() == Tag::type_id) {
-        std::get<std::vector<Dimension>>(item).push_back(id);
-        std::get<ColumnHandle>(item)
-            .resize(std::get<ColumnHandle>(item).size() * m_dimensions.at(id));
+        auto &dimensions = std::get<std::vector<Dimension>>(item);
+        auto &variable = std::get<ColumnHandle>(item);
+        if(m_dimensions.at(id) < 0) {
+          // Ragged dimension, find variable holding the size
+          const auto &dimensionSizeName = m_raggedDimensions.at(id);
+          for (auto &sizeItem : m_data) {
+            if (std::get<std::string>(sizeItem) == dimensionSizeName) {
+              auto &sizeDimensions = std::get<std::vector<Dimension>>(sizeItem);
+              auto &sizeVariable = std::get<ColumnHandle>(sizeItem);
+              // extend also into dimensions given be size variable of ragged dimension
+              // how should the public interface handle this?
+              dimensions.push_back(id);
+              dimensions.insert(dimensions.end(), sizeDimensions.begin(),
+                                sizeDimensions.end());
+              gsl::index size = 0;
+              for (const auto subsize :
+                   sizeVariable.cast<std::vector<gsl::index>>())
+                size += subsize;
+              variable.resize(variable.size() * size);
+              return;
+            }
+          }
+          throw std::runtime_error(
+              "Dataset misses size information for ragged dimension.");
+        }
+        dimensions.push_back(id);
+        variable.resize(variable.size() * m_dimensions.at(id));
         // TODO duplicate from slice 0 to all others.
         return;
       }
@@ -139,6 +170,7 @@ public:
 
 private:
   std::map<Dimension, gsl::index> m_dimensions;
+  std::map<Dimension, std::string> m_raggedDimensions;
   std::vector<std::tuple<std::string, std::vector<Dimension>, ColumnHandle>>
       m_data;
 };

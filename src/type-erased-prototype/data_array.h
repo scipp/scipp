@@ -1,6 +1,7 @@
 #ifndef DATA_ARRAY_H
 #define DATA_ARRAY_H
 
+#include <string>
 #include <type_traits>
 
 #include "cow_ptr.h"
@@ -63,6 +64,9 @@ public:
                                "volume given by dimension extents");
   }
 
+  const std::string &name() const { return m_name; }
+  void setName(const std::string &name) { m_name = name; }
+
   gsl::index size() const { return m_object->size(); }
 
   const Dimensions &dimensions() const { return m_dimensions; }
@@ -109,6 +113,7 @@ private:
   void resize(const gsl::index size) { m_object.access().resize(size); }
   Dimensions &dimensions() { return m_dimensions; }
 
+  std::string m_name;
   uint32_t m_type;
   Dimensions m_dimensions;
   cow_ptr<DataArrayConcept> m_object;
@@ -132,16 +137,17 @@ inline DataArray concatenate(const Dimension dim, const DataArray &a1,
                              const DataArray &a2) {
   if (a1.type() != a2.type())
     throw std::runtime_error(
-        "Cannot concatentate DataArrays: Data types do not match.");
+        "Cannot concatenate DataArrays: Data types do not match.");
+  if (a1.name() != a2.name())
+    throw std::runtime_error(
+        "Cannot concatenate DataArrays: Names do not match.");
   const auto &dims1 = a1.dimensions();
   const auto &dims2 = a2.dimensions();
   if (!(dims1 == dims2))
     throw std::runtime_error(
         "Cannot concatenate DataArrays: Dimensions do not match.");
   // TODO check units! How? Need support in DataArray, not in data type itself!
-  // TODO names?
-  // TODO what about DataArrays that link to others? Concattenate linked? Will
-  // break sharing and leads to duplicate work in Dataset?!
+  // Should we permit creation of ragged outputs if one dimension does not match?
   auto out(a1);
   out.resize(a1.size() + a2.size());
   auto &dims = out.dimensions();

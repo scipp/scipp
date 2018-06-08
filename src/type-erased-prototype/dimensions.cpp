@@ -147,3 +147,17 @@ void Dimensions::add(const Dimension label, const DataArray &raggedSize) {
     throw std::runtime_error("Only one dimension can be ragged.");
   m_raggedDim = std::make_unique<DataArray>(raggedSize);
 }
+
+Dimensions concatenate(const Dimension dim, const Dimensions &dims1,
+                       const Dimensions &dims2) {
+  if(dims1.contains(dim) && dims2.contains(dim)) {
+    // - all dimension labels must match and have same order.
+    // - if dim is ragged, all other dimensions must have matching size.
+    // - if dim is not ragged, one other dimension can have size mismatch (create ragged)
+  } else {
+    // - all dimension labels must match and have same order
+    // - in the result, up to one dimension may be ragged
+    // - if a dim is ragged, concatenate also ragged sizes
+    // - some more failure cases here
+  }
+}

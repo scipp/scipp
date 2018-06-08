@@ -98,12 +98,6 @@ private:
 public:
   template <class T>
   using ref_type = variable_type_t<detail::value_type_t<T>> &;
-  template <class T>
-  using column_ref_type = std::conditional_t<
-      std::is_const<T>::value,
-      const std::vector<detail::value_type_t<std::remove_const_t<T>>> &,
-      std::vector<detail::value_type_t<std::remove_const_t<T>>> &>;
-  // TODO do we need forward_as_tuple?
   DatasetIterator(Dataset &dataset,
                   const std::set<Dimension> &fixedDimensions = {})
       : m_index(extractExtents(dataset.dimensions(), fixedDimensions)),
