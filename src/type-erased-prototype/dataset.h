@@ -10,14 +10,18 @@
 
 class Dataset {
 public:
+  void add(DataArray variable) {
+    // TODO prevent duplicate names (if type matches)
+    mergeDimensions(variable.dimensions());
+    m_variables.push_back(std::move(variable));
+  }
+
   template <class Tag, class... Args>
   void add(const std::string &name, Dimensions dimensions, Args &&... args) {
-    // TODO prevent duplicate names
     auto a =
         makeDataArray<Tag>(std::move(dimensions), std::forward<Args>(args)...);
     a.setName(name);
-    mergeDimensions(a.dimensions());
-    m_variables.push_back(std::move(a));
+    add(std::move(a));
   }
 
   template <class Tag, class T>
@@ -25,13 +29,13 @@ public:
            std::initializer_list<T> values) {
     auto a = makeDataArray<Tag>(std::move(dimensions), values);
     a.setName(name);
-    mergeDimensions(a.dimensions());
-    m_variables.push_back(std::move(a));
+    add(std::move(a));
   }
 
   // TODO addAsEdge
 
   gsl::index size() const { return m_variables.size(); }
+  const DataArray &operator[](gsl::index i) const { return m_variables[i]; }
 
   // TODO need (helper) types for values and errors (instead of
   // std::vector<double>, which
@@ -95,5 +99,34 @@ private:
   Dimensions m_dimensions;
   std::vector<DataArray> m_variables;
 };
+
+inline Dataset concatenate(const Dimension dim, const Dataset &d1,
+                           const Dataset &d2) {
+  // Match type and name, drop missing?
+  // What do we have to do to check and compute the resulting dimensions?
+  // - If dim is in m_dimensions, *some* of the variables contain it. Those that
+  //   do not must then be identical (do not concatenate) or we could
+  //   automatically broadcast? Yes!?
+  // - If dim is new, concatenate variables if different, copy if same.
+  // We will be doing deep comparisons here, it would be nice if we could setup
+  // sharing, but d1 and d2 are const, is there a way...? Not without breaking
+  // thread safety? Could cache cow_ptr for future sharing setup, done by next
+  // non-const op?
+  Dataset out;
+  for (gsl::index i1 = 0; i1 < d1.size(); ++i1) {
+    const auto &var1 = d1[i1];
+    bool found{false};
+    for (gsl::index i2 = 0; i2 < d2.size(); ++i2) {
+      const auto &var2 = d2[i2];
+      if ((var1.type() == var2.type()) && (var1.name() == var2.name())) {
+        // TODO check if data is the same, do not concatenate if this is a new
+        // dimension.
+        out.add(concatenate(dim, var1, var2));
+        break;
+      }
+    }
+  }
+  return out;
+}
 
 #endif // DATASET_H
