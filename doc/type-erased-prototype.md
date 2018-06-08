@@ -27,7 +27,7 @@ In particular:
 
 1. Why not histograms as the smallest element in a `Dataset`?
    - Cannot handle sharing of the x-axis (bin edges) in an easy way.
-     There current approach via copy-on-write pointers has a couple of drawbacks:
+     The current approach via copy-on-write pointers has a couple of drawbacks:
      - Complex histogram API.
      - No good way to check for shared axis.
      - Cumbersome client code for maintaining sharing.
@@ -63,7 +63,7 @@ We have several options:
 1. Use some sort of view to iterate over one or more variables of concrete type.
    Essentially this is a convenience layer on top of option 1.) that acts as if data was stored as an array of structures.
    Furthermore it provides an elegant way of dealing with variables that do not share all their dimensions.
-   - The view/iterator could iterate either all (applicable) dimensions, a specific dimensions, or all but certain dimensions, depending on the needs to the specific client code.
+   - The view/iterator could iterate either all (applicable) dimensions, a specific dimension, or all but certain dimensions, depending on the needs to the specific client code.
    - See [`test/dataset_iterator_test.cpp`](../src/type-erased-prototype/test/dataset_iterator_test.cpp) for examples.
 1. Access a subset of a `Dataset` at a given axis value for a given dimension.
    This is basically slicing of the `Dataset`.
@@ -127,6 +127,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   };
   ```
   Additionally access via a name will probably be provided.
+  - Should variables be allowed to share a name if the have different types, e.g., `Variable::Value` and `Variable::Error` could both carry the name `"sample"` if the represent data for the sample.
 
 - We will need to support "axis" variables that are bin edges, i.e., are by 1 longer than the size of the dimension.
   If we iterate over all dimensions, what should the iteration for bin edges do?
@@ -146,6 +147,8 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
       This would imply changing variable labels if units are changed, yielding, e.g., `Variable::dSpacingEdge`.
       How would we handle this generically in client code accessing the edges, given that most code will not care whether it is `Tof` or `dSpace` or anything else?
       Would it make sense to support `Variable::Point`, `Variable::BinEdge`, and `Variable::Bin` as aliases for whatever the current unit is, e.g., `Variable::Tof`, `Variable::TofEdge`, and `Variable::TofBin`?
+    - Drop edge/bin part of the name completely, *always* use bin for normal iterators, provide special edge iterator?
+      Does not work! The resulting type of the variable would depend on the internal distinction between edges and points?
 
 - The time-of-flight axis in our workspaces can have a different length for each spectrum.
   This is a case that is not supported by `xarray` but we have two choices:
@@ -218,6 +221,10 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Store pointer to other variables?
   - Prevent removing variables from `Dataset` if there are any references to it from within the same `Dataset` instance.
   - Link value variables to their error variables and vice versa (unless stored as `DataPoint` variables, see above).
+  Update: Linking is troublesome for any shape operations, and for anything triggering the copy-on-write mechanism.
+  I now think we should probably avoid it.
+  It seems that for both relevant cases (variables replacing `SpectrumInfo` and a `Histogram` variable) we can do so by providing them only in the `DatasetView`, i.e., access via `Dataset::get` is not possible.
+  `DatasetView` can deal with constructing temporary helper variables and will also handle there lifetime in a natural way.
 
 - We should definitely investigate how `Dataset` could support better cache reuse by chaining several operations or algorithms.
   - At runtime or compile-time?
