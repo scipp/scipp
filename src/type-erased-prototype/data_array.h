@@ -30,14 +30,14 @@ public:
   void resize(const gsl::index size) override { m_model.resize(size); }
 
   void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
-                        const gsl::index chunkSkip,
-                        const DataArrayConcept &other) override {
+                const gsl::index chunkSkip,
+                const DataArrayConcept &other) override {
     const auto source = dynamic_cast<const DataArrayModel<T> &>(other);
     auto in = source.m_model.begin();
     auto in_end = source.m_model.end();
-    auto out = m_model.begin() + chunkStart*chunkSize;
+    auto out = m_model.begin() + chunkStart * chunkSize;
     auto out_end = m_model.end();
-    while(in != in_end && out != out_end) {
+    while (in != in_end && out != out_end) {
       for (gsl::index i = 0; i < chunkSize; ++i) {
         *out = *in;
         ++out;
@@ -70,9 +70,15 @@ public:
   gsl::index size() const { return m_object->size(); }
 
   const Dimensions &dimensions() const { return m_dimensions; }
+  void setDimensions(const Dimensions &dimensions) {
+    m_object.access().resize(dimensions.volume());
+    m_dimensions = dimensions;
+  }
 
-  template <class Tag>
-  bool valueTypeIs() const {
+  const DataArrayConcept &data() const { return *m_object; }
+  DataArrayConcept &data() { return m_object.access(); }
+
+  template <class Tag> bool valueTypeIs() const {
     return Tag::type_id == m_type;
   }
 
@@ -103,32 +109,21 @@ private:
     return dynamic_cast<DataArrayModel<T> &>(m_object.access()).m_model;
   }
 
-  // Direct resize should not be supported on the public interface since it will
-  // break connection to
-  // Dimensions. Should we support adding dimensions and changing dimension
-  // extent in existing DataArray?
-  // How can we prevent client code from getting mutable reference and resizing
-  // the underlying vector? Never return actual underlying type, instead a
-  // range?
-  void resize(const gsl::index size) { m_object.access().resize(size); }
-  Dimensions &dimensions() { return m_dimensions; }
-
   std::string m_name;
   uint32_t m_type;
   Dimensions m_dimensions;
   cow_ptr<DataArrayConcept> m_object;
-
-  friend DataArray concatenate(const Dimension dim, const DataArray &a1,
-                               const DataArray &a2);
 };
 
-template <class Tag, class... Args> DataArray makeDataArray(Dimensions dimensions, Args &&... args) {
+template <class Tag, class... Args>
+DataArray makeDataArray(Dimensions dimensions, Args &&... args) {
   return DataArray(Tag::type_id, std::move(dimensions),
                    variable_type_t<Tag>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
-DataArray makeDataArray(Dimensions dimensions,std::initializer_list<T> values) {
+DataArray makeDataArray(Dimensions dimensions,
+                        std::initializer_list<T> values) {
   return DataArray(Tag::type_id, std::move(dimensions),
                    variable_type_t<Tag>(values));
 }
@@ -147,18 +142,20 @@ inline DataArray concatenate(const Dimension dim, const DataArray &a1,
     throw std::runtime_error(
         "Cannot concatenate DataArrays: Dimensions do not match.");
   // TODO check units! How? Need support in DataArray, not in data type itself!
-  // Should we permit creation of ragged outputs if one dimension does not match?
+  // Should we permit creation of ragged outputs if one dimension does not
+  // match?
   auto out(a1);
-  out.resize(a1.size() + a2.size());
-  auto &dims = out.dimensions();
+  auto dims(dims1);
   if (dims.contains(dim)) {
     dims.resize(dim, dims1.size(dim) + dims2.size(dim));
+    out.setDimensions(dims);
     auto offset = dims1.offset(dim) * dims1.size(dim);
-    out.m_object.access().copyFrom(offset, 0, 2, *a1.m_object);
-    out.m_object.access().copyFrom(offset, 1, 2, *a2.m_object);
+    out.data().copyFrom(offset, 0, 2, a1.data());
+    out.data().copyFrom(offset, 1, 2, a2.data());
   } else {
     dims.add(dim, 2);
-    out.m_object.access().copyFrom(a1.size(), 1, 2, *a2.m_object);
+    out.setDimensions(dims);
+    out.data().copyFrom(a1.size(), 1, 2, a2.data());
   }
   return out;
 }
