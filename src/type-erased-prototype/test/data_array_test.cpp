@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include "test_macros.h"
+
 #include "data_array.h"
 #include "dimensions.h"
 #include "variable.h"
@@ -96,16 +98,6 @@ TEST(DataArray, concatenate) {
   EXPECT_EQ(data4[6], 2.0);
   EXPECT_EQ(data4[7], 1.0);
 }
-
-#define EXPECT_THROW_MSG(TRY_BLOCK, EXCEPTION_TYPE, MESSAGE)                   \
-  EXPECT_THROW({                                                               \
-    try {                                                                      \
-      TRY_BLOCK;                                                               \
-    } catch (const EXCEPTION_TYPE &e) {                                        \
-      EXPECT_STREQ(MESSAGE, e.what());                                         \
-      throw;                                                                   \
-    }                                                                          \
-  }, EXCEPTION_TYPE);
 
 TEST(DataArray, concatenate_fail) {
   Dimensions dims(Dimension::Tof, 1);

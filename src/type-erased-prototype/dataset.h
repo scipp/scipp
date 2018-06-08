@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 
+#include "data_array.h"
 #include "dimension.h"
 #include "index.h"
 #include "variable.h"
@@ -75,6 +76,26 @@ template <class... Ts> class DatasetIterator;
 
 class Dataset {
 public:
+  template <class Tag, class... Args>
+  void add(const std::string &name, Dimensions dimensions, Args &&... args) {
+    auto a =
+        makeDataArray<Tag>(std::move(dimensions), std::forward<Args>(args)...);
+    a.setName(name);
+    mergeDimensions(a.dimensions());
+    m_variables.push_back(std::move(a));
+  }
+
+  template <class Tag, class T>
+  void add(const std::string &name, Dimensions dimensions,
+           std::initializer_list<T> values) {
+    auto a = makeDataArray<Tag>(std::move(dimensions), values);
+    a.setName(name);
+    mergeDimensions(a.dimensions());
+    m_variables.push_back(std::move(a));
+  }
+
+  // TODO addAsEdge
+
   template <class Tag> void add(std::string name) {
     // TODO prevent duplicate names
     m_data.emplace_back(name, std::vector<Dimension>{},
@@ -87,16 +108,16 @@ public:
   // - list of applicable dimensions for all Ts
   void addDimension(const Dimension id, const gsl::index size) {
     // TODO throw if exists
-    m_dimensions[id] = size;
+    m_dimensions0[id] = size;
   }
 
   void addDimension(const Dimension id, const std::string &sizeVariable) {
     // sizeVariable must be immutable?
-    m_dimensions[id] = -1;
+    m_dimensions0[id] = -1;
     m_raggedDimensions[id] = sizeVariable;
   }
 
-  gsl::index size() const { return m_data.size(); }
+  gsl::index size() const { return m_variables.size(); }
 
   // How can we improve this API?
   // Should each variable have dimensions, such that we simply add a variable that already has its dimensions?
@@ -107,7 +128,7 @@ public:
       if (std::get<ColumnHandle>(item).type() == Tag::type_id) {
         auto &dimensions = std::get<std::vector<Dimension>>(item);
         auto &variable = std::get<ColumnHandle>(item);
-        if(m_dimensions.at(id) < 0) {
+        if(m_dimensions0.at(id) < 0) {
           // Ragged dimension, find variable holding the size
           const auto &dimensionSizeName = m_raggedDimensions.at(id);
           for (auto &sizeItem : m_data) {
@@ -131,7 +152,7 @@ public:
               "Dataset misses size information for ragged dimension.");
         }
         dimensions.push_back(id);
-        variable.resize(variable.size() * m_dimensions.at(id));
+        variable.resize(variable.size() * m_dimensions0.at(id));
         // TODO duplicate from slice 0 to all others.
         return;
       }
@@ -144,18 +165,21 @@ public:
   // would be duplicate). This is also the reason for T being the column type,
   // not the element type.
   template <class Tag> variable_type_t<Tag> &get() {
-    for (auto &item : m_data) {
+    for (auto &item : m_variables) {
       // TODO check for duplicate column types (can use get based on name in
       // that case).
-      if (std::get<ColumnHandle>(item).type() == Tag::type_id)
-        return std::get<ColumnHandle>(item)
-            .cast<std::remove_const_t<variable_type_t<Tag>>>();
+      if (item.type() == Tag::type_id)
+        return item.get<Tag>();
     }
-    throw std::runtime_error("Dataset does not contain such a column");
+    throw std::runtime_error("Dataset does not contain such a variable");
   }
 
+  // TODO Returning Dimensions here is a bit ambiguous, since Dimensions
+  // enforces an order on dimensions, whereas each varaible in Dataset can have
+  // a different dimension order, so the Dataset dimensions do not have an
+  // order.
   const std::map<Dimension, gsl::index> &dimensions() const {
-    return m_dimensions;
+    return m_dimensions0;
   }
 
   template <class Tag> const std::vector<Dimension> &dimensions() const {
@@ -169,10 +193,37 @@ public:
   template <class... Ts> friend class DatasetIterator;
 
 private:
-  std::map<Dimension, gsl::index> m_dimensions;
+  void mergeDimensions(const auto &dims) {
+    gsl::index j = 0;
+    gsl::index found = 0;
+    for (gsl::index i = 0; i < dims.count(); ++i) {
+      const auto dim = dims.label(i);
+      const auto size = dims.size(i);
+      bool found = false;
+      for (; j < m_dimensions.count(); ++j) {
+        if (m_dimensions.label(j) == dim) {
+          if (m_dimensions.size(j) != size) // TODO compare ragged
+            throw std::runtime_error(
+                "Cannot add variable to Dataset: Dimensions do not match");
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        if (m_dimensions.contains(dim))
+          throw std::runtime_error(
+              "Cannot add variable to Dataset: Dimension order mismatch");
+        m_dimensions.add(dim, size);
+      }
+    }
+  }
+
+  std::map<Dimension, gsl::index> m_dimensions0;
   std::map<Dimension, std::string> m_raggedDimensions;
   std::vector<std::tuple<std::string, std::vector<Dimension>, ColumnHandle>>
       m_data;
+  Dimensions m_dimensions;
+  std::vector<DataArray> m_variables;
 };
 
 #endif // DATASET_H

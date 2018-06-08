@@ -1,59 +1,72 @@
 #include <gtest/gtest.h>
 
+#include "test_macros.h"
+
 #include "dataset.h"
+#include "dimensions.h"
 
 TEST(Dataset, construct_empty) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(Dataset, construct) { ASSERT_NO_THROW(Dataset d); }
 
-TEST(Dataset, columns) {
+TEST(Dataset, add_variables) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
+  d.add<Variable::Value>("name1", Dimensions{}, {1.1});
+  d.add<Variable::Int>("name2", Dimensions{}, {2l});
   ASSERT_EQ(d.size(), 2);
 }
 
-TEST(Dataset, extendAlongDimension) {
+TEST(Dataset, add_variables_with_dimensions) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
-  d.addDimension(Dimension::Tof, 10);
-  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
+  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+  d.add<Variable::Int>("name2", Dimensions{}, {2l});
+}
+
+TEST(Dataset, add_variables_dimension_fail) {
+  Dimensions xy;
+  Dimensions xz;
+  Dimensions yz;
+  xy.add(Dimension::X, 1);
+  xz.add(Dimension::X, 1);
+  xy.add(Dimension::Y, 2);
+  yz.add(Dimension::Y, 2);
+  xz.add(Dimension::Z, 3);
+  yz.add(Dimension::Z, 3);
+  Dataset xyz;
+  xyz.add<Variable::Value>("name1", xy, 2);
+  EXPECT_NO_THROW(xyz.add<Variable::Value>("name2", yz, 6));
+  EXPECT_NO_THROW(xyz.add<Variable::Value>("name2", xz, 3));
+  // The following should also work (and NOT throw), it is simply constructing
+  // the same Dataset in a different order. For the time being, it does NOT
+  // work, but this is simply due to a crude preliminary implementation of the
+  // dimension merging code in Dataset.
+  Dataset xzy;
+  xzy.add<Variable::Value>("name1", xz, 3);
+  EXPECT_NO_THROW(xzy.add<Variable::Value>("name2", xy, 2));
+  EXPECT_THROW_MSG(xzy.add<Variable::Value>("name2", yz, 6), std::runtime_error,
+                   "Cannot add variable to Dataset: Dimension order mismatch");
 }
 
 TEST(Dataset, get) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
+  d.add<Variable::Value>("name1", Dimensions{}, {1.1});
+  d.add<Variable::Int>("name2", Dimensions{}, {2l});
   auto &view = d.get<Variable::Value>();
   ASSERT_EQ(view.size(), 1);
-  view[0] = 1.2;
-  ASSERT_EQ(view[0], 1.2);
+  EXPECT_EQ(view[0], 1.1);
+  view[0] = 2.2;
+  EXPECT_EQ(view[0], 2.2);
 }
 
 TEST(Dataset, get_const) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
+  d.add<Variable::Value>("name1", Dimensions{}, {1.1});
+  d.add<Variable::Int>("name2", Dimensions{}, {2l});
   auto &view = d.get<const Variable::Value>();
   ASSERT_EQ(view.size(), 1);
+  EXPECT_EQ(view[0], 1.1);
   // auto is now deduced to be const, so assignment will not compile:
   // view[0] = 1.2;
-}
-
-TEST(Dataset, view_tracks_changes) {
-  Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
-  auto &view = d.get<Variable::Value>();
-  ASSERT_EQ(view.size(), 1);
-  view[0] = 1.2;
-  d.addDimension(Dimension::Tof, 3);
-  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
-  ASSERT_EQ(view.size(), 3);
-  EXPECT_EQ(view[0], 1.2);
-  EXPECT_EQ(view[1], 0.0);
-  EXPECT_EQ(view[2], 0.0);
 }
 
 TEST(Dataset, ragged_dimension) {
@@ -97,5 +110,4 @@ TEST(Dataset, ragged_dimension) {
   //Variable qEdges(Variable::Q, Dimension::Q, Dimension::DeltaE);
   // Variable::Q Dimension::Q feels redundant, we are simply defining the independent variable Q?
   //Variable intensity(Variable::Value, Dimension::Q, Dimension::DeltaE);
-
 }
