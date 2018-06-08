@@ -108,10 +108,11 @@ public:
                                m_index),
                 dataset.get<detail::value_type_t<Ts>>(),
                 detail::is_slab<Ts>{})...) {
+    std::vector<std::vector<Dimension>> variableDimensions{
+        dataset.dimensions<detail::value_type_t<Ts>>()...};
     std::set<Dimension> dimensions;
-    for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
-      for (auto dimension :
-           std::get<std::vector<Dimension>>(dataset.m_data[i])) {
+    for (const auto &thisVariableDimensions : variableDimensions) {
+      for (auto dimension : thisVariableDimensions) {
         if (fixedDimensions.count(dimension) == 0)
           dimensions.insert(dimension);
       }
@@ -121,14 +122,14 @@ public:
     for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
       if (is_const[i])
         continue;
-      const auto &columnDimensions =
-          std::get<std::vector<Dimension>>(dataset.m_data[i]);
+      const auto &thisVariableDimensions = variableDimensions[i];
       std::vector<Dimension> diff;
-      std::set_difference(columnDimensions.begin(), columnDimensions.end(),
-                          fixedDimensions.begin(), fixedDimensions.end(),
+      std::set_difference(thisVariableDimensions.begin(),
+                          thisVariableDimensions.end(), fixedDimensions.begin(),
+                          fixedDimensions.end(),
                           std::inserter(diff, diff.begin()));
       if (dimensions.size() != diff.size())
-        throw std::runtime_error("Columns requested for iteration have "
+        throw std::runtime_error("Variables requested for iteration have "
                                  "different dimensions");
     }
   }

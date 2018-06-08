@@ -4,6 +4,8 @@
 #include <boost/mpl/sort.hpp>
 #include <boost/mpl/vector_c.hpp>
 
+#include "test_macros.h"
+
 #include "dataset_iterator.h"
 
 TEST(MultidimensionalIndex, end) {
@@ -127,8 +129,8 @@ TEST(LinearSubindex, flipped_2_dimensional_subindex) {
 
 TEST(DatasetIterator, construct) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
+  d.add<Variable::Value>("name1", Dimensions{}, {1.1});
+  d.add<Variable::Int>("name2", Dimensions{}, {2l});
   ASSERT_NO_THROW(DatasetIterator<> it(d));
   ASSERT_NO_THROW(DatasetIterator<Variable::Value> it(d));
   ASSERT_NO_THROW(DatasetIterator<Variable::Int> it(d));
@@ -138,11 +140,8 @@ TEST(DatasetIterator, construct) {
 
 TEST(DatasetIterator, single_column) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
-  d.addDimension(Dimension::Tof, 10);
-  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
-  d.extendAlongDimension<Variable::Int>(Dimension::Tof);
+  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 10), 10);
+  d.add<Variable::Int>("name2", Dimensions(Dimension::Tof, 10), 10);
   auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[3] = 3.2;
@@ -159,11 +158,8 @@ TEST(DatasetIterator, single_column) {
 
 TEST(DatasetIterator, multi_column) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
-  d.addDimension(Dimension::Tof, 2);
-  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
-  d.extendAlongDimension<Variable::Int>(Dimension::Tof);
+  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.add<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
   auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;
@@ -178,10 +174,8 @@ TEST(DatasetIterator, multi_column) {
 
 TEST(DatasetIterator, multi_column_mixed_dimension) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
-  d.addDimension(Dimension::Tof, 2);
-  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
+  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.add<Variable::Int>("name2", Dimensions{}, 1);
   auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;
@@ -198,10 +192,8 @@ TEST(DatasetIterator, multi_column_mixed_dimension) {
 
 TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
-  d.addDimension(Dimension::Tof, 2);
-  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
+  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.add<Variable::Int>("name2", Dimensions{}, 1);
   auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;

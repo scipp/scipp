@@ -174,18 +174,21 @@ public:
     throw std::runtime_error("Dataset does not contain such a variable");
   }
 
-  // TODO Returning Dimensions here is a bit ambiguous, since Dimensions
-  // enforces an order on dimensions, whereas each varaible in Dataset can have
-  // a different dimension order, so the Dataset dimensions do not have an
-  // order.
-  const std::map<Dimension, gsl::index> &dimensions() const {
-    return m_dimensions0;
+  std::map<Dimension, gsl::index> dimensions() const {
+    std::map<Dimension, gsl::index> dims;
+    for (gsl::index i = 0; i < m_dimensions.count(); ++i)
+      dims[m_dimensions.label(i)] = m_dimensions.size(i);
+    return dims;
   }
 
-  template <class Tag> const std::vector<Dimension> &dimensions() const {
-    for (auto &item : m_data) {
-      if (std::get<ColumnHandle>(item).type() == Tag::type_id)
-        return std::get<std::vector<Dimension>>(item);
+  template <class Tag> std::vector<Dimension> dimensions() const {
+    for (auto &item : m_variables) {
+      if (item.type() == Tag::type_id) {
+        std::vector<Dimension> dims;
+        for (gsl::index i = 0; i < item.dimensions().count(); ++i)
+          dims.push_back(item.dimensions().label(i));
+        return dims;
+      }
     }
     throw std::runtime_error("Dataset does not contain such a column");
   }
