@@ -27,13 +27,11 @@ public:
 
 TEST(Histogram, copy_copies_data) {
   Dataset d;
-  d.add<Variable::Value>("name1");
-  d.add<Variable::Int>("name2");
-  d.addDimension(Dimension::Tof, 2);
-  d.addDimension(Dimension::SpectrumNumber, 10);
-  d.extendAlongDimension<Variable::Value>(Dimension::Tof);
-  d.extendAlongDimension<Variable::Int>(Dimension::Tof);
-  d.extendAlongDimension<Variable::Int>(Dimension::SpectrumNumber);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 2);
+  d.add<Variable::Value>("name1", dims, 2);
+  dims.add(Dimension::SpectrumNumber, 10);
+  d.add<Variable::Int>("name2", dims, 20);
   Histogram hist(d, 1); // should only ever live within Dataset, this
                         // constructor would not be public in the final
                         // implementation!
