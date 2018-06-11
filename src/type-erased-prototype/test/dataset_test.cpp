@@ -48,6 +48,36 @@ TEST(Dataset, insert_variables_dimension_fail) {
       "Cannot insert variable into Dataset: Dimension order mismatch");
 }
 
+TEST(Dataset, insertAsEdge) {
+  Dataset d;
+  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+  auto edges = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3),
+                                              {1.1, 2.2, 3.3});
+  EXPECT_THROW_MSG(
+      d.insert(edges), std::runtime_error,
+      "Cannot insert variable into Dataset: Dimensions do not match");
+  EXPECT_NO_THROW(d.insertAsEdge(Dimension::Tof, edges));
+}
+
+TEST(Dataset, insertAsEdge_fail) {
+  Dataset d;
+  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+  auto too_short =
+      makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+  EXPECT_THROW_MSG(
+      d.insertAsEdge(Dimension::Tof, too_short), std::runtime_error,
+      "Cannot insert variable into Dataset: Dimensions do not match");
+  auto too_long = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 4),
+                                                 {1.1, 2.2, 3.3, 4.4});
+  EXPECT_THROW_MSG(
+      d.insertAsEdge(Dimension::Tof, too_long), std::runtime_error,
+      "Cannot insert variable into Dataset: Dimensions do not match");
+  auto edges = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3),
+                                                 {1.1, 2.2, 3.3});
+  EXPECT_THROW_MSG(d.insertAsEdge(Dimension::X, edges), std::runtime_error,
+                   "Dimension not found.");
+}
+
 TEST(Dataset, get) {
   Dataset d;
   d.insert<Variable::Value>("name1", Dimensions{}, {1.1});

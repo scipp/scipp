@@ -32,7 +32,14 @@ public:
     insert(std::move(a));
   }
 
-  // TODO insertAsEdge
+  void insertAsEdge(const Dimension dimension, DataArray variable) {
+    // Edges are by 1 longer than other data, so dimension size check and
+    // merging uses modified dimensions.
+    auto dims = variable.dimensions();
+    dims.resize(dimension, dims.size(dimension) - 1);
+    mergeDimensions(dims);
+    m_variables.push_back(std::move(variable));
+  }
 
   gsl::index size() const { return m_variables.size(); }
   const DataArray &operator[](gsl::index i) const { return m_variables[i]; }
