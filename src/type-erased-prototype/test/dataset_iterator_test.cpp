@@ -273,6 +273,23 @@ TEST(DatasetIterator, multi_column_edges) {
   // Bins<Variable::Tof> that can be used as a tag?
 }
 
+TEST(DatasetIterator, named_getter) {
+  Dataset d;
+  auto tof = makeDataArray<Variable::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  d.insert(tof);
+  auto &view = d.get<Variable::Tof>();
+  ASSERT_EQ(view.size(), 3);
+  view[0] = 0.2;
+  view[2] = 2.2;
+
+  DatasetIterator<Variable::Tof> it(d);
+  ASSERT_EQ(it.tof(), 0.2);
+  it.increment();
+  ASSERT_EQ(it.tof(), 0.0);
+  it.increment();
+  ASSERT_EQ(it.tof(), 2.2);
+}
+
 #if 0
 TEST(DatasetIterator, notes) {
   Dataset d(std::vector<double>(1), std::vector<int>(1));

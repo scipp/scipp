@@ -8,7 +8,7 @@
 struct Variable {
   // struct DetectorPosition {};
   // struct SpectrumPosition {};
-  struct TofEdge {
+  struct Tof {
     static const uint32_t type_id = 0;
   };
   struct TofBin {
@@ -31,18 +31,18 @@ struct Variable {
 template <class Tag> struct variable_type;
 template <class Tag> struct element_reference_type;
 
-template <> struct variable_type<Variable::TofEdge> {
+template <> struct variable_type<Variable::Tof> {
   using type = std::vector<double>;
 };
-template <> struct variable_type<const Variable::TofEdge> {
+template <> struct variable_type<const Variable::Tof> {
   using type = const std::vector<double>;
 };
 
 // template <> struct variable_type<Variable::TofBin> {
-//  using type = Bins<TofEdge>;
+//  using type = Bins<Tof>;
 //};
 // template <> struct variable_type<const Variable::TofBin> {
-//  using type = const Bins<TofEdge>;
+//  using type = const Bins<Tof>;
 //};
 
 template <> struct variable_type<Variable::Value> {
@@ -71,6 +71,13 @@ template <> struct variable_type<Variable::DimensionSize> {
 };
 template <> struct variable_type<const Variable::DimensionSize> {
   using type = const std::vector<gsl::index>;
+};
+
+template <> struct element_reference_type<Variable::Tof> {
+  using type = double &;
+};
+template <> struct element_reference_type<const Variable::Tof> {
+  using type = const double &;
 };
 
 template <> struct element_reference_type<Variable::Value> {

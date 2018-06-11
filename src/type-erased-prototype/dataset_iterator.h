@@ -80,10 +80,19 @@ private:
   const MultidimensionalIndex &m_index;
 };
 
+template <class Base, class T> struct GetterMixin {};
+
+template <class Base> struct GetterMixin<Base, Variable::Tof> {
+  const element_reference_type_t<Variable::Tof> tof() {
+    return static_cast<Base *>(this)->template get<Variable::Tof>();
+  }
+};
+
 // pass non-iterated dimensions in constructor?
 // Dataset::begin(Dimension::Tof)??
 // Dataset::begin(DoNotIterate::Tof)??
-template <class... Ts> class DatasetIterator {
+template <class... Ts>
+class DatasetIterator : public GetterMixin<DatasetIterator<Ts...>, Ts>... {
 private:
   std::vector<gsl::index>
   extractExtents(const std::map<Dimension, gsl::index> &dimensions,
@@ -163,6 +172,7 @@ public:
   // get<double> would fail in that case because both value and error are of
   // type double.
   // TODO add get version for Slab.
+  // TODO const/non-const versions.
   template <class Tag> element_reference_type_t<Tag> get() {
     auto &col = std::get<
         std::tuple<LinearSubindex, variable_type_t<Tag> &, std::false_type>>(
