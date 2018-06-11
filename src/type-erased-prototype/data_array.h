@@ -6,6 +6,7 @@
 
 #include "cow_ptr.h"
 #include "dimensions.h"
+#include "unit.h"
 #include "index.h"
 #include "variable.h"
 
@@ -57,7 +58,8 @@ class DataArray {
 public:
   template <class T>
   DataArray(uint32_t id, Dimensions dimensions, T object)
-      : m_type(id), m_dimensions(std::move(dimensions)),
+      : m_type(id), m_unit{Unit::Id::Dimensionless},
+        m_dimensions(std::move(dimensions)),
         m_object(std::make_unique<DataArrayModel<T>>(std::move(object))) {
     if (m_dimensions.volume() != m_object->size())
       throw std::runtime_error("Creating DataArray: data size does not match "
@@ -66,6 +68,17 @@ public:
 
   const std::string &name() const { return m_name; }
   void setName(const std::string &name) { m_name = name; }
+
+  const Unit &unit() const { return m_unit; }
+  void setUnit(const Unit &unit) {
+    // TODO
+    // Some variables are special, e.g., Variable::Tof, which must always have a
+    // time-of-flight-related unit. We need some sort of check here. Is there a
+    // better mechanism to implement this that does not require gatekeeping here
+    // but expresses itself on the interface instead? Does it make sense to
+    // handle all unit changes by conversion functions?
+    m_unit = unit;
+  }
 
   gsl::index size() const { return m_object->size(); }
 
@@ -109,8 +122,9 @@ private:
     return dynamic_cast<DataArrayModel<T> &>(m_object.access()).m_model;
   }
 
-  std::string m_name;
   uint32_t m_type;
+  std::string m_name;
+  Unit m_unit;
   Dimensions m_dimensions;
   cow_ptr<DataArrayConcept> m_object;
 };
@@ -133,6 +147,9 @@ inline DataArray concatenate(const Dimension dim, const DataArray &a1,
   if (a1.type() != a2.type())
     throw std::runtime_error(
         "Cannot concatenate DataArrays: Data types do not match.");
+  if (a1.unit() != a2.unit())
+    throw std::runtime_error(
+        "Cannot concatenate DataArrays: Units do not match.");
   if (a1.name() != a2.name())
     throw std::runtime_error(
         "Cannot concatenate DataArrays: Names do not match.");
@@ -141,7 +158,6 @@ inline DataArray concatenate(const Dimension dim, const DataArray &a1,
   if (!(dims1 == dims2))
     throw std::runtime_error(
         "Cannot concatenate DataArrays: Dimensions do not match.");
-  // TODO check units! How? Need support in DataArray, not in data type itself!
   // Should we permit creation of ragged outputs if one dimension does not
   // match?
   auto out(a1);

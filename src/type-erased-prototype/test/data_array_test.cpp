@@ -59,10 +59,13 @@ TEST(DataArray, ragged) {
 
 TEST(DataArray, concatenate) {
   Dimensions dims(Dimension::Tof, 1);
-  const auto a = makeDataArray<Variable::Value>(dims, {1.0});
-  const auto b = makeDataArray<Variable::Value>(dims, {2.0});
+  auto a = makeDataArray<Variable::Value>(dims, {1.0});
+  auto b = makeDataArray<Variable::Value>(dims, {2.0});
+  a.setUnit(Unit::Id::Length);
+  b.setUnit(Unit::Id::Length);
   auto ab = concatenate(Dimension::Tof, a, b);
   ASSERT_EQ(ab.size(), 2);
+  EXPECT_EQ(ab.unit(), Unit(Unit::Id::Length));
   const auto &data = ab.get<Variable::Value>();
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
@@ -115,6 +118,18 @@ TEST(DataArray, concatenate_fail) {
   // EXPECT_NO_THROW(concatenate(Dimension::Tof, a, aa));
   EXPECT_THROW_MSG(concatenate(Dimension::Q, a, aa), std::runtime_error,
                    "Cannot concatenate DataArrays: Dimensions do not match.");
+}
+
+TEST(DataArray, concatenate_unit_fail) {
+  Dimensions dims(Dimension::X, 1);
+  auto a = makeDataArray<Variable::Value>(dims, {1.0});
+  auto b(a);
+  EXPECT_NO_THROW(concatenate(Dimension::X, a, b));
+  a.setUnit(Unit::Id::Length);
+  EXPECT_THROW_MSG(concatenate(Dimension::X, a, b), std::runtime_error,
+                   "Cannot concatenate DataArrays: Units do not match.");
+  b.setUnit(Unit::Id::Length);
+  EXPECT_NO_THROW(concatenate(Dimension::X, a, b));
 }
 
 #if 0
