@@ -146,7 +146,10 @@ public:
     return std::get<1>(col)[std::get<LinearSubindex>(col).get()];
   }
 
+  // TODO Very bad temporary interface just for testing, make proper begin()
+  // and end() methods, etc. (rename to DatasetView?).
   void increment() { m_index.increment(); }
+  bool atLast() { return m_index.index == m_index.end; }
 
 private:
   MultidimensionalIndex m_index;

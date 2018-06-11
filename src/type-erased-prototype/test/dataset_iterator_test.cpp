@@ -194,6 +194,17 @@ TEST(DatasetIterator, multi_column_mixed_dimension) {
   ASSERT_EQ(it.get<const Variable::Int>(), 0);
 }
 
+TEST(DatasetIterator, multi_column_unrelated_dimension) {
+  Dataset d;
+  d.insert<Variable::Value>("name1", Dimensions(Dimension::X, 2), 2);
+  d.insert<Variable::Int>("name2", Dimensions(Dimension::Y, 3), 3);
+  DatasetIterator<Variable::Value> it(d);
+  it.increment();
+  // We iterate only Variable::Value, so there should be no iteration in
+  // Dimension::Y.
+  ASSERT_TRUE(it.atLast());
+}
+
 TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
   Dataset d;
   d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
