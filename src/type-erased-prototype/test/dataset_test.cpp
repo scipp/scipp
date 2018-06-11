@@ -54,7 +54,7 @@ TEST(Dataset, insertAsEdge) {
   auto edges = makeDataArray<Variable::Error>(Dimensions(Dimension::Tof, 3),
                                               {1.1, 2.2, 3.3});
   edges.setName("edges");
-  EXPECT_EQ(d.dimensions().at(Dimension::Tof), 2);
+  EXPECT_EQ(d.dimensions().size(Dimension::Tof), 2);
   EXPECT_THROW_MSG(
       d.insert(edges), std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match");

@@ -58,22 +58,14 @@ public:
     throw std::runtime_error("Dataset does not contain such a variable");
   }
 
-  std::map<Dimension, gsl::index> dimensions() const {
-    std::map<Dimension, gsl::index> dims;
-    for (gsl::index i = 0; i < m_dimensions.count(); ++i)
-      dims[m_dimensions.label(i)] = m_dimensions.size(i);
-    return dims;
+  const Dimensions &dimensions() const {
+    return m_dimensions;
   }
 
-  template <class Tag> std::vector<Dimension> dimensions() const {
-    for (auto &item : m_variables) {
-      if (item.type() == Tag::type_id) {
-        std::vector<Dimension> dims;
-        for (gsl::index i = 0; i < item.dimensions().count(); ++i)
-          dims.push_back(item.dimensions().label(i));
-        return dims;
-      }
-    }
+  template <class Tag> const Dimensions &dimensions() const {
+    for (auto &item : m_variables)
+      if (item.type() == Tag::type_id)
+        return item.dimensions();
     throw std::runtime_error("Dataset does not contain such a column");
   }
 

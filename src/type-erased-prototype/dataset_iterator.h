@@ -51,16 +51,19 @@ struct MultidimensionalIndex {
 
 class LinearSubindex {
 public:
-  LinearSubindex(const std::map<Dimension, gsl::index> &dimensionExtents,
-                 const std::vector<Dimension> &dimensions,
+  LinearSubindex(const std::map<Dimension, gsl::index> &variableDimensions,
+                 const Dimensions &dimensions,
                  const MultidimensionalIndex &index)
       : m_index(index) {
     gsl::index factor{1};
-    for (const auto dimension : dimensions) {
-      m_offsets.push_back(std::distance(dimensionExtents.begin(),
-                                        dimensionExtents.find(dimension)));
-      m_factors.push_back(factor);
-      factor *= dimensionExtents.at(dimension);
+    for (gsl::index i = 0; i < dimensions.count(); ++i) {
+      const auto dimension = dimensions.label(i);
+      if (variableDimensions.count(dimension)) {
+        m_offsets.push_back(std::distance(variableDimensions.begin(),
+                                          variableDimensions.find(dimension)));
+        m_factors.push_back(factor);
+      }
+      factor *= dimensions.size(i);
     }
   }
 
@@ -96,34 +99,25 @@ private:
     return extents;
   }
 
-public:
-  template <class T>
-  using ref_type = variable_type_t<detail::value_type_t<T>> &;
-  DatasetIterator(Dataset &dataset,
-                  const std::set<Dimension> &fixedDimensions = {})
-      : m_columns(
-            std::tuple<LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
-                LinearSubindex(dataset.dimensions(),
-                               dataset.dimensions<detail::value_type_t<Ts>>(),
-                               m_index),
-                dataset.get<detail::value_type_t<Ts>>(),
-                detail::is_slab<Ts>{})...) {
-    std::vector<std::vector<Dimension>> variableDimensions{
+  std::map<Dimension, gsl::index>
+  relevantDimensions(const Dataset &dataset,
+                     const std::set<Dimension> &fixedDimensions) {
+    std::vector<Dimensions> variableDimensions{
         dataset.dimensions<detail::value_type_t<Ts>>()...};
     std::set<Dimension> dimensions;
     for (const auto &thisVariableDimensions : variableDimensions) {
-      for (auto dimension : thisVariableDimensions) {
+      for (gsl::index i = 0; i < thisVariableDimensions.count(); ++i) {
+        const auto &dimension = thisVariableDimensions.label(i);
         if (fixedDimensions.count(dimension) == 0)
           dimensions.insert(dimension);
       }
     }
 
-    auto datasetDimensions = dataset.dimensions();
+    auto datasetDimensions =
+        sizeof...(Ts) == 1 ? variableDimensions[0] : dataset.dimensions();
     std::map<Dimension, gsl::index> relevantDimensions;
     for (const auto &dimension : dimensions)
-      relevantDimensions[dimension] = datasetDimensions.at(dimension);
-    m_index = MultidimensionalIndex(
-        extractExtents(relevantDimensions, fixedDimensions));
+      relevantDimensions[dimension] = datasetDimensions.size(dimension);
 
     std::vector<bool> is_const{std::is_const<Ts>::value...};
     for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
@@ -131,15 +125,33 @@ public:
         continue;
       const auto &thisVariableDimensions = variableDimensions[i];
       std::vector<Dimension> diff;
-      std::set_difference(thisVariableDimensions.begin(),
-                          thisVariableDimensions.end(), fixedDimensions.begin(),
-                          fixedDimensions.end(),
-                          std::inserter(diff, diff.begin()));
+      for (gsl::index i = 0; i < thisVariableDimensions.count(); ++i) {
+        const auto &dimension = thisVariableDimensions.label(i);
+        if (!fixedDimensions.count(dimension))
+          diff.push_back(dimension);
+      }
       if (dimensions.size() != diff.size())
         throw std::runtime_error("Variables requested for iteration have "
                                  "different dimensions");
     }
+
+    return relevantDimensions;
   }
+
+public:
+  template <class T>
+  using ref_type = variable_type_t<detail::value_type_t<T>> &;
+  DatasetIterator(Dataset &dataset,
+                  const std::set<Dimension> &fixedDimensions = {})
+      : m_relevantDimensions(relevantDimensions(dataset, fixedDimensions)),
+        m_index(extractExtents(m_relevantDimensions, fixedDimensions)),
+        m_columns(
+            std::tuple<LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
+                LinearSubindex(m_relevantDimensions,
+                               dataset.dimensions<detail::value_type_t<Ts>>(),
+                               m_index),
+                dataset.get<detail::value_type_t<Ts>>(),
+                detail::is_slab<Ts>{})...) {}
 
   // TODO create special named getters for frequently used types such as value
   // and errors.
@@ -159,6 +171,7 @@ public:
   bool atLast() { return m_index.index == m_index.end; }
 
 private:
+  std::map<Dimension, gsl::index> m_relevantDimensions;
   MultidimensionalIndex m_index;
   std::tuple<std::tuple<LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>...>
       m_columns;

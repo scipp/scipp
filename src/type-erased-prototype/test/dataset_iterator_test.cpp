@@ -35,9 +35,12 @@ TEST(LinearSubindex, full_subindex) {
   const std::map<Dimension, gsl::index> extents{
       {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
   MultidimensionalIndex i(volume);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 3);
+  dims.add(Dimension::SpectrumNumber, 1);
+  dims.add(Dimension::Q, 2);
 
-  LinearSubindex sub(
-      extents, {Dimension::Tof, Dimension::SpectrumNumber, Dimension::Q}, i);
+  LinearSubindex sub(extents, dims, i);
   gsl::index count{0};
   while (true) {
     ASSERT_EQ(sub.get(), count++);
@@ -53,7 +56,7 @@ TEST(LinearSubindex, zero_dimensional_subindex) {
       {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
   MultidimensionalIndex i(volume);
 
-  LinearSubindex sub(extents, {}, i);
+  LinearSubindex sub(extents, Dimensions{}, i);
   ASSERT_EQ(sub.get(), 0);
   i.increment();
   ASSERT_EQ(sub.get(), 0);
@@ -73,7 +76,7 @@ TEST(LinearSubindex, fast_1_dimensional_subindex) {
       {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
   MultidimensionalIndex i(volume);
 
-  LinearSubindex sub(extents, {Dimension::Tof}, i);
+  LinearSubindex sub(extents, Dimensions(Dimension::Tof, 3), i);
   ASSERT_EQ(sub.get(), 0);
   i.increment();
   ASSERT_EQ(sub.get(), 1);
@@ -93,7 +96,7 @@ TEST(LinearSubindex, slow_1_dimensional_subindex) {
       {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
   MultidimensionalIndex i(volume);
 
-  LinearSubindex sub(extents, {Dimension::Q}, i);
+  LinearSubindex sub(extents, Dimensions(Dimension::Q, 2), i);
   ASSERT_EQ(sub.get(), 0);
   i.increment();
   ASSERT_EQ(sub.get(), 0);
@@ -112,8 +115,11 @@ TEST(LinearSubindex, flipped_2_dimensional_subindex) {
   const std::map<Dimension, gsl::index> extents{
       {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
   MultidimensionalIndex i(volume);
+  Dimensions dims;
+  dims.add(Dimension::Q, 2);
+  dims.add(Dimension::Tof, 3);
 
-  LinearSubindex sub(extents, {Dimension::Q, Dimension::Tof}, i);
+  LinearSubindex sub(extents, dims, i);
   ASSERT_EQ(sub.get(), 0);
   i.increment();
   ASSERT_EQ(sub.get(), 2);
@@ -246,10 +252,10 @@ TEST(DatasetIterator, single_column_edges) {
   ASSERT_EQ(it.get<Variable::Value>(), 0.2);
   it.increment();
   ASSERT_EQ(it.get<Variable::Value>(), 0.0);
+  ASSERT_FALSE(it.atLast());
   it.increment();
-  // TODO current implementation loops back returning 0.2, since it does not
-  // handle edges correctly, so this test fails.
   ASSERT_EQ(it.get<Variable::Value>(), 2.2);
+  ASSERT_TRUE(it.atLast());
 }
 
 TEST(DatasetIterator, multi_column_edges) {
