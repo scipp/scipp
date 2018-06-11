@@ -25,6 +25,7 @@ template <class T> using is_slab_t = typename is_slab<T>::type;
 }
 
 struct MultidimensionalIndex {
+  MultidimensionalIndex() = default;
   MultidimensionalIndex(const std::vector<gsl::index> dimension)
       : index(dimension.size()), dimension(dimension), end(dimension) {
     for (auto &n : end)
@@ -43,9 +44,9 @@ struct MultidimensionalIndex {
     }
   }
 
-  std::vector<gsl::index> index;
-  std::vector<gsl::index> dimension;
-  std::vector<gsl::index> end;
+  std::vector<gsl::index> index{0};
+  std::vector<gsl::index> dimension{0};
+  std::vector<gsl::index> end{0};
 };
 
 class LinearSubindex {
@@ -100,8 +101,7 @@ public:
   using ref_type = variable_type_t<detail::value_type_t<T>> &;
   DatasetIterator(Dataset &dataset,
                   const std::set<Dimension> &fixedDimensions = {})
-      : m_index(extractExtents(dataset.dimensions(), fixedDimensions)),
-        m_columns(
+      : m_columns(
             std::tuple<LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
                 LinearSubindex(dataset.dimensions(),
                                dataset.dimensions<detail::value_type_t<Ts>>(),
@@ -117,6 +117,13 @@ public:
           dimensions.insert(dimension);
       }
     }
+
+    auto datasetDimensions = dataset.dimensions();
+    std::map<Dimension, gsl::index> relevantDimensions;
+    for (const auto &dimension : dimensions)
+      relevantDimensions[dimension] = datasetDimensions.at(dimension);
+    m_index = MultidimensionalIndex(
+        extractExtents(relevantDimensions, fixedDimensions));
 
     std::vector<bool> is_const{std::is_const<Ts>::value...};
     for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
