@@ -9,20 +9,20 @@ TEST(Dataset, construct_empty) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(Dataset, construct) { ASSERT_NO_THROW(Dataset d); }
 
-TEST(Dataset, add_variables) {
+TEST(Dataset, insert_variables) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions{}, {1.1});
-  d.add<Variable::Int>("name2", Dimensions{}, {2l});
+  d.insert<Variable::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Variable::Int>("name2", Dimensions{}, {2l});
   ASSERT_EQ(d.size(), 2);
 }
 
-TEST(Dataset, add_variables_with_dimensions) {
+TEST(Dataset, insert_variables_with_dimensions) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  d.add<Variable::Int>("name2", Dimensions{}, {2l});
+  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+  d.insert<Variable::Int>("name2", Dimensions{}, {2l});
 }
 
-TEST(Dataset, add_variables_dimension_fail) {
+TEST(Dataset, insert_variables_dimension_fail) {
   Dimensions xy;
   Dimensions xz;
   Dimensions yz;
@@ -33,24 +33,25 @@ TEST(Dataset, add_variables_dimension_fail) {
   xz.add(Dimension::Z, 3);
   yz.add(Dimension::Z, 3);
   Dataset xyz;
-  xyz.add<Variable::Value>("name1", xy, 2);
-  EXPECT_NO_THROW(xyz.add<Variable::Value>("name2", yz, 6));
-  EXPECT_NO_THROW(xyz.add<Variable::Value>("name2", xz, 3));
+  xyz.insert<Variable::Value>("name1", xy, 2);
+  EXPECT_NO_THROW(xyz.insert<Variable::Value>("name2", yz, 6));
+  EXPECT_NO_THROW(xyz.insert<Variable::Value>("name2", xz, 3));
   // The following should also work (and NOT throw), it is simply constructing
   // the same Dataset in a different order. For the time being, it does NOT
   // work, but this is simply due to a crude preliminary implementation of the
   // dimension merging code in Dataset.
   Dataset xzy;
-  xzy.add<Variable::Value>("name1", xz, 3);
-  EXPECT_NO_THROW(xzy.add<Variable::Value>("name2", xy, 2));
-  EXPECT_THROW_MSG(xzy.add<Variable::Value>("name2", yz, 6), std::runtime_error,
-                   "Cannot add variable to Dataset: Dimension order mismatch");
+  xzy.insert<Variable::Value>("name1", xz, 3);
+  EXPECT_NO_THROW(xzy.insert<Variable::Value>("name2", xy, 2));
+  EXPECT_THROW_MSG(
+      xzy.insert<Variable::Value>("name2", yz, 6), std::runtime_error,
+      "Cannot insert variable into Dataset: Dimension order mismatch");
 }
 
 TEST(Dataset, get) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions{}, {1.1});
-  d.add<Variable::Int>("name2", Dimensions{}, {2l});
+  d.insert<Variable::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Variable::Int>("name2", Dimensions{}, {2l});
   auto &view = d.get<Variable::Value>();
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);
@@ -60,8 +61,8 @@ TEST(Dataset, get) {
 
 TEST(Dataset, get_const) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions{}, {1.1});
-  d.add<Variable::Int>("name2", Dimensions{}, {2l});
+  d.insert<Variable::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Variable::Int>("name2", Dimensions{}, {2l});
   auto &view = d.get<const Variable::Value>();
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);

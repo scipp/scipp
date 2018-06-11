@@ -29,9 +29,9 @@ TEST(Histogram, copy_copies_data) {
   Dataset d;
   Dimensions dims;
   dims.add(Dimension::Tof, 2);
-  d.add<Variable::Value>("name1", dims, 2);
+  d.insert<Variable::Value>("name1", dims, 2);
   dims.add(Dimension::SpectrumNumber, 10);
-  d.add<Variable::Int>("name2", dims, 20);
+  d.insert<Variable::Int>("name2", dims, 20);
   Histogram hist(d, 1); // should only ever live within Dataset, this
                         // constructor would not be public in the final
                         // implementation!

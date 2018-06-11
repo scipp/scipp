@@ -129,19 +129,21 @@ TEST(LinearSubindex, flipped_2_dimensional_subindex) {
 
 TEST(DatasetIterator, construct) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions{}, {1.1});
-  d.add<Variable::Int>("name2", Dimensions{}, {2l});
+  d.insert<Variable::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Variable::Int>("name2", Dimensions{}, {2l});
   ASSERT_NO_THROW(DatasetIterator<> it(d));
   ASSERT_NO_THROW(DatasetIterator<Variable::Value> it(d));
   ASSERT_NO_THROW(DatasetIterator<Variable::Int> it(d));
-  ASSERT_NO_THROW(auto it = (DatasetIterator<Variable::Int, Variable::Value>(d)));
-  ASSERT_THROW(auto it = (DatasetIterator<Variable::Int, Variable::Error>(d)), std::runtime_error);
+  ASSERT_NO_THROW(auto it =
+                      (DatasetIterator<Variable::Int, Variable::Value>(d)));
+  ASSERT_THROW(auto it = (DatasetIterator<Variable::Int, Variable::Error>(d)),
+               std::runtime_error);
 }
 
 TEST(DatasetIterator, single_column) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 10), 10);
-  d.add<Variable::Int>("name2", Dimensions(Dimension::Tof, 10), 10);
+  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 10), 10);
+  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 10), 10);
   auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[3] = 3.2;
@@ -158,8 +160,8 @@ TEST(DatasetIterator, single_column) {
 
 TEST(DatasetIterator, multi_column) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
-  d.add<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
   auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;
@@ -174,14 +176,16 @@ TEST(DatasetIterator, multi_column) {
 
 TEST(DatasetIterator, multi_column_mixed_dimension) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
-  d.add<Variable::Int>("name2", Dimensions{}, 1);
+  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Variable::Int>("name2", Dimensions{}, 1);
   auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;
 
-  ASSERT_ANY_THROW(auto it = (DatasetIterator<Variable::Value, Variable::Int>(d)));
-  ASSERT_NO_THROW(auto it = (DatasetIterator<Variable::Value, const Variable::Int>(d)));
+  ASSERT_ANY_THROW(auto it =
+                       (DatasetIterator<Variable::Value, Variable::Int>(d)));
+  ASSERT_NO_THROW(
+      auto it = (DatasetIterator<Variable::Value, const Variable::Int>(d)));
   auto it = (DatasetIterator<Variable::Value, const Variable::Int>(d));
   ASSERT_EQ(it.get<Variable::Value>(), 0.2);
   ASSERT_EQ(it.get<const Variable::Int>(), 0);
@@ -192,13 +196,14 @@ TEST(DatasetIterator, multi_column_mixed_dimension) {
 
 TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
   Dataset d;
-  d.add<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
-  d.add<Variable::Int>("name2", Dimensions{}, 1);
+  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Variable::Int>("name2", Dimensions{}, 1);
   auto &view = d.get<Variable::Value>();
   view[0] = 0.2;
   view[1] = 3.2;
 
-  // Should fixed dimension be generic, or should we just provide a couple of special cases, in particular for Tof?
+  // Should fixed dimension be generic, or should we just provide a couple of
+  // special cases, in particular for Tof?
   // Use direct column access otherwise (how to access things like Tof slices?)?
   // YAGNI? Just support a single fixed dimension, given at compile time?!
   // We might want to iterate all BinEdges, getting a slab of corresponding

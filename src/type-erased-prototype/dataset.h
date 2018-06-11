@@ -10,29 +10,29 @@
 
 class Dataset {
 public:
-  void add(DataArray variable) {
+  void insert(DataArray variable) {
     // TODO prevent duplicate names (if type matches)
     mergeDimensions(variable.dimensions());
     m_variables.push_back(std::move(variable));
   }
 
   template <class Tag, class... Args>
-  void add(const std::string &name, Dimensions dimensions, Args &&... args) {
+  void insert(const std::string &name, Dimensions dimensions, Args &&... args) {
     auto a =
         makeDataArray<Tag>(std::move(dimensions), std::forward<Args>(args)...);
     a.setName(name);
-    add(std::move(a));
+    insert(std::move(a));
   }
 
   template <class Tag, class T>
-  void add(const std::string &name, Dimensions dimensions,
-           std::initializer_list<T> values) {
+  void insert(const std::string &name, Dimensions dimensions,
+              std::initializer_list<T> values) {
     auto a = makeDataArray<Tag>(std::move(dimensions), values);
     a.setName(name);
-    add(std::move(a));
+    insert(std::move(a));
   }
 
-  // TODO addAsEdge
+  // TODO insertAsEdge
 
   gsl::index size() const { return m_variables.size(); }
   const DataArray &operator[](gsl::index i) const { return m_variables[i]; }
@@ -82,7 +82,7 @@ private:
         if (m_dimensions.label(j) == dim) {
           if (m_dimensions.size(j) != size) // TODO compare ragged
             throw std::runtime_error(
-                "Cannot add variable to Dataset: Dimensions do not match");
+                "Cannot insert variable into Dataset: Dimensions do not match");
           found = true;
           break;
         }
@@ -90,7 +90,7 @@ private:
       if (!found) {
         if (m_dimensions.contains(dim))
           throw std::runtime_error(
-              "Cannot add variable to Dataset: Dimension order mismatch");
+              "Cannot insert variable into Dataset: Dimension order mismatch");
         m_dimensions.add(dim, size);
       }
     }
@@ -121,7 +121,7 @@ inline Dataset concatenate(const Dimension dim, const Dataset &d1,
       if ((var1.type() == var2.type()) && (var1.name() == var2.name())) {
         // TODO check if data is the same, do not concatenate if this is a new
         // dimension.
-        out.add(concatenate(dim, var1, var2));
+        out.insert(concatenate(dim, var1, var2));
         break;
       }
     }
