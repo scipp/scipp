@@ -221,6 +221,39 @@ TEST(DatasetIterator, multi_column_mixed_dimension_with_slab) {
   it.get<Variable::Int>();
 }
 
+TEST(DatasetIterator, single_column_edges) {
+  Dataset d;
+  auto edges = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3), 3);
+  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  auto &view = d.get<Variable::Value>();
+  ASSERT_EQ(view.size(), 3);
+  view[0] = 0.2;
+  view[2] = 2.2;
+
+  DatasetIterator<Variable::Value> it(d);
+  ASSERT_EQ(it.get<Variable::Value>(), 0.2);
+  it.increment();
+  ASSERT_EQ(it.get<Variable::Value>(), 0.0);
+  it.increment();
+  // TODO current implementation loops back returning 0.2, since it does not
+  // handle edges correctly, so this test fails.
+  ASSERT_EQ(it.get<Variable::Value>(), 2.2);
+}
+
+TEST(DatasetIterator, multi_column_edges) {
+  Dataset d;
+  auto edges = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3), 3);
+  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  auto &view = d.get<Variable::Value>();
+  view[0] = 0.2;
+  view[2] = 2.2;
+
+  // TODO Cannot simultaneously iterate edges and non-edges, this should throw.
+  ASSERT_ANY_THROW((DatasetIterator<Variable::Value, Variable::Int>(d)));
+}
+
 #if 0
 TEST(DatasetIterator, notes) {
   Dataset d(std::vector<double>(1), std::vector<int>(1));

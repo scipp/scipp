@@ -51,8 +51,10 @@ TEST(Dataset, insert_variables_dimension_fail) {
 TEST(Dataset, insertAsEdge) {
   Dataset d;
   d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  auto edges = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3),
+  auto edges = makeDataArray<Variable::Error>(Dimensions(Dimension::Tof, 3),
                                               {1.1, 2.2, 3.3});
+  edges.setName("edges");
+  EXPECT_EQ(d.dimensions().at(Dimension::Tof), 2);
   EXPECT_THROW_MSG(
       d.insert(edges), std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match");
@@ -73,9 +75,21 @@ TEST(Dataset, insertAsEdge_fail) {
       d.insertAsEdge(Dimension::Tof, too_long), std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match");
   auto edges = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3),
-                                                 {1.1, 2.2, 3.3});
+                                              {1.1, 2.2, 3.3});
   EXPECT_THROW_MSG(d.insertAsEdge(Dimension::X, edges), std::runtime_error,
                    "Dimension not found.");
+}
+
+TEST(Dataset, insertAsEdge_reverse_fail) {
+  Dataset d;
+  auto edges =
+      makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+  d.insertAsEdge(Dimension::Tof, edges);
+  EXPECT_THROW_MSG(
+      d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2),
+                                {1.1, 2.2}),
+      std::runtime_error,
+      "Cannot insert variable into Dataset: Dimensions do not match");
 }
 
 TEST(Dataset, get) {
