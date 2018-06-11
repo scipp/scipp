@@ -181,10 +181,6 @@ public:
                 dataset.get<detail::value_type_t<Ts>>(),
                 detail::is_slab<Ts>{})...) {}
 
-  // TODO create special named getters for frequently used types such as value
-  // and errors.
-  // get<double> would fail in that case because both value and error are of
-  // type double.
   // TODO add get version for Slab.
   // TODO const/non-const versions.
   template <class Tag>
