@@ -358,25 +358,6 @@ TEST(DatasetIterator, notes) {
 }
 #endif
 
-template <class Base, class T> struct GetterMixin;
-
-template <class Base> struct GetterMixin<Base, double> {
-  double getDouble() { return 1.5; }
-};
-
-template <class Base> struct GetterMixin<Base, int> {
-  int getInt() { return 1; }
-};
-
-template <class... Ts> struct View : public GetterMixin<View<Ts...>, Ts>... {};
-
-TEST(GetterMixins, compilation_test) {
-  View<double, int> view;
-  // The actual "test" is that the following code compiles:
-  EXPECT_EQ(view.getDouble(), 1.5);
-  EXPECT_EQ(view.getInt(), 1);
-}
-
 template <class T> constexpr int type_to_id();
 template <> constexpr int type_to_id<double>() { return 0; }
 template <> constexpr int type_to_id<int>() { return 1; }
