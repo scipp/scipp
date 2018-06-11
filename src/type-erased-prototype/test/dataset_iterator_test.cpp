@@ -267,8 +267,10 @@ TEST(DatasetIterator, multi_column_edges) {
   view[0] = 0.2;
   view[2] = 2.2;
 
-  // TODO Cannot simultaneously iterate edges and non-edges, this should throw.
+  // Cannot simultaneously iterate edges and non-edges, so this throws.
   ASSERT_ANY_THROW((DatasetIterator<Variable::Value, Variable::Int>(d)));
+  // TODO implement a way to iterate bins, maybe using a helper class
+  // Bins<Variable::Tof> that can be used as a tag?
 }
 
 #if 0

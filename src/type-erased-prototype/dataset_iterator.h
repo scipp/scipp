@@ -104,17 +104,22 @@ private:
                      const std::set<Dimension> &fixedDimensions) {
     std::vector<Dimensions> variableDimensions{
         dataset.dimensions<detail::value_type_t<Ts>>()...};
+    auto datasetDimensions =
+        sizeof...(Ts) == 1 ? variableDimensions[0] : dataset.dimensions();
+
     std::set<Dimension> dimensions;
     for (const auto &thisVariableDimensions : variableDimensions) {
       for (gsl::index i = 0; i < thisVariableDimensions.count(); ++i) {
         const auto &dimension = thisVariableDimensions.label(i);
-        if (fixedDimensions.count(dimension) == 0)
+        if (fixedDimensions.count(dimension) == 0) {
+          if (thisVariableDimensions.size(i) !=
+              datasetDimensions.size(dimension))
+            throw std::runtime_error("");
           dimensions.insert(dimension);
+        }
       }
     }
 
-    auto datasetDimensions =
-        sizeof...(Ts) == 1 ? variableDimensions[0] : dataset.dimensions();
     std::map<Dimension, gsl::index> relevantDimensions;
     for (const auto &dimension : dimensions)
       relevantDimensions[dimension] = datasetDimensions.size(dimension);
