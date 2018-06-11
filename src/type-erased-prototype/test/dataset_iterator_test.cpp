@@ -268,7 +268,11 @@ TEST(DatasetIterator, multi_column_edges) {
   view[2] = 2.2;
 
   // Cannot simultaneously iterate edges and non-edges, so this throws.
-  ASSERT_ANY_THROW((DatasetIterator<Variable::Value, Variable::Int>(d)));
+  EXPECT_THROW_MSG(
+      (DatasetIterator<Variable::Value, Variable::Int>(d)), std::runtime_error,
+      "One of the variables requested for iteration represents bin edges, "
+      "direct joint iteration is not possible. Use the Bins<> wrapper to "
+      "iterate over bins defined by edges instead.");
   // TODO implement a way to iterate bins, maybe using a helper class
   // Bins<Variable::Tof> that can be used as a tag?
 }

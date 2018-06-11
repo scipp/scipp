@@ -123,7 +123,10 @@ private:
         if (fixedDimensions.count(dimension) == 0) {
           if (thisVariableDimensions.size(i) !=
               datasetDimensions.size(dimension))
-            throw std::runtime_error("");
+            throw std::runtime_error(
+                "One of the variables requested for iteration represents bin "
+                "edges, direct joint iteration is not possible. Use the Bins<> "
+                "wrapper to iterate over bins defined by edges instead.");
           dimensions.insert(dimension);
         }
       }
