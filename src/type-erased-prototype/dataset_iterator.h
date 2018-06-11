@@ -11,6 +11,9 @@ template <class T> struct Slab { using value_type = T; };
 
 namespace detail {
 template <class T> struct value_type { using type = T; };
+template <class T> struct value_type<Bins<T>> {
+  using type = T;
+};
 template <class T> struct value_type<Slab<T>> {
   using type = typename Slab<T>::value_type;
 };
@@ -22,6 +25,10 @@ template <class T> using value_type_t = typename value_type<T>::type;
 template <class T> struct is_slab : public std::false_type {};
 template <class T> struct is_slab<Slab<T>> : public std::true_type {};
 template <class T> using is_slab_t = typename is_slab<T>::type;
+
+template <class T> struct is_bins : public std::false_type {};
+template <class T> struct is_bins<Bins<T>> : public std::true_type {};
+template <class T> using is_bins_t = typename is_bins<T>::type;
 }
 
 struct MultidimensionalIndex {
@@ -111,18 +118,21 @@ private:
   std::map<Dimension, gsl::index>
   relevantDimensions(const Dataset &dataset,
                      const std::set<Dimension> &fixedDimensions) {
+    std::vector<bool> is_bins{detail::is_bins<Ts>::value...};
     std::vector<Dimensions> variableDimensions{
         dataset.dimensions<detail::value_type_t<Ts>>()...};
-    auto datasetDimensions =
-        sizeof...(Ts) == 1 ? variableDimensions[0] : dataset.dimensions();
+    auto datasetDimensions = sizeof...(Ts) == 1 && !is_bins[0]
+                                 ? variableDimensions[0]
+                                 : dataset.dimensions();
 
     std::set<Dimension> dimensions;
-    for (const auto &thisVariableDimensions : variableDimensions) {
-      for (gsl::index i = 0; i < thisVariableDimensions.count(); ++i) {
-        const auto &dimension = thisVariableDimensions.label(i);
+    for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
+      const auto &thisVariableDimensions = variableDimensions[i];
+      for (gsl::index d = 0; d < thisVariableDimensions.count(); ++d) {
+        const auto &dimension = thisVariableDimensions.label(d);
         if (fixedDimensions.count(dimension) == 0) {
-          if (thisVariableDimensions.size(i) !=
-              datasetDimensions.size(dimension))
+          if (thisVariableDimensions.size(d) !=
+              datasetDimensions.size(dimension) + (is_bins[i] ? 1 : 0))
             throw std::runtime_error(
                 "One of the variables requested for iteration represents bin "
                 "edges, direct joint iteration is not possible. Use the Bins<> "
@@ -163,7 +173,8 @@ public:
       : m_relevantDimensions(relevantDimensions(dataset, fixedDimensions)),
         m_index(extractExtents(m_relevantDimensions, fixedDimensions)),
         m_columns(
-            std::tuple<LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
+            std::tuple<Ts, LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
+                Ts{},
                 LinearSubindex(m_relevantDimensions,
                                dataset.dimensions<detail::value_type_t<Ts>>(),
                                m_index),
@@ -176,11 +187,23 @@ public:
   // type double.
   // TODO add get version for Slab.
   // TODO const/non-const versions.
-  template <class Tag> element_reference_type_t<Tag> get() {
-    auto &col = std::get<
-        std::tuple<LinearSubindex, variable_type_t<Tag> &, std::false_type>>(
-        m_columns);
-    return std::get<1>(col)[std::get<LinearSubindex>(col).get()];
+  template <class Tag>
+  element_reference_type_t<Tag>
+  get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) {
+    auto &col = std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &,
+                                    std::false_type>>(m_columns);
+    return std::get<2>(col)[std::get<LinearSubindex>(col).get()];
+  }
+
+  template <class Tag>
+  element_reference_type_t<Tag>
+  get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) {
+    auto &col = std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &,
+                                    std::false_type>>(m_columns);
+    const auto &data = std::get<2>(col);
+    const auto index = std::get<LinearSubindex>(col).get();
+    // TODO This is wrong if Bins are not the innermost index.
+    return Bin(data[index], data[index + 1]);
   }
 
   // TODO Very bad temporary interface just for testing, make proper begin()
@@ -191,8 +214,9 @@ public:
 private:
   std::map<Dimension, gsl::index> m_relevantDimensions;
   MultidimensionalIndex m_index;
-  std::tuple<std::tuple<LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>...>
-      m_columns;
+  // Ts is a dummy used for Tag-based lookup.
+  std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>,
+                        detail::is_slab_t<Ts>>...> m_columns;
 };
 
 #endif // DATASET_ITERATOR_H

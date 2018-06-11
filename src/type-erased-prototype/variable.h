@@ -28,6 +28,22 @@ struct Variable {
   };
 };
 
+class Bin {
+public:
+  Bin(const double left, const double right) : m_left(left), m_right(right) {}
+
+  double center() const { return 0.5 * (m_left + m_right); }
+  double width() const { return m_right - m_left; }
+  double left() const { return m_left; }
+  double right() const { return m_right; }
+
+private:
+  double m_left;
+  double m_right;
+};
+
+template <class T> struct Bins { using value_type = T; };
+
 template <class Tag> struct variable_type;
 template <class Tag> struct element_reference_type;
 
@@ -36,6 +52,10 @@ template <> struct variable_type<Variable::Tof> {
 };
 template <> struct variable_type<const Variable::Tof> {
   using type = const std::vector<double>;
+};
+
+template <> struct variable_type<Bins<Variable::Tof>> {
+  using type = std::vector<double>;
 };
 
 // template <> struct variable_type<Variable::TofBin> {
@@ -78,6 +98,15 @@ template <> struct element_reference_type<Variable::Tof> {
 };
 template <> struct element_reference_type<const Variable::Tof> {
   using type = const double &;
+};
+
+template <> struct element_reference_type<Bins<Variable::Tof>> {
+  // Note: No reference.
+  using type = Bin;
+};
+template <> struct element_reference_type<Bins<const Variable::Tof>> {
+  // Note: No reference.
+  using type = Bin;
 };
 
 template <> struct element_reference_type<Variable::Value> {

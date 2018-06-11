@@ -258,23 +258,50 @@ TEST(DatasetIterator, single_column_edges) {
   ASSERT_TRUE(it.atLast());
 }
 
-TEST(DatasetIterator, multi_column_edges) {
+TEST(DatasetIterator, single_column_bins) {
   Dataset d;
-  auto edges = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeDataArray<Variable::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &view = d.get<Variable::Value>();
+  auto &view = d.get<Variable::Tof>();
+  ASSERT_EQ(view.size(), 3);
   view[0] = 0.2;
+  view[1] = 1.2;
+  view[2] = 2.2;
+
+  DatasetIterator<Bins<Variable::Tof>> it(d);
+  it.increment();
+  // Lenth of edges is 3, but there are only 2 bins!
+  ASSERT_TRUE(it.atLast());
+}
+
+TEST(DatasetIterator, multi_column_edges) {
+  Dataset d;
+  auto edges = makeDataArray<Variable::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  auto &view = d.get<Variable::Tof>();
+  view[0] = 0.2;
+  view[1] = 1.2;
   view[2] = 2.2;
 
   // Cannot simultaneously iterate edges and non-edges, so this throws.
   EXPECT_THROW_MSG(
-      (DatasetIterator<Variable::Value, Variable::Int>(d)), std::runtime_error,
+      (DatasetIterator<Variable::Tof, Variable::Int>(d)), std::runtime_error,
       "One of the variables requested for iteration represents bin edges, "
       "direct joint iteration is not possible. Use the Bins<> wrapper to "
       "iterate over bins defined by edges instead.");
-  // TODO implement a way to iterate bins, maybe using a helper class
-  // Bins<Variable::Tof> that can be used as a tag?
+
+  DatasetIterator<Bins<Variable::Tof>, Variable::Int> it(d);
+  // TODO Singular 'Bin' instead of 'Bins' would make more sense.
+  // TODO What are good names for named getters? tofCenter(), etc.?
+  const auto &bin = it.get<Bins<Variable::Tof>>();
+  EXPECT_EQ(bin.center(), 0.7);
+  EXPECT_EQ(bin.width(), 1.0);
+  EXPECT_EQ(bin.left(), 0.2);
+  EXPECT_EQ(bin.right(), 1.2);
+  it.increment();
+  ASSERT_TRUE(it.atLast());
 }
 
 TEST(DatasetIterator, named_getter) {
