@@ -11,23 +11,20 @@ struct Variable {
   struct Tof {
     static const uint32_t type_id = 0;
   };
-  struct TofBin {
+  struct Value {
     static const uint32_t type_id = 1;
   };
-  struct Value {
+  struct Error {
     static const uint32_t type_id = 2;
   };
-  struct Error {
+  struct Int {
     static const uint32_t type_id = 3;
   };
-  struct Int {
+  struct DimensionSize {
     static const uint32_t type_id = 4;
   };
-  struct DimensionSize {
-    static const uint32_t type_id = 5;
-  };
   struct Histogram {
-    static const uint32_t type_id = 6;
+    static const uint32_t type_id = 5;
   };
 };
 
@@ -60,13 +57,6 @@ template <> struct variable_type<const Variable::Tof> {
 template <> struct variable_type<Bins<Variable::Tof>> {
   using type = std::vector<double>;
 };
-
-// template <> struct variable_type<Variable::TofBin> {
-//  using type = Bins<Tof>;
-//};
-// template <> struct variable_type<const Variable::TofBin> {
-//  using type = const Bins<Tof>;
-//};
 
 template <> struct variable_type<Variable::Value> {
   using type = std::vector<double>;

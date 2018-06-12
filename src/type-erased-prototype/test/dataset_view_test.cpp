@@ -332,7 +332,22 @@ TEST(DatasetView, histogram) {
                             {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   d.insert<Variable::Error>("sample", dims, 8);
 
-  DatasetView<Variable::Histogram> view(d, {Dimension::Tof});
+  // Implies that Dimension::Tof is fixed.
+  // TODO How can we identify which dimension the histogram spans?
+  // Histogram<Dimension::Tof>?
+  // How to deal with multiple data variables, e.g., monitors which would be
+  // present in many cases?
+  // Are we forced to (almost) always use a string to identify variables?
+  // Handle duplicate matches as extra dimension (assuming only one variable is
+  // duplicate)?
+  // makeDatasetView(d, Variable::Histogram("sample"));
+  // Find variables by their dimensions? E.g, Dimension::Monitor?
+  // Does grouping variables help? sample.tof, sample.value, sample.error?
+  // Use distinct variable names for monitor data? Will not help in generic
+  // cases of Datasets containing multiple data variables, e.g., for sample and
+  // can, i.e., all algorithms that want to support generic cases will need to
+  // referencing variables by their name anyway?
+  DatasetView<Variable::Histogram> view(d);
   EXPECT_EQ(view.get<Variable::Histogram>().value(0), 1.0);
   EXPECT_EQ(view.get<Variable::Histogram>().value(1), 2.0);
   view.get<Variable::Histogram>().value(1) += 0.2;
