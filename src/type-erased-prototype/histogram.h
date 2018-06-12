@@ -6,6 +6,8 @@
 
 template <class... Ts> class DatasetView;
 
+// Note that this does not and will not support "point data". Will be handled by
+// a separate type!
 class Histogram {
 public:
   Histogram() = default;
@@ -36,6 +38,8 @@ public:
   template <class... Ts> friend class DatasetView;
 
 private:
+  // TODO Unit for Y and E (representing whether we are dealing with
+  // count/frequencies standard deviations/variance.
   const Unit m_unit{Unit::Id::Dimensionless};
   const gsl::index m_size{0};
   const gsl::index m_stride{1};

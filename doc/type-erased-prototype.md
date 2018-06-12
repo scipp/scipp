@@ -428,5 +428,46 @@ else
 - Issues from having monitors as variables in `Dataset`?
   Will have a second set of, e.g., `Variable::Tof` with different dimensions.
   Forces us to always use names for access?
+  - Would it make sense to restrict many variables to be single-use within a given `Dataset`, e.g., there can only be one set of instrument-related variables, one log, ...?
+    Would this help with the naming issue?
+  - If there are multiple variables with the same type and shape, should we just use an extra dimension?
+    No, since we will not have good sharing anymore, e.g., if sample and can runs are held in the same `Dataset`.
 - Introduce distinction between coordinate variables and data variables, similar to `xarray`?
   This defines which variables are transformed in operations, e.g., which variables are multiplied in a multiply operation between `Datasets`.
+- How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?
+- `Histogram` access:
+  - Must be able to specify the dimension the histogram spans.
+    This could be any, e.g., if there are bin edge axes in multiple dimensions?
+  - How can we find the correct edge variable?
+  - If we have the edge variable, we can check which dimension is longer, so we can figure out the correct dimension to span.
+    However, this would not work for point data!
+  - The edge/point variable matches its dimension variable, e.g., `Variable::Tof` for `Dimension::Tof`, i.e, it is always possible to associate one with the other, provided we know one of the two.
+  - Dimension identifies edge/point variable (unless there are multiple, see monitors issue above), but not the corresponding `Variable::Value` and `Variable::Error` (unless they are unique).
+- In cases with multiple "data variables" in a `Dataset`:
+  Do we want to or need to support distinct coordinates for each of them, i.e., coordinates with different values or even different lengths for each data variable?
+  - Not considering monitors, the answer is probably "no".
+    We would lose too much generality and options for getting dimensions sizes.
+    If it is essential for a particular use case, using an auxiliary dimension with ragged other dimension could be sufficient?
+  - Is the consequence that coordinates do not need a name?
+    Not for standard coordinates, but user coordinates such as a string labeling spectra requires naming support!
+
+Which variables are "data variables" and which are not?
+The distinction is based on the behavior under (arithmetic) operations:
+- *Data variables* are *transformed*.
+- Other variables (coordinates?) are *matched*.
+
+Data variables:
+- `Variable::Value`
+- `Variable::Error`
+- `Variable::String`
+- `Variable::Int`
+- `Variable::ExperimentLog`
+
+Other variables:
+- `Variable::Tof`
+- `Variable::Q`
+- `Variable::SpectrumNumber`
+- `Variable::DetectorId`
+- `Variable::SpectrumPosition`
+- `Variable::DetectorPosition`
+- `Variable::String` and others could also be used to label coordinates, in which case they would not be data variables?

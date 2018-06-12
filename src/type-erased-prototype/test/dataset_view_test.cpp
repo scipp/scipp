@@ -340,7 +340,9 @@ TEST(DatasetView, histogram) {
   // Are we forced to (almost) always use a string to identify variables?
   // Handle duplicate matches as extra dimension (assuming only one variable is
   // duplicate)?
-  // makeDatasetView(d, Variable::Histogram("sample"));
+  // makeDatasetView(d, Variable::Histogram(Dimension::Tof, "sample"));
+  // ... but how do we deal with derived dimensions, e.g.,
+  // Dimension::Wavelength?
   // Find variables by their dimensions? E.g, Dimension::Monitor?
   // Does grouping variables help? sample.tof, sample.value, sample.error?
   // Use distinct variable names for monitor data? Will not help in generic

@@ -47,13 +47,9 @@ public:
   gsl::index size() const { return m_variables.size(); }
   const DataArray &operator[](gsl::index i) const { return m_variables[i]; }
 
-  // TODO need (helper) types for values and errors (instead of
-  // std::vector<double>, which
-  // would be duplicate). This is also the reason for T being the column type,
-  // not the element type.
   template <class Tag> variable_type_t<Tag> &get() {
     for (auto &item : m_variables) {
-      // TODO check for duplicate column types (can use get based on name in
+      // TODO check for duplicate variable types (can use get based on name in
       // that case).
       if (item.type() == Tag::type_id)
         return item.get<Tag>();
