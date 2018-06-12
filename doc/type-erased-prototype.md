@@ -421,3 +421,12 @@ else
   This is in a very early state and needs to be expanded with set-like algebra and similar operations.
   Some of these are currently scattered to other classes like `DatasetView`.
   No major difficulty here due to well contained functionality, but will be quite tedious to do a full implementation covering all corner cases.
+- Add basic support for units.
+  The interface for (avoiding) the redundancy of defining units for variables that are coordinates for their dimension is still unclear.
+- How exactly will name-based access work?
+  Especially in combination with `DatasetView`?
+- Issues from having monitors as variables in `Dataset`?
+  Will have a second set of, e.g., `Variable::Tof` with different dimensions.
+  Forces us to always use names for access?
+- Introduce distinction between coordinate variables and data variables, similar to `xarray`?
+  This defines which variables are transformed in operations, e.g., which variables are multiplied in a multiply operation between `Datasets`.

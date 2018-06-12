@@ -12,6 +12,9 @@ class Dataset {
 public:
   void insert(DataArray variable) {
     // TODO prevent duplicate names (if type matches)
+    // TODO special handling for special variables types like
+    // Variable::Histogram (either prevent adding, or extract into underlying
+    // variables).
     mergeDimensions(variable.dimensions());
     m_variables.push_back(std::move(variable));
   }
@@ -63,8 +66,11 @@ public:
   }
 
   template <class Tag> const Dimensions &dimensions() const {
+    const auto id = Tag::type_id == Variable::Histogram::type_id
+                        ? Variable::Value::type_id
+                        : Tag::type_id;
     for (auto &item : m_variables)
-      if (item.type() == Tag::type_id)
+      if (item.type() == id)
         return item.dimensions();
     throw std::runtime_error("Dataset does not contain such a column");
   }

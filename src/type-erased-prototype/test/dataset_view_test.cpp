@@ -321,6 +321,22 @@ TEST(DatasetView, named_getter) {
   ASSERT_EQ(view.tof(), 2.2);
 }
 
+TEST(DatasetView, histogram) {
+  Dataset d;
+  auto tof = makeDataArray<Variable::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  d.insertAsEdge(Dimension::Tof, tof);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 2);
+  dims.add(Dimension::Spectrum, 4);
+  d.insert<Variable::Value>("sample", dims,
+                            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+  d.insert<Variable::Error>("sample", dims, 8);
+
+  DatasetView<Variable::Histogram> view(d, {Dimension::Tof});
+  EXPECT_EQ(view.get<Variable::Histogram>().value(0), 1.0);
+  EXPECT_EQ(view.get<Variable::Histogram>().value(1), 2.0);
+}
+
 #if 0
 TEST(DatasetView, notes) {
   Dataset d(std::vector<double>(1), std::vector<int>(1));

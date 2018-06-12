@@ -26,6 +26,9 @@ struct Variable {
   struct DimensionSize {
     static const uint32_t type_id = 5;
   };
+  struct Histogram {
+    static const uint32_t type_id = 6;
+  };
 };
 
 class Bin {
@@ -93,6 +96,14 @@ template <> struct variable_type<const Variable::DimensionSize> {
   using type = const std::vector<gsl::index>;
 };
 
+class Histogram;
+template <> struct variable_type<Variable::Histogram> {
+  using type = std::vector<Histogram>;
+};
+template <> struct variable_type<const Variable::Histogram> {
+  using type = const std::vector<Histogram>;
+};
+
 template <> struct element_reference_type<Variable::Tof> {
   using type = double &;
 };
@@ -135,6 +146,13 @@ template <> struct element_reference_type<Variable::DimensionSize> {
 };
 template <> struct element_reference_type<const Variable::DimensionSize> {
   using type = const gsl::index &;
+};
+
+template <> struct element_reference_type<Variable::Histogram> {
+  using type = Histogram &;
+};
+template <> struct element_reference_type<const Variable::Histogram> {
+  using type = const Histogram &;
 };
 
 template <class Tag> using variable_type_t = typename variable_type<Tag>::type;

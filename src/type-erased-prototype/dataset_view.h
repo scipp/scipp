@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include "dataset.h"
+#include "histogram.h"
 
 template <class T> struct Slab { using value_type = T; };
 
@@ -93,6 +94,41 @@ template <class Base> struct GetterMixin<Base, Variable::Tof> {
   }
 };
 
+template <class T> using ref_type = variable_type_t<detail::value_type_t<T>> &;
+
+template <class Tag>
+std::unique_ptr<std::vector<Histogram>>
+makeHistogramsIfRequired(Dataset &dataset) {
+  return nullptr;
+}
+
+template <>
+std::unique_ptr<std::vector<Histogram>>
+makeHistogramsIfRequired<Variable::Histogram>(Dataset &dataset) {
+  auto histograms = std::make_unique<std::vector<Histogram>>(0);
+  histograms->reserve(4);
+  const auto &edges = dataset.get<const Variable::Tof>();
+  auto &values = dataset.get<Variable::Value>();
+  auto &errors = dataset.get<Variable::Error>();
+  histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data(), values.data(),
+                           errors.data());
+  return histograms;
+}
+
+template <class Tag>
+ref_type<Tag>
+returnReference(Dataset &dataset,
+                const std::unique_ptr<std::vector<Histogram>> &histograms) {
+  return dataset.get<detail::value_type_t<Tag>>();
+}
+
+template <>
+ref_type<Variable::Histogram> returnReference<Variable::Histogram>(
+    Dataset &dataset,
+    const std::unique_ptr<std::vector<Histogram>> &histograms) {
+  return *histograms;
+}
+
 // pass non-iterated dimensions in constructor?
 // Dataset::begin(Dimension::Tof)??
 // Dataset::begin(DoNotIterate::Tof)??
@@ -163,9 +199,13 @@ private:
     return relevantDimensions;
   }
 
+  template <class Tag> ref_type<Tag> getData(Dataset &dataset) {
+    fprintf(stderr, "%u\n", detail::value_type_t<Tag>::type_id);
+    m_histograms = makeHistogramsIfRequired<Tag>(dataset);
+    return returnReference<Tag>(dataset, m_histograms);
+  }
+
 public:
-  template <class T>
-  using ref_type = variable_type_t<detail::value_type_t<T>> &;
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(dataset, fixedDimensions)),
         m_index(extractExtents(m_relevantDimensions, fixedDimensions)),
@@ -175,8 +215,7 @@ public:
                 LinearSubindex(m_relevantDimensions,
                                dataset.dimensions<detail::value_type_t<Ts>>(),
                                m_index),
-                dataset.get<detail::value_type_t<Ts>>(),
-                detail::is_slab<Ts>{})...) {}
+                getData<Ts>(dataset), detail::is_slab<Ts>{})...) {}
 
   // TODO add get version for Slab.
   // TODO const/non-const versions.
@@ -208,6 +247,8 @@ private:
   std::map<Dimension, gsl::index> m_relevantDimensions;
   MultidimensionalIndex m_index;
   // Ts is a dummy used for Tag-based lookup.
+  //std::unique_ptr<Histogram[]> m_histograms;
+  std::unique_ptr<std::vector<Histogram>> m_histograms;
   std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>,
                         detail::is_slab_t<Ts>>...> m_columns;
 };
