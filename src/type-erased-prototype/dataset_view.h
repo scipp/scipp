@@ -1,5 +1,5 @@
-#ifndef DATASET_ITERATOR_H
-#define DATASET_ITERATOR_H
+#ifndef DATASET_VIEW_H
+#define DATASET_VIEW_H
 
 #include <algorithm>
 #include <tuple>
@@ -11,9 +11,7 @@ template <class T> struct Slab { using value_type = T; };
 
 namespace detail {
 template <class T> struct value_type { using type = T; };
-template <class T> struct value_type<Bins<T>> {
-  using type = T;
-};
+template <class T> struct value_type<Bins<T>> { using type = T; };
 template <class T> struct value_type<Slab<T>> {
   using type = typename Slab<T>::value_type;
 };
@@ -99,7 +97,7 @@ template <class Base> struct GetterMixin<Base, Variable::Tof> {
 // Dataset::begin(Dimension::Tof)??
 // Dataset::begin(DoNotIterate::Tof)??
 template <class... Ts>
-class DatasetIterator : public GetterMixin<DatasetIterator<Ts...>, Ts>... {
+class DatasetView : public GetterMixin<DatasetView<Ts...>, Ts>... {
 private:
   std::vector<gsl::index>
   extractExtents(const std::map<Dimension, gsl::index> &dimensions,
@@ -168,8 +166,7 @@ private:
 public:
   template <class T>
   using ref_type = variable_type_t<detail::value_type_t<T>> &;
-  DatasetIterator(Dataset &dataset,
-                  const std::set<Dimension> &fixedDimensions = {})
+  DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(dataset, fixedDimensions)),
         m_index(extractExtents(m_relevantDimensions, fixedDimensions)),
         m_columns(
@@ -203,7 +200,7 @@ public:
   }
 
   // TODO Very bad temporary interface just for testing, make proper begin()
-  // and end() methods, etc. (rename to DatasetView?).
+  // and end() methods, etc.
   void increment() { m_index.increment(); }
   bool atLast() { return m_index.index == m_index.end; }
 
@@ -215,4 +212,4 @@ private:
                         detail::is_slab_t<Ts>>...> m_columns;
 };
 
-#endif // DATASET_ITERATOR_H
+#endif // DATASET_VIEW_H
