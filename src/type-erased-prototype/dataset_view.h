@@ -97,6 +97,18 @@ template <class Base> struct GetterMixin<Base, Variable::Tof> {
 template <class T> using ref_type = variable_type_t<detail::value_type_t<T>> &;
 
 template <class Tag>
+Dimensions getDimensions(const Dataset &dataset) {
+  return dataset.dimensions<detail::value_type_t<Tag>>();
+}
+
+template <>
+Dimensions getDimensions<Variable::Histogram>(const Dataset &dataset) {
+  auto dims = dataset.dimensions<Variable::Value>();
+  dims.erase(Dimension::Tof);
+  return dims;
+}
+
+template <class Tag>
 std::unique_ptr<std::vector<Histogram>>
 makeHistogramsIfRequired(Dataset &dataset) {
   return nullptr;
@@ -112,6 +124,8 @@ makeHistogramsIfRequired<Variable::Histogram>(Dataset &dataset) {
   auto &errors = dataset.get<Variable::Error>();
   histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data(), values.data(),
                            errors.data());
+  histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data() + 3,
+                           values.data() + 2, errors.data() + 2);
   return histograms;
 }
 
@@ -153,8 +167,7 @@ private:
   relevantDimensions(const Dataset &dataset,
                      const std::set<Dimension> &fixedDimensions) {
     std::vector<bool> is_bins{detail::is_bins<Ts>::value...};
-    std::vector<Dimensions> variableDimensions{
-        dataset.dimensions<detail::value_type_t<Ts>>()...};
+    std::vector<Dimensions> variableDimensions{getDimensions<Ts>(dataset)...};
     auto datasetDimensions = sizeof...(Ts) == 1 && !is_bins[0]
                                  ? variableDimensions[0]
                                  : dataset.dimensions();
@@ -200,7 +213,6 @@ private:
   }
 
   template <class Tag> ref_type<Tag> getData(Dataset &dataset) {
-    fprintf(stderr, "%u\n", detail::value_type_t<Tag>::type_id);
     m_histograms = makeHistogramsIfRequired<Tag>(dataset);
     return returnReference<Tag>(dataset, m_histograms);
   }
@@ -211,10 +223,8 @@ public:
         m_index(extractExtents(m_relevantDimensions, fixedDimensions)),
         m_columns(
             std::tuple<Ts, LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
-                Ts{},
-                LinearSubindex(m_relevantDimensions,
-                               dataset.dimensions<detail::value_type_t<Ts>>(),
-                               m_index),
+                Ts{}, LinearSubindex(m_relevantDimensions,
+                                     getDimensions<Ts>(dataset), m_index),
                 getData<Ts>(dataset), detail::is_slab<Ts>{})...) {}
 
   // TODO add get version for Slab.

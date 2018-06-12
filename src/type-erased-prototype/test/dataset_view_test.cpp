@@ -335,6 +335,10 @@ TEST(DatasetView, histogram) {
   DatasetView<Variable::Histogram> view(d, {Dimension::Tof});
   EXPECT_EQ(view.get<Variable::Histogram>().value(0), 1.0);
   EXPECT_EQ(view.get<Variable::Histogram>().value(1), 2.0);
+  view.get<Variable::Histogram>().value(1) += 0.2;
+  EXPECT_EQ(d.get<Variable::Value>()[1], 2.2);
+  view.increment();
+  EXPECT_EQ(view.get<Variable::Histogram>().value(0), 3.0);
 }
 
 #if 0

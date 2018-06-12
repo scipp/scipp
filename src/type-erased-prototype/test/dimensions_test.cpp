@@ -21,3 +21,12 @@ TEST(Dimensions, offset) {
   EXPECT_EQ(dims.offset(Dimension::Tof), 1);
   EXPECT_EQ(dims.offset(Dimension::Q), 3);
 }
+
+TEST(Dimensions, erase) {
+  Dimensions dims;
+  dims.add(Dimension::Tof, 3);
+  dims.add(Dimension::Q, 2);
+  dims.erase(Dimension::Tof);
+  EXPECT_FALSE(dims.contains(Dimension::Tof));
+  EXPECT_TRUE(dims.contains(Dimension::Q));
+}

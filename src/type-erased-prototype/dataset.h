@@ -66,11 +66,8 @@ public:
   }
 
   template <class Tag> const Dimensions &dimensions() const {
-    const auto id = Tag::type_id == Variable::Histogram::type_id
-                        ? Variable::Value::type_id
-                        : Tag::type_id;
     for (auto &item : m_variables)
-      if (item.type() == id)
+      if (item.type() == Tag::type_id)
         return item.dimensions();
     throw std::runtime_error("Dataset does not contain such a column");
   }

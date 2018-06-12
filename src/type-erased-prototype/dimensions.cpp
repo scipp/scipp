@@ -99,8 +99,7 @@ gsl::index Dimensions::offset(const Dimension label) const {
   gsl::index offset{1};
   for (const auto &item : m_dims) {
     if (item.second == -1)
-      throw std::runtime_error(
-          "Dimension is ragged, offset() not available.");
+      throw std::runtime_error("Dimension is ragged, offset() not available.");
     if (item.first == label) {
       return offset;
     }
@@ -121,6 +120,14 @@ void Dimensions::resize(const Dimension label, const gsl::index size) {
       return;
     }
   throw std::runtime_error("Dimension not found.");
+}
+
+void Dimensions::erase(const Dimension label) {
+  if (m_raggedDim)
+    throw std::runtime_error(
+        "Dimensions::erase not implemented if any dimension is ragged.");
+
+  m_dims.erase(m_dims.begin() + index(label));
 }
 
 const DataArray &Dimensions::raggedSize(const gsl::index i) const {
@@ -148,12 +155,20 @@ void Dimensions::add(const Dimension label, const DataArray &raggedSize) {
   m_raggedDim = std::make_unique<DataArray>(raggedSize);
 }
 
+gsl::index Dimensions::index(const Dimension label) const {
+  for (gsl::index i = 0; i < m_dims.size(); ++i)
+    if (m_dims[i].first == label)
+      return i;
+  throw std::runtime_error("Dimension not found.");
+}
+
 Dimensions concatenate(const Dimension dim, const Dimensions &dims1,
                        const Dimensions &dims2) {
-  if(dims1.contains(dim) && dims2.contains(dim)) {
+  if (dims1.contains(dim) && dims2.contains(dim)) {
     // - all dimension labels must match and have same order.
     // - if dim is ragged, all other dimensions must have matching size.
-    // - if dim is not ragged, one other dimension can have size mismatch (create ragged)
+    // - if dim is not ragged, one other dimension can have size mismatch
+    // (create ragged)
   } else {
     // - all dimension labels must match and have same order
     // - in the result, up to one dimension may be ragged
