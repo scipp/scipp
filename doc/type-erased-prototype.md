@@ -181,9 +181,9 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Instead, do verification lazily only when an axis is actually used for accessing the `Dataset`.
   - Results in some overhead (and MPI communication), but does not appear to happen too frequently and should not be an issue for performance.
 
-- A dimension in the `Dataset` is effectively the same as a unit.
+- A dimension in the `Dataset` is effectively the same as a unit for variables that correspond to the unit.
   For example,
-  - `Dimension::Tof` could be used to imply that the unit is time-of-flight microseconds, converting the unit could be done by changing the dimension label to, e.g., `Dimension::dSpacing`.
+  - `Dimension::Tof` for `Variable::Tof` could be used to imply that the unit is time-of-flight microseconds, converting the unit could be done by changing the dimension label to, e.g., `Dimension::dSpacing` and `Variable::dSpacing`.
   - As a consequence, any operation that checks matching dimensions of variables will implicitly ensure matching units.
 
 - To avoid a fair number of complications, variables should ideally not contain any data apart from the individual items.
@@ -407,3 +407,17 @@ if (d.contains<BinMask>())
 else
   apply<Alg, Histogram>(d);
 ```
+
+## Development log
+
+### Changes from v1 to v2
+
+- Introduced `DataArray`.
+  This helps to define dimensionality, especially when we want to support bin edges, and allows implementations of operations on simpler types, separating the operation on a single variable from difficulties that may arise when defining an operation on a `Dataset` containing many variables.
+- Support bin edges.
+- Support ragged dimensions.
+  Only a couple of basics support this right now due to development overhead that is no required at this prototyping stage.
+- Add a `Dimensions` class, holding dimensions and their extents.
+  This is in a very early state and needs to be expanded with set-like algebra and similar operations.
+  Some of these are currently scattered to other classes like `DatasetView`.
+  No major difficulty here due to well contained functionality, but will be quite tedious to do a full implementation covering all corner cases.
