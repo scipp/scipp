@@ -218,6 +218,17 @@ TEST(DatasetView, multi_column_unrelated_dimension) {
   ASSERT_TRUE(view.atLast());
 }
 
+TEST(DatasetView, multi_column_orthogonal_fail) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions(Dimension::X, 2), 2);
+  d.insert<Data::Int>("name2", Dimensions(Dimension::Y, 3), 3);
+  EXPECT_THROW_MSG((DatasetView<Data::Value, Data::Int>(d)), std::runtime_error,
+                   "Variables requested for iteration do not span a joint "
+                   "space. In case one of the variables represents bin edges "
+                   "direct joint iteration is not possible. Use the Bins<> "
+                   "wrapper to iterate over bins defined by edges instead.");
+}
+
 TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
@@ -336,6 +347,7 @@ TEST(DatasetView, duplicate_data_tag) {
 
   EXPECT_THROW_MSG(DatasetView<Data::Value> view(d), std::runtime_error,
                    "Given variable tag is not unique. Must provide a name.");
+  EXPECT_NO_THROW(DatasetView<Data::Value> view(d, "name2"));
 }
 
 TEST(DatasetView, histogram) {

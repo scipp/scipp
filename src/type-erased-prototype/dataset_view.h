@@ -117,6 +117,14 @@ template <class Tag> struct DimensionHelper {
     static_cast<void>(fixedDimensions);
     return dataset.dimensions<Tag>();
   }
+
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
+    // TODO Use name only for non-coord variables.
+    // TODO Do we need to check here if fixedDimensions are contained?
+    return dataset.dimensions<Tag>(name);
+  }
 };
 
 template <class Tag> struct DimensionHelper<Slab<Tag>> {
@@ -157,6 +165,12 @@ makeHistogramsIfRequired(Dataset &dataset) {
   return nullptr;
 }
 
+template <class Tag>
+std::unique_ptr<std::vector<Histogram>>
+makeHistogramsIfRequired(Dataset &dataset, const std::string &name) {
+  return nullptr;
+}
+
 template <>
 std::unique_ptr<std::vector<Histogram>>
 makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset) {
@@ -172,11 +186,34 @@ makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset) {
   return histograms;
 }
 
+template <>
+std::unique_ptr<std::vector<Histogram>>
+makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset,
+                                          const std::string &name) {
+  auto histograms = std::make_unique<std::vector<Histogram>>(0);
+  histograms->reserve(4);
+  const auto &edges = dataset.get<const Data::Tof>();
+  auto &values = dataset.get<Data::Value>(name);
+  auto &errors = dataset.get<Data::Error>(name);
+  histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data(), values.data(),
+                           errors.data());
+  histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data() + 3,
+                           values.data() + 2, errors.data() + 2);
+  return histograms;
+}
+
 template <class Tag>
 ref_type<Tag>
 returnReference(Dataset &dataset,
                 const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return dataset.get<detail::value_type_t<Tag>>();
+}
+
+template <class Tag>
+ref_type<Tag>
+returnReference(Dataset &dataset, const std::string &name,
+                const std::unique_ptr<std::vector<Histogram>> &histograms) {
+  return dataset.get<detail::value_type_t<Tag>>(name);
 }
 
 template <>
@@ -195,10 +232,8 @@ class DatasetView : public GetterMixin<DatasetView<Ts...>, Ts>... {
                 "DatasetView requires at least one variable for iteration");
 
 private:
-  Dimensions relevantDimensions(const Dataset &dataset,
-                                const std::set<Dimension> &fixedDimensions) {
-    std::vector<Dimensions> variableDimensions{
-        DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
+  Dimensions
+  relevantDimensions(const std::vector<Dimensions> &variableDimensions) {
     const auto &largest =
         *std::max_element(variableDimensions.begin(), variableDimensions.end(),
                           [](const Dimensions &a, const Dimensions &b) {
@@ -228,9 +263,24 @@ private:
     return returnReference<Tag>(dataset, m_histograms);
   }
 
+  template <class Tag>
+  ref_type<Tag> getData(Dataset &dataset, const std::string &name) {
+    m_histograms = makeHistogramsIfRequired<Tag>(dataset, name);
+    return returnReference<Tag>(dataset, name, m_histograms);
+  }
+
 public:
+  DatasetView(Dataset &dataset, const std::string &name,
+              const std::set<Dimension> &fixedDimensions = {})
+      : m_index(relevantDimensions(
+            {DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...})),
+        m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
+            Ts{}, LinearSubindex(m_index, DimensionHelper<Ts>::get(
+                                              dataset, name, fixedDimensions)),
+            getData<Ts>(dataset, name))...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
-      : m_index(relevantDimensions(dataset, fixedDimensions)),
+      : m_index(relevantDimensions(
+            {DimensionHelper<Ts>::get(dataset, fixedDimensions)...})),
         m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
             Ts{}, LinearSubindex(m_index, DimensionHelper<Ts>::get(
                                               dataset, fixedDimensions)),
