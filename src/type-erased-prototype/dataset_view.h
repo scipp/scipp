@@ -30,10 +30,20 @@ template <class T> struct is_bins<Bins<T>> : public std::true_type {};
 template <class T> using is_bins_t = typename is_bins<T>::type;
 }
 
-struct MultidimensionalIndex {
+class MultidimensionalIndex {
+private:
+  std::vector<gsl::index> extractExtents(const Dimensions &dimensions) {
+    std::vector<gsl::index> extents;
+    for (const auto &item : dimensions)
+      extents.push_back(item.second);
+    return extents;
+  }
+
+public:
   MultidimensionalIndex() = default;
-  MultidimensionalIndex(const std::vector<gsl::index> dimension)
-      : index(dimension.size()), dimension(dimension), end(dimension) {
+  MultidimensionalIndex(const Dimensions &dimensions)
+      : dimensions(dimensions), index(dimensions.count()),
+        dimension(extractExtents(dimensions)), end(dimension) {
     for (auto &n : end)
       --n;
   }
@@ -50,6 +60,7 @@ struct MultidimensionalIndex {
     }
   }
 
+  const Dimensions dimensions;
   std::vector<gsl::index> index{0};
   std::vector<gsl::index> dimension{0};
   std::vector<gsl::index> end{0};
@@ -57,16 +68,14 @@ struct MultidimensionalIndex {
 
 class LinearSubindex {
 public:
-  LinearSubindex(const std::map<Dimension, gsl::index> &variableDimensions,
-                 const Dimensions &dimensions,
-                 const MultidimensionalIndex &index)
+  LinearSubindex(const MultidimensionalIndex &index,
+                 const Dimensions &dimensions)
       : m_index(index) {
     gsl::index factor{1};
     for (gsl::index i = 0; i < dimensions.count(); ++i) {
       const auto dimension = dimensions.label(i);
-      if (variableDimensions.count(dimension)) {
-        m_offsets.push_back(std::distance(variableDimensions.begin(),
-                                          variableDimensions.find(dimension)));
+      if (m_index.dimensions.contains(dimension)) {
+        m_offsets.push_back(m_index.dimensions.index(dimension));
         m_factors.push_back(factor);
       }
       factor *= dimensions.size(i);
@@ -186,18 +195,8 @@ class DatasetView : public GetterMixin<DatasetView<Ts...>, Ts>... {
                 "DatasetView requires at least one variable for iteration");
 
 private:
-  std::vector<gsl::index>
-  extractExtents(const std::map<Dimension, gsl::index> &dimensions) {
-    std::vector<gsl::index> extents;
-    for (const auto &item : dimensions) {
-        extents.push_back(item.second);
-    }
-    return extents;
-  }
-
-  std::map<Dimension, gsl::index>
-  relevantDimensions(const Dataset &dataset,
-                     const std::set<Dimension> &fixedDimensions) {
+  Dimensions relevantDimensions(const Dataset &dataset,
+                                const std::set<Dimension> &fixedDimensions) {
     std::vector<Dimensions> variableDimensions{
         DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
     const auto &largest =
@@ -221,7 +220,7 @@ private:
         throw std::runtime_error("Variables requested for iteration have "
                                  "different dimensions");
     }
-    return {largest.begin(), largest.end()};
+    return largest;
   }
 
   template <class Tag> ref_type<Tag> getData(Dataset &dataset) {
@@ -231,31 +230,29 @@ private:
 
 public:
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
-      : m_relevantDimensions(relevantDimensions(dataset, fixedDimensions)),
-        m_index(extractExtents(m_relevantDimensions)),
-        m_columns(
-            std::tuple<Ts, LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
-                Ts{}, LinearSubindex(
-                          m_relevantDimensions,
-                          DimensionHelper<Ts>::get(dataset, fixedDimensions),
-                          m_index),
-                getData<Ts>(dataset), detail::is_slab<Ts>{})...) {}
+      : m_index(relevantDimensions(dataset, fixedDimensions)),
+        m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
+            Ts{}, LinearSubindex(m_index, DimensionHelper<Ts>::get(
+                                              dataset, fixedDimensions)),
+            getData<Ts>(dataset))...) {}
 
   // TODO add get version for Slab.
   // TODO const/non-const versions.
   template <class Tag>
   element_reference_type_t<Tag>
   get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) {
-    auto &col = std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &,
-                                    std::false_type>>(m_columns);
+    auto &col =
+        std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
+            m_columns);
     return std::get<2>(col)[std::get<LinearSubindex>(col).get()];
   }
 
   template <class Tag>
   element_reference_type_t<Tag>
   get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) {
-    auto &col = std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &,
-                                    std::false_type>>(m_columns);
+    auto &col =
+        std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
+            m_columns);
     const auto &data = std::get<2>(col);
     const auto index = std::get<LinearSubindex>(col).get();
     // TODO This is wrong if Bins are not the innermost index.
@@ -268,12 +265,10 @@ public:
   bool atLast() { return m_index.index == m_index.end; }
 
 private:
-  std::map<Dimension, gsl::index> m_relevantDimensions;
   MultidimensionalIndex m_index;
   std::unique_ptr<std::vector<Histogram>> m_histograms;
   // Ts is a dummy used for Tag-based lookup.
-  std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>,
-                        detail::is_slab_t<Ts>>...> m_columns;
+  std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> m_columns;
 };
 
 #endif // DATASET_VIEW_H

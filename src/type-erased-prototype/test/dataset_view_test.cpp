@@ -9,14 +9,20 @@
 #include "dataset_view.h"
 
 TEST(MultidimensionalIndex, end) {
-  const std::vector<gsl::index> volume{3, 1, 2};
-  MultidimensionalIndex i(volume);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 3);
+  dims.add(Dimension::SpectrumNumber, 1);
+  dims.add(Dimension::Q, 2);
+  MultidimensionalIndex i(dims);
   ASSERT_EQ(i.end, (std::vector<gsl::index>{2, 0, 1}));
 }
 
 TEST(MultidimensionalIndex, increment) {
-  const std::vector<gsl::index> volume{3, 1, 2};
-  MultidimensionalIndex i(volume);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 3);
+  dims.add(Dimension::SpectrumNumber, 1);
+  dims.add(Dimension::Q, 2);
+  MultidimensionalIndex i(dims);
   ASSERT_EQ(i.index, (std::vector<gsl::index>{0, 0, 0}));
   i.increment();
   ASSERT_EQ(i.index, (std::vector<gsl::index>{1, 0, 0}));
@@ -31,16 +37,13 @@ TEST(MultidimensionalIndex, increment) {
 }
 
 TEST(LinearSubindex, full_subindex) {
-  const std::vector<gsl::index> volume{3, 1, 2};
-  const std::map<Dimension, gsl::index> extents{
-      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
-  MultidimensionalIndex i(volume);
   Dimensions dims;
   dims.add(Dimension::Tof, 3);
   dims.add(Dimension::SpectrumNumber, 1);
   dims.add(Dimension::Q, 2);
+  MultidimensionalIndex i(dims);
 
-  LinearSubindex sub(extents, dims, i);
+  LinearSubindex sub(i, dims);
   gsl::index count{0};
   while (true) {
     ASSERT_EQ(sub.get(), count++);
@@ -51,12 +54,13 @@ TEST(LinearSubindex, full_subindex) {
 }
 
 TEST(LinearSubindex, zero_dimensional_subindex) {
-  const std::vector<gsl::index> volume{3, 1, 2};
-  const std::map<Dimension, gsl::index> extents{
-      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
-  MultidimensionalIndex i(volume);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 3);
+  dims.add(Dimension::SpectrumNumber, 1);
+  dims.add(Dimension::Q, 2);
+  MultidimensionalIndex i(dims);
 
-  LinearSubindex sub(extents, Dimensions{}, i);
+  LinearSubindex sub(i, Dimensions{});
   ASSERT_EQ(sub.get(), 0);
   i.increment();
   ASSERT_EQ(sub.get(), 0);
@@ -71,12 +75,13 @@ TEST(LinearSubindex, zero_dimensional_subindex) {
 }
 
 TEST(LinearSubindex, fast_1_dimensional_subindex) {
-  const std::vector<gsl::index> volume{3, 1, 2};
-  const std::map<Dimension, gsl::index> extents{
-      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
-  MultidimensionalIndex i(volume);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 3);
+  dims.add(Dimension::SpectrumNumber, 1);
+  dims.add(Dimension::Q, 2);
+  MultidimensionalIndex i(dims);
 
-  LinearSubindex sub(extents, Dimensions(Dimension::Tof, 3), i);
+  LinearSubindex sub(i, Dimensions(Dimension::Tof, 3));
   ASSERT_EQ(sub.get(), 0);
   i.increment();
   ASSERT_EQ(sub.get(), 1);
@@ -91,12 +96,13 @@ TEST(LinearSubindex, fast_1_dimensional_subindex) {
 }
 
 TEST(LinearSubindex, slow_1_dimensional_subindex) {
-  const std::vector<gsl::index> volume{3, 1, 2};
-  const std::map<Dimension, gsl::index> extents{
-      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
-  MultidimensionalIndex i(volume);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 3);
+  dims.add(Dimension::SpectrumNumber, 1);
+  dims.add(Dimension::Q, 2);
+  MultidimensionalIndex i(dims);
 
-  LinearSubindex sub(extents, Dimensions(Dimension::Q, 2), i);
+  LinearSubindex sub(i, Dimensions(Dimension::Q, 2));
   ASSERT_EQ(sub.get(), 0);
   i.increment();
   ASSERT_EQ(sub.get(), 0);
@@ -111,15 +117,16 @@ TEST(LinearSubindex, slow_1_dimensional_subindex) {
 }
 
 TEST(LinearSubindex, flipped_2_dimensional_subindex) {
-  const std::vector<gsl::index> volume{3, 1, 2};
-  const std::map<Dimension, gsl::index> extents{
-      {Dimension::Tof, 3}, {Dimension::SpectrumNumber, 1}, {Dimension::Q, 2}};
-  MultidimensionalIndex i(volume);
   Dimensions dims;
-  dims.add(Dimension::Q, 2);
   dims.add(Dimension::Tof, 3);
+  dims.add(Dimension::SpectrumNumber, 1);
+  dims.add(Dimension::Q, 2);
+  MultidimensionalIndex i(dims);
+  Dimensions subdims;
+  subdims.add(Dimension::Q, 2);
+  subdims.add(Dimension::Tof, 3);
 
-  LinearSubindex sub(extents, dims, i);
+  LinearSubindex sub(i, subdims);
   ASSERT_EQ(sub.get(), 0);
   i.increment();
   ASSERT_EQ(sub.get(), 2);

@@ -45,9 +45,9 @@ public:
   auto begin() const { return m_dims.begin(); }
   auto end() const { return m_dims.end(); }
 
-private:
   gsl::index index(const Dimension label) const;
 
+private:
   std::vector<std::pair<Dimension, gsl::index>> m_dims;
   // In a Dataset, multiple DataArrays will reference the same ragged size
   // DataArray. How can we support shape operations without breaking sharing?
