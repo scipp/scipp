@@ -7,10 +7,10 @@
 static void BM_Dataset_get_with_many_columns(benchmark::State &state) {
   Dataset d;
   for (int i = 0; i < state.range(0); ++i)
-    d.insert<Variable::Value>("name" + i, Dimensions{}, 1);
-  d.insert<Variable::Int>("name", Dimensions{}, 1);
+    d.insert<Data::Value>("name" + i, Dimensions{}, 1);
+  d.insert<Data::Int>("name", Dimensions{}, 1);
   for (auto _ : state)
-    d.get<Variable::Int>();
+    d.get<Data::Int>();
   state.SetItemsProcessed(state.iterations());
 }
 BENCHMARK(BM_Dataset_get_with_many_columns)

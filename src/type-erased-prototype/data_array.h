@@ -76,7 +76,7 @@ public:
   const Unit &unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
     // TODO
-    // Some variables are special, e.g., Variable::Tof, which must always have a
+    // Some variables are special, e.g., Data::Tof, which must always have a
     // time-of-flight-related unit. We need some sort of check here. Is there a
     // better mechanism to implement this that does not require gatekeeping here
     // but expresses itself on the interface instead? Does it make sense to

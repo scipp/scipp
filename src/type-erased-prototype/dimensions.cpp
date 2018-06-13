@@ -47,7 +47,7 @@ gsl::index Dimensions::volume() const {
       if (found != dependentDimensions.count())
         throw std::runtime_error(
             "Ragged size information contains extra dimensions.");
-      const auto &sizes = raggedInfo.get<const Variable::DimensionSize>();
+      const auto &sizes = raggedInfo.get<const Data::DimensionSize>();
       volume *= std::accumulate(sizes.begin(), sizes.end(), 0);
       raggedCorrection = dependentDimensions.volume();
     } else {
@@ -146,7 +146,7 @@ void Dimensions::add(const Dimension label, const gsl::index size) {
 
 void Dimensions::add(const Dimension label, const DataArray &raggedSize) {
   // TODO check duplicate dimensions
-  if (!raggedSize.valueTypeIs<Variable::DimensionSize>())
+  if (!raggedSize.valueTypeIs<Data::DimensionSize>())
     throw std::runtime_error("DataArray with sizes information for ragged "
                              "dimension is of wrong type.");
   m_dims.emplace_back(label, -1);

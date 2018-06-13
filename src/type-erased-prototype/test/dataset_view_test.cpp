@@ -135,86 +135,86 @@ TEST(LinearSubindex, flipped_2_dimensional_subindex) {
 
 TEST(DatasetView, construct) {
   Dataset d;
-  d.insert<Variable::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Variable::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Int>("name2", Dimensions{}, {2l});
   ASSERT_NO_THROW(DatasetView<> view(d));
-  ASSERT_NO_THROW(DatasetView<Variable::Value> view(d));
-  ASSERT_NO_THROW(DatasetView<Variable::Int> view(d));
-  ASSERT_NO_THROW(auto view = (DatasetView<Variable::Int, Variable::Value>(d)));
-  ASSERT_THROW(auto view = (DatasetView<Variable::Int, Variable::Error>(d)),
+  ASSERT_NO_THROW(DatasetView<Data::Value> view(d));
+  ASSERT_NO_THROW(DatasetView<Data::Int> view(d));
+  ASSERT_NO_THROW(auto view = (DatasetView<Data::Int, Data::Value>(d)));
+  ASSERT_THROW(auto view = (DatasetView<Data::Int, Data::Error>(d)),
                std::runtime_error);
 }
 
 TEST(DatasetView, single_column) {
   Dataset d;
-  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 10), 10);
-  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 10), 10);
-  auto &var = d.get<Variable::Value>();
+  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 10), 10);
+  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 10), 10);
+  auto &var = d.get<Data::Value>();
   var[0] = 0.2;
   var[3] = 3.2;
 
-  DatasetView<Variable::Value> view(d);
-  ASSERT_EQ(view.get<Variable::Value>(), 0.2);
+  DatasetView<Data::Value> view(d);
+  ASSERT_EQ(view.get<Data::Value>(), 0.2);
   view.increment();
-  ASSERT_EQ(view.get<Variable::Value>(), 0.0);
+  ASSERT_EQ(view.get<Data::Value>(), 0.0);
   view.increment();
-  ASSERT_EQ(view.get<Variable::Value>(), 0.0);
+  ASSERT_EQ(view.get<Data::Value>(), 0.0);
   view.increment();
-  ASSERT_EQ(view.get<Variable::Value>(), 3.2);
+  ASSERT_EQ(view.get<Data::Value>(), 3.2);
 }
 
 TEST(DatasetView, multi_column) {
   Dataset d;
-  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
-  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &var = d.get<Variable::Value>();
+  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  auto &var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
 
-  DatasetView<Variable::Value, Variable::Int> view(d);
-  ASSERT_EQ(view.get<Variable::Value>(), 0.2);
-  ASSERT_EQ(view.get<Variable::Int>(), 0);
+  DatasetView<Data::Value, Data::Int> view(d);
+  ASSERT_EQ(view.get<Data::Value>(), 0.2);
+  ASSERT_EQ(view.get<Data::Int>(), 0);
   view.increment();
-  ASSERT_EQ(view.get<Variable::Value>(), 3.2);
-  ASSERT_EQ(view.get<Variable::Int>(), 0);
+  ASSERT_EQ(view.get<Data::Value>(), 3.2);
+  ASSERT_EQ(view.get<Data::Int>(), 0);
 }
 
 TEST(DatasetView, multi_column_mixed_dimension) {
   Dataset d;
-  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
-  d.insert<Variable::Int>("name2", Dimensions{}, 1);
-  auto &var = d.get<Variable::Value>();
+  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Data::Int>("name2", Dimensions{}, 1);
+  auto &var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
 
   ASSERT_ANY_THROW(auto view =
-                       (DatasetView<Variable::Value, Variable::Int>(d)));
+                       (DatasetView<Data::Value, Data::Int>(d)));
   ASSERT_NO_THROW(auto view =
-                      (DatasetView<Variable::Value, const Variable::Int>(d)));
-  auto view = (DatasetView<Variable::Value, const Variable::Int>(d));
-  ASSERT_EQ(view.get<Variable::Value>(), 0.2);
-  ASSERT_EQ(view.get<const Variable::Int>(), 0);
+                      (DatasetView<Data::Value, const Data::Int>(d)));
+  auto view = (DatasetView<Data::Value, const Data::Int>(d));
+  ASSERT_EQ(view.get<Data::Value>(), 0.2);
+  ASSERT_EQ(view.get<const Data::Int>(), 0);
   view.increment();
-  ASSERT_EQ(view.get<Variable::Value>(), 3.2);
-  ASSERT_EQ(view.get<const Variable::Int>(), 0);
+  ASSERT_EQ(view.get<Data::Value>(), 3.2);
+  ASSERT_EQ(view.get<const Data::Int>(), 0);
 }
 
 TEST(DatasetView, multi_column_unrelated_dimension) {
   Dataset d;
-  d.insert<Variable::Value>("name1", Dimensions(Dimension::X, 2), 2);
-  d.insert<Variable::Int>("name2", Dimensions(Dimension::Y, 3), 3);
-  DatasetView<Variable::Value> view(d);
+  d.insert<Data::Value>("name1", Dimensions(Dimension::X, 2), 2);
+  d.insert<Data::Int>("name2", Dimensions(Dimension::Y, 3), 3);
+  DatasetView<Data::Value> view(d);
   view.increment();
-  // We iterate only Variable::Value, so there should be no iteration in
+  // We iterate only Data::Value, so there should be no iteration in
   // Dimension::Y.
   ASSERT_TRUE(view.atLast());
 }
 
 TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   Dataset d;
-  d.insert<Variable::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
-  d.insert<Variable::Int>("name2", Dimensions{}, 1);
-  auto &var = d.get<Variable::Value>();
+  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Data::Int>("name2", Dimensions{}, 1);
+  auto &var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
 
@@ -232,44 +232,44 @@ TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   // Maybe a better way to say this is: Iterate all dimensions of BinEdges. In
   // general we do not know which other columns need to be accessed as slabs,
   // how can we deal with this? Just access all as slab (which may be size 1)?
-  DatasetView<Slab<Variable::Value>, Variable::Int> view(d, {Dimension::Tof});
+  DatasetView<Slab<Data::Value>, Data::Int> view(d, {Dimension::Tof});
   // view.get<double>(); // Does not compile, since we cannot get a single
   // double.
-  view.get<Variable::Int>();
+  view.get<Data::Int>();
 }
 
 TEST(DatasetView, single_column_edges) {
   Dataset d;
-  auto edges = makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
-  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &var = d.get<Variable::Value>();
+  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  auto &var = d.get<Data::Value>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[2] = 2.2;
 
-  DatasetView<Variable::Value> view(d);
-  ASSERT_EQ(view.get<Variable::Value>(), 0.2);
+  DatasetView<Data::Value> view(d);
+  ASSERT_EQ(view.get<Data::Value>(), 0.2);
   view.increment();
-  ASSERT_EQ(view.get<Variable::Value>(), 0.0);
+  ASSERT_EQ(view.get<Data::Value>(), 0.0);
   ASSERT_FALSE(view.atLast());
   view.increment();
-  ASSERT_EQ(view.get<Variable::Value>(), 2.2);
+  ASSERT_EQ(view.get<Data::Value>(), 2.2);
   ASSERT_TRUE(view.atLast());
 }
 
 TEST(DatasetView, single_column_bins) {
   Dataset d;
-  auto edges = makeDataArray<Variable::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
-  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &var = d.get<Variable::Tof>();
+  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  auto &var = d.get<Data::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[1] = 1.2;
   var[2] = 2.2;
 
-  DatasetView<Bins<Variable::Tof>> view(d);
+  DatasetView<Bins<Data::Tof>> view(d);
   view.increment();
   // Lenth of edges is 3, but there are only 2 bins!
   ASSERT_TRUE(view.atLast());
@@ -277,25 +277,25 @@ TEST(DatasetView, single_column_bins) {
 
 TEST(DatasetView, multi_column_edges) {
   Dataset d;
-  auto edges = makeDataArray<Variable::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
-  d.insert<Variable::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &var = d.get<Variable::Tof>();
+  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  auto &var = d.get<Data::Tof>();
   var[0] = 0.2;
   var[1] = 1.2;
   var[2] = 2.2;
 
   // Cannot simultaneously iterate edges and non-edges, so this throws.
   EXPECT_THROW_MSG(
-      (DatasetView<Variable::Tof, Variable::Int>(d)), std::runtime_error,
+      (DatasetView<Data::Tof, Data::Int>(d)), std::runtime_error,
       "One of the variables requested for iteration represents bin edges, "
       "direct joint iteration is not possible. Use the Bins<> wrapper to "
       "iterate over bins defined by edges instead.");
 
-  DatasetView<Bins<Variable::Tof>, Variable::Int> view(d);
+  DatasetView<Bins<Data::Tof>, Data::Int> view(d);
   // TODO Singular 'Bin' instead of 'Bins' would make more sense.
   // TODO What are good names for named getters? tofCenter(), etc.?
-  const auto &bin = view.get<Bins<Variable::Tof>>();
+  const auto &bin = view.get<Bins<Data::Tof>>();
   EXPECT_EQ(bin.center(), 0.7);
   EXPECT_EQ(bin.width(), 1.0);
   EXPECT_EQ(bin.left(), 0.2);
@@ -306,14 +306,14 @@ TEST(DatasetView, multi_column_edges) {
 
 TEST(DatasetView, named_getter) {
   Dataset d;
-  auto tof = makeDataArray<Variable::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto tof = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insert(tof);
-  auto &var = d.get<Variable::Tof>();
+  auto &var = d.get<Data::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[2] = 2.2;
 
-  DatasetView<Variable::Tof> view(d);
+  DatasetView<Data::Tof> view(d);
   ASSERT_EQ(view.tof(), 0.2);
   view.increment();
   ASSERT_EQ(view.tof(), 0.0);
@@ -323,14 +323,14 @@ TEST(DatasetView, named_getter) {
 
 TEST(DatasetView, histogram) {
   Dataset d;
-  auto tof = makeDataArray<Variable::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto tof = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, tof);
   Dimensions dims;
   dims.add(Dimension::Tof, 2);
   dims.add(Dimension::Spectrum, 4);
-  d.insert<Variable::Value>("sample", dims,
+  d.insert<Data::Value>("sample", dims,
                             {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  d.insert<Variable::Error>("sample", dims, 8);
+  d.insert<Data::Error>("sample", dims, 8);
 
   // Implies that Dimension::Tof is fixed.
   // TODO How can we identify which dimension the histogram spans?
@@ -340,7 +340,7 @@ TEST(DatasetView, histogram) {
   // Are we forced to (almost) always use a string to identify variables?
   // Handle duplicate matches as extra dimension (assuming only one variable is
   // duplicate)?
-  // makeDatasetView(d, Variable::Histogram(Dimension::Tof, "sample"));
+  // makeDatasetView(d, Data::Histogram(Dimension::Tof, "sample"));
   // ... but how do we deal with derived dimensions, e.g.,
   // Dimension::Wavelength?
   // Find variables by their dimensions? E.g, Dimension::Monitor?
@@ -349,13 +349,13 @@ TEST(DatasetView, histogram) {
   // cases of Datasets containing multiple data variables, e.g., for sample and
   // can, i.e., all algorithms that want to support generic cases will need to
   // referencing variables by their name anyway?
-  DatasetView<Variable::Histogram> view(d);
-  EXPECT_EQ(view.get<Variable::Histogram>().value(0), 1.0);
-  EXPECT_EQ(view.get<Variable::Histogram>().value(1), 2.0);
-  view.get<Variable::Histogram>().value(1) += 0.2;
-  EXPECT_EQ(d.get<Variable::Value>()[1], 2.2);
+  DatasetView<Data::Histogram> view(d);
+  EXPECT_EQ(view.get<Data::Histogram>().value(0), 1.0);
+  EXPECT_EQ(view.get<Data::Histogram>().value(1), 2.0);
+  view.get<Data::Histogram>().value(1) += 0.2;
+  EXPECT_EQ(d.get<Data::Value>()[1], 2.2);
   view.increment();
-  EXPECT_EQ(view.get<Variable::Histogram>().value(0), 3.0);
+  EXPECT_EQ(view.get<Data::Histogram>().value(0), 3.0);
 }
 
 #if 0

@@ -24,7 +24,7 @@ struct Coord {
   using tags = std::tuple<Tof, SpectrumNumber>;
 };
 
-struct Variable {
+struct Data {
   struct Tof {};
   struct Value {};
   struct Error {};
@@ -38,9 +38,8 @@ struct Variable {
 template <class T>
 static constexpr uint16_t tag_id =
     detail::index<std::remove_const_t<T>,
-                  decltype(
-                      std::tuple_cat(std::declval<Coord::tags>(),
-                                     std::declval<Variable::tags>()))>::value;
+                  decltype(std::tuple_cat(std::declval<Coord::tags>(),
+                                          std::declval<Data::tags>()))>::value;
 template <class T>
 static constexpr bool is_coord =
     tag_id<T> < std::tuple_size<Coord::tags>::value;
@@ -64,101 +63,99 @@ template <class T> struct Bins { using value_type = T; };
 template <class Tag> struct variable_type;
 template <class Tag> struct element_reference_type;
 
-template <> struct variable_type<Variable::Tof> {
+template <> struct variable_type<Data::Tof> {
   using type = std::vector<double>;
 };
-template <> struct variable_type<const Variable::Tof> {
+template <> struct variable_type<const Data::Tof> {
   using type = const std::vector<double>;
 };
 
-template <> struct variable_type<Bins<Variable::Tof>> {
+template <> struct variable_type<Bins<Data::Tof>> {
   using type = std::vector<double>;
 };
 
-template <> struct variable_type<Variable::Value> {
+template <> struct variable_type<Data::Value> {
   using type = std::vector<double>;
 };
-template <> struct variable_type<const Variable::Value> {
+template <> struct variable_type<const Data::Value> {
   using type = const std::vector<double>;
 };
 
-template <> struct variable_type<Variable::Error> {
+template <> struct variable_type<Data::Error> {
   using type = std::vector<double>;
 };
-template <> struct variable_type<const Variable::Error> {
+template <> struct variable_type<const Data::Error> {
   using type = const std::vector<double>;
 };
 
-template <> struct variable_type<Variable::Int> {
+template <> struct variable_type<Data::Int> {
   using type = std::vector<int64_t>;
 };
-template <> struct variable_type<const Variable::Int> {
+template <> struct variable_type<const Data::Int> {
   using type = const std::vector<int64_t>;
 };
 
-template <> struct variable_type<Variable::DimensionSize> {
+template <> struct variable_type<Data::DimensionSize> {
   using type = std::vector<gsl::index>;
 };
-template <> struct variable_type<const Variable::DimensionSize> {
+template <> struct variable_type<const Data::DimensionSize> {
   using type = const std::vector<gsl::index>;
 };
 
 class Histogram;
-template <> struct variable_type<Variable::Histogram> {
+template <> struct variable_type<Data::Histogram> {
   using type = std::vector<Histogram>;
 };
-template <> struct variable_type<const Variable::Histogram> {
+template <> struct variable_type<const Data::Histogram> {
   using type = const std::vector<Histogram>;
 };
 
-template <> struct element_reference_type<Variable::Tof> {
-  using type = double &;
-};
-template <> struct element_reference_type<const Variable::Tof> {
+template <> struct element_reference_type<Data::Tof> { using type = double &; };
+template <> struct element_reference_type<const Data::Tof> {
   using type = const double &;
 };
 
-template <> struct element_reference_type<Bins<Variable::Tof>> {
+template <> struct element_reference_type<Bins<Data::Tof>> {
   // Note: No reference.
   using type = Bin;
 };
-template <> struct element_reference_type<Bins<const Variable::Tof>> {
+template <> struct element_reference_type<Bins<const Data::Tof>> {
   // Note: No reference.
   using type = Bin;
 };
 
-template <> struct element_reference_type<Variable::Value> {
+template <> struct element_reference_type<Data::Value> {
   using type = double &;
 };
-template <> struct element_reference_type<const Variable::Value> {
+template <> struct element_reference_type<const Data::Value> {
   using type = const double &;
 };
 
-template <> struct element_reference_type<Variable::Error> {
+template <> struct element_reference_type<Data::Error> {
   using type = double &;
 };
-template <> struct element_reference_type<const Variable::Error> {
+template <> struct element_reference_type<const Data::Error> {
   using type = const double &;
 };
 
-template <> struct element_reference_type<Variable::Int> {
+template <> struct element_reference_type<Data::Int> {
   using type = int64_t &;
 };
-template <> struct element_reference_type<const Variable::Int> {
+template <> struct element_reference_type<const Data::Int> {
   using type = const int64_t &;
 };
 
-template <> struct element_reference_type<Variable::DimensionSize> {
+template <> struct element_reference_type<Data::DimensionSize> {
   using type = gsl::index &;
 };
-template <> struct element_reference_type<const Variable::DimensionSize> {
+template <> struct element_reference_type<const Data::DimensionSize> {
   using type = const gsl::index &;
 };
 
-template <> struct element_reference_type<Variable::Histogram> {
+template <> struct element_reference_type<Data::Histogram> {
   using type = Histogram &;
 };
-template <> struct element_reference_type<const Variable::Histogram> {
+template <> struct element_reference_type<const Data::Histogram> {
   using type = const Histogram &;
 };
 

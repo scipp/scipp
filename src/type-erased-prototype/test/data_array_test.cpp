@@ -8,79 +8,76 @@
 #include "variable.h"
 
 TEST(DataArray, construct) {
-  ASSERT_NO_THROW(
-      makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 2), 2));
-  const auto a =
-      makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 2), 2);
-  const auto &data = a.get<Variable::Value>();
+  ASSERT_NO_THROW(makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2));
+  const auto a = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
+  const auto &data = a.get<Data::Value>();
   EXPECT_EQ(data.size(), 2);
 }
 
 TEST(DataArray, construct_fail) {
-  ASSERT_ANY_THROW(makeDataArray<Variable::Value>(Dimensions(), 2));
+  ASSERT_ANY_THROW(makeDataArray<Data::Value>(Dimensions(), 2));
   ASSERT_ANY_THROW(
-      makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 1), 2));
+      makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 1), 2));
   ASSERT_ANY_THROW(
-      makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 3), 2));
+      makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 3), 2));
 }
 
 TEST(DataArray, sharing) {
-  const auto a1 =
-      makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 2), 2);
+  const auto a1 = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
   const auto a2(a1);
-  EXPECT_EQ(&a1.get<Variable::Value>(), &a2.get<Variable::Value>());
+  EXPECT_EQ(&a1.get<Data::Value>(), &a2.get<Data::Value>());
 }
 
 TEST(DataArray, copy) {
   const auto a1 =
-      makeDataArray<Variable::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  const auto &data1 = a1.get<Variable::Value>();
+      makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+  const auto &data1 = a1.get<Data::Value>();
   EXPECT_EQ(data1[0], 1.1);
   EXPECT_EQ(data1[1], 2.2);
   auto a2(a1);
-  EXPECT_EQ(&a1.get<Variable::Value>(), &a2.get<const Variable::Value>());
-  EXPECT_NE(&a1.get<Variable::Value>(), &a2.get<Variable::Value>());
-  const auto &data2 = a2.get<Variable::Value>();
+  EXPECT_EQ(&a1.get<Data::Value>(), &a2.get<const Data::Value>());
+  EXPECT_NE(&a1.get<Data::Value>(), &a2.get<Data::Value>());
+  const auto &data2 = a2.get<Data::Value>();
   EXPECT_EQ(data2[0], 1.1);
   EXPECT_EQ(data2[1], 2.2);
 }
 
 TEST(DataArray, ragged) {
-  const auto raggedSize = makeDataArray<Variable::DimensionSize>(
+  const auto raggedSize = makeDataArray<Data::DimensionSize>(
       Dimensions(Dimension::SpectrumNumber, 2), {2l, 3l});
   EXPECT_EQ(raggedSize.dimensions().volume(), 2);
   Dimensions dimensions;
   dimensions.add(Dimension::Tof, raggedSize);
   dimensions.add(Dimension::SpectrumNumber, 2);
   EXPECT_EQ(dimensions.volume(), 5);
-  ASSERT_NO_THROW(makeDataArray<Variable::Value>(dimensions, 5));
-  ASSERT_ANY_THROW(makeDataArray<Variable::Value>(dimensions, 4));
+  ASSERT_NO_THROW(makeDataArray<Data::Value>(dimensions, 5));
+  ASSERT_ANY_THROW(makeDataArray<Data::Value>(dimensions, 4));
 }
 
 TEST(DataArray, concatenate) {
   Dimensions dims(Dimension::Tof, 1);
-  auto a = makeDataArray<Variable::Value>(dims, {1.0});
-  auto b = makeDataArray<Variable::Value>(dims, {2.0});
+  auto a = makeDataArray<Data::Value>(dims, {1.0});
+  auto b = makeDataArray<Data::Value>(dims, {2.0});
   a.setUnit(Unit::Id::Length);
   b.setUnit(Unit::Id::Length);
   auto ab = concatenate(Dimension::Tof, a, b);
   ASSERT_EQ(ab.size(), 2);
   EXPECT_EQ(ab.unit(), Unit(Unit::Id::Length));
-  const auto &data = ab.get<Variable::Value>();
+  const auto &data = ab.get<Data::Value>();
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
   auto ba = concatenate(Dimension::Tof, b, a);
   const auto abba = concatenate(Dimension::Q, ab, ba);
   ASSERT_EQ(abba.size(), 4);
   EXPECT_EQ(abba.dimensions().count(), 2);
-  const auto &data2 = abba.get<Variable::Value>();
+  const auto &data2 = abba.get<Data::Value>();
   EXPECT_EQ(data2[0], 1.0);
   EXPECT_EQ(data2[1], 2.0);
   EXPECT_EQ(data2[2], 2.0);
   EXPECT_EQ(data2[3], 1.0);
   const auto ababbaba = concatenate(Dimension::Tof, abba, abba);
   ASSERT_EQ(ababbaba.size(), 8);
-  const auto &data3 = ababbaba.get<Variable::Value>();
+  const auto &data3 = ababbaba.get<Data::Value>();
   EXPECT_EQ(data3[0], 1.0);
   EXPECT_EQ(data3[1], 2.0);
   EXPECT_EQ(data3[2], 1.0);
@@ -91,7 +88,7 @@ TEST(DataArray, concatenate) {
   EXPECT_EQ(data3[7], 1.0);
   const auto abbaabba = concatenate(Dimension::Q, abba, abba);
   ASSERT_EQ(abbaabba.size(), 8);
-  const auto &data4 = abbaabba.get<Variable::Value>();
+  const auto &data4 = abbaabba.get<Data::Value>();
   EXPECT_EQ(data4[0], 1.0);
   EXPECT_EQ(data4[1], 2.0);
   EXPECT_EQ(data4[2], 2.0);
@@ -104,9 +101,9 @@ TEST(DataArray, concatenate) {
 
 TEST(DataArray, concatenate_fail) {
   Dimensions dims(Dimension::Tof, 1);
-  auto a = makeDataArray<Variable::Value>(dims, {1.0});
-  auto b = makeDataArray<Variable::Value>(dims, {2.0});
-  auto c = makeDataArray<Variable::Error>(dims, {2.0});
+  auto a = makeDataArray<Data::Value>(dims, {1.0});
+  auto b = makeDataArray<Data::Value>(dims, {2.0});
+  auto c = makeDataArray<Data::Error>(dims, {2.0});
   a.setName("data");
   EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, b), std::runtime_error,
                    "Cannot concatenate DataArrays: Names do not match.");
@@ -122,7 +119,7 @@ TEST(DataArray, concatenate_fail) {
 
 TEST(DataArray, concatenate_unit_fail) {
   Dimensions dims(Dimension::X, 1);
-  auto a = makeDataArray<Variable::Value>(dims, {1.0});
+  auto a = makeDataArray<Data::Value>(dims, {1.0});
   auto b(a);
   EXPECT_NO_THROW(concatenate(Dimension::X, a, b));
   a.setUnit(Unit::Id::Length);
@@ -133,19 +130,19 @@ TEST(DataArray, concatenate_unit_fail) {
 }
 
 #if 0
-const auto spectrumPosition = makeDataArray<Variable::SpectrumPosition>(
+const auto spectrumPosition = makeDataArray<Data::SpectrumPosition>(
     detectorPosition, detectorGrouping);
 // dimensions given by linked?
 // why not allow for extra dimensions? does not make sense, would return same data
 // Internally in spectrum-pos variable:
-// DatasetIterator<Variable::DetectorPosition, Variable::DetectorGrouping>
+// DatasetIterator<Data::DetectorPosition, Data::DetectorGrouping>
 // does linking via DataArray make sense?
 // should DataArray be able to live on its own, outside Dataset?
 //
-// How to concatenate Variable::SpectrumPosition? Does not make sense, unless
+// How to concatenate Data::SpectrumPosition? Does not make sense, unless
 // DetectorPosition and DetectorGrouping are concatenated.
 //
-// We cannot drive this from Variable::SpectrumPosition, it cannot be the one
+// We cannot drive this from Data::SpectrumPosition, it cannot be the one
 // doing the concatenation of the variables it derives from.(*)
 // Ok if we are a passive observer of DetectorPosition and DetectorGrouping,
 // however this implies that we must ensure that DetectorGrouping and
@@ -154,13 +151,13 @@ const auto spectrumPosition = makeDataArray<Variable::SpectrumPosition>(
 // No! It only implies that variables depending on others may not exist outside
 // Dataset?
 // "Virtual" variables?
-// What about Variable::Histogram? It does actually contain some auxiliary data?
+// What about Data::Histogram? It does actually contain some auxiliary data?
 //
 // (*) Can it? If we make it the owner, even within Dataset it may be ok?
 // Dataset concatenates only SpectrumPosition, which interally deals with
 // DetectorPosition and DetectorGrouping. How can we expose the latter in
 // Dataset?
-// What if there are multiple owners, e.g., for Variable::DimensionSize which
+// What if there are multiple owners, e.g., for Data::DimensionSize which
 // is required by all variables making up a histogram?
 //
 // How to concatenate Dataset? In general, we do not want to concatenate all
@@ -171,7 +168,7 @@ const auto spectrumPosition = makeDataArray<Variable::SpectrumPosition>(
 //
 // Should all links be done via variables *names*? Dependent variables will then
 // automatically get the updated data, e.g., histogram-related variables will
-// see when Variable::DimensionSize has been concatenated?
+// see when Data::DimensionSize has been concatenated?
 //
 // Should dimensions hold their length and be shared?
 //

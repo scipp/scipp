@@ -7,15 +7,15 @@ BM_DatasetView_multi_column_mixed_dimension(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dimension::SpectrumNumber, state.range(0));
-  d.insert<Variable::Int>("specnums", dims, state.range(0));
+  d.insert<Data::Int>("specnums", dims, state.range(0));
   dims.add(Dimension::Tof, 1000);
-  d.insert<Variable::Value>("histograms", dims, state.range(0) * 1000);
+  d.insert<Data::Value>("histograms", dims, state.range(0) * 1000);
   gsl::index elements = 1000 * state.range(0);
 
   for (auto _ : state) {
-    DatasetView<Variable::Value, const Variable::Int> it(d);
+    DatasetView<Data::Value, const Data::Int> it(d);
     for (int i = 0; i < elements; ++i) {
-      benchmark::DoNotOptimize(it.get<Variable::Value>());
+      benchmark::DoNotOptimize(it.get<Data::Value>());
       it.increment();
     }
   }
@@ -31,16 +31,16 @@ BM_DatasetView_multi_column_mixed_dimension_slab(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dimension::SpectrumNumber, state.range(0));
-  d.insert<Variable::Int>("specnums", dims, state.range(0));
+  d.insert<Data::Int>("specnums", dims, state.range(0));
   dims.add(Dimension::Tof, 1000);
-  d.insert<Variable::Value>("histograms", dims, state.range(0) * 1000);
-  DatasetView<Slab<Variable::Value>, Variable::Int> it(d, {Dimension::Tof});
+  d.insert<Data::Value>("histograms", dims, state.range(0) * 1000);
+  DatasetView<Slab<Data::Value>, Data::Int> it(d, {Dimension::Tof});
   gsl::index elements = state.range(0);
 
   for (auto _ : state) {
-    DatasetView<Slab<Variable::Value>, Variable::Int> it(d, {Dimension::Tof});
+    DatasetView<Slab<Data::Value>, Data::Int> it(d, {Dimension::Tof});
     for (int i = 0; i < elements; ++i) {
-      benchmark::DoNotOptimize(it.get<Variable::Int>());
+      benchmark::DoNotOptimize(it.get<Data::Int>());
       it.increment();
     }
   }

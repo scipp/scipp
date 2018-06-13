@@ -13,7 +13,7 @@ public:
   void insert(DataArray variable) {
     // TODO prevent duplicate names (if type matches)
     // TODO special handling for special variables types like
-    // Variable::Histogram (either prevent adding, or extract into underlying
+    // Data::Histogram (either prevent adding, or extract into underlying
     // variables).
     mergeDimensions(variable.dimensions());
     m_variables.push_back(std::move(variable));

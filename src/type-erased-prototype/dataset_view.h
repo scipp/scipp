@@ -88,22 +88,20 @@ private:
 
 template <class Base, class T> struct GetterMixin {};
 
-template <class Base> struct GetterMixin<Base, Variable::Tof> {
-  const element_reference_type_t<Variable::Tof> tof() {
-    return static_cast<Base *>(this)->template get<Variable::Tof>();
+template <class Base> struct GetterMixin<Base, Data::Tof> {
+  const element_reference_type_t<Data::Tof> tof() {
+    return static_cast<Base *>(this)->template get<Data::Tof>();
   }
 };
 
 template <class T> using ref_type = variable_type_t<detail::value_type_t<T>> &;
 
-template <class Tag>
-Dimensions getDimensions(const Dataset &dataset) {
+template <class Tag> Dimensions getDimensions(const Dataset &dataset) {
   return dataset.dimensions<detail::value_type_t<Tag>>();
 }
 
-template <>
-Dimensions getDimensions<Variable::Histogram>(const Dataset &dataset) {
-  auto dims = dataset.dimensions<Variable::Value>();
+template <> Dimensions getDimensions<Data::Histogram>(const Dataset &dataset) {
+  auto dims = dataset.dimensions<Data::Value>();
   dims.erase(Dimension::Tof);
   return dims;
 }
@@ -116,12 +114,12 @@ makeHistogramsIfRequired(Dataset &dataset) {
 
 template <>
 std::unique_ptr<std::vector<Histogram>>
-makeHistogramsIfRequired<Variable::Histogram>(Dataset &dataset) {
+makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset) {
   auto histograms = std::make_unique<std::vector<Histogram>>(0);
   histograms->reserve(4);
-  const auto &edges = dataset.get<const Variable::Tof>();
-  auto &values = dataset.get<Variable::Value>();
-  auto &errors = dataset.get<Variable::Error>();
+  const auto &edges = dataset.get<const Data::Tof>();
+  auto &values = dataset.get<Data::Value>();
+  auto &errors = dataset.get<Data::Error>();
   histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data(), values.data(),
                            errors.data());
   histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data() + 3,
@@ -137,7 +135,7 @@ returnReference(Dataset &dataset,
 }
 
 template <>
-ref_type<Variable::Histogram> returnReference<Variable::Histogram>(
+ref_type<Data::Histogram> returnReference<Data::Histogram>(
     Dataset &dataset,
     const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return *histograms;
@@ -257,7 +255,7 @@ private:
   std::map<Dimension, gsl::index> m_relevantDimensions;
   MultidimensionalIndex m_index;
   // Ts is a dummy used for Tag-based lookup.
-  //std::unique_ptr<Histogram[]> m_histograms;
+  // std::unique_ptr<Histogram[]> m_histograms;
   std::unique_ptr<std::vector<Histogram>> m_histograms;
   std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>,
                         detail::is_slab_t<Ts>>...> m_columns;
