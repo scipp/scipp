@@ -94,6 +94,12 @@ template <class Base> struct GetterMixin<Base, Data::Tof> {
   }
 };
 
+template <class Base> struct GetterMixin<Base, Data::Value> {
+  const element_reference_type_t<Data::Value> value() {
+    return static_cast<Base *>(this)->template get<Data::Value>();
+  }
+};
+
 template <class T> using ref_type = variable_type_t<detail::value_type_t<T>> &;
 
 template <class Tag> Dimensions getDimensions(const Dataset &dataset) {

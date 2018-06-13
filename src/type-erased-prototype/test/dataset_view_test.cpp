@@ -321,6 +321,15 @@ TEST(DatasetView, named_getter) {
   ASSERT_EQ(view.tof(), 2.2);
 }
 
+TEST(DatasetView, duplicate_data_tag) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions{}, 1);
+  d.insert<Data::Value>("name2", Dimensions{}, 1);
+
+  EXPECT_THROW_MSG(DatasetView<Data::Value> view(d), std::runtime_error,
+                   "Given variable tag is not unique. Must provide a name.");
+}
+
 TEST(DatasetView, histogram) {
   Dataset d;
   auto tof = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
