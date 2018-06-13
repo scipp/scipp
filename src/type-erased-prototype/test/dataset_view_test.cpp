@@ -137,7 +137,8 @@ TEST(DatasetView, construct) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Int>("name2", Dimensions{}, {2l});
-  ASSERT_NO_THROW(DatasetView<> view(d));
+  // Empty view forbidden by static_assert:
+  //DatasetView<> view(d);
   ASSERT_NO_THROW(DatasetView<Data::Value> view(d));
   ASSERT_NO_THROW(DatasetView<Data::Int> view(d));
   ASSERT_NO_THROW(auto view = (DatasetView<Data::Int, Data::Value>(d)));
@@ -286,11 +287,11 @@ TEST(DatasetView, multi_column_edges) {
   var[2] = 2.2;
 
   // Cannot simultaneously iterate edges and non-edges, so this throws.
-  EXPECT_THROW_MSG(
-      (DatasetView<Data::Tof, Data::Int>(d)), std::runtime_error,
-      "One of the variables requested for iteration represents bin edges, "
-      "direct joint iteration is not possible. Use the Bins<> wrapper to "
-      "iterate over bins defined by edges instead.");
+  EXPECT_THROW_MSG((DatasetView<Data::Tof, Data::Int>(d)), std::runtime_error,
+                   "Variables requested for iteration do not span a joint "
+                   "space. In case one of the variables represents bin edges "
+                   "direct joint iteration is not possible. Use the Bins<> "
+                   "wrapper to iterate over bins defined by edges instead.");
 
   DatasetView<Bins<Data::Tof>, Data::Int> view(d);
   // TODO Singular 'Bin' instead of 'Bins' would make more sense.
@@ -358,7 +359,7 @@ TEST(DatasetView, histogram) {
   // cases of Datasets containing multiple data variables, e.g., for sample and
   // can, i.e., all algorithms that want to support generic cases will need to
   // referencing variables by their name anyway?
-  DatasetView<Data::Histogram> view(d);
+  DatasetView<Data::Histogram> view(d, {Dimension::Tof});
   EXPECT_EQ(view.get<Data::Histogram>().value(0), 1.0);
   EXPECT_EQ(view.get<Data::Histogram>().value(1), 2.0);
   view.get<Data::Histogram>().value(1) += 0.2;

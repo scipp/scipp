@@ -30,3 +30,34 @@ TEST(Dimensions, erase) {
   EXPECT_FALSE(dims.contains(Dimension::Tof));
   EXPECT_TRUE(dims.contains(Dimension::Q));
 }
+
+TEST(Dimensions, contains_other) {
+  Dimensions a;
+  a.add(Dimension::Tof, 3);
+  a.add(Dimension::Q, 2);
+
+  EXPECT_TRUE(a.contains(Dimensions{}));
+  EXPECT_TRUE(a.contains(a));
+  EXPECT_TRUE(a.contains(Dimensions(Dimension::Q, 2)));
+  EXPECT_FALSE(a.contains(Dimensions(Dimension::Q, 3)));
+
+  Dimensions b;
+  b.add(Dimension::Q, 2);
+  b.add(Dimension::Tof, 3);
+  // Order matters.
+  EXPECT_FALSE(a.contains(b));
+}
+
+TEST(Dimensions, merge) {
+  Dimensions a;
+  Dimensions b;
+  a.add(Dimension::Tof, 3);
+  EXPECT_EQ(merge(a, a).count(), 1);
+  EXPECT_EQ(merge(a, b).count(), 1);
+  EXPECT_EQ(merge(b, b).count(), 0);
+  EXPECT_EQ(merge(merge(a, b), a).count(), 1);
+  b.add(Dimension::Tof, 2);
+  EXPECT_ANY_THROW(merge(a, b));
+  b.resize(Dimension::Tof, 3);
+  EXPECT_NO_THROW(merge(a, b));
+}

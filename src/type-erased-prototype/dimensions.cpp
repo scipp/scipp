@@ -26,6 +26,10 @@ bool Dimensions::operator==(const Dimensions &other) const {
   return m_dims == other.m_dims;
 }
 
+bool Dimensions::isRagged() const {
+  return m_raggedDim != nullptr;
+}
+
 gsl::index Dimensions::count() const { return m_dims.size(); }
 
 gsl::index Dimensions::volume() const {
@@ -65,9 +69,27 @@ bool Dimensions::contains(const Dimension label) const {
   return false;
 }
 
+bool Dimensions::contains(const Dimensions &other) const {
+  // Ragged comparison too complex for now.
+  if (m_raggedDim || other.m_raggedDim)
+    return false;
+  auto otherIt = other.begin();
+  for (const auto &item : m_dims) {
+    if (otherIt == other.end())
+      break;
+    if (item == *otherIt)
+      ++otherIt;
+  }
+  return otherIt == other.end();
+}
+
 bool Dimensions::isRagged(const gsl::index i) const {
   const auto size = m_dims.at(i).second;
   return size == -1;
+}
+
+bool Dimensions::isRagged(const Dimension label) const {
+  return isRagged(index(label));
 }
 
 Dimension Dimensions::label(const gsl::index i) const {
@@ -131,12 +153,14 @@ void Dimensions::erase(const Dimension label) {
 }
 
 const DataArray &Dimensions::raggedSize(const gsl::index i) const {
-  if (!m_raggedDim)
-    throw std::runtime_error("No such dimension.");
   if (m_dims.at(i).second != -1)
     throw std::runtime_error(
         "Dimension is not ragged, use size() instead of raggedSize().");
   return *m_raggedDim;
+}
+
+const DataArray &Dimensions::raggedSize(const Dimension label) const {
+  return raggedSize(index(label));
 }
 
 void Dimensions::add(const Dimension label, const gsl::index size) {
@@ -160,6 +184,36 @@ gsl::index Dimensions::index(const Dimension label) const {
     if (m_dims[i].first == label)
       return i;
   throw std::runtime_error("Dimension not found.");
+}
+
+Dimensions merge(const Dimensions &a, const Dimensions &b) {
+  // TODO order??
+  // Not always well defined! Fail if not?!
+  auto merged(a);
+  for (const auto &item : b) {
+    const auto dim = item.first;
+    const auto size = item.second;
+    if (!a.contains(dim)) {
+      if (size == -1)
+        merged.add(dim, b.raggedSize(dim));
+      else
+        merged.add(dim, size);
+    } else {
+      if (a.isRagged(dim)) {
+        if (size == -1) {
+          if (a.raggedSize(dim).get<const Data::DimensionSize>() !=
+              b.raggedSize(dim).get<const Data::DimensionSize>())
+            throw std::runtime_error("Size mismatch when merging dimensions.");
+        } else {
+          throw std::runtime_error("Size mismatch when merging dimensions.");
+        }
+      } else {
+        if (a.size(dim) != size)
+          throw std::runtime_error("Size mismatch when merging dimensions.");
+      }
+    }
+  }
+  return merged;
 }
 
 Dimensions concatenate(const Dimension dim, const Dimensions &dims1,

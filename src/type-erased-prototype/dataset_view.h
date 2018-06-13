@@ -102,15 +102,45 @@ template <class Base> struct GetterMixin<Base, Data::Value> {
 
 template <class T> using ref_type = variable_type_t<detail::value_type_t<T>> &;
 
-template <class Tag> Dimensions getDimensions(const Dataset &dataset) {
-  return dataset.dimensions<detail::value_type_t<Tag>>();
-}
+template <class Tag> struct DimensionHelper {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
+    return dataset.dimensions<Tag>();
+  }
+};
 
-template <> Dimensions getDimensions<Data::Histogram>(const Dataset &dataset) {
-  auto dims = dataset.dimensions<Data::Value>();
-  dims.erase(Dimension::Tof);
-  return dims;
-}
+template <class Tag> struct DimensionHelper<Slab<Tag>> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    auto dims = dataset.dimensions<Tag>();
+    for (const auto dim : fixedDimensions)
+      dims.erase(dim);
+    return dims;
+  }
+};
+
+template <class Tag> struct DimensionHelper<Bins<Tag>> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    auto dims = dataset.dimensions<Tag>();
+    // TODO make this work for multiple dimensions and ragged dimensions.
+    dims.resize(dims.label(0), dims.size(0) - 1);
+    return dims;
+  }
+};
+
+template <> struct DimensionHelper<Data::Histogram> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    auto dims = dataset.dimensions<Data::Value>();
+    if (fixedDimensions.size() != 1)
+      throw std::runtime_error(
+          "Bad number of fixed dimensions. Only 1D histograms are supported.");
+    dims.erase(*fixedDimensions.begin());
+    return dims;
+  }
+};
 
 template <class Tag>
 std::unique_ptr<std::vector<Histogram>>
@@ -152,17 +182,15 @@ ref_type<Data::Histogram> returnReference<Data::Histogram>(
 // Dataset::begin(DoNotIterate::Tof)??
 template <class... Ts>
 class DatasetView : public GetterMixin<DatasetView<Ts...>, Ts>... {
+  static_assert(sizeof...(Ts),
+                "DatasetView requires at least one variable for iteration");
+
 private:
   std::vector<gsl::index>
-  extractExtents(const std::map<Dimension, gsl::index> &dimensions,
-                 const std::set<Dimension> &fixedDimensions) {
+  extractExtents(const std::map<Dimension, gsl::index> &dimensions) {
     std::vector<gsl::index> extents;
     for (const auto &item : dimensions) {
-      if (fixedDimensions.count(item.first) == 0)
         extents.push_back(item.second);
-      else
-        extents.push_back(1); // fake extent 1 implies no index incremented in
-                              // this dimension.
     }
     return extents;
   }
@@ -170,50 +198,30 @@ private:
   std::map<Dimension, gsl::index>
   relevantDimensions(const Dataset &dataset,
                      const std::set<Dimension> &fixedDimensions) {
-    std::vector<bool> is_bins{detail::is_bins<Ts>::value...};
-    std::vector<Dimensions> variableDimensions{getDimensions<Ts>(dataset)...};
-    auto datasetDimensions = sizeof...(Ts) == 1 && !is_bins[0]
-                                 ? variableDimensions[0]
-                                 : dataset.dimensions();
-
-    std::set<Dimension> dimensions;
-    for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
-      const auto &thisVariableDimensions = variableDimensions[i];
-      for (gsl::index d = 0; d < thisVariableDimensions.count(); ++d) {
-        const auto &dimension = thisVariableDimensions.label(d);
-        if (fixedDimensions.count(dimension) == 0) {
-          if (thisVariableDimensions.size(d) !=
-              datasetDimensions.size(dimension) + (is_bins[i] ? 1 : 0))
-            throw std::runtime_error(
-                "One of the variables requested for iteration represents bin "
-                "edges, direct joint iteration is not possible. Use the Bins<> "
-                "wrapper to iterate over bins defined by edges instead.");
-          dimensions.insert(dimension);
-        }
-      }
-    }
-
-    std::map<Dimension, gsl::index> relevantDimensions;
-    for (const auto &dimension : dimensions)
-      relevantDimensions[dimension] = datasetDimensions.size(dimension);
+    std::vector<Dimensions> variableDimensions{
+        DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
+    const auto &largest =
+        *std::max_element(variableDimensions.begin(), variableDimensions.end(),
+                          [](const Dimensions &a, const Dimensions &b) {
+                            return a.count() < b.count();
+                          });
 
     std::vector<bool> is_const{std::is_const<Ts>::value...};
     for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
-      if (is_const[i])
-        continue;
-      const auto &thisVariableDimensions = variableDimensions[i];
-      std::vector<Dimension> diff;
-      for (gsl::index i = 0; i < thisVariableDimensions.count(); ++i) {
-        const auto &dimension = thisVariableDimensions.label(i);
-        if (!fixedDimensions.count(dimension))
-          diff.push_back(dimension);
-      }
-      if (dimensions.size() != diff.size())
+      const auto &dims = variableDimensions[i];
+      // Largest must contain all other dimensions.
+      if (!largest.contains(dims))
+        throw std::runtime_error(
+            "Variables requested for iteration do not span a joint space. In "
+            "case one of the variables represents bin edges direct joint "
+            "iteration is not possible. Use the Bins<> "
+            "wrapper to iterate over bins defined by edges instead.");
+      // Must either be identical or access must be read-only.
+      if (!((largest == dims) || is_const[i]))
         throw std::runtime_error("Variables requested for iteration have "
                                  "different dimensions");
     }
-
-    return relevantDimensions;
+    return {largest.begin(), largest.end()};
   }
 
   template <class Tag> ref_type<Tag> getData(Dataset &dataset) {
@@ -224,11 +232,13 @@ private:
 public:
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(dataset, fixedDimensions)),
-        m_index(extractExtents(m_relevantDimensions, fixedDimensions)),
+        m_index(extractExtents(m_relevantDimensions)),
         m_columns(
             std::tuple<Ts, LinearSubindex, ref_type<Ts>, detail::is_slab_t<Ts>>(
-                Ts{}, LinearSubindex(m_relevantDimensions,
-                                     getDimensions<Ts>(dataset), m_index),
+                Ts{}, LinearSubindex(
+                          m_relevantDimensions,
+                          DimensionHelper<Ts>::get(dataset, fixedDimensions),
+                          m_index),
                 getData<Ts>(dataset), detail::is_slab<Ts>{})...) {}
 
   // TODO add get version for Slab.
@@ -260,9 +270,8 @@ public:
 private:
   std::map<Dimension, gsl::index> m_relevantDimensions;
   MultidimensionalIndex m_index;
-  // Ts is a dummy used for Tag-based lookup.
-  // std::unique_ptr<Histogram[]> m_histograms;
   std::unique_ptr<std::vector<Histogram>> m_histograms;
+  // Ts is a dummy used for Tag-based lookup.
   std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>,
                         detail::is_slab_t<Ts>>...> m_columns;
 };
