@@ -1,32 +1,49 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <tuple>
 #include <vector>
 
 #include "index.h"
 
-struct Variable {
-  // struct DetectorPosition {};
-  // struct SpectrumPosition {};
-  struct Tof {
-    static const uint32_t type_id = 0;
-  };
-  struct Value {
-    static const uint32_t type_id = 1;
-  };
-  struct Error {
-    static const uint32_t type_id = 2;
-  };
-  struct Int {
-    static const uint32_t type_id = 3;
-  };
-  struct DimensionSize {
-    static const uint32_t type_id = 4;
-  };
-  struct Histogram {
-    static const uint32_t type_id = 5;
-  };
+namespace detail {
+template <class T, class Tuple> struct index;
+template <class T, class... Types> struct index<T, std::tuple<T, Types...>> {
+  static const std::size_t value = 0;
 };
+template <class T, class U, class... Types>
+struct index<T, std::tuple<U, Types...>> {
+  static const std::size_t value = 1 + index<T, std::tuple<Types...>>::value;
+};
+}
+
+struct Coord {
+  struct Tof {};
+  struct SpectrumNumber {};
+
+  using tags = std::tuple<Tof, SpectrumNumber>;
+};
+
+struct Variable {
+  struct Tof {};
+  struct Value {};
+  struct Error {};
+  struct Int {};
+  struct DimensionSize {};
+  struct Histogram {};
+
+  using tags = std::tuple<Tof, Value, Error, Int, DimensionSize, Histogram>;
+};
+
+template <class T>
+static constexpr uint16_t tag_id =
+    detail::index<std::remove_const_t<T>,
+                  decltype(
+                      std::tuple_cat(std::declval<Coord::tags>(),
+                                     std::declval<Variable::tags>()))>::value;
+template <class T>
+static constexpr bool is_coord =
+    tag_id<T> < std::tuple_size<Coord::tags>::value;
 
 class Bin {
 public:

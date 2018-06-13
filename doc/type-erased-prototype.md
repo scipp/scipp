@@ -454,7 +454,10 @@ else
 Which variables are "data variables" and which are not?
 The distinction is based on the behavior under (arithmetic) operations:
 - *Data variables* are *transformed*.
-- Other variables (coordinates?) are *matched*.
+- *Coordinate variables* are *matched*.
+  - Do not have a name, implying that they must be unique.
+  - Do not have a unit, since it is implied by the tag defining the coordinate.
+    Might need to support unit *scale*.
 
 Data variables:
 - `Variable::Value`
@@ -463,11 +466,13 @@ Data variables:
 - `Variable::Int`
 - `Variable::ExperimentLog`
 
-Other variables:
-- `Variable::Tof`
-- `Variable::Q`
-- `Variable::SpectrumNumber`
-- `Variable::DetectorId`
-- `Variable::SpectrumPosition`
-- `Variable::DetectorPosition`
-- `Variable::String` and others could also be used to label coordinates, in which case they would not be data variables?
+Coordinate variables:
+- `Coord::Tof`
+- `Coord::Q`
+- `Coord::SpectrumNumber`
+- `Coord::DetectorId`
+- `Coord::SpectrumPosition`
+- `Coord::DetectorPosition`
+- `Coord::SpectrumLabel`
+- `Coord::RowLabel`
+- `Coord::ColumnLabel`

@@ -20,21 +20,40 @@ public:
   }
 
   template <class Tag, class... Args>
-  void insert(const std::string &name, Dimensions dimensions, Args &&... args) {
+  void insert(Dimensions dimensions, Args &&... args) {
+    static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
     auto a =
         makeDataArray<Tag>(std::move(dimensions), std::forward<Args>(args)...);
-    a.setName(name);
+    insert(std::move(a));
+  }
+
+  template <class Tag, class... Args>
+  void insert(const std::string &name, Dimensions dimensions, Args &&... args) {
+    static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
+    auto a =
+        makeDataArray<Tag>(std::move(dimensions), std::forward<Args>(args)...);
+    insert(std::move(a));
+    m_variables.back().setName(name);
+  }
+
+  template <class Tag, class T>
+  void insert(Dimensions dimensions,
+              std::initializer_list<T> values) {
+    static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
+    auto a = makeDataArray<Tag>(std::move(dimensions), values);
     insert(std::move(a));
   }
 
   template <class Tag, class T>
   void insert(const std::string &name, Dimensions dimensions,
               std::initializer_list<T> values) {
+    static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
     auto a = makeDataArray<Tag>(std::move(dimensions), values);
-    a.setName(name);
     insert(std::move(a));
+    m_variables.back().setName(name);
   }
 
+  // Only need this for coordinates... insertEdgeCoord?
   void insertAsEdge(const Dimension dimension, DataArray variable) {
     // Edges are by 1 longer than other data, so dimension size check and
     // merging uses modified dimensions.
@@ -51,7 +70,7 @@ public:
     for (auto &item : m_variables) {
       // TODO check for duplicate variable types (can use get based on name in
       // that case).
-      if (item.type() == Tag::type_id)
+      if (item.type() == tag_id<Tag>)
         return item.get<Tag>();
     }
     throw std::runtime_error("Dataset does not contain such a variable");
@@ -63,7 +82,7 @@ public:
 
   template <class Tag> const Dimensions &dimensions() const {
     for (auto &item : m_variables)
-      if (item.type() == Tag::type_id)
+      if (item.type() == tag_id<Tag>)
         return item.dimensions();
     throw std::runtime_error("Dataset does not contain such a column");
   }

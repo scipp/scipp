@@ -67,7 +67,11 @@ public:
   }
 
   const std::string &name() const { return m_name; }
-  void setName(const std::string &name) { m_name = name; }
+  void setName(const std::string &name) {
+    if (isCoord())
+      throw std::runtime_error("Coordinate variable cannot have a name.");
+    m_name = name;
+  }
 
   const Unit &unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
@@ -92,10 +96,11 @@ public:
   DataArrayConcept &data() { return m_object.access(); }
 
   template <class Tag> bool valueTypeIs() const {
-    return Tag::type_id == m_type;
+    return tag_id<Tag> == m_type;
   }
 
-  uint32_t type() const { return m_type; }
+  uint16_t type() const { return m_type; }
+  bool isCoord() const { return m_type < std::tuple_size<Coord::tags>::value; }
 
   template <class Tag> const variable_type_t<Tag> &get() const {
     return cast<std::remove_const_t<variable_type_t<Tag>>>();
@@ -122,7 +127,7 @@ private:
     return dynamic_cast<DataArrayModel<T> &>(m_object.access()).m_model;
   }
 
-  uint32_t m_type;
+  uint16_t m_type;
   std::string m_name;
   Unit m_unit;
   Dimensions m_dimensions;
@@ -131,14 +136,14 @@ private:
 
 template <class Tag, class... Args>
 DataArray makeDataArray(Dimensions dimensions, Args &&... args) {
-  return DataArray(Tag::type_id, std::move(dimensions),
+  return DataArray(tag_id<Tag>, std::move(dimensions),
                    variable_type_t<Tag>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
 DataArray makeDataArray(Dimensions dimensions,
                         std::initializer_list<T> values) {
-  return DataArray(Tag::type_id, std::move(dimensions),
+  return DataArray(tag_id<Tag>, std::move(dimensions),
                    variable_type_t<Tag>(values));
 }
 
