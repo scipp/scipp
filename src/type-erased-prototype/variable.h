@@ -63,6 +63,13 @@ template <class T> struct Bins { using value_type = T; };
 template <class Tag> struct variable_type;
 template <class Tag> struct element_reference_type;
 
+template <> struct variable_type<Coord::Tof> {
+  using type = std::vector<double>;
+};
+template <> struct variable_type<Coord::SpectrumNumber> {
+  using type = std::vector<int32_t>;
+};
+
 template <> struct variable_type<Data::Tof> {
   using type = std::vector<double>;
 };

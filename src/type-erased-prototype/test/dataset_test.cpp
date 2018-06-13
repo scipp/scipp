@@ -9,10 +9,23 @@ TEST(Dataset, construct_empty) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(Dataset, construct) { ASSERT_NO_THROW(Dataset d); }
 
-TEST(Dataset, insert_variables) {
+TEST(Dataset, insert_coords) {
+  Dataset d;
+  d.insert<Coord::Tof>(Dimensions{}, {1.1});
+  d.insert<Coord::SpectrumNumber>(Dimensions{}, {2});
+  EXPECT_THROW_MSG(d.insert<Coord::SpectrumNumber>(Dimensions{}, {2}),
+                   std::runtime_error,
+                   "Attempt to insert duplicate coordinate.");
+  ASSERT_EQ(d.size(), 2);
+}
+
+TEST(Dataset, insert_data) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  EXPECT_THROW_MSG(d.insert<Data::Int>("name2", Dimensions{}, {2l}),
+                   std::runtime_error,
+                   "Attempt to insert data of same type with duplicate name.");
   ASSERT_EQ(d.size(), 2);
 }
 
@@ -35,7 +48,7 @@ TEST(Dataset, insert_variables_dimension_fail) {
   Dataset xyz;
   xyz.insert<Data::Value>("name1", xy, 2);
   EXPECT_NO_THROW(xyz.insert<Data::Value>("name2", yz, 6));
-  EXPECT_NO_THROW(xyz.insert<Data::Value>("name2", xz, 3));
+  EXPECT_NO_THROW(xyz.insert<Data::Value>("name3", xz, 3));
   // The following should also work (and NOT throw), it is simply constructing
   // the same Dataset in a different order. For the time being, it does NOT
   // work, but this is simply due to a crude preliminary implementation of the
@@ -44,7 +57,7 @@ TEST(Dataset, insert_variables_dimension_fail) {
   xzy.insert<Data::Value>("name1", xz, 3);
   EXPECT_NO_THROW(xzy.insert<Data::Value>("name2", xy, 2));
   EXPECT_THROW_MSG(
-      xzy.insert<Data::Value>("name2", yz, 6), std::runtime_error,
+      xzy.insert<Data::Value>("name3", yz, 6), std::runtime_error,
       "Cannot insert variable into Dataset: Dimension order mismatch");
 }
 

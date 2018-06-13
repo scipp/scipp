@@ -11,7 +11,14 @@
 class Dataset {
 public:
   void insert(DataArray variable) {
-    // TODO prevent duplicate names (if type matches)
+    if (variable.isCoord() && count(variable.type()))
+      throw std::runtime_error("Attempt to insert duplicate coordinate.");
+    if (!variable.isCoord()) {
+      for (const auto &item : m_variables)
+        if (item.type() == variable.type() && item.name() == variable.name())
+          throw std::runtime_error(
+              "Attempt to insert data of same type with duplicate name.");
+    }
     // TODO special handling for special variables types like
     // Data::Histogram (either prevent adding, or extract into underlying
     // variables).
@@ -32,8 +39,8 @@ public:
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
     auto a =
         makeDataArray<Tag>(std::move(dimensions), std::forward<Args>(args)...);
+    a.setName(name);
     insert(std::move(a));
-    m_variables.back().setName(name);
   }
 
   template <class Tag, class T>
@@ -49,8 +56,8 @@ public:
               std::initializer_list<T> values) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
     auto a = makeDataArray<Tag>(std::move(dimensions), values);
+    a.setName(name);
     insert(std::move(a));
-    m_variables.back().setName(name);
   }
 
   // Only need this for coordinates... insertEdgeCoord?
@@ -88,6 +95,14 @@ public:
   }
 
 private:
+  gsl::index count(const uint16_t id) {
+    gsl::index n = 0;
+    for (auto &item : m_variables)
+      if (item.type() == id)
+        ++n;
+    return n;
+  }
+
   void mergeDimensions(const auto &dims) {
     gsl::index j = 0;
     gsl::index found = 0;
