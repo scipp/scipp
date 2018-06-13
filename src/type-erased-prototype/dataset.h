@@ -44,8 +44,7 @@ public:
   }
 
   template <class Tag, class T>
-  void insert(Dimensions dimensions,
-              std::initializer_list<T> values) {
+  void insert(Dimensions dimensions, std::initializer_list<T> values) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
     auto a = makeDataArray<Tag>(std::move(dimensions), values);
     insert(std::move(a));
@@ -74,33 +73,53 @@ public:
   const DataArray &operator[](gsl::index i) const { return m_variables[i]; }
 
   template <class Tag> variable_type_t<Tag> &get() {
-    for (auto &item : m_variables) {
-      // TODO check for duplicate variable types (can use get based on name in
-      // that case).
-      if (item.type() == tag_id<Tag>)
-        return item.get<Tag>();
-    }
-    throw std::runtime_error("Dataset does not contain such a variable");
+    return m_variables[findUnique(tag_id<Tag>)].get<Tag>();
   }
 
-  const Dimensions &dimensions() const {
-    return m_dimensions;
+  template <class Tag> variable_type_t<Tag> &get(const std::string &name) {
+    return m_variables[find(tag_id<Tag>, name)].get<Tag>();
   }
+
+  const Dimensions &dimensions() const { return m_dimensions; }
 
   template <class Tag> const Dimensions &dimensions() const {
-    for (auto &item : m_variables)
-      if (item.type() == tag_id<Tag>)
-        return item.dimensions();
-    throw std::runtime_error("Dataset does not contain such a column");
+    return m_variables[findUnique(tag_id<Tag>)].dimensions();
+  }
+
+  template <class Tag>
+  const Dimensions &dimensions(const std::string &name) const {
+    return m_variables[find(tag_id<Tag>, name)].dimensions();
   }
 
 private:
-  gsl::index count(const uint16_t id) {
+  gsl::index count(const uint16_t id) const {
     gsl::index n = 0;
     for (auto &item : m_variables)
       if (item.type() == id)
         ++n;
     return n;
+  }
+
+  gsl::index find(const uint16_t id, const std::string &name) const {
+    for (gsl::index i = 0; i < size(); ++i)
+      if (m_variables[i].type() == id && m_variables[i].name() == name)
+        return i;
+    throw std::runtime_error("Dataset does not contain such a variable.");
+  }
+
+  gsl::index findUnique(const uint16_t id) const {
+    gsl::index index = -1;
+    for (gsl::index i = 0; i < size(); ++i) {
+      if (m_variables[i].type() == id) {
+        if (index != -1)
+          throw std::runtime_error(
+              "Given variable tag is not unique. Must provide a name.");
+        index = i;
+      }
+    }
+    if (index == -1)
+      throw std::runtime_error("Dataset does not contain such a variable.");
+    return index;
   }
 
   void mergeDimensions(const auto &dims) {

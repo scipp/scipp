@@ -126,6 +126,28 @@ TEST(Dataset, get_const) {
   // view[0] = 1.2;
 }
 
+TEST(Dataset, get_fail) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Value>("name2", Dimensions{}, {1.1});
+  EXPECT_THROW_MSG(d.get<Data::Value>(), std::runtime_error,
+                   "Given variable tag is not unique. Must provide a name.");
+  EXPECT_THROW_MSG(d.get<Data::Int>(), std::runtime_error,
+                   "Dataset does not contain such a variable.");
+}
+
+TEST(Dataset, get_named) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Value>("name2", Dimensions{}, {2.2});
+  auto &var1 = d.get<Data::Value>("name1");
+  ASSERT_EQ(var1.size(), 1);
+  EXPECT_EQ(var1[0], 1.1);
+  auto &var2 = d.get<Data::Value>("name2");
+  ASSERT_EQ(var2.size(), 1);
+  EXPECT_EQ(var2[0], 2.2);
+}
+
 #if 0
 TEST(Dataset, ragged_dimension) {
   Dataset d;
