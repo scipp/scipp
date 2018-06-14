@@ -463,5 +463,21 @@ Open questions:
 
 ### To do
 
+The current implementation has a large number of features that are not supported in all combinations, e.g., while the prototype shows in a few examples that ragged dimensions can be supported, many other operations currently to not handle ragged dimensions.
+In general the implementation has been continued only to the point where it becomes clear that interface works and is thus capable of demonstrating that the designed concepts work.
+
+Outstanding tasks:
+
+- Full sample implementation of `concatenate` and `operator+` for `Dataset`, demonstrating the full suite of required features from `Dataset` and how they could be implemented.
+- `DatasetIndex` or similar for indexing via an coordinate.
+  For example, for access via `Coord::SpectrumNumber>`:
+  - Build `std::unordered_map<SpectrumNumber>`, which verifies that there are no duplicates.
+  - Fast access, similar to what `IndexInfo` is providing currently.
+- `Dataset::get<Tag>` should not return a resizable reference to a `std::vector`.
+  Use something like `gsl::span` instead.
 - Benchmark new `Histogram` mechanism, including stride support.
 - Demonstrate access to `Coord::SpectrumPosition` which is "virtual", i.e., does not contain data but computes positions based on `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
+- Different dimension order in each variable?
+- Support random access in `DatasetView` if possible efficiently.
+- Understand performance implications of doing a lot of operations in streaming memory access.
+  Investigate how a cache-blocked operation mode could be supported.
