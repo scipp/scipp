@@ -361,23 +361,6 @@ TEST(DatasetView, histogram) {
                             {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   d.insert<Data::Error>("sample", dims, 8);
 
-  // Implies that Dimension::Tof is fixed.
-  // TODO How can we identify which dimension the histogram spans?
-  // Histogram<Dimension::Tof>?
-  // How to deal with multiple data variables, e.g., monitors which would be
-  // present in many cases?
-  // Are we forced to (almost) always use a string to identify variables?
-  // Handle duplicate matches as extra dimension (assuming only one variable is
-  // duplicate)?
-  // makeDatasetView(d, Data::Histogram(Dimension::Tof, "sample"));
-  // ... but how do we deal with derived dimensions, e.g.,
-  // Dimension::Wavelength?
-  // Find variables by their dimensions? E.g, Dimension::Monitor?
-  // Does grouping variables help? sample.tof, sample.value, sample.error?
-  // Use distinct variable names for monitor data? Will not help in generic
-  // cases of Datasets containing multiple data variables, e.g., for sample and
-  // can, i.e., all algorithms that want to support generic cases will need to
-  // referencing variables by their name anyway?
   DatasetView<Data::Histogram> view(d, {Dimension::Tof});
   EXPECT_EQ(view.get<Data::Histogram>().value(0), 1.0);
   EXPECT_EQ(view.get<Data::Histogram>().value(1), 2.0);
@@ -386,43 +369,6 @@ TEST(DatasetView, histogram) {
   view.increment();
   EXPECT_EQ(view.get<Data::Histogram>().value(0), 3.0);
 }
-
-#if 0
-TEST(DatasetView, notes) {
-  Dataset d(std::vector<double>(1), std::vector<int>(1));
-  d.addDimension("tof", 10);
-  d.extendAlongDimension(ColumnType::Doubles, "tof");
-  d.addDimension("spec", 10);
-  d.extendAlongDimension(ColumnType::Doubles, "spec");
-  d.extendAlongDimension(ColumnType::Ints, "spec");
-
-  // ok
-  DatasetView<double> view(d, 0);
-  // should throw, because int has less dimensions and is not const
-  DatasetView<double, int> view(d, 0);
-  // ok
-  DatasetView<double, const int> view(d, 0);
-  // ok, int can be non-const since slab says "do not iterate tof".
-  // This is a common case so we may want a shorthand notation for this.
-  // We also need a way to have multiple columns of the same type, X,Y,E of a
-  // histogram are all double currently! If we have a type for, e.g., BinEdges
-  // wrapping a std::vector<double> we can use that (but template argument would
-  // not be item type anymore!). Can we use a column ID instead? Since the
-  // iterator is templated we cannot support custom types anyway.
-  // Unit handling?? Can/should a slab have a (runtime) unit? Could used by call
-  // wrapper to create output workspace (cannot *set* based on it due to
-  // conflict with multi threading, but can *check*)? (do we even need call
-  // wrappers, or should things be handled based on Dataset and
-  // transformations?).
-  DatasetView<slab<double, Dimension::Tof>, int> view(d, 0);
-  // iterate over items that are slabs of doubles with a spectrum dimension. In
-  // this case iteration is over tof.
-  // A slab is a bit like gsl::range, i.e., a view into a vector but may have a
-  // spread to support multi-dimensional slices.
-  DatasetView<slab<double, Dimension::Spectrum>,
-                  slab<const int, Dimension::Spectrum>> view(d, 0);
-}
-#endif
 
 template <class T> constexpr int type_to_id();
 template <> constexpr int type_to_id<double>() { return 0; }
