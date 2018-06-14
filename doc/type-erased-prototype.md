@@ -64,7 +64,7 @@ We have several options:
    Essentially this is a convenience layer on top of option 1.) that acts as if data was stored as an array of structures.
    Furthermore it provides an elegant way of dealing with variables that do not share all their dimensions.
    - The view/iterator could iterate either all (applicable) dimensions, a specific dimension, or all but certain dimensions, depending on the needs to the specific client code.
-   - See [`test/dataset_iterator_test.cpp`](../src/type-erased-prototype/test/dataset_iterator_test.cpp) for examples.
+   - See [`test/dataset_view_test.cpp`](../src/type-erased-prototype/test/dataset_view_test.cpp) for examples.
 1. Access a subset of a `Dataset` at a given axis value for a given dimension.
    This is basically slicing of the `Dataset`.
    It is still unclear how this should be handled in detail and is currently not part of the prototype.
@@ -92,8 +92,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Is this reasonable?
   - What are the major and minor drawbacks?
 
-- The prototype currently accesses variables and iterator elements by type.
-  We will probably need to use a tag or ID instead:
+- The prototype accesses variables and iterator elements by tag:
 
   ```cpp
   // Need to support also generic variables such as Double or String.
@@ -127,7 +126,9 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   };
   ```
   Additionally access via a name will probably be provided.
-  - Should variables be allowed to share a name if the have different types, e.g., `Variable::Value` and `Variable::Error` could both carry the name `"sample"` if the represent data for the sample.
+  - Should variables be allowed to share a name if the have different types?
+    For example, `Variable::Value` and `Variable::Error` could both carry the name `"sample"` if the represent data for the sample.
+    This implies that the two belong together and makes joint access, e.g., via a `Histogram` more straightforward.
 
 - We will need to support "axis" variables that are bin edges, i.e., are by 1 longer than the size of the dimension.
   If we iterate over all dimensions, what should the iteration for bin edges do?
@@ -194,6 +195,8 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   Handling units for Y and E would allow us to:
   - Get rid of the distinction between histogram data distribution data.
   - Provide a way to distinguish standard deviations and variances.
+    Maybe not entirely --- how can we distinguish standard deviations and variances for dimensionless quantities?
+    Can we have a dummy `UnitId::SquaredDimensionless`?
   - Allow more general operations that yield different units.
 
   As mentioned above, storing units in the type (using `boost::units`) is not really feasible.
@@ -412,6 +415,7 @@ else
 
 ### Changes from v1 to v2
 
+Findings and changes:
 - Introduced `DataArray`.
   This helps to define dimensionality, especially when we want to support bin edges, and allows implementations of operations on simpler types, separating the operation on a single variable from difficulties that may arise when defining an operation on a `Dataset` containing many variables.
 - Support bin edges.
@@ -423,56 +427,41 @@ else
   No major difficulty here due to well contained functionality, but will be quite tedious to do a full implementation covering all corner cases.
 - Add basic support for units.
   The interface for (avoiding) the redundancy of defining units for variables that are coordinates for their dimension is still unclear.
-- How exactly will name-based access work?
-  Especially in combination with `DatasetView`?
-- Issues from having monitors as variables in `Dataset`?
-  Will have a second set of, e.g., `Variable::Tof` with different dimensions.
-  Forces us to always use names for access?
-  - Would it make sense to restrict many variables to be single-use within a given `Dataset`, e.g., there can only be one set of instrument-related variables, one log, ...?
-    Would this help with the naming issue?
+- Support name-based access in `Dataset` and `DatasetView`.
+- Introduced distinction between coordinate variables and data variables, similar to `xarray`.
+  The distinction is based on the behavior under (arithmetic) operations between `Datasets`:
+  - *Data variables* are *transformed*, e.g., multiplied in a "multiply" operation.
+  - *Coordinate variables* are *matched*.
+    - Do not have a name, implying that they must be unique.
+    - Do not have a unit, since it is implied by the tag defining the coordinate.
+      Might need to support unit *scale*.
+    - Coordinate variables cannot have a name and therefore cannot be duplicate.
+  Data variables include `Data::Value`, `Data::Error`, `Data::String`, `Data::Int`, and `Data::ExperimentLog`.
+  Coordinate variables include `Coord::Tof`, `Coord::Q`, `Coord::SpectrumNumber`, `Coord::DetectorId`, `Coord::SpectrumPosition`, `Coord::DetectorPosition`, `Coord::DetectorGrouping`, `Coord::SpectrumLabel`, `Coord::RowLabel`, and `Coord::ColumnLabel`.
+- Issues from having multiple distinct data variables in `Dataset`, e.g., "sample" and "background" run and more importantly monitors as variables in `Dataset`:
+  - For monitors, would need to have a second set of, e.g., `Variable::Tof` with different dimensions.
   - If there are multiple variables with the same type and shape, should we just use an extra dimension?
     No, since we will not have good sharing anymore, e.g., if sample and can runs are held in the same `Dataset`.
-- Introduce distinction between coordinate variables and data variables, similar to `xarray`?
-  This defines which variables are transformed in operations, e.g., which variables are multiplied in a multiply operation between `Datasets`.
-- How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?
-- `Histogram` access:
+    If it is essential for a particular use case, using an auxiliary dimension with ragged other dimension could be sufficient, but it should not be the generic solution.
+  My current conclusion is that as stated above we will not support duplicate coordinate variables.
+  For monitors we will provide a separate `Dimension::MonitorTof` and `Coord::MonitorTof`.
+  Data variables can be duplicate and will need to be accessed with their name.
+- Support for `Histogram` access in early draft state.
   - Must be able to specify the dimension the histogram spans.
-    This could be any, e.g., if there are bin edge axes in multiple dimensions?
+    Currently using fixed dimension specification in `DatasetView`.
+    This seems consistent with what we plan to do for `Span`, so it should be intuitive to do it in the same way.
   - How can we find the correct edge variable?
-  - If we have the edge variable, we can check which dimension is longer, so we can figure out the correct dimension to span.
-    However, this would not work for point data!
-  - The edge/point variable matches its dimension variable, e.g., `Variable::Tof` for `Dimension::Tof`, i.e, it is always possible to associate one with the other, provided we know one of the two.
-  - Dimension identifies edge/point variable (unless there are multiple, see monitors issue above), but not the corresponding `Variable::Value` and `Variable::Error` (unless they are unique).
-- In cases with multiple "data variables" in a `Dataset`:
-  Do we want to or need to support distinct coordinates for each of them, i.e., coordinates with different values or even different lengths for each data variable?
-  - Not considering monitors, the answer is probably "no".
-    We would lose too much generality and options for getting dimensions sizes.
-    If it is essential for a particular use case, using an auxiliary dimension with ragged other dimension could be sufficient?
-  - Is the consequence that coordinates do not need a name?
-    Not for standard coordinates, but user coordinates such as a string labeling spectra requires naming support!
+    The dimension implies the axis!
+    For example, `Dimensions::Tof` implies that `Coord::Tof` is the associated edge variable.
+  - Data variables are always `Data::Value` and `Data::Error` and there does not seem to be a need to support anything else?
+    - Use name-based access if there are multiple data variables of this type.
 
-Which variables are "data variables" and which are not?
-The distinction is based on the behavior under (arithmetic) operations:
-- *Data variables* are *transformed*.
-- *Coordinate variables* are *matched*.
-  - Do not have a name, implying that they must be unique.
-  - Do not have a unit, since it is implied by the tag defining the coordinate.
-    Might need to support unit *scale*.
+Open questions:
+- How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?
+- Note that there will be an equivalent to `Histogram` for `PointData`.
+  - Is it a problem if they two are completely distinct types?
 
-Data variables:
-- `Variable::Value`
-- `Variable::Error`
-- `Variable::String`
-- `Variable::Int`
-- `Variable::ExperimentLog`
+### To do
 
-Coordinate variables:
-- `Coord::Tof`
-- `Coord::Q`
-- `Coord::SpectrumNumber`
-- `Coord::DetectorId`
-- `Coord::SpectrumPosition`
-- `Coord::DetectorPosition`
-- `Coord::SpectrumLabel`
-- `Coord::RowLabel`
-- `Coord::ColumnLabel`
+- Benchmark new `Histogram` mechanism, including stride support.
+- Demonstrate access to `Coord::SpectrumPosition` which is "virtual", i.e., does not contain data but computes positions based on `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
