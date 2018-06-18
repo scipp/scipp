@@ -76,6 +76,35 @@ BM_Histogram_plus_equals_allocation_from_threads(benchmark::State &state) {
                           sizeof(double));
 }
 
+static void BM_Histogram_plus_equals_breaking_sharing(benchmark::State &state) {
+  const int64_t count = 100000000 / state.range(0);
+  std::vector<Histogram> histograms(count, 0);
+  const auto size = histograms.size();
+#pragma omp parallel for num_threads(state.range(1))
+  for (gsl::index i = 0; i < size; ++i) {
+    // Create without sharing.
+    histograms[i] = Histogram(state.range(0));
+  }
+// Warmup.
+#pragma omp parallel for num_threads(state.range(1))
+  for (gsl::index i = 0; i < size; ++i) {
+    histograms[i] += histograms[i];
+  }
+  for (auto _ : state) {
+    state.PauseTiming();
+    std::vector<Histogram> histograms2(histograms);
+    state.ResumeTiming();
+#pragma omp parallel for num_threads(state.range(1))
+    for (gsl::index i = 0; i < size; ++i) {
+      // Allocation/copy by cow_ptr.
+      histograms2[i] += histograms[i];
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * count);
+  state.SetBytesProcessed(state.iterations() * count * state.range(0) * 3 *
+                          sizeof(double));
+}
+
 static void BM_bare_plus_equals(benchmark::State &state) {
   const int64_t count = 100000000 / state.range(0);
   std::vector<double> histograms(count * state.range(0));
@@ -90,6 +119,52 @@ static void BM_bare_plus_equals(benchmark::State &state) {
     for (gsl::index i = 0; i < size; ++i) {
       histograms[i] += histograms2[i];
     }
+  }
+  state.SetItemsProcessed(state.iterations() * count);
+  state.SetBytesProcessed(state.iterations() * count * state.range(0) * 3 *
+                          sizeof(double));
+}
+
+static void BM_bare_plus_equals_breaking_sharing(benchmark::State &state) {
+  const int64_t count = 100000000 / state.range(0);
+  std::vector<double> histograms(count * state.range(0));
+  const auto size = histograms.size();
+#pragma omp parallel for num_threads(state.range(1))
+  for (gsl::index i = 0; i < size; ++i) {
+    histograms[i] += histograms[i];
+  }
+  for (auto _ : state) {
+    // Allocation/copy would be done by cow_ptr in DataArray, outside loop.
+    auto histograms2(histograms);
+#pragma omp parallel for num_threads(state.range(1))
+    for (gsl::index i = 0; i < size; ++i) {
+      histograms2[i] += histograms[i];
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * count);
+  state.SetBytesProcessed(state.iterations() * count * state.range(0) * 3 *
+                          sizeof(double));
+}
+
+static void
+BM_bare_plus_equals_breaking_sharing_optimized(benchmark::State &state) {
+  const int64_t count = 100000000 / state.range(0);
+  std::vector<double> histograms(count * state.range(0));
+  const auto size = histograms.size();
+#pragma omp parallel for num_threads(state.range(1))
+  for (gsl::index i = 0; i < size; ++i) {
+    histograms[i] += histograms[i];
+  }
+  for (auto _ : state) {
+    // Allocation/copy would be done by cow_ptr in DataArray, outside loop.
+    // Note: Cannot use unique_ptr<double[]> since that has overhead of
+    // 0-initialization, i.e., we pay for an extra read/write.
+    double *histograms2 = new double[histograms.size()];
+#pragma omp parallel for num_threads(state.range(1))
+    for (gsl::index i = 0; i < size; ++i) {
+      histograms2[i] = histograms[i] + histograms[i];
+    }
+    delete [] histograms2;
   }
   state.SetItemsProcessed(state.iterations() * count);
   state.SetBytesProcessed(state.iterations() * count * state.range(0) * 3 *
@@ -158,7 +233,40 @@ BENCHMARK(BM_Histogram_plus_equals_allocation_from_threads)
     ->Args({1000, 24})
     ->UseRealTime();
 
+BENCHMARK(BM_Histogram_plus_equals_breaking_sharing)
+    ->Args({100, 1})
+    ->Args({100, 2})
+    ->Args({100, 4})
+    ->Args({100, 8})
+    ->Args({100, 12})
+    ->Args({100, 24})
+    ->Args({1000, 1})
+    ->Args({1000, 2})
+    ->Args({1000, 4})
+    ->Args({1000, 8})
+    ->Args({1000, 12})
+    ->Args({1000, 24})
+    ->UseRealTime();
+
 BENCHMARK(BM_bare_plus_equals)
+    ->Args({1000, 1})
+    ->Args({1000, 2})
+    ->Args({1000, 4})
+    ->Args({1000, 8})
+    ->Args({1000, 12})
+    ->Args({1000, 24})
+    ->UseRealTime();
+
+BENCHMARK(BM_bare_plus_equals_breaking_sharing)
+    ->Args({1000, 1})
+    ->Args({1000, 2})
+    ->Args({1000, 4})
+    ->Args({1000, 8})
+    ->Args({1000, 12})
+    ->Args({1000, 24})
+    ->UseRealTime();
+
+BENCHMARK(BM_bare_plus_equals_breaking_sharing_optimized)
     ->Args({1000, 1})
     ->Args({1000, 2})
     ->Args({1000, 4})
