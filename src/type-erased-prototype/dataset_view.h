@@ -98,14 +98,14 @@ private:
 template <class Base, class T> struct GetterMixin {};
 
 template <class Base> struct GetterMixin<Base, Data::Tof> {
-  const element_reference_type_t<Data::Tof> tof() {
-    return static_cast<Base *>(this)->template get<Data::Tof>();
+  const element_reference_type_t<Data::Tof> tof() const {
+    return static_cast<const Base *>(this)->template get<Data::Tof>();
   }
 };
 
 template <class Base> struct GetterMixin<Base, Data::Value> {
-  const element_reference_type_t<Data::Value> value() {
-    return static_cast<Base *>(this)->template get<Data::Value>();
+  const element_reference_type_t<Data::Value> value() const {
+    return static_cast<const Base *>(this)->template get<Data::Value>();
   }
 };
 
@@ -271,7 +271,7 @@ private:
 
 public:
   class iterator;
-  class Item {
+  class Item : public GetterMixin<Item, Ts>... {
   public:
     Item(const gsl::index index, const std::vector<gsl::index> &dimensions,
          std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &variables)
@@ -284,7 +284,7 @@ public:
       if (m_dimensions.empty())
         return;
       auto remainder{index};
-      for (gsl::index d = 0; d < m_dimensions.size()-1; ++d) {
+      for (gsl::index d = 0; d < m_dimensions.size() - 1; ++d) {
         m_indices[d] = remainder % m_dimensions[d];
         remainder /= m_dimensions[d];
       }
@@ -386,7 +386,7 @@ public:
   // TODO const/non-const versions.
   template <class Tag>
   element_reference_type_t<Tag>
-  get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) {
+  get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
     auto &col =
         std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
             m_columns);
@@ -395,7 +395,7 @@ public:
 
   template <class Tag>
   element_reference_type_t<Tag>
-  get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) {
+  get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) const {
     auto &col =
         std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
             m_columns);

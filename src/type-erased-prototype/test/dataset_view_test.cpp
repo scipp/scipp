@@ -163,7 +163,7 @@ TEST(DatasetView, iterator) {
   auto it = view.begin();
   ASSERT_EQ(it->get<Data::Value>(), 1.1);
   it->get<Data::Value>() = 2.2;
-  ASSERT_EQ(it->get<Data::Value>(), 2.2);
+  ASSERT_EQ(it->value(), 2.2);
   ASSERT_EQ(it, it);
   ASSERT_EQ(it, view.begin());
   ASSERT_NE(it, view.end());
