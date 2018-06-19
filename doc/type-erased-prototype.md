@@ -452,7 +452,7 @@ Findings and changes:
     This seems consistent with what we plan to do for `Span`, so it should be intuitive to do it in the same way.
   - How can we find the correct edge variable?
     The dimension implies the axis!
-    For example, `Dimensions::Tof` implies that `Coord::Tof` is the associated edge variable.
+    For example, `Dimension::Tof` implies that `Coord::Tof` is the associated edge variable.
   - Data variables are always `Data::Value` and `Data::Error` and there does not seem to be a need to support anything else?
     - Use name-based access if there are multiple data variables of this type.
 
@@ -479,5 +479,17 @@ Outstanding tasks:
 - Demonstrate access to `Coord::SpectrumPosition` which is "virtual", i.e., does not contain data but computes positions based on `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
 - Different dimension order in each variable?
 - Support random access in `DatasetView` if possible efficiently.
+  - `DatasetView::operator[](gsl::index)` strictly speaking not necessary.
+    Can we get a really efficient iterator that can be used with `OpenMP`?
+  - `DatasetItem`, returned/held by iterator/index-access in `DatasetView`?
+    Who owns it?
+  - Try on relevant examples!
+    - `operator+=` with different shape, such that implementation needs to use `DatasetView` and cannot iterate manually.
+      Wouldn't that typically be two different `Datasets`?
+      How can we iterate simultaneously if shape differs?
+      Merge into same `Dataset` first?
 - Understand performance implications of doing a lot of operations in streaming memory access.
   Investigate how a cache-blocked operation mode could be supported.
+  Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.
+- Investigate `EventList` replacement.
+- Investigate MPI integration.
