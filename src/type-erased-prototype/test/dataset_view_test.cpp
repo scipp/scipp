@@ -153,6 +153,24 @@ TEST(DatasetView, construct) {
                std::runtime_error);
 }
 
+TEST(DatasetView, iterator) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  DatasetView<Data::Value> view(d);
+  ASSERT_NO_THROW(view.begin());
+  ASSERT_NO_THROW(view.end());
+  auto it = view.begin();
+  ASSERT_EQ(it->get<Data::Value>(), 1.1);
+  it->get<Data::Value>() = 2.2;
+  ASSERT_EQ(it->get<Data::Value>(), 2.2);
+  ASSERT_EQ(it, it);
+  ASSERT_EQ(it, view.begin());
+  ASSERT_NE(it, view.end());
+  ASSERT_NO_THROW(it++);
+  ASSERT_EQ(it, view.end());
+}
+
 TEST(DatasetView, single_column) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 10), 10);

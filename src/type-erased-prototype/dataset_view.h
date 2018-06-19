@@ -5,6 +5,8 @@
 #include <tuple>
 #include <type_traits>
 
+#include <boost/iterator/iterator_facade.hpp>
+
 #include "dataset.h"
 #include "histogram.h"
 
@@ -268,6 +270,95 @@ private:
   }
 
 public:
+  class iterator;
+  class Item {
+  public:
+    Item(const gsl::index index, const std::vector<gsl::index> &dimensions,
+         std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &variables)
+        : m_indices(dimensions.size()), m_dimensions(dimensions),
+          m_variables(variables) {
+      setIndex(index);
+    }
+
+    void setIndex(const gsl::index index) {
+      if (m_dimensions.empty())
+        return;
+      auto remainder{index};
+      for (gsl::index d = 0; d < m_dimensions.size()-1; ++d) {
+        m_indices[d] = remainder % m_dimensions[d];
+        remainder /= m_dimensions[d];
+      }
+      m_indices.back() = remainder;
+    }
+
+    template <class Tag>
+    element_reference_type_t<Tag>
+    get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
+      auto &col =
+          std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
+              m_variables);
+      return std::get<2>(col)[std::get<LinearSubindex>(col).get(m_indices)];
+    }
+
+    bool operator==(const Item &other) const {
+      if (m_indices != other.m_indices)
+        return false;
+      if (&m_dimensions != &other.m_dimensions)
+        return false;
+      if (&m_variables != &other.m_variables)
+        return false;
+      return true;
+    }
+
+  private:
+    friend class iterator;
+    Item(const Item &other) = default;
+    std::vector<gsl::index> m_indices;
+    const std::vector<gsl::index> &m_dimensions;
+    std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &m_variables;
+  };
+
+  class iterator
+      : public boost::iterator_facade<iterator, const Item,
+                                      boost::random_access_traversal_tag> {
+  public:
+    iterator(
+        const gsl::index index, const std::vector<gsl::index> &dimensions,
+        std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &variables)
+        : m_index(index), m_item(index, dimensions, variables) {}
+
+  private:
+    friend class boost::iterator_core_access;
+
+    bool equal(const iterator &other) const {
+      return m_index == other.m_index && m_item == other.m_item;
+    }
+
+    void increment() {
+      ++m_index;
+      m_item.setIndex(m_index);
+    }
+
+    const Item &dereference() const { return m_item; }
+
+    void decrement() {
+      --m_index;
+      m_item.setIndex(m_index);
+    }
+    void advance(int64_t delta) {
+      m_index += delta;
+      m_item.setIndex(m_index);
+    }
+
+    int64_t distance_to(const iterator &other) const {
+      return static_cast<int64_t>(other.m_index) -
+             static_cast<int64_t>(m_index);
+    }
+
+    gsl::index m_index;
+    Item m_item;
+  };
+
   DatasetView(Dataset &dataset, const std::string &name,
               const std::set<Dimension> &fixedDimensions = {})
       : m_index(relevantDimensions(
@@ -285,6 +376,11 @@ public:
             LinearSubindex(m_index.dimensions,
                            DimensionHelper<Ts>::get(dataset, fixedDimensions)),
             getData<Ts>(dataset))...) {}
+
+  iterator begin() { return {0, m_index.dimension, m_columns}; }
+  iterator end() {
+    return {m_index.dimensions.volume(), m_index.dimension, m_columns};
+  }
 
   // TODO add get version for Slab.
   // TODO const/non-const versions.
