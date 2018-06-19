@@ -1,6 +1,53 @@
 #include <benchmark/benchmark.h>
+#include <array>
 
 #include "dataset_view.h"
+
+std::array<gsl::index, 3> getIndex(gsl::index i,
+                                   const std::array<gsl::index, 3> &size) {
+  std::array<gsl::index, 3> index;
+  // i = x + Nx(y + Ny z)
+  index[0] = i % size[0];
+  index[1] = (i / size[0]) % size[1];
+  index[2] = i / (size[0] * size[1]);
+  return index;
+}
+
+static void BM_index_math(benchmark::State &state) {
+  std::array<gsl::index, 3> size{123, 1234, 1245};
+  gsl::index volume = size[0] * size[1] * size[2];
+  for (auto _ : state) {
+    for (int i = 0; i < volume; ++i) {
+      benchmark::DoNotOptimize(getIndex(i, size));
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * volume);
+}
+BENCHMARK(BM_index_math)->UseRealTime();
+
+static void BM_index_math_threaded(benchmark::State &state) {
+  std::array<gsl::index, 3> size{123, 1234, 1245};
+  gsl::index volume = size[0] * size[1] * size[2];
+  // Warmup
+#pragma omp parallel for num_threads(state.range(0))
+  for (int i = 0; i < volume; ++i)
+    benchmark::DoNotOptimize(getIndex(i, size));
+  for (auto _ : state) {
+#pragma omp parallel for num_threads(state.range(0))
+    for (int i = 0; i < volume; ++i) {
+      benchmark::DoNotOptimize(getIndex(i, size));
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * volume);
+}
+BENCHMARK(BM_index_math_threaded)
+    ->Arg(1)
+    ->Arg(2)
+    ->Arg(4)
+    ->Arg(8)
+    ->Arg(12)
+    ->Arg(24)
+    ->UseRealTime();
 
 static void
 BM_DatasetView_multi_column_mixed_dimension(benchmark::State &state) {
@@ -24,7 +71,30 @@ BM_DatasetView_multi_column_mixed_dimension(benchmark::State &state) {
 BENCHMARK(BM_DatasetView_multi_column_mixed_dimension)
     ->RangeMultiplier(2)
     ->Range(8, 8 << 10);
-;
+
+static void
+BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
+  Dataset d;
+  Dimensions dims;
+  dims.add(Dimension::SpectrumNumber, state.range(0));
+  d.insert<Data::Error>("", dims, state.range(0));
+  dims.add(Dimension::Tof, 1000);
+  d.insert<Data::Value>("", dims, state.range(0) * 1000);
+  gsl::index elements = 1000 * state.range(0);
+
+  for (auto _ : state) {
+    DatasetView<Data::Value, const Data::Error> it(d);
+    for (int i = 0; i < elements; ++i) {
+      it.get<Data::Value>() += it.get<const Data::Error>();
+      it.increment();
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * elements);
+  state.SetBytesProcessed(state.iterations() * elements * 3 * sizeof(double));
+}
+BENCHMARK(BM_DatasetView_mixed_dimension_addition)
+    ->RangeMultiplier(2)
+    ->Range(8, 8 << 16);
 
 static void
 BM_DatasetView_multi_column_mixed_dimension_slab(benchmark::State &state) {
