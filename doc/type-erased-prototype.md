@@ -235,6 +235,11 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
 
 - Monitors can be stored as (a set of) separate variable(s) instead of the current mechanism linking to a separate workspace.
 
+- Given that we have tens of man years of effort encapsulated into our existing Algorithms, most of which work through the MatrixWorkspace interface, how do we forsee the `Dataset` integrating into the rest of Mantid?
+  - Will it somehow support the MatrixWorkspace interface?
+  - Is this a new workspace type that will only work with `DataSet` aware Algrorithms?
+  - Will there be some form of translation layer between Workspace types?
+
 ## Example
 
 A typical `Dataset`, equivalent to one of our current workspaces could contain the following variables and dimensions:
