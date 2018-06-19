@@ -43,10 +43,10 @@ TEST(LinearSubindex, full_subindex) {
   dims.add(Dimension::Q, 2);
   MultidimensionalIndex i(dims);
 
-  LinearSubindex sub(i, dims);
+  LinearSubindex sub(i.dimensions, dims);
   gsl::index count{0};
   while (true) {
-    ASSERT_EQ(sub.get(), count++);
+    ASSERT_EQ(sub.get(i.index), count++);
     if (i.index == i.end)
       break;
     i.increment();
@@ -60,18 +60,18 @@ TEST(LinearSubindex, zero_dimensional_subindex) {
   dims.add(Dimension::Q, 2);
   MultidimensionalIndex i(dims);
 
-  LinearSubindex sub(i, Dimensions{});
-  ASSERT_EQ(sub.get(), 0);
+  LinearSubindex sub(i.dimensions, Dimensions{});
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 0);
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 0);
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 0);
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 0);
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 0);
+  ASSERT_EQ(sub.get(i.index), 0);
 }
 
 TEST(LinearSubindex, fast_1_dimensional_subindex) {
@@ -81,18 +81,18 @@ TEST(LinearSubindex, fast_1_dimensional_subindex) {
   dims.add(Dimension::Q, 2);
   MultidimensionalIndex i(dims);
 
-  LinearSubindex sub(i, Dimensions(Dimension::Tof, 3));
-  ASSERT_EQ(sub.get(), 0);
+  LinearSubindex sub(i.dimensions, Dimensions(Dimension::Tof, 3));
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 1);
+  ASSERT_EQ(sub.get(i.index), 1);
   i.increment();
-  ASSERT_EQ(sub.get(), 2);
+  ASSERT_EQ(sub.get(i.index), 2);
   i.increment();
-  ASSERT_EQ(sub.get(), 0);
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 1);
+  ASSERT_EQ(sub.get(i.index), 1);
   i.increment();
-  ASSERT_EQ(sub.get(), 2);
+  ASSERT_EQ(sub.get(i.index), 2);
 }
 
 TEST(LinearSubindex, slow_1_dimensional_subindex) {
@@ -102,18 +102,18 @@ TEST(LinearSubindex, slow_1_dimensional_subindex) {
   dims.add(Dimension::Q, 2);
   MultidimensionalIndex i(dims);
 
-  LinearSubindex sub(i, Dimensions(Dimension::Q, 2));
-  ASSERT_EQ(sub.get(), 0);
+  LinearSubindex sub(i.dimensions, Dimensions(Dimension::Q, 2));
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 0);
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 0);
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 1);
+  ASSERT_EQ(sub.get(i.index), 1);
   i.increment();
-  ASSERT_EQ(sub.get(), 1);
+  ASSERT_EQ(sub.get(i.index), 1);
   i.increment();
-  ASSERT_EQ(sub.get(), 1);
+  ASSERT_EQ(sub.get(i.index), 1);
 }
 
 TEST(LinearSubindex, flipped_2_dimensional_subindex) {
@@ -126,18 +126,18 @@ TEST(LinearSubindex, flipped_2_dimensional_subindex) {
   subdims.add(Dimension::Q, 2);
   subdims.add(Dimension::Tof, 3);
 
-  LinearSubindex sub(i, subdims);
-  ASSERT_EQ(sub.get(), 0);
+  LinearSubindex sub(i.dimensions, subdims);
+  ASSERT_EQ(sub.get(i.index), 0);
   i.increment();
-  ASSERT_EQ(sub.get(), 2);
+  ASSERT_EQ(sub.get(i.index), 2);
   i.increment();
-  ASSERT_EQ(sub.get(), 4);
+  ASSERT_EQ(sub.get(i.index), 4);
   i.increment();
-  ASSERT_EQ(sub.get(), 1);
+  ASSERT_EQ(sub.get(i.index), 1);
   i.increment();
-  ASSERT_EQ(sub.get(), 3);
+  ASSERT_EQ(sub.get(i.index), 3);
   i.increment();
-  ASSERT_EQ(sub.get(), 5);
+  ASSERT_EQ(sub.get(i.index), 5);
 }
 
 TEST(DatasetView, construct) {
@@ -145,7 +145,7 @@ TEST(DatasetView, construct) {
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Int>("name2", Dimensions{}, {2l});
   // Empty view forbidden by static_assert:
-  //DatasetView<> view(d);
+  // DatasetView<> view(d);
   ASSERT_NO_THROW(DatasetView<Data::Value> view(d));
   ASSERT_NO_THROW(DatasetView<Data::Int> view(d));
   ASSERT_NO_THROW(auto view = (DatasetView<Data::Int, Data::Value>(d)));
@@ -195,10 +195,8 @@ TEST(DatasetView, multi_column_mixed_dimension) {
   var[0] = 0.2;
   var[1] = 3.2;
 
-  ASSERT_ANY_THROW(auto view =
-                       (DatasetView<Data::Value, Data::Int>(d)));
-  ASSERT_NO_THROW(auto view =
-                      (DatasetView<Data::Value, const Data::Int>(d)));
+  ASSERT_ANY_THROW(auto view = (DatasetView<Data::Value, Data::Int>(d)));
+  ASSERT_NO_THROW(auto view = (DatasetView<Data::Value, const Data::Int>(d)));
   auto view = (DatasetView<Data::Value, const Data::Int>(d));
   ASSERT_EQ(view.get<Data::Value>(), 0.2);
   ASSERT_EQ(view.get<const Data::Int>(), 0);
@@ -358,7 +356,7 @@ TEST(DatasetView, histogram) {
   dims.add(Dimension::Tof, 2);
   dims.add(Dimension::Spectrum, 4);
   d.insert<Data::Value>("sample", dims,
-                            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   d.insert<Data::Error>("sample", dims, 8);
 
   DatasetView<Data::Histogram> view(d, {Dimension::Tof});

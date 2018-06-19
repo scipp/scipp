@@ -68,31 +68,29 @@ public:
 
 class LinearSubindex {
 public:
-  LinearSubindex(const MultidimensionalIndex &index,
-                 const Dimensions &dimensions)
-      : m_index(index) {
+  LinearSubindex(const Dimensions &parentDimensions,
+                 const Dimensions &dimensions) {
     gsl::index factor{1};
     for (gsl::index i = 0; i < dimensions.count(); ++i) {
       const auto dimension = dimensions.label(i);
-      if (m_index.dimensions.contains(dimension)) {
-        m_offsets.push_back(m_index.dimensions.index(dimension));
+      if (parentDimensions.contains(dimension)) {
+        m_offsets.push_back(parentDimensions.index(dimension));
         m_factors.push_back(factor);
       }
       factor *= dimensions.size(i);
     }
   }
 
-  gsl::index get() const {
+  gsl::index get(const std::vector<gsl::index> &indices) const {
     gsl::index index{0};
     for (gsl::index i = 0; i < m_factors.size(); ++i)
-      index += m_factors[i] * m_index.index[m_offsets[i]];
+      index += m_factors[i] * indices[m_offsets[i]];
     return index;
   }
 
 private:
   std::vector<gsl::index> m_factors;
   std::vector<gsl::index> m_offsets;
-  const MultidimensionalIndex &m_index;
 };
 
 template <class Base, class T> struct GetterMixin {};
@@ -275,15 +273,17 @@ public:
       : m_index(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...})),
         m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
-            Ts{}, LinearSubindex(m_index, DimensionHelper<Ts>::get(
-                                              dataset, name, fixedDimensions)),
+            Ts{}, LinearSubindex(
+                      m_index.dimensions,
+                      DimensionHelper<Ts>::get(dataset, name, fixedDimensions)),
             getData<Ts>(dataset, name))...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_index(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, fixedDimensions)...})),
         m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
-            Ts{}, LinearSubindex(m_index, DimensionHelper<Ts>::get(
-                                              dataset, fixedDimensions)),
+            Ts{},
+            LinearSubindex(m_index.dimensions,
+                           DimensionHelper<Ts>::get(dataset, fixedDimensions)),
             getData<Ts>(dataset))...) {}
 
   // TODO add get version for Slab.
@@ -294,7 +294,7 @@ public:
     auto &col =
         std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
             m_columns);
-    return std::get<2>(col)[std::get<LinearSubindex>(col).get()];
+    return std::get<2>(col)[std::get<LinearSubindex>(col).get(m_index.index)];
   }
 
   template <class Tag>
@@ -304,7 +304,7 @@ public:
         std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
             m_columns);
     const auto &data = std::get<2>(col);
-    const auto index = std::get<LinearSubindex>(col).get();
+    const auto index = std::get<LinearSubindex>(col).get(m_index.index);
     // TODO This is wrong if Bins are not the innermost index.
     return Bin(data[index], data[index + 1]);
   }
