@@ -90,6 +90,13 @@ public:
     return index;
   }
 
+  gsl::index get(const gsl::index *indices) const {
+    gsl::index index{0};
+    for (gsl::index i = 0; i < m_factors.size(); ++i)
+      index += m_factors[i] * indices[m_offsets[i]];
+    return index;
+  }
+
 private:
   std::vector<gsl::index> m_factors;
   std::vector<gsl::index> m_offsets;
@@ -275,8 +282,7 @@ public:
   public:
     Item(const gsl::index index, const std::vector<gsl::index> &dimensions,
          std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &variables)
-        : m_indices(dimensions.size()), m_dimensions(dimensions),
-          m_variables(variables) {
+        : m_dimensions(dimensions), m_variables(variables) {
       setIndex(index);
     }
 
@@ -288,7 +294,7 @@ public:
         m_indices[d] = remainder % m_dimensions[d];
         remainder /= m_dimensions[d];
       }
-      m_indices.back() = remainder;
+      m_indices[m_dimensions.size() - 1] = remainder;
     }
 
     template <class Tag>
@@ -297,12 +303,12 @@ public:
       auto &col =
           std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
               m_variables);
-      return std::get<2>(col)[std::get<LinearSubindex>(col).get(m_indices)];
+      return std::get<2>(
+          col)[std::get<LinearSubindex>(col).get(m_indices.data())];
     }
 
     bool operator==(const Item &other) const {
-      if (m_indices != other.m_indices)
-        return false;
+      // Note: Index compared in iterator.
       if (&m_dimensions != &other.m_dimensions)
         return false;
       if (&m_variables != &other.m_variables)
@@ -313,7 +319,7 @@ public:
   private:
     friend class iterator;
     Item(const Item &other) = default;
-    std::vector<gsl::index> m_indices;
+    std::array<gsl::index, 3> m_indices;
     const std::vector<gsl::index> &m_dimensions;
     std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &m_variables;
   };

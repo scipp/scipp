@@ -78,15 +78,16 @@ BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
   Dimensions dims;
   dims.add(Dimension::SpectrumNumber, state.range(0));
   d.insert<Data::Error>("", dims, state.range(0));
-  dims.add(Dimension::Tof, 1000);
-  d.insert<Data::Value>("", dims, state.range(0) * 1000);
-  gsl::index elements = 1000 * state.range(0);
+  dims.add(Dimension::Tof, 100);
+  dims.add(Dimension::Run, 10);
+  gsl::index elements = state.range(0) * 100 * 10;
+  d.insert<Data::Value>("", dims, elements);
 
   for (auto _ : state) {
-    DatasetView<Data::Value, const Data::Error> it(d);
-    for (int i = 0; i < elements; ++i) {
-      it.get<Data::Value>() += it.get<const Data::Error>();
-      it.increment();
+    DatasetView<Data::Value, const Data::Error> view(d);
+    const auto end = view.end();
+    for (auto it = view.begin(); it != end; ++it) {
+      it->get<Data::Value>() += it->get<const Data::Error>();
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
@@ -94,7 +95,38 @@ BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
 }
 BENCHMARK(BM_DatasetView_mixed_dimension_addition)
     ->RangeMultiplier(2)
-    ->Range(8, 8 << 16);
+    ->Range(8, 8 << 14)
+    ->UseRealTime();
+
+static void
+BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
+  Dataset d;
+  Dimensions dims;
+  dims.add(Dimension::SpectrumNumber, state.range(0));
+  d.insert<Data::Error>("", dims, state.range(0));
+  dims.add(Dimension::Tof, 100);
+  dims.add(Dimension::Run, 10);
+  gsl::index elements = state.range(0) * 100 * 10;
+  d.insert<Data::Value>("", dims, elements);
+
+  for (auto _ : state) {
+    DatasetView<Data::Value, const Data::Error> view(d);
+    auto it = view.begin();
+    const auto end = view.end();
+    gsl::index count = end - it;
+#pragma omp parallel for num_threads(state.range(1)) schedule (static,10000)
+    for (gsl::index i = 0; i < count; ++i) {
+      auto item = view.begin() + i;
+      item->get<Data::Value>() += item->get<const Data::Error>();
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * elements);
+  state.SetBytesProcessed(state.iterations() * elements * 3 * sizeof(double));
+}
+BENCHMARK(BM_DatasetView_mixed_dimension_addition_threaded)
+    ->RangeMultiplier(2)
+    ->Ranges({{8, 8 << 14}, {1, 24}})
+    ->UseRealTime();
 
 static void
 BM_DatasetView_multi_column_mixed_dimension_slab(benchmark::State &state) {
