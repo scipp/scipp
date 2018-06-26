@@ -239,6 +239,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Will it somehow support the MatrixWorkspace interface?
   - Is this a new workspace type that will only work with `DataSet` aware Algrorithms?
   - Will there be some form of translation layer between Workspace types?
+- These questions regarding MatrixWorkspace interface have been considered [here](https://confluence.esss.lu.se/display/DAM/Workspace-2.0+rollout)
 
 ## Example
 
