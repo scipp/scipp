@@ -9,6 +9,7 @@
 
 #include "dataset.h"
 #include "histogram.h"
+#include "multi_index.h"
 
 template <class T> struct Slab { using value_type = T; };
 
@@ -71,7 +72,8 @@ public:
 class LinearSubindex {
 public:
   LinearSubindex(const Dimensions &parentDimensions,
-                 const Dimensions &dimensions) {
+                 const Dimensions &dimensions)
+      : dimensions(dimensions) {
     gsl::index factor{1};
     for (gsl::index i = 0; i < dimensions.count(); ++i) {
       const auto dimension = dimensions.label(i);
@@ -96,6 +98,8 @@ public:
       index += m_factors[i] * indices[m_offsets[i]];
     return index;
   }
+
+  const Dimensions dimensions;
 
 private:
   std::vector<gsl::index> m_factors;
@@ -280,47 +284,39 @@ public:
   class iterator;
   class Item : public GetterMixin<Item, Ts>... {
   public:
-    Item(const gsl::index index, const std::vector<gsl::index> &dimensions,
+    Item(const gsl::index index, const Dimensions &dimensions,
+         const std::vector<Dimensions> &subdimensions,
          std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &variables)
-        : m_dimensions(dimensions), m_variables(variables) {
+        : m_index(dimensions, subdimensions), m_variables(variables) {
       setIndex(index);
     }
 
     void setIndex(const gsl::index index) {
-      if (m_dimensions.empty())
-        return;
-      auto remainder{index};
-      for (gsl::index d = 0; d < m_dimensions.size() - 1; ++d) {
-        m_indices[d] = remainder % m_dimensions[d];
-        remainder /= m_dimensions[d];
-      }
-      m_indices[m_dimensions.size() - 1] = remainder;
+      m_index.setIndex(index);
     }
 
     template <class Tag>
     element_reference_type_t<Tag>
     get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
+      constexpr auto variableIndex = detail::index<
+          std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>,
+          std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...>>::value;
       auto &col =
           std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
               m_variables);
-      return std::get<2>(
-          col)[std::get<LinearSubindex>(col).get(m_indices.data())];
+      //fprintf(stderr, "%lu %ld\n", variableIndex, m_index.get<variableIndex>());
+      return std::get<2>(col)[m_index.get<variableIndex>()];
     }
 
     bool operator==(const Item &other) const {
-      // Note: Index compared in iterator.
-      if (&m_dimensions != &other.m_dimensions)
-        return false;
-      if (&m_variables != &other.m_variables)
-        return false;
-      return true;
+      // TODO Compare references DatasetView?
+      return m_index == other.m_index;
     }
 
   private:
     friend class iterator;
     Item(const Item &other) = default;
-    std::array<gsl::index, 3> m_indices;
-    const std::vector<gsl::index> &m_dimensions;
+    MultiIndex m_index;
     std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &m_variables;
   };
 
@@ -329,39 +325,36 @@ public:
                                       boost::random_access_traversal_tag> {
   public:
     iterator(
-        const gsl::index index, const std::vector<gsl::index> &dimensions,
+        const gsl::index index, const Dimensions &dimensions,
+        const std::vector<Dimensions> &subdimensions,
         std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &variables)
-        : m_index(index), m_item(index, dimensions, variables) {}
+        : m_item(index, dimensions, subdimensions, variables) {}
 
   private:
     friend class boost::iterator_core_access;
 
     bool equal(const iterator &other) const {
-      return m_index == other.m_index && m_item == other.m_item;
+      return m_item == other.m_item;
     }
 
-    void increment() {
-      ++m_index;
-      m_item.setIndex(m_index);
-    }
+    void increment() { m_item.m_index.increment(); }
 
     const Item &dereference() const { return m_item; }
 
     void decrement() {
-      --m_index;
-      m_item.setIndex(m_index);
-    }
+      // TODO Ensure that index 0 is always the full linear index, either in
+      // MultiIndex itself or when creating it.
+      m_item.setIndex(m_item.m_index.get<0>() - 1); }
+
     void advance(int64_t delta) {
-      m_index += delta;
-      m_item.setIndex(m_index);
+      m_item.setIndex(m_item.m_index.get<0>() + delta);
     }
 
     int64_t distance_to(const iterator &other) const {
-      return static_cast<int64_t>(other.m_index) -
-             static_cast<int64_t>(m_index);
+      return static_cast<int64_t>(other.m_item.m_index.get<0>()) -
+             static_cast<int64_t>(m_item.m_index.get<0>());
     }
 
-    gsl::index m_index;
     Item m_item;
   };
 
@@ -383,9 +376,23 @@ public:
                            DimensionHelper<Ts>::get(dataset, fixedDimensions)),
             getData<Ts>(dataset))...) {}
 
-  iterator begin() { return {0, m_index.dimension, m_columns}; }
+  iterator begin() {
+    const std::vector<Dimensions> subdimensions{
+        std::get<1>(
+            std::get<std::tuple<Ts, LinearSubindex, variable_type_t<Ts> &>>(
+                m_columns)).dimensions...};
+    return {0, m_index.dimensions, subdimensions, m_columns};
+  }
   iterator end() {
-    return {m_index.dimensions.volume(), m_index.dimension, m_columns};
+    const std::vector<Dimensions> subdimensions{
+        std::get<1>(
+            std::get<std::tuple<Ts, LinearSubindex, variable_type_t<Ts> &>>(
+                m_columns)).dimensions...};
+    return {
+        m_index.dimensions.volume(),
+        m_index.dimensions,
+        subdimensions,
+        m_columns};
   }
 
   // TODO add get version for Slab.

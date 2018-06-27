@@ -155,8 +155,8 @@ TEST(DatasetView, construct) {
 
 TEST(DatasetView, iterator) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Value>("name1", Dimensions{Dimension::X, 2}, {1.1, 1.2});
+  d.insert<Data::Int>("name2", Dimensions{Dimension::X, 2}, {2l, 3l});
   DatasetView<Data::Value> view(d);
   ASSERT_NO_THROW(view.begin());
   ASSERT_NO_THROW(view.end());
@@ -167,6 +167,9 @@ TEST(DatasetView, iterator) {
   ASSERT_EQ(it, it);
   ASSERT_EQ(it, view.begin());
   ASSERT_NE(it, view.end());
+  ASSERT_NO_THROW(it++);
+  ASSERT_NE(it, view.end());
+  ASSERT_EQ(it->value(), 1.2);
   ASSERT_NO_THROW(it++);
   ASSERT_EQ(it, view.end());
 }

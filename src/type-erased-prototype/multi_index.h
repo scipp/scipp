@@ -39,10 +39,10 @@ public:
       m_delta[4 * d + 3] = get<3>();
       if (d > 0) {
         setIndex(offset - 1);
-        m_delta[4 * d + 0] -= get<0>() + m_delta[4 * (d - 1) + 0];
-        m_delta[4 * d + 1] -= get<1>() + m_delta[4 * (d - 1) + 1];
-        m_delta[4 * d + 2] -= get<2>() + m_delta[4 * (d - 1) + 2];
-        m_delta[4 * d + 3] -= get<3>() + m_delta[4 * (d - 1) + 3];
+        m_delta[4 * d + 0] -= get<0>() + m_delta[0];
+        m_delta[4 * d + 1] -= get<1>() + m_delta[1];
+        m_delta[4 * d + 2] -= get<2>() + m_delta[2];
+        m_delta[4 * d + 3] -= get<3>() + m_delta[3];
       }
       offset *= m_extent[d];
     }
@@ -55,20 +55,26 @@ public:
       m_index[i] += m_delta[0 + i];
     ++m_coord[0];
     if (m_coord[0] == m_extent[0]) {
-      m_coord[0] = 0;
       for (int i = 0; i < 4; ++i)
         m_index[i] += m_delta[4 + i];
-      ++m_coord[1];
-      if (m_dims > 1 && m_coord[1] == m_extent[1]) {
-        m_coord[1] = 0;
-        for (int i = 0; i < 4; ++i)
-          m_index[i] += m_delta[8 + i];
-        ++m_coord[2];
-        if (m_dims > 2 && m_coord[2] == m_extent[2]) {
-          m_coord[2] = 0;
+      if (m_dims > 1) {
+        m_coord[0] = 0;
+        ++m_coord[1];
+        if (m_coord[1] == m_extent[1]) {
           for (int i = 0; i < 4; ++i)
-            m_index[i] += m_delta[12 + i];
-          ++m_coord[3];
+            m_index[i] += m_delta[8 + i];
+          if (m_dims > 2) {
+            m_coord[1] = 0;
+            ++m_coord[2];
+            if (m_coord[2] == m_extent[2]) {
+              for (int i = 0; i < 4; ++i)
+                m_index[i] += m_delta[12 + i];
+              if(m_dims > 3) {
+                m_coord[2] = 0;
+                ++m_coord[3];
+              }
+            }
+          }
         }
       }
     }
@@ -93,8 +99,10 @@ public:
   template <int N> gsl::index get() const { return m_index[N]; }
 
   // TODO Always use full dimensions for index 0. Or compare m_coord instead?
-  bool operator==(const MultiIndex &other) {
-    return m_index[0] == other.m_index[0];
+  bool operator==(const MultiIndex &other) const {
+    //fprintf(stderr, "%ld %ld %ld %ld   %ld %ld %ld %ld\n", m_coord[0], m_coord[1], m_coord[2], m_coord[3], other.m_coord[0], other.m_coord[1], other.m_coord[2], other.m_coord[3]);
+    return m_coord[0] == other.m_coord[0] && m_coord[1] == other.m_coord[1] &&
+           m_coord[2] == other.m_coord[2] && m_coord[3] == other.m_coord[3];
   }
 
 private:
@@ -104,7 +112,7 @@ private:
   // m_index are always stored instead of merely being kept in regsiters.
   alignas(32) gsl::index m_index[4];
   alignas(32) gsl::index m_delta[16];
-  alignas(32) gsl::index m_coord[4];
+  alignas(32) gsl::index m_coord[4]{0, 0, 0, 0};
   alignas(32) gsl::index m_extent[4];
   gsl::index m_dims;
   std::vector<std::vector<gsl::index>> m_offsets;
