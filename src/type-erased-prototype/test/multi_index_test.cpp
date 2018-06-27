@@ -70,6 +70,17 @@ TEST_F(MultiIndex2DTest, increment_2D) {
   EXPECT_EQ(i.get<0>(), 3);
 }
 
+TEST_F(MultiIndex2DTest, end) {
+  MultiIndex it(xy, {xy});
+  MultiIndex end(xy, {xy});
+  end.setIndex(3 * 5);
+  for (gsl::index i = 0; i < 3 * 5; ++i) {
+    EXPECT_FALSE(it == end);
+    it.increment();
+  }
+  EXPECT_TRUE(it == end);
+}
+
 TEST_F(MultiIndex2DTest, increment_2D_transpose) {
   MultiIndex i(xy, {yx});
   std::vector<gsl::index> expected{0,  5, 10, 1,  6, 11, 2, 7,

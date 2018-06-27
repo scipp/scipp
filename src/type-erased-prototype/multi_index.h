@@ -92,6 +92,11 @@ public:
 
   template <int N> gsl::index get() const { return m_index[N]; }
 
+  // TODO Always use full dimensions for index 0. Or compare m_coord instead?
+  bool operator==(const MultiIndex &other) {
+    return m_index[0] == other.m_index[0];
+  }
+
 private:
   // alignas does not help, for some reason gcc does not generate SIMD
   // instructions.
