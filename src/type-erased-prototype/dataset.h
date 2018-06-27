@@ -73,11 +73,11 @@ public:
   const DataArray &operator[](gsl::index i) const { return m_variables[i]; }
 
   template <class Tag> variable_type_t<Tag> &get() {
-    return m_variables[findUnique(tag_id<Tag>)].get<Tag>();
+    return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
   }
 
   template <class Tag> variable_type_t<Tag> &get(const std::string &name) {
-    return m_variables[find(tag_id<Tag>, name)].get<Tag>();
+    return m_variables[find(tag_id<Tag>, name)].template get<Tag>();
   }
 
   const Dimensions &dimensions() const { return m_dimensions; }

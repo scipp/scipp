@@ -1,4 +1,4 @@
-#include <algorithm>
+#include <numeric>
 
 #include "data_array.h"
 #include "dimensions.h"
