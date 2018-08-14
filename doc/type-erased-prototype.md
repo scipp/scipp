@@ -455,6 +455,7 @@ Findings and changes:
     For example, `Dimension::Tof` implies that `Coord::Tof` is the associated edge variable.
   - Data variables are always `Data::Value` and `Data::Error` and there does not seem to be a need to support anything else?
     - Use name-based access if there are multiple data variables of this type.
+- Support iterating variables with different dimensions order, i.e., we have support for on-the-fly transposition of data.
 
 Open questions:
 - How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?
@@ -477,7 +478,6 @@ Outstanding tasks:
   Use something like `gsl::span` instead.
 - Benchmark new `Histogram` mechanism, including stride support.
 - Demonstrate access to `Coord::SpectrumPosition` which is "virtual", i.e., does not contain data but computes positions based on `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
-- Different dimension order in each variable?
 - Support random access in `DatasetView` if possible efficiently.
   - `DatasetView::operator[](gsl::index)` strictly speaking not necessary.
     Can we get a really efficient iterator that can be used with `OpenMP`?

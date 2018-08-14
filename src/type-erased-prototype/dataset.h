@@ -139,9 +139,6 @@ private:
         }
       }
       if (!found) {
-        if (m_dimensions.contains(dim))
-          throw std::runtime_error(
-              "Cannot insert variable into Dataset: Dimension order mismatch");
         m_dimensions.add(dim, size);
       }
     }

@@ -99,6 +99,28 @@ TEST(DatasetView, multi_column_mixed_dimension) {
   ASSERT_EQ(it->get<const Data::Int>(), 0);
 }
 
+TEST(DatasetView, multi_column_transposed) {
+  Dataset d;
+  Dimensions dimsXY;
+  dimsXY.add(Dimension::X, 2);
+  dimsXY.add(Dimension::Y, 3);
+  Dimensions dimsYX;
+  dimsYX.add(Dimension::Y, 3);
+  dimsYX.add(Dimension::X, 2);
+
+  d.insert<Data::Value>("name1", dimsXY, {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insert<Data::Int>("name2", dimsYX, {1l, 3l, 5l, 2l, 4l, 6l});
+  // TODO Current dimension check is too strict and fails unless data with
+  // transposed dimensions is accessed as const.
+  DatasetView<Data::Value, const Data::Int> view(d);
+  auto it = view.begin();
+  ASSERT_NE(++it, view.end());
+  ASSERT_EQ(it->get<Data::Value>(), 2.0);
+  ASSERT_EQ(it->get<const Data::Int>(), 2l);
+  for(const auto &item : view)
+    ASSERT_EQ(it->get<Data::Value>(), it->get<const Data::Int>());
+}
+
 TEST(DatasetView, multi_column_unrelated_dimension) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::X, 2), 2);

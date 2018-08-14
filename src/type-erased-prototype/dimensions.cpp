@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <numeric>
 
 #include "data_array.h"
@@ -69,18 +70,16 @@ bool Dimensions::contains(const Dimension label) const {
   return false;
 }
 
+/// Returns true if all dimensions of other are also contained in *this. Does
+/// not check dimension order.
 bool Dimensions::contains(const Dimensions &other) const {
   // Ragged comparison too complex for now.
   if (m_raggedDim || other.m_raggedDim)
     return false;
-  auto otherIt = other.begin();
-  for (const auto &item : m_dims) {
-    if (otherIt == other.end())
-      break;
-    if (item == *otherIt)
-      ++otherIt;
-  }
-  return otherIt == other.end();
+  for (const auto &item : other.m_dims)
+    if (std::find(m_dims.begin(), m_dims.end(), item) == m_dims.end())
+      return false;
+  return true;
 }
 
 bool Dimensions::isRagged(const gsl::index i) const {

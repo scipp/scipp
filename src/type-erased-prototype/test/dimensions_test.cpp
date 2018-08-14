@@ -44,8 +44,8 @@ TEST(Dimensions, contains_other) {
   Dimensions b;
   b.add(Dimension::Q, 2);
   b.add(Dimension::Tof, 3);
-  // Order matters.
-  EXPECT_FALSE(a.contains(b));
+  // Order does not matter.
+  EXPECT_TRUE(a.contains(b));
 }
 
 TEST(Dimensions, merge) {
