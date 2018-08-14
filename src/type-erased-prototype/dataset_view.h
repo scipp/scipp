@@ -285,19 +285,15 @@ public:
 
     const Item &dereference() const { return m_item; }
 
-    void decrement() {
-      // TODO Ensure that index 0 is always the full linear index, either in
-      // MultiIndex itself or when creating it.
-      m_item.setIndex(m_item.m_index.template get<0>() - 1);
-    }
+    void decrement() { m_item.setIndex(m_item.m_index.index() - 1); }
 
     void advance(int64_t delta) {
-      m_item.setIndex(m_item.m_index.template get<0>() + delta);
+      m_item.setIndex(m_item.m_index.index() + delta);
     }
 
     int64_t distance_to(const iterator &other) const {
-      return static_cast<int64_t>(other.m_item.m_index.template get<0>()) -
-             static_cast<int64_t>(m_item.m_index.template get<0>());
+      return static_cast<int64_t>(other.m_item.m_index.index()) -
+             static_cast<int64_t>(m_item.m_index.index());
     }
 
     Item m_item;

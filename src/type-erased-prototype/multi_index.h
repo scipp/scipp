@@ -78,9 +78,11 @@ public:
         }
       }
     }
+    ++m_fullIndex;
   }
 
   void setIndex(const gsl::index index) {
+    m_fullIndex = index;
     if (m_dims == 0)
       return;
     auto remainder{index};
@@ -97,12 +99,10 @@ public:
   }
 
   template <int N> gsl::index get() const { return m_index[N]; }
+  gsl::index index() const { return m_fullIndex; }
 
-  // TODO Always use full dimensions for index 0. Or compare m_coord instead?
   bool operator==(const MultiIndex &other) const {
-    //fprintf(stderr, "%ld %ld %ld %ld   %ld %ld %ld %ld\n", m_coord[0], m_coord[1], m_coord[2], m_coord[3], other.m_coord[0], other.m_coord[1], other.m_coord[2], other.m_coord[3]);
-    return m_coord[0] == other.m_coord[0] && m_coord[1] == other.m_coord[1] &&
-           m_coord[2] == other.m_coord[2] && m_coord[3] == other.m_coord[3];
+    return m_fullIndex == other.m_fullIndex;
   }
 
 private:
@@ -114,6 +114,7 @@ private:
   alignas(32) gsl::index m_delta[16];
   alignas(32) gsl::index m_coord[4]{0, 0, 0, 0};
   alignas(32) gsl::index m_extent[4];
+  gsl::index m_fullIndex;
   gsl::index m_dims;
   std::vector<std::vector<gsl::index>> m_offsets;
   std::vector<std::vector<gsl::index>> m_factors;
