@@ -183,13 +183,16 @@ TEST(DatasetView, single_column) {
   var[3] = 3.2;
 
   DatasetView<Data::Value> view(d);
-  ASSERT_EQ(view.get<Data::Value>(), 0.2);
-  view.increment();
-  ASSERT_EQ(view.get<Data::Value>(), 0.0);
-  view.increment();
-  ASSERT_EQ(view.get<Data::Value>(), 0.0);
-  view.increment();
-  ASSERT_EQ(view.get<Data::Value>(), 3.2);
+  auto it = view.begin();
+  ASSERT_EQ(it->get<Data::Value>(), 0.2);
+  it++;
+  ASSERT_EQ(it->get<Data::Value>(), 0.0);
+  it++;
+  ASSERT_EQ(it->get<Data::Value>(), 0.0);
+  it++;
+  ASSERT_EQ(it->get<Data::Value>(), 3.2);
+  it += 7;
+  ASSERT_EQ(it, view.end());
 }
 
 TEST(DatasetView, multi_column) {
@@ -201,11 +204,12 @@ TEST(DatasetView, multi_column) {
   var[1] = 3.2;
 
   DatasetView<Data::Value, Data::Int> view(d);
-  ASSERT_EQ(view.get<Data::Value>(), 0.2);
-  ASSERT_EQ(view.get<Data::Int>(), 0);
-  view.increment();
-  ASSERT_EQ(view.get<Data::Value>(), 3.2);
-  ASSERT_EQ(view.get<Data::Int>(), 0);
+  auto it = view.begin();
+  ASSERT_EQ(it->get<Data::Value>(), 0.2);
+  ASSERT_EQ(it->get<Data::Int>(), 0);
+  it++;
+  ASSERT_EQ(it->get<Data::Value>(), 3.2);
+  ASSERT_EQ(it->get<Data::Int>(), 0);
 }
 
 TEST(DatasetView, multi_column_mixed_dimension) {
@@ -219,11 +223,12 @@ TEST(DatasetView, multi_column_mixed_dimension) {
   ASSERT_ANY_THROW(auto view = (DatasetView<Data::Value, Data::Int>(d)));
   ASSERT_NO_THROW(auto view = (DatasetView<Data::Value, const Data::Int>(d)));
   auto view = (DatasetView<Data::Value, const Data::Int>(d));
-  ASSERT_EQ(view.get<Data::Value>(), 0.2);
-  ASSERT_EQ(view.get<const Data::Int>(), 0);
-  view.increment();
-  ASSERT_EQ(view.get<Data::Value>(), 3.2);
-  ASSERT_EQ(view.get<const Data::Int>(), 0);
+  auto it = view.begin();
+  ASSERT_EQ(it->get<Data::Value>(), 0.2);
+  ASSERT_EQ(it->get<const Data::Int>(), 0);
+  it++;
+  ASSERT_EQ(it->get<Data::Value>(), 3.2);
+  ASSERT_EQ(it->get<const Data::Int>(), 0);
 }
 
 TEST(DatasetView, multi_column_unrelated_dimension) {
@@ -231,10 +236,12 @@ TEST(DatasetView, multi_column_unrelated_dimension) {
   d.insert<Data::Value>("name1", Dimensions(Dimension::X, 2), 2);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Y, 3), 3);
   DatasetView<Data::Value> view(d);
-  view.increment();
+  auto it = view.begin();
+  ASSERT_TRUE(it < view.end());
+  it += 2;
   // We iterate only Data::Value, so there should be no iteration in
   // Dimension::Y.
-  ASSERT_TRUE(view.atLast());
+  ASSERT_EQ(it, view.end());
 }
 
 TEST(DatasetView, multi_column_orthogonal_fail) {
@@ -287,13 +294,16 @@ TEST(DatasetView, single_column_edges) {
   var[2] = 2.2;
 
   DatasetView<Data::Value> view(d);
-  ASSERT_EQ(view.get<Data::Value>(), 0.2);
-  view.increment();
-  ASSERT_EQ(view.get<Data::Value>(), 0.0);
-  ASSERT_FALSE(view.atLast());
-  view.increment();
-  ASSERT_EQ(view.get<Data::Value>(), 2.2);
-  ASSERT_TRUE(view.atLast());
+  auto it = view.begin();
+  ASSERT_EQ(it->get<Data::Value>(), 0.2);
+  it++;
+  ASSERT_EQ(it->get<Data::Value>(), 0.0);
+  ASSERT_LT(it, view.end());
+  it++;
+  ASSERT_EQ(it->get<Data::Value>(), 2.2);
+  ASSERT_LT(it, view.end());
+  it++;
+  ASSERT_EQ(it, view.end());
 }
 
 TEST(DatasetView, single_column_bins) {
@@ -308,9 +318,12 @@ TEST(DatasetView, single_column_bins) {
   var[2] = 2.2;
 
   DatasetView<Bins<Data::Tof>> view(d);
-  view.increment();
+  auto it = view.begin();
+  it++;
+  ASSERT_NE(it, view.end());
+  it++;
   // Lenth of edges is 3, but there are only 2 bins!
-  ASSERT_TRUE(view.atLast());
+  ASSERT_EQ(it, view.end());
 }
 
 TEST(DatasetView, multi_column_edges) {
@@ -338,8 +351,6 @@ TEST(DatasetView, multi_column_edges) {
   EXPECT_EQ(bin.width(), 1.0);
   EXPECT_EQ(bin.left(), 0.2);
   EXPECT_EQ(bin.right(), 1.2);
-  view.increment();
-  ASSERT_TRUE(view.atLast());
 }
 
 TEST(DatasetView, named_getter) {
@@ -352,11 +363,12 @@ TEST(DatasetView, named_getter) {
   var[2] = 2.2;
 
   DatasetView<Data::Tof> view(d);
-  ASSERT_EQ(view.tof(), 0.2);
-  view.increment();
-  ASSERT_EQ(view.tof(), 0.0);
-  view.increment();
-  ASSERT_EQ(view.tof(), 2.2);
+  auto it = view.begin();
+  ASSERT_EQ(it->tof(), 0.2);
+  it++;
+  ASSERT_EQ(it->tof(), 0.0);
+  it++;
+  ASSERT_EQ(it->tof(), 2.2);
 }
 
 TEST(DatasetView, duplicate_data_tag) {
@@ -381,12 +393,13 @@ TEST(DatasetView, histogram) {
   d.insert<Data::Error>("sample", dims, 8);
 
   DatasetView<Data::Histogram> view(d, {Dimension::Tof});
-  EXPECT_EQ(view.get<Data::Histogram>().value(0), 1.0);
-  EXPECT_EQ(view.get<Data::Histogram>().value(1), 2.0);
-  view.get<Data::Histogram>().value(1) += 0.2;
+  auto it = view.begin();
+  EXPECT_EQ(it->get<Data::Histogram>().value(0), 1.0);
+  EXPECT_EQ(it->get<Data::Histogram>().value(1), 2.0);
+  it->get<Data::Histogram>().value(1) += 0.2;
   EXPECT_EQ(d.get<Data::Value>()[1], 2.2);
-  view.increment();
-  EXPECT_EQ(view.get<Data::Histogram>().value(0), 3.0);
+  it++;
+  EXPECT_EQ(it->get<Data::Histogram>().value(0), 3.0);
 }
 
 template <class T> constexpr int type_to_id();
