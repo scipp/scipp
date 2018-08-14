@@ -260,6 +260,8 @@ public:
 
   private:
     friend class iterator;
+    // Private such that iterator can be copied but clients cannot extract Item
+    // (access only by reference).
     Item(const Item &other) = default;
     MultiIndex m_index;
     std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> &m_variables;

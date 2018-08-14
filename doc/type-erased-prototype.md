@@ -481,8 +481,6 @@ Outstanding tasks:
 - Support random access in `DatasetView` if possible efficiently.
   - `DatasetView::operator[](gsl::index)` strictly speaking not necessary.
     Can we get a really efficient iterator that can be used with `OpenMP`?
-  - `DatasetItem`, returned/held by iterator/index-access in `DatasetView`?
-    Who owns it?
   - Try on relevant examples!
     - `operator+=` with different shape, such that implementation needs to use `DatasetView` and cannot iterate manually.
       Wouldn't that typically be two different `Datasets`?

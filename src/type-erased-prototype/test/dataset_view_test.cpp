@@ -29,6 +29,9 @@ TEST(DatasetView, iterator) {
   ASSERT_NO_THROW(view.begin());
   ASSERT_NO_THROW(view.end());
   auto it = view.begin();
+  // Note: Cannot assigned dereferenced iterator by value since Dataset::Item
+  // should not live outside and iterator.
+  // auto item = *it;
   ASSERT_EQ(it->get<Data::Value>(), 1.1);
   it->get<Data::Value>() = 2.2;
   ASSERT_EQ(it->value(), 2.2);
