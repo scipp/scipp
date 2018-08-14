@@ -255,7 +255,6 @@ public:
     }
 
     bool operator==(const Item &other) const {
-      // TODO Compare references DatasetView?
       return m_index == other.m_index;
     }
 
