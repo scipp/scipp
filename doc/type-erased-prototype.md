@@ -493,3 +493,4 @@ Outstanding tasks:
   Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.
 - Investigate `EventList` replacement.
 - Investigate MPI integration.
+- View or similar to support histogram access to `EventList` with on-the-fly binning.
