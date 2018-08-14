@@ -7,7 +7,7 @@ enum class Dimension : char {
   Spectrum,
   SpectrumNumber,
   Run,
-  DetectorId,
+  Detector,
   Q,
   X,
   Y,

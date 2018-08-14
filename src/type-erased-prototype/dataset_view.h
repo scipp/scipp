@@ -53,7 +53,15 @@ template <class Base> struct GetterMixin<Base, Data::Histogram> {
   }
 };
 
-template <class T> using ref_type = variable_type_t<detail::value_type_t<T>> &;
+template <class T> struct ref_type {
+  using type = variable_type_t<detail::value_type_t<T>> &;
+};
+template <> struct ref_type<Coord::SpectrumPosition> {
+  using type = std::pair<
+      variable_type_t<detail::value_type_t<Coord::DetectorPosition>> &,
+      variable_type_t<detail::value_type_t<Coord::DetectorGrouping>> &>;
+};
+template <class T> using ref_type_t = typename ref_type<T>::type;
 
 template <class Tag> struct DimensionHelper {
   static Dimensions get(const Dataset &dataset,
@@ -103,6 +111,13 @@ template <> struct DimensionHelper<Data::Histogram> {
   }
 };
 
+template <> struct DimensionHelper<Coord::SpectrumPosition> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    return dataset.dimensions<Coord::DetectorGrouping>();
+  }
+};
+
 template <class Tag>
 std::unique_ptr<std::vector<Histogram>>
 makeHistogramsIfRequired(Dataset &dataset) {
@@ -147,24 +162,53 @@ makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset,
 }
 
 template <class Tag>
-ref_type<Tag>
+ref_type_t<Tag>
 returnReference(Dataset &dataset,
                 const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return dataset.get<detail::value_type_t<Tag>>();
 }
 
 template <class Tag>
-ref_type<Tag>
+ref_type_t<Tag>
 returnReference(Dataset &dataset, const std::string &name,
                 const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return dataset.get<detail::value_type_t<Tag>>(name);
 }
 
 template <>
-ref_type<Data::Histogram> returnReference<Data::Histogram>(
+ref_type_t<Data::Histogram> returnReference<Data::Histogram>(
     Dataset &dataset,
     const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return *histograms;
+}
+
+template <>
+ref_type_t<Coord::SpectrumPosition> returnReference<Coord::SpectrumPosition>(
+    Dataset &dataset,
+    const std::unique_ptr<std::vector<Histogram>> &histograms) {
+  return ref_type_t<Coord::SpectrumPosition>(
+      dataset.get<detail::value_type_t<Coord::DetectorPosition>>(),
+      dataset.get<detail::value_type_t<Coord::DetectorGrouping>>());
+}
+
+/// Class with overloads used to handle "virtual" variables such as
+/// Coord::SpectrumPosition.
+template <class Tag>
+element_reference_type_t<Tag> itemGetHelper(ref_type_t<Tag> &data,
+                                            gsl::index index) {
+  return data[index];
+}
+
+template <>
+element_reference_type_t<Coord::SpectrumPosition>
+itemGetHelper<Coord::SpectrumPosition>(
+    ref_type_t<Coord::SpectrumPosition> &data, gsl::index index) {
+  if (data.second[index].empty())
+    throw std::runtime_error("Spectrum has no detectors, cannot get position.");
+  double position = 0.0;
+  for (const auto det : data.second[index])
+    position += data.first[det];
+  return position /= data.second[index].size();
 }
 
 // pass non-iterated dimensions in constructor?
@@ -202,13 +246,13 @@ private:
     return largest;
   }
 
-  template <class Tag> ref_type<Tag> getData(Dataset &dataset) {
+  template <class Tag> ref_type_t<Tag> getData(Dataset &dataset) {
     m_histograms = makeHistogramsIfRequired<Tag>(dataset);
     return returnReference<Tag>(dataset, m_histograms);
   }
 
   template <class Tag>
-  ref_type<Tag> getData(Dataset &dataset, const std::string &name) {
+  ref_type_t<Tag> getData(Dataset &dataset, const std::string &name) {
     m_histograms = makeHistogramsIfRequired<Tag>(dataset, name);
     return returnReference<Tag>(dataset, name, m_histograms);
   }
@@ -219,7 +263,7 @@ public:
   public:
     Item(const gsl::index index, const Dimensions &dimensions,
          const std::vector<Dimensions> &subdimensions,
-         std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> &
+         std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...> &
              variables)
         : m_index(dimensions, subdimensions), m_variables(variables) {
       setIndex(index);
@@ -230,13 +274,14 @@ public:
     template <class Tag>
     element_reference_type_t<Tag>
     get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
-      constexpr auto variableIndex = detail::index<
-          std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>,
-          std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...>>::value;
-      auto &col =
-          std::get<std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>>(
-              m_variables);
-      return std::get<2>(col)[m_index.get<variableIndex>()];
+      constexpr auto variableIndex =
+          detail::index<std::tuple<Tag, const Dimensions, ref_type_t<Tag>>,
+                        std::tuple<std::tuple<Ts, const Dimensions,
+                                              ref_type_t<Ts>>...>>::value;
+      auto &col = std::get<std::tuple<Tag, const Dimensions, ref_type_t<Tag>>>(
+          m_variables);
+      // TODO Ensure that this is inlined and does not affect performance.
+      return itemGetHelper<Tag>(std::get<2>(col), m_index.get<variableIndex>());
     }
 
     template <class Tag>
@@ -244,7 +289,8 @@ public:
     get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) const {
       constexpr auto variableIndex = detail::index<
           std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>,
-          std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...>>::value;
+          std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...>>::
+          value;
       auto &col =
           std::get<std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>>(
               m_variables);
@@ -264,7 +310,8 @@ public:
     // (access only by reference).
     Item(const Item &other) = default;
     MultiIndex m_index;
-    std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> &m_variables;
+    std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...> &
+        m_variables;
   };
 
   class iterator
@@ -273,7 +320,7 @@ public:
   public:
     iterator(const gsl::index index, const Dimensions &dimensions,
              const std::vector<Dimensions> &subdimensions,
-             std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> &
+             std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...> &
                  variables)
         : m_item(index, dimensions, subdimensions, variables) {}
 
@@ -307,25 +354,25 @@ public:
               const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...})),
-        m_columns(std::tuple<Ts, const Dimensions, ref_type<Ts>>(
+        m_columns(std::tuple<Ts, const Dimensions, ref_type_t<Ts>>(
             Ts{}, DimensionHelper<Ts>::get(dataset, name, fixedDimensions),
             getData<Ts>(dataset, name))...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, fixedDimensions)...})),
-        m_columns(std::tuple<Ts, const Dimensions, ref_type<Ts>>(
+        m_columns(std::tuple<Ts, const Dimensions, ref_type_t<Ts>>(
             Ts{}, DimensionHelper<Ts>::get(dataset, fixedDimensions),
             getData<Ts>(dataset))...) {}
 
   iterator begin() {
     const std::vector<Dimensions> subdimensions{
-        std::get<1>(std::get<std::tuple<Ts, const Dimensions, ref_type<Ts>>>(
+        std::get<1>(std::get<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>>(
             m_columns))...};
     return {0, m_relevantDimensions, subdimensions, m_columns};
   }
   iterator end() {
     const std::vector<Dimensions> subdimensions{
-        std::get<1>(std::get<std::tuple<Ts, const Dimensions, ref_type<Ts>>>(
+        std::get<1>(std::get<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>>(
             m_columns))...};
     return {m_relevantDimensions.volume(), m_relevantDimensions, subdimensions,
             m_columns};
@@ -335,7 +382,7 @@ private:
   const Dimensions m_relevantDimensions;
   std::unique_ptr<std::vector<Histogram>> m_histograms;
   // Ts is a dummy used for Tag-based lookup.
-  std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> m_columns;
+  std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...> m_columns;
 };
 
 #endif // DATASET_VIEW_H

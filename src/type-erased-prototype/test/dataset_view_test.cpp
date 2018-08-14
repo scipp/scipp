@@ -120,7 +120,7 @@ TEST(DatasetView, multi_column_transposed) {
   ASSERT_NE(++it, view.end());
   ASSERT_EQ(it->get<Data::Value>(), 2.0);
   ASSERT_EQ(it->get<const Data::Int>(), 2l);
-  for(const auto &item : view)
+  for (const auto &item : view)
     ASSERT_EQ(it->get<Data::Value>(), it->get<const Data::Int>());
 }
 
@@ -299,6 +299,25 @@ TEST(DatasetView, histogram) {
   d.get<Data::Value>()[2] += 0.3;
   EXPECT_EQ(ref.value(0), 3.3);
   EXPECT_EQ(copy.value(0), 3.0);
+}
+
+TEST(DatasetView, spectrum_position) {
+  Dataset d;
+  d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
+                                    {1.0, 2.0, 4.0, 8.0});
+  std::vector<std::vector<gsl::index>> grouping = {{0, 2}, {1}, {}};
+  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
+
+  DatasetView<Coord::SpectrumPosition> view(d);
+  auto it = view.begin();
+  EXPECT_EQ(it->get<Coord::SpectrumPosition>(), 2.5);
+  ++it;
+  EXPECT_EQ(it->get<Coord::SpectrumPosition>(), 2.0);
+  ++it;
+  EXPECT_THROW_MSG(it->get<Coord::SpectrumPosition>(), std::runtime_error,
+                   "Spectrum has no detectors, cannot get position.");
+  ++it;
+  ASSERT_EQ(it, view.end());
 }
 
 template <class T> constexpr int type_to_id();

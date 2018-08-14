@@ -456,11 +456,14 @@ Findings and changes:
   - Data variables are always `Data::Value` and `Data::Error` and there does not seem to be a need to support anything else?
     - Use name-based access if there are multiple data variables of this type.
 - Support iterating variables with different dimensions order, i.e., we have support for on-the-fly transposition of data.
+- Access to derived "virtual" variables such as `Coord::SpectrumPosition` via `DatasetView`.
+  Such variables do not exist in the `Dataset` but can be derived from other variables.
+  In the case of `Coord::SpectrumPosition` we use `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
 
 Open questions:
 - How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?
 - Note that there will be an equivalent to `Histogram` for `PointData`.
-  - Is it a problem if they two are completely distinct types?
+  - Is it a problem if the two are completely distinct types?
 
 ### To do
 
@@ -482,7 +485,6 @@ Outstanding tasks:
 - `Dataset::get<Tag>` should not return a resizable reference to a `std::vector`.
   Use something like `gsl::span` instead.
 - Benchmark new `Histogram` mechanism, including stride support.
-- Demonstrate access to `Coord::SpectrumPosition` which is "virtual", i.e., does not contain data but computes positions based on `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
 - Understand performance implications of doing a lot of operations in streaming memory access.
   Investigate how a cache-blocked operation mode could be supported.
   Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.

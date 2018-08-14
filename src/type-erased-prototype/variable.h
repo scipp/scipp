@@ -20,8 +20,12 @@ struct index<T, std::tuple<U, Types...>> {
 struct Coord {
   struct Tof {};
   struct SpectrumNumber {};
+  struct DetectorPosition {};
+  struct DetectorGrouping {};
+  struct SpectrumPosition {};
 
-  using tags = std::tuple<Tof, SpectrumNumber>;
+  using tags = std::tuple<Tof, SpectrumNumber, DetectorPosition,
+                          DetectorGrouping, SpectrumPosition>;
 };
 
 struct Data {
@@ -70,6 +74,14 @@ template <> struct variable_type<Coord::Tof> {
 template <> struct variable_type<Coord::SpectrumNumber> {
   using type = std::vector<int32_t>;
 };
+template <> struct variable_type<Coord::DetectorPosition> {
+  // Dummy for now, should be something like Eigen::Vector3d.
+  using type = std::vector<double>;
+};
+template <> struct variable_type<Coord::DetectorGrouping> {
+  // Dummy for now, or sufficient like this?
+  using type = std::vector<std::vector<gsl::index>>;
+};
 
 template <> struct variable_type<Data::Tof> {
   using type = std::vector<double>;
@@ -116,6 +128,29 @@ template <> struct variable_type<Data::Histogram> {
 };
 template <> struct variable_type<const Data::Histogram> {
   using type = const std::vector<Histogram>;
+};
+
+template <> struct element_reference_type<Coord::Tof> {
+  using type = double &;
+};
+template <> struct element_reference_type<const Coord::Tof> {
+  using type = const double &;
+};
+
+template <> struct element_reference_type<Coord::DetectorPosition> {
+  using type = double &;
+};
+template <> struct element_reference_type<const Coord::DetectorPosition> {
+  using type = const double &;
+};
+
+template <> struct element_reference_type<Coord::SpectrumPosition> {
+  // Note: No reference.
+  using type = double;
+};
+template <> struct element_reference_type<const Coord::SpectrumPosition> {
+  // Note: No reference.
+  using type = const double;
 };
 
 template <> struct element_reference_type<Data::Tof> { using type = double &; };
