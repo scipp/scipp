@@ -39,10 +39,16 @@ public:
       m_delta[4 * d + 3] = get<3>();
       if (d > 0) {
         setIndex(offset - 1);
-        m_delta[4 * d + 0] -= get<0>() + m_delta[0];
-        m_delta[4 * d + 1] -= get<1>() + m_delta[1];
-        m_delta[4 * d + 2] -= get<2>() + m_delta[2];
-        m_delta[4 * d + 3] -= get<3>() + m_delta[3];
+        m_delta[4 * d + 0] -= get<0>();
+        m_delta[4 * d + 1] -= get<1>();
+        m_delta[4 * d + 2] -= get<2>();
+        m_delta[4 * d + 3] -= get<3>();
+      }
+      for (gsl::index d2 = 0; d2 < d; ++d2) {
+        m_delta[4 * d + 0] -= m_delta[4 * d2 + 0];
+        m_delta[4 * d + 1] -= m_delta[4 * d2 + 1];
+        m_delta[4 * d + 2] -= m_delta[4 * d2 + 2];
+        m_delta[4 * d + 3] -= m_delta[4 * d2 + 3];
       }
       offset *= m_extent[d];
     }
@@ -110,10 +116,11 @@ private:
   // instructions.
   // Using std::array is 1.5x slower, for some reason intermediate values of
   // m_index are always stored instead of merely being kept in regsiters.
-  alignas(32) gsl::index m_index[4];
-  alignas(32) gsl::index m_delta[16];
+  alignas(32) gsl::index m_index[4]{0, 0, 0, 0};
+  alignas(32) gsl::index m_delta[16]{0, 0, 0, 0, 0, 0, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0, 0};
   alignas(32) gsl::index m_coord[4]{0, 0, 0, 0};
-  alignas(32) gsl::index m_extent[4];
+  alignas(32) gsl::index m_extent[4]{0, 0, 0, 0};
   gsl::index m_fullIndex;
   gsl::index m_dims;
   std::vector<std::vector<gsl::index>> m_offsets;

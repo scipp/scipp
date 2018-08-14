@@ -136,6 +136,8 @@ public:
     yx.add(Dimension::X, xlen);
 
     x.add(Dimension::X, xlen);
+
+    y.add(Dimension::Y, ylen);
   }
 
 protected:
@@ -144,6 +146,7 @@ protected:
   Dimensions zyx;
   Dimensions yx;
   Dimensions x;
+  Dimensions y;
   Dimensions none;
 };
 
@@ -246,4 +249,90 @@ TEST_F(MultiIndex3DTest, increment_3D) {
   EXPECT_EQ(i.get<0>(), 23);
   EXPECT_EQ(i.get<1>(), 27);
   EXPECT_EQ(i.get<2>(), 25);
+}
+
+TEST_F(MultiIndex3DTest, increment_3D_1D_1D) {
+  MultiIndex i(xyz, {xyz, x, y});
+  // y=0, z=0
+  EXPECT_EQ(i.get<0>(), 0);
+  EXPECT_EQ(i.get<1>(), 0);
+  EXPECT_EQ(i.get<2>(), 0);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 1);
+  EXPECT_EQ(i.get<1>(), 1);
+  EXPECT_EQ(i.get<2>(), 0);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 2);
+  EXPECT_EQ(i.get<1>(), 2);
+  EXPECT_EQ(i.get<2>(), 0);
+  i.increment();
+
+  // y=1, z=0
+  EXPECT_EQ(i.get<0>(), 3);
+  EXPECT_EQ(i.get<1>(), 0);
+  EXPECT_EQ(i.get<2>(), 1);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 4);
+  EXPECT_EQ(i.get<1>(), 1);
+  EXPECT_EQ(i.get<2>(), 1);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 5);
+  EXPECT_EQ(i.get<1>(), 2);
+  EXPECT_EQ(i.get<2>(), 1);
+
+  // y=2, z=0
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 6);
+  EXPECT_EQ(i.get<1>(), 0);
+  EXPECT_EQ(i.get<2>(), 2);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 7);
+  EXPECT_EQ(i.get<1>(), 1);
+  EXPECT_EQ(i.get<2>(), 2);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 8);
+  EXPECT_EQ(i.get<1>(), 2);
+  EXPECT_EQ(i.get<2>(), 2);
+
+  // y=0, z=1
+  i.setIndex(3 * 5);
+  EXPECT_EQ(i.get<0>(), 15);
+  EXPECT_EQ(i.get<1>(), 0);
+  EXPECT_EQ(i.get<2>(), 0);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 16);
+  EXPECT_EQ(i.get<1>(), 1);
+  EXPECT_EQ(i.get<2>(), 0);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 17);
+  EXPECT_EQ(i.get<1>(), 2);
+  EXPECT_EQ(i.get<2>(), 0);
+
+  // y=1, z=1
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 18);
+  EXPECT_EQ(i.get<1>(), 0);
+  EXPECT_EQ(i.get<2>(), 1);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 19);
+  EXPECT_EQ(i.get<1>(), 1);
+  EXPECT_EQ(i.get<2>(), 1);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 20);
+  EXPECT_EQ(i.get<1>(), 2);
+  EXPECT_EQ(i.get<2>(), 1);
+
+  // y=2, z=1
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 21);
+  EXPECT_EQ(i.get<1>(), 0);
+  EXPECT_EQ(i.get<2>(), 2);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 22);
+  EXPECT_EQ(i.get<1>(), 1);
+  EXPECT_EQ(i.get<2>(), 2);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 23);
+  EXPECT_EQ(i.get<1>(), 2);
+  EXPECT_EQ(i.get<2>(), 2);
 }
