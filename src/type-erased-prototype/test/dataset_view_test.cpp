@@ -119,7 +119,7 @@ TEST(DatasetView, multi_column_orthogonal_fail) {
   EXPECT_THROW_MSG((DatasetView<Data::Value, Data::Int>(d)), std::runtime_error,
                    "Variables requested for iteration do not span a joint "
                    "space. In case one of the variables represents bin edges "
-                   "direct joint iteration is not possible. Use the Bins<> "
+                   "direct joint iteration is not possible. Use the Bin<> "
                    "wrapper to iterate over bins defined by edges instead.");
 }
 
@@ -185,7 +185,7 @@ TEST(DatasetView, single_column_bins) {
   var[1] = 1.2;
   var[2] = 2.2;
 
-  DatasetView<Bins<Data::Tof>> view(d);
+  DatasetView<Bin<Data::Tof>> view(d);
   auto it = view.begin();
   it++;
   ASSERT_NE(it, view.end());
@@ -208,17 +208,16 @@ TEST(DatasetView, multi_column_edges) {
   EXPECT_THROW_MSG((DatasetView<Data::Tof, Data::Int>(d)), std::runtime_error,
                    "Variables requested for iteration do not span a joint "
                    "space. In case one of the variables represents bin edges "
-                   "direct joint iteration is not possible. Use the Bins<> "
+                   "direct joint iteration is not possible. Use the Bin<> "
                    "wrapper to iterate over bins defined by edges instead.");
 
-  DatasetView<Bins<Data::Tof>, Data::Int> view(d);
-  // TODO Singular 'Bin' instead of 'Bins' would make more sense.
+  DatasetView<Bin<Data::Tof>, Data::Int> view(d);
   // TODO What are good names for named getters? tofCenter(), etc.?
-  //const auto &bin = view.begin()->get<Bins<Data::Tof>>();
-  //EXPECT_EQ(bin.center(), 0.7);
-  //EXPECT_EQ(bin.width(), 1.0);
-  //EXPECT_EQ(bin.left(), 0.2);
-  //EXPECT_EQ(bin.right(), 1.2);
+  const auto &bin = view.begin()->get<Bin<Data::Tof>>();
+  EXPECT_EQ(bin.center(), 0.7);
+  EXPECT_EQ(bin.width(), 1.0);
+  EXPECT_EQ(bin.left(), 0.2);
+  EXPECT_EQ(bin.right(), 1.2);
 }
 
 TEST(DatasetView, named_getter) {

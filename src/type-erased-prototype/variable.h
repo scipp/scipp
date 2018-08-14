@@ -44,9 +44,10 @@ template <class T>
 static constexpr bool is_coord =
     tag_id<T> < std::tuple_size<Coord::tags>::value;
 
-class Bin {
+class DataBin {
 public:
-  Bin(const double left, const double right) : m_left(left), m_right(right) {}
+  DataBin(const double left, const double right)
+      : m_left(left), m_right(right) {}
 
   double center() const { return 0.5 * (m_left + m_right); }
   double width() const { return m_right - m_left; }
@@ -58,7 +59,7 @@ private:
   double m_right;
 };
 
-template <class T> struct Bins { using value_type = T; };
+template <class T> struct Bin { using value_type = T; };
 
 template <class Tag> struct variable_type;
 template <class Tag> struct element_reference_type;
@@ -77,7 +78,7 @@ template <> struct variable_type<const Data::Tof> {
   using type = const std::vector<double>;
 };
 
-template <> struct variable_type<Bins<Data::Tof>> {
+template <> struct variable_type<Bin<Data::Tof>> {
   using type = std::vector<double>;
 };
 
@@ -122,13 +123,13 @@ template <> struct element_reference_type<const Data::Tof> {
   using type = const double &;
 };
 
-template <> struct element_reference_type<Bins<Data::Tof>> {
+template <> struct element_reference_type<Bin<Data::Tof>> {
   // Note: No reference.
-  using type = Bin;
+  using type = DataBin;
 };
-template <> struct element_reference_type<Bins<const Data::Tof>> {
+template <> struct element_reference_type<Bin<const Data::Tof>> {
   // Note: No reference.
-  using type = Bin;
+  using type = DataBin;
 };
 
 template <> struct element_reference_type<Data::Value> {

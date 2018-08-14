@@ -15,7 +15,7 @@ template <class T> struct Slab { using value_type = T; };
 
 namespace detail {
 template <class T> struct value_type { using type = T; };
-template <class T> struct value_type<Bins<T>> { using type = T; };
+template <class T> struct value_type<Bin<T>> { using type = T; };
 template <class T> struct value_type<Slab<T>> {
   using type = typename Slab<T>::value_type;
 };
@@ -29,7 +29,7 @@ template <class T> struct is_slab<Slab<T>> : public std::true_type {};
 template <class T> using is_slab_t = typename is_slab<T>::type;
 
 template <class T> struct is_bins : public std::false_type {};
-template <class T> struct is_bins<Bins<T>> : public std::true_type {};
+template <class T> struct is_bins<Bin<T>> : public std::true_type {};
 template <class T> using is_bins_t = typename is_bins<T>::type;
 }
 
@@ -81,7 +81,7 @@ template <class Tag> struct DimensionHelper<Slab<Tag>> {
   }
 };
 
-template <class Tag> struct DimensionHelper<Bins<Tag>> {
+template <class Tag> struct DimensionHelper<Bin<Tag>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
     auto dims = dataset.dimensions<Tag>();
@@ -192,8 +192,8 @@ private:
         throw std::runtime_error(
             "Variables requested for iteration do not span a joint space. In "
             "case one of the variables represents bin edges direct joint "
-            "iteration is not possible. Use the Bins<> "
-            "wrapper to iterate over bins defined by edges instead.");
+            "iteration is not possible. Use the Bin<> wrapper to iterate over "
+            "bins defined by edges instead.");
       // Must either be identical or access must be read-only.
       if (!((largest == dims) || is_const[i]))
         throw std::runtime_error("Variables requested for iteration have "
@@ -237,6 +237,21 @@ public:
           std::get<std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>>(
               m_variables);
       return std::get<2>(col)[m_index.get<variableIndex>()];
+    }
+
+    template <class Tag>
+    element_reference_type_t<Tag>
+    get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) const {
+      constexpr auto variableIndex = detail::index<
+          std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>,
+          std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...>>::value;
+      auto &col =
+          std::get<std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>>(
+              m_variables);
+      // TODO This is wrong if bins are not the innermost index. Ensure that
+      // that is always the case at time of creation?
+      return DataBin(std::get<2>(col)[m_index.get<variableIndex>()],
+                     std::get<2>(col)[m_index.get<variableIndex>() + 1]);
     }
 
     bool operator==(const Item &other) const {
