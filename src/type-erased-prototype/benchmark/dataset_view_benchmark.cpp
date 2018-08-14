@@ -60,10 +60,11 @@ BM_DatasetView_multi_column_mixed_dimension(benchmark::State &state) {
   gsl::index elements = 1000 * state.range(0);
 
   for (auto _ : state) {
-    DatasetView<Data::Value, const Data::Int> it(d);
+    DatasetView<Data::Value, const Data::Int> view(d);
+    auto it = view.begin();
     for (int i = 0; i < elements; ++i) {
-      benchmark::DoNotOptimize(it.get<Data::Value>());
-      it.increment();
+      benchmark::DoNotOptimize(it->get<Data::Value>());
+      it++;
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
@@ -140,10 +141,11 @@ BM_DatasetView_multi_column_mixed_dimension_slab(benchmark::State &state) {
   gsl::index elements = state.range(0);
 
   for (auto _ : state) {
-    DatasetView<Slab<Data::Value>, Data::Int> it(d, {Dimension::Tof});
+    DatasetView<Slab<Data::Value>, Data::Int> view(d, {Dimension::Tof});
+    auto it = view.begin();
     for (int i = 0; i < elements; ++i) {
-      benchmark::DoNotOptimize(it.get<Data::Int>());
-      it.increment();
+      benchmark::DoNotOptimize(it->get<Data::Int>());
+      it++;
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);

@@ -344,15 +344,16 @@ public:
     void decrement() {
       // TODO Ensure that index 0 is always the full linear index, either in
       // MultiIndex itself or when creating it.
-      m_item.setIndex(m_item.m_index.get<0>() - 1); }
+      m_item.setIndex(m_item.m_index.template get<0>() - 1);
+    }
 
     void advance(int64_t delta) {
-      m_item.setIndex(m_item.m_index.get<0>() + delta);
+      m_item.setIndex(m_item.m_index.template get<0>() + delta);
     }
 
     int64_t distance_to(const iterator &other) const {
-      return static_cast<int64_t>(other.m_item.m_index.get<0>()) -
-             static_cast<int64_t>(m_item.m_index.get<0>());
+      return static_cast<int64_t>(other.m_item.m_index.template get<0>()) -
+             static_cast<int64_t>(m_item.m_index.template get<0>());
     }
 
     Item m_item;
@@ -360,71 +361,41 @@ public:
 
   DatasetView(Dataset &dataset, const std::string &name,
               const std::set<Dimension> &fixedDimensions = {})
-      : m_index(relevantDimensions(
+      : m_relevantDimensions(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...})),
         m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
             Ts{}, LinearSubindex(
-                      m_index.dimensions,
+                      m_relevantDimensions,
                       DimensionHelper<Ts>::get(dataset, name, fixedDimensions)),
             getData<Ts>(dataset, name))...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
-      : m_index(relevantDimensions(
+      : m_relevantDimensions(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, fixedDimensions)...})),
         m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
             Ts{},
-            LinearSubindex(m_index.dimensions,
+            LinearSubindex(m_relevantDimensions,
                            DimensionHelper<Ts>::get(dataset, fixedDimensions)),
             getData<Ts>(dataset))...) {}
 
   iterator begin() {
     const std::vector<Dimensions> subdimensions{
-        std::get<1>(
-            std::get<std::tuple<Ts, LinearSubindex, variable_type_t<Ts> &>>(
-                m_columns)).dimensions...};
-    return {0, m_index.dimensions, subdimensions, m_columns};
+        std::get<1>(std::get<std::tuple<Ts, LinearSubindex, ref_type<Ts>>>(
+                        m_columns)).dimensions...};
+    return {0, m_relevantDimensions, subdimensions, m_columns};
   }
   iterator end() {
     const std::vector<Dimensions> subdimensions{
-        std::get<1>(
-            std::get<std::tuple<Ts, LinearSubindex, variable_type_t<Ts> &>>(
-                m_columns)).dimensions...};
+        std::get<1>(std::get<std::tuple<Ts, LinearSubindex, ref_type<Ts>>>(
+                        m_columns)).dimensions...};
     return {
-        m_index.dimensions.volume(),
-        m_index.dimensions,
+        m_relevantDimensions.volume(),
+        m_relevantDimensions,
         subdimensions,
         m_columns};
   }
 
-  // TODO add get version for Slab.
-  // TODO const/non-const versions.
-  template <class Tag>
-  element_reference_type_t<Tag>
-  get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
-    auto &col =
-        std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
-            m_columns);
-    return std::get<2>(col)[std::get<LinearSubindex>(col).get(m_index.index)];
-  }
-
-  template <class Tag>
-  element_reference_type_t<Tag>
-  get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) const {
-    auto &col =
-        std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
-            m_columns);
-    const auto &data = std::get<2>(col);
-    const auto index = std::get<LinearSubindex>(col).get(m_index.index);
-    // TODO This is wrong if Bins are not the innermost index.
-    return Bin(data[index], data[index + 1]);
-  }
-
-  // TODO Very bad temporary interface just for testing, make proper begin()
-  // and end() methods, etc.
-  void increment() { m_index.increment(); }
-  bool atLast() { return m_index.index == m_index.end; }
-
 private:
-  MultidimensionalIndex m_index;
+  const Dimensions m_relevantDimensions;
   std::unique_ptr<std::vector<Histogram>> m_histograms;
   // Ts is a dummy used for Tag-based lookup.
   std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> m_columns;
