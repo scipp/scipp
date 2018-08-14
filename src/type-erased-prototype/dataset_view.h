@@ -47,6 +47,12 @@ template <class Base> struct GetterMixin<Base, Data::Value> {
   }
 };
 
+template <class Base> struct GetterMixin<Base, Data::Histogram> {
+  const element_reference_type_t<Data::Histogram> histogram() const {
+    return static_cast<const Base *>(this)->template get<Data::Histogram>();
+  }
+};
+
 template <class T> using ref_type = variable_type_t<detail::value_type_t<T>> &;
 
 template <class Tag> struct DimensionHelper {

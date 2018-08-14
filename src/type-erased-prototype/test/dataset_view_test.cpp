@@ -262,12 +262,14 @@ TEST(DatasetView, histogram) {
 
   DatasetView<Data::Histogram> view(d, {Dimension::Tof});
   auto it = view.begin();
-  EXPECT_EQ(it->get<Data::Histogram>().value(0), 1.0);
-  EXPECT_EQ(it->get<Data::Histogram>().value(1), 2.0);
-  it->get<Data::Histogram>().value(1) += 0.2;
+  auto &histogram = it->histogram();
+  EXPECT_EQ(histogram.size(), 2);
+  EXPECT_EQ(histogram.value(0), 1.0);
+  EXPECT_EQ(histogram.value(1), 2.0);
+  histogram.value(1) += 0.2;
   EXPECT_EQ(d.get<Data::Value>()[1], 2.2);
   it++;
-  EXPECT_EQ(it->get<Data::Histogram>().value(0), 3.0);
+  EXPECT_EQ(it->histogram().value(0), 3.0);
 }
 
 template <class T> constexpr int type_to_id();
