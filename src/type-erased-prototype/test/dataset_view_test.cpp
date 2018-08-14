@@ -294,6 +294,11 @@ TEST(DatasetView, histogram) {
   EXPECT_EQ(d.get<Data::Value>()[1], 2.2);
   it++;
   EXPECT_EQ(it->histogram().value(0), 3.0);
+  auto &ref = it->histogram();
+  auto copy = it->histogram();
+  d.get<Data::Value>()[2] += 0.3;
+  EXPECT_EQ(ref.value(0), 3.3);
+  EXPECT_EQ(copy.value(0), 3.0);
 }
 
 template <class T> constexpr int type_to_id();
