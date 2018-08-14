@@ -33,79 +33,6 @@ template <class T> struct is_bins<Bins<T>> : public std::true_type {};
 template <class T> using is_bins_t = typename is_bins<T>::type;
 }
 
-class MultidimensionalIndex {
-private:
-  std::vector<gsl::index> extractExtents(const Dimensions &dimensions) {
-    std::vector<gsl::index> extents;
-    for (const auto &item : dimensions)
-      extents.push_back(item.second);
-    return extents;
-  }
-
-public:
-  MultidimensionalIndex() = default;
-  MultidimensionalIndex(const Dimensions &dimensions)
-      : dimensions(dimensions), index(dimensions.count()),
-        dimension(extractExtents(dimensions)), end(dimension) {
-    for (auto &n : end)
-      --n;
-  }
-
-  void increment() {
-    ++index[0];
-    for (gsl::index i = 0; i < index.size(); ++i) {
-      if (index[i] == dimension[i]) {
-        index[i] = 0;
-        ++index[i + 1];
-      } else {
-        break;
-      }
-    }
-  }
-
-  const Dimensions dimensions;
-  std::vector<gsl::index> index{0};
-  std::vector<gsl::index> dimension{0};
-  std::vector<gsl::index> end{0};
-};
-
-class LinearSubindex {
-public:
-  LinearSubindex(const Dimensions &parentDimensions,
-                 const Dimensions &dimensions)
-      : dimensions(dimensions) {
-    gsl::index factor{1};
-    for (gsl::index i = 0; i < dimensions.count(); ++i) {
-      const auto dimension = dimensions.label(i);
-      if (parentDimensions.contains(dimension)) {
-        m_offsets.push_back(parentDimensions.index(dimension));
-        m_factors.push_back(factor);
-      }
-      factor *= dimensions.size(i);
-    }
-  }
-
-  gsl::index get(const std::vector<gsl::index> &indices) const {
-    gsl::index index{0};
-    for (gsl::index i = 0; i < m_factors.size(); ++i)
-      index += m_factors[i] * indices[m_offsets[i]];
-    return index;
-  }
-
-  gsl::index get(const gsl::index *indices) const {
-    gsl::index index{0};
-    for (gsl::index i = 0; i < m_factors.size(); ++i)
-      index += m_factors[i] * indices[m_offsets[i]];
-    return index;
-  }
-
-  const Dimensions dimensions;
-
-private:
-  std::vector<gsl::index> m_factors;
-  std::vector<gsl::index> m_offsets;
-};
-
 template <class Base, class T> struct GetterMixin {};
 
 template <class Base> struct GetterMixin<Base, Data::Tof> {
@@ -286,25 +213,23 @@ public:
   public:
     Item(const gsl::index index, const Dimensions &dimensions,
          const std::vector<Dimensions> &subdimensions,
-         std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &variables)
+         std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> &
+             variables)
         : m_index(dimensions, subdimensions), m_variables(variables) {
       setIndex(index);
     }
 
-    void setIndex(const gsl::index index) {
-      m_index.setIndex(index);
-    }
+    void setIndex(const gsl::index index) { m_index.setIndex(index); }
 
     template <class Tag>
     element_reference_type_t<Tag>
     get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
       constexpr auto variableIndex = detail::index<
-          std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>,
-          std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...>>::value;
+          std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>,
+          std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...>>::value;
       auto &col =
-          std::get<std::tuple<Tag, LinearSubindex, variable_type_t<Tag> &>>(
+          std::get<std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>>(
               m_variables);
-      //fprintf(stderr, "%lu %ld\n", variableIndex, m_index.get<variableIndex>());
       return std::get<2>(col)[m_index.get<variableIndex>()];
     }
 
@@ -317,25 +242,23 @@ public:
     friend class iterator;
     Item(const Item &other) = default;
     MultiIndex m_index;
-    std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &m_variables;
+    std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> &m_variables;
   };
 
   class iterator
       : public boost::iterator_facade<iterator, const Item,
                                       boost::random_access_traversal_tag> {
   public:
-    iterator(
-        const gsl::index index, const Dimensions &dimensions,
-        const std::vector<Dimensions> &subdimensions,
-        std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> &variables)
+    iterator(const gsl::index index, const Dimensions &dimensions,
+             const std::vector<Dimensions> &subdimensions,
+             std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> &
+                 variables)
         : m_item(index, dimensions, subdimensions, variables) {}
 
   private:
     friend class boost::iterator_core_access;
 
-    bool equal(const iterator &other) const {
-      return m_item == other.m_item;
-    }
+    bool equal(const iterator &other) const { return m_item == other.m_item; }
 
     void increment() { m_item.m_index.increment(); }
 
@@ -363,42 +286,35 @@ public:
               const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...})),
-        m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
-            Ts{}, LinearSubindex(
-                      m_relevantDimensions,
-                      DimensionHelper<Ts>::get(dataset, name, fixedDimensions)),
+        m_columns(std::tuple<Ts, const Dimensions, ref_type<Ts>>(
+            Ts{}, DimensionHelper<Ts>::get(dataset, name, fixedDimensions),
             getData<Ts>(dataset, name))...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, fixedDimensions)...})),
-        m_columns(std::tuple<Ts, LinearSubindex, ref_type<Ts>>(
-            Ts{},
-            LinearSubindex(m_relevantDimensions,
-                           DimensionHelper<Ts>::get(dataset, fixedDimensions)),
+        m_columns(std::tuple<Ts, const Dimensions, ref_type<Ts>>(
+            Ts{}, DimensionHelper<Ts>::get(dataset, fixedDimensions),
             getData<Ts>(dataset))...) {}
 
   iterator begin() {
     const std::vector<Dimensions> subdimensions{
-        std::get<1>(std::get<std::tuple<Ts, LinearSubindex, ref_type<Ts>>>(
-                        m_columns)).dimensions...};
+        std::get<1>(std::get<std::tuple<Ts, const Dimensions, ref_type<Ts>>>(
+            m_columns))...};
     return {0, m_relevantDimensions, subdimensions, m_columns};
   }
   iterator end() {
     const std::vector<Dimensions> subdimensions{
-        std::get<1>(std::get<std::tuple<Ts, LinearSubindex, ref_type<Ts>>>(
-                        m_columns)).dimensions...};
-    return {
-        m_relevantDimensions.volume(),
-        m_relevantDimensions,
-        subdimensions,
-        m_columns};
+        std::get<1>(std::get<std::tuple<Ts, const Dimensions, ref_type<Ts>>>(
+            m_columns))...};
+    return {m_relevantDimensions.volume(), m_relevantDimensions, subdimensions,
+            m_columns};
   }
 
 private:
   const Dimensions m_relevantDimensions;
   std::unique_ptr<std::vector<Histogram>> m_histograms;
   // Ts is a dummy used for Tag-based lookup.
-  std::tuple<std::tuple<Ts, LinearSubindex, ref_type<Ts>>...> m_columns;
+  std::tuple<std::tuple<Ts, const Dimensions, ref_type<Ts>>...> m_columns;
 };
 
 #endif // DATASET_VIEW_H
