@@ -112,13 +112,10 @@ BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
 
   for (auto _ : state) {
     DatasetView<Data::Value, const Data::Error> view(d);
-    auto it = view.begin();
     const auto end = view.end();
-    gsl::index count = end - it;
-#pragma omp parallel for num_threads(state.range(1)) schedule (static,10000)
-    for (gsl::index i = 0; i < count; ++i) {
-      auto item = view.begin() + i;
-      item->get<Data::Value>() += item->get<const Data::Error>();
+#pragma omp parallel for num_threads(state.range(1))
+    for (auto it = view.begin(); it < end; ++it) {
+      it->get<Data::Value>() += it->get<const Data::Error>();
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);

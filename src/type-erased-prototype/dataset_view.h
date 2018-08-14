@@ -289,7 +289,10 @@ public:
     void decrement() { m_item.setIndex(m_item.m_index.index() - 1); }
 
     void advance(int64_t delta) {
-      m_item.setIndex(m_item.m_index.index() + delta);
+      if (delta == 1)
+        increment();
+      else
+        m_item.setIndex(m_item.m_index.index() + delta);
     }
 
     int64_t distance_to(const iterator &other) const {
