@@ -496,3 +496,14 @@ Outstanding tasks:
     - `Histogram<Data::Events>`, following the same pattern as `Bin<Coord::Tof>`.
   - Need to store binning in Dataset?
   - Can the axis of the bin direction be deduced from the `EventList`?
+- Is the current implementation of `Histogram` the best choice?
+  Another (simpler?) route would be to default to returning a view by value, extracting data into a stand-alone `Histogram` would be an explicit function call.
+  Semantically this would be similar to returning a `gsl::span` instead of a `std::vector &` in the case of `Dataset::get`.
+  It is not clear which of the two options would be less confusing.
+  Returning a view by value is in a sense more similar to how Python handles things.
+  - How would be handle const histograms if we return by value?
+    We do not want to have them as a separate type.
+
+Other:
+
+- Use https://github.com/tcbrindle/span instead of the one from GSL?

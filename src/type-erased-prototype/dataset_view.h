@@ -256,6 +256,9 @@ private:
   }
 
   template <class Tag> auto getData(Dataset &dataset) {
+    // TODO I think this is broken if multiple histogram tags are given.
+    // TODO I think this is always breaking sharing, even if we request const
+    // Data::Histogram.
     m_histograms = makeHistogramsIfRequired<Tag>(dataset);
     return returnReference<Tag>(dataset, m_histograms);
   }
