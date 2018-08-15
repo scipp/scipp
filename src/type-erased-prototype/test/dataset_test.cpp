@@ -100,6 +100,20 @@ TEST(Dataset, insertAsEdge_reverse_fail) {
       "Cannot insert variable into Dataset: Dimensions do not match");
 }
 
+TEST(Dataset, const_get) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  const auto &const_d(d);
+  auto &view = const_d.get<const Data::Value>();
+  // No non-const access to variable if Dataset is const, will not compile:
+  // auto &view = const_d.get<Data::Value>();
+  ASSERT_EQ(view.size(), 1);
+  EXPECT_EQ(view[0], 1.1);
+  // auto is deduced to be const, so assignment will not compile:
+  // view[0] = 1.2;
+}
+
 TEST(Dataset, get) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
