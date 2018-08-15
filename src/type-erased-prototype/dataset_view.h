@@ -276,11 +276,10 @@ public:
       setIndex(index);
     }
 
-    void setIndex(const gsl::index index) { m_index.setIndex(index); }
-
     template <class Tag>
     element_reference_type_t<maybe_const<Tag>>
     get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
+      // Should we allow passing const?
       static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
                                                 "for tags when accessing "
                                                 "DatasetView::iterator.");
@@ -307,15 +306,17 @@ public:
                      col[m_index.get<variableIndex>() + 1]);
     }
 
-    bool operator==(const Item &other) const {
-      return m_index == other.m_index;
-    }
-
   private:
     friend class iterator;
     // Private such that iterator can be copied but clients cannot extract Item
     // (access only by reference).
     Item(const Item &other) = default;
+    void setIndex(const gsl::index index) { m_index.setIndex(index); }
+
+    bool operator==(const Item &other) const {
+      return m_index == other.m_index;
+    }
+
     MultiIndex m_index;
     std::tuple<ref_type_t<Ts>...> &m_variables;
   };
