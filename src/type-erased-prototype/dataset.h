@@ -3,9 +3,10 @@
 
 #include <vector>
 
+#include <gsl/gsl_util>
+
 #include "data_array.h"
 #include "dimension.h"
-#include "index.h"
 #include "variable.h"
 
 class Dataset {

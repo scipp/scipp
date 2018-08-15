@@ -4,12 +4,12 @@
 #include <string>
 #include <type_traits>
 
+#include <gsl/gsl_util>
 #include <gsl/span>
 
 #include "cow_ptr.h"
 #include "dimensions.h"
 #include "unit.h"
-#include "index.h"
 #include "variable.h"
 
 class DataArrayConcept {

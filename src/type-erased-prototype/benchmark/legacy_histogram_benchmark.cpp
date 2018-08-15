@@ -3,8 +3,9 @@
 
 #include <vector>
 
+#include <gsl/gsl_util>
+
 #include "legacy_cow_ptr.h"
-#include "index.h"
 
 class Histogram {
 private:

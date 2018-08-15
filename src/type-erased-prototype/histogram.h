@@ -1,7 +1,8 @@
 #include <memory>
 #include <vector>
 
-#include "index.h"
+#include <gsl/gsl_util>
+
 #include "unit.h"
 
 template <class... Ts> class DatasetView;
