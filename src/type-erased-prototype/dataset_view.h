@@ -36,19 +36,19 @@ template <class T> using is_bins_t = typename is_bins<T>::type;
 template <class Base, class T> struct GetterMixin {};
 
 template <class Base> struct GetterMixin<Base, Data::Tof> {
-  const element_reference_type_t<Data::Tof> tof() const {
+  const element_return_type_t<Data::Tof> tof() const {
     return static_cast<const Base *>(this)->template get<Data::Tof>();
   }
 };
 
 template <class Base> struct GetterMixin<Base, Data::Value> {
-  const element_reference_type_t<Data::Value> value() const {
+  const element_return_type_t<Data::Value> value() const {
     return static_cast<const Base *>(this)->template get<Data::Value>();
   }
 };
 
 template <class Base> struct GetterMixin<Base, Data::Histogram> {
-  const element_reference_type_t<Data::Histogram> histogram() const {
+  const element_return_type_t<Data::Histogram> histogram() const {
     return static_cast<const Base *>(this)->template get<Data::Histogram>();
   }
 };
@@ -59,9 +59,8 @@ template <class Tag> struct ref_type {
       typename detail::value_type_t<Tag>::type>>;
 };
 template <> struct ref_type<Coord::SpectrumPosition> {
-  using type = std::pair<
-      gsl::span<typename Coord::DetectorPosition::type>,
-      gsl::span<typename Coord::DetectorGrouping::type>>;
+  using type = std::pair<gsl::span<typename Coord::DetectorPosition::type>,
+                         gsl::span<typename Coord::DetectorGrouping::type>>;
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
 
@@ -196,13 +195,13 @@ auto returnReference<Coord::SpectrumPosition>(
 /// Class with overloads used to handle "virtual" variables such as
 /// Coord::SpectrumPosition.
 template <class Tag>
-element_reference_type_t<Tag> itemGetHelper(ref_type_t<Tag> &data,
-                                            gsl::index index) {
+element_return_type_t<Tag> itemGetHelper(ref_type_t<Tag> &data,
+                                         gsl::index index) {
   return data[index];
 }
 
 template <>
-element_reference_type_t<Coord::SpectrumPosition>
+element_return_type_t<Coord::SpectrumPosition>
 itemGetHelper<Coord::SpectrumPosition>(
     ref_type_t<Coord::SpectrumPosition> &data, gsl::index index) {
   if (data.second[index].empty())
@@ -278,7 +277,7 @@ public:
     }
 
     template <class Tag>
-    element_reference_type_t<maybe_const<Tag>>
+    element_return_type_t<maybe_const<Tag>>
     get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
       // Should we allow passing const?
       static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
@@ -294,8 +293,7 @@ public:
     }
 
     template <class Tag>
-    element_reference_type_t<maybe_const<Tag>>
-    get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) const {
+    auto get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) const {
       static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
                                                 "for tags when accessing "
                                                 "DatasetView::iterator.");

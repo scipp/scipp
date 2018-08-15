@@ -15,6 +15,7 @@ template <class T, class U, class... Types>
 struct index<T, std::tuple<U, Types...>> {
   static const std::size_t value = 1 + index<T, std::tuple<Types...>>::value;
 };
+struct ReturnByValuePolicy {};
 }
 
 struct Coord {
@@ -32,7 +33,7 @@ struct Coord {
     // Dummy for now, or sufficient like this?
     using type = std::vector<gsl::index>;
   };
-  struct SpectrumPosition {
+  struct SpectrumPosition : public detail::ReturnByValuePolicy {
     // TODO This is a virtual/derived tag, do we need to specify type?
     using type = double;
   };
@@ -89,83 +90,17 @@ private:
   double m_right;
 };
 
-template <class T> struct Bin { using value_type = T; };
+template <class T> struct Bin { using type = DataBin; };
 
-template <class Tag> struct element_reference_type;
-
-template <> struct element_reference_type<Coord::Tof> {
-  using type = double &;
-};
-template <> struct element_reference_type<const Coord::Tof> {
-  using type = const double &;
-};
-
-template <> struct element_reference_type<Coord::DetectorPosition> {
-  using type = double &;
-};
-template <> struct element_reference_type<const Coord::DetectorPosition> {
-  using type = const double &;
-};
-
-template <> struct element_reference_type<Coord::SpectrumPosition> {
-  // Note: No reference.
-  using type = double;
-};
-template <> struct element_reference_type<const Coord::SpectrumPosition> {
-  // Note: No reference.
-  using type = const double;
-};
-
-template <> struct element_reference_type<Data::Tof> { using type = double &; };
-template <> struct element_reference_type<const Data::Tof> {
-  using type = const double &;
-};
-
-template <> struct element_reference_type<Bin<Data::Tof>> {
-  // Note: No reference.
-  using type = DataBin;
-};
-template <> struct element_reference_type<Bin<const Data::Tof>> {
-  // Note: No reference.
-  using type = DataBin;
-};
-
-template <> struct element_reference_type<Data::Value> {
-  using type = double &;
-};
-template <> struct element_reference_type<const Data::Value> {
-  using type = const double &;
-};
-
-template <> struct element_reference_type<Data::Error> {
-  using type = double &;
-};
-template <> struct element_reference_type<const Data::Error> {
-  using type = const double &;
-};
-
-template <> struct element_reference_type<Data::Int> {
-  using type = int64_t &;
-};
-template <> struct element_reference_type<const Data::Int> {
-  using type = const int64_t &;
-};
-
-template <> struct element_reference_type<Data::DimensionSize> {
-  using type = gsl::index &;
-};
-template <> struct element_reference_type<const Data::DimensionSize> {
-  using type = const gsl::index &;
-};
-
-template <> struct element_reference_type<Data::Histogram> {
-  using type = Histogram &;
-};
-template <> struct element_reference_type<const Data::Histogram> {
-  using type = const Histogram &;
+template <class Tag> struct element_return_type {
+  using type = std::conditional_t<
+      std::is_base_of<detail::ReturnByValuePolicy, Tag>::value,
+      typename Tag::type,
+      std::conditional_t<std::is_const<Tag>::value, const typename Tag::type &,
+                         typename Tag::type &>>;
 };
 
 template <class Tag>
-using element_reference_type_t = typename element_reference_type<Tag>::type;
+using element_return_type_t = typename element_return_type<Tag>::type;
 
 #endif // VARIABLE_H
