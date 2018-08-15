@@ -271,7 +271,7 @@ public:
   public:
     Item(const gsl::index index, const Dimensions &dimensions,
          const std::vector<Dimensions> &subdimensions,
-         std::tuple<std::tuple<const Dimensions, ref_type_t<Ts>>...> &variables)
+         std::tuple<ref_type_t<Ts>...> &variables)
         : m_index(dimensions, subdimensions), m_variables(variables) {
       setIndex(index);
     }
@@ -290,7 +290,7 @@ public:
       // TODO Ensure that this is inlined and does not affect performance.
       return itemGetHelper<
           std::tuple_element_t<variableIndex, std::tuple<Ts...>>>(
-          std::get<1>(col), m_index.get<variableIndex>());
+          col, m_index.get<variableIndex>());
     }
 
     template <class Tag>
@@ -303,8 +303,8 @@ public:
       auto &col = std::get<variableIndex>(m_variables);
       // TODO This is wrong if bins are not the innermost index. Ensure that
       // that is always the case at time of creation?
-      return DataBin(std::get<1>(col)[m_index.get<variableIndex>()],
-                     std::get<1>(col)[m_index.get<variableIndex>() + 1]);
+      return DataBin(col[m_index.get<variableIndex>()],
+                     col[m_index.get<variableIndex>() + 1]);
     }
 
     bool operator==(const Item &other) const {
@@ -317,17 +317,16 @@ public:
     // (access only by reference).
     Item(const Item &other) = default;
     MultiIndex m_index;
-    std::tuple<std::tuple<const Dimensions, ref_type_t<Ts>>...> &m_variables;
+    std::tuple<ref_type_t<Ts>...> &m_variables;
   };
 
   class iterator
       : public boost::iterator_facade<iterator, const Item,
                                       boost::random_access_traversal_tag> {
   public:
-    iterator(
-        const gsl::index index, const Dimensions &dimensions,
-        const std::vector<Dimensions> &subdimensions,
-        std::tuple<std::tuple<const Dimensions, ref_type_t<Ts>>...> &variables)
+    iterator(const gsl::index index, const Dimensions &dimensions,
+             const std::vector<Dimensions> &subdimensions,
+             std::tuple<ref_type_t<Ts>...> &variables)
         : m_item(index, dimensions, subdimensions, variables) {}
 
   private:
@@ -358,34 +357,28 @@ public:
 
   DatasetView(Dataset &dataset, const std::string &name,
               const std::set<Dimension> &fixedDimensions = {})
-      : m_relevantDimensions(relevantDimensions(
-            {DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...})),
-        m_columns(std::tuple<const Dimensions, ref_type_t<Ts>>(
-            DimensionHelper<Ts>::get(dataset, name, fixedDimensions),
-            getData<Ts>(dataset, name))...) {}
+      : m_subdimensions{DimensionHelper<Ts>::get(dataset, name,
+                                                 fixedDimensions)...},
+        m_relevantDimensions(relevantDimensions(m_subdimensions)),
+        m_columns(getData<Ts>(dataset, name)...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
-      : m_relevantDimensions(relevantDimensions(
-            {DimensionHelper<Ts>::get(dataset, fixedDimensions)...})),
-        m_columns(std::tuple<const Dimensions, ref_type_t<Ts>>(
-            DimensionHelper<Ts>::get(dataset, fixedDimensions),
-            getData<Ts>(dataset))...) {}
+      : m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
+        m_relevantDimensions(relevantDimensions(m_subdimensions)),
+        m_columns(getData<Ts>(dataset)...) {}
 
   iterator begin() {
-    const std::vector<Dimensions> subdimensions{std::get<0>(
-        std::get<std::tuple<const Dimensions, ref_type_t<Ts>>>(m_columns))...};
-    return {0, m_relevantDimensions, subdimensions, m_columns};
+    return {0, m_relevantDimensions, m_subdimensions, m_columns};
   }
   iterator end() {
-    const std::vector<Dimensions> subdimensions{std::get<0>(
-        std::get<std::tuple<const Dimensions, ref_type_t<Ts>>>(m_columns))...};
-    return {m_relevantDimensions.volume(), m_relevantDimensions, subdimensions,
-            m_columns};
+    return {m_relevantDimensions.volume(), m_relevantDimensions,
+            m_subdimensions, m_columns};
   }
 
 private:
+  const std::vector<Dimensions> m_subdimensions;
   const Dimensions m_relevantDimensions;
   std::unique_ptr<std::vector<Histogram>> m_histograms;
-  std::tuple<std::tuple<const Dimensions, ref_type_t<Ts>>...> m_columns;
+  std::tuple<ref_type_t<Ts>...> m_columns;
 };
 
 #endif // DATASET_VIEW_H
