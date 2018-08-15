@@ -220,6 +220,14 @@ class DatasetView : public GetterMixin<DatasetView<Ts...>, Ts>... {
                 "DatasetView requires at least one variable for iteration");
 
 private:
+  using tags = std::tuple<std::remove_const_t<Ts>...>;
+  // Note: Not removing const from Tag, we want it to fail if const is passed.
+  // TODO detail::index is from variable.h, put it somewhere else and rename.
+  template <class Tag>
+  static constexpr size_t tag_index = detail::index<Tag, tags>::value;
+  template <class Tag>
+  using maybe_const = std::tuple_element_t<tag_index<Tag>, std::tuple<Ts...>>;
+
   Dimensions
   relevantDimensions(const std::vector<Dimensions> &variableDimensions) {
     const auto &largest =
@@ -263,8 +271,7 @@ public:
   public:
     Item(const gsl::index index, const Dimensions &dimensions,
          const std::vector<Dimensions> &subdimensions,
-         std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...> &
-             variables)
+         std::tuple<std::tuple<const Dimensions, ref_type_t<Ts>>...> &variables)
         : m_index(dimensions, subdimensions), m_variables(variables) {
       setIndex(index);
     }
@@ -272,32 +279,32 @@ public:
     void setIndex(const gsl::index index) { m_index.setIndex(index); }
 
     template <class Tag>
-    element_reference_type_t<Tag>
+    element_reference_type_t<maybe_const<Tag>>
     get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
-      constexpr auto variableIndex =
-          detail::index<std::tuple<Tag, const Dimensions, ref_type_t<Tag>>,
-                        std::tuple<std::tuple<Ts, const Dimensions,
-                                              ref_type_t<Ts>>...>>::value;
-      auto &col = std::get<std::tuple<Tag, const Dimensions, ref_type_t<Tag>>>(
-          m_variables);
+      static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
+                                                "for tags when accessing "
+                                                "DatasetView::iterator.");
+      constexpr auto variableIndex = tag_index<Tag>;
+      auto &col = std::get<variableIndex>(m_variables);
+
       // TODO Ensure that this is inlined and does not affect performance.
-      return itemGetHelper<Tag>(std::get<2>(col), m_index.get<variableIndex>());
+      return itemGetHelper<
+          std::tuple_element_t<variableIndex, std::tuple<Ts...>>>(
+          std::get<1>(col), m_index.get<variableIndex>());
     }
 
     template <class Tag>
-    element_reference_type_t<Tag>
+    element_reference_type_t<maybe_const<Tag>>
     get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) const {
-      constexpr auto variableIndex = detail::index<
-          std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>,
-          std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...>>::
-          value;
-      auto &col =
-          std::get<std::tuple<Tag, const Dimensions, variable_type_t<Tag> &>>(
-              m_variables);
+      static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
+                                                "for tags when accessing "
+                                                "DatasetView::iterator.");
+      constexpr auto variableIndex = tag_index<Tag>;
+      auto &col = std::get<variableIndex>(m_variables);
       // TODO This is wrong if bins are not the innermost index. Ensure that
       // that is always the case at time of creation?
-      return DataBin(std::get<2>(col)[m_index.get<variableIndex>()],
-                     std::get<2>(col)[m_index.get<variableIndex>() + 1]);
+      return DataBin(std::get<1>(col)[m_index.get<variableIndex>()],
+                     std::get<1>(col)[m_index.get<variableIndex>() + 1]);
     }
 
     bool operator==(const Item &other) const {
@@ -310,18 +317,17 @@ public:
     // (access only by reference).
     Item(const Item &other) = default;
     MultiIndex m_index;
-    std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...> &
-        m_variables;
+    std::tuple<std::tuple<const Dimensions, ref_type_t<Ts>>...> &m_variables;
   };
 
   class iterator
       : public boost::iterator_facade<iterator, const Item,
                                       boost::random_access_traversal_tag> {
   public:
-    iterator(const gsl::index index, const Dimensions &dimensions,
-             const std::vector<Dimensions> &subdimensions,
-             std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...> &
-                 variables)
+    iterator(
+        const gsl::index index, const Dimensions &dimensions,
+        const std::vector<Dimensions> &subdimensions,
+        std::tuple<std::tuple<const Dimensions, ref_type_t<Ts>>...> &variables)
         : m_item(index, dimensions, subdimensions, variables) {}
 
   private:
@@ -354,26 +360,24 @@ public:
               const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...})),
-        m_columns(std::tuple<Ts, const Dimensions, ref_type_t<Ts>>(
-            Ts{}, DimensionHelper<Ts>::get(dataset, name, fixedDimensions),
+        m_columns(std::tuple<const Dimensions, ref_type_t<Ts>>(
+            DimensionHelper<Ts>::get(dataset, name, fixedDimensions),
             getData<Ts>(dataset, name))...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_relevantDimensions(relevantDimensions(
             {DimensionHelper<Ts>::get(dataset, fixedDimensions)...})),
-        m_columns(std::tuple<Ts, const Dimensions, ref_type_t<Ts>>(
-            Ts{}, DimensionHelper<Ts>::get(dataset, fixedDimensions),
+        m_columns(std::tuple<const Dimensions, ref_type_t<Ts>>(
+            DimensionHelper<Ts>::get(dataset, fixedDimensions),
             getData<Ts>(dataset))...) {}
 
   iterator begin() {
-    const std::vector<Dimensions> subdimensions{
-        std::get<1>(std::get<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>>(
-            m_columns))...};
+    const std::vector<Dimensions> subdimensions{std::get<0>(
+        std::get<std::tuple<const Dimensions, ref_type_t<Ts>>>(m_columns))...};
     return {0, m_relevantDimensions, subdimensions, m_columns};
   }
   iterator end() {
-    const std::vector<Dimensions> subdimensions{
-        std::get<1>(std::get<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>>(
-            m_columns))...};
+    const std::vector<Dimensions> subdimensions{std::get<0>(
+        std::get<std::tuple<const Dimensions, ref_type_t<Ts>>>(m_columns))...};
     return {m_relevantDimensions.volume(), m_relevantDimensions, subdimensions,
             m_columns};
   }
@@ -381,8 +385,7 @@ public:
 private:
   const Dimensions m_relevantDimensions;
   std::unique_ptr<std::vector<Histogram>> m_histograms;
-  // Ts is a dummy used for Tag-based lookup.
-  std::tuple<std::tuple<Ts, const Dimensions, ref_type_t<Ts>>...> m_columns;
+  std::tuple<std::tuple<const Dimensions, ref_type_t<Ts>>...> m_columns;
 };
 
 #endif // DATASET_VIEW_H

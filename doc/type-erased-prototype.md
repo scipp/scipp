@@ -491,5 +491,3 @@ Outstanding tasks:
 - Investigate `EventList` replacement.
 - Investigate MPI integration.
 - View or similar to support histogram access to `EventList` with on-the-fly binning.
-- GetterMixins: How to distinguish been const and non-const versions?
-  Can we drop the need to use const on the iterator, such that it is sufficient to provide it when creating `DatasetView`?

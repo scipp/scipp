@@ -96,10 +96,10 @@ TEST(DatasetView, multi_column_mixed_dimension) {
   auto view = (DatasetView<Data::Value, const Data::Int>(d));
   auto it = view.begin();
   ASSERT_EQ(it->get<Data::Value>(), 0.2);
-  ASSERT_EQ(it->get<const Data::Int>(), 0);
+  ASSERT_EQ(it->get<Data::Int>(), 0);
   it++;
   ASSERT_EQ(it->get<Data::Value>(), 3.2);
-  ASSERT_EQ(it->get<const Data::Int>(), 0);
+  ASSERT_EQ(it->get<Data::Int>(), 0);
 }
 
 TEST(DatasetView, multi_column_transposed) {
@@ -119,9 +119,9 @@ TEST(DatasetView, multi_column_transposed) {
   auto it = view.begin();
   ASSERT_NE(++it, view.end());
   ASSERT_EQ(it->get<Data::Value>(), 2.0);
-  ASSERT_EQ(it->get<const Data::Int>(), 2l);
+  ASSERT_EQ(it->get<Data::Int>(), 2l);
   for (const auto &item : view)
-    ASSERT_EQ(it->get<Data::Value>(), it->get<const Data::Int>());
+    ASSERT_EQ(it->get<Data::Value>(), it->get<Data::Int>());
 }
 
 TEST(DatasetView, multi_column_unrelated_dimension) {

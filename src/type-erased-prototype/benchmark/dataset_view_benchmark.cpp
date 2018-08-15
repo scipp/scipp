@@ -88,7 +88,7 @@ BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
     DatasetView<Data::Value, const Data::Error> view(d);
     const auto end = view.end();
     for (auto it = view.begin(); it != end; ++it) {
-      it->get<Data::Value>() += it->get<const Data::Error>();
+      it->get<Data::Value>() += it->get<Data::Error>();
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
@@ -115,7 +115,7 @@ BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
     const auto end = view.end();
 #pragma omp parallel for num_threads(state.range(1))
     for (auto it = view.begin(); it < end; ++it) {
-      it->get<Data::Value>() += it->get<const Data::Error>();
+      it->get<Data::Value>() += it->get<Data::Error>();
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
