@@ -21,6 +21,16 @@ TEST(DatasetView, construct) {
                std::runtime_error);
 }
 
+TEST(DatasetView, construct_with_const_Dataset) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  const auto copy(d);
+  // TODO This does not compile currently since everything in DatasetView is
+  // implemented based on a non-const Dataset.
+  // ASSERT_NO_THROW(DatasetView<const Data::Value> view(copy));
+}
+
 TEST(DatasetView, iterator) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{Dimension::X, 2}, {1.1, 1.2});
@@ -43,6 +53,24 @@ TEST(DatasetView, iterator) {
   ASSERT_EQ(it->value(), 1.2);
   ASSERT_NO_THROW(it++);
   ASSERT_EQ(it, view.end());
+}
+
+TEST(DatasetView, copy_on_write) {
+  Dataset d;
+  d.insert<Coord::X>({Dimension::X, 2}, 2);
+  d.insert<Coord::Y>({Dimension::X, 2}, 2);
+  const auto copy(d);
+
+  DatasetView<const Coord::X> const_view(d);
+  EXPECT_EQ(&const_view.begin()->get<Coord::X>(), &copy.get<Coord::X>()[0]);
+  // Again, just to confirm that the call to `copy.get` is not the reason for
+  // breaking sharing:
+  EXPECT_EQ(&const_view.begin()->get<Coord::X>(), &copy.get<Coord::X>()[0]);
+
+  DatasetView<Coord::X, const Coord::Y> view(d);
+  EXPECT_NE(&view.begin()->get<Coord::X>(), &copy.get<Coord::X>()[0]);
+  // Breaks sharing only for the non-const variables:
+  EXPECT_EQ(&view.begin()->get<Coord::Y>(), &copy.get<Coord::Y>()[0]);
 }
 
 TEST(DatasetView, single_column) {

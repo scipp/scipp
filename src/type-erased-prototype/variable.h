@@ -19,6 +19,15 @@ struct ReturnByValuePolicy {};
 }
 
 struct Coord {
+  struct X {
+    using type = double;
+  };
+  struct Y {
+    using type = double;
+  };
+  struct Z {
+    using type = double;
+  };
   struct Tof {
     using type = double;
   };
@@ -38,7 +47,7 @@ struct Coord {
     using type = double;
   };
 
-  using tags = std::tuple<Tof, SpectrumNumber, DetectorPosition,
+  using tags = std::tuple<X, Y, Z, Tof, SpectrumNumber, DetectorPosition,
                           DetectorGrouping, SpectrumPosition>;
 };
 
