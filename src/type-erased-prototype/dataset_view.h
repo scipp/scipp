@@ -53,18 +53,15 @@ template <class Base> struct GetterMixin<Base, Data::Histogram> {
   }
 };
 
-template <class T> struct ref_type {
+template <class Tag> struct ref_type {
   using type = gsl::span<std::conditional_t<
-      std::is_const<T>::value,
-      const typename variable_type_t<detail::value_type_t<T>>::value_type,
-      typename variable_type_t<detail::value_type_t<T>>::value_type>>;
+      std::is_const<Tag>::value, const typename detail::value_type_t<Tag>::type,
+      typename detail::value_type_t<Tag>::type>>;
 };
 template <> struct ref_type<Coord::SpectrumPosition> {
-  using type =
-      std::pair<gsl::span<typename variable_type_t<
-                    detail::value_type_t<Coord::DetectorPosition>>::value_type>,
-                gsl::span<typename variable_type_t<detail::value_type_t<
-                    Coord::DetectorGrouping>>::value_type>>;
+  using type = std::pair<
+      gsl::span<typename Coord::DetectorPosition::type>,
+      gsl::span<typename Coord::DetectorGrouping::type>>;
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
 

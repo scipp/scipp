@@ -105,7 +105,10 @@ public:
   bool isCoord() const { return m_type < std::tuple_size<Coord::tags>::value; }
 
   template <class Tag> auto get() const {
-    return gsl::make_span(cast<std::remove_const_t<variable_type_t<Tag>>>());
+    // For now we support only variables that are a std::vector. In principle we
+    // could support anything that is convertible to gsl::span (or an adequate
+    // replacement).
+    return gsl::make_span(cast<std::vector<typename Tag::type>>());
   }
 
   template <class Tag>
@@ -115,7 +118,7 @@ public:
 
   template <class Tag>
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
-    return gsl::make_span(cast<std::remove_const_t<variable_type_t<Tag>>>());
+    return gsl::make_span(cast<std::vector<typename Tag::type>>());
   }
 
 private:
@@ -136,15 +139,16 @@ private:
 
 template <class Tag, class... Args>
 DataArray makeDataArray(Dimensions dimensions, Args &&... args) {
-  return DataArray(tag_id<Tag>, std::move(dimensions),
-                   variable_type_t<Tag>(std::forward<Args>(args)...));
+  return DataArray(
+      tag_id<Tag>, std::move(dimensions),
+      std::vector<typename Tag::type>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
 DataArray makeDataArray(Dimensions dimensions,
                         std::initializer_list<T> values) {
   return DataArray(tag_id<Tag>, std::move(dimensions),
-                   variable_type_t<Tag>(values));
+                   std::vector<typename Tag::type>(values));
 }
 
 inline DataArray concatenate(const Dimension dim, const DataArray &a1,

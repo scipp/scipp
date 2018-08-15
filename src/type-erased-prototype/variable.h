@@ -18,23 +18,49 @@ struct index<T, std::tuple<U, Types...>> {
 }
 
 struct Coord {
-  struct Tof {};
-  struct SpectrumNumber {};
-  struct DetectorPosition {};
-  struct DetectorGrouping {};
-  struct SpectrumPosition {};
+  struct Tof {
+    using type = double;
+  };
+  struct SpectrumNumber {
+    using type = int32_t;
+  };
+  struct DetectorPosition {
+    // Dummy for now, should be something like Eigen::Vector3d.
+    using type = double;
+  };
+  struct DetectorGrouping {
+    // Dummy for now, or sufficient like this?
+    using type = std::vector<gsl::index>;
+  };
+  struct SpectrumPosition {
+    // TODO This is a virtual/derived tag, do we need to specify type?
+    using type = double;
+  };
 
   using tags = std::tuple<Tof, SpectrumNumber, DetectorPosition,
                           DetectorGrouping, SpectrumPosition>;
 };
 
+class Histogram;
 struct Data {
-  struct Tof {};
-  struct Value {};
-  struct Error {};
-  struct Int {};
-  struct DimensionSize {};
-  struct Histogram {};
+  struct Tof {
+    using type = double;
+  };
+  struct Value {
+    using type = double;
+  };
+  struct Error {
+    using type = double;
+  };
+  struct Int {
+    using type = int64_t;
+  };
+  struct DimensionSize {
+    using type = gsl::index;
+  };
+  struct Histogram {
+    using type = ::Histogram;
+  };
 
   using tags = std::tuple<Tof, Value, Error, Int, DimensionSize, Histogram>;
 };
@@ -65,70 +91,7 @@ private:
 
 template <class T> struct Bin { using value_type = T; };
 
-template <class Tag> struct variable_type;
 template <class Tag> struct element_reference_type;
-
-template <> struct variable_type<Coord::Tof> {
-  using type = std::vector<double>;
-};
-template <> struct variable_type<Coord::SpectrumNumber> {
-  using type = std::vector<int32_t>;
-};
-template <> struct variable_type<Coord::DetectorPosition> {
-  // Dummy for now, should be something like Eigen::Vector3d.
-  using type = std::vector<double>;
-};
-template <> struct variable_type<Coord::DetectorGrouping> {
-  // Dummy for now, or sufficient like this?
-  using type = std::vector<std::vector<gsl::index>>;
-};
-
-template <> struct variable_type<Data::Tof> {
-  using type = std::vector<double>;
-};
-template <> struct variable_type<const Data::Tof> {
-  using type = const std::vector<double>;
-};
-
-template <> struct variable_type<Bin<Data::Tof>> {
-  using type = std::vector<double>;
-};
-
-template <> struct variable_type<Data::Value> {
-  using type = std::vector<double>;
-};
-template <> struct variable_type<const Data::Value> {
-  using type = const std::vector<double>;
-};
-
-template <> struct variable_type<Data::Error> {
-  using type = std::vector<double>;
-};
-template <> struct variable_type<const Data::Error> {
-  using type = const std::vector<double>;
-};
-
-template <> struct variable_type<Data::Int> {
-  using type = std::vector<int64_t>;
-};
-template <> struct variable_type<const Data::Int> {
-  using type = const std::vector<int64_t>;
-};
-
-template <> struct variable_type<Data::DimensionSize> {
-  using type = std::vector<gsl::index>;
-};
-template <> struct variable_type<const Data::DimensionSize> {
-  using type = const std::vector<gsl::index>;
-};
-
-class Histogram;
-template <> struct variable_type<Data::Histogram> {
-  using type = std::vector<Histogram>;
-};
-template <> struct variable_type<const Data::Histogram> {
-  using type = const std::vector<Histogram>;
-};
 
 template <> struct element_reference_type<Coord::Tof> {
   using type = double &;
@@ -202,7 +165,6 @@ template <> struct element_reference_type<const Data::Histogram> {
   using type = const Histogram &;
 };
 
-template <class Tag> using variable_type_t = typename variable_type<Tag>::type;
 template <class Tag>
 using element_reference_type_t = typename element_reference_type<Tag>::type;
 
