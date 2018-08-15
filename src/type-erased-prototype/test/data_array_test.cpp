@@ -22,10 +22,18 @@ TEST(DataArray, construct_fail) {
       makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 3), 2));
 }
 
+TEST(DataArray, span_references_DataArray) {
+  auto a = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
+  auto span = a.get<Data::Value>();
+  EXPECT_EQ(span.size(), 2);
+  span[0] = 1.0;
+  EXPECT_EQ(a.get<Data::Value>()[0], 1.0);
+}
+
 TEST(DataArray, sharing) {
   const auto a1 = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
   const auto a2(a1);
-  EXPECT_EQ(&a1.get<Data::Value>(), &a2.get<Data::Value>());
+  EXPECT_EQ(&a1.get<Data::Value>()[0], &a2.get<Data::Value>()[0]);
 }
 
 TEST(DataArray, copy) {
@@ -35,8 +43,8 @@ TEST(DataArray, copy) {
   EXPECT_EQ(data1[0], 1.1);
   EXPECT_EQ(data1[1], 2.2);
   auto a2(a1);
-  EXPECT_EQ(&a1.get<Data::Value>(), &a2.get<const Data::Value>());
-  EXPECT_NE(&a1.get<Data::Value>(), &a2.get<Data::Value>());
+  EXPECT_EQ(&a1.get<Data::Value>()[0], &a2.get<const Data::Value>()[0]);
+  EXPECT_NE(&a1.get<Data::Value>()[0], &a2.get<Data::Value>()[0]);
   const auto &data2 = a2.get<Data::Value>();
   EXPECT_EQ(data2[0], 1.1);
   EXPECT_EQ(data2[1], 2.2);

@@ -54,12 +54,17 @@ template <class Base> struct GetterMixin<Base, Data::Histogram> {
 };
 
 template <class T> struct ref_type {
-  using type = variable_type_t<detail::value_type_t<T>> &;
+  using type = gsl::span<std::conditional_t<
+      std::is_const<T>::value,
+      const typename variable_type_t<detail::value_type_t<T>>::value_type,
+      typename variable_type_t<detail::value_type_t<T>>::value_type>>;
 };
 template <> struct ref_type<Coord::SpectrumPosition> {
-  using type = std::pair<
-      variable_type_t<detail::value_type_t<Coord::DetectorPosition>> &,
-      variable_type_t<detail::value_type_t<Coord::DetectorGrouping>> &>;
+  using type =
+      std::pair<gsl::span<typename variable_type_t<
+                    detail::value_type_t<Coord::DetectorPosition>>::value_type>,
+                gsl::span<typename variable_type_t<detail::value_type_t<
+                    Coord::DetectorGrouping>>::value_type>>;
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
 
@@ -135,9 +140,9 @@ std::unique_ptr<std::vector<Histogram>>
 makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset) {
   auto histograms = std::make_unique<std::vector<Histogram>>(0);
   histograms->reserve(4);
-  const auto &edges = dataset.get<const Data::Tof>();
-  auto &values = dataset.get<Data::Value>();
-  auto &errors = dataset.get<Data::Error>();
+  const auto edges = dataset.get<const Data::Tof>();
+  auto values = dataset.get<Data::Value>();
+  auto errors = dataset.get<Data::Error>();
   histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data(), values.data(),
                            errors.data());
   histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data() + 3,
@@ -151,9 +156,9 @@ makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset,
                                           const std::string &name) {
   auto histograms = std::make_unique<std::vector<Histogram>>(0);
   histograms->reserve(4);
-  const auto &edges = dataset.get<const Data::Tof>();
-  auto &values = dataset.get<Data::Value>(name);
-  auto &errors = dataset.get<Data::Error>(name);
+  const auto edges = dataset.get<const Data::Tof>();
+  auto values = dataset.get<Data::Value>(name);
+  auto errors = dataset.get<Data::Error>(name);
   histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data(), values.data(),
                            errors.data());
   histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data() + 3,
@@ -162,28 +167,28 @@ makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset,
 }
 
 template <class Tag>
-ref_type_t<Tag>
-returnReference(Dataset &dataset,
-                const std::unique_ptr<std::vector<Histogram>> &histograms) {
+auto returnReference(
+    Dataset &dataset,
+    const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return dataset.get<detail::value_type_t<Tag>>();
 }
 
 template <class Tag>
-ref_type_t<Tag>
-returnReference(Dataset &dataset, const std::string &name,
-                const std::unique_ptr<std::vector<Histogram>> &histograms) {
+auto returnReference(
+    Dataset &dataset, const std::string &name,
+    const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return dataset.get<detail::value_type_t<Tag>>(name);
 }
 
 template <>
-ref_type_t<Data::Histogram> returnReference<Data::Histogram>(
+auto returnReference<Data::Histogram>(
     Dataset &dataset,
     const std::unique_ptr<std::vector<Histogram>> &histograms) {
-  return *histograms;
+  return gsl::make_span(*histograms);
 }
 
 template <>
-ref_type_t<Coord::SpectrumPosition> returnReference<Coord::SpectrumPosition>(
+auto returnReference<Coord::SpectrumPosition>(
     Dataset &dataset,
     const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return ref_type_t<Coord::SpectrumPosition>(
@@ -254,13 +259,12 @@ private:
     return largest;
   }
 
-  template <class Tag> ref_type_t<Tag> getData(Dataset &dataset) {
+  template <class Tag> auto getData(Dataset &dataset) {
     m_histograms = makeHistogramsIfRequired<Tag>(dataset);
     return returnReference<Tag>(dataset, m_histograms);
   }
 
-  template <class Tag>
-  ref_type_t<Tag> getData(Dataset &dataset, const std::string &name) {
+  template <class Tag> auto getData(Dataset &dataset, const std::string &name) {
     m_histograms = makeHistogramsIfRequired<Tag>(dataset, name);
     return returnReference<Tag>(dataset, name, m_histograms);
   }

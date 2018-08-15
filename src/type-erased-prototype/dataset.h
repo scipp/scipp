@@ -72,20 +72,19 @@ public:
   gsl::index size() const { return m_variables.size(); }
   const DataArray &operator[](gsl::index i) const { return m_variables[i]; }
 
-  template <class Tag> variable_type_t<Tag> &get() const {
+  template <class Tag> auto get() const {
     return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
   }
 
-  template <class Tag>
-  variable_type_t<Tag> &get(const std::string &name) const {
+  template <class Tag> auto get(const std::string &name) const {
     return m_variables[find(tag_id<Tag>, name)].template get<Tag>();
   }
 
-  template <class Tag> variable_type_t<Tag> &get() {
+  template <class Tag> auto get() {
     return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
   }
 
-  template <class Tag> variable_type_t<Tag> &get(const std::string &name) {
+  template <class Tag> auto get(const std::string &name) {
     return m_variables[find(tag_id<Tag>, name)].template get<Tag>();
   }
 

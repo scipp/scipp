@@ -105,7 +105,7 @@ TEST(Dataset, const_get) {
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Int>("name2", Dimensions{}, {2l});
   const auto &const_d(d);
-  auto &view = const_d.get<const Data::Value>();
+  auto view = const_d.get<const Data::Value>();
   // No non-const access to variable if Dataset is const, will not compile:
   // auto &view = const_d.get<Data::Value>();
   ASSERT_EQ(view.size(), 1);
@@ -118,7 +118,7 @@ TEST(Dataset, get) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Int>("name2", Dimensions{}, {2l});
-  auto &view = d.get<Data::Value>();
+  auto view = d.get<Data::Value>();
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);
   view[0] = 2.2;
@@ -129,7 +129,7 @@ TEST(Dataset, get_const) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Int>("name2", Dimensions{}, {2l});
-  auto &view = d.get<const Data::Value>();
+  auto view = d.get<const Data::Value>();
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);
   // auto is now deduced to be const, so assignment will not compile:
@@ -150,10 +150,10 @@ TEST(Dataset, get_named) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Value>("name2", Dimensions{}, {2.2});
-  auto &var1 = d.get<Data::Value>("name1");
+  auto var1 = d.get<Data::Value>("name1");
   ASSERT_EQ(var1.size(), 1);
   EXPECT_EQ(var1[0], 1.1);
-  auto &var2 = d.get<Data::Value>("name2");
+  auto var2 = d.get<Data::Value>("name2");
   ASSERT_EQ(var2.size(), 1);
   EXPECT_EQ(var2[0], 2.2);
 }

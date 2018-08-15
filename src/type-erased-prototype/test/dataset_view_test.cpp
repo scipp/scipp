@@ -49,7 +49,7 @@ TEST(DatasetView, single_column) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 10), 10);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 10), 10);
-  auto &var = d.get<Data::Value>();
+  auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[3] = 3.2;
 
@@ -70,7 +70,7 @@ TEST(DatasetView, multi_column) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &var = d.get<Data::Value>();
+  auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
 
@@ -87,7 +87,7 @@ TEST(DatasetView, multi_column_mixed_dimension) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
   d.insert<Data::Int>("name2", Dimensions{}, 1);
-  auto &var = d.get<Data::Value>();
+  auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
 
@@ -152,7 +152,7 @@ TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
   d.insert<Data::Int>("name2", Dimensions{}, 1);
-  auto &var = d.get<Data::Value>();
+  auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
 
@@ -181,7 +181,7 @@ TEST(DatasetView, single_column_edges) {
   auto edges = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &var = d.get<Data::Value>();
+  auto var = d.get<Data::Value>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[2] = 2.2;
@@ -204,7 +204,7 @@ TEST(DatasetView, single_column_bins) {
   auto edges = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &var = d.get<Data::Tof>();
+  auto var = d.get<Data::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[1] = 1.2;
@@ -224,7 +224,7 @@ TEST(DatasetView, multi_column_edges) {
   auto edges = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto &var = d.get<Data::Tof>();
+  auto var = d.get<Data::Tof>();
   var[0] = 0.2;
   var[1] = 1.2;
   var[2] = 2.2;
@@ -249,7 +249,7 @@ TEST(DatasetView, named_getter) {
   Dataset d;
   auto tof = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insert(tof);
-  auto &var = d.get<Data::Tof>();
+  auto var = d.get<Data::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[2] = 2.2;

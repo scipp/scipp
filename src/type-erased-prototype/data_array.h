@@ -4,6 +4,8 @@
 #include <string>
 #include <type_traits>
 
+#include <gsl/span>
+
 #include "cow_ptr.h"
 #include "dimensions.h"
 #include "unit.h"
@@ -102,20 +104,18 @@ public:
   uint16_t type() const { return m_type; }
   bool isCoord() const { return m_type < std::tuple_size<Coord::tags>::value; }
 
-  template <class Tag> const variable_type_t<Tag> &get() const {
-    return cast<std::remove_const_t<variable_type_t<Tag>>>();
+  template <class Tag> auto get() const {
+    return gsl::make_span(cast<std::remove_const_t<variable_type_t<Tag>>>());
   }
 
   template <class Tag>
-  variable_type_t<Tag> &
-  get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
+  auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
     return const_cast<const DataArray *>(this)->get<Tag>();
   }
 
   template <class Tag>
-  variable_type_t<Tag> &
-  get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
-    return cast<std::remove_const_t<variable_type_t<Tag>>>();
+  auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+    return gsl::make_span(cast<std::remove_const_t<variable_type_t<Tag>>>());
   }
 
 private:
