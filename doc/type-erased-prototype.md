@@ -489,3 +489,10 @@ Outstanding tasks:
 - Investigate `EventList` replacement.
 - Investigate MPI integration.
 - View or similar to support histogram access to `EventList` with on-the-fly binning.
+  - Based on `Data::Events` (or `Data::EventList`?).
+  - As `Data::Histogram` but return by value, same type as normal histogram but never referencing data in `Dataset`!
+  - Tag name?
+    - `Data::HistogramView`.
+    - `Histogram<Data::Events>`, following the same pattern as `Bin<Coord::Tof>`.
+  - Need to store binning in Dataset?
+  - Can the axis of the bin direction be deduced from the `EventList`?
