@@ -482,8 +482,6 @@ Outstanding tasks:
   For example, for access via `Coord::SpectrumNumber>`:
   - Build `std::unordered_map<SpectrumNumber>`, which verifies that there are no duplicates.
   - Fast access, similar to what `IndexInfo` is providing currently.
-- `Dataset::get<Tag>` should not return a resizable reference to a `std::vector`.
-  Use something like `gsl::span` instead.
 - Benchmark new `Histogram` mechanism, including stride support.
 - Understand performance implications of doing a lot of operations in streaming memory access.
   Investigate how a cache-blocked operation mode could be supported.
