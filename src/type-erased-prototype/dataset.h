@@ -7,7 +7,7 @@
 
 #include "data_array.h"
 #include "dimension.h"
-#include "variable.h"
+#include "tags.h"
 
 class Dataset {
 public:

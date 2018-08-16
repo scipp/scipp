@@ -223,7 +223,7 @@ class DatasetView : public GetterMixin<DatasetView<Ts...>, Ts>... {
 private:
   using tags = std::tuple<std::remove_const_t<Ts>...>;
   // Note: Not removing const from Tag, we want it to fail if const is passed.
-  // TODO detail::index is from variable.h, put it somewhere else and rename.
+  // TODO detail::index is from tags.h, put it somewhere else and rename.
   template <class Tag>
   static constexpr size_t tag_index = detail::index<Tag, tags>::value;
   template <class Tag>

@@ -5,7 +5,7 @@
 
 #include "data_array.h"
 #include "dimensions.h"
-#include "variable.h"
+#include "tags.h"
 
 TEST(DataArray, construct) {
   ASSERT_NO_THROW(makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2));

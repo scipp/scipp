@@ -1,5 +1,5 @@
-#ifndef VARIABLE_H
-#define VARIABLE_H
+#ifndef TAGS_H
+#define TAGS_H
 
 #include <tuple>
 #include <vector>
@@ -112,4 +112,4 @@ template <class Tag> struct element_return_type {
 template <class Tag>
 using element_return_type_t = typename element_return_type<Tag>::type;
 
-#endif // VARIABLE_H
+#endif // TAGS_H

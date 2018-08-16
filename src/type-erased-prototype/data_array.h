@@ -9,8 +9,8 @@
 
 #include "cow_ptr.h"
 #include "dimensions.h"
+#include "tags.h"
 #include "unit.h"
-#include "variable.h"
 
 class DataArrayConcept {
 public:
