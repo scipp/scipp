@@ -70,6 +70,26 @@ TEST(Variable, ragged) {
   ASSERT_ANY_THROW(makeVariable<Data::Value>(dimensions, 4));
 }
 
+TEST(Variable, operator_equals) {
+  const auto a = makeVariable<Data::Value>({Dimension::Tof, 2}, {1.1, 2.2});
+  const auto a_copy(a);
+  const auto b = makeVariable<Data::Value>({Dimension::Tof, 2}, {1.1, 2.2});
+  const auto diff1 = makeVariable<Data::Value>({Dimension::Tof, 2}, {1.1, 2.1});
+  const auto diff2 = makeVariable<Data::Value>({Dimension::X, 2}, {1.1, 2.2});
+  auto diff3(a);
+  diff3.setName("test");
+  auto diff4(a);
+  diff4.setUnit(Unit::Id::Length);
+  EXPECT_EQ(a, a);
+  EXPECT_EQ(a, a_copy);
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(b, a);
+  EXPECT_FALSE(a == diff1);
+  EXPECT_FALSE(a == diff2);
+  EXPECT_FALSE(a == diff3);
+  EXPECT_FALSE(a == diff4);
+}
+
 TEST(Variable, concatenate) {
   Dimensions dims(Dimension::Tof, 1);
   auto a = makeVariable<Data::Value>(dims, {1.0});

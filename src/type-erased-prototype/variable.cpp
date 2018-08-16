@@ -1,5 +1,23 @@
 #include "variable.h"
 
+bool Variable::operator==(const Variable &other) const {
+  // Compare even before pointer comparison since data may be shared even if
+  // names differ.
+  if (m_name != other.m_name)
+    return false;
+  if (m_unit != other.m_unit)
+    return false;
+  // Trivial case: Pointers are equal
+  if (m_object == other.m_object)
+    return true;
+  // Deep comparison
+  if (m_type != other.m_type)
+    return false;
+  if (!(m_dimensions == other.m_dimensions))
+    return false;
+  return *m_object == *other.m_object;
+}
+
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2) {
   if (a1.type() != a2.type())

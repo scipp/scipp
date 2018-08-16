@@ -16,6 +16,7 @@ class VariableConcept {
 public:
   virtual ~VariableConcept() = default;
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
+  virtual bool operator==(const VariableConcept &other) const = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
   virtual void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
@@ -29,13 +30,16 @@ public:
   std::unique_ptr<VariableConcept> clone() const override {
     return std::make_unique<VariableModel<T>>(m_model);
   }
+  bool operator==(const VariableConcept &other) const override {
+    return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
+  }
   gsl::index size() const override { return m_model.size(); }
   void resize(const gsl::index size) override { m_model.resize(size); }
 
   void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
                 const gsl::index chunkSkip,
                 const VariableConcept &other) override {
-    const auto source = dynamic_cast<const VariableModel<T> &>(other);
+    const auto &source = dynamic_cast<const VariableModel<T> &>(other);
     auto in = source.m_model.begin();
     auto in_end = source.m_model.end();
     auto out = m_model.begin() + chunkStart * chunkSize;
@@ -52,9 +56,6 @@ public:
 
   T m_model;
 };
-
-Variable concatenate(const Dimension dim, const Variable &a1,
-                     const Variable &a2);
 
 class Variable {
 public:
@@ -74,6 +75,7 @@ public:
       throw std::runtime_error("Coordinate variable cannot have a name.");
     m_name = name;
   }
+  bool operator==(const Variable &other) const;
 
   const Unit &unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
