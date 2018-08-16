@@ -167,6 +167,20 @@ TEST(Dataset, operator_plus_equal) {
   EXPECT_EQ(a.get<Data::Value>()[0], 4.4);
 }
 
+TEST(Dataset, operator_plus_equal_different_content) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("name1", {Dimension::X, 1}, {2.2});
+  Dataset b;
+  b.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  b.insert<Data::Value>("name1", {Dimension::X, 1}, {2.2});
+  b.insert<Data::Value>("name2", {Dimension::X, 1}, {3.3});
+  EXPECT_THROW_MSG(a += b, std::runtime_error, "Right-hand-side in addition "
+                                               "contains variable that is not "
+                                               "present in left-hand-side.");
+  EXPECT_NO_THROW(b += a);
+}
+
 TEST(Dataset, concatenate_constant_dimension_broken) {
   Dataset a;
   a.insert<Data::Value>("name1", Dimensions{}, {1.1});

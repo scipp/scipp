@@ -1,8 +1,19 @@
 #include "dataset.h"
 
 Dataset &Dataset::operator+=(const Dataset &other) {
-  for (auto &var1 : m_variables) {
-    const auto &var2 = other[other.find(var1.type(), var1.name())];
+  for (const auto &var2 : other.m_variables) {
+    // Handling of missing variables:
+    // - Skip if this contains more (automatic by having enclosing loop over
+    //   other instead of *this).
+    // - Fail if other contains more.
+    gsl::index index;
+    try {
+      index = find(var2.type(), var2.name());
+    } catch (const std::runtime_error &) {
+      throw std::runtime_error("Right-hand-side in addition contains variable "
+                               "that is not present in left-hand-side.");
+    }
+    auto &var1 = m_variables[index];
     if (var1.isCoord()) {
       // Coordinate variables must match
       // Strictly speaking we should allow "equivalent" coordinates, i.e., match
