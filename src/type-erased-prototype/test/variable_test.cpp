@@ -3,27 +3,25 @@
 
 #include "test_macros.h"
 
-#include "data_array.h"
 #include "dimensions.h"
 #include "tags.h"
+#include "variable.h"
 
-TEST(DataArray, construct) {
-  ASSERT_NO_THROW(makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2));
-  const auto a = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
+TEST(Variable, construct) {
+  ASSERT_NO_THROW(makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), 2));
+  const auto a = makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
   const auto &data = a.get<Data::Value>();
   EXPECT_EQ(data.size(), 2);
 }
 
-TEST(DataArray, construct_fail) {
-  ASSERT_ANY_THROW(makeDataArray<Data::Value>(Dimensions(), 2));
-  ASSERT_ANY_THROW(
-      makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 1), 2));
-  ASSERT_ANY_THROW(
-      makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 3), 2));
+TEST(Variable, construct_fail) {
+  ASSERT_ANY_THROW(makeVariable<Data::Value>(Dimensions(), 2));
+  ASSERT_ANY_THROW(makeVariable<Data::Value>(Dimensions(Dimension::Tof, 1), 2));
+  ASSERT_ANY_THROW(makeVariable<Data::Value>(Dimensions(Dimension::Tof, 3), 2));
 }
 
-TEST(DataArray, span_references_DataArray) {
-  auto a = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
+TEST(Variable, span_references_Variable) {
+  auto a = makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
   auto observer = a.get<const Data::Value>();
   // This line does not compile, const-correctness works:
   // observer[0] = 1.0;
@@ -38,17 +36,17 @@ TEST(DataArray, span_references_DataArray) {
   EXPECT_EQ(observer[0], 1.0);
 }
 
-TEST(DataArray, sharing) {
-  const auto a1 = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
+TEST(Variable, sharing) {
+  const auto a1 = makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
   const auto a2(a1);
-  // TODO Should we require the use of `const` with the tag if DataArray is
+  // TODO Should we require the use of `const` with the tag if Variable is
   // const?
   EXPECT_EQ(&a1.get<Data::Value>()[0], &a2.get<Data::Value>()[0]);
 }
 
-TEST(DataArray, copy) {
+TEST(Variable, copy) {
   const auto a1 =
-      makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+      makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
   const auto &data1 = a1.get<Data::Value>();
   EXPECT_EQ(data1[0], 1.1);
   EXPECT_EQ(data1[1], 2.2);
@@ -60,22 +58,22 @@ TEST(DataArray, copy) {
   EXPECT_EQ(data2[1], 2.2);
 }
 
-TEST(DataArray, ragged) {
-  const auto raggedSize = makeDataArray<Data::DimensionSize>(
+TEST(Variable, ragged) {
+  const auto raggedSize = makeVariable<Data::DimensionSize>(
       Dimensions(Dimension::SpectrumNumber, 2), {2l, 3l});
   EXPECT_EQ(raggedSize.dimensions().volume(), 2);
   Dimensions dimensions;
   dimensions.add(Dimension::Tof, raggedSize);
   dimensions.add(Dimension::SpectrumNumber, 2);
   EXPECT_EQ(dimensions.volume(), 5);
-  ASSERT_NO_THROW(makeDataArray<Data::Value>(dimensions, 5));
-  ASSERT_ANY_THROW(makeDataArray<Data::Value>(dimensions, 4));
+  ASSERT_NO_THROW(makeVariable<Data::Value>(dimensions, 5));
+  ASSERT_ANY_THROW(makeVariable<Data::Value>(dimensions, 4));
 }
 
-TEST(DataArray, concatenate) {
+TEST(Variable, concatenate) {
   Dimensions dims(Dimension::Tof, 1);
-  auto a = makeDataArray<Data::Value>(dims, {1.0});
-  auto b = makeDataArray<Data::Value>(dims, {2.0});
+  auto a = makeVariable<Data::Value>(dims, {1.0});
+  auto b = makeVariable<Data::Value>(dims, {2.0});
   a.setUnit(Unit::Id::Length);
   b.setUnit(Unit::Id::Length);
   auto ab = concatenate(Dimension::Tof, a, b);
@@ -117,32 +115,32 @@ TEST(DataArray, concatenate) {
   EXPECT_EQ(data4[7], 1.0);
 }
 
-TEST(DataArray, concatenate_fail) {
+TEST(Variable, concatenate_fail) {
   Dimensions dims(Dimension::Tof, 1);
-  auto a = makeDataArray<Data::Value>(dims, {1.0});
-  auto b = makeDataArray<Data::Value>(dims, {2.0});
-  auto c = makeDataArray<Data::Error>(dims, {2.0});
+  auto a = makeVariable<Data::Value>(dims, {1.0});
+  auto b = makeVariable<Data::Value>(dims, {2.0});
+  auto c = makeVariable<Data::Error>(dims, {2.0});
   a.setName("data");
   EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, b), std::runtime_error,
-                   "Cannot concatenate DataArrays: Names do not match.");
+                   "Cannot concatenate Variables: Names do not match.");
   c.setName("data");
   EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, c), std::runtime_error,
-                   "Cannot concatenate DataArrays: Data types do not match.");
+                   "Cannot concatenate Variables: Data types do not match.");
   auto aa = concatenate(Dimension::Tof, a, a);
   // TODO better size check, the following should work:
   // EXPECT_NO_THROW(concatenate(Dimension::Tof, a, aa));
   EXPECT_THROW_MSG(concatenate(Dimension::Q, a, aa), std::runtime_error,
-                   "Cannot concatenate DataArrays: Dimensions do not match.");
+                   "Cannot concatenate Variables: Dimensions do not match.");
 }
 
-TEST(DataArray, concatenate_unit_fail) {
+TEST(Variable, concatenate_unit_fail) {
   Dimensions dims(Dimension::X, 1);
-  auto a = makeDataArray<Data::Value>(dims, {1.0});
+  auto a = makeVariable<Data::Value>(dims, {1.0});
   auto b(a);
   EXPECT_NO_THROW(concatenate(Dimension::X, a, b));
   a.setUnit(Unit::Id::Length);
   EXPECT_THROW_MSG(concatenate(Dimension::X, a, b), std::runtime_error,
-                   "Cannot concatenate DataArrays: Units do not match.");
+                   "Cannot concatenate Variables: Units do not match.");
   b.setUnit(Unit::Id::Length);
   EXPECT_NO_THROW(concatenate(Dimension::X, a, b));
 }

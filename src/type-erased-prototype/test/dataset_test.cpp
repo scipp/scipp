@@ -60,8 +60,8 @@ TEST(Dataset, insert_variables_different_order) {
 TEST(Dataset, insertAsEdge) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  auto edges = makeDataArray<Data::Error>(Dimensions(Dimension::Tof, 3),
-                                          {1.1, 2.2, 3.3});
+  auto edges =
+      makeVariable<Data::Error>(Dimensions(Dimension::Tof, 3), {1.1, 2.2, 3.3});
   edges.setName("edges");
   EXPECT_EQ(d.dimensions().size(Dimension::Tof), 2);
   EXPECT_THROW_MSG(
@@ -74,17 +74,17 @@ TEST(Dataset, insertAsEdge_fail) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
   auto too_short =
-      makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+      makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
   EXPECT_THROW_MSG(
       d.insertAsEdge(Dimension::Tof, too_short), std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match");
-  auto too_long = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 4),
-                                             {1.1, 2.2, 3.3, 4.4});
+  auto too_long = makeVariable<Data::Value>(Dimensions(Dimension::Tof, 4),
+                                            {1.1, 2.2, 3.3, 4.4});
   EXPECT_THROW_MSG(
       d.insertAsEdge(Dimension::Tof, too_long), std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match");
-  auto edges = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 3),
-                                          {1.1, 2.2, 3.3});
+  auto edges =
+      makeVariable<Data::Value>(Dimensions(Dimension::Tof, 3), {1.1, 2.2, 3.3});
   EXPECT_THROW_MSG(d.insertAsEdge(Dimension::X, edges), std::runtime_error,
                    "Dimension not found.");
 }
@@ -92,7 +92,7 @@ TEST(Dataset, insertAsEdge_fail) {
 TEST(Dataset, insertAsEdge_reverse_fail) {
   Dataset d;
   auto edges =
-      makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
+      makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
   d.insertAsEdge(Dimension::Tof, edges);
   EXPECT_THROW_MSG(
       d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2}),

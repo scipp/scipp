@@ -135,7 +135,7 @@ static void BM_bare_plus_equals_breaking_sharing(benchmark::State &state) {
     histograms[i] += histograms[i];
   }
   for (auto _ : state) {
-    // Allocation/copy would be done by cow_ptr in DataArray, outside loop.
+    // Allocation/copy would be done by cow_ptr in Variable, outside loop.
     auto histograms2(histograms);
 #pragma omp parallel for num_threads(state.range(1))
     for (gsl::index i = 0; i < size; ++i) {
@@ -157,7 +157,7 @@ BM_bare_plus_equals_breaking_sharing_optimized(benchmark::State &state) {
     histograms[i] += histograms[i];
   }
   for (auto _ : state) {
-    // Allocation/copy would be done by cow_ptr in DataArray, outside loop.
+    // Allocation/copy would be done by cow_ptr in Variable, outside loop.
     // Note: Cannot use unique_ptr<double[]> since that has overhead of
     // 0-initialization, i.e., we pay for an extra read/write.
     double *histograms2 = new double[histograms.size()];
@@ -165,7 +165,7 @@ BM_bare_plus_equals_breaking_sharing_optimized(benchmark::State &state) {
     for (gsl::index i = 0; i < size; ++i) {
       histograms2[i] = histograms[i] + histograms[i];
     }
-    delete [] histograms2;
+    delete[] histograms2;
   }
   state.SetItemsProcessed(state.iterations() * count);
   state.SetBytesProcessed(state.iterations() * count * state.range(0) * 3 *

@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <numeric>
 
-#include "data_array.h"
 #include "dimensions.h"
+#include "variable.h"
 
 Dimensions::Dimensions() = default;
 Dimensions::Dimensions(const Dimension label, const gsl::index size) {
@@ -10,7 +10,7 @@ Dimensions::Dimensions(const Dimension label, const gsl::index size) {
 }
 Dimensions::Dimensions(const Dimensions &other) : m_dims(other.m_dims) {
   if (other.m_raggedDim)
-    m_raggedDim = std::make_unique<DataArray>(*other.m_raggedDim);
+    m_raggedDim = std::make_unique<Variable>(*other.m_raggedDim);
 }
 Dimensions::Dimensions(Dimensions &&other) = default;
 Dimensions::~Dimensions() = default;
@@ -27,9 +27,7 @@ bool Dimensions::operator==(const Dimensions &other) const {
   return m_dims == other.m_dims;
 }
 
-bool Dimensions::isRagged() const {
-  return m_raggedDim != nullptr;
-}
+bool Dimensions::isRagged() const { return m_raggedDim != nullptr; }
 
 gsl::index Dimensions::count() const { return m_dims.size(); }
 
@@ -151,14 +149,14 @@ void Dimensions::erase(const Dimension label) {
   m_dims.erase(m_dims.begin() + index(label));
 }
 
-const DataArray &Dimensions::raggedSize(const gsl::index i) const {
+const Variable &Dimensions::raggedSize(const gsl::index i) const {
   if (m_dims.at(i).second != -1)
     throw std::runtime_error(
         "Dimension is not ragged, use size() instead of raggedSize().");
   return *m_raggedDim;
 }
 
-const DataArray &Dimensions::raggedSize(const Dimension label) const {
+const Variable &Dimensions::raggedSize(const Dimension label) const {
   return raggedSize(index(label));
 }
 
@@ -167,15 +165,15 @@ void Dimensions::add(const Dimension label, const gsl::index size) {
   m_dims.emplace_back(label, size);
 }
 
-void Dimensions::add(const Dimension label, const DataArray &raggedSize) {
+void Dimensions::add(const Dimension label, const Variable &raggedSize) {
   // TODO check duplicate dimensions
   if (!raggedSize.valueTypeIs<Data::DimensionSize>())
-    throw std::runtime_error("DataArray with sizes information for ragged "
+    throw std::runtime_error("Variable with sizes information for ragged "
                              "dimension is of wrong type.");
   m_dims.emplace_back(label, -1);
   if (m_raggedDim)
     throw std::runtime_error("Only one dimension can be ragged.");
-  m_raggedDim = std::make_unique<DataArray>(raggedSize);
+  m_raggedDim = std::make_unique<Variable>(raggedSize);
 }
 
 gsl::index Dimensions::index(const Dimension label) const {

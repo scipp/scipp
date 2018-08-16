@@ -206,7 +206,7 @@ TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
 
 TEST(DatasetView, single_column_edges) {
   Dataset d;
-  auto edges = makeDataArray<Data::Value>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeVariable<Data::Value>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
   auto var = d.get<Data::Value>();
@@ -229,7 +229,7 @@ TEST(DatasetView, single_column_edges) {
 
 TEST(DatasetView, single_column_bins) {
   Dataset d;
-  auto edges = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
   auto var = d.get<Data::Tof>();
@@ -249,7 +249,7 @@ TEST(DatasetView, single_column_bins) {
 
 TEST(DatasetView, multi_column_edges) {
   Dataset d;
-  auto edges = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
   auto var = d.get<Data::Tof>();
@@ -275,7 +275,7 @@ TEST(DatasetView, multi_column_edges) {
 
 TEST(DatasetView, named_getter) {
   Dataset d;
-  auto tof = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto tof = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insert(tof);
   auto var = d.get<Data::Tof>();
   ASSERT_EQ(var.size(), 3);
@@ -303,7 +303,7 @@ TEST(DatasetView, duplicate_data_tag) {
 
 TEST(DatasetView, histogram) {
   Dataset d;
-  auto tof = makeDataArray<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto tof = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, tof);
   Dimensions dims;
   dims.add(Dimension::Tof, 2);

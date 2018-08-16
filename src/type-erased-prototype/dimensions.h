@@ -9,7 +9,7 @@
 
 #include "dimension.h"
 
-class DataArray;
+class Variable;
 
 class Dimensions {
 public:
@@ -38,10 +38,10 @@ public:
   void resize(const Dimension label, const gsl::index size);
   void erase(const Dimension label);
 
-  const DataArray &raggedSize(const gsl::index i) const;
-  const DataArray &raggedSize(const Dimension label) const;
+  const Variable &raggedSize(const gsl::index i) const;
+  const Variable &raggedSize(const Dimension label) const;
   void add(const Dimension label, const gsl::index size);
-  void add(const Dimension label, const DataArray &raggedSize);
+  void add(const Dimension label, const Variable &raggedSize);
 
   auto begin() const { return m_dims.begin(); }
   auto end() const { return m_dims.end(); }
@@ -50,9 +50,9 @@ public:
 
 private:
   std::vector<std::pair<Dimension, gsl::index>> m_dims;
-  // In a Dataset, multiple DataArrays will reference the same ragged size
-  // DataArray. How can we support shape operations without breaking sharing?
-  std::unique_ptr<DataArray> m_raggedDim;
+  // In a Dataset, multiple Variables will reference the same ragged size
+  // Variable. How can we support shape operations without breaking sharing?
+  std::unique_ptr<Variable> m_raggedDim;
 };
 
 Dimensions merge(const Dimensions &a, const Dimensions &b);

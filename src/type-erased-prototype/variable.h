@@ -1,5 +1,5 @@
-#ifndef DATA_ARRAY_H
-#define DATA_ARRAY_H
+#ifndef VARIABLE_H
+#define VARIABLE_H
 
 #include <string>
 #include <type_traits>
@@ -12,30 +12,30 @@
 #include "tags.h"
 #include "unit.h"
 
-class DataArrayConcept {
+class VariableConcept {
 public:
-  virtual ~DataArrayConcept() = default;
-  virtual std::unique_ptr<DataArrayConcept> clone() const = 0;
+  virtual ~VariableConcept() = default;
+  virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
   virtual void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
                         const gsl::index chunkSkip,
-                        const DataArrayConcept &other) = 0;
+                        const VariableConcept &other) = 0;
 };
 
-template <class T> class DataArrayModel : public DataArrayConcept {
+template <class T> class VariableModel : public VariableConcept {
 public:
-  DataArrayModel(T const &model) : m_model(model) {}
-  std::unique_ptr<DataArrayConcept> clone() const override {
-    return std::make_unique<DataArrayModel<T>>(m_model);
+  VariableModel(T const &model) : m_model(model) {}
+  std::unique_ptr<VariableConcept> clone() const override {
+    return std::make_unique<VariableModel<T>>(m_model);
   }
   gsl::index size() const override { return m_model.size(); }
   void resize(const gsl::index size) override { m_model.resize(size); }
 
   void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
                 const gsl::index chunkSkip,
-                const DataArrayConcept &other) override {
-    const auto source = dynamic_cast<const DataArrayModel<T> &>(other);
+                const VariableConcept &other) override {
+    const auto source = dynamic_cast<const VariableModel<T> &>(other);
     auto in = source.m_model.begin();
     auto in_end = source.m_model.end();
     auto out = m_model.begin() + chunkStart * chunkSize;
@@ -53,18 +53,18 @@ public:
   T m_model;
 };
 
-DataArray concatenate(const Dimension dim, const DataArray &a1,
-                      const DataArray &a2);
+Variable concatenate(const Dimension dim, const Variable &a1,
+                     const Variable &a2);
 
-class DataArray {
+class Variable {
 public:
   template <class T>
-  DataArray(uint32_t id, Dimensions dimensions, T object)
+  Variable(uint32_t id, Dimensions dimensions, T object)
       : m_type(id), m_unit{Unit::Id::Dimensionless},
         m_dimensions(std::move(dimensions)),
-        m_object(std::make_unique<DataArrayModel<T>>(std::move(object))) {
+        m_object(std::make_unique<VariableModel<T>>(std::move(object))) {
     if (m_dimensions.volume() != m_object->size())
-      throw std::runtime_error("Creating DataArray: data size does not match "
+      throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
 
@@ -94,8 +94,8 @@ public:
     m_dimensions = dimensions;
   }
 
-  const DataArrayConcept &data() const { return *m_object; }
-  DataArrayConcept &data() { return m_object.access(); }
+  const VariableConcept &data() const { return *m_object; }
+  VariableConcept &data() { return m_object.access(); }
 
   template <class Tag> bool valueTypeIs() const {
     return tag_id<Tag> == m_type;
@@ -113,7 +113,7 @@ public:
 
   template <class Tag>
   auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
-    return const_cast<const DataArray *>(this)->get<Tag>();
+    return const_cast<const Variable *>(this)->get<Tag>();
   }
 
   template <class Tag>
@@ -123,50 +123,48 @@ public:
 
 private:
   template <class T> const T &cast() const {
-    return dynamic_cast<const DataArrayModel<T> &>(*m_object).m_model;
+    return dynamic_cast<const VariableModel<T> &>(*m_object).m_model;
   }
 
   template <class T> T &cast() {
-    return dynamic_cast<DataArrayModel<T> &>(m_object.access()).m_model;
+    return dynamic_cast<VariableModel<T> &>(m_object.access()).m_model;
   }
 
   uint16_t m_type;
   std::string m_name;
   Unit m_unit;
   Dimensions m_dimensions;
-  cow_ptr<DataArrayConcept> m_object;
+  cow_ptr<VariableConcept> m_object;
 };
 
 template <class Tag, class... Args>
-DataArray makeDataArray(Dimensions dimensions, Args &&... args) {
-  return DataArray(
-      tag_id<Tag>, std::move(dimensions),
-      std::vector<typename Tag::type>(std::forward<Args>(args)...));
+Variable makeVariable(Dimensions dimensions, Args &&... args) {
+  return Variable(tag_id<Tag>, std::move(dimensions),
+                  std::vector<typename Tag::type>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
-DataArray makeDataArray(Dimensions dimensions,
-                        std::initializer_list<T> values) {
-  return DataArray(tag_id<Tag>, std::move(dimensions),
-                   std::vector<typename Tag::type>(values));
+Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
+  return Variable(tag_id<Tag>, std::move(dimensions),
+                  std::vector<typename Tag::type>(values));
 }
 
-inline DataArray concatenate(const Dimension dim, const DataArray &a1,
-                             const DataArray &a2) {
+inline Variable concatenate(const Dimension dim, const Variable &a1,
+                            const Variable &a2) {
   if (a1.type() != a2.type())
     throw std::runtime_error(
-        "Cannot concatenate DataArrays: Data types do not match.");
+        "Cannot concatenate Variables: Data types do not match.");
   if (a1.unit() != a2.unit())
     throw std::runtime_error(
-        "Cannot concatenate DataArrays: Units do not match.");
+        "Cannot concatenate Variables: Units do not match.");
   if (a1.name() != a2.name())
     throw std::runtime_error(
-        "Cannot concatenate DataArrays: Names do not match.");
+        "Cannot concatenate Variables: Names do not match.");
   const auto &dims1 = a1.dimensions();
   const auto &dims2 = a2.dimensions();
   if (!(dims1 == dims2))
     throw std::runtime_error(
-        "Cannot concatenate DataArrays: Dimensions do not match.");
+        "Cannot concatenate Variables: Dimensions do not match.");
   // Should we permit creation of ragged outputs if one dimension does not
   // match?
   auto out(a1);
@@ -185,4 +183,4 @@ inline DataArray concatenate(const Dimension dim, const DataArray &a1,
   return out;
 }
 
-#endif // DATA_ARRAY_H
+#endif // VARIABLE_H

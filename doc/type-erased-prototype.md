@@ -416,8 +416,8 @@ else
 ### Changes from v1 to v2
 
 Findings and changes:
-- Introduced `DataArray`.
-  Note the difference to `xarray.DataArray` --- our `DataArray` does not have axes.
+- Introduced `Variable`, similar to `xarray.DataArray`.
+  The difference is that `Variable` does not have axes.
   This helps to define dimensionality, especially when we want to support bin edges, and allows implementations of operations on simpler types, separating the operation on a single variable from difficulties that may arise when defining an operation on a `Dataset` containing many variables.
 - Support bin edges.
 - Support ragged dimensions.

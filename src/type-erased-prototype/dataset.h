@@ -5,13 +5,13 @@
 
 #include <gsl/gsl_util>
 
-#include "data_array.h"
 #include "dimension.h"
 #include "tags.h"
+#include "variable.h"
 
 class Dataset {
 public:
-  void insert(DataArray variable) {
+  void insert(Variable variable) {
     if (variable.isCoord() && count(variable.type()))
       throw std::runtime_error("Attempt to insert duplicate coordinate.");
     if (!variable.isCoord()) {
@@ -31,7 +31,7 @@ public:
   void insert(Dimensions dimensions, Args &&... args) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
     auto a =
-        makeDataArray<Tag>(std::move(dimensions), std::forward<Args>(args)...);
+        makeVariable<Tag>(std::move(dimensions), std::forward<Args>(args)...);
     insert(std::move(a));
   }
 
@@ -39,7 +39,7 @@ public:
   void insert(const std::string &name, Dimensions dimensions, Args &&... args) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
     auto a =
-        makeDataArray<Tag>(std::move(dimensions), std::forward<Args>(args)...);
+        makeVariable<Tag>(std::move(dimensions), std::forward<Args>(args)...);
     a.setName(name);
     insert(std::move(a));
   }
@@ -47,7 +47,7 @@ public:
   template <class Tag, class T>
   void insert(Dimensions dimensions, std::initializer_list<T> values) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
-    auto a = makeDataArray<Tag>(std::move(dimensions), values);
+    auto a = makeVariable<Tag>(std::move(dimensions), values);
     insert(std::move(a));
   }
 
@@ -55,13 +55,13 @@ public:
   void insert(const std::string &name, Dimensions dimensions,
               std::initializer_list<T> values) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
-    auto a = makeDataArray<Tag>(std::move(dimensions), values);
+    auto a = makeVariable<Tag>(std::move(dimensions), values);
     a.setName(name);
     insert(std::move(a));
   }
 
   // Only need this for coordinates... insertEdgeCoord?
-  void insertAsEdge(const Dimension dimension, DataArray variable) {
+  void insertAsEdge(const Dimension dimension, Variable variable) {
     // Edges are by 1 longer than other data, so dimension size check and
     // merging uses modified dimensions.
     auto dims = variable.dimensions();
@@ -71,7 +71,7 @@ public:
   }
 
   gsl::index size() const { return m_variables.size(); }
-  const DataArray &operator[](gsl::index i) const { return m_variables[i]; }
+  const Variable &operator[](gsl::index i) const { return m_variables[i]; }
 
   template <class Tag> auto get() const {
     return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
@@ -154,7 +154,7 @@ private:
   }
 
   Dimensions m_dimensions;
-  std::vector<DataArray> m_variables;
+  std::vector<Variable> m_variables;
 };
 
 inline Dataset concatenate(const Dimension dim, const Dataset &d1,
