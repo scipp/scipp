@@ -18,6 +18,21 @@ bool Variable::operator==(const Variable &other) const {
   return *m_object == *other.m_object;
 }
 
+Variable &Variable::operator+=(const Variable &other) {
+  // Addition with different Variable type is supported, mismatch of underlying
+  // element types is handled in VariableModel::operator+=.
+  if (m_unit != other.m_unit)
+    throw std::runtime_error("Cannot add Variables: Units do not match.");
+  // TODO Should we support shape mismatch also in Variable, or is it sufficient
+  // to have that supported in Dataset::operator+=?
+  if (!(m_dimensions == other.m_dimensions))
+    throw std::runtime_error("Cannot add Variables: Dimensions do not match.");
+  // Note: Different name is ok for addition.
+
+  m_object.access() += *other.m_object;
+  return *this;
+}
+
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2) {
   if (a1.type() != a2.type())

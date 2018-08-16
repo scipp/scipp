@@ -90,6 +90,48 @@ TEST(Variable, operator_equals) {
   EXPECT_FALSE(a == diff4);
 }
 
+TEST(Variable, operator_plus_equal) {
+  auto a = makeVariable<Data::Value>({Dimension::X, 2}, {1.1, 2.2});
+
+  EXPECT_NO_THROW(a += a);
+  EXPECT_EQ(a.get<Data::Value>()[0], 2.2);
+  EXPECT_EQ(a.get<Data::Value>()[1], 4.4);
+
+  auto different_name(a);
+  different_name.setName("test");
+  EXPECT_NO_THROW(a += different_name);
+
+  auto different_dimensions =
+      makeVariable<Data::Value>({Dimension::Y, 2}, {1.1, 2.2});
+  EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
+                   "Cannot add Variables: Dimensions do not match.");
+
+  auto different_unit(a);
+  different_unit.setUnit(Unit::Id::Length);
+  EXPECT_THROW_MSG(a += different_unit, std::runtime_error,
+                   "Cannot add Variables: Units do not match.");
+}
+
+TEST(Variable, operator_plus_equal_non_arithmetic_type) {
+  auto a = makeVariable<Data::String>({Dimension::X, 1}, {std::string("test")});
+  EXPECT_THROW_MSG(a += a, std::runtime_error,
+                   "Cannot add strings. Use append() instead.");
+}
+
+TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
+  auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
+  auto b = makeVariable<Data::Int>({Dimension::X, 1}, {2l});
+  EXPECT_THROW_MSG(a += b, std::runtime_error,
+                   "Cannot add Variables: Underlying data types do not match.");
+}
+
+TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
+  auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
+  auto b = makeVariable<Data::Error>({Dimension::X, 1}, {2.0});
+  EXPECT_NO_THROW(a += b);
+  EXPECT_EQ(a.get<Data::Value>()[0], 3.0);
+}
+
 TEST(Variable, concatenate) {
   Dimensions dims(Dimension::Tof, 1);
   auto a = makeVariable<Data::Value>(dims, {1.0});

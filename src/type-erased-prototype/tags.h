@@ -68,11 +68,15 @@ struct Data {
   struct DimensionSize {
     using type = gsl::index;
   };
+  struct String {
+    using type = std::string;
+  };
   struct Histogram {
     using type = ::Histogram;
   };
 
-  using tags = std::tuple<Tof, Value, Error, Int, DimensionSize, Histogram>;
+  using tags =
+      std::tuple<Tof, Value, Error, Int, DimensionSize, String, Histogram>;
 };
 
 template <class T>

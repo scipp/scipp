@@ -17,11 +17,32 @@ public:
   virtual ~VariableConcept() = default;
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
+  virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
   virtual void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
                         const gsl::index chunkSkip,
                         const VariableConcept &other) = 0;
+};
+
+template <class T> struct ArithmeticHelper {
+  static void plus_equals(std::vector<T> &a, const std::vector<T> &b) {
+    std::transform(a.begin(), a.end(), b.begin(), a.begin(), std::plus<T>());
+  }
+};
+
+template <class T> struct ArithmeticHelper<std::vector<T>> {
+  static void plus_equals(std::vector<std::vector<T>> &a,
+                          const std::vector<std::vector<T>> &b) {
+    throw std::runtime_error("Not an arithmetic type. Addition not possible.");
+  }
+};
+
+template <> struct ArithmeticHelper<std::string> {
+  static void plus_equals(std::vector<std::string> &a,
+                          const std::vector<std::string> &b) {
+    throw std::runtime_error("Cannot add strings. Use append() instead.");
+  }
 };
 
 template <class T> class VariableModel : public VariableConcept {
@@ -32,6 +53,16 @@ public:
   }
   bool operator==(const VariableConcept &other) const override {
     return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
+  }
+  VariableConcept &operator+=(const VariableConcept &other) override {
+    try {
+      ArithmeticHelper<typename T::value_type>::plus_equals(
+          m_model, dynamic_cast<const VariableModel<T> &>(other).m_model);
+    } catch (const std::bad_cast &) {
+      throw std::runtime_error(
+          "Cannot add Variables: Underlying data types do not match.");
+    }
+    return *this;
   }
   gsl::index size() const override { return m_model.size(); }
   void resize(const gsl::index size) override { m_model.resize(size); }
@@ -76,6 +107,7 @@ public:
     m_name = name;
   }
   bool operator==(const Variable &other) const;
+  Variable &operator+=(const Variable &other);
 
   const Unit &unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
