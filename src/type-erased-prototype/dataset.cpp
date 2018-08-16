@@ -1,5 +1,27 @@
 #include "dataset.h"
 
+Dataset &Dataset::operator+=(const Dataset &other) {
+  for (auto &var1 : m_variables) {
+    const auto &var2 = other[other.find(var1.type(), var1.name())];
+    if (var1.isCoord()) {
+      // Coordinate variables must match
+      // Strictly speaking we should allow "equivalent" coordinates, i.e., match
+      // only after projecting out any constant dimensions.
+      if (!(var1 == var2))
+        throw std::runtime_error(
+            "Coordinates of datasets do not match. Cannot perform addition");
+      // TODO We could improve sharing here magically, but whether this is
+      // beneficial would depend on the shared reference count in var1 and var2:
+      // var1 = var2;
+    } else {
+      // Data variables are added
+      var1 += var2;
+      // How should we handle different shapes? Make a joint DatasetView?
+    }
+  }
+  return *this;
+}
+
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2) {
   // Match type and name, drop missing?
   // What do we have to do to check and compute the resulting dimensions?

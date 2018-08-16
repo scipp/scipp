@@ -505,6 +505,9 @@ Outstanding tasks:
   Returning a view by value is in a sense more similar to how Python handles things.
   - How would be handle const histograms if we return by value?
     We do not want to have them as a separate type.
+
+  Can we get away without having such a `Histogram` type?
+  Just implement everything for `Dataset`, `DatasetView`, or `DatasetView::Item`?
 - More details on unit handling.
 
 Other:

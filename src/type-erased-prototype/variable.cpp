@@ -24,7 +24,8 @@ Variable &Variable::operator+=(const Variable &other) {
   if (m_unit != other.m_unit)
     throw std::runtime_error("Cannot add Variables: Units do not match.");
   // TODO Should we support shape mismatch also in Variable, or is it sufficient
-  // to have that supported in Dataset::operator+=?
+  // to have that supported in Dataset::operator+=? If we support it here we
+  // must be careful to update the dimensions of Dataset.
   if (!(m_dimensions == other.m_dimensions))
     throw std::runtime_error("Cannot add Variables: Dimensions do not match.");
   // Note: Different name is ok for addition.

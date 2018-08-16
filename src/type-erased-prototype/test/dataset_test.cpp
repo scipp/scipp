@@ -158,6 +158,15 @@ TEST(Dataset, get_named) {
   EXPECT_EQ(var2[0], 2.2);
 }
 
+TEST(Dataset, operator_plus_equal) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("name1", {Dimension::X, 1}, {2.2});
+  a += a;
+  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
+  EXPECT_EQ(a.get<Data::Value>()[0], 4.4);
+}
+
 TEST(Dataset, concatenate_constant_dimension_broken) {
   Dataset a;
   a.insert<Data::Value>("name1", Dimensions{}, {1.1});

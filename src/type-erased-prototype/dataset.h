@@ -107,6 +107,8 @@ public:
     throw std::runtime_error("Dataset does not contain such a variable.");
   }
 
+  Dataset &operator+=(const Dataset &other);
+
 private:
   gsl::index count(const uint16_t id) const {
     gsl::index n = 0;
