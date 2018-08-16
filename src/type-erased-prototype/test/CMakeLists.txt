@@ -1,6 +1,6 @@
-add_executable ( type_erased_prototype_test dataset_test.cpp dataset_view_test.cpp variable_test.cpp ../dimensions.cpp dimensions_test.cpp ../unit.cpp unit_test.cpp multi_index_test.cpp )
-target_include_directories ( type_erased_prototype_test PRIVATE ".." ${CMAKE_BINARY_DIR}/gsl-src/include )
+add_executable ( type_erased_prototype_test dataset_test.cpp dataset_view_test.cpp variable_test.cpp dimensions_test.cpp unit_test.cpp multi_index_test.cpp )
 target_link_libraries( type_erased_prototype_test
   LINK_PRIVATE
+  libDataset
   gtest_main
   ${GTEST_LIBRARIES} )
