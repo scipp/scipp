@@ -35,6 +35,7 @@ public:
 
   gsl::index size() const { return m_size; }
   double &value(const gsl::index i) { return m_values[i]; }
+  const double &value(const gsl::index i) const { return m_values[i]; }
 
   template <class... Ts> friend class DatasetView;
 

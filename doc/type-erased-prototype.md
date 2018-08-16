@@ -417,6 +417,7 @@ else
 
 Findings and changes:
 - Introduced `DataArray`.
+  Note the difference to `xarray.DataArray` --- our `DataArray` does not have axes.
   This helps to define dimensionality, especially when we want to support bin edges, and allows implementations of operations on simpler types, separating the operation on a single variable from difficulties that may arise when defining an operation on a `Dataset` containing many variables.
 - Support bin edges.
 - Support ragged dimensions.
@@ -436,6 +437,7 @@ Findings and changes:
     - Do not have a unit, since it is implied by the tag defining the coordinate.
       Might need to support unit *scale*.
     - Coordinate variables cannot have a name and therefore cannot be duplicate.
+
   Data variables include `Data::Value`, `Data::Error`, `Data::String`, `Data::Int`, and `Data::ExperimentLog`.
   Coordinate variables include `Coord::Tof`, `Coord::Q`, `Coord::SpectrumNumber`, `Coord::DetectorId`, `Coord::SpectrumPosition`, `Coord::DetectorPosition`, `Coord::DetectorGrouping`, `Coord::SpectrumLabel`, `Coord::RowLabel`, and `Coord::ColumnLabel`.
 - Issues from having multiple distinct data variables in `Dataset`, e.g., "sample" and "background" run and more importantly monitors as variables in `Dataset`:
@@ -503,6 +505,7 @@ Outstanding tasks:
   Returning a view by value is in a sense more similar to how Python handles things.
   - How would be handle const histograms if we return by value?
     We do not want to have them as a separate type.
+- More details on unit handling.
 
 Other:
 
