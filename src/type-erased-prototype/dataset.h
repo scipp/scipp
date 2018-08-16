@@ -100,6 +100,13 @@ public:
     return m_variables[find(tag_id<Tag>, name)].dimensions();
   }
 
+  gsl::index find(const uint16_t id, const std::string &name) const {
+    for (gsl::index i = 0; i < size(); ++i)
+      if (m_variables[i].type() == id && m_variables[i].name() == name)
+        return i;
+    throw std::runtime_error("Dataset does not contain such a variable.");
+  }
+
 private:
   gsl::index count(const uint16_t id) const {
     gsl::index n = 0;
@@ -107,13 +114,6 @@ private:
       if (item.type() == id)
         ++n;
     return n;
-  }
-
-  gsl::index find(const uint16_t id, const std::string &name) const {
-    for (gsl::index i = 0; i < size(); ++i)
-      if (m_variables[i].type() == id && m_variables[i].name() == name)
-        return i;
-    throw std::runtime_error("Dataset does not contain such a variable.");
   }
 
   gsl::index findUnique(const uint16_t id) const {
@@ -157,33 +157,6 @@ private:
   std::vector<Variable> m_variables;
 };
 
-inline Dataset concatenate(const Dimension dim, const Dataset &d1,
-                           const Dataset &d2) {
-  // Match type and name, drop missing?
-  // What do we have to do to check and compute the resulting dimensions?
-  // - If dim is in m_dimensions, *some* of the variables contain it. Those that
-  //   do not must then be identical (do not concatenate) or we could
-  //   automatically broadcast? Yes!?
-  // - If dim is new, concatenate variables if different, copy if same.
-  // We will be doing deep comparisons here, it would be nice if we could setup
-  // sharing, but d1 and d2 are const, is there a way...? Not without breaking
-  // thread safety? Could cache cow_ptr for future sharing setup, done by next
-  // non-const op?
-  Dataset out;
-  for (gsl::index i1 = 0; i1 < d1.size(); ++i1) {
-    const auto &var1 = d1[i1];
-    bool found{false};
-    for (gsl::index i2 = 0; i2 < d2.size(); ++i2) {
-      const auto &var2 = d2[i2];
-      if ((var1.type() == var2.type()) && (var1.name() == var2.name())) {
-        // TODO check if data is the same, do not concatenate if this is a new
-        // dimension.
-        out.insert(concatenate(dim, var1, var2));
-        break;
-      }
-    }
-  }
-  return out;
-}
+Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
 
 #endif // DATASET_H

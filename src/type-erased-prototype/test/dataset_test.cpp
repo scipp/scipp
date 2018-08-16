@@ -157,3 +157,41 @@ TEST(Dataset, get_named) {
   ASSERT_EQ(var2.size(), 1);
   EXPECT_EQ(var2[0], 2.2);
 }
+
+TEST(Dataset, concatenate_constant_dimension_broken) {
+  Dataset a;
+  a.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  a.insert<Data::Value>("name2", Dimensions{}, {2.2});
+  auto d = concatenate(Dimension::X, a, a);
+  // TODO Special case: No variable depends on X so the result does not contain
+  // this dimension either. Change this behavior?!
+  EXPECT_FALSE(d.dimensions().contains(Dimension::X));
+}
+
+TEST(Dataset, concatenate) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("data", {Dimension::X, 1}, {2.2});
+  auto x = concatenate(Dimension::X, a, a);
+  EXPECT_TRUE(x.dimensions().contains(Dimension::X));
+  EXPECT_EQ(x.get<const Coord::X>().size(), 2);
+  EXPECT_EQ(x.get<const Data::Value>().size(), 2);
+  auto x2(x);
+  x2.get<Data::Value>()[0] = 100.0;
+  auto xy = concatenate(Dimension::Y, x, x2);
+  EXPECT_TRUE(xy.dimensions().contains(Dimension::X));
+  EXPECT_TRUE(xy.dimensions().contains(Dimension::Y));
+  EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
+  EXPECT_EQ(xy.get<const Data::Value>().size(), 4);
+  // Coord::X is shared since it it was the same in x and x2 and is thus
+  // "constant" along Dimension::Y in xy.
+  EXPECT_EQ(&x.get<const Coord::X>()[0], &xy.get<const Coord::X>()[0]);
+  EXPECT_NE(&x.get<const Data::Value>()[0], &xy.get<const Data::Value>()[0]);
+
+  // Broken, see TODO in variable_test.cpp, need to fix dimension matching.
+  // xy = concatenate(Dimension::Y, xy, x);
+
+  xy = concatenate(Dimension::Y, xy, xy);
+  EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
+  EXPECT_EQ(xy.get<const Data::Value>().size(), 8);
+}
