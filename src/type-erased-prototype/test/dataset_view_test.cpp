@@ -303,6 +303,7 @@ TEST(DatasetView, duplicate_data_tag) {
   EXPECT_NO_THROW(DatasetView<Data::Value> view(d, "name2"));
 }
 
+#if 0
 TEST(DatasetView, histogram) {
   Dataset d;
   auto tof = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
@@ -330,6 +331,7 @@ TEST(DatasetView, histogram) {
   EXPECT_EQ(ref.value(0), 3.3);
   EXPECT_EQ(copy.value(0), 3.0);
 }
+#endif
 
 TEST(DatasetView, spectrum_position) {
   Dataset d;

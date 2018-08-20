@@ -474,12 +474,10 @@ In general the implementation has been continued only to the point where it beco
 
 Outstanding tasks:
 
-- Full sample implementation of `concatenate` and `operator+` for `Dataset`, demonstrating the full suite of required features from `Dataset` and how they could be implemented.
-  - Try on relevant examples!
-    - `operator+=` with different shape, such that implementation needs to use `DatasetView` and cannot iterate manually.
-      Wouldn't that typically be two different `Datasets`?
-      How can we iterate simultaneously if shape differs?
-      Merge into same `Dataset` first?
+- More details and larger-scale examples for `concatenate` and `operator+=`.
+  - Propagation of uncertainties!
+    - Always store variance, so this is trivial for `operator+=`.
+      Also implement `operator*=` as a non-trivial example.
 - `DatasetIndex` or similar for indexing via an coordinate.
   For example, for access via `Coord::SpectrumNumber>`:
   - Build `std::unordered_map<SpectrumNumber>`, which verifies that there are no duplicates.
@@ -513,7 +511,14 @@ Outstanding tasks:
   It is determined by the variable with the highest dimensionality.
   If tied, it is determined by the order in which variable tags are given, but if we implement the prototyped sorting...?
 - Can we get to the point where we can apply `std::transform` to a `Dataset` (or rather `DatasetView`) in a convenient way?
+- Do we need to support simultaneous iteration of two `Datasets`?
+  - Merge into the same `Dataset` first?
+    Does not work for coordinates, which cannot be duplicate.
 
 Other:
 
 - Use https://github.com/tcbrindle/span instead of the one from GSL?
+
+Problems:
+
+- How do distinguish (or avoid distinguising const and mutable versions of `DatasetIndex` and `Histogram`?

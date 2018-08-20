@@ -120,74 +120,17 @@ template <> struct DimensionHelper<Coord::SpectrumPosition> {
   }
 };
 
-template <class Tag>
-std::unique_ptr<std::vector<Histogram>>
-makeHistogramsIfRequired(Dataset &dataset) {
-  return nullptr;
-}
-
-template <class Tag>
-std::unique_ptr<std::vector<Histogram>>
-makeHistogramsIfRequired(Dataset &dataset, const std::string &name) {
-  return nullptr;
-}
-
-template <>
-inline std::unique_ptr<std::vector<Histogram>>
-makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset) {
-  auto histograms = std::make_unique<std::vector<Histogram>>(0);
-  histograms->reserve(4);
-  const auto edges = dataset.get<const Data::Tof>();
-  auto values = dataset.get<Data::Value>();
-  auto errors = dataset.get<Data::Error>();
-  histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data(), values.data(),
-                           errors.data());
-  histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data() + 3,
-                           values.data() + 2, errors.data() + 2);
-  return histograms;
-}
-
-template <>
-inline std::unique_ptr<std::vector<Histogram>>
-makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset,
-                                          const std::string &name) {
-  auto histograms = std::make_unique<std::vector<Histogram>>(0);
-  histograms->reserve(4);
-  const auto edges = dataset.get<const Data::Tof>();
-  auto values = dataset.get<Data::Value>(name);
-  auto errors = dataset.get<Data::Error>(name);
-  histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data(), values.data(),
-                           errors.data());
-  histograms->emplace_back(Unit::Id::Length, 2, 1, edges.data() + 3,
-                           values.data() + 2, errors.data() + 2);
-  return histograms;
-}
-
-template <class Tag>
-auto returnReference(
-    Dataset &dataset,
-    const std::unique_ptr<std::vector<Histogram>> &histograms) {
+template <class Tag> auto returnReference(Dataset &dataset) {
   return dataset.get<detail::value_type_t<Tag>>();
 }
 
 template <class Tag>
-auto returnReference(
-    Dataset &dataset, const std::string &name,
-    const std::unique_ptr<std::vector<Histogram>> &histograms) {
+auto returnReference(Dataset &dataset, const std::string &name) {
   return dataset.get<detail::value_type_t<Tag>>(name);
 }
 
 template <>
-inline auto returnReference<Data::Histogram>(
-    Dataset &dataset,
-    const std::unique_ptr<std::vector<Histogram>> &histograms) {
-  return gsl::make_span(*histograms);
-}
-
-template <>
-inline auto returnReference<Coord::SpectrumPosition>(
-    Dataset &dataset,
-    const std::unique_ptr<std::vector<Histogram>> &histograms) {
+inline auto returnReference<Coord::SpectrumPosition>(Dataset &dataset) {
   return ref_type_t<Coord::SpectrumPosition>(
       dataset.get<detail::value_type_t<Coord::DetectorPosition>>(),
       dataset.get<detail::value_type_t<Coord::DetectorGrouping>>());
@@ -260,13 +203,11 @@ private:
     // TODO I think this is broken if multiple histogram tags are given.
     // TODO I think this is always breaking sharing, even if we request const
     // Data::Histogram.
-    m_histograms = makeHistogramsIfRequired<Tag>(dataset);
-    return returnReference<Tag>(dataset, m_histograms);
+    return returnReference<Tag>(dataset);
   }
 
   template <class Tag> auto getData(Dataset &dataset, const std::string &name) {
-    m_histograms = makeHistogramsIfRequired<Tag>(dataset, name);
-    return returnReference<Tag>(dataset, name, m_histograms);
+    return returnReference<Tag>(dataset, name);
   }
 
 public:
@@ -379,9 +320,9 @@ public:
   }
 
 private:
+  const std::vector<Unit> m_units;
   const std::vector<Dimensions> m_subdimensions;
   const Dimensions m_relevantDimensions;
-  std::unique_ptr<std::vector<Histogram>> m_histograms;
   std::tuple<ref_type_t<Ts>...> m_columns;
 };
 
