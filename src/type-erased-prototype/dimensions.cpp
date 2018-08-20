@@ -8,6 +8,11 @@ Dimensions::Dimensions() = default;
 Dimensions::Dimensions(const Dimension label, const gsl::index size) {
   add(label, size);
 }
+Dimensions::Dimensions(
+    const std::vector<std::pair<Dimension, gsl::index>> &sizes) {
+  for (const auto &item : sizes)
+    add(item.first, item.second);
+}
 Dimensions::Dimensions(const Dimensions &other) : m_dims(other.m_dims) {
   if (other.m_raggedDim)
     m_raggedDim = std::make_unique<Variable>(*other.m_raggedDim);

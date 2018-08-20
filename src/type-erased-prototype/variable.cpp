@@ -1,3 +1,4 @@
+#include "dataset_view.h"
 #include "variable.h"
 
 bool Variable::operator==(const Variable &other) const {
@@ -13,7 +14,7 @@ bool Variable::operator==(const Variable &other) const {
   // Deep comparison
   if (m_type != other.m_type)
     return false;
-  if (!(m_dimensions == other.m_dimensions))
+  if (!(dimensions() == other.dimensions()))
     return false;
   return *m_object == *other.m_object;
 }
@@ -21,16 +22,17 @@ bool Variable::operator==(const Variable &other) const {
 Variable &Variable::operator+=(const Variable &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in VariableModel::operator+=.
+  // Different name is ok for addition.
   if (m_unit != other.m_unit)
     throw std::runtime_error("Cannot add Variables: Units do not match.");
-  // TODO Should we support shape mismatch also in Variable, or is it sufficient
-  // to have that supported in Dataset::operator+=? If we support it here we
-  // must be careful to update the dimensions of Dataset.
-  if (!(m_dimensions == other.m_dimensions))
+  if (dimensions().contains(other.dimensions())) {
+    // Note: This will broadcast/transpose the RHS if required. We do not
+    // support changing the dimensions of the LHS though!
+    m_object.access() += *other.m_object;
+  } else {
     throw std::runtime_error("Cannot add Variables: Dimensions do not match.");
-  // Note: Different name is ok for addition.
+  }
 
-  m_object.access() += *other.m_object;
   return *this;
 }
 

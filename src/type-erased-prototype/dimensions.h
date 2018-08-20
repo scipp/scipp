@@ -15,6 +15,7 @@ class Dimensions {
 public:
   Dimensions();
   Dimensions(const Dimension label, const gsl::index size);
+  Dimensions(const std::vector<std::pair<Dimension, gsl::index>> &sizes);
   Dimensions(const Dimensions &other);
   Dimensions(Dimensions &&other);
   ~Dimensions();

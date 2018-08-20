@@ -216,8 +216,10 @@ TEST(DatasetView, single_column_edges) {
 
   DatasetView<Data::Value> view(d);
   auto it = view.begin();
+  ASSERT_LT(it, view.end());
   ASSERT_EQ(it->get<Data::Value>(), 0.2);
   it++;
+  ASSERT_LT(it, view.end());
   ASSERT_EQ(it->get<Data::Value>(), 0.0);
   ASSERT_LT(it, view.end());
   it++;

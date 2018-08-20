@@ -11,6 +11,7 @@
 #include "dimensions.h"
 #include "tags.h"
 #include "unit.h"
+#include "variable_view.h"
 
 class VariableConcept {
 public:
@@ -23,47 +24,62 @@ public:
   virtual void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
                         const gsl::index chunkSkip,
                         const VariableConcept &other) = 0;
+
+  virtual const Dimensions &dimensions() const = 0;
+  virtual void setDimensions(const Dimensions &dimensions) = 0;
 };
 
 template <class T> struct ArithmeticHelper {
-  static void plus_equals(std::vector<T> &a, const std::vector<T> &b) {
+  static void plus_equals(std::vector<T> &a,
+                          const VariableView<std::vector<T>> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), std::plus<T>());
   }
 };
 
 template <class T> struct ArithmeticHelper<std::vector<T>> {
   static void plus_equals(std::vector<std::vector<T>> &a,
-                          const std::vector<std::vector<T>> &b) {
+                          const VariableView<std::vector<std::vector<T>>> &b) {
     throw std::runtime_error("Not an arithmetic type. Addition not possible.");
   }
 };
 
 template <> struct ArithmeticHelper<std::string> {
   static void plus_equals(std::vector<std::string> &a,
-                          const std::vector<std::string> &b) {
+                          const VariableView<std::vector<std::string>> &b) {
     throw std::runtime_error("Cannot add strings. Use append() instead.");
   }
 };
 
 template <class T> class VariableModel : public VariableConcept {
 public:
-  VariableModel(T const &model) : m_model(model) {}
-  std::unique_ptr<VariableConcept> clone() const override {
-    return std::make_unique<VariableModel<T>>(m_model);
+  VariableModel(Dimensions dimensions, T model)
+      : m_dimensions(std::move(dimensions)), m_model(std::move(model)) {
+    if (m_dimensions.volume() != m_model.size())
+      throw std::runtime_error("Creating Variable: data size does not match "
+                               "volume given by dimension extents");
   }
+
+  std::unique_ptr<VariableConcept> clone() const override {
+    return std::make_unique<VariableModel<T>>(m_dimensions, m_model);
+  }
+
   bool operator==(const VariableConcept &other) const override {
     return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
   }
+
   VariableConcept &operator+=(const VariableConcept &other) override {
     try {
       ArithmeticHelper<typename T::value_type>::plus_equals(
-          m_model, dynamic_cast<const VariableModel<T> &>(other).m_model);
+          m_model,
+          VariableView<T>(dynamic_cast<const VariableModel<T> &>(other).m_model,
+                          dimensions(), other.dimensions()));
     } catch (const std::bad_cast &) {
       throw std::runtime_error(
           "Cannot add Variables: Underlying data types do not match.");
     }
     return *this;
   }
+
   gsl::index size() const override { return m_model.size(); }
   void resize(const gsl::index size) override { m_model.resize(size); }
 
@@ -85,6 +101,15 @@ public:
     }
   }
 
+  const Dimensions &dimensions() const override { return m_dimensions; }
+  void setDimensions(const Dimensions &dimensions) override {
+    // TODO Zero data? Or guarentee that equivalent data is moved to correct
+    // target position?
+    m_dimensions = dimensions;
+    resize(m_dimensions.volume());
+  }
+
+  Dimensions m_dimensions;
   T m_model;
 };
 
@@ -93,12 +118,8 @@ public:
   template <class T>
   Variable(uint32_t id, Dimensions dimensions, T object)
       : m_type(id), m_unit{Unit::Id::Dimensionless},
-        m_dimensions(std::move(dimensions)),
-        m_object(std::make_unique<VariableModel<T>>(std::move(object))) {
-    if (m_dimensions.volume() != m_object->size())
-      throw std::runtime_error("Creating Variable: data size does not match "
-                               "volume given by dimension extents");
-  }
+        m_object(std::make_unique<VariableModel<T>>(std::move(dimensions),
+                                                    std::move(object))) {}
 
   const std::string &name() const { return m_name; }
   void setName(const std::string &name) {
@@ -122,10 +143,9 @@ public:
 
   gsl::index size() const { return m_object->size(); }
 
-  const Dimensions &dimensions() const { return m_dimensions; }
+  const Dimensions &dimensions() const { return m_object->dimensions(); }
   void setDimensions(const Dimensions &dimensions) {
-    m_object.access().resize(dimensions.volume());
-    m_dimensions = dimensions;
+    m_object.access().setDimensions(dimensions);
   }
 
   const VariableConcept &data() const { return *m_object; }
@@ -167,7 +187,6 @@ private:
   uint16_t m_type;
   std::string m_name;
   Unit m_unit;
-  Dimensions m_dimensions;
   cow_ptr<VariableConcept> m_object;
 };
 

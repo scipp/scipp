@@ -2,6 +2,7 @@
 #define DATASET_VIEW_H
 
 #include <algorithm>
+#include <set>
 #include <tuple>
 #include <type_traits>
 
@@ -132,7 +133,7 @@ makeHistogramsIfRequired(Dataset &dataset, const std::string &name) {
 }
 
 template <>
-std::unique_ptr<std::vector<Histogram>>
+inline std::unique_ptr<std::vector<Histogram>>
 makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset) {
   auto histograms = std::make_unique<std::vector<Histogram>>(0);
   histograms->reserve(4);
@@ -147,7 +148,7 @@ makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset) {
 }
 
 template <>
-std::unique_ptr<std::vector<Histogram>>
+inline std::unique_ptr<std::vector<Histogram>>
 makeHistogramsIfRequired<Data::Histogram>(Dataset &dataset,
                                           const std::string &name) {
   auto histograms = std::make_unique<std::vector<Histogram>>(0);
@@ -177,14 +178,14 @@ auto returnReference(
 }
 
 template <>
-auto returnReference<Data::Histogram>(
+inline auto returnReference<Data::Histogram>(
     Dataset &dataset,
     const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return gsl::make_span(*histograms);
 }
 
 template <>
-auto returnReference<Coord::SpectrumPosition>(
+inline auto returnReference<Coord::SpectrumPosition>(
     Dataset &dataset,
     const std::unique_ptr<std::vector<Histogram>> &histograms) {
   return ref_type_t<Coord::SpectrumPosition>(
@@ -201,7 +202,7 @@ element_return_type_t<Tag> itemGetHelper(ref_type_t<Tag> &data,
 }
 
 template <>
-element_return_type_t<Coord::SpectrumPosition>
+inline element_return_type_t<Coord::SpectrumPosition>
 itemGetHelper<Coord::SpectrumPosition>(
     ref_type_t<Coord::SpectrumPosition> &data, gsl::index index) {
   if (data.second[index].empty())

@@ -100,11 +100,46 @@ TEST(Variable, operator_plus_equal) {
   auto different_name(a);
   different_name.setName("test");
   EXPECT_NO_THROW(a += different_name);
+}
+
+TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
+  auto a = makeVariable<Data::Value>({Dimension::X, 2}, {1.1, 2.2});
+
+  auto fewer_dimensions = makeVariable<Data::Value>({}, {1.0});
+
+  EXPECT_NO_THROW(a += fewer_dimensions);
+  EXPECT_EQ(a.get<Data::Value>()[0], 2.1);
+  EXPECT_EQ(a.get<Data::Value>()[1], 3.2);
+}
+
+TEST(Variable, operator_plus_equal_transpose) {
+  auto a = makeVariable<Data::Value>(
+      Dimensions({{Dimension::X, 2}, {Dimension::Y, 3}}),
+      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  auto transpose = makeVariable<Data::Value>(
+      Dimensions({{Dimension::Y, 3}, {Dimension::X, 2}}),
+      {1.0, 3.0, 5.0, 2.0, 4.0, 6.0});
+
+  EXPECT_NO_THROW(a += transpose);
+  EXPECT_EQ(a.get<Data::Value>()[0], 2.0);
+  EXPECT_EQ(a.get<Data::Value>()[1], 4.0);
+  EXPECT_EQ(a.get<Data::Value>()[2], 6.0);
+  EXPECT_EQ(a.get<Data::Value>()[3], 8.0);
+  EXPECT_EQ(a.get<Data::Value>()[4], 10.0);
+  EXPECT_EQ(a.get<Data::Value>()[5], 12.0);
+}
+
+TEST(Variable, operator_plus_equal_different_dimensions) {
+  auto a = makeVariable<Data::Value>({Dimension::X, 2}, {1.1, 2.2});
 
   auto different_dimensions =
       makeVariable<Data::Value>({Dimension::Y, 2}, {1.1, 2.2});
   EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
                    "Cannot add Variables: Dimensions do not match.");
+}
+
+TEST(Variable, operator_plus_equal_different_unit) {
+  auto a = makeVariable<Data::Value>({Dimension::X, 2}, {1.1, 2.2});
 
   auto different_unit(a);
   different_unit.setUnit(Unit::Id::Length);
