@@ -167,6 +167,51 @@ TEST(Dataset, operator_plus_equal) {
   EXPECT_EQ(a.get<Data::Value>()[0], 4.4);
 }
 
+TEST(Dataset, operator_plus_equal_broadcast) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>(
+      "name1",
+      Dimensions({{Dimension::X, 1}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
+      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  Dataset b;
+  b.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  b.insert<Data::Value>("name1", Dimensions({{Dimension::Z, 3}}),
+                        {0.1, 0.2, 0.3});
+
+  EXPECT_NO_THROW(a += b);
+  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
+  EXPECT_EQ(a.get<Data::Value>()[0], 1.1);
+  EXPECT_EQ(a.get<Data::Value>()[1], 2.1);
+  EXPECT_EQ(a.get<Data::Value>()[2], 3.2);
+  EXPECT_EQ(a.get<Data::Value>()[3], 4.2);
+  EXPECT_EQ(a.get<Data::Value>()[4], 5.3);
+  EXPECT_EQ(a.get<Data::Value>()[5], 6.3);
+}
+
+TEST(Dataset, operator_plus_equal_transpose) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>(
+      "name1",
+      Dimensions({{Dimension::X, 1}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
+      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  Dataset b;
+  b.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  b.insert<Data::Value>("name1",
+                        Dimensions({{Dimension::Z, 3}, {Dimension::Y, 2}}),
+                        {0.1, 0.2, 0.3, 0.1, 0.2, 0.3});
+
+  EXPECT_NO_THROW(a += b);
+  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
+  EXPECT_EQ(a.get<Data::Value>()[0], 1.1);
+  EXPECT_EQ(a.get<Data::Value>()[1], 2.1);
+  EXPECT_EQ(a.get<Data::Value>()[2], 3.2);
+  EXPECT_EQ(a.get<Data::Value>()[3], 4.2);
+  EXPECT_EQ(a.get<Data::Value>()[4], 5.3);
+  EXPECT_EQ(a.get<Data::Value>()[5], 6.3);
+}
+
 TEST(Dataset, operator_plus_equal_different_content) {
   Dataset a;
   a.insert<Coord::X>({Dimension::X, 1}, {0.1});

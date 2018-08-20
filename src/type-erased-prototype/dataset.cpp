@@ -27,7 +27,6 @@ Dataset &Dataset::operator+=(const Dataset &other) {
     } else {
       // Data variables are added
       var1 += var2;
-      // How should we handle different shapes? Make a joint DatasetView?
     }
   }
   return *this;
