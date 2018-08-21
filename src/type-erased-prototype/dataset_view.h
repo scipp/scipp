@@ -12,22 +12,10 @@
 #include "histogram.h"
 #include "multi_index.h"
 
-template <class T> struct Slab { using value_type = T; };
-
 namespace detail {
 template <class T> struct value_type { using type = T; };
 template <class T> struct value_type<Bin<T>> { using type = T; };
-template <class T> struct value_type<Slab<T>> {
-  using type = typename Slab<T>::value_type;
-};
-template <class T> struct value_type<const Slab<T>> {
-  using type = const typename Slab<T>::value_type;
-};
 template <class T> using value_type_t = typename value_type<T>::type;
-
-template <class T> struct is_slab : public std::false_type {};
-template <class T> struct is_slab<Slab<T>> : public std::true_type {};
-template <class T> using is_slab_t = typename is_slab<T>::type;
 
 template <class T> struct is_bins : public std::false_type {};
 template <class T> struct is_bins<Bin<T>> : public std::true_type {};
@@ -112,16 +100,6 @@ template <class Tag> struct DimensionHelper {
     // TODO Use name only for non-coord variables.
     // TODO Do we need to check here if fixedDimensions are contained?
     return dataset.dimensions<Tag>(name);
-  }
-};
-
-template <class Tag> struct DimensionHelper<Slab<Tag>> {
-  static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
-    auto dims = dataset.dimensions<Tag>();
-    for (const auto dim : fixedDimensions)
-      dims.erase(dim);
-    return dims;
   }
 };
 
@@ -352,11 +330,8 @@ public:
     friend class boost::iterator_core_access;
 
     bool equal(const iterator &other) const { return m_item == other.m_item; }
-
     void increment() { m_item.m_index.increment(); }
-
     const Item &dereference() const { return m_item; }
-
     void decrement() { m_item.setIndex(m_item.m_index.index() - 1); }
 
     void advance(int64_t delta) {
@@ -376,8 +351,7 @@ public:
 
   DatasetView(Dataset &dataset, const std::string &name,
               const std::set<Dimension> &fixedDimensions = {})
-      : m_fixedDimensions(fixedDimensions),
-        m_units{UnitHelper<Ts>::get(dataset, name)...},
+      : m_units{UnitHelper<Ts>::get(dataset, name)...},
         m_subdimensions{
             DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...},
         m_relevantDimensions(
@@ -385,8 +359,7 @@ public:
         m_columns(DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {
   }
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
-      : m_fixedDimensions(fixedDimensions),
-        m_units{UnitHelper<Ts>::get(dataset)...},
+      : m_units{UnitHelper<Ts>::get(dataset)...},
         m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
         m_relevantDimensions(
             relevantDimensions(m_subdimensions, fixedDimensions)),
@@ -394,8 +367,7 @@ public:
 
   DatasetView(const DatasetView &other,
               const std::tuple<ref_type_t<Ts>...> &data)
-      : m_fixedDimensions(other.m_fixedDimensions), m_units(other.m_units),
-        m_subdimensions(other.m_subdimensions),
+      : m_units(other.m_units), m_subdimensions(other.m_subdimensions),
         m_relevantDimensions(other.m_relevantDimensions), m_columns(data) {}
 
   gsl::index size() const { return m_relevantDimensions.volume(); }
@@ -409,7 +381,6 @@ public:
   }
 
 private:
-  const std::set<Dimension> m_fixedDimensions;
   const std::tuple<detail::unit_t<Ts>...> m_units;
   const std::vector<Dimensions> m_subdimensions;
   const Dimensions m_relevantDimensions;
