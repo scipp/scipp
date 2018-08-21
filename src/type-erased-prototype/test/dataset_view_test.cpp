@@ -176,6 +176,28 @@ TEST(DatasetView, multi_column_orthogonal_fail) {
                    "wrapper to iterate over bins defined by edges instead.");
 }
 
+TEST(DatasetView, nested_DatasetView) {
+  Dataset d;
+  d.insert<Data::Value>("name1",
+                        Dimensions({{Dimension::X, 2}, {Dimension::Y, 3}}),
+                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insert<Data::Int>("name2", {Dimension::X, 2}, {10l, 20l});
+  DatasetView<DatasetView<const Data::Value>, const Data::Int> view(
+      d, {Dimension::Y});
+  ASSERT_EQ(view.size(), 2);
+  double base = 0.0;
+  for (const auto &item : view) {
+    auto subview = item.get<DatasetView<const Data::Value>>();
+    ASSERT_EQ(subview.size(), 3);
+    auto it = subview.begin();
+    EXPECT_EQ(it++->get<Data::Value>(), base + 1.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 3.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 5.0);
+    base += 1.0;
+  }
+}
+
+#if 0
 TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
@@ -203,6 +225,7 @@ TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   // double.
   view.begin()->get<Data::Int>();
 }
+#endif
 
 TEST(DatasetView, single_column_edges) {
   Dataset d;

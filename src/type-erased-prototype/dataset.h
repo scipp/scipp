@@ -100,6 +100,15 @@ public:
     return m_variables[find(tag_id<Tag>, name)].dimensions();
   }
 
+  template <class Tag> const Unit &unit() const {
+    return m_variables[findUnique(tag_id<Tag>)].unit();
+  }
+
+  template <class Tag>
+  const Unit &unit(const std::string &name) const {
+    return m_variables[find(tag_id<Tag>, name)].unit();
+  }
+
   gsl::index find(const uint16_t id, const std::string &name) const {
     for (gsl::index i = 0; i < size(); ++i)
       if (m_variables[i].type() == id && m_variables[i].name() == name)

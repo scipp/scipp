@@ -32,6 +32,12 @@ template <class T> using is_slab_t = typename is_slab<T>::type;
 template <class T> struct is_bins : public std::false_type {};
 template <class T> struct is_bins<Bin<T>> : public std::true_type {};
 template <class T> using is_bins_t = typename is_bins<T>::type;
+
+template <class Tag> struct unit { using type = Unit; };
+template <class... Tags> struct unit<DatasetView<Tags...>> {
+  using type = std::tuple<typename unit<Tags>::type...>;
+};
+template <class... Tags> using unit_t = typename unit<Tags...>::type;
 }
 
 template <class Base, class T> struct GetterMixin {};
@@ -63,7 +69,35 @@ template <> struct ref_type<Coord::SpectrumPosition> {
   using type = std::pair<gsl::span<typename Coord::DetectorPosition::type>,
                          gsl::span<typename Coord::DetectorGrouping::type>>;
 };
+template <class... Tags> struct ref_type<DatasetView<Tags...>> {
+  using type = std::pair<DatasetView<Tags...>,
+                         std::tuple<typename ref_type<Tags>::type...>>;
+};
 template <class T> using ref_type_t = typename ref_type<T>::type;
+
+template <class Tag> struct UnitHelper {
+  static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
+
+  static Unit get(const Dataset &dataset, const std::string &name) {
+    return dataset.unit<Tag>(name);
+  }
+};
+
+template <class Tag> struct UnitHelper<Bin<Tag>> {
+  static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
+};
+
+template <> struct UnitHelper<Coord::SpectrumPosition> {
+  static Unit get(const Dataset &dataset) {
+    return dataset.unit<Coord::DetectorPosition>();
+  }
+};
+
+template <class... Tags> struct UnitHelper<DatasetView<Tags...>> {
+  static detail::unit_t<DatasetView<Tags...>> get(const Dataset &dataset) {
+    return std::make_tuple(dataset.unit<Tags>()...);
+  }
+};
 
 template <class Tag> struct DimensionHelper {
   static Dimensions get(const Dataset &dataset,
@@ -120,41 +154,85 @@ template <> struct DimensionHelper<Coord::SpectrumPosition> {
   }
 };
 
-template <class Tag> auto returnReference(Dataset &dataset) {
-  return dataset.get<detail::value_type_t<Tag>>();
-}
+template <class Tag, class... Tags>
+struct DimensionHelper<DatasetView<Tag, Tags...>> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    // TODO Support only 1D nested view with all dimensions identical? Assume
+    // this is the case for:
+    auto dims = dataset.dimensions<Tag>();
+    // TODO I think this is wrong: We need the fixed dimensions when computing
+    // offsets (but we do not want it when determining iteration?)
+    // for (const auto dim : fixedDimensions)
+    //  dims.erase(dim);
+    return dims;
+  }
+};
 
-template <class Tag>
-auto returnReference(Dataset &dataset, const std::string &name) {
-  return dataset.get<detail::value_type_t<Tag>>(name);
-}
+template <class Tag> struct DataHelper {
+  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
+    return dataset.get<detail::value_type_t<Tag>>();
+  }
+  static auto get(Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    return dataset.get<detail::value_type_t<Tag>>(name);
+  }
+};
 
-template <>
-inline auto returnReference<Coord::SpectrumPosition>(Dataset &dataset) {
-  return ref_type_t<Coord::SpectrumPosition>(
-      dataset.get<detail::value_type_t<Coord::DetectorPosition>>(),
-      dataset.get<detail::value_type_t<Coord::DetectorGrouping>>());
-}
+template <> struct DataHelper<Coord::SpectrumPosition> {
+  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
+    return ref_type_t<Coord::SpectrumPosition>(
+        dataset.get<detail::value_type_t<Coord::DetectorPosition>>(),
+        dataset.get<detail::value_type_t<Coord::DetectorGrouping>>());
+  }
+};
+
+template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
+  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
+    std::set<Dimension> fixedDimensions;
+    for (auto &item : iterationDimensions)
+      fixedDimensions.insert(item.first);
+    // For the nested case we create a DatasetView with the correct dimensions
+    // and store it. It is later copied and initialized with the correct offset
+    // in iterator::get.
+    return ref_type_t<DatasetView<Tags...>>{
+        DatasetView<Tags...>(dataset, fixedDimensions),
+        std::make_tuple(dataset.get<detail::value_type_t<Tags>>()...)};
+  }
+};
 
 /// Class with overloads used to handle "virtual" variables such as
 /// Coord::SpectrumPosition.
-template <class Tag>
-element_return_type_t<Tag> itemGetHelper(ref_type_t<Tag> &data,
-                                         gsl::index index) {
-  return data[index];
-}
+template <class Tag> struct ItemHelper {
+  static element_return_type_t<Tag> get(ref_type_t<Tag> &data,
+                                        gsl::index index) {
+    return data[index];
+  }
+};
 
-template <>
-inline element_return_type_t<Coord::SpectrumPosition>
-itemGetHelper<Coord::SpectrumPosition>(
-    ref_type_t<Coord::SpectrumPosition> &data, gsl::index index) {
-  if (data.second[index].empty())
-    throw std::runtime_error("Spectrum has no detectors, cannot get position.");
-  double position = 0.0;
-  for (const auto det : data.second[index])
-    position += data.first[det];
-  return position /= data.second[index].size();
-}
+template <> struct ItemHelper<Coord::SpectrumPosition> {
+  static element_return_type_t<Coord::SpectrumPosition>
+  get(ref_type_t<Coord::SpectrumPosition> &data, gsl::index index) {
+    if (data.second[index].empty())
+      throw std::runtime_error(
+          "Spectrum has no detectors, cannot get position.");
+    double position = 0.0;
+    for (const auto det : data.second[index])
+      position += data.first[det];
+    return position /= data.second[index].size();
+  }
+};
+
+template <class... Tags> struct ItemHelper<DatasetView<Tags...>> {
+  static element_return_type_t<DatasetView<Tags...>>
+  get(ref_type_t<DatasetView<Tags...>> &data, gsl::index index) {
+    // Add offset to each span passed to the nested DatasetView.
+    auto subdata = std::make_tuple(
+        std::get<detail::index<Tags, std::tuple<Tags...>>::value>(data.second)
+            .subspan(index)...);
+    return DatasetView<Tags...>(data.first, subdata);
+  }
+};
 
 // pass non-iterated dimensions in constructor?
 // Dataset::begin(Dimension::Tof)??
@@ -174,16 +252,23 @@ private:
   using maybe_const = std::tuple_element_t<tag_index<Tag>, std::tuple<Ts...>>;
 
   Dimensions
-  relevantDimensions(const std::vector<Dimensions> &variableDimensions) {
-    const auto &largest =
+  relevantDimensions(const std::vector<Dimensions> &variableDimensions,
+                     const std::set<Dimension> &fixedDimensions) {
+    auto largest =
         *std::max_element(variableDimensions.begin(), variableDimensions.end(),
                           [](const Dimensions &a, const Dimensions &b) {
                             return a.count() < b.count();
                           });
+    for (const auto dim : fixedDimensions)
+      if (largest.contains(dim))
+        largest.erase(dim);
 
     std::vector<bool> is_const{std::is_const<Ts>::value...};
     for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
-      const auto &dims = variableDimensions[i];
+      auto dims = variableDimensions[i];
+      for (const auto dim : fixedDimensions)
+        if (dims.contains(dim))
+          dims.erase(dim);
       // Largest must contain all other dimensions.
       if (!largest.contains(dims))
         throw std::runtime_error(
@@ -197,17 +282,6 @@ private:
                                  "different dimensions");
     }
     return largest;
-  }
-
-  template <class Tag> auto getData(Dataset &dataset) {
-    // TODO I think this is broken if multiple histogram tags are given.
-    // TODO I think this is always breaking sharing, even if we request const
-    // Data::Histogram.
-    return returnReference<Tag>(dataset);
-  }
-
-  template <class Tag> auto getData(Dataset &dataset, const std::string &name) {
-    return returnReference<Tag>(dataset, name);
   }
 
 public:
@@ -232,9 +306,9 @@ public:
       auto &col = std::get<variableIndex>(m_variables);
 
       // TODO Ensure that this is inlined and does not affect performance.
-      return itemGetHelper<
-          std::tuple_element_t<variableIndex, std::tuple<Ts...>>>(
-          col, m_index.get<variableIndex>());
+      return ItemHelper<std::tuple_element_t<
+          variableIndex, std::tuple<Ts...>>>::get(col,
+                                                  m_index.get<variableIndex>());
     }
 
     template <class Tag>
@@ -302,14 +376,29 @@ public:
 
   DatasetView(Dataset &dataset, const std::string &name,
               const std::set<Dimension> &fixedDimensions = {})
-      : m_subdimensions{DimensionHelper<Ts>::get(dataset, name,
-                                                 fixedDimensions)...},
-        m_relevantDimensions(relevantDimensions(m_subdimensions)),
-        m_columns(getData<Ts>(dataset, name)...) {}
+      : m_fixedDimensions(fixedDimensions),
+        m_units{UnitHelper<Ts>::get(dataset, name)...},
+        m_subdimensions{
+            DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...},
+        m_relevantDimensions(
+            relevantDimensions(m_subdimensions, fixedDimensions)),
+        m_columns(DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {
+  }
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
-      : m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
-        m_relevantDimensions(relevantDimensions(m_subdimensions)),
-        m_columns(getData<Ts>(dataset)...) {}
+      : m_fixedDimensions(fixedDimensions),
+        m_units{UnitHelper<Ts>::get(dataset)...},
+        m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
+        m_relevantDimensions(
+            relevantDimensions(m_subdimensions, fixedDimensions)),
+        m_columns(DataHelper<Ts>::get(dataset, m_relevantDimensions)...) {}
+
+  DatasetView(const DatasetView &other,
+              const std::tuple<ref_type_t<Ts>...> &data)
+      : m_fixedDimensions(other.m_fixedDimensions), m_units(other.m_units),
+        m_subdimensions(other.m_subdimensions),
+        m_relevantDimensions(other.m_relevantDimensions), m_columns(data) {}
+
+  gsl::index size() const { return m_relevantDimensions.volume(); }
 
   iterator begin() {
     return {0, m_relevantDimensions, m_subdimensions, m_columns};
@@ -320,7 +409,8 @@ public:
   }
 
 private:
-  const std::vector<Unit> m_units;
+  const std::set<Dimension> m_fixedDimensions;
+  const std::tuple<detail::unit_t<Ts>...> m_units;
   const std::vector<Dimensions> m_subdimensions;
   const Dimensions m_relevantDimensions;
   std::tuple<ref_type_t<Ts>...> m_columns;

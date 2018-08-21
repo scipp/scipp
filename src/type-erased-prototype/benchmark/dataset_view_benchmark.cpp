@@ -126,6 +126,7 @@ BENCHMARK(BM_DatasetView_mixed_dimension_addition_threaded)
     ->Ranges({{8, 8 << 14}, {1, 24}})
     ->UseRealTime();
 
+#if 0
 static void
 BM_DatasetView_multi_column_mixed_dimension_slab(benchmark::State &state) {
   Dataset d;
@@ -151,5 +152,6 @@ BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_slab)
     ->RangeMultiplier(2)
     ->Range(8, 8 << 10);
 ;
+#endif
 
 BENCHMARK_MAIN();

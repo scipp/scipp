@@ -113,6 +113,11 @@ template <class Tag> struct element_return_type {
                          typename Tag::type &>>;
 };
 
+template <class... Ts> class DatasetView;
+template <class... Tags> struct element_return_type<DatasetView<Tags...>> {
+  using type = DatasetView<Tags...>;
+};
+
 template <class Tag>
 using element_return_type_t = typename element_return_type<Tag>::type;
 
