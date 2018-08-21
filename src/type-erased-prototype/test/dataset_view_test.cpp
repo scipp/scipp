@@ -197,6 +197,116 @@ TEST(DatasetView, nested_DatasetView) {
   }
 }
 
+TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
+  Dataset d;
+  d.insert<Data::Value>(
+      "name1",
+      Dimensions({{Dimension::X, 4}, {Dimension::Y, 3}, {Dimension::Z, 2}}),
+      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
+       14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
+
+  DatasetView<DatasetView<const Data::Value>> viewX(
+      d, {Dimension::Y, Dimension::Z});
+  ASSERT_EQ(viewX.size(), 4);
+  double base = 0.0;
+  for (const auto &item : viewX) {
+    auto subview = item.get<DatasetView<const Data::Value>>();
+    ASSERT_EQ(subview.size(), 6);
+    auto it = subview.begin();
+    EXPECT_EQ(it++->get<Data::Value>(), base + 1.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 5.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 9.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 13.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 17.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 21.0);
+    base += 1.0;
+  }
+
+  DatasetView<DatasetView<const Data::Value>> viewY(
+      d, {Dimension::X, Dimension::Z});
+  ASSERT_EQ(viewY.size(), 3);
+  base = 0.0;
+  for (const auto &item : viewY) {
+    auto subview = item.get<DatasetView<const Data::Value>>();
+    ASSERT_EQ(subview.size(), 8);
+    auto it = subview.begin();
+    EXPECT_EQ(it++->get<Data::Value>(), base + 1.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 2.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 3.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 4.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 13.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 14.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 15.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 16.0);
+    base += 4.0;
+  }
+
+  DatasetView<DatasetView<const Data::Value>> viewZ(
+      d, {Dimension::X, Dimension::Y});
+  ASSERT_EQ(viewZ.size(), 2);
+  base = 0.0;
+  for (const auto &item : viewZ) {
+    auto subview = item.get<DatasetView<const Data::Value>>();
+    ASSERT_EQ(subview.size(), 12);
+    auto it = subview.begin();
+    EXPECT_EQ(it++->get<Data::Value>(), base + 1.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 2.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 3.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 4.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 5.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 6.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 7.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 8.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 9.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 10.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 11.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 12.0);
+    base += 12.0;
+  }
+
+  DatasetView<DatasetView<const Data::Value>> viewYZ(d, {Dimension::X});
+  ASSERT_EQ(viewYZ.size(), 6);
+  base = 0.0;
+  for (const auto &item : viewYZ) {
+    auto subview = item.get<DatasetView<const Data::Value>>();
+    ASSERT_EQ(subview.size(), 4);
+    auto it = subview.begin();
+    EXPECT_EQ(it++->get<Data::Value>(), base + 1.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 2.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 3.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 4.0);
+    base += 4.0;
+  }
+
+  DatasetView<DatasetView<const Data::Value>> viewXZ(d, {Dimension::Y});
+  ASSERT_EQ(viewXZ.size(), 8);
+  base = 0.0;
+  for (const auto &item : viewXZ) {
+    auto subview = item.get<DatasetView<const Data::Value>>();
+    ASSERT_EQ(subview.size(), 3);
+    auto it = subview.begin();
+    EXPECT_EQ(it++->get<Data::Value>(), base + 1.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 5.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 9.0);
+    base += 1.0;
+    // Jump to next Z
+    if (base == 4.0)
+      base += 8.0;
+  }
+
+  DatasetView<DatasetView<const Data::Value>> viewXY(d, {Dimension::Z});
+  ASSERT_EQ(viewXY.size(), 12);
+  base = 0.0;
+  for (const auto &item : viewXY) {
+    auto subview = item.get<DatasetView<const Data::Value>>();
+    ASSERT_EQ(subview.size(), 2);
+    auto it = subview.begin();
+    EXPECT_EQ(it++->get<Data::Value>(), base + 1.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 13.0);
+    base += 1.0;
+  }
+}
+
 #if 0
 TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   Dataset d;
