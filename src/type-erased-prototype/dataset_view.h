@@ -136,14 +136,29 @@ template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
     std::vector<Dimensions> variableDimensions{dataset.dimensions<Tags>()...};
+    // Remove fixed dimensions *before* finding largest --- outer iteration must
+    // cover all contained non-fixed dimensions.
+    for (auto &dims : variableDimensions)
+      for (const auto dim : fixedDimensions)
+        if (dims.contains(dim))
+          dims.erase(dim);
     auto largest =
         *std::max_element(variableDimensions.begin(), variableDimensions.end(),
                           [](const Dimensions &a, const Dimensions &b) {
                             return a.count() < b.count();
                           });
-    for (const auto dim : fixedDimensions)
-      if (largest.contains(dim))
-        largest.erase(dim);
+
+    // Check that Tags have correct constness if dimensions do not match.
+    // Usually this happens in `relevantDimensions` but for the nested case we
+    // are returning only the largest set of dimensions so we have to do the
+    // comparison here.
+    std::vector<bool> is_const{std::is_const<Tags>::value...};
+    for (gsl::index i = 0; i < sizeof...(Tags); ++i) {
+      auto dims = variableDimensions[i];
+      if (!((largest == dims) || is_const[i]))
+        throw std::runtime_error("Variables requested for iteration have "
+                                 "different dimensions");
+    }
     return largest;
   }
 };

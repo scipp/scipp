@@ -314,6 +314,17 @@ TEST(DatasetView, nested_DatasetView_constant_variable) {
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   d.insert<Coord::X>({Dimension::X, 4}, {10.0, 20.0, 30.0, 40.0});
 
+  // Coord::X has fewer dimensions, throws if not const when not nested...
+  EXPECT_THROW_MSG(
+      (DatasetView<const Data::Value, Coord::X>(d)), std::runtime_error,
+      "Variables requested for iteration have different dimensions");
+  // ... and also when nested.
+  EXPECT_THROW_MSG(
+      (DatasetView<DatasetView<const Data::Value, Coord::X>>(d,
+                                                             {Dimension::X})),
+      std::runtime_error,
+      "Variables requested for iteration have different dimensions");
+
   DatasetView<DatasetView<const Data::Value, const Coord::X>> view(
       d, {Dimension::X});
   ASSERT_EQ(view.size(), 2);
