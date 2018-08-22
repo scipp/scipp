@@ -350,10 +350,9 @@ public:
   class iterator;
   class Item : public GetterMixin<Item, Ts>... {
   public:
-    Item(const gsl::index index, const Dimensions &dimensions,
-         const std::vector<Dimensions> &subdimensions,
+    Item(const gsl::index index, const MultiIndex &multiIndex,
          std::tuple<ref_type_t<Ts>...> &variables)
-        : m_index(dimensions, subdimensions), m_variables(variables) {
+        : m_index(multiIndex), m_variables(variables) {
       setIndex(index);
     }
 
@@ -405,10 +404,9 @@ public:
       : public boost::iterator_facade<iterator, const Item,
                                       boost::random_access_traversal_tag> {
   public:
-    iterator(const gsl::index index, const Dimensions &dimensions,
-             const std::vector<Dimensions> &subdimensions,
+    iterator(const gsl::index index, const MultiIndex &multiIndex,
              std::tuple<ref_type_t<Ts>...> &variables)
-        : m_item(index, dimensions, subdimensions, variables) {}
+        : m_item(index, multiIndex, variables) {}
 
   private:
     friend class boost::iterator_core_access;
@@ -440,6 +438,7 @@ public:
             DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...},
         m_relevantDimensions(
             relevantDimensions(dataset, m_subdimensions, fixedDimensions)),
+        m_index(m_relevantDimensions, m_subdimensions),
         m_variables(
             DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
@@ -447,27 +446,29 @@ public:
         m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
         m_relevantDimensions(
             relevantDimensions(dataset, m_subdimensions, fixedDimensions)),
+        m_index(m_relevantDimensions, m_subdimensions),
         m_variables(DataHelper<Ts>::get(dataset, m_relevantDimensions)...) {}
 
   DatasetView(const DatasetView &other,
               const std::tuple<ref_type_t<Ts>...> &data)
       : m_units(other.m_units), m_subdimensions(other.m_subdimensions),
-        m_relevantDimensions(other.m_relevantDimensions), m_variables(data) {}
+        m_relevantDimensions(other.m_relevantDimensions),
+        m_index(other.m_index), m_variables(data) {}
 
   gsl::index size() const { return m_relevantDimensions.volume(); }
 
-  iterator begin() {
-    return {0, m_relevantDimensions, m_subdimensions, m_variables};
-  }
+  iterator begin() { return {0, m_index, m_variables}; }
   iterator end() {
-    return {m_relevantDimensions.volume(), m_relevantDimensions,
-            m_subdimensions, m_variables};
+    return {m_relevantDimensions.volume(), m_index, m_variables};
   }
 
 private:
   const std::tuple<detail::unit_t<Ts>...> m_units;
-  const std::vector<Dimensions> m_subdimensions;
+  // TODO Do not need m_subdimensions and m_relevantDimensions after init, but
+  // the init order makes refactoring nontrivial.
+  std::vector<Dimensions> m_subdimensions;
   const Dimensions m_relevantDimensions;
+  const MultiIndex m_index;
   std::tuple<ref_type_t<Ts>...> m_variables;
 };
 
