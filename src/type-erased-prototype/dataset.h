@@ -15,6 +15,9 @@ public:
     if (variable.isCoord() && count(variable.type()))
       throw std::runtime_error("Attempt to insert duplicate coordinate.");
     if (!variable.isCoord()) {
+      if (variable.name().empty())
+        throw std::runtime_error(
+            "Non-coordinate variable cannot have an empty name.");
       for (const auto &item : m_variables)
         if (item.type() == variable.type() && item.name() == variable.name())
           throw std::runtime_error(

@@ -554,8 +554,7 @@ TEST(DatasetView, edges_are_not_inner_dimension) {
 
 TEST(DatasetView, named_getter) {
   Dataset d;
-  auto tof = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  d.insert(tof);
+  d.insert<Data::Tof>("name", Dimensions(Dimension::Tof, 3), 3);
   auto var = d.get<Data::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;

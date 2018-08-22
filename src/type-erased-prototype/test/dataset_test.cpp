@@ -29,6 +29,13 @@ TEST(Dataset, insert_data) {
   ASSERT_EQ(d.size(), 2);
 }
 
+TEST(Dataset, insert_data_empty_name_fail) {
+  Dataset d;
+  EXPECT_THROW_MSG(d.insert<Data::Value>("", Dimensions{}, {1.1}),
+                   std::runtime_error,
+                   "Non-coordinate variable cannot have an empty name.");
+}
+
 TEST(Dataset, insert_variables_with_dimensions) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
