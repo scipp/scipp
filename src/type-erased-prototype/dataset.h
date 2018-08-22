@@ -11,21 +11,7 @@
 
 class Dataset {
 public:
-  void insert(Variable variable) {
-    if (variable.isCoord() && count(variable.type()))
-      throw std::runtime_error("Attempt to insert duplicate coordinate.");
-    if (!variable.isCoord()) {
-      for (const auto &item : m_variables)
-        if (item.type() == variable.type() && item.name() == variable.name())
-          throw std::runtime_error(
-              "Attempt to insert data of same type with duplicate name.");
-    }
-    // TODO special handling for special variables types like
-    // Data::Histogram (either prevent adding, or extract into underlying
-    // variables).
-    mergeDimensions(variable.dimensions());
-    m_variables.push_back(std::move(variable));
-  }
+  void insert(Variable variable);
 
   template <class Tag, class... Args>
   void insert(Dimensions dimensions, Args &&... args) {
@@ -61,14 +47,7 @@ public:
   }
 
   // Only need this for coordinates... insertEdgeCoord?
-  void insertAsEdge(const Dimension dimension, Variable variable) {
-    // Edges are by 1 longer than other data, so dimension size check and
-    // merging uses modified dimensions.
-    auto dims = variable.dimensions();
-    dims.resize(dimension, dims.size(dimension) - 1);
-    mergeDimensions(dims);
-    m_variables.push_back(std::move(variable));
-  }
+  void insertAsEdge(const Dimension dimension, Variable variable);
 
   gsl::index size() const { return m_variables.size(); }
   const Variable &operator[](gsl::index i) const { return m_variables[i]; }
@@ -104,65 +83,18 @@ public:
     return m_variables[findUnique(tag_id<Tag>)].unit();
   }
 
-  template <class Tag>
-  const Unit &unit(const std::string &name) const {
+  template <class Tag> const Unit &unit(const std::string &name) const {
     return m_variables[find(tag_id<Tag>, name)].unit();
   }
 
-  gsl::index find(const uint16_t id, const std::string &name) const {
-    for (gsl::index i = 0; i < size(); ++i)
-      if (m_variables[i].type() == id && m_variables[i].name() == name)
-        return i;
-    throw std::runtime_error("Dataset does not contain such a variable.");
-  }
+  gsl::index find(const uint16_t id, const std::string &name) const;
 
   Dataset &operator+=(const Dataset &other);
 
 private:
-  gsl::index count(const uint16_t id) const {
-    gsl::index n = 0;
-    for (auto &item : m_variables)
-      if (item.type() == id)
-        ++n;
-    return n;
-  }
-
-  gsl::index findUnique(const uint16_t id) const {
-    gsl::index index = -1;
-    for (gsl::index i = 0; i < size(); ++i) {
-      if (m_variables[i].type() == id) {
-        if (index != -1)
-          throw std::runtime_error(
-              "Given variable tag is not unique. Must provide a name.");
-        index = i;
-      }
-    }
-    if (index == -1)
-      throw std::runtime_error("Dataset does not contain such a variable.");
-    return index;
-  }
-
-  void mergeDimensions(const auto &dims) {
-    gsl::index j = 0;
-    gsl::index found = 0;
-    for (gsl::index i = 0; i < dims.count(); ++i) {
-      const auto dim = dims.label(i);
-      const auto size = dims.size(i);
-      bool found = false;
-      for (; j < m_dimensions.count(); ++j) {
-        if (m_dimensions.label(j) == dim) {
-          if (m_dimensions.size(j) != size) // TODO compare ragged
-            throw std::runtime_error(
-                "Cannot insert variable into Dataset: Dimensions do not match");
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        m_dimensions.add(dim, size);
-      }
-    }
-  }
+  gsl::index count(const uint16_t id) const;
+  gsl::index findUnique(const uint16_t id) const;
+  void mergeDimensions(const auto &dims);
 
   Dimensions m_dimensions;
   std::vector<Variable> m_variables;
