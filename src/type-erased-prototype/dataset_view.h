@@ -54,7 +54,10 @@ template <class Tag> struct ref_type {
       typename detail::value_type_t<Tag>::type>>;
 };
 template <class Tag> struct ref_type<Bin<Tag>> {
-  using type = gsl::span<const typename detail::value_type_t<Bin<Tag>>::type>;
+  // First is the offset to the next edge.
+  using type =
+      std::pair<gsl::index,
+                gsl::span<const typename detail::value_type_t<Bin<Tag>>::type>>;
 };
 template <> struct ref_type<Coord::SpectrumPosition> {
   using type = std::pair<gsl::span<typename Coord::DetectorPosition::type>,
@@ -109,10 +112,7 @@ template <class Tag> struct DimensionHelper {
 template <class Tag> struct DimensionHelper<Bin<Tag>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
-    auto dims = dataset.dimensions<Tag>();
-    // TODO make this work for multiple dimensions and ragged dimensions.
-    dims.resize(dims.label(0), dims.size(0) - 1);
-    return dims;
+    return dataset.dimensions<Tag>();
   }
 };
 
@@ -174,6 +174,22 @@ template <class Tag> struct DataHelper {
   static auto get(Dataset &dataset, const Dimensions &iterationDimensions,
                   const std::string &name) {
     return dataset.get<detail::value_type_t<Tag>>(name);
+  }
+};
+
+template <class Tag> struct DataHelper<Bin<Tag>> {
+  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
+    // Compute offset to next edge.
+    gsl::index offset = 1;
+    const auto dims = dataset.dimensions<Tag>();
+    for (const auto &dim : dims) {
+      if (dim.second != iterationDimensions.size(dim.first))
+        break;
+      offset *= dim.second;
+    }
+
+    return ref_type_t<Bin<Tag>>{offset,
+                                dataset.get<detail::value_type_t<Tag>>()};
   }
 };
 
@@ -257,9 +273,25 @@ private:
   template <class Tag>
   using maybe_const = std::tuple_element_t<tag_index<Tag>, std::tuple<Ts...>>;
 
-  Dimensions
-  relevantDimensions(const std::vector<Dimensions> &variableDimensions,
-                     const std::set<Dimension> &fixedDimensions) {
+  Dimensions relevantDimensions(const Dataset &dataset,
+                                std::vector<Dimensions> variableDimensions,
+                                const std::set<Dimension> &fixedDimensions) {
+    // The dimensions for the variables may be longer by one if the variable is
+    // an edge variable. For iteration dimensions we require the dimensions
+    // without the extended length. The original variableDimensions is kept
+    // (note pass by value) since the extended length is required to compute the
+    // correct offset into the variable.
+    std::vector<bool> is_bins{detail::is_bins_t<Ts>::value...};
+    for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
+      auto &dims = variableDimensions[i];
+      if (is_bins[i]) {
+        const auto &actual = dataset.dimensions();
+        for (auto &dim : dims)
+          dims.resize(dim.first, actual.size(dim.first));
+        // dims.resize(dims.label(0), dims.size(0) - 1);
+      }
+    }
+
     auto largest =
         *std::max_element(variableDimensions.begin(), variableDimensions.end(),
                           [](const Dimensions &a, const Dimensions &b) {
@@ -324,10 +356,10 @@ public:
                                                 "DatasetView::iterator.");
       constexpr auto variableIndex = tag_index<Tag>;
       auto &col = std::get<variableIndex>(m_variables);
-      // TODO This is wrong if bins are not the innermost index. Ensure that
-      // that is always the case at time of creation?
-      return DataBin(col[m_index.get<variableIndex>()],
-                     col[m_index.get<variableIndex>() + 1]);
+      auto offset = col.first;
+      auto data = col.second;
+      return DataBin(data[m_index.get<variableIndex>()],
+                     data[m_index.get<variableIndex>() + offset]);
     }
 
   private:
@@ -383,14 +415,14 @@ public:
         m_subdimensions{
             DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...},
         m_relevantDimensions(
-            relevantDimensions(m_subdimensions, fixedDimensions)),
+            relevantDimensions(dataset, m_subdimensions, fixedDimensions)),
         m_variables(
             DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset)...},
         m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
         m_relevantDimensions(
-            relevantDimensions(m_subdimensions, fixedDimensions)),
+            relevantDimensions(dataset, m_subdimensions, fixedDimensions)),
         m_variables(DataHelper<Ts>::get(dataset, m_relevantDimensions)...) {}
 
   DatasetView(const DatasetView &other,

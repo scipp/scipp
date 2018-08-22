@@ -397,8 +397,8 @@ TEST(DatasetView, nested_DatasetView_copy_on_write) {
 
 TEST(DatasetView, histogram_using_nested_DatasetView) {
   Dataset d;
-  //auto tof = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  //d.insertAsEdge(Dimension::Tof, tof);
+  // auto tof = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  // d.insertAsEdge(Dimension::Tof, tof);
   d.insert<Coord::Tof>({Dimension::Tof, 2}, 2);
   Dimensions dims;
   dims.add(Dimension::Tof, 2);
@@ -494,6 +494,46 @@ TEST(DatasetView, multi_column_edges) {
   EXPECT_EQ(bin.width(), 1.0);
   EXPECT_EQ(bin.left(), 0.2);
   EXPECT_EQ(bin.right(), 1.2);
+}
+
+TEST(DatasetView, multi_dimensional_edges) {
+  Dataset d;
+  auto edges =
+      makeVariable<Coord::X>(Dimensions({{Dimension::X, 3}, {Dimension::Y, 2}}),
+                             {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insertAsEdge(Dimension::X, edges);
+
+  DatasetView<Bin<Coord::X>> view(d);
+  ASSERT_EQ(view.size(), 4);
+  auto it = view.begin();
+  EXPECT_EQ(it++->get<Bin<Coord::X>>().left(), 1.0);
+  EXPECT_EQ(it++->get<Bin<Coord::X>>().left(), 2.0);
+  EXPECT_EQ(it++->get<Bin<Coord::X>>().left(), 4.0);
+  EXPECT_EQ(it++->get<Bin<Coord::X>>().left(), 5.0);
+  it -= 4;
+  EXPECT_EQ(it++->get<Bin<Coord::X>>().right(), 2.0);
+  EXPECT_EQ(it++->get<Bin<Coord::X>>().right(), 3.0);
+  EXPECT_EQ(it++->get<Bin<Coord::X>>().right(), 5.0);
+  EXPECT_EQ(it++->get<Bin<Coord::X>>().right(), 6.0);
+}
+
+TEST(DatasetView, edges_are_not_inner_dimension) {
+  Dataset d;
+  auto edges =
+      makeVariable<Coord::Y>(Dimensions({{Dimension::X, 3}, {Dimension::Y, 2}}),
+                             {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insertAsEdge(Dimension::Y, edges);
+
+  DatasetView<Bin<Coord::Y>> view(d);
+  ASSERT_EQ(view.size(), 3);
+  auto it = view.begin();
+  EXPECT_EQ(it++->get<Bin<Coord::Y>>().left(), 1.0);
+  EXPECT_EQ(it++->get<Bin<Coord::Y>>().left(), 2.0);
+  EXPECT_EQ(it++->get<Bin<Coord::Y>>().left(), 3.0);
+  it -= 3;
+  EXPECT_EQ(it++->get<Bin<Coord::Y>>().right(), 4.0);
+  EXPECT_EQ(it++->get<Bin<Coord::Y>>().right(), 5.0);
+  EXPECT_EQ(it++->get<Bin<Coord::Y>>().right(), 6.0);
 }
 
 TEST(DatasetView, named_getter) {

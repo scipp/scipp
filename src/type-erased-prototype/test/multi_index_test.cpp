@@ -13,6 +13,9 @@ public:
     xy.add(Dimension::X, xlen);
     xy.add(Dimension::Y, ylen);
 
+    xy_x_edges.add(Dimension::X, xlen + 1);
+    xy_x_edges.add(Dimension::Y, ylen);
+
     yx.add(Dimension::Y, ylen);
     yx.add(Dimension::X, xlen);
 
@@ -23,6 +26,7 @@ public:
 
 protected:
   Dimensions xy;
+  Dimensions xy_x_edges;
   Dimensions yx;
   Dimensions x;
   Dimensions y;
@@ -129,6 +133,43 @@ TEST_F(MultiIndex2DTest, fixed_dimensions_transposed) {
   EXPECT_EQ(i.get<0>(), 5);
   i.increment();
   EXPECT_EQ(i.get<0>(), 10);
+}
+
+TEST_F(MultiIndex2DTest, edges) {
+  MultiIndex i(xy, {xy_x_edges});
+  EXPECT_EQ(i.get<0>(), 0);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 1);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 2);
+
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 4);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 5);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 6);
+
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 8);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 9);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 10);
+
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 12);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 13);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 14);
+
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 16);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 17);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 18);
 }
 
 class MultiIndex3DTest : public ::testing::Test {
