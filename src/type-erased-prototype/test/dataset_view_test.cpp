@@ -397,23 +397,39 @@ TEST(DatasetView, nested_DatasetView_copy_on_write) {
 
 TEST(DatasetView, histogram_using_nested_DatasetView) {
   Dataset d;
-  // auto tof = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  // d.insertAsEdge(Dimension::Tof, tof);
-  d.insert<Coord::Tof>({Dimension::Tof, 2}, 2);
+  // Edges do not have Dimension::Spectrum, "shared" by all histograms.
+  auto tof = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3),
+                                      {10.0, 20.0, 30.0});
+  d.insertAsEdge(Dimension::Tof, tof);
   Dimensions dims;
   dims.add(Dimension::Tof, 2);
   dims.add(Dimension::Spectrum, 4);
   d.insert<Data::Value>("sample", dims,
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   d.insert<Data::Error>("sample", dims, 8);
+  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 4}, {1, 2, 3, 4});
 
-  // TODO I think there is a bug in the offset computation for nested bins, or
-  // bins in general? Use "point data" for now in this test.
-  using Histogram = DatasetView<const Coord::Tof, Data::Value, Data::Error>;
-  DatasetView<Histogram> view(d, {Dimension::Tof});
+  using HistogramView = DatasetView<Bin<Coord::Tof>, Data::Value, Data::Error>;
+  DatasetView<HistogramView, Coord::SpectrumNumber> view(d, {Dimension::Tof});
+
+  EXPECT_EQ(view.size(), 4);
+  int32_t specNum = 1;
+  double value = 1.0;
+  for(const auto &item : view) {
+    EXPECT_EQ(item.get<Coord::SpectrumNumber>(), specNum++);
+    auto histview = item.get<HistogramView>();
+    EXPECT_EQ(histview.size(), 2);
+    double edge = 10.0;
+    for(const auto &bin : histview) {
+      EXPECT_EQ(bin.left(), edge);
+      EXPECT_EQ(bin.right(), edge + 10.0);
+      edge += 10.0;
+      EXPECT_EQ(bin.value(), value++);
+    }
+  }
 
   auto it = view.begin();
-  auto histogram = it->get<Histogram>();
+  auto histogram = it->get<HistogramView>();
   EXPECT_EQ(histogram.size(), 2);
   auto bin = histogram.begin();
   EXPECT_EQ(bin->value(), 1.0);
@@ -422,7 +438,7 @@ TEST(DatasetView, histogram_using_nested_DatasetView) {
   bin->value() += 0.2;
   EXPECT_EQ(d.get<Data::Value>()[1], 2.2);
   it++;
-  EXPECT_EQ(it->get<Histogram>().begin()->value(), 3.0);
+  EXPECT_EQ(it->get<HistogramView>().begin()->value(), 3.0);
 }
 
 TEST(DatasetView, single_column_edges) {

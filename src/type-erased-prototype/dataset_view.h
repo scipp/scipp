@@ -48,6 +48,16 @@ template <class Base> struct GetterMixin<Base, Data::Histogram> {
   }
 };
 
+template <class Base, class T> struct GetterMixin<Base, Bin<T>> {
+  // Lift the getters of Bin into the iterator.
+  double left() const {
+    return static_cast<const Base *>(this)->template get<Bin<T>>().left();
+  }
+  double right() const {
+    return static_cast<const Base *>(this)->template get<Bin<T>>().right();
+  }
+};
+
 template <class Tag> struct ref_type {
   using type = gsl::span<std::conditional_t<
       std::is_const<Tag>::value, const typename detail::value_type_t<Tag>::type,
@@ -146,6 +156,7 @@ template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
       for (const auto dim : fixedDimensions)
         if (dims.contains(dim))
           dims.erase(dim);
+
     auto largest =
         *std::max_element(variableDimensions.begin(), variableDimensions.end(),
                           [](const Dimensions &a, const Dimensions &b) {
@@ -156,7 +167,8 @@ template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
     // Usually this happens in `relevantDimensions` but for the nested case we
     // are returning only the largest set of dimensions so we have to do the
     // comparison here.
-    std::vector<bool> is_const{std::is_const<Tags>::value...};
+    std::vector<bool> is_const{
+        std::is_const<detail::value_type_t<Tags>>::value...};
     for (gsl::index i = 0; i < sizeof...(Tags); ++i) {
       auto dims = variableDimensions[i];
       if (!((largest == dims) || is_const[i]))
@@ -181,9 +193,10 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
   static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
     // Compute offset to next edge.
     gsl::index offset = 1;
-    const auto dims = dataset.dimensions<Tag>();
+    const auto &dims = dataset.dimensions<Tag>();
+    const auto &actual = dataset.dimensions();
     for (const auto &dim : dims) {
-      if (dim.second != iterationDimensions.size(dim.first))
+      if (dim.second != actual.size(dim.first))
         break;
       offset *= dim.second;
     }
@@ -213,7 +226,19 @@ template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
         MultiIndex(iterationDimensions,
                    {DimensionHelper<Tags>::get(dataset, {})...}),
         DatasetView<Tags...>(dataset, fixedDimensions),
-        std::make_tuple(dataset.get<detail::value_type_t<Tags>>()...)};
+        std::make_tuple(DataHelper<Tags>::get(dataset, {})...)};
+  }
+};
+
+template <class Tag> struct SubdataHelper {
+  static auto get(const ref_type_t<Tag> &data, const gsl::index offset) {
+    return data.subspan(offset);
+  }
+};
+
+template <class Tag> struct SubdataHelper<Bin<Tag>> {
+  static auto get(const ref_type_t<Bin<Tag>> &data, const gsl::index offset) {
+    return ref_type_t<Bin<Tag>>{data.first, data.second.subspan(offset)};
   }
 };
 
@@ -249,9 +274,9 @@ template <class... Tags> struct ItemHelper<DatasetView<Tags...>> {
     // Add offset to each span passed to the nested DatasetView.
     MultiIndex nestedIndex = std::get<0>(data);
     nestedIndex.setIndex(index);
-    auto subdata =
-        std::make_tuple(std::get<subindex<Tags>>(std::get<2>(data))
-                            .subspan(nestedIndex.get<subindex<Tags>>())...);
+    auto subdata = std::make_tuple(
+        SubdataHelper<Tags>::get(std::get<subindex<Tags>>(std::get<2>(data)),
+                                 nestedIndex.get<subindex<Tags>>())...);
     return DatasetView<Tags...>(std::get<1>(data), subdata);
   }
 };
@@ -288,7 +313,6 @@ private:
         const auto &actual = dataset.dimensions();
         for (auto &dim : dims)
           dims.resize(dim.first, actual.size(dim.first));
-        // dims.resize(dims.label(0), dims.size(0) - 1);
       }
     }
 

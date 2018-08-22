@@ -524,3 +524,4 @@ Other:
 Problems:
 
 - How do distinguish (or avoid distinguising const and mutable versions of `DatasetIndex` and `Histogram`?
+- Can we avoid horrible template error messages in client code?
