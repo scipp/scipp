@@ -58,8 +58,8 @@ template <> struct ref_type<Coord::SpectrumPosition> {
                          gsl::span<typename Coord::DetectorGrouping::type>>;
 };
 template <class... Tags> struct ref_type<DatasetView<Tags...>> {
-  using type = std::pair<DatasetView<Tags...>,
-                         std::tuple<typename ref_type<Tags>::type...>>;
+  using type = std::tuple<MultiIndex, DatasetView<Tags...>,
+                          std::tuple<typename ref_type<Tags>::type...>>;
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
 
@@ -132,18 +132,19 @@ template <> struct DimensionHelper<Coord::SpectrumPosition> {
   }
 };
 
-template <class Tag, class... Tags>
-struct DimensionHelper<DatasetView<Tag, Tags...>> {
+template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
-    // TODO Support only 1D nested view with all dimensions identical? Assume
-    // this is the case for:
-    auto dims = dataset.dimensions<Tag>();
-    // TODO I think this is wrong: We need the fixed dimensions when computing
-    // offsets (but we do not want it when determining iteration?)
-    // for (const auto dim : fixedDimensions)
-    //  dims.erase(dim);
-    return dims;
+    std::vector<Dimensions> variableDimensions{dataset.dimensions<Tags>()...};
+    auto largest =
+        *std::max_element(variableDimensions.begin(), variableDimensions.end(),
+                          [](const Dimensions &a, const Dimensions &b) {
+                            return a.count() < b.count();
+                          });
+    for (const auto dim : fixedDimensions)
+      if (largest.contains(dim))
+        largest.erase(dim);
+    return largest;
   }
 };
 
@@ -174,6 +175,8 @@ template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
     // and store it. It is later copied and initialized with the correct offset
     // in iterator::get.
     return ref_type_t<DatasetView<Tags...>>{
+        MultiIndex(iterationDimensions,
+                   {DimensionHelper<Tags>::get(dataset, {})...}),
         DatasetView<Tags...>(dataset, fixedDimensions),
         std::make_tuple(dataset.get<detail::value_type_t<Tags>>()...)};
   }
@@ -202,13 +205,19 @@ template <> struct ItemHelper<Coord::SpectrumPosition> {
 };
 
 template <class... Tags> struct ItemHelper<DatasetView<Tags...>> {
+  template <class Tag>
+  static constexpr auto subindex =
+      detail::index<Tag, std::tuple<Tags...>>::value;
+
   static element_return_type_t<DatasetView<Tags...>>
   get(ref_type_t<DatasetView<Tags...>> &data, gsl::index index) {
     // Add offset to each span passed to the nested DatasetView.
-    auto subdata = std::make_tuple(
-        std::get<detail::index<Tags, std::tuple<Tags...>>::value>(data.second)
-            .subspan(index)...);
-    return DatasetView<Tags...>(data.first, subdata);
+    MultiIndex nestedIndex = std::get<0>(data);
+    nestedIndex.setIndex(index);
+    auto subdata =
+        std::make_tuple(std::get<subindex<Tags>>(std::get<2>(data))
+                            .subspan(nestedIndex.get<subindex<Tags>>())...);
+    return DatasetView<Tags...>(std::get<1>(data), subdata);
   }
 };
 

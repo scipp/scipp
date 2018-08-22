@@ -113,6 +113,24 @@ TEST_F(MultiIndex2DTest, increment_0D) {
   EXPECT_EQ(i.get<0>(), 0);
 }
 
+TEST_F(MultiIndex2DTest, fixed_dimensions) {
+  MultiIndex i(x, {xy});
+  EXPECT_EQ(i.get<0>(), 0);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 1);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 2);
+}
+
+TEST_F(MultiIndex2DTest, fixed_dimensions_transposed) {
+  MultiIndex i(x, {yx});
+  EXPECT_EQ(i.get<0>(), 0);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 5);
+  i.increment();
+  EXPECT_EQ(i.get<0>(), 10);
+}
+
 class MultiIndex3DTest : public ::testing::Test {
 public:
   MultiIndex3DTest() {

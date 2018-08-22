@@ -307,6 +307,30 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
   }
 }
 
+TEST(DatasetView, nested_DatasetView_constant_variable) {
+  Dataset d;
+  d.insert<Data::Value>("name1",
+                        Dimensions({{Dimension::X, 4}, {Dimension::Z, 2}}),
+                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+  d.insert<Coord::X>({Dimension::X, 4}, {10.0, 20.0, 30.0, 40.0});
+
+  DatasetView<DatasetView<const Data::Value, const Coord::X>> view(
+      d, {Dimension::X});
+  ASSERT_EQ(view.size(), 2);
+  double value = 0.0;
+  for (const auto &item : view) {
+    auto subview = item.get<DatasetView<const Data::Value, const Coord::X>>();
+    ASSERT_EQ(subview.size(), 4);
+    double x = 0.0;
+    for (const auto &subitem : subview) {
+      x += 10.0;
+      value += 1.0;
+      EXPECT_EQ(subitem.get<Coord::X>(), x);
+      EXPECT_EQ(subitem.get<Data::Value>(), value);
+    }
+  }
+}
+
 #if 0
 TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   Dataset d;
