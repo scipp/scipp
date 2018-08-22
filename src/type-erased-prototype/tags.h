@@ -113,6 +113,10 @@ template <class Tag> struct element_return_type {
                          typename Tag::type &>>;
 };
 
+template <class Tags> struct element_return_type<Bin<Tags>> {
+  using type = DataBin;
+};
+
 template <class... Ts> class DatasetView;
 template <class... Tags> struct element_return_type<DatasetView<Tags...>> {
   using type = DatasetView<Tags...>;

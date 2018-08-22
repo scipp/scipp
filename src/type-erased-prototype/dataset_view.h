@@ -255,6 +255,14 @@ template <> struct ItemHelper<Coord::SpectrumPosition> {
   }
 };
 
+template <class Tag> struct ItemHelper<Bin<Tag>> {
+  static element_return_type_t<Bin<Tag>> get(ref_type_t<Bin<Tag>> &data,
+                                             gsl::index index) {
+    auto offset = data.first;
+    return DataBin(data.second[index], data.second[index + offset]);
+  }
+};
+
 template <class... Tags> struct ItemHelper<DatasetView<Tags...>> {
   template <class Tag>
   static constexpr auto subindex =
@@ -344,33 +352,15 @@ public:
       setIndex(index);
     }
 
-    template <class Tag>
-    element_return_type_t<maybe_const<Tag>>
-    get(std::enable_if_t<!detail::is_bins<Tag>::value> * = nullptr) const {
+    template <class Tag> element_return_type_t<maybe_const<Tag>> get() const {
       // Should we allow passing const?
       static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
                                                 "for tags when accessing "
                                                 "DatasetView::iterator.");
       constexpr auto variableIndex = tag_index<Tag>;
-      auto &col = std::get<variableIndex>(m_variables);
-
       // TODO Ensure that this is inlined and does not affect performance.
-      return ItemHelper<std::tuple_element_t<
-          variableIndex, std::tuple<Ts...>>>::get(col,
-                                                  m_index.get<variableIndex>());
-    }
-
-    template <class Tag>
-    auto get(std::enable_if_t<detail::is_bins<Tag>::value> * = nullptr) const {
-      static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
-                                                "for tags when accessing "
-                                                "DatasetView::iterator.");
-      constexpr auto variableIndex = tag_index<Tag>;
-      auto &col = std::get<variableIndex>(m_variables);
-      auto offset = col.first;
-      auto data = col.second;
-      return DataBin(data[m_index.get<variableIndex>()],
-                     data[m_index.get<variableIndex>() + offset]);
+      return ItemHelper<maybe_const<Tag>>::get(
+          std::get<variableIndex>(m_variables), m_index.get<variableIndex>());
     }
 
   private:
