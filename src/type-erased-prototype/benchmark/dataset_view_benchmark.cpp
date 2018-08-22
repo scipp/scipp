@@ -28,7 +28,7 @@ BENCHMARK(BM_index_math)->UseRealTime();
 static void BM_index_math_threaded(benchmark::State &state) {
   std::array<gsl::index, 3> size{123, 1234, 1245};
   gsl::index volume = size[0] * size[1] * size[2];
-  // Warmup
+// Warmup
 #pragma omp parallel for num_threads(state.range(0))
   for (int i = 0; i < volume; ++i)
     benchmark::DoNotOptimize(getIndex(i, size));
@@ -73,8 +73,7 @@ BENCHMARK(BM_DatasetView_multi_column_mixed_dimension)
     ->RangeMultiplier(2)
     ->Range(8, 8 << 10);
 
-static void
-BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
+static void BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dimension::SpectrumNumber, state.range(0));
@@ -126,32 +125,31 @@ BENCHMARK(BM_DatasetView_mixed_dimension_addition_threaded)
     ->Ranges({{8, 8 << 14}, {1, 24}})
     ->UseRealTime();
 
-#if 0
 static void
-BM_DatasetView_multi_column_mixed_dimension_slab(benchmark::State &state) {
+BM_DatasetView_multi_column_mixed_dimension_nested(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dimension::SpectrumNumber, state.range(0));
   d.insert<Data::Int>("specnums", dims, state.range(0));
   dims.add(Dimension::Tof, 1000);
   d.insert<Data::Value>("histograms", dims, state.range(0) * 1000);
-  DatasetView<Slab<Data::Value>, Data::Int> it(d, {Dimension::Tof});
+  DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dimension::Tof});
   gsl::index elements = state.range(0);
 
   for (auto _ : state) {
-    DatasetView<Slab<Data::Value>, Data::Int> view(d, {Dimension::Tof});
+    DatasetView<DatasetView<Data::Value>, Data::Int> view(d, {Dimension::Tof});
     auto it = view.begin();
     for (int i = 0; i < elements; ++i) {
       benchmark::DoNotOptimize(it->get<Data::Int>());
+      benchmark::DoNotOptimize(it->get<DatasetView<Data::Value>>());
       it++;
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
 }
-BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_slab)
+BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested)
     ->RangeMultiplier(2)
     ->Range(8, 8 << 10);
 ;
-#endif
 
 BENCHMARK_MAIN();

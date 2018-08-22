@@ -14,7 +14,7 @@
 
 namespace detail {
 template <class T> struct value_type { using type = T; };
-template <class T> struct value_type<Bin<T>> { using type = T; };
+template <class T> struct value_type<Bin<T>> { using type = const T; };
 template <class T> using value_type_t = typename value_type<T>::type;
 
 template <class T> struct is_bins : public std::false_type {};
@@ -53,6 +53,9 @@ template <class Tag> struct ref_type {
       std::is_const<Tag>::value, const typename detail::value_type_t<Tag>::type,
       typename detail::value_type_t<Tag>::type>>;
 };
+template <class Tag> struct ref_type<Bin<Tag>> {
+  using type = gsl::span<const typename detail::value_type_t<Bin<Tag>>::type>;
+};
 template <> struct ref_type<Coord::SpectrumPosition> {
   using type = std::pair<gsl::span<typename Coord::DetectorPosition::type>,
                          gsl::span<typename Coord::DetectorGrouping::type>>;
@@ -83,7 +86,7 @@ template <> struct UnitHelper<Coord::SpectrumPosition> {
 
 template <class... Tags> struct UnitHelper<DatasetView<Tags...>> {
   static detail::unit_t<DatasetView<Tags...>> get(const Dataset &dataset) {
-    return std::make_tuple(dataset.unit<Tags>()...);
+    return std::make_tuple(UnitHelper<Tags>::get(dataset)...);
   }
 };
 
@@ -135,7 +138,8 @@ template <> struct DimensionHelper<Coord::SpectrumPosition> {
 template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
-    std::vector<Dimensions> variableDimensions{dataset.dimensions<Tags>()...};
+    std::vector<Dimensions> variableDimensions{
+        DimensionHelper<Tags>::get(dataset, fixedDimensions)...};
     // Remove fixed dimensions *before* finding largest --- outer iteration must
     // cover all contained non-fixed dimensions.
     for (auto &dims : variableDimensions)

@@ -395,35 +395,35 @@ TEST(DatasetView, nested_DatasetView_copy_on_write) {
                   ->get<Coord::X>()));
 }
 
-#if 0
-TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
+TEST(DatasetView, histogram_using_nested_DatasetView) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
-  d.insert<Data::Int>("name2", Dimensions{}, 1);
-  auto var = d.get<Data::Value>();
-  var[0] = 0.2;
-  var[1] = 3.2;
+  //auto tof = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  //d.insertAsEdge(Dimension::Tof, tof);
+  d.insert<Coord::Tof>({Dimension::Tof, 2}, 2);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 2);
+  dims.add(Dimension::Spectrum, 4);
+  d.insert<Data::Value>("sample", dims,
+                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+  d.insert<Data::Error>("sample", dims, 8);
 
-  // Should fixed dimension be generic, or should we just provide a couple of
-  // special cases, in particular for Tof?
-  // Use direct column access otherwise (how to access things like Tof slices?)?
-  // YAGNI? Just support a single fixed dimension, given at compile time?!
-  // We might want to iterate all BinEdges, getting a slab of corresponding
-  // counts (e.g., all spectra for certain polarization)?! That is,
-  // Dimension::Tof and Dimension::SpectrumNumber might be fixed, while
-  // Dimension::Polarization is running. Or Dimension::Tof and
-  // Dimension::Polarization are fixed file Dimension::SpectrumNumber is
-  // running. The latter is more likely to be expressed as "iterate only
-  // SpectrumNumber", how do we handle that in general?
-  // Maybe a better way to say this is: Iterate all dimensions of BinEdges. In
-  // general we do not know which other columns need to be accessed as slabs,
-  // how can we deal with this? Just access all as slab (which may be size 1)?
-  DatasetView<Slab<Data::Value>, Data::Int> view(d, {Dimension::Tof});
-  // view.get<double>(); // Does not compile, since we cannot get a single
-  // double.
-  view.begin()->get<Data::Int>();
+  // TODO I think there is a bug in the offset computation for nested bins, or
+  // bins in general? Use "point data" for now in this test.
+  using Histogram = DatasetView<const Coord::Tof, Data::Value, Data::Error>;
+  DatasetView<Histogram> view(d, {Dimension::Tof});
+
+  auto it = view.begin();
+  auto histogram = it->get<Histogram>();
+  EXPECT_EQ(histogram.size(), 2);
+  auto bin = histogram.begin();
+  EXPECT_EQ(bin->value(), 1.0);
+  ++bin;
+  EXPECT_EQ(bin->value(), 2.0);
+  bin->value() += 0.2;
+  EXPECT_EQ(d.get<Data::Value>()[1], 2.2);
+  it++;
+  EXPECT_EQ(it->get<Histogram>().begin()->value(), 3.0);
 }
-#endif
 
 TEST(DatasetView, single_column_edges) {
   Dataset d;
@@ -523,36 +523,6 @@ TEST(DatasetView, duplicate_data_tag) {
                    "Given variable tag is not unique. Must provide a name.");
   EXPECT_NO_THROW(DatasetView<Data::Value> view(d, "name2"));
 }
-
-#if 0
-TEST(DatasetView, histogram) {
-  Dataset d;
-  auto tof = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  d.insertAsEdge(Dimension::Tof, tof);
-  Dimensions dims;
-  dims.add(Dimension::Tof, 2);
-  dims.add(Dimension::Spectrum, 4);
-  d.insert<Data::Value>("sample", dims,
-                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  d.insert<Data::Error>("sample", dims, 8);
-
-  DatasetView<Data::Histogram> view(d, {Dimension::Tof});
-  auto it = view.begin();
-  auto &histogram = it->histogram();
-  EXPECT_EQ(histogram.size(), 2);
-  EXPECT_EQ(histogram.value(0), 1.0);
-  EXPECT_EQ(histogram.value(1), 2.0);
-  histogram.value(1) += 0.2;
-  EXPECT_EQ(d.get<Data::Value>()[1], 2.2);
-  it++;
-  EXPECT_EQ(it->histogram().value(0), 3.0);
-  auto &ref = it->histogram();
-  auto copy = it->histogram();
-  d.get<Data::Value>()[2] += 0.3;
-  EXPECT_EQ(ref.value(0), 3.3);
-  EXPECT_EQ(copy.value(0), 3.0);
-}
-#endif
 
 TEST(DatasetView, spectrum_position) {
   Dataset d;
