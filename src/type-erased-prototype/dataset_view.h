@@ -128,21 +128,12 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
 
 template <> struct DimensionHelper<Data::Histogram> {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
-    auto dims = dataset.dimensions<Data::Value>();
-    if (fixedDimensions.size() != 1)
-      throw std::runtime_error(
-          "Bad number of fixed dimensions. Only 1D histograms are supported.");
-    dims.erase(*fixedDimensions.begin());
-    return dims;
-  }
+                        const std::set<Dimension> &fixedDimensions);
 };
 
 template <> struct DimensionHelper<Coord::SpectrumPosition> {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
-    return dataset.dimensions<Coord::DetectorGrouping>();
-  }
+                        const std::set<Dimension> &fixedDimensions);
 };
 
 template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
@@ -281,9 +272,6 @@ template <class... Tags> struct ItemHelper<DatasetView<Tags...>> {
   }
 };
 
-// pass non-iterated dimensions in constructor?
-// Dataset::begin(Dimension::Tof)??
-// Dataset::begin(DoNotIterate::Tof)??
 template <class... Ts>
 class DatasetView : public GetterMixin<DatasetView<Ts...>, Ts>... {
   static_assert(sizeof...(Ts),
