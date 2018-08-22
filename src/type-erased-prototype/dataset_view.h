@@ -384,35 +384,35 @@ public:
             DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...},
         m_relevantDimensions(
             relevantDimensions(m_subdimensions, fixedDimensions)),
-        m_columns(DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {
-  }
+        m_variables(
+            DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset)...},
         m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
         m_relevantDimensions(
             relevantDimensions(m_subdimensions, fixedDimensions)),
-        m_columns(DataHelper<Ts>::get(dataset, m_relevantDimensions)...) {}
+        m_variables(DataHelper<Ts>::get(dataset, m_relevantDimensions)...) {}
 
   DatasetView(const DatasetView &other,
               const std::tuple<ref_type_t<Ts>...> &data)
       : m_units(other.m_units), m_subdimensions(other.m_subdimensions),
-        m_relevantDimensions(other.m_relevantDimensions), m_columns(data) {}
+        m_relevantDimensions(other.m_relevantDimensions), m_variables(data) {}
 
   gsl::index size() const { return m_relevantDimensions.volume(); }
 
   iterator begin() {
-    return {0, m_relevantDimensions, m_subdimensions, m_columns};
+    return {0, m_relevantDimensions, m_subdimensions, m_variables};
   }
   iterator end() {
     return {m_relevantDimensions.volume(), m_relevantDimensions,
-            m_subdimensions, m_columns};
+            m_subdimensions, m_variables};
   }
 
 private:
   const std::tuple<detail::unit_t<Ts>...> m_units;
   const std::vector<Dimensions> m_subdimensions;
   const Dimensions m_relevantDimensions;
-  std::tuple<ref_type_t<Ts>...> m_columns;
+  std::tuple<ref_type_t<Ts>...> m_variables;
 };
 
 #endif // DATASET_VIEW_H
