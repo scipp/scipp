@@ -342,6 +342,59 @@ TEST(DatasetView, nested_DatasetView_constant_variable) {
   }
 }
 
+TEST(DatasetView, nested_DatasetView_copy_on_write) {
+  Dataset d;
+  d.insert<Data::Value>("name1",
+                        Dimensions({{Dimension::X, 2}, {Dimension::Y, 2}}),
+                        {1.0, 2.0, 3.0, 4.0});
+  d.insert<Coord::X>(Dimensions({{Dimension::X, 2}, {Dimension::Y, 2}}),
+                     {10.0, 20.0, 30.0, 40.0});
+
+  auto copy(d);
+
+  DatasetView<DatasetView<const Data::Value, const Coord::X>> const_view(
+      copy, {Dimension::X});
+
+  EXPECT_EQ(&d.get<const Data::Value>()[0],
+            &(const_view.begin()
+                  ->get<DatasetView<const Data::Value, const Coord::X>>()
+                  .begin()
+                  ->get<Data::Value>()));
+  EXPECT_EQ(&d.get<const Coord::X>()[0],
+            &(const_view.begin()
+                  ->get<DatasetView<const Data::Value, const Coord::X>>()
+                  .begin()
+                  ->get<Coord::X>()));
+
+  DatasetView<DatasetView<const Data::Value, Coord::X>> partially_const_view(
+      copy, {Dimension::X});
+
+  EXPECT_EQ(&d.get<const Data::Value>()[0],
+            &(partially_const_view.begin()
+                  ->get<DatasetView<const Data::Value, Coord::X>>()
+                  .begin()
+                  ->get<Data::Value>()));
+  EXPECT_NE(&d.get<const Coord::X>()[0],
+            &(partially_const_view.begin()
+                  ->get<DatasetView<const Data::Value, Coord::X>>()
+                  .begin()
+                  ->get<Coord::X>()));
+
+  DatasetView<DatasetView<Data::Value, Coord::X>> nonconst_view(copy,
+                                                                {Dimension::X});
+
+  EXPECT_NE(&d.get<const Data::Value>()[0],
+            &(nonconst_view.begin()
+                  ->get<DatasetView<Data::Value, Coord::X>>()
+                  .begin()
+                  ->get<Data::Value>()));
+  EXPECT_NE(&d.get<const Coord::X>()[0],
+            &(nonconst_view.begin()
+                  ->get<DatasetView<Data::Value, Coord::X>>()
+                  .begin()
+                  ->get<Coord::X>()));
+}
+
 #if 0
 TEST(DatasetView, multi_column_mixed_dimension_with_slab) {
   Dataset d;

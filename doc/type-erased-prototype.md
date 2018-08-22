@@ -518,6 +518,8 @@ Outstanding tasks:
 Other:
 
 - Use https://github.com/tcbrindle/span instead of the one from GSL?
+- Avoid triggering COW if there is a subsequent exception, especially in `DatasetView`.
+  Can we do all checks beforehand?
 
 Problems:
 
