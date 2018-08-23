@@ -284,6 +284,54 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
                                                "present in left-hand-side.");
 }
 
+TEST(Dataset, operator_times_equal_with_units) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  auto values =
+      makeVariable<Data::Value>(Dimensions({{Dimension::X, 1}}), {3.0});
+  values.setName("name1");
+  values.setUnit(Unit::Id::Length);
+  auto variances =
+      makeVariable<Data::Variance>(Dimensions({{Dimension::X, 1}}), {2.0});
+  variances.setName("name1");
+  variances.setUnit(Unit::Id::Area);
+  a.insert(values);
+  a.insert(variances);
+  a *= a;
+  EXPECT_EQ(a.unit<Data::Value>(), Unit::Id::Area);
+  EXPECT_EQ(a.unit<Data::Variance>(), Unit::Id::AreaVariance);
+  EXPECT_EQ(a.get<Data::Variance>()[0], 36.0);
+}
+
+TEST(Dataset, operator_times_equal_histogram_data) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  auto values =
+      makeVariable<Data::Value>(Dimensions({{Dimension::X, 1}}), {3.0});
+  values.setName("name1");
+  values.setUnit(Unit::Id::Counts);
+  auto variances =
+      makeVariable<Data::Variance>(Dimensions({{Dimension::X, 1}}), {2.0});
+  variances.setName("name1");
+  variances.setUnit(Unit::Id::CountsVariance);
+  a.insert(values);
+  a.insert(variances);
+
+  Dataset b;
+  b.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  b.insert<Data::Value>("name1", {Dimension::X, 1}, {4.0});
+  b.insert<Data::Variance>("name1", {Dimension::X, 1}, {4.0});
+
+  // Counts (aka "histogram data") times counts not possible.
+  EXPECT_THROW_MSG(a *= a, std::runtime_error, "Unsupported unit on LHS");
+  // Counts times frequencies (aka "distribution") ok.
+  // TODO Works for dimensionless right now, but do we need to handle other
+  // cases as well?
+  auto a_copy(a);
+  EXPECT_NO_THROW(a *= b);
+  EXPECT_NO_THROW(b *= a_copy);
+}
+
 TEST(Dataset, concatenate_constant_dimension_broken) {
   Dataset a;
   a.insert<Data::Value>("name1", Dimensions{}, {1.1});

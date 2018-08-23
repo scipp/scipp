@@ -505,7 +505,6 @@ Outstanding tasks:
 
   Can we get away without having such a `Histogram` type?
   Just implement everything for `Dataset`, `DatasetView`, or `DatasetView::Item`?
-- More details on unit handling.
 - Do we have to guarantee the iteration order of dimensions in `DatasetView`?
   It is determined by the variable with the highest dimensionality.
   If tied, it is determined by the order in which variable tags are given, but if we implement the prototyped sorting...?
