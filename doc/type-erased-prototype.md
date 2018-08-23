@@ -474,10 +474,6 @@ In general the implementation has been continued only to the point where it beco
 
 Outstanding tasks:
 
-- More details and larger-scale examples for `concatenate` and `operator+=`.
-  - Propagation of uncertainties!
-    - Always store variance, so this is trivial for `operator+=`.
-      Also implement `operator*=` as a non-trivial example.
 - `DatasetIndex` or similar for indexing via an coordinate.
   For example, for access via `Coord::SpectrumNumber>`:
   - Build `std::unordered_map<SpectrumNumber>`, which verifies that there are no duplicates.

@@ -154,9 +154,11 @@ Dataset &Dataset::operator*=(const Dataset &other) {
           auto error_index2 = other.find(tag_id<Data::Variance>, var2.name());
           auto &error1 = m_variables[error_index1];
           auto &error2 = other.m_variables[error_index2];
+          // Expression templates could make this faster, but only if shapes
+          // match?
+          error1 = error1 * (var2 * var2) + var1 * var1 * error2;
           // TODO: Catch errors from unit propagation here and give a better
           // error message.
-          error1 = error1 * (var2 * var2) + var1 * var1 * error2;
         } else {
           // No variance found, continue without.
         }

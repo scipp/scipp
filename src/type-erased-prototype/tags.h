@@ -52,12 +52,15 @@ struct Coord {
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct SpectrumPosition : public detail::ReturnByValuePolicy {
-    // TODO This is a virtual/derived tag, do we need to specify type?
     using type = double;
+  };
+  struct RowLabel {
+    using type = std::string;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
 
   using tags = std::tuple<X, Y, Z, Tof, SpectrumNumber, DetectorPosition,
-                          DetectorGrouping, SpectrumPosition>;
+                          DetectorGrouping, SpectrumPosition, RowLabel>;
 };
 
 class Histogram;

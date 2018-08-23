@@ -11,7 +11,8 @@ enum class Dimension : char {
   Q,
   X,
   Y,
-  Z
+  Z,
+  Row
 };
 
 #endif // DIMENSION_H

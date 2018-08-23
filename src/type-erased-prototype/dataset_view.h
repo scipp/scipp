@@ -37,7 +37,16 @@ template <class Base> struct GetterMixin<Base, Data::Tof> {
 };
 
 template <class Base> struct GetterMixin<Base, Data::Value> {
+  element_return_type_t<Data::Value> value() {
+    return static_cast<Base *>(this)->template get<Data::Value>();
+  }
   const element_return_type_t<Data::Value> value() const {
+    return static_cast<const Base *>(this)->template get<Data::Value>();
+  }
+};
+
+template <class Base> struct GetterMixin<Base, const Data::Value> {
+  element_return_type_t<const Data::Value> value() const {
     return static_cast<const Base *>(this)->template get<Data::Value>();
   }
 };

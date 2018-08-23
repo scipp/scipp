@@ -152,8 +152,41 @@ BM_DatasetView_multi_column_mixed_dimension_nested(benchmark::State &state) {
 }
 BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested)
     ->RangeMultiplier(2)
-    ->Range(8, 8 << 13);
+    ->Range(8, 8 << 15);
 ;
+
+static void
+BM_DatasetView_multi_column_mixed_dimension_nested_threaded(benchmark::State &state) {
+  gsl::index nSpec = state.range(0);
+  Dataset d;
+  d.insert<Data::Int>("specnums", {Dimension::SpectrumNumber, nSpec}, nSpec);
+  Dimensions dims;
+  dims.add(Dimension::Tof, 1000);
+  dims.add(Dimension::SpectrumNumber, nSpec);
+  d.insert<Data::Value>("histograms", dims, nSpec * 1000);
+  d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
+  DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dimension::Tof});
+
+  for (auto _ : state) {
+    DatasetView<DatasetView<Data::Value, Data::Variance>, Data::Int> view(
+        d, {Dimension::Tof});
+    const auto end = view.end();
+#pragma omp parallel for num_threads(state.range(1))
+    for (auto it = view.begin(); it < end; ++it) {
+      auto &item = *it;
+      for (auto &point : item.get<DatasetView<Data::Value, Data::Variance>>()) {
+        point.value() -= point.get<Data::Variance>();
+      }
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * nSpec);
+  state.SetBytesProcessed(state.iterations() * nSpec * 1000 * 3 *
+                          sizeof(double));
+}
+BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested_threaded)
+    ->RangeMultiplier(2)
+    ->Ranges({{8, 8 << 15}, {1, 24}})
+    ->UseRealTime();
 
 static void BM_DatasetView_multi_column_mixed_dimension_nested_transpose(
     benchmark::State &state) {
