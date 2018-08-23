@@ -358,7 +358,6 @@ public:
                                                 "for tags when accessing "
                                                 "DatasetView::iterator.");
       constexpr auto variableIndex = tag_index<Tag>;
-      // TODO Ensure that this is inlined and does not affect performance.
       return ItemHelper<maybe_const<Tag>>::get(
           std::get<variableIndex>(m_variables), m_index.get<variableIndex>());
     }

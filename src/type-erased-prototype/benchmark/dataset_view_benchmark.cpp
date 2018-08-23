@@ -87,7 +87,7 @@ static void BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
     DatasetView<Data::Value, const Data::Error> view(d);
     const auto end = view.end();
     for (auto it = view.begin(); it != end; ++it) {
-      it->get<Data::Value>() += it->get<Data::Error>();
+      it->get<Data::Value>() -= it->get<Data::Error>();
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
@@ -114,7 +114,7 @@ BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
     const auto end = view.end();
 #pragma omp parallel for num_threads(state.range(1))
     for (auto it = view.begin(); it < end; ++it) {
-      it->get<Data::Value>() += it->get<Data::Error>();
+      it->get<Data::Value>() -= it->get<Data::Error>();
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
@@ -127,29 +127,62 @@ BENCHMARK(BM_DatasetView_mixed_dimension_addition_threaded)
 
 static void
 BM_DatasetView_multi_column_mixed_dimension_nested(benchmark::State &state) {
+  gsl::index nSpec = state.range(0);
   Dataset d;
+  d.insert<Data::Int>("specnums", {Dimension::SpectrumNumber, nSpec}, nSpec);
   Dimensions dims;
-  dims.add(Dimension::SpectrumNumber, state.range(0));
-  d.insert<Data::Int>("specnums", dims, state.range(0));
   dims.add(Dimension::Tof, 1000);
-  d.insert<Data::Value>("histograms", dims, state.range(0) * 1000);
+  dims.add(Dimension::SpectrumNumber, nSpec);
+  d.insert<Data::Value>("histograms", dims, nSpec * 1000);
+  d.insert<Data::Error>("histograms", dims, nSpec * 1000);
   DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dimension::Tof});
-  gsl::index elements = state.range(0);
 
   for (auto _ : state) {
-    DatasetView<DatasetView<Data::Value>, Data::Int> view(d, {Dimension::Tof});
-    auto it = view.begin();
-    for (int i = 0; i < elements; ++i) {
-      benchmark::DoNotOptimize(it->get<Data::Int>());
-      benchmark::DoNotOptimize(it->get<DatasetView<Data::Value>>());
-      it++;
+    DatasetView<DatasetView<Data::Value, Data::Error>, Data::Int> view(
+        d, {Dimension::Tof});
+    for (auto &item : view) {
+      for (auto &point : item.get<DatasetView<Data::Value, Data::Error>>()) {
+        point.value() -= point.get<Data::Error>();
+      }
     }
   }
-  state.SetItemsProcessed(state.iterations() * elements);
+  state.SetItemsProcessed(state.iterations() * nSpec);
+  state.SetBytesProcessed(state.iterations() * nSpec * 1000 * 3 *
+                          sizeof(double));
 }
 BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested)
     ->RangeMultiplier(2)
-    ->Range(8, 8 << 10);
+    ->Range(8, 8 << 13);
+;
+
+static void
+BM_DatasetView_multi_column_mixed_dimension_nested_transpose(benchmark::State &state) {
+  gsl::index nSpec = state.range(0);
+  Dataset d;
+  d.insert<Data::Int>("specnums", {Dimension::SpectrumNumber, nSpec}, nSpec);
+  Dimensions dims;
+  dims.add(Dimension::SpectrumNumber, nSpec);
+  dims.add(Dimension::Tof, 1000);
+  d.insert<Data::Value>("histograms", dims, nSpec * 1000);
+  d.insert<Data::Error>("histograms", dims, nSpec * 1000);
+  DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dimension::Tof});
+
+  for (auto _ : state) {
+    DatasetView<DatasetView<Data::Value, Data::Error>, Data::Int> view(
+        d, {Dimension::Tof});
+    for (auto &item : view) {
+      for (auto &point : item.get<DatasetView<Data::Value, Data::Error>>()) {
+        point.value() -= point.get<Data::Error>();
+      }
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * nSpec);
+  state.SetBytesProcessed(state.iterations() * nSpec * 1000 * 3 *
+                          sizeof(double));
+}
+BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested_transpose)
+    ->RangeMultiplier(2)
+    ->Range(8, 8 << 13);
 ;
 
 BENCHMARK_MAIN();

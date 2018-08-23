@@ -482,7 +482,6 @@ Outstanding tasks:
   For example, for access via `Coord::SpectrumNumber>`:
   - Build `std::unordered_map<SpectrumNumber>`, which verifies that there are no duplicates.
   - Fast access, similar to what `IndexInfo` is providing currently.
-- Benchmark new `Histogram` mechanism, including stride support.
 - Understand performance implications of doing a lot of operations in streaming memory access.
   Investigate how a cache-blocked operation mode could be supported.
   Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.
@@ -514,6 +513,8 @@ Outstanding tasks:
 - Do we need to support simultaneous iteration of two `Datasets`?
   - Merge into the same `Dataset` first?
     Does not work for coordinates, which cannot be duplicate.
+  - If we create two `DatasetViews`, provindg a mechanism to ensure that they use the same dimensions for iteration woul be sufficient.
+    Then we can use things like `std::transform`.
 
 Other:
 
