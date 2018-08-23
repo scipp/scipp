@@ -18,6 +18,7 @@ public:
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
   virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
+  virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
   virtual void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
@@ -30,7 +31,8 @@ public:
 
 class Variable {
 public:
-  template <class T> Variable(uint32_t id, Dimensions dimensions, T object);
+  template <class T>
+  Variable(uint32_t id, const Unit::Id unit, Dimensions dimensions, T object);
 
   const std::string &name() const { return m_name; }
   void setName(const std::string &name) {
@@ -40,6 +42,7 @@ public:
   }
   bool operator==(const Variable &other) const;
   Variable &operator+=(const Variable &other);
+  Variable &operator*=(const Variable &other);
 
   const Unit &unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
@@ -98,13 +101,13 @@ private:
 
 template <class Tag, class... Args>
 Variable makeVariable(Dimensions dimensions, Args &&... args) {
-  return Variable(tag_id<Tag>, std::move(dimensions),
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   std::vector<typename Tag::type>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
 Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
-  return Variable(tag_id<Tag>, std::move(dimensions),
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   std::vector<typename Tag::type>(values));
 }
 

@@ -167,6 +167,16 @@ TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
   EXPECT_EQ(a.get<Data::Value>()[0], 3.0);
 }
 
+TEST(Variable, operator_times_equal) {
+  auto a = makeVariable<Coord::X>({Dimension::X, 2}, {2.0, 3.0});
+
+  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_NO_THROW(a *= a);
+  EXPECT_EQ(a.get<Data::Value>()[0], 4.0);
+  EXPECT_EQ(a.get<Data::Value>()[1], 9.0);
+  EXPECT_EQ(a.unit(), Unit::Id::Area);
+}
+
 TEST(Variable, concatenate) {
   Dimensions dims(Dimension::Tof, 1);
   auto a = makeVariable<Data::Value>(dims, {1.0});

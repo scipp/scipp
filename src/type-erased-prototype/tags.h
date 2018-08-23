@@ -6,6 +6,8 @@
 
 #include <gsl/gsl_util>
 
+#include "unit.h"
+
 namespace detail {
 template <class T, class Tuple> struct index;
 template <class T, class... Types> struct index<T, std::tuple<T, Types...>> {
@@ -21,26 +23,33 @@ struct ReturnByValuePolicy {};
 struct Coord {
   struct X {
     using type = double;
+    static constexpr auto unit = Unit::Id::Length;
   };
   struct Y {
     using type = double;
+    static constexpr auto unit = Unit::Id::Length;
   };
   struct Z {
     using type = double;
+    static constexpr auto unit = Unit::Id::Length;
   };
   struct Tof {
     using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct SpectrumNumber {
     using type = int32_t;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct DetectorPosition {
     // Dummy for now, should be something like Eigen::Vector3d.
     using type = double;
+    static constexpr auto unit = Unit::Id::Length;
   };
   struct DetectorGrouping {
     // Dummy for now, or sufficient like this?
     using type = std::vector<gsl::index>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct SpectrumPosition : public detail::ReturnByValuePolicy {
     // TODO This is a virtual/derived tag, do we need to specify type?
@@ -55,24 +64,30 @@ class Histogram;
 struct Data {
   struct Tof {
     using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct Value {
     using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct Variance {
     using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct StdDev : public detail::ReturnByValuePolicy {
     using type = double;
   };
   struct Int {
     using type = int64_t;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct DimensionSize {
     using type = gsl::index;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct String {
     using type = std::string;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct Histogram {
     using type = ::Histogram;

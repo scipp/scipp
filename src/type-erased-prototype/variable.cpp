@@ -6,6 +6,11 @@ template <class T> struct ArithmeticHelper {
                           const VariableView<std::vector<T>> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), std::plus<T>());
   }
+  static void times_equals(std::vector<T> &a,
+                           const VariableView<std::vector<T>> &b) {
+    std::transform(a.begin(), a.end(), b.begin(), a.begin(),
+                   std::multiplies<T>());
+  }
 };
 
 template <class T> struct ArithmeticHelper<std::vector<T>> {
@@ -13,12 +18,22 @@ template <class T> struct ArithmeticHelper<std::vector<T>> {
                           const VariableView<std::vector<std::vector<T>>> &b) {
     throw std::runtime_error("Not an arithmetic type. Addition not possible.");
   }
+  static void times_equals(std::vector<std::vector<T>> &a,
+                           const VariableView<std::vector<std::vector<T>>> &b) {
+    throw std::runtime_error(
+        "Not an arithmetic type. Multiplication not possible.");
+  }
 };
 
 template <> struct ArithmeticHelper<std::string> {
   static void plus_equals(std::vector<std::string> &a,
                           const VariableView<std::vector<std::string>> &b) {
     throw std::runtime_error("Cannot add strings. Use append() instead.");
+  }
+  static void times_equals(std::vector<std::string> &a,
+                           const VariableView<std::vector<std::string>> &b) {
+    throw std::runtime_error(
+        "Not an arithmetic type. Multiplication not possible.");
   }
 };
 
@@ -48,6 +63,19 @@ public:
     } catch (const std::bad_cast &) {
       throw std::runtime_error(
           "Cannot add Variables: Underlying data types do not match.");
+    }
+    return *this;
+  }
+
+  VariableConcept &operator*=(const VariableConcept &other) override {
+    try {
+      ArithmeticHelper<typename T::value_type>::times_equals(
+          m_model,
+          VariableView<T>(dynamic_cast<const VariableModel<T> &>(other).m_model,
+                          dimensions(), other.dimensions()));
+    } catch (const std::bad_cast &) {
+      throw std::runtime_error(
+          "Cannot multiply Variables: Underlying data types do not match.");
     }
     return *this;
   }
@@ -86,8 +114,9 @@ public:
 };
 
 template <class T>
-Variable::Variable(uint32_t id, Dimensions dimensions, T object)
-    : m_type(id), m_unit{Unit::Id::Dimensionless},
+Variable::Variable(uint32_t id, const Unit::Id unit, Dimensions dimensions,
+                   T object)
+    : m_type(id), m_unit{unit},
       m_object(std::make_unique<VariableModel<T>>(std::move(dimensions),
                                                   std::move(object))) {}
 
@@ -100,7 +129,8 @@ template <class T> T &Variable::cast() {
 }
 
 #define INSTANTIATE(type)                                                      \
-  template Variable::Variable(uint32_t, Dimensions, std::vector<type>);        \
+  template Variable::Variable(uint32_t, const Unit::Id, Dimensions,            \
+                              std::vector<type>);                              \
   template std::vector<type> &Variable::cast<std::vector<type>>();             \
   template const std::vector<type> &Variable::cast<std::vector<type>>() const;
 
@@ -142,6 +172,15 @@ Variable &Variable::operator+=(const Variable &other) {
     throw std::runtime_error("Cannot add Variables: Dimensions do not match.");
   }
 
+  return *this;
+}
+
+Variable &Variable::operator*=(const Variable &other) {
+  m_unit = m_unit * other.m_unit;
+  if (!dimensions().contains(other.dimensions()))
+    throw std::runtime_error(
+        "Cannot multiply Variables: Dimensions do not match.");
+  m_object.access() *= *other.m_object;
   return *this;
 }
 
