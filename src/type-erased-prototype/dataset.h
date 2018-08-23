@@ -90,9 +90,11 @@ public:
   gsl::index find(const uint16_t id, const std::string &name) const;
 
   Dataset &operator+=(const Dataset &other);
+  Dataset &operator*=(const Dataset &other);
 
 private:
   gsl::index count(const uint16_t id) const;
+  gsl::index count(const uint16_t id, const std::string &name) const;
   gsl::index findUnique(const uint16_t id) const;
   void mergeDimensions(const auto &dims);
 

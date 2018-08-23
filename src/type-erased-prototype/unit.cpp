@@ -33,9 +33,12 @@ template <class A> Unit multiply(const A &a, const Unit &b) {
 
 Unit operator*(const Unit &a, const Unit &b) {
   if (a == Unit{Unit::Id::Dimensionless})
-    return multiply(boost::units::si::dimensionless{}, b);
+    return b;
+  if (b == Unit{Unit::Id::Dimensionless})
+    return a;
   if (a == Unit{Unit::Id::Length})
     return multiply(boost::units::si::length{}, b);
   if (a == Unit{Unit::Id::Area})
     return multiply(boost::units::si::area{}, b);
+  throw std::runtime_error("Unsupported unit on LHS");
 }

@@ -3,7 +3,7 @@
 
 class Unit {
 public:
-  enum class Id { Dimensionless, Length, Area };
+  enum class Id { Dimensionless, Length, Area, Counts };
   // TODO should this be explicit?
   Unit(const Unit::Id id) : m_id(id) {}
 

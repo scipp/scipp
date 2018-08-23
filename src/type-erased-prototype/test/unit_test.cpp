@@ -40,3 +40,11 @@ TEST(Unit, multiply) {
   EXPECT_ANY_THROW(c * b);
   EXPECT_ANY_THROW(c * c);
 }
+
+TEST(Unit, multiply_counts) {
+  Unit counts{Unit::Id::Counts};
+  Unit none{Unit::Id::Dimensionless};
+  EXPECT_ANY_THROW(counts * counts);
+  EXPECT_EQ(counts * none, counts);
+  EXPECT_EQ(none * counts, counts);
+}

@@ -226,6 +226,64 @@ TEST(Dataset, operator_plus_equal_different_content) {
   EXPECT_NO_THROW(b += a);
 }
 
+TEST(Dataset, operator_times_equal) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("name1", {Dimension::X, 1}, {3.0});
+  a *= a;
+  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
+  EXPECT_EQ(a.get<Data::Value>()[0], 9.0);
+}
+
+TEST(Dataset, operator_times_equal_with_uncertainty) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("name1", {Dimension::X, 1}, {3.0});
+  a.insert<Data::Variance>("name1", {Dimension::X, 1}, {2.0});
+  Dataset b;
+  b.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  b.insert<Data::Value>("name1", {Dimension::X, 1}, {4.0});
+  b.insert<Data::Variance>("name1", {Dimension::X, 1}, {3.0});
+  a *= b;
+  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
+  EXPECT_EQ(a.get<Data::Value>()[0], 12.0);
+  EXPECT_EQ(a.get<Data::Variance>()[0], 2.0 * 16.0 + 3.0 * 9.0);
+}
+
+TEST(Dataset, operator_times_equal_uncertainty_failures) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("name1", {Dimension::X, 1}, {3.0});
+  a.insert<Data::Variance>("name1", {Dimension::X, 1}, {2.0});
+  Dataset b;
+  b.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  b.insert<Data::Value>("name1", {Dimension::X, 1}, {4.0});
+  Dataset c;
+  c.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  c.insert<Data::Variance>("name1", {Dimension::X, 1}, {2.0});
+  EXPECT_THROW_MSG(a *= b, std::runtime_error, "Either both or none of the "
+                                               "operands must have a variance "
+                                               "for their values.");
+  EXPECT_THROW_MSG(b *= a, std::runtime_error, "Either both or none of the "
+                                               "operands must have a variance "
+                                               "for their values.");
+  EXPECT_THROW_MSG(c *= c, std::runtime_error, "Cannot multiply datasets that "
+                                               "contain a variance but no "
+                                               "corresponding value.");
+  EXPECT_THROW_MSG(a *= c, std::runtime_error, "Cannot multiply datasets that "
+                                               "contain a variance but no "
+                                               "corresponding value.");
+  EXPECT_THROW_MSG(c *= a, std::runtime_error, "Right-hand-side in addition "
+                                               "contains variable that is not "
+                                               "present in left-hand-side.");
+  EXPECT_THROW_MSG(b *= c, std::runtime_error, "Right-hand-side in addition "
+                                               "contains variable that is not "
+                                               "present in left-hand-side.");
+  EXPECT_THROW_MSG(c *= b, std::runtime_error, "Right-hand-side in addition "
+                                               "contains variable that is not "
+                                               "present in left-hand-side.");
+}
+
 TEST(Dataset, concatenate_constant_dimension_broken) {
   Dataset a;
   a.insert<Data::Value>("name1", Dimensions{}, {1.1});

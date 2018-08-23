@@ -184,6 +184,16 @@ Variable &Variable::operator*=(const Variable &other) {
   return *this;
 }
 
+Variable operator+(const Variable &a, const Variable &b) {
+  auto result(a);
+  return result += b;
+}
+
+Variable operator*(const Variable &a, const Variable &b) {
+  auto result(a);
+  return result *= b;
+}
+
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2) {
   if (a1.type() != a2.type())

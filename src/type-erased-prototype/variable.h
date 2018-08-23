@@ -111,6 +111,9 @@ Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
                   std::vector<typename Tag::type>(values));
 }
 
+Variable operator+(const Variable &a, const Variable &b);
+Variable operator*(const Variable &a, const Variable &b);
+
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2);
 

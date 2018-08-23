@@ -40,6 +40,14 @@ gsl::index Dataset::count(const uint16_t id) const {
   return n;
 }
 
+gsl::index Dataset::count(const uint16_t id, const std::string &name) const {
+  gsl::index n = 0;
+  for (auto &item : m_variables)
+    if (item.type() == id && item.name() == name)
+      ++n;
+  return n;
+}
+
 gsl::index Dataset::findUnique(const uint16_t id) const {
   gsl::index index = -1;
   for (gsl::index i = 0; i < size(); ++i) {
@@ -104,6 +112,59 @@ Dataset &Dataset::operator+=(const Dataset &other) {
     } else {
       // Data variables are added
       var1 += var2;
+    }
+  }
+  return *this;
+}
+
+Dataset &Dataset::operator*=(const Dataset &other) {
+  // See operator+= for additional comments.
+  for (const auto &var2 : other.m_variables) {
+    gsl::index index;
+    try {
+      index = find(var2.type(), var2.name());
+    } catch (const std::runtime_error &) {
+      throw std::runtime_error("Right-hand-side in addition contains variable "
+                               "that is not present in left-hand-side.");
+    }
+    if (var2.type() == tag_id<Data::Variance>) {
+      try {
+        find(tag_id<Data::Value>, var2.name());
+        other.find(tag_id<Data::Value>, var2.name());
+      } catch (const std::runtime_error &) {
+        throw std::runtime_error("Cannot multiply datasets that contain a "
+                                 "variance but no corresponding value.");
+      }
+    }
+    auto &var1 = m_variables[index];
+    if (var1.isCoord()) {
+      // Coordinate variables must match
+      if (!(var1 == var2))
+        throw std::runtime_error(
+            "Coordinates of datasets do not match. Cannot perform addition");
+    } else {
+      // Data variables are added
+      if (var2.type() == tag_id<Data::Value>) {
+        if (count(tag_id<Data::Variance>, var2.name()) !=
+            other.count(tag_id<Data::Variance>, var2.name()))
+          throw std::runtime_error("Either both or none of the operands must "
+                                   "have a variance for their values.");
+        try {
+          auto error_index1 = find(tag_id<Data::Variance>, var2.name());
+          auto error_index2 = other.find(tag_id<Data::Variance>, var2.name());
+          auto &error1 = m_variables[error_index1];
+          auto &error2 = other.m_variables[error_index2];
+          error1 = error1 * var2 * var2 + var1 * var1 * error2;
+        } catch (const std::runtime_error &) {
+          // No variance found, continue without.
+        }
+        var1 *= var2;
+      } else if (var2.type() == tag_id<Data::Variance>) {
+        // Do nothing, math for variance is done when processing corresponding
+        // value.
+      } else {
+        var1 *= var2;
+      }
     }
   }
   return *this;
