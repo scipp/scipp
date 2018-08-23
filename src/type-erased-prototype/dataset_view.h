@@ -73,6 +73,9 @@ template <> struct ref_type<Coord::SpectrumPosition> {
   using type = std::pair<gsl::span<typename Coord::DetectorPosition::type>,
                          gsl::span<typename Coord::DetectorGrouping::type>>;
 };
+template <> struct ref_type<Data::StdDev> {
+  using type = typename ref_type<Data::Variance>::type;
+};
 template <class... Tags> struct ref_type<DatasetView<Tags...>> {
   using type = std::tuple<MultiIndex, DatasetView<Tags...>,
                           std::tuple<typename ref_type<Tags>::type...>>;
@@ -94,6 +97,12 @@ template <class Tag> struct UnitHelper<Bin<Tag>> {
 template <> struct UnitHelper<Coord::SpectrumPosition> {
   static Unit get(const Dataset &dataset) {
     return dataset.unit<Coord::DetectorPosition>();
+  }
+};
+
+template <> struct UnitHelper<Data::StdDev> {
+  static Unit get(const Dataset &dataset) {
+    return dataset.unit<Data::Variance>();
   }
 };
 
@@ -132,6 +141,11 @@ template <> struct DimensionHelper<Data::Histogram> {
 };
 
 template <> struct DimensionHelper<Coord::SpectrumPosition> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions);
+};
+
+template <> struct DimensionHelper<Data::StdDev> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions);
 };
@@ -205,6 +219,12 @@ template <> struct DataHelper<Coord::SpectrumPosition> {
   }
 };
 
+template <> struct DataHelper<Data::StdDev> {
+  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
+    return DataHelper<Data::Variance>::get(dataset, iterationDimensions);
+  }
+};
+
 template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
   static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
     std::set<Dimension> fixedDimensions;
@@ -252,6 +272,13 @@ template <> struct ItemHelper<Coord::SpectrumPosition> {
     for (const auto det : data.second[index])
       position += data.first[det];
     return position /= data.second[index].size();
+  }
+};
+
+template <> struct ItemHelper<Data::StdDev> {
+  static element_return_type_t<Data::StdDev> get(ref_type_t<Data::StdDev> &data,
+                                                 gsl::index index) {
+    return sqrt(ItemHelper<Data::Variance>::get(data, index));
   }
 };
 

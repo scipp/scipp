@@ -14,3 +14,9 @@ Dimensions DimensionHelper<Coord::SpectrumPosition>::get(
     const Dataset &dataset, const std::set<Dimension> &fixedDimensions) {
   return dataset.dimensions<Coord::DetectorGrouping>();
 }
+
+Dimensions
+DimensionHelper<Data::StdDev>::get(const Dataset &dataset,
+                                   const std::set<Dimension> &fixedDimensions) {
+  return dataset.dimensions<Data::Variance>();
+}

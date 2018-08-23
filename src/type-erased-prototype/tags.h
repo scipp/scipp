@@ -62,6 +62,9 @@ struct Data {
   struct Variance {
     using type = double;
   };
+  struct StdDev : public detail::ReturnByValuePolicy {
+    using type = double;
+  };
   struct Int {
     using type = int64_t;
   };
@@ -75,8 +78,8 @@ struct Data {
     using type = ::Histogram;
   };
 
-  using tags =
-      std::tuple<Tof, Value, Variance, Int, DimensionSize, String, Histogram>;
+  using tags = std::tuple<Tof, Value, Variance, StdDev, Int, DimensionSize,
+                          String, Histogram>;
 };
 
 template <class T>

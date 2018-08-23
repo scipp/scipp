@@ -600,6 +600,18 @@ TEST(DatasetView, spectrum_position) {
   ASSERT_EQ(it, view.end());
 }
 
+TEST(DatasetView, derived_standard_deviation) {
+  Dataset d;
+  d.insert<Data::Variance>("data", {Dimension::X, 3}, {4.0, 9.0, -1.0});
+  DatasetView<Data::StdDev> view(d);
+  auto it = view.begin();
+  EXPECT_EQ(it->get<Data::StdDev>(), 2.0);
+  ++it;
+  EXPECT_EQ(it->get<Data::StdDev>(), 3.0);
+  ++it;
+  EXPECT_TRUE(std::isnan(it->get<Data::StdDev>()));
+}
+
 template <class T> constexpr int type_to_id();
 template <> constexpr int type_to_id<double>() { return 0; }
 template <> constexpr int type_to_id<int>() { return 1; }
