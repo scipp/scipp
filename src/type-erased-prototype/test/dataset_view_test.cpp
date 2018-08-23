@@ -17,7 +17,7 @@ TEST(DatasetView, construct) {
   ASSERT_NO_THROW(DatasetView<Data::Value> view(d));
   ASSERT_NO_THROW(DatasetView<Data::Int> view(d));
   ASSERT_NO_THROW(auto view = (DatasetView<Data::Int, Data::Value>(d)));
-  ASSERT_THROW(auto view = (DatasetView<Data::Int, Data::Error>(d)),
+  ASSERT_THROW(auto view = (DatasetView<Data::Int, Data::Variance>(d)),
                std::runtime_error);
 }
 
@@ -406,21 +406,22 @@ TEST(DatasetView, histogram_using_nested_DatasetView) {
   dims.add(Dimension::Spectrum, 4);
   d.insert<Data::Value>("sample", dims,
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  d.insert<Data::Error>("sample", dims, 8);
+  d.insert<Data::Variance>("sample", dims, 8);
   d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 4}, {1, 2, 3, 4});
 
-  using HistogramView = DatasetView<Bin<Coord::Tof>, Data::Value, Data::Error>;
+  using HistogramView =
+      DatasetView<Bin<Coord::Tof>, Data::Value, Data::Variance>;
   DatasetView<HistogramView, Coord::SpectrumNumber> view(d, {Dimension::Tof});
 
   EXPECT_EQ(view.size(), 4);
   int32_t specNum = 1;
   double value = 1.0;
-  for(const auto &item : view) {
+  for (const auto &item : view) {
     EXPECT_EQ(item.get<Coord::SpectrumNumber>(), specNum++);
     auto histview = item.get<HistogramView>();
     EXPECT_EQ(histview.size(), 2);
     double edge = 10.0;
-    for(const auto &bin : histview) {
+    for (const auto &bin : histview) {
       EXPECT_EQ(bin.left(), edge);
       EXPECT_EQ(bin.right(), edge + 10.0);
       edge += 10.0;

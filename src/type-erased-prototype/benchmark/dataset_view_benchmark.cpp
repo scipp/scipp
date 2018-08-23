@@ -77,17 +77,17 @@ static void BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dimension::SpectrumNumber, state.range(0));
-  d.insert<Data::Error>("", dims, state.range(0));
+  d.insert<Data::Variance>("", dims, state.range(0));
   dims.add(Dimension::Tof, 100);
   dims.add(Dimension::Run, 10);
   gsl::index elements = state.range(0) * 100 * 10;
   d.insert<Data::Value>("", dims, elements);
 
   for (auto _ : state) {
-    DatasetView<Data::Value, const Data::Error> view(d);
+    DatasetView<Data::Value, const Data::Variance> view(d);
     const auto end = view.end();
     for (auto it = view.begin(); it != end; ++it) {
-      it->get<Data::Value>() -= it->get<Data::Error>();
+      it->get<Data::Value>() -= it->get<Data::Variance>();
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
@@ -103,18 +103,18 @@ BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dimension::SpectrumNumber, state.range(0));
-  d.insert<Data::Error>("", dims, state.range(0));
+  d.insert<Data::Variance>("", dims, state.range(0));
   dims.add(Dimension::Tof, 100);
   dims.add(Dimension::Run, 10);
   gsl::index elements = state.range(0) * 100 * 10;
   d.insert<Data::Value>("", dims, elements);
 
   for (auto _ : state) {
-    DatasetView<Data::Value, const Data::Error> view(d);
+    DatasetView<Data::Value, const Data::Variance> view(d);
     const auto end = view.end();
 #pragma omp parallel for num_threads(state.range(1))
     for (auto it = view.begin(); it < end; ++it) {
-      it->get<Data::Value>() -= it->get<Data::Error>();
+      it->get<Data::Value>() -= it->get<Data::Variance>();
     }
   }
   state.SetItemsProcessed(state.iterations() * elements);
@@ -134,15 +134,15 @@ BM_DatasetView_multi_column_mixed_dimension_nested(benchmark::State &state) {
   dims.add(Dimension::Tof, 1000);
   dims.add(Dimension::SpectrumNumber, nSpec);
   d.insert<Data::Value>("histograms", dims, nSpec * 1000);
-  d.insert<Data::Error>("histograms", dims, nSpec * 1000);
+  d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
   DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dimension::Tof});
 
   for (auto _ : state) {
-    DatasetView<DatasetView<Data::Value, Data::Error>, Data::Int> view(
+    DatasetView<DatasetView<Data::Value, Data::Variance>, Data::Int> view(
         d, {Dimension::Tof});
     for (auto &item : view) {
-      for (auto &point : item.get<DatasetView<Data::Value, Data::Error>>()) {
-        point.value() -= point.get<Data::Error>();
+      for (auto &point : item.get<DatasetView<Data::Value, Data::Variance>>()) {
+        point.value() -= point.get<Data::Variance>();
       }
     }
   }
@@ -155,8 +155,8 @@ BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested)
     ->Range(8, 8 << 13);
 ;
 
-static void
-BM_DatasetView_multi_column_mixed_dimension_nested_transpose(benchmark::State &state) {
+static void BM_DatasetView_multi_column_mixed_dimension_nested_transpose(
+    benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
   d.insert<Data::Int>("specnums", {Dimension::SpectrumNumber, nSpec}, nSpec);
@@ -164,15 +164,15 @@ BM_DatasetView_multi_column_mixed_dimension_nested_transpose(benchmark::State &s
   dims.add(Dimension::SpectrumNumber, nSpec);
   dims.add(Dimension::Tof, 1000);
   d.insert<Data::Value>("histograms", dims, nSpec * 1000);
-  d.insert<Data::Error>("histograms", dims, nSpec * 1000);
+  d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
   DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dimension::Tof});
 
   for (auto _ : state) {
-    DatasetView<DatasetView<Data::Value, Data::Error>, Data::Int> view(
+    DatasetView<DatasetView<Data::Value, Data::Variance>, Data::Int> view(
         d, {Dimension::Tof});
     for (auto &item : view) {
-      for (auto &point : item.get<DatasetView<Data::Value, Data::Error>>()) {
-        point.value() -= point.get<Data::Error>();
+      for (auto &point : item.get<DatasetView<Data::Value, Data::Variance>>()) {
+        point.value() -= point.get<Data::Variance>();
       }
     }
   }

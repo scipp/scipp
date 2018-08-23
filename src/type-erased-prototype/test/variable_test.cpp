@@ -162,7 +162,7 @@ TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
 
 TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
   auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
-  auto b = makeVariable<Data::Error>({Dimension::X, 1}, {2.0});
+  auto b = makeVariable<Data::Variance>({Dimension::X, 1}, {2.0});
   EXPECT_NO_THROW(a += b);
   EXPECT_EQ(a.get<Data::Value>()[0], 3.0);
 }
@@ -216,7 +216,7 @@ TEST(Variable, concatenate_fail) {
   Dimensions dims(Dimension::Tof, 1);
   auto a = makeVariable<Data::Value>(dims, {1.0});
   auto b = makeVariable<Data::Value>(dims, {2.0});
-  auto c = makeVariable<Data::Error>(dims, {2.0});
+  auto c = makeVariable<Data::Variance>(dims, {2.0});
   a.setName("data");
   EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, b), std::runtime_error,
                    "Cannot concatenate Variables: Names do not match.");

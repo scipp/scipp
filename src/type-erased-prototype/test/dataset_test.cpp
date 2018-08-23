@@ -60,8 +60,8 @@ TEST(Dataset, insert_variables_different_order) {
 TEST(Dataset, insertAsEdge) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  auto edges =
-      makeVariable<Data::Error>(Dimensions(Dimension::Tof, 3), {1.1, 2.2, 3.3});
+  auto edges = makeVariable<Data::Variance>(Dimensions(Dimension::Tof, 3),
+                                            {1.1, 2.2, 3.3});
   edges.setName("edges");
   EXPECT_EQ(d.dimensions().size(Dimension::Tof), 2);
   EXPECT_THROW_MSG(

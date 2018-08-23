@@ -59,7 +59,7 @@ struct Data {
   struct Value {
     using type = double;
   };
-  struct Error {
+  struct Variance {
     using type = double;
   };
   struct Int {
@@ -76,7 +76,7 @@ struct Data {
   };
 
   using tags =
-      std::tuple<Tof, Value, Error, Int, DimensionSize, String, Histogram>;
+      std::tuple<Tof, Value, Variance, Int, DimensionSize, String, Histogram>;
 };
 
 template <class T>
