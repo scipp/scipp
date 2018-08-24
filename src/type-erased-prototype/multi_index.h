@@ -87,14 +87,14 @@ public:
     if (m_dims == 0)
       return;
     auto remainder{index};
-    for (gsl::index d = 0; d < m_dims - 1; ++d) {
+    for (int32_t d = 0; d < m_dims - 1; ++d) {
       m_coord[d] = remainder % m_extent[d];
       remainder /= m_extent[d];
     }
     m_coord[m_dims - 1] = remainder;
-    for (gsl::index i = 0; i < m_numberOfSubindices; ++i) {
+    for (int32_t i = 0; i < m_numberOfSubindices; ++i) {
       m_index[i] = 0;
-      for (gsl::index j = 0; j < m_subdims[i]; ++j)
+      for (int32_t j = 0; j < m_subdims[i]; ++j)
         m_index[i] += m_factors[i][j] * m_coord[m_offsets[i][j]];
     }
   }
@@ -117,10 +117,10 @@ private:
   alignas(32) gsl::index m_coord[4]{0, 0, 0, 0};
   alignas(32) gsl::index m_extent[4]{0, 0, 0, 0};
   gsl::index m_fullIndex;
-  gsl::index m_dims;
-  gsl::index m_numberOfSubindices;
-  std::array<gsl::index, 4> m_subdims;
-  std::array<std::array<gsl::index, 4>, 4> m_offsets;
+  int32_t m_dims;
+  int32_t m_numberOfSubindices;
+  std::array<int32_t, 4> m_subdims;
+  std::array<std::array<int32_t, 4>, 4> m_offsets;
   std::array<std::array<gsl::index, 4>, 4> m_factors;
 };
 
