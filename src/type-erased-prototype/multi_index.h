@@ -15,20 +15,21 @@ public:
     for (gsl::index d = 0; d < m_dims; ++d)
       m_extent[d] = parentDimensions.size(d);
 
-    for (const auto &dimensions : subdimensions) {
+    m_numberOfSubindices = subdimensions.size();
+    for (gsl::index j = 0; j < m_numberOfSubindices; ++j) {
+      const auto &dimensions = subdimensions[j];
       gsl::index factor{1};
-      std::vector<gsl::index> offsets;
-      std::vector<gsl::index> factors;
+      gsl::index k = 0;
       for (gsl::index i = 0; i < dimensions.count(); ++i) {
         const auto dimension = dimensions.label(i);
         if (parentDimensions.contains(dimension)) {
-          offsets.push_back(parentDimensions.index(dimension));
-          factors.push_back(factor);
+          m_offsets[j][k] = parentDimensions.index(dimension);
+          m_factors[j][k] = factor;
+          ++k;
         }
         factor *= dimensions.size(i);
       }
-      m_offsets.push_back(offsets);
-      m_factors.push_back(factors);
+      m_subdims[j] = k;
     }
     gsl::index offset{1};
     for (gsl::index d = 0; d < m_dims; ++d) {
@@ -75,7 +76,7 @@ public:
             if (m_coord[2] == m_extent[2]) {
               for (int i = 0; i < 4; ++i)
                 m_index[i] += m_delta[12 + i];
-              if(m_dims > 3) {
+              if (m_dims > 3) {
                 m_coord[2] = 0;
                 ++m_coord[3];
               }
@@ -97,9 +98,9 @@ public:
       remainder /= m_extent[d];
     }
     m_coord[m_dims - 1] = remainder;
-    for (gsl::index i = 0; i < m_factors.size(); ++i) {
+    for (gsl::index i = 0; i < m_numberOfSubindices; ++i) {
       m_index[i] = 0;
-      for (gsl::index j = 0; j < m_factors[i].size(); ++j)
+      for (gsl::index j = 0; j < m_subdims[i]; ++j)
         m_index[i] += m_factors[i][j] * m_coord[m_offsets[i][j]];
     }
   }
@@ -115,7 +116,7 @@ private:
   // alignas does not help, for some reason gcc does not generate SIMD
   // instructions.
   // Using std::array is 1.5x slower, for some reason intermediate values of
-  // m_index are always stored instead of merely being kept in regsiters.
+  // m_index are always stored instead of merely being kept in registers.
   alignas(32) gsl::index m_index[4]{0, 0, 0, 0};
   alignas(32) gsl::index m_delta[16]{0, 0, 0, 0, 0, 0, 0, 0,
                                      0, 0, 0, 0, 0, 0, 0, 0};
@@ -123,8 +124,10 @@ private:
   alignas(32) gsl::index m_extent[4]{0, 0, 0, 0};
   gsl::index m_fullIndex;
   gsl::index m_dims;
-  std::vector<std::vector<gsl::index>> m_offsets;
-  std::vector<std::vector<gsl::index>> m_factors;
+  gsl::index m_numberOfSubindices;
+  std::array<gsl::index, 4> m_subdims;
+  std::array<std::array<gsl::index, 4>, 4> m_offsets;
+  std::array<std::array<gsl::index, 4>, 4> m_factors;
 };
 
 #endif // MULTI_INDEX_H

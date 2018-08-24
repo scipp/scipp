@@ -451,36 +451,42 @@ public:
             DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...},
         m_relevantDimensions(
             relevantDimensions(dataset, m_subdimensions, fixedDimensions)),
+        m_size(m_relevantDimensions.volume()),
         m_index(m_relevantDimensions, m_subdimensions),
         m_variables(
-            DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {}
+            DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {
+    m_subdimensions.clear();
+    m_relevantDimensions = Dimensions();
+  }
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset)...},
         m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
         m_relevantDimensions(
             relevantDimensions(dataset, m_subdimensions, fixedDimensions)),
+        m_size(m_relevantDimensions.volume()),
         m_index(m_relevantDimensions, m_subdimensions),
-        m_variables(DataHelper<Ts>::get(dataset, m_relevantDimensions)...) {}
+        m_variables(DataHelper<Ts>::get(dataset, m_relevantDimensions)...) {
+    m_subdimensions.clear();
+    m_relevantDimensions = Dimensions();
+  }
 
   DatasetView(const DatasetView &other,
               const std::tuple<ref_type_t<Ts>...> &data)
       : m_units(other.m_units), m_subdimensions(other.m_subdimensions),
-        m_relevantDimensions(other.m_relevantDimensions),
+        m_relevantDimensions(other.m_relevantDimensions), m_size(other.m_size),
         m_index(other.m_index), m_variables(data) {}
 
-  gsl::index size() const { return m_relevantDimensions.volume(); }
-
+  gsl::index size() const { return m_size; }
   iterator begin() { return {0, m_index, m_variables}; }
-  iterator end() {
-    return {m_relevantDimensions.volume(), m_index, m_variables};
-  }
+  iterator end() { return {m_size, m_index, m_variables}; }
 
 private:
   const std::tuple<detail::unit_t<Ts>...> m_units;
   // TODO Do not need m_subdimensions and m_relevantDimensions after init, but
   // the init order makes refactoring nontrivial.
   std::vector<Dimensions> m_subdimensions;
-  const Dimensions m_relevantDimensions;
+  Dimensions m_relevantDimensions;
+  gsl::index m_size;
   const MultiIndex m_index;
   std::tuple<ref_type_t<Ts>...> m_variables;
 };
