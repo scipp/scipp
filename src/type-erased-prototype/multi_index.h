@@ -64,24 +64,18 @@ public:
     if (m_coord[0] == m_extent[0]) {
       for (int i = 0; i < 4; ++i)
         m_index[i] += m_delta[4 + i];
-      if (m_dims > 1) {
-        m_coord[0] = 0;
-        ++m_coord[1];
-        if (m_coord[1] == m_extent[1]) {
+      m_coord[0] = 0;
+      ++m_coord[1];
+      if (m_coord[1] == m_extent[1]) {
+        for (int i = 0; i < 4; ++i)
+          m_index[i] += m_delta[8 + i];
+        m_coord[1] = 0;
+        ++m_coord[2];
+        if (m_coord[2] == m_extent[2]) {
           for (int i = 0; i < 4; ++i)
-            m_index[i] += m_delta[8 + i];
-          if (m_dims > 2) {
-            m_coord[1] = 0;
-            ++m_coord[2];
-            if (m_coord[2] == m_extent[2]) {
-              for (int i = 0; i < 4; ++i)
-                m_index[i] += m_delta[12 + i];
-              if (m_dims > 3) {
-                m_coord[2] = 0;
-                ++m_coord[3];
-              }
-            }
-          }
+            m_index[i] += m_delta[12 + i];
+          m_coord[2] = 0;
+          ++m_coord[3];
         }
       }
     }
