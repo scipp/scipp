@@ -86,7 +86,7 @@ template <> struct ref_type<Data::StdDev> {
   using type = typename ref_type<Data::Variance>::type;
 };
 template <class... Tags> struct ref_type<DatasetView<Tags...>> {
-  using type = std::tuple<MultiIndex, DatasetView<Tags...>,
+  using type = std::tuple<const MultiIndex, const DatasetView<Tags...>,
                           std::tuple<typename ref_type<Tags>::type...>>;
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
@@ -448,48 +448,65 @@ public:
   DatasetView(Dataset &dataset, const std::string &name,
               const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset, name)...},
-        m_subdimensions{
-            DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...},
-        m_relevantDimensions(
-            relevantDimensions(dataset, m_subdimensions, fixedDimensions)),
-        m_size(m_relevantDimensions.volume()),
-        m_index(m_relevantDimensions, m_subdimensions),
-        m_variables(
-            DataHelper<Ts>::get(dataset, m_relevantDimensions, name)...) {
-    m_subdimensions.clear();
-    m_relevantDimensions = Dimensions();
-  }
+        m_variables(makeVariables(dataset, name, fixedDimensions)) {}
   DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset)...},
-        m_subdimensions{DimensionHelper<Ts>::get(dataset, fixedDimensions)...},
-        m_relevantDimensions(
-            relevantDimensions(dataset, m_subdimensions, fixedDimensions)),
-        m_size(m_relevantDimensions.volume()),
-        m_index(m_relevantDimensions, m_subdimensions),
-        m_variables(DataHelper<Ts>::get(dataset, m_relevantDimensions)...) {
-    m_subdimensions.clear();
-    m_relevantDimensions = Dimensions();
-  }
+        m_variables(makeVariables(dataset, fixedDimensions)) {}
 
   DatasetView(const DatasetView &other,
               const std::tuple<ref_type_t<Ts>...> &data)
-      : m_units(other.m_units), m_subdimensions(other.m_subdimensions),
-        m_relevantDimensions(other.m_relevantDimensions), m_size(other.m_size),
-        m_index(other.m_index), m_variables(data) {}
+      : m_units(other.m_units), //m_size(other.m_size), m_index(other.m_index),
+        m_variables(std::get<0>(other.m_variables), std::get<1>(other.m_variables), data) {}
 
-  gsl::index size() const { return m_size; }
-  iterator begin() const { return {0, m_index, m_variables}; }
-  iterator end() const { return {m_size, m_index, m_variables}; }
+  gsl::index size() const { return std::get<0>(m_variables); }
+  iterator begin() const {
+    return {0, std::get<1>(m_variables), std::get<2>(m_variables)};
+  }
+  iterator end() const {
+    return {std::get<0>(m_variables), std::get<1>(m_variables),
+            std::get<2>(m_variables)};
+  }
 
 private:
+  std::tuple<const gsl::index, const MultiIndex, const std::tuple<ref_type_t<Ts>...>> makeVariables(Dataset &dataset, const std::string &name,
+                     const std::set<Dimension> &fixedDimensions) const {
+    std::vector<Dimensions> subdimensions{
+        DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...};
+    Dimensions iterationDimensions(
+        relevantDimensions(dataset, subdimensions, fixedDimensions));
+    //m_size = iterationDimensions.volume();
+    //m_index = MultiIndex(iterationDimensions, subdimensions);
+    //return std::tuple<ref_type_t<Ts>...>{
+    //    DataHelper<Ts>::get(dataset, iterationDimensions, name)...};
+    return std::tuple<const gsl::index, const MultiIndex,
+                      const std::tuple<ref_type_t<Ts>...>>{
+        iterationDimensions.volume(),
+        MultiIndex(iterationDimensions, subdimensions),
+        std::tuple<ref_type_t<Ts>...>{
+            DataHelper<Ts>::get(dataset, iterationDimensions, name)...}};
+  }
+  std::tuple<const gsl::index, const MultiIndex, const std::tuple<ref_type_t<Ts>...>> makeVariables(Dataset &dataset,
+                     const std::set<Dimension> &fixedDimensions) const {
+    std::vector<Dimensions> subdimensions{
+        DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
+    Dimensions iterationDimensions(
+        relevantDimensions(dataset, subdimensions, fixedDimensions));
+    //m_size = iterationDimensions.volume();
+    //m_index = MultiIndex(iterationDimensions, subdimensions);
+    //return std::tuple<ref_type_t<Ts>...>{
+    //    DataHelper<Ts>::get(dataset, iterationDimensions)...};
+    return std::tuple<const gsl::index, const MultiIndex,
+                      const std::tuple<ref_type_t<Ts>...>>{
+        iterationDimensions.volume(),
+        MultiIndex(iterationDimensions, subdimensions),
+        std::tuple<ref_type_t<Ts>...>{
+            DataHelper<Ts>::get(dataset, iterationDimensions)...}};
+  }
+
   const std::tuple<detail::unit_t<Ts>...> m_units;
-  // TODO Do not need m_subdimensions and m_relevantDimensions after init, but
-  // the init order makes refactoring nontrivial.
-  std::vector<Dimensions> m_subdimensions;
-  Dimensions m_relevantDimensions;
-  gsl::index m_size;
-  const MultiIndex m_index;
-  const std::tuple<ref_type_t<Ts>...> m_variables;
+  //gsl::index m_size;
+  //MultiIndex m_index;
+  const std::tuple<const gsl::index, const MultiIndex, const std::tuple<ref_type_t<Ts>...>> m_variables;
 };
 
 #endif // DATASET_VIEW_H
