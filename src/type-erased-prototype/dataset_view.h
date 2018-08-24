@@ -265,7 +265,7 @@ template <class Tag> struct SubdataHelper<Bin<Tag>> {
 /// Class with overloads used to handle "virtual" variables such as
 /// Coord::SpectrumPosition.
 template <class Tag> struct ItemHelper {
-  static element_return_type_t<Tag> get(ref_type_t<Tag> &data,
+  static element_return_type_t<Tag> get(const ref_type_t<Tag> &data,
                                         gsl::index index) {
     return data[index];
   }
@@ -273,7 +273,7 @@ template <class Tag> struct ItemHelper {
 
 template <> struct ItemHelper<Coord::SpectrumPosition> {
   static element_return_type_t<Coord::SpectrumPosition>
-  get(ref_type_t<Coord::SpectrumPosition> &data, gsl::index index) {
+  get(const ref_type_t<Coord::SpectrumPosition> &data, gsl::index index) {
     if (data.second[index].empty())
       throw std::runtime_error(
           "Spectrum has no detectors, cannot get position.");
@@ -285,14 +285,14 @@ template <> struct ItemHelper<Coord::SpectrumPosition> {
 };
 
 template <> struct ItemHelper<Data::StdDev> {
-  static element_return_type_t<Data::StdDev> get(ref_type_t<Data::StdDev> &data,
-                                                 gsl::index index) {
+  static element_return_type_t<Data::StdDev>
+  get(const ref_type_t<Data::StdDev> &data, gsl::index index) {
     return sqrt(ItemHelper<Data::Variance>::get(data, index));
   }
 };
 
 template <class Tag> struct ItemHelper<Bin<Tag>> {
-  static element_return_type_t<Bin<Tag>> get(ref_type_t<Bin<Tag>> &data,
+  static element_return_type_t<Bin<Tag>> get(const ref_type_t<Bin<Tag>> &data,
                                              gsl::index index) {
     auto offset = data.first;
     return DataBin(data.second[index], data.second[index + offset]);
@@ -305,7 +305,7 @@ template <class... Tags> struct ItemHelper<DatasetView<Tags...>> {
       detail::index<Tag, std::tuple<Tags...>>::value;
 
   static element_return_type_t<DatasetView<Tags...>>
-  get(ref_type_t<DatasetView<Tags...>> &data, gsl::index index) {
+  get(const ref_type_t<DatasetView<Tags...>> &data, gsl::index index) {
     // Add offset to each span passed to the nested DatasetView.
     MultiIndex nestedIndex = std::get<0>(data);
     nestedIndex.setIndex(index);
@@ -330,9 +330,10 @@ private:
   template <class Tag>
   using maybe_const = std::tuple_element_t<tag_index<Tag>, std::tuple<Ts...>>;
 
-  Dimensions relevantDimensions(const Dataset &dataset,
-                                std::vector<Dimensions> variableDimensions,
-                                const std::set<Dimension> &fixedDimensions) {
+  Dimensions
+  relevantDimensions(const Dataset &dataset,
+                     std::vector<Dimensions> variableDimensions,
+                     const std::set<Dimension> &fixedDimensions) const {
     // The dimensions for the variables may be longer by one if the variable is
     // an edge variable. For iteration dimensions we require the dimensions
     // without the extended length. The original variableDimensions is kept
@@ -383,7 +384,7 @@ public:
   class Item : public GetterMixin<Item, Ts>... {
   public:
     Item(const gsl::index index, const MultiIndex &multiIndex,
-         std::tuple<ref_type_t<Ts>...> &variables)
+         const std::tuple<ref_type_t<Ts>...> &variables)
         : m_index(multiIndex), m_variables(variables) {
       setIndex(index);
     }
@@ -410,7 +411,7 @@ public:
     }
 
     MultiIndex m_index;
-    std::tuple<ref_type_t<Ts>...> &m_variables;
+    const std::tuple<ref_type_t<Ts>...> &m_variables;
   };
 
   class iterator
@@ -418,7 +419,7 @@ public:
                                       boost::random_access_traversal_tag> {
   public:
     iterator(const gsl::index index, const MultiIndex &multiIndex,
-             std::tuple<ref_type_t<Ts>...> &variables)
+             const std::tuple<ref_type_t<Ts>...> &variables)
         : m_item(index, multiIndex, variables) {}
 
   private:
@@ -477,8 +478,8 @@ public:
         m_index(other.m_index), m_variables(data) {}
 
   gsl::index size() const { return m_size; }
-  iterator begin() { return {0, m_index, m_variables}; }
-  iterator end() { return {m_size, m_index, m_variables}; }
+  iterator begin() const { return {0, m_index, m_variables}; }
+  iterator end() const { return {m_size, m_index, m_variables}; }
 
 private:
   const std::tuple<detail::unit_t<Ts>...> m_units;
@@ -488,7 +489,7 @@ private:
   Dimensions m_relevantDimensions;
   gsl::index m_size;
   const MultiIndex m_index;
-  std::tuple<ref_type_t<Ts>...> m_variables;
+  const std::tuple<ref_type_t<Ts>...> m_variables;
 };
 
 #endif // DATASET_VIEW_H
