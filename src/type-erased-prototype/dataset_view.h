@@ -95,7 +95,10 @@ template <class Tag> struct UnitHelper {
   static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
 
   static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset.unit<Tag>(name);
+    if (is_coord<Tag>)
+      return dataset.unit<Tag>();
+    else
+      return dataset.unit<Tag>(name);
   }
 };
 
@@ -119,6 +122,10 @@ template <class... Tags> struct UnitHelper<DatasetView<Tags...>> {
   static detail::unit_t<DatasetView<Tags...>> get(const Dataset &dataset) {
     return std::make_tuple(UnitHelper<Tags>::get(dataset)...);
   }
+  static detail::unit_t<DatasetView<Tags...>> get(const Dataset &dataset,
+                                                  const std::string &name) {
+    return std::make_tuple(UnitHelper<Tags>::get(dataset, name)...);
+  }
 };
 
 template <class Tag> struct DimensionHelper {
@@ -131,9 +138,11 @@ template <class Tag> struct DimensionHelper {
   static Dimensions get(const Dataset &dataset, const std::string &name,
                         const std::set<Dimension> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
-    // TODO Use name only for non-coord variables.
     // TODO Do we need to check here if fixedDimensions are contained?
-    return dataset.dimensions<Tag>(name);
+    if (is_coord<Tag>)
+      return dataset.dimensions<Tag>();
+    else
+      return dataset.dimensions<Tag>(name);
   }
 };
 
@@ -160,10 +169,8 @@ template <> struct DimensionHelper<Data::StdDev> {
 };
 
 template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
-  static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
-    std::vector<Dimensions> variableDimensions{
-        DimensionHelper<Tags>::get(dataset, fixedDimensions)...};
+  static Dimensions getHelper(std::vector<Dimensions> variableDimensions,
+                              const std::set<Dimension> &fixedDimensions) {
     // Remove fixed dimensions *before* finding largest --- outer iteration must
     // cover all contained non-fixed dimensions.
     for (auto &dims : variableDimensions)
@@ -191,6 +198,19 @@ template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
     }
     return largest;
   }
+
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    return getHelper({DimensionHelper<Tags>::get(dataset, fixedDimensions)...},
+                     fixedDimensions);
+  }
+
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions) {
+    return getHelper(
+        {DimensionHelper<Tags>::get(dataset, name, fixedDimensions)...},
+        fixedDimensions);
+  }
 };
 
 template <class Tag> struct DataHelper {
@@ -199,7 +219,10 @@ template <class Tag> struct DataHelper {
   }
   static auto get(Dataset &dataset, const Dimensions &iterationDimensions,
                   const std::string &name) {
-    return dataset.get<detail::value_type_t<Tag>>(name);
+    if (is_coord<Tag>)
+      return dataset.get<detail::value_type_t<Tag>>();
+    else
+      return dataset.get<detail::value_type_t<Tag>>(name);
   }
 };
 
@@ -247,6 +270,20 @@ template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
                    {DimensionHelper<Tags>::get(dataset, {})...}),
         DatasetView<Tags...>(dataset, fixedDimensions),
         std::make_tuple(DataHelper<Tags>::get(dataset, {})...)};
+  }
+  static auto get(Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    std::set<Dimension> fixedDimensions;
+    for (auto &item : iterationDimensions)
+      fixedDimensions.insert(item.first);
+    // For the nested case we create a DatasetView with the correct dimensions
+    // and store it. It is later copied and initialized with the correct offset
+    // in iterator::get.
+    return ref_type_t<DatasetView<Tags...>>{
+        MultiIndex(iterationDimensions,
+                   {DimensionHelper<Tags>::get(dataset, name, {})...}),
+        DatasetView<Tags...>(dataset, name, fixedDimensions),
+        std::make_tuple(DataHelper<Tags>::get(dataset, {}, name)...)};
   }
 };
 

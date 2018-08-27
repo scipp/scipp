@@ -581,6 +581,15 @@ TEST(DatasetView, duplicate_data_tag) {
   EXPECT_NO_THROW(DatasetView<Data::Value> view(d, "name2"));
 }
 
+TEST(DatasetView, named_variable_and_coordinate) {
+  Dataset d;
+  d.insert<Coord::X>(Dimensions{}, 1);
+  d.insert<Data::Value>("name", Dimensions{}, 1);
+
+  EXPECT_NO_THROW((DatasetView<Coord::X, Data::Value>(d, "name")));
+  (DatasetView<Coord::X, Data::Value>(d, "name"));
+}
+
 TEST(DatasetView, spectrum_position) {
   Dataset d;
   d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
