@@ -455,8 +455,9 @@ public:
 
   DatasetView(const DatasetView &other,
               const std::tuple<ref_type_t<Ts>...> &data)
-      : m_units(other.m_units), //m_size(other.m_size), m_index(other.m_index),
-        m_variables(std::get<0>(other.m_variables), std::get<1>(other.m_variables), data) {}
+      : m_units(other.m_units),
+        m_variables(std::get<0>(other.m_variables),
+                    std::get<1>(other.m_variables), data) {}
 
   gsl::index size() const { return std::get<0>(m_variables); }
   iterator begin() const {
@@ -468,16 +469,14 @@ public:
   }
 
 private:
-  std::tuple<const gsl::index, const MultiIndex, const std::tuple<ref_type_t<Ts>...>> makeVariables(Dataset &dataset, const std::string &name,
-                     const std::set<Dimension> &fixedDimensions) const {
+  std::tuple<const gsl::index, const MultiIndex,
+             const std::tuple<ref_type_t<Ts>...>>
+  makeVariables(Dataset &dataset, const std::string &name,
+                const std::set<Dimension> &fixedDimensions) const {
     std::vector<Dimensions> subdimensions{
         DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...};
     Dimensions iterationDimensions(
         relevantDimensions(dataset, subdimensions, fixedDimensions));
-    //m_size = iterationDimensions.volume();
-    //m_index = MultiIndex(iterationDimensions, subdimensions);
-    //return std::tuple<ref_type_t<Ts>...>{
-    //    DataHelper<Ts>::get(dataset, iterationDimensions, name)...};
     return std::tuple<const gsl::index, const MultiIndex,
                       const std::tuple<ref_type_t<Ts>...>>{
         iterationDimensions.volume(),
@@ -485,16 +484,14 @@ private:
         std::tuple<ref_type_t<Ts>...>{
             DataHelper<Ts>::get(dataset, iterationDimensions, name)...}};
   }
-  std::tuple<const gsl::index, const MultiIndex, const std::tuple<ref_type_t<Ts>...>> makeVariables(Dataset &dataset,
-                     const std::set<Dimension> &fixedDimensions) const {
+  std::tuple<const gsl::index, const MultiIndex,
+             const std::tuple<ref_type_t<Ts>...>>
+  makeVariables(Dataset &dataset,
+                const std::set<Dimension> &fixedDimensions) const {
     std::vector<Dimensions> subdimensions{
         DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
     Dimensions iterationDimensions(
         relevantDimensions(dataset, subdimensions, fixedDimensions));
-    //m_size = iterationDimensions.volume();
-    //m_index = MultiIndex(iterationDimensions, subdimensions);
-    //return std::tuple<ref_type_t<Ts>...>{
-    //    DataHelper<Ts>::get(dataset, iterationDimensions)...};
     return std::tuple<const gsl::index, const MultiIndex,
                       const std::tuple<ref_type_t<Ts>...>>{
         iterationDimensions.volume(),
@@ -504,9 +501,8 @@ private:
   }
 
   const std::tuple<detail::unit_t<Ts>...> m_units;
-  //gsl::index m_size;
-  //MultiIndex m_index;
-  const std::tuple<const gsl::index, const MultiIndex, const std::tuple<ref_type_t<Ts>...>> m_variables;
+  const std::tuple<const gsl::index, const MultiIndex,
+                   const std::tuple<ref_type_t<Ts>...>> m_variables;
 };
 
 #endif // DATASET_VIEW_H

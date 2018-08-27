@@ -61,24 +61,13 @@ public:
     for (int i = 0; i < 4; ++i)
       m_index[i] += m_delta[0 + i];
     ++m_coord[0];
-    if (m_coord[0] == m_extent[0]) {
-      for (int i = 0; i < 4; ++i)
-        m_index[i] += m_delta[4 + i];
-      m_coord[0] = 0;
-      ++m_coord[1];
-      if (m_coord[1] == m_extent[1]) {
-        for (int i = 0; i < 4; ++i)
-          m_index[i] += m_delta[8 + i];
-        m_coord[1] = 0;
-        ++m_coord[2];
-        if (m_coord[2] == m_extent[2]) {
-          for (int i = 0; i < 4; ++i)
-            m_index[i] += m_delta[12 + i];
-          m_coord[2] = 0;
-          ++m_coord[3];
-        }
-      }
-    }
+    // It may seem counter-intuitive, but moving the code for a wrapped index
+    // into a separate method helps with inlining of this *outer* part of the
+    // increment method. Since mostly we do not wrap, inlining `increment()` is
+    // the important part, the function call to `indexWrapped()` is not so
+    // critical.
+    if (m_coord[0] == m_extent[0])
+      indexWrapped();
     ++m_fullIndex;
   }
 
@@ -107,6 +96,25 @@ public:
   }
 
 private:
+  void indexWrapped() {
+    for (int i = 0; i < 4; ++i)
+      m_index[i] += m_delta[4 + i];
+    m_coord[0] = 0;
+    ++m_coord[1];
+    if (m_coord[1] == m_extent[1]) {
+      for (int i = 0; i < 4; ++i)
+        m_index[i] += m_delta[8 + i];
+      m_coord[1] = 0;
+      ++m_coord[2];
+      if (m_coord[2] == m_extent[2]) {
+        for (int i = 0; i < 4; ++i)
+          m_index[i] += m_delta[12 + i];
+        m_coord[2] = 0;
+        ++m_coord[3];
+      }
+    }
+  }
+
   // alignas does not help, for some reason gcc does not generate SIMD
   // instructions.
   // Using std::array is 1.5x slower, for some reason intermediate values of
