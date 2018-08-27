@@ -71,10 +71,14 @@ struct Coord {
     using type = std::string;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct Temperature {
+    using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
 
   using tags = std::tuple<X, Y, Z, Tof, MonitorTof, DetectorId, SpectrumNumber,
                           DetectorPosition, DetectorGrouping, SpectrumPosition,
-                          RowLabel, Polarization>;
+                          RowLabel, Polarization, Temperature>;
 };
 
 class Histogram;
