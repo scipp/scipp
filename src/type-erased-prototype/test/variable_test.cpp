@@ -60,11 +60,11 @@ TEST(Variable, copy) {
 
 TEST(Variable, ragged) {
   const auto raggedSize = makeVariable<Data::DimensionSize>(
-      Dimensions(Dimension::SpectrumNumber, 2), {2l, 3l});
+      Dimensions(Dimension::Spectrum, 2), {2l, 3l});
   EXPECT_EQ(raggedSize.dimensions().volume(), 2);
   Dimensions dimensions;
   dimensions.add(Dimension::Tof, raggedSize);
-  dimensions.add(Dimension::SpectrumNumber, 2);
+  dimensions.add(Dimension::Spectrum, 2);
   EXPECT_EQ(dimensions.volume(), 5);
   ASSERT_NO_THROW(makeVariable<Data::Value>(dimensions, 5));
   ASSERT_ANY_THROW(makeVariable<Data::Value>(dimensions, 4));
@@ -222,6 +222,18 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data4[7], 1.0);
 }
 
+TEST(Variable, concatenate_volume_with_slice) {
+  auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
+  auto aa = concatenate(Dimension::X, a, a);
+  EXPECT_NO_THROW(concatenate(Dimension::X, aa, a));
+}
+
+TEST(Variable, concatenate_slice_with_volume) {
+  auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
+  auto aa = concatenate(Dimension::X, a, a);
+  EXPECT_NO_THROW(concatenate(Dimension::X, a, aa));
+}
+
 TEST(Variable, concatenate_fail) {
   Dimensions dims(Dimension::Tof, 1);
   auto a = makeVariable<Data::Value>(dims, {1.0});
@@ -234,10 +246,9 @@ TEST(Variable, concatenate_fail) {
   EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, c), std::runtime_error,
                    "Cannot concatenate Variables: Data types do not match.");
   auto aa = concatenate(Dimension::Tof, a, a);
-  // TODO better size check, the following should work:
-  // EXPECT_NO_THROW(concatenate(Dimension::Tof, a, aa));
-  EXPECT_THROW_MSG(concatenate(Dimension::Q, a, aa), std::runtime_error,
-                   "Cannot concatenate Variables: Dimensions do not match.");
+  EXPECT_THROW_MSG(
+      concatenate(Dimension::Q, a, aa), std::runtime_error,
+      "Cannot concatenate Variables: Dimension extents do not match.");
 }
 
 TEST(Variable, concatenate_unit_fail) {

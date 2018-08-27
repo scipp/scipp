@@ -53,7 +53,7 @@ static void
 BM_DatasetView_multi_column_mixed_dimension(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
-  dims.add(Dimension::SpectrumNumber, state.range(0));
+  dims.add(Dimension::Spectrum, state.range(0));
   d.insert<Data::Int>("specnums", dims, state.range(0));
   dims.add(Dimension::Tof, 1000);
   d.insert<Data::Value>("histograms", dims, state.range(0) * 1000);
@@ -76,7 +76,7 @@ BENCHMARK(BM_DatasetView_multi_column_mixed_dimension)
 static void BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
-  dims.add(Dimension::SpectrumNumber, state.range(0));
+  dims.add(Dimension::Spectrum, state.range(0));
   d.insert<Data::Variance>("", dims, state.range(0));
   dims.add(Dimension::Tof, 100);
   dims.add(Dimension::Run, 10);
@@ -102,7 +102,7 @@ static void
 BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
-  dims.add(Dimension::SpectrumNumber, state.range(0));
+  dims.add(Dimension::Spectrum, state.range(0));
   d.insert<Data::Variance>("", dims, state.range(0));
   dims.add(Dimension::Tof, 100);
   dims.add(Dimension::Run, 10);
@@ -129,10 +129,10 @@ static void
 BM_DatasetView_multi_column_mixed_dimension_nested(benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert<Data::Int>("specnums", {Dimension::SpectrumNumber, nSpec}, nSpec);
+  d.insert<Data::Int>("specnums", {Dimension::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dimension::Tof, 1000);
-  dims.add(Dimension::SpectrumNumber, nSpec);
+  dims.add(Dimension::Spectrum, nSpec);
   d.insert<Data::Value>("histograms", dims, nSpec * 1000);
   d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
   DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dimension::Tof});
@@ -155,14 +155,14 @@ BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested)
     ->Range(8, 8 << 15);
 ;
 
-static void
-BM_DatasetView_multi_column_mixed_dimension_nested_threaded(benchmark::State &state) {
+static void BM_DatasetView_multi_column_mixed_dimension_nested_threaded(
+    benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert<Data::Int>("specnums", {Dimension::SpectrumNumber, nSpec}, nSpec);
+  d.insert<Data::Int>("specnums", {Dimension::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dimension::Tof, 1000);
-  dims.add(Dimension::SpectrumNumber, nSpec);
+  dims.add(Dimension::Spectrum, nSpec);
   d.insert<Data::Value>("histograms", dims, nSpec * 1000);
   d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
   DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dimension::Tof});
@@ -192,9 +192,9 @@ static void BM_DatasetView_multi_column_mixed_dimension_nested_transpose(
     benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert<Data::Int>("specnums", {Dimension::SpectrumNumber, nSpec}, nSpec);
+  d.insert<Data::Int>("specnums", {Dimension::Spectrum, nSpec}, nSpec);
   Dimensions dims;
-  dims.add(Dimension::SpectrumNumber, nSpec);
+  dims.add(Dimension::Spectrum, nSpec);
   dims.add(Dimension::Tof, 1000);
   d.insert<Data::Value>("histograms", dims, nSpec * 1000);
   d.insert<Data::Variance>("histograms", dims, nSpec * 1000);

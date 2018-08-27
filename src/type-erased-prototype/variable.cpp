@@ -3,35 +3,39 @@
 
 template <class T> struct ArithmeticHelper {
   static void plus_equals(std::vector<T> &a,
-                          const VariableView<std::vector<T>> &b) {
+                          const VariableView<const std::vector<T>> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), std::plus<T>());
   }
   static void times_equals(std::vector<T> &a,
-                           const VariableView<std::vector<T>> &b) {
+                           const VariableView<const std::vector<T>> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(),
                    std::multiplies<T>());
   }
 };
 
 template <class T> struct ArithmeticHelper<std::vector<T>> {
-  static void plus_equals(std::vector<std::vector<T>> &a,
-                          const VariableView<std::vector<std::vector<T>>> &b) {
+  static void
+  plus_equals(std::vector<std::vector<T>> &a,
+              const VariableView<const std::vector<std::vector<T>>> &b) {
     throw std::runtime_error("Not an arithmetic type. Addition not possible.");
   }
-  static void times_equals(std::vector<std::vector<T>> &a,
-                           const VariableView<std::vector<std::vector<T>>> &b) {
+  static void
+  times_equals(std::vector<std::vector<T>> &a,
+               const VariableView<const std::vector<std::vector<T>>> &b) {
     throw std::runtime_error(
         "Not an arithmetic type. Multiplication not possible.");
   }
 };
 
 template <> struct ArithmeticHelper<std::string> {
-  static void plus_equals(std::vector<std::string> &a,
-                          const VariableView<std::vector<std::string>> &b) {
+  static void
+  plus_equals(std::vector<std::string> &a,
+              const VariableView<const std::vector<std::string>> &b) {
     throw std::runtime_error("Cannot add strings. Use append() instead.");
   }
-  static void times_equals(std::vector<std::string> &a,
-                           const VariableView<std::vector<std::string>> &b) {
+  static void
+  times_equals(std::vector<std::string> &a,
+               const VariableView<const std::vector<std::string>> &b) {
     throw std::runtime_error(
         "Not an arithmetic type. Multiplication not possible.");
   }
@@ -57,9 +61,9 @@ public:
   VariableConcept &operator+=(const VariableConcept &other) override {
     try {
       ArithmeticHelper<typename T::value_type>::plus_equals(
-          m_model,
-          VariableView<T>(dynamic_cast<const VariableModel<T> &>(other).m_model,
-                          dimensions(), other.dimensions()));
+          m_model, VariableView<const T>(
+                       dynamic_cast<const VariableModel<T> &>(other).m_model,
+                       dimensions(), other.dimensions()));
     } catch (const std::bad_cast &) {
       throw std::runtime_error(
           "Cannot add Variables: Underlying data types do not match.");
@@ -70,9 +74,9 @@ public:
   VariableConcept &operator*=(const VariableConcept &other) override {
     try {
       ArithmeticHelper<typename T::value_type>::times_equals(
-          m_model,
-          VariableView<T>(dynamic_cast<const VariableModel<T> &>(other).m_model,
-                          dimensions(), other.dimensions()));
+          m_model, VariableView<const T>(
+                       dynamic_cast<const VariableModel<T> &>(other).m_model,
+                       dimensions(), other.dimensions()));
     } catch (const std::bad_cast &) {
       throw std::runtime_error(
           "Cannot multiply Variables: Underlying data types do not match.");
@@ -83,22 +87,24 @@ public:
   gsl::index size() const override { return m_model.size(); }
   void resize(const gsl::index size) override { m_model.resize(size); }
 
-  void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
-                const gsl::index chunkSkip,
-                const VariableConcept &other) override {
-    const auto &source = dynamic_cast<const VariableModel<T> &>(other);
-    auto in = source.m_model.begin();
-    auto in_end = source.m_model.end();
-    auto out = m_model.begin() + chunkStart * chunkSize;
-    auto out_end = m_model.end();
-    while (in != in_end && out != out_end) {
-      for (gsl::index i = 0; i < chunkSize; ++i) {
-        *out = *in;
-        ++out;
-        ++in;
-      }
-      out += (chunkSkip - 1) * chunkSize;
-    }
+  void copyFrom(const VariableConcept &otherConcept, const Dimension dim,
+                const gsl::index offset) override {
+    const auto &other = dynamic_cast<const VariableModel<T> &>(otherConcept);
+
+    auto iterationDimensions = dimensions();
+    if (!other.dimensions().contains(dim))
+      iterationDimensions.erase(dim);
+    else
+      iterationDimensions.resize(dim, other.dimensions().size(dim));
+
+    auto target = gsl::make_span(
+        m_model.data() + offset * dimensions().offset(dim), &*m_model.end());
+    VariableView<decltype(target)> view(target, iterationDimensions,
+                                        dimensions());
+    VariableView<const T> otherView(other.m_model, iterationDimensions,
+                                    other.dimensions());
+
+    std::copy(otherView.begin(), otherView.end(), view.begin());
   }
 
   const Dimensions &dimensions() const override { return m_dimensions; }
@@ -207,23 +213,50 @@ Variable concatenate(const Dimension dim, const Variable &a1,
         "Cannot concatenate Variables: Names do not match.");
   const auto &dims1 = a1.dimensions();
   const auto &dims2 = a2.dimensions();
-  if (!(dims1 == dims2))
+  // TODO Many things in this function should be refactored and moved in class
+  // Dimensions.
+  // TODO Special handling for edge variables.
+  for (const auto &item : dims1) {
+    if (item.first != dim) {
+      if (!dims2.contains(item.first))
+        throw std::runtime_error(
+            "Cannot concatenate Variables: Dimensions do not match.");
+      if (dims2.size(item.first) != item.second)
+        throw std::runtime_error(
+            "Cannot concatenate Variables: Dimension extents do not match.");
+    }
+  }
+  auto size1 = dims1.count();
+  auto size2 = dims2.count();
+  if (dims1.contains(dim))
+    size1--;
+  if (dims2.contains(dim))
+    size2--;
+  // This check covers the case of dims2 having extra dimensions not present in
+  // dims1.
+  // TODO Support broadcast of dimensions?
+  if (size1 != size2)
     throw std::runtime_error(
         "Cannot concatenate Variables: Dimensions do not match.");
+
   // Should we permit creation of ragged outputs if one dimension does not
   // match?
   auto out(a1);
   auto dims(dims1);
-  if (dims.contains(dim)) {
-    dims.resize(dim, dims1.size(dim) + dims2.size(dim));
-    out.setDimensions(dims);
-    auto offset = dims1.offset(dim) * dims1.size(dim);
-    out.data().copyFrom(offset, 0, 2, a1.data());
-    out.data().copyFrom(offset, 1, 2, a2.data());
-  } else {
-    dims.add(dim, 2);
-    out.setDimensions(dims);
-    out.data().copyFrom(a1.size(), 1, 2, a2.data());
-  }
+  gsl::index extent1 = 1;
+  gsl::index extent2 = 1;
+  if (dims1.contains(dim))
+    extent1 += dims1.size(dim) - 1;
+  if (dims2.contains(dim))
+    extent2 += dims2.size(dim) - 1;
+  if (dims.contains(dim))
+    dims.resize(dim, extent1 + extent2);
+  else
+    dims.add(dim, extent1 + extent2);
+  out.setDimensions(dims);
+
+  out.data().copyFrom(a1.data(), dim, 0);
+  out.data().copyFrom(a2.data(), dim, extent1);
+
   return out;
 }

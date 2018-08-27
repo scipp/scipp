@@ -21,9 +21,8 @@ public:
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
-  virtual void copyFrom(const gsl::index chunkSize, const gsl::index chunkStart,
-                        const gsl::index chunkSkip,
-                        const VariableConcept &other) = 0;
+  virtual void copyFrom(const VariableConcept &other, const Dimension dim,
+                        const gsl::index offset) = 0;
 
   virtual const Dimensions &dimensions() const = 0;
   virtual void setDimensions(const Dimensions &dimensions) = 0;

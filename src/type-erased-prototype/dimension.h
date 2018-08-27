@@ -4,14 +4,17 @@
 // TODO rename to Spectrum and Detector?
 enum class Dimension : char {
   Tof,
+  MonitorTof,
   Spectrum,
-  SpectrumNumber,
+  Monitor,
   Run,
   Detector,
   Q,
   X,
   Y,
   Z,
+  Polarization,
+  Temperature,
   Row
 };
 
