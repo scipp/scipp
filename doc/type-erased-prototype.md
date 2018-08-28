@@ -478,6 +478,11 @@ Outstanding tasks:
   For example, for access via `Coord::SpectrumNumber>`:
   - Build `std::unordered_map<SpectrumNumber>`, which verifies that there are no duplicates.
   - Fast access, similar to what `IndexInfo` is providing currently.
+
+  This is related to a slicing mechanism.
+  Slicing can use a view or a copy.
+  A view is in conflict with our copy-on-write mechanism, so probably only read-only views can be supported.
+  If implemented via a copy, see also notes regarding using a memory pool.
 - Understand performance implications of doing a lot of operations in streaming memory access.
   Investigate how a cache-blocked operation mode could be supported.
   Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.
@@ -516,6 +521,8 @@ Other:
 - Use https://github.com/tcbrindle/span instead of the one from GSL?
 - Avoid triggering COW if there is a subsequent exception, especially in `DatasetView`.
   Can we do all checks beforehand?
+- Use a memory pool.
+  This is particularely important if we implementing slicing via making a copy.
 
 Problems:
 
