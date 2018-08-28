@@ -60,8 +60,6 @@ TEST(Workspace2D, basics) {
       {Dimension::Polarization, 2},
       std::vector<std::string>{"spin-up", "spin-down"});
 
-  // TODO Implement slicing so we can subsequently subtract up from down.
-
   combined.insert<Coord::Temperature>({}, {300.0});
   combined.get<Data::Value>("sample")[0] = exp(-0.001 * 300.0);
   auto dataPoint(combined);
@@ -70,6 +68,13 @@ TEST(Workspace2D, basics) {
     dataPoint.get<Data::Value>("sample")[0] = exp(-0.001 * temperature);
     combined = concatenate(Dimension::Temperature, combined, dataPoint);
   }
+
+  // TODO Implement slicing so we can subsequently subtract up from down.
+  // Can we avoid creating temporaries?
+  // Dataset containing DatasetView for each variable. Specialize VariableModel
+  // so it cannot be resized etc.?
+  //auto delta = slice(combined, Dimension::Polarization, "spin-up") -
+  //             slice(combined, Dimension::Polarization, "spin-down");
 
   using PointData = DatasetView<const Coord::Temperature, const Data::Value,
                                 const Data::Variance>;
