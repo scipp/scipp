@@ -87,8 +87,22 @@ public:
   gsl::index size() const override { return m_model.size(); }
   void resize(const gsl::index size) override { m_model.resize(size); }
 
+  void copySlice(const VariableConcept &otherConcept, const Dimension dim,
+                         const gsl::index index) override {
+    const auto &other = dynamic_cast<const VariableModel<T> &>(otherConcept);
+    auto data = gsl::make_span(other.m_model.data() +
+                                   index * other.dimensions().offset(dim),
+                               &*other.m_model.end());
+    auto sliceDims = other.dimensions();
+    sliceDims.erase(dim);
+    VariableView<const decltype(data)> sliceView(data, sliceDims,
+                                                 other.dimensions());
+    std::copy(sliceView.begin(), sliceView.end(), m_model.begin());
+  }
+
   void copyFrom(const VariableConcept &otherConcept, const Dimension dim,
                 const gsl::index offset) override {
+    // TODO Can probably merge this method with copySlice.
     const auto &other = dynamic_cast<const VariableModel<T> &>(otherConcept);
 
     auto iterationDimensions = dimensions();
@@ -198,6 +212,16 @@ Variable operator+(const Variable &a, const Variable &b) {
 Variable operator*(const Variable &a, const Variable &b) {
   auto result(a);
   return result *= b;
+}
+
+Variable slice(const Variable &var, const Dimension dim,
+               const gsl::index index) {
+  auto out(var);
+  auto dims = out.dimensions();
+  dims.erase(dim);
+  out.setDimensions(dims);
+  out.data().copySlice(var.data(), dim, index);
+  return out;
 }
 
 Variable concatenate(const Dimension dim, const Variable &a1,

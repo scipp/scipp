@@ -21,6 +21,8 @@ public:
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
+  virtual void copySlice(const VariableConcept &other, const Dimension dim,
+                         const gsl::index index) = 0;
   virtual void copyFrom(const VariableConcept &other, const Dimension dim,
                         const gsl::index offset) = 0;
 
@@ -113,6 +115,8 @@ Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
 Variable operator+(const Variable &a, const Variable &b);
 Variable operator*(const Variable &a, const Variable &b);
 
+Variable slice(const Variable &var, const Dimension dim,
+               const gsl::index index);
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2);
 

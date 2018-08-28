@@ -515,6 +515,7 @@ Outstanding tasks:
     Does not work for coordinates, which cannot be duplicate.
   - If we create two `DatasetViews`, provindg a mechanism to ensure that they use the same dimensions for iteration woul be sufficient.
     Then we can use things like `std::transform`.
+- Example of scanning instrument.
 
 Other:
 
