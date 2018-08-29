@@ -92,9 +92,10 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
         return item.template get<Coord::SpectrumNumber>() == 1;
       })->get<PointData>();
 
-  for (const auto &point : tempDependence)
-    printf("%lf %lf %lf\n", point.get<Coord::Temperature>(), point.value(),
-           point.get<Data::Variance>());
+  // Do something with the resulting point data, e.g., plot:
+  // for (const auto &point : tempDependence)
+  //   plotPoint(point.get<Coord::Temperature>(), point.value(),
+  //             point.get<Data::Variance>());
 }
 
 TEST(Workspace2D, multiple_data) {
