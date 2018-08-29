@@ -42,6 +42,8 @@ TEST(TableWorkspace, basics) {
 
   // Standard shape operations provide basic things required for tables:
   auto mergedTable = concatenate(Dimension::Row, table, table);
-  // Other basics (to be implemented): cut/slice/truncate/chop/extract (naming
+  auto row = slice(table, Dimension::Row, 1);
+  EXPECT_EQ(row.get<const Coord::RowLabel>()[0], "b");
+  // Other basics (to be implemented): cut/truncate/chop/extract (naming
   // unclear), sort, filter, etc.
 }
