@@ -27,23 +27,17 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
 
   // "X" axis (shared for all spectra).
   d.insert<Coord::Tof>({Dimension::Tof, 1000}, 1000);
+  Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
   // Y
-  d.insert<Data::Value>(
-      "sample", Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}),
-      3 * 1000);
+  d.insert<Data::Value>("sample", dims, dims.volume());
   // E
-  d.insert<Data::Variance>(
-      "sample", Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}),
-      3 * 1000);
+  d.insert<Data::Variance>("sample", dims, dims.volume());
 
   // Monitors
+  dims = Dimensions({{Dimension::MonitorTof, 222}, {Dimension::Monitor, 2}});
   d.insert<Coord::MonitorTof>({Dimension::MonitorTof, 222}, 222);
-  d.insert<Data::Value>("monitor", Dimensions({{Dimension::MonitorTof, 222},
-                                               {Dimension::Monitor, 2}}),
-                        2 * 222);
-  d.insert<Data::Variance>("monitor", Dimensions({{Dimension::MonitorTof, 222},
-                                                  {Dimension::Monitor, 2}}),
-                           2 * 222);
+  d.insert<Data::Value>("monitor", dims, dims.volume());
+  d.insert<Data::Variance>("monitor", dims, dims.volume());
 
   auto spinUp(d);
   auto spinDown(d);
@@ -103,30 +97,21 @@ TEST(Workspace2D, multiple_data) {
 
   d.insert<Coord::Tof>({Dimension::Tof, 1000}, 1000);
 
+  Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
+
   // Sample
-  d.insert<Data::Value>(
-      "sample", Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}),
-      3 * 1000);
-  d.insert<Data::Variance>(
-      "sample", Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}),
-      3 * 1000);
+  d.insert<Data::Value>("sample", dims, dims.volume());
+  d.insert<Data::Variance>("sample", dims, dims.volume());
 
   // Background
-  d.insert<Data::Value>(
-      "background",
-      Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}), 3 * 1000);
-  d.insert<Data::Variance>(
-      "background",
-      Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}), 3 * 1000);
+  d.insert<Data::Value>("background", dims, dims.volume());
+  d.insert<Data::Variance>("background", dims, dims.volume());
 
   // Monitors
+  dims = Dimensions({{Dimension::MonitorTof, 222}, {Dimension::Monitor, 2}});
   d.insert<Coord::MonitorTof>({Dimension::MonitorTof, 222}, 222);
-  d.insert<Data::Value>("monitor", Dimensions({{Dimension::MonitorTof, 222},
-                                               {Dimension::Monitor, 2}}),
-                        2 * 222);
-  d.insert<Data::Variance>("monitor", Dimensions({{Dimension::MonitorTof, 222},
-                                                  {Dimension::Monitor, 2}}),
-                           2 * 222);
+  d.insert<Data::Value>("monitor", dims, dims.volume());
+  d.insert<Data::Variance>("monitor", dims, dims.volume());
 
   d.merge(d.extract("sample") - d.extract("background"));
 
