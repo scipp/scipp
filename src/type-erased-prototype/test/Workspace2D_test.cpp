@@ -103,7 +103,6 @@ TEST(Workspace2D, scanning) {
   // Scalar part of instrument, e.g.:
   // d.insert<Coord::Instrument>({}, Beamline::ComponentInfo{});
   d.insert<Coord::DetectorId>({Dimension::Detector, 4},
-  d.insert<Coord::DetectorId>({Dimension::Detector, 4},
                               {1001, 1002, 1003, 1004});
   d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
                                     {1.0, 2.0, 3.0, 4.0});

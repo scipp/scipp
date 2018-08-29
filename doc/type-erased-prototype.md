@@ -416,19 +416,27 @@ else
 ### Changes from v1 to v2
 
 Findings and changes:
+
 - Introduced `Variable`, similar to `xarray.DataArray`.
   The difference is that `Variable` does not have axes.
   This helps to define dimensionality, especially when we want to support bin edges, and allows implementations of operations on simpler types, separating the operation on a single variable from difficulties that may arise when defining an operation on a `Dataset` containing many variables.
-- Support bin edges.
+
+- Support bin edges in `DatasetView`.
+  - Provides read-only access the left/right/center/width of a bin.
+
 - Support ragged dimensions.
-  Only a couple of basics support this right now due to development overhead that is no required at this prototyping stage.
+  Only a couple of basics support this right now due to development overhead that is not required at this prototyping stage.
+  - After addition of more unrelated features and in particular performance issues in `DatasetView` I am now very skeptical regarding this feature.
+    Support would most likely affect the performance of any iteration using `DatasetView`, even if there is no ragged dimensions.
+    Furthermore the implementation of many operations would get quite a bit more complex, increasing the initial implementation effort significantly and reducing maintainability.
+
 - Add a `Dimensions` class, holding dimensions and their extents.
   This is in a very early state and needs to be expanded with set-like algebra and similar operations.
   Some of these are currently scattered to other classes like `DatasetView`.
   No major difficulty here due to well contained functionality, but will be quite tedious to do a full implementation covering all corner cases.
-- Add basic support for units.
-  The interface for (avoiding) the redundancy of defining units for variables that are coordinates for their dimension is still unclear.
+
 - Support name-based access in `Dataset` and `DatasetView`.
+
 - Introduced distinction between coordinate variables and data variables, similar to `xarray`.
   The distinction is based on the behavior under (arithmetic) operations between `Datasets`:
   - *Data variables* are *transformed*, e.g., multiplied in a "multiply" operation.
@@ -440,6 +448,13 @@ Findings and changes:
 
   Data variables include `Data::Value`, `Data::Error`, `Data::String`, `Data::Int`, and `Data::ExperimentLog`.
   Coordinate variables include `Coord::Tof`, `Coord::Q`, `Coord::SpectrumNumber`, `Coord::DetectorId`, `Coord::SpectrumPosition`, `Coord::DetectorPosition`, `Coord::DetectorGrouping`, `Coord::SpectrumLabel`, `Coord::RowLabel`, and `Coord::ColumnLabel`.
+
+- Add basic support for units.
+  - Variables are automatically assigned a default unit based in their tag, e.g., `Coord::X` wold have the unit "length".
+  - If there is no sensible default the variable is dimensionless unless set explicitly.
+  - For coordinate variables changing the unit will not be possible.
+    The interface for (avoiding) the redundancy of defining units for variables that are coordinates for their dimension is still unclear.
+
 - Issues from having multiple distinct data variables in `Dataset`, e.g., "sample" and "background" run and more importantly monitors as variables in `Dataset`:
   - For monitors, would need to have a second set of, e.g., `Variable::Tof` with different dimensions.
   - If there are multiple variables with the same type and shape, should we just use an extra dimension?
@@ -448,30 +463,40 @@ Findings and changes:
   My current conclusion is that as stated above we will not support duplicate coordinate variables.
   For monitors we will provide a separate `Dimension::MonitorTof` and `Coord::MonitorTof`.
   Data variables can be duplicate and will need to be accessed with their name.
-- Support for `Histogram` access in early draft state.
-  - Must be able to specify the dimension the histogram spans.
-    Currently using fixed dimension specification in `DatasetView`.
-    This seems consistent with what we plan to do for `Span`, so it should be intuitive to do it in the same way.
-  - How can we find the correct edge variable?
-    The dimension implies the axis!
-    For example, `Dimension::Tof` implies that `Coord::Tof` is the associated edge variable.
-  - Data variables are always `Data::Value` and `Data::Error` and there does not seem to be a need to support anything else?
-    - Use name-based access if there are multiple data variables of this type.
+
 - Support iterating variables with different dimensions order, i.e., we have support for on-the-fly transposition of data.
+
 - Access to derived "virtual" variables such as `Coord::SpectrumPosition` via `DatasetView`.
   Such variables do not exist in the `Dataset` but can be derived from other variables.
   In the case of `Coord::SpectrumPosition` we use `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
+
+- Add `operator+=` and `operator*=` for `Dataset` as examples of arithmetic operations.
+  - Demonstrates matching of coordinate and data variables, automatic broadcast, automatic transposition, propagation of uncertainties, and propagation/validation of units.
+  - Demonstrate how the unit can be used to distinguish between counts and frequencies, including helping to prevent certain operations such as multiplying counts.
+
 - Add `slice` for `Dataset`.
   The current implementation copies data when creating the slice --- the slice is simply a new `Dataset`.
   It would be possible to implement slicing based on a view, avoiding the copy, however only for read-only views.
   A mutable slice would be in conflict with the copy-on-write mechanism, since creating a mutable slice would require triggering the copy-on-write for all variables in the dataset.
   The inefficiency of creating a new `Dataset` for every slice could be alleviated by a memory pool for the allocation of data in `Variable`.
+
 - Add `DatasetIndex` to determine an index that can be used, e.g., for slicing.
 
-Open questions:
-- How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?
-- Note that there will be an equivalent to `Histogram` for `PointData`.
-  - Is it a problem if the two are completely distinct types?
+- Add `concatenate` for `Dataset`, a generic multi-dimensional way of merging datasets along a dimension.
+
+- Two options to support `Histogram` were tested (note that there will be an equivalent to `Histogram` for `PointData`):
+  1. A class `Histogram` that can internally either reference data in a `Dataset` or extract data into an internal buffer upon copy.
+     - The advantage is that we have the same data type for a histogram with data stored in a `Dataset` as well as a standalone histogram.
+     - The disadvantages are that (a) the design feels a bit brittle and (b) we need a different type for const and mutable histograms, unless we are willing to resort to use `const_cast` and rely on the encapsulation given by `DatasetView`.
+  2. Nesting `DatasetView`.
+     - Accessing a histogram in the parent `DatasetView` would return a view by value, with its range restricted to data for the histogram.
+     - Semantically this would be similar to returning a `gsl::span` instead of a `std::vector &` in the case of `Dataset::get`.
+     - As with `gsl::span`, we and up with a different histogram type for const and mutable cases.
+     - Extracting data into a stand-alone `Histogram` would be an explicit function call.
+
+  Option (i.) has been mostly disabled in the latest version.
+  Option (ii.) feels more generic and cleaner.
+  The major disadvantage is that we cannot have the same data type for standalone histograms and "histogram views".
 
 ### To do
 
@@ -483,36 +508,32 @@ Outstanding tasks:
 - Understand performance implications of doing a lot of operations in streaming memory access.
   Investigate how a cache-blocked operation mode could be supported.
   Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.
+
 - Investigate `EventList` replacement.
+
 - Investigate MPI integration.
+
 - View or similar to support histogram access to `EventList` with on-the-fly binning.
   - Based on `Data::Events` (or `Data::EventList`?).
-  - As `Data::Histogram` but return by value, same type as normal histogram but never referencing data in `Dataset`!
+  - Returns a histogram return by value, same type as normal histogram (in case option (i.) is chosen for a histogram implementation it will never referencing data in `Dataset`)!
   - Tag name?
     - `Data::HistogramView`.
     - `Histogram<Data::Events>`, following the same pattern as `Bin<Coord::Tof>`.
   - Need to store binning in Dataset?
   - Can the axis of the bin direction be deduced from the `EventList`?
-- Is the current implementation of `Histogram` the best choice?
-  Another (simpler?) route would be to default to returning a view by value, extracting data into a stand-alone `Histogram` would be an explicit function call.
-  Semantically this would be similar to returning a `gsl::span` instead of a `std::vector &` in the case of `Dataset::get`.
-  It is not clear which of the two options would be less confusing.
-  Returning a view by value is in a sense more similar to how Python handles things.
-  - How would be handle const histograms if we return by value?
-    We do not want to have them as a separate type.
 
-  Can we get away without having such a `Histogram` type?
-  Just implement everything for `Dataset`, `DatasetView`, or `DatasetView::Item`?
+- Is the current implementation of `Histogram` as a view the best choice?
+
 - Do we have to guarantee the iteration order of dimensions in `DatasetView`?
   It is determined by the variable with the highest dimensionality.
   If tied, it is determined by the order in which variable tags are given, but if we implement the prototyped sorting...?
-- Can we get to the point where we can apply `std::transform` to a `Dataset` (or rather `DatasetView`) in a convenient way?
 - Do we need to support simultaneous iteration of two `Datasets`?
   - Merge into the same `Dataset` first?
     Does not work for coordinates, which cannot be duplicate.
-  - If we create two `DatasetViews`, provindg a mechanism to ensure that they use the same dimensions for iteration woul be sufficient.
+  - If we create two `DatasetViews`, providing a mechanism to ensure that they use the same dimensions for iteration woul be sufficient.
     Then we can use things like `std::transform`.
-- Example of scanning instrument.
+
+- How do we handle operations between variables in the same `Dataset`, e.g., normalizing data to monitors or subtracting background runs from sample runs?
 
 Other:
 
@@ -527,3 +548,4 @@ Problems:
 - How do distinguish (or avoid distinguising) const and mutable versions of `DatasetView` and `Histogram`?
 - Can we avoid horrible template error messages in client code?
 - Compilations times are beginning to suffer, need some cleanup and move things out of header where possible.
+- How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?
