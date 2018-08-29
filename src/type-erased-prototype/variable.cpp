@@ -67,6 +67,10 @@ public:
     return apply<std::plus>(other);
   }
 
+  VariableConcept &operator-=(const VariableConcept &other) override {
+    return apply<std::minus>(other);
+  }
+
   VariableConcept &operator*=(const VariableConcept &other) override {
     return apply<std::multiplies>(other);
   }
@@ -187,6 +191,18 @@ Variable &Variable::operator+=(const Variable &other) {
   return *this;
 }
 
+Variable &Variable::operator-=(const Variable &other) {
+  if (m_unit != other.m_unit)
+    throw std::runtime_error("Cannot subtract Variables: Units do not match.");
+  if (dimensions().contains(other.dimensions())) {
+    m_object.access() -= *other.m_object;
+  } else {
+    throw std::runtime_error("Cannot subtract Variables: Dimensions do not match.");
+  }
+
+  return *this;
+}
+
 Variable &Variable::operator*=(const Variable &other) {
   m_unit = m_unit * other.m_unit;
   if (!dimensions().contains(other.dimensions()))
@@ -199,6 +215,11 @@ Variable &Variable::operator*=(const Variable &other) {
 Variable operator+(const Variable &a, const Variable &b) {
   auto result(a);
   return result += b;
+}
+
+Variable operator-(const Variable &a, const Variable &b) {
+  auto result(a);
+  return result -= b;
 }
 
 Variable operator*(const Variable &a, const Variable &b) {

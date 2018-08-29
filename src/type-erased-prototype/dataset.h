@@ -106,6 +106,7 @@ public:
   gsl::index find(const uint16_t id, const std::string &name) const;
 
   Dataset &operator+=(const Dataset &other);
+  Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
 
 private:
@@ -119,6 +120,7 @@ private:
 };
 
 Dataset operator+(const Dataset &a, const Dataset &b);
+Dataset operator-(const Dataset &a, const Dataset &b);
 Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index);
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
 

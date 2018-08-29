@@ -117,6 +117,28 @@ Dataset &Dataset::operator+=(const Dataset &other) {
   return *this;
 }
 
+Dataset &Dataset::operator-=(const Dataset &other) {
+  for (const auto &var2 : other.m_variables) {
+    gsl::index index;
+    try {
+      index = find(var2.type(), var2.name());
+    } catch (const std::runtime_error &) {
+      throw std::runtime_error("Right-hand-side in subtraction contains "
+                               "variable that is not present in "
+                               "left-hand-side.");
+    }
+    auto &var1 = m_variables[index];
+    if (var1.isCoord()) {
+      if (!(var1 == var2))
+        throw std::runtime_error("Coordinates of datasets do not match. Cannot "
+                                 "perform subtraction.");
+    } else {
+      var1 -= var2;
+    }
+  }
+  return *this;
+}
+
 Dataset &Dataset::operator*=(const Dataset &other) {
   // See operator+= for additional comments.
   for (const auto &var2 : other.m_variables) {
@@ -177,6 +199,11 @@ Dataset &Dataset::operator*=(const Dataset &other) {
 Dataset operator+(const Dataset &a, const Dataset &b) {
   auto result(a);
   return result += b;
+}
+
+Dataset operator-(const Dataset &a, const Dataset &b) {
+  auto result(a);
+  return result -= b;
 }
 
 Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {

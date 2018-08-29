@@ -76,7 +76,7 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // Compute spin difference.
   DatasetIndex<Coord::Polarization> spin(combined);
   combined.erase<Coord::Polarization>();
-  auto delta = slice(combined, Dimension::Polarization, spin["spin-up"]) +
+  auto delta = slice(combined, Dimension::Polarization, spin["spin-up"]) -
                slice(combined, Dimension::Polarization, spin["spin-down"]);
 
   // Extract a single Tof slice.

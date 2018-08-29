@@ -18,6 +18,7 @@ public:
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
   virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
+  virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
@@ -43,6 +44,7 @@ public:
   }
   bool operator==(const Variable &other) const;
   Variable &operator+=(const Variable &other);
+  Variable &operator-=(const Variable &other);
   Variable &operator*=(const Variable &other);
 
   const Unit &unit() const { return m_unit; }
@@ -115,6 +117,7 @@ Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
 }
 
 Variable operator+(const Variable &a, const Variable &b);
+Variable operator-(const Variable &a, const Variable &b);
 Variable operator*(const Variable &a, const Variable &b);
 
 Variable slice(const Variable &var, const Dimension dim,
