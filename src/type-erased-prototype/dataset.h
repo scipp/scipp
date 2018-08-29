@@ -47,8 +47,17 @@ public:
   }
 
   template <class Tag> void erase() {
-    // TODO Update dimensions if required.
-    m_variables.erase(m_variables.begin() + findUnique(tag_id<Tag>));
+    const auto it = m_variables.begin() + findUnique(tag_id<Tag>);
+    const auto dims = it->dimensions();
+    m_variables.erase(it);
+    for (const auto &dim : dims) {
+      bool found = false;
+      for (const auto &var : m_variables)
+        if (var.dimensions().contains(dim.first))
+          found = true;
+      if (!found)
+        m_dimensions.erase(dim.first);
+    }
   }
 
   // Only need this for coordinates... insertEdgeCoord?
