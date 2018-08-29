@@ -100,11 +100,25 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
 TEST(Workspace2D, scanning) {
   Dataset d;
 
+  // Scalar part of instrument, e.g.:
+  // d.insert<Coord::Instrument>({}, Beamline::ComponentInfo{});
+  d.insert<Coord::DetectorId>({Dimension::Detector, 4},
   d.insert<Coord::DetectorId>({Dimension::Detector, 4},
                               {1001, 1002, 1003, 1004});
   d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
                                     {1.0, 2.0, 3.0, 4.0});
 
+  // In the current implementation in Mantid, ComponentInfo holds a reference to DetectorInfo. Now the contents of DetectorInfo are simply variables in the dataset. Keeping references to the dataset does not seem to be the right solution. Instead we could have a helper class dealing with movements or access to positions of all components that is constructed on the fly:
+  // class InstrumentView {
+  //   InstrumentView(Dataset &d);
+  //   void setPosition(const gsl::index i, const Eigen::Vector3d &pos) {
+  //     if (i < m_dataset.dimensions().size(Dimension::Detector))
+  //       m_detPos[i] = pos;
+  //     else {
+  //       // recursive move as implemented in Beamline::ComponentInfo
+  //     }
+  //   }
+  // };
   auto moved(d);
   for (auto &pos : moved.get<Coord::DetectorPosition>())
     pos += 0.5;
