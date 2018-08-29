@@ -484,6 +484,15 @@ Findings and changes:
 
 - Add `concatenate` for `Dataset`, a generic multi-dimensional way of merging datasets along a dimension.
 
+- Operations between variables in the same `Dataset`, e.g., normalizing data to monitors or subtracting background runs from sample runs.
+  The prototyped solution is based on extracting subsets from `Dataset` and applying operations with non-matching names (non-matching names are supported only if there is no conflict).
+  Another option would be to use `DatasetView`, but this feels a bit too verbose and would require implementing operators for `DatasetView`:
+  ```cpp
+  DatasetView<Data::Value, Data::Variance> sample(dataset, "sample");
+  DatasetView<const Data::Value, const Data::Variance> background(dataset, "background");
+  sample -= background;
+  ```
+
 - Two options to support `Histogram` were tested (note that there will be an equivalent to `Histogram` for `PointData`):
   1. A class `Histogram` that can internally either reference data in a `Dataset` or extract data into an internal buffer upon copy.
      - The advantage is that we have the same data type for a histogram with data stored in a `Dataset` as well as a standalone histogram.
@@ -527,46 +536,12 @@ Outstanding tasks:
 - Do we have to guarantee the iteration order of dimensions in `DatasetView`?
   It is determined by the variable with the highest dimensionality.
   If tied, it is determined by the order in which variable tags are given, but if we implement the prototyped sorting...?
+
 - Do we need to support simultaneous iteration of two `Datasets`?
   - Merge into the same `Dataset` first?
     Does not work for coordinates, which cannot be duplicate.
   - If we create two `DatasetViews`, providing a mechanism to ensure that they use the same dimensions for iteration would be sufficient.
     Then we can use things like `std::transform`.
-
-- How do we handle operations between variables in the same `Dataset`, e.g., normalizing data to monitors or subtracting background runs from sample runs?
-  Option 1:
-  ```cpp
-  // This feels verbose and requires implementing operators on DatasetView:
-  DatasetView<Data::Value, Data::Variance> sample(dataset, "sample");
-  DatasetView<const Data::Value, const Data::Variance> background(dataset, "background");
-  sample -= background;
-
-  DatasetView<Data::Value, Data::Variance> sample(dataset, "sample");
-  DatasetView<const Data::Value, const Data::Variance> monitor(dataset, "monitor");
-  // How to select monitor?
-  // How to deal with different axis (Coord::Tof vs. Coord::MonitorTof). Convert first!
-  sample /= monitor;
-  ```
-  Option 2:
-  ```cpp
-  // `extract` could return a Dataset and erases variables from argument:
-  auto background = dataset.extract("background");
-  dataset -= background; // Does not work, wrong name!
-
-  // `subset` creates a subset of the Dataset, containing all variables with the
-  // given name:
-  auto monitor = slice(subset(dataset, "monitor"), Dimension::Monitor, 0);
-  // This will not work since names do not match:
-  dataset /= monitor; // Would divide monitors!
-  // Rename variables in `monitor` to "sample"?
-
-  // Instead?
-  // Would still not work due to same mismatch. If there is just a single variable
-  // with a given tag, should we just apply the operation? Result could be named
-  // "sample - background". Yes, but only for `operator-`, not for `operator-=`?
-  dataset.merge(dataset.extract("sample") - dataset.extract("background"));
-  dataset.merge(dataset.extract("sample") / monitor);
-  ```
 
 Other:
 
