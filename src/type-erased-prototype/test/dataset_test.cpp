@@ -100,6 +100,20 @@ TEST(Dataset, insertAsEdge_reverse_fail) {
       "Cannot insert variable into Dataset: Dimensions do not match");
 }
 
+TEST(Dataset, extract) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Variance>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  EXPECT_EQ(d.size(), 3);
+  auto name1 = d.extract("name1");
+  EXPECT_EQ(d.size(), 1);
+  EXPECT_EQ(name1.size(), 2);
+  auto name2 = d.extract("name2");
+  EXPECT_EQ(d.size(), 0);
+  EXPECT_EQ(name2.size(), 1);
+}
+
 TEST(Dataset, const_get) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});

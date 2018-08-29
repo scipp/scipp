@@ -60,6 +60,19 @@ public:
     }
   }
 
+  Dataset extract(const std::string &name) {
+    Dataset subset;
+    for (auto it = m_variables.begin(); it != m_variables.end();) {
+      if (it->name() == name) {
+        subset.insert(*it);
+        it = m_variables.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    return subset;
+  }
+
   // Only need this for coordinates... insertEdgeCoord?
   void insertAsEdge(const Dimension dimension, Variable variable);
 
