@@ -79,11 +79,12 @@ template <class Tag> struct ref_type<Bin<Tag>> {
                 gsl::span<const typename detail::value_type_t<Bin<Tag>>::type>>;
 };
 template <> struct ref_type<Coord::SpectrumPosition> {
-  using type = std::pair<gsl::span<typename Coord::DetectorPosition::type>,
-                         gsl::span<typename Coord::DetectorGrouping::type>>;
+  using type =
+      std::pair<gsl::span<const typename Coord::DetectorPosition::type>,
+                gsl::span<const typename Coord::DetectorGrouping::type>>;
 };
 template <> struct ref_type<Data::StdDev> {
-  using type = typename ref_type<Data::Variance>::type;
+  using type = typename ref_type<const Data::Variance>::type;
 };
 template <class... Tags> struct ref_type<DatasetView<Tags...>> {
   using type = std::tuple<const MultiIndex, const DatasetView<Tags...>,
@@ -213,21 +214,41 @@ template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
   }
 };
 
+namespace detail {
+template <class... Conds> struct and_ : std::true_type {};
+template <class Cond, class... Conds>
+struct and_<Cond, Conds...>
+    : std::conditional<Cond::value, and_<Conds...>, std::false_type>::type {};
+
+template <class T> struct is_const : std::false_type {};
+template <class T> struct is_const<const T> : std::true_type {};
+template <class... Ts>
+struct is_const<DatasetView<Ts...>> : and_<is_const<Ts>...> {};
+}
+
+template <class... Tags>
+using MaybeConstDataset =
+    std::conditional_t<detail::and_<detail::is_const<Tags>...>::value,
+                       const Dataset, Dataset>;
+
 template <class Tag> struct DataHelper {
-  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
-    return dataset.get<detail::value_type_t<Tag>>();
+  static auto get(MaybeConstDataset<Tag> &dataset,
+                  const Dimensions &iterationDimensions) {
+    return dataset.template get<detail::value_type_t<Tag>>();
   }
-  static auto get(Dataset &dataset, const Dimensions &iterationDimensions,
+  static auto get(MaybeConstDataset<Tag> &dataset,
+                  const Dimensions &iterationDimensions,
                   const std::string &name) {
     if (is_coord<Tag>)
-      return dataset.get<detail::value_type_t<Tag>>();
+      return dataset.template get<detail::value_type_t<Tag>>();
     else
-      return dataset.get<detail::value_type_t<Tag>>(name);
+      return dataset.template get<detail::value_type_t<Tag>>(name);
   }
 };
 
 template <class Tag> struct DataHelper<Bin<Tag>> {
-  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
+  static auto get(const Dataset &dataset,
+                  const Dimensions &iterationDimensions) {
     // Compute offset to next edge.
     gsl::index offset = 1;
     const auto &dims = dataset.dimensions<Tag>();
@@ -239,26 +260,29 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
     }
 
     return ref_type_t<Bin<Tag>>{offset,
-                                dataset.get<detail::value_type_t<Tag>>()};
+                                dataset.get<const detail::value_type_t<Tag>>()};
   }
 };
 
 template <> struct DataHelper<Coord::SpectrumPosition> {
-  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
+  static auto get(const Dataset &dataset,
+                  const Dimensions &iterationDimensions) {
     return ref_type_t<Coord::SpectrumPosition>(
-        dataset.get<detail::value_type_t<Coord::DetectorPosition>>(),
-        dataset.get<detail::value_type_t<Coord::DetectorGrouping>>());
+        dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
+        dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
   }
 };
 
 template <> struct DataHelper<Data::StdDev> {
-  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
-    return DataHelper<Data::Variance>::get(dataset, iterationDimensions);
+  static auto get(const Dataset &dataset,
+                  const Dimensions &iterationDimensions) {
+    return DataHelper<const Data::Variance>::get(dataset, iterationDimensions);
   }
 };
 
 template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
-  static auto get(Dataset &dataset, const Dimensions &iterationDimensions) {
+  static auto get(MaybeConstDataset<Tags...> &dataset,
+                  const Dimensions &iterationDimensions) {
     std::set<Dimension> fixedDimensions;
     for (auto &item : iterationDimensions)
       fixedDimensions.insert(item.first);
@@ -271,7 +295,8 @@ template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
         DatasetView<Tags...>(dataset, fixedDimensions),
         std::make_tuple(DataHelper<Tags>::get(dataset, {})...)};
   }
-  static auto get(Dataset &dataset, const Dimensions &iterationDimensions,
+  static auto get(MaybeConstDataset<Tags...> &dataset,
+                  const Dimensions &iterationDimensions,
                   const std::string &name) {
     std::set<Dimension> fixedDimensions;
     for (auto &item : iterationDimensions)
@@ -324,7 +349,7 @@ template <> struct ItemHelper<Coord::SpectrumPosition> {
 template <> struct ItemHelper<Data::StdDev> {
   static element_return_type_t<Data::StdDev>
   get(const ref_type_t<Data::StdDev> &data, gsl::index index) {
-    return sqrt(ItemHelper<Data::Variance>::get(data, index));
+    return sqrt(ItemHelper<const Data::Variance>::get(data, index));
   }
 };
 
@@ -482,11 +507,12 @@ public:
     Item m_item;
   };
 
-  DatasetView(Dataset &dataset, const std::string &name,
+  DatasetView(MaybeConstDataset<Ts...> &dataset, const std::string &name,
               const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset, name)...},
         m_variables(makeVariables(dataset, name, fixedDimensions)) {}
-  DatasetView(Dataset &dataset, const std::set<Dimension> &fixedDimensions = {})
+  DatasetView(MaybeConstDataset<Ts...> &dataset,
+              const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset)...},
         m_variables(makeVariables(dataset, fixedDimensions)) {}
 
@@ -508,7 +534,7 @@ public:
 private:
   std::tuple<const gsl::index, const MultiIndex,
              const std::tuple<ref_type_t<Ts>...>>
-  makeVariables(Dataset &dataset, const std::string &name,
+  makeVariables(MaybeConstDataset<Ts...> &dataset, const std::string &name,
                 const std::set<Dimension> &fixedDimensions) const {
     std::vector<Dimensions> subdimensions{
         DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...};
@@ -523,7 +549,7 @@ private:
   }
   std::tuple<const gsl::index, const MultiIndex,
              const std::tuple<ref_type_t<Ts>...>>
-  makeVariables(Dataset &dataset,
+  makeVariables(MaybeConstDataset<Ts...> &dataset,
                 const std::set<Dimension> &fixedDimensions) const {
     std::vector<Dimensions> subdimensions{
         DimensionHelper<Ts>::get(dataset, fixedDimensions)...};

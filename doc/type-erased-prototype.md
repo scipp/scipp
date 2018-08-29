@@ -530,7 +530,7 @@ Outstanding tasks:
 - Do we need to support simultaneous iteration of two `Datasets`?
   - Merge into the same `Dataset` first?
     Does not work for coordinates, which cannot be duplicate.
-  - If we create two `DatasetViews`, providing a mechanism to ensure that they use the same dimensions for iteration woul be sufficient.
+  - If we create two `DatasetViews`, providing a mechanism to ensure that they use the same dimensions for iteration would be sufficient.
     Then we can use things like `std::transform`.
 
 - How do we handle operations between variables in the same `Dataset`, e.g., normalizing data to monitors or subtracting background runs from sample runs?
@@ -541,11 +541,11 @@ Other:
 - Avoid triggering COW if there is a subsequent exception, especially in `DatasetView`.
   Can we do all checks beforehand?
 - Use a memory pool.
-  This is particularely important if we implementing slicing via making a copy.
+  This is particularly important if we implementing slicing via making a copy.
 
 Problems:
 
-- How do distinguish (or avoid distinguising) const and mutable versions of `DatasetView` and `Histogram`?
+- How do distinguish (or avoid distinguishing) const and mutable versions of `DatasetView` and `Histogram`?
 - Can we avoid horrible template error messages in client code?
 - Compilations times are beginning to suffer, need some cleanup and move things out of header where possible.
 - How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?

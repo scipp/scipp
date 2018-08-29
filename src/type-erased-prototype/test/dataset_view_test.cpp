@@ -23,12 +23,15 @@ TEST(DatasetView, construct) {
 
 TEST(DatasetView, construct_with_const_Dataset) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Value>("name1", {Dimension::X, 1}, {1.1});
   d.insert<Data::Int>("name2", Dimensions{}, {2l});
-  const auto copy(d);
-  // TODO This does not compile currently since everything in DatasetView is
-  // implemented based on a non-const Dataset.
-  // ASSERT_NO_THROW(DatasetView<const Data::Value> view(copy));
+  const auto const_d(d);
+  EXPECT_NO_THROW(DatasetView<const Data::Value> view(const_d));
+  EXPECT_NO_THROW(DatasetView<DatasetView<const Data::Value>> nested(
+      const_d, {Dimension::X}));
+  EXPECT_NO_THROW(
+      auto view = (DatasetView<DatasetView<const Data::Value>, const Data::Int>(
+          const_d, {Dimension::X})));
 }
 
 TEST(DatasetView, iterator) {
