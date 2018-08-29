@@ -534,6 +534,39 @@ Outstanding tasks:
     Then we can use things like `std::transform`.
 
 - How do we handle operations between variables in the same `Dataset`, e.g., normalizing data to monitors or subtracting background runs from sample runs?
+  Option 1:
+  ```cpp
+  // This feels verbose and requires implementing operators on DatasetView:
+  DatasetView<Data::Value, Data::Variance> sample(dataset, "sample");
+  DatasetView<const Data::Value, const Data::Variance> background(dataset, "background");
+  sample -= background;
+
+  DatasetView<Data::Value, Data::Variance> sample(dataset, "sample");
+  DatasetView<const Data::Value, const Data::Variance> monitor(dataset, "monitor");
+  // How to select monitor?
+  // How to deal with different axis (Coord::Tof vs. Coord::MonitorTof). Convert first!
+  sample /= monitor;
+  ```
+  Option 2:
+  ```cpp
+  // `extract` could return a Dataset and erases variables from argument:
+  auto background = dataset.extract("background");
+  dataset -= background; // Does not work, wrong name!
+
+  // `subset` creates a subset of the Dataset, containing all variables with the
+  // given name:
+  auto monitor = slice(subset(dataset, "monitor"), Dimension::Monitor, 0);
+  // This will not work since names do not match:
+  dataset /= monitor; // Would divide monitors!
+  // Rename variables in `monitor` to "sample"?
+
+  // Instead?
+  // Would still not work due to same mismatch. If there is just a single variable
+  // with a given tag, should we just apply the operation? Result could be named
+  // "sample - background". Yes, but only for `operator-`, not for `operator-=`?
+  dataset.merge(dataset.extract("sample") - dataset.extract("background"));
+  dataset.merge(dataset.extract("sample") / monitor);
+  ```
 
 Other:
 
@@ -542,6 +575,7 @@ Other:
   Can we do all checks beforehand?
 - Use a memory pool.
   This is particularly important if we implementing slicing via making a copy.
+- Support `operator+` etc. with rvalue references are pass by value such that we can avoid unnecessary copies of the underlying data if a temporary is passed.
 
 Problems:
 
