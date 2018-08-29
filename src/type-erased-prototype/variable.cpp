@@ -1,57 +1,33 @@
 #include "variable.h"
 #include "variable_view.h"
 
-template <class T> struct ArithmeticHelper {
-  static void plus_equals(std::vector<T> &a,
-                          const VariableView<const std::vector<T>> &b) {
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(), std::plus<T>());
-  }
-  static void times_equals(std::vector<T> &a,
-                           const VariableView<const std::vector<T>> &b) {
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(),
-                   std::multiplies<T>());
+template <template <class> class Op, class T> struct ArithmeticHelper {
+  static void apply(std::vector<T> &a,
+                    const VariableView<const std::vector<T>> &b) {
+    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
 };
 
-template <class T> struct ArithmeticHelper<std::vector<T>> {
-  static void
-  plus_equals(std::vector<std::vector<T>> &a,
-              const VariableView<const std::vector<std::vector<T>>> &b) {
-    throw std::runtime_error("Not an arithmetic type. Addition not possible.");
-  }
-  static void
-  times_equals(std::vector<std::vector<T>> &a,
-               const VariableView<const std::vector<std::vector<T>>> &b) {
-    throw std::runtime_error(
-        "Not an arithmetic type. Multiplication not possible.");
+template <template <class> class Op, class T>
+struct ArithmeticHelper<Op, std::vector<T>> {
+  static void apply(std::vector<std::vector<T>> &a,
+                    const VariableView<const std::vector<std::vector<T>>> &b) {
+    throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
   }
 };
 
-template <class T> struct ArithmeticHelper<std::pair<T, T>> {
-  static void
-  plus_equals(std::vector<std::pair<T, T>> &a,
-              const VariableView<const std::vector<std::pair<T, T>>> &b) {
-    throw std::runtime_error("Not an arithmetic type. Addition not possible.");
-  }
-  static void
-  times_equals(std::vector<std::pair<T, T>> &a,
-               const VariableView<const std::vector<std::pair<T, T>>> &b) {
-    throw std::runtime_error(
-        "Not an arithmetic type. Multiplication not possible.");
+template <template <class> class Op, class T>
+struct ArithmeticHelper<Op, std::pair<T, T>> {
+  static void apply(std::vector<std::pair<T, T>> &a,
+                    const VariableView<const std::vector<std::pair<T, T>>> &b) {
+    throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
   }
 };
 
-template <> struct ArithmeticHelper<std::string> {
-  static void
-  plus_equals(std::vector<std::string> &a,
-              const VariableView<const std::vector<std::string>> &b) {
+template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
+  static void apply(std::vector<std::string> &a,
+                    const VariableView<const std::vector<std::string>> &b) {
     throw std::runtime_error("Cannot add strings. Use append() instead.");
-  }
-  static void
-  times_equals(std::vector<std::string> &a,
-               const VariableView<const std::vector<std::string>> &b) {
-    throw std::runtime_error(
-        "Not an arithmetic type. Multiplication not possible.");
   }
 };
 
@@ -74,7 +50,7 @@ public:
 
   VariableConcept &operator+=(const VariableConcept &other) override {
     try {
-      ArithmeticHelper<typename T::value_type>::plus_equals(
+      ArithmeticHelper<std::plus, typename T::value_type>::apply(
           m_model, VariableView<const T>(
                        dynamic_cast<const VariableModel<T> &>(other).m_model,
                        dimensions(), other.dimensions()));
@@ -87,7 +63,7 @@ public:
 
   VariableConcept &operator*=(const VariableConcept &other) override {
     try {
-      ArithmeticHelper<typename T::value_type>::times_equals(
+      ArithmeticHelper<std::multiplies, typename T::value_type>::apply(
           m_model, VariableView<const T>(
                        dynamic_cast<const VariableModel<T> &>(other).m_model,
                        dimensions(), other.dimensions()));
