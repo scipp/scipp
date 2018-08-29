@@ -11,6 +11,11 @@
 
 class Dataset {
 public:
+  gsl::index size() const { return m_variables.size(); }
+  const Variable &operator[](gsl::index i) const { return m_variables[i]; }
+  auto begin() const { return m_variables.begin(); }
+  auto end() const { return m_variables.end(); }
+
   void insert(Variable variable);
 
   template <class Tag, class... Args>
@@ -73,13 +78,13 @@ public:
     return subset;
   }
 
+  void merge(const Dataset &other) {
+    for (const auto &var : other)
+      insert(var);
+  }
+
   // Only need this for coordinates... insertEdgeCoord?
   void insertAsEdge(const Dimension dimension, Variable variable);
-
-  gsl::index size() const { return m_variables.size(); }
-  const Variable &operator[](gsl::index i) const { return m_variables[i]; }
-  auto begin() const { return m_variables.begin(); }
-  auto end() const { return m_variables.end(); }
 
   template <class Tag> auto get() const {
     return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();

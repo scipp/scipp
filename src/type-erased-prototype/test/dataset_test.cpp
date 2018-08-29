@@ -114,6 +114,24 @@ TEST(Dataset, extract) {
   EXPECT_EQ(name2.size(), 1);
 }
 
+TEST(Dataset, merge) {
+  Dataset d;
+  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Variance>("name1", Dimensions{}, {1.1});
+  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+
+  Dataset merged;
+  merged.merge(d);
+  EXPECT_EQ(merged.size(), 3);
+  EXPECT_THROW_MSG(merged.merge(d), std::runtime_error,
+                   "Attempt to insert data of same type with duplicate name.");
+
+  Dataset d2;
+  d2.insert<Data::Value>("name3", Dimensions{}, {1.1});
+  merged.merge(d2);
+  EXPECT_EQ(merged.size(), 4);
+}
+
 TEST(Dataset, const_get) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
