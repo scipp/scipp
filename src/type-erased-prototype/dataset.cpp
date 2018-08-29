@@ -174,6 +174,21 @@ Dataset &Dataset::operator*=(const Dataset &other) {
   return *this;
 }
 
+Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {
+  // TODO It is up for debate whether this should always throw if the dimension
+  // is not contained or only with non-zero index.
+  if (!d.dimensions().contains(dim) && index != 0)
+    throw std::runtime_error("Slice index out of range");
+  Dataset out;
+  for (const auto &var : d) {
+    if (var.dimensions().contains(dim))
+      out.insert(slice(var, dim, index));
+    else
+      out.insert(var);
+  }
+  return out;
+}
+
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2) {
   // Match type and name, drop missing?
   // What do we have to do to check and compute the resulting dimensions?

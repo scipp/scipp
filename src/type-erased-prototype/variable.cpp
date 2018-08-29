@@ -94,6 +94,8 @@ public:
                                    index * other.dimensions().offset(dim),
                                &*other.m_model.end());
     auto sliceDims = other.dimensions();
+    if (index >= sliceDims.size(dim) || index < 0)
+      throw std::runtime_error("Slice index out of range");
     sliceDims.erase(dim);
     VariableView<const decltype(data)> sliceView(data, sliceDims,
                                                  other.dimensions());

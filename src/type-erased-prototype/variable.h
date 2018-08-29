@@ -60,6 +60,8 @@ public:
 
   const Dimensions &dimensions() const { return m_object->dimensions(); }
   void setDimensions(const Dimensions &dimensions) {
+    // TODO This does a copy first which is very inefficient and also does not
+    // release the potentially very large amount of memory.
     m_object.access().setDimensions(dimensions);
   }
 

@@ -104,6 +104,7 @@ private:
   std::vector<Variable> m_variables;
 };
 
+Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index);
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
 
 #endif // DATASET_H

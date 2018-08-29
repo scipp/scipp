@@ -332,6 +332,35 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   EXPECT_NO_THROW(b *= a_copy);
 }
 
+TEST(Dataset, slice) {
+  Dataset d;
+  d.insert<Coord::X>({Dimension::X, 2}, {0.0, 0.1});
+  d.insert<Data::Value>("data",
+                        Dimensions({{Dimension::X, 2}, {Dimension::Y, 3}}),
+                        {0.0, 1.0, 2.0, 3.0, 4.0, 5.0});
+  for (const gsl::index i : {0, 1}) {
+    auto sliceX = slice(d, Dimension::X, i);
+    ASSERT_EQ(sliceX.size(), 2);
+    ASSERT_EQ(sliceX.get<const Coord::X>().size(), 1);
+    EXPECT_EQ(sliceX.get<const Coord::X>()[0], 0.1 * i);
+    ASSERT_EQ(sliceX.get<const Data::Value>().size(), 3);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[0], 0.0 + i);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[1], 2.0 + i);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[2], 4.0 + i);
+  }
+  for (const gsl::index i : {0, 1, 2}) {
+    auto sliceY = slice(d, Dimension::Y, i);
+    ASSERT_EQ(sliceY.size(), 2);
+    ASSERT_EQ(sliceY.get<const Coord::X>(), d.get<const Coord::X>());
+    ASSERT_EQ(sliceY.get<const Data::Value>().size(), 2);
+    EXPECT_EQ(sliceY.get<const Data::Value>()[0], 0.0 + 2*i);
+    EXPECT_EQ(sliceY.get<const Data::Value>()[1], 1.0 + 2*i);
+  }
+  EXPECT_NO_THROW(slice(d, Dimension::Z, 0));
+  EXPECT_THROW_MSG(slice(d, Dimension::Z, 1), std::runtime_error,
+                   "Slice index out of range");
+}
+
 TEST(Dataset, concatenate_constant_dimension_broken) {
   Dataset a;
   a.insert<Data::Value>("name1", Dimensions{}, {1.1});
