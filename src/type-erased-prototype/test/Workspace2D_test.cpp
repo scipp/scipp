@@ -107,7 +107,11 @@ TEST(Workspace2D, scanning) {
   d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
                                     {1.0, 2.0, 3.0, 4.0});
 
-  // In the current implementation in Mantid, ComponentInfo holds a reference to DetectorInfo. Now the contents of DetectorInfo are simply variables in the dataset. Keeping references to the dataset does not seem to be the right solution. Instead we could have a helper class dealing with movements or access to positions of all components that is constructed on the fly:
+  // In the current implementation in Mantid, ComponentInfo holds a reference to
+  // DetectorInfo. Now the contents of DetectorInfo are simply variables in the
+  // dataset. Keeping references to the dataset does not seem to be the right
+  // solution. Instead we could have a helper class dealing with movements or
+  // access to positions of all components that is constructed on the fly:
   // class InstrumentView {
   //   InstrumentView(Dataset &d);
   //   void setPosition(const gsl::index i, const Eigen::Vector3d &pos) {
