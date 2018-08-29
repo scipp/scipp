@@ -461,6 +461,12 @@ Findings and changes:
 - Access to derived "virtual" variables such as `Coord::SpectrumPosition` via `DatasetView`.
   Such variables do not exist in the `Dataset` but can be derived from other variables.
   In the case of `Coord::SpectrumPosition` we use `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
+- Add `slice` for `Dataset`.
+  The current implementation copies data when creating the slice --- the slice is simply a new `Dataset`.
+  It would be possible to implement slicing based on a view, avoiding the copy, however only for read-only views.
+  A mutable slice would be in conflict with the copy-on-write mechanism, since creating a mutable slice would require triggering the copy-on-write for all variables in the dataset.
+  The inefficiency of creating a new `Dataset` for every slice could be alleviated by a memory pool for the allocation of data in `Variable`.
+- Add `DatasetIndex` to determine an index that can be used, e.g., for slicing.
 
 Open questions:
 - How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?
@@ -474,15 +480,6 @@ In general the implementation has been continued only to the point where it beco
 
 Outstanding tasks:
 
-- `DatasetIndex` or similar for indexing via an coordinate.
-  For example, for access via `Coord::SpectrumNumber>`:
-  - Build `std::unordered_map<SpectrumNumber>`, which verifies that there are no duplicates.
-  - Fast access, similar to what `IndexInfo` is providing currently.
-
-  This is related to a slicing mechanism.
-  Slicing can use a view or a copy.
-  A view is in conflict with our copy-on-write mechanism, so probably only read-only views can be supported.
-  If implemented via a copy, see also notes regarding using a memory pool.
 - Understand performance implications of doing a lot of operations in streaming memory access.
   Investigate how a cache-blocked operation mode could be supported.
   Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.
@@ -527,6 +524,6 @@ Other:
 
 Problems:
 
-- How do distinguish (or avoid distinguising const and mutable versions of `DatasetIndex` and `Histogram`?
+- How do distinguish (or avoid distinguising) const and mutable versions of `DatasetView` and `Histogram`?
 - Can we avoid horrible template error messages in client code?
 - Compilations times are beginning to suffer, need some cleanup and move things out of header where possible.
