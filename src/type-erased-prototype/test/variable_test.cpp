@@ -157,7 +157,8 @@ TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
   auto b = makeVariable<Data::Int>({Dimension::X, 1}, {2l});
   EXPECT_THROW_MSG(a += b, std::runtime_error,
-                   "Cannot add Variables: Underlying data types do not match.");
+                   "Cannot apply arithmetic operation to Variables: Underlying "
+                   "data types do not match.");
 }
 
 TEST(Variable, operator_plus_equal_different_variables_same_element_type) {

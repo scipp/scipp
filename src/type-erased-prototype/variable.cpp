@@ -48,30 +48,27 @@ public:
     return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
   }
 
-  VariableConcept &operator+=(const VariableConcept &other) override {
+  template <template <class> class Op>
+  VariableConcept &apply(const VariableConcept &other) {
     try {
-      ArithmeticHelper<std::plus, typename T::value_type>::apply(
+      ArithmeticHelper<Op, typename T::value_type>::apply(
           m_model, VariableView<const T>(
                        dynamic_cast<const VariableModel<T> &>(other).m_model,
                        dimensions(), other.dimensions()));
     } catch (const std::bad_cast &) {
-      throw std::runtime_error(
-          "Cannot add Variables: Underlying data types do not match.");
+      throw std::runtime_error("Cannot apply arithmetic operation to "
+                               "Variables: Underlying data types do not "
+                               "match.");
     }
     return *this;
   }
 
+  VariableConcept &operator+=(const VariableConcept &other) override {
+    return apply<std::plus>(other);
+  }
+
   VariableConcept &operator*=(const VariableConcept &other) override {
-    try {
-      ArithmeticHelper<std::multiplies, typename T::value_type>::apply(
-          m_model, VariableView<const T>(
-                       dynamic_cast<const VariableModel<T> &>(other).m_model,
-                       dimensions(), other.dimensions()));
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error(
-          "Cannot multiply Variables: Underlying data types do not match.");
-    }
-    return *this;
+    return apply<std::multiplies>(other);
   }
 
   gsl::index size() const override { return m_model.size(); }
