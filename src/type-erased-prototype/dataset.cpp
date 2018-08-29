@@ -196,15 +196,10 @@ Dataset &Dataset::operator*=(const Dataset &other) {
   return *this;
 }
 
-Dataset operator+(const Dataset &a, const Dataset &b) {
-  auto result(a);
-  return result += b;
-}
-
-Dataset operator-(const Dataset &a, const Dataset &b) {
-  auto result(a);
-  return result -= b;
-}
+// Strictly speaking we can do better and support this also for the second
+// argument.
+Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
+Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
 
 Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {
   // TODO It is up for debate whether this should always throw if the dimension

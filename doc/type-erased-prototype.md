@@ -575,7 +575,6 @@ Other:
   Can we do all checks beforehand?
 - Use a memory pool.
   This is particularly important if we implementing slicing via making a copy.
-- Support `operator+` etc. with rvalue references are pass by value such that we can avoid unnecessary copies of the underlying data if a temporary is passed.
 
 Problems:
 

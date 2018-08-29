@@ -332,6 +332,21 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   EXPECT_NO_THROW(b *= a_copy);
 }
 
+TEST(Dataset, operator_plus_with_temporary_avoids_copy) {
+  Dataset a;
+  a.insert<Data::Value>("name", {Dimension::X, 1}, {2.2});
+  const auto a2(a);
+  const auto b(a);
+
+  const auto *addr = &a.get<Data::Value>()[0];
+  auto sum = std::move(a) + b;
+  EXPECT_EQ(&sum.get<Data::Value>()[0], addr);
+
+  const auto *addr2 = &a2.get<Data::Value>()[0];
+  auto sum2 = a2 + b;
+  EXPECT_NE(&sum2.get<Data::Value>()[0], addr2);
+}
+
 TEST(Dataset, slice) {
   Dataset d;
   d.insert<Coord::X>({Dimension::X, 2}, {0.0, 0.1});
@@ -353,8 +368,8 @@ TEST(Dataset, slice) {
     ASSERT_EQ(sliceY.size(), 2);
     ASSERT_EQ(sliceY.get<const Coord::X>(), d.get<const Coord::X>());
     ASSERT_EQ(sliceY.get<const Data::Value>().size(), 2);
-    EXPECT_EQ(sliceY.get<const Data::Value>()[0], 0.0 + 2*i);
-    EXPECT_EQ(sliceY.get<const Data::Value>()[1], 1.0 + 2*i);
+    EXPECT_EQ(sliceY.get<const Data::Value>()[0], 0.0 + 2 * i);
+    EXPECT_EQ(sliceY.get<const Data::Value>()[1], 1.0 + 2 * i);
   }
   EXPECT_NO_THROW(slice(d, Dimension::Z, 0));
   EXPECT_THROW_MSG(slice(d, Dimension::Z, 1), std::runtime_error,
