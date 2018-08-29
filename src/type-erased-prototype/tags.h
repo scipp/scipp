@@ -75,10 +75,14 @@ struct Coord {
     using type = double;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct TimeInterval {
+    using type = std::pair<int64_t, int64_t>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
 
   using tags = std::tuple<X, Y, Z, Tof, MonitorTof, DetectorId, SpectrumNumber,
                           DetectorPosition, DetectorGrouping, SpectrumPosition,
-                          RowLabel, Polarization, Temperature>;
+                          RowLabel, Polarization, Temperature, TimeInterval>;
 };
 
 class Histogram;

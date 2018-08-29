@@ -1,7 +1,6 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
-// TODO rename to Spectrum and Detector?
 enum class Dimension : char {
   Tof,
   MonitorTof,
@@ -15,6 +14,7 @@ enum class Dimension : char {
   Z,
   Polarization,
   Temperature,
+  DetectorScan,
   Row
 };
 

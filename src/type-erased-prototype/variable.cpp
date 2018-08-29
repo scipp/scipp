@@ -27,6 +27,20 @@ template <class T> struct ArithmeticHelper<std::vector<T>> {
   }
 };
 
+template <class T> struct ArithmeticHelper<std::pair<T, T>> {
+  static void
+  plus_equals(std::vector<std::pair<T, T>> &a,
+              const VariableView<const std::vector<std::pair<T, T>>> &b) {
+    throw std::runtime_error("Not an arithmetic type. Addition not possible.");
+  }
+  static void
+  times_equals(std::vector<std::pair<T, T>> &a,
+               const VariableView<const std::vector<std::pair<T, T>>> &b) {
+    throw std::runtime_error(
+        "Not an arithmetic type. Multiplication not possible.");
+  }
+};
+
 template <> struct ArithmeticHelper<std::string> {
   static void
   plus_equals(std::vector<std::string> &a,
@@ -88,7 +102,7 @@ public:
   void resize(const gsl::index size) override { m_model.resize(size); }
 
   void copySlice(const VariableConcept &otherConcept, const Dimension dim,
-                         const gsl::index index) override {
+                 const gsl::index index) override {
     const auto &other = dynamic_cast<const VariableModel<T> &>(otherConcept);
     auto data = gsl::make_span(other.m_model.data() +
                                    index * other.dimensions().offset(dim),
@@ -150,16 +164,19 @@ template <class T> T &Variable::cast() {
   return dynamic_cast<VariableModel<T> &>(m_object.access()).m_model;
 }
 
-#define INSTANTIATE(type)                                                      \
+#define INSTANTIATE(...)                                                       \
   template Variable::Variable(uint32_t, const Unit::Id, Dimensions,            \
-                              std::vector<type>);                              \
-  template std::vector<type> &Variable::cast<std::vector<type>>();             \
-  template const std::vector<type> &Variable::cast<std::vector<type>>() const;
+                              std::vector<__VA_ARGS__>);                       \
+  template std::vector<__VA_ARGS__> &                                          \
+  Variable::cast<std::vector<__VA_ARGS__>>();                                  \
+  template const std::vector<__VA_ARGS__> &                                    \
+  Variable::cast<std::vector<__VA_ARGS__>>() const;
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)
 INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
+INSTANTIATE(std::pair<int64_t, int64_t>)
 INSTANTIATE(std::vector<gsl::index>)
 
 bool Variable::operator==(const Variable &other) const {

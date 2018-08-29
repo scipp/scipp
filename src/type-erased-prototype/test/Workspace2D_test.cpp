@@ -5,7 +5,7 @@
 #include "dataset_index.h"
 #include "dataset_view.h"
 
-TEST(Workspace2D, basics) {
+TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   Dataset d;
 
   // Scalar metadata using existing Mantid classes:
@@ -95,4 +95,41 @@ TEST(Workspace2D, basics) {
   for (const auto &point : tempDependence)
     printf("%lf %lf %lf\n", point.get<Coord::Temperature>(), point.value(),
            point.get<Data::Variance>());
+}
+
+TEST(Workspace2D, scanning) {
+  Dataset d;
+
+  d.insert<Coord::DetectorId>({Dimension::Detector, 4},
+                              {1001, 1002, 1003, 1004});
+  d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
+                                    {1.0, 2.0, 3.0, 4.0});
+
+  auto moved(d);
+  for (auto &pos : moved.get<Coord::DetectorPosition>())
+    pos += 0.5;
+
+  auto scanning = concatenate(Dimension::DetectorScan, d, moved);
+  scanning.insert<Coord::TimeInterval>(
+      {Dimension::DetectorScan, 2},
+      {std::make_pair(0l, 10l), std::make_pair(10l, 20l)});
+
+  // Spectrum to detector mapping and spectrum numbers. Currently this mapping
+  // is purely positional. We may consider changing this to an two-part
+  // (detector-index, time-index). In any case, since the mapping is based on
+  // indices we need to take this into account in the implementation of
+  // slicing/dicing and merging operations such that indices are updated
+  // accordingly. Probably the easiest solution is to forbid shape operations on
+  // Dimension::Detector and Dimension::DetectorScan if Coord::DetectorGrouping
+  // is present.
+  std::vector<std::vector<gsl::index>> grouping = {{0}, {2}, {4}};
+  scanning.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
+  scanning.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
+
+  DatasetView<Coord::SpectrumPosition> view(scanning);
+  ASSERT_EQ(view.size(), 3);
+  auto it = view.begin();
+  EXPECT_EQ(it++->get<Coord::SpectrumPosition>(), 1.0);
+  EXPECT_EQ(it++->get<Coord::SpectrumPosition>(), 3.0);
+  EXPECT_EQ(it++->get<Coord::SpectrumPosition>(), 1.5);
 }
