@@ -1,3 +1,5 @@
+#include <set>
+
 #include "dataset.h"
 
 void Dataset::insert(Variable variable) {
@@ -118,22 +120,49 @@ Dataset &Dataset::operator+=(const Dataset &other) {
 }
 
 Dataset &Dataset::operator-=(const Dataset &other) {
+  std::set<std::string> names;
+  for (const auto &var2 : other.m_variables)
+    if (!var2.isCoord())
+      names.insert(var2.name());
+
   for (const auto &var2 : other.m_variables) {
     gsl::index index;
     try {
       index = find(var2.type(), var2.name());
     } catch (const std::runtime_error &) {
-      throw std::runtime_error("Right-hand-side in subtraction contains "
-                               "variable that is not present in "
-                               "left-hand-side.");
+      if (!var2.isCoord() && names.size() == 1) {
+        // Only a single (named) variable in RHS, subtract from all.
+        index = -1;
+      } else {
+        throw std::runtime_error("Right-hand-side in subtraction contains "
+                                 "variable that is not present in "
+                                 "left-hand-side.");
+      }
     }
-    auto &var1 = m_variables[index];
-    if (var1.isCoord()) {
-      if (!(var1 == var2))
-        throw std::runtime_error("Coordinates of datasets do not match. Cannot "
-                                 "perform subtraction.");
+    if (index >= 0) {
+      auto &var1 = m_variables[index];
+      if (var1.isCoord()) {
+        if (!(var1 == var2))
+          throw std::runtime_error(
+              "Coordinates of datasets do not match. Cannot "
+              "perform subtraction.");
+      } else {
+        var1 -= var2;
+      }
     } else {
-      var1 -= var2;
+      // Not a coordinate, subtract from all.
+      gsl::index count = 0;
+      for (auto &var1 : m_variables) {
+        if (var1.type() == var2.type()) {
+          ++count;
+          var1 -= var2;
+          var1.setName(var1.name() + " - " + var2.name());
+        }
+      }
+      if (count == 0)
+        throw std::runtime_error("Right-hand-side in subtraction contains "
+                                 "variable type that is not present in "
+                                 "left-hand-side.");
     }
   }
   return *this;

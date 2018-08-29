@@ -97,6 +97,45 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
            point.get<Data::Variance>());
 }
 
+TEST(Workspace2D, multiple_data) {
+  Dataset d;
+
+  d.insert<Coord::Tof>({Dimension::Tof, 1000}, 1000);
+
+  // Sample
+  d.insert<Data::Value>(
+      "sample", Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}),
+      3 * 1000);
+  d.insert<Data::Variance>(
+      "sample", Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}),
+      3 * 1000);
+
+  // Background
+  d.insert<Data::Value>(
+      "background",
+      Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}), 3 * 1000);
+  d.insert<Data::Variance>(
+      "background",
+      Dimensions({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}}), 3 * 1000);
+
+  // Monitors
+  d.insert<Coord::MonitorTof>({Dimension::MonitorTof, 222}, 222);
+  d.insert<Data::Value>("monitor", Dimensions({{Dimension::MonitorTof, 222},
+                                               {Dimension::Monitor, 2}}),
+                        2 * 222);
+  d.insert<Data::Variance>("monitor", Dimensions({{Dimension::MonitorTof, 222},
+                                                  {Dimension::Monitor, 2}}),
+                           2 * 222);
+
+  d.merge(d.extract("sample") - d.extract("background"));
+
+  EXPECT_NO_THROW(d.get<const Data::Value>("sample - background"));
+  EXPECT_NO_THROW(d.get<const Data::Variance>("sample - background"));
+  EXPECT_NO_THROW(d.get<const Data::Value>("monitor"));
+  EXPECT_ANY_THROW(d.get<const Data::Value>("sample"));
+  EXPECT_ANY_THROW(d.get<const Data::Value>("background"));
+}
+
 TEST(Workspace2D, scanning) {
   Dataset d;
 
