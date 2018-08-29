@@ -46,6 +46,11 @@ public:
     insert(std::move(a));
   }
 
+  template <class Tag> void erase() {
+    // TODO Update dimensions if required.
+    m_variables.erase(m_variables.begin() + findUnique(tag_id<Tag>));
+  }
+
   // Only need this for coordinates... insertEdgeCoord?
   void insertAsEdge(const Dimension dimension, Variable variable);
 
@@ -104,6 +109,7 @@ private:
   std::vector<Variable> m_variables;
 };
 
+Dataset operator+(const Dataset &a, const Dataset &b);
 Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index);
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
 

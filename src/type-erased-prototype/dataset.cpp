@@ -174,6 +174,11 @@ Dataset &Dataset::operator*=(const Dataset &other) {
   return *this;
 }
 
+Dataset operator+(const Dataset &a, const Dataset &b) {
+  auto result(a);
+  return result += b;
+}
+
 Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {
   // TODO It is up for debate whether this should always throw if the dimension
   // is not contained or only with non-zero index.

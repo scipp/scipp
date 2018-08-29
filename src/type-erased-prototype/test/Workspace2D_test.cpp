@@ -2,6 +2,7 @@
 
 #include "test_macros.h"
 
+#include "dataset_index.h"
 #include "dataset_view.h"
 
 TEST(Workspace2D, basics) {
@@ -55,11 +56,14 @@ TEST(Workspace2D, basics) {
   // other `Data` variables such as monitors.
   spinDown += offset;
 
+  // Combine data for spin-up and spin-down in same dataset, polarization is an
+  // extra dimension.
   auto combined = concatenate(Dimension::Polarization, spinUp, spinDown);
   combined.insert<Coord::Polarization>(
       {Dimension::Polarization, 2},
       std::vector<std::string>{"spin-up", "spin-down"});
 
+  // Do a temperature scan, adding a new temperature dimension to the dataset.
   combined.insert<Coord::Temperature>({}, {300.0});
   combined.get<Data::Value>("sample")[0] = exp(-0.001 * 300.0);
   auto dataPoint(combined);
@@ -69,33 +73,26 @@ TEST(Workspace2D, basics) {
     combined = concatenate(Dimension::Temperature, combined, dataPoint);
   }
 
-  // TODO Implement slicing so we can subsequently subtract up from down.
-  // Can we avoid creating temporaries?
-  // Dataset containing DatasetView for each variable. Specialize VariableModel
-  // so it cannot be resized etc.?
-  //auto delta = slice(combined, Dimension::Polarization, "spin-up") -
-  //             slice(combined, Dimension::Polarization, "spin-down");
+  // Compute spin difference.
+  DatasetIndex<Coord::Polarization> spin(combined);
+  combined.erase<Coord::Polarization>();
+  auto delta = slice(combined, Dimension::Polarization, spin["spin-up"]) +
+               slice(combined, Dimension::Polarization, spin["spin-down"]);
+
+  // Extract a single Tof slice.
+  delta = slice(delta, Dimension::Tof, 0);
 
   using PointData = DatasetView<const Coord::Temperature, const Data::Value,
                                 const Data::Variance>;
-  DatasetView<PointData, const Coord::Polarization, const Coord::SpectrumNumber>
-      view(combined, "sample", {Dimension::Temperature});
+  DatasetView<PointData, const Coord::SpectrumNumber> view(
+      delta, "sample", {Dimension::Temperature});
 
-  auto tempSpinUp =
+  auto tempDependence =
       std::find_if(view.begin(), view.end(), [](const auto &item) {
-        return item.template get<Coord::Polarization>() == "spin-up" &&
-               item.template get<Coord::SpectrumNumber>() == 1;
+        return item.template get<Coord::SpectrumNumber>() == 1;
       })->get<PointData>();
 
-  auto tempSpinDown =
-      std::find_if(view.begin(), view.end(), [](const auto &item) {
-        return item.template get<Coord::Polarization>() == "spin-down" &&
-               item.template get<Coord::SpectrumNumber>() == 1;
-      })->get<PointData>();
-
-  // Note that view also has Dimension::Tof, we simply found the first Tof.
-
-  for (const auto &point : tempSpinUp)
+  for (const auto &point : tempDependence)
     printf("%lf %lf %lf\n", point.get<Coord::Temperature>(), point.value(),
            point.get<Data::Variance>());
 }
