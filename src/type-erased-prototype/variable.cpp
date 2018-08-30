@@ -34,17 +34,27 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
   }
 };
 
+VariableConcept::VariableConcept(const Dimensions &dimensions)
+    : m_dimensions(dimensions){};
+
+void VariableConcept::setDimensions(const Dimensions &dimensions) {
+  // TODO Zero data? Or guarentee that equivalent data is moved to correct
+  // target position?
+  m_dimensions = dimensions;
+  resize(m_dimensions.volume());
+}
+
 template <class T> class VariableModel final : public VariableConcept {
 public:
   VariableModel(Dimensions dimensions, T model)
-      : m_dimensions(std::move(dimensions)), m_model(std::move(model)) {
-    if (m_dimensions.volume() != m_model.size())
+      : VariableConcept(std::move(dimensions)), m_model(std::move(model)) {
+    if (this->dimensions().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
 
   std::unique_ptr<VariableConcept> clone() const override {
-    return std::make_unique<VariableModel<T>>(m_dimensions, m_model);
+    return std::make_unique<VariableModel<T>>(dimensions(), m_model);
   }
 
   std::unique_ptr<VariableConcept> cloneEmpty() const override {
@@ -127,15 +137,6 @@ public:
     std::copy(otherView.begin(), otherView.end(), view.begin());
   }
 
-  const Dimensions &dimensions() const override { return m_dimensions; }
-  void setDimensions(const Dimensions &dimensions) override {
-    // TODO Zero data? Or guarentee that equivalent data is moved to correct
-    // target position?
-    m_dimensions = dimensions;
-    resize(m_dimensions.volume());
-  }
-
-  Dimensions m_dimensions;
   T m_model;
 };
 

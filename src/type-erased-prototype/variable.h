@@ -14,6 +14,7 @@
 
 class VariableConcept {
 public:
+  VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual std::unique_ptr<VariableConcept> cloneEmpty() const = 0;
@@ -28,8 +29,11 @@ public:
   virtual void copyFrom(const VariableConcept &other, const Dimension dim,
                         const gsl::index offset) = 0;
 
-  virtual const Dimensions &dimensions() const = 0;
-  virtual void setDimensions(const Dimensions &dimensions) = 0;
+  const Dimensions &dimensions() const { return m_dimensions; }
+  void setDimensions(const Dimensions &dimensions);
+
+private:
+  Dimensions m_dimensions;
 };
 
 class Variable {
