@@ -373,8 +373,7 @@ template <class... Tags> struct ItemHelper<DatasetView<Tags...>> {
   }
 };
 
-template <class... Ts>
-class DatasetView : public GetterMixin<DatasetView<Ts...>, Ts>... {
+template <class... Ts> class DatasetView {
   static_assert(sizeof...(Ts),
                 "DatasetView requires at least one variable for iteration");
 
