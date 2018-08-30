@@ -450,7 +450,7 @@ Findings and changes:
   Coordinate variables include `Coord::Tof`, `Coord::Q`, `Coord::SpectrumNumber`, `Coord::DetectorId`, `Coord::SpectrumPosition`, `Coord::DetectorPosition`, `Coord::DetectorGrouping`, `Coord::SpectrumLabel`, `Coord::RowLabel`, and `Coord::ColumnLabel`.
 
 - Add basic support for units.
-  - Variables are automatically assigned a default unit based in their tag, e.g., `Coord::X` wold have the unit "length".
+  - Variables are automatically assigned a default unit based in their tag, e.g., `Coord::X` would have the unit "length".
   - If there is no sensible default the variable is dimensionless unless set explicitly.
   - For coordinate variables changing the unit will not be possible.
     The interface for (avoiding) the redundancy of defining units for variables that are coordinates for their dimension is still unclear.
@@ -556,7 +556,7 @@ Other:
 - Avoid triggering COW if there is a subsequent exception, especially in `DatasetView`.
   Can we do all checks beforehand?
 - Use a memory pool.
-  This is particularly important if we implementing slicing via making a copy.
+  This is particularly important if we implement slicing via making a copy.
 
 Problems:
 
