@@ -6,27 +6,30 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
                     const VariableView<const std::vector<T>> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
+  static void apply(std::vector<T> &a, const std::vector<T> &b) {
+    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
+  }
 };
 
 template <template <class> class Op, class T>
 struct ArithmeticHelper<Op, std::vector<T>> {
-  static void apply(std::vector<std::vector<T>> &a,
-                    const VariableView<const std::vector<std::vector<T>>> &b) {
+  template <class Other>
+  static void apply(std::vector<std::vector<T>> &a, const Other &b) {
     throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
   }
 };
 
 template <template <class> class Op, class T>
 struct ArithmeticHelper<Op, std::pair<T, T>> {
-  static void apply(std::vector<std::pair<T, T>> &a,
-                    const VariableView<const std::vector<std::pair<T, T>>> &b) {
+  template <class Other>
+  static void apply(std::vector<std::pair<T, T>> &a, const Other &b) {
     throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
   }
 };
 
 template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
-  static void apply(std::vector<std::string> &a,
-                    const VariableView<const std::vector<std::string>> &b) {
+  template <class Other>
+  static void apply(std::vector<std::string> &a, const Other) {
     throw std::runtime_error("Cannot add strings. Use append() instead.");
   }
 };
@@ -55,10 +58,16 @@ public:
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
     try {
-      ArithmeticHelper<Op, typename T::value_type>::apply(
-          m_model, VariableView<const T>(
-                       dynamic_cast<const VariableModel<T> &>(other).m_model,
-                       dimensions(), other.dimensions()));
+      const auto &otherModel =
+          dynamic_cast<const VariableModel<T> &>(other).m_model;
+      if (dimensions() == other.dimensions()) {
+        ArithmeticHelper<Op, typename T::value_type>::apply(m_model,
+                                                            otherModel);
+      } else {
+        ArithmeticHelper<Op, typename T::value_type>::apply(
+            m_model, VariableView<const T>(otherModel, dimensions(),
+                                           other.dimensions()));
+      }
     } catch (const std::bad_cast &) {
       throw std::runtime_error("Cannot apply arithmetic operation to "
                                "Variables: Underlying data types do not "
