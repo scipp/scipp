@@ -506,6 +506,12 @@ Findings and changes:
   Option (i.) has been mostly disabled in the latest version.
   Option (ii.) feels more generic and cleaner.
   The major disadvantage is that we cannot have the same data type for standalone histograms and "histogram views".
+  - If option (ii.) is chosen we will still require a type to function as the current `HistogramData::Histogram`.
+    Keeping this type is one option, but another, potentially more attractive solution is to simply use `Dataset`.
+    Most of the required features for `Histogram` would also be supported by `Dataset`, and even in its current form `Dataset` provides features that are equivalent or surpassing what `HistogramData::Histogram` provides currently.
+    The main question is whether the performance is adequate.
+    Preliminary benchmarks indicate that we are in the right ballpark, even though some optimizations may be required.
+
 
 ### To do
 

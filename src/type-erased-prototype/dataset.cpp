@@ -225,8 +225,6 @@ Dataset &Dataset::operator*=(const Dataset &other) {
   return *this;
 }
 
-// Strictly speaking we can do better and support this also for the second
-// argument.
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
 Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
 

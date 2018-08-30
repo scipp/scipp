@@ -44,6 +44,10 @@ public:
     return std::make_unique<VariableModel<T>>(m_dimensions, m_model);
   }
 
+  std::unique_ptr<VariableConcept> cloneEmpty() const override {
+    return std::make_unique<VariableModel<T>>(Dimensions{}, T(1));
+  }
+
   bool operator==(const VariableConcept &other) const override {
     return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
   }
@@ -198,7 +202,8 @@ Variable &Variable::operator-=(const Variable &other) {
   if (dimensions().contains(other.dimensions())) {
     m_object.access() -= *other.m_object;
   } else {
-    throw std::runtime_error("Cannot subtract Variables: Dimensions do not match.");
+    throw std::runtime_error(
+        "Cannot subtract Variables: Dimensions do not match.");
   }
 
   return *this;

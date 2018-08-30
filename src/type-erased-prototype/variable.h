@@ -16,6 +16,7 @@ class VariableConcept {
 public:
   virtual ~VariableConcept() = default;
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
+  virtual std::unique_ptr<VariableConcept> cloneEmpty() const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
   virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
@@ -62,8 +63,7 @@ public:
 
   const Dimensions &dimensions() const { return m_object->dimensions(); }
   void setDimensions(const Dimensions &dimensions) {
-    // TODO This does a copy first which is very inefficient and also does not
-    // release the potentially very large amount of memory.
+    m_object = m_object->cloneEmpty();
     m_object.access().setDimensions(dimensions);
   }
 
