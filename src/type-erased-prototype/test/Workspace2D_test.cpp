@@ -175,3 +175,72 @@ TEST(Workspace2D, scanning) {
   EXPECT_EQ(it++->get<Coord::SpectrumPosition>(), 3.0);
   EXPECT_EQ(it++->get<Coord::SpectrumPosition>(), 1.5);
 }
+
+TEST(Workspace2D, masking) {
+  // Solution for masking not clear, the following shows one option.
+
+  Dataset d;
+
+  d.insert<Coord::Tof>({Dimension::Tof, 1000}, 1000);
+  Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
+  // Sample
+  d.insert<Data::Value>("sample", dims, dims.volume());
+  d.insert<Data::Variance>("sample", dims, dims.volume());
+  // Background
+  d.insert<Data::Value>("background", dims, dims.volume());
+  d.insert<Data::Variance>("background", dims, dims.volume());
+  // Monitors
+  dims = Dimensions({{Dimension::MonitorTof, 222}, {Dimension::Monitor, 2}});
+  d.insert<Coord::MonitorTof>({Dimension::MonitorTof, 222}, 222);
+  d.insert<Data::Value>("monitor", dims, dims.volume());
+  d.insert<Data::Variance>("monitor", dims, dims.volume());
+
+  // Spectra mask.
+  Dataset mask;
+  mask.insert<Coord::Mask>({Dimension::Spectrum, 3},
+                           std::vector<char>{0, 0, 1});
+
+  auto d_masked(d);
+
+  // Add mask to Dataset, no touching data.
+  d_masked.merge(mask);
+
+  // Cannot add masked workspace to non-masked (handled implicitly by
+  // requirement of matching coordinates).
+  EXPECT_ANY_THROW(d += d_masked);
+  // Adding non-masked to masked works, is this sensible behavior?
+  EXPECT_NO_THROW(d_masked += d);
+
+  mask.get<Coord::Mask>()[0] = 1;
+  auto d_masked2(d);
+  d_masked2.merge(mask);
+
+  // If there are conflicting masks addition in any order fails, i.e., there is
+  // no hidden magic.
+  EXPECT_ANY_THROW(d_masked += d_masked2);
+  EXPECT_ANY_THROW(d_masked2 += d_masked);
+
+  // Remove mask.
+  d_masked.erase<Coord::Mask>();
+
+  // Apply mask.
+  DatasetView<Data::Value, Data::Variance, const Coord::Mask> view(d_masked2);
+  for (auto &item : view) {
+    item.value *= item.get<Coord::Mask>();
+    item.get<Data::Variance>() *= item.get<Coord::Mask>();
+  }
+  // Could by simplified if we implement binary operations with mixed types
+  // (such as double * int):
+  // d_masked2.merge(d_masked2.extract("sample") *
+  //                 d_masked2.extract<Coord::Mask>());
+
+  // Bin mask.
+  mask = Dataset();
+  mask.insert<Coord::Mask>({Dimension::Tof, 1000}, 1000);
+  mask.get<Coord::Mask>()[0] = 1;
+  // mask has no Dimension::Spectrum so this masks the first bin of all spectra.
+  d_masked.merge(mask);
+  // Different bin masking for all spectra.
+  mask = Dataset();
+  mask.insert<Coord::Mask>(dims, dims.volume());
+}

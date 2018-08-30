@@ -151,6 +151,7 @@ template <class T> T &Variable::cast() {
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)
+INSTANTIATE(char)
 INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
 INSTANTIATE(std::pair<int64_t, int64_t>)
