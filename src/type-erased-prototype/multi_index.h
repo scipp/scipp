@@ -1,12 +1,15 @@
 #ifndef MULTI_INDEX_H
 #define MULTI_INDEX_H
 
+#include <boost/container/small_vector.hpp>
+
 #include "dimensions.h"
 
 class MultiIndex {
 public:
-  MultiIndex(const Dimensions &parentDimensions,
-             const std::vector<Dimensions> &subdimensions) {
+  MultiIndex(
+      const Dimensions &parentDimensions,
+      const boost::container::small_vector<Dimensions, 4> &subdimensions) {
     if (parentDimensions.count() > 4)
       throw std::runtime_error("MultiIndex supports at most 4 dimensions.");
     if (subdimensions.size() > 4)

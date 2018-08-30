@@ -99,8 +99,8 @@ private:
   template <class T> T &cast();
 
   uint16_t m_type;
-  std::string m_name;
   Unit m_unit;
+  std::string m_name;
   cow_ptr<VariableConcept> m_object;
 };
 

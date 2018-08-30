@@ -76,6 +76,8 @@ bool Dimensions::contains(const Dimension label) const {
 /// Returns true if all dimensions of other are also contained in *this. Does
 /// not check dimension order.
 bool Dimensions::contains(const Dimensions &other) const {
+  if (*this == other)
+    return true;
   // Ragged comparison too complex for now.
   if (m_raggedDim || other.m_raggedDim)
     return false;

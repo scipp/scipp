@@ -392,10 +392,10 @@ private:
   template <class Tag>
   using maybe_const = std::tuple_element_t<tag_index<Tag>, std::tuple<Ts...>>;
 
-  Dimensions
-  relevantDimensions(const Dataset &dataset,
-                     std::vector<Dimensions> variableDimensions,
-                     const std::set<Dimension> &fixedDimensions) const {
+  Dimensions relevantDimensions(
+      const Dataset &dataset,
+      boost::container::small_vector<Dimensions, 4> variableDimensions,
+      const std::set<Dimension> &fixedDimensions) const {
     // The dimensions for the variables may be longer by one if the variable is
     // an edge variable. For iteration dimensions we require the dimensions
     // without the extended length. The original variableDimensions is kept
@@ -536,7 +536,7 @@ private:
              const std::tuple<ref_type_t<Ts>...>>
   makeVariables(MaybeConstDataset<Ts...> &dataset, const std::string &name,
                 const std::set<Dimension> &fixedDimensions) const {
-    std::vector<Dimensions> subdimensions{
+    boost::container::small_vector<Dimensions, 4> subdimensions{
         DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...};
     Dimensions iterationDimensions(
         relevantDimensions(dataset, subdimensions, fixedDimensions));
@@ -551,7 +551,7 @@ private:
              const std::tuple<ref_type_t<Ts>...>>
   makeVariables(MaybeConstDataset<Ts...> &dataset,
                 const std::set<Dimension> &fixedDimensions) const {
-    std::vector<Dimensions> subdimensions{
+    boost::container::small_vector<Dimensions, 4> subdimensions{
         DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
     Dimensions iterationDimensions(
         relevantDimensions(dataset, subdimensions, fixedDimensions));

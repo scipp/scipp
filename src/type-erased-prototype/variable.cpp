@@ -31,7 +31,7 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
   }
 };
 
-template <class T> class VariableModel : public VariableConcept {
+template <class T> class VariableModel final : public VariableConcept {
 public:
   VariableModel(Dimensions dimensions, T model)
       : m_dimensions(std::move(dimensions)), m_model(std::move(model)) {
