@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
 
 #include "dimension.h"
@@ -50,7 +51,7 @@ public:
   gsl::index index(const Dimension label) const;
 
 private:
-  std::vector<std::pair<Dimension, gsl::index>> m_dims;
+  boost::container::small_vector<std::pair<Dimension, gsl::index>, 2> m_dims;
   // In a Dataset, multiple Variables will reference the same ragged size
   // Variable. How can we support shape operations without breaking sharing?
   std::unique_ptr<Variable> m_raggedDim;

@@ -134,7 +134,7 @@ private:
   void mergeDimensions(const auto &dims);
 
   Dimensions m_dimensions;
-  std::vector<Variable> m_variables;
+  boost::container::small_vector<Variable, 4> m_variables;
 };
 
 Dataset operator+(Dataset a, const Dataset &b);
