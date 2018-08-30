@@ -189,20 +189,15 @@ TEST(Workspace2D, masking) {
   // Background
   d.insert<Data::Value>("background", dims, dims.volume());
   d.insert<Data::Variance>("background", dims, dims.volume());
-  // Monitors
-  dims = Dimensions({{Dimension::MonitorTof, 222}, {Dimension::Monitor, 2}});
-  d.insert<Coord::MonitorTof>({Dimension::MonitorTof, 222}, 222);
-  d.insert<Data::Value>("monitor", dims, dims.volume());
-  d.insert<Data::Variance>("monitor", dims, dims.volume());
 
   // Spectra mask.
+  // Can be in its own Dataset to support loading, saving, and manipulation.
   Dataset mask;
   mask.insert<Coord::Mask>({Dimension::Spectrum, 3},
                            std::vector<char>{0, 0, 1});
 
+  // Add mask to Dataset, not touching data.
   auto d_masked(d);
-
-  // Add mask to Dataset, no touching data.
   d_masked.merge(mask);
 
   // Cannot add masked workspace to non-masked (handled implicitly by
@@ -223,10 +218,20 @@ TEST(Workspace2D, masking) {
   // Remove mask.
   d_masked.erase<Coord::Mask>();
 
+  // Skip processing spectrum if it is masked.
+  EXPECT_FALSE(d_masked2.dimensions<Coord::Mask>().contains(Dimension::Tof));
+  DatasetView<DatasetView<Data::Value>, const Coord::Mask> spectra(d_masked2,
+                                                                   "sample");
+  for (auto &item : spectra)
+    if (!item.get<Coord::Mask>())
+      for (auto &point : item.get<DatasetView<Data::Value>>())
+        point.value() += 1.0;
+
   // Apply mask.
-  DatasetView<Data::Value, Data::Variance, const Coord::Mask> view(d_masked2);
+  DatasetView<Data::Value, Data::Variance, const Coord::Mask> view(
+      d_masked2, "background");
   for (auto &item : view) {
-    item.value *= item.get<Coord::Mask>();
+    item.value() *= item.get<Coord::Mask>();
     item.get<Data::Variance>() *= item.get<Coord::Mask>();
   }
   // Could by simplified if we implement binary operations with mixed types
