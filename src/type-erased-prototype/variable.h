@@ -66,10 +66,7 @@ public:
   gsl::index size() const { return m_object->size(); }
 
   const Dimensions &dimensions() const { return m_object->dimensions(); }
-  void setDimensions(const Dimensions &dimensions) {
-    m_object = m_object->cloneEmpty();
-    m_object.access().setDimensions(dimensions);
-  }
+  void setDimensions(const Dimensions &dimensions);
 
   const VariableConcept &data() const { return *m_object; }
   VariableConcept &data() { return m_object.access(); }

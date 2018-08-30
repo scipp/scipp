@@ -147,6 +147,11 @@ Variable::Variable(uint32_t id, const Unit::Id unit, Dimensions dimensions,
       m_object(std::make_unique<VariableModel<T>>(std::move(dimensions),
                                                   std::move(object))) {}
 
+void Variable::setDimensions(const Dimensions &dimensions) {
+  m_object = m_object->cloneEmpty();
+  m_object.access().setDimensions(dimensions);
+}
+
 template <class T> const T &Variable::cast() const {
   return dynamic_cast<const VariableModel<T> &>(*m_object).m_model;
 }

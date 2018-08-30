@@ -523,6 +523,7 @@ Outstanding tasks:
 - Understand performance implications of doing a lot of operations in streaming memory access.
   Investigate how a cache-blocked operation mode could be supported.
   Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.
+  - One option could involve slicing `Dataset`, applying a series of operations, and subsequently concatenating all slices.
 
 - Investigate `EventList` replacement.
 

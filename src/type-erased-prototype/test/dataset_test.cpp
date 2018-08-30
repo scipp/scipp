@@ -438,10 +438,11 @@ TEST(Dataset, concatenate) {
   EXPECT_EQ(&x.get<const Coord::X>()[0], &xy.get<const Coord::X>()[0]);
   EXPECT_NE(&x.get<const Data::Value>()[0], &xy.get<const Data::Value>()[0]);
 
-  // Broken, see TODO in variable_test.cpp, need to fix dimension matching.
-  // xy = concatenate(Dimension::Y, xy, x);
+  xy = concatenate(Dimension::Y, xy, x);
+  EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
+  EXPECT_EQ(xy.get<const Data::Value>().size(), 6);
 
   xy = concatenate(Dimension::Y, xy, xy);
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
-  EXPECT_EQ(xy.get<const Data::Value>().size(), 8);
+  EXPECT_EQ(xy.get<const Data::Value>().size(), 12);
 }

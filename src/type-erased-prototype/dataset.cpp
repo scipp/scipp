@@ -18,6 +18,19 @@ void Dataset::insert(Variable variable) {
   m_variables.push_back(std::move(variable));
 }
 
+Dataset Dataset::extract(const std::string &name) {
+  Dataset subset;
+  for (auto it = m_variables.begin(); it != m_variables.end();) {
+    if (it->name() == name) {
+      subset.insert(*it);
+      it = m_variables.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  return subset;
+}
+
 void Dataset::insertAsEdge(const Dimension dimension, Variable variable) {
   // Edges are by 1 longer than other data, so dimension size check and
   // merging uses modified dimensions.
