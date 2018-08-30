@@ -30,26 +30,21 @@ template <class... Tags> using unit_t = typename unit<Tags...>::type;
 
 template <class Base, class T> struct GetterMixin {};
 
-template <class Base> struct GetterMixin<Base, Data::Tof> {
-  const element_return_type_t<Data::Tof> tof() const {
-    return static_cast<const Base *>(this)->template get<Data::Tof>();
-  }
-};
+#define GETTER_MIXIN(Tag, name)                                                \
+  template <class Base> struct GetterMixin<Base, Tag> {                        \
+    const element_return_type_t<Tag> name() const {                            \
+      return static_cast<const Base *>(this)->template get<Tag>();             \
+    }                                                                          \
+  };                                                                           \
+  template <class Base> struct GetterMixin<Base, const Tag> {                  \
+    const element_return_type_t<const Tag> name() const {                      \
+      return static_cast<const Base *>(this)->template get<Tag>();             \
+    }                                                                          \
+  };
 
-template <class Base> struct GetterMixin<Base, Data::Value> {
-  element_return_type_t<Data::Value> value() {
-    return static_cast<Base *>(this)->template get<Data::Value>();
-  }
-  const element_return_type_t<Data::Value> value() const {
-    return static_cast<const Base *>(this)->template get<Data::Value>();
-  }
-};
-
-template <class Base> struct GetterMixin<Base, const Data::Value> {
-  element_return_type_t<const Data::Value> value() const {
-    return static_cast<const Base *>(this)->template get<Data::Value>();
-  }
-};
+GETTER_MIXIN(Data::Tof, tof)
+GETTER_MIXIN(Data::Value, value)
+GETTER_MIXIN(Data::Variance, variance)
 
 template <class Base> struct GetterMixin<Base, Data::Histogram> {
   const element_return_type_t<Data::Histogram> histogram() const {
