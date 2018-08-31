@@ -218,20 +218,33 @@ Dataset &Dataset::operator*=(const Dataset &other) {
           auto error_index2 = other.find(tag_id<Data::Variance>, var2.name());
           auto &error1 = m_variables[error_index1];
           auto &error2 = other.m_variables[error_index2];
-          // Expression templates could make this faster, but only if shapes
-          // match?
-          // We compute error1 = error1 * (var2 * var2) + var1 * var1 * error2,
-          // avoiding some temporaries by reformulating as follows:
-          auto tmp =
-              var1 * var1 * error2; // error1 may be error2, use before write.
-          error1 *= var2 * var2;
-          error1 += tmp;
-          // TODO: Catch errors from unit propagation here and give a better
-          // error message.
+          if ((var1.dimensions() == var2.dimensions()) &&
+              (var1.dimensions() == error1.dimensions()) &&
+              (var1.dimensions() == error2.dimensions())) {
+            // Optimization if all dimensions match, avoiding allocation of
+            // temporaries and redundant streaming from memory of large array.
+            error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
+                           var1.unit() * var1.unit() * error2.unit());
+            var1.setUnit(var1.unit() * var2.unit());
+
+            auto v1 = var1.get<Data::Value>();
+            auto v2 = var2.get<const Data::Value>();
+            auto e1 = error1.get<Data::Value>();
+            auto e2 = error2.get<const Data::Value>();
+            for (gsl::index i = 0; i < v1.size(); ++i) {
+              e1[i] = e1[i] * v2[i] * v2[i] + e2[i] * v1[i] * v1[i];
+              v1[i] *= v2[i];
+            }
+          } else {
+            error1 = error1 * (var2 * var2) + var1 * var1 * error2;
+            // TODO: Catch errors from unit propagation here and give a better
+            // error message.
+            var1 *= var2;
+          }
         } else {
           // No variance found, continue without.
+          var1 *= var2;
         }
-        var1 *= var2;
       } else if (var2.type() == tag_id<Data::Variance>) {
         // Do nothing, math for variance is done when processing corresponding
         // value.
