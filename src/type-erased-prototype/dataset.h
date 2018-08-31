@@ -128,6 +128,7 @@ private:
 
 Dataset operator+(Dataset a, const Dataset &b);
 Dataset operator-(Dataset a, const Dataset &b);
+Dataset operator*(Dataset a, const Dataset &b);
 Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index);
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
 

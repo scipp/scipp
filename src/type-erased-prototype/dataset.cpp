@@ -240,6 +240,7 @@ Dataset &Dataset::operator*=(const Dataset &other) {
 
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
 Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
+Dataset operator*(Dataset a, const Dataset &b) { return a *= b; }
 
 Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {
   // TODO It is up for debate whether this should always throw if the dimension

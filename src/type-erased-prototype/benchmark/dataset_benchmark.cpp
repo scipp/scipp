@@ -7,7 +7,7 @@
 static void BM_Dataset_get_with_many_columns(benchmark::State &state) {
   Dataset d;
   for (int i = 0; i < state.range(0); ++i)
-    d.insert<Data::Value>("name" + i, Dimensions{}, 1);
+    d.insert<Data::Value>("name" + std::to_string(i), Dimensions{}, 1);
   d.insert<Data::Int>("name", Dimensions{}, 1);
   for (auto _ : state)
     d.get<Data::Int>();
@@ -64,5 +64,66 @@ static void BM_Dataset_as_Histogram_with_slice(benchmark::State &state) {
                           sizeof(double));
 }
 BENCHMARK(BM_Dataset_as_Histogram_with_slice);
+
+Dataset makeDataset(const gsl::index nSpec, const gsl::index nPoint) {
+  Dataset d;
+
+  d.insert<Coord::DetectorId>({Dimension::Detector, nSpec}, nSpec);
+  d.insert<Coord::DetectorPosition>({Dimension::Detector, nSpec}, nSpec);
+  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, nSpec}, nSpec);
+  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, nSpec}, nSpec);
+
+  d.insert<Coord::Tof>({Dimension::Tof, nPoint}, nPoint);
+  Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
+  d.insert<Data::Value>("sample", dims, dims.volume());
+  d.insert<Data::Variance>("sample", dims, dims.volume());
+  d.insert<Data::Value>("background", dims, dims.volume());
+  d.insert<Data::Variance>("background", dims, dims.volume());
+
+  return d;
+}
+
+Dataset doWork(Dataset d) {
+  d *= d;
+  d.merge(d.extract("sample") - d.extract("background"));
+  d *= d;
+  return d;
+}
+
+static void BM_Dataset_cache_blocking_reference(benchmark::State &state) {
+  gsl::index nSpec = 10000;
+  gsl::index nPoint = state.range(0);
+  auto d = makeDataset(nSpec, nPoint);
+  for (auto _ : state) {
+    d = doWork(d);
+  }
+  state.SetItemsProcessed(state.iterations() * nSpec);
+  // This is the minimal theoretical data volume to and from RAM, loading 2+2,
+  // storing 2. That is, this does not take into account intermediate values.
+  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
+                          sizeof(double));
+}
+BENCHMARK(BM_Dataset_cache_blocking_reference)
+    ->RangeMultiplier(2)
+    ->Range(2 << 9, 2 << 12);
+
+static void BM_Dataset_cache_blocking(benchmark::State &state) {
+  gsl::index nSpec = 10000;
+  gsl::index nPoint = state.range(0);
+  auto d = makeDataset(nSpec, nPoint);
+  for (auto _ : state) {
+    for (gsl::index i = 0; i < nSpec; ++i) {
+      auto spec = doWork(slice(d, Dimension::Spectrum, i));
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * nSpec);
+  // This is the minimal theoretical data volume to and from RAM, loading 2+2,
+  // storing 2. That is, this does not take into account intermediate values.
+  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
+                          sizeof(double));
+}
+BENCHMARK(BM_Dataset_cache_blocking)
+    ->RangeMultiplier(2)
+    ->Range(2 << 9, 2 << 12);
 
 BENCHMARK_MAIN();
