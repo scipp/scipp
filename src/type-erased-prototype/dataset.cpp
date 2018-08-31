@@ -222,8 +222,10 @@ Dataset &Dataset::operator*=(const Dataset &other) {
           // match?
           // We compute error1 = error1 * (var2 * var2) + var1 * var1 * error2,
           // avoiding some temporaries by reformulating as follows:
+          auto tmp =
+              var1 * var1 * error2; // error1 may be error2, use before write.
           error1 *= var2 * var2;
-          error1 += var1 * var1 * error2;
+          error1 += tmp;
           // TODO: Catch errors from unit propagation here and give a better
           // error message.
         } else {
