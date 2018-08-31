@@ -220,7 +220,10 @@ Dataset &Dataset::operator*=(const Dataset &other) {
           auto &error2 = other.m_variables[error_index2];
           // Expression templates could make this faster, but only if shapes
           // match?
-          error1 = error1 * (var2 * var2) + var1 * var1 * error2;
+          // We compute error1 = error1 * (var2 * var2) + var1 * var1 * error2,
+          // avoiding some temporaries by reformulating as follows:
+          error1 *= var2 * var2;
+          error1 += var1 * var1 * error2;
           // TODO: Catch errors from unit propagation here and give a better
           // error message.
         } else {
