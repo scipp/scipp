@@ -83,6 +83,40 @@ Dataset makeDataset(const gsl::index nSpec, const gsl::index nPoint) {
   return d;
 }
 
+static void BM_Dataset_plus(benchmark::State &state) {
+  gsl::index nSpec = 10000;
+  gsl::index nPoint = state.range(0);
+  auto d = makeDataset(nSpec, nPoint);
+  for (auto _ : state) {
+    d += d;
+  }
+  state.SetItemsProcessed(state.iterations() * nSpec);
+  // This is the minimal theoretical data volume to and from RAM, loading 2+2,
+  // storing 2. That is, this does not take into account intermediate values.
+  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
+                          sizeof(double));
+}
+BENCHMARK(BM_Dataset_plus)
+    ->RangeMultiplier(2)
+    ->Range(2 << 9, 2 << 12);
+
+static void BM_Dataset_multiply(benchmark::State &state) {
+  gsl::index nSpec = 10000;
+  gsl::index nPoint = state.range(0);
+  auto d = makeDataset(nSpec, nPoint);
+  for (auto _ : state) {
+    d *= d;
+  }
+  state.SetItemsProcessed(state.iterations() * nSpec);
+  // This is the minimal theoretical data volume to and from RAM, loading 2+2,
+  // storing 2. That is, this does not take into account intermediate values.
+  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
+                          sizeof(double));
+}
+BENCHMARK(BM_Dataset_multiply)
+    ->RangeMultiplier(2)
+    ->Range(2 << 9, 2 << 12);
+
 Dataset doWork(Dataset d) {
   d *= d;
   d.merge(d.extract("sample") - d.extract("background"));
