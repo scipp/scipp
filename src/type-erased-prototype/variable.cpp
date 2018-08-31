@@ -110,10 +110,15 @@ public:
     auto sliceDims = other.dimensions();
     if (index >= sliceDims.size(dim) || index < 0)
       throw std::runtime_error("Slice index out of range");
-    sliceDims.erase(dim);
-    VariableView<const decltype(data)> sliceView(data, sliceDims,
-                                                 other.dimensions());
-    std::copy(sliceView.begin(), sliceView.end(), m_model.begin());
+    if (sliceDims.label(sliceDims.count() - 1) == dim) {
+      // Slicing slowest dimension so data is contiguous, avoid using view.
+      std::copy(data.begin(), data.begin() + m_model.size(), m_model.begin());
+    } else {
+      sliceDims.erase(dim);
+      VariableView<const decltype(data)> sliceView(data, sliceDims,
+                                                   other.dimensions());
+      std::copy(sliceView.begin(), sliceView.end(), m_model.begin());
+    }
   }
 
   void copyFrom(const VariableConcept &otherConcept, const Dimension dim,
@@ -129,12 +134,27 @@ public:
 
     auto target = gsl::make_span(
         m_model.data() + offset * dimensions().offset(dim), &*m_model.end());
-    VariableView<decltype(target)> view(target, iterationDimensions,
-                                        dimensions());
-    VariableView<const T> otherView(other.m_model, iterationDimensions,
-                                    other.dimensions());
-
-    std::copy(otherView.begin(), otherView.end(), view.begin());
+    // For cases for minimizing use of VariableView --- just copy contiguous
+    // range where possible.
+    if (dimensions().label(dimensions().count() - 1) == dim) {
+      if (iterationDimensions == other.dimensions()) {
+        std::copy(other.m_model.begin(), other.m_model.end(), target.begin());
+      } else {
+        VariableView<const T> otherView(other.m_model, iterationDimensions,
+                                        other.dimensions());
+        std::copy(otherView.begin(), otherView.end(), target.begin());
+      }
+    } else {
+      VariableView<decltype(target)> view(target, iterationDimensions,
+                                          dimensions());
+      if (iterationDimensions == other.dimensions()) {
+        std::copy(other.m_model.begin(), other.m_model.end(), view.begin());
+      } else {
+        VariableView<const T> otherView(other.m_model, iterationDimensions,
+                                        other.dimensions());
+        std::copy(otherView.begin(), otherView.end(), view.begin());
+      }
+    }
   }
 
   T m_model;
@@ -229,10 +249,10 @@ Variable &Variable::operator-=(const Variable &other) {
 }
 
 Variable &Variable::operator*=(const Variable &other) {
-  m_unit = m_unit * other.m_unit;
   if (!dimensions().contains(other.dimensions()))
     throw std::runtime_error(
         "Cannot multiply Variables: Dimensions do not match.");
+  m_unit = m_unit * other.m_unit;
   m_object.access() *= *other.m_object;
   return *this;
 }
