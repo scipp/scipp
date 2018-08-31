@@ -168,6 +168,8 @@ Variable::Variable(uint32_t id, const Unit::Id unit, Dimensions dimensions,
                                                   std::move(object))) {}
 
 void Variable::setDimensions(const Dimensions &dimensions) {
+  if (dimensions == m_object->dimensions())
+    return;
   m_object = m_object->cloneEmpty();
   m_object.access().setDimensions(dimensions);
 }
