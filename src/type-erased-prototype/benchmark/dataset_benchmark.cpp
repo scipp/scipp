@@ -131,7 +131,7 @@ static void BM_Dataset_cache_blocking_reference(benchmark::State &state) {
   gsl::index nPoint = state.range(0);
   auto d = makeDataset(nSpec, nPoint);
   for (auto _ : state) {
-    d = doWork(d);
+    d = doWork(std::move(d));
   }
   state.SetItemsProcessed(state.iterations() * nSpec);
   // This is the minimal theoretical data volume to and from RAM, loading 2+2,
@@ -165,6 +165,6 @@ static void BM_Dataset_cache_blocking(benchmark::State &state) {
 }
 BENCHMARK(BM_Dataset_cache_blocking)
     ->RangeMultiplier(2)
-    ->Range(2 << 9, 2 << 12);
+    ->Range(2 << 9, 2 << 14);
 
 BENCHMARK_MAIN();
