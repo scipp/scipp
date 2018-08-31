@@ -115,6 +115,8 @@ public:
   Dataset &operator+=(const Dataset &other);
   Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
+  void setSlice(const Dataset &slice, const Dimension dim,
+                const gsl::index index);
 
 private:
   gsl::index count(const uint16_t id) const;

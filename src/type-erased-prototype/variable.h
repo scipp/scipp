@@ -48,9 +48,12 @@ public:
     m_name = name;
   }
   bool operator==(const Variable &other) const;
+  bool operator!=(const Variable &other) const;
   Variable &operator+=(const Variable &other);
   Variable &operator-=(const Variable &other);
   Variable &operator*=(const Variable &other);
+  void setSlice(const Variable &slice, const Dimension dim,
+                const gsl::index index);
 
   const Unit &unit() const { return m_unit; }
   void setUnit(const Unit &unit) {

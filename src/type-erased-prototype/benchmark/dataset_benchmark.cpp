@@ -87,6 +87,8 @@ Dataset doWork(Dataset d) {
   d *= d;
   d.merge(d.extract("sample") - d.extract("background"));
   d *= d;
+  d *= d;
+  d *= d;
   return d;
 }
 
@@ -110,10 +112,15 @@ BENCHMARK(BM_Dataset_cache_blocking_reference)
 static void BM_Dataset_cache_blocking(benchmark::State &state) {
   gsl::index nSpec = 10000;
   gsl::index nPoint = state.range(0);
-  auto d = makeDataset(nSpec, nPoint);
+  const auto d = makeDataset(nSpec, nPoint);
+  auto out(d);
+  Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
+  out.insert<Data::Value>("sample - background", dims, dims.volume());
+  out.insert<Data::Variance>("sample - background", dims, dims.volume());
   for (auto _ : state) {
     for (gsl::index i = 0; i < nSpec; ++i) {
-      auto spec = doWork(slice(d, Dimension::Spectrum, i));
+      out.setSlice(doWork(slice(d, Dimension::Spectrum, i)),
+                   Dimension::Spectrum, i);
     }
   }
   state.SetItemsProcessed(state.iterations() * nSpec);

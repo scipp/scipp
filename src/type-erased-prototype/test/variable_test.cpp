@@ -178,6 +178,35 @@ TEST(Variable, operator_times_equal) {
   EXPECT_EQ(a.unit(), Unit::Id::Area);
 }
 
+TEST(Variable, setSlice) {
+  Dimensions dims(Dimension::Tof, 1);
+  const auto parent = makeVariable<Data::Value>(
+      Dimensions({{Dimension::X, 4}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
+      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
+       14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
+  const auto empty = makeVariable<Data::Value>(
+      Dimensions({{Dimension::X, 4}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
+      24);
+
+  auto d(empty);
+  EXPECT_NE(parent, d);
+  for (const gsl::index index : {0, 1, 2, 3})
+    d.setSlice(slice(parent, Dimension::X, index), Dimension::X, index);
+  EXPECT_EQ(parent, d);
+
+  d = empty;
+  EXPECT_NE(parent, d);
+  for (const gsl::index index : {0, 1})
+    d.setSlice(slice(parent, Dimension::Y, index), Dimension::Y, index);
+  EXPECT_EQ(parent, d);
+
+  d = empty;
+  EXPECT_NE(parent, d);
+  for (const gsl::index index : {0, 1, 2})
+    d.setSlice(slice(parent, Dimension::Z, index), Dimension::Z, index);
+  EXPECT_EQ(parent, d);
+}
+
 TEST(Variable, slice) {
   Dimensions dims(Dimension::Tof, 1);
   const auto parent = makeVariable<Data::Value>(

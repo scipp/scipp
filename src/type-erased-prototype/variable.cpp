@@ -194,6 +194,10 @@ bool Variable::operator==(const Variable &other) const {
   return *m_object == *other.m_object;
 }
 
+bool Variable::operator!=(const Variable &other) const {
+  return !(*this == other);
+}
+
 Variable &Variable::operator+=(const Variable &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in VariableModel::operator+=.
@@ -231,6 +235,18 @@ Variable &Variable::operator*=(const Variable &other) {
         "Cannot multiply Variables: Dimensions do not match.");
   m_object.access() *= *other.m_object;
   return *this;
+}
+
+void Variable::setSlice(const Variable &slice, const Dimension dim,
+                        const gsl::index index) {
+  if (m_unit != slice.m_unit)
+    throw std::runtime_error("Cannot set slice: Units do not match.");
+  if (m_object == slice.m_object)
+    return;
+  if (!dimensions().contains(slice.dimensions()))
+    throw std::runtime_error(
+        "Cannot set slice: Dimensions do not match.");
+  data().copyFrom(slice.data(), dim, index);
 }
 
 Variable operator+(const Variable &a, const Variable &b) {

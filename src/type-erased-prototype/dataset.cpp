@@ -241,6 +241,14 @@ Dataset &Dataset::operator*=(const Dataset &other) {
   return *this;
 }
 
+void Dataset::setSlice(const Dataset &slice, const Dimension dim,
+                       const gsl::index index) {
+  for (const auto &var2 : slice.m_variables) {
+    auto &var1 = m_variables[find(var2.type(), var2.name())];
+    var1.setSlice(var2, dim, index);
+  }
+}
+
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
 Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
 Dataset operator*(Dataset a, const Dataset &b) { return a *= b; }
