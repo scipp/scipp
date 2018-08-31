@@ -120,9 +120,9 @@ Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
                   std::vector<typename Tag::type>(values));
 }
 
-Variable operator+(const Variable &a, const Variable &b);
-Variable operator-(const Variable &a, const Variable &b);
-Variable operator*(const Variable &a, const Variable &b);
+Variable operator+(Variable a, const Variable &b);
+Variable operator-(Variable a, const Variable &b);
+Variable operator*(Variable a, const Variable &b);
 
 Variable slice(const Variable &var, const Dimension dim,
                const gsl::index index);

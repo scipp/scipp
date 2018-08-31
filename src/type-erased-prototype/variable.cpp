@@ -269,20 +269,9 @@ void Variable::setSlice(const Variable &slice, const Dimension dim,
   data().copyFrom(slice.data(), dim, index);
 }
 
-Variable operator+(const Variable &a, const Variable &b) {
-  auto result(a);
-  return result += b;
-}
-
-Variable operator-(const Variable &a, const Variable &b) {
-  auto result(a);
-  return result -= b;
-}
-
-Variable operator*(const Variable &a, const Variable &b) {
-  auto result(a);
-  return result *= b;
-}
+Variable operator+(Variable a, const Variable &b) { return a += b; }
+Variable operator-(Variable a, const Variable &b) { return a -= b; }
+Variable operator*(Variable a, const Variable &b) { return a *= b; }
 
 Variable slice(const Variable &var, const Dimension dim,
                const gsl::index index) {
