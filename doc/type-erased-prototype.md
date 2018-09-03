@@ -599,6 +599,16 @@ Outstanding tasks:
   - If we create two `DatasetViews`, providing a mechanism to ensure that they use the same dimensions for iteration would be sufficient.
     Then we can use things like `std::transform`.
 
+- Logging?
+  - Do not want to depend on `Poco`.
+  - Can we have a `Logger` variable that we simply write to?
+    Some sort of wrapper that forwards to the default Mantid logger but does not require the dependency?
+
+- Progress reporting, in particular cancellation?
+  - Do we need it for the "small" operations defined in this library?
+    Is it sufficient to have it for higher-level algorithms?
+    - Cancellation can lead to undefined effects on input workspaces, which would be a good argument to not support it on this level.
+
 Other:
 
 - Use https://github.com/tcbrindle/span instead of the one from GSL?
