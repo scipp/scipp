@@ -443,14 +443,14 @@ Findings and changes:
   - *Coordinate variables* are *matched*.
     - Do not have a name, implying that they must be unique.
     - Do not have a unit, since it is implied by the tag defining the coordinate.
-      Might need to support unit *scale*.
+      Note that even though the base unit is fixed, we might need to support the same unit but with a different *scale*, e.g., `s` and `ms`.
     - Coordinate variables cannot have a name and therefore cannot be duplicate.
 
   Data variables include `Data::Value`, `Data::Error`, `Data::String`, `Data::Int`, and `Data::ExperimentLog`.
   Coordinate variables include `Coord::Tof`, `Coord::Q`, `Coord::SpectrumNumber`, `Coord::DetectorId`, `Coord::SpectrumPosition`, `Coord::DetectorPosition`, `Coord::DetectorGrouping`, `Coord::SpectrumLabel`, `Coord::RowLabel`, and `Coord::ColumnLabel`.
 
 - Add basic support for units.
-  - Variables are automatically assigned a default unit based in their tag, e.g., `Coord::X` would have the unit "length".
+  - Variables are automatically assigned a default unit based in their tag, e.g., `Coord::X` would have the unit "m".
   - If there is no sensible default the variable is dimensionless unless set explicitly.
   - For coordinate variables changing the unit will not be possible.
     The interface for (avoiding) the redundancy of defining units for variables that are coordinates for their dimension is still unclear.
@@ -508,7 +508,7 @@ Findings and changes:
   The major disadvantage is that we cannot have the same data type for standalone histograms and "histogram views".
   - If option (ii.) is chosen we will still require a type to function as the current `HistogramData::Histogram`.
     Keeping this type is one option, but another, potentially more attractive solution is to simply use `Dataset`.
-    Most of the required features for `Histogram` would also be supported by `Dataset`, and even in its current form `Dataset` provides features that are equivalent or surpassing what `HistogramData::Histogram` provides currently.
+    Most of the required features for `Histogram` would also be supported by `Dataset`, and even in its current form `Dataset` provides features that are equivalent or surpassing what `HistogramData::Histogram` provides currently (additional features include support for multi-dimensional histograms, arbitrary types in a histogram such as integer histograms, a histogram without uncertainties, a histogram with attached mask, ..., "X" unit stored in histogram, "Y" and "E" can also have units, histogram can have a name).
     The main question is whether the performance is adequate.
     Preliminary benchmarks indicate that we are in the right ballpark, even though some optimizations may be required.
 
