@@ -263,6 +263,47 @@ TEST(Dataset, operator_plus_equal_different_content) {
   EXPECT_NO_THROW(b += a);
 }
 
+TEST(Dataset, operator_plus_equal_history) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("name1", {Dimension::X, 1}, {2.2});
+  a.insert<Data::History>("history", {}, 1);
+  a += a;
+  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
+  EXPECT_EQ(a.get<Data::Value>()[0], 4.4);
+  EXPECT_EQ(a.get<Data::History>()[0].size(), 1);
+  EXPECT_EQ(a.get<Data::History>()[0][0], "operator+=");
+  a += a;
+  EXPECT_EQ(a.get<Data::History>()[0].size(), 2);
+  EXPECT_EQ(a.get<Data::History>()[0][1], "operator+=");
+}
+
+TEST(Dataset, history_with_slicing) {
+  Dataset d;
+  d.insert<Coord::X>({Dimension::X, 3}, {0.1, 0.2, 0.3});
+  d.insert<Data::Value>("name", {Dimension::X, 3}, {1.1, 2.2, 3.3});
+  d.insert<Data::History>("history", {}, 1);
+  d += d;
+  for (gsl::index i = 0; i < 3; ++i) {
+    auto s = slice(d, Dimension::X, i);
+    // By default, slicing operations should probably also write to history.
+    // However, for the purpose of using slicing for cache blocking we do not
+    // want a polluted history. One option is the remove the history from all by
+    // one slice before processing. There may be the need for additional cleanup
+    // of the history after calling Dataset::setSlice (in the current
+    // implementation it does not write to the history, so there is no issue).
+    // The described history management would be part of a class/function
+    // performing the blocking and would not be exposed to the user.
+    if (i != 0)
+      s.erase<Data::History>();
+    s += s;
+    d.setSlice(s, Dimension::X, i);
+  }
+  EXPECT_EQ(d.get<Data::History>()[0].size(), 2);
+  EXPECT_EQ(d.get<Data::History>()[0][0], "operator+=");
+  EXPECT_EQ(d.get<Data::History>()[0][1], "operator+=");
+}
+
 TEST(Dataset, operator_times_equal) {
   Dataset a;
   a.insert<Coord::X>({Dimension::X, 1}, {0.1});

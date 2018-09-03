@@ -127,9 +127,13 @@ struct Data {
   struct Histogram {
     using type = ::Histogram;
   };
+  struct History {
+    using type = std::vector<std::string>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
 
   using tags = std::tuple<Tof, Value, Variance, StdDev, Int, DimensionSize,
-                          String, Histogram>;
+                          String, Histogram, History>;
 };
 
 template <class T>

@@ -200,6 +200,7 @@ INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
 INSTANTIATE(std::pair<int64_t, int64_t>)
 INSTANTIATE(std::vector<gsl::index>)
+INSTANTIATE(std::vector<std::string>)
 
 bool Variable::operator==(const Variable &other) const {
   // Compare even before pointer comparison since data may be shared even if

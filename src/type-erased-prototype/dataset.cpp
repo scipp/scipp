@@ -133,8 +133,18 @@ Dataset &Dataset::operator+=(const Dataset &other) {
       // beneficial would depend on the shared reference count in var1 and var2:
       // var1 = var2;
     } else {
-      // Data variables are added
-      var1 += var2;
+      if (var1.valueTypeIs<Data::History>()) {
+        auto hists = var1.get<Data::History>();
+        if (hists.size() != 1)
+          throw std::runtime_error("TODO: History should be 0-dimensions. "
+                                   "Flatten it? Prevent creation? Do we need "
+                                   "history with dimensions?");
+        // TODO should merge history from other.
+        hists[0].push_back("operator+=");
+      } else {
+        // Data variables are added
+        var1 += var2;
+      }
     }
   }
   return *this;
@@ -283,7 +293,10 @@ void Dataset::setSlice(const Dataset &slice, const Dimension dim,
                        const gsl::index index) {
   for (const auto &var2 : slice.m_variables) {
     auto &var1 = m_variables[find(var2.type(), var2.name())];
-    var1.setSlice(var2, dim, index);
+    if (var1.dimensions().contains(dim))
+      var1.setSlice(var2, dim, index);
+    else
+      var1 = var2;
   }
 }
 
