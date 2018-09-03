@@ -96,9 +96,7 @@ static void BM_Dataset_plus(benchmark::State &state) {
   state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
                           sizeof(double));
 }
-BENCHMARK(BM_Dataset_plus)
-    ->RangeMultiplier(2)
-    ->Range(2 << 9, 2 << 12);
+BENCHMARK(BM_Dataset_plus)->RangeMultiplier(2)->Range(2 << 9, 2 << 12);
 
 static void BM_Dataset_multiply(benchmark::State &state) {
   gsl::index nSpec = 10000;
@@ -113,13 +111,16 @@ static void BM_Dataset_multiply(benchmark::State &state) {
   state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
                           sizeof(double));
 }
-BENCHMARK(BM_Dataset_multiply)
-    ->RangeMultiplier(2)
-    ->Range(2 << 9, 2 << 12);
+BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 9, 2 << 12);
 
 Dataset doWork(Dataset d) {
   d *= d;
-  d.merge(d.extract("sample") - d.extract("background"));
+  d *= d;
+  d *= d;
+  d *= d;
+  d *= d;
+  d *= d;
+  d *= d;
   d *= d;
   d *= d;
   d *= d;
@@ -130,13 +131,14 @@ static void BM_Dataset_cache_blocking_reference(benchmark::State &state) {
   gsl::index nSpec = 10000;
   gsl::index nPoint = state.range(0);
   auto d = makeDataset(nSpec, nPoint);
+  auto out(d);
   for (auto _ : state) {
-    d = doWork(d);
+    d = doWork(std::move(d));
   }
   state.SetItemsProcessed(state.iterations() * nSpec);
   // This is the minimal theoretical data volume to and from RAM, loading 2+2,
-  // storing 2. That is, this does not take into account intermediate values.
-  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
+  // storing 2+2. That is, this does not take into account intermediate values.
+  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 8 *
                           sizeof(double));
 }
 BENCHMARK(BM_Dataset_cache_blocking_reference)
@@ -146,24 +148,44 @@ BENCHMARK(BM_Dataset_cache_blocking_reference)
 static void BM_Dataset_cache_blocking(benchmark::State &state) {
   gsl::index nSpec = 10000;
   gsl::index nPoint = state.range(0);
-  const auto d = makeDataset(nSpec, nPoint);
-  auto out(d);
-  Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
-  out.insert<Data::Value>("sample - background", dims, dims.volume());
-  out.insert<Data::Variance>("sample - background", dims, dims.volume());
+  auto d = makeDataset(nSpec, nPoint);
   for (auto _ : state) {
     for (gsl::index i = 0; i < nSpec; ++i) {
-      out.setSlice(doWork(slice(d, Dimension::Spectrum, i)),
-                   Dimension::Spectrum, i);
+      d.setSlice(doWork(slice(d, Dimension::Spectrum, i)), Dimension::Spectrum,
+                 i);
     }
   }
   state.SetItemsProcessed(state.iterations() * nSpec);
   // This is the minimal theoretical data volume to and from RAM, loading 2+2,
-  // storing 2. That is, this does not take into account intermediate values.
-  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
+  // storing 2+2. That is, this does not take into account intermediate values.
+  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 8 *
                           sizeof(double));
 }
 BENCHMARK(BM_Dataset_cache_blocking)
+    ->RangeMultiplier(2)
+    ->Range(2 << 9, 2 << 14);
+
+static void BM_Dataset_cache_blocking_no_slicing(benchmark::State &state) {
+  gsl::index nSpec = 10000;
+  gsl::index nPoint = state.range(0);
+  const auto d = makeDataset(nSpec, nPoint);
+  std::vector<Dataset> slices;
+  for (gsl::index i = 0; i < nSpec; ++i) {
+    slices.emplace_back(slice(d, Dimension::Spectrum, i));
+  }
+
+  for (auto _ : state) {
+    for (gsl::index i = 0; i < nSpec; ++i) {
+      slices[i] = doWork(std::move(slices[i]));
+    }
+  }
+  state.SetItemsProcessed(state.iterations() * nSpec);
+  // This is the minimal theoretical data volume to and from RAM, loading 2+2,
+  // storing 2+2. That is, this does not take into account intermediate values.
+  state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 8 *
+                          sizeof(double));
+}
+BENCHMARK(BM_Dataset_cache_blocking_no_slicing)
     ->RangeMultiplier(2)
     ->Range(2 << 9, 2 << 14);
 
