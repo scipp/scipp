@@ -532,7 +532,7 @@ Findings and changes:
     static void apply(Dataset d, std::function f) {
       Slice slice(d, Dimension::Spectrum, 0);
       f(slice); // triggers copy-on-write
-      // Now it is certain that ref counts or modified variables are 1,
+      // Now it is certain that ref counts of modified variables are 1,
       // can use multiple threads to process the remaining slices.
     #pragma omp parallel for
       for (gsl::index i = 1; i < nSpec; ++i)
@@ -562,7 +562,7 @@ Outstanding tasks:
 
 - View or similar to support histogram access to `EventList` with on-the-fly binning.
   - Based on `Data::Events` (or `Data::EventList`?).
-  - Returns a histogram return by value, same type as normal histogram (in case option (i.) is chosen for a histogram implementation it will never referencing data in `Dataset`)!
+  - Returns a histogram by value, same type as normal histogram (in case option (i.) is chosen for a histogram implementation it will never referencing data in `Dataset`)!
   - Tag name?
     - `Data::HistogramView`.
     - `Histogram<Data::Events>`, following the same pattern as `Bin<Coord::Tof>`.
