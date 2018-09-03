@@ -274,8 +274,10 @@ TEST(Dataset, operator_plus_equal_history) {
   EXPECT_EQ(a.get<Data::History>()[0].size(), 1);
   EXPECT_EQ(a.get<Data::History>()[0][0], "operator+=");
   a += a;
-  EXPECT_EQ(a.get<Data::History>()[0].size(), 2);
-  EXPECT_EQ(a.get<Data::History>()[0][1], "operator+=");
+  // Merged history, so it contains 3 operations, not 2.
+  EXPECT_EQ(a.get<Data::History>()[0].size(), 3);
+  EXPECT_EQ(a.get<Data::History>()[0][1], "other.operator+=");
+  EXPECT_EQ(a.get<Data::History>()[0][2], "operator+=");
 }
 
 TEST(Dataset, history_with_slicing) {
@@ -299,9 +301,10 @@ TEST(Dataset, history_with_slicing) {
     d.setSlice(s, Dimension::X, i);
     d.get<Data::History>()[0].pop_back();
   }
-  EXPECT_EQ(d.get<Data::History>()[0].size(), 2);
+  EXPECT_EQ(d.get<Data::History>()[0].size(), 3);
   EXPECT_EQ(d.get<Data::History>()[0][0], "operator+=");
-  EXPECT_EQ(d.get<Data::History>()[0][1], "operator+=");
+  EXPECT_EQ(d.get<Data::History>()[0][1], "other.operator+=");
+  EXPECT_EQ(d.get<Data::History>()[0][2], "operator+=");
 }
 
 TEST(Dataset, operator_times_equal) {

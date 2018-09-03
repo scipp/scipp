@@ -139,7 +139,10 @@ Dataset &Dataset::operator+=(const Dataset &other) {
           throw std::runtime_error("TODO: History should be 0-dimensions. "
                                    "Flatten it? Prevent creation? Do we need "
                                    "history with dimensions?");
-        // TODO should merge history from other.
+        const auto &hist2 = var2.get<const Data::History>()[0];
+        const gsl::index size = hist2.size();
+        for (gsl::index i = 0; i < size; ++i)
+          hists[0].push_back("other." + hist2[i]);
         hists[0].push_back("operator+=");
       } else {
         // Data variables are added
