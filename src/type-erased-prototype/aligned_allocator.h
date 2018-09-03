@@ -1,3 +1,9 @@
+/// @file
+/// SPDX-License-Identifier: GPL-3.0-or-later
+/// @author Simon Heybrock
+/// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
+/// National Laboratory, and European Spallation Source ERIC.
+
 // from https://stackoverflow.com/a/12942652/1458281
 
 enum class Alignment : size_t {
