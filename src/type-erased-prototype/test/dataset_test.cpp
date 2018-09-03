@@ -289,7 +289,7 @@ TEST(Dataset, history_with_slicing) {
   for (gsl::index i = 0; i < 3; ++i) {
     auto s = slice(d, Dimension::X, i);
     // For the purpose of using slicing for cache blocking we do not want a
-    // polluted history. One option is the remove the history from all by one
+    // polluted history. One option is to remove the history from all by one
     // slice before processing, as well as the history entries related to
     // slicing. The outline history management would be part of a class/function
     // performing the blocking and would not be exposed to the user.
