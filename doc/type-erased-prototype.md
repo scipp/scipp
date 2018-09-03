@@ -565,6 +565,18 @@ Outstanding tasks:
 - Investigate `EventList` replacement.
 
 - Investigate MPI integration.
+  - Very similar to what we intend to do for cache blocking.
+  - Do we need a mechanism like the current `Parallel::StorageMode` and `Parallel::ExecutionMode` that was added Mantid for implementing MPI support?
+    - Is `ExecutionMode` basically just a requirement of an operation on its input datasets?
+      For example, `DiffractionFocussing` could require that there is a `Dimension::Spectrum`.
+      What if the dimension is only partial, would a special tag like `PartialDimension::Spectrum` make sense?
+      How can we know that combining partial dimensions yields a full dimension?
+      Should `class Dimensions` store the full length also?
+    - How do we handle this when building `DatasetIndex`, which would do a global validation --- not possible in serial processing?
+    - Do we need an equivalent to `ExecutionMode::MasterOnly`?
+      If based on partial dimensions we cannot distinguish between `StorageMode::Cloned` and `StorageMode::MasterOnly`.
+      The current need for `ExecutionMode::Master` only stems from the strategy to run the same Python script on all ranks.
+      If this could be changed, e.g., by pushing only the relevant section to non-master ranks we would not need it, I think.
 
 - View or similar to support histogram access to `EventList` with on-the-fly binning.
   - Based on `Data::Events` (or `Data::EventList`?).
