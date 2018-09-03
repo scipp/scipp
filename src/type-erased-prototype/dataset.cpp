@@ -298,6 +298,9 @@ void Dataset::setSlice(const Dataset &slice, const Dimension dim,
     else
       var1 = var2;
   }
+  if (count(tag_id<Data::History>) == 1)
+    get<Data::History>()[0].push_back("this->setSlice(slice, dim, " +
+                                      std::to_string(index) + ");");
 }
 
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
@@ -315,6 +318,11 @@ Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {
       out.insert(slice(var, dim, index));
     else
       out.insert(var);
+  }
+  try {
+    out.get<Data::History>()[0].push_back("slice(., dim, " +
+                                          std::to_string(index) + ");");
+  } catch (std::runtime_error &) { // no history
   }
   return out;
 }

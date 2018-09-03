@@ -286,18 +286,18 @@ TEST(Dataset, history_with_slicing) {
   d += d;
   for (gsl::index i = 0; i < 3; ++i) {
     auto s = slice(d, Dimension::X, i);
-    // By default, slicing operations should probably also write to history.
-    // However, for the purpose of using slicing for cache blocking we do not
-    // want a polluted history. One option is the remove the history from all by
-    // one slice before processing. There may be the need for additional cleanup
-    // of the history after calling Dataset::setSlice (in the current
-    // implementation it does not write to the history, so there is no issue).
-    // The described history management would be part of a class/function
+    // For the purpose of using slicing for cache blocking we do not want a
+    // polluted history. One option is the remove the history from all by one
+    // slice before processing, as well as the history entries related to
+    // slicing. The outline history management would be part of a class/function
     // performing the blocking and would not be exposed to the user.
     if (i != 0)
       s.erase<Data::History>();
+    else
+      s.get<Data::History>()[0].pop_back();
     s += s;
     d.setSlice(s, Dimension::X, i);
+    d.get<Data::History>()[0].pop_back();
   }
   EXPECT_EQ(d.get<Data::History>()[0].size(), 2);
   EXPECT_EQ(d.get<Data::History>()[0][0], "operator+=");
