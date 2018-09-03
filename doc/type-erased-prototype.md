@@ -512,6 +512,42 @@ Findings and changes:
     The main question is whether the performance is adequate.
     Preliminary benchmarks indicate that we are in the right ballpark, even though some optimizations may be required.
 
+- When working with a typical large `Dataset` most operations need to stream through a lot of memory.
+  The performance will thus alsways be limited by memory bandwidth.
+  To get around this we need to make better use of the CPU caches, reusing data.
+  One way to do this is a high-level cache blocking:
+  - Instead of operating on a large `Dataset` for all spectra, process each spectrum or a small number of spectra at a time, such that the working set fits into cache.
+    - One option could involve slicing `Dataset`, applying a series of operations, and subsequently concatenating all slices.
+  - We added benchmarks which indicate that (not counting the cost of potential slicing and merging) the overhead of `Dataset` is sufficiently small to make this worthwhile.
+    Applying `Dataset::operator*=` in multiple threads runs at 10x the speed if data fits into cache as opposed to memory.
+    Certainly more complex operations and datasets will lead to more overhead but these benchmarks indicate that it would be worthwhile to investigate further in this direction.
+  - The added benefit of processing data in this fashion is that it would also help to get away from the fork-join threading approach.
+  - As discussed above, our current implementation of `slice` for `Dataset` makes a copy.
+    If we were to use this frequently for the purpose of cache blocking it coult be benefical to have slices that *reference* data in a `Dataset` instead.
+    This however would cause issues with multi-threading due to the interaction with the copy-on-write mechanism.
+    We can circumvent these problems by processing the first slice only with a single thread:
+    ```cpp
+    class SliceView {
+    // Passed by value for thread-safety.
+    static void apply(Dataset d, std::function f) {
+      Slice slice(d, Dimension::Spectrum, 0);
+      f(slice); // triggers copy-on-write
+      // Now it is certain that ref counts or modified variables are 1,
+      // can use multiple threads to process the remaining slices.
+    #pragma omp parallel for
+      for (gsl::index i = 1; i < nSpec; ++i)
+        f(Slice(d, Dimension::Spectrum, i);
+      return d;
+    }
+    };
+
+    Dataset d;
+    // Copy of d still needed.
+    d = SliceView::apply(d, doWork);
+    // Move if d not needed.
+    d = SliceView::apply(std::move(d), doWork);
+    ```
+
 
 ### To do
 
@@ -519,11 +555,6 @@ The current implementation has a large number of features that are not supported
 In general the implementation has been continued only to the point where it becomes clear that interface works and is thus capable of demonstrating that the designed concepts work.
 
 Outstanding tasks:
-
-- Understand performance implications of doing a lot of operations in streaming memory access.
-  Investigate how a cache-blocked operation mode could be supported.
-  Any solution to this would also help with overhead from the fork-join threading approach adopted in Mantid.
-  - One option could involve slicing `Dataset`, applying a series of operations, and subsequently concatenating all slices.
 
 - Investigate `EventList` replacement.
 
