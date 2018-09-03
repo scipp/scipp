@@ -99,8 +99,8 @@ static void BM_Dataset_plus(benchmark::State &state) {
 BENCHMARK(BM_Dataset_plus)->RangeMultiplier(2)->Range(2 << 9, 2 << 12);
 
 static void BM_Dataset_multiply(benchmark::State &state) {
-  gsl::index nSpec = 10000;
-  gsl::index nPoint = state.range(0);
+  gsl::index nSpec = state.range(0);
+  gsl::index nPoint = 1024;
   auto d = makeDataset(nSpec, nPoint);
   for (auto _ : state) {
     d *= d;
@@ -111,7 +111,7 @@ static void BM_Dataset_multiply(benchmark::State &state) {
   state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 6 *
                           sizeof(double));
 }
-BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 9, 2 << 12);
+BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12);
 
 Dataset doWork(Dataset d) {
   d *= d;
