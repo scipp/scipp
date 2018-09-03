@@ -28,6 +28,9 @@ Dataset Dataset::extract(const std::string &name) {
       ++it;
     }
   }
+  if (subset.size() == 0)
+    throw std::runtime_error(
+        "Dataset::extract(): No matching variable found in Dataset.");
   return subset;
 }
 
