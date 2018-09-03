@@ -186,7 +186,7 @@ Dataset &Dataset::operator-=(const Dataset &other) {
 
 namespace aligned {
 // Helpers to define a pointer to aligned memory.
-template <class T> using type alignas(64) = T;
+template <class T> using type alignas(32) = T;
 template <class T> using ptr = type<T> *;
 
 // Using restrict does not seem to help much?
