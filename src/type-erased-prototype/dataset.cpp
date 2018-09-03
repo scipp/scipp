@@ -184,13 +184,21 @@ Dataset &Dataset::operator-=(const Dataset &other) {
   return *this;
 }
 
+namespace aligned {
+// Helpers to define a pointer to aligned memory.
+template <class T> using type alignas(64) = T;
+template <class T> using ptr = type<T> *;
+
+// Using restrict does not seem to help much?
 #define RESTRICT __restrict
-void helper(const gsl::index size, double *RESTRICT v1, double *RESTRICT e1,
-            const double *RESTRICT v2, const double *RESTRICT e2) {
+void multiply(const gsl::index size, ptr<double> RESTRICT v1,
+              ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
+              ptr<const double> RESTRICT e2) {
   for (gsl::index i = 0; i < size; ++i) {
     e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
     v1[i] *= v2[i];
   }
+}
 }
 
 Dataset &Dataset::operator*=(const Dataset &other) {
@@ -243,14 +251,8 @@ Dataset &Dataset::operator*=(const Dataset &other) {
             auto v2 = var2.get<const Data::Value>();
             auto e1 = error1.get<Data::Value>();
             auto e2 = error2.get<const Data::Value>();
-            helper(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
-            /*
-            const gsl::index size = v1.size();
-            for (gsl::index i = 0; i < size; ++i) {
-              e1[i] = e1[i] * v2[i] * v2[i] + e2[i] * v1[i] * v1[i];
-              v1[i] *= v2[i];
-            }
-            */
+            aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
+                              e2.data());
           } else {
             error1 = error1 * (var2 * var2) + var1 * var1 * error2;
             // TODO: Catch errors from unit propagation here and give a better

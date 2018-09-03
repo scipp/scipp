@@ -21,7 +21,7 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
                                     {1.0, 2.0, 4.0, 8.0});
 
   // Spectrum to detector mapping and spectrum numbers.
-  std::vector<std::vector<gsl::index>> grouping = {{0, 2}, {1}, {}};
+  Vector<std::vector<gsl::index>> grouping = {{0, 2}, {1}, {}};
   d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
   d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
 
@@ -55,7 +55,7 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   auto combined = concatenate(Dimension::Polarization, spinUp, spinDown);
   combined.insert<Coord::Polarization>(
       {Dimension::Polarization, 2},
-      std::vector<std::string>{"spin-up", "spin-down"});
+      Vector<std::string>{"spin-up", "spin-down"});
 
   // Do a temperature scan, adding a new temperature dimension to the dataset.
   combined.insert<Coord::Temperature>({}, {300.0});
@@ -164,7 +164,7 @@ TEST(Workspace2D, scanning) {
   // accordingly. Probably the easiest solution is to forbid shape operations on
   // Dimension::Detector and Dimension::DetectorScan if Coord::DetectorGrouping
   // is present.
-  std::vector<std::vector<gsl::index>> grouping = {{0}, {2}, {4}};
+  Vector<std::vector<gsl::index>> grouping = {{0}, {2}, {4}};
   scanning.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
   scanning.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
 
@@ -193,8 +193,7 @@ TEST(Workspace2D, masking) {
   // Spectra mask.
   // Can be in its own Dataset to support loading, saving, and manipulation.
   Dataset mask;
-  mask.insert<Coord::Mask>({Dimension::Spectrum, 3},
-                           std::vector<char>{0, 0, 1});
+  mask.insert<Coord::Mask>({Dimension::Spectrum, 3}, Vector<char>{0, 0, 1});
 
   // Add mask to Dataset, not touching data.
   auto d_masked(d);

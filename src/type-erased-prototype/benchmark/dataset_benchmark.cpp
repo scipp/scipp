@@ -65,6 +65,22 @@ static void BM_Dataset_as_Histogram_with_slice(benchmark::State &state) {
 }
 BENCHMARK(BM_Dataset_as_Histogram_with_slice);
 
+Dataset makeSingleDataDataset(const gsl::index nSpec, const gsl::index nPoint) {
+  Dataset d;
+
+  d.insert<Coord::DetectorId>({Dimension::Detector, nSpec}, nSpec);
+  d.insert<Coord::DetectorPosition>({Dimension::Detector, nSpec}, nSpec);
+  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, nSpec}, nSpec);
+  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, nSpec}, nSpec);
+
+  d.insert<Coord::Tof>({Dimension::Tof, nPoint}, nPoint);
+  Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
+  d.insert<Data::Value>("sample", dims, dims.volume());
+  d.insert<Data::Variance>("sample", dims, dims.volume());
+
+  return d;
+}
+
 Dataset makeDataset(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
 
@@ -101,9 +117,10 @@ BENCHMARK(BM_Dataset_plus)->RangeMultiplier(2)->Range(2 << 9, 2 << 12);
 static void BM_Dataset_multiply(benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   gsl::index nPoint = 1024;
-  auto d = makeDataset(nSpec, nPoint);
+  auto d = makeSingleDataDataset(nSpec, nPoint);
+  const auto d2 = makeSingleDataDataset(nSpec, nPoint);
   for (auto _ : state) {
-    d *= d;
+    d *= d2;
   }
   state.SetItemsProcessed(state.iterations() * nSpec);
   // This is the minimal theoretical data volume to and from RAM, loading 2+2,
@@ -112,6 +129,10 @@ static void BM_Dataset_multiply(benchmark::State &state) {
                           sizeof(double));
 }
 BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12);
+BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12)->Threads(4)->UseRealTime();
+BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12)->Threads(8)->UseRealTime();
+BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12)->Threads(12)->UseRealTime();
+BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12)->Threads(24)->UseRealTime();
 
 Dataset doWork(Dataset d) {
   d *= d;

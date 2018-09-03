@@ -2,11 +2,10 @@
 #include "variable_view.h"
 
 template <template <class> class Op, class T> struct ArithmeticHelper {
-  static void apply(std::vector<T> &a,
-                    const VariableView<const std::vector<T>> &b) {
+  static void apply(Vector<T> &a, const VariableView<const Vector<T>> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(std::vector<T> &a, const std::vector<T> &b) {
+  static void apply(Vector<T> &a, const Vector<T> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
 };
@@ -14,7 +13,7 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
 template <template <class> class Op, class T>
 struct ArithmeticHelper<Op, std::vector<T>> {
   template <class Other>
-  static void apply(std::vector<std::vector<T>> &a, const Other &b) {
+  static void apply(Vector<std::vector<T>> &a, const Other &b) {
     throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
   }
 };
@@ -22,14 +21,14 @@ struct ArithmeticHelper<Op, std::vector<T>> {
 template <template <class> class Op, class T>
 struct ArithmeticHelper<Op, std::pair<T, T>> {
   template <class Other>
-  static void apply(std::vector<std::pair<T, T>> &a, const Other &b) {
+  static void apply(Vector<std::pair<T, T>> &a, const Other &b) {
     throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
   }
 };
 
 template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
   template <class Other>
-  static void apply(std::vector<std::string> &a, const Other) {
+  static void apply(Vector<std::string> &a, const Other) {
     throw std::runtime_error("Cannot add strings. Use append() instead.");
   }
 };
@@ -184,11 +183,10 @@ template <class T> T &Variable::cast() {
 
 #define INSTANTIATE(...)                                                       \
   template Variable::Variable(uint32_t, const Unit::Id, Dimensions,            \
-                              std::vector<__VA_ARGS__>);                       \
-  template std::vector<__VA_ARGS__> &                                          \
-  Variable::cast<std::vector<__VA_ARGS__>>();                                  \
-  template const std::vector<__VA_ARGS__> &                                    \
-  Variable::cast<std::vector<__VA_ARGS__>>() const;
+                              Vector<__VA_ARGS__>);                            \
+  template Vector<__VA_ARGS__> &Variable::cast<Vector<__VA_ARGS__>>();         \
+  template const Vector<__VA_ARGS__> &Variable::cast<Vector<__VA_ARGS__>>()    \
+      const;
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)
@@ -266,8 +264,7 @@ void Variable::setSlice(const Variable &slice, const Dimension dim,
   if (m_object == slice.m_object)
     return;
   if (!dimensions().contains(slice.dimensions()))
-    throw std::runtime_error(
-        "Cannot set slice: Dimensions do not match.");
+    throw std::runtime_error("Cannot set slice: Dimensions do not match.");
   data().copyFrom(slice.data(), dim, index);
 }
 

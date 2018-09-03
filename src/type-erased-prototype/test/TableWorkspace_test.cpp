@@ -23,7 +23,7 @@ std::vector<std::string> asStrings(const Variable &variable) {
 TEST(TableWorkspace, basics) {
   Dataset table;
   table.insert<Coord::RowLabel>({Dimension::Row, 3},
-                                std::vector<std::string>{"a", "b", "c"});
+                                Vector<std::string>{"a", "b", "c"});
   table.insert<Data::Value>("Data", {Dimension::Row, 3}, {1.0, -2.0, 3.0});
   table.insert<Data::String>("Comment", {Dimension::Row, 3}, 3);
 

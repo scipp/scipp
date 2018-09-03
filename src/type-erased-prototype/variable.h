@@ -11,6 +11,7 @@
 #include "dimensions.h"
 #include "tags.h"
 #include "unit.h"
+#include "vector.h"
 
 class VariableConcept {
 public:
@@ -85,7 +86,7 @@ public:
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).
-    return gsl::make_span(cast<std::vector<typename Tag::type>>());
+    return gsl::make_span(cast<Vector<typename Tag::type>>());
   }
 
   template <class Tag>
@@ -95,7 +96,7 @@ public:
 
   template <class Tag>
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
-    return gsl::make_span(cast<std::vector<typename Tag::type>>());
+    return gsl::make_span(cast<Vector<typename Tag::type>>());
   }
 
 private:
@@ -111,13 +112,13 @@ private:
 template <class Tag, class... Args>
 Variable makeVariable(Dimensions dimensions, Args &&... args) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
-                  std::vector<typename Tag::type>(std::forward<Args>(args)...));
+                  Vector<typename Tag::type>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
 Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
-                  std::vector<typename Tag::type>(values));
+                  Vector<typename Tag::type>(values));
 }
 
 Variable operator+(Variable a, const Variable &b);
