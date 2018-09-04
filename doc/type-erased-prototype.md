@@ -581,6 +581,12 @@ Outstanding tasks:
       The current need for `ExecutionMode::Master` only stems from the strategy to run the same Python script on all ranks.
       If this could be changed, e.g., by pushing only the relevant section to non-master ranks we would not need it, I think.
 
+- Related to MPI and cache-blocking, investigate `dask` integration or `dask`-like processing.
+  - Process each spectrum independently until the "reduction" step of the workflow.
+  - Can we use `dask`?
+    - From the `xarray` documentation: *A good rule of thumb to create arrays with a minimum chunksize of at least one million elements (e.g., a 1000x1000 matrix).* --- this would imply that directly using `dask` is not useful to chunks that fit into cache?
+  - What can we learn from `dask`?
+
 - View or similar to support histogram access to `EventList` with on-the-fly binning.
   - Based on `Data::Events` (or `Data::EventList`?).
   - Returns a histogram by value, same type as normal histogram (in case option (i.) is chosen for a histogram implementation it will never referencing data in `Dataset`)!
