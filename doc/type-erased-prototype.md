@@ -519,7 +519,7 @@ Findings and changes:
     Preliminary benchmarks indicate that we are in the right ballpark, even though some optimizations may be required.
 
 - When working with a typical large `Dataset` most operations need to stream through a lot of memory.
-  The performance will thus alsways be limited by memory bandwidth.
+  The performance will thus always be limited by memory bandwidth.
   To get around this we need to make better use of the CPU caches, reusing data.
   One way to do this is a high-level cache blocking:
   - Instead of operating on a large `Dataset` for all spectra, process each spectrum or a small number of spectra at a time, such that the working set fits into cache.
@@ -554,6 +554,9 @@ Findings and changes:
     d = SliceView::apply(std::move(d), doWork);
     ```
 
+- Basic processing-history mechanism for `Dataset` based on a zero-dimensional `Variable` is tested.
+  It is currently not clear whether having the history as a `Variable` is the best choice, apart from being able to use existing methods for insertion, etc.
+  - Main problem: How do we handle operations involving objects that do not have a history, e.g., `Dataset::insert(Variable var)` --- unless we serialize the content of `var` we will not be able to reproduce the resulting `Dataset`.
 
 ### To do
 
@@ -603,11 +606,19 @@ Outstanding tasks:
   - Do not want to depend on `Poco`.
   - Can we have a `Logger` variable that we simply write to?
     Some sort of wrapper that forwards to the default Mantid logger but does not require the dependency?
+  - Simply redirect `std::cout` using https://en.cppreference.com/w/cpp/io/basic_ios/rdbuf?
+    - How can we have multiple log levels?
+      Filter after the fact based on error/warning/... prefix in message?
+    - Do redirect to buffer that forwards to Python's `logging`, which can do the filtering?
 
 - Progress reporting, in particular cancellation?
+  - Progress only useful in the GUI, cancellation also in Python.
+    - `numpy` operations (which are also C++ in the backend) cannot be cancelled.
   - Do we need it for the "small" operations defined in this library?
     Is it sufficient to have it for higher-level algorithms?
-    - Cancellation can lead to undefined effects on input workspaces, which would be a good argument to not support it on this level.
+    - Cancellation can lead to undefined effects on input workspaces for in-place operation, which would be a good argument to not support it on this level.
+    - Always passing by value (client can use `std::move`) would avoid the issue, on failure client code would be left with an *empty* `Dataset`, not a *broken* one.
+  - Cancellation could use an (optional) function argument, or be based on a field (`Variable`?) in the `Dataset`?
 
 Other:
 
