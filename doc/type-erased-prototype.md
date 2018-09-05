@@ -557,6 +557,7 @@ Findings and changes:
 - Basic processing-history mechanism for `Dataset` based on a zero-dimensional `Variable` is tested.
   It is currently not clear whether having the history as a `Variable` is the best choice, apart from being able to use existing methods for insertion, etc.
   - Main problem: How do we handle operations involving objects that do not have a history, e.g., `Dataset::insert(Variable var)` --- unless we serialize the content of `var` we will not be able to reproduce the resulting `Dataset`.
+  - Can we use a `dask` graph as history?
 
 ### To do
 
@@ -585,6 +586,7 @@ Outstanding tasks:
   - Process each spectrum independently until the "reduction" step of the workflow.
   - Can we use `dask`?
     - From the `xarray` documentation: *A good rule of thumb to create arrays with a minimum chunksize of at least one million elements (e.g., a 1000x1000 matrix).* --- this would imply that directly using `dask` is not useful to chunks that fit into cache?
+      Maybe smaller chunks are feasible if our computation is a longer (compiled) list of algorithms?
   - What can we learn from `dask`?
 
 - View or similar to support histogram access to `EventList` with on-the-fly binning.
