@@ -567,6 +567,23 @@ In general the implementation has been continued only to the point where it beco
 Outstanding tasks:
 
 - Investigate `EventList` replacement.
+  - Based on `Data::Events` (or `Data::EventList`?).
+  - Returns a histogram (`Dataset`) by value.
+  - Tag name?
+    - `Data::HistogramView`.
+    - `Histogram<Data::Events>`, following the same pattern as `Bin<Coord::Tof>`.
+  - Need to store binning in Dataset?
+  - Can the axis of the bin direction be deduced from the `EventList`?
+    - `EventList` should have a unit, can find corresponding dimension and corresponding axis in `Dataset`.
+  - Should we use `Dataset` as our `EventList`?
+    - Dummy dimension `Dimension::Event`, only 1D makes sense.
+    - Contains `Data::Tof` and *optionally* `Data::PulseTime` and a weight if required.
+    - We get the unit "built in".
+    - `concatenate` provides merging, ...
+    - Copy-on-write reduces space use for empty event lists?
+    - ```cpp
+      d.insert<Data::Events>("sample", {Dimension::Spectrum});
+      ```
 
 - Investigate MPI integration.
   - Very similar to what we intend to do for cache blocking.
@@ -588,15 +605,6 @@ Outstanding tasks:
     - From the `xarray` documentation: *A good rule of thumb to create arrays with a minimum chunksize of at least one million elements (e.g., a 1000x1000 matrix).* --- this would imply that directly using `dask` is not useful to chunks that fit into cache?
       Maybe smaller chunks are feasible if our computation is a longer (compiled) list of algorithms?
   - What can we learn from `dask`?
-
-- View or similar to support histogram access to `EventList` with on-the-fly binning.
-  - Based on `Data::Events` (or `Data::EventList`?).
-  - Returns a histogram by value, same type as normal histogram (in case option (i.) is chosen for a histogram implementation it will never referencing data in `Dataset`)!
-  - Tag name?
-    - `Data::HistogramView`.
-    - `Histogram<Data::Events>`, following the same pattern as `Bin<Coord::Tof>`.
-  - Need to store binning in Dataset?
-  - Can the axis of the bin direction be deduced from the `EventList`?
 
 - Is the current implementation of `Histogram` as a view the best choice?
 
