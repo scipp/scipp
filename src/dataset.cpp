@@ -95,7 +95,7 @@ void Dataset::mergeDimensions(const auto &dims) {
     bool found = false;
     for (; j < m_dimensions.count(); ++j) {
       if (m_dimensions.label(j) == dim) {
-        if (m_dimensions.size(j) != size) // TODO compare ragged
+        if (m_dimensions.size(j) != size)
           throw std::runtime_error(
               "Cannot insert variable into Dataset: Dimensions do not match");
         found = true;

@@ -63,18 +63,6 @@ TEST(Variable, copy) {
   EXPECT_EQ(data2[1], 2.2);
 }
 
-TEST(Variable, ragged) {
-  const auto raggedSize = makeVariable<Data::DimensionSize>(
-      Dimensions(Dimension::Spectrum, 2), {2l, 3l});
-  EXPECT_EQ(raggedSize.dimensions().volume(), 2);
-  Dimensions dimensions;
-  dimensions.add(Dimension::Tof, raggedSize);
-  dimensions.add(Dimension::Spectrum, 2);
-  EXPECT_EQ(dimensions.volume(), 5);
-  ASSERT_NO_THROW(makeVariable<Data::Value>(dimensions, 5));
-  ASSERT_ANY_THROW(makeVariable<Data::Value>(dimensions, 4));
-}
-
 TEST(Variable, operator_equals) {
   const auto a = makeVariable<Data::Value>({Dimension::Tof, 2}, {1.1, 2.2});
   const auto a_copy(a);

@@ -327,8 +327,6 @@ Variable concatenate(const Dimension dim, const Variable &a1,
     throw std::runtime_error(
         "Cannot concatenate Variables: Dimensions do not match.");
 
-  // Should we permit creation of ragged outputs if one dimension does not
-  // match?
   auto out(a1);
   auto dims(dims1);
   gsl::index extent1 = 1;
