@@ -618,6 +618,7 @@ Outstanding tasks:
     - How can we have multiple log levels?
       Filter after the fact based on error/warning/... prefix in message?
     - Do redirect to buffer that forwards to Python's `logging`, which can do the filtering?
+  - `std::cout` would be bad in multi-threaded cases.
 
 - Progress reporting, in particular cancellation?
   - Progress only useful in the GUI, cancellation also in Python.
