@@ -24,6 +24,3 @@ set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --save-temps -mavx2 -march=haswell -fno-omit-frame-pointer")
 
 add_subdirectory(src)
-
-pybind11_add_module(rebin src/pybind.cpp)
-pybind11_add_module(composition_exports src/composition_exports.cpp)
