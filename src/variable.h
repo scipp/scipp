@@ -88,6 +88,10 @@ public:
   bool isCoord() const { return m_type < std::tuple_size<Coord::tags>::value; }
 
   template <class Tag> auto get() const {
+    static_assert(std::is_const<Tag>::value,
+                  "Variable is `const`, must use const-qualified tag in call "
+                  "to `get`, e.g., `get<const Coord::X>()` instead of "
+                  "`get<Coord::X>()`");
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).

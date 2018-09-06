@@ -15,7 +15,7 @@
 TEST(Variable, construct) {
   ASSERT_NO_THROW(makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), 2));
   const auto a = makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), 2);
-  const auto &data = a.get<Data::Value>();
+  const auto &data = a.get<const Data::Value>();
   EXPECT_EQ(data.size(), 2);
 }
 
@@ -46,18 +46,18 @@ TEST(Variable, sharing) {
   const auto a2(a1);
   // TODO Should we require the use of `const` with the tag if Variable is
   // const?
-  EXPECT_EQ(&a1.get<Data::Value>()[0], &a2.get<Data::Value>()[0]);
+  EXPECT_EQ(&a1.get<const Data::Value>()[0], &a2.get<const Data::Value>()[0]);
 }
 
 TEST(Variable, copy) {
   const auto a1 =
       makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  const auto &data1 = a1.get<Data::Value>();
+  const auto &data1 = a1.get<const Data::Value>();
   EXPECT_EQ(data1[0], 1.1);
   EXPECT_EQ(data1[1], 2.2);
   auto a2(a1);
-  EXPECT_EQ(&a1.get<Data::Value>()[0], &a2.get<const Data::Value>()[0]);
-  EXPECT_NE(&a1.get<Data::Value>()[0], &a2.get<Data::Value>()[0]);
+  EXPECT_EQ(&a1.get<const Data::Value>()[0], &a2.get<const Data::Value>()[0]);
+  EXPECT_NE(&a1.get<const Data::Value>()[0], &a2.get<Data::Value>()[0]);
   const auto &data2 = a2.get<Data::Value>();
   EXPECT_EQ(data2[0], 1.1);
   EXPECT_EQ(data2[1], 2.2);
@@ -258,14 +258,14 @@ TEST(Variable, concatenate) {
   const auto abba = concatenate(Dimension::Q, ab, ba);
   ASSERT_EQ(abba.size(), 4);
   EXPECT_EQ(abba.dimensions().count(), 2);
-  const auto &data2 = abba.get<Data::Value>();
+  const auto &data2 = abba.get<const Data::Value>();
   EXPECT_EQ(data2[0], 1.0);
   EXPECT_EQ(data2[1], 2.0);
   EXPECT_EQ(data2[2], 2.0);
   EXPECT_EQ(data2[3], 1.0);
   const auto ababbaba = concatenate(Dimension::Tof, abba, abba);
   ASSERT_EQ(ababbaba.size(), 8);
-  const auto &data3 = ababbaba.get<Data::Value>();
+  const auto &data3 = ababbaba.get<const Data::Value>();
   EXPECT_EQ(data3[0], 1.0);
   EXPECT_EQ(data3[1], 2.0);
   EXPECT_EQ(data3[2], 1.0);
@@ -276,7 +276,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data3[7], 1.0);
   const auto abbaabba = concatenate(Dimension::Q, abba, abba);
   ASSERT_EQ(abbaabba.size(), 8);
-  const auto &data4 = abbaabba.get<Data::Value>();
+  const auto &data4 = abbaabba.get<const Data::Value>();
   EXPECT_EQ(data4[0], 1.0);
   EXPECT_EQ(data4[1], 2.0);
   EXPECT_EQ(data4[2], 2.0);

@@ -70,15 +70,17 @@ TEST(DatasetView, copy_on_write) {
   const auto copy(d);
 
   DatasetView<const Coord::X> const_view(d);
-  EXPECT_EQ(&const_view.begin()->get<Coord::X>(), &copy.get<Coord::X>()[0]);
+  EXPECT_EQ(&const_view.begin()->get<Coord::X>(),
+            &copy.get<const Coord::X>()[0]);
   // Again, just to confirm that the call to `copy.get` is not the reason for
   // breaking sharing:
-  EXPECT_EQ(&const_view.begin()->get<Coord::X>(), &copy.get<Coord::X>()[0]);
+  EXPECT_EQ(&const_view.begin()->get<Coord::X>(),
+            &copy.get<const Coord::X>()[0]);
 
   DatasetView<Coord::X, const Coord::Y> view(d);
-  EXPECT_NE(&view.begin()->get<Coord::X>(), &copy.get<Coord::X>()[0]);
+  EXPECT_NE(&view.begin()->get<Coord::X>(), &copy.get<const Coord::X>()[0]);
   // Breaks sharing only for the non-const variables:
-  EXPECT_EQ(&view.begin()->get<Coord::Y>(), &copy.get<Coord::Y>()[0]);
+  EXPECT_EQ(&view.begin()->get<Coord::Y>(), &copy.get<const Coord::Y>()[0]);
 }
 
 TEST(DatasetView, single_column) {

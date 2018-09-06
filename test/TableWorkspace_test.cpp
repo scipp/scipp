@@ -14,13 +14,13 @@
 std::vector<std::string> asStrings(const Variable &variable) {
   std::vector<std::string> strings;
   if (variable.valueTypeIs<Coord::RowLabel>())
-    for (const auto &value : variable.get<Coord::RowLabel>())
+    for (const auto &value : variable.get<const Coord::RowLabel>())
       strings.emplace_back(value);
   if (variable.valueTypeIs<Data::Value>())
-    for (const auto &value : variable.get<Data::Value>())
+    for (const auto &value : variable.get<const Data::Value>())
       strings.emplace_back(std::to_string(value));
   else if (variable.valueTypeIs<Data::String>())
-    for (const auto &value : variable.get<Data::String>())
+    for (const auto &value : variable.get<const Data::String>())
       strings.emplace_back(value);
   return strings;
 }

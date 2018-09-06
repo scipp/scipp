@@ -423,7 +423,7 @@ TEST(Dataset, operator_plus_with_temporary_avoids_copy) {
   auto sum = std::move(a) + b;
   EXPECT_EQ(&sum.get<Data::Value>()[0], addr);
 
-  const auto *addr2 = &a2.get<Data::Value>()[0];
+  const auto *addr2 = &a2.get<const Data::Value>()[0];
   auto sum2 = a2 + b;
   EXPECT_NE(&sum2.get<Data::Value>()[0], addr2);
 }
