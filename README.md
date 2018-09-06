@@ -1,5 +1,7 @@
-# workspace-sandbox
-Sandbox for testing and prototyping related to workspace-2.0
+# libDataset
+
+This a prototype for the `Dataset` library.
+`Dataset` is inspired by `xarray.Dataset` and could replace most of the workspace types available in Mantid while at the same time providing more flexibility and features.
 
 ## Build instructions
 
