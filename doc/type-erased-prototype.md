@@ -27,7 +27,7 @@ In particular:
 
 1. Why not histograms as the smallest element in a `Dataset`?
    - Cannot handle sharing of the x-axis (bin edges) in an easy way.
-     There current approach via copy-on-write pointers has a couple of drawbacks:
+     The current approach via copy-on-write pointers has a couple of drawbacks:
      - Complex histogram API.
      - No good way to check for shared axis.
      - Cumbersome client code for maintaining sharing.
@@ -63,8 +63,8 @@ We have several options:
 1. Use some sort of view to iterate over one or more variables of concrete type.
    Essentially this is a convenience layer on top of option 1.) that acts as if data was stored as an array of structures.
    Furthermore it provides an elegant way of dealing with variables that do not share all their dimensions.
-   - The view/iterator could iterate either all (applicable) dimensions, a specific dimensions, or all but certain dimensions, depending on the needs to the specific client code.
-   - See [`test/dataset_iterator_test.cpp`](../src/type-erased-prototype/test/dataset_iterator_test.cpp) for examples.
+   - The view/iterator could iterate either all (applicable) dimensions, a specific dimension, or all but certain dimensions, depending on the needs to the specific client code.
+   - See [`test/dataset_view_test.cpp`](../src/type-erased-prototype/test/dataset_view_test.cpp) for examples.
 1. Access a subset of a `Dataset` at a given axis value for a given dimension.
    This is basically slicing of the `Dataset`.
    It is still unclear how this should be handled in detail and is currently not part of the prototype.
@@ -92,8 +92,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Is this reasonable?
   - What are the major and minor drawbacks?
 
-- The prototype currently accesses variables and iterator elements by type.
-  We will probably need to use a tag or ID instead:
+- The prototype accesses variables and iterator elements by tag:
 
   ```cpp
   // Need to support also generic variables such as Double or String.
@@ -127,6 +126,9 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   };
   ```
   Additionally access via a name will probably be provided.
+  - Should variables be allowed to share a name if the have different types?
+    For example, `Variable::Value` and `Variable::Error` could both carry the name `"sample"` if the represent data for the sample.
+    This implies that the two belong together and makes joint access, e.g., via a `Histogram` more straightforward.
 
 - We will need to support "axis" variables that are bin edges, i.e., are by 1 longer than the size of the dimension.
   If we iterate over all dimensions, what should the iteration for bin edges do?
@@ -146,6 +148,8 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
       This would imply changing variable labels if units are changed, yielding, e.g., `Variable::dSpacingEdge`.
       How would we handle this generically in client code accessing the edges, given that most code will not care whether it is `Tof` or `dSpace` or anything else?
       Would it make sense to support `Variable::Point`, `Variable::BinEdge`, and `Variable::Bin` as aliases for whatever the current unit is, e.g., `Variable::Tof`, `Variable::TofEdge`, and `Variable::TofBin`?
+    - Drop edge/bin part of the name completely, *always* use bin for normal iterators, provide special edge iterator?
+      Does not work! The resulting type of the variable would depend on the internal distinction between edges and points?
 
 - The time-of-flight axis in our workspaces can have a different length for each spectrum.
   This is a case that is not supported by `xarray` but we have two choices:
@@ -178,9 +182,9 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Instead, do verification lazily only when an axis is actually used for accessing the `Dataset`.
   - Results in some overhead (and MPI communication), but does not appear to happen too frequently and should not be an issue for performance.
 
-- A dimension in the `Dataset` is effectively the same as a unit.
+- A dimension in the `Dataset` is effectively the same as a unit for variables that correspond to the unit.
   For example,
-  - `Dimension::Tof` could be used to imply that the unit is time-of-flight microseconds, converting the unit could be done by changing the dimension label to, e.g., `Dimension::dSpacing`.
+  - `Dimension::Tof` for `Variable::Tof` could be used to imply that the unit is time-of-flight microseconds, converting the unit could be done by changing the dimension label to, e.g., `Dimension::dSpacing` and `Variable::dSpacing`.
   - As a consequence, any operation that checks matching dimensions of variables will implicitly ensure matching units.
 
 - To avoid a fair number of complications, variables should ideally not contain any data apart from the individual items.
@@ -191,6 +195,8 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   Handling units for Y and E would allow us to:
   - Get rid of the distinction between histogram data distribution data.
   - Provide a way to distinguish standard deviations and variances.
+    Maybe not entirely --- how can we distinguish standard deviations and variances for dimensionless quantities?
+    Can we have a dummy `UnitId::SquaredDimensionless`?
   - Allow more general operations that yield different units.
 
   As mentioned above, storing units in the type (using `boost::units`) is not really feasible.
@@ -218,6 +224,10 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
   - Store pointer to other variables?
   - Prevent removing variables from `Dataset` if there are any references to it from within the same `Dataset` instance.
   - Link value variables to their error variables and vice versa (unless stored as `DataPoint` variables, see above).
+  Update: Linking is troublesome for any shape operations, and for anything triggering the copy-on-write mechanism.
+  I now think we should probably avoid it.
+  It seems that for both relevant cases (variables replacing `SpectrumInfo` and a `Histogram` variable) we can do so by providing them only in the `DatasetView`, i.e., access via `Dataset::get` is not possible.
+  `DatasetView` can deal with constructing temporary helper variables and will also handle there lifetime in a natural way.
 
 - We should definitely investigate how `Dataset` could support better cache reuse by chaining several operations or algorithms.
   - At runtime or compile-time?
@@ -406,3 +416,188 @@ if (d.contains<BinMask>())
 else
   apply<Alg, Histogram>(d);
 ```
+
+## Development log
+
+### Changes from v1 to v2
+
+Findings and changes:
+
+- Introduced `Variable`, similar to `xarray.DataArray`.
+  The difference is that `Variable` does not have axes.
+  This helps to define dimensionality, especially when we want to support bin edges, and allows implementations of operations on simpler types, separating the operation on a single variable from difficulties that may arise when defining an operation on a `Dataset` containing many variables.
+
+- Support bin edges in `DatasetView`.
+  - Provides read-only access the left/right/center/width of a bin.
+
+- Support ragged dimensions.
+  Only a couple of basics support this right now due to development overhead that is not required at this prototyping stage.
+  - After addition of more unrelated features and in particular performance issues in `DatasetView` I am now very skeptical regarding this feature.
+    Support would most likely affect the performance of any iteration using `DatasetView`, even if there is no ragged dimensions.
+    Furthermore the implementation of many operations would get quite a bit more complex, increasing the initial implementation effort significantly and reducing maintainability.
+
+- Add a `Dimensions` class, holding dimensions and their extents.
+  This is in a very early state and needs to be expanded with set-like algebra and similar operations.
+  Some of these are currently scattered to other classes like `DatasetView`.
+  No major difficulty here due to well contained functionality, but will be quite tedious to do a full implementation covering all corner cases.
+
+- Support name-based access in `Dataset` and `DatasetView`.
+
+- Introduced distinction between coordinate variables and data variables, similar to `xarray`.
+  The distinction is based on the behavior under (arithmetic) operations between `Datasets`:
+  - *Data variables* are *transformed*, e.g., multiplied in a "multiply" operation.
+  - *Coordinate variables* are *matched*.
+    - Do not have a name, implying that they must be unique.
+    - Do not have a unit, since it is implied by the tag defining the coordinate.
+      Note that even though the base unit is fixed, we might need to support the same unit but with a different *scale*, e.g., `s` and `ms`.
+    - Coordinate variables cannot have a name and therefore cannot be duplicate.
+
+  Data variables include `Data::Value`, `Data::Error`, `Data::String`, `Data::Int`, and `Data::ExperimentLog`.
+  Coordinate variables include `Coord::Tof`, `Coord::Q`, `Coord::SpectrumNumber`, `Coord::DetectorId`, `Coord::SpectrumPosition`, `Coord::DetectorPosition`, `Coord::DetectorGrouping`, `Coord::SpectrumLabel`, `Coord::RowLabel`, and `Coord::ColumnLabel`.
+
+- Add basic support for units.
+  - Variables are automatically assigned a default unit based in their tag, e.g., `Coord::X` would have the unit "m".
+  - If there is no sensible default the variable is dimensionless unless set explicitly.
+  - For coordinate variables changing the unit will not be possible.
+    The interface for (avoiding) the redundancy of defining units for variables that are coordinates for their dimension is still unclear.
+
+- Issues from having multiple distinct data variables in `Dataset`, e.g., "sample" and "background" run and more importantly monitors as variables in `Dataset`:
+  - For monitors, would need to have a second set of, e.g., `Variable::Tof` with different dimensions.
+  - If there are multiple variables with the same type and shape, should we just use an extra dimension?
+    No, since we will not have good sharing anymore, e.g., if sample and can runs are held in the same `Dataset`.
+    If it is essential for a particular use case, using an auxiliary dimension with ragged other dimension could be sufficient, but it should not be the generic solution.
+  My current conclusion is that as stated above we will not support duplicate coordinate variables.
+  For monitors we will provide a separate `Dimension::MonitorTof` and `Coord::MonitorTof`.
+  Data variables can be duplicate and will need to be accessed with their name.
+
+- Support iterating variables with different dimensions order, i.e., we have support for on-the-fly transposition of data.
+
+- Access to derived "virtual" variables such as `Coord::SpectrumPosition` via `DatasetView`.
+  Such variables do not exist in the `Dataset` but can be derived from other variables.
+  In the case of `Coord::SpectrumPosition` we use `Coord::DetectorPosition` and `Coord::DetectorGrouping`.
+
+- Add `operator+=` and `operator*=` for `Dataset` as examples of arithmetic operations.
+  - Demonstrates matching of coordinate and data variables, automatic broadcast, automatic transposition, propagation of uncertainties, and propagation/validation of units.
+  - Demonstrate how the unit can be used to distinguish between counts and frequencies, including helping to prevent certain operations such as multiplying counts.
+
+- Add `slice` for `Dataset`.
+  The current implementation copies data when creating the slice --- the slice is simply a new `Dataset`.
+  It would be possible to implement slicing based on a view, avoiding the copy, however only for read-only views.
+  A mutable slice would be in conflict with the copy-on-write mechanism, since creating a mutable slice would require triggering the copy-on-write for all variables in the dataset.
+  The inefficiency of creating a new `Dataset` for every slice could be alleviated by a memory pool for the allocation of data in `Variable`.
+
+- Add `DatasetIndex` to determine an index that can be used, e.g., for slicing.
+
+- Add `concatenate` for `Dataset`, a generic multi-dimensional way of merging datasets along a dimension.
+
+- Operations between variables in the same `Dataset`, e.g., normalizing data to monitors or subtracting background runs from sample runs.
+  The prototyped solution is based on extracting subsets from `Dataset` and applying operations with non-matching names (non-matching names are supported only if there is no conflict).
+  Another option would be to use `DatasetView`, but this feels a bit too verbose and would require implementing operators for `DatasetView`:
+  ```cpp
+  DatasetView<Data::Value, Data::Variance> sample(dataset, "sample");
+  DatasetView<const Data::Value, const Data::Variance> background(dataset, "background");
+  sample -= background;
+  ```
+
+- Two options to support `Histogram` were tested (note that there will be an equivalent to `Histogram` for `PointData`):
+  1. A class `Histogram` that can internally either reference data in a `Dataset` or extract data into an internal buffer upon copy.
+     - The advantage is that we have the same data type for a histogram with data stored in a `Dataset` as well as a standalone histogram.
+     - The disadvantages are that (a) the design feels a bit brittle and (b) we need a different type for const and mutable histograms, unless we are willing to resort to use `const_cast` and rely on the encapsulation given by `DatasetView`.
+  2. Nesting `DatasetView`.
+     - Accessing a histogram in the parent `DatasetView` would return a view by value, with its range restricted to data for the histogram.
+     - Semantically this would be similar to returning a `gsl::span` instead of a `std::vector &` in the case of `Dataset::get`.
+     - As with `gsl::span`, we and up with a different histogram type for const and mutable cases.
+     - Extracting data into a stand-alone `Histogram` would be an explicit function call.
+
+  Option (i.) has been mostly disabled in the latest version.
+  Option (ii.) feels more generic and cleaner.
+  The major disadvantage is that we cannot have the same data type for standalone histograms and "histogram views".
+  - If option (ii.) is chosen we will still require a type to function as the current `HistogramData::Histogram`.
+    Keeping this type is one option, but another, potentially more attractive solution is to simply use `Dataset`.
+    Most of the required features for `Histogram` would also be supported by `Dataset`, and even in its current form `Dataset` provides features that are equivalent or surpassing what `HistogramData::Histogram` provides currently (additional features include support for multi-dimensional histograms, arbitrary types in a histogram such as integer histograms, a histogram without uncertainties, a histogram with attached mask, ..., "X" unit stored in histogram, "Y" and "E" can also have units, histogram can have a name).
+    The main question is whether the performance is adequate.
+    Preliminary benchmarks indicate that we are in the right ballpark, even though some optimizations may be required.
+
+- When working with a typical large `Dataset` most operations need to stream through a lot of memory.
+  The performance will thus alsways be limited by memory bandwidth.
+  To get around this we need to make better use of the CPU caches, reusing data.
+  One way to do this is a high-level cache blocking:
+  - Instead of operating on a large `Dataset` for all spectra, process each spectrum or a small number of spectra at a time, such that the working set fits into cache.
+    - One option could involve slicing `Dataset`, applying a series of operations, and subsequently concatenating all slices.
+  - We added benchmarks which indicate that (not counting the cost of potential slicing and merging) the overhead of `Dataset` is sufficiently small to make this worthwhile.
+    Applying `Dataset::operator*=` in multiple threads runs at 10x the speed if data fits into cache as opposed to memory.
+    Certainly more complex operations and datasets will lead to more overhead but these benchmarks indicate that it would be worthwhile to investigate further in this direction.
+  - The added benefit of processing data in this fashion is that it would also help to get away from the fork-join threading approach.
+  - As discussed above, our current implementation of `slice` for `Dataset` makes a copy.
+    If we were to use this frequently for the purpose of cache blocking it coult be benefical to have slices that *reference* data in a `Dataset` instead.
+    This however would cause issues with multi-threading due to the interaction with the copy-on-write mechanism.
+    We can circumvent these problems by processing the first slice only with a single thread:
+    ```cpp
+    class SliceView {
+    // Passed by value for thread-safety.
+    static void apply(Dataset d, std::function f) {
+      Slice slice(d, Dimension::Spectrum, 0);
+      f(slice); // triggers copy-on-write
+      // Now it is certain that ref counts of modified variables are 1,
+      // can use multiple threads to process the remaining slices.
+    #pragma omp parallel for
+      for (gsl::index i = 1; i < nSpec; ++i)
+        f(Slice(d, Dimension::Spectrum, i);
+      return d;
+    }
+    };
+
+    Dataset d;
+    // Copy of d still needed.
+    d = SliceView::apply(d, doWork);
+    // Move if d not needed.
+    d = SliceView::apply(std::move(d), doWork);
+    ```
+
+
+### To do
+
+The current implementation has a large number of features that are not supported in all combinations, e.g., while the prototype shows in a few examples that ragged dimensions can be supported, many other operations currently to not handle ragged dimensions.
+In general the implementation has been continued only to the point where it becomes clear that interface works and is thus capable of demonstrating that the designed concepts work.
+
+Outstanding tasks:
+
+- Investigate `EventList` replacement.
+
+- Investigate MPI integration.
+
+- View or similar to support histogram access to `EventList` with on-the-fly binning.
+  - Based on `Data::Events` (or `Data::EventList`?).
+  - Returns a histogram by value, same type as normal histogram (in case option (i.) is chosen for a histogram implementation it will never referencing data in `Dataset`)!
+  - Tag name?
+    - `Data::HistogramView`.
+    - `Histogram<Data::Events>`, following the same pattern as `Bin<Coord::Tof>`.
+  - Need to store binning in Dataset?
+  - Can the axis of the bin direction be deduced from the `EventList`?
+
+- Is the current implementation of `Histogram` as a view the best choice?
+
+- Do we have to guarantee the iteration order of dimensions in `DatasetView`?
+  It is determined by the variable with the highest dimensionality.
+  If tied, it is determined by the order in which variable tags are given, but if we implement the prototyped sorting...?
+
+- Do we need to support simultaneous iteration of two `Datasets`?
+  - Merge into the same `Dataset` first?
+    Does not work for coordinates, which cannot be duplicate.
+  - If we create two `DatasetViews`, providing a mechanism to ensure that they use the same dimensions for iteration would be sufficient.
+    Then we can use things like `std::transform`.
+
+Other:
+
+- Use https://github.com/tcbrindle/span instead of the one from GSL?
+- Avoid triggering COW if there is a subsequent exception, especially in `DatasetView`.
+  Can we do all checks beforehand?
+- Use a memory pool.
+  This is particularly important if we implement slicing via making a copy.
+
+Problems:
+
+- How do distinguish (or avoid distinguishing) const and mutable versions of `DatasetView` and `Histogram`?
+- Can we avoid horrible template error messages in client code?
+- Compilations times are beginning to suffer, need some cleanup and move things out of header where possible.
+- How to generically refer to the "X" dimension, i.e., typically originally `Variable::Tof` but also anything derived from it?

@@ -1,39 +1,62 @@
-class Dataset {
-  public:
-    Histogram &histogram(const int i) {
-      return Histogram(*this);
-    }
-  private:
-    std::vector<double> m_binEdges;
-    std::vector<double> m_values;
-    std::vector<double> m_errors;
+/// @file
+/// SPDX-License-Identifier: GPL-3.0-or-later
+/// @author Simon Heybrock
+/// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
+/// National Laboratory, and European Spallation Source ERIC.
+#include <memory>
+#include <vector>
 
-    friend class Histogram;
-};
+#include <gsl/gsl_util>
 
+#include "unit.h"
 
+template <class... Ts> class DatasetView;
+
+// Note that this does not and will not support "point data". Will be handled by
+// a separate type!
 class Histogram {
-  public:
-    Histogram(const Histogram &other) {}
-  private:
-    const double *m_binEdges; // might be shared, can only be const (actually also better to avoid messing up data)
-    double *m_values;
-    double *m_errors;
-    std::unique_ptr<std::vector<double>> m_data{nullptr};
-    //gsl::index m_stride{1}; // TODO measure performance overhead of supporting stride
+public:
+  Histogram() = default;
+  Histogram(const Unit &unit, const gsl::index size, const gsl::index stride,
+            const double *edges, double *values, double *errors)
+      : m_unit(unit), m_size(size), m_stride(stride), m_edges(edges),
+        m_values(values), m_errors(errors) {}
+
+  Histogram(const Histogram &other)
+      : m_unit(other.m_unit), m_size(other.m_size), m_stride(other.m_stride) {
+    m_data = std::make_unique<std::vector<double>>(3 * m_size + 1);
+    for (gsl::index i = 0; i < m_size + 1; ++i)
+      m_data->operator[](i) = other.m_edges[i];
+    for (gsl::index i = 0; i < m_size; ++i)
+      m_data->operator[](m_size + 1 + i) = other.m_values[i];
+    for (gsl::index i = 0; i < m_size; ++i)
+      m_data->operator[](2 * m_size + 1 + i) = other.m_errors[i];
+    m_edges = m_data->data();
+    m_values = m_data->data() + m_size + 1;
+    m_errors = m_data->data() + 2 * m_size + 1;
+  }
+  Histogram(Histogram &&other) = default;
+  Histogram &operator=(Histogram &&other) = default;
+
+  gsl::index size() const { return m_size; }
+  double &value(const gsl::index i) { return m_values[i]; }
+  const double &value(const gsl::index i) const { return m_values[i]; }
+
+  template <class... Ts> friend class DatasetView;
+
+private:
+  // TODO Unit for Y and E (representing whether we are dealing with
+  // count/frequencies standard deviations/variance.
+  const Unit m_unit{Unit::Id::Dimensionless};
+  const gsl::index m_size{0};
+  const gsl::index m_stride{1};
+  const double *m_edges{nullptr};
+  double *m_values{nullptr};
+  double *m_errors{nullptr};
+  std::unique_ptr<std::vector<double>> m_data;
 };
 
-// Requirements:
-// 1. Cheap to pass by value
-// 2. Data should be held either directly or in Dataset?
-//
-// BinEdges always const!? (allows for sharing)
-// Unit?!
-
-
-// reference to dataset? pointer to dataset?
-//
-
+#if 0
 Dataset d1;
 Dataset d2;
 auto h1 = d1.histogram(i); // Dataset does not contain histograms, this returns by value, but h references d!? Copy constructor, assignment??
@@ -51,18 +74,6 @@ auto h2 = d1.histogram(i); // value, copy constructor extracts data, stored inte
 h1 = h2; // sets data in d1, works only if unit ok??
 
 
-
-class Histogram {
-  public:
-    // accessors to X, Y, E
-  private:
-    gsl::index m_size;
-    const UnitId m_unit; // not a reference, but always const, must be know at time of construction (probably want 2 o 3 fields?) how to square errors in-place? store init in X, Y, and E?
-    const double &m_binEdges; // always const to support sharing?
-    double &m_values;
-    double &m_errors;
-    std::unique_ptr<std::vector<double>> m_data{nullptr};
-};
 
 // Histogram convertStdDevToVariance(const Histogram &histogram);
 
@@ -131,3 +142,4 @@ d.apply(rebin)
 
 void apply(Dataset &d, const std::function &f);
 // Use signature of f to determine which columns to apply to and which dimensions are core dimensions?
+#endif
