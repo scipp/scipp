@@ -13,8 +13,3 @@ execute_process(COMMAND ${CMAKE_COMMAND} --build .
 
 add_subdirectory(${CMAKE_BINARY_DIR}/googlebenchmark-src
                  ${CMAKE_BINARY_DIR}/googlebenchmark-build)
-
-find_package(Threads)
-set( GBENCH_INCLUDE_DIR "${CMAKE_BINARY_DIR}/googlebenchmark-src/include" )
-set( GBENCH_LIBRARIES "${CMAKE_BINARY_DIR}/googlebenchmark-build/src/libbenchmark.a" ${CMAKE_THREAD_LIBS_INIT} )
-include_directories(${GBENCH_INCLUDE_DIR})
