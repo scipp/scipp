@@ -1,4 +1,4 @@
-# Type-erased dataset prototype
+# Dataset Development Notes
 
 ## Nomenclature
 
@@ -59,12 +59,12 @@ We have several options:
 
 1. Access individual variables, by requesting a specific variable (identified by a tag) of a certain type (optionally with a certain name).
    `Dataset` can then perform a lookup among its variables and cast the matching variable to the requested concrete type.
-   - See [`test/dataset_test.cpp`](../src/type-erased-prototype/test/dataset_test.cpp) for examples.
+   - See [`test/dataset_test.cpp`](../test/dataset_test.cpp) for examples.
 1. Use some sort of view to iterate over one or more variables of concrete type.
    Essentially this is a convenience layer on top of option 1.) that acts as if data was stored as an array of structures.
    Furthermore it provides an elegant way of dealing with variables that do not share all their dimensions.
    - The view/iterator could iterate either all (applicable) dimensions, a specific dimension, or all but certain dimensions, depending on the needs to the specific client code.
-   - See [`test/dataset_view_test.cpp`](../src/type-erased-prototype/test/dataset_view_test.cpp) for examples.
+   - See [`test/dataset_view_test.cpp`](../test/dataset_view_test.cpp) for examples.
 1. Access a subset of a `Dataset` at a given axis value for a given dimension.
    This is basically slicing of the `Dataset`.
    It is still unclear how this should be handled in detail and is currently not part of the prototype.
@@ -85,7 +85,7 @@ Furthermore, `Dataset` will cover many other cases that are currently impossible
 - Given the importance of histograms in our data reduction we should provide a `Histogram` type.
   As discussed in the FAQ above, storing histograms in `Dataset` has disadvantages.
   This could be solved by having a lightweight dummy histogram variable for accessing the underlying data.
-  `Dataset` would contain an extra variable containing a new class `Histogram` as shown in [`test/histogram_test.cpp`](../src/type-erased-prototype/test/histogram_test.cpp).
+  `Dataset` would contain an extra variable containing a new class `Histogram`.
   Apart from the X axis being `const` this could act very similar to our current `Histogram` class.
   It can be used to directly modify the data within the `Dataset`.
   Copying `Histogram` extracts the data into an internal buffer, such that `Histogram` can be used also stand-alone without an attached `Dataset`.
