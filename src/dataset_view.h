@@ -14,7 +14,6 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "dataset.h"
-#include "histogram.h"
 #include "multi_index.h"
 
 namespace detail {
@@ -50,12 +49,6 @@ template <class Base, class T> struct GetterMixin {};
 GETTER_MIXIN(Data::Tof, tof)
 GETTER_MIXIN(Data::Value, value)
 GETTER_MIXIN(Data::Variance, variance)
-
-template <class Base> struct GetterMixin<Base, Data::Histogram> {
-  const element_return_type_t<Data::Histogram> histogram() const {
-    return static_cast<const Base *>(this)->template get<Data::Histogram>();
-  }
-};
 
 template <class Base, class T> struct GetterMixin<Base, Bin<T>> {
   // Lift the getters of Bin into the iterator.
@@ -152,11 +145,6 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
                         const std::set<Dimension> &fixedDimensions) {
     return dataset.dimensions<Tag>();
   }
-};
-
-template <> struct DimensionHelper<Data::Histogram> {
-  static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions);
 };
 
 template <> struct DimensionHelper<Coord::SpectrumPosition> {

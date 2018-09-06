@@ -95,7 +95,6 @@ struct Coord {
                  Polarization, Temperature, TimeInterval, Mask>;
 };
 
-class Histogram;
 struct Data {
   struct Tof {
     using type = double;
@@ -124,16 +123,13 @@ struct Data {
     using type = std::string;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct Histogram {
-    using type = ::Histogram;
-  };
   struct History {
     using type = std::vector<std::string>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
 
   using tags = std::tuple<Tof, Value, Variance, StdDev, Int, DimensionSize,
-                          String, Histogram, History>;
+                          String, History>;
 };
 
 template <class T>
