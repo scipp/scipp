@@ -594,8 +594,6 @@ Outstanding tasks:
       Maybe smaller chunks are feasible if our computation is a longer (compiled) list of algorithms?
   - What can we learn from `dask`?
 
-- Is the current implementation of `Histogram` as a view the best choice?
-
 - Do we have to guarantee the iteration order of dimensions in `DatasetView`?
   It is determined by the variable with the highest dimensionality.
   If tied, it is determined by the order in which variable tags are given, but if we implement the prototyped sorting...?

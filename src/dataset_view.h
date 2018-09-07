@@ -49,6 +49,7 @@ template <class Base, class T> struct GetterMixin {};
     }                                                                          \
   };
 
+GETTER_MIXIN(Coord::Tof, tof)
 GETTER_MIXIN(Data::Tof, tof)
 GETTER_MIXIN(Data::Value, value)
 GETTER_MIXIN(Data::Variance, variance)
@@ -385,51 +386,7 @@ private:
   Dimensions relevantDimensions(
       const Dataset &dataset,
       boost::container::small_vector<Dimensions, 4> variableDimensions,
-      const std::set<Dimension> &fixedDimensions) const {
-    // The dimensions for the variables may be longer by one if the variable is
-    // an edge variable. For iteration dimensions we require the dimensions
-    // without the extended length. The original variableDimensions is kept
-    // (note pass by value) since the extended length is required to compute the
-    // correct offset into the variable.
-    std::vector<bool> is_bins{detail::is_bins_t<Ts>::value...};
-    for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
-      auto &dims = variableDimensions[i];
-      if (is_bins[i]) {
-        const auto &actual = dataset.dimensions();
-        for (auto &dim : dims)
-          dims.resize(dim.first, actual.size(dim.first));
-      }
-    }
-
-    auto largest =
-        *std::max_element(variableDimensions.begin(), variableDimensions.end(),
-                          [](const Dimensions &a, const Dimensions &b) {
-                            return a.count() < b.count();
-                          });
-    for (const auto dim : fixedDimensions)
-      if (largest.contains(dim))
-        largest.erase(dim);
-
-    std::vector<bool> is_const{detail::is_const<Ts>::value...};
-    for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
-      auto dims = variableDimensions[i];
-      for (const auto dim : fixedDimensions)
-        if (dims.contains(dim))
-          dims.erase(dim);
-      // Largest must contain all other dimensions.
-      if (!largest.contains(dims))
-        throw std::runtime_error(
-            "Variables requested for iteration do not span a joint space. In "
-            "case one of the variables represents bin edges direct joint "
-            "iteration is not possible. Use the Bin<> wrapper to iterate over "
-            "bins defined by edges instead.");
-      // Must either be identical or access must be read-only.
-      if (!((largest == dims) || is_const[i]))
-        throw std::runtime_error("Variables requested for iteration have "
-                                 "different dimensions");
-    }
-    return largest;
-  }
+      const std::set<Dimension> &fixedDimensions) const;
 
 public:
   class iterator;

@@ -479,16 +479,16 @@ TEST(DatasetView, single_column_edges) {
 
 TEST(DatasetView, single_column_bins) {
   Dataset d;
-  auto edges = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto var = d.get<Data::Tof>();
+  auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[1] = 1.2;
   var[2] = 2.2;
 
-  DatasetView<Bin<Data::Tof>> view(d);
+  DatasetView<Bin<Coord::Tof>> view(d);
   auto it = view.begin();
   it++;
   ASSERT_NE(it, view.end());
@@ -499,24 +499,24 @@ TEST(DatasetView, single_column_bins) {
 
 TEST(DatasetView, multi_column_edges) {
   Dataset d;
-  auto edges = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto edges = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insertAsEdge(Dimension::Tof, edges);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto var = d.get<Data::Tof>();
+  auto var = d.get<Coord::Tof>();
   var[0] = 0.2;
   var[1] = 1.2;
   var[2] = 2.2;
 
   // Cannot simultaneously iterate edges and non-edges, so this throws.
-  EXPECT_THROW_MSG((DatasetView<Data::Tof, Data::Int>(d)), std::runtime_error,
+  EXPECT_THROW_MSG((DatasetView<Coord::Tof, Data::Int>(d)), std::runtime_error,
                    "Variables requested for iteration do not span a joint "
                    "space. In case one of the variables represents bin edges "
                    "direct joint iteration is not possible. Use the Bin<> "
                    "wrapper to iterate over bins defined by edges instead.");
 
-  DatasetView<Bin<Data::Tof>, Data::Int> view(d);
+  DatasetView<Bin<Coord::Tof>, Data::Int> view(d);
   // TODO What are good names for named getters? tofCenter(), etc.?
-  const auto &bin = view.begin()->get<Bin<Data::Tof>>();
+  const auto &bin = view.begin()->get<Bin<Coord::Tof>>();
   EXPECT_EQ(bin.center(), 0.7);
   EXPECT_EQ(bin.width(), 1.0);
   EXPECT_EQ(bin.left(), 0.2);
@@ -565,14 +565,14 @@ TEST(DatasetView, edges_are_not_inner_dimension) {
 
 TEST(DatasetView, named_getter) {
   Dataset d;
-  auto tof = makeVariable<Data::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  auto tof = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insert(tof);
-  auto var = d.get<Data::Tof>();
+  auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[2] = 2.2;
 
-  DatasetView<Data::Tof> view(d);
+  DatasetView<Coord::Tof> view(d);
   auto it = view.begin();
   ASSERT_EQ(it->tof(), 0.2);
   it++;
