@@ -435,6 +435,7 @@ Findings and changes:
   - After addition of more unrelated features and in particular performance issues in `DatasetView` I am now very skeptical regarding this feature.
     Support would most likely affect the performance of any iteration using `DatasetView`, even if there is no ragged dimensions.
     Furthermore the implementation of many operations would get quite a bit more complex, increasing the initial implementation effort significantly and reducing maintainability.
+  - Feature removed now, but if someone really needs it they can store nested `Dataset`.
 
 - Add a `Dimensions` class, holding dimensions and their extents.
   This is in a very early state and needs to be expanded with set-like algebra and similar operations.
