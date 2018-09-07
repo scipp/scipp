@@ -9,9 +9,20 @@ Dimensions DimensionHelper<Coord::SpectrumPosition>::get(
     const Dataset &dataset, const std::set<Dimension> &fixedDimensions) {
   return dataset.dimensions<Coord::DetectorGrouping>();
 }
+Dimensions DimensionHelper<Coord::SpectrumPosition>::get(
+    const Dataset &dataset, const std::string &name,
+    const std::set<Dimension> &fixedDimensions) {
+  return dataset.dimensions<Coord::DetectorGrouping>();
+}
 
 Dimensions
 DimensionHelper<Data::StdDev>::get(const Dataset &dataset,
+                                   const std::set<Dimension> &fixedDimensions) {
+  return dataset.dimensions<Data::Variance>();
+}
+Dimensions
+DimensionHelper<Data::StdDev>::get(const Dataset &dataset,
+                                   const std::string &name,
                                    const std::set<Dimension> &fixedDimensions) {
   return dataset.dimensions<Data::Variance>();
 }
@@ -66,16 +77,57 @@ Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
   return largest;
 }
 
+template <class... Ts>
+using makeVariableReturnType = std::tuple<const gsl::index, const MultiIndex,
+                                          const std::tuple<ref_type_t<Ts>...>>;
+
+template <class... Ts>
+makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
+    MaybeConstDataset<Ts...> &dataset, const std::string &name,
+    const std::set<Dimension> &fixedDimensions) const {
+  boost::container::small_vector<Dimensions, 4> subdimensions{
+      DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...};
+  Dimensions iterationDimensions(
+      relevantDimensions(dataset, subdimensions, fixedDimensions));
+  return std::tuple<const gsl::index, const MultiIndex,
+                    const std::tuple<ref_type_t<Ts>...>>{
+      iterationDimensions.volume(),
+      MultiIndex(iterationDimensions, subdimensions),
+      std::tuple<ref_type_t<Ts>...>{
+          DataHelper<Ts>::get(dataset, iterationDimensions, name)...}};
+}
+template <class... Ts>
+makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
+    MaybeConstDataset<Ts...> &dataset,
+    const std::set<Dimension> &fixedDimensions) const {
+  boost::container::small_vector<Dimensions, 4> subdimensions{
+      DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
+  Dimensions iterationDimensions(
+      relevantDimensions(dataset, subdimensions, fixedDimensions));
+  return std::tuple<const gsl::index, const MultiIndex,
+                    const std::tuple<ref_type_t<Ts>...>>{
+      iterationDimensions.volume(),
+      MultiIndex(iterationDimensions, subdimensions),
+      std::tuple<ref_type_t<Ts>...>{
+          DataHelper<Ts>::get(dataset, iterationDimensions)...}};
+}
+
 #define INSTANTIATE(...)                                                       \
   template Dimensions DatasetViewImpl<__VA_ARGS__>::relevantDimensions(        \
       const Dataset &, boost::container::small_vector<Dimensions, 4>,          \
-      const std::set<Dimension> &) const;
+      const std::set<Dimension> &) const;                                      \
+  template makeVariableReturnType<__VA_ARGS__>                                 \
+  DatasetViewImpl<__VA_ARGS__>::makeVariables(                                 \
+      MaybeConstDataset<__VA_ARGS__> &, const std::string &,                   \
+      const std::set<Dimension> &) const;                                      \
+  template makeVariableReturnType<__VA_ARGS__>                                 \
+  DatasetViewImpl<__VA_ARGS__>::makeVariables(                                 \
+      MaybeConstDataset<__VA_ARGS__> &, const std::set<Dimension> &) const;
 
 // For very special cases we should probably provide a header that includes the
 // definition, so we do not need to instantiate everything directly, but just
 // the most common cases.
 INSTANTIATE(Bin<Coord::Tof>)
-INSTANTIATE(Bin<Coord::Tof> const)
 INSTANTIATE(Bin<Coord::Tof>, Data::Int)
 INSTANTIATE(Bin<Coord::Tof>, Data::Value, Data::Variance)
 INSTANTIATE(Bin<Coord::X>)

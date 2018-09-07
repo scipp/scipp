@@ -102,16 +102,25 @@ template <class Tag> struct UnitHelper {
 
 template <class Tag> struct UnitHelper<Bin<Tag>> {
   static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
+  static Unit get(const Dataset &dataset, const std::string &name) {
+    return dataset.unit<Tag>();
+  }
 };
 
 template <> struct UnitHelper<Coord::SpectrumPosition> {
   static Unit get(const Dataset &dataset) {
     return dataset.unit<Coord::DetectorPosition>();
   }
+  static Unit get(const Dataset &dataset, const std::string &name) {
+    return dataset.unit<Coord::DetectorPosition>();
+  }
 };
 
 template <> struct UnitHelper<Data::StdDev> {
   static Unit get(const Dataset &dataset) {
+    return dataset.unit<Data::Variance>();
+  }
+  static Unit get(const Dataset &dataset, const std::string &name) {
     return dataset.unit<Data::Variance>();
   }
 };
@@ -149,15 +158,26 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
                         const std::set<Dimension> &fixedDimensions) {
     return dataset.dimensions<Tag>();
   }
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions) {
+    if (is_coord<Tag>)
+      return dataset.dimensions<Tag>();
+    else
+      return dataset.dimensions<Tag>(name);
+  }
 };
 
 template <> struct DimensionHelper<Coord::SpectrumPosition> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions);
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions);
 };
 
 template <> struct DimensionHelper<Data::StdDev> {
   static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions);
+  static Dimensions get(const Dataset &dataset, const std::string &name,
                         const std::set<Dimension> &fixedDimensions);
 };
 
@@ -254,6 +274,10 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
     return ref_type_t<Bin<Tag>>{offset,
                                 dataset.get<const detail::value_type_t<Tag>>()};
   }
+  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    return get(dataset, iterationDimensions);
+  }
 };
 
 template <> struct DataHelper<Coord::SpectrumPosition> {
@@ -263,11 +287,21 @@ template <> struct DataHelper<Coord::SpectrumPosition> {
         dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
         dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
   }
+  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    return ref_type_t<Coord::SpectrumPosition>(
+        dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
+        dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
+  }
 };
 
 template <> struct DataHelper<Data::StdDev> {
   static auto get(const Dataset &dataset,
                   const Dimensions &iterationDimensions) {
+    return DataHelper<const Data::Variance>::get(dataset, iterationDimensions);
+  }
+  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name) {
     return DataHelper<const Data::Variance>::get(dataset, iterationDimensions);
   }
 };
@@ -482,33 +516,11 @@ private:
   std::tuple<const gsl::index, const MultiIndex,
              const std::tuple<ref_type_t<Ts>...>>
   makeVariables(MaybeConstDataset<Ts...> &dataset, const std::string &name,
-                const std::set<Dimension> &fixedDimensions) const {
-    boost::container::small_vector<Dimensions, 4> subdimensions{
-        DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...};
-    Dimensions iterationDimensions(
-        relevantDimensions(dataset, subdimensions, fixedDimensions));
-    return std::tuple<const gsl::index, const MultiIndex,
-                      const std::tuple<ref_type_t<Ts>...>>{
-        iterationDimensions.volume(),
-        MultiIndex(iterationDimensions, subdimensions),
-        std::tuple<ref_type_t<Ts>...>{
-            DataHelper<Ts>::get(dataset, iterationDimensions, name)...}};
-  }
+                const std::set<Dimension> &fixedDimensions) const;
   std::tuple<const gsl::index, const MultiIndex,
              const std::tuple<ref_type_t<Ts>...>>
   makeVariables(MaybeConstDataset<Ts...> &dataset,
-                const std::set<Dimension> &fixedDimensions) const {
-    boost::container::small_vector<Dimensions, 4> subdimensions{
-        DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
-    Dimensions iterationDimensions(
-        relevantDimensions(dataset, subdimensions, fixedDimensions));
-    return std::tuple<const gsl::index, const MultiIndex,
-                      const std::tuple<ref_type_t<Ts>...>>{
-        iterationDimensions.volume(),
-        MultiIndex(iterationDimensions, subdimensions),
-        std::tuple<ref_type_t<Ts>...>{
-            DataHelper<Ts>::get(dataset, iterationDimensions)...}};
-  }
+                const std::set<Dimension> &fixedDimensions) const;
 
   const std::tuple<detail::unit_t<Ts>...> m_units;
   const std::tuple<const gsl::index, const MultiIndex,
