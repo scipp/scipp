@@ -12,6 +12,9 @@
 #include <type_traits>
 
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/mpl/at.hpp>
+#include <boost/mpl/sort.hpp>
+#include <boost/mpl/vector_c.hpp>
 
 #include "dataset.h"
 #include "multi_index.h"
@@ -26,7 +29,7 @@ template <class T> struct is_bins<Bin<T>> : public std::true_type {};
 template <class T> using is_bins_t = typename is_bins<T>::type;
 
 template <class Tag> struct unit { using type = Unit; };
-template <class... Tags> struct unit<DatasetView<Tags...>> {
+template <class... Tags> struct unit<DatasetViewImpl<Tags...>> {
   using type = std::tuple<typename unit<Tags>::type...>;
 };
 template <class... Tags> using unit_t = typename unit<Tags...>::type;
@@ -79,8 +82,8 @@ template <> struct ref_type<Coord::SpectrumPosition> {
 template <> struct ref_type<Data::StdDev> {
   using type = typename ref_type<const Data::Variance>::type;
 };
-template <class... Tags> struct ref_type<DatasetView<Tags...>> {
-  using type = std::tuple<const MultiIndex, const DatasetView<Tags...>,
+template <class... Tags> struct ref_type<DatasetViewImpl<Tags...>> {
+  using type = std::tuple<const MultiIndex, const DatasetViewImpl<Tags...>,
                           std::tuple<typename ref_type<Tags>::type...>>;
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
@@ -112,12 +115,12 @@ template <> struct UnitHelper<Data::StdDev> {
   }
 };
 
-template <class... Tags> struct UnitHelper<DatasetView<Tags...>> {
-  static detail::unit_t<DatasetView<Tags...>> get(const Dataset &dataset) {
+template <class... Tags> struct UnitHelper<DatasetViewImpl<Tags...>> {
+  static detail::unit_t<DatasetViewImpl<Tags...>> get(const Dataset &dataset) {
     return std::make_tuple(UnitHelper<Tags>::get(dataset)...);
   }
-  static detail::unit_t<DatasetView<Tags...>> get(const Dataset &dataset,
-                                                  const std::string &name) {
+  static detail::unit_t<DatasetViewImpl<Tags...>> get(const Dataset &dataset,
+                                                      const std::string &name) {
     return std::make_tuple(UnitHelper<Tags>::get(dataset, name)...);
   }
 };
@@ -157,7 +160,7 @@ template <> struct DimensionHelper<Data::StdDev> {
                         const std::set<Dimension> &fixedDimensions);
 };
 
-template <class... Tags> struct DimensionHelper<DatasetView<Tags...>> {
+template <class... Tags> struct DimensionHelper<DatasetViewImpl<Tags...>> {
   static Dimensions getHelper(std::vector<Dimensions> variableDimensions,
                               const std::set<Dimension> &fixedDimensions) {
     // Remove fixed dimensions *before* finding largest --- outer iteration must
@@ -211,7 +214,7 @@ struct and_<Cond, Conds...>
 template <class T> struct is_const : std::false_type {};
 template <class T> struct is_const<const T> : std::true_type {};
 template <class... Ts>
-struct is_const<DatasetView<Ts...>> : and_<is_const<Ts>...> {};
+struct is_const<DatasetViewImpl<Ts...>> : and_<is_const<Ts>...> {};
 }
 
 template <class... Tags>
@@ -268,7 +271,7 @@ template <> struct DataHelper<Data::StdDev> {
   }
 };
 
-template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
+template <class... Tags> struct DataHelper<DatasetViewImpl<Tags...>> {
   static auto get(MaybeConstDataset<Tags...> &dataset,
                   const Dimensions &iterationDimensions) {
     std::set<Dimension> fixedDimensions;
@@ -277,10 +280,10 @@ template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
     // For the nested case we create a DatasetView with the correct dimensions
     // and store it. It is later copied and initialized with the correct offset
     // in iterator::get.
-    return ref_type_t<DatasetView<Tags...>>{
+    return ref_type_t<DatasetViewImpl<Tags...>>{
         MultiIndex(iterationDimensions,
                    {DimensionHelper<Tags>::get(dataset, {})...}),
-        DatasetView<Tags...>(dataset, fixedDimensions),
+        DatasetViewImpl<Tags...>(dataset, fixedDimensions),
         std::make_tuple(DataHelper<Tags>::get(dataset, {})...)};
   }
   static auto get(MaybeConstDataset<Tags...> &dataset,
@@ -292,10 +295,10 @@ template <class... Tags> struct DataHelper<DatasetView<Tags...>> {
     // For the nested case we create a DatasetView with the correct dimensions
     // and store it. It is later copied and initialized with the correct offset
     // in iterator::get.
-    return ref_type_t<DatasetView<Tags...>>{
+    return ref_type_t<DatasetViewImpl<Tags...>>{
         MultiIndex(iterationDimensions,
                    {DimensionHelper<Tags>::get(dataset, name, {})...}),
-        DatasetView<Tags...>(dataset, name, fixedDimensions),
+        DatasetViewImpl<Tags...>(dataset, name, fixedDimensions),
         std::make_tuple(DataHelper<Tags>::get(dataset, {}, name)...)};
   }
 };
@@ -349,24 +352,24 @@ template <class Tag> struct ItemHelper<Bin<Tag>> {
   }
 };
 
-template <class... Tags> struct ItemHelper<DatasetView<Tags...>> {
+template <class... Tags> struct ItemHelper<DatasetViewImpl<Tags...>> {
   template <class Tag>
   static constexpr auto subindex =
       detail::index<Tag, std::tuple<Tags...>>::value;
 
-  static element_return_type_t<DatasetView<Tags...>>
-  get(const ref_type_t<DatasetView<Tags...>> &data, gsl::index index) {
+  static element_return_type_t<DatasetViewImpl<Tags...>>
+  get(const ref_type_t<DatasetViewImpl<Tags...>> &data, gsl::index index) {
     // Add offset to each span passed to the nested DatasetView.
     MultiIndex nestedIndex = std::get<0>(data);
     nestedIndex.setIndex(index);
     auto subdata = std::make_tuple(
         SubdataHelper<Tags>::get(std::get<subindex<Tags>>(std::get<2>(data)),
                                  nestedIndex.get<subindex<Tags>>())...);
-    return DatasetView<Tags...>(std::get<1>(data), subdata);
+    return DatasetViewImpl<Tags...>(std::get<1>(data), subdata);
   }
 };
 
-template <class... Ts> class DatasetView {
+template <class... Ts> class DatasetViewImpl {
   static_assert(sizeof...(Ts),
                 "DatasetView requires at least one variable for iteration");
 
@@ -494,17 +497,17 @@ public:
     Item m_item;
   };
 
-  DatasetView(MaybeConstDataset<Ts...> &dataset, const std::string &name,
-              const std::set<Dimension> &fixedDimensions = {})
+  DatasetViewImpl(MaybeConstDataset<Ts...> &dataset, const std::string &name,
+                  const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset, name)...},
         m_variables(makeVariables(dataset, name, fixedDimensions)) {}
-  DatasetView(MaybeConstDataset<Ts...> &dataset,
-              const std::set<Dimension> &fixedDimensions = {})
+  DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
+                  const std::set<Dimension> &fixedDimensions = {})
       : m_units{UnitHelper<Ts>::get(dataset)...},
         m_variables(makeVariables(dataset, fixedDimensions)) {}
 
-  DatasetView(const DatasetView &other,
-              const std::tuple<ref_type_t<Ts>...> &data)
+  DatasetViewImpl(const DatasetViewImpl &other,
+                  const std::tuple<ref_type_t<Ts>...> &data)
       : m_units(other.m_units),
         m_variables(std::get<0>(other.m_variables),
                     std::get<1>(other.m_variables), data) {}
@@ -554,5 +557,79 @@ private:
   const std::tuple<const gsl::index, const MultiIndex,
                    const std::tuple<ref_type_t<Ts>...>> m_variables;
 };
+
+namespace detail {
+// Helpers used for making DatasetView independent of the order used when
+// specifying tags.
+template <class T> struct type_to_id {
+  static constexpr int32_t value =
+      std::is_const<T>::value ? 4 * tag_id<T> + 1 : 4 * tag_id<T> + 3;
+};
+template <class T> struct type_to_id<Bin<T>> {
+  static constexpr int32_t value =
+      std::is_const<T>::value ? 4 * tag_id<T> + 2 : 4 * tag_id<T> + 4;
+};
+// Nested DatasetView gets an ID based on the IDs of all child tags.
+template <class... Ts> struct type_to_id<DatasetViewImpl<Ts...>> {
+  static constexpr std::array<int32_t, sizeof...(Ts)> ids{
+      type_to_id<Ts>::value...};
+  static constexpr int32_t value =
+      200 * ((sizeof...(Ts) == 1) ? ids[0] : (sizeof...(Ts) == 2)
+                                                 ? 200 * ids[1] + ids[0]
+                                                 : 200 * 200 * ids[2] +
+                                                       200 * ids[1] + ids[0]);
+};
+
+template <int32_t N>
+using get_type = std::conditional_t<
+    N % 2 == 0,
+    std::conditional_t<N % 4 == 0, Bin<std::tuple_element_t<(N - 1) / 4, Tags>>,
+                       const Bin<std::tuple_element_t<(N - 1) / 4, Tags>>>,
+    std::conditional_t<N % 4 == 3, std::tuple_element_t<(N - 1) / 4, Tags>,
+                       const std::tuple_element_t<(N - 1) / 4, Tags>>>;
+
+template <int32_t N> struct id_to_type {
+  using type = std::conditional_t<
+      (N < 200), get_type<N % 200>,
+      std::conditional_t<
+          (N < 200 * 200), std::tuple<get_type<(N / 200) % 200>>,
+          std::conditional_t<
+              (N < 200 * 200 * 200),
+              std::tuple<get_type<(N / 200) % 200>,
+                         get_type<(N / (200 * 200)) % 200>>,
+              std::tuple<get_type<(N / 200) % 200>,
+                         get_type<(N / (200 * 200)) % 200>,
+                         get_type<(N / (200 * 200 * 200)) % 200>>>>>;
+};
+template <int32_t N> using id_to_type_t = typename id_to_type<N>::type;
+
+template <class Sorted, size_t... Is>
+auto sort_types_impl(std::index_sequence<Is...>) {
+  return std::tuple<
+      id_to_type_t<boost::mpl::at_c<Sorted, Is>::type::value>...>();
+}
+
+template <class... Ts> auto sort_types() {
+  using Unsorted = boost::mpl::vector_c<int, type_to_id<Ts>::value...>;
+  return sort_types_impl<typename boost::mpl::sort<Unsorted>::type>(
+      std::make_index_sequence<sizeof...(Ts)>{});
+}
+
+// Helper to return either Tag or translate tuple of tags into DatasetView.
+template <class Tag> struct tag { using type = Tag; };
+template <class... Tags> struct tag<std::tuple<Tags...>> {
+  using type = DatasetViewImpl<Tags...>;
+};
+
+// Helper to translate (potentially nested) tuple of Tags into DatasetView.
+template <class T> struct dataset_view;
+template <class... Ts> struct dataset_view<std::tuple<Ts...>> {
+  using type = DatasetViewImpl<typename tag<Ts>::type...>;
+};
+}
+
+template <class... Ts>
+using DatasetView =
+    typename detail::dataset_view<decltype(detail::sort_types<Ts...>())>::type;
 
 #endif // DATASET_VIEW_H

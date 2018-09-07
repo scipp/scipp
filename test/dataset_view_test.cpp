@@ -631,54 +631,45 @@ TEST(DatasetView, derived_standard_deviation) {
   EXPECT_TRUE(std::isnan(it->get<Data::StdDev>()));
 }
 
-template <class T> constexpr int type_to_id();
-template <> constexpr int type_to_id<double>() { return 0; }
-template <> constexpr int type_to_id<int>() { return 1; }
-template <> constexpr int type_to_id<char>() { return 2; }
-
-template <int N> struct id_to_type;
-template <> struct id_to_type<0> { using type = double; };
-template <> struct id_to_type<1> { using type = int; };
-template <> struct id_to_type<2> { using type = char; };
-template <int N> using id_to_type_t = typename id_to_type<N>::type;
-
-template <class Sorted, size_t... Is>
-auto sort_types_impl(std::index_sequence<Is...>) {
-  return std::tuple<
-      id_to_type_t<boost::mpl::at_c<Sorted, Is>::type::value>...>{};
+TEST(DatasetView, type_sorting) {
+  Dataset data;
+  data.insert<Coord::X>({}, 1);
+  data.insert<Coord::Y>({}, 1);
+  DatasetView<Coord::X, Coord::Y> a(data);
+  DatasetView<Coord::Y, Coord::X> b(data);
+  DatasetView<Coord::Y, const Coord::X> b_const(data);
+  EXPECT_EQ(typeid(decltype(a)), typeid(decltype(b)));
+  EXPECT_NE(typeid(decltype(a)), typeid(decltype(b_const)));
 }
 
-template <class... Ts> auto sort_types() {
-  using Unsorted = boost::mpl::vector_c<int, type_to_id<Ts>()...>;
-  return sort_types_impl<typename boost::mpl::sort<Unsorted>::type>(
-      std::make_index_sequence<sizeof...(Ts)>{});
+TEST(DatasetView, type_sorting_nested) {
+  Dataset data;
+  data.insert<Coord::X>({}, 1);
+  data.insert<Coord::Y>({}, 1);
+  DatasetView<Coord::X, DatasetView<Coord::Y>> a(data);
+  DatasetView<DatasetView<Coord::Y>, Coord::X> b(data);
+  EXPECT_EQ(typeid(decltype(a)),
+            typeid(DatasetViewImpl<Coord::X, DatasetViewImpl<Coord::Y>>));
+  EXPECT_EQ(typeid(decltype(a)), typeid(decltype(b)));
 }
 
-// Named "Set" because the order of types in the declaration does not matter,
-// yields the same type.
-template <class... Ts> using Set = decltype(sort_types<Ts...>());
-
-TEST(SortTypes, same) {
-  using unsorted1 = boost::mpl::vector_c<int, 4, 3, 1>;
-  using unsorted2 = boost::mpl::vector_c<int, 4, 1, 3>;
-  ASSERT_EQ(typeid(boost::mpl::sort<unsorted1>::type),
-            typeid(boost::mpl::sort<unsorted2>::type));
-}
-
-TEST(SortTypes, different) {
-  using unsorted1 = boost::mpl::vector_c<int, 4, 3, 1>;
-  using unsorted2 = boost::mpl::vector_c<int, 4, 1, 2>;
-  ASSERT_NE(typeid(boost::mpl::sort<unsorted1>::type),
-            typeid(boost::mpl::sort<unsorted2>::type));
-}
-
-TEST(SortTypes, sort) {
-  auto t = sort_types<char, double, int>();
-  ASSERT_EQ(typeid(decltype(t)), typeid(std::tuple<double, int, char>));
-}
-
-TEST(SortTypes, type) {
-  Set<char, double, int> a;
-  Set<double, char, int> b;
-  ASSERT_EQ(typeid(decltype(a)), typeid(decltype(b)));
+TEST(DatasetView, type_sorting_two_nested) {
+  Dataset data;
+  data.insert<Coord::X>({}, 1);
+  data.insert<Coord::Y>({}, 1);
+  data.insert<Coord::Z>({}, 1);
+  DatasetView<Coord::X, DatasetView<Coord::Y, Coord::Z>> a(data);
+  DatasetView<Coord::X, DatasetView<Coord::Z, Coord::Y>> b(data);
+  DatasetView<DatasetView<Coord::Y, Coord::Z>, Coord::X> c(data);
+  DatasetView<DatasetView<Coord::Z, Coord::Y>, Coord::X> d(data);
+  EXPECT_EQ(
+      typeid(decltype(a)),
+      typeid(DatasetViewImpl<Coord::X, DatasetViewImpl<Coord::Y, Coord::Z>>));
+  EXPECT_EQ(typeid(decltype(a)), typeid(decltype(b)));
+  EXPECT_EQ(typeid(decltype(a)), typeid(decltype(c)));
+  EXPECT_EQ(typeid(decltype(a)), typeid(decltype(d)));
+  DatasetView<Coord::X, DatasetView<const Coord::Y, Coord::Z>> a_const(data);
+  EXPECT_EQ(typeid(decltype(a_const)),
+            typeid(DatasetViewImpl<Coord::X,
+                                   DatasetViewImpl<const Coord::Y, Coord::Z>>));
 }

@@ -141,11 +141,11 @@ struct Data {
                           DimensionSize, String, History, Events>;
 };
 
+using Tags = decltype(
+    std::tuple_cat(std::declval<Coord::tags>(), std::declval<Data::tags>()));
 template <class T>
 static constexpr uint16_t tag_id =
-    detail::index<std::remove_const_t<T>,
-                  decltype(std::tuple_cat(std::declval<Coord::tags>(),
-                                          std::declval<Data::tags>()))>::value;
+    detail::index<std::remove_const_t<T>, Tags>::value;
 template <class T>
 static constexpr bool is_coord =
     tag_id<T> < std::tuple_size<Coord::tags>::value;
@@ -179,9 +179,9 @@ template <class Tags> struct element_return_type<Bin<Tags>> {
   using type = DataBin;
 };
 
-template <class... Ts> class DatasetView;
-template <class... Tags> struct element_return_type<DatasetView<Tags...>> {
-  using type = DatasetView<Tags...>;
+template <class... Ts> class DatasetViewImpl;
+template <class... Tags> struct element_return_type<DatasetViewImpl<Tags...>> {
+  using type = DatasetViewImpl<Tags...>;
 };
 
 template <class Tag>
