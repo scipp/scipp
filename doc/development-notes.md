@@ -559,6 +559,7 @@ Findings and changes:
   - Main problem: How do we handle operations involving objects that do not have a history, e.g., `Dataset::insert(Variable var)` --- unless we serialize the content of `var` we will not be able to reproduce the resulting `Dataset`.
   - Can we use a `dask` graph as history?
   - Store history as tree, *do not serialize* data, e.g., just keep copy of `Variable`, serialize only on demand, either to Python or to C++.
+  - Could store `Dataset` at every point in history => undo functionality!
 
 - `EventList` replacement: `Dataset`!
   - Variables are optional, so we can add/remove things like pulse times and weights if required, saving space and memory bandwidth.
