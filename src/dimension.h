@@ -7,6 +7,7 @@
 #define DIMENSION_H
 
 enum class Dimension : char {
+  Event,
   Tof,
   MonitorTof,
   Spectrum,

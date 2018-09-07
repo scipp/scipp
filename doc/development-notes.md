@@ -558,6 +558,11 @@ Findings and changes:
   It is currently not clear whether having the history as a `Variable` is the best choice, apart from being able to use existing methods for insertion, etc.
   - Main problem: How do we handle operations involving objects that do not have a history, e.g., `Dataset::insert(Variable var)` --- unless we serialize the content of `var` we will not be able to reproduce the resulting `Dataset`.
   - Can we use a `dask` graph as history?
+  - Store history as tree, *do not serialize* data, e.g., just keep copy of `Variable`, serialize only on demand, either to Python or to C++.
+
+- `EventList` replacement: `Dataset`!
+  - Variables are optional, so we can add/remove things like pulse times and weights if required, saving space and memory bandwidth.
+
 
 ### To do
 
@@ -565,25 +570,6 @@ The current implementation has a large number of features that are not supported
 In general the implementation has been continued only to the point where it becomes clear that interface works and is thus capable of demonstrating that the designed concepts work.
 
 Outstanding tasks:
-
-- Investigate `EventList` replacement.
-  - Based on `Data::Events` (or `Data::EventList`?).
-  - Returns a histogram (`Dataset`) by value.
-  - Tag name?
-    - `Data::HistogramView`.
-    - `Histogram<Data::Events>`, following the same pattern as `Bin<Coord::Tof>`.
-  - Need to store binning in Dataset?
-  - Can the axis of the bin direction be deduced from the `EventList`?
-    - `EventList` should have a unit, can find corresponding dimension and corresponding axis in `Dataset`.
-  - Should we use `Dataset` as our `EventList`?
-    - Dummy dimension `Dimension::Event`, only 1D makes sense.
-    - Contains `Data::Tof` and *optionally* `Data::PulseTime` and a weight if required.
-    - We get the unit "built in".
-    - `concatenate` provides merging, ...
-    - Copy-on-write reduces space use for empty event lists?
-    - ```cpp
-      d.insert<Data::Events>("sample", {Dimension::Spectrum});
-      ```
 
 - Investigate MPI integration.
   - Very similar to what we intend to do for cache blocking.

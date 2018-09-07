@@ -78,8 +78,8 @@ gsl::index Dimensions::offset(const Dimension label) const {
 }
 
 void Dimensions::resize(const Dimension label, const gsl::index size) {
-  if (size <= 0)
-    throw std::runtime_error("Dimension size must be positive.");
+  if (size < 0)
+    throw std::runtime_error("Dimension size cannot be negative.");
   for (auto &item : m_dims)
     if (item.first == label) {
       item.second = size;

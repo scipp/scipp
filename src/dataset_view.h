@@ -407,7 +407,7 @@ private:
       if (largest.contains(dim))
         largest.erase(dim);
 
-    std::vector<bool> is_const{std::is_const<Ts>::value...};
+    std::vector<bool> is_const{detail::is_const<Ts>::value...};
     for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
       auto dims = variableDimensions[i];
       for (const auto dim : fixedDimensions)

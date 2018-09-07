@@ -117,6 +117,7 @@ public:
 
   gsl::index find(const uint16_t id, const std::string &name) const;
 
+  bool operator==(const Dataset &other) const;
   Dataset &operator+=(const Dataset &other);
   Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);

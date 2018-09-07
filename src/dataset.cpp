@@ -108,6 +108,11 @@ void Dataset::mergeDimensions(const auto &dims) {
   }
 }
 
+bool Dataset::operator==(const Dataset &other) const {
+  return (m_dimensions == other.m_dimensions) &&
+         (m_variables == other.m_variables);
+}
+
 Dataset &Dataset::operator+=(const Dataset &other) {
   for (const auto &var2 : other.m_variables) {
     // Handling of missing variables:

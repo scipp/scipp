@@ -95,8 +95,13 @@ struct Coord {
                  Polarization, Temperature, TimeInterval, Mask>;
 };
 
+class Dataset;
 struct Data {
   struct Tof {
+    using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct PulseTime {
     using type = double;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
@@ -127,9 +132,13 @@ struct Data {
     using type = std::vector<std::string>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct Events {
+    using type = Dataset;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
 
-  using tags = std::tuple<Tof, Value, Variance, StdDev, Int, DimensionSize,
-                          String, History>;
+  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
+                          DimensionSize, String, History, Events>;
 };
 
 template <class T>

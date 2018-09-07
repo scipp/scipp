@@ -3,6 +3,7 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include "dataset.h"
 #include "variable.h"
 #include "variable_view.h"
 
@@ -201,6 +202,7 @@ INSTANTIATE(int64_t)
 INSTANTIATE(std::pair<int64_t, int64_t>)
 INSTANTIATE(std::vector<gsl::index>)
 INSTANTIATE(std::vector<std::string>)
+INSTANTIATE(Dataset)
 
 bool Variable::operator==(const Variable &other) const {
   // Compare even before pointer comparison since data may be shared even if
