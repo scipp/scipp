@@ -5,27 +5,199 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include "dataset_view.h"
 
-Dimensions DimensionHelper<Coord::SpectrumPosition>::get(
-    const Dataset &dataset, const std::set<Dimension> &fixedDimensions) {
-  return dataset.dimensions<Coord::DetectorGrouping>();
-}
-Dimensions DimensionHelper<Coord::SpectrumPosition>::get(
-    const Dataset &dataset, const std::string &name,
-    const std::set<Dimension> &fixedDimensions) {
-  return dataset.dimensions<Coord::DetectorGrouping>();
-}
+template <class Tag> struct DimensionHelper {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
+    return dataset.dimensions<Tag>();
+  }
 
-Dimensions
-DimensionHelper<Data::StdDev>::get(const Dataset &dataset,
-                                   const std::set<Dimension> &fixedDimensions) {
-  return dataset.dimensions<Data::Variance>();
-}
-Dimensions
-DimensionHelper<Data::StdDev>::get(const Dataset &dataset,
-                                   const std::string &name,
-                                   const std::set<Dimension> &fixedDimensions) {
-  return dataset.dimensions<Data::Variance>();
-}
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
+    // TODO Do we need to check here if fixedDimensions are contained?
+    if (is_coord<Tag>)
+      return dataset.dimensions<Tag>();
+    else
+      return dataset.dimensions<Tag>(name);
+  }
+};
+
+template <class Tag> struct DimensionHelper<Bin<Tag>> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    return dataset.dimensions<Tag>();
+  }
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions) {
+    if (is_coord<Tag>)
+      return dataset.dimensions<Tag>();
+    else
+      return dataset.dimensions<Tag>(name);
+  }
+};
+
+template <> struct DimensionHelper<Coord::SpectrumPosition> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    return dataset.dimensions<Coord::DetectorGrouping>();
+  }
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions) {
+    return dataset.dimensions<Coord::DetectorGrouping>();
+  }
+};
+
+template <> struct DimensionHelper<Data::StdDev> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    return dataset.dimensions<Data::Variance>();
+  }
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions) {
+    return dataset.dimensions<Data::Variance>();
+  }
+};
+
+template <class... Tags> struct DimensionHelper<DatasetViewImpl<Tags...>> {
+  static Dimensions getHelper(std::vector<Dimensions> variableDimensions,
+                              const std::set<Dimension> &fixedDimensions) {
+    // Remove fixed dimensions *before* finding largest --- outer iteration must
+    // cover all contained non-fixed dimensions.
+    for (auto &dims : variableDimensions)
+      for (const auto dim : fixedDimensions)
+        if (dims.contains(dim))
+          dims.erase(dim);
+
+    auto largest =
+        *std::max_element(variableDimensions.begin(), variableDimensions.end(),
+                          [](const Dimensions &a, const Dimensions &b) {
+                            return a.count() < b.count();
+                          });
+
+    // Check that Tags have correct constness if dimensions do not match.
+    // Usually this happens in `relevantDimensions` but for the nested case we
+    // are returning only the largest set of dimensions so we have to do the
+    // comparison here.
+    std::vector<bool> is_const{
+        std::is_const<detail::value_type_t<Tags>>::value...};
+    for (gsl::index i = 0; i < sizeof...(Tags); ++i) {
+      auto dims = variableDimensions[i];
+      if (!((largest == dims) || is_const[i]))
+        throw std::runtime_error("Variables requested for iteration have "
+                                 "different dimensions");
+    }
+    return largest;
+  }
+
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dimension> &fixedDimensions) {
+    return getHelper({DimensionHelper<Tags>::get(dataset, fixedDimensions)...},
+                     fixedDimensions);
+  }
+
+  static Dimensions get(const Dataset &dataset, const std::string &name,
+                        const std::set<Dimension> &fixedDimensions) {
+    return getHelper(
+        {DimensionHelper<Tags>::get(dataset, name, fixedDimensions)...},
+        fixedDimensions);
+  }
+};
+
+template <class Tag> struct DataHelper {
+  static auto get(MaybeConstDataset<Tag> &dataset,
+                  const Dimensions &iterationDimensions) {
+    return dataset.template get<detail::value_type_t<Tag>>();
+  }
+  static auto get(MaybeConstDataset<Tag> &dataset,
+                  const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    if (is_coord<Tag>)
+      return dataset.template get<detail::value_type_t<Tag>>();
+    else
+      return dataset.template get<detail::value_type_t<Tag>>(name);
+  }
+};
+
+template <class Tag> struct DataHelper<Bin<Tag>> {
+  static auto get(const Dataset &dataset,
+                  const Dimensions &iterationDimensions) {
+    // Compute offset to next edge.
+    gsl::index offset = 1;
+    const auto &dims = dataset.dimensions<Tag>();
+    const auto &actual = dataset.dimensions();
+    for (const auto &dim : dims) {
+      if (dim.second != actual.size(dim.first))
+        break;
+      offset *= dim.second;
+    }
+
+    return ref_type_t<Bin<Tag>>{offset,
+                                dataset.get<const detail::value_type_t<Tag>>()};
+  }
+  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    return get(dataset, iterationDimensions);
+  }
+};
+
+template <> struct DataHelper<Coord::SpectrumPosition> {
+  static auto get(const Dataset &dataset,
+                  const Dimensions &iterationDimensions) {
+    return ref_type_t<Coord::SpectrumPosition>(
+        dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
+        dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
+  }
+  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    return ref_type_t<Coord::SpectrumPosition>(
+        dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
+        dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
+  }
+};
+
+template <> struct DataHelper<Data::StdDev> {
+  static auto get(const Dataset &dataset,
+                  const Dimensions &iterationDimensions) {
+    return DataHelper<const Data::Variance>::get(dataset, iterationDimensions);
+  }
+  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    return DataHelper<const Data::Variance>::get(dataset, iterationDimensions);
+  }
+};
+
+template <class... Tags> struct DataHelper<DatasetViewImpl<Tags...>> {
+  static auto get(MaybeConstDataset<Tags...> &dataset,
+                  const Dimensions &iterationDimensions) {
+    std::set<Dimension> fixedDimensions;
+    for (auto &item : iterationDimensions)
+      fixedDimensions.insert(item.first);
+    // For the nested case we create a DatasetView with the correct dimensions
+    // and store it. It is later copied and initialized with the correct offset
+    // in iterator::get.
+    return ref_type_t<DatasetViewImpl<Tags...>>{
+        MultiIndex(iterationDimensions,
+                   {DimensionHelper<Tags>::get(dataset, {})...}),
+        DatasetViewImpl<Tags...>(dataset, fixedDimensions),
+        std::make_tuple(DataHelper<Tags>::get(dataset, {})...)};
+  }
+  static auto get(MaybeConstDataset<Tags...> &dataset,
+                  const Dimensions &iterationDimensions,
+                  const std::string &name) {
+    std::set<Dimension> fixedDimensions;
+    for (auto &item : iterationDimensions)
+      fixedDimensions.insert(item.first);
+    // For the nested case we create a DatasetView with the correct dimensions
+    // and store it. It is later copied and initialized with the correct offset
+    // in iterator::get.
+    return ref_type_t<DatasetViewImpl<Tags...>>{
+        MultiIndex(iterationDimensions,
+                   {DimensionHelper<Tags>::get(dataset, name, {})...}),
+        DatasetViewImpl<Tags...>(dataset, name, fixedDimensions),
+        std::make_tuple(DataHelper<Tags>::get(dataset, {}, name)...)};
+  }
+};
 
 template <class... Ts>
 Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
