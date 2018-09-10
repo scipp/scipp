@@ -34,7 +34,7 @@ template <class... Tags> struct unit<DatasetViewImpl<Tags...>> {
   using type = std::tuple<typename unit<Tags>::type...>;
 };
 template <class... Tags> using unit_t = typename unit<Tags...>::type;
-}
+} // namespace detail
 
 template <class Base, class T> struct GetterMixin {};
 
@@ -90,52 +90,6 @@ template <class... Tags> struct ref_type<DatasetViewImpl<Tags...>> {
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
 
-template <class Tag> struct UnitHelper {
-  static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
-
-  static Unit get(const Dataset &dataset, const std::string &name) {
-    if (is_coord<Tag>)
-      return dataset.unit<Tag>();
-    else
-      return dataset.unit<Tag>(name);
-  }
-};
-
-template <class Tag> struct UnitHelper<Bin<Tag>> {
-  static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
-  static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset.unit<Tag>();
-  }
-};
-
-template <> struct UnitHelper<Coord::SpectrumPosition> {
-  static Unit get(const Dataset &dataset) {
-    return dataset.unit<Coord::DetectorPosition>();
-  }
-  static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset.unit<Coord::DetectorPosition>();
-  }
-};
-
-template <> struct UnitHelper<Data::StdDev> {
-  static Unit get(const Dataset &dataset) {
-    return dataset.unit<Data::Variance>();
-  }
-  static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset.unit<Data::Variance>();
-  }
-};
-
-template <class... Tags> struct UnitHelper<DatasetViewImpl<Tags...>> {
-  static detail::unit_t<DatasetViewImpl<Tags...>> get(const Dataset &dataset) {
-    return std::make_tuple(UnitHelper<Tags>::get(dataset)...);
-  }
-  static detail::unit_t<DatasetViewImpl<Tags...>> get(const Dataset &dataset,
-                                                      const std::string &name) {
-    return std::make_tuple(UnitHelper<Tags>::get(dataset, name)...);
-  }
-};
-
 namespace detail {
 template <class... Conds> struct and_ : std::true_type {};
 template <class Cond, class... Conds>
@@ -146,7 +100,7 @@ template <class T> struct is_const : std::false_type {};
 template <class T> struct is_const<const T> : std::true_type {};
 template <class... Ts>
 struct is_const<DatasetViewImpl<Ts...>> : and_<is_const<Ts>...> {};
-}
+} // namespace detail
 
 template <class... Tags>
 using MaybeConstDataset =
@@ -304,19 +258,12 @@ public:
   };
 
   DatasetViewImpl(MaybeConstDataset<Ts...> &dataset, const std::string &name,
-                  const std::set<Dimension> &fixedDimensions = {})
-      : m_units{UnitHelper<Ts>::get(dataset, name)...},
-        m_variables(makeVariables(dataset, name, fixedDimensions)) {}
+                  const std::set<Dimension> &fixedDimensions = {});
   DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
-                  const std::set<Dimension> &fixedDimensions = {})
-      : m_units{UnitHelper<Ts>::get(dataset)...},
-        m_variables(makeVariables(dataset, fixedDimensions)) {}
+                  const std::set<Dimension> &fixedDimensions = {});
 
   DatasetViewImpl(const DatasetViewImpl &other,
-                  const std::tuple<ref_type_t<Ts>...> &data)
-      : m_units(other.m_units),
-        m_variables(std::get<0>(other.m_variables),
-                    std::get<1>(other.m_variables), data) {}
+                  const std::tuple<ref_type_t<Ts>...> &data);
 
   gsl::index size() const { return std::get<0>(m_variables); }
   iterator begin() const {
@@ -339,7 +286,8 @@ private:
 
   const std::tuple<detail::unit_t<Ts>...> m_units;
   const std::tuple<const gsl::index, const MultiIndex,
-                   const std::tuple<ref_type_t<Ts>...>> m_variables;
+                   const std::tuple<ref_type_t<Ts>...>>
+      m_variables;
 };
 
 namespace detail {
@@ -358,10 +306,11 @@ template <class... Ts> struct type_to_id<DatasetViewImpl<Ts...>> {
   static constexpr std::array<int32_t, sizeof...(Ts)> ids{
       type_to_id<Ts>::value...};
   static constexpr int32_t value =
-      200 * ((sizeof...(Ts) == 1) ? ids[0] : (sizeof...(Ts) == 2)
-                                                 ? 200 * ids[1] + ids[0]
-                                                 : 200 * 200 * ids[2] +
-                                                       200 * ids[1] + ids[0]);
+      200 * ((sizeof...(Ts) == 1)
+                 ? ids[0]
+                 : (sizeof...(Ts) == 2)
+                       ? 200 * ids[1] + ids[0]
+                       : 200 * 200 * ids[2] + 200 * ids[1] + ids[0]);
 };
 
 template <int32_t N>
@@ -410,7 +359,7 @@ template <class T> struct dataset_view;
 template <class... Ts> struct dataset_view<std::tuple<Ts...>> {
   using type = DatasetViewImpl<typename tag<Ts>::type...>;
 };
-}
+} // namespace detail
 
 template <class... Ts>
 using DatasetView =

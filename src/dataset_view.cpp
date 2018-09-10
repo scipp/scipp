@@ -5,6 +5,52 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include "dataset_view.h"
 
+template <class Tag> struct UnitHelper {
+  static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
+
+  static Unit get(const Dataset &dataset, const std::string &name) {
+    if (is_coord<Tag>)
+      return dataset.unit<Tag>();
+    else
+      return dataset.unit<Tag>(name);
+  }
+};
+
+template <class Tag> struct UnitHelper<Bin<Tag>> {
+  static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
+  static Unit get(const Dataset &dataset, const std::string &name) {
+    return dataset.unit<Tag>();
+  }
+};
+
+template <> struct UnitHelper<Coord::SpectrumPosition> {
+  static Unit get(const Dataset &dataset) {
+    return dataset.unit<Coord::DetectorPosition>();
+  }
+  static Unit get(const Dataset &dataset, const std::string &name) {
+    return dataset.unit<Coord::DetectorPosition>();
+  }
+};
+
+template <> struct UnitHelper<Data::StdDev> {
+  static Unit get(const Dataset &dataset) {
+    return dataset.unit<Data::Variance>();
+  }
+  static Unit get(const Dataset &dataset, const std::string &name) {
+    return dataset.unit<Data::Variance>();
+  }
+};
+
+template <class... Tags> struct UnitHelper<DatasetViewImpl<Tags...>> {
+  static detail::unit_t<DatasetViewImpl<Tags...>> get(const Dataset &dataset) {
+    return std::make_tuple(UnitHelper<Tags>::get(dataset)...);
+  }
+  static detail::unit_t<DatasetViewImpl<Tags...>> get(const Dataset &dataset,
+                                                      const std::string &name) {
+    return std::make_tuple(UnitHelper<Tags>::get(dataset, name)...);
+  }
+};
+
 template <class Tag> struct DimensionHelper {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
@@ -250,6 +296,26 @@ Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
 }
 
 template <class... Ts>
+DatasetViewImpl<Ts...>::DatasetViewImpl(
+    MaybeConstDataset<Ts...> &dataset, const std::string &name,
+    const std::set<Dimension> &fixedDimensions)
+    : m_units{UnitHelper<Ts>::get(dataset, name)...},
+      m_variables(makeVariables(dataset, name, fixedDimensions)) {}
+template <class... Ts>
+DatasetViewImpl<Ts...>::DatasetViewImpl(
+    MaybeConstDataset<Ts...> &dataset,
+    const std::set<Dimension> &fixedDimensions)
+    : m_units{UnitHelper<Ts>::get(dataset)...},
+      m_variables(makeVariables(dataset, fixedDimensions)) {}
+
+template <class... Ts>
+DatasetViewImpl<Ts...>::DatasetViewImpl(
+    const DatasetViewImpl &other, const std::tuple<ref_type_t<Ts>...> &data)
+    : m_units(other.m_units),
+      m_variables(std::get<0>(other.m_variables),
+                  std::get<1>(other.m_variables), data) {}
+
+template <class... Ts>
 using makeVariableReturnType = std::tuple<const gsl::index, const MultiIndex,
                                           const std::tuple<ref_type_t<Ts>...>>;
 
@@ -284,17 +350,7 @@ makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
           DataHelper<Ts>::get(dataset, iterationDimensions)...}};
 }
 
-#define INSTANTIATE(...)                                                       \
-  template Dimensions DatasetViewImpl<__VA_ARGS__>::relevantDimensions(        \
-      const Dataset &, boost::container::small_vector<Dimensions, 4>,          \
-      const std::set<Dimension> &) const;                                      \
-  template makeVariableReturnType<__VA_ARGS__>                                 \
-  DatasetViewImpl<__VA_ARGS__>::makeVariables(                                 \
-      MaybeConstDataset<__VA_ARGS__> &, const std::string &,                   \
-      const std::set<Dimension> &) const;                                      \
-  template makeVariableReturnType<__VA_ARGS__>                                 \
-  DatasetViewImpl<__VA_ARGS__>::makeVariables(                                 \
-      MaybeConstDataset<__VA_ARGS__> &, const std::set<Dimension> &) const;
+#define INSTANTIATE(...) template class DatasetViewImpl<__VA_ARGS__>;
 
 // For very special cases we should probably provide a header that includes the
 // definition, so we do not need to instantiate everything directly, but just
