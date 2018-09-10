@@ -7,6 +7,7 @@
 #define DATASET_VIEW_H
 
 #include <algorithm>
+#include <cmath>
 #include <set>
 #include <tuple>
 #include <type_traits>
@@ -189,7 +190,7 @@ template <> struct ItemHelper<Coord::SpectrumPosition> {
 template <> struct ItemHelper<Data::StdDev> {
   static element_return_type_t<Data::StdDev>
   get(const ref_type_t<Data::StdDev> &data, gsl::index index) {
-    return sqrt(ItemHelper<const Data::Variance>::get(data, index));
+    return std::sqrt(ItemHelper<const Data::Variance>::get(data, index));
   }
 };
 
