@@ -5,6 +5,7 @@
 /// National Laboratory, and European Spallation Source ERIC.
 
 // from https://stackoverflow.com/a/12942652/1458281
+#include "memory_pool.h"
 
 enum class Alignment : size_t {
   Normal = sizeof(void *),
@@ -16,6 +17,8 @@ namespace detail {
 void *allocate_aligned_memory(size_t align, size_t size);
 void deallocate_aligned_memory(void *ptr) noexcept;
 
+//#define USE_POOL
+
 inline void *allocate_aligned_memory(size_t align, size_t size) {
   assert(align >= sizeof(void *));
   assert(nail::is_power_of_two(align));
@@ -24,6 +27,9 @@ inline void *allocate_aligned_memory(size_t align, size_t size) {
     return nullptr;
   }
 
+#ifdef USE_POOL
+  return instance().allocate(size);
+#else
   void *ptr = nullptr;
   int rc = posix_memalign(&ptr, align, size);
 
@@ -32,10 +38,17 @@ inline void *allocate_aligned_memory(size_t align, size_t size) {
   }
 
   return ptr;
+#endif
 }
 
-inline void deallocate_aligned_memory(void *ptr) noexcept { return free(ptr); }
+inline void deallocate_aligned_memory(void *ptr) noexcept {
+#ifdef USE_POOL
+  return instance().deallocate(ptr);
+#else
+  return free(ptr);
+#endif
 }
+} // namespace detail
 
 template <typename T, Alignment Align = Alignment::AVX> class AlignedAllocator;
 

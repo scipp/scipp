@@ -65,9 +65,9 @@ def from_dataset(dataset, slice_dim):
     dsk[name] = dataset
     return DatasetCollection(dsk, name, size, slice_dim)
 
-lx = 2000
+lx = 20000
 ly = 2000
-lz = 100
+lz = 10
 d = Dataset()
 dimsX = Dimensions()
 dimsX.add(Dimension.X, lx)
@@ -97,18 +97,18 @@ d2 += d
 #orig = orig + orig
 elapsed = timeit.default_timer() - start_time
 print(elapsed)
+with dask.config.set(pool=ThreadPool(10)):
+    d = from_dataset(d, slice_dim=Dimension.Z)
+    d = d.persist()
+    d2 = d + d
+    for i in range(10):
+        d2 = d2 + d
 
-d = from_dataset(d, slice_dim=Dimension.Z)
-d = d.persist()
-d2 = d + d
-for i in range(10):
-    d2 = d2 + d
-
-#d2.visualize(filename='test.svg')
-print('computing...')
-start_time = timeit.default_timer()
-d2 = d2.persist()
-elapsed = timeit.default_timer() - start_time
-print(elapsed)
+    #d2.visualize(filename='test.svg')
+    print('computing...')
+    start_time = timeit.default_timer()
+    d2 = d2.persist()
+    elapsed = timeit.default_timer() - start_time
+    print(elapsed)
 #d2 = d2.compute()
 #print(orig + orig + orig == d2)
