@@ -6,7 +6,7 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
-enum class Dimension : char {
+enum class Dimension {
   Event,
   Tof,
   MonitorTof,

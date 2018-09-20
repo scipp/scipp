@@ -130,6 +130,13 @@ Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
                   Vector<typename Tag::type>(values));
 }
 
+template <class Tag, class T>
+Variable makeVariable(Dimensions dimensions, const std::vector<T> &values) {
+  // Copy to aligned memory.
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+                  Vector<typename Tag::type>(values.begin(), values.end()));
+}
+
 Variable operator+(Variable a, const Variable &b);
 Variable operator-(Variable a, const Variable &b);
 Variable operator*(Variable a, const Variable &b);

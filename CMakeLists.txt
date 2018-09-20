@@ -26,3 +26,4 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --save-temps -march=native -fno-omit-fr
 add_subdirectory ( src )
 add_subdirectory ( test )
 add_subdirectory ( benchmark )
+add_subdirectory ( exports )
