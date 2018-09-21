@@ -28,6 +28,8 @@ public:
   virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
+  virtual std::unique_ptr<VariableConcept>
+  operator+(const VariableConcept &other) const = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
   virtual void copySlice(const VariableConcept &other, const Dimension dim,

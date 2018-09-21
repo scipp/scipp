@@ -3,8 +3,8 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include "dataset.h"
 #include "variable.h"
+#include "dataset.h"
 #include "variable_view.h"
 
 template <template <class> class Op, class T> struct ArithmeticHelper {
@@ -14,27 +14,31 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
   static void apply(Vector<T> &a, const Vector<T> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
+  static void apply(const Vector<T> &a, const VariableView<const Vector<T>> &b,
+                    Vector<T> &out) {
+    std::transform(a.begin(), a.end(), b.begin(), out.begin(), Op<T>());
+  }
+  static void apply(const Vector<T> &a, const Vector<T> &b, Vector<T> &out) {
+    std::transform(a.begin(), a.end(), b.begin(), out.begin(), Op<T>());
+  }
 };
 
 template <template <class> class Op, class T>
 struct ArithmeticHelper<Op, std::vector<T>> {
-  template <class Other>
-  static void apply(Vector<std::vector<T>> &a, const Other &b) {
+  template <class... Args> static void apply(Args &&...) {
     throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
   }
 };
 
 template <template <class> class Op, class T>
 struct ArithmeticHelper<Op, std::pair<T, T>> {
-  template <class Other>
-  static void apply(Vector<std::pair<T, T>> &a, const Other &b) {
+  template <class... Args> static void apply(Args &&...) {
     throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
   }
 };
 
 template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
-  template <class Other>
-  static void apply(Vector<std::string> &a, const Other) {
+  template <class... Args> static void apply(Args &&...) {
     throw std::runtime_error("Cannot add strings. Use append() instead.");
   }
 };
@@ -51,6 +55,10 @@ void VariableConcept::setDimensions(const Dimensions &dimensions) {
 
 template <class T> class VariableModel final : public VariableConcept {
 public:
+  VariableModel(Dimensions dimensions)
+      : VariableConcept(std::move(dimensions)),
+        m_model(this->dimensions().volume()) {}
+
   VariableModel(Dimensions dimensions, T model)
       : VariableConcept(std::move(dimensions)), m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
@@ -91,6 +99,31 @@ public:
     return *this;
   }
 
+  template <template <class> class Op>
+  std::unique_ptr<VariableConcept>
+  applyBinary(const VariableConcept &other) const {
+    auto result = std::make_unique<VariableModel<T>>(dimensions());
+    auto &resultModel = result->m_model;
+    try {
+      const auto &otherModel =
+          dynamic_cast<const VariableModel<T> &>(other).m_model;
+      if (dimensions() == other.dimensions()) {
+        ArithmeticHelper<Op, typename T::value_type>::apply(m_model, otherModel,
+                                                            resultModel);
+      } else {
+        ArithmeticHelper<Op, typename T::value_type>::apply(
+            m_model,
+            VariableView<const T>(otherModel, dimensions(), other.dimensions()),
+            resultModel);
+      }
+    } catch (const std::bad_cast &) {
+      throw std::runtime_error("Cannot apply arithmetic operation to "
+                               "Variables: Underlying data types do not "
+                               "match.");
+    }
+    return result;
+  }
+
   VariableConcept &operator+=(const VariableConcept &other) override {
     return apply<std::plus>(other);
   }
@@ -101,6 +134,11 @@ public:
 
   VariableConcept &operator*=(const VariableConcept &other) override {
     return apply<std::multiplies>(other);
+  }
+
+  std::unique_ptr<VariableConcept>
+  operator+(const VariableConcept &other) const override {
+    return applyBinary<std::plus>(other);
   }
 
   gsl::index size() const override { return m_model.size(); }
@@ -235,7 +273,15 @@ Variable &Variable::operator+=(const Variable &other) {
   if (dimensions().contains(other.dimensions())) {
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
-    m_object.access() += *other.m_object;
+    if (m_object.unique()) {
+      m_object.access() += *other.m_object;
+    } else {
+      // Handling special case to avoid copy should reduce data movement from/to
+      // memory --- making copy requires 2 load + 1 store, `+=` is 2 load + 1
+      // store, `+` is 3 load + 1 store. In practive I did not observe a
+      // significant speedup though, need more benchmarks.
+      m_object = *m_object + *other.m_object;
+    }
   } else {
     throw std::runtime_error("Cannot add Variables: Dimensions do not match.");
   }
