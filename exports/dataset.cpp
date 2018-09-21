@@ -58,6 +58,42 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
+      .def("__getstate__",
+           [](const Dataset &self) {
+             py::list vars;
+             for (const auto &var : self) {
+               const auto &dimensions = var.dimensions();
+               py::list dims;
+               for (const auto &dim : dimensions)
+                 dims.append(py::make_tuple(static_cast<int32_t>(dim.first),
+                                            dim.second));
+               auto data = var.get<const Data::Value>();
+               std::vector<double> buffer(data.begin(), data.end());
+               vars.append(py::make_tuple(dims, var.type(),
+                                          static_cast<int32_t>(var.unit().id()),
+                                          var.name(), buffer));
+             }
+             return vars;
+           })
+      .def("__setstate__",
+           [](Dataset &self, py::list vars) {
+             new (&self) Dataset();
+             for (const auto &var : vars) {
+               const auto tuple = var.cast<py::tuple>();
+               const auto dims = tuple[0].cast<py::list>();
+               Dimensions dimensions;
+               for (const auto &dim : dims) {
+                 const auto d = dim.cast<py::tuple>();
+                 dimensions.add(static_cast<Dimension>(d[0].cast<int32_t>()),
+                                d[1].cast<gsl::index>());
+               }
+               const auto type = tuple[1].cast<uint16_t>();
+               const auto unit = tuple[2].cast<int32_t>();
+               const auto name = tuple[3].cast<std::string>();
+               const auto data = tuple[4].cast<std::vector<double>>();
+               self.insert<Data::Value>(name, dimensions, data);
+             }
+           })
       .def("insertCoordX",
            py::overload_cast<Dimensions, const std::vector<double> &>(
                &Dataset::insert<Coord::X, const std::vector<double> &>))

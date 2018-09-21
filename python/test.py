@@ -22,6 +22,7 @@ import uuid
 from dask import sharedict
 from dask.sharedict import ShareDict
 from toolz import concat
+from cloudpickle import pickle
 
 class DatasetCollection(DaskMethodsMixin):
     def __init__(self, dask, name, n_chunk, slice_dim):
@@ -47,6 +48,9 @@ class DatasetCollection(DaskMethodsMixin):
 
     def __dask_postpersist__(self):
         return DatasetCollection, (self.name, self.n_chunk, self.slice_dim)
+
+    def __dask_tokenize__(self):
+        return self.name
 
     @property
     def numblocks(self):
@@ -101,72 +105,92 @@ def from_dataset(dataset, slice_dim):
     original_name = name = 'dataset-' + str(uuid.uuid1())
     # See also da.core.getem.
     keys = list(product([name], *[range(len(bds)) for bds in chunks]))
-    values = [ (Dataset.slice, original_name, slice_dim, i) for i in range(size) ]
+    # dask is trying to pickle Dataset.slice, which fails, wrapping it as a workaround.
+    def do_slice(dataset, slice_dim, i):
+        return dataset.slice(slice_dim, i)
+    values = [ (do_slice, original_name, slice_dim, i) for i in range(size) ]
     dsk = dict(zip(keys, values))
     dsk[original_name] = dataset
     return DatasetCollection(dsk, name, size, slice_dim)
 
-lx = 4000
-ly = 4000
-lz = 100
-d = Dataset()
-dimsX = Dimensions()
-dimsX.add(Dimension.X, lx)
-dimsY = Dimensions()
-dimsY.add(Dimension.Y, ly)
-dimsZ = Dimensions()
-dimsZ.add(Dimension.Z, lz)
-dims = Dimensions()
-dims.add(Dimension.X, lx)
-dims.add(Dimension.Y, ly)
-dims.add(Dimension.Z, lz)
+#d = Dataset()
+##print(Dataset.__dict__)
+#print(d)
+#print(type(d).__repr__)
+#result = pickle.dumps(d)
+#print(result)
 
-d.insertCoordX(dimsX, range(lx))
-d.insertCoordY(dimsY, range(ly))
-d.insertCoordZ(dimsZ, range(lz))
-d.insertDataValue("name", dims, np.arange(lx*ly*lz))
+if __name__ == '__main__':
+    with Client(n_workers=3) as client:
+        lx = 2
+        ly = 3
+        lz = 10
+        d = Dataset()
+        dimsX = Dimensions()
+        dimsX.add(Dimension.X, lx)
+        dimsY = Dimensions()
+        dimsY.add(Dimension.Y, ly)
+        dimsZ = Dimensions()
+        dimsZ.add(Dimension.Z, lz)
+        dims = Dimensions()
+        dims.add(Dimension.X, lx)
+        dims.add(Dimension.Y, ly)
+        dims.add(Dimension.Z, lz)
 
-volume = lx*ly*lz
-print("Dataset volume is {} ({} GByte)".format(volume, (volume*8)/2**30))
+        #d.insertCoordX(dimsX, range(lx))
+        #d.insertCoordY(dimsY, range(ly))
+        #d.insertCoordZ(dimsZ, range(lz))
+        d.insertDataValue("name", dims, np.arange(lx*ly*lz))
 
-start_time = timeit.default_timer()
-tmp = d.slice(Dimension.X, 7)
-print(timeit.default_timer() - start_time)
+        volume = lx*ly*lz
+        print("Dataset volume is {} ({} GByte)".format(volume, (volume*8)/2**30))
 
-with dask.config.set(pool=ThreadPool(10)):
-    test = from_dataset(d, slice_dim=Dimension.Z)
-    test = test.persist()
 
-    start_time = timeit.default_timer()
-    sliced = test.slice(Dimension.X, 7)
-    sliced = sliced.compute()
-    print(timeit.default_timer() - start_time)
+        test = from_dataset(d, slice_dim=Dimension.Z)
+        test = test.persist()
+        test = test.compute()
+        for val in test.getDataValue():
+            print(val)
+        print(test.size())
 
-    start_time = timeit.default_timer()
-    sliced = test.slice(Dimension.Y, 111)
-    sliced = sliced.compute()
-    print(timeit.default_timer() - start_time)
+    #start_time = timeit.default_timer()
+    #tmp = d.slice(Dimension.X, 7)
+    #print(timeit.default_timer() - start_time)
 
-    #sliced.visualize(filename='test.svg')
+    #with dask.config.set(pool=ThreadPool(10)):
+    #    test = from_dataset(d, slice_dim=Dimension.Z)
+    #    test = test.persist()
 
-start_time = timeit.default_timer()
-d2 = d + d
-for i in range(10):
-    d2 += d
-print(timeit.default_timer() - start_time)
+    #    start_time = timeit.default_timer()
+    #    sliced = test.slice(Dimension.X, 7)
+    #    sliced = sliced.compute()
+    #    print(timeit.default_timer() - start_time)
 
-with dask.config.set(pool=ThreadPool(10)):
-    d = from_dataset(d, slice_dim=Dimension.Z)
-    #d = d.persist() # executes the slicing
+    #    start_time = timeit.default_timer()
+    #    sliced = test.slice(Dimension.Y, 111)
+    #    sliced = sliced.compute()
+    #    print(timeit.default_timer() - start_time)
 
-    d3 = d + d
-    for i in range(10):
-        d3 = d3 + d
+    #    #sliced.visualize(filename='test.svg')
 
-    #d3.visualize(filename='test.svg')
+    #start_time = timeit.default_timer()
+    #d2 = d + d
+    #for i in range(10):
+    #    d2 += d
+    #print(timeit.default_timer() - start_time)
 
-    print('computing...')
-    start_time = timeit.default_timer()
-    d3 = d3.persist()
-    elapsed = timeit.default_timer() - start_time
-    print('{} {} GB/s'.format(elapsed, lx*ly*lz*8*4*11/elapsed/2**30))
+    #with dask.config.set(pool=ThreadPool(10)):
+    #    d = from_dataset(d, slice_dim=Dimension.Z)
+    #    #d = d.persist() # executes the slicing
+
+    #    d3 = d + d
+    #    for i in range(10):
+    #        d3 = d3 + d
+
+    #    #d3.visualize(filename='test.svg')
+
+    #    print('computing...')
+    #    start_time = timeit.default_timer()
+    #    d3 = d3.persist()
+    #    elapsed = timeit.default_timer() - start_time
+    #    print('{} {} GB/s'.format(elapsed, lx*ly*lz*8*4*11/elapsed/2**30))
