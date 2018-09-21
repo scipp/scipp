@@ -65,15 +65,6 @@ def finalize(results, slice_dim):
         result = concatenate(slice_dim, result, r)
     return result
 
-#def elemwise(op, a, b):
-#    # Do not support mismatching chunking for now.
-#    assert a.numblocks == b.numblocks
-#    assert a.slice_dim == b.slice_dim
-#    name = "{}({},{})".format(funcname(op), a.name, b.name)
-#    dsk = top(op, name, 'i', a.name, 'i', b.name, 'i', numblocks={a.name : (a.numblocks,), b.name : (b.numblocks,)})
-#    dask = {**a.dask, **b.dask, **dsk}
-#    return DatasetCollection(dask, name, a.numblocks, a.slice_dim)
-
 def elemwise(op, *args, **kwargs):
     # See also da.core.elemwise. Note: dask seems to be able to convert Python
     # and numpy objects in this function, thus supporting operations between
@@ -115,9 +106,9 @@ def from_dataset(dataset, slice_dim):
     dsk[original_name] = dataset
     return DatasetCollection(dsk, name, size, slice_dim)
 
-lx = 4
-ly = 4
-lz = 3
+lx = 4000
+ly = 4000
+lz = 100
 d = Dataset()
 dimsX = Dimensions()
 dimsX.add(Dimension.X, lx)
@@ -135,18 +126,28 @@ d.insertCoordY(dimsY, range(ly))
 d.insertCoordZ(dimsZ, range(lz))
 d.insertDataValue("name", dims, np.arange(lx*ly*lz))
 
-orig = d # TODO if we make a copy, data is corrupted.
-sliced = d.slice(Dimension.X, 1)
-for val in sliced.getDataValue():
-    print(val)
+volume = lx*ly*lz
+print("Dataset volume is {} ({} GByte)".format(volume, (volume*8)/2**30))
 
-test = from_dataset(d, slice_dim=Dimension.Z)
-test = test + test
-sliced = test.slice(Dimension.X, 1)
-sliced.visualize(filename='test.svg')
-sliced = sliced.compute()
-for val in sliced.getDataValue():
-    print(val)
+start_time = timeit.default_timer()
+tmp = d.slice(Dimension.X, 7)
+print(timeit.default_timer() - start_time)
+
+with dask.config.set(pool=ThreadPool(10)):
+    test = from_dataset(d, slice_dim=Dimension.Z)
+    test = test.persist()
+
+    start_time = timeit.default_timer()
+    sliced = test.slice(Dimension.X, 7)
+    sliced = sliced.compute()
+    print(timeit.default_timer() - start_time)
+
+    start_time = timeit.default_timer()
+    sliced = test.slice(Dimension.Y, 111)
+    sliced = sliced.compute()
+    print(timeit.default_timer() - start_time)
+
+    #sliced.visualize(filename='test.svg')
 
 start_time = timeit.default_timer()
 d2 = d + d
@@ -159,7 +160,7 @@ with dask.config.set(pool=ThreadPool(10)):
     #d = d.persist() # executes the slicing
 
     d3 = d + d
-    for i in range(3):
+    for i in range(10):
         d3 = d3 + d
 
     #d3.visualize(filename='test.svg')
