@@ -14,12 +14,21 @@ from dask.base import DaskMethodsMixin
 #from dask.array.core import normalize_chunks
 #from dask import ShareDict
 from dask.utils import funcname
+import dask.array as da
 from dask.array.core import top
 from itertools import product
 import operator
+import uuid
+from dask import sharedict
+from dask.sharedict import ShareDict
+from toolz import concat
 
 class DatasetCollection(DaskMethodsMixin):
     def __init__(self, dask, name, n_chunk, slice_dim):
+        if not isinstance(dask, ShareDict):
+            s = ShareDict()
+            s.update_with_key(dask, key=name)
+            dask = s
         self.dask = dask
         self.name = name
         self.n_chunk = n_chunk
@@ -39,8 +48,16 @@ class DatasetCollection(DaskMethodsMixin):
     def __dask_postpersist__(self):
         return DatasetCollection, (self.name, self.n_chunk, self.slice_dim)
 
+    @property
+    def numblocks(self):
+        return (self.n_chunk,)
+
     def __add__(self, other):
         return elemwise(operator.add, self, other)
+
+    def slice(self, slice_dim, index):
+        assert slice_dim != self.slice_dim # TODO implement
+        return do_slice(Dataset.slice, self, slice_dim, index)
 
 def finalize(results, slice_dim):
     result = results[0]
@@ -48,26 +65,71 @@ def finalize(results, slice_dim):
         result = concatenate(slice_dim, result, r)
     return result
 
-def elemwise(op, a, b):
-    assert a.n_chunk == b.n_chunk
-    assert a.slice_dim == b.slice_dim
-    name = "{}({},{})".format(funcname(op), a.name, b.name)
-    dsk = top(op, name, 'i', a.name, 'i', b.name, 'i', numblocks={a.name : (a.n_chunk,), b.name : (b.n_chunk,)})
-    dask = {**a.dask, **b.dask, **dsk}
-    return DatasetCollection(dask, name, a.n_chunk, a.slice_dim)
+#def elemwise(op, a, b):
+#    # Do not support mismatching chunking for now.
+#    assert a.numblocks == b.numblocks
+#    assert a.slice_dim == b.slice_dim
+#    name = "{}({},{})".format(funcname(op), a.name, b.name)
+#    dsk = top(op, name, 'i', a.name, 'i', b.name, 'i', numblocks={a.name : (a.numblocks,), b.name : (b.numblocks,)})
+#    dask = {**a.dask, **b.dask, **dsk}
+#    return DatasetCollection(dask, name, a.numblocks, a.slice_dim)
+
+def elemwise(op, *args, **kwargs):
+    # See also da.core.elemwise. Note: dask seems to be able to convert Python
+    # and numpy objects in this function, thus supporting operations between
+    # dask objects and others. This would be useful for us as well.
+    # Do not support mismatching chunking for now.
+    n_chunk = None
+    slice_dim = None
+    for arg in args:
+        if isinstance(arg, DatasetCollection):
+            if n_chunk is not None:
+                assert n_chunk == arg.n_chunk
+                assert slice_dim == arg.slice_dim
+            else:
+                n_chunk = arg.n_chunk
+                slice_dim = arg.slice_dim
+    argstring = ','.join(['{}'.format(arg.name if isinstance(arg, DatasetCollection) else arg ) for arg in args])
+    out = '{}({})'.format(funcname(op), argstring)
+    out_ind = (0,)
+    # Handling only 1D chunking here, so everything is (0,).
+    arginds = list((a, (0,) if isinstance(a, DatasetCollection) else None) for a in args)
+    numblocks = {a.name: a.numblocks for a, ind in arginds if ind is not None}
+    argindsstr = list(concat([(a if ind is None else a.name, ind) for a, ind in arginds]))
+    dsk = top(op, out, out_ind, *argindsstr, numblocks=numblocks, **kwargs)
+    dsks = [a.dask for a, ind in arginds if ind is not None]
+    return DatasetCollection(sharedict.merge((out, dsk), *dsks), out, n_chunk, slice_dim)
+    #dsk = top(op, name, 'i', a.name, 'i', b.name, 'i', numblocks={a.name : (a.numblocks,), b.name : (b.numblocks,)})
+    #dask = {**a.dask, **b.dask, **dsk}
+    #return DatasetCollection(dask, name, a.numblocks, a.slice_dim)
+
+def do_slice(op, a, slice_dim, index):
+    #argstring = ','.join(['{}'.format(arg) for arg in args])
+    # TODO graph looks wrong, what is happening?
+    name = "{}({},{},{})".format(funcname(op), a.name, slice_dim, index)
+    dsk = top(op, name, 'i', a.name, 'i', slice_dim, None, index, None, numblocks={a.name : (a.numblocks,)})
+    print(name, a.name, dsk)
+    dask = {**a.dask, **dsk}
+    return DatasetCollection(dask, name, a.numblocks, a.slice_dim)
 
 def from_dataset(dataset, slice_dim):
-    name = "dummy"
+    # See also da.from_array.
     size = dataset.dimensions().size(slice_dim)
-    keys = [ (name, i) for i in range(size) ]
-    values = [ (Dataset.slice, name, slice_dim, i) for i in range(size) ]
+    # Dataset currently only supports slices with thickness 1.
+    # TODO make correct chunk size based on dataset.dimensions(), so we can handle multi-dimensional cases?
+    chunks = da.core.normalize_chunks(1, shape=(size,))
+    # Use a random name, similar to da.from_array with name = None.
+    original_name = name = 'dataset-' + str(uuid.uuid1())
+    # See also da.core.getem.
+    keys = list(product([name], *[range(len(bds)) for bds in chunks]))
+    values = [ (Dataset.slice, original_name, slice_dim, i) for i in range(size) ]
     dsk = dict(zip(keys, values))
-    dsk[name] = dataset
+    dsk[original_name] = dataset
     return DatasetCollection(dsk, name, size, slice_dim)
 
-lx = 20000
-ly = 2000
-lz = 10
+lx = 400
+ly = 400
+lz = 3
 d = Dataset()
 dimsX = Dimensions()
 dimsX.add(Dimension.X, lx)
@@ -85,30 +147,37 @@ d.insertCoordY(dimsY, range(ly))
 d.insertCoordZ(dimsZ, range(lz))
 d.insertDataValue("name", dims, np.arange(lx*ly*lz))
 
-d2 = d + d
-d2 += d
-#with dask.config.set(pool=ThreadPool(4)):
-#dask.compute(PG3_4844)
+#orig = d # TODO if we make a copy, data is corrupted.
+#sliced = d.slice(Dimension.X, 1)
+#for val in sliced.getDataValue():
+#    print(val)
 
-orig = d
+#test = from_dataset(d, slice_dim=Dimension.Z)
+#sliced = test.slice(Dimension.X, 1)
+#sliced.visualize(filename='test.svg')
+#print(sliced.dask)
+#sliced = sliced.compute()
+#for val in sliced.getDataValue():
+#    print(val)
 
 start_time = timeit.default_timer()
-d2 += d
-#orig = orig + orig
-elapsed = timeit.default_timer() - start_time
-print(elapsed)
+d2 = d + d
+for i in range(10):
+    d2 += d
+print(timeit.default_timer() - start_time)
+
 with dask.config.set(pool=ThreadPool(10)):
     d = from_dataset(d, slice_dim=Dimension.Z)
-    d = d.persist()
-    d2 = d + d
-    for i in range(10):
-        d2 = d2 + d
+    #d = d.persist() # executes the slicing
 
-    #d2.visualize(filename='test.svg')
+    d3 = d + d
+    for i in range(3):
+        d3 = d3 + d
+
+    d3.visualize(filename='test.svg')
+
     print('computing...')
     start_time = timeit.default_timer()
-    d2 = d2.persist()
+    d3 = d3.persist()
     elapsed = timeit.default_timer() - start_time
-    print(elapsed)
-#d2 = d2.compute()
-#print(orig + orig + orig == d2)
+    print('{} {} GB/s'.format(elapsed, lx*ly*lz*8*4*11/elapsed/2**30))
