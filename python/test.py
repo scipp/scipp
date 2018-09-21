@@ -57,7 +57,7 @@ class DatasetCollection(DaskMethodsMixin):
 
     def slice(self, slice_dim, index):
         assert slice_dim != self.slice_dim # TODO implement
-        return do_slice(Dataset.slice, self, slice_dim, index)
+        return elemwise(Dataset.slice, self, slice_dim, index)
 
 def finalize(results, slice_dim):
     result = results[0]
@@ -99,18 +99,6 @@ def elemwise(op, *args, **kwargs):
     dsk = top(op, out, out_ind, *argindsstr, numblocks=numblocks, **kwargs)
     dsks = [a.dask for a, ind in arginds if ind is not None]
     return DatasetCollection(sharedict.merge((out, dsk), *dsks), out, n_chunk, slice_dim)
-    #dsk = top(op, name, 'i', a.name, 'i', b.name, 'i', numblocks={a.name : (a.numblocks,), b.name : (b.numblocks,)})
-    #dask = {**a.dask, **b.dask, **dsk}
-    #return DatasetCollection(dask, name, a.numblocks, a.slice_dim)
-
-def do_slice(op, a, slice_dim, index):
-    #argstring = ','.join(['{}'.format(arg) for arg in args])
-    # TODO graph looks wrong, what is happening?
-    name = "{}({},{},{})".format(funcname(op), a.name, slice_dim, index)
-    dsk = top(op, name, 'i', a.name, 'i', slice_dim, None, index, None, numblocks={a.name : (a.numblocks,)})
-    print(name, a.name, dsk)
-    dask = {**a.dask, **dsk}
-    return DatasetCollection(dask, name, a.numblocks, a.slice_dim)
 
 def from_dataset(dataset, slice_dim):
     # See also da.from_array.
@@ -127,8 +115,8 @@ def from_dataset(dataset, slice_dim):
     dsk[original_name] = dataset
     return DatasetCollection(dsk, name, size, slice_dim)
 
-lx = 400
-ly = 400
+lx = 4
+ly = 4
 lz = 3
 d = Dataset()
 dimsX = Dimensions()
@@ -147,18 +135,18 @@ d.insertCoordY(dimsY, range(ly))
 d.insertCoordZ(dimsZ, range(lz))
 d.insertDataValue("name", dims, np.arange(lx*ly*lz))
 
-#orig = d # TODO if we make a copy, data is corrupted.
-#sliced = d.slice(Dimension.X, 1)
-#for val in sliced.getDataValue():
-#    print(val)
+orig = d # TODO if we make a copy, data is corrupted.
+sliced = d.slice(Dimension.X, 1)
+for val in sliced.getDataValue():
+    print(val)
 
-#test = from_dataset(d, slice_dim=Dimension.Z)
-#sliced = test.slice(Dimension.X, 1)
-#sliced.visualize(filename='test.svg')
-#print(sliced.dask)
-#sliced = sliced.compute()
-#for val in sliced.getDataValue():
-#    print(val)
+test = from_dataset(d, slice_dim=Dimension.Z)
+test = test + test
+sliced = test.slice(Dimension.X, 1)
+sliced.visualize(filename='test.svg')
+sliced = sliced.compute()
+for val in sliced.getDataValue():
+    print(val)
 
 start_time = timeit.default_timer()
 d2 = d + d
@@ -174,7 +162,7 @@ with dask.config.set(pool=ThreadPool(10)):
     for i in range(3):
         d3 = d3 + d
 
-    d3.visualize(filename='test.svg')
+    #d3.visualize(filename='test.svg')
 
     print('computing...')
     start_time = timeit.default_timer()
