@@ -11,8 +11,6 @@ from dask.distributed import Client
 import timeit
 
 from dask.base import DaskMethodsMixin
-#from dask.array.core import normalize_chunks
-#from dask import ShareDict
 from dask.utils import funcname
 import dask.array as da
 from dask.array.core import top
@@ -22,7 +20,6 @@ import uuid
 from dask import sharedict
 from dask.sharedict import ShareDict
 from toolz import concat
-from cloudpickle import pickle
 
 class DatasetCollection(DaskMethodsMixin):
     def __init__(self, dask, name, n_chunk, slice_dim):
@@ -62,6 +59,10 @@ class DatasetCollection(DaskMethodsMixin):
     def slice(self, slice_dim, index):
         assert slice_dim != self.slice_dim # TODO implement
         return elemwise(Dataset.slice, self, slice_dim, index)
+
+    def concatenate(self, dim, other):
+        assert dim != self.slice_dim # TODO implement
+        return elemwise(concatenate, dim, self, other)
 
 def finalize(results, slice_dim):
     result = results[0]
@@ -113,13 +114,6 @@ def from_dataset(dataset, slice_dim):
     dsk[original_name] = dataset
     return DatasetCollection(dsk, name, size, slice_dim)
 
-#d = Dataset()
-##print(Dataset.__dict__)
-#print(d)
-#print(type(d).__repr__)
-#result = pickle.dumps(d)
-#print(result)
-
 if __name__ == '__main__':
     with Client(n_workers=3) as client:
         lx = 2
@@ -147,6 +141,7 @@ if __name__ == '__main__':
 
 
         test = from_dataset(d, slice_dim=Dimension.Z)
+        test = test.concatenate(Dimension.X, test)
         test = test.persist()
         test = test.compute()
         for val in test.getDataValue():
