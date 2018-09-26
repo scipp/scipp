@@ -36,19 +36,22 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
   mutable_span_methods<T>::add(span);
 }
 
+namespace detail {
+enum class Coord { X, Y, Z };
+}
+
 PYBIND11_MODULE(dataset, m) {
   py::enum_<Dimension>(m, "Dimension")
       .value("X", Dimension::X)
       .value("Y", Dimension::Y)
       .value("Z", Dimension::Z);
+  py::enum_<detail::Coord>(m, "Coord")
+      .value("X", detail::Coord::X)
+      .value("Y", detail::Coord::Y)
+      .value("Z", detail::Coord::Z);
 
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
-
-  py::class_<Coord> coord(m, "Coord");
-  py::class_<Coord::X>(coord, "X");
-  py::class_<Coord::Y>(coord, "Y");
-  py::class_<Coord::Z>(coord, "Z");
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
@@ -67,8 +70,23 @@ PYBIND11_MODULE(dataset, m) {
                for (const auto &dim : dimensions)
                  dims.append(py::make_tuple(static_cast<int32_t>(dim.first),
                                             dim.second));
-               auto data = var.get<const Data::Value>();
-               std::vector<double> buffer(data.begin(), data.end());
+               std::vector<double> buffer;
+               if (var.valueTypeIs<Data::Value>()) {
+                 auto data = var.get<const Data::Value>();
+                 buffer = std::vector<double>(data.begin(), data.end());
+               }
+               if (var.valueTypeIs<Coord::X>()) {
+                 auto data = var.get<const Coord::X>();
+                 buffer = std::vector<double>(data.begin(), data.end());
+               }
+               if (var.valueTypeIs<Coord::Y>()) {
+                 auto data = var.get<const Coord::Y>();
+                 buffer = std::vector<double>(data.begin(), data.end());
+               }
+               if (var.valueTypeIs<Coord::Z>()) {
+                 auto data = var.get<const Coord::Z>();
+                 buffer = std::vector<double>(data.begin(), data.end());
+               }
                vars.append(py::make_tuple(dims, var.type(),
                                           static_cast<int32_t>(var.unit().id()),
                                           var.name(), buffer));
@@ -91,18 +109,37 @@ PYBIND11_MODULE(dataset, m) {
                const auto unit = tuple[2].cast<int32_t>();
                const auto name = tuple[3].cast<std::string>();
                const auto data = tuple[4].cast<std::vector<double>>();
-               self.insert<Data::Value>(name, dimensions, data);
+               switch (type) {
+               case tag_id<Data::Value>:
+                 self.insert<Data::Value>(name, dimensions, data);
+                 break;
+               case tag_id<Coord::X>:
+                 self.insert<Coord::X>(dimensions, data);
+                 break;
+               case tag_id<Coord::Y>:
+                 self.insert<Coord::Y>(dimensions, data);
+                 break;
+               case tag_id<Coord::Z>:
+                 self.insert<Coord::Z>(dimensions, data);
+                 break;
+               }
              }
            })
-      .def("insertCoordX",
-           py::overload_cast<Dimensions, const std::vector<double> &>(
-               &Dataset::insert<Coord::X, const std::vector<double> &>))
-      .def("insertCoordY",
-           py::overload_cast<Dimensions, const std::vector<double> &>(
-               &Dataset::insert<Coord::Y, const std::vector<double> &>))
-      .def("insertCoordZ",
-           py::overload_cast<Dimensions, const std::vector<double> &>(
-               &Dataset::insert<Coord::Z, const std::vector<double> &>))
+      .def("insert",
+           [](Dataset &self, const detail::Coord tag, const Dimensions &dims,
+              const std::vector<double> &data) {
+             switch (tag) {
+             case detail::Coord::X:
+               self.insert<Coord::X>(dims, data);
+               break;
+             case detail::Coord::Y:
+               self.insert<Coord::Y>(dims, data);
+               break;
+             case detail::Coord::Z:
+               self.insert<Coord::Z>(dims, data);
+               break;
+             }
+           })
       .def("insertDataValue",
            py::overload_cast<const std::string &, Dimensions,
                              const std::vector<double> &>(

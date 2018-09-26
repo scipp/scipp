@@ -137,9 +137,9 @@ if __name__ == '__main__':
         dims.add(Dimension.Y, ly)
         dims.add(Dimension.Z, lz)
 
-        #d.insertCoordX(dimsX, range(lx))
-        #d.insertCoordY(dimsY, range(ly))
-        #d.insertCoordZ(dimsZ, range(lz))
+        d.insert(Coord.X, dimsX, range(lx))
+        d.insert(Coord.Y, dimsY, range(ly))
+        d.insert(Coord.Z, dimsZ, range(lz))
         d.insertDataValue("name", dims, np.arange(lx*ly*lz))
 
         volume = lx*ly*lz
