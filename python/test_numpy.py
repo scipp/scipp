@@ -33,11 +33,25 @@ if __name__ == '__main__':
         print(a.shape)
         wait(a)
 
+        # Slice in Z (fast)
         start_time = timeit.default_timer()
-        sliced = a[:,:,:7]
+        sliced = a[7,:,:]
         sliced = sliced.compute()
         print(timeit.default_timer() - start_time)
 
+        # Slice in Y (fast)
+        start_time = timeit.default_timer()
+        sliced = a[:,7,:]
+        sliced = sliced.compute()
+        print(timeit.default_timer() - start_time)
+
+        # Slice in X (extremely slow, why?)
+        start_time = timeit.default_timer()
+        sliced = a[:,:,7]
+        sliced = sliced.compute()
+        print(timeit.default_timer() - start_time)
+
+        # Slice in X
         start_time = timeit.default_timer()
         sliced = a[:,:,8]
         sliced = sliced.compute()
