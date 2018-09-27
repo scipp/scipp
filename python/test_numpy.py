@@ -30,6 +30,8 @@ if __name__ == '__main__':
         a = da.concatenate([a,a], axis=1)
         a = da.concatenate([a,a], axis=1)
         a = da.concatenate([a,a], axis=1)
+        # da.concatenate does not merge chunks, even if they span the entire dimension, need to rechunk:
+        a = a.rechunk(chunks=(1, -1, -1))
         a = client.persist(a)
         print(a.shape)
         wait(a)
