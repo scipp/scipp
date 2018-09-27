@@ -64,10 +64,12 @@ class DatasetCollection(DaskMethodsMixin):
         return elemwise(concatenate, dim, self, other)
 
 def finalize(results, slice_dim):
-    result = results[0]
-    for r in results[1:]:
-        result = concatenate(slice_dim, result, r)
-    return result
+    size = len(results)
+    if size == 1:
+        return results[0]
+    left = finalize(results[:size//2], slice_dim)
+    right = finalize(results[size//2:], slice_dim)
+    return concatenate(slice_dim, left, right)
 
 def elemwise(op, *args, **kwargs):
     # See also da.core.elemwise. Note: dask seems to be able to convert Python
