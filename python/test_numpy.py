@@ -11,7 +11,8 @@ import timeit
 from dask.distributed import wait
 
 if __name__ == '__main__':
-    #with Client(n_workers=2, serializers=['dask'], deserializers=['dask']) as client:
+    # Slice X-slicing is almost 2x faster with this client, as opposed to client using workers launched by dask-ssh.
+    #with Client(n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
     with Client('localhost:8786', n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
         lx = 100
         ly = 1000

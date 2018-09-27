@@ -51,18 +51,27 @@ if __name__ == '__main__':
         test = client.persist(test)
         #test = test.persist()
         wait(test)
+
+        start_time = timeit.default_timer()
+        sliced = test.slice(Dimension.Y, 6)
+        sliced = sliced.compute()
+        print(timeit.default_timer() - start_time)
+
         start_time = timeit.default_timer()
         sliced = test.slice(Dimension.X, 7)
         sliced = sliced.compute()
         print(timeit.default_timer() - start_time)
+
         start_time = timeit.default_timer()
         sliced = test.slice(Dimension.X, 8)
         sliced = sliced.compute()
         print(timeit.default_timer() - start_time)
+
         start_time = timeit.default_timer()
         sliced = test.slice(Dimension.X, 6)
         sliced = sliced.compute()
         print(timeit.default_timer() - start_time)
+
         print(len(sliced.getDataValue()))
 
     #start_time = timeit.default_timer()
