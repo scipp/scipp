@@ -45,7 +45,7 @@ struct VariableHeader {
   Unit::Id unit;
   gsl::index dataSize;
 };
-}
+} // namespace detail
 
 PYBIND11_MODULE(dataset, m) {
   py::enum_<Dimension>(m, "Dimension")
@@ -68,7 +68,7 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
-      .def("__getstate__",
+      .def("serialize",
            [](const Dataset &self) {
              py::list vars;
              for (const auto &var : self) {
@@ -98,7 +98,8 @@ PYBIND11_MODULE(dataset, m) {
                    sizeof(detail::VariableHeader) + header.dataSize;
                auto buffer = std::make_unique<char[]>(size);
                memcpy(buffer.get(), &header, sizeof(detail::VariableHeader));
-               memcpy(buffer.get() + sizeof(detail::VariableHeader) , data.data(), header.dataSize);
+               memcpy(buffer.get() + sizeof(detail::VariableHeader),
+                      data.data(), header.dataSize);
                vars.append(py::bytes(buffer.get(), size));
              }
              return vars;
@@ -106,14 +107,13 @@ PYBIND11_MODULE(dataset, m) {
            py::call_guard<py::gil_scoped_release>())
       .def("deserialize",
            [](Dataset &self, py::list vars) {
-             //new (&self) Dataset();
              for (const auto &var : vars) {
                const auto buffer = var.cast<py::bytes>().cast<std::string>();
                detail::VariableHeader header;
                memcpy(&header, buffer.data(), sizeof(detail::VariableHeader));
 
                Dimensions dimensions;
-               for (gsl::index dim =0; dim<header.nDim; ++dim)
+               for (gsl::index dim = 0; dim < header.nDim; ++dim)
                  dimensions.add(header.dimensions[dim].first,
                                 header.dimensions[dim].second);
                Vector<double> data(header.dataSize / sizeof(double));

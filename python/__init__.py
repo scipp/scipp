@@ -6,16 +6,13 @@ from .dataset import *
 @dask_serialize.register(Dataset)
 def serialize(dataset):
     header = {}
-    frames = dataset.__getstate__()
-    #print("serializing {} vars".format(len(frames)))
-    #print(frames)
+    frames = dataset.serialize()
     return header, frames
 
 @dask_deserialize.register(Dataset)
 def deserialize(header, frames):
     dataset = Dataset()
-    #print("deserializing {} vars".format(len(frames)))
-    #print(frames)
+    # We serialize into `bytes` but somehow get back `bytearray`,
+    # which pybind11 does not understand. Convert as workaround:
     dataset.deserialize([bytes(frame) for frame in frames])
-    #dataset.deserialize(frames)
     return dataset;
