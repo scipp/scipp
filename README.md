@@ -13,3 +13,19 @@ cd build
 cmake ..
 make
 ```
+
+## Usage of the Python exports
+
+Setup is as above, but the `install` target needs to be run to setup the Python files:
+
+```
+cmake -DCMAKE_INSTALL_PREFIX=/some/path ..
+make install
+```
+
+Then, add the install location `/some/path` to `PYTHONPATH`.
+You can now do, e.g.,
+
+```python
+from dataset import Dataset
+```
