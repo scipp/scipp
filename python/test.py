@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# export PYTHONPATH=$PYTHONPATH:/home/simon/build/dataset/exports
 
 from dataset import *
 from dataset.dataset_collection import from_dataset
