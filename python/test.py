@@ -32,6 +32,7 @@ if __name__ == '__main__':
         dims.add(Dimension.Y, ly)
         dims.add(Dimension.Z, lz)
 
+        # Note: Axes add significant overhead for serialization, etc., slicing is 30% faster without them.
         d.insert(Coord.X, dimsX, range(lx))
         d.insert(Coord.Y, dimsY, range(ly))
         d.insert(Coord.Z, dimsZ, range(lz))
