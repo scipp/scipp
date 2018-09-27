@@ -65,11 +65,8 @@ class DatasetCollection(DaskMethodsMixin):
 
 def finalize(results, slice_dim):
     result = results[0]
-    # TODO I think this wrapper is not needed, remove.
-    def do_concatenate(dim, a, b):
-        return concatenate(dim, a, b)
     for r in results[1:]:
-        result = do_concatenate(slice_dim, result, r)
+        result = concatenate(slice_dim, result, r)
     return result
 
 def elemwise(op, *args, **kwargs):
