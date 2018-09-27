@@ -12,8 +12,8 @@ from dask.distributed import wait
 
 if __name__ == '__main__':
     # Slice X-slicing is almost 2x faster with this client, as opposed to client using workers launched by dask-ssh.
-    #with Client(n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
-    with Client('localhost:8786', n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
+    with Client(n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
+    #with Client('localhost:8786', n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
         lx = 100
         ly = 1000
         lz = 100
@@ -33,7 +33,7 @@ if __name__ == '__main__':
         # da.concatenate does not merge chunks, even if they span the entire dimension, need to rechunk:
         a = a.rechunk(chunks=(1, -1, -1))
         a = client.persist(a)
-        print(a.shape)
+        print(a)
         wait(a)
 
         # Slice in Z (fast)

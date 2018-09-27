@@ -14,8 +14,8 @@ import timeit
 from dask.distributed import wait
 
 if __name__ == '__main__':
-    #with Client(n_workers=2, serializers=['dask'], deserializers=['dask']) as client:
-    with Client('localhost:8786', n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
+    with Client(n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
+    #with Client('localhost:8786', n_workers=10, serializers=['dask'], deserializers=['dask']) as client:
         # 10, 1000, 100
         lx = 100
         ly = 1000
