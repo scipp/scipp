@@ -8,7 +8,7 @@
 
 class Unit {
 public:
-  enum class Id {
+  enum class Id : uint16_t {
     Dimensionless,
     Length,
     Area,

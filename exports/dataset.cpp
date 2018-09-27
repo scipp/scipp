@@ -38,6 +38,13 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
 
 namespace detail {
 enum class Coord { X, Y, Z };
+struct VariableHeader {
+  gsl::index nDim;
+  std::array<std::pair<Dimension, gsl::index>, 4> dimensions;
+  uint16_t type;
+  Unit::Id unit;
+  gsl::index dataSize;
+};
 }
 
 PYBIND11_MODULE(dataset, m) {
@@ -65,66 +72,71 @@ PYBIND11_MODULE(dataset, m) {
            [](const Dataset &self) {
              py::list vars;
              for (const auto &var : self) {
+               detail::VariableHeader header;
                const auto &dimensions = var.dimensions();
-               py::list dims;
-               for (const auto &dim : dimensions)
-                 dims.append(py::make_tuple(static_cast<int32_t>(dim.first),
-                                            dim.second));
-               std::vector<double> buffer;
+               header.nDim = dimensions.count();
+               std::copy(dimensions.begin(), dimensions.end(),
+                         header.dimensions.begin());
+               header.type = var.type();
+               header.unit = var.unit().id();
+
+               gsl::span<const double> data;
                if (var.valueTypeIs<Data::Value>()) {
-                 auto data = var.get<const Data::Value>();
-                 buffer = std::vector<double>(data.begin(), data.end());
+                 data = var.get<const Data::Value>();
                }
                if (var.valueTypeIs<Coord::X>()) {
-                 auto data = var.get<const Coord::X>();
-                 buffer = std::vector<double>(data.begin(), data.end());
+                 data = var.get<const Coord::X>();
                }
                if (var.valueTypeIs<Coord::Y>()) {
-                 auto data = var.get<const Coord::Y>();
-                 buffer = std::vector<double>(data.begin(), data.end());
+                 data = var.get<const Coord::Y>();
                }
                if (var.valueTypeIs<Coord::Z>()) {
-                 auto data = var.get<const Coord::Z>();
-                 buffer = std::vector<double>(data.begin(), data.end());
+                 data = var.get<const Coord::Z>();
                }
-               vars.append(py::make_tuple(dims, var.type(),
-                                          static_cast<int32_t>(var.unit().id()),
-                                          var.name(), buffer));
+               header.dataSize = data.size() * sizeof(double);
+               gsl::index size =
+                   sizeof(detail::VariableHeader) + header.dataSize;
+               auto buffer = std::make_unique<char[]>(size);
+               memcpy(buffer.get(), &header, sizeof(detail::VariableHeader));
+               memcpy(buffer.get() + sizeof(detail::VariableHeader) , data.data(), header.dataSize);
+               vars.append(py::bytes(buffer.get(), size));
              }
              return vars;
-           })
-      .def("__setstate__",
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("deserialize",
            [](Dataset &self, py::list vars) {
-             new (&self) Dataset();
+             //new (&self) Dataset();
              for (const auto &var : vars) {
-               const auto tuple = var.cast<py::tuple>();
-               const auto dims = tuple[0].cast<py::list>();
+               const auto buffer = var.cast<py::bytes>().cast<std::string>();
+               detail::VariableHeader header;
+               memcpy(&header, buffer.data(), sizeof(detail::VariableHeader));
+
                Dimensions dimensions;
-               for (const auto &dim : dims) {
-                 const auto d = dim.cast<py::tuple>();
-                 dimensions.add(static_cast<Dimension>(d[0].cast<int32_t>()),
-                                d[1].cast<gsl::index>());
-               }
-               const auto type = tuple[1].cast<uint16_t>();
-               const auto unit = tuple[2].cast<int32_t>();
-               const auto name = tuple[3].cast<std::string>();
-               const auto data = tuple[4].cast<std::vector<double>>();
-               switch (type) {
+               for (gsl::index dim =0; dim<header.nDim; ++dim)
+                 dimensions.add(header.dimensions[dim].first,
+                                header.dimensions[dim].second);
+               Vector<double> data(header.dataSize / sizeof(double));
+               memcpy(data.data(),
+                      buffer.data() + sizeof(detail::VariableHeader),
+                      header.dataSize);
+               switch (header.type) {
                case tag_id<Data::Value>:
-                 self.insert<Data::Value>(name, dimensions, data);
+                 self.insert<Data::Value>("", dimensions, std::move(data));
                  break;
                case tag_id<Coord::X>:
-                 self.insert<Coord::X>(dimensions, data);
+                 self.insert<Coord::X>(dimensions, std::move(data));
                  break;
                case tag_id<Coord::Y>:
-                 self.insert<Coord::Y>(dimensions, data);
+                 self.insert<Coord::Y>(dimensions, std::move(data));
                  break;
                case tag_id<Coord::Z>:
-                 self.insert<Coord::Z>(dimensions, data);
+                 self.insert<Coord::Z>(dimensions, std::move(data));
                  break;
                }
              }
-           })
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("insert",
            [](Dataset &self, const detail::Coord tag, const Dimensions &dims,
               const std::vector<double> &data) {
