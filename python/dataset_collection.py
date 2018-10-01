@@ -5,7 +5,7 @@ import numpy as np
 from multiprocessing.pool import ThreadPool
 from dask.distributed import Client
 
-from dask.base import DaskMethodsMixin
+from dask.base import DaskMethodsMixin, tokenize
 from dask.utils import funcname
 import dask.array as da
 from dask.array.core import top
@@ -86,8 +86,7 @@ def elemwise(op, *args, **kwargs):
             else:
                 n_chunk = arg.n_chunk
                 slice_dim = arg.slice_dim
-    argstring = ','.join(['{}'.format(arg.name if isinstance(arg, DatasetCollection) else arg ) for arg in args])
-    out = '{}({})'.format(funcname(op), argstring)
+    out = '{}-{}'.format(funcname(op), tokenize(op, *args))
     out_ind = (0,)
     # Handling only 1D chunking here, so everything is (0,).
     arginds = list((a, (0,) if isinstance(a, DatasetCollection) else None) for a in args)
