@@ -157,9 +157,17 @@ private:
 };
 
 template <class Tag, class... Args>
-Variable makeVariable(Dimensions dimensions, Args &&... args) {
+std::enable_if_t<tag_has_type<Tag>::value, Variable>
+makeVariable(Dimensions dimensions, Args &&... args) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(std::forward<Args>(args)...));
+}
+
+template <class Tag, class Type, class... Args>
+std::enable_if_t<!tag_has_type<Tag>::value, Variable>
+makeVariable(Dimensions dimensions, Args &&... args) {
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+                  Vector<Type>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class Type,
