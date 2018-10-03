@@ -234,6 +234,7 @@ template <class T> T &Variable::cast() {
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)
+INSTANTIATE(float)
 INSTANTIATE(char)
 INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)

@@ -94,6 +94,9 @@ public:
                   "Variable is `const`, must use const-qualified tag in call "
                   "to `get`, e.g., `get<const Coord::X>()` instead of "
                   "`get<Coord::X>()`");
+    static_assert(tag_has_type<Tag>::value, "Tag has no fixed value type, use "
+                                            "get<Tag, Type>() instead of "
+                                            "get<Tag>().");
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).
@@ -102,12 +105,45 @@ public:
 
   template <class Tag>
   auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
+    static_assert(tag_has_type<Tag>::value, "Tag has no fixed value type, use "
+                                            "get<Tag, Type>() instead of "
+                                            "get<Tag>().");
     return const_cast<const Variable *>(this)->get<Tag>();
   }
 
   template <class Tag>
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+    static_assert(tag_has_type<Tag>::value, "Tag has no fixed value type, use "
+                                            "get<Tag, Type>() instead of "
+                                            "get<Tag>().");
     return gsl::make_span(cast<Vector<typename Tag::type>>());
+  }
+
+  template <class Tag, class Type> auto get() const {
+    static_assert(std::is_const<Tag>::value,
+                  "Variable is `const`, must use const-qualified tag in call "
+                  "to `get`, e.g., `get<const Coord::X>()` instead of "
+                  "`get<Coord::X>()`");
+    static_assert(!tag_has_type<Tag>::value, "Tag has a fixed value type, use "
+                                             "get<Tag>() instead of get<Tag, "
+                                             "Type>().");
+    return gsl::make_span(cast<Vector<Type>>());
+  }
+
+  template <class Tag, class Type>
+  auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
+    static_assert(!tag_has_type<Tag>::value, "Tag has a fixed value type, use "
+                                             "get<Tag>() instead of get<Tag, "
+                                             "Type>().");
+    return const_cast<const Variable *>(this)->get<Tag, Type>();
+  }
+
+  template <class Tag, class Type>
+  auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+    static_assert(!tag_has_type<Tag>::value, "Tag has a fixed value type, use "
+                                             "get<Tag>() instead of get<Tag, "
+                                             "Type>().");
+    return gsl::make_span(cast<Vector<Type>>());
   }
 
 private:
@@ -127,16 +163,33 @@ Variable makeVariable(Dimensions dimensions, Args &&... args) {
 }
 
 template <class Tag, class T>
-Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
+Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values,
+                      std::enable_if_t<tag_has_type<Tag>::value> * = nullptr) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(values));
 }
 
 template <class Tag, class T>
-Variable makeVariable(Dimensions dimensions, const std::vector<T> &values) {
+Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values,
+                      std::enable_if_t<!tag_has_type<Tag>::value> * = nullptr) {
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+                  Vector<T>(values));
+}
+
+template <class Tag, class T>
+Variable makeVariable(Dimensions dimensions, const std::vector<T> &values,
+                      std::enable_if_t<tag_has_type<Tag>::value> * = nullptr) {
   // Copy to aligned memory.
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(values.begin(), values.end()));
+}
+
+template <class Tag, class T>
+Variable makeVariable(Dimensions dimensions, const std::vector<T> &values,
+                      std::enable_if_t<!tag_has_type<Tag>::value> * = nullptr) {
+  // Copy to aligned memory.
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+                  Vector<T>(values.begin(), values.end()));
 }
 
 Variable operator+(Variable a, const Variable &b);

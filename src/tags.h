@@ -23,7 +23,8 @@ struct index<T, std::tuple<U, Types...>> {
   static const std::size_t value = 1 + index<T, std::tuple<Types...>>::value;
 };
 struct ReturnByValuePolicy {};
-}
+struct FlexibleTypePolicy {};
+} // namespace detail
 
 struct Coord {
   struct X {
@@ -105,6 +106,9 @@ struct Data {
     using type = double;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct Any : public detail::FlexibleTypePolicy {
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
   struct Value {
     using type = double;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -137,7 +141,7 @@ struct Data {
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
 
-  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
+  using tags = std::tuple<Tof, PulseTime, Any, Value, Variance, StdDev, Int,
                           DimensionSize, String, History, Events>;
 };
 
@@ -149,6 +153,24 @@ static constexpr uint16_t tag_id =
 template <class T>
 static constexpr bool is_coord =
     tag_id<T> < std::tuple_size<Coord::tags>::value;
+
+template <class Tag, class Type = void, class Enable = void> struct tag_type;
+template <class Tag> struct tag_type<Tag> { using type = typename Tag::type; };
+template <class Tag, class Type>
+struct tag_type<
+    Tag, Type,
+    std::enable_if_t<std::is_base_of<detail::FlexibleTypePolicy, Tag>::value>> {
+  using type = Type;
+};
+template <class... Args> using tag_type_t = typename tag_type<Args...>::type;
+
+template <class Tag, class Enable = void>
+struct tag_has_type : public std::true_type {};
+template <class Tag>
+struct tag_has_type<
+    Tag,
+    std::enable_if_t<std::is_base_of<detail::FlexibleTypePolicy, Tag>::value>>
+    : public std::false_type {};
 
 class DataBin {
 public:

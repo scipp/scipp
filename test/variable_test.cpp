@@ -63,6 +63,22 @@ TEST(Variable, copy) {
   EXPECT_EQ(data2[1], 2.2);
 }
 
+TEST(Variable, flexible_type) {
+  auto v1 = makeVariable<Data::Any>({Dimension::Tof, 2}, {1.1, 2.2});
+  EXPECT_NO_THROW((v1.get<const Data::Any, double>()));
+  EXPECT_NO_THROW((v1.get<Data::Any, double>()));
+  auto data1 = v1.get<Data::Any, double>();
+  EXPECT_TRUE((std::is_same<double, decltype(data1)::element_type>::value));
+  EXPECT_FALSE((std::is_same<float, decltype(data1)::element_type>::value));
+
+  auto v2 = makeVariable<Data::Any>({Dimension::Tof, 2}, {1.1f, 2.2f});
+  EXPECT_NO_THROW((v2.get<const Data::Any, float>()));
+  EXPECT_NO_THROW((v2.get<Data::Any, float>()));
+  auto data2 = v2.get<Data::Any, float>();
+  EXPECT_FALSE((std::is_same<double, decltype(data2)::element_type>::value));
+  EXPECT_TRUE((std::is_same<float, decltype(data2)::element_type>::value));
+}
+
 TEST(Variable, operator_equals) {
   const auto a = makeVariable<Data::Value>({Dimension::Tof, 2}, {1.1, 2.2});
   const auto a_copy(a);
@@ -175,8 +191,8 @@ TEST(Variable, setSlice) {
   Dimensions dims(Dimension::Tof, 1);
   const auto parent = makeVariable<Data::Value>(
       Dimensions({{Dimension::X, 4}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
-      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
-       14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
+      {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
+       13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
   const auto empty = makeVariable<Data::Value>(
       Dimensions({{Dimension::X, 4}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
       24);
@@ -204,8 +220,8 @@ TEST(Variable, slice) {
   Dimensions dims(Dimension::Tof, 1);
   const auto parent = makeVariable<Data::Value>(
       Dimensions({{Dimension::X, 4}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
-      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
-       14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
+      {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
+       13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
   for (const gsl::index index : {0, 1, 2, 3}) {
     auto sliceX = slice(parent, Dimension::X, index);
