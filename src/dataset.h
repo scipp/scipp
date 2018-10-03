@@ -24,18 +24,39 @@ public:
   void insert(Variable variable);
 
   template <class Tag, class... Args>
-  void insert(Dimensions dimensions, Args &&... args) {
+  std::enable_if_t<tag_has_type<Tag>::value> insert(Dimensions dimensions,
+                                                    Args &&... args) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
     auto a =
         makeVariable<Tag>(std::move(dimensions), std::forward<Args>(args)...);
     insert(std::move(a));
   }
 
+  template <class Tag, class Type, class... Args>
+  std::enable_if_t<!tag_has_type<Tag>::value> insert(Dimensions dimensions,
+                                                     Args &&... args) {
+    static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
+    auto a = makeVariable<Tag, Type>(std::move(dimensions),
+                                     std::forward<Args>(args)...);
+    insert(std::move(a));
+  }
+
   template <class Tag, class... Args>
-  void insert(const std::string &name, Dimensions dimensions, Args &&... args) {
+  std::enable_if_t<tag_has_type<Tag>::value>
+  insert(const std::string &name, Dimensions dimensions, Args &&... args) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
     auto a =
         makeVariable<Tag>(std::move(dimensions), std::forward<Args>(args)...);
+    a.setName(name);
+    insert(std::move(a));
+  }
+
+  template <class Tag, class Type, class... Args>
+  std::enable_if_t<!tag_has_type<Tag>::value>
+  insert(const std::string &name, Dimensions dimensions, Args &&... args) {
+    static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
+    auto a = makeVariable<Tag, Type>(std::move(dimensions),
+                                     std::forward<Args>(args)...);
     a.setName(name);
     insert(std::move(a));
   }
@@ -80,20 +101,20 @@ public:
   // Only need this for coordinates... insertEdgeCoord?
   void insertAsEdge(const Dimension dimension, Variable variable);
 
-  template <class Tag> auto get() const {
-    return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
+  template <class Tag, class... Type> auto get() const {
+    return m_variables[findUnique(tag_id<Tag>)].template get<Tag, Type...>();
   }
 
-  template <class Tag> auto get(const std::string &name) const {
-    return m_variables[find(tag_id<Tag>, name)].template get<Tag>();
+  template <class Tag, class... Type> auto get(const std::string &name) const {
+    return m_variables[find(tag_id<Tag>, name)].template get<Tag, Type...>();
   }
 
-  template <class Tag> auto get() {
-    return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
+  template <class Tag, class... Type> auto get() {
+    return m_variables[findUnique(tag_id<Tag>)].template get<Tag, Type...>();
   }
 
-  template <class Tag> auto get(const std::string &name) {
-    return m_variables[find(tag_id<Tag>, name)].template get<Tag>();
+  template <class Tag, class... Type> auto get(const std::string &name) {
+    return m_variables[find(tag_id<Tag>, name)].template get<Tag, Type...>();
   }
 
   const Dimensions &dimensions() const { return m_dimensions; }

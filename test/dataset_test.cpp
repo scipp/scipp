@@ -105,6 +105,18 @@ TEST(Dataset, insertAsEdge_reverse_fail) {
       "Cannot insert variable into Dataset: Dimensions do not match");
 }
 
+TEST(Dataset, insert_flexible_type) {
+  Dataset d;
+  d.insert<Data::Any>("derived-double", Dimensions{}, {1.1});
+  d.insert<Data::Any>("derived-float", Dimensions{}, {1.1f});
+  d.insert<Data::Any, double>("explicit-double", Dimensions{});
+  d.insert<Data::Any, float>("explicit-float", Dimensions{});
+  EXPECT_NO_THROW((d.get<Data::Any, double>("derived-double")));
+  EXPECT_NO_THROW((d.get<Data::Any, float>("derived-float")));
+  EXPECT_NO_THROW((d.get<Data::Any, double>("explicit-double")));
+  EXPECT_NO_THROW((d.get<Data::Any, float>("explicit-float")));
+}
+
 TEST(Dataset, extract) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
@@ -257,9 +269,10 @@ TEST(Dataset, operator_plus_equal_different_content) {
   b.insert<Coord::X>({Dimension::X, 1}, {0.1});
   b.insert<Data::Value>("name1", {Dimension::X, 1}, {2.2});
   b.insert<Data::Value>("name2", {Dimension::X, 1}, {3.3});
-  EXPECT_THROW_MSG(a += b, std::runtime_error, "Right-hand-side in addition "
-                                               "contains variable that is not "
-                                               "present in left-hand-side.");
+  EXPECT_THROW_MSG(a += b, std::runtime_error,
+                   "Right-hand-side in addition "
+                   "contains variable that is not "
+                   "present in left-hand-side.");
   EXPECT_NO_THROW(b += a);
 }
 
@@ -342,27 +355,34 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
   Dataset c;
   c.insert<Coord::X>({Dimension::X, 1}, {0.1});
   c.insert<Data::Variance>("name1", {Dimension::X, 1}, {2.0});
-  EXPECT_THROW_MSG(a *= b, std::runtime_error, "Either both or none of the "
-                                               "operands must have a variance "
-                                               "for their values.");
-  EXPECT_THROW_MSG(b *= a, std::runtime_error, "Either both or none of the "
-                                               "operands must have a variance "
-                                               "for their values.");
-  EXPECT_THROW_MSG(c *= c, std::runtime_error, "Cannot multiply datasets that "
-                                               "contain a variance but no "
-                                               "corresponding value.");
-  EXPECT_THROW_MSG(a *= c, std::runtime_error, "Cannot multiply datasets that "
-                                               "contain a variance but no "
-                                               "corresponding value.");
-  EXPECT_THROW_MSG(c *= a, std::runtime_error, "Right-hand-side in addition "
-                                               "contains variable that is not "
-                                               "present in left-hand-side.");
-  EXPECT_THROW_MSG(b *= c, std::runtime_error, "Right-hand-side in addition "
-                                               "contains variable that is not "
-                                               "present in left-hand-side.");
-  EXPECT_THROW_MSG(c *= b, std::runtime_error, "Right-hand-side in addition "
-                                               "contains variable that is not "
-                                               "present in left-hand-side.");
+  EXPECT_THROW_MSG(a *= b, std::runtime_error,
+                   "Either both or none of the "
+                   "operands must have a variance "
+                   "for their values.");
+  EXPECT_THROW_MSG(b *= a, std::runtime_error,
+                   "Either both or none of the "
+                   "operands must have a variance "
+                   "for their values.");
+  EXPECT_THROW_MSG(c *= c, std::runtime_error,
+                   "Cannot multiply datasets that "
+                   "contain a variance but no "
+                   "corresponding value.");
+  EXPECT_THROW_MSG(a *= c, std::runtime_error,
+                   "Cannot multiply datasets that "
+                   "contain a variance but no "
+                   "corresponding value.");
+  EXPECT_THROW_MSG(c *= a, std::runtime_error,
+                   "Right-hand-side in addition "
+                   "contains variable that is not "
+                   "present in left-hand-side.");
+  EXPECT_THROW_MSG(b *= c, std::runtime_error,
+                   "Right-hand-side in addition "
+                   "contains variable that is not "
+                   "present in left-hand-side.");
+  EXPECT_THROW_MSG(c *= b, std::runtime_error,
+                   "Right-hand-side in addition "
+                   "contains variable that is not "
+                   "present in left-hand-side.");
 }
 
 TEST(Dataset, operator_times_equal_with_units) {

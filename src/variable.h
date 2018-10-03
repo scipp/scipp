@@ -162,6 +162,20 @@ Variable makeVariable(Dimensions dimensions, Args &&... args) {
                   Vector<typename Tag::type>(std::forward<Args>(args)...));
 }
 
+template <class Tag, class Type,
+          std::enable_if_t<tag_has_type<Tag>::value> * = nullptr>
+Variable makeVariable(Dimensions dimensions) {
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+                  Vector<typename Tag::type>(dimensions.volume()));
+}
+
+template <class Tag, class Type,
+          std::enable_if_t<!tag_has_type<Tag>::value> * = nullptr>
+Variable makeVariable(Dimensions dimensions) {
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+                  Vector<Type>(dimensions.volume()));
+}
+
 template <class Tag, class T>
 Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values,
                       std::enable_if_t<tag_has_type<Tag>::value> * = nullptr) {
