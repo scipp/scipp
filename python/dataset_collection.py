@@ -5,7 +5,7 @@ import numpy as np
 from multiprocessing.pool import ThreadPool
 from dask.distributed import Client
 
-from dask.base import DaskMethodsMixin, tokenize
+from dask.base import DaskMethodsMixin, tokenize, dont_optimize
 from dask.utils import funcname
 import dask.array as da
 from dask.array.core import top
@@ -14,6 +14,8 @@ import operator
 import uuid
 from dask import sharedict
 from dask.sharedict import ShareDict
+from dask.context import globalmethod
+from dask.array.optimization import optimize
 from toolz import concat
 
 # dask is trying to pickle Dataset.slice, which fails, wrapping it as a workaround.
@@ -37,6 +39,8 @@ class DatasetCollection(DaskMethodsMixin):
     def __dask_keys__(self):
         return [ (self.name,) + (i,) for i in range(self.n_chunk) ]
 
+    __dask_optimize__ = globalmethod(optimize, key='array_optimize',
+                                     falsey=dont_optimize)
     __dask_scheduler__ = staticmethod(dask.threaded.get)
 
     def __dask_postcompute__(self):
