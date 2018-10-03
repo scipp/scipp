@@ -38,6 +38,7 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
 
 namespace detail {
 enum class Coord { X, Y, Z };
+enum class Data { Value, Variance };
 struct VariableHeader {
   gsl::index nDim;
   std::array<std::pair<Dimension, gsl::index>, 4> dimensions;
@@ -56,6 +57,9 @@ PYBIND11_MODULE(dataset, m) {
       .value("X", detail::Coord::X)
       .value("Y", detail::Coord::Y)
       .value("Z", detail::Coord::Z);
+  py::enum_<detail::Data>(m, "Data")
+      .value("Value", detail::Data::Value)
+      .value("Variance", detail::Data::Variance);
 
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
@@ -150,6 +154,27 @@ PYBIND11_MODULE(dataset, m) {
              case detail::Coord::Z:
                self.insert<Coord::Z>(dims, data);
                break;
+             }
+           })
+      .def("insert",
+           [](Dataset &self, const detail::Data tag, const std::string &name,
+              const Dimensions &dims, const std::vector<double> &data) {
+             switch (tag) {
+             case detail::Data::Value:
+               self.insert<Data::Value>(name, dims, data);
+               break;
+             case detail::Data::Variance:
+               self.insert<Data::Variance>(name, dims, data);
+               break;
+             }
+           })
+      .def("get",
+           [](Dataset &self, const detail::Data tag, const std::string &name) {
+             switch (tag) {
+             case detail::Data::Value:
+               return self.get<const Data::Value>(name);
+             case detail::Data::Variance:
+               return self.get<const Data::Variance>(name);
              }
            })
       .def("insertDataValue",
