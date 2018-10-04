@@ -7,12 +7,14 @@ Prototype reviewers: Owen Arnold, Martyn Gigg
 
 ## Context
 
-![test](workspace-hierarchy.png)
+As a grand overview of the current situation, consider the class inheritance diagram for the existing workspaces in Mantid:
 
-https://github.com/mantidproject/documents/blob/master/Project-Management/CoreTeam/workspace-notes.md
+![current inheritance diagram for workspaces in Mantid](workspace-hierarchy.png)
 
-What has been done so far:
-Gathered requirements.
+To put this diagram in perspective, note that one major criticism of the current implementation was "not enough workspace types", i.e., for the redesign an even larger variety was requested.
+
+Before starting the design and prototyping phase, [comments about the current implementation and requirements for the new design](https://github.com/mantidproject/documents/blob/master/Project-Management/CoreTeam/workspace-notes.md) had been gathered.
+
 Several concepts prototyped, one in great detailed, reviewed.
 
 ## Goals and non-goals
