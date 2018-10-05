@@ -107,22 +107,22 @@ The data handle also implements a copy-on-write mechanism, which makes `Variable
 
 Alongside the new `Dataset` type a series of basic and common operations will be provided.
 A mostly but not entirely complete list of operations to be supported is:
-1. Basic unary and binary operations: unary `-`, binary `+`, `-`, `*`, `/`
+1. Arithmetic operations: unary `-`, binary `+`, `-`, `*`, `/`
 1. `transpose`
 1. `slice` and `dice`
 1. `concatenate` and `merge`
 1. `sort`
-1. Rebin
-1. Convert (unit and/or dimension)
+1. `rebin`
+1. `convert` (unit and/or dimension)
 1. `filter`
 1. Boolean/logical operations for mask operations
-1. Integrate
+1. `integrate`
 1. Basic statistics operations such as min, max, mean, and standard deviation
 
 ### Relation to existing workspace types
 
 From the above description it may not be clear how `Dataset` is used to replace existing workspace types or components so we take a break to give some examples.
-For clarity, in the following we are explicitly giving the current Mantid namespaces `API`, `DataObjects`, and `Geometry` when referring to types from the existing implementation.
+For clarity, in the following we are explicitly giving the current Mantid namespace names such as `API`, `DataObjects`, `Geometry`, and `Algorithms` when referring to types from the existing implementation.
 
 ##### DataObjects::TableWorkspace
 
@@ -147,19 +147,65 @@ A typical example would be three-dimensional `Data::Value` and `Data::Variance` 
 A dataset with two-dimensional variables `Data::Value` and `Data::Variance` in combination with a one- or two-dimensional variable `Coord::Tof` is a close equivalent to the current `DataObjects::Workspace2D`.
 - Typically `Data::Value` and `Data::Variance` would have dimensions `Dimension::Tof` and `Dimension::Spectrum`.
 - If `Coord::Tof` has only `Dimension::Tof`, it corresponds to a `DataObjects::Workspace2D` with shared X axis, if it also has `Dimension::Spectrum` X is not shared.
+- `Coord::SpectrumNumber` provides a spectrum number (currently in `API::ISpectrum`).
 - Mapping from spectra to detectors (currently in `API::ISpectrum`) can be added using `Coord::DetectorGrouping`.
-  For representing the instrument see the corresponding section.
+  For representing the instrument see the corresponding section below.
 - Data from `API::ExperimentInfo` such as `API::Run` can be held by zero-dimensional variables such as `Data::ExperimentLog`.
 
-##### Geometry::DetectorInfo and Geometry::ComponentInfo
+Regarding operations, most basic operations have an obvious mapping to what our current algorithms are doing.
 
-##### EventList
-##### Histogram
-##### EventWorkspace
+##### Geometry::DetectorInfo, Geometry::ComponentInfo, Geometry::Instrument
+
+`Geometry::DetectorInfo` and `Geometry::ComponentInfo` are the result of the refactoring effort as part of **Instrument-2.0**.
+Thanks to that refactoring, the underlying data is already stored in a structure of vectors, which can be mapped to variables in a dataset in an almost 1:1 manner.
+- In place of `Geometry::DetectorInfo`, several variables with `Dimension::Detector` would be added to a dataset.
+  - `Coord::DetectorPosition` to store positions, `Coord::DetectorRotation` to store rotations, ...
+- The option to have multi-dimensional variables will provide support for instruments with (synchronously) scanning detectors in a natural way.
+  - Variables such as `Coord::DetectorPosition` can have the additional `Dimension::DetectorScan` (in addition to `Dimension::Detector`).
+  - Time intervals for the scan can be stored in an additional variable `Coord::TimeInterval`.
+- Data for `Geometry::ComponentInfo` can be mapped to variables in the dataset in a similar manner.
+- `Geometry::Instrument` still exists as part of the pre-**Instrument-2.0** legacy.
+  For the time being it can be supported by simply holding it in a zero-dimensional variable.
+
+##### HistogramData::Histogram
+
+`Dataset` will store histogram data as a single multi-dimensional array, i.e., *not* as a variable holding histograms.
+However, we may still want to operate on a single histogram at a time in some cases.
+A histogram would simply be represented by a dataset with one-dimensional data variables `Data::Value` and `Data::Variance` alongside a one-dimensional coordinate variable such as `Coord::Tof`.
+- Arithmetic operations as well as many of the other basic operations support most of what would be required from a histogram type.
+
+##### DataObjects::EventWorkspace
+
+In contrast to histograms in `DataObjects::Workspace2D`, the event lists stored in `DataObject::EventWorkspace` all have varying length.
+Therefore, the events cannot be stored as a single multi-dimensional array.
+- A one-dimensional variable `Data::Events` with `Dimension::Spectrum` would hold the lists of the events.
+- The lists of events would be a type similar to `DataObjects::EventList`, and one option is to use `Dataset` for this, that is the dataset would contain a list of datasets, one for each event list.
+
+##### DataObjects::EventList
+
+A one-dimensional dataset without coordinate variables can be used to represent an event list.
+- `Dimension::Event` is used as the only dimension for all variables.
+- `Data::Tof` and `Data::PulseTime` make up the key part of data.
+- Extra variables can be added to support weighted events.
+
+
+TODO make enhancement list for each? or separate?
 
 Enhancements:
 - Can have more dimensions.
 - Can have multiple data.
+
+
+
+
+    Can in principle be multi dimensional.
+    Can contain arbitrary types, so we could have an integer histogram, a histogram without uncertainties, a histogram with attached masking, ...
+    concatenate
+    Y and E can have units.
+    X unit also stored in histogram.
+    Can have a name.
+
+
 
 
 
@@ -170,6 +216,12 @@ Type-erased handle to the data.
 
 - explain how current types map onto `Dataset`
 
+### Key concepts
+
+- history
+- logging
+- cancellation
+- bin edges
 
 ### Python exports
 
