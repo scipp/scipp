@@ -4,6 +4,7 @@ Author: Simon Heybrock
 
 Prototype reviewers: Owen Arnold, Martyn Gigg
 
+
 ## Context
 
 This document describes a proposed new library, to become part of the Mantid project.
@@ -20,6 +21,7 @@ Based on these requirements a design and prototyping process was started in earl
 Initially a couple of different options have been prototyped but it soon became apparent that only one of them was a real option.
 In agreement with reviewers of those early investigations, effort has thus been mostly focused on the `Dataset` option, described below.
 Altogether, as of 2018-10-05, a total of 60 working days (approx 3.5 FTE months) have been invested in the design and prototyping process.
+
 
 ## High level design overview
 
@@ -39,6 +41,7 @@ This includes not just `MatrixWorkspace` and its child classes `Workspace2D` and
 In addition, `Dataset` can likely also replace `Histogram`, `EventList`, and data structure introduced as part of **Instrument-2.0**.
 `Dataset` would provide a *uniform interface* in a *single type* for all of these.
 Furthermore, `Dataset` will cover many other cases that are currently impossible to represent in a single workspace.
+
 
 ### Components
 
@@ -103,6 +106,7 @@ The name of data variables is furthermore used to imply a grouping of variables.
 The data in `Variable` is held by a type-erased handle, i.e., a `Variable` can hold data of any type.
 The data handle also implements a copy-on-write mechanism, which makes `Variable` and `Dataset` cheap to copy and saves memory if only some variables in a dataset are modified.
 
+
 ### Operations
 
 Alongside the new `Dataset` type a series of basic and common operations will be provided.
@@ -118,6 +122,7 @@ A mostly but not entirely complete list of operations to be supported is:
 1. Boolean/logical operations for mask operations
 1. `integrate`
 1. Basic statistics operations such as min, max, mean, and standard deviation
+
 
 ### Relation to existing workspace types
 
@@ -141,20 +146,21 @@ A dataset where all variables are one-dimensional is a table.
 A dataset with multi-dimensional variables `Data::Value` and `Data::Variance` in combination with a corresponding number of one--dimensional coordinate variables is a close equivalent to the current `DataObjects::MDHistoWorkspace`.
 A typical example would be three-dimensional `Data::Value` and `Data::Variance` alongside one-dimensional `Coord:Qx`, `Coord:Qy`, and `Coord::Qz`.
 
-
 ##### DataObjects::Workspace2D
 
 A dataset with two-dimensional variables `Data::Value` and `Data::Variance` in combination with a one- or two-dimensional variable `Coord::Tof` is a close equivalent to the current `DataObjects::Workspace2D`.
 - Typically `Data::Value` and `Data::Variance` would have dimensions `Dimension::Tof` and `Dimension::Spectrum`.
 - If `Coord::Tof` has only `Dimension::Tof`, it corresponds to a `DataObjects::Workspace2D` with shared X axis, if it also has `Dimension::Spectrum` X is not shared.
+- To represent bin edges, the extent of `Coord::Tof` in `Dimension::Tof` is larger by one than `Dimension::Tof` of the other variables.
 - `Coord::SpectrumNumber` provides a spectrum number (currently in `API::ISpectrum`).
 - Mapping from spectra to detectors (currently in `API::ISpectrum`) can be added using `Coord::DetectorGrouping`.
   For representing the instrument see the corresponding section below.
 - Data from `API::ExperimentInfo` such as `API::Run` can be held by zero-dimensional variables such as `Data::ExperimentLog`.
+- Masking of complete spectra or individual bins support by one- or two-dimensional variables such as `Coord::Mask`.
 
-Regarding operations, most basic operations have an obvious mapping to what our current algorithms are doing.
+Most basic operations have an obvious mapping to what our current basic algorithms are doing.
 
-##### Geometry::DetectorInfo, Geometry::ComponentInfo, Geometry::Instrument
+##### Geometry::DetectorInfo, Geometry::ComponentInfo, and Geometry::Instrument
 
 `Geometry::DetectorInfo` and `Geometry::ComponentInfo` are the result of the refactoring effort as part of **Instrument-2.0**.
 Thanks to that refactoring, the underlying data is already stored in a structure of vectors, which can be mapped to variables in a dataset in an almost 1:1 manner.
@@ -171,15 +177,16 @@ Thanks to that refactoring, the underlying data is already stored in a structure
 
 `Dataset` will store histogram data as a single multi-dimensional array, i.e., *not* as a variable holding histograms.
 However, we may still want to operate on a single histogram at a time in some cases.
-A histogram would simply be represented by a dataset with one-dimensional data variables `Data::Value` and `Data::Variance` alongside a one-dimensional coordinate variable such as `Coord::Tof`.
+A dataset with one-dimensional data variables `Data::Value` and `Data::Variance` alongside a one-dimensional coordinate variable such as `Coord::Tof` is a histogram.
 - Arithmetic operations as well as many of the other basic operations support most of what would be required from a histogram type.
 
 ##### DataObjects::EventWorkspace
 
-In contrast to histograms in `DataObjects::Workspace2D`, the event lists stored in `DataObject::EventWorkspace` all have varying length.
+In contrast to histograms in `DataObjects::Workspace2D`, the event lists stored in `DataObject::EventWorkspace` have varying length.
 Therefore, the events cannot be stored as a single multi-dimensional array.
-- A one-dimensional variable `Data::Events` with `Dimension::Spectrum` would hold the lists of the events.
-- The lists of events would be a type similar to `DataObjects::EventList`, and one option is to use `Dataset` for this, that is the dataset would contain a list of datasets, one for each event list.
+- A one-dimensional variable `Data::Events` with `Dimension::Spectrum` holds the lists of the events.
+- The lists of events is a type similar to `DataObjects::EventList`.
+  One option is to use `Dataset` for this, that is the dataset would contain many datasets, one for each event list.
 
 ##### DataObjects::EventList
 
@@ -187,74 +194,85 @@ A one-dimensional dataset without coordinate variables can be used to represent 
 - `Dimension::Event` is used as the only dimension for all variables.
 - `Data::Tof` and `Data::PulseTime` make up the key part of data.
 - Extra variables can be added to support weighted events.
+- `concatenate` provides a merge operation.
+- `sort` provides sorting by time-of-flight or pulse-time.
+- `filter` provides filtering by time-of-flight or pulse-time.
 
-
-TODO make enhancement list for each? or separate?
-
-Enhancements:
-- Can have more dimensions.
-- Can have multiple data.
-
-
-
-
-    Can in principle be multi dimensional.
-    Can contain arbitrary types, so we could have an integer histogram, a histogram without uncertainties, a histogram with attached masking, ...
-    concatenate
-    Y and E can have units.
-    X unit also stored in histogram.
-    Can have a name.
-
-
-
-
-
-Type-erased handle to the data.
-
-`DatasetView`.
-`DatasetIndex`.
-
-- explain how current types map onto `Dataset`
-
-### Key concepts
-
-- history
-- logging
-- cancellation
-- bin edges
 
 ### Python exports
 
-POD-Variables exposed as read/write `numpy.ndarray` with correct dimensionality (not just 1D arrays as current `MatrixWorkspace::readX()` and `MatrixWorkspace::dataX()`.
-copy-on-write (explain hidden)
-
-## Goals and non-goals
-
-## Milestones
-
- - user stories?
-
-## Impact
-
-## Discussion
+All relevant high-level classes and functions are fully exposed via a Python interface.
+- The C++ API is modern and is thus easily mapped to a "pythonic" dataset library.
+- `Dataset` itself is very similar to Python `dict`.
+- Data of variables containing plain old data such as floating point values is exposed as readable and writable `numpy.ndarray`.
+  These are true multi-dimensional arrays, i.e., in contrast to the current `API::MatrixWorkspace::readX()` and `API::MatrixWorkspace::dataX()` it is *not* a separate array for every spectrum.
 
 
+## Design details
 
 
+### Dependencies
+
+- `boost::units` for unit handling.
+- `boost::container` for `small_vector`, which is used as an optimization in a couple of places.
+- `boost::mpl` to help with some meta programming.
+- `gsl` is used for `gsl::index` and `gsl::span`.
+  This could easily be replaced by a stand alone implementation, in particular since `span` is part of C++20.
+- `range-v3` has been used for implementing some multi-column sort operations but replacing it by a stand-alone implementation should be no trouble.
+- GoogleTest for unit testing.
+- GoogleBenchmark for benchmarking.
+
+The prototype has been implemented using C++14, and this is sufficient.
+Nevertheless, having C++17 available would be an advantage, particularly since a moderate amount of template-meta programming is required.
+Given the long time scale, it could be expected that the Mantid project is ready to move to C++17 by the time `Dataset` might be included in the main repository.
+
+Note that `Dataset` or rather `Variable` will be able to hold data from libraries that are *not* dependencies of this library.
+It is sufficient to forward-declare types when adding a tag for such a variable.
+*Example:
+We can store `API::Run` in `Dataset`, but the dataset library does not need to depend on `Mantid::API`.*
+
+It is currently unclear whether this library should be kept as a separate repository or be included as a new module in the Mantid repository.
+- The advantage of includes is the automatic use of the build server and deployment infrastructure.
 
 
-- numpy read/write wrappers, as old readX/dataX, but now multi-dimensional!
+### Unit tests
 
-## Details
+The library is intended as a low-level building block and the mixed-multi-dimensional aspected lead to many corner cases.
+A comprehensive and maintainable suite of unit tests is thus essential.
 
-explain tradeof/cost of type-erasure (being generic, vs. some code noise)
 
-C++14, maybe even C++17?
-Dependencies: range-v3, gsl, boost, but in most cases very little, could make it almost completely stand-alone (with exception of boost)?
+### Benchmarks
 
-## Naming
+Given the intention of being a low-level building block for everything else, ensuring good performance and preventing performance regression is thus essential.
+A suite of benchmarks is to be maintained and monitored for changes.
 
-### Components of the library are part of namespace `dataset`
+
+### Documentation
+
+Documentation is required for several cases:
+- Library (developer) documentation.
+- C++ API (user) documentation.
+- Python API (user) documentation.
+- Python usage examples beyond simple API documentation, e.g., how to represent complex data structures such as a `DataObjects::Workspace2D` as a `Dataset`.
+
+
+### Scope and extension
+
+The design described here is seen as a nearly complete description of the scope of the dataset library.
+Extending the functionally should be avoided and should happen only after careful consideration.
+In particular, anything that is *more* specific than already supported should not be made part of this library, but instead be placed in another library that depends on this library.
+- Actually `convert` to convert units is pretty specific as it needs to connect instrument information to data.
+  Is having it as part of this lowest-level library the right choice?
+
+There are some cases which are likely to lead to additions to the dataset library:
+- Initially we will not have covered all required cases with tags for `Dimension` and variable tags for `Coord` and `Data`.
+  In particular, we need a new `Coord` for every unit that we support.
+- As a consequence the unit handling will also need to be extended.
+
+
+### Naming
+
+#### Components of the library are part of namespace `dataset`
 
 ##### Rationale
 
@@ -264,11 +282,188 @@ Instead, namespaces like `dataset` should be lower-case, as opposed to types whi
 We then have, e.g., `dataset::Dataset`.
 This also matches the Python convention where module names are typically lower-case, thus reducing the differences between the C++ and Python APIs.
 
-##
+#### The Python module name is `dataset`
+
+##### Rationale
+
+This is a corollary from the namespace name.
+
+#### The top level namespace and module is `mantid`
+
+##### Rationale
+
+Currently we have `namespace Mantid` in C++ while the Python module is `mantid`.
+Changing the namespace name would this improve consistency.
+Furthermore, this would reduce naming clashes between existing and new code.
+
+
+### Copy-on-write mechanism
+
+##### Context
+
+The copy-on-write mechanism is hidden in the API and simply handled internally in `Variable`:
+A copy-on-write pointer hold a `VariableConcept`.
+To maintain sharing we only require code to be `const`-correct.
+*TODO: Cannot use `const` in Python, need methods with different names that explicitly request mutable or immutable access.*
+
+##### Rationale
+
+The copy-on-write mechanism is something that has since long been adopted in Mantid, e.g., in `DataObjects::Workspace2D` for the histogram data and for `Geometry::DetectorInfo`.
+However, for the interface of `API::MatrixWorkspace` (and in connection to that `HistogramData::Histogram`) this has led to an interface that is too complicated, with different API functions for read-only access, write-access, and access for sharing.
+
+
+### Type erasure
+
+The type erasure and implementation of basic operations for `Variable` uses **concept-based polymorphism** (a pattern by Sean Parent).
+The involved types are `class VariableConcept` (the interface) and `template <class T> class VariableModel` (the implementation(s)).
+
 
 ### Uncertainties are stored as variances, not standard deviations
 
 ##### Rationale
+
+Mantid currently stores uncertainties as standard deviation (except for `DataObjects::MDHistoWorkspace`).
+However, most computations require the variance for propagation of uncertainties.
+To this end it is often squared in place (breaking assumptions about, e.g., `HistogramData::Histogram` and `DataObjects::Workspace2D`, and subsequently converted back to standard deviation by taking the square root.
+This also adds a little computational overhead.
+Having a clear and well defined strategy will reduce the risk of confusion.
+
+##### Implementation
+
+The go-to tag for storing uncertainties will be `Data::Variance`.
+`Data::StdDev` will exist, but is for *access* only, i.e., attempting to create a `Variable` with that tag should fail.
+Instead `Data::StdDev` can by used in combination with `DatasetView` to *read* the standard deviations if required, e.g., for visualization purposes.
+If it turns out to be useful it would also be possible to provide setters --- as opposed to a simple assignment which is possible if the actual underlying data is referenced --- for standard deviation using `DatasetView` .
+
+
+### "Distributions" and "histogram data" are distinguished by their unit
+
+##### Rationale
+
+Currently `API::MatrixWorkspace` (and by extension `HistogramData::Histogram`) keep a flag indicating whether data in a histogram has been divided by its bin width.
+A considerable number of algorithms are checking this manually, branching to different code sections.
+`HistogramData::Histogram` attempted to solve this by introducing getters like `Histogram::counts()` and `Histogram::frequencies()`.
+However, it seems to be useful only in a rather limited number of places, whereas it adds a significant amount of complication to the API.
+The flag adds complication and should thus be removed.
+
+##### Implementation
+
+This will require having a unit for "counts", i.e., we cannot simply use "dimensionless".
+We need to establish whether it is possible to write clean client code based on the unit-driven mechanism.
+Apart from that there should not be any major implementation difficulties.
+
+
+### No progress reporting an no cancellation
+
+##### Rationale
+
+- Most operations are simple and thus fast.
+- Cancellation and progress reporting can be implemented in higher-level algorithms that *use* `Dataset`.
+- Cancellation leads to undefined side effects for in-place operation, i.e., it breaks data.
+- Adds complexity and complicates the interface.
+- `numpy` operations cannot be cancelled and do not report progress.
+
+
+### No support for histograms with varying length
+
+##### Rationale
+
+This has not been supported in `DataObjects::Workspace2D` for 10 years, until a very recent change, i.e., it does not appear to be strictly necessary.
+Support has been considered and prototyped, however there are two strong reasons it is not part of the final design:
+- Significant complication of implementation for all operations, leading to larger initial development cost and more difficulty in long-term maintenance.
+- Negatively affects the performance of iteration via `DatasetView`, *even if the length does not vary*.
+
+##### Workaround
+
+It is possible to store a variable holding datasets in a dataset.
+The result could be very similar to a current `DataObjects::Workspace2D`.
+In general we should discourage doing this since most of the other functionality we provide would not work nicely with such as nested dataset.
+However, if a varying histogram length is essential for some purpose it is absolutely possible.
+
+
+### Operations are threaded using OpenMP
+
+##### Rationale
+
+Threading using OpenMP in a fork-join style manner is not the most efficient one.
+As part of the prototyping process we considered other solutions, in particular [dask](https://dask.org/).
+Dask could solve many problems such as overcoming the limitations of the fork-join approach as providing a unified solution for threading and multi-process parallelisation such as MPI
+However, the prototyping experience indicated that it is not performant enough to completely replace threading for our typical workloads.
+For that reason, and for maximum simplicity, optimal performance requires multi-threading.
+
+##### Implementation
+
+In most cases a simple `#pragma omp parallel for` could do the job.
+We should probably limit the thread count depending on the size of data and the operation in question.
+For small data the threading overhead may be larger than the gains.
+For large data, many cases such as `operator+` are heavily limited by memory bandwidth and using more cores than necessary for reaching the peak bandwidth would be wasteful.
+
+---
+
+
+- guarantees about not breaking inputs on failed operations (exception safety) --- explicitly specify in each case! clear if broken
+
+- (single) precision
+
+explain tradeof/cost of type-erasure (being generic, vs. some code noise)
+
+enhancement list for each workspace example? or separate?
+    Can in principle be multi dimensional.
+    Can contain arbitrary types, so we could have an integer histogram, a histogram without uncertainties, a histogram with attached masking, ...
+    concatenate
+    Y and E can have units.
+    X unit also stored in histogram.
+    Can have a name.
+
+- alignment?
+
+- multi threading
+
+- not dask
+
+- guarantees same API across types
+
+`DatasetView`.
+`DatasetIndex`.
+`Dimensions`.
+
+Dataset ser/deser
+
+
+### Sharing of bin edges
+
+
+
+
+
+
+### Key concepts
+
+- history
+- logging
+- bin edges
+
+## Goals and non-goals
+
+- ragged workspace
+
+## Milestones
+
+- user stories?
+  - polarization
+  - multi dimensional slicing
+  - parameter scans
+  - reactor constant-wavelength
+  - imaging
+
+## Impact
+
+## Discussion
+
+
+
+
+
 
 * [R: test](#Rr-scoped)
 
@@ -282,11 +477,35 @@ This also matches the Python convention where module names are typically lower-c
 - rollout
   - Python ADS issues
 - do not give estimates for things that we do not know about, e.g., time for implementing higher level algorithms --- we do not know if this is what people will want to do, how it works, ...
-- guarantees about not breaking inputs on failed operations (exception safety) --- explicitly specify in each case! clear if broken
 
-- many parts of Instrument-2.0 can be mapped nearly 1:1
-- scanning
-- within Mantid repo or separate?
-- units
 
-- library structure, keep it small and do not add more random things over time, build other things on top of this lib.
+
+Implementation effort (impl, tests, doc):
+
+early user (developer) testing, to continuously ensure we are implementing something that is actually useful
+Dataset
+Variable
+Dimensions
+DatasetView
+helper classes
+operations
+"apply ufunc"?
+Python exports (numpy adds difficulties, in particular since it can be enabled only for some types)
+serialization and deserialization
+continuous integration, build system, ...
+ramp up time for every additional developer
+
+slice viewer
+integration in Mantid
+  - integrate in build, such that you can import it in Python
+  - wrap in Workspace (or not! given problems of ADS and Python! significant effort here to find a solution)
+  - table viewer
+converters from Mantid workspaces to Dataset (vice versa would be extra effort since there is no 1:1 mapping)
+
+replace less-used workspaces types?
+- MaskWorkspace?
+- GroupWorkspace?
+- MDHistoWorkspace?
+- TableWorkspace?
+
+
