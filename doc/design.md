@@ -39,6 +39,7 @@
   - [No logging](#design-details:no-logging)
   - [Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given](#design-details:exception-safety)
   - [No processing history, for the time being](#design-details:no-processing-history)
+  - [Floating-point precision can be set at compile time](#design-details:floating-point-precision-compile-time)
 - [Implementation](#implementation)
   - [Milestones](#implementation:milestones)
   - [Effort](#implementation:effort)
@@ -163,6 +164,7 @@ A mostly but not entirely complete list of operations to be supported is:
 1. Boolean/logical operations for mask operations
 1. `integrate`
 1. Basic statistics operations such as min, max, mean, and standard deviation
+1. Serialization and deserialization, mainly for saving to and loading from disk
 
 
 ### <a name="overview:relation-to-existing-workspace-types"></a>Relation to existing workspace types
@@ -618,6 +620,27 @@ There would be some complications related to having a history without `API::Anal
 Overall however, it should have no influence on the `Dataset` design, i.e., it seems safe to postpone a decision until we have a clearer understanding of how `Dataset` will be used in practice and how it will get integrated in the current Mantid ecosystem.
 
 
+### <a name="design-details:floating-point-precision-compile-time"></a>Floating-point precision can be set at compile time
+
+##### Rationale
+
+Mantid currently uses double precision for time-of-flight, counts, and values derived from the former two.
+Using single precision could give a performance improvement of the order of 2x.
+Apart from global accumulation (which could be done in double precision) there appear to be no (or few) operations where double precision would be required.
+Taking the step to *always* use single precision for those variables would probably too large a risk.
+
+##### Implementation
+
+- Define the precision of relevant variables (`Data::Value`, `Data::Variance`, `Data::Tof`, `Coord::Tof`, ...) at compile time.
+- Run all tests for both the single- and the double-precision versions of the library.
+- Provide two library versions, probably with a default.
+  For example, we could initially default to using the double-precision library, using the single-precision version only on demand for applications with high performance demands after the particular workflow has been validated to be correct in single precision.
+  At a later point, in case we have convinced ourselves that the single-precision version is always sufficient, the default could be changed.
+
+It is not entirely clear how much development overhead this would cause for code depending on this library.
+More code is likely to be templated for the precision (`double` and `single`).
+However, the development cost for this library itself would be rather minor, so there is very little risk involved in supporting it from the beginning.
+
 
 ## <a name="implementation"></a>Implementation
 
@@ -662,32 +685,18 @@ replace less-used workspaces types?
 
 
 ## <a name="discussion"></a>Discussion
+
+
+### <a name="discussion:impact"></a>Impact
+
+- full Python exports for all workspace types
+
 - user stories?
   - polarization
   - multi dimensional slicing
   - parameter scans
   - reactor constant-wavelength
   - imaging
-
-
-- new challenges:
-- zoo of datasets, standardize ways of representing things
-- type erasure cumbersome?
-  explain tradeof/cost of type-erasure (being generic, vs. some code noise)
-- guarantees same API across types
-### <a name="discussion:impact"></a>Impact
-
-
-
----
-
-### Sharing of bin edges
-- bin edges
-- chunking / MPI --- info in class Dimensions? (as future extension?)
-
-
-- (single) precision
-
 
 enhancement list for each workspace example? or separate?
     Can in principle be multi dimensional.
@@ -696,11 +705,20 @@ enhancement list for each workspace example? or separate?
     Y and E can have units.
     X unit also stored in histogram.
     Can have a name.
+    nicer sharing of bin edges (etc.)
 
+### new challenges:
+- zoo of datasets, standardize ways of representing things
+- type erasure cumbersome?
+  explain tradeof/cost of type-erasure (being generic, vs. some code noise)
+- guarantees same API across types
 
+#### meta
 
-`DatasetView`.
-`DatasetIndex`.
-`Dimensions`.
+- old mantid and new mantid, avoid being a rewrite
 
-Dataset ser/deser
+---
+
+- `API::Run` using `Dataset` directly (time series etc)
+- chunking / MPI --- info in class Dimensions? (as future extension?)
+
