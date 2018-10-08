@@ -4,8 +4,23 @@ Author: Simon Heybrock
 
 Prototype reviewers: Owen Arnold, Martyn Gigg
 
+## Contents
 
-## Context
+- [Context](#context)
+- [High level design overview](#overview)
+  - [Components](#overview:components)
+  - [Operations](#overview:operations)
+  - [Relation to existing workspace types](#overview:relation-to-existing-workspace-types)
+  - [Python exports](#overview:python-exports)
+- [Design details](#details)
+  - [Dependencies](#details:dependencies)
+  - [Unit tests](#details:unit-tests)
+  - [Benchmarks](#details:benchmarks)
+  - [Documentation](#details:documentation)
+  - [Scope and extension](#details:scope-and-extension)
+  - [Naming](#details:naming)
+
+## <a name="context"></a>Context
 
 This document describes a proposed new library, to become part of the Mantid project.
 The working title of the project that led to the design proposed in the following has been **Workspace-2.0**, i.e., the set goal was to find a way to improve upon the workspace types that are currently available in Mantid.
@@ -23,7 +38,7 @@ In agreement with reviewers of those early investigations, effort has thus been 
 Altogether, as of 2018-10-05, a total of 60 working days (approx 3.5 FTE months) have been invested in the design and prototyping process.
 
 
-## High level design overview
+## <a name="overview"></a>High level design overview
 
 We propose a new class called `Dataset`, with the capability to replace almost all existing workspaces types while at the same time providing more features and more flexibility.
 The inspiration for `Dataset` comes from the `Dataset` type in [xarray](http://xarray.pydata.org/en/stable/).
@@ -43,7 +58,7 @@ In addition, `Dataset` can likely also replace `Histogram`, `EventList`, and dat
 Furthermore, `Dataset` will cover many other cases that are currently impossible to represent in a single workspace.
 
 
-### Components
+### <a name="overview:components"></a>Components
 
 `class Dataset` is the top level entity.
 It simply set of variables, instances `class Variable`.
@@ -107,7 +122,7 @@ The data in `Variable` is held by a type-erased handle, i.e., a `Variable` can h
 The data handle also implements a copy-on-write mechanism, which makes `Variable` and `Dataset` cheap to copy and saves memory if only some variables in a dataset are modified.
 
 
-### Operations
+### <a name="overview:operations"></a>Operations
 
 Alongside the new `Dataset` type a series of basic and common operations will be provided.
 A mostly but not entirely complete list of operations to be supported is:
@@ -124,7 +139,7 @@ A mostly but not entirely complete list of operations to be supported is:
 1. Basic statistics operations such as min, max, mean, and standard deviation
 
 
-### Relation to existing workspace types
+### <a name="overview:relation-to-existing-workspace-types"></a>Relation to existing workspace types
 
 From the above description it may not be clear how `Dataset` is used to replace existing workspace types or components so we take a break to give some examples.
 For clarity, in the following we are explicitly giving the current Mantid namespace names such as `API`, `DataObjects`, `Geometry`, and `Algorithms` when referring to types from the existing implementation.
@@ -199,7 +214,7 @@ A one-dimensional dataset without coordinate variables can be used to represent 
 - `filter` provides filtering by time-of-flight or pulse-time.
 
 
-### Python exports
+### <a name="overview:python-exports"></a>Python exports
 
 All relevant high-level classes and functions are fully exposed via a Python interface.
 - The C++ API is modern and is thus easily mapped to a "pythonic" dataset library.
@@ -208,10 +223,10 @@ All relevant high-level classes and functions are fully exposed via a Python int
   These are true multi-dimensional arrays, i.e., in contrast to the current `API::MatrixWorkspace::readX()` and `API::MatrixWorkspace::dataX()` it is *not* a separate array for every spectrum.
 
 
-## Design details
+## <a name="details"></a>Design details
 
 
-### Dependencies
+### <a name="details:dependencies"></a>Dependencies
 
 - `boost::units` for unit handling.
 - `boost::container` for `small_vector`, which is used as an optimization in a couple of places.
@@ -235,19 +250,19 @@ It is currently unclear whether this library should be kept as a separate reposi
 - The advantage of includes is the automatic use of the build server and deployment infrastructure.
 
 
-### Unit tests
+### <a name="details:unit-tests"></a>Unit tests
 
 The library is intended as a low-level building block and the mixed-multi-dimensional aspected lead to many corner cases.
 A comprehensive and maintainable suite of unit tests is thus essential.
 
 
-### Benchmarks
+### <a name="details:benchmarks"></a>Benchmarks
 
 Given the intention of being a low-level building block for everything else, ensuring good performance and preventing performance regression is thus essential.
 A suite of benchmarks is to be maintained and monitored for changes.
 
 
-### Documentation
+### <a name="details:documentation"></a>Documentation
 
 Documentation is required for several cases:
 - Library (developer) documentation.
@@ -256,7 +271,7 @@ Documentation is required for several cases:
 - Python usage examples beyond simple API documentation, e.g., how to represent complex data structures such as a `DataObjects::Workspace2D` as a `Dataset`.
 
 
-### Scope and extension
+### <a name="details:scope-and-extension"></a>Scope and extension
 
 The design described here is seen as a nearly complete description of the scope of the dataset library.
 Extending the functionally should be avoided and should happen only after careful consideration.
@@ -270,7 +285,7 @@ There are some cases which are likely to lead to additions to the dataset librar
 - As a consequence the unit handling will also need to be extended.
 
 
-### Naming
+### <a name="details:naming"></a>Naming
 
 #### Components of the library are part of namespace `dataset`
 
@@ -370,7 +385,7 @@ Apart from that there should not be any major implementation difficulties.
 
 This has not been supported in `DataObjects::Workspace2D` for 10 years, until a very recent change, i.e., it does not appear to be strictly necessary.
 Support has been considered and prototyped, however there are two strong reasons it is not part of the final design:
-- Significant complication of implementation for all operations, leading to larger initial development cost and more difficulty in long-term maintenance.
+- Significant complication of implementation for all operations, leading to larger initial development cost and more difficult long-term maintenance.
 - Negatively affects the performance of iteration via `DatasetView`, *even if the length does not vary*.
 
 ##### Workaround
@@ -387,7 +402,7 @@ However, if a varying histogram length is essential for some purpose it is absol
 
 Threading using OpenMP in a fork-join style manner is not the most efficient one.
 As part of the prototyping process we considered other solutions, in particular [dask](https://dask.org/).
-Dask could solve many problems such as overcoming the limitations of the fork-join approach as providing a unified solution for threading and multi-process parallelisation such as MPI
+Dask could solve many problems such as overcoming the limitations of the fork-join approach as providing a unified solution for threading and multi-process parallelisation such as MPI.
 However, the prototyping experience indicated that it is not performant enough to completely replace threading for our typical workloads.
 For that reason, and for maximum simplicity, optimal performance requires multi-threading.
 
@@ -442,7 +457,7 @@ If required we could log to `stdout` using `std::cout`, which can be redirected 
 For performance reasons operations can be (and are in practice) applied in-place.
 If an exception is thrown it can happen that data is partially modified and thus in an unknown state.
 It is impossible for client code to tell if data has been corrupted, unless there is a well defined exception safety guarantee in combination with flagging of bad data.
-The user would thus continue working with the bad data, with unknown consequences.
+The user thus continue working with the bad data, with unknown consequences.
 
 ##### Implementation
 
@@ -453,7 +468,23 @@ The safest and simplest way to do so is to completely clear datasets that may ha
 
 The exception safety guarantee of each operation is to be documented.
 
+
+### No processing history, for the time being
+
+##### Rationale
+
+All Mantid algorithms are recorded in the workspace processing history, and this is one of the most important features of Mantid.
+It is currently not clear how this is best handled for `Dataset`.
+If the operations for datasets end up getting wrapped in algorithms there is no need to direct history handling in `Dataset`.
+If this is not the case it would be very desirable to have this feature, and according to very basic prototyping it could simply be handled as an additional variable in the dataset.
+There would be some complications related to having a history without `API::AnalysisDataService` so there is some effort connected to coming up with an actual solution.
+Overall however, it should have no influence on the `Dataset` design, i.e., it seems safe to postpone a decision until we have a clearer understanding of how `Dataset` will be used in practice and how it will get integrated in the current Mantid ecosystem.
+
+
 ---
+
+### Sharing of bin edges
+- bin edges
 
 
 
@@ -471,7 +502,6 @@ enhancement list for each workspace example? or separate?
     Can have a name.
 
 
-- guarantees same API across types
 
 `DatasetView`.
 `DatasetIndex`.
@@ -480,17 +510,11 @@ enhancement list for each workspace example? or separate?
 Dataset ser/deser
 
 
-### Sharing of bin edges
 
 
 
 
 
-
-### Key concepts
-
-- history
-- bin edges
 
 
 ## Milestones
@@ -506,6 +530,10 @@ Dataset ser/deser
 
 ## Discussion
 
+- new challenges:
+- zoo of datasets, standardize ways of representing things
+- type erasure cumbersome?
+- guarantees same API across types
 
 
 
