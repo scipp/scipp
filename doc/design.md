@@ -1,8 +1,8 @@
 # Dataset design
 
-Author: Simon Heybrock
-
-Prototype reviewers: Owen Arnold, Martyn Gigg
+- Author: Simon Heybrock
+- Prototype review: Owen Arnold, Martyn Gigg
+- Design review:
 
 ## Contents
 
@@ -19,6 +19,22 @@ Prototype reviewers: Owen Arnold, Martyn Gigg
   - [Documentation](#details:documentation)
   - [Scope and extension](#details:scope-and-extension)
   - [Naming](#details:naming)
+  - [Copy-on-write mechanism](#details:copy-on-write-mechanism)
+  - [Uncertainties are stored as variances, not standard deviations](#details:uncertainties-are-stored-as-variances)
+  - ["Distributions" and "histogram data" are distinguished by their unit](#details:distribution-histogram-distinguised-by-unit)
+  - [No progress reporting an no cancellation](#details:no-progress-reporting-no-cancellation)
+  - [No support for histograms with varying length](#details:no-length-variation)
+  - [Operations are threaded using OpenMP](#details:threading)
+  - [No magic](#details:no-magic)
+  - [No logging](#details:no-logging)
+  - [Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given](#details:exception-safety)
+  - [No processing history, for the time being](#details:no-processing-history)
+- [Implementation](#implementation)
+  - [Milestones](#implementation:milestones)
+  - [Effort](#implementation:effort)
+- [Discussion](#discussion)
+  - [Impact](#discussion:impact)
+
 
 ## <a name="context"></a>Context
 
@@ -312,7 +328,7 @@ Changing the namespace name would this improve consistency.
 Furthermore, this would reduce naming clashes between existing and new code.
 
 
-### Copy-on-write mechanism
+### <a name="details:copy-on-write-mechanism"></a>Copy-on-write mechanism
 
 ##### Context
 
@@ -327,13 +343,7 @@ The copy-on-write mechanism is something that has since long been adopted in Man
 However, for the interface of `API::MatrixWorkspace` (and in connection to that `HistogramData::Histogram`) this has led to an interface that is too complicated, with different API functions for read-only access, write-access, and access for sharing.
 
 
-### Type erasure
-
-The type erasure and implementation of basic operations for `Variable` uses **concept-based polymorphism** (a pattern by Sean Parent).
-The involved types are `class VariableConcept` (the interface) and `template <class T> class VariableModel` (the implementation(s)).
-
-
-### Uncertainties are stored as variances, not standard deviations
+### <a name="details:uncertainties-are-stored-as-variances"></a>Uncertainties are stored as variances, not standard deviations
 
 ##### Rationale
 
@@ -351,7 +361,7 @@ Instead `Data::StdDev` can by used in combination with `DatasetView` to *read* t
 If it turns out to be useful it would also be possible to provide setters --- as opposed to a simple assignment which is possible if the actual underlying data is referenced --- for standard deviation using `DatasetView` .
 
 
-### "Distributions" and "histogram data" are distinguished by their unit
+### <a name="details:distribution-histogram-distinguised-by-unit"></a>"Distributions" and "histogram data" are distinguished by their unit
 
 ##### Rationale
 
@@ -368,7 +378,7 @@ We need to establish whether it is possible to write clean client code based on 
 Apart from that there should not be any major implementation difficulties.
 
 
-### No progress reporting an no cancellation
+### <a name="details:no-progress-reporting-no-cancellation"></a>No progress reporting an no cancellation
 
 ##### Rationale
 
@@ -379,7 +389,7 @@ Apart from that there should not be any major implementation difficulties.
 - `numpy` operations cannot be cancelled and do not report progress.
 
 
-### No support for histograms with varying length
+### <a name="details:no-length-variation"></a>No support for histograms with varying length
 
 ##### Rationale
 
@@ -396,7 +406,7 @@ In general we should discourage doing this since most of the other functionality
 However, if a varying histogram length is essential for some purpose it is absolutely possible.
 
 
-### Operations are threaded using OpenMP
+### <a name="details:threading"></a>Operations are threaded using OpenMP
 
 ##### Rationale
 
@@ -414,7 +424,7 @@ For small data the threading overhead may be larger than the gains.
 For large data, many cases such as `operator+` are heavily limited by memory bandwidth and using more cores than necessary for reaching the peak bandwidth would be wasteful.
 
 
-### No magic
+### <a name="details:no-magic"></a>No magic
 
 ##### Rationale
 
@@ -437,7 +447,7 @@ High level algorithms that simply work no matter what is thrown at them are like
 We are merely banning it from *this* library, i.e., the lowest-level building block.
 
 
-### No logging
+### <a name="details:no-logging"></a>No logging
 
 ##### Rationale
 
@@ -450,7 +460,7 @@ Adding logging functionality would increase complexity and add extra dependencie
 If required we could log to `stdout` using `std::cout`, which can be redirected and filtered.
 
 
-### Operations have strong exception guarantee or clear data if only a base exception guarantee can be given
+### <a name="details:exception-safety"></a>Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given
 
 ##### Rationale
 
@@ -469,7 +479,7 @@ The safest and simplest way to do so is to completely clear datasets that may ha
 The exception safety guarantee of each operation is to be documented.
 
 
-### No processing history, for the time being
+### <a name="details:no-processing-history"></a>No processing history, for the time being
 
 ##### Rationale
 
@@ -481,69 +491,13 @@ There would be some complications related to having a history without `API::Anal
 Overall however, it should have no influence on the `Dataset` design, i.e., it seems safe to postpone a decision until we have a clearer understanding of how `Dataset` will be used in practice and how it will get integrated in the current Mantid ecosystem.
 
 
----
+### Type erasure
 
-### Sharing of bin edges
-- bin edges
-
-
-
-- (single) precision
-- alignment?
-
-explain tradeof/cost of type-erasure (being generic, vs. some code noise)
-
-enhancement list for each workspace example? or separate?
-    Can in principle be multi dimensional.
-    Can contain arbitrary types, so we could have an integer histogram, a histogram without uncertainties, a histogram with attached masking, ...
-    concatenate
-    Y and E can have units.
-    X unit also stored in histogram.
-    Can have a name.
+The type erasure and implementation of basic operations for `Variable` uses **concept-based polymorphism** (a pattern by Sean Parent).
+The involved types are `class VariableConcept` (the interface) and `template <class T> class VariableModel` (the implementation(s)).
 
 
-
-`DatasetView`.
-`DatasetIndex`.
-`Dimensions`.
-
-Dataset ser/deser
-
-
-
-
-
-
-
-
-
-## Milestones
-
-- user stories?
-  - polarization
-  - multi dimensional slicing
-  - parameter scans
-  - reactor constant-wavelength
-  - imaging
-
-## Impact
-
-## Discussion
-
-- new challenges:
-- zoo of datasets, standardize ways of representing things
-- type erasure cumbersome?
-- guarantees same API across types
-
-
-
-
-
-* [R: test](#Rr-scoped)
-
-### <a name="Rr-scoped"></a>R.5: 
-
-
+## <a name="implementation"></a>Implementation
 
 - efforts estimates (10x prototyping time and detailed list)
   - documentation (developer and user)
@@ -581,3 +535,51 @@ replace less-used workspaces types?
 - TableWorkspace?
 
 
+### <a name="implementation:milestones"></a>Milestones
+### <a name="implementation:effort"></a>Effort
+
+
+## <a name="discussion"></a>Discussion
+- user stories?
+  - polarization
+  - multi dimensional slicing
+  - parameter scans
+  - reactor constant-wavelength
+  - imaging
+
+
+- new challenges:
+- zoo of datasets, standardize ways of representing things
+- type erasure cumbersome?
+- guarantees same API across types
+### <a name="discussion:impact"></a>Impact
+
+
+
+---
+
+### Sharing of bin edges
+- bin edges
+
+
+
+- (single) precision
+- alignment?
+
+explain tradeof/cost of type-erasure (being generic, vs. some code noise)
+
+enhancement list for each workspace example? or separate?
+    Can in principle be multi dimensional.
+    Can contain arbitrary types, so we could have an integer histogram, a histogram without uncertainties, a histogram with attached masking, ...
+    concatenate
+    Y and E can have units.
+    X unit also stored in histogram.
+    Can have a name.
+
+
+
+`DatasetView`.
+`DatasetIndex`.
+`Dimensions`.
+
+Dataset ser/deser
