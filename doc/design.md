@@ -398,12 +398,67 @@ We should probably limit the thread count depending on the size of data and the 
 For small data the threading overhead may be larger than the gains.
 For large data, many cases such as `operator+` are heavily limited by memory bandwidth and using more cores than necessary for reaching the peak bandwidth would be wasteful.
 
+
+### No magic
+
+##### Rationale
+
+Many algorithms in Mantid to "magic" under the hood:
+- Convert inputs if required. *Example: Conversion from point data in `Algorithms::ConvertUnits` and `Algorithms::Rebin`.*
+- Tolerate partially bad input data. *Example: Replacing special values in `Algorithms::SumSpectra`.*
+- Support doing two different things that are actually different. *Example: `Algorithms::Rebin` can rebin histogram data, bin event data, or set new bin edges in a workspace.*
+- Combine multiple processing steps. *Examples: Aligning bins in `Algorithms::ConvertUnits`. Loading and saving calibration files in `Algorithms::MaskDetectorsIf`.*
+
+Support for such features complicates the implementation and makes reasoning about code harder.
+It should therefore not be done in this library.
+- Operations should simply fail as early as possible.
+- Inputs are required to be cleaned up and converted to the correct format explicitly.
+- Processing steps should be kept as separate operations.
+
+##### Note
+
+There is nothing wrong with "magic" in higher-level operations.
+High level algorithms that simply work no matter what is thrown at them are likely still a requirement.
+We are merely banning it from *this* library, i.e., the lowest-level building block.
+
+
+### No logging
+
+##### Rationale
+
+As a corollary from the "no magic" strategy above, there will be very few occasions that require log messages.
+Logging can be implemented in higher-level algorithms, or potentially in some Python wrappers.
+Adding logging functionality would increase complexity and add extra dependencies.
+
+##### Workaround
+
+If required we could log to `stdout` using `std::cout`, which can be redirected and filtered.
+
+
+### Operations have strong exception guarantee or clear data if only a base exception guarantee can be given
+
+##### Rationale
+
+For performance reasons operations can be (and are in practice) applied in-place.
+If an exception is thrown it can happen that data is partially modified and thus in an unknown state.
+It is impossible for client code to tell if data has been corrupted, unless there is a well defined exception safety guarantee in combination with flagging of bad data.
+The user would thus continue working with the bad data, with unknown consequences.
+
+##### Implementation
+
+Wherever possible, operations should provide a strong exception guarantee, i.e., even for in-place operations there should be no risk of unknowingly corrupting data.
+This simply boils down to performing any checks up-front, before data is modified.
+For operations that cannot give a strong guarantee we need to avoid accidental use of corrupted data.
+The safest and simplest way to do so is to completely clear datasets that may have been corrupted.
+
+The exception safety guarantee of each operation is to be documented.
+
 ---
 
 
-- guarantees about not breaking inputs on failed operations (exception safety) --- explicitly specify in each case! clear if broken
 
 - (single) precision
+- alignment?
 
 explain tradeof/cost of type-erasure (being generic, vs. some code noise)
 
@@ -415,11 +470,6 @@ enhancement list for each workspace example? or separate?
     X unit also stored in histogram.
     Can have a name.
 
-- alignment?
-
-- multi threading
-
-- not dask
 
 - guarantees same API across types
 
@@ -440,12 +490,8 @@ Dataset ser/deser
 ### Key concepts
 
 - history
-- logging
 - bin edges
 
-## Goals and non-goals
-
-- ragged workspace
 
 ## Milestones
 
@@ -474,8 +520,6 @@ Dataset ser/deser
 - efforts estimates (10x prototyping time and detailed list)
   - documentation (developer and user)
   - testing
-- rollout
-  - Python ADS issues
 - do not give estimates for things that we do not know about, e.g., time for implementing higher level algorithms --- we do not know if this is what people will want to do, how it works, ...
 
 
