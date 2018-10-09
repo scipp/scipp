@@ -28,6 +28,7 @@
   - [Benchmarks](#design-details:benchmarks)
   - [Documentation](#design-details:documentation)
   - [Scope and extension](#design-details:scope-and-extension)
+  - [API stability](#design-details:api-stability)
   - [Naming](#design-details:naming)
   - [Copy-on-write mechanism](#design-details:copy-on-write-mechanism)
   - [Uncertainties are stored as variances, not standard deviations](#design-details:uncertainties-are-stored-as-variances)
@@ -315,6 +316,15 @@ The prototype implements very little of this in a clean way, and the API should 
 In many cases the code is scattered around the project, in the implementation of individual operations.
 This is to be cleaned up when implementing the full set of operations.
 
+At a later point, a small extension of `Dimensions` can provide support for multi-dimensional chunking/partitioning.
+This could enable MPI support, cache blocking for more efficient use of the CPU caches, and working with data that does not fit into memory.
+- Store the full dimension extent in addition to the chunk extent in `Dimensions`.
+- If a dimension of a dataset represents just a subsection of the full dimension extent we use a special dimension tag.
+- Operations that operate on a particular dimension will then fail.
+  *Example: `Algorithms::DiffractionFocussing` requires `Dimension::Spectrum`.*
+- Based on the stored full dimension extent we can assemble a dataset from chunks, or provide a multi-step operation that can deal with partial dimensions and does the assembling process.
+  *Example: A version of `Algorithms::DiffractionFocussing` that first focusses within each chunk and merges focussed data from all chunks in a final step.*
+
 
 ### <a name="design-components:dimension-tags"></a>Dimension tags
 
@@ -428,6 +438,19 @@ There are some cases which are likely to lead to additions to the dataset librar
 - Initially we will not have covered all required cases with tags for `Dimension` and variable tags for `Coord` and `Data`.
   In particular, we need a new `Coord` for every unit that we support.
 - As a consequence the unit handling will also need to be extended.
+
+
+### <a name="design-details:api-stability"></a>API stability
+
+The C++ version as well as the Python exports are meant as a low level building block for other parts of the project, in addition to direct use in scripts by users.
+Therefore we need to ensure that the API is reasonably stable.
+At the same time, we will struggle with things that do not work out early on as imagined right now and will need to change the API.
+- The API is considered unstable and can change without notice until the library version has reached v1.0.
+- With v1.0 onwards the Python API should only change with major releases and a proper deprecation cycle.
+- The C++ API should ideally follow the same rules as the Python API.
+  However, since most or all C++ code using the API should be under our control, the API may be updated in a less restrictive way if there is a good reason.
+
+The implication is that this library would probably require versioning independent of Mantid itself.
 
 
 ### <a name="design-details:naming"></a>Naming
@@ -638,7 +661,7 @@ Taking the step to *always* use single precision for those variables would proba
   At a later point, in case we have convinced ourselves that the single-precision version is always sufficient, the default could be changed.
 
 It is not entirely clear how much development overhead this would cause for code depending on this library.
-More code is likely to be templated for the precision (`double` and `single`).
+More code is likely to require templating for the precision (`double` and `single`).
 However, the development cost for this library itself would be rather minor, so there is very little risk involved in supporting it from the beginning.
 
 
@@ -681,6 +704,10 @@ replace less-used workspaces types?
 
 
 ### <a name="implementation:milestones"></a>Milestones
+
+- guerilla usability testing at user/dev workshop 2019.
+- keep doing user testing throughout the development process.
+
 ### <a name="implementation:effort"></a>Effort
 
 
@@ -708,17 +735,14 @@ enhancement list for each workspace example? or separate?
     nicer sharing of bin edges (etc.)
 
 ### new challenges:
+- old mantid and new mantid, avoid being a rewrite
 - zoo of datasets, standardize ways of representing things
 - type erasure cumbersome?
   explain tradeof/cost of type-erasure (being generic, vs. some code noise)
 - guarantees same API across types
 
-#### meta
 
-- old mantid and new mantid, avoid being a rewrite
 
 ---
 
 - `API::Run` using `Dataset` directly (time series etc)
-- chunking / MPI --- info in class Dimensions? (as future extension?)
-
