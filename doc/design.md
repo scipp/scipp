@@ -26,6 +26,8 @@
   - [Dependencies](#design-details:dependencies)
   - [Unit tests](#design-details:unit-tests)
   - [Benchmarks](#design-details:benchmarks)
+  - [Sanitizers](#design-details:sanitizers)
+  - [Code review](#design-details:code-review)
   - [Documentation](#design-details:documentation)
   - [Scope and extension](#design-details:scope-and-extension)
   - [API stability](#design-details:api-stability)
@@ -42,10 +44,13 @@
   - [No processing history, for the time being](#design-details:no-processing-history)
   - [Floating-point precision can be set at compile time](#design-details:floating-point-precision-compile-time)
 - [Implementation](#implementation)
+  - [Goals and non-goals](#implementation:goals-and-non-goals)
   - [Milestones](#implementation:milestones)
+  - [Further steps](#implementation:further-steps)
   - [Effort](#implementation:effort)
 - [Discussion](#discussion)
   - [Impact](#discussion:impact)
+  - [New challenges](#discussion:new-challenges)
 
 
 ## <a name="context"></a>Context
@@ -166,6 +171,7 @@ A mostly but not entirely complete list of operations to be supported is:
 1. `integrate`
 1. Basic statistics operations such as min, max, mean, and standard deviation
 1. Serialization and deserialization, mainly for saving to and loading from disk
+   *Question: Should disk I/O live in a separate module/library?*
 
 
 ### <a name="overview:relation-to-existing-workspace-types"></a>Relation to existing workspace types
@@ -254,6 +260,10 @@ All relevant high-level classes and functions are fully exposed via a Python int
 
 ## <a name="design-components"></a>Design components
 
+The following is only an incomplete description.
+For more details and examples the prototype code serves as a reference.
+A good starting point that gives an overview of how `Dataset` may be *used* is given by [`TableWorkspace` example](../test/TableWorkspace_test.cpp), [`Workspace2D` example](../test/Workspace2D_test.cpp), and [`EventWorkspace` example](../test/EventWorkspace_test.cpp).
+
 
 ### <a name="design-components:dataset"></a>`class Dataset`
 
@@ -329,9 +339,25 @@ This could enable MPI support, cache blocking for more efficient use of the CPU 
 ### <a name="design-components:dimension-tags"></a>Dimension tags
 
 A dimension is identified by a tag.
-This is simply and `enum class Dimension`.
+This is simply an `enum class Dimension`.
 Consider renaming this to `enum class Dim` for brevity.
 Despite the abbreviation this should be clear and may actually improve code readability since it is more concise when used frequently?
+
+An incomplete list of dimension tags:
+- `Dimension::X`, `Dimension::Y`, `Dimension::Z`.
+- `Dimension::Qx`, `Dimension::Qy`, `Dimension::Qz`.
+- `Dimension::Detector`
+- `Dimension::Spectrum`
+- `Dimension::Tof`
+- `Dimension::Wavelength`
+- `Dimension::DetectorScan`
+- `Dimension::Temperature`
+- `Dimension::Polarization`
+- `Dimension::Run`
+- `Dimension::Row`
+- `Dimension::Event`
+
+In many cases there is a corresponding coordinate tag for a dimension.
 
 
 ### <a name="design-components:datasetview"></a>`class DatasetView`
@@ -386,6 +412,7 @@ We should most likely add a clear range of exception types that provide useful i
 - `boost::units` for unit handling.
 - `boost::container` for `small_vector`, which is used as an optimization in a couple of places.
 - `boost::mpl` to help with some meta programming.
+- `Eigen` for vectors and rotations, in particular for detector positions.
 - `gsl` is used for `gsl::index` and `gsl::span`.
   This could easily be replaced by a stand alone implementation, in particular since `span` is part of C++20.
 - `range-v3` has been used for implementing some multi-column sort operations but replacing it by a stand-alone implementation should be no trouble.
@@ -402,7 +429,8 @@ It is sufficient to forward-declare types when adding a tag for such a variable.
 We can store `API::Run` in `Dataset`, but the dataset library does not need to depend on `Mantid::API`.*
 
 It is currently unclear whether this library should be kept as a separate repository or be included as a new module in the Mantid repository.
-- The advantage of includes is the automatic use of the build server and deployment infrastructure.
+- The advantage of inclusion is the automatic use of the build server and deployment infrastructure.
+- The disadvantage is a potential coupling of versioning, see [API stability](#design-details:api-stability).
 
 
 ### <a name="design-details:unit-tests"></a>Unit tests
@@ -415,6 +443,18 @@ A comprehensive and maintainable suite of unit tests is thus essential.
 
 Given the intention of being a low-level building block for everything else, ensuring good performance and preventing performance regression is thus essential.
 A suite of benchmarks is to be maintained and monitored for changes.
+
+
+### <a name="design-details:sanitizers"></a>Sanitizers
+
+Static analysis and sanitization runs should be performed and verified automatically.
+Most importantly, AddressSanitizer should be used to strictly monitor for memory corruption bugs.
+
+
+### <a name="design-details:code-review"></a>Code review
+
+The same review/approval system for pull request as in Mantid should be adopted.
+However, given the scope of the project, we should require *two full reviews*, i.e., the gatekeeper should also do a thorough review, in addition to the first reviewer.
 
 
 ### <a name="design-details:documentation"></a>Documentation
@@ -479,6 +519,17 @@ Currently we have `namespace Mantid` in C++ while the Python module is `mantid`.
 Changing the namespace name would this improve consistency.
 Furthermore, this would reduce naming clashes between existing and new code.
 
+##### Questions
+
+Does this make sense?
+Where to we put additional functionality?
+Sibling or children of `dataset`?
+Consider `class Dataset` itself and two hypothetical modules with *additional* functionality that is not part of this library.
+Our options would include:
+1. `mantid::dataset::Dataset`, `mantid::dataset::algorithm`, `mantid::dataset::io`.
+1. `mantid::dataset::Dataset`, `mantid::algorithm`, `mantid::io`.
+1. `mantid::dataset::core::Dataset`, `mantid::dataset::algorithm`, `mantid::dataset::io`.
+
 
 ### <a name="design-details:copy-on-write-mechanism"></a>Copy-on-write mechanism
 
@@ -487,7 +538,7 @@ Furthermore, this would reduce naming clashes between existing and new code.
 The copy-on-write mechanism is hidden in the API and simply handled internally in `Variable`:
 A copy-on-write pointer hold a `VariableConcept`.
 To maintain sharing we only require code to be `const`-correct.
-*TODO: Cannot use `const` in Python, need methods with different names that explicitly request mutable or immutable access.*
+*Question: Cannot use `const` in Python, need methods/tags with different names that explicitly request mutable or immutable access. What is the bast naming convention?*
 
 ##### Rationale
 
@@ -667,48 +718,117 @@ However, the development cost for this library itself would be rather minor, so 
 
 ## <a name="implementation"></a>Implementation
 
-- efforts estimates (10x prototyping time and detailed list)
-  - documentation (developer and user)
-  - testing
-- do not give estimates for things that we do not know about, e.g., time for implementing higher level algorithms --- we do not know if this is what people will want to do, how it works, ...
 
+### <a name="implementation:goals-and-non-goals"></a>Goals and non-goals
 
+##### Goals in this implementation phase
 
-Implementation effort (impl, tests, doc):
+1. Provide a simple, lightweight, functional and well-tested library that can replace and enhance most of the workspaces types existing in Mantid.
+1. Reach a point where this library (in combination with some supporting libraries) is useful in practice.
+   We define useful as:
+   - Complete low-level functionality in C++ and Python.
+   - `numpy` interoperability.
+   - Visualization using a slice viewer.
+   - Visualization using a multi-dimensional table viewer.
+   - Instrument visualization using the Mantid instrument viewer.
+   - Can leverage existing Mantid code such as `DataHandling::LoadEventNexus` by a subsequent conversion into a `Dataset`.
+1. Demonstrate usefulness on at least two real examples, ideally bringing them to a production ready stage.
+   Candidates are:
+   - Constant-wavelength (reactor) workflows, which currently use `API::MatrixWorkspace` with length-1 histograms as a workaround.
+   - Imaging workflows, which would benefit from presenting data as a stack of images rather than a list of histograms, i.e., the dimension order would be the opposite of what we are used to in `API::MatrixWorkspace`.
+   - Workflow with parameter scan or polarization analysis to demonstrate new capabilities of extra dimensions and/or multiple data variables.
+1. If applicable, demonstrate performance gain over existing Mantid workflow.
 
-early user (developer) testing, to continuously ensure we are implementing something that is actually useful
-Dataset
-Variable
-Dimensions
-DatasetView
-helper classes
-operations
-"apply ufunc"?
-Python exports (numpy adds difficulties, in particular since it can be enabled only for some types)
-serialization and deserialization
-continuous integration, build system, ...
-ramp up time for every additional developer
+##### Non-goals in this implementation phase
 
-slice viewer
-integration in Mantid
-  - integrate in build, such that you can import it in Python
-  - wrap in Workspace (or not! given problems of ADS and Python! significant effort here to find a solution)
-  - table viewer
-converters from Mantid workspaces to Dataset (vice versa would be extra effort since there is no 1:1 mapping)
-
-replace less-used workspaces types?
-- MaskWorkspace?
-- GroupWorkspace?
-- MDHistoWorkspace?
-- TableWorkspace?
+1. It is a non-goal to provide a drop-in replacement for all existing workspaces.
+1. It is a non-goal to convert all 970 algorithms to use `Dataset` instead of `API::Workspace`.
+1. It is a non-goal to provide support for all visualization widgets.
 
 
 ### <a name="implementation:milestones"></a>Milestones
 
-- guerilla usability testing at user/dev workshop 2019.
-- keep doing user testing throughout the development process.
+##### Milestone 1
+
+- Mostly useable in C++ and Python but basics not 100% complete.
+- Guerilla usability testing at user/dev workshop 2019.
+
+##### Milestone 2
+
+- Basics complete.
+- Useful for interested developers and power users working in Python in combination with `numpy`.
+
+##### Milestone 3
+
+- Widgets for visualization available from Python.
+
+##### Milestone 4
+
+- Basic Mantid integration available.
+  - Can convert (most) existing workspace types to `Dataset`.
+
+- not at all useful without loading saving! which milestone?
+
+- keep doing user/developer testing throughout the development process.
+
+
+- do not give estimates for things that we do not know about, e.g., time for implementing higher level algorithms --- we do not know if this is what people will want to do, how it works, ...
+
+
+"apply ufunc"?
+
+integration in Mantid
+  - integrate in build, such that you can import it in Python
+  - wrap in Workspace (or not! given problems of ADS and Python! significant effort here to find a solution)
+converters from Mantid workspaces to Dataset (vice versa would be extra effort since there is no 1:1 mapping)
+
+
+
+### <a name="implementation:further-steps"></a>Further steps
+
+It is not clear where to go after above milestones have been completed.
+A lot will depend on how the first implementation phase goes, what difficulties we face, and how it is accepted by the developer and user community.
+Options for follow up steps include, in no particular order:
+- Replace less-used workspace types, such as `DataObjects::MaskWorkspace`, `DataObjects::GroupWorkspace`, `DataObjects::TableWorkspace`, and `DataObjects::MDHistoWorkspace`.
+- Complete integration in the Mantid workbench (Mantid-4.0), including solving issues regarding adding Python objects to the `API::AnalysisDataService`.
+- Develop algorithm libraries beyond core functionality, e.g., technique specifics.
+- Record processing history via Python API.
+- Implement a stand-alone `DatasetViewer` application.
+
 
 ### <a name="implementation:effort"></a>Effort
+
+
+| Task | Weeks min | Weeks max | Comment |
+| --- | --- | --- | --- |
+| `Dataset` | 1 | 2 |
+| `Variable` | 1 | 2 |
+| `DatasetView` | 2 | 3 |
+| `Dimensions` | 2 | 3 |
+| units | 4 | 8 | scope/requirements unclear thus extra effort |
+| other classes | 1 | 2 |
+| exception system | 0.5 | 1 |
+| operations: essentials | 4 | 8 | arithmetics and shape operations |
+| operations: I/O | 1 | 2 | only basic types, no NeXus |
+| operations: other | 4 | 8 | beyond basic arithmetics and shape operations
+| performance optimization | 4 | 8 |
+| Python exports | 3 | 6 | includes `numpy` interoperability |
+| doc: internal | 1 | 2 |
+| doc: C++ API | 0.5 | 1 |
+| doc: Python API | 0.5 | 1 |
+| doc: Usage examples | 2 | 3 |
+| build system | 2 | 4 |
+| ramp-up time for every additional developer | 1 | 2 |
+| converters: `API::MatrixWorkspace` and `DataObjects::MDHistoWorkspace` to `Dataset` | 2 | 4 |
+| slice viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
+| table viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
+| `API::Workspace` wrapping | 1 | 3 | need to define interaction with `API::AnalysisDataService`, should ultimately use a different mechanism such as Python introspection |
+| converters: instrument | 2 | 4 |
+| helpers for instrument | 1 | 2 | e.g., functionality that is now in `Beamline::ComponentInfo` |
+| code reviews by multiple parties | 4 | 8 |
+| detailed design | 2 | 4 | investigate open design questions, evaluate candidates, motivate choice to get TSC approval |
+
+Note: Many of these things would be outside the core library!
 
 
 ## <a name="discussion"></a>Discussion
@@ -716,7 +836,16 @@ replace less-used workspaces types?
 
 ### <a name="discussion:impact"></a>Impact
 
-- full Python exports for all workspace types
+- Simple and flexible, and thus ready for the future both in terms of maintainability and new requirements.
+- Guarantees the same API across all "workspace types".
+- Full Python exports for all "workspace types".
+- Supports a pythonic way of working.
+- Improved `numpy` interoperability.
+- Provides us with a chance to cull our algorithms to a well defined core plus well structured technique/facility specific extensions.
+- Key features such as multidimensional variables and multiple data variables support complex workflows such as sample environment parameter scans.
+- New features can be used to enable improved performance, depending on the application.
+- Improved confidence in correctness due to well-defined low-level functionality and more widespread unit handling.
+
 
 - user stories?
   - polarization
@@ -734,15 +863,21 @@ enhancement list for each workspace example? or separate?
     Can have a name.
     nicer sharing of bin edges (etc.)
 
-### new challenges:
-- old mantid and new mantid, avoid being a rewrite
-- zoo of datasets, standardize ways of representing things
-- type erasure cumbersome?
-  explain tradeof/cost of type-erasure (being generic, vs. some code noise)
-- guarantees same API across types
 
-
-
----
 
 - `API::Run` using `Dataset` directly (time series etc)
+- monitors
+
+### <a name="discussion:new-challenges"></a>New challenges
+
+We believe that this simple design will solve many of the problems we face currently when using the existing workspace types.
+Obviously there will be new problems, not all of which can be foreseen.
+Based on the limited experience when working with the prototype, there are a couple of new challenges we *do* foresee:
+1. Avoiding an "old Mantid" vs. "new Mantid" split.
+   This design is not a rewrite and real datasets will in fact reuse several of the components in existing workspaces.
+   However, given that we do not intend to port all algorithms there is a real risk of getting stuck with two separate sub-projects for a very long time.
+1. `Dataset` can contain anything.
+   - We may need to develop strategies or standards that avoid an unmaintainable zoo of datasets.
+     One example might be standards for naming variables.
+   - Implementing algorithms for completely generic datasets may be more challenging, e.g., if multiple data variables are present.
+1. Type-erasure makes some code slightly more cumbersome and verbose.
