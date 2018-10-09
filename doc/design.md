@@ -51,6 +51,7 @@
 - [Discussion](#discussion)
   - [Impact](#discussion:impact)
   - [New challenges](#discussion:new-challenges)
+  - [Summary](#discussion:summary)
 
 
 ## <a name="context"></a>Context
@@ -273,7 +274,7 @@ A good starting point that gives an overview of how `Dataset` may be *used* is g
 - Variables are identified by a combination of their tag and (for data variables) their name.
   Duplicate tag/name combinations are forbidden, i.e., `Dataset` behaves like a set.
 
-The current implementation also contains a global `Dimensions` objects, holding the space spanned by the combination of all the variables dimensions.
+The current implementation also contains a `Dimensions` objects, holding the space spanned by the combination of all the variables dimensions.
 However, this is not necessary and may change in the actual implementation.
 
 There are very few methods for direct manipulation of `Dataset`:
@@ -748,6 +749,8 @@ However, the development cost for this library itself would be rather minor, so 
 
 ### <a name="implementation:milestones"></a>Milestones
 
+*To do: This needs a lot of work. It is quite unclear what belongs to which milestone, the idea is the have something more usable at every step.*
+
 ##### Milestone 1
 
 - Mostly useable in C++ and Python but basics not 100% complete.
@@ -756,32 +759,22 @@ However, the development cost for this library itself would be rather minor, so 
 ##### Milestone 2
 
 - Basics complete.
+- I/O, or at least converters from Mantid workspaces.
 - Useful for interested developers and power users working in Python in combination with `numpy`.
+- User/developer testing before reaching milestone.
 
 ##### Milestone 3
 
 - Widgets for visualization available from Python.
+- Demonstration workflows.
+- User/developer testing before reaching milestone.
 
 ##### Milestone 4
 
 - Basic Mantid integration available.
   - Can convert (most) existing workspace types to `Dataset`.
-
-- not at all useful without loading saving! which milestone?
-
-- keep doing user/developer testing throughout the development process.
-
-
-- do not give estimates for things that we do not know about, e.g., time for implementing higher level algorithms --- we do not know if this is what people will want to do, how it works, ...
-
-
-"apply ufunc"?
-
-integration in Mantid
-  - integrate in build, such that you can import it in Python
-  - wrap in Workspace (or not! given problems of ADS and Python! significant effort here to find a solution)
-converters from Mantid workspaces to Dataset (vice versa would be extra effort since there is no 1:1 mapping)
-
+- Demonstrate performance gains.
+- User/developer testing before reaching milestone.
 
 
 ### <a name="implementation:further-steps"></a>Further steps
@@ -798,6 +791,8 @@ Options for follow up steps include, in no particular order:
 
 ### <a name="implementation:effort"></a>Effort
 
+*To do: Split into milestones and improve estimates after initial design review iterations.*
+In no particular order:
 
 | Task | Weeks min | Weeks max | Comment |
 | --- | --- | --- | --- |
@@ -805,13 +800,13 @@ Options for follow up steps include, in no particular order:
 | `Variable` | 1 | 2 |
 | `DatasetView` | 2 | 3 |
 | `Dimensions` | 2 | 3 |
-| units | 4 | 8 | scope/requirements unclear thus extra effort |
+| units | 2 | 8 | scope/requirements unclear thus extra effort |
 | other classes | 1 | 2 |
 | exception system | 0.5 | 1 |
 | operations: essentials | 4 | 8 | arithmetics and shape operations |
 | operations: I/O | 1 | 2 | only basic types, no NeXus |
 | operations: other | 4 | 8 | beyond basic arithmetics and shape operations
-| performance optimization | 4 | 8 |
+| performance optimization | 3 | 6 |
 | Python exports | 3 | 6 | includes `numpy` interoperability |
 | doc: internal | 1 | 2 |
 | doc: C++ API | 0.5 | 1 |
@@ -822,19 +817,22 @@ Options for follow up steps include, in no particular order:
 | converters: `API::MatrixWorkspace` and `DataObjects::MDHistoWorkspace` to `Dataset` | 2 | 4 |
 | slice viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
 | table viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
-| `API::Workspace` wrapping | 1 | 3 | need to define interaction with `API::AnalysisDataService`, should ultimately use a different mechanism such as Python introspection |
+| instrument viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
+| workspace list support | 2 | 8 | wrap in `API::Workspace`? Need to define interaction with `API::AnalysisDataService`, should use a different mechanism such as Python introspection, do *not* break Python by making variables global via the ADS. |
 | converters: instrument | 2 | 4 |
 | helpers for instrument | 1 | 2 | e.g., functionality that is now in `Beamline::ComponentInfo` |
 | code reviews by multiple parties | 4 | 8 |
 | detailed design | 2 | 4 | investigate open design questions, evaluate candidates, motivate choice to get TSC approval |
 
-Note: Many of these things would be outside the core library!
+Note that several of these tasks refer the development outside the core library, i.e., in additional building blocks that are based on `Dataset`.
 
 
 ## <a name="discussion"></a>Discussion
 
 
 ### <a name="discussion:impact"></a>Impact
+
+##### General improvements
 
 - Simple and flexible, and thus ready for the future both in terms of maintainability and new requirements.
 - Guarantees the same API across all "workspace types".
@@ -846,27 +844,16 @@ Note: Many of these things would be outside the core library!
 - New features can be used to enable improved performance, depending on the application.
 - Improved confidence in correctness due to well-defined low-level functionality and more widespread unit handling.
 
+##### Enabling "new" use-cases
 
-- user stories?
-  - polarization
-  - multi dimensional slicing
-  - parameter scans
-  - reactor constant-wavelength
-  - imaging
+- Supporting constant-wavelength (reactor) "workspaces" without workarounds.
+- Supporting workspaces where time-of-flight is not the inner dimension, e.g., imaging.
+- Multiple-dimension support for all variables and "workspace types" and multiple data variables.
+  Provides natural support for:
+  - Sample environment parameter scans.
+  - Multi-dimensional slicing.
+  - Polarization analysis.
 
-enhancement list for each workspace example? or separate?
-    Can in principle be multi dimensional.
-    Can contain arbitrary types, so we could have an integer histogram, a histogram without uncertainties, a histogram with attached masking, ...
-    concatenate
-    Y and E can have units.
-    X unit also stored in histogram.
-    Can have a name.
-    nicer sharing of bin edges (etc.)
-
-
-
-- `API::Run` using `Dataset` directly (time series etc)
-- monitors
 
 ### <a name="discussion:new-challenges"></a>New challenges
 
@@ -881,3 +868,8 @@ Based on the limited experience when working with the prototype, there are a cou
      One example might be standards for naming variables.
    - Implementing algorithms for completely generic datasets may be more challenging, e.g., if multiple data variables are present.
 1. Type-erasure makes some code slightly more cumbersome and verbose.
+
+
+### <a name="discussion:summary"></a>Summary
+
+*(to be added after first review cycles)*
