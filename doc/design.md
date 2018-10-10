@@ -121,7 +121,7 @@ Examples of tags for data variables are:
 - `Data::Variance`
 - `Data::String`
 - `Data::Int`
-- `Data::ExperimentLog`
+- `Data::ExperimentLog`. *Question: Should this actually be a coordinate?*
 
 Examples of tags coordinate variables are:
 - `Coord::Tof`
@@ -154,6 +154,32 @@ The name of data variables is furthermore used to imply a grouping of variables.
 
 The data in `Variable` is held by a type-erased handle, i.e., a `Variable` can hold data of any type.
 The data handle also implements a copy-on-write mechanism, which makes `Variable` and `Dataset` cheap to copy and saves memory if only some variables in a dataset are modified.
+
+##### Examples
+
+A basic example of a dataset with two variables, a coordinate and data:
+![figure: basic dataset with up to two dimensions](dataset-2d.png)
+
+Coordinates can be bin-edges, i.e., their extent can be longer by one than the corresponding dimensions of other variables:
+![figure: dataset with a bin-edge variable](dataset-2d-bin-edges.png)
+
+Coordinates do not need to be one-dimensional, i.e., they can represent a non-shared "X", as we are used to from `API::MatrixWorkspace`:
+![figure: dataset with a coordinate depending on another dimension](dataset-2d-coord-not-shared.png)
+
+More coordinates can be added, e.g., for other dimensions:
+![figure: dataset with coordinates for more dimensions](dataset-2d-more-coords.png)
+
+Multiple coordinates for the same dimension are also possible, as long as the coordinate tag is different, e.g., the final energy `Ef` in a spectrometer:
+![figure: dataset with multiple coordinates for the same dimension](dataset-2d-multiple-coords-same-dimension.png)
+
+Variables can be zero-dimensional:
+![figure: dataset with a zero-dimensional coordinate variable](dataset-2d-variable-0d.png)
+
+Variables can have more dimensions if needed:
+![figure: dataset with up to three dimensions](dataset-3d.png)
+
+Multiple data variables of the same type are supported by a different name:
+![figure: dataset with up to three dimensions and two data variables](dataset-3d-two-data-variables.png)
 
 
 ### <a name="overview:operations"></a>Operations
