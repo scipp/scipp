@@ -144,6 +144,9 @@ It simply set of variables, instances of `class Variable`.
 The dimensions of the variables in a dataset can differ, but the extents of the individual dimensions must match.
 *Example: A one-dimensional variable with `Dim::X` and a two-dimensional variable with `Dim::X` and `Dim::Y` in the *same* dataset.
 The respective extents of `Dim::X` must match.*
+*Exception:
+Coordinates can represent bin edges.
+In that case the extent will be larger by 1.*
 A zero-dimensional variable corresponds to a point, i.e., it will contain a single data item.
 
 Variables come in two classes, distinguished by their tag:
