@@ -89,13 +89,14 @@ Furthermore, it will be written in C++ with Python exports for optimal performan
 As described in this document, `Dataset` should be able to replace all of our workspace types, with maybe the exception of `MDEventWorkspace`.
 This includes not just `MatrixWorkspace` and its child classes `Workspace2D` and `EventWorkspace` but also `TableWorkspace`, `PeaksWorkspace`, and `MDHistoWorkspace`.
 In addition, `Dataset` can likely also replace `Histogram`, `EventList`, and data structure introduced as part of **Instrument-2.0**.
-`Dataset` would provide a *uniform interface* in a *single type* for all of these.
-Furthermore, `Dataset` will cover many other cases that are currently impossible to represent in a single workspace.
+`Dataset` provides a *uniform interface* in a *single type* for all of these.
+Furthermore, `Dataset` covers many other cases that are currently impossible to represent in a single workspace or in an intuitive manner.
 
 ### <a name="overview-examples"></a>Examples
 
 We begin with a series of examples.
 If clarification is needed, please first read the [following section](#overview-components) for a description of the nomenclature and underlying objects.
+Labels in the figures use a Python-like syntax and naming is preliminary.
 
 ##### A basic dataset containing two variables, a coordinate and data
 
@@ -133,7 +134,7 @@ If clarification is needed, please first read the [following section](#overview-
 ### <a name="overview-components"></a>Components
 
 `class Dataset` is the top level entity.
-It simply set of variables, instances `class Variable`.
+It simply set of variables, instances of `class Variable`.
 `Variable` contains:
 - Tag and name identifying the variable.
 - Unit of the data held by the variable.
@@ -141,8 +142,8 @@ It simply set of variables, instances `class Variable`.
 - Data, stored in an array-like container.
 
 The dimensions of the variables in a dataset can differ, but the extents of the individual dimensions must match.
-*Example: A one-dimensional variable with `Dimension::X` and a two-dimensional variable with `Dimension::X` and `Dimension::Y` in the *same* dataset.
-The respective extents of `Dimension::X` must match.*
+*Example: A one-dimensional variable with `Dim::X` and a two-dimensional variable with `Dim::X` and `Dim::Y` in the *same* dataset.
+The respective extents of `Dim::X` must match.*
 A zero-dimensional variable corresponds to a point, i.e., it will contain a single data item.
 
 Variables come in two classes, distinguished by their tag:
@@ -238,9 +239,9 @@ A typical example would be three-dimensional `Data::Value` and `Data::Variance` 
 ##### DataObjects::Workspace2D
 
 A dataset with two-dimensional variables `Data::Value` and `Data::Variance` in combination with a one- or two-dimensional variable `Coord::Tof` is a close equivalent to the current `DataObjects::Workspace2D`.
-- Typically `Data::Value` and `Data::Variance` would have dimensions `Dimension::Tof` and `Dimension::Spectrum`.
-- If `Coord::Tof` has only `Dimension::Tof`, it corresponds to a `DataObjects::Workspace2D` with shared X axis, if it also has `Dimension::Spectrum` X is not shared.
-- To represent bin edges, the extent of `Coord::Tof` in `Dimension::Tof` is larger by one than `Dimension::Tof` of the other variables.
+- Typically `Data::Value` and `Data::Variance` would have dimensions `Dim::Tof` and `Dim::Spectrum`.
+- If `Coord::Tof` has only `Dim::Tof`, it corresponds to a `DataObjects::Workspace2D` with shared X axis, if it also has `Dim::Spectrum` X is not shared.
+- To represent bin edges, the extent of `Coord::Tof` in `Dim::Tof` is larger by one than `Dim::Tof` of the other variables.
 - `Coord::SpectrumNumber` provides a spectrum number (currently in `API::ISpectrum`).
 - Mapping from spectra to detectors (currently in `API::ISpectrum`) can be added using `Coord::DetectorGrouping`.
   For representing the instrument see the corresponding section below.
@@ -253,10 +254,10 @@ Most basic operations have an obvious mapping to what our current basic algorith
 
 `Geometry::DetectorInfo` and `Geometry::ComponentInfo` are the result of the refactoring effort as part of **Instrument-2.0**.
 Thanks to that refactoring, the underlying data is already stored in a structure of vectors, which can be mapped to variables in a dataset in an almost 1:1 manner.
-- In place of `Geometry::DetectorInfo`, several variables with `Dimension::Detector` would be added to a dataset.
+- In place of `Geometry::DetectorInfo`, several variables with `Dim::Detector` would be added to a dataset.
   - `Coord::DetectorPosition` to store positions, `Coord::DetectorRotation` to store rotations, ...
 - The option to have multi-dimensional variables will provide support for instruments with (synchronously) scanning detectors in a natural way.
-  - Variables such as `Coord::DetectorPosition` can have the additional `Dimension::DetectorScan` (in addition to `Dimension::Detector`).
+  - Variables such as `Coord::DetectorPosition` can have the additional `Dim::DetectorScan` (in addition to `Dim::Detector`).
   - Time intervals for the scan can be stored in an additional variable `Coord::TimeInterval`.
 - Data for `Geometry::ComponentInfo` can be mapped to variables in the dataset in a similar manner.
 - `Geometry::Instrument` still exists as part of the pre-**Instrument-2.0** legacy.
@@ -273,14 +274,14 @@ A dataset with one-dimensional data variables `Data::Value` and `Data::Variance`
 
 In contrast to histograms in `DataObjects::Workspace2D`, the event lists stored in `DataObject::EventWorkspace` have varying length.
 Therefore, the events cannot be stored as a single multi-dimensional array.
-- A one-dimensional variable `Data::Events` with `Dimension::Spectrum` holds the lists of the events.
+- A one-dimensional variable `Data::Events` with `Dim::Spectrum` holds the lists of the events.
 - The lists of events is a type similar to `DataObjects::EventList`.
   One option is to use `Dataset` for this, that is the dataset would contain many datasets, one for each event list.
 
 ##### DataObjects::EventList
 
 A one-dimensional dataset without coordinate variables can be used to represent an event list.
-- `Dimension::Event` is used as the only dimension for all variables.
+- `Dim::Event` is used as the only dimension for all variables.
 - `Data::Tof` and `Data::PulseTime` make up the key part of data.
 - Extra variables can be added to support weighted events.
 - `concatenate` provides a merge operation.
@@ -370,7 +371,7 @@ This could enable MPI support, cache blocking for more efficient use of the CPU 
 - Store the full dimension extent in addition to the chunk extent in `Dimensions`.
 - If a dimension of a dataset represents just a subsection of the full dimension extent we use a special dimension tag.
 - Operations that operate on a particular dimension will then fail.
-  *Example: `Algorithms::DiffractionFocussing` requires `Dimension::Spectrum`.*
+  *Example: `Algorithms::DiffractionFocussing` requires `Dim::Spectrum`.*
 - Based on the stored full dimension extent we can assemble a dataset from chunks, or provide a multi-step operation that can deal with partial dimensions and does the assembling process.
   *Example: A version of `Algorithms::DiffractionFocussing` that first focusses within each chunk and merges focussed data from all chunks in a final step.*
 
@@ -378,23 +379,24 @@ This could enable MPI support, cache blocking for more efficient use of the CPU 
 ### <a name="design-components-dimension-tags"></a>Dimension tags
 
 A dimension is identified by a tag.
-This is simply an `enum class Dimension`.
-Consider renaming this to `enum class Dim` for brevity.
-Despite the abbreviation this should be clear and may actually improve code readability since it is more concise when used frequently?
+This is simply an `enum class Dim`.
+*Note:
+In the prototype this is currently named `enum class Dimension`, but we suggest renaming this to `enum class Dim` for brevity.
+Despite the abbreviation this should be clear and may actually improve code readability since it is more concise when used frequently?*
 
 An incomplete list of dimension tags:
-- `Dimension::X`, `Dimension::Y`, `Dimension::Z`.
-- `Dimension::Qx`, `Dimension::Qy`, `Dimension::Qz`.
-- `Dimension::Detector`
-- `Dimension::Spectrum`
-- `Dimension::Tof`
-- `Dimension::Wavelength`
-- `Dimension::DetectorScan`
-- `Dimension::Temperature`
-- `Dimension::Polarization`
-- `Dimension::Run`
-- `Dimension::Row`
-- `Dimension::Event`
+- `Dim::X`, `Dim::Y`, `Dim::Z`.
+- `Dim::Qx`, `Dim::Qy`, `Dim::Qz`.
+- `Dim::Detector`
+- `Dim::Spectrum`
+- `Dim::Tof`
+- `Dim::Wavelength`
+- `Dim::DetectorScan`
+- `Dim::Temperature`
+- `Dim::Polarization`
+- `Dim::Run`
+- `Dim::Row`
+- `Dim::Event`
 
 In many cases there is a corresponding coordinate tag for a dimension.
 
@@ -514,7 +516,7 @@ In particular, anything that is *more* specific than already supported should no
   Is having it as part of this lowest-level library the right choice?
 
 There are some cases which are likely to lead to additions to the dataset library:
-- Initially we will not have covered all required cases with tags for `Dimension` and variable tags for `Coord` and `Data`.
+- Initially we will not have covered all required cases with tags for `Dim` and variable tags for `Coord` and `Data`.
   In particular, we need a new `Coord` for every unit that we support.
 - As a consequence the unit handling will also need to be extended.
 
