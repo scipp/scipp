@@ -8,50 +8,50 @@
 
 - [Context](#context)
 - [High level design overview](#overview)
-  - [Components](#overview:components)
-  - [Operations](#overview:operations)
-  - [Relation to existing workspace types](#overview:relation-to-existing-workspace-types)
-  - [Python exports](#overview:python-exports)
+  - [Components](#overview-components)
+  - [Operations](#overview-operations)
+  - [Relation to existing workspace types](#overview-relation-to-existing-workspace-types)
+  - [Python exports](#overview-python-exports)
 - [Design components](#design-components)
-  - [`class Dataset`](#design-components:dataset)
-  - [`class Variable`](#design-components:variable)
-  - [Variable tags](#design-components:variable-tags)
-  - [`class Dimensions`](#design-components:dimensions)
-  - [Dimension tags](#design-components:dimension-tags)
-  - [`class DatasetView`](#design-components:datasetview)
-  - [`class DatasetIndex`](#design-components:datasetindex)
-  - [Units](#design-components:units)
-  - [Exceptions](#design-components:exceptions)
+  - [`class Dataset`](#design-components-dataset)
+  - [`class Variable`](#design-components-variable)
+  - [Variable tags](#design-components-variable-tags)
+  - [`class Dimensions`](#design-components-dimensions)
+  - [Dimension tags](#design-components-dimension-tags)
+  - [`class DatasetView`](#design-components-datasetview)
+  - [`class DatasetIndex`](#design-components-datasetindex)
+  - [Units](#design-components-units)
+  - [Exceptions](#design-components-exceptions)
 - [Design details](#design-details)
-  - [Dependencies](#design-details:dependencies)
-  - [Unit tests](#design-details:unit-tests)
-  - [Benchmarks](#design-details:benchmarks)
-  - [Sanitizers](#design-details:sanitizers)
-  - [Code review](#design-details:code-review)
-  - [Documentation](#design-details:documentation)
-  - [Scope and extension](#design-details:scope-and-extension)
-  - [API stability](#design-details:api-stability)
-  - [Naming](#design-details:naming)
-  - [Copy-on-write mechanism](#design-details:copy-on-write-mechanism)
-  - [Uncertainties are stored as variances, not standard deviations](#design-details:uncertainties-are-stored-as-variances)
-  - ["Distributions" and "histogram data" are distinguished by their unit](#design-details:distribution-histogram-distinguised-by-unit)
-  - [No progress reporting an no cancellation](#design-details:no-progress-reporting-no-cancellation)
-  - [No support for histograms with varying length](#design-details:no-length-variation)
-  - [Operations are threaded using OpenMP](#design-details:threading)
-  - [No magic](#design-details:no-magic)
-  - [No logging](#design-details:no-logging)
-  - [Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given](#design-details:exception-safety)
-  - [No processing history, for the time being](#design-details:no-processing-history)
-  - [Floating-point precision can be set at compile time](#design-details:floating-point-precision-compile-time)
+  - [Dependencies](#design-details-dependencies)
+  - [Unit tests](#design-details-unit-tests)
+  - [Benchmarks](#design-details-benchmarks)
+  - [Sanitizers](#design-details-sanitizers)
+  - [Code review](#design-details-code-review)
+  - [Documentation](#design-details-documentation)
+  - [Scope and extension](#design-details-scope-and-extension)
+  - [API stability](#design-details-api-stability)
+  - [Naming](#design-details-naming)
+  - [Copy-on-write mechanism](#design-details-copy-on-write-mechanism)
+  - [Uncertainties are stored as variances, not standard deviations](#design-details-uncertainties-are-stored-as-variances)
+  - ["Distributions" and "histogram data" are distinguished by their unit](#design-details-distribution-histogram-distinguised-by-unit)
+  - [No progress reporting an no cancellation](#design-details-no-progress-reporting-no-cancellation)
+  - [No support for histograms with varying length](#design-details-no-length-variation)
+  - [Operations are threaded using OpenMP](#design-details-threading)
+  - [No magic](#design-details-no-magic)
+  - [No logging](#design-details-no-logging)
+  - [Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given](#design-details-exception-safety)
+  - [No processing history, for the time being](#design-details-no-processing-history)
+  - [Floating-point precision can be set at compile time](#design-details-floating-point-precision-compile-time)
 - [Implementation](#implementation)
-  - [Goals and non-goals](#implementation:goals-and-non-goals)
-  - [Milestones](#implementation:milestones)
-  - [Further steps](#implementation:further-steps)
-  - [Effort](#implementation:effort)
+  - [Goals and non-goals](#implementation-goals-and-non-goals)
+  - [Milestones](#implementation-milestones)
+  - [Further steps](#implementation-further-steps)
+  - [Effort](#implementation-effort)
 - [Discussion](#discussion)
-  - [Impact](#discussion:impact)
-  - [New challenges](#discussion:new-challenges)
-  - [Summary](#discussion:summary)
+  - [Impact](#discussion-impact)
+  - [New challenges](#discussion-new-challenges)
+  - [Summary](#discussion-summary)
 
 
 ## <a name="context"></a>Context
@@ -92,7 +92,7 @@ In addition, `Dataset` can likely also replace `Histogram`, `EventList`, and dat
 Furthermore, `Dataset` will cover many other cases that are currently impossible to represent in a single workspace.
 
 
-### <a name="overview:components"></a>Components
+### <a name="overview-components"></a>Components
 
 `class Dataset` is the top level entity.
 It simply set of variables, instances `class Variable`.
@@ -182,7 +182,7 @@ Multiple data variables of the same type are supported by a different name:
 ![figure: dataset with up to three dimensions and two data variables](dataset-3d-two-data-variables.png)
 
 
-### <a name="overview:operations"></a>Operations
+### <a name="overview-operations"></a>Operations
 
 Alongside the new `Dataset` type a series of basic and common operations will be provided.
 A mostly but not entirely complete list of operations to be supported is:
@@ -201,7 +201,7 @@ A mostly but not entirely complete list of operations to be supported is:
    *Question: Should disk I/O live in a separate module/library?*
 
 
-### <a name="overview:relation-to-existing-workspace-types"></a>Relation to existing workspace types
+### <a name="overview-relation-to-existing-workspace-types"></a>Relation to existing workspace types
 
 From the above description it may not be clear how `Dataset` is used to replace existing workspace types or components so we take a break to give some examples.
 For clarity, in the following we are explicitly giving the current Mantid namespace names such as `API`, `DataObjects`, `Geometry`, and `Algorithms` when referring to types from the existing implementation.
@@ -276,7 +276,7 @@ A one-dimensional dataset without coordinate variables can be used to represent 
 - `filter` provides filtering by time-of-flight or pulse-time.
 
 
-### <a name="overview:python-exports"></a>Python exports
+### <a name="overview-python-exports"></a>Python exports
 
 All relevant high-level classes and functions are fully exposed via a Python interface.
 - The C++ API is modern and is thus easily mapped to a "pythonic" dataset library.
@@ -292,7 +292,7 @@ For more details and examples the prototype code serves as a reference.
 A good starting point that gives an overview of how `Dataset` may be *used* is given by [`TableWorkspace` example](../test/TableWorkspace_test.cpp), [`Workspace2D` example](../test/Workspace2D_test.cpp), and [`EventWorkspace` example](../test/EventWorkspace_test.cpp).
 
 
-### <a name="design-components:dataset"></a>`class Dataset`
+### <a name="design-components-dataset"></a>`class Dataset`
 
 `class Dataset` is literally just a set or list of variables.
 - Variables can be inserted and removed.
@@ -314,7 +314,7 @@ Most other functionality would probably be added as free functions.
 - Insertion mechanism for bin-edge variables needs to be clarified.
 
 
-### <a name="design-components:variable"></a>`class Variable`
+### <a name="design-components-variable"></a>`class Variable`
 
 `class Variable` can hold a N-dimensional array of arbitrary data, with some additions that make it self-describing:
 - Tag and name identifying the variable.
@@ -337,7 +337,7 @@ There is no disadvantage to this apart from preventing move operations when init
 In case alignment shows no actual advantage for performance in practice we can consider removing this feature.
 
 
-### <a name="design-components:variable-tags"></a>Variable tags
+### <a name="design-components-variable-tags"></a>Variable tags
 
 Variables are identified by their tag, such as `Coord::X` and `Data::Value`.
 Tags are also used for `const`-correct access, e.g., for avoiding triggering a copy or joint iteration with lower-dimensional variables.
@@ -345,7 +345,7 @@ Therefore the tags are not and `enum` but a class.
 This lets us use things like `dataset.get<const Coord::X>()` instead of a less intuitive `dataset.get<Coord::ConstX>()`.
 
 
-### <a name="design-components:dimensions"></a>`class Dimensions`
+### <a name="design-components-dimensions"></a>`class Dimensions`
 
 `class Dimensions` is an ordered list of dimension names alongside the dimension's extent, i.e., it defines a N-dimensional volume.
 Furthermore it provides means of operating with dimensions, such as checking if a dimension is contained, merging dimensions, checking for subspaces, and dimension ordering.
@@ -363,7 +363,7 @@ This could enable MPI support, cache blocking for more efficient use of the CPU 
   *Example: A version of `Algorithms::DiffractionFocussing` that first focusses within each chunk and merges focussed data from all chunks in a final step.*
 
 
-### <a name="design-components:dimension-tags"></a>Dimension tags
+### <a name="design-components-dimension-tags"></a>Dimension tags
 
 A dimension is identified by a tag.
 This is simply an `enum class Dimension`.
@@ -387,7 +387,7 @@ An incomplete list of dimension tags:
 In many cases there is a corresponding coordinate tag for a dimension.
 
 
-### <a name="design-components:datasetview"></a>`class DatasetView`
+### <a name="design-components-datasetview"></a>`class DatasetView`
 
 Due to the type-erasure we cannot simply treat `Dataset` as an array of structs, i.e., there is no equivalent to `API::MatrixWorkspace::getSpectrum(const size_t index)`.
 If only access to a single variable is required it can be access directly.
@@ -400,7 +400,7 @@ The current implementation seems to support all required features.
 Performance was originally a problem due to the multi-dimensional iteration, but has been subsequently been optimized to the point where it should be sufficient for most applications.
 
 
-### <a name="design-components:datasetindex"></a>`class DatasetIndex`
+### <a name="design-components-datasetindex"></a>`class DatasetIndex`
 
 `class DatasetIndex` is a simple helper to index slices in a dataset via values in an axis (coordinate).
 `Dataset` itself makes no attempt at keeping values in a coordinate variable validated.
@@ -413,7 +413,7 @@ Instead `DatasetIndex` builds the index (and does the validation) on demand when
 I tried to *maintain* consistent indices like spectrum numbers using code in `Indexing::IndexInfo`, but it turned out to be really complicated when integrating it into `API::MatrixWorkspace`.
 
 
-### <a name="design-components:units"></a>Units
+### <a name="design-components-units"></a>Units
 
 Internally the prototype uses `boost::units`, but we require run-time units.
 It is therefore wrapped in a class that simply stores an unique ID for every unit.
@@ -425,7 +425,7 @@ This will probably require a not insignificant amount of work to get right to ma
 See for example [An issue with distributions and dimensionless units](https://github.com/mantidproject/documents/blob/fix-divide-distribution/Design/DistributionsAndDimensionlessData.md) for a recent issue relating to this in Mantid.
 
 
-### <a name="design-components:exceptions"></a>Exceptions
+### <a name="design-components-exceptions"></a>Exceptions
 
 The prototype currently simply throws `std::runtime_error` in most cases.
 We should most likely add a clear range of exception types that provide useful information such as indices about the failure.
@@ -434,7 +434,7 @@ We should most likely add a clear range of exception types that provide useful i
 ## <a name="design-details"></a>Design details
 
 
-### <a name="design-details:dependencies"></a>Dependencies
+### <a name="design-details-dependencies"></a>Dependencies
 
 - `boost::units` for unit handling.
 - `boost::container` for `small_vector`, which is used as an optimization in a couple of places.
@@ -460,31 +460,31 @@ It is currently unclear whether this library should be kept as a separate reposi
 - The disadvantage is a potential coupling of versioning, see [API stability](#design-details:api-stability).
 
 
-### <a name="design-details:unit-tests"></a>Unit tests
+### <a name="design-details-unit-tests"></a>Unit tests
 
 The library is intended as a low-level building block and the mixed-multi-dimensional aspected lead to many corner cases.
 A comprehensive and maintainable suite of unit tests is thus essential.
 
 
-### <a name="design-details:benchmarks"></a>Benchmarks
+### <a name="design-details-benchmarks"></a>Benchmarks
 
 Given the intention of being a low-level building block for everything else, ensuring good performance and preventing performance regression is thus essential.
 A suite of benchmarks is to be maintained and monitored for changes.
 
 
-### <a name="design-details:sanitizers"></a>Sanitizers
+### <a name="design-details-sanitizers"></a>Sanitizers
 
 Static analysis and sanitization runs should be performed and verified automatically.
 Most importantly, AddressSanitizer should be used to strictly monitor for memory corruption bugs.
 
 
-### <a name="design-details:code-review"></a>Code review
+### <a name="design-details-code-review"></a>Code review
 
 The same review/approval system for pull request as in Mantid should be adopted.
 However, given the scope of the project, we should require *two full reviews*, i.e., the gatekeeper should also do a thorough review, in addition to the first reviewer.
 
 
-### <a name="design-details:documentation"></a>Documentation
+### <a name="design-details-documentation"></a>Documentation
 
 Documentation is required for several cases:
 - Library (developer) documentation.
@@ -493,7 +493,7 @@ Documentation is required for several cases:
 - Python usage examples beyond simple API documentation, e.g., how to represent complex data structures such as a `DataObjects::Workspace2D` as a `Dataset`.
 
 
-### <a name="design-details:scope-and-extension"></a>Scope and extension
+### <a name="design-details-scope-and-extension"></a>Scope and extension
 
 The design described here is seen as a nearly complete description of the scope of the dataset library.
 Extending the functionally should be avoided and should happen only after careful consideration.
@@ -507,7 +507,7 @@ There are some cases which are likely to lead to additions to the dataset librar
 - As a consequence the unit handling will also need to be extended.
 
 
-### <a name="design-details:api-stability"></a>API stability
+### <a name="design-details-api-stability"></a>API stability
 
 The C++ version as well as the Python exports are meant as a low level building block for other parts of the project, in addition to direct use in scripts by users.
 Therefore we need to ensure that the API is reasonably stable.
@@ -520,7 +520,7 @@ At the same time, we will struggle with things that do not work out early on as 
 The implication is that this library would probably require versioning independent of Mantid itself.
 
 
-### <a name="design-details:naming"></a>Naming
+### <a name="design-details-naming"></a>Naming
 
 #### Components of the library are part of namespace `dataset`
 
@@ -558,7 +558,7 @@ Our options would include:
 1. `mantid::dataset::core::Dataset`, `mantid::dataset::algorithm`, `mantid::dataset::io`.
 
 
-### <a name="design-details:copy-on-write-mechanism"></a>Copy-on-write mechanism
+### <a name="design-details-copy-on-write-mechanism"></a>Copy-on-write mechanism
 
 ##### Context
 
@@ -573,7 +573,7 @@ The copy-on-write mechanism is something that has since long been adopted in Man
 However, for the interface of `API::MatrixWorkspace` (and in connection to that `HistogramData::Histogram`) this has led to an interface that is too complicated, with different API functions for read-only access, write-access, and access for sharing.
 
 
-### <a name="design-details:uncertainties-are-stored-as-variances"></a>Uncertainties are stored as variances, not standard deviations
+### <a name="design-details-uncertainties-are-stored-as-variances"></a>Uncertainties are stored as variances, not standard deviations
 
 ##### Rationale
 
@@ -591,7 +591,7 @@ Instead `Data::StdDev` can by used in combination with `DatasetView` to *read* t
 If it turns out to be useful it would also be possible to provide setters --- as opposed to a simple assignment which is possible if the actual underlying data is referenced --- for standard deviation using `DatasetView` .
 
 
-### <a name="design-details:distribution-histogram-distinguised-by-unit"></a>"Distributions" and "histogram data" are distinguished by their unit
+### <a name="design-details-distribution-histogram-distinguised-by-unit"></a>"Distributions" and "histogram data" are distinguished by their unit
 
 ##### Rationale
 
@@ -608,7 +608,7 @@ We need to establish whether it is possible to write clean client code based on 
 Apart from that there should not be any major implementation difficulties.
 
 
-### <a name="design-details:no-progress-reporting-no-cancellation"></a>No progress reporting an no cancellation
+### <a name="design-details-no-progress-reporting-no-cancellation"></a>No progress reporting an no cancellation
 
 ##### Rationale
 
@@ -619,7 +619,7 @@ Apart from that there should not be any major implementation difficulties.
 - `numpy` operations cannot be cancelled and do not report progress.
 
 
-### <a name="design-details:no-length-variation"></a>No support for histograms with varying length
+### <a name="design-details-no-length-variation"></a>No support for histograms with varying length
 
 ##### Rationale
 
@@ -636,7 +636,7 @@ In general we should discourage doing this since most of the other functionality
 However, if a varying histogram length is essential for some purpose it is absolutely possible.
 
 
-### <a name="design-details:threading"></a>Operations are threaded using OpenMP
+### <a name="design-details-threading"></a>Operations are threaded using OpenMP
 
 ##### Rationale
 
@@ -654,7 +654,7 @@ For small data the threading overhead may be larger than the gains.
 For large data, many cases such as `operator+` are heavily limited by memory bandwidth and using more cores than necessary for reaching the peak bandwidth would be wasteful.
 
 
-### <a name="design-details:no-magic"></a>No magic
+### <a name="design-details-no-magic"></a>No magic
 
 ##### Rationale
 
@@ -677,7 +677,7 @@ High level algorithms that simply work no matter what is thrown at them are like
 We are merely banning it from *this* library, i.e., the lowest-level building block.
 
 
-### <a name="design-details:no-logging"></a>No logging
+### <a name="design-details-no-logging"></a>No logging
 
 ##### Rationale
 
@@ -690,7 +690,7 @@ Adding logging functionality would increase complexity and add extra dependencie
 If required we could log to `stdout` using `std::cout`, which can be redirected and filtered.
 
 
-### <a name="design-details:exception-safety"></a>Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given
+### <a name="design-details-exception-safety"></a>Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given
 
 ##### Rationale
 
@@ -709,7 +709,7 @@ The safest and simplest way to do so is to completely clear datasets that may ha
 The exception safety guarantee of each operation is to be documented.
 
 
-### <a name="design-details:no-processing-history"></a>No processing history, for the time being
+### <a name="design-details-no-processing-history"></a>No processing history, for the time being
 
 ##### Rationale
 
@@ -721,7 +721,7 @@ There would be some complications related to having a history without `API::Anal
 Overall however, it should have no influence on the `Dataset` design, i.e., it seems safe to postpone a decision until we have a clearer understanding of how `Dataset` will be used in practice and how it will get integrated in the current Mantid ecosystem.
 
 
-### <a name="design-details:floating-point-precision-compile-time"></a>Floating-point precision can be set at compile time
+### <a name="design-details-floating-point-precision-compile-time"></a>Floating-point precision can be set at compile time
 
 ##### Rationale
 
@@ -746,7 +746,7 @@ However, the development cost for this library itself would be rather minor, so 
 ## <a name="implementation"></a>Implementation
 
 
-### <a name="implementation:goals-and-non-goals"></a>Goals and non-goals
+### <a name="implementation-goals-and-non-goals"></a>Goals and non-goals
 
 ##### Goals in this implementation phase
 
@@ -773,7 +773,7 @@ However, the development cost for this library itself would be rather minor, so 
 1. It is a non-goal to provide support for all visualization widgets.
 
 
-### <a name="implementation:milestones"></a>Milestones
+### <a name="implementation-milestones"></a>Milestones
 
 *To do: This needs a lot of work. It is quite unclear what belongs to which milestone, the idea is the have something more usable at every step.*
 
@@ -803,7 +803,7 @@ However, the development cost for this library itself would be rather minor, so 
 - User/developer testing before reaching milestone.
 
 
-### <a name="implementation:further-steps"></a>Further steps
+### <a name="implementation-further-steps"></a>Further steps
 
 It is not clear where to go after above milestones have been completed.
 A lot will depend on how the first implementation phase goes, what difficulties we face, and how it is accepted by the developer and user community.
@@ -815,7 +815,7 @@ Options for follow up steps include, in no particular order:
 - Implement a stand-alone `DatasetViewer` application.
 
 
-### <a name="implementation:effort"></a>Effort
+### <a name="implementation-effort"></a>Effort
 
 *To do: Split into milestones and improve estimates after initial design review iterations.*
 In no particular order:
@@ -856,7 +856,7 @@ Note that several of these tasks refer the development outside the core library,
 ## <a name="discussion"></a>Discussion
 
 
-### <a name="discussion:impact"></a>Impact
+### <a name="discussion-impact"></a>Impact
 
 ##### General improvements
 
@@ -881,7 +881,7 @@ Note that several of these tasks refer the development outside the core library,
   - Polarization analysis.
 
 
-### <a name="discussion:new-challenges"></a>New challenges
+### <a name="discussion-new-challenges"></a>New challenges
 
 We believe that this simple design will solve many of the problems we face currently when using the existing workspace types.
 Obviously there will be new problems, not all of which can be foreseen.
@@ -896,6 +896,6 @@ Based on the limited experience when working with the prototype, there are a cou
 1. Type-erasure makes some code slightly more cumbersome and verbose.
 
 
-### <a name="discussion:summary"></a>Summary
+### <a name="discussion-summary"></a>Summary
 
 *(to be added after first review cycles)*
