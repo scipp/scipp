@@ -9,7 +9,7 @@
 - [Context](#context)
 - [High level design overview](#overview)
   - [Examples](#overview-examples)
-  - [Components](#overview-components)
+  - [Elements](#overview-elements)
   - [Operations](#overview-operations)
   - [Relation to existing workspace types](#overview-relation-to-existing-workspace-types)
   - [Python exports](#overview-python-exports)
@@ -69,6 +69,7 @@ For a big picture of the current situation, consider the class inheritance diagr
 To put this diagram in perspective, note that one major point of criticism of the current implementation was "not enough workspace types", i.e., for the redesign an even larger variety was requested.
 Based on these requirements a design and prototyping process was started in early 2018.
 Initially a couple of different options have been prototyped but it soon became apparent that only one of them was a real option.
+We refer to the [early prototype documentation](https://github.com/mantidproject/workspace-sandbox) for details on the abandoned options and why they were abandoned.
 In agreement with reviewers of those early investigations, effort has thus been mostly focused on the `Dataset` option, described below.
 Altogether, as of 2018-10-10, a total of 65 working days (approx 3.5 FTE months) have been invested in the design and prototyping process.
 
@@ -122,7 +123,7 @@ Labels in the figures use a Python-like syntax and naming is preliminary.
 
 <img src="dataset-2d-variable-0d.png" height="70%" width="70%">
 
-##### Variables can have more dimensions if needed
+##### Variables can have more dimensions if needed, e.g., for multi-period data or scan data
 
 <img src="dataset-3d.png" height="70%" width="70%">
 
@@ -131,7 +132,7 @@ Labels in the figures use a Python-like syntax and naming is preliminary.
 <img src="dataset-3d-two-data-variables.png" height="70%" width="70%">
 
 
-### <a name="overview-components"></a>Components
+### <a name="overview-elements"></a>Elements
 
 `class Dataset` is the top level entity.
 It simply set of variables, instances of `class Variable`.
@@ -215,6 +216,9 @@ A mostly but not entirely complete list of operations to be supported is:
 1. Basic statistics operations such as min, max, mean, and standard deviation
 1. Serialization and deserialization, mainly for saving to and loading from disk
    *Question: Should disk I/O live in a separate module/library?*
+
+As discussed earlier, coordinate variables are not operated on in operations between datasets.
+To modify a coordinate variable, we operate directly on the variable-level.
 
 
 ### <a name="overview-relation-to-existing-workspace-types"></a>Relation to existing workspace types
@@ -475,6 +479,8 @@ We can store `API::Run` in `Dataset`, but the dataset library does not need to d
 It is currently unclear whether this library should be kept as a separate repository or be included as a new module in the Mantid repository.
 - The advantage of inclusion is the automatic use of the build server and deployment infrastructure.
 - The disadvantage is a potential coupling of versioning, see [API stability](#design-details:api-stability).
+
+If included in the Mantid repository, stand-alone packages should be provided as a light-weight alternative to downloading the full Mantid package.
 
 
 ### <a name="design-details-unit-tests"></a>Unit tests
