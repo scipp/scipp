@@ -162,25 +162,32 @@ A basic example of a dataset with two variables, a coordinate and data:
 <img src="dataset-2d.png" align="center" height="50%" width="50%">
 
 Coordinates can be bin-edges, i.e., their extent can be longer by one than the corresponding dimensions of other variables:
-![figure: dataset with a bin-edge variable](dataset-2d-bin-edges.png)
+
+<img src="dataset-2d-bin-edges.png" align="center" height="50%" width="50%">
 
 Coordinates do not need to be one-dimensional, i.e., they can represent a non-shared "X", as we are used to from `API::MatrixWorkspace`:
-![figure: dataset with a coordinate depending on another dimension](dataset-2d-coord-not-shared.png)
+
+<img src="dataset-2d-coord-not-shared.png" align="center" height="50%" width="50%">
 
 More coordinates can be added, e.g., for other dimensions:
-![figure: dataset with coordinates for more dimensions](dataset-2d-more-coords.png)
+
+<img src="dataset-2d-more-coords.png" align="center" height="50%" width="50%">
 
 Multiple coordinates for the same dimension are also possible, as long as the coordinate tag is different, e.g., the final energy `Ef` in a spectrometer:
-![figure: dataset with multiple coordinates for the same dimension](dataset-2d-multiple-coords-same-dimension.png)
+
+<img src="dataset-2d-multiple-coords-same-dimension.png" align="center" height="50%" width="50%">
 
 Variables can be zero-dimensional:
-![figure: dataset with a zero-dimensional coordinate variable](dataset-2d-variable-0d.png)
+
+<img src="dataset-2d-variable-0d.png" align="center" height="50%" width="50%">
 
 Variables can have more dimensions if needed:
-![figure: dataset with up to three dimensions](dataset-3d.png)
+
+<img src="dataset-3d.png" align="center" height="50%" width="50%">
 
 Multiple data variables of the same type are supported by a different name:
-![figure: dataset with up to three dimensions and two data variables](dataset-3d-two-data-variables.png)
+
+<img src="dataset-3d-two-data-variables.png" align="center" height="50%" width="50%">
 
 
 ### <a name="overview-operations"></a>Operations
