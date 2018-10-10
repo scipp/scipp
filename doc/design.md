@@ -8,6 +8,7 @@
 
 - [Context](#context)
 - [High level design overview](#overview)
+  - [Examples](#overview-examples)
   - [Components](#overview-components)
   - [Operations](#overview-operations)
   - [Relation to existing workspace types](#overview-relation-to-existing-workspace-types)
@@ -69,7 +70,7 @@ To put this diagram in perspective, note that one major point of criticism of th
 Based on these requirements a design and prototyping process was started in early 2018.
 Initially a couple of different options have been prototyped but it soon became apparent that only one of them was a real option.
 In agreement with reviewers of those early investigations, effort has thus been mostly focused on the `Dataset` option, described below.
-Altogether, as of 2018-10-05, a total of 60 working days (approx 3.5 FTE months) have been invested in the design and prototyping process.
+Altogether, as of 2018-10-10, a total of 65 working days (approx 3.5 FTE months) have been invested in the design and prototyping process.
 
 
 ## <a name="overview"></a>High level design overview
@@ -90,6 +91,43 @@ This includes not just `MatrixWorkspace` and its child classes `Workspace2D` and
 In addition, `Dataset` can likely also replace `Histogram`, `EventList`, and data structure introduced as part of **Instrument-2.0**.
 `Dataset` would provide a *uniform interface* in a *single type* for all of these.
 Furthermore, `Dataset` will cover many other cases that are currently impossible to represent in a single workspace.
+
+### <a name="overview-examples"></a>Examples
+
+We begin with a series of examples.
+If clarification is needed, please first read the [following section](#overview-components) for a description of the nomenclature and underlying objects.
+
+##### A basic dataset containing two variables, a coordinate and data
+
+<img src="dataset-2d.png" height="48%" width="48%">
+
+##### Coordinates can be bin-edges, i.e., their extent can be longer by one than the corresponding dimensions of other variables
+
+<img src="dataset-2d-bin-edges.png" height="48%" width="48%">
+
+##### Coordinates do not need to be one-dimensional, i.e., they can represent a non-shared "X", as we are used to from `API::MatrixWorkspace`
+
+<img src="dataset-2d-coord-not-shared.png" height="48%" width="48%">
+
+##### More coordinates can be added, e.g., for other dimensions
+
+<img src="dataset-2d-more-coords.png" height="70%" width="70%">
+
+##### Multiple coordinates for the same dimension are also possible, as long as the coordinate tag is different, e.g., the final energy `Ef` in a spectrometer
+
+<img src="dataset-2d-multiple-coordinates-same-dimension.png" height="70%" width="70%">
+
+##### Variables can be zero-dimensional
+
+<img src="dataset-2d-variable-0d.png" height="70%" width="70%">
+
+##### Variables can have more dimensions if needed
+
+<img src="dataset-3d.png" height="70%" width="70%">
+
+##### Multiple data variables of the same type are supported by a different name
+
+<img src="dataset-3d-two-data-variables.png" height="70%" width="70%">
 
 
 ### <a name="overview-components"></a>Components
@@ -154,40 +192,6 @@ The name of data variables is furthermore used to imply a grouping of variables.
 
 The data in `Variable` is held by a type-erased handle, i.e., a `Variable` can hold data of any type.
 The data handle also implements a copy-on-write mechanism, which makes `Variable` and `Dataset` cheap to copy and saves memory if only some variables in a dataset are modified.
-
-##### Examples
-
-A basic example of a dataset with two variables, a coordinate and data:
-
-<img src="dataset-2d.png" height="48%" width="48%">
-
-Coordinates can be bin-edges, i.e., their extent can be longer by one than the corresponding dimensions of other variables:
-
-<img src="dataset-2d-bin-edges.png" height="48%" width="48%">
-
-Coordinates do not need to be one-dimensional, i.e., they can represent a non-shared "X", as we are used to from `API::MatrixWorkspace`:
-
-<img src="dataset-2d-coord-not-shared.png" height="48%" width="48%">
-
-More coordinates can be added, e.g., for other dimensions:
-
-<img src="dataset-2d-more-coords.png" height="70%" width="70%">
-
-Multiple coordinates for the same dimension are also possible, as long as the coordinate tag is different, e.g., the final energy `Ef` in a spectrometer:
-
-<img src="dataset-2d-multiple-coordinates-same-dimension.png" height="70%" width="70%">
-
-Variables can be zero-dimensional:
-
-<img src="dataset-2d-variable-0d.png" height="70%" width="70%">
-
-Variables can have more dimensions if needed:
-
-<img src="dataset-3d.png" height="70%" width="70%">
-
-Multiple data variables of the same type are supported by a different name:
-
-<img src="dataset-3d-two-data-variables.png" height="70%" width="70%">
 
 
 ### <a name="overview-operations"></a>Operations
@@ -783,7 +787,11 @@ However, the development cost for this library itself would be rather minor, so 
 
 ### <a name="implementation-milestones"></a>Milestones
 
-*To do: This needs a lot of work. It is quite unclear what belongs to which milestone, the idea is the have something more usable at every step.*
+*To do:
+This needs a lot of work.
+It is quite unclear what belongs to which milestone, the idea is the have something more usable at every step.
+Also, do we have any ideas that can ultimately avoid a hard and risky "drop all the old stuff" step?
+*
 
 ##### Milestone 1
 
