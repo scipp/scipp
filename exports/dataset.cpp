@@ -37,8 +37,6 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
-enum class Coord { X, Y, Z };
-enum class Data { Value, Variance };
 struct VariableHeader {
   gsl::index nDim;
   std::array<std::pair<Dimension, gsl::index>, 4> dimensions;
@@ -46,6 +44,24 @@ struct VariableHeader {
   Unit::Id unit;
   gsl::index dataSize;
 };
+
+template <class Tag>
+void insertCoord(Dataset &self, const Tag, const Dimensions &dims,
+                 const std::vector<double> &data) {
+  self.insert<const Tag>(dims, data);
+}
+
+template <class Tag>
+void insert(Dataset &self, const Tag, const std::string &name,
+            const Dimensions &dims, const std::vector<double> &data) {
+  self.insert<const Tag>(name, dims, data);
+}
+
+template <class Tag>
+auto get(const Dataset &self, const Tag, const std::string &name)
+    -> decltype(self.get<const Tag>(name)) {
+  return self.get<const Tag>(name);
+}
 } // namespace detail
 
 PYBIND11_MODULE(dataset, m) {
@@ -53,16 +69,26 @@ PYBIND11_MODULE(dataset, m) {
       .value("X", Dimension::X)
       .value("Y", Dimension::Y)
       .value("Z", Dimension::Z);
-  py::enum_<detail::Coord>(m, "Coord")
-      .value("X", detail::Coord::X)
-      .value("Y", detail::Coord::Y)
-      .value("Z", detail::Coord::Z);
-  py::enum_<detail::Data>(m, "Data")
-      .value("Value", detail::Data::Value)
-      .value("Variance", detail::Data::Variance);
+
+  auto data_tags = m.def_submodule("Data");
+  py::class_<Data::Value>(data_tags, "_Value");
+  py::class_<Data::Variance>(data_tags, "_Variance");
+  py::class_<Data::String>(data_tags, "_String");
+  data_tags.attr("Value") = Data::Value{};
+  data_tags.attr("Variance") = Data::Variance{};
+  data_tags.attr("String") = Data::String{};
+
+  auto coord_tags = m.def_submodule("Coord");
+  py::class_<Coord::X>(coord_tags, "_X");
+  py::class_<Coord::Y>(coord_tags, "_Y");
+  py::class_<Coord::Z>(coord_tags, "_Z");
+  coord_tags.attr("X") = Coord::X{};
+  coord_tags.attr("Y") = Coord::Y{};
+  coord_tags.attr("Z") = Coord::Z{};
 
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
+  declare_span<const std::string>(m, "string_const");
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
@@ -141,42 +167,14 @@ PYBIND11_MODULE(dataset, m) {
              }
            },
            py::call_guard<py::gil_scoped_release>())
-      .def("insert",
-           [](Dataset &self, const detail::Coord tag, const Dimensions &dims,
-              const std::vector<double> &data) {
-             switch (tag) {
-             case detail::Coord::X:
-               self.insert<Coord::X>(dims, data);
-               break;
-             case detail::Coord::Y:
-               self.insert<Coord::Y>(dims, data);
-               break;
-             case detail::Coord::Z:
-               self.insert<Coord::Z>(dims, data);
-               break;
-             }
-           })
-      .def("insert",
-           [](Dataset &self, const detail::Data tag, const std::string &name,
-              const Dimensions &dims, const std::vector<double> &data) {
-             switch (tag) {
-             case detail::Data::Value:
-               self.insert<Data::Value>(name, dims, data);
-               break;
-             case detail::Data::Variance:
-               self.insert<Data::Variance>(name, dims, data);
-               break;
-             }
-           })
-      .def("get",
-           [](Dataset &self, const detail::Data tag, const std::string &name) {
-             switch (tag) {
-             case detail::Data::Value:
-               return self.get<const Data::Value>(name);
-             case detail::Data::Variance:
-               return self.get<const Data::Variance>(name);
-             }
-           })
+      .def("insert", detail::insertCoord<Coord::X>)
+      .def("insert", detail::insertCoord<Coord::Y>)
+      .def("insert", detail::insertCoord<Coord::Z>)
+      .def("insert", detail::insert<Data::Value>)
+      .def("insert", detail::insert<Data::Variance>)
+      .def("get", detail::get<Data::Value>)
+      .def("get", detail::get<Data::Variance>)
+      .def("get", detail::get<Data::String>)
       .def("insertDataValue",
            py::overload_cast<const std::string &, Dimensions,
                              const std::vector<double> &>(
