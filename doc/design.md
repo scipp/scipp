@@ -171,11 +171,11 @@ Coordinates do not need to be one-dimensional, i.e., they can represent a non-sh
 
 More coordinates can be added, e.g., for other dimensions:
 
-<img src="dataset-2d-more-coords.png" align="center" height="50%" width="50%">
+<img src="dataset-2d-more-coords.png" align="center" height="70%" width="70%">
 
 Multiple coordinates for the same dimension are also possible, as long as the coordinate tag is different, e.g., the final energy `Ef` in a spectrometer:
 
-<img src="dataset-2d-multiple-coords-same-dimension.png" align="center" height="50%" width="50%">
+<img src="dataset-2d-multiple-coordinates-same-dimension.png" align="center" height="50%" width="50%">
 
 Variables can be zero-dimensional:
 
