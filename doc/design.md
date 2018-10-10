@@ -159,15 +159,15 @@ The data handle also implements a copy-on-write mechanism, which makes `Variable
 
 A basic example of a dataset with two variables, a coordinate and data:
 
-<img src="dataset-2d.png" align="center" height="50%" width="50%">
+<img src="dataset-2d.png" align="center" height="47%" width="47%">
 
 Coordinates can be bin-edges, i.e., their extent can be longer by one than the corresponding dimensions of other variables:
 
-<img src="dataset-2d-bin-edges.png" align="center" height="50%" width="50%">
+<img src="dataset-2d-bin-edges.png" align="center" height="47%" width="47%">
 
 Coordinates do not need to be one-dimensional, i.e., they can represent a non-shared "X", as we are used to from `API::MatrixWorkspace`:
 
-<img src="dataset-2d-coord-not-shared.png" align="center" height="50%" width="50%">
+<img src="dataset-2d-coord-not-shared.png" align="center" height="47%" width="47%">
 
 More coordinates can be added, e.g., for other dimensions:
 
@@ -175,19 +175,19 @@ More coordinates can be added, e.g., for other dimensions:
 
 Multiple coordinates for the same dimension are also possible, as long as the coordinate tag is different, e.g., the final energy `Ef` in a spectrometer:
 
-<img src="dataset-2d-multiple-coordinates-same-dimension.png" align="center" height="50%" width="50%">
+<img src="dataset-2d-multiple-coordinates-same-dimension.png" align="center" height="70%" width="70%">
 
 Variables can be zero-dimensional:
 
-<img src="dataset-2d-variable-0d.png" align="center" height="50%" width="50%">
+<img src="dataset-2d-variable-0d.png" align="center" height="70%" width="70%">
 
 Variables can have more dimensions if needed:
 
-<img src="dataset-3d.png" align="center" height="50%" width="50%">
+<img src="dataset-3d.png" align="center" height="70%" width="70%">
 
 Multiple data variables of the same type are supported by a different name:
 
-<img src="dataset-3d-two-data-variables.png" align="center" height="50%" width="50%">
+<img src="dataset-3d-two-data-variables.png" align="center" height="70%" width="70%">
 
 
 ### <a name="overview-operations"></a>Operations
