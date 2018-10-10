@@ -3,6 +3,7 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -175,6 +176,31 @@ PYBIND11_MODULE(dataset, m) {
       .def("get", detail::get<Data::Value>)
       .def("get", detail::get<Data::Variance>)
       .def("get", detail::get<Data::String>)
+      .def(
+          "getNumpy",
+          [](py::object &obj) {
+            const auto &d = obj.cast<const Dataset &>();
+            auto dims = d.dimensions<const Data::Value>();
+            std::vector<int64_t> shape(dims.count());
+            for (gsl::index i = 0; i < shape.size(); ++i)
+              shape[i] = dims.size(shape.size() - 1 - i);
+            auto array = py::array_t<double>(
+                shape, {}, d.get<const Data::Value>().data(), obj);
+            // See https://github.com/pybind/pybind11/issues/481.
+            reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())->flags &=
+                ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+            return array;
+          })
+      .def("getNumpyMutable",
+           [](py::object &obj) {
+             const auto &d = obj.cast<const Dataset &>();
+             auto dims = d.dimensions<const Data::Value>();
+             std::vector<int64_t> shape(dims.count());
+             for (gsl::index i = 0; i < shape.size(); ++i)
+               shape[i] = dims.size(shape.size() - 1 - i);
+             return py::array_t<double>(shape, {},
+                                        d.get<const Data::Value>().data(), obj);
+           })
       .def("insertDataValue",
            py::overload_cast<const std::string &, Dimensions,
                              const std::vector<double> &>(
