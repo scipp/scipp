@@ -158,7 +158,7 @@ The data handle also implements a copy-on-write mechanism, which makes `Variable
 ##### Examples
 
 A basic example of a dataset with two variables, a coordinate and data:
-![figure: basic dataset with up to two dimensions](dataset-2d.png){:height="50%"}
+![figure: basic dataset with up to two dimensions](dataset-2d.png){:height="50%" width="50%"}
 
 Coordinates can be bin-edges, i.e., their extent can be longer by one than the corresponding dimensions of other variables:
 ![figure: dataset with a bin-edge variable](dataset-2d-bin-edges.png)
