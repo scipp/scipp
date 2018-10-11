@@ -18,6 +18,8 @@ class Dataset {
 public:
   gsl::index size() const { return m_variables.size(); }
   const Variable &operator[](gsl::index i) const { return m_variables[i]; }
+  // TODO Remove either this or Variable::setName and Variable::setDimensions.
+  Variable &operator[](gsl::index i) { return m_variables[i]; }
   auto begin() const { return m_variables.begin(); }
   auto end() const { return m_variables.end(); }
 

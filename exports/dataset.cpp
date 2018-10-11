@@ -63,7 +63,83 @@ auto get(const Dataset &self, const Tag, const std::string &name)
     -> decltype(self.get<const Tag>(name)) {
   return self.get<const Tag>(name);
 }
+
+template <class Tag> class TypedVariable {
+  using value_type = typename Tag::type;
+
+public:
+  TypedVariable(Variable &variable)
+      : m_variable(variable), data(variable.get<const Tag>()) {}
+
+  const Dimensions &dimensions() const { return m_variable.dimensions(); }
+  const std::string &name() const { return m_variable.name(); }
+  gsl::index size() const { return data.size(); }
+  void setItem(const gsl::index i, const value_type value) {
+    // Note that this is not thread-safe but it should not matter for Python
+    // exports?
+    if (!m_mutableData) {
+      m_mutableData = m_variable.get<Tag>().data();
+      data = m_variable.get<const Tag>();
+    }
+    m_mutableData[i] = value;
+  }
+
+  gsl::span<const value_type> data;
+
+private:
+  Variable &m_variable;
+  value_type *m_mutableData{nullptr};
+};
+
+template <class Tag> TypedVariable<Tag> getCoord(Dataset &self, const Tag) {
+  return {self[self.find(tag_id<Tag>, "")]};
+}
+
+template <class Tag>
+TypedVariable<Tag> getData(Dataset &self,
+                           const std::pair<const Tag, const std::string> &key) {
+  return {self[self.find(tag_id<Tag>, key.second)]};
+}
+
+std::string formatDim(const Dimension dim) {
+  switch (dim) {
+  case Dimension::X:
+    return "Dim.X";
+  case Dimension::Y:
+    return "Dim.Y";
+  case Dimension::Z:
+    return "Dim.Z";
+  default:
+    return "<unknown-dimension-tag>";
+  }
+}
+
+std::string format(const Dimensions &dims) {
+  std::string out = "Dimensions = {";
+  // TODO reverse order to match numpy convention.
+  for (const auto &item : dims)
+    out += formatDim(item.first) + ": " + std::to_string(item.second) + ", ";
+  out.resize(out.size() - 2);
+  out += '}';
+  return out;
+}
 } // namespace detail
+
+template <class Tag>
+void declare_typed_variable(py::module &m, const std::string &suffix) {
+  py::class_<detail::TypedVariable<Tag>>(
+      m, (std::string("Variable_") + suffix).c_str())
+      // This is a linear index. If we decide to keep this, we should probably
+      // not support slicing notation. If we change to using multi-dimensional
+      // indexing like numpy we can also support slicing.
+      .def("__len__", &detail::TypedVariable<Tag>::size)
+      .def("__getitem__", [](const detail::TypedVariable<Tag> &self,
+                             const gsl::index i) { return self.data[i]; })
+      .def("__setitem__", &detail::TypedVariable<Tag>::setItem)
+      .def_property_readonly("dimensions",
+                             &detail::TypedVariable<Tag>::dimensions)
+      .def_property_readonly("name", &detail::TypedVariable<Tag>::name);
+}
 
 PYBIND11_MODULE(dataset, m) {
   py::enum_<Dimension>(m, "Dimension")
@@ -93,12 +169,18 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
+      .def("__repr__", &detail::format)
       .def("add", &Dimensions::add)
       .def("size",
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
 
+  declare_typed_variable<Data::Value>(m, "DataValue");
+  declare_typed_variable<Coord::X>(m, "CoordX");
+
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
+      .def("__getitem__", detail::getCoord<Coord::X>)
+      .def("__getitem__", detail::getData<Data::Value>)
       .def("serialize",
            [](const Dataset &self) {
              py::list vars;
