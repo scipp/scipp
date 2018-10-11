@@ -789,11 +789,31 @@ However, the development cost for this library itself would be rather minor, so 
    - Workflow with parameter scan or polarization analysis to demonstrate new capabilities of extra dimensions and/or multiple data variables.
 1. If applicable, demonstrate performance gain over existing Mantid workflow.
 
-##### Non-goals in this implementation phase
+##### Non-goals
 
-1. It is a non-goal to provide a drop-in replacement for all existing workspaces.
+Even beyond this implementation phase, we have the following non-goals:
+
+1. It is a non-goal to provide a drop-in replacement for all existing workspaces, i.e., there will by no type compatibility.
 1. It is a non-goal to convert all 970 algorithms to use `Dataset` instead of `API::Workspace`.
 1. It is a non-goal to provide support for all visualization widgets.
+
+This may seem like a harsh and drastic step, and it is, if we were to consider only the next couple of years of Mantid's life.
+It is justified as follows:
+- We focus on ensuring long term maintainability and functionality, as well as other aspects detailed in the [core-team proposal](https://github.com/mantidproject/documents/blob/master/Project-Management/PMB/Mantid%20core%20team%20proposal.docx).
+  That is, the focus is on how Mantid would and should look like in 5-10 years from now.
+- For a more concrete reasons, we consider the two big refactoring projects the team has undertaken in the past couple of years:
+  - The `Histogram` type as part of the `HistogramData` library is a relatively small addition.
+    It mostly kept API compatibilty (for `API::MatrixWorkspace`) but nevertheless a relatively time-consuming rollout was necessary.
+    In retrorespect the choice to keep the API compatible feels like it led to too many compromises and missed opportunities to solve some underlying problems.
+    In particular, with a couple of exceptions, it did not lead to the cleanup in algorithms we had hoped for.
+  - The **Instrument-2.0** effort to improve performance has taken several years of effort so far and is not complete.
+    In this case the API was not kept compatible and we have not encountered any serious drawbacks so far.
+    The main issue here is the big discrepancy in effort between the implementation and rollout, with the latter taking the big majority, as well as the incomplete rollout state.
+
+  Compared to the aforementioned two cases, a new "workspace" implementation and rollout to all existing algorithms is vastly more effort, probably by an order of magnitude.
+  In light of the experience with `Histogram`, where the need to do a rollout severely limited the design as well as the improvements in client code, we also run the risk of severely diminishing our opportunities for actual improvement.
+  That is, if were to attempt a full rollout with a mostly compatible API, we could potentially be faced with several decades worth of effort with little tangible benefit.
+  This is clearly not an option.
 
 
 ### <a name="implementation-milestones"></a>Milestones
