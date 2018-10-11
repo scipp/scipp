@@ -157,6 +157,10 @@ void declare_typed_variable(py::module &m, const std::string &suffix) {
              // => Use explicit syntax for accessing individual items.
              // => *Must* return a view on slicing to be consistent with numpy
              //    and xarray.
+             // numpy does some magic to copy data into a view when the parent
+             // is deleted! Do they just share the data ownership? How can we
+             // combine this with our COW? Have two distinct reference counters,
+             // one for sharing views, and one for distinct owners?
              return slice(self.variable, d.begin()->first, d.begin()->second);
 
            })
