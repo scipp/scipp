@@ -69,25 +69,26 @@ template <class Tag> class TypedVariable {
 
 public:
   TypedVariable(Variable &variable)
-      : m_variable(variable), data(variable.get<const Tag>()) {}
+      : variable(variable), data(variable.get<const Tag>()) {}
 
-  const Dimensions &dimensions() const { return m_variable.dimensions(); }
-  const std::string &name() const { return m_variable.name(); }
+  const Dimensions &dimensions() const { return variable.dimensions(); }
+  const std::string &name() const { return variable.name(); }
   gsl::index size() const { return data.size(); }
   void setItem(const gsl::index i, const value_type value) {
     // Note that this is not thread-safe but it should not matter for Python
     // exports? Make sure to not release GIL.
     if (!m_mutableData) {
-      m_mutableData = m_variable.get<Tag>().data();
-      data = m_variable.get<const Tag>();
+      m_mutableData = variable.get<Tag>().data();
+      data = variable.get<const Tag>();
     }
     m_mutableData[i] = value;
   }
 
   gsl::span<const value_type> data;
 
+  Variable &variable;
+
 private:
-  Variable &m_variable;
   value_type *m_mutableData{nullptr};
 };
 
@@ -137,6 +138,28 @@ void declare_typed_variable(py::module &m, const std::string &suffix) {
       // http://xarray.pydata.org/en/stable/indexing.html.
       .def("__getitem__", [](const detail::TypedVariable<Tag> &self,
                              const gsl::index i) { return self.data[i]; })
+      .def("__getitem__",
+           [](const detail::TypedVariable<Tag> &self,
+              const std::map<Dimension, gsl::index> d) {
+             if (d.size() != 1)
+               throw std::runtime_error(
+                   "Currently only 1D slicing is supported.");
+             // TODO It is a bit weird that this returns Variable instead of
+             // TypedVariable, but we cannot since the latter only holds a
+             // reference... the resulting Variable cannot be modified in Python
+             // right now, would need an extra cast step.
+             // Would this be solved by returning the slice as a view?
+             // This highlights a more general problem: The mechanism of
+             // returning a typed variable in Dataset.__getitem__ is nice, but
+             // we cannot provide the same interface as for a stand-alone
+             // Variable?
+             // => Always return a Variable in __getitem__, even if 0-dim.
+             // => Use explicit syntax for accessing individual items.
+             // => *Must* return a view on slicing to be consistent with numpy
+             //    and xarray.
+             return slice(self.variable, d.begin()->first, d.begin()->second);
+
+           })
       .def("__setitem__", &detail::TypedVariable<Tag>::setItem)
       .def_property_readonly("dimensions",
                              &detail::TypedVariable<Tag>::dimensions)
@@ -178,6 +201,8 @@ PYBIND11_MODULE(dataset, m) {
 
   declare_typed_variable<Data::Value>(m, "DataValue");
   declare_typed_variable<Coord::X>(m, "CoordX");
+
+  py::class_<Variable>(m, "Variable");
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
