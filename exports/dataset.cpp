@@ -76,7 +76,7 @@ public:
   gsl::index size() const { return data.size(); }
   void setItem(const gsl::index i, const value_type value) {
     // Note that this is not thread-safe but it should not matter for Python
-    // exports?
+    // exports? Make sure to not release GIL.
     if (!m_mutableData) {
       m_mutableData = m_variable.get<Tag>().data();
       data = m_variable.get<const Tag>();
@@ -133,6 +133,8 @@ void declare_typed_variable(py::module &m, const std::string &suffix) {
       // not support slicing notation. If we change to using multi-dimensional
       // indexing like numpy we can also support slicing.
       .def("__len__", &detail::TypedVariable<Tag>::size)
+      // TODO Also support indexing with dimensions names, as in
+      // http://xarray.pydata.org/en/stable/indexing.html.
       .def("__getitem__", [](const detail::TypedVariable<Tag> &self,
                              const gsl::index i) { return self.data[i]; })
       .def("__setitem__", &detail::TypedVariable<Tag>::setItem)
