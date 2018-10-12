@@ -18,25 +18,20 @@ public:
   const T &data() const { return *m_data; }
   T &mutableData() { return m_data.access(); }
 
-  std::shared_ptr<cow_ptr<T>> getForReading() const { return m_data; }
-  std::shared_ptr<cow_ptr<T>> getForWriting() {
-    if(m_data.unique()) {
-      // Call *inner* access to copy buffer.
-      m_data->access();
-    } else {
-      if (m_data->unique()) {
-        // If buffer is unique, do nothing.
-      } else {
-        // More than one view, may not call access() for current buffer so we
-        // first copy the buffer owner.
-        m_data.access().access();
-      }
-    }
+  cow_ptr<cow_ptr<T>> getForReading() const { return m_data; }
+  cow_ptr<cow_ptr<T>> getForWriting() {
+    // If buffer owner (m_data) is unique this will simply behave like a normal
+    // copy-on-write (the inner call to access()). If there are multiple buffer
+    // owners it first copies the owner (the outer access()) to ensure that
+    // other owners can still read in a safe way.
+    // TODO Need lock here?
+    if (!m_data->unique())
+      m_data.access().access();
     return m_data;
   }
 
 private:
-  std::shared_ptr<cow_ptr<T>> m_data;
+  cow_ptr<cow_ptr<T>> m_data;
 };
 
 template <class T> class VariableView {
@@ -64,7 +59,7 @@ private:
       : m_bufferManager(bufferManager) {}
 
   std::shared_ptr<BufferManager<T>> m_bufferManager;
-  std::shared_ptr<cow_ptr<T>> m_bufferKeepAlive;
+  cow_ptr<cow_ptr<T>> m_bufferKeepAlive;
 };
 
 TEST(VariableView, copy_and_view) {
