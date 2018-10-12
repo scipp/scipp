@@ -55,6 +55,7 @@ public:
         }
       }
       keepAlive = m_data;
+      // Do not move this outside the `if`, we need the lock here!
       return keepAlive->access();
     } else {
       if (keepAlive != m_data) {
@@ -75,10 +76,12 @@ public:
   VariableView(const gsl::index size)
       : m_bufferManager(std::make_unique<BufferManager<T>>(size)) {}
 
+  // This *copies* the BufferManager.
   VariableView(const VariableView &other)
       : m_bufferManager(
             std::make_shared<BufferManager<T>>(*other.m_bufferManager)) {}
 
+  // This creates a view, *sharing* the BufferManager.
   VariableView makeView() { return VariableView(m_bufferManager); }
 
   const T &data() const {
