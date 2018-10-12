@@ -18,7 +18,7 @@ public:
   BufferManager(const gsl::index size)
       : m_data(std::make_shared<cow_ptr<T>>(std::make_unique<T>(size))) {}
   BufferManager(const BufferManager &other)
-    // TODO do we need a mutex here?
+      // TODO do we need a mutex here?
       : m_data(std::make_shared<cow_ptr<T>>(*other.m_data)) {}
 
   const T &data() const { return *m_data; }
@@ -44,13 +44,15 @@ public:
     // Note the difference to using cow_ptr<cow_ptr>: Here we copy the outer
     // based on the ref count of the *inner* pointer!
     if (!m_data->unique()) {
-      // Dropping old buffer. This is strictly speaking not necessary but can
-      // avoid unneccessary copies of the buffer owner (not the buffer itself)
-      // in BufferManager.
-      keepAlive = nullptr;
       std::lock_guard<std::mutex> lock{m_mutex};
-      if (!m_data->unique() && !m_data.unique()) {
-        std::atomic_store(&m_data, std::make_shared<cow_ptr<T>>(*m_data));
+      if (!m_data->unique()) {
+        // Dropping old buffer. This is strictly speaking not necessary but can
+        // avoid unneccessary copies of the buffer owner (not the buffer itself)
+        // in BufferManager.
+        keepAlive = nullptr;
+        if (!m_data.unique()) {
+          std::atomic_store(&m_data, std::make_shared<cow_ptr<T>>(*m_data));
+        }
       }
       keepAlive = m_data;
       return keepAlive->access();
