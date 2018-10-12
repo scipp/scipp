@@ -18,7 +18,6 @@ public:
   BufferManager(const gsl::index size)
       : m_data(std::make_shared<cow_ptr<T>>(std::make_unique<T>(size))) {}
   BufferManager(const BufferManager &other)
-      // TODO do we need a mutex here?
       : m_data(std::make_shared<cow_ptr<T>>(*other.m_data)) {}
 
   const T &data() const { return *m_data; }
@@ -47,8 +46,8 @@ public:
       std::lock_guard<std::mutex> lock{m_mutex};
       if (!m_data->unique()) {
         // Dropping old buffer. This is strictly speaking not necessary but can
-        // avoid unneccessary copies of the buffer owner (not the buffer itself)
-        // in BufferManager.
+        // avoid unneccessary copies of the buffer owner (not the buffer
+        // itself).
         keepAlive = nullptr;
         if (!m_data.unique()) {
           std::atomic_store(&m_data, std::make_shared<cow_ptr<T>>(*m_data));
@@ -59,6 +58,8 @@ public:
       return keepAlive->access();
     } else {
       if (keepAlive != m_data) {
+        // TODO Do we need this lock? Why? Why not? Do we need to lock for the
+        // comparison? Same for getForReading().
         std::lock_guard<std::mutex> lock{m_mutex};
         keepAlive = m_data;
       }
