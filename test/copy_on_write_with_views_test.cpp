@@ -23,18 +23,19 @@ public:
   const T &data() const { return *m_data; }
   T &mutableData() { return m_data.access(); }
 
-  std::pair<std::shared_ptr<cow_ptr<T>>, const T &> getForReading() const {
+  const T &getForReading(std::shared_ptr<cow_ptr<T>> &keepAlive) const {
     // Two things need to be protected by mutex:
     // 1. The outer pointer may not be copied and reassigned at the same time.
     // 2. The inner pointer may not be copied and used with `access()` at the
     // same time.
-
-    // Without this I get bad data in copy!
-    std::lock_guard<std::mutex> lock{m_mutex};
-    return {m_data, **m_data};
+    if (keepAlive != m_data) {
+      std::lock_guard<std::mutex> lock{m_mutex};
+      keepAlive = m_data;
+    }
+    return **keepAlive;
   }
 
-  std::pair<std::shared_ptr<cow_ptr<T>>, T &> getForWriting() {
+  T & getForWriting(std::shared_ptr<cow_ptr<T>> &keepAlive) {
     // If buffer owner (m_data) is unique this will simply behave like a normal
     // copy-on-write (the inner call to access()). If there are multiple buffer
     // owners it first copies the owner (the outer access()) to ensure that
@@ -48,9 +49,15 @@ public:
         std::atomic_store(&m_data, std::make_shared<cow_ptr<T>>(*m_data));
         //m_data = std::make_shared<cow_ptr<T>>(*m_data);
       }
+      keepAlive = m_data;
+      return keepAlive->access();
+    } else {
+      if (keepAlive != m_data) {
+        std::lock_guard<std::mutex> lock{m_mutex};
+        keepAlive = m_data;
+      }
+      return keepAlive->access();
     }
-    std::lock_guard<std::mutex> lock{m_mutex};
-    return {m_data, m_data->access()};
   }
 
 private:
@@ -74,18 +81,18 @@ public:
     // sufficient? Main view would never see updates of writes to slices!
     // How can we make reading from a single VariableView thread safe then? Is
     // it ok as long as no one writes?
-    auto handle = m_bufferManager->getForReading();
-    m_bufferKeepAlive = handle.first;
-    return handle.second;
+    return m_bufferManager->getForReading(m_bufferKeepAlive);
   }
+
   T &mutableData() {
+    return m_bufferManager->getForWriting(m_bufferKeepAlive);
     // Dropping old buffer. This is strictly speaking not necessary but can
     // avoid unneccessary copies of the buffer owner (not the buffer itself) in
     // BufferManager.
-    m_bufferKeepAlive = nullptr;
-    auto handle = m_bufferManager->getForWriting();
-    m_bufferKeepAlive = handle.first;
-    return handle.second;
+    //m_bufferKeepAlive = nullptr;
+    //auto handle = m_bufferManager->getForWriting();
+    //m_bufferKeepAlive = handle.first;
+    //return handle.second;
   }
 
 private:
