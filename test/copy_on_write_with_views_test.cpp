@@ -18,6 +18,7 @@ public:
   BufferManager(const gsl::index size)
       : m_data(std::make_shared<cow_ptr<T>>(std::make_unique<T>(size))) {}
   BufferManager(const BufferManager &other)
+    // TODO do we need a mutex here?
       : m_data(std::make_shared<cow_ptr<T>>(*other.m_data)) {}
 
   const T &data() const { return *m_data; }
@@ -79,6 +80,8 @@ public:
   VariableView makeView() { return VariableView(m_bufferManager); }
 
   const T &data() const {
+    // Updating the mutable m_bufferKeepAlive should be thread-safe due to mutex
+    // in m_bufferManager?
     return m_bufferManager->getForReading(m_bufferKeepAlive);
   }
 
@@ -190,16 +193,42 @@ TEST(VariableView, multiple_owners_read_then_write) {
   EXPECT_EQ(v.data()[0], 2.0);
 }
 
-TEST(VariableView, thread_safety) {
+TEST(VariableView, thread_safety_multiple_writers_multiple_view) {
   const gsl::index chunks = 12345;
   const gsl::index chunk_size = 321;
   const gsl::index size = chunk_size * chunks;
-  for (int repeat = 0; repeat < 5120; ++repeat) {
+  for (int repeat = 0; repeat < 512; ++repeat) {
     VariableView<std::vector<double>> v(size);
     auto copy(v);
 #pragma omp parallel for num_threads(49)
     for (gsl::index chunk = 0; chunk < chunks; ++chunk) {
       auto view = v.makeView();
+      view.data();
+      auto &data = view.mutableData();
+      for (gsl::index i = 0; i < chunk_size; ++i) {
+        data[chunk * chunk_size + i] = chunk * chunk_size + i;
+      }
+    }
+
+    const auto &data = v.data();
+    for (gsl::index i = 0; i < size; ++i)
+      ASSERT_EQ(data[i], i);
+    const auto &copy_data = copy.data();
+    for (gsl::index i = 0; i < size; ++i)
+      ASSERT_EQ(copy_data[i], 0.0);
+  }
+}
+
+TEST(VariableView, thread_safety_multi_writers_same_view) {
+  const gsl::index chunks = 12345;
+  const gsl::index chunk_size = 321;
+  const gsl::index size = chunk_size * chunks;
+  for (int repeat = 0; repeat < 512; ++repeat) {
+    VariableView<std::vector<double>> v(size);
+    auto copy(v);
+    auto view = v.makeView();
+#pragma omp parallel for num_threads(49)
+    for (gsl::index chunk = 0; chunk < chunks; ++chunk) {
       view.data();
       auto &data = view.mutableData();
       for (gsl::index i = 0; i < chunk_size; ++i) {
