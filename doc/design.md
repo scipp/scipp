@@ -87,7 +87,7 @@ Our design adds features that are not present in `xarray.Dataset` but represent 
 Note that the proposed design is *not* a 1:1 copy of `xarray.Dataset`, there are some significant differences.
 Furthermore, it will be written in C++ with Python exports for optimal performance and flexibility.
 
-As described in this document, `Dataset` should be able to replace all of our workspace types, with maybe the exception of `MDEventWorkspace`.
+As described in this document, `Dataset` should be able to replace all of our workspace types (for `MDEventWorkspace` there is not significant advantage to using the new design since data in `MDEventWorkspace` has a tree structure).
 This includes not just `MatrixWorkspace` and its child classes `Workspace2D` and `EventWorkspace` but also `TableWorkspace`, `PeaksWorkspace`, and `MDHistoWorkspace`.
 In addition, `Dataset` can likely also replace `Histogram`, `EventList`, and data structure introduced as part of **Instrument-2.0**.
 `Dataset` provides a *uniform interface* in a *single type* for all of these.
@@ -96,7 +96,7 @@ Furthermore, `Dataset` covers many other cases that are currently impossible to 
 ### <a name="overview-examples"></a>Examples
 
 We begin with a series of examples.
-If clarification is needed, please first read the [following section](#overview-components) for a description of the nomenclature and underlying objects.
+If clarification is needed, please first read the [following section](#overview-elements) for a description of the nomenclature and underlying objects.
 Labels in the figures use a Python-like syntax and naming is preliminary.
 
 ##### A basic dataset containing two variables, a coordinate and data
@@ -418,7 +418,7 @@ For cases that require join access to multiple variables we provide `class Datas
 - Allows for joint iteration with bin-edge variables using a `Bin` wrapper, overcoming the old nuisance of having `length+1` bin edges.
 
 The current implementation seems to support all required features.
-Performance was originally a problem due to the multi-dimensional iteration, but has been subsequently been optimized to the point where it should be sufficient for most applications.
+Performance was originally a problem due to the multi-dimensional iteration, but has subsequently been optimized to the point where it should be sufficient for most applications.
 
 
 ### <a name="design-components-datasetindex"></a>`class DatasetIndex`
@@ -478,7 +478,7 @@ We can store `API::Run` in `Dataset`, but the dataset library does not need to d
 
 It is currently unclear whether this library should be kept as a separate repository or be included as a new module in the Mantid repository.
 - The advantage of inclusion is the automatic use of the build server and deployment infrastructure.
-- The disadvantage is a potential coupling of versioning, see [API stability](#design-details:api-stability).
+- The disadvantage is a potential coupling of versioning, see [API stability](#design-details-api-stability).
 
 If included in the Mantid repository, stand-alone packages should be provided as a light-weight alternative to downloading the full Mantid package.
 
@@ -566,7 +566,7 @@ This is a corollary from the namespace name.
 ##### Rationale
 
 Currently we have `namespace Mantid` in C++ while the Python module is `mantid`.
-Changing the namespace name would this improve consistency.
+Changing the namespace name would improve consistency.
 Furthermore, this would reduce naming clashes between existing and new code.
 
 ##### Questions
@@ -631,7 +631,7 @@ We need to establish whether it is possible to write clean client code based on 
 Apart from that there should not be any major implementation difficulties.
 
 
-### <a name="design-details-no-progress-reporting-no-cancellation"></a>No progress reporting an no cancellation
+### <a name="design-details-no-progress-reporting-no-cancellation"></a>No progress reporting and no cancellation
 
 ##### Rationale
 
@@ -681,7 +681,7 @@ For large data, many cases such as `operator+` are heavily limited by memory ban
 
 ##### Rationale
 
-Many algorithms in Mantid to "magic" under the hood:
+Many algorithms in Mantid do "magic" under the hood:
 - Convert inputs if required. *Example: Conversion from point data in `Algorithms::ConvertUnits` and `Algorithms::Rebin`.*
 - Tolerate partially bad input data. *Example: Replacing special values in `Algorithms::SumSpectra`.*
 - Support doing two different things that are actually different. *Example: `Algorithms::Rebin` can rebin histogram data, bin event data, or set new bin edges in a workspace.*
