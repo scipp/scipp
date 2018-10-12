@@ -5,10 +5,10 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <gtest/gtest.h>
 
-#include <omp.h>
 #include <gsl/gsl_util>
 #include <memory>
 #include <mutex>
+#include <omp.h>
 #include <vector>
 
 #include "../benchmark/legacy_cow_ptr.h"
@@ -35,7 +35,7 @@ public:
     return **keepAlive;
   }
 
-  T & getForWriting(std::shared_ptr<cow_ptr<T>> &keepAlive) {
+  T &getForWriting(std::shared_ptr<cow_ptr<T>> &keepAlive) {
     // If buffer owner (m_data) is unique this will simply behave like a normal
     // copy-on-write (the inner call to access()). If there are multiple buffer
     // owners it first copies the owner (the outer access()) to ensure that
@@ -43,11 +43,13 @@ public:
     // Note the difference to using cow_ptr<cow_ptr>: Here we copy the outer
     // based on the ref count of the *inner* pointer!
     if (!m_data->unique()) {
+      // Dropping old buffer. This is strictly speaking not necessary but can
+      // avoid unneccessary copies of the buffer owner (not the buffer itself)
+      // in BufferManager.
+      keepAlive = nullptr;
       std::lock_guard<std::mutex> lock{m_mutex};
-      if (!m_data->unique()) {
-        //fprintf(stderr, "copy owner\n");
+      if (!m_data->unique() && !m_data.unique()) {
         std::atomic_store(&m_data, std::make_shared<cow_ptr<T>>(*m_data));
-        //m_data = std::make_shared<cow_ptr<T>>(*m_data);
       }
       keepAlive = m_data;
       return keepAlive->access();
@@ -77,23 +79,10 @@ public:
   VariableView makeView() { return VariableView(m_bufferManager); }
 
   const T &data() const {
-    // Do we need to call this every time or is doing it on construction
-    // sufficient? Main view would never see updates of writes to slices!
-    // How can we make reading from a single VariableView thread safe then? Is
-    // it ok as long as no one writes?
     return m_bufferManager->getForReading(m_bufferKeepAlive);
   }
 
-  T &mutableData() {
-    return m_bufferManager->getForWriting(m_bufferKeepAlive);
-    // Dropping old buffer. This is strictly speaking not necessary but can
-    // avoid unneccessary copies of the buffer owner (not the buffer itself) in
-    // BufferManager.
-    //m_bufferKeepAlive = nullptr;
-    //auto handle = m_bufferManager->getForWriting();
-    //m_bufferKeepAlive = handle.first;
-    //return handle.second;
-  }
+  T &mutableData() { return m_bufferManager->getForWriting(m_bufferKeepAlive); }
 
 private:
   VariableView(std::shared_ptr<BufferManager<T>> bufferManager)
