@@ -156,7 +156,7 @@ This distinction enables a simple but effective definition of the behavior of `D
 - *Data variables* are *transformed*, e.g., subtracted in a "subtract" operation.
 - *Coordinate variables* are *matched*.
 
-As a simple example, consider subtracting two histogram:
+As a simple example, consider subtracting two histograms:
 We need to check that the X values match, and then subtract the Y values, i.e., the X values are coordinates, the Y values are data.
 
 Examples of tags for data variables are:
@@ -246,7 +246,7 @@ A typical example would be three-dimensional `Data::Value` and `Data::Variance` 
 ##### DataObjects::Workspace2D
 
 A dataset with two-dimensional variables `Data::Value` and `Data::Variance` in combination with a one- or two-dimensional variable `Coord::Tof` is a close equivalent to the current `DataObjects::Workspace2D`.
-- Typically `Data::Value` and `Data::Variance` would have dimensions `Dim::Tof` and `Dim::Spectrum`.
+- Typically `Data::Value` and `Data::Variance` would both have dimensions `Dim::Tof` and `Dim::Spectrum`.
 - If `Coord::Tof` has only `Dim::Tof`, it corresponds to a `DataObjects::Workspace2D` with shared X axis, if it also has `Dim::Spectrum` X is not shared.
 - To represent bin edges, the extent of `Coord::Tof` in `Dim::Tof` is larger by one than `Dim::Tof` of the other variables.
 - `Coord::SpectrumNumber` provides a spectrum number (currently in `API::ISpectrum`).
@@ -411,8 +411,8 @@ In many cases there is a corresponding coordinate tag for a dimension.
 ### <a name="design-components-datasetview"></a>`class DatasetView`
 
 Due to the type-erasure we cannot simply treat `Dataset` as an array of structs, i.e., there is no equivalent to `API::MatrixWorkspace::getSpectrum(const size_t index)`.
-If only access to a single variable is required it can be access directly.
-For cases that require join access to multiple variables we provide `class DatasetView`:
+If only access to a single variable is required it can be accessed directly.
+For cases that require joint access to multiple variables we provide `class DatasetView`:
 - Effectively provides a "zip-iterator", with support for automatic on-the-fly broadcast or transposition of dimensions.
 - Nested view allows for accessing a histogram-like view.
 - Allows for joint iteration with bin-edge variables using a `Bin` wrapper, overcoming the old nuisance of having `length+1` bin edges.
@@ -751,7 +751,7 @@ Overall however, it should have no influence on the `Dataset` design, i.e., it s
 Mantid currently uses double precision for time-of-flight, counts, and values derived from the former two.
 Using single precision could give a performance improvement of the order of 2x.
 Apart from global accumulation (which could be done in double precision) there appear to be no (or few) operations where double precision would be required.
-Taking the step to *always* use single precision for those variables would probably too large a risk.
+Taking the step to *always* use single precision for those variables would probably be too large a risk.
 
 ##### Implementation
 
