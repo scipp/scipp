@@ -605,7 +605,7 @@ lambdaSlice = slice(lambdaSlice, Dim::Polarization, spin[Spin::Up]) -
 // which is used for joint iteration of bin-edge variables and other
 // variables.
 using Histogram = DatasetView<Bin<Coord::Temperature>, const Data::Value,
-                              const Data::Variance>;
+                              const Data::StdDev>;
 // We specify Dim::Temperature when creating the view, indicating that the
 // (outer) view will not iterate that dimension. This implies that it will
 // be the (only) dimension of the nested views.
