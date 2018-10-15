@@ -31,7 +31,7 @@
   - [`class DatasetIndex`](#design-components-datasetindex)
   - [Units](#design-components-units)
   - [Exceptions](#design-components-exceptions)
-- [Examples](#xamples)
+- [Examples](#examples)
   - [C++ example](#examples-cpp)
   - [Python example](#examples-python)
 - [Design details](#design-details)
@@ -444,6 +444,7 @@ For cases that require joint access to multiple variables we provide `class Data
 - Effectively provides a "zip-iterator", with support for automatic on-the-fly broadcast or transposition of dimensions.
 - Nested view allows for accessing a histogram-like view.
 - Allows for joint iteration with bin-edge variables using a `Bin` wrapper, overcoming the old nuisance of having `length+1` bin edges.
+  See the [C++ example](#examples-cpp) for an example of how this would be used.
 
 The current implementation seems to support all required features.
 Performance was originally a problem due to the multi-dimensional iteration, but has subsequently been optimized to the point where it should be sufficient for most applications.
