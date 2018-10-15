@@ -242,6 +242,8 @@ For clarity, in the following we are explicitly giving the current Mantid namesp
 
 ##### DataObjects::TableWorkspace
 
+<img src="dataset-TableWorkspace.png" height="70%" width="70%">
+
 A dataset where all variables are one-dimensional is a table.
 - Each variable is a column.
 - The variable name is the column label.
