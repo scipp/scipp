@@ -242,7 +242,7 @@ For clarity, in the following we are explicitly giving the current Mantid namesp
 
 ##### DataObjects::TableWorkspace
 
-<img src="dataset-TableWorkspace.png" height="60%" width="60%">
+<img src="dataset-TableWorkspace.png" height="50%" width="50%">
 
 A dataset where all variables are one-dimensional is a table.
 - Each variable is a column.
@@ -281,6 +281,8 @@ See also the [working example](../test/Workspace2D_test.cpp).
 
 ##### Geometry::DetectorInfo, Geometry::ComponentInfo, and Geometry::Instrument
 
+<img src="dataset-Instrument.png" height="60%" width="60%">
+
 `Geometry::DetectorInfo` and `Geometry::ComponentInfo` are the result of the refactoring effort as part of **Instrument-2.0**.
 Thanks to that refactoring, the underlying data is already stored in a structure of vectors, which can be mapped to variables in a dataset in an almost 1:1 manner.
 - In place of `Geometry::DetectorInfo`, several variables with `Dim::Detector` would be added to a dataset.
@@ -311,7 +313,7 @@ See also the [working example](../test/EventWorkspace_test.cpp).
 
 ##### DataObjects::EventList
 
-<img src="dataset-EventList.png" height="40%" width="40%">
+<img src="dataset-EventList.png" height="30%" width="30%">
 
 A one-dimensional dataset without coordinate variables can be used to represent an event list.
 - `Dim::Event` is used as the only dimension for all variables.
