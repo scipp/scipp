@@ -28,10 +28,8 @@ public:
     // 1. The outer pointer may not be copied and reassigned at the same time.
     // 2. The inner pointer may not be copied and used with `access()` at the
     // same time.
-    if (keepAlive != m_data) {
-      std::lock_guard<std::mutex> lock{m_mutex};
-      keepAlive = m_data;
-    }
+    if (keepAlive != m_data)
+      std::atomic_store(&keepAlive, m_data);
     return **keepAlive;
   }
 
@@ -48,21 +46,17 @@ public:
         // Dropping old buffer. This is strictly speaking not necessary but can
         // avoid unneccessary copies of the buffer owner (not the buffer
         // itself).
-        keepAlive = nullptr;
+        std::atomic_store(&keepAlive, std::shared_ptr<cow_ptr<T>>(nullptr));
         if (!m_data.unique()) {
           std::atomic_store(&m_data, std::make_shared<cow_ptr<T>>(*m_data));
         }
       }
-      keepAlive = m_data;
+      std::atomic_store(&keepAlive, m_data);
       // Do not move this outside the `if`, we need the lock here!
       return keepAlive->access();
     } else {
-      if (keepAlive != m_data) {
-        // TODO Do we need this lock? Why? Why not? Do we need to lock for the
-        // comparison? Same for getForReading().
-        std::lock_guard<std::mutex> lock{m_mutex};
-        keepAlive = m_data;
-      }
+      if (keepAlive != m_data)
+        std::atomic_store(&keepAlive, m_data);
       return keepAlive->access();
     }
   }
@@ -225,7 +219,7 @@ TEST(VariableView, thread_safety_multiple_writers_multiple_view) {
   }
 }
 
-TEST(VariableView, thread_safety_multi_writers_same_view) {
+TEST(VariableView, thread_safety_multiple_writers_same_view) {
   const gsl::index chunks = 12345;
   const gsl::index chunk_size = 321;
   const gsl::index size = chunk_size * chunks;
@@ -233,12 +227,16 @@ TEST(VariableView, thread_safety_multi_writers_same_view) {
     VariableView<std::vector<double>> v(size);
     auto copy(v);
     auto view = v.makeView();
+    // Note that we call mutableData() outside the parallel section. Doing so
+    // inside should usually also be ok, however calling data() *and*
+    // mutableData() is not. Note that this would also violate the general rule:
+    // non-const methods (like mutableData()) are not to be considered
+    // thread-safe. Writing to individual elements of the returned array is.
+    auto &viewData = view.mutableData();
 #pragma omp parallel for num_threads(49)
     for (gsl::index chunk = 0; chunk < chunks; ++chunk) {
-      view.data();
-      auto &data = view.mutableData();
       for (gsl::index i = 0; i < chunk_size; ++i) {
-        data[chunk * chunk_size + i] = chunk * chunk_size + i;
+        viewData[chunk * chunk_size + i] = chunk * chunk_size + i;
       }
     }
 
