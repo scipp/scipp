@@ -537,7 +537,7 @@ auto &main_mon = d.get<Data::Monitor>()[monitors["main"]];
 main_mon.insert<Data::Tof>("", {Dim::Event, 238576});
 main_mon.insert<Data::PulseTime>("", {Dim::Event, 238576});
 
-// Convert monitor do histogram.
+// Convert monitor to histogram.
 auto mon = d.get<Data::Monitor>()[monitors["main"]];
 // Bin events using axis from d.
 auto mon_hist = binEvents(mon, d.at<Coord::Tof>());
@@ -550,6 +550,14 @@ mon.merge(mon_hist);
 // matching tag.
 d /= d.get<Data::Monitor>()[monitors["main"]];
 
+// Build equivalent to Mantid's WorkspaceSingleValue.
+Dataset offset;
+offset.insert<Data::Value>("sample", {}, {1.0});
+offset.insert<Data::Variance>("sample", {}, {0.1});
+// Note the use of name "sample" such that offset affects sample, not
+// other `Data` variables such as "background".
+d += offset;
+
 // Subtract the background. To get around name matching we extract data for
 // subtraction, removing it from the dataset to avoid failure in operator-.
 d.merge(d.extract("sample") - d.extract("background"));
@@ -559,14 +567,6 @@ auto spinUp(d);
 spinUp.insert<Coord::Polarization>({}, Spin::Up);
 auto spinDown(d);
 spinDown.insert<Coord::Polarization>({}, Spin::Down);
-
-// Build equivalent to Mantid's WorkspaceSingleValue.
-Dataset offset;
-offset.insert<Data::Value>("sample - background", {}, {1.0});
-offset.insert<Data::Variance>("sample - background", {}, {0.1});
-// Note the use of name "sample" such that offset affects sample, not
-// other `Data` variables such as "background".
-spinUp += offset;
 
 // Combine data for spin-up and spin-down in same dataset, polarization is
 // an extra dimension.
@@ -592,7 +592,7 @@ scan.merge(tempEdges);
 
 // Convert units or dimension. Note that for units of independent variables
 // a unit change implies a change in the dimension (label). The exact API
-// for this has not been design yet.
+// for this has not been designed yet.
 scan = convert(scan, Dim::Tof, Dim::Wavelength);
 
 // Extract a single wavelength slice.
