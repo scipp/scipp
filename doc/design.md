@@ -1,8 +1,16 @@
 # Dataset design
 
-- Author: Simon Heybrock
-- Prototype review: Owen Arnold, Martyn Gigg
-- Design review:
+- Author:
+  Simon Heybrock
+
+- Prototype review:
+  Owen Arnold,
+  Martyn Gigg
+
+- Design document reviewers:
+  Owen Arnold,
+  Lamar Moore,
+  Neil Vaytet
 
 ## Contents
 
@@ -23,6 +31,9 @@
   - [`class DatasetIndex`](#design-components-datasetindex)
   - [Units](#design-components-units)
   - [Exceptions](#design-components-exceptions)
+- [Examples](#xamples)
+  - [C++ example](#examples-cpp)
+  - [Python example](#examples-python)
 - [Design details](#design-details)
   - [Dependencies](#design-details-dependencies)
   - [Unit tests](#design-details-unit-tests)
@@ -44,6 +55,7 @@
   - [Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given](#design-details-exception-safety)
   - [No processing history, for the time being](#design-details-no-processing-history)
   - [Floating-point precision can be set at compile time](#design-details-floating-point-precision-compile-time)
+  - [Slicing](#design-details-slicing)
 - [Implementation](#implementation)
   - [Goals and non-goals](#implementation-goals-and-non-goals)
   - [Milestones](#implementation-milestones)
@@ -71,7 +83,9 @@ Based on these requirements a design and prototyping process was started in earl
 Initially a couple of different options have been prototyped but it soon became apparent that only one of them was a real option.
 We refer to the [early prototype documentation](https://github.com/mantidproject/workspace-sandbox) for details on the abandoned options and why they were abandoned.
 In agreement with reviewers of those early investigations, effort has thus been mostly focused on the `Dataset` option, described below.
+
 Altogether, as of 2018-10-10, a total of 65 working days (approx 3.5 FTE months) have been invested in the design and prototyping process.
+We also refer to the [prototype development notes](development-notes.md) for more details and motivation of the features presented in the following.
 
 
 ## <a name="overview"></a>High level design overview
@@ -238,10 +252,14 @@ A dataset where all variables are one-dimensional is a table.
 - `sort` sorts the table.
 - Coordinate and name matching enables mathematical operations on individual table columns.
 
+See also the [working example](../test/TableWorkspace_test.cpp).
+
 ##### DataObjects::MDHistoWorkspace
 
 A dataset with multi-dimensional variables `Data::Value` and `Data::Variance` in combination with a corresponding number of one--dimensional coordinate variables is a close equivalent to the current `DataObjects::MDHistoWorkspace`.
 A typical example would be three-dimensional `Data::Value` and `Data::Variance` alongside one-dimensional `Coord:Qx`, `Coord:Qy`, and `Coord::Qz`.
+- Can have coordinates that are bin edges or center points.
+- Can have non-uniform binning.
 
 ##### DataObjects::Workspace2D
 
@@ -256,6 +274,8 @@ A dataset with two-dimensional variables `Data::Value` and `Data::Variance` in c
 - Masking of complete spectra or individual bins support by one- or two-dimensional variables such as `Coord::Mask`.
 
 Most basic operations have an obvious mapping to what our current basic algorithms are doing.
+
+See also the [working example](../test/Workspace2D_test.cpp).
 
 ##### Geometry::DetectorInfo, Geometry::ComponentInfo, and Geometry::Instrument
 
@@ -284,6 +304,8 @@ Therefore, the events cannot be stored as a single multi-dimensional array.
 - A one-dimensional variable `Data::Events` with `Dim::Spectrum` holds the lists of the events.
 - The lists of events is a type similar to `DataObjects::EventList`.
   One option is to use `Dataset` for this, that is the dataset would contain many datasets, one for each event list.
+
+See also the [working example](../test/EventWorkspace_test.cpp).
 
 ##### DataObjects::EventList
 
@@ -450,6 +472,170 @@ See for example [An issue with distributions and dimensionless units](https://gi
 
 The prototype currently simply throws `std::runtime_error` in most cases.
 We should most likely add a clear range of exception types that provide useful information such as indices about the failure.
+
+
+## <a name="examples"></a>Examples
+
+
+### <a name="examples-cpp"></a>C++ example
+
+The following is a relatively complex example of the capabilities of `Dataset`.
+Apart from minor details and operations that have not been fully implemented yet, all features that are used below have been demonstrated to work in the prototype.
+
+```cpp
+// Create an empty dataset.
+Dataset d;
+
+// Add some information about the instrument. This would likely be wrapped in
+// convenience functions.
+// Data passed as argument, e.g., initializer_list.
+d.insert<Coord::DetectorId>({Dim::Detector, 4}, {1, 2, 3, 4});
+// No data passed, will be default-constructed.
+d.insert<Coord::DetectorPosition>({Dim::Detector, 4});
+
+// Add spectrum-to-detector mapping and spectrum numbers.
+std::vector<std::vector<gsl::index>> grouping = {{0, 2}, {1}, {}};
+d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
+d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
+
+// Add time-of-flight axis ("X" in current Mantid nomenclature) which
+// will be shared for all spectra.
+d.insert<Coord::Tof>({Dim::Tof, 1000});
+Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
+
+// Add data and uncertainties ("Y" and "E" in current Mantid nomenclature).
+d.insert<Data::Value>("sample", dims);
+d.insert<Data::Variance>("sample", dims);
+
+// Add another set of data and uncertainties.
+d.insert<Data::Value>("background", dims);
+d.insert<Data::Variance>("background", dims);
+
+// Add monitors as a nested dataset.
+d.insert<Coord::MonitorName>({Dim::Monitor, 2}, "beam-status", "main");
+d.insert<Data::Monitor>("monitor", {Dim::Monitor, 2});
+// Add data to monitors. Use DatasetIndex to do lookup by name.
+DatasetIndex<Coord::MonitorName> monitors(d);
+// First monitor has histogram data and is pixelated.
+int pixels = 10 * 10;
+auto &beam_mon = d.get<Data::Monitor>()[monitors["beam-status"]];
+beam_mon.insertAsEdge<Coord::Tof>("", {Dim::Tof, 101});
+beam_mon.insert<Data::Value>("", {{Dim::Tof, 100}, {Dim::Spectrum}},
+                             100 * pixels);
+beam_mon.insert<Data::Variance>("", {{Dim::Tof, 100}, {Dim::Spectrum}},
+                                100 * pixels);
+// Second monitor is event-mode.
+auto &main_mon = d.get<Data::Monitor>()[monitors["main"]];
+// Note that there is Coord::Tof and Data::Tof, the latter is used for events.
+main_mon.insert<Data::Tof>("", {Dim::Event, 238576});
+main_mon.insert<Data::PulseTime>("", {Dim::Event, 238576});
+
+// Convert monitor do histogram.
+auto mon = d.get<Data::Monitor>()[monitors["main"]];
+// Bin events using axis from d.
+auto mon_hist = binEvents(mon, d.at<Coord::Tof>());
+// Merge histogram monitor data into monitor. Note that we can keep the
+// events if we want.
+mon.merge(mon_hist);
+
+// Normalize "sample" and "background" to monitor. Note that the variables
+// in monitor do not have a name so it will affect all data variables with a
+// matching tag.
+d /= d.get<Data::Monitor>()[monitors["main"]];
+
+// Subtract the background. To get around name matching we extract data for
+// subtraction, removing it from the dataset to avoid failure in operator-.
+d.merge(d.extract("sample") - d.extract("background"));
+
+// Copy the dataset. All variables use copy-on-write, so this is cheap.
+auto spinUp(d);
+spinUp.insert<Coord::Polarization>({}, Spin::Up);
+auto spinDown(d);
+spinDown.insert<Coord::Polarization>({}, Spin::Down);
+
+// Build equivalent to Mantid's WorkspaceSingleValue.
+Dataset offset;
+offset.insert<Data::Value>("sample - background", {}, {1.0});
+offset.insert<Data::Variance>("sample - background", {}, {0.1});
+// Note the use of name "sample" such that offset affects sample, not
+// other `Data` variables such as "background".
+spinUp += offset;
+
+// Combine data for spin-up and spin-down in same dataset, polarization is
+// an extra dimension.
+auto combined = concatenate(Dim::Polarization, spinUp, spinDown);
+
+// Do a temperature scan, adding a new temperature dimension to the dataset.
+Dataset tempEdges.insertAsEdge<Coord::Temperature>({Dim::Temperature, 6},
+                                                   {273.0, 200.0, 100.0, 10.0,
+                                                    4.2, 4.1});
+// Empty dataset for accumulation.
+Dataset scan;
+auto dataPoint(combined);
+for (const auto temperature : DatasetView<Bin<Coord::Temperature>>(tempEdges)) {
+  dataPoint.get<Data::Value>("sample - background")[0] =
+      exp(-0.001 * temperature.center());
+  // Note that concatenate will collapse dimensions of a variable if the
+  // variable is constant. For example, Coord::Tof is the same for all data
+  // points so it will *not* have Dim::Temperature in the result.
+  scan = concatenate(Dim::Temperature, scan, dataPoint);
+}
+// Merge temperature axis.
+scan.merge(tempEdges);
+
+// Convert units or dimension. Note that for units of independent variables
+// a unit change implies a change in the dimension (label). The exact API
+// for this has not been design yet.
+scan = convert(scan, Dim::Tof, Dim::Wavelength);
+
+// Extract a single wavelength slice.
+auto lambdaSlice = slice(scan, Dim::Wavelength, 10.5);
+
+// Compute the spin difference.
+DatasetIndex<Coord::Polarization> spin(lambdaSlice);
+// If we want to subtract slices we need to remove mismatching coordinates
+// first, otherwise binary operations will fail.
+lambdaSlice.erase<Coord::Polarization>();
+lambdaSlice = slice(lambdaSlice, Dim::Polarization, spin[Spin::Up]) -
+              slice(lambdaSlice, Dim::Polarization, spin[Spin::Down]);
+
+// Create a nested DatasetView, for "zip"-style iteration
+// Define an abbreviation for a nested view. For convenience, frequently
+// used variants could be provided as built-ins. Note the `Bin` wrapper,
+// which is used for joint iteration of bin-edge variables and other
+// variables.
+using Histogram = DatasetView<Bin<Coord::Temperature>, const Data::Value,
+                              const Data::Variance>;
+// We specify Dim::Temperature when creating the view, indicating that the
+// (outer) view will not iterate that dimension. This implies that it will
+// be the (only) dimension of the nested views.
+DatasetView<Histogram, const Coord::SpectrumNumber>
+    view(lambdaSlice, "sample - background", {Dim::Temperature});
+
+for (const auto &tempDependence : view) {
+  // Items in view have named getters, alternatively
+  // get<Coord::SpectrumNumber>() can be used.
+  printf("Plotting spectrum %d\n", tempDependence.spectrumNumber());
+  // Plot the data.
+  mantid::matplotlib::plot(tempDependence.get<Histogram>());
+  // The view we are passing to `plot` can be operated on as follows.
+  for (const auto bin : tempDependence.get<Histogram>()) {
+    // Note that we can read left, right, and center of the bin, even though
+    // the underlying data is storing the edges.
+    mantid::matplotlib::drawBox(bin.left(), bin.right(), bin.value());
+    // Note that we can read the standard deviation, even though the
+    // underlying data is stored as variance.
+    mantid::matplotlib::drawErrorBar(bin.center(), bin.value(), bin.stdDev());
+  }
+}
+```
+
+
+### <a name="examples-python"></a>Python example
+
+The design of the Python API is in an early stage so we do not give a full example yet.
+Overall the functionality will be as above for the C++ example.
+If in doubt regarding conventions, we intend to adopt the behavior of `numpy` (or `xarray`, if applicable), in particular for indexing and slicing.
 
 
 ## <a name="design-details"></a>Design details
@@ -766,6 +952,14 @@ More code is likely to require templating for the precision (`double` and `singl
 However, the development cost for this library itself would be rather minor, so there is very little risk involved in supporting it from the beginning.
 
 
+### <a name="design-details-slicing"></a>Slicing
+
+We would like to support slicing as in `numpy` and `xarray`, e.g., `array[2:4,10:20, :]` in the case of slicing `Variable` (or the equivalent with named dimensions in the case of slicing `Dataset`, as supported in `xarray`).
+In both `numpy` and `xarray` the returned object is a view, i.e., data is not extracted.
+Since the proposed design uses a copy-on-write mechanism, supporting views is problematic, in particular if access is required from multiple threads.
+We are currently investigating a potential solution for this but at this point it is not clear what the outcome will be.
+
+
 ## <a name="implementation"></a>Implementation
 
 
@@ -881,13 +1075,13 @@ In no particular order:
 | operations: I/O | 1 | 2 | only basic types, no NeXus |
 | operations: other | 4 | 8 | beyond basic arithmetics and shape operations
 | performance optimization | 3 | 6 |
-| Python exports | 3 | 6 | includes `numpy` interoperability |
+| Python exports | 4 | 8 | includes `numpy` interoperability |
 | doc: internal | 1 | 2 |
 | doc: C++ API | 0.5 | 1 |
 | doc: Python API | 0.5 | 1 |
 | doc: Usage examples | 2 | 3 |
 | build system | 2 | 4 |
-| ramp-up time for every additional developer | 1 | 2 |
+| ramp-up time for every additional developer | 2 | 3 |
 | converters: `API::MatrixWorkspace` and `DataObjects::MDHistoWorkspace` to `Dataset` | 2 | 4 |
 | slice viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
 | table viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
@@ -896,7 +1090,7 @@ In no particular order:
 | converters: instrument | 2 | 4 |
 | helpers for instrument | 1 | 2 | e.g., functionality that is now in `Beamline::ComponentInfo` |
 | code reviews by multiple parties | 4 | 8 |
-| detailed design | 2 | 4 | investigate open design questions, evaluate candidates, motivate choice to get TSC approval |
+| detailed design | 4 | 8 | interface details, investigate open design questions, evaluate candidates, motivate choice to get TSC approval |
 
 Note that several of these tasks refer the development outside the core library, i.e., in additional building blocks that are based on `Dataset`.
 
