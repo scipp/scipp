@@ -242,7 +242,7 @@ For clarity, in the following we are explicitly giving the current Mantid namesp
 
 ##### DataObjects::TableWorkspace
 
-<img src="dataset-TableWorkspace.png" height="70%" width="70%">
+<img src="dataset-TableWorkspace.png" height="60%" width="60%">
 
 A dataset where all variables are one-dimensional is a table.
 - Each variable is a column.
@@ -310,6 +310,8 @@ Therefore, the events cannot be stored as a single multi-dimensional array.
 See also the [working example](../test/EventWorkspace_test.cpp).
 
 ##### DataObjects::EventList
+
+<img src="dataset-EventList.png" height="40%" width="40%">
 
 A one-dimensional dataset without coordinate variables can be used to represent an event list.
 - `Dim::Event` is used as the only dimension for all variables.
