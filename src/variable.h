@@ -13,6 +13,7 @@
 #include <gsl/span>
 
 #include "cow_ptr.h"
+#include "shared_cow_ptr.h"
 #include "dimensions.h"
 #include "tags.h"
 #include "unit.h"
@@ -117,7 +118,7 @@ private:
   uint16_t m_type;
   Unit m_unit;
   std::string m_name;
-  cow_ptr<VariableConcept> m_object;
+  shared_cow_ptr<VariableConcept> m_object;
 };
 
 template <class Tag, class... Args>
