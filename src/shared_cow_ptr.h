@@ -32,6 +32,7 @@ public:
     // Note the difference to using cow_ptr<cow_ptr>: Here we copy the outer
     // based on the ref count of the *inner* pointer!
     if (!m_data->unique()) {
+      // TODO Can use atomics instead of lock?
       std::lock_guard<std::mutex> lock{m_mutex};
       if (!m_data->unique()) {
         // Dropping old buffer. This is strictly speaking not necessary but can
@@ -87,9 +88,9 @@ public:
   }
   T &access() { return m_bufferManager->getForWriting(m_bufferKeepAlive); }
   bool operator==(const shared_cow_ptr<T> &other) const noexcept {
-    return m_bufferManager == other.m_bufferManager;
+    return *m_bufferManager == *other.m_bufferManager;
   }
-  bool unique() const noexcept { return m_bufferManager.unique(); }
+  bool unique() const noexcept { return m_bufferManager->unique(); }
 
 private:
   std::shared_ptr<BufferManager<T>> m_bufferManager;
