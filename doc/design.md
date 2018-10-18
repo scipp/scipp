@@ -899,7 +899,7 @@ See also [Slicing](#design-details-slicing).
 As a possible alternative we can make coordinate variables in `Dataset` shared but immutable and always copy data variables.
 Since coordinate variables change infrequently the immutability is not a huge drawback but reduces the copy overhead somewhat.
 Data changes more frequently so copying it is probably feasible.
-However, this certainly have negative effects on memory usage and performance.
+However, this certainly has negative effects on memory usage and performance.
 Furthermore it would significantly reduce the flexibility gained with `Dataset` since suddenly having datasets with many variables will become a burden instead of an opportunity.
 
 
