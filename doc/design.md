@@ -815,15 +815,92 @@ Many groups seem to be looking for solutions to similar problems.
 
 ##### Context
 
-The copy-on-write mechanism is hidden in the API and simply handled internally in `Variable`:
-A copy-on-write pointer hold a `VariableConcept`.
-To maintain sharing we only require code to be `const`-correct.
-*Question: Cannot use `const` in Python, need methods/tags with different names that explicitly request mutable or immutable access. What is the bast naming convention?*
+From a high-level point of view there are two extremes that can be adopted when copying a `dict`-like object like `Dataset`:
+1. A copy of `Dataset` will always make a copy of all variables.
+2. A copy of `Dataset` will not make a copy of variables. 
+   The underlying data buffers will remain shared and modifying the copy will implicitly modify the original.
 
-##### Rationale
+The big advantage of 1.) is that it is easy to reason about and most relevant operations such as modifying non-overlapping chunks are automatically thread safe.
+The big disadvantage is the cost of copying and the size overhead in case only a subset of variables is modified.
 
-The copy-on-write mechanism is something that has since long been adopted in Mantid, e.g., in `DataObjects::Workspace2D` for the histogram data and for `Geometry::DetectorInfo`.
-However, for the interface of `API::MatrixWorkspace` (and in connection to that `HistogramData::Histogram`) this has led to an interface that is too complicated, with different API functions for read-only access, write-access, and access for sharing.
+The big advantage of 2.) is that there is basically no overhead to copying `Dataset` and modifying only a subset of variables will cause no memory overhead.
+This is how Python operates, e.g., for a `dict` of array-like objects.
+`numpy`, `pandas`, and `xarray` also adopt these semantics.
+The disadvantage is that operations cannot be done in-place without risking breaking all other instances.
+In-place operations would furthermore not be thread-safe in many cases.
+
+A compromise between the two is the copy-on-write mechanism that has since long been adopted in Mantid, e.g., in `DataObjects::Workspace2D` for the histogram data and for `Beamline::DetectorInfo`.
+Qt uses a slightly different implementation referred to as [implicit sharing](http://doc.qt.io/qt-5/implicit-sharing.html) for many of their basic data types.
+This combines the advantages of easy-to-reason-about value semantics with no-overhead copying or partial modification.
+
+The cost is *invalidation of all iterators, references, or views* to the underlying data if *any* non-`const` method is called or if a copy is made.
+This is also made explicit in the [corresponding Qt](http://doc.qt.io/qt-5/containers.html#the-iterator-classes) [documentation](http://doc.qt.io/qt-5/containers.html#implicit-sharing-iterator-problem).
+The effect is most visible in multi-threaded environments, but can be demonstrated even without:
+
+```cpp
+#include "MantidKernel/cow_ptr.h"
+
+Kernel::cow_ptr<std::vector<double>> vec;
+vec.access().resize(1000);
+auto copy(vec);
+
+auto const_it = vec->begin();
+vec.access()[0] = 1.0;
+// const_it is now pointing to data owned exclusively by copy.
+
+copy.reset(); // This could be DeleteWorkspace in another (GUI) thread.
+// const_it is now pointing to free'ed memory.
+```
+
+Note that this trap is absolutely not obvious since only the middle section of the above block would typically be part of the local source code.
+For example, many algorithms support `OutputWorkspace == InputWorkspace` and may call something like
+```cpp
+// This is illegal, do not do this, unless you verified that outputWS != inputWS.
+outputWS.mutableY(0) = inputWS.y(0);
+```
+
+If `outputWS == inputWS` and the reference count for the Y data is not 1 then `inputWS.y(0)` references data that is now owned by other workspace instances or by other histograms in the same workspace.
+That is, it can be arbitrarily modified or even get deallocated.
+
+Note that assignment (`operator=`) [is not a sequence point in C++](https://en.cppreference.com/w/cpp/language/eval_order), i.e., this problem does indeed occur even if neither the LHS nor the RHS in above example is explicitly stored as a reference.
+
+
+##### Conclusion and rationale
+
+- Neither of the extreme cases 1.) or 2.) seems to be a viable alternative.
+- Use a copy-on-write mechanism that is hidden in the API and simply handled internally in `Variable`:
+  A copy-on-write pointer holds a `VariableConcept`.
+  To maintain sharing we only require code to be `const`-correct.
+  *Question: Cannot use `const` in Python, need methods/tags with different names that explicitly request mutable or immutable access. What is the best naming convention?*
+  - Do not expose the copy-on-write mechanism on the API.
+    For the interface of `API::MatrixWorkspace` (and in connection to that `HistogramData::Histogram`) this has led to an interface that is too complicated, with different API functions for read-only access, write-access, and access for sharing.
+- Documentation as well as developer and user training needs to be *very* clear about the implication for iterators, references, and other forms of views.
+  In particular we have, very similar to what the Qt documentation implies:
+  1. Non-`const` methods of `Variable` (and by extension some of those in `Dataset`) invalidate all iterators.
+     Furthermore, *copying* `Variable` or `Dataset` also invalidates all iterators.
+  2. Non-`const` methods of `Dataset` and `Variable` are not thread-safe.
+     Exception: Writing to different variables in `Dataset` *is* thread-safe.
+  3. Writing to different parts of the data buffer in a variable *is* thread-safe.
+     Note that 2.) implies that *getting* the reference to the data buffer is *not* thread-safe.
+
+  These limitations may sound bad (even though we are already living with them right now), but if we get the API and other low-level functionality right we can potentially eliminate many cases where developers or users would come across these issues in their daily work.
+  One example could be to implement most functionality in a "functional" way, i.e., as functions that return a new `Dataset`.
+  In-place operations would be implemented by passing arguments by-value (or as rvalue references).
+  This would prevent most issues similar to the example with `outputWS == inputWS` discussed above.
+- `Kernel::cow_ptr::access()` is made thread-safe via a mutex.
+  This may seem nice, but it is also confusing since "*write* concurrent with *write*" is safe but "*read* concurrent with *write*" is *not*.
+  We should probably go with the Qt way here, where `QSharedDataPointer::detach()` is not thread-safe.
+  This would also eliminate the `std::mutex` from `cow_ptr` which may be relevant for using `Dataset` for small objects like even lists.
+
+See also [Slicing](#design-details-slicing).
+
+##### Alternatives
+
+As a possible alternative we can make coordinate variables in `Dataset` shared but immutable and always copy data variables.
+Since coordinate variables change infrequently the immutability is not a huge drawback but reduces the copy overhead somewhat.
+Data changes more frequently so copying it is probably feasible.
+However, this certainly have negative effects on memory usage and performance.
+Furthermore it would significantly reduce the flexibility gained with `Dataset` since suddenly having datasets with many variables will become a burden instead of an opportunity.
 
 
 ### <a name="design-details-uncertainties-are-stored-as-variances"></a>Uncertainties are stored as variances, not standard deviations
@@ -1000,8 +1077,12 @@ However, the development cost for this library itself would be rather minor, so 
 
 We would like to support slicing as in `numpy` and `xarray`, e.g., `array[2:4,10:20, :]` in the case of slicing `Variable` (or the equivalent with named dimensions in the case of slicing `Dataset`, as supported in `xarray`).
 In both `numpy` and `xarray` the returned object is a view, i.e., data is not extracted.
-Since the proposed design uses a copy-on-write mechanism, supporting views is problematic, in particular if access is required from multiple threads.
-We are currently investigating a potential solution for this but at this point it is not clear what the outcome will be.
+
+The ownership and copying discussion in the section [Copy-on-write mechanism](#design-details-copy-on-write-mechanism) is related to such slice-views and implies:
+- Any iterator obtained from a view is invalidated if any non-`const` method on *any other view* to the same `Variable` is called.
+  - The view itself can stay valid since it references the variable, not its data.
+- Contrary to the `numpy` behavior, if the owning `Variable` goes out of scope all views should probably become invalid.
+  To support views that stay valid we would need to wrap all variables in `Dataset` into a `shared_ptr` and the benefit does not seem to justify this additional complexity at this point.
 
 
 ## <a name="implementation"></a>Implementation
