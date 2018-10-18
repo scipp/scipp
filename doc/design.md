@@ -890,7 +890,7 @@ Note that assignment (`operator=`) [is not a sequence point in C++](https://en.c
 - `Kernel::cow_ptr::access()` is made thread-safe via a mutex.
   This may seem nice, but it is also confusing since "*write* concurrent with *write*" is safe but "*read* concurrent with *write*" is *not*.
   We should probably go with the Qt way here, where `QSharedDataPointer::detach()` is not thread-safe.
-  This would also eliminate the `std::mutex` from `cow_ptr` which may be relevant for using `Dataset` for small objects like even lists.
+  This would also eliminate the `std::mutex` from `cow_ptr` which may be relevant for using `Dataset` for small objects like event lists.
 
 See also [Slicing](#design-details-slicing).
 
