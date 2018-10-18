@@ -44,6 +44,7 @@
   - [Scope and extension](#design-details-scope-and-extension)
   - [API stability](#design-details-api-stability)
   - [Naming](#design-details-naming)
+  - [Attributes](#design-details-attributes)
   - [Copy-on-write mechanism](#design-details-copy-on-write-mechanism)
   - [Uncertainties are stored as variances, not standard deviations](#design-details-uncertainties-are-stored-as-variances)
   - ["Distributions" and "histogram data" are distinguished by their unit](#design-details-distribution-histogram-distinguised-by-unit)
@@ -178,7 +179,6 @@ Examples of tags for data variables are:
 - `Data::Variance`
 - `Data::String`
 - `Data::Int`
-- `Data::ExperimentLog`. *Question: Should this actually be a coordinate?*
 
 Examples of tags coordinate variables are:
 - `Coord::Tof`
@@ -196,6 +196,7 @@ Examples of tags coordinate variables are:
 - `Coord::Mask`
 
 The tag defines the underlying data type.
+Experiment logs (`API::Run` in Mantid) are probably a special case, see the section on [Attributes](#design-details-attributes) below.
 
 We furthermore define:
 - Coordinate variables do not have a name and are thus identified only by their tag.
@@ -772,6 +773,42 @@ Our options would include:
 1. `mantid::dataset::Dataset`, `mantid::dataset::algorithm`, `mantid::dataset::io`.
 1. `mantid::dataset::Dataset`, `mantid::algorithm`, `mantid::io`.
 1. `mantid::dataset::core::Dataset`, `mantid::dataset::algorithm`, `mantid::dataset::io`.
+
+
+### <a name="design-details-attributes"></a>Attributes
+
+##### Context
+
+Variables grouped into coordinates and data cover almost all relevant cases, both in terms of what information needs to be stored as well as the behavior under operations, matching for coordinates and transformation for data.
+However, there is one exception:
+Metadata seems to fall in neither of the two categories.
+In the case of Mantid almost all metadata is contained in the `API::Run` object.
+The current behavior is to carry the metadata through most operations unchanged, with a few exceptions like `Algorithms::Plus` which merge the metadata.
+
+`xarray` handles metadata by supporting arbitrary *attributes* for `xarray.Dataset`.
+Most `xarray` operations drop attributes, unless explicitly asked to keep them using `keep_attrs`.
+See also the [xarray approach to metadata](http://xarray.pydata.org/en/stable/faq.html#what-is-your-approach-to-metadata).
+There are also several [ongoing](https://github.com/pydata/xarray/issues/988) [discussions](https://github.com/pydata/xarray/issues/1614) in the `xarray` community and developer team.
+Many groups seem to be looking for solutions to similar problems.
+
+##### Conclusion
+
+- `Dataset` should support a third class of variables, attributes, with tag `Attr` complementing the `Coord` and `Data` variables discussed previously.
+- All operations propagate attributes unchanged, without matching them.
+- Support special behavior for certain operations, e.g., merging attributes in `operator+`.
+
+##### Rationale
+
+- This is contrary to what `xarray` does, but it seems to be more in line with the needs for Mantid and also how Mantid behaves currently.
+- `xarray` provides a `compat` option to require matching attributes.
+  This may be useful if units are stored as attributes (`xarray` has no explicit unit support).
+  In our case we directly support units, so matching attributes in operations is less useful.
+
+##### Details
+
+- `Attr::ExperimentLog`, replacing/storing `API::Run` is the only relevant example for now.
+- We see no need to provide an equivalent to `xarray`'s `keep_attrs`.
+  If attributes should be dropped we can do so explicitly in a separate operation.
 
 
 ### <a name="design-details-copy-on-write-mechanism"></a>Copy-on-write mechanism
