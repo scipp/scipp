@@ -64,41 +64,74 @@ auto get(const Dataset &self, const Tag, const std::string &name)
   return self.get<const Tag>(name);
 }
 
-template <class Tag> class TypedVariable {
-  using value_type = typename Tag::type;
+std::vector<gsl::index> numpy_shape(const Dimensions &dims) {
+  std::vector<gsl::index> shape(dims.count());
+  for (gsl::index i = 0; i < shape.size(); ++i)
+    shape[i] = dims.size(shape.size() - 1 - i);
+  return shape;
+}
 
+template <class Tag>
+std::vector<gsl::index> numpy_strides(const Dimensions &dims) {
+  std::vector<gsl::index> strides(dims.count());
+  gsl::index stride = sizeof(typename Tag::type);
+  for (gsl::index i = strides.size() - 1; i >= 0; --i) {
+    strides[i] = stride;
+    stride *= dims.size(strides.size() - 1 - i);
+  }
+  return strides;
+}
+
+template <class Tag> class VariableView {
 public:
-  TypedVariable(Variable &variable)
-      : variable(variable), data(variable.get<const Tag>()) {}
+  // Note: Not const since this is created from a Python object.
+  VariableView(Variable &variable)
+      : m_variable(variable), m_start(0),
+        m_shape(numpy_shape(variable.dimensions())),
+        m_strides(numpy_strides<Tag>(variable.dimensions())) {}
 
-  const Dimensions &dimensions() const { return variable.dimensions(); }
-  const std::string &name() const { return variable.name(); }
-  gsl::index size() const { return data.size(); }
-  void setItem(const gsl::index i, const value_type value) {
-    // Note that this is not thread-safe but it should not matter for Python
-    // exports? Make sure to not release GIL.
-    if (!m_mutableData) {
-      m_mutableData = variable.get<Tag>().data();
-      data = variable.get<const Tag>();
-    }
-    m_mutableData[i] = value;
+  VariableView slice(const Dimension dim, const gsl::index index) const {
+    // TODO This is wrong if slice already got reduced dimensions.
+    const auto dimIndex =
+        m_strides.size() - 1 - m_variable.dimensions().index(dim);
+
+    VariableView sliced(*this);
+    sliced.m_start += index * m_strides[dimIndex] / sizeof(typename Tag::type);
+    // Eliminate dimension.
+    sliced.m_shape.erase(sliced.m_shape.begin() + dimIndex);
+    sliced.m_strides.erase(sliced.m_strides.begin() + dimIndex);
+    return sliced;
   }
 
-  gsl::span<const value_type> data;
+  VariableView slice(const Dimension dim, const py::slice indices) const {
+    const auto dimIndex =
+        m_strides.size() - 1 - m_variable.dimensions().index(dim);
 
-  Variable &variable;
+    size_t start, stop, step, slicelength;
+    if (!indices.compute(m_shape[dimIndex], &start, &stop, &step, &slicelength))
+      throw py::error_already_set();
+    if (step != 1)
+      throw std::runtime_error("Step must be 1");
 
-private:
-  value_type *m_mutableData{nullptr};
+    VariableView sliced(*this);
+    sliced.m_start += start * m_strides[dimIndex] / sizeof(typename Tag::type);
+    sliced.m_shape[dimIndex] = slicelength;
+    return sliced;
+  }
+
+  Variable &m_variable;
+  gsl::index m_start;
+  std::vector<gsl::index> m_shape;
+  std::vector<gsl::index> m_strides;
 };
 
-template <class Tag> TypedVariable<Tag> getCoord(Dataset &self, const Tag) {
+template <class Tag> VariableView<Tag> getCoord(Dataset &self, const Tag) {
   return {self[self.find(tag_id<Tag>, "")]};
 }
 
 template <class Tag>
-TypedVariable<Tag> getData(Dataset &self,
-                           const std::pair<const Tag, const std::string> &key) {
+VariableView<Tag> getData(Dataset &self,
+                          const std::pair<const Tag, const std::string> &key) {
   return {self[self.find(tag_id<Tag>, key.second)]};
 }
 
@@ -127,47 +160,61 @@ std::string format(const Dimensions &dims) {
 } // namespace detail
 
 template <class Tag>
-void declare_typed_variable(py::module &m, const std::string &suffix) {
-  py::class_<detail::TypedVariable<Tag>>(
-      m, (std::string("Variable_") + suffix).c_str())
-      // This is a linear index. If we decide to keep this, we should probably
-      // not support slicing notation. If we change to using multi-dimensional
-      // indexing like numpy we can also support slicing.
-      .def("__len__", &detail::TypedVariable<Tag>::size)
-      // TODO Also support indexing with dimensions names, as in
-      // http://xarray.pydata.org/en/stable/indexing.html.
-      .def("__getitem__", [](const detail::TypedVariable<Tag> &self,
-                             const gsl::index i) { return self.data[i]; })
+void declare_VariableView(py::module &m, const std::string &suffix) {
+  py::class_<detail::VariableView<Tag>>(
+      m, (std::string("VariableView_") + suffix).c_str())
       .def("__getitem__",
-           [](const detail::TypedVariable<Tag> &self,
-              const std::map<Dimension, gsl::index> d) {
+           [](const detail::VariableView<Tag> &self,
+              const std::map<Dimension, const gsl::index> d) {
              if (d.size() != 1)
                throw std::runtime_error(
                    "Currently only 1D slicing is supported.");
-             // TODO It is a bit weird that this returns Variable instead of
-             // TypedVariable, but we cannot since the latter only holds a
-             // reference... the resulting Variable cannot be modified in Python
-             // right now, would need an extra cast step.
-             // Would this be solved by returning the slice as a view?
-             // This highlights a more general problem: The mechanism of
-             // returning a typed variable in Dataset.__getitem__ is nice, but
-             // we cannot provide the same interface as for a stand-alone
-             // Variable?
-             // => Always return a Variable in __getitem__, even if 0-dim.
-             // => Use explicit syntax for accessing individual items.
-             // => *Must* return a view on slicing to be consistent with numpy
-             //    and xarray.
-             // numpy does some magic to copy data into a view when the parent
-             // is deleted! Do they just share the data ownership? How can we
-             // combine this with our COW? Have two distinct reference counters,
-             // one for sharing views, and one for distinct owners?
-             return slice(self.variable, d.begin()->first, d.begin()->second);
-
+             return self.slice(d.begin()->first, d.begin()->second);
            })
-      .def("__setitem__", &detail::TypedVariable<Tag>::setItem)
-      .def_property_readonly("dimensions",
-                             &detail::TypedVariable<Tag>::dimensions)
-      .def_property_readonly("name", &detail::TypedVariable<Tag>::name);
+      .def("__getitem__",
+           [](const detail::VariableView<Tag> &self,
+              const std::map<Dimension, const py::slice> d) {
+             if (d.size() != 1)
+               throw std::runtime_error(
+                   "Currently only 1D slicing is supported.");
+             return self.slice(d.begin()->first, d.begin()->second);
+           })
+      // TODO Provide setItem
+      .def_property(
+          "numpy",
+          [](py::object &obj) {
+            auto &view = obj.cast<detail::VariableView<Tag> &>();
+            auto array = py::array_t<typename Tag::type>{
+                view.m_shape, view.m_strides,
+                view.m_variable.template get<const Tag>().data() + view.m_start,
+                obj};
+            // See https://github.com/pybind/pybind11/issues/481.
+            reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())->flags &=
+                ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+            return array;
+          },
+          [](py::object &obj, const py::array_t<typename Tag::type> &data) {
+            auto &view = obj.cast<detail::VariableView<Tag> &>();
+            py::array_t<typename Tag::type>{
+                view.m_shape, view.m_strides,
+                view.m_variable.template get<Tag>().data() + view.m_start,
+                obj} = data;
+          })
+      .def_property(
+          "numpy_mutable",
+          [](py::object &obj) {
+            auto &view = obj.cast<detail::VariableView<Tag> &>();
+            return py::array_t<typename Tag::type>{
+                view.m_shape, view.m_strides,
+                view.m_variable.template get<Tag>().data() + view.m_start, obj};
+          },
+          [](py::object &obj, const py::array_t<typename Tag::type> &data) {
+            auto &view = obj.cast<detail::VariableView<Tag> &>();
+            py::array_t<typename Tag::type>{
+                view.m_shape, view.m_strides,
+                view.m_variable.template get<Tag>().data() + view.m_start,
+                obj} = data;
+          });
 }
 
 PYBIND11_MODULE(dataset, m) {
@@ -203,8 +250,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("size",
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
 
-  declare_typed_variable<Data::Value>(m, "DataValue");
-  declare_typed_variable<Coord::X>(m, "CoordX");
+  declare_VariableView<Data::Value>(m, "DataValue");
+  declare_VariableView<Coord::X>(m, "CoordX");
 
   py::class_<Variable>(m, "Variable");
 
@@ -293,10 +340,8 @@ PYBIND11_MODULE(dataset, m) {
           "getNumpy",
           [](py::object &obj) {
             const auto &d = obj.cast<const Dataset &>();
-            auto dims = d.dimensions<const Data::Value>();
-            std::vector<int64_t> shape(dims.count());
-            for (gsl::index i = 0; i < shape.size(); ++i)
-              shape[i] = dims.size(shape.size() - 1 - i);
+            const auto &dims = d.dimensions<const Data::Value>();
+            auto shape = detail::numpy_shape(dims);
             auto array = py::array_t<double>(
                 shape, {}, d.get<const Data::Value>().data(), obj);
             // See https://github.com/pybind/pybind11/issues/481.
@@ -307,10 +352,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("getNumpyMutable",
            [](py::object &obj) {
              const auto &d = obj.cast<const Dataset &>();
-             auto dims = d.dimensions<const Data::Value>();
-             std::vector<int64_t> shape(dims.count());
-             for (gsl::index i = 0; i < shape.size(); ++i)
-               shape[i] = dims.size(shape.size() - 1 - i);
+             const auto &dims = d.dimensions<const Data::Value>();
+             auto shape = detail::numpy_shape(dims);
              return py::array_t<double>(shape, {},
                                         d.get<const Data::Value>().data(), obj);
            })
