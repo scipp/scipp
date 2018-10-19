@@ -88,24 +88,25 @@ public:
   VariableView(Variable &variable)
       : m_variable(variable), m_start(0),
         m_shape(numpy_shape(variable.dimensions())),
-        m_strides(numpy_strides<Tag>(variable.dimensions())) {}
+        m_strides(numpy_strides<Tag>(variable.dimensions())),
+        m_dimensions(variable.dimensions()) {}
+
+  const Dimensions &dimensions() const { return m_dimensions; }
 
   VariableView slice(const Dimension dim, const gsl::index index) const {
-    // TODO This is wrong if slice already got reduced dimensions.
-    const auto dimIndex =
-        m_strides.size() - 1 - m_variable.dimensions().index(dim);
+    const auto dimIndex = m_strides.size() - 1 - dimensions().index(dim);
 
     VariableView sliced(*this);
     sliced.m_start += index * m_strides[dimIndex] / sizeof(typename Tag::type);
     // Eliminate dimension.
     sliced.m_shape.erase(sliced.m_shape.begin() + dimIndex);
     sliced.m_strides.erase(sliced.m_strides.begin() + dimIndex);
+    sliced.m_dimensions.erase(dim);
     return sliced;
   }
 
   VariableView slice(const Dimension dim, const py::slice indices) const {
-    const auto dimIndex =
-        m_strides.size() - 1 - m_variable.dimensions().index(dim);
+    const auto dimIndex = m_strides.size() - 1 - dimensions().index(dim);
 
     size_t start, stop, step, slicelength;
     if (!indices.compute(m_shape[dimIndex], &start, &stop, &step, &slicelength))
@@ -116,6 +117,7 @@ public:
     VariableView sliced(*this);
     sliced.m_start += start * m_strides[dimIndex] / sizeof(typename Tag::type);
     sliced.m_shape[dimIndex] = slicelength;
+    sliced.m_dimensions.resize(dim, slicelength);
     return sliced;
   }
 
@@ -123,6 +125,9 @@ public:
   gsl::index m_start;
   std::vector<gsl::index> m_shape;
   std::vector<gsl::index> m_strides;
+
+private:
+  Dimensions m_dimensions;
 };
 
 template <class Tag> VariableView<Tag> getCoord(Dataset &self, const Tag) {
@@ -163,6 +168,8 @@ template <class Tag>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<detail::VariableView<Tag>>(
       m, (std::string("VariableView_") + suffix).c_str())
+      .def_property_readonly("dimensions",
+                             &detail::VariableView<Tag>::dimensions)
       .def("__getitem__",
            [](const detail::VariableView<Tag> &self,
               const std::map<Dimension, const gsl::index> d) {
