@@ -86,7 +86,7 @@ template <class Tag> class VariableView {
 public:
   // Note: Not const since this is created from a Python object.
   VariableView(Variable &variable)
-      : m_variable(variable), m_start(0),
+      : m_variable(&variable), m_start(0),
         m_shape(numpy_shape(variable.dimensions())),
         m_strides(numpy_strides<Tag>(variable.dimensions())),
         m_dimensions(variable.dimensions()) {}
@@ -121,7 +121,7 @@ public:
     return sliced;
   }
 
-  Variable &m_variable;
+  Variable *m_variable;
   gsl::index m_start;
   std::vector<gsl::index> m_shape;
   std::vector<gsl::index> m_strides;
@@ -173,27 +173,27 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
       .def("__getitem__",
            [](const detail::VariableView<Tag> &self,
               const std::map<Dimension, const gsl::index> d) {
-             if (d.size() != 1)
-               throw std::runtime_error(
-                   "Currently only 1D slicing is supported.");
-             return self.slice(d.begin()->first, d.begin()->second);
+             auto slice(self);
+             for (auto item : d)
+               slice = slice.slice(item.first, item.second);
+             return slice;
            })
       .def("__getitem__",
            [](const detail::VariableView<Tag> &self,
               const std::map<Dimension, const py::slice> d) {
-             if (d.size() != 1)
-               throw std::runtime_error(
-                   "Currently only 1D slicing is supported.");
-             return self.slice(d.begin()->first, d.begin()->second);
+             auto slice(self);
+             for (auto item : d)
+               slice = slice.slice(item.first, item.second);
+             return slice;
            })
-      // TODO Provide setItem
       .def_property(
           "numpy",
           [](py::object &obj) {
             auto &view = obj.cast<detail::VariableView<Tag> &>();
             auto array = py::array_t<typename Tag::type>{
                 view.m_shape, view.m_strides,
-                view.m_variable.template get<const Tag>().data() + view.m_start,
+                view.m_variable->template get<const Tag>().data() +
+                    view.m_start,
                 obj};
             // See https://github.com/pybind/pybind11/issues/481.
             reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())->flags &=
@@ -204,7 +204,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
             auto &view = obj.cast<detail::VariableView<Tag> &>();
             py::array_t<typename Tag::type>{
                 view.m_shape, view.m_strides,
-                view.m_variable.template get<Tag>().data() + view.m_start,
+                view.m_variable->template get<Tag>().data() + view.m_start,
                 obj} = data;
           })
       .def_property(
@@ -213,13 +213,14 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
             auto &view = obj.cast<detail::VariableView<Tag> &>();
             return py::array_t<typename Tag::type>{
                 view.m_shape, view.m_strides,
-                view.m_variable.template get<Tag>().data() + view.m_start, obj};
+                view.m_variable->template get<Tag>().data() + view.m_start,
+                obj};
           },
           [](py::object &obj, const py::array_t<typename Tag::type> &data) {
             auto &view = obj.cast<detail::VariableView<Tag> &>();
             py::array_t<typename Tag::type>{
                 view.m_shape, view.m_strides,
-                view.m_variable.template get<Tag>().data() + view.m_start,
+                view.m_variable->template get<Tag>().data() + view.m_start,
                 obj} = data;
           });
 }
