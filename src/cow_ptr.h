@@ -8,7 +8,6 @@
 
 #include <atomic>
 #include <memory>
-#include <mutex>
 
 /**
   \class cow_ptr
@@ -58,7 +57,6 @@ public:
 
 private:
   ptr_type Data; ///< Real object Ptr
-  std::mutex copyMutex;
 
 public:
   cow_ptr(ptr_type &&resourceSptr) noexcept;
@@ -161,26 +159,14 @@ cow_ptr<DataType> &cow_ptr<DataType>::operator=(const ptr_type &A) noexcept {
   Access function.
   If data is shared, creates a copy of Data so that it can be modified.
 
-  In certain situations this function is not thread safe. Specifically it is not
-  thread
-  safe in the presence of a simultaneous cow_ptr copy. Copies of the underlying
-  data are only
-  made when the reference count > 1.
+  This function is not thread safe.
 
   @return new copy of *this, if required
 */
 template <typename DataType> DataType &cow_ptr<DataType>::access() {
-  // Use a double-check for sharing so that we only acquire the lock if
-  // absolutely necessary
-  if (!Data.unique()) {
-    std::lock_guard<std::mutex> lock{copyMutex};
-    // Check again because another thread may have taken copy and dropped
-    // reference count since previous check
-    if (!Data.unique()) {
-      std::atomic_store(&Data,
-                        std::shared_ptr<DataType>(Data->clone().release()));
-    }
-  }
+  if (!Data.unique())
+    std::atomic_store(&Data,
+                      std::shared_ptr<DataType>(Data->clone().release()));
   return *Data;
 }
 
