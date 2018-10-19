@@ -66,12 +66,12 @@ public:
                                "volume given by dimension extents");
   }
 
-  std::unique_ptr<VariableConcept> clone() const override {
-    return std::make_unique<VariableModel<T>>(dimensions(), m_model);
+  std::shared_ptr<VariableConcept> clone() const override {
+    return std::make_shared<VariableModel<T>>(dimensions(), m_model);
   }
 
-  std::unique_ptr<VariableConcept> cloneEmpty() const override {
-    return std::make_unique<VariableModel<T>>(Dimensions{}, T(1));
+  std::shared_ptr<VariableConcept> cloneEmpty() const override {
+    return std::make_shared<VariableModel<T>>(Dimensions{}, T(1));
   }
 
   bool operator==(const VariableConcept &other) const override {

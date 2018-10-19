@@ -22,8 +22,9 @@ class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
-  virtual std::unique_ptr<VariableConcept> clone() const = 0;
-  virtual std::unique_ptr<VariableConcept> cloneEmpty() const = 0;
+  // This is dropped into a cow_ptr so we prefer shared_ptr over unique_ptr.
+  virtual std::shared_ptr<VariableConcept> clone() const = 0;
+  virtual std::shared_ptr<VariableConcept> cloneEmpty() const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
   virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator-=(const VariableConcept &other) = 0;

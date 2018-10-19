@@ -165,8 +165,7 @@ cow_ptr<DataType> &cow_ptr<DataType>::operator=(const ptr_type &A) noexcept {
 */
 template <typename DataType> DataType &cow_ptr<DataType>::access() {
   if (!Data.unique())
-    std::atomic_store(&Data,
-                      std::shared_ptr<DataType>(Data->clone().release()));
+    std::atomic_store(&Data, Data->clone());
   return *Data;
 }
 
