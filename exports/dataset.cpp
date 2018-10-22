@@ -226,7 +226,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
 }
 
 PYBIND11_MODULE(dataset, m) {
-  py::enum_<Dimension>(m, "Dimension")
+  py::enum_<Dimension>(m, "Dim")
       .value("X", Dimension::X)
       .value("Y", Dimension::Y)
       .value("Z", Dimension::Z);
