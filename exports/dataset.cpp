@@ -170,6 +170,18 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
       m, (std::string("VariableView_") + suffix).c_str())
       .def_property_readonly("dimensions",
                              &detail::VariableView<Tag>::dimensions)
+      .def_property_readonly("is_coord",
+                             [](const detail::VariableView<Tag> &self) {
+                               return self.m_variable->isCoord();
+                             })
+      .def_property_readonly("type",
+                             [](const detail::VariableView<Tag> &self) {
+                               return self.m_variable->type();
+                             })
+      .def_property_readonly("name",
+                             [](const detail::VariableView<Tag> &self) {
+                               return self.m_variable->name();
+                             })
       .def("__getitem__",
            [](const detail::VariableView<Tag> &self,
               const std::map<Dimension, const gsl::index> d) {
@@ -254,18 +266,29 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
       .def("__repr__", &detail::format)
+      .def_property_readonly("labels",
+                             [](const Dimensions &dims) {
+                               std::vector<Dimension> labels;
+                               for (const auto &dim : dims)
+                                 labels.insert(labels.begin(), dim.first);
+                               return labels;
+                             })
       .def("add", &Dimensions::add)
       .def("size",
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
 
   declare_VariableView<Data::Value>(m, "DataValue");
   declare_VariableView<Coord::X>(m, "CoordX");
+  declare_VariableView<Coord::Y>(m, "CoordY");
+  declare_VariableView<Coord::Z>(m, "CoordZ");
 
   py::class_<Variable>(m, "Variable");
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
       .def("__getitem__", detail::getCoord<Coord::X>)
+      .def("__getitem__", detail::getCoord<Coord::Y>)
+      .def("__getitem__", detail::getCoord<Coord::Z>)
       .def("__getitem__", detail::getData<Data::Value>)
       .def("serialize",
            [](const Dataset &self) {
