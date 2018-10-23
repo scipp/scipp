@@ -28,8 +28,8 @@ static void BM_Dataset_as_Histogram(benchmark::State &state) {
   gsl::index nPoint = state.range(0);
   Dataset d;
   d.insert<Coord::Tof>({Dimension::Tof, nPoint}, nPoint);
-  d.insert<Data::Value>("sample", {Dimension::Tof, nPoint}, nPoint);
-  d.insert<Data::Variance>("sample", {Dimension::Tof, nPoint}, nPoint);
+  d.insert<Data::Value>("", {Dimension::Tof, nPoint}, nPoint);
+  d.insert<Data::Variance>("", {Dimension::Tof, nPoint}, nPoint);
   std::vector<Dataset> histograms;
   gsl::index nSpec = std::min(1000000l, 10000000 / nPoint);
   for (gsl::index i = 0; i < nSpec; ++i) {
