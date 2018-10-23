@@ -3,9 +3,9 @@
 
 The purpose of this document is ultimately to determine how we will properly support Instrument 2.0 (a.k.a Beamine) in Dataset and what the cost will be. **The best way to understand what will be needed for Dataset is first to map out how the remaining rollout would be done outside of dataset, against existing Workspace**. Since Dataset can and will support all Geometry, we can use these estimates to inform the rollout strategy and effort for Geometry in Dataset.
 
-## Phases
+## Phases without Dataset
 
-What is presented here are phases that would need to be completed against Mantid (v.3.14) to get to a point that the Dataset like Beamline types (`DetectorInfo`, `ComponentInfo`, `SpectrumInfo`) could be used without the need whatsoever for `Instrument 1.0`
+What is presented here are phases that would need to be completed against Mantid (v.3.14) to get to a point that Beamline types (`DetectorInfo`, `ComponentInfo`, `SpectrumInfo`) could be used without the need whatsoever for `Instrument 1.0`
 
 ### Phase 1 - Push Instrument 1.0 to IO aspects only
 
@@ -71,25 +71,84 @@ This is a breaking change so would have to happen at some controlled point.
 1. Amensty for scripts to update
 1. Document and publicise to community removal
 
-## Notes
+### Notes
 
 - ComponentIDs are not written to or read disk, and cannot be since they are simply the address of the in-memory component
 - Important to separate the need for storage of arbitrary parameters against a component and the copy hack employed by Instrument 1.0 to store a modified geometry via parameters of a ParameterMap. The former is still very important.
 
-## Effort
+### Workspace 1.0 Geometry Estimates
 
 Effort estimtates based on above considerations
 
-| Phase  | Lower Estimate (Weeks) | Upper Estimate (Weeks) | Notes |
-| ------------- | ------------- | ------------- | ------------- |
-| 1  | 4  | 12 | Changing signatures will be the largest effort and unknown |
-| 2(b)  | 1 | 3 | Relatively well understood. Does not require removing base instrument |
-| 3(c)  | 1 | 3 | Solution similar to the above, but fields are optional |
-| 4 |  12 | 32 | Almost total removal as set out in above plan |
-| 5 | 6 | 14 | Complete removal and clean-up |
-| **Total Weeks** | 24 | 64 | | 
+| Phase  | Lower Estimate (Weeks) | Upper Estimate (Weeks) | Required for Dataset approach y/n | Notes |
+| ------------- | ------------- | ------------- | ------------- | ------------- |
+| 1  | 4  | 12 | n | Changing signatures will be the largest effort and unknown |
+| 2(b)  | 1 | 3 | y | Relatively well understood. Does not require removing base instrument |
+| 3(c)  | 1 | 3 | y | Solution similar to the above, but fields are optional |
+| 4 |  12 | 32 | n | Almost total removal as set out in above plan |
+| 5 | 6 | 14 | n |Complete removal and clean-up |
+| **Total Weeks** | 24 | 64 | | | 
 
-**Mapping to Dataset, it is suggested that the above form only the base part of the estimate** The above solutions do not factor in any change or new file format. It may reasonably take 6+ months to design and, implement and optimise a file format and reading/writing functionality.
+## Dataset Objectives
+
+The `Dataset` objectives are slightly different from everything outlined above. Firstly `Dataset` provides a more "green field" approach rather than the "brown field" that has to be considered when supporting existing workspaces. For example `Dataset` rollout will involve a new stream of non-compatible (with existing base `API::Algorithm`) `Algorithms` and that gives significant flexibility when breaking with old behaviour. 
+
+Here are some key differences as relating to the Geometry:
+
+* Fundamental non-compatibility between `Workspace` and `Dataset`. `Dataset` has more information than possible in `Workspace`. All interop via conversion, API compatibility not maintained.
+  - Existing saving would have to "slice" `Dataset`, so would be required to write new saving functionality and format for `Dataset`
+  - Because of saving requirement, no requirement to save geometry deltas. Geometry can be written to be directly correspond to the mutated Beamline geometry - not origninal (IDF) + delta
+  - Loading functionality would follow from the above
+* No ExperimentInfo
+  - Geometry, alongside run information is part of `Dataset`
+* No ParameterMap
+  - Exact solution(s) not yet apparent, but there are several options. Given that a number of parameters are linked to the instrument and not individual components, this might affect how things are done
+* No `ComponentID` by design. Infact, there may be no requirement for unique identification of `Components` at all.
+
+Another key difference with the phases for non-dataset approach is that the approach concludes with the complete removal of `Instrument 1.0` but not `Workspace 1.0`. The current preferred rollout for `Dataset` is to develop alongside the existing codebase, and not to consider removal of legacy data structures i.e. Workspace until `Dataset` usage has acted as a full replacement. We would simultaneously remove `Workspace 1.0`, `Algorithms 1.0`, `Instrument 1.0`, `ExperimentInfo`. 
+
+The net result of these differences is that the activities and timescales differ from those presented in the above section. We refer to these as activities rather than phases, since the order of the activities is not known and possibly not interdependent.
+
+### Activity 1 - Functional wrappers to Dataset for Geometry
+
+Need to provide classes of the form `SpectrumInfo`, `ComponentInfo` and `DetectorInfo` that wrap `Dataset`. These classes should point to a `Dataset` containing all required information. Note that `ComponentInfo` and `DetectorInfo` are inter-dependent, a higher-level grouping may be required. `SpectrumInfo` uses `DetectorInfo`. We would need to consider time spent to reproduce functional and performance testing.
+
+### Activity 2 - Saving Loading
+
+As described above, no need to preserve compatibility with existing intermediate formats as far as the total `Dataset` is concerned. Time would need to be invested to trial and optimise these. Requirements for end-users should also be considered, for example if `Dataset` libraries are used outside of Mantid. Note that `Saving` and `Loading` and format specifics must not be mixed into the `Dataset` library. 
+
+### Activity 3 - Serialization/De-serialization NexusGeometry
+
+I have split this from activity above for estimation purposes.
+
+We will also need to serialize/de-serialize between in-memory geometry and target formats. For example serializing `ComponentInfo` to `NexusGeometryFormat` would likely be required for some kind of `SaveBeamline` (a rare example of something useful between Mantid as of v3.14 and with dataset).
+
+### Activity 4 - Physical Instrument
+
+This is a relatively minor consideration. Favoured approaches are to either lazy load the physical instrument as part of the instrument visualisation or to attach it as some extra variables. Infact, only `positions` and `rotations` should be allowed to differ between neutronic and physical beamlines.
+
+### Activity 5 - Advise on Parameter Map
+
+Probably should research and provide best practice for storing ParameterMap equivlent information
+
+### Notes
+
+This is slightly beyond the remit of the discussion here, but one concern with the `Dataset` rollout plan is the surge in technical debt. Conceptional understanding for a time will be problematic as there will be two very different ways of supporting data reduction. The size of the codebase will also increase significantly for a time. It may be many years before the codebase can be collapsed. 
+
+### Dataset Geometry Estimates
+
+Effort based on above consideration. **Note when comparing with Workspace 1.0 estimates that this does not include effort to take away existing approaches**
+
+| Activity  | Lower Estimate (Weeks) | Upper Estimate (Weeks) |  Notes |
+| ------------- | ------------- | ------------- |------------- |
+| 1  | 2  | 8 | Mantid already provides a good template for this. Work may be rapid |
+| 2  | 4 | 12 | Looking at xarray implementation may help |
+| 3  | 2 | 12 |  |
+| 4  | 1 | 2 |  |
+| 4  | 1 | 2 |  |
+| **Total Weeks** | 10 | 36 | | 
+
+
 
 
 
