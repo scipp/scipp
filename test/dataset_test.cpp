@@ -257,9 +257,10 @@ TEST(Dataset, operator_plus_equal_different_content) {
   b.insert<Coord::X>({Dimension::X, 1}, {0.1});
   b.insert<Data::Value>("name1", {Dimension::X, 1}, {2.2});
   b.insert<Data::Value>("name2", {Dimension::X, 1}, {3.3});
-  EXPECT_THROW_MSG(a += b, std::runtime_error, "Right-hand-side in addition "
-                                               "contains variable that is not "
-                                               "present in left-hand-side.");
+  EXPECT_THROW_MSG(a += b, std::runtime_error,
+                   "Right-hand-side in addition "
+                   "contains variable that is not "
+                   "present in left-hand-side.");
   EXPECT_NO_THROW(b += a);
 }
 
@@ -278,6 +279,21 @@ TEST(Dataset, operator_plus_equal_history) {
   EXPECT_EQ(a.get<Data::History>()[0].size(), 3);
   EXPECT_EQ(a.get<Data::History>()[0][1], "other.operator+=");
   EXPECT_EQ(a.get<Data::History>()[0][2], "operator+=");
+}
+
+TEST(Dataset, operator_plus_equal_with_attributes) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("name1", {Dimension::X, 1}, {2.2});
+  Dataset logs;
+  logs.insert<Data::String>("comments", {}, {std::string("test")});
+  a.insert<Attr::ExperimentLog>("", {}, {logs});
+  a += a;
+  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
+  EXPECT_EQ(a.get<Data::Value>()[0], 4.4);
+  // For now there is no special merging behavior, just keep attributes of first
+  // operand.
+  EXPECT_EQ(a.get<Attr::ExperimentLog>()[0], logs);
 }
 
 TEST(Dataset, history_with_slicing) {
@@ -316,6 +332,19 @@ TEST(Dataset, operator_times_equal) {
   EXPECT_EQ(a.get<Data::Value>()[0], 9.0);
 }
 
+TEST(Dataset, operator_times_equal_with_attributes) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("name1", {Dimension::X, 1}, {3.0});
+  Dataset logs;
+  logs.insert<Data::String>("comments", {}, {std::string("test")});
+  a.insert<Attr::ExperimentLog>("", {}, {logs});
+  a *= a;
+  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
+  EXPECT_EQ(a.get<Data::Value>()[0], 9.0);
+  EXPECT_EQ(a.get<Attr::ExperimentLog>()[0], logs);
+}
+
 TEST(Dataset, operator_times_equal_with_uncertainty) {
   Dataset a;
   a.insert<Coord::X>({Dimension::X, 1}, {0.1});
@@ -342,27 +371,34 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
   Dataset c;
   c.insert<Coord::X>({Dimension::X, 1}, {0.1});
   c.insert<Data::Variance>("name1", {Dimension::X, 1}, {2.0});
-  EXPECT_THROW_MSG(a *= b, std::runtime_error, "Either both or none of the "
-                                               "operands must have a variance "
-                                               "for their values.");
-  EXPECT_THROW_MSG(b *= a, std::runtime_error, "Either both or none of the "
-                                               "operands must have a variance "
-                                               "for their values.");
-  EXPECT_THROW_MSG(c *= c, std::runtime_error, "Cannot multiply datasets that "
-                                               "contain a variance but no "
-                                               "corresponding value.");
-  EXPECT_THROW_MSG(a *= c, std::runtime_error, "Cannot multiply datasets that "
-                                               "contain a variance but no "
-                                               "corresponding value.");
-  EXPECT_THROW_MSG(c *= a, std::runtime_error, "Right-hand-side in addition "
-                                               "contains variable that is not "
-                                               "present in left-hand-side.");
-  EXPECT_THROW_MSG(b *= c, std::runtime_error, "Right-hand-side in addition "
-                                               "contains variable that is not "
-                                               "present in left-hand-side.");
-  EXPECT_THROW_MSG(c *= b, std::runtime_error, "Right-hand-side in addition "
-                                               "contains variable that is not "
-                                               "present in left-hand-side.");
+  EXPECT_THROW_MSG(a *= b, std::runtime_error,
+                   "Either both or none of the "
+                   "operands must have a variance "
+                   "for their values.");
+  EXPECT_THROW_MSG(b *= a, std::runtime_error,
+                   "Either both or none of the "
+                   "operands must have a variance "
+                   "for their values.");
+  EXPECT_THROW_MSG(c *= c, std::runtime_error,
+                   "Cannot multiply datasets that "
+                   "contain a variance but no "
+                   "corresponding value.");
+  EXPECT_THROW_MSG(a *= c, std::runtime_error,
+                   "Cannot multiply datasets that "
+                   "contain a variance but no "
+                   "corresponding value.");
+  EXPECT_THROW_MSG(c *= a, std::runtime_error,
+                   "Right-hand-side in addition "
+                   "contains variable that is not "
+                   "present in left-hand-side.");
+  EXPECT_THROW_MSG(b *= c, std::runtime_error,
+                   "Right-hand-side in addition "
+                   "contains variable that is not "
+                   "present in left-hand-side.");
+  EXPECT_THROW_MSG(c *= b, std::runtime_error,
+                   "Right-hand-side in addition "
+                   "contains variable that is not "
+                   "present in left-hand-side.");
 }
 
 TEST(Dataset, operator_times_equal_with_units) {
@@ -494,4 +530,45 @@ TEST(Dataset, concatenate) {
   xy = concatenate(Dimension::Y, xy, xy);
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
   EXPECT_EQ(xy.get<const Data::Value>().size(), 12);
+}
+
+TEST(Dataset, concatenate_with_attributes) {
+  Dataset a;
+  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
+  a.insert<Data::Value>("data", {Dimension::X, 1}, {2.2});
+  Dataset logs;
+  logs.insert<Data::String>("comments", {}, {std::string("test")});
+  a.insert<Attr::ExperimentLog>("", {}, {logs});
+
+  auto x = concatenate(Dimension::X, a, a);
+  EXPECT_TRUE(x.dimensions().contains(Dimension::X));
+  EXPECT_EQ(x.get<const Coord::X>().size(), 2);
+  EXPECT_EQ(x.get<const Data::Value>().size(), 2);
+  EXPECT_EQ(x.get<const Attr::ExperimentLog>().size(), 1);
+  EXPECT_EQ(x.get<const Attr::ExperimentLog>()[0], logs);
+
+  auto x2(x);
+  x2.get<Data::Value>()[0] = 100.0;
+  x2.get<Attr::ExperimentLog>()[0].get<Data::String>()[0] = "different";
+  auto xy = concatenate(Dimension::Y, x, x2);
+  EXPECT_TRUE(xy.dimensions().contains(Dimension::X));
+  EXPECT_TRUE(xy.dimensions().contains(Dimension::Y));
+  EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
+  EXPECT_EQ(xy.get<const Data::Value>().size(), 4);
+  // Coord::X is shared since it it was the same in x and x2 and is thus
+  // "constant" along Dimension::Y in xy.
+  EXPECT_EQ(&x.get<const Coord::X>()[0], &xy.get<const Coord::X>()[0]);
+  EXPECT_NE(&x.get<const Data::Value>()[0], &xy.get<const Data::Value>()[0]);
+  // Attributes get a dimension, no merging happens. This might be useful
+  // behavior, e.g., when dealing with multiple runs in a single dataset?
+  EXPECT_EQ(xy.get<const Attr::ExperimentLog>().size(), 2);
+  EXPECT_EQ(xy.get<const Attr::ExperimentLog>()[0], logs);
+
+  EXPECT_NO_THROW(concatenate(Dimension::X, xy, xy));
+
+  auto xy2(xy);
+  xy2.get<Attr::ExperimentLog>()[0].get<Data::String>()[0] = "";
+  // Concatenating in existing dimension fail currently. Would need to implement
+  // merging functionality for attributes?
+  EXPECT_ANY_THROW(concatenate(Dimension::X, xy, xy2));
 }

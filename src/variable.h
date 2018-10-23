@@ -131,6 +131,11 @@ public:
 
   uint16_t type() const { return m_type; }
   bool isCoord() const { return m_type < std::tuple_size<Coord::tags>::value; }
+  bool isAttr() const {
+    return m_type >= std::tuple_size<Coord::tags>::value +
+                         std::tuple_size<Data::tags>::value;
+  }
+  bool isData() const { return !isCoord() && !isAttr(); }
 
   template <class Tag> auto get() const {
     static_assert(std::is_const<Tag>::value,
@@ -162,6 +167,12 @@ private:
   deep_ptr<std::string> m_name;
   cow_ptr<VariableConcept> m_object;
 };
+
+template <class Tag, class... Args>
+Variable makeVariable(Dimensions dimensions) {
+  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+                  Vector<typename Tag::type>(dimensions.volume()));
+}
 
 template <class Tag, class... Args>
 Variable makeVariable(Dimensions dimensions, Args &&... args) {

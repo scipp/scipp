@@ -141,14 +141,29 @@ struct Data {
                           DimensionSize, String, History, Events>;
 };
 
-using Tags = decltype(
-    std::tuple_cat(std::declval<Coord::tags>(), std::declval<Data::tags>()));
+struct Attr {
+  struct ExperimentLog {
+    using type = Dataset;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+
+  using tags = std::tuple<ExperimentLog>;
+};
+
+using Tags = decltype(std::tuple_cat(std::declval<Coord::tags>(),
+                                     std::declval<Data::tags>(),
+                                     std::declval<Attr::tags>()));
 template <class T>
 static constexpr uint16_t tag_id =
     detail::index<std::remove_const_t<T>, Tags>::value;
 template <class T>
 static constexpr bool is_coord =
     tag_id<T> < std::tuple_size<Coord::tags>::value;
+template <class T>
+static constexpr bool is_attr =
+    tag_id<T> >=
+    std::tuple_size<Coord::tags>::value + std::tuple_size<Data::tags>::value;
+template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 
 class DataBin {
 public:

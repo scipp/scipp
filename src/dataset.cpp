@@ -137,7 +137,7 @@ Dataset &Dataset::operator+=(const Dataset &other) {
       // TODO We could improve sharing here magically, but whether this is
       // beneficial would depend on the shared reference count in var1 and var2:
       // var1 = var2;
-    } else {
+    } else if (var1.isData()) {
       if (var1.valueTypeIs<Data::History>()) {
         auto hists = var1.get<Data::History>();
         if (hists.size() != 1)
@@ -161,7 +161,7 @@ Dataset &Dataset::operator+=(const Dataset &other) {
 Dataset &Dataset::operator-=(const Dataset &other) {
   std::set<std::string> names;
   for (const auto &var2 : other.m_variables)
-    if (!var2.isCoord())
+    if (var2.isData())
       names.insert(var2.name());
 
   for (const auto &var2 : other.m_variables) {
@@ -169,7 +169,7 @@ Dataset &Dataset::operator-=(const Dataset &other) {
     try {
       index = find(var2.type(), var2.name());
     } catch (const std::runtime_error &) {
-      if (!var2.isCoord() && names.size() == 1) {
+      if (var2.isData() && names.size() == 1) {
         // Only a single (named) variable in RHS, subtract from all.
         index = -1;
       } else {
@@ -185,7 +185,7 @@ Dataset &Dataset::operator-=(const Dataset &other) {
           throw std::runtime_error(
               "Coordinates of datasets do not match. Cannot "
               "perform subtraction.");
-      } else {
+      } else if (var1.isData()) {
         var1 -= var2;
       }
     } else {
@@ -222,7 +222,7 @@ void multiply(const gsl::index size, ptr<double> RESTRICT v1,
     v1[i] *= v2[i];
   }
 }
-}
+} // namespace aligned
 
 Dataset &Dataset::operator*=(const Dataset &other) {
   // See operator+= for additional comments.
@@ -249,7 +249,7 @@ Dataset &Dataset::operator*=(const Dataset &other) {
       if (!(var1 == var2))
         throw std::runtime_error(
             "Coordinates of datasets do not match. Cannot perform addition");
-    } else {
+    } else if (var1.isData()) {
       // Data variables are added
       if (var2.type() == tag_id<Data::Value>) {
         if (count(tag_id<Data::Variance>, var2.name()) !=
