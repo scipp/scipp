@@ -31,12 +31,12 @@ static void BM_Dataset_as_Histogram(benchmark::State &state) {
   d.insert<Data::Value>("", {Dimension::Tof, nPoint}, nPoint);
   d.insert<Data::Variance>("", {Dimension::Tof, nPoint}, nPoint);
   std::vector<Dataset> histograms;
-  gsl::index nSpec = std::min(1000000l, 10000000 / nPoint);
+  gsl::index nSpec = std::min(1000000l, 10000000 / (nPoint + 1));
   for (gsl::index i = 0; i < nSpec; ++i) {
     auto hist(d);
     // Break sharing
-    hist.get<Data::Value>()[0] = 1.0;
-    hist.get<Data::Variance>()[0] = 1.0;
+    hist.get<Data::Value>();
+    hist.get<Data::Variance>();
     histograms.push_back(hist);
   }
 
@@ -49,7 +49,7 @@ static void BM_Dataset_as_Histogram(benchmark::State &state) {
   state.SetBytesProcessed(state.iterations() * nSpec * nPoint * 2 *
                           sizeof(double));
 }
-BENCHMARK(BM_Dataset_as_Histogram)->RangeMultiplier(2)->Range(1, 2 << 14);
+BENCHMARK(BM_Dataset_as_Histogram)->RangeMultiplier(2)->Range(0, 2 << 14);
 
 static void BM_Dataset_as_Histogram_with_slice(benchmark::State &state) {
   Dataset d;
