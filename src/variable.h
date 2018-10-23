@@ -45,16 +45,58 @@ private:
   Dimensions m_dimensions;
 };
 
+template <class T> class deep_ptr {
+public:
+  deep_ptr() = default;
+  deep_ptr(std::unique_ptr<T> &&other) : m_data(std::move(other)) {}
+  deep_ptr(const deep_ptr<T> &other)
+      : m_data(other ? std::make_unique<T>(*other) : nullptr) {}
+  deep_ptr(deep_ptr<T> &&) = default;
+  constexpr deep_ptr(std::nullptr_t){};
+  deep_ptr<T> &operator=(const deep_ptr<T> &other) {
+    if (&other != this && other)
+      m_data = std::make_unique<T>(*other);
+    return *this;
+  }
+  deep_ptr<T> &operator=(deep_ptr<T> &&) = default;
+
+  explicit operator bool() const noexcept { return bool(m_data); }
+  bool operator==(const deep_ptr<T> &other) const noexcept {
+    return m_data == other.m_data;
+  }
+  bool operator!=(const deep_ptr<T> &other) const noexcept {
+    return m_data != other.m_data;
+  }
+
+  const T &operator*() const { return *m_data; }
+  T &operator*() { return *m_data; }
+  const T *operator->() const { return m_data.get(); }
+  T *operator->() { return m_data.get(); }
+
+private:
+  std::unique_ptr<T> m_data;
+};
+
 class Variable {
 public:
   template <class T>
   Variable(uint32_t id, const Unit::Id unit, Dimensions dimensions, T object);
 
-  const std::string &name() const { return m_name; }
+  const std::string &name() const {
+    static const std::string empty;
+    if (!m_name)
+      return empty;
+    return *m_name;
+  }
   void setName(const std::string &name) {
     if (isCoord())
       throw std::runtime_error("Coordinate variable cannot have a name.");
-    m_name = name;
+    if (name.empty())
+      m_name = nullptr;
+    else if (m_name)
+      *m_name = name;
+    else
+      m_name = std::make_unique<std::string>(name);
   }
   bool operator==(const Variable &other) const;
   bool operator!=(const Variable &other) const;
@@ -117,7 +159,7 @@ private:
 
   uint16_t m_type;
   Unit m_unit;
-  std::string m_name;
+  deep_ptr<std::string> m_name;
   cow_ptr<VariableConcept> m_object;
 };
 

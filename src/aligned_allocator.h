@@ -19,9 +19,11 @@ void deallocate_aligned_memory(void *ptr) noexcept;
 
 //#define USE_POOL
 
+constexpr bool is_power_of_two(int v) { return v && ((v & (v - 1)) == 0); }
+
 inline void *allocate_aligned_memory(size_t align, size_t size) {
   assert(align >= sizeof(void *));
-  assert(nail::is_power_of_two(align));
+  assert(is_power_of_two(align));
 
   if (size == 0) {
     return nullptr;

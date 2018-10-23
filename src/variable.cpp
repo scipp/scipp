@@ -105,6 +105,7 @@ public:
     auto result = std::make_unique<VariableModel<T>>(dimensions());
     auto &resultModel = result->m_model;
     try {
+      // TODO We can use static_cast if the tag matches.
       const auto &otherModel =
           dynamic_cast<const VariableModel<T> &>(other).m_model;
       if (dimensions() == other.dimensions()) {
@@ -245,8 +246,12 @@ INSTANTIATE(Dataset)
 bool Variable::operator==(const Variable &other) const {
   // Compare even before pointer comparison since data may be shared even if
   // names differ.
-  if (m_name != other.m_name)
-    return false;
+  if (m_name != other.m_name) {
+    if (m_name == nullptr || other.m_name == nullptr)
+      return false;
+    if (*m_name != *other.m_name)
+      return false;
+  }
   if (m_unit != other.m_unit)
     return false;
   // Trivial case: Pointers are equal
