@@ -132,6 +132,8 @@ private:
   gsl::index findUnique(const uint16_t id) const;
   void mergeDimensions(const auto &dims);
 
+  // TODO These dimensions do not imply any ordering, should use another class
+  // in place of `Dimensions`, which *does* imply an order.
   Dimensions m_dimensions;
   boost::container::small_vector<Variable, 4> m_variables;
 };
