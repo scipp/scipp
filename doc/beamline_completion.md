@@ -104,18 +104,21 @@ Here are some key differences as relating to the Geometry:
 * No ParameterMap
   - Exact solution(s) not yet apparent, but there are several options. Given that a number of parameters are linked to the instrument and not individual components, this might affect how things are done
 * No `ComponentID` by design. Infact, there may be no requirement for unique identification of `Components` at all.
+* No CSG shapes. Dataset will record information as close as possible to the on-disk Nexus Geometry format specification for meshes and cylinders
 
-Another key difference with the phases for non-dataset approach is that the approach concludes with the complete removal of `Instrument 1.0` but not `Workspace 1.0`. The current preferred rollout for `Dataset` is to develop alongside the existing codebase, and not to consider removal of legacy data structures i.e. Workspace until `Dataset` usage has acted as a full replacement. We would simultaneously remove `Workspace 1.0`, `Algorithms 1.0`, `Instrument 1.0`, `ExperimentInfo`. 
+Another key difference with the phases for non-dataset approach is that the approach concludes with the complete removal of `Instrument 1.0` but not `Workspace 1.0`. The current preferred rollout for `Dataset` is to develop alongside the existing codebase, and not to consider removal of legacy data structures i.e. Workspace until `Dataset` usage has acted as a full replacement. We would simultaneously depecate then remove `Workspace 1.0`, `Algorithms 1.0`, `Instrument 1.0`, `ExperimentInfo`. 
 
 The net result of these differences is that the activities and timescales differ from those presented in the above section. We refer to these as activities rather than phases, since the order of the activities is not known and possibly not interdependent.
 
 ### Activity 1 - Functional wrappers to Dataset for Geometry
 
-Need to provide classes of the form `SpectrumInfo`, `ComponentInfo` and `DetectorInfo` that wrap `Dataset`. These classes should point to a `Dataset` containing all required information. Note that `ComponentInfo` and `DetectorInfo` are inter-dependent, a higher-level grouping may be required. `SpectrumInfo` uses `DetectorInfo`. We would need to consider time spent to reproduce functional and performance testing.
+Need to provide classes `ComponentInfo` and `Shape` that wrap `Dataset`. These classes should point to a `Dataset` containing all required information. 
+
+Note that the on-the-fly `Shape` requirement is new to Mantid, and would take some time to figure out and optimise. Much of the functionality can probably be ported from `NexusGeometryParser`
 
 ### Activity 2 - Saving Loading
 
-As described above, no need to preserve compatibility with existing intermediate formats as far as the total `Dataset` is concerned. Time would need to be invested to trial and optimise these. Requirements for end-users should also be considered, for example if `Dataset` libraries are used outside of Mantid. Note that `Saving` and `Loading` and format specifics must not be mixed into the `Dataset` library. 
+As described above, no need to preserve compatibility with existing intermediate formats as far as the total `Dataset` is concerned. Time would need to be invested to trial and optimise these. Requirements for end-users should also be considered, for example if `Dataset` libraries are used outside of Mantid. Note that `Saving` and `Loading` and format specifics must not be mixed into the `Dataset` library. All information, including shape could be preserved via a generic load/save for Dataset.
 
 ### Activity 3 - Serialization/De-serialization NexusGeometry
 
@@ -131,6 +134,12 @@ This is a relatively minor consideration. Favoured approaches are to either lazy
 
 Probably should research and provide best practice for storing ParameterMap equivlent information
 
+### Activity 6 - Make InstrumentView compatible
+
+Should be relatively straight forward given wide spread use of `ComponentInfo`. Only complexities are:
+- Parameters displayed from ParameterMap
+- Any use of DetectorInfo (think there are a few) which would need to go via `DataSetView`
+
 ### Notes
 
 This is slightly beyond the remit of the discussion here, but one concern with the `Dataset` rollout plan is the surge in technical debt. Conceptional understanding for a time will be problematic as there will be two very different ways of supporting data reduction. The size of the codebase will also increase significantly for a time. It may be many years before the codebase can be collapsed. 
@@ -141,12 +150,13 @@ Effort based on above consideration. **Note when comparing with Workspace 1.0 es
 
 | Activity  | Lower Estimate (Weeks) | Upper Estimate (Weeks) |  Notes |
 | ------------- | ------------- | ------------- |------------- |
-| 1  | 2  | 8 | Mantid already provides a good template for this. Work may be rapid |
-| 2  | 4 | 12 | Looking at xarray implementation may help |
-| 3  | 2 | 12 |  |
+| 1  | 2  | 8 | ComponentInfo done in Mantid already. Shape support would be new. |
+| 2  | 1 | 8 | Looking at xarray implementation may help |
+| 3  | 2 | 8 |  |
 | 4  | 1 | 2 |  |
 | 5  | 1 | 2 |  |
-| **Total Weeks** | 10 | 36 | | 
+| 6  | 1 | 2 |  |
+| **Total Weeks** | 8 | 30 | | 
 
 
 
