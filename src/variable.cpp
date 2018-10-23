@@ -275,20 +275,33 @@ Variable &Variable::operator+=(const Variable &other) {
   // Different name is ok for addition.
   if (m_unit != other.m_unit)
     throw std::runtime_error("Cannot add Variables: Units do not match.");
-  if (dimensions().contains(other.dimensions())) {
-    // Note: This will broadcast/transpose the RHS if required. We do not
-    // support changing the dimensions of the LHS though!
-    if (m_object.unique()) {
-      m_object.access() += *other.m_object;
+  if (!valueTypeIs<Data::Events>()) {
+    if (dimensions().contains(other.dimensions())) {
+      // Note: This will broadcast/transpose the RHS if required. We do not
+      // support changing the dimensions of the LHS though!
+      if (m_object.unique()) {
+        m_object.access() += *other.m_object;
+      } else {
+        // Handling special case to avoid copy should reduce data movement
+        // from/to memory --- making copy requires 2 load + 1 store, `+=` is 2
+        // load + 1 store, `+` is 3 load + 1 store. In practive I did not
+        // observe a significant speedup though, need more benchmarks.
+        m_object = *m_object + *other.m_object;
+      }
     } else {
-      // Handling special case to avoid copy should reduce data movement from/to
-      // memory --- making copy requires 2 load + 1 store, `+=` is 2 load + 1
-      // store, `+` is 3 load + 1 store. In practive I did not observe a
-      // significant speedup though, need more benchmarks.
-      m_object = *m_object + *other.m_object;
+      throw std::runtime_error(
+          "Cannot add Variables: Dimensions do not match.");
     }
   } else {
-    throw std::runtime_error("Cannot add Variables: Dimensions do not match.");
+    if (dimensions() == other.dimensions()) {
+      auto events = get<Data::Events>();
+      const auto otherEvents = other.get<const Data::Events>();
+      for (gsl::index i = 0; i < events.size(); ++i)
+        events[i] = concatenate(Dimension::Event, events[i], otherEvents[i]);
+    } else {
+      throw std::runtime_error(
+          "Cannot add Variables: Dimensions do not match.");
+    }
   }
 
   return *this;
@@ -298,6 +311,8 @@ Variable &Variable::operator-=(const Variable &other) {
   if (m_unit != other.m_unit)
     throw std::runtime_error("Cannot subtract Variables: Units do not match.");
   if (dimensions().contains(other.dimensions())) {
+    if (valueTypeIs<Data::Events>())
+      throw std::runtime_error("Subtraction of events lists not implemented.");
     m_object.access() -= *other.m_object;
   } else {
     throw std::runtime_error(
@@ -311,6 +326,8 @@ Variable &Variable::operator*=(const Variable &other) {
   if (!dimensions().contains(other.dimensions()))
     throw std::runtime_error(
         "Cannot multiply Variables: Dimensions do not match.");
+  if (valueTypeIs<Data::Events>())
+    throw std::runtime_error("Multiplication of events lists not implemented.");
   m_unit = m_unit * other.m_unit;
   m_object.access() *= *other.m_object;
   return *this;

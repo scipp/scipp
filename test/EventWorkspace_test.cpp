@@ -5,8 +5,8 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include "range/v3/all.hpp"
+#include <algorithm>
 
 #include "test_macros.h"
 
@@ -121,4 +121,35 @@ TEST(EventWorkspace, basics) {
 
   // Can delete events fully later.
   d.erase<Data::Events>();
+}
+
+TEST(EventWorkspace, plus) {
+  Dataset d;
+
+  Dataset e;
+  e.insert<Data::Tof>("", {Dimension::Event, 10});
+  e.insert<Data::PulseTime>("", {Dimension::Event, 10});
+  auto e2 = concatenate(Dimension::Event, e, e);
+
+  d.insert<Data::Events>("", {Dimension::Spectrum, 2}, {e, e2});
+
+  EXPECT_THROW_MSG(d - d, std::runtime_error,
+                   "Subtraction of events lists not implemented.");
+  EXPECT_THROW_MSG(d * d, std::runtime_error,
+                   "Multiplication of events lists not implemented.");
+
+  // Special handling: Adding datasets *concatenates* the event lists.
+  auto sum = d + d;
+
+  auto eventLists = sum.get<Data::Events>();
+  EXPECT_EQ(eventLists.size(), 2);
+  EXPECT_EQ(eventLists[0].get<const Data::Tof>().size(), 2 * 10);
+  EXPECT_EQ(eventLists[1].get<const Data::Tof>().size(), 2 * 20);
+
+  sum += d;
+
+  eventLists = sum.get<Data::Events>();
+  EXPECT_EQ(eventLists.size(), 2);
+  EXPECT_EQ(eventLists[0].get<const Data::Tof>().size(), 3 * 10);
+  EXPECT_EQ(eventLists[1].get<const Data::Tof>().size(), 3 * 20);
 }
