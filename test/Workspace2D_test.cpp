@@ -26,7 +26,8 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
                                     {1.0, 2.0, 4.0, 8.0});
 
   // Spectrum to detector mapping and spectrum numbers.
-  Vector<std::vector<gsl::index>> grouping = {{0, 2}, {1}, {}};
+  Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
+      {0, 2}, {1}, {}};
   d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
   d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
 
@@ -169,7 +170,8 @@ TEST(Workspace2D, scanning) {
   // accordingly. Probably the easiest solution is to forbid shape operations on
   // Dimension::Detector and Dimension::DetectorScan if Coord::DetectorGrouping
   // is present.
-  Vector<std::vector<gsl::index>> grouping = {{0}, {2}, {4}};
+  Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
+      {0}, {2}, {4}};
   scanning.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
   scanning.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
 

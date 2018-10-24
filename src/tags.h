@@ -9,6 +9,7 @@
 #include <tuple>
 #include <vector>
 
+#include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
 
 #include "unit.h"
@@ -61,7 +62,7 @@ struct Coord {
   };
   struct DetectorGrouping {
     // Dummy for now, or sufficient like this?
-    using type = std::vector<gsl::index>;
+    using type = boost::container::small_vector<gsl::index, 1>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct SpectrumPosition : public detail::ReturnByValuePolicy {

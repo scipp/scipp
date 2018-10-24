@@ -604,7 +604,8 @@ TEST(DatasetView, spectrum_position) {
   Dataset d;
   d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
                                     {1.0, 2.0, 4.0, 8.0});
-  Vector<std::vector<gsl::index>> grouping = {{0, 2}, {1}, {}};
+  Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
+      {0, 2}, {1}, {}};
   d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
 
   DatasetView<Coord::SpectrumPosition> view(d);

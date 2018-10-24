@@ -24,6 +24,13 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
 };
 
 template <template <class> class Op, class T>
+struct ArithmeticHelper<Op, boost::container::small_vector<T, 1>> {
+  template <class... Args> static void apply(Args &&...) {
+    throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
+  }
+};
+
+template <template <class> class Op, class T>
 struct ArithmeticHelper<Op, std::vector<T>> {
   template <class... Args> static void apply(Args &&...) {
     throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
@@ -239,7 +246,7 @@ INSTANTIATE(char)
 INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
 INSTANTIATE(std::pair<int64_t, int64_t>)
-INSTANTIATE(std::vector<gsl::index>)
+INSTANTIATE(boost::container::small_vector<gsl::index, 1>)
 INSTANTIATE(std::vector<std::string>)
 INSTANTIATE(Dataset)
 

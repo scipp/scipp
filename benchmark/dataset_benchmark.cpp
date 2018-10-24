@@ -5,6 +5,8 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <benchmark/benchmark.h>
 
+#include <numeric>
+
 #include "dataset.h"
 
 // Dataset::get requires a search based on a tag defined by the type and is thus
@@ -214,5 +216,63 @@ static void BM_Dataset_cache_blocking_no_slicing(benchmark::State &state) {
 BENCHMARK(BM_Dataset_cache_blocking_no_slicing)
     ->RangeMultiplier(2)
     ->Range(2 << 9, 2 << 14);
+
+Dataset makeWorkspace2D(const gsl::index nSpec, const gsl::index nPoint) {
+  Dataset d;
+  d.insert<Coord::DetectorId>({Dimension::Detector, nSpec});
+  auto ids = d.get<Coord::DetectorId>();
+  std::iota(ids.begin(), ids.end(), 1);
+  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, nSpec}, nSpec,
+                                    typename Coord::DetectorGrouping::type{0});
+  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, nSpec});
+  auto groups = d.get<Coord::DetectorGrouping>();
+  for (gsl::index i = 0; i < groups.size(); ++i)
+    groups[i][0] = i;
+  auto nums = d.get<Coord::SpectrumNumber>();
+  std::iota(nums.begin(), nums.end(), 1);
+
+  auto edges = makeVariable<Coord::Tof>({Dimension::Tof, nPoint + 1});
+  d.insertAsEdge(Dimension::Tof, edges);
+  Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
+  d.insert<Data::Value>("sample", dims);
+  d.insert<Data::Variance>("sample", dims);
+  return d;
+}
+
+static void BM_Dataset_Workspace2D_create(benchmark::State &state) {
+  gsl::index nSpec = 1024 * 1024;
+  gsl::index nPoint = 2;
+  for (auto _ : state) {
+    auto d = makeWorkspace2D(nSpec, nPoint);
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+BENCHMARK(BM_Dataset_Workspace2D_create);
+
+static void BM_Dataset_Workspace2D_copy(benchmark::State &state) {
+  gsl::index nSpec = 1024 * 1024;
+  gsl::index nPoint = 2;
+  auto d = makeWorkspace2D(nSpec, nPoint);
+  for (auto _ : state) {
+    auto copy(d);
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+BENCHMARK(BM_Dataset_Workspace2D_copy);
+
+static void BM_Dataset_Workspace2D_copy_and_write(benchmark::State &state) {
+  gsl::index nSpec = 1024 * 1024;
+  gsl::index nPoint = state.range(0);
+  auto d = makeWorkspace2D(nSpec, nPoint);
+  for (auto _ : state) {
+    auto copy(d);
+    copy.get<Data::Value>()[0] = 1.0;
+    copy.get<Data::Variance>()[0] = 1.0;
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+BENCHMARK(BM_Dataset_Workspace2D_copy_and_write)
+    ->RangeMultiplier(2)
+    ->Range(2, 2 << 10);
 
 BENCHMARK_MAIN();
