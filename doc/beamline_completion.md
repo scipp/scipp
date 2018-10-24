@@ -104,7 +104,8 @@ Here are some key differences as relating to the Geometry:
 * No ParameterMap
   - Exact solution(s) not yet apparent, but there are several options. Given that a number of parameters are linked to the instrument and not individual components, this might affect how things are done
 * No `ComponentID` by design. Infact, there may be no requirement for unique identification of `Components` at all.
-* No CSG shapes. Dataset will record information as close as possible to the on-disk Nexus Geometry format specification for meshes and cylinders
+
+- No CSG shapes. Dataset will record information as close as possible to the on-disk Nexus Geometry format specification for meshes and cylinders
 
 Another key difference with the phases for non-dataset approach is that the approach concludes with the complete removal of `Instrument 1.0` but not `Workspace 1.0`. The current preferred rollout for `Dataset` is to develop alongside the existing codebase, and not to consider removal of legacy data structures i.e. Workspace until `Dataset` usage has acted as a full replacement. We would simultaneously depecate then remove `Workspace 1.0`, `Algorithms 1.0`, `Instrument 1.0`, `ExperimentInfo`. 
 
@@ -112,13 +113,13 @@ The net result of these differences is that the activities and timescales differ
 
 ### Activity 1 - Functional wrappers to Dataset for Geometry
 
-Need to provide classes `ComponentInfo` and `Shape` that wrap `Dataset`. These classes should point to a `Dataset` containing all required information. 
+Need to provide a `ComponentInfo` like class that wrap `Dataset` (`ComponentTreeView` as suggested name). These class should point to a `Dataset` containing all required information. 
 
-Note that the on-the-fly `Shape` requirement is new to Mantid, and would take some time to figure out and optimise. Much of the functionality can probably be ported from `NexusGeometryParser`
+Desirable eventual goals for `Dataset` include storing `Shape` in OFF-like `variable` arrays with on-the-fly interpretation. This would take some time to figure out and optimise and would break compatibility across Mantid. Thefore this is not the desired rollout approach. `Dataset` will support a `variable` of type `Geometry::IObject` as the initial aim.   
 
 ### Activity 2 - Saving Loading
 
-As described above, no need to preserve compatibility with existing intermediate formats as far as the total `Dataset` is concerned. Time would need to be invested to trial and optimise these. Requirements for end-users should also be considered, for example if `Dataset` libraries are used outside of Mantid. Note that `Saving` and `Loading` and format specifics must not be mixed into the `Dataset` library. All information, including shape could be preserved via a generic load/save for Dataset.
+There are no special requirements for loading and saving for `Geometry` of `Dataset` above general `Dataset` that are not already under consideration as part of he the wider Nexus Geometry initiative. There is already a need to save Instrument Geometry out to the new-style nexus format.
 
 ### Activity 3 - Serialization/De-serialization NexusGeometry
 
@@ -142,7 +143,9 @@ Should be relatively straight forward given wide spread use of `ComponentInfo`. 
 
 ### Notes
 
-This is slightly beyond the remit of the discussion here, but one concern with the `Dataset` rollout plan is the surge in technical debt. Conceptional understanding for a time will be problematic as there will be two very different ways of supporting data reduction. The size of the codebase will also increase significantly for a time. It may be many years before the codebase can be collapsed. 
+* As part of an overall `Dataset` policy, initial rollout will not attempt to replace auxillary Objects such as `Run`, `Sample`, `Object`, the latter of which is relevant for geometry. 
+* Note that `Saving` and `Loading` and format specifics must not be mixed into the `Dataset` library.
+* This is slightly beyond the remit of the discussion here, but one concern with the `Dataset` rollout plan is the surge in technical debt. Conceptional understanding for a time will be problematic as there will be two very different ways of supporting data reduction. The size of the codebase will also increase significantly for a time. It may be many years before the codebase can be collapsed. 
 
 ### Dataset Geometry Estimates
 
@@ -150,13 +153,13 @@ Effort based on above consideration. **Note when comparing with Workspace 1.0 es
 
 | Activity  | Lower Estimate (Weeks) | Upper Estimate (Weeks) |  Notes |
 | ------------- | ------------- | ------------- |------------- |
-| 1  | 2  | 8 | ComponentInfo done in Mantid already. Shape support would be new. |
-| 2  | 1 | 2 | Only saving shapes considered over and above general Dataset saving concerns. Would be generic otherwise. |
+| 1  | 1  | 3 | ComponentInfo done in Mantid already |
+| 2  | 0 | 0 | No special considerations here. See discussion. |
 | 3  | 2 | 8 |  |
 | 4  | 1 | 2 |  |
 | 5  | 1 | 2 |  |
 | 6  | 1 | 2 |  |
-| **Total Weeks** | 8 | 24 | | 
+| **Total Weeks** | 6 | 17 | | 
 
 
 
