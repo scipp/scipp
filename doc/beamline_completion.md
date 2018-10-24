@@ -151,12 +151,12 @@ Effort based on above consideration. **Note when comparing with Workspace 1.0 es
 | Activity  | Lower Estimate (Weeks) | Upper Estimate (Weeks) |  Notes |
 | ------------- | ------------- | ------------- |------------- |
 | 1  | 2  | 8 | ComponentInfo done in Mantid already. Shape support would be new. |
-| 2  | 1 | 8 | Looking at xarray implementation may help |
+| 2  | 1 | 2 | Only saving shapes considered over and above general Dataset saving concerns. Would be generic otherwise. |
 | 3  | 2 | 8 |  |
 | 4  | 1 | 2 |  |
 | 5  | 1 | 2 |  |
 | 6  | 1 | 2 |  |
-| **Total Weeks** | 8 | 30 | | 
+| **Total Weeks** | 8 | 24 | | 
 
 
 
