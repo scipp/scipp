@@ -14,12 +14,19 @@
 #include "tags.h"
 #include "variable.h"
 
+class Dataset;
+namespace detail {
+template <class Tag> class VariableView;
+template <class Tag> VariableView<Tag> getCoord(Dataset &, const Tag);
+template <class Tag>
+VariableView<Tag> getData(Dataset &,
+                          const std::pair<const Tag, const std::string> &);
+} // namespace detail
+
 class Dataset {
 public:
   gsl::index size() const { return m_variables.size(); }
   const Variable &operator[](gsl::index i) const { return m_variables[i]; }
-  // TODO Remove either this or Variable::setName and Variable::setDimensions.
-  Variable &operator[](gsl::index i) { return m_variables[i]; }
   auto begin() const { return m_variables.begin(); }
   auto end() const { return m_variables.end(); }
 
@@ -127,6 +134,19 @@ public:
                 const gsl::index index);
 
 private:
+  // This is private such that name and dimensions of variables cannot be
+  // modified in a way that would break the dataset.
+  Variable &get(gsl::index i) { return m_variables[i]; }
+
+  // The way the Python exports are written we require non-const references to
+  // variables. Note that setting breaking attributes is not exported, so we
+  // should be safe.
+  template <class Tag>
+  friend detail::VariableView<Tag> detail::getCoord(Dataset &, const Tag);
+  template <class Tag>
+  friend detail::VariableView<Tag>
+  detail::getData(Dataset &, const std::pair<const Tag, const std::string> &);
+
   gsl::index count(const uint16_t id) const;
   gsl::index count(const uint16_t id, const std::string &name) const;
   gsl::index findUnique(const uint16_t id) const;

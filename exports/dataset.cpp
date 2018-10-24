@@ -131,13 +131,13 @@ private:
 };
 
 template <class Tag> VariableView<Tag> getCoord(Dataset &self, const Tag) {
-  return {self[self.find(tag_id<Tag>, "")]};
+  return {self.get(self.find(tag_id<Tag>, ""))};
 }
 
 template <class Tag>
 VariableView<Tag> getData(Dataset &self,
                           const std::pair<const Tag, const std::string> &key) {
-  return {self[self.find(tag_id<Tag>, key.second)]};
+  return {self.get(self.find(tag_id<Tag>, key.second))};
 }
 
 std::string formatDim(const Dimension dim) {
@@ -168,6 +168,8 @@ template <class Tag>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<detail::VariableView<Tag>>(
       m, (std::string("VariableView_") + suffix).c_str())
+      // Careful: Do not expose setName, setDimensions, and assignment,
+      // otherwise we can break the dataset.
       .def_property_readonly("dimensions",
                              &detail::VariableView<Tag>::dimensions)
       .def_property_readonly("is_coord",
