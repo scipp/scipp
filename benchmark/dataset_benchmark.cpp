@@ -427,6 +427,7 @@ static void BM_Dataset_EventWorkspace_grow(benchmark::State &state) {
   for (auto _ : state) {
     state.PauseTiming();
     auto sum(d);
+    static_cast<void>(sum.get<Data::Events>());
     state.ResumeTiming();
     sum += update;
   }
