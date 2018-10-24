@@ -23,6 +23,28 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
   }
 };
 
+#define DISABLE_ARITHMETICS_T(...)                                             \
+  template <template <class> class Op, class T>                                \
+  struct ArithmeticHelper<Op, __VA_ARGS__> {                                   \
+    template <class... Args> static void apply(Args &&...) {                   \
+      throw std::runtime_error(                                                \
+          "Not an arithmetic type. Cannot apply operand.");                    \
+    }                                                                          \
+  };
+
+#define DISABLE_ARITHMETICS_N(...)                                             \
+  template <template <class> class Op, int N>                                  \
+  struct ArithmeticHelper<Op, __VA_ARGS__> {                                   \
+    template <class... Args> static void apply(Args &&...) {                   \
+      throw std::runtime_error(                                                \
+          "Not an arithmetic type. Cannot apply operand.");                    \
+    }                                                                          \
+  };
+
+DISABLE_ARITHMETICS_T(std::shared_ptr<T>)
+DISABLE_ARITHMETICS_T(std::array<T, 4>)
+DISABLE_ARITHMETICS_T(std::array<T, 3>)
+
 template <template <class> class Op, class T>
 struct ArithmeticHelper<Op, boost::container::small_vector<T, 1>> {
   template <class... Args> static void apply(Args &&...) {
@@ -248,7 +270,11 @@ INSTANTIATE(int64_t)
 INSTANTIATE(std::pair<int64_t, int64_t>)
 INSTANTIATE(boost::container::small_vector<gsl::index, 1>)
 INSTANTIATE(std::vector<std::string>)
+INSTANTIATE(std::vector<gsl::index>)
 INSTANTIATE(Dataset)
+INSTANTIATE(std::array<double, 3>)
+INSTANTIATE(std::array<double, 4>)
+INSTANTIATE(std::shared_ptr<std::array<double, 100>>)
 
 bool Variable::operator==(const Variable &other) const {
   // Compare even before pointer comparison since data may be shared even if
@@ -303,6 +329,7 @@ Variable &Variable::operator+=(const Variable &other) {
     if (dimensions() == other.dimensions()) {
       auto events = get<Data::Events>();
       const auto otherEvents = other.get<const Data::Events>();
+#pragma omp parallel for
       for (gsl::index i = 0; i < events.size(); ++i)
         events[i] = concatenate(Dimension::Event, events[i], otherEvents[i]);
     } else {

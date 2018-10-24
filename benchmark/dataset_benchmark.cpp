@@ -6,6 +6,7 @@
 #include <benchmark/benchmark.h>
 
 #include <numeric>
+#include <random>
 
 #include "dataset.h"
 
@@ -136,10 +137,26 @@ static void BM_Dataset_multiply(benchmark::State &state) {
                           sizeof(double));
 }
 BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12);
-BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12)->Threads(4)->UseRealTime();
-BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12)->Threads(8)->UseRealTime();
-BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12)->Threads(12)->UseRealTime();
-BENCHMARK(BM_Dataset_multiply)->RangeMultiplier(2)->Range(2 << 0, 2 << 12)->Threads(24)->UseRealTime();
+BENCHMARK(BM_Dataset_multiply)
+    ->RangeMultiplier(2)
+    ->Range(2 << 0, 2 << 12)
+    ->Threads(4)
+    ->UseRealTime();
+BENCHMARK(BM_Dataset_multiply)
+    ->RangeMultiplier(2)
+    ->Range(2 << 0, 2 << 12)
+    ->Threads(8)
+    ->UseRealTime();
+BENCHMARK(BM_Dataset_multiply)
+    ->RangeMultiplier(2)
+    ->Range(2 << 0, 2 << 12)
+    ->Threads(12)
+    ->UseRealTime();
+BENCHMARK(BM_Dataset_multiply)
+    ->RangeMultiplier(2)
+    ->Range(2 << 0, 2 << 12)
+    ->Threads(24)
+    ->UseRealTime();
 
 Dataset doWork(Dataset d) {
   d *= d;
@@ -217,19 +234,62 @@ BENCHMARK(BM_Dataset_cache_blocking_no_slicing)
     ->RangeMultiplier(2)
     ->Range(2 << 9, 2 << 14);
 
-Dataset makeWorkspace2D(const gsl::index nSpec, const gsl::index nPoint) {
+Dataset makeBeamline(const gsl::index nComp, const gsl::index nDet) {
   Dataset d;
-  d.insert<Coord::DetectorId>({Dimension::Detector, nSpec});
+
+  d.insert<Coord::DetectorId>({Dimension::Detector, nDet});
+  d.insert<Coord::DetectorIsMonitor>({Dimension::Detector, nDet});
+  d.insert<Coord::DetectorMask>({Dimension::Detector, nDet});
+  d.insert<Coord::DetectorPosition>({Dimension::Detector, nDet});
+  d.insert<Coord::DetectorRotation>({Dimension::Detector, nDet});
+  d.insert<Coord::DetectorParent>({Dimension::Detector, nDet});
+  d.insert<Coord::DetectorScale>({Dimension::Detector, nDet});
+  // TODO As it is, this will break coordinate matching. We need a special
+  // comparison for referenced shapes, or a shape factory.
+  // d.insert<Coord::DetectorShape>({Dimension::Detector, nDet}, nDet,
+  //                               std::make_shared<std::array<double, 100>>());
+
+  d.insert<Coord::ComponentChildren>({Dimension::Component, nComp});
+  d.insert<Coord::ComponentName>({Dimension::Component, nComp});
+  d.insert<Coord::ComponentParent>({Dimension::Component, nComp});
+  d.insert<Coord::ComponentPosition>({Dimension::Component, nComp});
+  d.insert<Coord::ComponentRotation>({Dimension::Component, nComp});
+  d.insert<Coord::ComponentScale>({Dimension::Component, nComp});
+  d.insert<Coord::ComponentShape>({Dimension::Component, nComp});
+  d.insert<Coord::ComponentSubtreeRange>({Dimension::Component, nComp});
+  d.insert<Coord::DetectorSubtreeRange>({Dimension::Component, nComp});
+
+  d.insert<Attr::ExperimentLog>("NeXus logs", {});
+
+  // These are special, length is same, but there is no association with the
+  // index in the dimension. Should handle this differently? Put it into a
+  // zero-dimensional variable?
+  d.insert<Coord::DetectorSubtree>({Dimension::Detector, nDet});
+  d.insert<Coord::ComponentSubtree>({Dimension::Component, nComp});
+
   auto ids = d.get<Coord::DetectorId>();
   std::iota(ids.begin(), ids.end(), 1);
-  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, nSpec}, nSpec,
-                                    typename Coord::DetectorGrouping::type{0});
+
+  return d;
+}
+
+Dataset makeSpectra(const gsl::index nSpec) {
+  Dataset d;
+
+  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, nSpec});
   d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, nSpec});
   auto groups = d.get<Coord::DetectorGrouping>();
   for (gsl::index i = 0; i < groups.size(); ++i)
-    groups[i][0] = i;
+    groups[i] = {i};
   auto nums = d.get<Coord::SpectrumNumber>();
   std::iota(nums.begin(), nums.end(), 1);
+
+  return d;
+}
+
+Dataset makeWorkspace2D(const gsl::index nSpec, const gsl::index nPoint) {
+  auto d = makeBeamline(nSpec / 100, nSpec);
+  d.merge(makeSpectra(nSpec));
 
   auto edges = makeVariable<Coord::Tof>({Dimension::Tof, nPoint + 1});
   d.insertAsEdge(Dimension::Tof, edges);
@@ -273,6 +333,111 @@ static void BM_Dataset_Workspace2D_copy_and_write(benchmark::State &state) {
 }
 BENCHMARK(BM_Dataset_Workspace2D_copy_and_write)
     ->RangeMultiplier(2)
+    ->Range(2, 2 << 7);
+
+Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
+  auto d = makeBeamline(nSpec / 100, nSpec);
+  d.merge(makeSpectra(nSpec));
+
+  auto edges = makeVariable<Coord::Tof>({Dimension::Tof, 2});
+  d.insertAsEdge(Dimension::Tof, edges);
+
+  d.insert<Data::Events>("events", {Dimension::Spectrum, nSpec});
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_int_distribution<int> dist(0, nEvent);
+  Dataset empty;
+  empty.insert<Data::Tof>("", {Dimension::Event, 0});
+  empty.insert<Data::PulseTime>("", {Dimension::Event, 0});
+  for (auto &eventList : d.get<Data::Events>()) {
+    // 1/4 of the event lists is empty
+    gsl::index count = std::max(0l, dist(mt) - nEvent / 4);
+    if (count == 0)
+      eventList = empty;
+    else {
+      eventList.insert<Data::Tof>("", {Dimension::Event, count});
+      eventList.insert<Data::PulseTime>("", {Dimension::Event, count});
+    }
+  }
+
+  return d;
+}
+
+static void BM_Dataset_EventWorkspace_create(benchmark::State &state) {
+  gsl::index nSpec = 1024 * 1024;
+  gsl::index nEvent = 0;
+  for (auto _ : state) {
+    auto d = makeEventWorkspace(nSpec, nEvent);
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+BENCHMARK(BM_Dataset_EventWorkspace_create);
+
+static void BM_Dataset_EventWorkspace_copy(benchmark::State &state) {
+  gsl::index nSpec = 1024 * 1024;
+  gsl::index nEvent = 0;
+  auto d = makeEventWorkspace(nSpec, nEvent);
+  for (auto _ : state) {
+    auto copy(d);
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+BENCHMARK(BM_Dataset_EventWorkspace_copy);
+
+static void BM_Dataset_EventWorkspace_copy_and_write(benchmark::State &state) {
+  gsl::index nSpec = 1024 * 1024;
+  gsl::index nEvent = state.range(0);
+  auto d = makeEventWorkspace(nSpec, nEvent);
+  for (auto _ : state) {
+    auto copy(d);
+    auto eventLists = copy.get<Data::Events>();
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+BENCHMARK(BM_Dataset_EventWorkspace_copy_and_write)
+    ->RangeMultiplier(8)
     ->Range(2, 2 << 10);
+
+static void BM_Dataset_EventWorkspace_plus(benchmark::State &state) {
+  gsl::index nSpec = 128 * 1024;
+  gsl::index nEvent = state.range(0);
+  auto d = makeEventWorkspace(nSpec, nEvent);
+  for (auto _ : state) {
+    auto sum = d + d;
+  }
+
+  gsl::index actualEvents = 0;
+  for (auto &eventList : d.get<const Data::Events>())
+    actualEvents += eventList.dimensions().size(Dimension::Event);
+  state.SetItemsProcessed(state.iterations());
+  // 2 for Tof and PulseTime
+  // 1+1+2+2 for loads and save
+  state.SetBytesProcessed(state.iterations() * actualEvents * 2 * 6 *
+                          sizeof(double));
+}
+BENCHMARK(BM_Dataset_EventWorkspace_plus)
+    ->RangeMultiplier(2)
+    ->Range(2, 2 << 12);
+
+static void BM_Dataset_EventWorkspace_grow(benchmark::State &state) {
+  gsl::index nSpec = 128 * 1024;
+  gsl::index nEvent = state.range(0);
+  auto d = makeEventWorkspace(nSpec, nEvent);
+  auto update = makeEventWorkspace(nSpec, 100);
+  for (auto _ : state) {
+    state.PauseTiming();
+    auto sum(d);
+    state.ResumeTiming();
+    sum += update;
+  }
+
+  gsl::index actualEvents = 0;
+  for (auto &eventList : update.get<const Data::Events>())
+    actualEvents += eventList.dimensions().size(Dimension::Event);
+  state.SetItemsProcessed(state.iterations() * actualEvents);
+}
+BENCHMARK(BM_Dataset_EventWorkspace_grow)
+    ->RangeMultiplier(2)
+    ->Range(2, 2 << 13);
 
 BENCHMARK_MAIN();

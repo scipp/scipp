@@ -21,6 +21,7 @@ enum class Dimension {
   Polarization,
   Temperature,
   DetectorScan,
+  Component,
   Row
 };
 

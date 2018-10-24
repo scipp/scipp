@@ -6,6 +6,7 @@
 #ifndef TAGS_H
 #define TAGS_H
 
+#include <memory>
 #include <tuple>
 #include <vector>
 
@@ -24,7 +25,7 @@ struct index<T, std::tuple<U, Types...>> {
   static const std::size_t value = 1 + index<T, std::tuple<Types...>>::value;
 };
 struct ReturnByValuePolicy {};
-}
+} // namespace detail
 
 struct Coord {
   struct X {
@@ -53,6 +54,19 @@ struct Coord {
   };
   struct SpectrumNumber {
     using type = int32_t;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DetectorIsMonitor {
+    using type = char;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DetectorMask {
+    using type = char;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DetectorRotation {
+    // Dummy for now, should be something like Eigen::Quaterniond.
+    using type = std::array<double, 4>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct DetectorPosition {
@@ -89,11 +103,71 @@ struct Coord {
     using type = char;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct ComponentRotation {
+    using type = std::array<double, 4>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct ComponentPosition {
+    using type = std::array<double, 3>;
+    static constexpr auto unit = Unit::Id::Length;
+  };
+  struct ComponentParent {
+    using type = gsl::index;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct ComponentChildren {
+    using type = std::vector<gsl::index>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct ComponentScale {
+    using type = std::array<double, 3>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct ComponentShape {
+    using type = std::shared_ptr<std::array<double, 100>>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct ComponentName {
+    using type = std::vector<std::string>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct ComponentSubtree {
+    using type = std::vector<gsl::index>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DetectorSubtree {
+    using type = std::vector<gsl::index>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct ComponentSubtreeRange {
+    using type = std::pair<gsl::index, gsl::index>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DetectorSubtreeRange {
+    using type = std::pair<gsl::index, gsl::index>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DetectorParent {
+    using type = gsl::index;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DetectorScale {
+    using type = std::array<double, 3>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DetectorShape {
+    using type = std::shared_ptr<std::array<double, 100>>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
 
-  using tags =
-      std::tuple<X, Y, Z, Tof, MonitorTof, DetectorId, SpectrumNumber,
-                 DetectorPosition, DetectorGrouping, SpectrumPosition, RowLabel,
-                 Polarization, Temperature, TimeInterval, Mask>;
+  using tags = std::tuple<
+      X, Y, Z, Tof, MonitorTof, DetectorId, SpectrumNumber, DetectorIsMonitor,
+      DetectorMask, DetectorRotation, DetectorPosition, DetectorGrouping,
+      SpectrumPosition, RowLabel, Polarization, Temperature, TimeInterval, Mask,
+      ComponentRotation, ComponentPosition, ComponentParent, ComponentChildren,
+      ComponentScale, ComponentShape, ComponentName, ComponentSubtree,
+      DetectorSubtree, ComponentSubtreeRange, DetectorSubtreeRange,
+      DetectorParent, DetectorScale, DetectorShape>;
 };
 
 class Dataset;
