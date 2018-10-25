@@ -148,7 +148,7 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
 
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
-  auto b = makeVariable<Data::Int>({Dimension::X, 1}, {2l});
+  auto b = makeVariable<Data::Int>({Dimension::X, 1}, {2});
   EXPECT_THROW_MSG(a += b, std::runtime_error,
                    "Cannot apply arithmetic operation to Variables: Underlying "
                    "data types do not match.");

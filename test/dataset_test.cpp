@@ -27,8 +27,8 @@ TEST(Dataset, insert_coords) {
 TEST(Dataset, insert_data) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
-  EXPECT_THROW_MSG(d.insert<Data::Int>("name2", Dimensions{}, {2l}),
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
+  EXPECT_THROW_MSG(d.insert<Data::Int>("name2", Dimensions{}, {2}),
                    std::runtime_error,
                    "Attempt to insert data of same type with duplicate name.");
   ASSERT_EQ(d.size(), 2);
@@ -37,7 +37,7 @@ TEST(Dataset, insert_data) {
 TEST(Dataset, insert_variables_with_dimensions) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
 }
 
 TEST(Dataset, insert_variables_different_order) {
@@ -109,7 +109,7 @@ TEST(Dataset, extract) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Variance>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
   EXPECT_EQ(d.size(), 3);
   auto name1 = d.extract("name1");
   EXPECT_EQ(d.size(), 1);
@@ -123,7 +123,7 @@ TEST(Dataset, merge) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
   d.insert<Data::Variance>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
 
   Dataset merged;
   merged.merge(d);
@@ -140,7 +140,7 @@ TEST(Dataset, merge) {
 TEST(Dataset, const_get) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
   const auto &const_d(d);
   auto view = const_d.get<const Data::Value>();
   // No non-const access to variable if Dataset is const, will not compile:
@@ -154,7 +154,7 @@ TEST(Dataset, const_get) {
 TEST(Dataset, get) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
   auto view = d.get<Data::Value>();
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);
@@ -165,7 +165,7 @@ TEST(Dataset, get) {
 TEST(Dataset, get_const) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
   auto view = d.get<const Data::Value>();
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);

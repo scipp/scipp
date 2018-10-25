@@ -183,7 +183,7 @@ Variable makeVariable(Dimensions dimensions, Args &&... args) {
 template <class Tag, class T>
 Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
-                  Vector<typename Tag::type>(values));
+                  Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
 template <class Tag, class T>

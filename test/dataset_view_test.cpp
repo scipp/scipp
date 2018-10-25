@@ -16,7 +16,7 @@
 TEST(DatasetView, construct) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
   // Empty view forbidden by static_assert:
   // DatasetView<> view(d);
   ASSERT_NO_THROW(DatasetView<Data::Value> view(d));
@@ -29,7 +29,7 @@ TEST(DatasetView, construct) {
 TEST(DatasetView, construct_with_const_Dataset) {
   Dataset d;
   d.insert<Data::Value>("name1", {Dimension::X, 1}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2l});
+  d.insert<Data::Int>("name2", Dimensions{}, {2});
   const auto const_d(d);
   EXPECT_NO_THROW(DatasetView<const Data::Value> view(const_d));
   EXPECT_NO_THROW(DatasetView<DatasetView<const Data::Value>> nested(
@@ -42,7 +42,7 @@ TEST(DatasetView, construct_with_const_Dataset) {
 TEST(DatasetView, iterator) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{Dimension::X, 2}, {1.1, 1.2});
-  d.insert<Data::Int>("name2", Dimensions{Dimension::X, 2}, {2l, 3l});
+  d.insert<Data::Int>("name2", Dimensions{Dimension::X, 2}, {2, 3});
   DatasetView<Data::Value> view(d);
   ASSERT_NO_THROW(view.begin());
   ASSERT_NO_THROW(view.end());
@@ -150,14 +150,14 @@ TEST(DatasetView, multi_column_transposed) {
   dimsYX.add(Dimension::X, 2);
 
   d.insert<Data::Value>("name1", dimsXY, {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert<Data::Int>("name2", dimsYX, {1l, 3l, 5l, 2l, 4l, 6l});
+  d.insert<Data::Int>("name2", dimsYX, {1, 3, 5, 2, 4, 6});
   // TODO Current dimension check is too strict and fails unless data with
   // transposed dimensions is accessed as const.
   DatasetView<Data::Value, const Data::Int> view(d);
   auto it = view.begin();
   ASSERT_NE(++it, view.end());
   ASSERT_EQ(it->get<Data::Value>(), 2.0);
-  ASSERT_EQ(it->get<Data::Int>(), 2l);
+  ASSERT_EQ(it->get<Data::Int>(), 2);
   for (const auto &item : view)
     ASSERT_EQ(it->get<Data::Value>(), it->get<Data::Int>());
 }
@@ -191,7 +191,7 @@ TEST(DatasetView, nested_DatasetView) {
   d.insert<Data::Value>("name1",
                         Dimensions({{Dimension::X, 2}, {Dimension::Y, 3}}),
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert<Data::Int>("name2", {Dimension::X, 2}, {10l, 20l});
+  d.insert<Data::Int>("name2", {Dimension::X, 2}, {10, 20});
   DatasetView<DatasetView<const Data::Value>, const Data::Int> view(
       d, {Dimension::Y});
   ASSERT_EQ(view.size(), 2);
