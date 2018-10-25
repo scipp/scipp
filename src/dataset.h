@@ -150,7 +150,7 @@ private:
   gsl::index count(const uint16_t id) const;
   gsl::index count(const uint16_t id, const std::string &name) const;
   gsl::index findUnique(const uint16_t id) const;
-  void mergeDimensions(const auto &dims);
+  void mergeDimensions(const Dimensions &dims);
 
   // TODO These dimensions do not imply any ordering, should use another class
   // in place of `Dimensions`, which *does* imply an order.

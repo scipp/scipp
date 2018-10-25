@@ -86,7 +86,7 @@ gsl::index Dataset::findUnique(const uint16_t id) const {
   return index;
 }
 
-void Dataset::mergeDimensions(const auto &dims) {
+void Dataset::mergeDimensions(const Dimensions &dims) {
   gsl::index j = 0;
   gsl::index found = 0;
   for (gsl::index i = 0; i < dims.count(); ++i) {
