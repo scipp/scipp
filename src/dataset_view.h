@@ -38,14 +38,15 @@ template <class... Tags> using unit_t = typename unit<Tags...>::type;
 
 template <class Base, class T> struct GetterMixin {};
 
+// TODO Check const correctness here.
 #define GETTER_MIXIN(Tag, name)                                                \
   template <class Base> struct GetterMixin<Base, Tag> {                        \
-    const element_return_type_t<Tag> name() const {                            \
+    element_return_type_t<Tag> name() const {                                  \
       return static_cast<const Base *>(this)->template get<Tag>();             \
     }                                                                          \
   };                                                                           \
   template <class Base> struct GetterMixin<Base, const Tag> {                  \
-    const element_return_type_t<const Tag> name() const {                      \
+    element_return_type_t<const Tag> name() const {                            \
       return static_cast<const Base *>(this)->template get<Tag>();             \
     }                                                                          \
   };
