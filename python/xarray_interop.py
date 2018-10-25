@@ -41,7 +41,7 @@ def as_xarray(dataset):
     data = dict()
     coords = dict()
     def xarray_name(var):
-        names = {0:'X', 1:'Y', 2:'Z', 17:'Value'}
+        names = {0:'X', 1:'Y', 2:'Z', 34:'Value'}
         if var.is_coord:
             return names[var.type]
         else:
@@ -59,7 +59,7 @@ ds = as_xarray(d)
 ds *= 1.5
 
 print(ds['Value:name'][10])
-ds['Value:name'][10].plot()
+ds['Value:name'][10, 5:10,5:10].plot()
 plt.savefig('test.png')
 
 # Key differences to xarray:
