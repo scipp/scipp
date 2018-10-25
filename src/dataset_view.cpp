@@ -307,6 +307,12 @@ DatasetViewImpl<Ts...>::DatasetViewImpl(
     const std::set<Dimension> &fixedDimensions)
     : m_units{UnitHelper<Ts>::get(dataset)...},
       m_variables(makeVariables(dataset, fixedDimensions)) {}
+template <class... Ts>
+DatasetViewImpl<Ts...>::DatasetViewImpl(
+    MaybeConstDataset<Ts...> &dataset,
+    const std::initializer_list<Dimension> &fixedDimensions)
+    : m_units{UnitHelper<Ts>::get(dataset)...},
+      m_variables(makeVariables(dataset, fixedDimensions)) {}
 
 template <class... Ts>
 DatasetViewImpl<Ts...>::DatasetViewImpl(

@@ -263,6 +263,8 @@ public:
                   const std::set<Dimension> &fixedDimensions = {});
   DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
                   const std::set<Dimension> &fixedDimensions = {});
+  DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
+                  const std::initializer_list<Dimension> &fixedDimensions);
 
   DatasetViewImpl(const DatasetViewImpl &other,
                   const std::tuple<ref_type_t<Ts>...> &data);
