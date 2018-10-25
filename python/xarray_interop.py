@@ -65,7 +65,7 @@ plt.savefig('test.png')
 # pip3 install hvplot holoplot
 import hvplot.xarray
 import holoplot
-sliceview = ds['Value:name'].hvplot.image()
+sliceview = ds['Value:name'].hvplot.image(groupby='Z',height=1000,width=1000)
 holoplot.show(sliceview)
 
 # Key differences to xarray:
