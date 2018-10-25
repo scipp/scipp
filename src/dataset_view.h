@@ -197,7 +197,7 @@ public:
   public:
     Item(const gsl::index index, const MultiIndex &multiIndex,
          const std::tuple<ref_type_t<Ts>...> &variables)
-        : m_index(multiIndex), m_variables(variables) {
+        : m_index(multiIndex), m_variables(&variables) {
       setIndex(index);
     }
 
@@ -208,14 +208,15 @@ public:
                                                 "DatasetView::iterator.");
       constexpr auto variableIndex = tag_index<Tag>;
       return ItemHelper<maybe_const<Tag>>::get(
-          std::get<variableIndex>(m_variables), m_index.get<variableIndex>());
+          std::get<variableIndex>(*m_variables), m_index.get<variableIndex>());
     }
 
   private:
     friend class iterator;
     // Private such that iterator can be copied but clients cannot extract Item
     // (access only by reference).
-    Item(const Item &other) = default;
+    Item(const Item &) = default;
+    Item &operator=(const Item &) = default;
     void setIndex(const gsl::index index) { m_index.setIndex(index); }
 
     bool operator==(const Item &other) const {
@@ -223,7 +224,7 @@ public:
     }
 
     MultiIndex m_index;
-    const std::tuple<ref_type_t<Ts>...> &m_variables;
+    const std::tuple<ref_type_t<Ts>...> *m_variables;
   };
 
   class iterator
