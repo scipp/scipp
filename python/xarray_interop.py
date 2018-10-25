@@ -21,7 +21,7 @@ dimsZ.add(Dim.Z, lz)
 
 d.insert(Coord.X, dimsX, np.arange(lx))
 d.insert(Coord.Z, dimsZ, np.arange(lz))
-d.insert(Data.Value, "name", dims, np.arange(lx*ly*lz))
+d.insert(Data.Value, "name", dims, np.random.random(lx*ly*lz))
 
 d = concatenate(Dim.Y, d, d)
 d.insert(Coord.Y, dimsY, np.arange(2*ly))
@@ -61,6 +61,12 @@ ds *= 1.5
 print(ds['Value:name'][10])
 ds['Value:name'][10, 5:10,5:10].plot()
 plt.savefig('test.png')
+
+# pip3 install hvplot holoplot
+import hvplot.xarray
+import holoplot
+sliceview = ds['Value:name'].hvplot.image()
+holoplot.show(sliceview)
 
 # Key differences to xarray:
 # - support bin edges
