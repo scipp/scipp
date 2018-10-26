@@ -4,6 +4,6 @@
 # National Laboratory, and European Spallation Source ERIC.
 
 add_library ( Dataset STATIC dataset.cpp dataset_view.cpp dimensions.cpp unit.cpp variable.cpp )
-target_link_libraries ( Dataset PUBLIC Boost::boost )
+target_link_libraries ( Dataset PUBLIC Boost::boost OpenMP::OpenMP_CXX )
 target_include_directories ( Dataset PUBLIC "." ${CMAKE_BINARY_DIR}/gsl-src/include )
 set_target_properties ( Dataset PROPERTIES POSITION_INDEPENDENT_CODE TRUE )
