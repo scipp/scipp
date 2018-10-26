@@ -128,7 +128,7 @@ struct Coord {
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct ComponentName {
-    using type = std::vector<std::string>;
+    using type = std::string;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct ComponentSubtree {
