@@ -34,6 +34,7 @@ template <class T> struct RebinHelper {
     auto newCoordIt = newCoordView.begin();
     auto oldIt = oldModel.begin();
     auto newIt = newModel.begin();
+    // TODO This is completely wrong for multi-dimensional data, I think.
     while (newIt != newModel.end() && oldIt != oldModel.end()) {
       const auto xo_low = *oldCoordIt;
       const auto xo_high = *(&(*oldCoordIt) + oldOffset);
@@ -74,39 +75,12 @@ template <class T> struct RebinHelper {
     }                                                                          \
   };
 
-#define DISABLE_ARITHMETICS_N(...)                                             \
-  template <template <class> class Op, int N>                                  \
-  struct ArithmeticHelper<Op, __VA_ARGS__> {                                   \
-    template <class... Args> static void apply(Args &&...) {                   \
-      throw std::runtime_error(                                                \
-          "Not an arithmetic type. Cannot apply operand.");                    \
-    }                                                                          \
-  };
-
 DISABLE_ARITHMETICS_T(std::shared_ptr<T>)
 DISABLE_ARITHMETICS_T(std::array<T, 4>)
 DISABLE_ARITHMETICS_T(std::array<T, 3>)
-
-template <template <class> class Op, class T>
-struct ArithmeticHelper<Op, boost::container::small_vector<T, 1>> {
-  template <class... Args> static void apply(Args &&...) {
-    throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
-  }
-};
-
-template <template <class> class Op, class T>
-struct ArithmeticHelper<Op, std::vector<T>> {
-  template <class... Args> static void apply(Args &&...) {
-    throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
-  }
-};
-
-template <template <class> class Op, class T>
-struct ArithmeticHelper<Op, std::pair<T, T>> {
-  template <class... Args> static void apply(Args &&...) {
-    throw std::runtime_error("Not an arithmetic type. Cannot apply operand.");
-  }
-};
+DISABLE_ARITHMETICS_T(boost::container::small_vector<T, 1>)
+DISABLE_ARITHMETICS_T(std::vector<T>)
+DISABLE_ARITHMETICS_T(std::pair<T, T>)
 
 template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
   template <class... Args> static void apply(Args &&...) {

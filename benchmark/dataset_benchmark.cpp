@@ -292,6 +292,8 @@ Dataset makeWorkspace2D(const gsl::index nSpec, const gsl::index nPoint) {
   d.merge(makeSpectra(nSpec));
 
   d.insert<Coord::Tof>({Dimension::Tof, nPoint + 1});
+  auto tofs = d.get<Coord::Tof>();
+  std::iota(tofs.begin(), tofs.end(), 0.0);
   Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
   d.insert<Data::Value>("sample", dims);
   d.insert<Data::Variance>("sample", dims);
@@ -333,6 +335,29 @@ static void BM_Dataset_Workspace2D_copy_and_write(benchmark::State &state) {
 BENCHMARK(BM_Dataset_Workspace2D_copy_and_write)
     ->RangeMultiplier(2)
     ->Range(2, 2 << 7);
+
+static void BM_Dataset_Workspace2D_rebin(benchmark::State &state) {
+  gsl::index nSpec = 128 * 1024;
+  gsl::index nPoint = 1024;
+
+  auto newCoord = makeVariable<Coord::Tof>({Dimension::Tof, nPoint / 2});
+  double value = 0.0;
+  for(auto &tof : newCoord.get<Coord::Tof>()) {
+    tof = value;
+    value += 3.0;
+  }
+
+  for (auto _ : state) {
+    state.PauseTiming();
+    auto d = makeWorkspace2D(nSpec, nPoint);
+    state.ResumeTiming();
+    auto rebinned = rebin(d, newCoord);
+  }
+  state.SetItemsProcessed(state.iterations());
+  state.SetBytesProcessed(state.iterations() * nSpec * (nPoint + nPoint / 2) *
+                          (8 + 8) * sizeof(double));
+}
+BENCHMARK(BM_Dataset_Workspace2D_rebin);
 
 Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
   auto d = makeBeamline(nSpec / 100, nSpec);
