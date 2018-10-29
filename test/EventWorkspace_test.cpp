@@ -76,8 +76,7 @@ TEST(EventWorkspace, basics) {
   d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
 
   // "X" axis (shared for all spectra).
-  auto edges = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 1001), 1001);
-  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 1001), 1001);
 
   Dataset e;
   e.insert<Data::Tof>("", {Dimension::Event, 0}, 0);

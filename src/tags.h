@@ -13,6 +13,7 @@
 #include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
 
+#include "dimension.h"
 #include "unit.h"
 
 namespace detail {
@@ -239,6 +240,37 @@ static constexpr bool is_attr =
     tag_id<T> >=
     std::tuple_size<Coord::tags>::value + std::tuple_size<Data::tags>::value;
 template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
+
+template <class Tag> constexpr bool is_dimension_coordinate = false;
+template <> constexpr bool is_dimension_coordinate<Coord::Tof> = true;
+template <> constexpr bool is_dimension_coordinate<Coord::X> = true;
+template <> constexpr bool is_dimension_coordinate<Coord::Y> = true;
+template <> constexpr bool is_dimension_coordinate<Coord::Z> = true;
+template <>
+constexpr bool is_dimension_coordinate<Coord::SpectrumNumber> = true;
+
+template <class Tag> constexpr Dimension coordinate_dimension = Dim::Invalid;
+template <> constexpr Dimension coordinate_dimension<Coord::Tof> = Dim::Tof;
+template <> constexpr Dimension coordinate_dimension<Coord::X> = Dim::X;
+template <> constexpr Dimension coordinate_dimension<Coord::Y> = Dim::Y;
+template <> constexpr Dimension coordinate_dimension<Coord::Z> = Dim::Z;
+template <>
+constexpr Dimension coordinate_dimension<Coord::SpectrumNumber> = Dim::Spectrum;
+
+template <class... Ts>
+constexpr std::array<bool, std::tuple_size<Tags>::value>
+make_is_dimension_coordinate(const std::tuple<Ts...> &) {
+  return {is_dimension_coordinate<Ts>...};
+}
+
+template <class... Ts>
+constexpr std::array<Dim, std::tuple_size<Tags>::value>
+make_coordinate_dimension(const std::tuple<Ts...> &) {
+  return {coordinate_dimension<Ts>...};
+}
+
+constexpr auto isDimensionCoord = make_is_dimension_coordinate(Tags{});
+constexpr auto coordDimension = make_coordinate_dimension(Tags{});
 
 class DataBin {
 public:

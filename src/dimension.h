@@ -7,6 +7,7 @@
 #define DIMENSION_H
 
 enum class Dimension {
+  Invalid,
   Event,
   Tof,
   MonitorTof,
@@ -24,5 +25,12 @@ enum class Dimension {
   Component,
   Row
 };
+
+using Dim = Dimension;
+constexpr bool isContinuous(const Dim dim) {
+  if (dim == Dim::Tof || dim == Dim::X || dim == Dim::Y || dim == Dim::Z)
+    return true;
+  return false;
+}
 
 #endif // DIMENSION_H

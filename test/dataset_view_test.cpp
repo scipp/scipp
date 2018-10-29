@@ -408,9 +408,7 @@ TEST(DatasetView, nested_DatasetView_copy_on_write) {
 TEST(DatasetView, histogram_using_nested_DatasetView) {
   Dataset d;
   // Edges do not have Dimension::Spectrum, "shared" by all histograms.
-  auto tof = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3),
-                                      {10.0, 20.0, 30.0});
-  d.insertAsEdge(Dimension::Tof, tof);
+  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), {10.0, 20.0, 30.0});
   Dimensions dims;
   dims.add(Dimension::Tof, 2);
   dims.add(Dimension::Spectrum, 4);
@@ -454,24 +452,23 @@ TEST(DatasetView, histogram_using_nested_DatasetView) {
 
 TEST(DatasetView, single_column_edges) {
   Dataset d;
-  auto edges = makeVariable<Data::Value>(Dimensions(Dimension::Tof, 3), 3);
-  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
-  auto var = d.get<Data::Value>();
+  auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[2] = 2.2;
 
-  DatasetView<Data::Value> view(d);
+  DatasetView<Coord::Tof> view(d);
   auto it = view.begin();
   ASSERT_LT(it, view.end());
-  ASSERT_EQ(it->get<Data::Value>(), 0.2);
+  ASSERT_EQ(it->get<Coord::Tof>(), 0.2);
   it++;
   ASSERT_LT(it, view.end());
-  ASSERT_EQ(it->get<Data::Value>(), 0.0);
+  ASSERT_EQ(it->get<Coord::Tof>(), 0.0);
   ASSERT_LT(it, view.end());
   it++;
-  ASSERT_EQ(it->get<Data::Value>(), 2.2);
+  ASSERT_EQ(it->get<Coord::Tof>(), 2.2);
   ASSERT_LT(it, view.end());
   it++;
   ASSERT_EQ(it, view.end());
@@ -479,8 +476,7 @@ TEST(DatasetView, single_column_edges) {
 
 TEST(DatasetView, single_column_bins) {
   Dataset d;
-  auto edges = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
   auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
@@ -499,8 +495,7 @@ TEST(DatasetView, single_column_bins) {
 
 TEST(DatasetView, multi_column_edges) {
   Dataset d;
-  auto edges = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
   d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
   auto var = d.get<Coord::Tof>();
   var[0] = 0.2;
@@ -525,10 +520,12 @@ TEST(DatasetView, multi_column_edges) {
 
 TEST(DatasetView, multi_dimensional_edges) {
   Dataset d;
-  auto edges =
-      makeVariable<Coord::X>(Dimensions({{Dimension::X, 3}, {Dimension::Y, 2}}),
-                             {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insertAsEdge(Dimension::X, edges);
+  d.insert<Coord::X>(Dimensions({{Dimension::X, 3}, {Dimension::Y, 2}}),
+                     {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  // TODO There is currently a bug in DatasetView: If `Bin` iteration is
+  // requested but the dataset contains only edges the shape calculation gives
+  // wrong results.
+  d.insert<Data::Value>("", {Dimension::X, 2});
 
   DatasetView<Bin<Coord::X>> view(d);
   ASSERT_EQ(view.size(), 4);
@@ -546,10 +543,9 @@ TEST(DatasetView, multi_dimensional_edges) {
 
 TEST(DatasetView, edges_are_not_inner_dimension) {
   Dataset d;
-  auto edges =
-      makeVariable<Coord::Y>(Dimensions({{Dimension::X, 3}, {Dimension::Y, 2}}),
-                             {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insertAsEdge(Dimension::Y, edges);
+  d.insert<Coord::Y>(Dimensions({{Dimension::X, 3}, {Dimension::Y, 2}}),
+                     {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insert<Data::Value>("", {Dimension::Y, 1});
 
   DatasetView<Bin<Coord::Y>> view(d);
   ASSERT_EQ(view.size(), 3);
@@ -565,8 +561,7 @@ TEST(DatasetView, edges_are_not_inner_dimension) {
 
 TEST(DatasetView, named_getter) {
   Dataset d;
-  auto tof = makeVariable<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  d.insert(tof);
+  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
   auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;

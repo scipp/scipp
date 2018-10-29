@@ -291,8 +291,7 @@ Dataset makeWorkspace2D(const gsl::index nSpec, const gsl::index nPoint) {
   auto d = makeBeamline(nSpec / 100, nSpec);
   d.merge(makeSpectra(nSpec));
 
-  auto edges = makeVariable<Coord::Tof>({Dimension::Tof, nPoint + 1});
-  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Coord::Tof>({Dimension::Tof, nPoint + 1});
   Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
   d.insert<Data::Value>("sample", dims);
   d.insert<Data::Variance>("sample", dims);
@@ -339,8 +338,7 @@ Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
   auto d = makeBeamline(nSpec / 100, nSpec);
   d.merge(makeSpectra(nSpec));
 
-  auto edges = makeVariable<Coord::Tof>({Dimension::Tof, 2});
-  d.insertAsEdge(Dimension::Tof, edges);
+  d.insert<Coord::Tof>({Dimension::Tof, 2});
 
   d.insert<Data::Events>("events", {Dimension::Spectrum, nSpec});
   std::random_device rd;

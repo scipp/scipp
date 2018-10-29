@@ -86,9 +86,6 @@ public:
       insert(var);
   }
 
-  // Only need this for coordinates... insertEdgeCoord?
-  void insertAsEdge(const Dimension dimension, Variable variable);
-
   template <class Tag> auto get() const {
     return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
   }
@@ -150,7 +147,7 @@ private:
   gsl::index count(const uint16_t id) const;
   gsl::index count(const uint16_t id, const std::string &name) const;
   gsl::index findUnique(const uint16_t id) const;
-  void mergeDimensions(const Dimensions &dims);
+  void mergeDimensions(const Dimensions &dims, const Dim coordDim);
 
   // TODO These dimensions do not imply any ordering, should use another class
   // in place of `Dimensions`, which *does* imply an order.

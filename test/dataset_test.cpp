@@ -62,47 +62,72 @@ TEST(Dataset, insert_variables_different_order) {
   EXPECT_NO_THROW(xzy.insert<Data::Value>("name3", yz, 6));
 }
 
-TEST(Dataset, insertAsEdge) {
+TEST(Dataset, insert_edges) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  auto edges = makeVariable<Data::Variance>(Dimensions(Dimension::Tof, 3),
-                                            {1.1, 2.2, 3.3});
-  edges.setName("edges");
-  EXPECT_EQ(d.dimensions().size(Dimension::Tof), 2);
-  EXPECT_THROW_MSG(
-      d.insert(edges), std::runtime_error,
-      "Cannot insert variable into Dataset: Dimensions do not match");
-  EXPECT_NO_THROW(d.insertAsEdge(Dimension::Tof, edges));
+  d.insert<Data::Value>("name1", {Dim::Tof, 2});
+  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
+  EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
+  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
 }
 
-TEST(Dataset, insertAsEdge_fail) {
+TEST(Dataset, insert_edges_first) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  auto too_short =
-      makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  EXPECT_THROW_MSG(
-      d.insertAsEdge(Dimension::Tof, too_short), std::runtime_error,
-      "Cannot insert variable into Dataset: Dimensions do not match");
-  auto too_long = makeVariable<Data::Value>(Dimensions(Dimension::Tof, 4),
-                                            {1.1, 2.2, 3.3, 4.4});
-  EXPECT_THROW_MSG(
-      d.insertAsEdge(Dimension::Tof, too_long), std::runtime_error,
-      "Cannot insert variable into Dataset: Dimensions do not match");
-  auto edges =
-      makeVariable<Data::Value>(Dimensions(Dimension::Tof, 3), {1.1, 2.2, 3.3});
-  EXPECT_THROW_MSG(d.insertAsEdge(Dimension::X, edges), std::runtime_error,
-                   "Dimension not found.");
+  EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
+  EXPECT_EQ(d.dimensions().size(Dim::Tof), 3);
+  EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
+  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
 }
 
-TEST(Dataset, insertAsEdge_reverse_fail) {
+TEST(Dataset, insert_edges_first_fail) {
   Dataset d;
-  auto edges =
-      makeVariable<Data::Value>(Dimensions(Dimension::Tof, 2), {1.1, 2.2});
-  d.insertAsEdge(Dimension::Tof, edges);
+  EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
+  EXPECT_EQ(d.dimensions().size(Dim::Tof), 3);
+  EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
+  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
+  // Once we have edges and non-edges dimensions cannot change further.
   EXPECT_THROW_MSG(
-      d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), {1.1, 2.2}),
+      d.insert<Data::Value>("name2", {Dim::Tof, 1}), std::runtime_error,
+      "Cannot insert variable into Dataset: Dimensions do not match.");
+  EXPECT_THROW_MSG(d.insert<Coord::Tof>({Dim::Tof, 4}), std::runtime_error,
+                   "Attempt to insert duplicate coordinate.");
+}
+
+TEST(Dataset, insert_edges_fail) {
+  Dataset d;
+  EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
+  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
+  EXPECT_THROW_MSG(d.insert<Coord::Tof>({Dim::Tof, 4}), std::runtime_error,
+                   "Cannot insert variable into Dataset: Variable is a "
+                   "dimension coordiante, but the dimension length matches "
+                   "neither as default coordinate nor as edge coordinate.");
+  EXPECT_THROW_MSG(d.insert<Coord::Tof>({Dim::Tof, 1}), std::runtime_error,
+                   "Cannot insert variable into Dataset: Variable is a "
+                   "dimension coordiante, but the dimension length matches "
+                   "neither as default coordinate nor as edge coordinate.");
+}
+
+TEST(Dataset, insert_edges_reverse_fail) {
+  Dataset d;
+  EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
+  EXPECT_EQ(d.dimensions().size(Dim::Tof), 3);
+  EXPECT_THROW_MSG(
+      d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 1)),
       std::runtime_error,
-      "Cannot insert variable into Dataset: Dimensions do not match");
+      "Cannot insert variable into Dataset: Dimensions do not match.");
+  EXPECT_THROW_MSG(
+      d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 4)),
+      std::runtime_error,
+      "Cannot insert variable into Dataset: Dimensions do not match.");
+}
+
+TEST(Dataset, can_use_normal_insert_to_copy_edges) {
+  Dataset d;
+  d.insert<Data::Value>("", {Dim::X, 2});
+  d.insert<Coord::X>({Dim::X, 3});
+
+  Dataset copy;
+  for(auto &var : d)
+    EXPECT_NO_THROW(copy.insert(var));
 }
 
 TEST(Dataset, extract) {

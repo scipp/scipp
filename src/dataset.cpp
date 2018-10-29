@@ -19,7 +19,7 @@ void Dataset::insert(Variable variable) {
   // TODO special handling for special variables types like
   // Data::Histogram (either prevent adding, or extract into underlying
   // variables).
-  mergeDimensions(variable.dimensions());
+  mergeDimensions(variable.dimensions(), coordDimension[variable.type()]);
   m_variables.push_back(std::move(variable));
 }
 
@@ -37,15 +37,6 @@ Dataset Dataset::extract(const std::string &name) {
     throw std::runtime_error(
         "Dataset::extract(): No matching variable found in Dataset.");
   return subset;
-}
-
-void Dataset::insertAsEdge(const Dimension dimension, Variable variable) {
-  // Edges are by 1 longer than other data, so dimension size check and
-  // merging uses modified dimensions.
-  auto dims = variable.dimensions();
-  dims.resize(dimension, dims.size(dimension) - 1);
-  mergeDimensions(dims);
-  m_variables.push_back(std::move(variable));
 }
 
 gsl::index Dataset::find(const uint16_t id, const std::string &name) const {
@@ -86,22 +77,53 @@ gsl::index Dataset::findUnique(const uint16_t id) const {
   return index;
 }
 
-void Dataset::mergeDimensions(const Dimensions &dims) {
+void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
   gsl::index j = 0;
   gsl::index found = 0;
   for (gsl::index i = 0; i < dims.count(); ++i) {
     const auto dim = dims.label(i);
-    const auto size = dims.size(i);
+    auto size = dims.size(i);
     bool found = false;
     for (; j < m_dimensions.count(); ++j) {
       if (m_dimensions.label(j) == dim) {
-        if (m_dimensions.size(j) != size)
+        if (m_dimensions.size(j) == size) {
+          found = true;
+          break;
+        }
+        // coordDim is `Dim::Invalid` if there is no coordinate dimesion.
+        if (dim == coordDim) {
+          if (m_dimensions.size(j) == size - 1) {
+            // This is an edge coordinate, merge reduced dimension.
+            --size;
+            found = true;
+            break;
+          }
           throw std::runtime_error(
-              "Cannot insert variable into Dataset: Dimensions do not match");
-        found = true;
-        break;
+              "Cannot insert variable into Dataset: Variable is a dimension "
+              "coordiante, but the dimension length matches neither as default "
+              "coordinate nor as edge coordinate.");
+        } else {
+          if (m_dimensions.size(j) == size + 1) {
+            // If the dataset so far contains only edge variables for this
+            // dimension, shrink its size.
+            bool canShrink = true;
+            for (const auto &var : m_variables) {
+              if (var.dimensions().contains(dim) &&
+                  coordDimension[var.type()] != dim)
+                canShrink = false;
+            }
+            if (canShrink) {
+              m_dimensions.resize(dim, size);
+              found = true;
+              break;
+            }
+          }
+          throw std::runtime_error(
+              "Cannot insert variable into Dataset: Dimensions do not match.");
+        }
       }
     }
+    // TODO Add after checking all so we can give strong exception guarantee.
     if (!found) {
       m_dimensions.add(dim, size);
     }
