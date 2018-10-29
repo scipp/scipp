@@ -23,6 +23,7 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
   }
 };
 
+template <class T> class VariableModel;
 template <class T> struct RebinHelper {
   static void rebin(const Dim dim, const T &oldModel, T &newModel,
                     const VariableView<const T> &oldCoordView,
@@ -74,6 +75,53 @@ template <class T> struct RebinHelper {
       }
     }
   }
+
+  // Special rebin version for rebinning inner dimension to a joint new coord.
+  static void rebinInner(const Dim dim, const VariableModel<T> &oldModel,
+                         VariableModel<T> &newModel,
+                         const VariableModel<T> &oldCoord,
+                         const VariableModel<T> &newCoord) {
+    const auto &oldData = oldModel.m_model;
+    auto &newData = newModel.m_model;
+    const auto oldSize = oldModel.dimensions().size(dim);
+    const auto newSize = newModel.dimensions().size(dim);
+    const auto count = oldModel.dimensions().volume() / oldSize;
+    const auto *xold = &*oldCoord.m_model.begin();
+    const auto *xnew = &*newCoord.m_model.begin();
+#pragma omp parallel for
+    for (gsl::index c = 0; c < count; ++c) {
+      gsl::index iold = 0;
+      gsl::index inew = 0;
+      const auto oldOffset = c * oldSize;
+      const auto newOffset = c * newSize;
+      while ((iold < oldSize) && (inew < newSize)) {
+        auto xo_low = xold[iold];
+        auto xo_high = xold[iold + 1];
+        auto xn_low = xnew[inew];
+        auto xn_high = xnew[inew + 1];
+
+        if (xn_high <= xo_low)
+          inew++; /* old and new bins do not overlap */
+        else if (xo_high <= xn_low)
+          iold++; /* old and new bins do not overlap */
+        else {
+          // delta is the overlap of the bins on the x axis
+          auto delta = xo_high < xn_high ? xo_high : xn_high;
+          delta -= xo_low > xn_low ? xo_low : xn_low;
+
+          auto owidth = xo_high - xo_low;
+          newData[newOffset + inew] +=
+              oldData[oldOffset + iold] * delta / owidth;
+
+          if (xn_high > xo_high) {
+            iold++;
+          } else {
+            inew++;
+          }
+        }
+      }
+    }
+  }
 };
 
 #define DISABLE_ARITHMETICS_T(...)                                             \
@@ -103,11 +151,17 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
     template <class... Args> static void rebin(Args &&...) {                   \
       throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
     }                                                                          \
+    template <class... Args> static void rebinInner(Args &&...) {              \
+      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
+    }                                                                          \
   };
 
 #define DISABLE_REBIN(...)                                                     \
   template <> struct RebinHelper<Vector<__VA_ARGS__>> {                        \
     template <class... Args> static void rebin(Args &&...) {                   \
+      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
+    }                                                                          \
+    template <class... Args> static void rebinInner(Args &&...) {              \
       throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
     }                                                                          \
   };
@@ -180,25 +234,35 @@ public:
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
-    const auto &oldModel = dynamic_cast<const VariableModel<T> &>(old).m_model;
-    const auto &oldCoordModel =
-        dynamic_cast<const VariableModel<T> &>(oldCoord).m_model;
-    const auto &newCoordModel =
-        dynamic_cast<const VariableModel<T> &>(newCoord).m_model;
-    // Dimensions of *this and old are guaranteed to be the same.
-    auto oldCoordDims = oldCoord.dimensions();
-    oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
-    auto newCoordDims = newCoord.dimensions();
-    newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
-    VariableView<const T> oldCoordView(oldCoordModel, dimensions(),
-                                       oldCoordDims);
-    VariableView<const T> newCoordView(newCoordModel, dimensions(),
-                                       newCoordDims);
-    const auto oldOffset = oldCoordDims.offset(dim);
-    const auto newOffset = newCoordDims.offset(dim);
 
-    RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
-                          newCoordView, newOffset);
+    // Dimensions of *this and old are guaranteed to be the same.
+    if (dimensions().label(0) == dim && oldCoord.dimensions().count() == 1 &&
+        newCoord.dimensions().count() == 1) {
+      RebinHelper<T>::rebinInner(
+          dim, dynamic_cast<const VariableModel<T> &>(old), *this,
+          dynamic_cast<const VariableModel<T> &>(oldCoord),
+          dynamic_cast<const VariableModel<T> &>(newCoord));
+    } else {
+      const auto &oldModel =
+          dynamic_cast<const VariableModel<T> &>(old).m_model;
+      const auto &oldCoordModel =
+          dynamic_cast<const VariableModel<T> &>(oldCoord).m_model;
+      const auto &newCoordModel =
+          dynamic_cast<const VariableModel<T> &>(newCoord).m_model;
+      auto oldCoordDims = oldCoord.dimensions();
+      oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
+      auto newCoordDims = newCoord.dimensions();
+      newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
+      VariableView<const T> oldCoordView(oldCoordModel, dimensions(),
+                                         oldCoordDims);
+      VariableView<const T> newCoordView(newCoordModel, dimensions(),
+                                         newCoordDims);
+      const auto oldOffset = oldCoordDims.offset(dim);
+      const auto newOffset = newCoordDims.offset(dim);
+
+      RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
+                            newCoordView, newOffset);
+    }
   }
 
   template <template <class> class Op>
