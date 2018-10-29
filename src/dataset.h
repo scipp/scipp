@@ -122,6 +122,7 @@ public:
   }
 
   gsl::index find(const uint16_t id, const std::string &name) const;
+  gsl::index findUnique(const uint16_t id) const;
 
   bool operator==(const Dataset &other) const;
   Dataset &operator+=(const Dataset &other);
@@ -146,7 +147,6 @@ private:
 
   gsl::index count(const uint16_t id) const;
   gsl::index count(const uint16_t id, const std::string &name) const;
-  gsl::index findUnique(const uint16_t id) const;
   void mergeDimensions(const Dimensions &dims, const Dim coordDim);
 
   // TODO These dimensions do not imply any ordering, should use another class
@@ -160,5 +160,7 @@ Dataset operator-(Dataset a, const Dataset &b);
 Dataset operator*(Dataset a, const Dataset &b);
 Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index);
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
+Dataset convert(const Dataset &d, const Dimension from, const Dimension to);
+Dataset rebin(const Dataset &d, const Variable &newCoord);
 
 #endif // DATASET_H

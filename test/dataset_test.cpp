@@ -597,3 +597,63 @@ TEST(Dataset, concatenate_with_attributes) {
   // merging functionality for attributes?
   EXPECT_ANY_THROW(concatenate(Dimension::X, xy, xy2));
 }
+
+TEST(Dataset, rebin_failures) {
+  Dataset d;
+  auto coord = makeVariable<Coord::X>({Dim::X, 3}, {1.0, 3.0, 5.0});
+  EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
+                   "Dataset does not contain such a variable.");
+  auto data = makeVariable<Data::Value>({Dim::X, 2}, {2.0, 4.0});
+  EXPECT_THROW_MSG(
+      rebin(d, data), std::runtime_error,
+      "The provided rebin coordinate is not a coordinate variable.");
+  auto nonDimCoord =
+      makeVariable<Coord::DetectorPosition>({Dim::Detector, 2}, {2.0, 4.0});
+  EXPECT_THROW_MSG(
+      rebin(d, nonDimCoord), std::runtime_error,
+      "The provided rebin coordinate is not a dimension coordinate.");
+  auto missingDimCoord = makeVariable<Coord::X>({Dim::Y, 2}, {2.0, 4.0});
+  EXPECT_THROW_MSG(rebin(d, missingDimCoord), std::runtime_error,
+                   "The provided rebin coordinate lacks the dimension "
+                   "corresponding to the coordinate.");
+  auto nonContinuousCoord =
+      makeVariable<Coord::SpectrumNumber>({Dim::Spectrum, 2}, {2.0, 4.0});
+  EXPECT_THROW_MSG(
+      rebin(d, nonContinuousCoord), std::runtime_error,
+      "The provided rebin coordinate is not a continuous coordinate.");
+  auto oldMissingDimCoord =
+      makeVariable<Coord::X>({Dim::Y, 3}, {1.0, 3.0, 5.0});
+  d.insert(oldMissingDimCoord);
+  EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
+                   "Existing coordinate to be rebined lacks the dimension "
+                   "corresponding to the new coordinate.");
+  d.erase<Coord::X>();
+  d.insert(coord);
+  EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
+                   "Existing coordinate to be rebinned is not a bin edge "
+                   "coordinate. Use `resample` instead of rebin or convert to "
+                   "histogram data first.");
+  d.erase<Coord::X>();
+  d.insert(coord);
+  d.insert<Data::Value>("badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
+  auto badAuxDim =
+      makeVariable<Coord::X>(Dimensions({{Dim::X, 3}, {Dim::Y, 3}}));
+  EXPECT_THROW_MSG(rebin(d, badAuxDim), std::runtime_error,
+                   "Size mistmatch in auxiliary dimension of new coordinate.");
+}
+
+TEST(Dataset, rebin) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 3}, {1.0, 3.0, 5.0});
+  auto coordNew = makeVariable<Coord::X>({Dim::X, 2}, {1.0, 5.0});
+  // With only the coord in the dataset there is no way to tell it is an edge, so this fails.
+  EXPECT_THROW_MSG(rebin(d, coordNew), std::runtime_error,
+                   "Existing coordinate to be rebinned is not a bin edge "
+                   "coordinate. Use `resample` instead of rebin or convert to "
+                   "histogram data first.");
+
+  d.insert<Data::Value>("", {Dim::X, 2}, {10.0, 20.0});
+  auto rebinned = rebin(d, coordNew);
+  EXPECT_EQ(rebinned.get<const Data::Value>().size(), 1);
+  EXPECT_EQ(rebinned.get<const Data::Value>()[0], 30.0);
+}

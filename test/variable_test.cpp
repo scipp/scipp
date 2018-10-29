@@ -327,3 +327,14 @@ TEST(Variable, concatenate_unit_fail) {
   b.setUnit(Unit::Id::Length);
   EXPECT_NO_THROW(concatenate(Dimension::X, a, b));
 }
+
+TEST(Variable, rebin) {
+  auto var = makeVariable<Data::Value>({Dim::X, 2}, {1.0, 2.0});
+  const auto oldEdge = makeVariable<Coord::X>({Dim::X, 3}, {1.0, 2.0, 3.0});
+  const auto newEdge = makeVariable<Coord::X>({Dim::X, 2}, {1.0, 3.0});
+  auto rebinned = rebin(var, oldEdge, newEdge);
+  ASSERT_EQ(rebinned.dimensions().count(), 1);
+  ASSERT_EQ(rebinned.dimensions().volume(), 1);
+  ASSERT_EQ(rebinned.get<const Data::Value>().size(), 1);
+  EXPECT_EQ(rebinned.get<const Data::Value>()[0], 3.0);
+}

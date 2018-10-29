@@ -26,6 +26,9 @@ public:
   virtual std::shared_ptr<VariableConcept> clone() const = 0;
   virtual std::shared_ptr<VariableConcept> cloneEmpty() const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
+  virtual void rebin(const VariableConcept &old, const Dim dim,
+                     const VariableConcept &oldCoord,
+                     const VariableConcept &newCoord) = 0;
   virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
@@ -201,5 +204,7 @@ Variable slice(const Variable &var, const Dimension dim,
                const gsl::index index);
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2);
+Variable rebin(const Variable &var, const Variable &oldCoord,
+               const Variable &newCoord);
 
 #endif // VARIABLE_H

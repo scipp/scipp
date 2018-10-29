@@ -23,6 +23,48 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
   }
 };
 
+template <class T> struct RebinHelper {
+  static void rebin(const Dim dim, const T &oldModel, T &newModel,
+                    const VariableView<const T> &oldCoordView,
+                    const gsl::index oldOffset,
+                    const VariableView<const T> &newCoordView,
+                    const gsl::index newOffset) {
+
+    auto oldCoordIt = oldCoordView.begin();
+    auto newCoordIt = newCoordView.begin();
+    auto oldIt = oldModel.begin();
+    auto newIt = newModel.begin();
+    while (newIt != newModel.end() && oldIt != oldModel.end()) {
+      const auto xo_low = *oldCoordIt;
+      const auto xo_high = *(&(*oldCoordIt) + oldOffset);
+      const auto xn_low = *newCoordIt;
+      const auto xn_high = *(&(*newCoordIt) + newOffset);
+      if (xn_high <= xo_low) {
+        // No overlap, go to next new bin
+        ++newCoordIt;
+        ++newIt;
+      } else if (xo_high <= xn_low) {
+        // No overlap, go to next old bin
+        ++oldCoordIt;
+        ++oldIt;
+      } else {
+        auto delta = xo_high < xn_high ? xo_high : xn_high;
+        delta -= xo_low > xn_low ? xo_low : xn_low;
+
+        *newIt += *oldIt * delta / (xo_high - xo_low);
+
+        if (xn_high > xo_high) {
+          ++oldCoordIt;
+          ++oldIt;
+        } else {
+          ++newCoordIt;
+          ++newIt;
+        }
+      }
+    }
+  }
+};
+
 #define DISABLE_ARITHMETICS_T(...)                                             \
   template <template <class> class Op, class T>                                \
   struct ArithmeticHelper<Op, __VA_ARGS__> {                                   \
@@ -71,6 +113,29 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
     throw std::runtime_error("Cannot add strings. Use append() instead.");
   }
 };
+
+#define DISABLE_REBIN_T(...)                                                   \
+  template <class T> struct RebinHelper<Vector<__VA_ARGS__>> {                 \
+    template <class... Args> static void rebin(Args &&...) {                   \
+      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
+    }                                                                          \
+  };
+
+#define DISABLE_REBIN(...)                                                     \
+  template <> struct RebinHelper<Vector<__VA_ARGS__>> {                        \
+    template <class... Args> static void rebin(Args &&...) {                   \
+      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
+    }                                                                          \
+  };
+
+DISABLE_REBIN_T(std::shared_ptr<T>)
+DISABLE_REBIN_T(std::array<T, 4>)
+DISABLE_REBIN_T(std::array<T, 3>)
+DISABLE_REBIN_T(std::vector<T>)
+DISABLE_REBIN_T(boost::container::small_vector<T, 1>)
+DISABLE_REBIN_T(std::pair<T, T>)
+DISABLE_REBIN(Dataset)
+DISABLE_REBIN(std::string)
 
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
@@ -126,6 +191,30 @@ public:
                                "match.");
     }
     return *this;
+  }
+
+  void rebin(const VariableConcept &old, const Dim dim,
+             const VariableConcept &oldCoord,
+             const VariableConcept &newCoord) override {
+    const auto &oldModel = dynamic_cast<const VariableModel<T> &>(old).m_model;
+    const auto &oldCoordModel =
+        dynamic_cast<const VariableModel<T> &>(oldCoord).m_model;
+    const auto &newCoordModel =
+        dynamic_cast<const VariableModel<T> &>(newCoord).m_model;
+    // Dimensions of *this and old are guaranteed to be the same.
+    auto oldCoordDims = oldCoord.dimensions();
+    oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
+    auto newCoordDims = newCoord.dimensions();
+    newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
+    VariableView<const T> oldCoordView(oldCoordModel, dimensions(),
+                                       oldCoordDims);
+    VariableView<const T> newCoordView(newCoordModel, dimensions(),
+                                       newCoordDims);
+    const auto oldOffset = oldCoordDims.offset(dim);
+    const auto newOffset = newCoordDims.offset(dim);
+
+    RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
+                          newCoordView, newOffset);
   }
 
   template <template <class> class Op>
@@ -453,4 +542,16 @@ Variable concatenate(const Dimension dim, const Variable &a1,
   out.data().copyFrom(a2.data(), dim, extent1);
 
   return out;
+}
+
+Variable rebin(const Variable &var, const Variable &oldCoord,
+               const Variable &newCoord) {
+  auto rebinned(var);
+  auto dims = rebinned.dimensions();
+  const Dim dim = coordDimension[newCoord.type()];
+  dims.resize(dim, newCoord.dimensions().size(dim) - 1);
+  rebinned.setDimensions(dims);
+  // TODO take into account unit if values have been divided by bin width.
+  rebinned.data().rebin(var.data(), dim, oldCoord.data(), newCoord.data());
+  return rebinned;
 }

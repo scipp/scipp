@@ -395,3 +395,81 @@ Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2) {
   }
   return out;
 }
+
+Dataset convert(const Dataset &d, const Dimension from, const Dimension to) {
+  // How to convert? There are several cases:
+  // 1. Tof conversion as Mantid's ConvertUnits.
+  // 2. Axis conversion as Mantid's ConvertSpectrumAxis.
+  // 3. Conversion of multiple dimensions simultaneuously, e.g., to Q, which
+  //    cannot be done here since it affects more than one input and output
+  //    dimension. Should we have a variant that accepts a list of dimensions
+  //    for input and output?
+  // 4. Conversion from 1 to N or N to 1, e.g., Dim::Spectrum to X and Y pixel
+  //    index.
+  if (!d.dimensions().contains(from))
+    throw std::runtime_error(
+        "Dataset does not contain the dimension requested for conversion.");
+  // Can Dim::Spectrum be converted to anything? Should we require a matching coordinate when doing a conversion?
+  // This does not make sense:
+  //auto converted = convert(dataset, Dim::Spectrum, Dim::Tof);
+  // This does if we can lookup the TwoTheta, make axis here, or require it?
+  // Should it do the reordering? Is sorting separately much less efficient?
+  // Dim::Spectrum is discrete, Dim::TwoTheta is in principle contiguous. How to
+  // handle that? Do we simply want to sort instead? Discrete->contiguous can be
+  // handled by binning? Or is Dim::TwoTheta implicitly also discrete?
+  //auto converted = convert(dataset, Dim::Spectrum, Dim::TwoTheta);
+  // This is a *derived* coordinate, no need to store it explicitly? May even be prevented?
+  //DatasetView<const Coord::TwoTheta>(dataset);
+
+}
+
+Dataset rebin(const Dataset &d, const Variable &newCoord) {
+  Dataset out;
+  if (!newCoord.isCoord())
+    throw std::runtime_error(
+        "The provided rebin coordinate is not a coordinate variable.");
+  const auto dim = coordDimension[newCoord.type()];
+  if (dim == Dim::Invalid)
+    throw std::runtime_error(
+        "The provided rebin coordinate is not a dimension coordinate.");
+  const auto &newDims = newCoord.dimensions();
+  if (!newDims.contains(dim))
+    throw std::runtime_error("The provided rebin coordinate lacks the "
+                             "dimension corresponding to the coordinate.");
+  if (!isContinuous(dim))
+    throw std::runtime_error(
+        "The provided rebin coordinate is not a continuous coordinate.");
+  const auto &oldCoord = d[d.findUnique(newCoord.type())];
+  const auto &oldDims = oldCoord.dimensions();
+  const auto &datasetDims = d.dimensions();
+  if (!oldDims.contains(dim))
+    throw std::runtime_error("Existing coordinate to be rebined lacks the "
+                             "dimension corresponding to the new coordinate.");
+  if (oldDims.size(dim) != datasetDims.size(dim) + 1)
+    throw std::runtime_error("Existing coordinate to be rebinned is not a bin "
+                             "edge coordinate. Use `resample` instead of rebin "
+                             "or convert to histogram data first.");
+  for (const auto &item : newDims) {
+    if (item.first == dim)
+      continue;
+    if (datasetDims.contains(item.first)) {
+      if (datasetDims.size(item.first) != item.second)
+        throw std::runtime_error(
+            "Size mistmatch in auxiliary dimension of new coordinate.");
+    }
+  }
+  // TODO check that input as well as output coordinate are sorted in rebin
+  // dimension.
+  for(const auto &var : d) {
+    if(!var.dimensions().contains(dim)) {
+      // TODO Need to make insert for for edge coordinates as well! Otherwise
+      // agnostic copying will fail.
+      out.insert(var);
+    } else if (var.type() == newCoord.type()) {
+      out.insert(newCoord);
+    } else {
+      out.insert(rebin(var, oldCoord, newCoord));
+    }
+  }
+  return out;
+}
