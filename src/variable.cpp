@@ -34,10 +34,21 @@ template <class T> struct RebinHelper {
     auto newCoordIt = newCoordView.begin();
     auto oldIt = oldModel.begin();
     auto newIt = newModel.begin();
-    // TODO This is completely wrong for multi-dimensional data, I think.
     while (newIt != newModel.end() && oldIt != oldModel.end()) {
+      if (&*(oldCoordIt + 1) == &(*oldCoordIt) + oldOffset) {
+        // Last bin in this 1D subhistogram, go to next.
+        ++oldCoordIt;
+        ++oldIt;
+        continue;
+      }
       const auto xo_low = *oldCoordIt;
       const auto xo_high = *(&(*oldCoordIt) + oldOffset);
+      if (&*(newCoordIt + 1) == &(*newCoordIt) + newOffset) {
+        // Last bin in this 1D subhistogram, go to next.
+        ++newCoordIt;
+        ++newIt;
+        continue;
+      }
       const auto xn_low = *newCoordIt;
       const auto xn_high = *(&(*newCoordIt) + newOffset);
       if (xn_high <= xo_low) {
@@ -51,7 +62,6 @@ template <class T> struct RebinHelper {
       } else {
         auto delta = xo_high < xn_high ? xo_high : xn_high;
         delta -= xo_low > xn_low ? xo_low : xn_low;
-
         *newIt += *oldIt * delta / (xo_high - xo_low);
 
         if (xn_high > xo_high) {

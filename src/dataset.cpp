@@ -462,8 +462,6 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   // dimension.
   for(const auto &var : d) {
     if(!var.dimensions().contains(dim)) {
-      // TODO Need to make insert for for edge coordinates as well! Otherwise
-      // agnostic copying will fail.
       out.insert(var);
     } else if (var.type() == newCoord.type()) {
       out.insert(newCoord);
