@@ -3,9 +3,9 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 
-lx = 20
-ly = 30
-lz = 40
+lx = 200
+ly = 300
+lz = 400
 d = Dataset()
 dims = Dimensions()
 dims.add(Dim.X, lx)
