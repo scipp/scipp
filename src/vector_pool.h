@@ -18,8 +18,6 @@ public:
     if (it != m_pool.end()) {
       Vector<T> vec(std::move(*it));
       m_pool.erase(it);
-      // fprintf(stderr, "Reusing vector of size %lu from pool. Pool size is now
-      // %lu\n", vec.size(), m_pool.size()-1);
       return vec;
     }
     return Vector<T>(size);
@@ -27,8 +25,6 @@ public:
 
   void put(Vector<T> &&vec) {
     std::lock_guard<std::mutex> g(m_mutex);
-    // fprintf(stderr, "Added vector of size %lu to pool. Pool size is now
-    // %lu\n", vec.size(), m_pool.size()+1);
     if (m_pool.size() == 8) {
       m_backgroundDealloc = std::async(
           std::launch::async, [v = std::move(m_pool.back())]() mutable {});
