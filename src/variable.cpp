@@ -94,15 +94,18 @@ template <class T> struct RebinHelper {
       gsl::index inew = 0;
       const auto oldOffset = c * oldSize;
       const auto newOffset = c * newSize;
+      double newValue = 0.0;
       while ((iold < oldSize) && (inew < newSize)) {
         auto xo_low = xold[iold];
         auto xo_high = xold[iold + 1];
         auto xn_low = xnew[inew];
         auto xn_high = xnew[inew + 1];
 
-        if (xn_high <= xo_low)
+        if (xn_high <= xo_low) {
+          newData[newOffset + inew] = newValue;
+          newValue = 0.0;
           inew++; /* old and new bins do not overlap */
-        else if (xo_high <= xn_low)
+        } else if (xo_high <= xn_low)
           iold++; /* old and new bins do not overlap */
         else {
           // delta is the overlap of the bins on the x axis
@@ -110,12 +113,14 @@ template <class T> struct RebinHelper {
           delta -= xo_low > xn_low ? xo_low : xn_low;
 
           auto owidth = xo_high - xo_low;
-          newData[newOffset + inew] +=
+            newValue +=
               oldData[oldOffset + iold] * delta / owidth;
 
           if (xn_high > xo_high) {
             iold++;
           } else {
+            newData[newOffset + inew] = newValue;
+            newValue = 0.0;
             inew++;
           }
         }
