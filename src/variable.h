@@ -17,6 +17,19 @@
 #include "tags.h"
 #include "unit.h"
 #include "vector.h"
+#include "vector_pool.h"
+
+template <class T> struct ResizeHelper {
+  static void resize(T &vec, const gsl::index size) { vec.resize(size); }
+};
+
+template <> struct ResizeHelper<Vector<double>> {
+  static void resize(Vector<double> &vec, const gsl::index size) {
+    if (!vec.empty() && vec.size() > 1024)
+      vectorPoolInstance<double>().put(std::move(vec));
+    vec = vectorPoolInstance<double>().get(size);
+  }
+};
 
 class VariableConcept {
 public:
@@ -173,8 +186,10 @@ private:
 
 template <class Tag, class... Args>
 Variable makeVariable(Dimensions dimensions) {
+  Vector<typename Tag::type> data(0);
+  ResizeHelper<Vector<typename Tag::type>>::resize(data, dimensions.volume());
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
-                  Vector<typename Tag::type>(dimensions.volume()));
+                  std::move(data));
 }
 
 template <class Tag, class... Args>

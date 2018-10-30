@@ -5,6 +5,8 @@
 #include <mutex>
 #include <vector>
 
+#include <gsl/gsl_util>
+
 class MemoryPool {
 public:
   void *allocate(size_t size) const {

@@ -188,8 +188,9 @@ void VariableConcept::setDimensions(const Dimensions &dimensions) {
 template <class T> class VariableModel final : public VariableConcept {
 public:
   VariableModel(Dimensions dimensions)
-      : VariableConcept(std::move(dimensions)),
-        m_model(this->dimensions().volume()) {}
+      : VariableConcept(std::move(dimensions)), m_model(0) {
+    resize(this->dimensions().volume());
+  }
 
   VariableModel(Dimensions dimensions, T model)
       : VariableConcept(std::move(dimensions)), m_model(std::move(model)) {
@@ -197,6 +198,8 @@ public:
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
+
+  ~VariableModel() override { resize(0); }
 
   std::shared_ptr<VariableConcept> clone() const override {
     return std::make_shared<VariableModel<T>>(dimensions(), m_model);
@@ -309,7 +312,10 @@ public:
   }
 
   gsl::index size() const override { return m_model.size(); }
-  void resize(const gsl::index size) override { m_model.resize(size); }
+  void resize(const gsl::index size) override {
+    ResizeHelper<T>::resize(m_model, size);
+    //m_model.resize(size);
+  }
 
   void copySlice(const VariableConcept &otherConcept, const Dimension dim,
                  const gsl::index index) override {
@@ -460,6 +466,8 @@ Variable &Variable::operator+=(const Variable &other) {
         // from/to memory --- making copy requires 2 load + 1 store, `+=` is 2
         // load + 1 store, `+` is 3 load + 1 store. In practive I did not
         // observe a significant speedup though, need more benchmarks.
+        // Update: Is it because std::vector zeros its data, i.e., we also pay
+        // an extra 1 load + 1 store?
         m_object = *m_object + *other.m_object;
       }
     } else {
