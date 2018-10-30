@@ -1,6 +1,7 @@
 #ifndef VECTOR_POOL_H
 #define VECTOR_POOL_H
 
+#include <deque>
 #include <thread>
 
 #include <gsl/gsl_util>
@@ -20,8 +21,8 @@ public:
         m_pool.begin(), m_pool.end(),
         [size](const Vector<T> &vec) { return vec.size() == size; });
     if (it != m_pool.end()) {
-      Vector<T> vec;
-      std::swap(vec, *it);
+      Vector<T> vec(std::move(*it));
+      m_pool.erase(it);
       // fprintf(stderr, "Reusing vector of size %lu from pool. Pool size is now
       // %lu\n", vec.size(), m_pool.size()-1);
       return vec;
@@ -33,24 +34,19 @@ public:
     std::lock_guard<std::mutex> g(m_mutex);
     // fprintf(stderr, "Added vector of size %lu to pool. Pool size is now
     // %lu\n", vec.size(), m_pool.size()+1);
-    auto it =
-        std::find_if(m_pool.begin(), m_pool.end(),
-                     [](const Vector<T> &vec) { return vec.size() == 0; });
-    if (it != m_pool.end()) {
-      std::swap(vec, *it);
-    } else {
-      std::swap(vec, m_pool[m_lastEvicted]);
+    if (m_pool.size() == 8) {
       if (m_backgroundDealloc.joinable())
         m_backgroundDealloc.join();
-      m_backgroundDealloc = std::thread([v = std::move(vec)]() mutable {});
-      m_lastEvicted = (m_lastEvicted - 1 + m_pool.size()) % m_pool.size();
+      m_backgroundDealloc =
+          std::thread([v = std::move(m_pool.back())]() mutable {});
+      m_pool.pop_back();
     }
+    m_pool.push_front(std::move(vec));
   }
 
 private:
-  mutable std::mutex m_mutex;
-  mutable std::vector<Vector<T>> m_pool{std::vector<Vector<T>>(16)};
-  gsl::index m_lastEvicted{15};
+  std::mutex m_mutex;
+  std::deque<Vector<T>> m_pool;
   std::thread m_backgroundDealloc;
 };
 
