@@ -2,7 +2,7 @@
 #define VECTOR_POOL_H
 
 #include <deque>
-#include <thread>
+#include <future>
 
 #include <gsl/gsl_util>
 
@@ -10,11 +10,6 @@
 
 template <class T> class VectorPool {
 public:
-  ~VectorPool() {
-    if (m_backgroundDealloc.joinable())
-      m_backgroundDealloc.join();
-  }
-
   Vector<T> get(const gsl::index size) {
     std::lock_guard<std::mutex> g(m_mutex);
     auto it = std::find_if(
@@ -35,10 +30,8 @@ public:
     // fprintf(stderr, "Added vector of size %lu to pool. Pool size is now
     // %lu\n", vec.size(), m_pool.size()+1);
     if (m_pool.size() == 8) {
-      if (m_backgroundDealloc.joinable())
-        m_backgroundDealloc.join();
-      m_backgroundDealloc =
-          std::thread([v = std::move(m_pool.back())]() mutable {});
+      m_backgroundDealloc = std::async(
+          std::launch::async, [v = std::move(m_pool.back())]() mutable {});
       m_pool.pop_back();
     }
     m_pool.push_front(std::move(vec));
@@ -47,7 +40,7 @@ public:
 private:
   std::mutex m_mutex;
   std::deque<Vector<T>> m_pool;
-  std::thread m_backgroundDealloc;
+  std::future<void> m_backgroundDealloc;
 };
 
 template <class T> inline VectorPool<T> &vectorPoolInstance() {

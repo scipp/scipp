@@ -184,7 +184,7 @@ private:
   cow_ptr<VariableConcept> m_object;
 };
 
-template <class Tag, class... Args>
+template <class Tag>
 Variable makeVariable(Dimensions dimensions) {
   Vector<typename Tag::type> data(0);
   ResizeHelper<Vector<typename Tag::type>>::resize(data, dimensions.volume());
