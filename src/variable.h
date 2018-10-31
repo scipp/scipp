@@ -18,6 +18,8 @@
 #include "unit.h"
 #include "vector.h"
 
+class Variable;
+
 class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
@@ -43,6 +45,8 @@ public:
 
   const Dimensions &dimensions() const { return m_dimensions; }
   void setDimensions(const Dimensions &dimensions);
+
+  friend class Variable;
 
 private:
   Dimensions m_dimensions;
@@ -79,6 +83,8 @@ public:
 private:
   std::unique_ptr<T> m_data;
 };
+
+template <class... Tags> class LinearView;
 
 class Variable {
 public:
@@ -161,9 +167,14 @@ public:
     return gsl::make_span(cast<Vector<typename Tag::type>>());
   }
 
+  template <class... Tags> friend class LinearView;
+
 private:
   template <class T> const T &cast() const;
   template <class T> T &cast();
+  // Used by LinearView. Need to find a better way instead of having everyone as
+  // friend.
+  Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }
 
   uint16_t m_type;
   Unit m_unit;

@@ -88,6 +88,12 @@ void Dimensions::resize(const Dimension label, const gsl::index size) {
   throw std::runtime_error("Dimension not found.");
 }
 
+void Dimensions::resize(const gsl::index i, const gsl::index size) {
+  if (size < 0)
+    throw std::runtime_error("Dimension size cannot be negative.");
+  m_dims[i].second = size;
+}
+
 void Dimensions::erase(const Dimension label) {
   m_dims.erase(m_dims.begin() + index(label));
 }

@@ -144,6 +144,7 @@ private:
   template <class Tag>
   friend detail::VariableView<Tag>
   detail::getData(Dataset &, const std::pair<const Tag, const std::string> &);
+  template <class... Tags> friend class LinearView;
 
   gsl::index count(const uint16_t id) const;
   gsl::index count(const uint16_t id, const std::string &name) const;

@@ -33,6 +33,7 @@ public:
   gsl::index size(const Dimension label) const;
   gsl::index offset(const Dimension label) const;
   void resize(const Dimension label, const gsl::index size);
+  void resize(const gsl::index i, const gsl::index size);
   void erase(const Dimension label);
 
   void add(const Dimension label, const gsl::index size);
