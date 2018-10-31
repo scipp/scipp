@@ -5,6 +5,8 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include "dataset_view.h"
 
+using namespace detail;
+
 template <class Tag> struct UnitHelper {
   static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
 

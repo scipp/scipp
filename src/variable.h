@@ -171,8 +171,7 @@ private:
   cow_ptr<VariableConcept> m_object;
 };
 
-template <class Tag, class... Args>
-Variable makeVariable(Dimensions dimensions) {
+template <class Tag> Variable makeVariable(Dimensions dimensions) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(dimensions.volume()));
 }

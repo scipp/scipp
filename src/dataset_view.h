@@ -19,6 +19,7 @@
 
 #include "dataset.h"
 #include "multi_index.h"
+#include "traits.h"
 
 namespace detail {
 template <class T> struct value_type { using type = T; };
@@ -90,23 +91,6 @@ template <class... Tags> struct ref_type<DatasetViewImpl<Tags...>> {
                           std::tuple<typename ref_type<Tags>::type...>>;
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
-
-namespace detail {
-template <class... Conds> struct and_ : std::true_type {};
-template <class Cond, class... Conds>
-struct and_<Cond, Conds...>
-    : std::conditional<Cond::value, and_<Conds...>, std::false_type>::type {};
-
-template <class T> struct is_const : std::false_type {};
-template <class T> struct is_const<const T> : std::true_type {};
-template <class... Ts>
-struct is_const<DatasetViewImpl<Ts...>> : and_<is_const<Ts>...> {};
-} // namespace detail
-
-template <class... Tags>
-using MaybeConstDataset =
-    std::conditional_t<detail::and_<detail::is_const<Tags>...>::value,
-                       const Dataset, Dataset>;
 
 template <class Tag> struct SubdataHelper {
   static auto get(const ref_type_t<Tag> &data, const gsl::index offset) {
@@ -259,11 +243,12 @@ public:
     Item m_item;
   };
 
-  DatasetViewImpl(MaybeConstDataset<Ts...> &dataset, const std::string &name,
+  DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
+                  const std::string &name,
                   const std::set<Dimension> &fixedDimensions = {});
-  DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
+  DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
                   const std::set<Dimension> &fixedDimensions = {});
-  DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
+  DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
                   const std::initializer_list<Dimension> &fixedDimensions);
 
   DatasetViewImpl(const DatasetViewImpl &other,
@@ -281,11 +266,12 @@ public:
 private:
   std::tuple<const gsl::index, const MultiIndex,
              const std::tuple<ref_type_t<Ts>...>>
-  makeVariables(MaybeConstDataset<Ts...> &dataset, const std::string &name,
+  makeVariables(detail::MaybeConstDataset<Ts...> &dataset,
+                const std::string &name,
                 const std::set<Dimension> &fixedDimensions) const;
   std::tuple<const gsl::index, const MultiIndex,
              const std::tuple<ref_type_t<Ts>...>>
-  makeVariables(MaybeConstDataset<Ts...> &dataset,
+  makeVariables(detail::MaybeConstDataset<Ts...> &dataset,
                 const std::set<Dimension> &fixedDimensions) const;
 
   const std::tuple<detail::unit_t<Ts>...> m_units;
