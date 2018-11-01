@@ -364,6 +364,20 @@ Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {
   return out;
 }
 
+Dataset slice(const Dataset &d, const Dimension dim, const gsl::index begin,
+              const gsl::index end) {
+  if (!d.dimensions().contains(dim) && (begin != 0 || end != 1))
+    throw std::runtime_error("Slice index out of range");
+  Dataset out;
+  for (const auto &var : d) {
+    if (var.dimensions().contains(dim))
+      out.insert(slice(var, dim, begin, end));
+    else
+      out.insert(var);
+  }
+  return out;
+}
+
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2) {
   // Match type and name, drop missing?
   // What do we have to do to check and compute the resulting dimensions?

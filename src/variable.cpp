@@ -550,8 +550,8 @@ Variable slice(const Variable &var, const Dimension dim,
   return out;
 }
 
-Variable slice(const Variable &var, const Dimension dim, gsl::index begin,
-               gsl::index end) {
+Variable slice(const Variable &var, const Dimension dim, const gsl::index begin,
+               const gsl::index end) {
   auto out(var);
   auto dims = out.dimensions();
   dims.resize(dim, end - begin);

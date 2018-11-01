@@ -50,6 +50,12 @@ TEST(TableWorkspace, basics) {
   auto row = slice(table, Dimension::Row, 1);
   EXPECT_EQ(row.get<const Coord::RowLabel>()[0], "b");
 
+  auto rows = slice(mergedTable, Dimension::Row, 1, 4);
+  ASSERT_EQ(rows.get<const Coord::RowLabel>().size(), 3);
+  EXPECT_EQ(rows.get<const Coord::RowLabel>()[0], "b");
+  EXPECT_EQ(rows.get<const Coord::RowLabel>()[1], "c");
+  EXPECT_EQ(rows.get<const Coord::RowLabel>()[2], "a");
+
   // Can sort by arbitrary column.
   auto sortedTable = sort(table, tag<Data::Value>, "Data");
   EXPECT_EQ(asStrings(sortedTable[0]),

@@ -213,8 +213,8 @@ Variable operator*(Variable a, const Variable &b);
 
 Variable slice(const Variable &var, const Dimension dim,
                const gsl::index index);
-Variable slice(const Variable &var, const Dimension dim, gsl::index begin,
-               gsl::index end);
+Variable slice(const Variable &var, const Dimension dim, const gsl::index begin,
+               const gsl::index end);
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2);
 Variable rebin(const Variable &var, const Variable &oldCoord,
