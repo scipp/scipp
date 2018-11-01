@@ -411,7 +411,7 @@ PYBIND11_MODULE(dataset, m) {
           py::call_guard<py::gil_scoped_release>())
       .def("size", &Dataset::size);
   m.def("concatenate",
-        py::overload_cast<const Dimension, const Dataset &, const Dataset &>(
+        py::overload_cast<const Dataset &, const Dataset &, const Dimension>(
             &concatenate),
         py::call_guard<py::gil_scoped_release>());
 }

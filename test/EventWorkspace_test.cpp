@@ -24,8 +24,8 @@ TEST(EventWorkspace, EventList) {
   // use concatenate, but there is no `push_back` or similar:
   Dataset e2;
   e2.insert<Data::Tof>("", {Dimension::Event, 3}, {1.1, 2.2, 3.3});
-  e = concatenate(Dimension::Event, e, e2);
-  e = concatenate(Dimension::Event, e, e2);
+  e = concatenate(e, e2, Dimension::Event);
+  e = concatenate(e, e2, Dimension::Event);
   EXPECT_EQ(e.get<const Data::Tof>().size(), 6);
 
   // Can insert pulse times if needed.
@@ -94,7 +94,7 @@ TEST(EventWorkspace, basics) {
   e2.insert<Data::Tof>("", {Dimension::Event, 3}, {1.1, 2.2, 3.3});
   e2.insert<Data::PulseTime>("", {Dimension::Event, 3}, 3);
   eventLists[1] = e2;
-  eventLists[2] = concatenate(Dimension::Event, e2, e2);
+  eventLists[2] = concatenate(e2, e2, Dimension::Event);
 
   // Insert variable for histogrammed data.
   Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
@@ -128,7 +128,7 @@ TEST(EventWorkspace, plus) {
   Dataset e;
   e.insert<Data::Tof>("", {Dimension::Event, 10});
   e.insert<Data::PulseTime>("", {Dimension::Event, 10});
-  auto e2 = concatenate(Dimension::Event, e, e);
+  auto e2 = concatenate(e, e, Dimension::Event);
 
   d.insert<Data::Events>("", {Dimension::Spectrum, 2}, {e, e2});
 

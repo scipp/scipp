@@ -522,7 +522,7 @@ TEST(Dataset, concatenate_constant_dimension_broken) {
   Dataset a;
   a.insert<Data::Value>("name1", Dimensions{}, {1.1});
   a.insert<Data::Value>("name2", Dimensions{}, {2.2});
-  auto d = concatenate(Dimension::X, a, a);
+  auto d = concatenate(a, a, Dimension::X);
   // TODO Special case: No variable depends on X so the result does not contain
   // this dimension either. Change this behavior?!
   EXPECT_FALSE(d.dimensions().contains(Dimension::X));
@@ -532,13 +532,13 @@ TEST(Dataset, concatenate) {
   Dataset a;
   a.insert<Coord::X>({Dimension::X, 1}, {0.1});
   a.insert<Data::Value>("data", {Dimension::X, 1}, {2.2});
-  auto x = concatenate(Dimension::X, a, a);
+  auto x = concatenate(a, a, Dimension::X);
   EXPECT_TRUE(x.dimensions().contains(Dimension::X));
   EXPECT_EQ(x.get<const Coord::X>().size(), 2);
   EXPECT_EQ(x.get<const Data::Value>().size(), 2);
   auto x2(x);
   x2.get<Data::Value>()[0] = 100.0;
-  auto xy = concatenate(Dimension::Y, x, x2);
+  auto xy = concatenate(x, x2, Dimension::Y);
   EXPECT_TRUE(xy.dimensions().contains(Dimension::X));
   EXPECT_TRUE(xy.dimensions().contains(Dimension::Y));
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
@@ -548,11 +548,11 @@ TEST(Dataset, concatenate) {
   EXPECT_EQ(&x.get<const Coord::X>()[0], &xy.get<const Coord::X>()[0]);
   EXPECT_NE(&x.get<const Data::Value>()[0], &xy.get<const Data::Value>()[0]);
 
-  xy = concatenate(Dimension::Y, xy, x);
+  xy = concatenate(xy, x, Dimension::Y);
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
   EXPECT_EQ(xy.get<const Data::Value>().size(), 6);
 
-  xy = concatenate(Dimension::Y, xy, xy);
+  xy = concatenate(xy, xy, Dimension::Y);
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
   EXPECT_EQ(xy.get<const Data::Value>().size(), 12);
 }
@@ -565,7 +565,7 @@ TEST(Dataset, concatenate_with_attributes) {
   logs.insert<Data::String>("comments", {}, {std::string("test")});
   a.insert<Attr::ExperimentLog>("", {}, {logs});
 
-  auto x = concatenate(Dimension::X, a, a);
+  auto x = concatenate(a, a, Dimension::X);
   EXPECT_TRUE(x.dimensions().contains(Dimension::X));
   EXPECT_EQ(x.get<const Coord::X>().size(), 2);
   EXPECT_EQ(x.get<const Data::Value>().size(), 2);
@@ -575,7 +575,7 @@ TEST(Dataset, concatenate_with_attributes) {
   auto x2(x);
   x2.get<Data::Value>()[0] = 100.0;
   x2.get<Attr::ExperimentLog>()[0].get<Data::String>()[0] = "different";
-  auto xy = concatenate(Dimension::Y, x, x2);
+  auto xy = concatenate(x, x2, Dimension::Y);
   EXPECT_TRUE(xy.dimensions().contains(Dimension::X));
   EXPECT_TRUE(xy.dimensions().contains(Dimension::Y));
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
@@ -589,13 +589,13 @@ TEST(Dataset, concatenate_with_attributes) {
   EXPECT_EQ(xy.get<const Attr::ExperimentLog>().size(), 2);
   EXPECT_EQ(xy.get<const Attr::ExperimentLog>()[0], logs);
 
-  EXPECT_NO_THROW(concatenate(Dimension::X, xy, xy));
+  EXPECT_NO_THROW(concatenate(xy, xy, Dimension::X));
 
   auto xy2(xy);
   xy2.get<Attr::ExperimentLog>()[0].get<Data::String>()[0] = "";
   // Concatenating in existing dimension fail currently. Would need to implement
   // merging functionality for attributes?
-  EXPECT_ANY_THROW(concatenate(Dimension::X, xy, xy2));
+  EXPECT_ANY_THROW(concatenate(xy, xy2, Dimension::X));
 }
 
 TEST(Dataset, rebin_failures) {

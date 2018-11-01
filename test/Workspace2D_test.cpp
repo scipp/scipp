@@ -58,7 +58,7 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
 
   // Combine data for spin-up and spin-down in same dataset, polarization is an
   // extra dimension.
-  auto combined = concatenate(Dimension::Polarization, spinUp, spinDown);
+  auto combined = concatenate(spinUp, spinDown, Dimension::Polarization);
   combined.insert<Coord::Polarization>(
       {Dimension::Polarization, 2},
       Vector<std::string>{"spin-up", "spin-down"});
@@ -70,7 +70,7 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   for (const auto temperature : {273.0, 200.0, 100.0, 10.0, 4.2}) {
     dataPoint.get<Coord::Temperature>()[0] = temperature;
     dataPoint.get<Data::Value>("sample")[0] = exp(-0.001 * temperature);
-    combined = concatenate(Dimension::Temperature, combined, dataPoint);
+    combined = concatenate(combined, dataPoint, Dimension::Temperature);
   }
 
   // Compute spin difference.
@@ -157,7 +157,7 @@ TEST(Workspace2D, scanning) {
   for (auto &pos : moved.get<Coord::DetectorPosition>())
     pos += 0.5;
 
-  auto scanning = concatenate(Dimension::DetectorScan, d, moved);
+  auto scanning = concatenate(d, moved, Dimension::DetectorScan);
   scanning.insert<Coord::TimeInterval>(
       {Dimension::DetectorScan, 2},
       {std::make_pair(0l, 10l), std::make_pair(10l, 20l)});

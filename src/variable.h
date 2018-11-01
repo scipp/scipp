@@ -215,12 +215,12 @@ Variable slice(const Variable &var, const Dimension dim,
                const gsl::index index);
 Variable slice(const Variable &var, const Dimension dim, const gsl::index begin,
                const gsl::index end);
-Variable concatenate(const Dimension dim, const Variable &a1,
-                     const Variable &a2);
+std::vector<Variable> split(const Variable &var, const Dim dim,
+                            const std::vector<gsl::index> &indices);
+Variable concatenate(const Variable &a1, const Variable &a2,
+                     const Dimension dim);
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord);
 Variable permute(const Variable &var, const std::vector<gsl::index> &indices);
-std::vector<Variable> split(const Variable &var, const Dim dim,
-                            const std::vector<gsl::index> &indices);
 
 #endif // VARIABLE_H

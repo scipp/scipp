@@ -329,14 +329,14 @@ TEST(Variable, concatenate) {
   auto b = makeVariable<Data::Value>(dims, {2.0});
   a.setUnit(Unit::Id::Length);
   b.setUnit(Unit::Id::Length);
-  auto ab = concatenate(Dimension::Tof, a, b);
+  auto ab = concatenate(a, b, Dimension::Tof);
   ASSERT_EQ(ab.size(), 2);
   EXPECT_EQ(ab.unit(), Unit(Unit::Id::Length));
   const auto &data = ab.get<Data::Value>();
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
-  auto ba = concatenate(Dimension::Tof, b, a);
-  const auto abba = concatenate(Dimension::Q, ab, ba);
+  auto ba = concatenate(b, a, Dimension::Tof);
+  const auto abba = concatenate(ab, ba, Dimension::Q);
   ASSERT_EQ(abba.size(), 4);
   EXPECT_EQ(abba.dimensions().count(), 2);
   const auto &data2 = abba.get<const Data::Value>();
@@ -344,7 +344,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data2[1], 2.0);
   EXPECT_EQ(data2[2], 2.0);
   EXPECT_EQ(data2[3], 1.0);
-  const auto ababbaba = concatenate(Dimension::Tof, abba, abba);
+  const auto ababbaba = concatenate(abba, abba, Dimension::Tof);
   ASSERT_EQ(ababbaba.size(), 8);
   const auto &data3 = ababbaba.get<const Data::Value>();
   EXPECT_EQ(data3[0], 1.0);
@@ -355,7 +355,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data3[5], 1.0);
   EXPECT_EQ(data3[6], 2.0);
   EXPECT_EQ(data3[7], 1.0);
-  const auto abbaabba = concatenate(Dimension::Q, abba, abba);
+  const auto abbaabba = concatenate(abba, abba, Dimension::Q);
   ASSERT_EQ(abbaabba.size(), 8);
   const auto &data4 = abbaabba.get<const Data::Value>();
   EXPECT_EQ(data4[0], 1.0);
@@ -370,14 +370,14 @@ TEST(Variable, concatenate) {
 
 TEST(Variable, concatenate_volume_with_slice) {
   auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
-  auto aa = concatenate(Dimension::X, a, a);
-  EXPECT_NO_THROW(concatenate(Dimension::X, aa, a));
+  auto aa = concatenate(a, a, Dimension::X);
+  EXPECT_NO_THROW(concatenate(aa, a, Dimension::X));
 }
 
 TEST(Variable, concatenate_slice_with_volume) {
   auto a = makeVariable<Data::Value>({Dimension::X, 1}, {1.0});
-  auto aa = concatenate(Dimension::X, a, a);
-  EXPECT_NO_THROW(concatenate(Dimension::X, a, aa));
+  auto aa = concatenate(a, a, Dimension::X);
+  EXPECT_NO_THROW(concatenate(a, aa, Dimension::X));
 }
 
 TEST(Variable, concatenate_fail) {
@@ -386,14 +386,14 @@ TEST(Variable, concatenate_fail) {
   auto b = makeVariable<Data::Value>(dims, {2.0});
   auto c = makeVariable<Data::Variance>(dims, {2.0});
   a.setName("data");
-  EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, b), std::runtime_error,
+  EXPECT_THROW_MSG(concatenate(a, b, Dimension::Tof), std::runtime_error,
                    "Cannot concatenate Variables: Names do not match.");
   c.setName("data");
-  EXPECT_THROW_MSG(concatenate(Dimension::Tof, a, c), std::runtime_error,
+  EXPECT_THROW_MSG(concatenate(a, c, Dimension::Tof), std::runtime_error,
                    "Cannot concatenate Variables: Data types do not match.");
-  auto aa = concatenate(Dimension::Tof, a, a);
+  auto aa = concatenate(a, a, Dimension::Tof);
   EXPECT_THROW_MSG(
-      concatenate(Dimension::Q, a, aa), std::runtime_error,
+      concatenate(a, aa, Dimension::Q), std::runtime_error,
       "Cannot concatenate Variables: Dimension extents do not match.");
 }
 
@@ -401,12 +401,12 @@ TEST(Variable, concatenate_unit_fail) {
   Dimensions dims(Dimension::X, 1);
   auto a = makeVariable<Data::Value>(dims, {1.0});
   auto b(a);
-  EXPECT_NO_THROW(concatenate(Dimension::X, a, b));
+  EXPECT_NO_THROW(concatenate(a, b, Dimension::X));
   a.setUnit(Unit::Id::Length);
-  EXPECT_THROW_MSG(concatenate(Dimension::X, a, b), std::runtime_error,
+  EXPECT_THROW_MSG(concatenate(a, b, Dimension::X), std::runtime_error,
                    "Cannot concatenate Variables: Units do not match.");
   b.setUnit(Unit::Id::Length);
-  EXPECT_NO_THROW(concatenate(Dimension::X, a, b));
+  EXPECT_NO_THROW(concatenate(a, b, Dimension::X));
 }
 
 TEST(Variable, rebin) {

@@ -489,7 +489,7 @@ Variable &Variable::operator+=(const Variable &other) {
       const auto otherEvents = other.get<const Data::Events>();
 #pragma omp parallel for
       for (gsl::index i = 0; i < events.size(); ++i)
-        events[i] = concatenate(Dimension::Event, events[i], otherEvents[i]);
+        events[i] = concatenate(events[i], otherEvents[i], Dimension::Event);
     } else {
       throw std::runtime_error(
           "Cannot add Variables: Dimensions do not match.");
@@ -577,8 +577,8 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   return vars;
 }
 
-Variable concatenate(const Dimension dim, const Variable &a1,
-                     const Variable &a2) {
+Variable concatenate(const Variable &a1, const Variable &a2,
+                     const Dimension dim) {
   if (a1.type() != a2.type())
     throw std::runtime_error(
         "Cannot concatenate Variables: Data types do not match.");

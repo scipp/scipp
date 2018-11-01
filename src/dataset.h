@@ -164,7 +164,7 @@ Dataset slice(const Dataset &d, const Dimension dim, const gsl::index begin,
               const gsl::index end);
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices);
-Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
+Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dimension dim);
 Dataset convert(const Dataset &d, const Dimension from, const Dimension to);
 Dataset rebin(const Dataset &d, const Variable &newCoord);
 

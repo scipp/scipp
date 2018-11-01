@@ -46,7 +46,7 @@ TEST(TableWorkspace, basics) {
             std::vector<std::string>({"", "why is this negative?", ""}));
 
   // Standard shape operations provide basic things required for tables:
-  auto mergedTable = concatenate(Dimension::Row, table, table);
+  auto mergedTable = concatenate(table, table, Dimension::Row);
   auto row = slice(table, Dimension::Row, 1);
   EXPECT_EQ(row.get<const Coord::RowLabel>()[0], "b");
 
