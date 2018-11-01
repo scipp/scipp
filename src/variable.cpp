@@ -311,57 +311,71 @@ public:
   gsl::index size() const override { return m_model.size(); }
   void resize(const gsl::index size) override { m_model.resize(size); }
 
-  void copySlice(const VariableConcept &otherConcept, const Dimension dim,
-                 const gsl::index index) override {
-    const auto &other = dynamic_cast<const VariableModel<T> &>(otherConcept);
-    auto data = gsl::make_span(other.m_model.data() +
-                                   index * other.dimensions().offset(dim),
-                               &*other.m_model.end());
-    auto sliceDims = other.dimensions();
-    if (index >= sliceDims.size(dim) || index < 0)
-      throw std::runtime_error("Slice index out of range");
-    if (sliceDims.label(sliceDims.count() - 1) == dim) {
-      // Slicing slowest dimension so data is contiguous, avoid using view.
-      std::copy(data.begin(), data.begin() + m_model.size(), m_model.begin());
-    } else {
-      sliceDims.erase(dim);
-      VariableView<const decltype(data)> sliceView(data, sliceDims,
-                                                   other.dimensions());
-      std::copy(sliceView.begin(), sliceView.end(), m_model.begin());
-    }
-  }
-
-  void copyFrom(const VariableConcept &otherConcept, const Dimension dim,
-                const gsl::index offset) override {
-    // TODO Can probably merge this method with copySlice.
+  void copy(const VariableConcept &otherConcept, const Dim dim,
+            const gsl::index offset, const gsl::index otherBegin,
+            const gsl::index otherEnd) override {
     const auto &other = dynamic_cast<const VariableModel<T> &>(otherConcept);
 
     auto iterationDimensions = dimensions();
-    if (!other.dimensions().contains(dim))
-      iterationDimensions.erase(dim);
-    else
-      iterationDimensions.resize(dim, other.dimensions().size(dim));
+    auto otherDims = other.dimensions();
+    auto thisDims = dimensions();
+    if (!iterationDimensions.contains(dim) && offset != 0)
+      throw std::runtime_error("VariableConcept::copy: Output offset must be 0 "
+                               "if dimension is not contained.");
+    if (!other.dimensions().contains(dim)) {
+      if (iterationDimensions.contains(dim))
+        iterationDimensions.erase(dim);
+      // Add fake dim such that we can use Dimensions::offset below.
+      if (otherBegin != 0 || otherEnd != 1)
+        throw std::runtime_error(
+            "VariableConcept::copy: Slice index out of range.");
+      otherDims.add(dim, 1);
+    } else {
+      if (iterationDimensions.contains(dim))
+        iterationDimensions.resize(dim, other.dimensions().size(dim));
+      else
+        thisDims.add(dim, 1);
+    }
 
-    auto target = gsl::make_span(
-        m_model.data() + offset * dimensions().offset(dim), &*m_model.end());
-    // For cases for minimizing use of VariableView --- just copy contiguous
+    auto target = gsl::make_span(m_model.data() + offset * thisDims.offset(dim),
+                                 &*m_model.end());
+    // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    if (dimensions().label(dimensions().count() - 1) == dim) {
-      if (iterationDimensions == other.dimensions()) {
-        std::copy(other.m_model.begin(), other.m_model.end(), target.begin());
+    gsl::index otherBeginOffset = otherBegin * otherDims.offset(dim);
+    gsl::index otherEndOffset = otherEnd * otherDims.offset(dim);
+    bool otherIsContiguous = otherDims.label(thisDims.count() - 1) == dim;
+    if (thisDims.label(thisDims.count() - 1) == dim) {
+      if (otherIsContiguous && iterationDimensions == other.dimensions()) {
+        // Case 1: Output range is contiguous, input is contiguous and not
+        // transposed.
+        auto begin = other.m_model.begin() + otherBeginOffset;
+        auto end = other.m_model.begin() + otherEndOffset;
+        std::copy(begin, end, target.begin());
       } else {
-        VariableView<const T> otherView(other.m_model, iterationDimensions,
-                                        other.dimensions());
+        // Case 2: Output range is contiguous, input is not contiguous or
+        // transposed.
+        auto source = gsl::make_span(other.m_model.data() + otherBeginOffset,
+                                     &*other.m_model.end());
+        VariableView<const decltype(source)> otherView(
+            source, iterationDimensions, other.dimensions());
         std::copy(otherView.begin(), otherView.end(), target.begin());
       }
     } else {
       VariableView<decltype(target)> view(target, iterationDimensions,
                                           dimensions());
-      if (iterationDimensions == other.dimensions()) {
-        std::copy(other.m_model.begin(), other.m_model.end(), view.begin());
+      if (otherIsContiguous && iterationDimensions == other.dimensions()) {
+        // Case 3: Output range is not contiguous, input is contiguous and not
+        // transposed.
+        auto begin = other.m_model.begin() + otherBeginOffset;
+        auto end = other.m_model.begin() + otherEndOffset;
+        std::copy(begin, end, view.begin());
       } else {
-        VariableView<const T> otherView(other.m_model, iterationDimensions,
-                                        other.dimensions());
+        // Case 4: Output range is not contiguous, input is not contiguous or
+        // transposed.
+        auto source = gsl::make_span(other.m_model.data() + otherBeginOffset,
+                                     &*other.m_model.end());
+        VariableView<const decltype(source)> otherView(
+            source, iterationDimensions, other.dimensions());
         std::copy(otherView.begin(), otherView.end(), view.begin());
       }
     }
@@ -525,7 +539,7 @@ void Variable::setSlice(const Variable &slice, const Dimension dim,
     return;
   if (!dimensions().contains(slice.dimensions()))
     throw std::runtime_error("Cannot set slice: Dimensions do not match.");
-  data().copyFrom(slice.data(), dim, index);
+  data().copy(slice.data(), dim, index, 0, 1);
 }
 
 Variable operator+(Variable a, const Variable &b) { return a += b; }
@@ -538,7 +552,17 @@ Variable slice(const Variable &var, const Dimension dim,
   auto dims = out.dimensions();
   dims.erase(dim);
   out.setDimensions(dims);
-  out.data().copySlice(var.data(), dim, index);
+  out.data().copy(var.data(), dim, 0, index, index + 1);
+  return out;
+}
+
+Variable slice(const Variable &var, const Dimension dim, gsl::index begin,
+               gsl::index end) {
+  auto out(var);
+  auto dims = out.dimensions();
+  dims.resize(dim, end - begin);
+  out.setDimensions(dims);
+  out.data().copy(var.data(), dim, 0, begin, end);
   return out;
 }
 
@@ -595,8 +619,8 @@ Variable concatenate(const Dimension dim, const Variable &a1,
     dims.add(dim, extent1 + extent2);
   out.setDimensions(dims);
 
-  out.data().copyFrom(a1.data(), dim, 0);
-  out.data().copyFrom(a2.data(), dim, extent1);
+  out.data().copy(a1.data(), dim, 0, 0, extent1);
+  out.data().copy(a2.data(), dim, extent1, 0, extent2);
 
   return out;
 }

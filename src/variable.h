@@ -38,10 +38,9 @@ public:
   operator+(const VariableConcept &other) const = 0;
   virtual gsl::index size() const = 0;
   virtual void resize(const gsl::index) = 0;
-  virtual void copySlice(const VariableConcept &other, const Dimension dim,
-                         const gsl::index index) = 0;
-  virtual void copyFrom(const VariableConcept &other, const Dimension dim,
-                        const gsl::index offset) = 0;
+  virtual void copy(const VariableConcept &otherConcept, const Dim dim,
+                    const gsl::index offset, const gsl::index otherBegin,
+                    const gsl::index otherEnd) = 0;
   virtual void copyPermute(const VariableConcept &otherConcept,
                            const std::vector<gsl::index> &indices) = 0;
 
@@ -214,6 +213,8 @@ Variable operator*(Variable a, const Variable &b);
 
 Variable slice(const Variable &var, const Dimension dim,
                const gsl::index index);
+Variable slice(const Variable &var, const Dimension dim, gsl::index begin,
+               gsl::index end);
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2);
 Variable rebin(const Variable &var, const Variable &oldCoord,
