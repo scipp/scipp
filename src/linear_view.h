@@ -6,7 +6,7 @@
 #ifndef LINEAR_VIEW_H
 #define LINEAR_VIEW_H
 
-#include "range/v3/all.hpp"
+#include "range/v3/view/zip.hpp"
 
 #include "dataset.h"
 #include "traits.h"

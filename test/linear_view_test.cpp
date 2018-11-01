@@ -3,7 +3,10 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <random>
+
+#include "range/v3/algorithm.hpp"
 
 #include "test_macros.h"
 
