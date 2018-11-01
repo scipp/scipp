@@ -476,6 +476,8 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   return out;
 }
 
+// We can specialize this to switch to a more efficient variant when sorting
+// datasets that represent events lists, using LinearView.
 template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
   auto const_axis = d.get<const Tag>(name);
   if (d.dimensions<Tag>(name).count() != 1)
