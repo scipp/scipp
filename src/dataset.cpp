@@ -476,9 +476,9 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   return out;
 }
 
-template <class Tag> Dataset sort(const Dataset &d) {
-  auto const_axis = d.get<const Tag>();
-  if (d.dimensions<Tag>().count() != 1)
+template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
+  auto const_axis = d.get<const Tag>(name);
+  if (d.dimensions<Tag>(name).count() != 1)
     throw std::runtime_error("Axis for sorting must be 1-dimensional.");
   const auto sortDim = d.dimensions<Tag>().label(0);
   if (const_axis.size() != d.dimensions().size(sortDim))
@@ -487,8 +487,8 @@ template <class Tag> Dataset sort(const Dataset &d) {
     return d;
 
   Dataset sorted;
-  sorted.insert(d[d.findUnique(tag_id<Tag>)]);
-  auto axis = sorted.get<Tag>();
+  auto axisVar = d[d.find(tag_id<Tag>, name)];
+  auto axis = axisVar.template get<Tag>();
   std::vector<gsl::index> indices(axis.size());
   std::iota(indices.begin(), indices.end(), 0);
   auto view = ranges::view::zip(axis, indices);
@@ -496,16 +496,32 @@ template <class Tag> Dataset sort(const Dataset &d) {
   sort(view.begin(), view.end(), [](const auto &a, const auto &b) {
     return std::get<0>(a) < std::get<0>(b);
   });
+  // Joint code for all tags, extract into function to reduce instantiated code
+  // size?
   for (const auto &var : d) {
     if (!var.dimensions().contains(sortDim))
       sorted.insert(var);
     else if (var.dimensions().count() > 1)
       throw std::runtime_error(
           "Sorting for 2- or higher-dimensional variables is not implemented.");
-    else if (var.type() != tag_id<Tag>)
+    else if (var.type() == tag_id<Tag> && var.name() == name)
+      sorted.insert(axisVar);
+    else
       sorted.insert(permute(var, indices));
   }
   return sorted;
 }
 
-template Dataset sort<Coord::X>(const Dataset &);
+#define CASE_RETURN(TAG, FUNC, ...)                                            \
+  case tag<TAG>.value():                                                       \
+    return FUNC<TAG>(__VA_ARGS__);
+
+Dataset sort(const Dataset &d, Tag t, const std::string &name) {
+  switch (t.value()) {
+    CASE_RETURN(Coord::X, sort, d, name);
+    CASE_RETURN(Data::Value, sort, d, name);
+  default:
+    throw std::runtime_error(
+        "Sorting by this variable type has not been implemented.");
+  }
+}

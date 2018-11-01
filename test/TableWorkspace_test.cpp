@@ -49,6 +49,16 @@ TEST(TableWorkspace, basics) {
   auto mergedTable = concatenate(Dimension::Row, table, table);
   auto row = slice(table, Dimension::Row, 1);
   EXPECT_EQ(row.get<const Coord::RowLabel>()[0], "b");
+
+  // Can sort by arbitrary column.
+  auto sortedTable = sort(table, tag<Data::Value>, "Data");
+  EXPECT_EQ(asStrings(sortedTable[0]),
+            std::vector<std::string>({"b", "a", "c"}));
+  EXPECT_EQ(asStrings(sortedTable[1]),
+            std::vector<std::string>({"-2.000000", "1.000000", "3.000000"}));
+  EXPECT_EQ(asStrings(sortedTable[2]),
+            std::vector<std::string>({"why is this negative?", "", ""}));
+
   // Other basics (to be implemented): cut/truncate/chop/extract (naming
-  // unclear), sort, filter, etc.
+  // unclear), filter, etc.
 }

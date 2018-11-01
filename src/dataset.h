@@ -164,8 +164,8 @@ Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
 Dataset convert(const Dataset &d, const Dimension from, const Dimension to);
 Dataset rebin(const Dataset &d, const Variable &newCoord);
 
-// This `sort` takes the tags as a template argument. We can also provide a
-// runtime version which selects the correct template instance.
-template <class Tag> Dataset sort(const Dataset &d);
+Dataset sort(const Dataset &d, Tag t, const std::string &name = "");
+// Note: Can provide stable_sort for sorting by multiple columns, e.g., for a
+// QTableView.
 
 #endif // DATASET_H

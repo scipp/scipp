@@ -126,7 +126,7 @@ TEST(Dataset, can_use_normal_insert_to_copy_edges) {
   d.insert<Coord::X>({Dim::X, 3});
 
   Dataset copy;
-  for(auto &var : d)
+  for (auto &var : d)
     EXPECT_NO_THROW(copy.insert(var));
 }
 
@@ -646,7 +646,8 @@ TEST(Dataset, rebin) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 3}, {1.0, 3.0, 5.0});
   auto coordNew = makeVariable<Coord::X>({Dim::X, 2}, {1.0, 5.0});
-  // With only the coord in the dataset there is no way to tell it is an edge, so this fails.
+  // With only the coord in the dataset there is no way to tell it is an edge,
+  // so this fails.
   EXPECT_THROW_MSG(rebin(d, coordNew), std::runtime_error,
                    "Existing coordinate to be rebinned is not a bin edge "
                    "coordinate. Use `resample` instead of rebin or convert to "
@@ -664,7 +665,7 @@ TEST(Dataset, sort) {
   d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
   d.insert<Data::Value>("", {Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
 
-  auto sorted = sort<Coord::X>(d);
+  auto sorted = sort(d, tag<Coord::X>);
 
   ASSERT_EQ(sorted.get<const Coord::X>().size(), 4);
   EXPECT_EQ(sorted.get<const Coord::X>()[0], 0.0);

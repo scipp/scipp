@@ -234,6 +234,19 @@ static constexpr bool is_attr =
     std::tuple_size<Coord::tags>::value + std::tuple_size<Data::tags>::value;
 template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 
+class Tag {
+public:
+  constexpr explicit Tag(uint16_t value) : m_value(value) {}
+  constexpr uint16_t value() const { return m_value; }
+
+private:
+  uint16_t m_value;
+};
+
+// TODO We should use this everywhere instead of the non-type-safe uint16_t
+// provided by tag_id.
+template <class T> static constexpr Tag tag = Tag(tag_id<T>);
+
 template <class Tag> constexpr bool is_dimension_coordinate = false;
 template <> constexpr bool is_dimension_coordinate<Coord::Tof> = true;
 template <> constexpr bool is_dimension_coordinate<Coord::X> = true;
