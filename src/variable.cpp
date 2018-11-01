@@ -367,6 +367,15 @@ public:
     }
   }
 
+  void copyPermute(const VariableConcept &otherConcept,
+                   const std::vector<gsl::index> &indices) override {
+    const auto &other =
+        dynamic_cast<const VariableModel<T> &>(otherConcept).m_model;
+    for (gsl::index i = 0; i < indices.size(); ++i) {
+      m_model[i] = other[indices[i]];
+    }
+  }
+
   T m_model;
 };
 
@@ -602,4 +611,10 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
   // TODO take into account unit if values have been divided by bin width.
   rebinned.data().rebin(var.data(), dim, oldCoord.data(), newCoord.data());
   return rebinned;
+}
+
+Variable permute(const Variable &var, const std::vector<gsl::index> &indices) {
+  auto permuted(var);
+  permuted.data().copyPermute(var.data(), indices);
+  return permuted;
 }

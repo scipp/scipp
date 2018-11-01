@@ -42,6 +42,8 @@ public:
                          const gsl::index index) = 0;
   virtual void copyFrom(const VariableConcept &other, const Dimension dim,
                         const gsl::index offset) = 0;
+  virtual void copyPermute(const VariableConcept &otherConcept,
+                           const std::vector<gsl::index> &indices) = 0;
 
   const Dimensions &dimensions() const { return m_dimensions; }
   void setDimensions(const Dimensions &dimensions);
@@ -216,5 +218,6 @@ Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2);
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord);
+Variable permute(const Variable &var, const std::vector<gsl::index> &indices);
 
 #endif // VARIABLE_H

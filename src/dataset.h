@@ -164,4 +164,8 @@ Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2);
 Dataset convert(const Dataset &d, const Dimension from, const Dimension to);
 Dataset rebin(const Dataset &d, const Variable &newCoord);
 
+// This `sort` takes the tags as a template argument. We can also provide a
+// runtime version which selects the correct template instance.
+template <class Tag> Dataset sort(const Dataset &d);
+
 #endif // DATASET_H

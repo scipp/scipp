@@ -3,7 +3,11 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <numeric>
 #include <set>
+
+#include "range/v3/algorithm.hpp"
+#include "range/v3/view/zip.hpp"
 
 #include "dataset.h"
 
@@ -409,18 +413,18 @@ Dataset convert(const Dataset &d, const Dimension from, const Dimension to) {
   if (!d.dimensions().contains(from))
     throw std::runtime_error(
         "Dataset does not contain the dimension requested for conversion.");
-  // Can Dim::Spectrum be converted to anything? Should we require a matching coordinate when doing a conversion?
-  // This does not make sense:
-  //auto converted = convert(dataset, Dim::Spectrum, Dim::Tof);
+  // Can Dim::Spectrum be converted to anything? Should we require a matching
+  // coordinate when doing a conversion? This does not make sense:
+  // auto converted = convert(dataset, Dim::Spectrum, Dim::Tof);
   // This does if we can lookup the TwoTheta, make axis here, or require it?
   // Should it do the reordering? Is sorting separately much less efficient?
   // Dim::Spectrum is discrete, Dim::TwoTheta is in principle contiguous. How to
   // handle that? Do we simply want to sort instead? Discrete->contiguous can be
   // handled by binning? Or is Dim::TwoTheta implicitly also discrete?
-  //auto converted = convert(dataset, Dim::Spectrum, Dim::TwoTheta);
-  // This is a *derived* coordinate, no need to store it explicitly? May even be prevented?
-  //DatasetView<const Coord::TwoTheta>(dataset);
-
+  // auto converted = convert(dataset, Dim::Spectrum, Dim::TwoTheta);
+  // This is a *derived* coordinate, no need to store it explicitly? May even be
+  // prevented?
+  // DatasetView<const Coord::TwoTheta>(dataset);
 }
 
 Dataset rebin(const Dataset &d, const Variable &newCoord) {
@@ -460,8 +464,8 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   }
   // TODO check that input as well as output coordinate are sorted in rebin
   // dimension.
-  for(const auto &var : d) {
-    if(!var.dimensions().contains(dim)) {
+  for (const auto &var : d) {
+    if (!var.dimensions().contains(dim)) {
       out.insert(var);
     } else if (var.type() == newCoord.type()) {
       out.insert(newCoord);
@@ -471,3 +475,37 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   }
   return out;
 }
+
+template <class Tag> Dataset sort(const Dataset &d) {
+  auto const_axis = d.get<const Tag>();
+  if (d.dimensions<Tag>().count() != 1)
+    throw std::runtime_error("Axis for sorting must be 1-dimensional.");
+  const auto sortDim = d.dimensions<Tag>().label(0);
+  if (const_axis.size() != d.dimensions().size(sortDim))
+    throw std::runtime_error("Axis for sorting cannot be a bin-edge axis.");
+  if (std::is_sorted(const_axis.begin(), const_axis.end()))
+    return d;
+
+  Dataset sorted;
+  sorted.insert(d[d.findUnique(tag_id<Tag>)]);
+  auto axis = sorted.get<Tag>();
+  std::vector<gsl::index> indices(axis.size());
+  std::iota(indices.begin(), indices.end(), 0);
+  auto view = ranges::view::zip(axis, indices);
+  using ranges::sort;
+  sort(view.begin(), view.end(), [](const auto &a, const auto &b) {
+    return std::get<0>(a) < std::get<0>(b);
+  });
+  for (const auto &var : d) {
+    if (!var.dimensions().contains(sortDim))
+      sorted.insert(var);
+    else if (var.dimensions().count() > 1)
+      throw std::runtime_error(
+          "Sorting for 2- or higher-dimensional variables is not implemented.");
+    else if (var.type() != tag_id<Tag>)
+      sorted.insert(permute(var, indices));
+  }
+  return sorted;
+}
+
+template Dataset sort<Coord::X>(const Dataset &);

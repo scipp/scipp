@@ -657,3 +657,28 @@ TEST(Dataset, rebin) {
   EXPECT_EQ(rebinned.get<const Data::Value>().size(), 1);
   EXPECT_EQ(rebinned.get<const Data::Value>()[0], 30.0);
 }
+
+TEST(Dataset, sort) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
+  d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
+  d.insert<Data::Value>("", {Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
+
+  auto sorted = sort<Coord::X>(d);
+
+  ASSERT_EQ(sorted.get<const Coord::X>().size(), 4);
+  EXPECT_EQ(sorted.get<const Coord::X>()[0], 0.0);
+  EXPECT_EQ(sorted.get<const Coord::X>()[1], 1.0);
+  EXPECT_EQ(sorted.get<const Coord::X>()[2], 3.0);
+  EXPECT_EQ(sorted.get<const Coord::X>()[3], 5.0);
+
+  ASSERT_EQ(sorted.get<const Coord::Y>().size(), 2);
+  EXPECT_EQ(sorted.get<const Coord::Y>()[0], 1.0);
+  EXPECT_EQ(sorted.get<const Coord::Y>()[1], 0.9);
+
+  ASSERT_EQ(sorted.get<const Data::Value>().size(), 4);
+  EXPECT_EQ(sorted.get<const Data::Value>()[0], 4.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[1], 2.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[2], 3.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[3], 1.0);
+}
