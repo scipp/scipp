@@ -337,27 +337,26 @@ public:
         thisDims.add(dim, 1);
     }
 
-    auto target = gsl::make_span(m_model.data() + offset * thisDims.offset(dim),
-                                 &*m_model.end());
-    // Four cases for minimizing use of VariableView --- just copy contiguous
-    // range where possible.
     gsl::index otherBeginOffset = otherBegin * otherDims.offset(dim);
     gsl::index otherEndOffset = otherEnd * otherDims.offset(dim);
+    auto target = gsl::make_span(m_model.data() + offset * thisDims.offset(dim),
+                                 &*m_model.end());
+    auto source = gsl::make_span(other.m_model.data() + otherBeginOffset,
+                                 &*other.m_model.end());
+    VariableView<const decltype(source)> otherView(source, iterationDimensions,
+                                                   other.dimensions());
+    // Four cases for minimizing use of VariableView --- just copy contiguous
+    // range where possible.
     bool otherIsContiguous = otherDims.label(thisDims.count() - 1) == dim;
     if (thisDims.label(thisDims.count() - 1) == dim) {
       if (otherIsContiguous && iterationDimensions == other.dimensions()) {
         // Case 1: Output range is contiguous, input is contiguous and not
         // transposed.
-        auto begin = other.m_model.begin() + otherBeginOffset;
-        auto end = other.m_model.begin() + otherEndOffset;
-        std::copy(begin, end, target.begin());
+        std::copy(source.begin(), source.begin() + otherEndOffset,
+                  target.begin());
       } else {
         // Case 2: Output range is contiguous, input is not contiguous or
         // transposed.
-        auto source = gsl::make_span(other.m_model.data() + otherBeginOffset,
-                                     &*other.m_model.end());
-        VariableView<const decltype(source)> otherView(
-            source, iterationDimensions, other.dimensions());
         std::copy(otherView.begin(), otherView.end(), target.begin());
       }
     } else {
@@ -366,16 +365,10 @@ public:
       if (otherIsContiguous && iterationDimensions == other.dimensions()) {
         // Case 3: Output range is not contiguous, input is contiguous and not
         // transposed.
-        auto begin = other.m_model.begin() + otherBeginOffset;
-        auto end = other.m_model.begin() + otherEndOffset;
-        std::copy(begin, end, view.begin());
+        std::copy(source.begin(), source.end(), view.begin());
       } else {
         // Case 4: Output range is not contiguous, input is not contiguous or
         // transposed.
-        auto source = gsl::make_span(other.m_model.data() + otherBeginOffset,
-                                     &*other.m_model.end());
-        VariableView<const decltype(source)> otherView(
-            source, iterationDimensions, other.dimensions());
         std::copy(otherView.begin(), otherView.end(), view.begin());
       }
     }
