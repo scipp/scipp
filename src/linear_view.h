@@ -6,6 +6,8 @@
 #ifndef LINEAR_VIEW_H
 #define LINEAR_VIEW_H
 
+#include "range/v3/all.hpp"
+
 #include "dataset.h"
 #include "traits.h"
 
@@ -64,6 +66,17 @@ public:
                              .template cast<Vector<typename Tags::type>>()...);
   }
 
+  template <size_t... Is> auto makeView(std::index_sequence<Is...>) {
+    return ranges::view::zip(*std::get<Is>(m_data)...);
+  }
+
+  auto begin() {
+    return makeView(std::make_index_sequence<sizeof...(Tags)>{}).begin();
+  }
+  auto end() {
+    return makeView(std::make_index_sequence<sizeof...(Tags)>{}).end();
+  }
+
   void push_back(const std::tuple<typename Tags::type...> &value) {
     AccessHelper<Tags...>::push_back(m_dimensions, m_data, value);
   }
@@ -72,5 +85,11 @@ private:
   std::array<Dimensions *, sizeof...(Tags)> m_dimensions;
   std::tuple<Vector<typename Tags::type> *...> m_data;
 };
+
+template <class... Tags>
+void swap(typename LinearView<Tags...>::Item &a,
+          typename LinearView<Tags...>::Item &b) noexcept {
+  a.swap(b);
+}
 
 #endif // LINEAR_VIEW_H
