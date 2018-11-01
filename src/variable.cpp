@@ -332,7 +332,7 @@ public:
       otherDims.add(dim, 1);
     } else {
       if (iterationDimensions.contains(dim))
-        iterationDimensions.resize(dim, other.dimensions().size(dim));
+        iterationDimensions.resize(dim, otherEnd - otherBegin);
       else
         thisDims.add(dim, 1);
     }
@@ -365,7 +365,8 @@ public:
       if (otherIsContiguous && iterationDimensions == other.dimensions()) {
         // Case 3: Output range is not contiguous, input is contiguous and not
         // transposed.
-        std::copy(source.begin(), source.end(), view.begin());
+        std::copy(source.begin(), source.begin() + otherEndOffset,
+                  view.begin());
       } else {
         // Case 4: Output range is not contiguous, input is not contiguous or
         // transposed.
@@ -554,6 +555,8 @@ Variable slice(const Variable &var, const Dimension dim, gsl::index begin,
   auto out(var);
   auto dims = out.dimensions();
   dims.resize(dim, end - begin);
+  if (dims == out.dimensions())
+    return out;
   out.setDimensions(dims);
   out.data().copy(var.data(), dim, 0, begin, end);
   return out;
