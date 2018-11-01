@@ -50,6 +50,7 @@ TEST(TableWorkspace, basics) {
   auto row = slice(table, Dimension::Row, 1);
   EXPECT_EQ(row.get<const Coord::RowLabel>()[0], "b");
 
+  // Slice a range to obtain a new table with a subset of rows.
   auto rows = slice(mergedTable, Dimension::Row, 1, 4);
   ASSERT_EQ(rows.get<const Coord::RowLabel>().size(), 3);
   EXPECT_EQ(rows.get<const Coord::RowLabel>()[0], "b");
@@ -64,6 +65,12 @@ TEST(TableWorkspace, basics) {
             std::vector<std::string>({"-2.000000", "1.000000", "3.000000"}));
   EXPECT_EQ(asStrings(sortedTable[2]),
             std::vector<std::string>({"why is this negative?", "", ""}));
+
+  // Split (opposite of concatenate).
+  auto parts = split(mergedTable, Dimension::Row, {3});
+  ASSERT_EQ(parts.size(), 2);
+  EXPECT_EQ(parts[0], table);
+  EXPECT_EQ(parts[1], table);
 
   // Other basics (to be implemented): cut/truncate/chop/extract (naming
   // unclear), filter, etc.

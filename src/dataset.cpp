@@ -378,6 +378,22 @@ Dataset slice(const Dataset &d, const Dimension dim, const gsl::index begin,
   return out;
 }
 
+std::vector<Dataset> split(const Dataset &d, const Dim dim,
+                           const std::vector<gsl::index> &indices) {
+  std::vector<Dataset> out(indices.size() + 1);
+  for (const auto &var : d) {
+    if (var.dimensions().contains(dim)) {
+      auto vars = split(var, dim, indices);
+      for (gsl::index i = 0; i < out.size(); ++i)
+        out[i].insert(vars[i]);
+    } else {
+      for (auto &o : out)
+        o.insert(var);
+    }
+  }
+  return out;
+}
+
 Dataset concatenate(const Dimension dim, const Dataset &d1, const Dataset &d2) {
   // Match type and name, drop missing?
   // What do we have to do to check and compute the resulting dimensions?

@@ -562,6 +562,21 @@ Variable slice(const Variable &var, const Dimension dim, const gsl::index begin,
   return out;
 }
 
+// Example of a "derived" operation: Implementation does not require adding a
+// virtual function to VariableConcept.
+std::vector<Variable> split(const Variable &var, const Dim dim,
+                            const std::vector<gsl::index> &indices) {
+  if (indices.empty())
+    return {var};
+  std::vector<Variable> vars;
+  vars.emplace_back(slice(var, dim, 0, indices.front()));
+  for (gsl::index i = 0; i < indices.size() - 1; ++i)
+    vars.emplace_back(slice(var, dim, indices[i], indices[i + 1]));
+  vars.emplace_back(
+      slice(var, dim, indices.back(), var.dimensions().size(dim)));
+  return vars;
+}
+
 Variable concatenate(const Dimension dim, const Variable &a1,
                      const Variable &a2) {
   if (a1.type() != a2.type())

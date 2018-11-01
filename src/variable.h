@@ -220,5 +220,7 @@ Variable concatenate(const Dimension dim, const Variable &a1,
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord);
 Variable permute(const Variable &var, const std::vector<gsl::index> &indices);
+std::vector<Variable> split(const Variable &var, const Dim dim,
+                            const std::vector<gsl::index> &indices);
 
 #endif // VARIABLE_H
