@@ -5,7 +5,22 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <gtest/gtest.h>
 
+#include <type_traits>
+
 #include "dimensions.h"
+
+TEST(Dimensions2, footprint) {
+  EXPECT_EQ(sizeof(Dimensions2), 64);
+  EXPECT_EQ(std::alignment_of<Dimensions2>(), 64);
+}
+
+TEST(Dimensions2, construct) {
+  EXPECT_NO_THROW(Dimensions2());
+  EXPECT_NO_THROW(Dimensions2{});
+  EXPECT_NO_THROW((Dimensions2{Dim::X, 1}));
+  EXPECT_NO_THROW((Dimensions2({Dim::X, 1})));
+  EXPECT_NO_THROW((Dimensions2({{Dim::X, 1}, {Dim::Y, 1}})));
+}
 
 TEST(Dimensions, count_and_volume) {
   Dimensions dims;

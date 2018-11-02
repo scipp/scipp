@@ -6,7 +6,7 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
-enum class Dimension {
+enum class Dimension : uint16_t {
   Invalid,
   Event,
   Tof,

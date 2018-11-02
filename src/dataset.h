@@ -165,7 +165,9 @@ Dataset slice(const Dataset &d, const Dimension dim, const gsl::index begin,
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices);
 Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dimension dim);
+// Not implemented
 Dataset convert(const Dataset &d, const Dimension from, const Dimension to);
+// Not verified, likely wrong in some cases
 Dataset rebin(const Dataset &d, const Variable &newCoord);
 
 Dataset sort(const Dataset &d, Tag t, const std::string &name = "");

@@ -12,6 +12,7 @@
 
 #include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
+#include <gsl/span>
 
 #include "dimension.h"
 
@@ -44,7 +45,46 @@ public:
   gsl::index index(const Dimension label) const;
 
 private:
+  // This is 56 Byte, or would be 40 Byte for small size 1.
   boost::container::small_vector<std::pair<Dimension, gsl::index>, 2> m_dims;
+};
+
+/// Dimensions are accessed very frequently, so packing everything into a single
+/// (64 Byte) cacheline should be advantageous.
+class alignas(64) Dimensions2 {
+public:
+  Dimensions2() noexcept {}
+  Dimensions2(const Dim dim, const gsl::index size)
+      : Dimensions2({{dim, size}}) {}
+  Dimensions2(const std::initializer_list<std::pair<Dim, gsl::index>> dims) {
+    // TODO Check for duplicate dimension.
+    m_ndim = dims.size();
+    if (m_ndim > 6)
+      throw std::runtime_error("At most 6 dimensions are supported.");
+    auto dim = dims.begin();
+    for (gsl::index i = 0; i < m_ndim; ++i, ++dim) {
+      m_dims[i] = dim->first;
+      if (m_dims[i] == Dim::Invalid)
+        throw std::runtime_error("Dim::Invalid is not a valid dimension.");
+      m_shape[i] = dim->second;
+      if (m_shape[i] < 0)
+        throw std::runtime_error("Dimension extent cannot be negative.");
+    }
+  }
+
+  int32_t ndim() const noexcept { return ndim(); }
+
+  gsl::span<const gsl::index> shape() const noexcept {
+    return {m_shape, m_shape + m_ndim};
+  }
+
+private:
+  // Support at most 6 dimensions, should be sufficient?
+  // 6*8 Byte = 48 Byte
+  gsl::index m_shape[6]{-1, -1, -1, -1, -1, -1};
+  int32_t m_ndim{0};
+  Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
+                Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
 
 Dimensions merge(const Dimensions &a, const Dimensions &b);
