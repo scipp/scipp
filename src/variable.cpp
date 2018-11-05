@@ -466,7 +466,7 @@ Variable &Variable::operator+=(const Variable &other) {
   // Different name is ok for addition.
   if (m_unit != other.m_unit)
     throw std::runtime_error("Cannot add Variables: Units do not match.");
-  if (!valueTypeIs<Data::Events>()) {
+  if (!valueTypeIs<Data::Events>() && !valueTypeIs<Data::Table>()) {
     if (dimensions().contains(other.dimensions())) {
       // Note: This will broadcast/transpose the RHS if required. We do not
       // support changing the dimensions of the LHS though!
@@ -485,11 +485,16 @@ Variable &Variable::operator+=(const Variable &other) {
     }
   } else {
     if (dimensions() == other.dimensions()) {
-      auto events = get<Data::Events>();
-      const auto otherEvents = other.get<const Data::Events>();
+      const auto otherDatasets = gsl::make_span(other.cast<Vector<Dataset>>());
+      if (otherDatasets.size() > 0 &&
+          otherDatasets[0].dimensions().count() != 1)
+        throw std::runtime_error(
+            "Cannot add Variable: Nested Dataset dimension must be 1.");
+      auto datasets = gsl::make_span(cast<Vector<Dataset>>());
+      const Dim dim = datasets[0].dimensions().label(0);
 #pragma omp parallel for
-      for (gsl::index i = 0; i < events.size(); ++i)
-        events[i] = concatenate(events[i], otherEvents[i], Dimension::Event);
+      for (gsl::index i = 0; i < datasets.size(); ++i)
+        datasets[i] = concatenate(datasets[i], otherDatasets[i], dim);
     } else {
       throw std::runtime_error(
           "Cannot add Variables: Dimensions do not match.");

@@ -205,9 +205,13 @@ struct Data {
     using type = Dataset;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct Table {
+    using type = Dataset;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
 
   using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
-                          DimensionSize, String, History, Events>;
+                          DimensionSize, String, History, Events, Table>;
 };
 
 struct Attr {
