@@ -66,6 +66,8 @@ void Dimensions::erase(const Dimension label) {
 }
 
 void Dimensions::add(const Dimension label, const gsl::index size) {
+  if (m_ndim == 6)
+    throw std::runtime_error("More than 6 dimensions are not supported.");
   // TODO check duplicate dimensions
   m_shape[m_ndim] = size;
   m_dims[m_ndim] = label;
