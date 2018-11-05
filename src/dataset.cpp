@@ -179,6 +179,11 @@ Dataset &Dataset::operator+=(const Dataset &other) {
         // Data variables are added
         var1 += var2;
       }
+    } else {
+      // Attribute variables are added
+      // TODO Does it make sense to do this only if mismatched?
+      if (var1 != var2)
+        var1 += var2;
     }
   }
   return *this;

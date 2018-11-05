@@ -16,6 +16,7 @@
 #include "dimension.h"
 #include "traits.h"
 #include "unit.h"
+#include "value_with_delta.h"
 
 namespace detail {
 struct ReturnByValuePolicy {};
@@ -89,6 +90,10 @@ struct Coord {
     using type = double;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct Time {
+    using type = int64_t;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
   struct TimeInterval {
     using type = std::pair<int64_t, int64_t>;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -153,15 +158,19 @@ struct Coord {
     using type = std::shared_ptr<std::array<double, 100>>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct FuzzyTemperature {
+    using type = ValueWithDelta<double>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
 
   using tags = std::tuple<
       X, Y, Z, Tof, MonitorTof, DetectorId, SpectrumNumber, DetectorIsMonitor,
       DetectorMask, DetectorRotation, DetectorPosition, DetectorGrouping,
-      SpectrumPosition, RowLabel, Polarization, Temperature, TimeInterval, Mask,
-      ComponentRotation, ComponentPosition, ComponentParent, ComponentChildren,
-      ComponentScale, ComponentShape, ComponentName, ComponentSubtree,
-      DetectorSubtree, ComponentSubtreeRange, DetectorSubtreeRange,
-      DetectorParent, DetectorScale, DetectorShape>;
+      SpectrumPosition, RowLabel, Polarization, Temperature, FuzzyTemperature,
+      Time, TimeInterval, Mask, ComponentRotation, ComponentPosition,
+      ComponentParent, ComponentChildren, ComponentScale, ComponentShape,
+      ComponentName, ComponentSubtree, DetectorSubtree, ComponentSubtreeRange,
+      DetectorSubtreeRange, DetectorParent, DetectorScale, DetectorShape>;
 };
 
 class Dataset;

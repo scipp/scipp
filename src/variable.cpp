@@ -139,6 +139,7 @@ DISABLE_ARITHMETICS_T(std::array<T, 3>)
 DISABLE_ARITHMETICS_T(boost::container::small_vector<T, 1>)
 DISABLE_ARITHMETICS_T(std::vector<T>)
 DISABLE_ARITHMETICS_T(std::pair<T, T>)
+DISABLE_ARITHMETICS_T(ValueWithDelta<T>)
 
 template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
   template <class... Args> static void apply(Args &&...) {
@@ -172,6 +173,7 @@ DISABLE_REBIN_T(std::array<T, 3>)
 DISABLE_REBIN_T(std::vector<T>)
 DISABLE_REBIN_T(boost::container::small_vector<T, 1>)
 DISABLE_REBIN_T(std::pair<T, T>)
+DISABLE_REBIN_T(ValueWithDelta<T>)
 DISABLE_REBIN(Dataset)
 DISABLE_REBIN(std::string)
 
@@ -422,6 +424,7 @@ INSTANTIATE(char)
 INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
 INSTANTIATE(std::pair<int64_t, int64_t>)
+INSTANTIATE(ValueWithDelta<double>)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
 INSTANTIATE(gsl::index)
 INSTANTIATE(std::pair<gsl::index, gsl::index>)

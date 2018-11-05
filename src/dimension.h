@@ -21,6 +21,7 @@ enum class Dimension : uint16_t {
   Z,
   Polarization,
   Temperature,
+  Time,
   DetectorScan,
   Component,
   Row
