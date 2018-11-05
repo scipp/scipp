@@ -189,11 +189,10 @@ void VariableConcept::setDimensions(const Dimensions &dimensions) {
 
 template <class T> class VariableModel final : public VariableConcept {
 public:
-  VariableModel(Dimensions dimensions)
-      : VariableConcept(std::move(dimensions)),
-        m_model(this->dimensions().volume()) {}
+  VariableModel(const Dimensions &dimensions)
+      : VariableConcept(dimensions), m_model(this->dimensions().volume()) {}
 
-  VariableModel(Dimensions dimensions, T model)
+  VariableModel(const Dimensions &dimensions, T model)
       : VariableConcept(std::move(dimensions)), m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -390,8 +389,8 @@ public:
 };
 
 template <class T>
-Variable::Variable(uint32_t id, const Unit::Id unit, Dimensions dimensions,
-                   T object)
+Variable::Variable(uint32_t id, const Unit::Id unit,
+                   const Dimensions &dimensions, T object)
     : m_type(id), m_unit{unit},
       m_object(std::make_unique<VariableModel<T>>(std::move(dimensions),
                                                   std::move(object))) {}
@@ -412,7 +411,7 @@ template <class T> T &Variable::cast() {
 }
 
 #define INSTANTIATE(...)                                                       \
-  template Variable::Variable(uint32_t, const Unit::Id, Dimensions,            \
+  template Variable::Variable(uint32_t, const Unit::Id, const Dimensions &,    \
                               Vector<__VA_ARGS__>);                            \
   template Vector<__VA_ARGS__> &Variable::cast<Vector<__VA_ARGS__>>();         \
   template const Vector<__VA_ARGS__> &Variable::cast<Vector<__VA_ARGS__>>()    \
@@ -601,12 +600,12 @@ Variable concatenate(const Variable &a1, const Variable &a2,
   // TODO Many things in this function should be refactored and moved in class
   // Dimensions.
   // TODO Special handling for edge variables.
-  for (const auto &item : dims1) {
-    if (item.first != dim) {
-      if (!dims2.contains(item.first))
+  for (const auto &dim1 : dims1.labels()) {
+    if (dim1 != dim) {
+      if (!dims2.contains(dim1))
         throw std::runtime_error(
             "Cannot concatenate Variables: Dimensions do not match.");
-      if (dims2.size(item.first) != item.second)
+      if (dims2.size(dim1) != dims1.size(dim1))
         throw std::runtime_error(
             "Cannot concatenate Variables: Dimension extents do not match.");
     }

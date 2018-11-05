@@ -10,16 +10,20 @@
 #include "dimensions.h"
 
 TEST(Dimensions, footprint) {
-  EXPECT_EQ(sizeof(dataset::Dimensions), 64);
-  EXPECT_EQ(std::alignment_of<dataset::Dimensions>(), 64);
+  EXPECT_EQ(sizeof(Dimensions), 64);
+  EXPECT_EQ(std::alignment_of<Dimensions>(), 64);
 }
 
 TEST(Dimensions, construct) {
-  EXPECT_NO_THROW(dataset::Dimensions());
-  EXPECT_NO_THROW(dataset::Dimensions{});
-  EXPECT_NO_THROW((dataset::Dimensions{Dim::X, 1}));
-  EXPECT_NO_THROW((dataset::Dimensions({Dim::X, 1})));
-  EXPECT_NO_THROW((dataset::Dimensions({{Dim::X, 1}, {Dim::Y, 1}})));
+  EXPECT_NO_THROW(Dimensions());
+  EXPECT_NO_THROW(Dimensions{});
+  EXPECT_NO_THROW((Dimensions{Dim::X, 1}));
+  EXPECT_NO_THROW((Dimensions({Dim::X, 1})));
+  EXPECT_NO_THROW((Dimensions({{Dim::X, 1}, {Dim::Y, 1}})));
+}
+
+TEST(Dimensions, operator_equals) {
+  EXPECT_EQ((Dimensions({Dim::X, 1})), (Dimensions({Dim::X, 1})));
 }
 
 TEST(Dimensions, count_and_volume) {
@@ -66,18 +70,4 @@ TEST(Dimensions, contains_other) {
   b.add(Dimension::Tof, 3);
   // Order does not matter.
   EXPECT_TRUE(a.contains(b));
-}
-
-TEST(Dimensions, merge) {
-  Dimensions a;
-  Dimensions b;
-  a.add(Dimension::Tof, 3);
-  EXPECT_EQ(merge(a, a).count(), 1);
-  EXPECT_EQ(merge(a, b).count(), 1);
-  EXPECT_EQ(merge(b, b).count(), 0);
-  EXPECT_EQ(merge(merge(a, b), a).count(), 1);
-  b.add(Dimension::Tof, 2);
-  EXPECT_ANY_THROW(merge(a, b));
-  b.resize(Dimension::Tof, 3);
-  EXPECT_NO_THROW(merge(a, b));
 }

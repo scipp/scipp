@@ -9,122 +9,78 @@
 #include "dimensions.h"
 #include "variable.h"
 
-Dimensions::Dimensions() = default;
-Dimensions::Dimensions(const Dimension label, const gsl::index size) {
-  add(label, size);
-}
-Dimensions::Dimensions(
-    const std::vector<std::pair<Dimension, gsl::index>> &sizes) {
-  for (const auto &item : sizes)
-    add(item.first, item.second);
-}
-
-bool Dimensions::operator==(const Dimensions &other) const {
-  return m_dims == other.m_dims;
-}
-
-gsl::index Dimensions::count() const { return m_dims.size(); }
-
-gsl::index Dimensions::volume() const {
-  gsl::index volume{1};
-  for (gsl::index dim = 0; dim < count(); ++dim)
-    volume *= size(dim);
-  return volume;
-}
-
-bool Dimensions::contains(const Dimension label) const {
-  for (const auto &item : m_dims)
-    if (item.first == label)
-      return true;
-  return false;
-}
-
 /// Returns true if all dimensions of other are also contained in *this. Does
 /// not check dimension order.
 bool Dimensions::contains(const Dimensions &other) const {
   if (*this == other)
     return true;
-  for (const auto &item : other.m_dims)
-    if (std::find(m_dims.begin(), m_dims.end(), item) == m_dims.end())
+  for (const auto dim : other.labels())
+    if (!contains(dim))
+      return false;
+  for (int32_t i = 0; i < other.ndim(); ++i)
+    if (other.shape()[i] != operator[](other.labels()[i]))
       return false;
   return true;
 }
 
 Dimension Dimensions::label(const gsl::index i) const {
-  return m_dims.at(i).first;
+  return m_dims[i];
 }
 
 gsl::index Dimensions::size(const gsl::index i) const {
-  return m_dims.at(i).second;
+  return m_shape[i];
 }
 
 gsl::index Dimensions::size(const Dimension label) const {
-  for (const auto &item : m_dims)
-    if (item.first == label)
-      return item.second;
-  throw std::runtime_error("Dimension not found.");
+  return operator[](label);
 }
 
 /// Return the offset of elements along this dimension in a multi-dimensional
 /// array defined by this.
 gsl::index Dimensions::offset(const Dimension label) const {
   gsl::index offset{1};
-  for (const auto &item : m_dims) {
-    if (item.first == label)
+  for (int32_t i = 0; i < m_ndim; ++i) {
+    if (m_dims[i] == label)
       return offset;
-    offset *= item.second;
+    offset *= m_shape[i];
   }
-  throw std::runtime_error("Dimension not found.");
+  throw dataset::except::DimensionNotFoundError(*this, label);
 }
 
-void Dimensions::resize(const Dimension label, const gsl::index size) {
+void Dimensions::resize(const Dim label, const gsl::index size) {
   if (size < 0)
     throw std::runtime_error("Dimension size cannot be negative.");
-  for (auto &item : m_dims)
-    if (item.first == label) {
-      item.second = size;
-      return;
-    }
-  throw std::runtime_error("Dimension not found.");
+  operator[](label) = size;
 }
 
 void Dimensions::resize(const gsl::index i, const gsl::index size) {
   if (size < 0)
     throw std::runtime_error("Dimension size cannot be negative.");
-  m_dims[i].second = size;
+  m_shape[i] = size;
 }
 
 void Dimensions::erase(const Dimension label) {
-  m_dims.erase(m_dims.begin() + index(label));
+  for (int32_t i = index(label); i < m_ndim - 1; ++i) {
+    m_shape[i] = m_shape[i + 1];
+    m_dims[i] = m_dims[i + 1];
+  }
+  --m_ndim;
+  m_shape[m_ndim] = -1;
+  m_dims[m_ndim] = Dim::Invalid;
 }
 
 void Dimensions::add(const Dimension label, const gsl::index size) {
   // TODO check duplicate dimensions
-  m_dims.emplace_back(label, size);
+  m_shape[m_ndim] = size;
+  m_dims[m_ndim] = label;
+  ++m_ndim;
 }
 
-gsl::index Dimensions::index(const Dimension label) const {
-  for (gsl::index i = 0; i < m_dims.size(); ++i)
-    if (m_dims[i].first == label)
+gsl::index Dimensions::index(const Dim dim) const {
+  for (int32_t i = 0; i < 6; ++i)
+    if (m_dims[i] == dim)
       return i;
-  throw std::runtime_error("Dimension not found.");
-}
-
-Dimensions merge(const Dimensions &a, const Dimensions &b) {
-  // TODO order??
-  // Not always well defined! Fail if not?!
-  auto merged(a);
-  for (const auto &item : b) {
-    const auto dim = item.first;
-    const auto size = item.second;
-    if (!a.contains(dim)) {
-      merged.add(dim, size);
-    } else {
-      if (a.size(dim) != size)
-        throw std::runtime_error("Size mismatch when merging dimensions.");
-    }
-  }
-  return merged;
+  throw dataset::except::DimensionNotFoundError(*this, dim);
 }
 
 Dimensions concatenate(const Dimension dim, const Dimensions &dims1,

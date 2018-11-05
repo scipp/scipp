@@ -9,6 +9,7 @@
 #include <pybind11/stl.h>
 
 #include "dataset.h"
+#include "except.h"
 
 namespace py = pybind11;
 
@@ -140,26 +141,9 @@ VariableView<Tag> getData(Dataset &self,
   return {self.get(self.find(tag_id<Tag>, key.second))};
 }
 
-std::string formatDim(const Dimension dim) {
-  switch (dim) {
-  case Dimension::X:
-    return "Dim.X";
-  case Dimension::Y:
-    return "Dim.Y";
-  case Dimension::Z:
-    return "Dim.Z";
-  default:
-    return "<unknown-dimension-tag>";
-  }
-}
-
 std::string format(const Dimensions &dims) {
-  std::string out = "Dimensions = {";
   // TODO reverse order to match numpy convention.
-  for (const auto &item : dims)
-    out += formatDim(item.first) + ": " + std::to_string(item.second) + ", ";
-  out.resize(out.size() - 2);
-  out += '}';
+  std::string out = "Dimensions = " + dataset::to_string(dims);
   return out;
 }
 } // namespace detail
@@ -268,13 +252,7 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
       .def("__repr__", &detail::format)
-      .def_property_readonly("labels",
-                             [](const Dimensions &dims) {
-                               std::vector<Dimension> labels;
-                               for (const auto &dim : dims)
-                                 labels.insert(labels.begin(), dim.first);
-                               return labels;
-                             })
+      .def_property_readonly("labels", &Dimensions::labels)
       .def("add", &Dimensions::add)
       .def("size",
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
@@ -299,8 +277,11 @@ PYBIND11_MODULE(dataset, m) {
                detail::VariableHeader header;
                const auto &dimensions = var.dimensions();
                header.nDim = dimensions.count();
-               std::copy(dimensions.begin(), dimensions.end(),
-                         header.dimensions.begin());
+               throw std::runtime_error(
+                   "TODO: Update implementation for new API.");
+               // std::copy(dimensions.shape().begin(),
+               // dimensions.shape().end(),
+               //           header.dimensions.begin());
                header.type = var.type();
                header.unit = var.unit().id();
 
@@ -391,7 +372,7 @@ PYBIND11_MODULE(dataset, m) {
                                         d.get<const Data::Value>().data(), obj);
            })
       .def("insertDataValue",
-           py::overload_cast<const std::string &, Dimensions,
+           py::overload_cast<const std::string &, const Dimensions &,
                              const std::vector<double> &>(
                &Dataset::insert<Data::Value, const std::vector<double> &>))
       .def("getDataValueConst", (gsl::span<const double>(Dataset::*)())(

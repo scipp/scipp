@@ -33,7 +33,7 @@ public:
   void insert(Variable variable);
 
   template <class Tag, class... Args>
-  void insert(Dimensions dimensions, Args &&... args) {
+  void insert(const Dimensions &dimensions, Args &&... args) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
     auto a =
         makeVariable<Tag>(std::move(dimensions), std::forward<Args>(args)...);
@@ -41,7 +41,8 @@ public:
   }
 
   template <class Tag, class... Args>
-  void insert(const std::string &name, Dimensions dimensions, Args &&... args) {
+  void insert(const std::string &name, const Dimensions &dimensions,
+              Args &&... args) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
     auto a =
         makeVariable<Tag>(std::move(dimensions), std::forward<Args>(args)...);
@@ -50,14 +51,14 @@ public:
   }
 
   template <class Tag, class T>
-  void insert(Dimensions dimensions, std::initializer_list<T> values) {
+  void insert(const Dimensions &dimensions, std::initializer_list<T> values) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
     auto a = makeVariable<Tag>(std::move(dimensions), values);
     insert(std::move(a));
   }
 
   template <class Tag, class T>
-  void insert(const std::string &name, Dimensions dimensions,
+  void insert(const std::string &name, const Dimensions &dimensions,
               std::initializer_list<T> values) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
     auto a = makeVariable<Tag>(std::move(dimensions), values);
@@ -69,13 +70,13 @@ public:
     const auto it = m_variables.begin() + findUnique(tag_id<Tag>);
     const auto dims = it->dimensions();
     m_variables.erase(it);
-    for (const auto &dim : dims) {
+    for (const auto dim : dims.labels()) {
       bool found = false;
       for (const auto &var : m_variables)
-        if (var.dimensions().contains(dim.first))
+        if (var.dimensions().contains(dim))
           found = true;
       if (!found)
-        m_dimensions.erase(dim.first);
+        m_dimensions.erase(dim);
     }
   }
 

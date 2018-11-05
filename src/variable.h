@@ -90,7 +90,8 @@ template <class... Tags> class LinearView;
 class Variable {
 public:
   template <class T>
-  Variable(uint32_t id, const Unit::Id unit, Dimensions dimensions, T object);
+  Variable(uint32_t id, const Unit::Id unit, const Dimensions &dimensions,
+           T object);
 
   const std::string &name() const {
     static const std::string empty;
@@ -183,25 +184,27 @@ private:
   cow_ptr<VariableConcept> m_object;
 };
 
-template <class Tag> Variable makeVariable(Dimensions dimensions) {
+template <class Tag> Variable makeVariable(const Dimensions &dimensions) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(dimensions.volume()));
 }
 
 template <class Tag, class... Args>
-Variable makeVariable(Dimensions dimensions, Args &&... args) {
+Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
-Variable makeVariable(Dimensions dimensions, std::initializer_list<T> values) {
+Variable makeVariable(const Dimensions &dimensions,
+                      std::initializer_list<T> values) {
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
 template <class Tag, class T>
-Variable makeVariable(Dimensions dimensions, const std::vector<T> &values) {
+Variable makeVariable(const Dimensions &dimensions,
+                      const std::vector<T> &values) {
   // Copy to aligned memory.
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(values.begin(), values.end()));

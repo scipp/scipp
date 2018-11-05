@@ -174,10 +174,10 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
     gsl::index offset = 1;
     const auto &dims = dataset.dimensions<Tag>();
     const auto &actual = dataset.dimensions();
-    for (const auto &dim : dims) {
-      if (dim.second != actual.size(dim.first))
+    for(gsl::index i=0; i<dims.ndim(); ++i) {
+      if (dims.size(i) != actual.size(dims.label(i)))
         break;
-      offset *= dim.second;
+      offset *= dims.size(i);
     }
 
     return ref_type_t<Bin<Tag>>{offset,
@@ -218,9 +218,8 @@ template <> struct DataHelper<Data::StdDev> {
 template <class... Tags> struct DataHelper<DatasetViewImpl<Tags...>> {
   static auto get(MaybeConstDataset<Tags...> &dataset,
                   const Dimensions &iterationDimensions) {
-    std::set<Dimension> fixedDimensions;
-    for (auto &item : iterationDimensions)
-      fixedDimensions.insert(item.first);
+    const auto labels = iterationDimensions.labels();
+    std::set<Dimension> fixedDimensions(labels.begin(), labels.end());
     // For the nested case we create a DatasetView with the correct dimensions
     // and store it. It is later copied and initialized with the correct offset
     // in iterator::get.
@@ -233,9 +232,8 @@ template <class... Tags> struct DataHelper<DatasetViewImpl<Tags...>> {
   static auto get(MaybeConstDataset<Tags...> &dataset,
                   const Dimensions &iterationDimensions,
                   const std::string &name) {
-    std::set<Dimension> fixedDimensions;
-    for (auto &item : iterationDimensions)
-      fixedDimensions.insert(item.first);
+    const auto labels = iterationDimensions.labels();
+    std::set<Dimension> fixedDimensions(labels.begin(), labels.end());
     // For the nested case we create a DatasetView with the correct dimensions
     // and store it. It is later copied and initialized with the correct offset
     // in iterator::get.
@@ -262,8 +260,8 @@ Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
     auto &dims = variableDimensions[i];
     if (is_bins[i]) {
       const auto &actual = dataset.dimensions();
-      for (auto &dim : dims)
-        dims.resize(dim.first, actual.size(dim.first));
+      for (auto &dim : dims.labels())
+        dims.resize(dim, actual.size(dim));
     }
   }
 

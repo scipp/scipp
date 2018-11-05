@@ -639,7 +639,7 @@ TEST(Dataset, rebin_failures) {
   auto badAuxDim =
       makeVariable<Coord::X>(Dimensions({{Dim::X, 3}, {Dim::Y, 3}}));
   EXPECT_THROW_MSG(rebin(d, badAuxDim), std::runtime_error,
-                   "Size mistmatch in auxiliary dimension of new coordinate.");
+                   "Size mismatch in auxiliary dimension of new coordinate.");
 }
 
 TEST(Dataset, rebin) {

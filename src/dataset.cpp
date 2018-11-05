@@ -488,13 +488,14 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
     throw std::runtime_error("Existing coordinate to be rebinned is not a bin "
                              "edge coordinate. Use `resample` instead of rebin "
                              "or convert to histogram data first.");
-  for (const auto &item : newDims) {
-    if (item.first == dim)
+  for(gsl::index i=0; i<newDims.ndim(); ++i) {
+    const auto newDim = newDims.label(i);
+    if (newDim == dim)
       continue;
-    if (datasetDims.contains(item.first)) {
-      if (datasetDims.size(item.first) != item.second)
+    if (datasetDims.contains(newDim)) {
+      if (datasetDims.size(newDim) != newDims.shape()[i])
         throw std::runtime_error(
-            "Size mistmatch in auxiliary dimension of new coordinate.");
+            "Size mismatch in auxiliary dimension of new coordinate.");
     }
   }
   // TODO check that input as well as output coordinate are sorted in rebin
