@@ -49,14 +49,17 @@ private:
   boost::container::small_vector<std::pair<Dimension, gsl::index>, 2> m_dims;
 };
 
+namespace dataset {
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
-class alignas(64) Dimensions2 {
+/// We follow the numpy convention: First dimension is outer dimension, last
+/// dimension is inner dimension.
+class alignas(64) Dimensions {
 public:
-  Dimensions2() noexcept {}
-  Dimensions2(const Dim dim, const gsl::index size)
-      : Dimensions2({{dim, size}}) {}
-  Dimensions2(const std::initializer_list<std::pair<Dim, gsl::index>> dims) {
+  Dimensions() noexcept {}
+  Dimensions(const Dim dim, const gsl::index size)
+      : Dimensions({{dim, size}}) {}
+  Dimensions(const std::initializer_list<std::pair<Dim, gsl::index>> dims) {
     // TODO Check for duplicate dimension.
     m_ndim = dims.size();
     if (m_ndim > 6)
@@ -72,11 +75,35 @@ public:
     }
   }
 
-  int32_t ndim() const noexcept { return ndim(); }
+  bool operator==(const Dimensions &other) const noexcept {
+    return m_ndim == other.m_ndim && m_shape == other.m_shape &&
+           m_dims == other.m_dims;
+  }
+  bool operator!=(const Dimensions &other) const noexcept {
+    return !(*this == other);
+  }
+
+  bool empty() const noexcept { return m_ndim == 0; }
+
+  int32_t ndim() const noexcept { return m_ndim; }
 
   gsl::span<const gsl::index> shape() const noexcept {
     return {m_shape, m_shape + m_ndim};
   }
+
+  gsl::span<const Dim> labels() const noexcept {
+    return {m_dims, m_dims + m_ndim};
+  }
+
+  bool contains(const Dim dim) const noexcept {
+    for (int32_t i = 0; i < ndim(); ++i)
+      if (m_dims[i] == dim)
+        return true;
+    return false;
+  }
+
+  Dim inner() const { return m_dims[ndim() - 1]; }
+  Dim outer() const { return m_dims[0]; }
 
 private:
   // Support at most 6 dimensions, should be sufficient?
@@ -86,6 +113,7 @@ private:
   Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
+} // namespace dataset
 
 Dimensions merge(const Dimensions &a, const Dimensions &b);
 
