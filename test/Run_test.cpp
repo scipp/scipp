@@ -10,23 +10,28 @@
 #include "dataset.h"
 #include "value_with_delta.h"
 
-TEST(Run, meta_data_propagation) {
-  Dataset run1;
-  run1.insert<Data::Value>("total_counts", {}, {1000});
-  run1.insert<Coord::Polarization>({}, {"Spin-Up"});
-  run1.insert<Coord::FuzzyTemperature>({}, {ValueWithDelta<double>(4.2, 0.1)});
+Dataset makeRun() {
+  Dataset run;
+  run.insert<Data::Value>("total_counts", {}, {1000});
+  run.insert<Coord::Polarization>({}, {"Spin-Up"});
+  run.insert<Coord::FuzzyTemperature>({}, {ValueWithDelta<double>(4.2, 0.1)});
   Dataset comment;
   comment.insert<Data::String>("", {Dim::Row, 1}, {"first run"});
-  run1.insert<Data::Table>("comment", {}, {comment});
+  run.insert<Data::Table>("comment", {}, {comment});
   Dataset timeSeriesLog;
   timeSeriesLog.insert<Coord::Time>({Dim::Time, 3}, {0, 1000, 1500});
   timeSeriesLog.insert<Data::Value>("pressure1", {Dim::Time, 3},
                                     {1013, 900, 800});
   timeSeriesLog.insert<Data::Value>("pressure2", {Dim::Time, 3}, {100, 90, 80});
-  run1.insert<Data::Table>("pressure_log", {}, {timeSeriesLog});
+  run.insert<Data::Table>("pressure_log", {}, {timeSeriesLog});
   Dataset otherLogEntries;
   otherLogEntries.insert<Data::Table>("root", {Dim::Row, 1});
-  run1.insert<Data::Table>("generic_log", {Dim::Row, 1}, {otherLogEntries});
+  run.insert<Data::Table>("generic_log", {Dim::Row, 1}, {otherLogEntries});
+  return run;
+}
+
+TEST(Run, meta_data_propagation) {
+  Dataset run1 = makeRun();
 
   Dataset d1;
   d1.insert<Attr::ExperimentLog>("sample_log", {}, {run1});
@@ -104,4 +109,39 @@ TEST(Run, meta_data_propagation) {
   EXPECT_EQ(generic_log_run2.size(), 1);
   EXPECT_EQ(generic_log_run2[0].name(), "user comment");
   // Again there was no automatic merging, can be done by hand if required.
+}
+
+TEST(Run, meta_data_fail_coord_mismatch) {
+  Dataset d1;
+  d1.insert<Attr::ExperimentLog>("sample_log", {}, {makeRun()});
+  Dataset d2(d1);
+
+  auto &run2 = d2.get<Attr::ExperimentLog>("sample_log")[0];
+  run2.get<Coord::Polarization>()[0] = "Spin-Down";
+  EXPECT_THROW_MSG(
+      d1 += d2, std::runtime_error,
+      "Coordinates of datasets do not match. Cannot perform addition");
+}
+
+TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
+  Dataset d1;
+  d1.insert<Attr::ExperimentLog>("sample_log", {}, {makeRun()});
+  Dataset d2(d1);
+
+  auto &run2 = d2.get<Attr::ExperimentLog>("sample_log")[0];
+  run2.get<Coord::FuzzyTemperature>()[0] = ValueWithDelta<double>(4.0, 0.1);
+  EXPECT_THROW_MSG(
+      d1 += d2, std::runtime_error,
+      "Coordinates of datasets do not match. Cannot perform addition");
+}
+
+TEST(Run, meta_data_fail_missing) {
+  Dataset d1;
+  d1.insert<Attr::ExperimentLog>("sample_log", {}, {makeRun()});
+  Dataset d2(d1);
+
+  auto &run2 = d2.get<Attr::ExperimentLog>("sample_log")[0];
+  run2.get<Data::Table>("comment")[0].erase<Data::String>();
+  EXPECT_THROW_MSG(d1 += d2, std::runtime_error,
+                   "Cannot add Variable: Nested Dataset dimension must be 1.");
 }
