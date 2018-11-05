@@ -23,13 +23,9 @@ bool Dimensions::contains(const Dimensions &other) const {
   return true;
 }
 
-Dimension Dimensions::label(const gsl::index i) const {
-  return m_dims[i];
-}
+Dimension Dimensions::label(const gsl::index i) const { return m_dims[i]; }
 
-gsl::index Dimensions::size(const gsl::index i) const {
-  return m_shape[i];
-}
+gsl::index Dimensions::size(const gsl::index i) const { return m_shape[i]; }
 
 gsl::index Dimensions::size(const Dimension label) const {
   return operator[](label);
