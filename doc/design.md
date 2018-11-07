@@ -58,6 +58,7 @@
   - [Floating-point precision can be set at compile time](#design-details-floating-point-precision-compile-time)
   - [Slicing](#design-details-slicing)
 - [Implementation](#implementation)
+  - [Options](#implementation-options)
   - [Goals and non-goals](#implementation-goals-and-non-goals)
   - [Milestones](#implementation-milestones)
   - [Further steps](#implementation-further-steps)
@@ -1086,6 +1087,115 @@ The ownership and copying discussion in the section [Copy-on-write mechanism](#d
 
 
 ## <a name="implementation"></a>Implementation
+
+
+### <a name="implementation-options"></a>Options
+
+A high level summary of the options for implementation is given in the following figure.
+The reasoning behind the estimates/guesses for benefit, cost, and risk is discussed afterwards.
+
+![figure: implementation options with benefit, cost, and risk indication](implementation-options.png)
+
+##### Option 1.) No new design
+
+Keep the current workspaces and keep using workarounds for new features.
+
+*2-year timescale:*
+
+- No benefit over current solution.
+- Cost is low. Implementing new features will take as long as it takes now.
+- Very little risk since we have a working solution.
+
+*5-year timescale:*
+
+- No benefit over current solution.
+- Cost is rising. Implementing new features or changes will take longer and longer(this can already be observed in Mantid right now).
+- Little risk for running facilities since we have a working solution. Risk for new facilities is higher, anticipating the high risk at 10-year timescale.
+
+*10-year timescale:*
+
+- No benefit over current solution.
+- Cost is rising even more or can be extreme in case of total breakdown.
+- High risk of total breakdown, due to total reliance on 20-year old components with no modularity.
+  Change to a new design will be even harder than it is now.
+
+##### Option 2a.) This design, keep `MatrixWorkspace`
+
+Implement `Dataset` roughly as proposed.
+Replace only less-used workspace and keep `MatrixWorkspace`.
+This implies keeping `Workspace2D` and `EventWorkspace`.
+
+*2-year timescale:*
+
+- Some benefit from using `Dataset` for simple Python-based workflows independent of most current algorithms.
+- Moderate cost for implementation of `Dataset` basics.
+- Some risk due to potentially wasted effort.
+
+*5-year timescale:*
+
+- Some benefit from using `Dataset` for less-used workspaces.
+- Moderate to high cost for rollout of `Dataset` for less-used workspaces.
+- Some risk due to potentially wasted effort and introduction of bugs during algorithm refactoring.
+
+*10-year timescale:*
+
+- Unclear benefit since the ubiquitous use of `MatrixWorkspace` may turn out very limiting.
+- High cost due to increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent.
+- High risk since reliance on `MatrixWorkspace` is not eliminated, codebase may be harder to maintain than it is now since due to duplication of concepts (`MatrixWorkspace` and `Dataset`).
+  Note that risk is not considered extreme since `Dataset` provides an escape route.
+
+##### Option 2b.) This design, deprecate algorithms using `MatrixWorkspace`
+
+Implement `Dataset` roughly as proposed.
+Implement new algorithms based on `Dataset`, potentially making high-level algorithms compatible.
+In the long run, deprecate and remove `MatrixWorkspace` as well as all algorithms that will still depend on it.
+
+*2-year timescale:*
+
+- Some benefit from using `Dataset` for simple Python-based workflows independent of most current algorithms.
+- Moderate cost for implementation of `Dataset` basics.
+- Some risk due to potentially wasted effort.
+
+*5-year timescale:*
+
+- Moderate to high benefit from using `Dataset` with new algorithms in Python and in the GUI to a limited extent.
+- High cost for implementing/refactoring all required functionality.
+  Potentially some cost savings in other subprojects, such as Instrument-2.0, where refactoring to remove Instrument-1.0 will not be necessary anymore.
+- High risk due to temporary split between "old" and "new" algorithms, risk of bugs.
+
+*10-year timescale:*
+
+- Full benefits, with fully functional Python, C++, and GUI.
+- Low cost since the big phase of change is over.
+  Hopefully less cost for new features than now due to better modularity and flexibility of data structures.
+- Low risk since the big phase of change is over.
+
+##### Option 2c.) This design, refactor `MatrixWorkspace` API and use `Dataset` internally
+
+Implement `Dataset` roughly as proposed.
+Replace less-used workspace and refactor the `MatrixWorkspace` API such that it can use `Dataset` internally.
+
+*2-year timescale:*
+
+- Some benefit from using `Dataset` for simple Python-based workflows independent of most current algorithms.
+- High cost for implementation of `Dataset` basics and refactoring to make the `MatrixWorkspace` API compatible.
+- High risk due to potentially wasted effort and introduction of bugs during `MatrixWorkspace` API refactoring.
+
+*5-year timescale:*
+
+- Some benefit from using `Dataset` for less-used workspaces.
+- Moderate to high cost for rollout of `Dataset` for less-used workspaces.
+- Some risk due to potentially wasted effort and introduction of bugs during algorithm refactoring.
+
+*10-year timescale:*
+
+- Some benefit if we slowly manage to refactor old algorithms using `MatrixWorkspace` to natively use `Dataset`.
+- High cost due to either (i) increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent, or (ii) refactoring old algorithms to natively use `Dataset`.
+- High risk since reliance on `MatrixWorkspace` is not eliminated, codebase may be harder to maintain than it is now since due to duplication of concepts (`MatrixWorkspace` and `Dataset`).
+  Note that risk is not considered extreme since `Dataset` provides an escape route.
+
+##### Option 3a.) Different design compatible with `MatrixWorkspace` API
+##### Option 3b.) Different design not compatible with `MatrixWorkspace` API
 
 
 ### <a name="implementation-goals-and-non-goals"></a>Goals and non-goals
