@@ -175,4 +175,6 @@ Dataset sort(const Dataset &d, Tag t, const std::string &name = "");
 // Note: Can provide stable_sort for sorting by multiple columns, e.g., for a
 // QTableView.
 
+Dataset filter(const Dataset &d, const Variable &select);
+
 #endif // DATASET_H

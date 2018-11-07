@@ -660,3 +660,28 @@ Variable permute(const Variable &var, const std::vector<gsl::index> &indices) {
   permuted.data().copyPermute(var.data(), indices);
   return permuted;
 }
+
+Variable filter(const Variable &var, const Variable &filter) {
+  if (filter.dimensions().ndim() != 1)
+    throw std::runtime_error(
+        "Cannot filter variable: The filter must by 1-dimensional.");
+  const auto dim = filter.dimensions().labels()[0];
+  auto mask = filter.get<const Coord::Mask>();
+
+  const gsl::index removed = std::count(mask.begin(), mask.end(), 0);
+  if (removed == 0)
+    return var;
+
+  auto out(var);
+  auto dims = out.dimensions();
+  dims.resize(dim, dims.size(dim) - removed);
+  out.setDimensions(dims);
+
+  gsl::index iOut = 0;
+  gsl::index iIn = 0;
+  // Note: Could copy larger chunks of applicable for better(?) performance.
+  for (gsl::index iIn = 0; iIn < mask.size(); ++iIn)
+    if (mask[iIn])
+      out.data().copy(var.data(), dim, iOut++, iIn, iIn + 1);
+  return out;
+}

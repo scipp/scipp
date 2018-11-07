@@ -563,3 +563,18 @@ Dataset sort(const Dataset &d, Tag t, const std::string &name) {
         "Sorting by this variable type has not been implemented.");
   }
 }
+
+Dataset filter(const Dataset &d, const Variable &select) {
+  if (select.dimensions().ndim() != 1)
+    throw std::runtime_error(
+        "Cannot filter variable: The filter must by 1-dimensional.");
+  const auto dim = select.dimensions().labels()[0];
+
+  Dataset filtered;
+  for (auto &var : d)
+    if (var.dimensions().contains(dim))
+      filtered.insert(filter(var, select));
+    else
+      filtered.insert(var);
+  return filtered;
+}

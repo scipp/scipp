@@ -225,5 +225,6 @@ Variable concatenate(const Variable &a1, const Variable &a2,
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord);
 Variable permute(const Variable &var, const std::vector<gsl::index> &indices);
+Variable filter(const Variable &var, const Variable &filter);
 
 #endif // VARIABLE_H
