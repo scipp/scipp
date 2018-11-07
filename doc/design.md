@@ -1116,7 +1116,7 @@ Keep the current workspaces and keep using workarounds for new features.
 
 - No benefit over current solution.
 - Cost is rising even more or can be extreme in case of total breakdown.
-- High risk of total breakdown, due to total reliance on 20-year old components with no modularity.
+- High to extremely high risk of total breakdown, due to total reliance on 20-year old components with no modularity.
   Change to a new design will be even harder than it is now.
 
 ##### Option 2a.) This design, keep `MatrixWorkspace`
@@ -1195,7 +1195,32 @@ Replace less-used workspace and refactor the `MatrixWorkspace` API such that it 
   Note that risk is not considered extreme since `Dataset` provides an escape route.
 
 ##### Option 3a.) Different design compatible with `MatrixWorkspace` API
+
+There is not concrete proposal for this option.
+Nevertheless, we attempt to guess potential benefits, costs, and risks.
+
+*2-year timescale:*
+
+- Some benefit from using new workspace types provided by the new design.
+- Moderate cost for implementation of new workspace types.
+- Some risk due to potentially wasted effort and bugs introduced by refactoring.
+
+*5-year timescale:*
+
+- Some benefit from using new workspace types provided by the new design.
+- Moderate to high cost for implementation of new workspace types and maintenance of an even larger variety of workspace types.
+- Some risk due to potentially wasted effort and introduction of bugs during algorithm refactoring.
+
+*10-year timescale:*
+
+- Unclear benefit since the ubiquitous use of `MatrixWorkspace` may turn out very limiting.
+- High cost due to increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent.
+- High risk (or possible very high) since reliance on `MatrixWorkspace` is not eliminated and codebase may be harder to maintain than it is now since the number of workspace only got larger, potentially without solving the existing problems.
+
 ##### Option 3b.) Different design not compatible with `MatrixWorkspace` API
+
+There is no concrete proposal for this option.
+Benefits, costs, and risks or likely similar to one of the suboptions of option 2.), depending on the choice for implementation.
 
 
 ### <a name="implementation-goals-and-non-goals"></a>Goals and non-goals
