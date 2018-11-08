@@ -1096,6 +1096,8 @@ The reasoning behind the estimates/guesses for benefit, cost, and risk is discus
 
 ![figure: implementation options with benefit, cost, and risk indication](implementation-options.png)
 
+#### Option description
+
 ##### Option 1.) No new design
 
 Keep the current workspaces and keep using workarounds for new features.
@@ -1221,6 +1223,36 @@ Nevertheless, we attempt to guess potential benefits, costs, and risks.
 
 There is no concrete proposal for this option.
 Benefits, costs, and risks or likely similar to one of the suboptions of option 2.), depending on the choice for implementation.
+
+
+#### Option discussion
+
+- Start with 2a) and transition into 2b)?
+  The idea would be to smoothen out and decrease the peak in risk and effort associated with 2b), while at the same time avoiding the long-term rise on cost and risk associated with 2a).
+- *Criticism:* Two types of algorithms and workspaces that are not compatible with each other.
+  - In a sense we have that now, see `MatrixWorkspace` and `MDHistoWorkspace` with their respective algorithms, e.g., `Plus` and `PlusMD`.
+  - How to separate the two in the GUI?
+- We do not want to repeat the issues with the Python interface.
+  - How does that affect our choice, in particular if we want to support running with workspaces and datasets in parallel?
+  - Explicitly copy into ADS? Introspection? Just use Jupyter Notebooks? Look at what Spyder does?
+- Do not support the GUI initially?
+  - Even if not full GUI support, we would probably need key widgets like `InstrumentView`, a slice viewer, 1D and 2D plotting.
+  - Use only for auto-reduction, script-reduction, and Jupyter Notebooks?
+- Rollout technique-by-technique or Workspace-by-workspace?
+  - Is a workspace-by-workspace rollout useful, unless we intend to ultimately keep all those algorithms?
+    - `PlusMD` will be gone (or merged into a common `Plus`), why spend time on refactoring it to use a new data container?
+      Should the refactoring to use the new workspace type include refactoring related algorithms completely, i.e., they may be renamed, dropped, or have major interface changes?
+  - Even the "less" used workspaces like `TableWorkspace` show up a lot, that is the connected effort would also be major:
+    - `TableWorkspace` is used in 128 C++ algorithms, the related `PeaksWorkspace` in 72 C++ algorithms, `MDHistoWorkspace` in 57 C++ algorithms.
+  - Instead of replacing existing workspaces, what about adding new but required ones, i.e., for imaging, constant-wavelength, etc., which cannot be supported at all or only based on workarounds right now?
+- Keep using `Run`.
+- Can we reuse `History`, unless we wrap all functionality in algorithms?
+- How to integrate with Mantid algorithms (property system and validators)?
+  - Wrap each dataset in a `Workspace`.
+  - Make and `Algorithm` wrapper for each function operating on `Dataset`.
+
+  The consequence would be that we are back to the problem of the broken handling of workspaces in Python.
+  Can this be solved independently, or does it have to be done in the same step?
 
 
 ### <a name="implementation-goals-and-non-goals"></a>Goals and non-goals
