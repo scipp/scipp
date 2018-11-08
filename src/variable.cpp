@@ -680,6 +680,8 @@ Variable filter(const Variable &var, const Variable &filter) {
   gsl::index iOut = 0;
   gsl::index iIn = 0;
   // Note: Could copy larger chunks of applicable for better(?) performance.
+  // Note: This implementation is inefficient, since we need to cast to concrete
+  // type for *every* slice. Should be combined into a single virtual call.
   for (gsl::index iIn = 0; iIn < mask.size(); ++iIn)
     if (mask[iIn])
       out.data().copy(var.data(), dim, iOut++, iIn, iIn + 1);
