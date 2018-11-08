@@ -21,7 +21,10 @@
 /// (64 Byte) cacheline should be advantageous.
 /// We should follow the numpy convention: First dimension is outer dimension,
 /// last dimension is inner dimension, for now we do not.
-class alignas(64) Dimensions {
+/// Note: May want to use alignas(64) here, but this is currently causing issues
+/// (segfaults) when Dimensions is used as a class member in a test, in
+/// particular MultiIndex2DTest.
+class Dimensions {
 public:
   Dimensions() noexcept {}
   Dimensions(const Dim dim, const gsl::index size)
