@@ -684,6 +684,36 @@ TEST(Dataset, sort) {
   EXPECT_EQ(sorted.get<const Data::Value>()[3], 1.0);
 }
 
+TEST(Dataset, sort_2D) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
+  d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
+  d.insert<Data::Value>("", {{Dim::X, 4}, {Dim::Y, 2}},
+                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+
+  auto sorted = sort(d, tag<Coord::X>);
+
+  ASSERT_EQ(sorted.get<const Coord::X>().size(), 4);
+  EXPECT_EQ(sorted.get<const Coord::X>()[0], 0.0);
+  EXPECT_EQ(sorted.get<const Coord::X>()[1], 1.0);
+  EXPECT_EQ(sorted.get<const Coord::X>()[2], 3.0);
+  EXPECT_EQ(sorted.get<const Coord::X>()[3], 5.0);
+
+  ASSERT_EQ(sorted.get<const Coord::Y>().size(), 2);
+  EXPECT_EQ(sorted.get<const Coord::Y>()[0], 1.0);
+  EXPECT_EQ(sorted.get<const Coord::Y>()[1], 0.9);
+
+  ASSERT_EQ(sorted.get<const Data::Value>().size(), 8);
+  EXPECT_EQ(sorted.get<const Data::Value>()[0], 4.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[1], 2.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[2], 3.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[3], 1.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[4], 8.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[5], 6.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[6], 7.0);
+  EXPECT_EQ(sorted.get<const Data::Value>()[7], 5.0);
+}
+
 TEST(Dataset, filter) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});

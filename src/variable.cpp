@@ -655,9 +655,11 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
   return rebinned;
 }
 
-Variable permute(const Variable &var, const std::vector<gsl::index> &indices) {
+Variable permute(const Variable &var, const Dimension dim,
+                 const std::vector<gsl::index> &indices) {
   auto permuted(var);
-  permuted.data().copyPermute(var.data(), indices);
+  for (gsl::index i = 0; i < indices.size(); ++i)
+    permuted.data().copy(var.data(), dim, i, indices[i], indices[i] + 1);
   return permuted;
 }
 
@@ -678,7 +680,6 @@ Variable filter(const Variable &var, const Variable &filter) {
   out.setDimensions(dims);
 
   gsl::index iOut = 0;
-  gsl::index iIn = 0;
   // Note: Could copy larger chunks of applicable for better(?) performance.
   // Note: This implementation is inefficient, since we need to cast to concrete
   // type for *every* slice. Should be combined into a single virtual call.

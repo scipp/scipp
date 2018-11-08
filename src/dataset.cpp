@@ -488,7 +488,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
     throw std::runtime_error("Existing coordinate to be rebinned is not a bin "
                              "edge coordinate. Use `resample` instead of rebin "
                              "or convert to histogram data first.");
-  for(gsl::index i=0; i<newDims.ndim(); ++i) {
+  for (gsl::index i = 0; i < newDims.ndim(); ++i) {
     const auto newDim = newDims.label(i);
     if (newDim == dim)
       continue;
@@ -539,13 +539,10 @@ template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
   for (const auto &var : d) {
     if (!var.dimensions().contains(sortDim))
       sorted.insert(var);
-    else if (var.dimensions().count() > 1)
-      throw std::runtime_error(
-          "Sorting for 2- or higher-dimensional variables is not implemented.");
     else if (var.type() == tag_id<Tag> && var.name() == name)
       sorted.insert(axisVar);
     else
-      sorted.insert(permute(var, indices));
+      sorted.insert(permute(var, sortDim, indices));
   }
   return sorted;
 }
