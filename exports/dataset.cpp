@@ -167,6 +167,11 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<detail::VariableView<Tag>>(
       m, (std::string("VariableView_") + suffix).c_str(), py::buffer_protocol())
       .def_buffer([](detail::VariableView<Tag> &self) {
+        // Note: Currently this always triggers copy-on-write ---
+        // py::buffer_info does currently not support the `readonly` flag of the
+        // Python buffer protocol. We can probably get this fixed upstream, see
+        // discussion and sample implementation here:
+        // https://github.com/pybind/pybind11/issues/863.
         return py::buffer_info(
             self.m_variable->template get<Tag>().data(), /* Pointer to buffer */
             sizeof(typename Tag::type), /* Size of one scalar */
