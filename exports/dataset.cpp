@@ -178,10 +178,9 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
             py::format_descriptor<typename Tag::type>::format(), /* Python
                                                        struct-style format
                                                        descriptor */
-            self.dimensions().count(),              /* Number of dimensions */
-            detail::numpy_shape(self.dimensions()), /* Buffer dimensions */
-            detail::numpy_strides<Tag>(
-                self.dimensions()) /* Strides (in bytes) for each index */
+            self.dimensions().count(), /* Number of dimensions */
+            self.m_shape,              /* Buffer dimensions */
+            self.m_strides             /* Strides (in bytes) for each index */
         );
       })
       // Careful: Do not expose setName, setDimensions, and assignment,
