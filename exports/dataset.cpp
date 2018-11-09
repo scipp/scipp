@@ -310,27 +310,6 @@ PYBIND11_MODULE(dataset, m) {
       .def("get", detail::get<Data::Value>)
       .def("get", detail::get<Data::Variance>)
       .def("get", detail::get<Data::String>)
-      .def(
-          "getNumpy",
-          [](py::object &obj) {
-            const auto &d = obj.cast<const Dataset &>();
-            const auto &dims = d.dimensions<const Data::Value>();
-            auto shape = detail::numpy_shape(dims);
-            auto array = py::array_t<double>(
-                shape, {}, d.get<const Data::Value>().data(), obj);
-            // See https://github.com/pybind/pybind11/issues/481.
-            reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())->flags &=
-                ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-            return array;
-          })
-      .def("getNumpyMutable",
-           [](py::object &obj) {
-             const auto &d = obj.cast<const Dataset &>();
-             const auto &dims = d.dimensions<const Data::Value>();
-             auto shape = detail::numpy_shape(dims);
-             return py::array_t<double>(shape, {},
-                                        d.get<const Data::Value>().data(), obj);
-           })
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
