@@ -331,14 +331,6 @@ PYBIND11_MODULE(dataset, m) {
              return py::array_t<double>(shape, {},
                                         d.get<const Data::Value>().data(), obj);
            })
-      .def("insertDataValue",
-           py::overload_cast<const std::string &, const Dimensions &,
-                             const std::vector<double> &>(
-               &Dataset::insert<Data::Value, const std::vector<double> &>))
-      .def("getDataValueConst", (gsl::span<const double>(Dataset::*)())(
-                                    &Dataset::get<const Data::Value>))
-      .def("getDataValue",
-           [](Dataset &self) { return self.get<Data::Value>(); })
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
