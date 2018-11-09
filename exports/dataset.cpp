@@ -141,6 +141,20 @@ VariableView<Tag> getData(Dataset &self,
   return {self.get(self.find(tag_id<Tag>, key.second))};
 }
 
+template <class Tag>
+void setData(Dataset &self, const std::pair<const Tag, const std::string> &key,
+             py::array_t<typename Tag::type> &data) {
+  const auto &dims = self.dimensions<Tag>(key.second);
+  py::buffer_info info = data.request();
+  if (info.shape != detail::numpy_shape(dims))
+    throw std::runtime_error(
+        "Shape mismatch when setting data from numpy array.");
+
+  auto buf = self.get<Tag>(key.second);
+  double *ptr = (double *)info.ptr;
+  std::copy(ptr, ptr + dims.volume(), buf.begin());
+}
+
 std::string format(const Dimensions &dims) {
   // TODO reverse order to match numpy convention.
   std::string out = "Dimensions = " + dataset::to_string(dims);
@@ -151,7 +165,20 @@ std::string format(const Dimensions &dims) {
 template <class Tag>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<detail::VariableView<Tag>>(
-      m, (std::string("VariableView_") + suffix).c_str())
+      m, (std::string("VariableView_") + suffix).c_str(), py::buffer_protocol())
+      .def_buffer([](detail::VariableView<Tag> &self) {
+        return py::buffer_info(
+            self.m_variable->template get<Tag>().data(), /* Pointer to buffer */
+            sizeof(typename Tag::type), /* Size of one scalar */
+            py::format_descriptor<typename Tag::type>::format(), /* Python
+                                                       struct-style format
+                                                       descriptor */
+            self.dimensions().count(),              /* Number of dimensions */
+            detail::numpy_shape(self.dimensions()), /* Buffer dimensions */
+            detail::numpy_strides<Tag>(
+                self.dimensions()) /* Strides (in bytes) for each index */
+        );
+      })
       // Careful: Do not expose setName, setDimensions, and assignment,
       // otherwise we can break the dataset.
       .def_property_readonly("dimensions",
@@ -270,6 +297,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__", detail::getCoord<Coord::Y>)
       .def("__getitem__", detail::getCoord<Coord::Z>)
       .def("__getitem__", detail::getData<Data::Value>)
+      .def("__setitem__", detail::setData<Data::Value>)
       .def("serialize",
            [](const Dataset &self) {
              py::list vars;

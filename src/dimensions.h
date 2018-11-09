@@ -21,7 +21,7 @@
 /// (64 Byte) cacheline should be advantageous.
 /// We should follow the numpy convention: First dimension is outer dimension,
 /// last dimension is inner dimension, for now we do not.
-class alignas(64) Dimensions {
+class Dimensions {
 public:
   Dimensions() noexcept {}
   Dimensions(const Dim dim, const gsl::index size)
