@@ -13,10 +13,6 @@
 
 namespace py = pybind11;
 
-void setItem(gsl::span<double> &self, gsl::index i, double value) {
-  self[i] = value;
-}
-
 template <class T> struct mutable_span_methods {
   static void add(py::class_<gsl::span<T>> &span) {
     span.def("__setitem__", [](gsl::span<T> &self, const gsl::index i,
@@ -39,14 +35,6 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
-struct VariableHeader {
-  gsl::index nDim;
-  std::array<std::pair<Dimension, gsl::index>, 4> dimensions;
-  uint16_t type;
-  Unit::Id unit;
-  gsl::index dataSize;
-};
-
 template <class Tag>
 void insertCoord(Dataset &self, const Tag, const Dimensions &dims,
                  const std::vector<double> &data) {
