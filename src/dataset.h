@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include <boost/iterator/iterator_facade.hpp>
 #include <gsl/gsl_util>
 
 #include "dimension.h"
@@ -23,10 +24,14 @@ VariableView<Tag> getData(Dataset &,
                           const std::pair<const Tag, const std::string> &);
 } // namespace detail
 
+template <class T> class Slice;
+
 class Dataset {
 public:
   gsl::index size() const { return m_variables.size(); }
   const Variable &operator[](gsl::index i) const { return m_variables[i]; }
+  Slice<const Dataset> operator[](const std::string &name) const;
+
   auto begin() const { return m_variables.begin(); }
   auto end() const { return m_variables.end(); }
 
@@ -127,7 +132,7 @@ public:
 
   bool operator==(const Dataset &other) const;
   Dataset &operator+=(const Dataset &other);
-  Dataset &operator-=(const Dataset &other);
+  template <class T> Dataset &operator-=(const T &other);
   Dataset &operator*=(const Dataset &other);
   void setSlice(const Dataset &slice, const Dimension dim,
                 const gsl::index index);
@@ -155,6 +160,56 @@ private:
   // in place of `Dimensions`, which *does* imply an order.
   Dimensions m_dimensions;
   boost::container::small_vector<Variable, 4> m_variables;
+};
+
+// T is either Dataset or const Dataset.
+template <class T> class Slice {
+public:
+  Slice(T &dataset, const std::string &select) : m_dataset(dataset) {
+    for (gsl::index i = 0; i < dataset.size(); ++i) {
+      const auto &var = dataset[i];
+      if (var.isCoord() || var.name() == select)
+        m_indices.push_back(i);
+    }
+  }
+
+  class iterator
+      : public boost::iterator_facade<iterator, const Variable,
+                                      boost::random_access_traversal_tag> {
+  public:
+    iterator(const Dataset &dataset, const std::vector<gsl::index> &indices,
+             const gsl::index index)
+        : m_dataset(dataset), m_indices(indices), m_index(index) {}
+
+  private:
+    friend class boost::iterator_core_access;
+
+    bool equal(const iterator &other) const { return m_index == other.m_index; }
+    void increment() { ++m_index; }
+    auto &dereference() const { return m_dataset[m_indices[m_index]]; }
+    void decrement() { --m_index; }
+    void advance(int64_t delta) { m_index += delta; }
+    int64_t distance_to(const iterator &other) const {
+      return other.m_index - m_index;
+    }
+
+    const Dataset &m_dataset;
+    const std::vector<gsl::index> &m_indices;
+    gsl::index m_index;
+  };
+
+  gsl::index size() const { return m_indices.size(); }
+  const Variable &operator[](const gsl::index i) const {
+    return m_dataset[m_indices[i]];
+  }
+  iterator begin() const { return {m_dataset, m_indices, 0}; }
+  iterator end() const {
+    return {m_dataset, m_indices, static_cast<gsl::index>(m_indices.size())};
+  }
+
+private:
+  T &m_dataset;
+  std::vector<gsl::index> m_indices;
 };
 
 Dataset operator+(Dataset a, const Dataset &b);

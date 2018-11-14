@@ -738,3 +738,50 @@ TEST(Dataset, filter) {
   EXPECT_EQ(filtered.get<const Data::Value>()[2], 6.0);
   EXPECT_EQ(filtered.get<const Data::Value>()[3], 8.0);
 }
+
+TEST(DatasetSlice, basics) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 4});
+  d.insert<Coord::Y>({Dim::Y, 2});
+  d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}});
+  d.insert<Data::Value>("b", {{Dim::X, 4}, {Dim::Y, 2}});
+  d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}});
+  d.insert<Data::Variance>("b", {{Dim::X, 4}, {Dim::Y, 2}});
+
+  Slice<const Dataset> viewA(d, "a");
+  Slice<const Dataset> viewB(d, "b");
+
+  auto check = [](const auto &view, const std::string &name) {
+    ASSERT_EQ(view.size(), 4);
+    gsl::index count = 0;
+    for (const auto &var : view) {
+      if (var.isData()) {
+        EXPECT_EQ(var.name(), name);
+        ++count;
+      }
+    }
+    EXPECT_EQ(count, 2);
+  };
+
+  check(viewA, "a");
+  check(viewB, "b");
+  check(d["a"], "a");
+  check(d["b"], "b");
+}
+
+TEST(DatasetSlice, minus_equals) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 4});
+  d.insert<Coord::Y>({Dim::Y, 2});
+  d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}}, 8, 1.0);
+  d.insert<Data::Value>("b", {{Dim::X, 4}, {Dim::Y, 2}}, 8, 1.0);
+  d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}}, 8, 1.0);
+  d.insert<Data::Variance>("b", {{Dim::X, 4}, {Dim::Y, 2}}, 8, 1.0);
+
+  EXPECT_NO_THROW(d -= d["a"]);
+
+  EXPECT_EQ(d.get<const Data::Value>("a")[0], 0.0);
+  EXPECT_EQ(d.get<const Data::Value>("b")[0], 1.0);
+  EXPECT_EQ(d.get<const Data::Variance>("a")[0], 0.0);
+  EXPECT_EQ(d.get<const Data::Variance>("b")[0], 1.0);
+}

@@ -11,6 +11,10 @@
 
 #include "dataset.h"
 
+Slice<const Dataset> Dataset::operator[](const std::string &name) const {
+  return Slice<const Dataset>(*this, name);
+}
+
 void Dataset::insert(Variable variable) {
   if (variable.isCoord() && count(variable.type()))
     throw std::runtime_error("Attempt to insert duplicate coordinate.");
@@ -189,13 +193,13 @@ Dataset &Dataset::operator+=(const Dataset &other) {
   return *this;
 }
 
-Dataset &Dataset::operator-=(const Dataset &other) {
+template <class T> Dataset &Dataset::operator-=(const T &other) {
   std::set<std::string> names;
-  for (const auto &var2 : other.m_variables)
+  for (const auto &var2 : other)
     if (var2.isData())
       names.insert(var2.name());
 
-  for (const auto &var2 : other.m_variables) {
+  for (const auto &var2 : other) {
     gsl::index index;
     try {
       index = find(var2.type(), var2.name());
@@ -237,6 +241,10 @@ Dataset &Dataset::operator-=(const Dataset &other) {
   }
   return *this;
 }
+
+template Dataset &Dataset::operator-=<Dataset>(const Dataset &);
+template Dataset &Dataset::operator-=
+    <Slice<const Dataset>>(const Slice<const Dataset> &);
 
 namespace aligned {
 // Helpers to define a pointer to aligned memory.
