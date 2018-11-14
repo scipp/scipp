@@ -213,7 +213,6 @@ public:
 
 private:
   Variable &get(const gsl::index i);
-  // Passing non-const Dataset -> non-const iterator.
   dataset_slice_iterator<Dataset> mutableBegin() const;
   dataset_slice_iterator<Dataset> mutableEnd() const;
 
@@ -240,7 +239,6 @@ public:
     return m_dataset[m_indices[i]];
   }
 
-  // Passing const Dataset -> const iterator.
   dataset_slice_iterator<const Dataset> begin() const {
     return {dataset(), m_indices, 0};
   }
