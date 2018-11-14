@@ -12,20 +12,6 @@
 #include "dataset.h"
 
 namespace detail {
-class DatasetAccess {
-public:
-  DatasetAccess(Dataset &dataset) : m_dataset(dataset) {}
-
-  auto begin() const { return m_dataset.m_variables.begin(); }
-  auto end() const { return m_dataset.m_variables.end(); }
-  Variable &operator[](const gsl::index i) const {
-    return m_dataset.m_variables[i];
-  }
-
-private:
-  Dataset &m_dataset;
-};
-
 template <class Data> class Access;
 
 template <> class Access<Dataset> {
@@ -313,7 +299,7 @@ Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
 }
 
 Variable &SliceMutableMixin<Slice<Dataset>>::get(const gsl::index i) {
-  return detail::DatasetAccess(base().m_dataset)[base().m_indices[i]];
+  return detail::makeAccess(base().m_dataset)[base().m_indices[i]];
 }
 
 dataset_slice_iterator<Dataset>

@@ -22,7 +22,6 @@ template <class Tag> VariableView<Tag> getCoord(Dataset &, const Tag);
 template <class Tag>
 VariableView<Tag> getData(Dataset &,
                           const std::pair<const Tag, const std::string> &);
-class DatasetAccess;
 template <class Data> class Access;
 } // namespace detail
 
@@ -142,7 +141,6 @@ public:
                 const gsl::index index);
 
 private:
-  friend class detail::DatasetAccess;
   template <class Data> friend class detail::Access;
   template <class Value> friend class dataset_slice_iterator;
   // This is private such that name and dimensions of variables cannot be
