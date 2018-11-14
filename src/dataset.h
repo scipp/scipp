@@ -30,7 +30,15 @@ template <class T> class Slice;
 class Dataset {
 public:
   gsl::index size() const { return m_variables.size(); }
-  const Variable &operator[](gsl::index i) const { return m_variables[i]; }
+  const Variable &operator[](const gsl::index i) const {
+    return m_variables[i];
+  }
+  // WARNING: This returns `const Variable &` ON PURPOSE. We do not provide
+  // non-const access to Variable since it could break the dataset, e.g., by
+  // assigning a variable with a different shape. Nevetheless we need to
+  // non-const overload to avoid compiler warnings about ambiguous overloads
+  // with the std::string version.
+  const Variable &operator[](const gsl::index i) { return m_variables[i]; }
   Slice<const Dataset> operator[](const std::string &name) const;
   Slice<Dataset> operator[](const std::string &name);
 
