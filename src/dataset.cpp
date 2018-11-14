@@ -11,6 +11,22 @@
 
 #include "dataset.h"
 
+namespace detail {
+class DatasetAccess {
+public:
+  DatasetAccess(Dataset &dataset) : m_dataset(dataset) {}
+
+  auto begin() const { return m_dataset.m_variables.begin(); }
+  auto end() const { return m_dataset.m_variables.end(); }
+  Variable &operator[](const gsl::index i) const {
+    return m_dataset.m_variables[i];
+  }
+
+private:
+  Dataset &m_dataset;
+};
+} // namespace detail
+
 Slice<const Dataset> Dataset::operator[](const std::string &name) const {
   return Slice<const Dataset>(*this, name);
 }
@@ -193,7 +209,7 @@ Dataset &Dataset::operator+=(const Dataset &other) {
   return *this;
 }
 
-template <class T> Dataset &Dataset::operator-=(const T &other) {
+template <class T> Dataset &operator-=(Dataset &dataset, const T &other) {
   std::set<std::string> names;
   for (const auto &var2 : other)
     if (var2.isData())
@@ -202,7 +218,7 @@ template <class T> Dataset &Dataset::operator-=(const T &other) {
   for (const auto &var2 : other) {
     gsl::index index;
     try {
-      index = find(var2.type(), var2.name());
+      index = dataset.find(var2.type(), var2.name());
     } catch (const std::runtime_error &) {
       if (var2.isData() && names.size() == 1) {
         // Only a single (named) variable in RHS, subtract from all.
@@ -214,7 +230,7 @@ template <class T> Dataset &Dataset::operator-=(const T &other) {
       }
     }
     if (index >= 0) {
-      auto &var1 = m_variables[index];
+      auto &var1 = detail::DatasetAccess(dataset)[index];
       if (var1.isCoord()) {
         if (!(var1 == var2))
           throw std::runtime_error(
@@ -226,7 +242,7 @@ template <class T> Dataset &Dataset::operator-=(const T &other) {
     } else {
       // Not a coordinate, subtract from all.
       gsl::index count = 0;
-      for (auto &var1 : m_variables) {
+      for (auto &var1 : detail::DatasetAccess(dataset)) {
         if (var1.type() == var2.type()) {
           ++count;
           var1 -= var2;
@@ -239,12 +255,12 @@ template <class T> Dataset &Dataset::operator-=(const T &other) {
                                  "left-hand-side.");
     }
   }
-  return *this;
+  return dataset;
 }
 
-template Dataset &Dataset::operator-=<Dataset>(const Dataset &);
-template Dataset &Dataset::operator-=
-    <Slice<const Dataset>>(const Slice<const Dataset> &);
+template Dataset &operator-=<Dataset>(Dataset &, const Dataset &);
+template Dataset &operator-=
+    <Slice<const Dataset>>(Dataset &, const Slice<const Dataset> &);
 
 namespace aligned {
 // Helpers to define a pointer to aligned memory.

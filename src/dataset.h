@@ -22,6 +22,7 @@ template <class Tag> VariableView<Tag> getCoord(Dataset &, const Tag);
 template <class Tag>
 VariableView<Tag> getData(Dataset &,
                           const std::pair<const Tag, const std::string> &);
+class DatasetAccess;
 } // namespace detail
 
 template <class T> class Slice;
@@ -132,12 +133,12 @@ public:
 
   bool operator==(const Dataset &other) const;
   Dataset &operator+=(const Dataset &other);
-  template <class T> Dataset &operator-=(const T &other);
   Dataset &operator*=(const Dataset &other);
   void setSlice(const Dataset &slice, const Dimension dim,
                 const gsl::index index);
 
 private:
+  friend class detail::DatasetAccess;
   // This is private such that name and dimensions of variables cannot be
   // modified in a way that would break the dataset.
   Variable &get(gsl::index i) { return m_variables[i]; }
@@ -212,6 +213,7 @@ private:
   std::vector<gsl::index> m_indices;
 };
 
+template <class T> Dataset &operator-=(Dataset &dataset, const T &other);
 Dataset operator+(Dataset a, const Dataset &b);
 Dataset operator-(Dataset a, const Dataset &b);
 Dataset operator*(Dataset a, const Dataset &b);
