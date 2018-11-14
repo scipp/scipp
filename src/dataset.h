@@ -23,15 +23,18 @@ template <class Tag>
 VariableView<Tag> getData(Dataset &,
                           const std::pair<const Tag, const std::string> &);
 class DatasetAccess;
+template <class Data> class Access;
 } // namespace detail
 
 template <class T> class Slice;
+template <class Value> class dataset_slice_iterator;
 
 class Dataset {
 public:
   gsl::index size() const { return m_variables.size(); }
   const Variable &operator[](gsl::index i) const { return m_variables[i]; }
   Slice<const Dataset> operator[](const std::string &name) const;
+  Slice<Dataset> operator[](const std::string &name);
 
   auto begin() const { return m_variables.begin(); }
   auto end() const { return m_variables.end(); }
@@ -133,12 +136,15 @@ public:
 
   bool operator==(const Dataset &other) const;
   Dataset &operator+=(const Dataset &other);
+  template <class T> Dataset &operator-=(const T &other);
   Dataset &operator*=(const Dataset &other);
   void setSlice(const Dataset &slice, const Dimension dim,
                 const gsl::index index);
 
 private:
   friend class detail::DatasetAccess;
+  template <class Data> friend class detail::Access;
+  template <class Value> friend class dataset_slice_iterator;
   // This is private such that name and dimensions of variables cannot be
   // modified in a way that would break the dataset.
   Variable &get(gsl::index i) { return m_variables[i]; }
@@ -163,10 +169,60 @@ private:
   boost::container::small_vector<Variable, 4> m_variables;
 };
 
-// T is either Dataset or const Dataset.
-template <class T> class Slice {
+template <class Value>
+class dataset_slice_iterator
+    : public boost::iterator_facade<
+          dataset_slice_iterator<Value>,
+          std::conditional_t<std::is_const<Value>::value, const Variable,
+                             Variable>,
+          boost::random_access_traversal_tag> {
 public:
-  Slice(T &dataset, const std::string &select) : m_dataset(dataset) {
+  dataset_slice_iterator(Value &dataset, const std::vector<gsl::index> &indices,
+                         const gsl::index index)
+      : m_dataset(dataset), m_indices(indices), m_index(index) {}
+
+private:
+  friend class boost::iterator_core_access;
+
+  bool equal(const dataset_slice_iterator &other) const {
+    return m_index == other.m_index;
+  }
+  void increment() { ++m_index; }
+  auto &dereference() const {
+    return m_dataset.m_variables[m_indices[m_index]];
+  }
+  void decrement() { --m_index; }
+  void advance(int64_t delta) { m_index += delta; }
+  int64_t distance_to(const dataset_slice_iterator &other) const {
+    return other.m_index - m_index;
+  }
+
+  Value &m_dataset;
+  const std::vector<gsl::index> &m_indices;
+  gsl::index m_index;
+};
+
+template <class Base> class SliceMutableMixin {};
+
+template <> class SliceMutableMixin<Slice<Dataset>> {
+public:
+  template <class T> Slice<Dataset> &operator-=(const T &other);
+
+private:
+  Variable &get(const gsl::index i);
+  // Passing non-const Dataset -> non-const iterator.
+  dataset_slice_iterator<Dataset> mutableBegin() const;
+  dataset_slice_iterator<Dataset> mutableEnd() const;
+
+  friend class detail::Access<Slice<Dataset>>;
+  const Slice<Dataset> &base() const;
+  Slice<Dataset> &base();
+};
+
+// D is either Dataset or const Dataset.
+template <class D> class Slice : public SliceMutableMixin<Slice<D>> {
+public:
+  Slice(D &dataset, const std::string &select) : m_dataset(dataset) {
     for (gsl::index i = 0; i < dataset.size(); ++i) {
       const auto &var = dataset[i];
       if (var.isCoord() || var.name() == select)
@@ -174,46 +230,27 @@ public:
     }
   }
 
-  class iterator
-      : public boost::iterator_facade<iterator, const Variable,
-                                      boost::random_access_traversal_tag> {
-  public:
-    iterator(const Dataset &dataset, const std::vector<gsl::index> &indices,
-             const gsl::index index)
-        : m_dataset(dataset), m_indices(indices), m_index(index) {}
-
-  private:
-    friend class boost::iterator_core_access;
-
-    bool equal(const iterator &other) const { return m_index == other.m_index; }
-    void increment() { ++m_index; }
-    auto &dereference() const { return m_dataset[m_indices[m_index]]; }
-    void decrement() { --m_index; }
-    void advance(int64_t delta) { m_index += delta; }
-    int64_t distance_to(const iterator &other) const {
-      return other.m_index - m_index;
-    }
-
-    const Dataset &m_dataset;
-    const std::vector<gsl::index> &m_indices;
-    gsl::index m_index;
-  };
+  const Dataset &dataset() const { return m_dataset; }
 
   gsl::index size() const { return m_indices.size(); }
   const Variable &operator[](const gsl::index i) const {
     return m_dataset[m_indices[i]];
   }
-  iterator begin() const { return {m_dataset, m_indices, 0}; }
-  iterator end() const {
-    return {m_dataset, m_indices, static_cast<gsl::index>(m_indices.size())};
+
+  // Passing const Dataset -> const iterator.
+  dataset_slice_iterator<const Dataset> begin() const {
+    return {dataset(), m_indices, 0};
+  }
+  dataset_slice_iterator<const Dataset> end() const {
+    return {dataset(), m_indices, static_cast<gsl::index>(m_indices.size())};
   }
 
 private:
-  T &m_dataset;
+  friend class SliceMutableMixin<Slice<D>>;
+  D &m_dataset;
   std::vector<gsl::index> m_indices;
 };
 
-template <class T> Dataset &operator-=(Dataset &dataset, const T &other);
 Dataset operator+(Dataset a, const Dataset &b);
 Dataset operator-(Dataset a, const Dataset &b);
 Dataset operator*(Dataset a, const Dataset &b);

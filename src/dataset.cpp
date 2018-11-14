@@ -25,10 +25,48 @@ public:
 private:
   Dataset &m_dataset;
 };
+
+template <class Data> class Access;
+
+template <> class Access<Dataset> {
+public:
+  Access(Dataset &dataset) : m_data(dataset) {}
+
+  auto begin() const { return m_data.m_variables.begin(); }
+  auto end() const { return m_data.m_variables.end(); }
+  Variable &operator[](const gsl::index i) const {
+    return m_data.m_variables[i];
+  }
+
+private:
+  Dataset &m_data;
+};
+
+template <> class Access<Slice<Dataset>> {
+public:
+  Access(Slice<Dataset> &dataset) : m_data(dataset) {}
+
+  auto begin() const { return m_data.mutableBegin(); }
+  auto end() const { return m_data.mutableEnd(); }
+  Variable &operator[](const gsl::index i) const { return m_data.get(i); }
+
+private:
+  Slice<Dataset> &m_data;
+};
+
+auto makeAccess(Dataset &dataset) { return Access<Dataset>(dataset); }
+auto makeAccess(Slice<Dataset> &dataset) {
+  return Access<Slice<Dataset>>(dataset);
+}
+
 } // namespace detail
 
 Slice<const Dataset> Dataset::operator[](const std::string &name) const {
   return Slice<const Dataset>(*this, name);
+}
+
+Slice<Dataset> Dataset::operator[](const std::string &name) {
+  return Slice<Dataset>(*this, name);
 }
 
 void Dataset::insert(Variable variable) {
@@ -63,11 +101,17 @@ Dataset Dataset::extract(const std::string &name) {
   return subset;
 }
 
-gsl::index Dataset::find(const uint16_t id, const std::string &name) const {
-  for (gsl::index i = 0; i < size(); ++i)
-    if (m_variables[i].type() == id && m_variables[i].name() == name)
+// T can be Dataset or Slice.
+template <class T>
+gsl::index find(const T &dataset, const uint16_t id, const std::string &name) {
+  for (gsl::index i = 0; i < dataset.size(); ++i)
+    if (dataset[i].type() == id && dataset[i].name() == name)
       return i;
   throw std::runtime_error("Dataset does not contain such a variable.");
+}
+
+gsl::index Dataset::find(const uint16_t id, const std::string &name) const {
+  return ::find(*this, id, name);
 }
 
 gsl::index Dataset::count(const uint16_t id) const {
@@ -209,7 +253,7 @@ Dataset &Dataset::operator+=(const Dataset &other) {
   return *this;
 }
 
-template <class T> Dataset &operator-=(Dataset &dataset, const T &other) {
+template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
   std::set<std::string> names;
   for (const auto &var2 : other)
     if (var2.isData())
@@ -218,7 +262,7 @@ template <class T> Dataset &operator-=(Dataset &dataset, const T &other) {
   for (const auto &var2 : other) {
     gsl::index index;
     try {
-      index = dataset.find(var2.type(), var2.name());
+      index = find(dataset, var2.type(), var2.name());
     } catch (const std::runtime_error &) {
       if (var2.isData() && names.size() == 1) {
         // Only a single (named) variable in RHS, subtract from all.
@@ -230,7 +274,7 @@ template <class T> Dataset &operator-=(Dataset &dataset, const T &other) {
       }
     }
     if (index >= 0) {
-      auto &var1 = detail::DatasetAccess(dataset)[index];
+      auto &var1 = detail::makeAccess(dataset)[index];
       if (var1.isCoord()) {
         if (!(var1 == var2))
           throw std::runtime_error(
@@ -242,7 +286,7 @@ template <class T> Dataset &operator-=(Dataset &dataset, const T &other) {
     } else {
       // Not a coordinate, subtract from all.
       gsl::index count = 0;
-      for (auto &var1 : detail::DatasetAccess(dataset)) {
+      for (auto &var1 : detail::makeAccess(dataset)) {
         if (var1.type() == var2.type()) {
           ++count;
           var1 -= var2;
@@ -258,9 +302,46 @@ template <class T> Dataset &operator-=(Dataset &dataset, const T &other) {
   return dataset;
 }
 
-template Dataset &operator-=<Dataset>(Dataset &, const Dataset &);
-template Dataset &operator-=
-    <Slice<const Dataset>>(Dataset &, const Slice<const Dataset> &);
+template <class T> Dataset &Dataset::operator-=(const T &other) {
+  return minus_equals(*this, other);
+}
+
+// template <>
+template <class T>
+Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
+  return minus_equals(base(), other);
+}
+
+Variable &SliceMutableMixin<Slice<Dataset>>::get(const gsl::index i) {
+  return detail::DatasetAccess(base().m_dataset)[base().m_indices[i]];
+}
+
+dataset_slice_iterator<Dataset>
+SliceMutableMixin<Slice<Dataset>>::mutableBegin() const {
+  return {base().m_dataset, base().m_indices, 0};
+}
+dataset_slice_iterator<Dataset>
+SliceMutableMixin<Slice<Dataset>>::mutableEnd() const {
+  return {base().m_dataset, base().m_indices,
+          static_cast<gsl::index>(base().m_indices.size())};
+}
+const Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::base() const {
+  return static_cast<const Slice<Dataset> &>(*this);
+}
+Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::base() {
+  return static_cast<Slice<Dataset> &>(*this);
+}
+
+template Dataset &Dataset::operator-=(const Dataset &);
+template Dataset &Dataset::operator-=(const Slice<const Dataset> &);
+template Dataset &Dataset::operator-=(const Slice<Dataset> &);
+
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator-=(const Dataset &);
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator-=(const Slice<const Dataset> &);
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator-=(const Slice<Dataset> &);
 
 namespace aligned {
 // Helpers to define a pointer to aligned memory.
