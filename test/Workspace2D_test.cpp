@@ -122,6 +122,8 @@ TEST(Workspace2D, multiple_data) {
   d.insert<Data::Variance>("monitor", dims, dims.volume());
 
   d.merge(d.extract("sample") - d.extract("background"));
+  // Note: If we want to also keep "background" we can use:
+  // d["sample"] -= d["background"];
 
   EXPECT_NO_THROW(d.get<const Data::Value>("sample - background"));
   EXPECT_NO_THROW(d.get<const Data::Variance>("sample - background"));
