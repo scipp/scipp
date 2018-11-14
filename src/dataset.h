@@ -26,7 +26,6 @@ template <class Data> class Access;
 } // namespace detail
 
 template <class T> class Slice;
-template <class Value> class dataset_slice_iterator;
 
 class Dataset {
 public:
@@ -142,7 +141,6 @@ public:
 
 private:
   template <class Data> friend class detail::Access;
-  template <class Value> friend class dataset_slice_iterator;
   // This is private such that name and dimensions of variables cannot be
   // modified in a way that would break the dataset.
   Variable &get(gsl::index i) { return m_variables[i]; }
@@ -186,9 +184,8 @@ private:
     return m_index == other.m_index;
   }
   void increment() { ++m_index; }
-  auto &dereference() const {
-    return m_dataset.m_variables[m_indices[m_index]];
-  }
+  std::conditional_t<std::is_const<Value>::value, const Variable, Variable> &
+  dereference() const;
   void decrement() { --m_index; }
   void advance(int64_t delta) { m_index += delta; }
   int64_t distance_to(const dataset_slice_iterator &other) const {

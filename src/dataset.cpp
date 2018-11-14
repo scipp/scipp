@@ -40,6 +40,7 @@ private:
   Slice<Dataset> &m_data;
 };
 
+const Dataset &makeAccess(const Dataset &dataset) { return dataset; }
 auto makeAccess(Dataset &dataset) { return Access<Dataset>(dataset); }
 auto makeAccess(Slice<Dataset> &dataset) {
   return Access<Slice<Dataset>>(dataset);
@@ -435,6 +436,15 @@ void Dataset::setSlice(const Dataset &slice, const Dimension dim,
     get<Data::History>()[0].push_back("this->setSlice(slice, dim, " +
                                       std::to_string(index) + ");");
 }
+
+template <class Value>
+std::conditional_t<std::is_const<Value>::value, const Variable, Variable> &
+dataset_slice_iterator<Value>::dereference() const {
+  return detail::makeAccess(m_dataset)[m_indices[m_index]];
+}
+
+template class dataset_slice_iterator<Dataset>;
+template class dataset_slice_iterator<const Dataset>;
 
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
 Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
