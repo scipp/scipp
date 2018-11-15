@@ -234,8 +234,6 @@ public:
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
     try {
-      const auto &otherModel =
-          dynamic_cast<const VariableModel<T> &>(other).m_model;
       if (IsContiguous<T>::get(other, dimensions())) {
         ArithmeticHelper<Op, typename T::value_type>::apply(
             m_model, CastHelper<T>::getSpan(other));
@@ -391,15 +389,6 @@ public:
         // transposed.
         std::copy(otherView.begin(), otherView.end(), view.begin());
       }
-    }
-  }
-
-  void copyPermute(const VariableConcept &otherConcept,
-                   const std::vector<gsl::index> &indices) override {
-    const auto &other =
-        dynamic_cast<const VariableModel<T> &>(otherConcept).m_model;
-    for (gsl::index i = 0; i < indices.size(); ++i) {
-      m_model[i] = other[indices[i]];
     }
   }
 

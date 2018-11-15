@@ -44,8 +44,6 @@ public:
   virtual void copy(const VariableConcept &otherConcept, const Dim dim,
                     const gsl::index offset, const gsl::index otherBegin,
                     const gsl::index otherEnd) = 0;
-  virtual void copyPermute(const VariableConcept &otherConcept,
-                           const std::vector<gsl::index> &indices) = 0;
 
   const Dimensions &dimensions() const { return m_dimensions; }
 
