@@ -194,13 +194,22 @@ template <class T> struct IsContiguous<Vector<T>> {
 };
 
 template <class T> struct CastHelper {
+  template <class Concept> static auto &getModel(Concept &concept) {
+    return dynamic_cast<std::conditional_t<std::is_const<Concept>::value,
+                                           const VariableModel<T> &,
+                                           VariableModel<T> &>>(concept)
+        .m_model;
+  }
+
   static auto getSpan(const VariableConcept &concept) {
     const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
     return gsl::make_span(model);
   }
-  static auto getSpan(const VariableConcept &concept, const Dim dim,
+
+  template <class Concept>
+  static auto getSpan(Concept &concept, const Dim dim,
                       const gsl::index begin, const gsl::index end) {
-    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
+    auto &model = CastHelper<T>::getModel(concept);
     if (!concept.dimensions().contains(dim)) {
       if (begin != 0 || end != 1)
         throw std::runtime_error("VariableConcept: Slice index out of range.");
@@ -211,15 +220,20 @@ template <class T> struct CastHelper {
     gsl::index endOffset = end * dims.offset(dim);
     return gsl::make_span(model.data() + beginOffset, model.data() + endOffset);
   }
+
   static auto getView(const VariableConcept &concept, const Dimensions &dims) {
     const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
     return VariableView<const T>(model, dims, concept.dimensions());
   }
+
   static auto getView(const VariableConcept &concept, const Dimensions &dims,
                       const Dim dim, const gsl::index begin) {
     const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
-    gsl::index beginOffset = concept.dimensions().contains(dim) ? begin * concept.dimensions().offset(dim) : begin * concept.dimensions().volume();
-    return VariableView<const decltype(model.data())>(model.data() + beginOffset, dims, concept.dimensions());
+    gsl::index beginOffset = concept.dimensions().contains(dim)
+                                 ? begin * concept.dimensions().offset(dim)
+                                 : begin * concept.dimensions().volume();
+    return VariableView<const decltype(model.data())>(
+        model.data() + beginOffset, dims, concept.dimensions());
   }
 };
 
@@ -342,8 +356,8 @@ public:
         thisDims.add(dim, 1);
     }
 
-    auto target = gsl::make_span(m_model.data() + offset * thisDims.offset(dim),
-                                 &*m_model.end());
+    auto target = CastHelper<T>::getSpan(*this, dim, offset,
+                                         offset + otherEnd - otherBegin);
     auto source =
         CastHelper<T>::getSpan(otherConcept, dim, otherBegin, otherEnd);
     auto otherView = CastHelper<T>::getView(otherConcept, iterationDimensions,
