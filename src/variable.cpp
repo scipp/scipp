@@ -334,22 +334,18 @@ public:
   void copy(const VariableConcept &otherConcept, const Dim dim,
             const gsl::index offset, const gsl::index otherBegin,
             const gsl::index otherEnd) override {
-    const auto &other = dynamic_cast<const VariableModel<T> &>(otherConcept);
-
     auto iterationDimensions = dimensions();
-    auto otherDims = other.dimensions();
     auto thisDims = dimensions();
     if (!iterationDimensions.contains(dim) && offset != 0)
       throw std::runtime_error("VariableConcept::copy: Output offset must be 0 "
                                "if dimension is not contained.");
-    if (!other.dimensions().contains(dim)) {
+    if (!otherConcept.dimensions().contains(dim)) {
       if (iterationDimensions.contains(dim))
         iterationDimensions.erase(dim);
       // Add fake dim such that we can use Dimensions::offset below.
       if (otherBegin != 0 || otherEnd != 1)
         throw std::runtime_error(
             "VariableConcept::copy: Slice index out of range.");
-      otherDims.add(dim, 1);
     } else {
       if (iterationDimensions.contains(dim))
         iterationDimensions.resize(dim, otherEnd - otherBegin);
@@ -365,10 +361,10 @@ public:
                                             dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    // bool otherIsContiguous = otherDims.label(thisDims.count() - 1) == dim;
     bool otherIsContiguous = IsContiguous<T>::get(otherConcept, thisDims);
     if (thisDims.label(thisDims.count() - 1) == dim) {
-      if (otherIsContiguous && iterationDimensions == other.dimensions()) {
+      if (otherIsContiguous &&
+          iterationDimensions == otherConcept.dimensions()) {
         // Case 1: Output range is contiguous, input is contiguous and not
         // transposed.
         std::copy(source.begin(), source.end(), target.begin());
@@ -380,7 +376,8 @@ public:
     } else {
       auto view =
           CastHelper<T>::getView(*this, iterationDimensions, dim, offset);
-      if (otherIsContiguous && iterationDimensions == other.dimensions()) {
+      if (otherIsContiguous &&
+          iterationDimensions == otherConcept.dimensions()) {
         // Case 3: Output range is not contiguous, input is contiguous and not
         // transposed.
         std::copy(source.begin(), source.end(), view.begin());
