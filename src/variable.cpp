@@ -189,7 +189,7 @@ template <class T> struct IsContiguous {
 template <class T> struct IsContiguous<Vector<T>> {
   static bool get() { return true; }
   static bool get(const VariableConcept &concept, const Dimensions &dims) {
-    return concept.dimensions() == dims;
+    return dims.isContiguousIn(concept.dimensions());
   }
 };
 
@@ -198,9 +198,29 @@ template <class T> struct CastHelper {
     const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
     return gsl::make_span(model);
   }
+  static auto getSpan(const VariableConcept &concept, const Dim dim,
+                      const gsl::index begin, const gsl::index end) {
+    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
+    if (!concept.dimensions().contains(dim)) {
+      if (begin != 0 || end != 1)
+        throw std::runtime_error("VariableConcept: Slice index out of range.");
+      return gsl::make_span(model);
+    }
+    const auto &dims = concept.dimensions();
+    gsl::index beginOffset = begin * dims.offset(dim);
+    gsl::index endOffset = end * dims.offset(dim);
+    return gsl::make_span(model.data() + beginOffset, model.data() + endOffset);
+  }
   static auto getView(const VariableConcept &concept, const Dimensions &dims) {
     const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
     return VariableView<const T>(model, dims, concept.dimensions());
+  }
+  static auto getView(const VariableConcept &concept, const Dimensions &dims,
+                      const Dim dim, const gsl::index begin) {
+    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
+    gsl::index beginOffset = concept.dimensions().contains(dim) ? begin * concept.dimensions().offset(dim) : begin * concept.dimensions().volume();
+    //fprintf(stderr, "%p\n", model.data() + beginOffset);
+    return VariableView<const decltype(model.data())>(model.data() + beginOffset, dims, concept.dimensions());
   }
 };
 
@@ -327,22 +347,32 @@ public:
     gsl::index otherEndOffset = otherEnd * otherDims.offset(dim);
     auto target = gsl::make_span(m_model.data() + offset * thisDims.offset(dim),
                                  &*m_model.end());
-    auto source = gsl::make_span(other.m_model.data() + otherBeginOffset,
-                                 &*other.m_model.end());
-    VariableView<const decltype(source)> otherView(source, iterationDimensions,
-                                                   other.dimensions());
+    //auto source2 = gsl::make_span(other.m_model.data() + otherBeginOffset,
+    //                             &*other.m_model.end());
+    auto source =
+        CastHelper<T>::getSpan(otherConcept, dim, otherBegin, otherEnd);
+    //fprintf(stderr, "%lu %lu %lu  %lu %lu\n", otherEnd - otherBegin, source.size(), otherConcept.dimensions().volume(), otherBeginOffset, otherEndOffset);
+    //VariableView<const decltype(source)> otherView2(source, iterationDimensions,
+    //                                               other.dimensions());
+    //fprintf(stderr, "orig %p\n", &source[0]);
+    auto otherView = CastHelper<T>::getView(otherConcept, iterationDimensions,
+                                            dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    bool otherIsContiguous = otherDims.label(thisDims.count() - 1) == dim;
+    //bool otherIsContiguous = otherDims.label(thisDims.count() - 1) == dim;
+    bool otherIsContiguous =
+        IsContiguous<T>::get(otherConcept, thisDims);
     if (thisDims.label(thisDims.count() - 1) == dim) {
       if (otherIsContiguous && iterationDimensions == other.dimensions()) {
         // Case 1: Output range is contiguous, input is contiguous and not
         // transposed.
+    //fprintf(stderr, "case 1 %lu %lu\n", source.size(), source2.size());
         std::copy(source.begin(), source.begin() + otherEndOffset,
                   target.begin());
       } else {
         // Case 2: Output range is contiguous, input is not contiguous or
         // transposed.
+    //fprintf(stderr, "case 2 %lu %lu\n", std::distance(otherView.begin(), otherView.end()), std::distance(otherView2.begin(), otherView2.end()));
         std::copy(otherView.begin(), otherView.end(), target.begin());
       }
     } else {
@@ -351,11 +381,13 @@ public:
       if (otherIsContiguous && iterationDimensions == other.dimensions()) {
         // Case 3: Output range is not contiguous, input is contiguous and not
         // transposed.
+    //fprintf(stderr, "cas 3 %lu %lu\n", source.size(), source2.size());
         std::copy(source.begin(), source.begin() + otherEndOffset,
                   view.begin());
       } else {
         // Case 4: Output range is not contiguous, input is not contiguous or
         // transposed.
+    //fprintf(stderr, "case 4 %lu %lu\n", std::distance(otherView.begin(), otherView.end()), std::distance(otherView2.begin(), otherView2.end()));
         std::copy(otherView.begin(), otherView.end(), view.begin());
       }
     }

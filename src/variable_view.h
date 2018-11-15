@@ -10,23 +10,47 @@
 
 #include "dimensions.h"
 #include "multi_index.h"
+#include "vector.h"
+
+// Some type traits to get pointer to underlying data for various possible
+// inputs (vector, span, pointer).
+template <class T> struct ValueType { using type = typename T::value_type; };
+template <class T> struct ValueType<const Vector<T>> { using type = const T; };
+template <class T> struct ValueType<gsl::span<T>> { using type = T; };
+template <class T> struct ValueType<const gsl::span<T>> { using type = T; };
+template <class T> struct ValueType<T *> { using type = T; };
+template <class T> struct ValueType<const T *> { using type = const T; };
+template <class T> struct ValueType<const T *const> { using type = const T; };
+
+template <class T> struct GetPtr {
+  static auto get(T &variable) { return variable.data(); }
+};
+
+template <class T> struct GetPtr<T *> {
+  static auto get(T *variable) { return variable; }
+};
+
+template <class T> struct GetPtr<T *const> {
+  static auto get(T *const variable) { return variable; }
+};
 
 template <class T> class VariableView {
 public:
   VariableView(T &variable, const Dimensions &targetDimensions,
                const Dimensions &dimensions)
-      : m_variable(variable), m_targetDimensions(targetDimensions),
-        m_dimensions(dimensions) {}
+      : m_variable(GetPtr<T>::get(variable)),
+        m_targetDimensions(targetDimensions), m_dimensions(dimensions) {}
 
-  class iterator
-      : public boost::iterator_facade<
-            iterator, std::conditional_t<std::is_const<T>::value,
-                                         const typename T::value_type,
-                                         typename T::value_type>,
-            boost::random_access_traversal_tag> {
+  class iterator : public boost::iterator_facade<
+                       iterator,
+                       std::conditional_t<std::is_const<T>::value,
+                                          const typename ValueType<T>::type,
+                                          typename ValueType<T>::type>,
+                       boost::random_access_traversal_tag> {
   public:
-    iterator(T &variable, const Dimensions &targetDimensions,
-             const Dimensions &dimensions, const gsl::index index)
+    iterator(typename ValueType<T>::type *variable,
+             const Dimensions &targetDimensions, const Dimensions &dimensions,
+             const gsl::index index)
         : m_variable(variable), m_index(targetDimensions, {dimensions}) {
       m_index.setIndex(index);
     }
@@ -49,7 +73,7 @@ public:
              static_cast<int64_t>(m_index.index());
     }
 
-    T &m_variable;
+    typename ValueType<T>::type *m_variable;
     MultiIndex m_index;
   };
 
@@ -62,7 +86,7 @@ public:
   }
 
 private:
-  T &m_variable;
+  typename ValueType<T>::type *m_variable;
   const Dimensions m_targetDimensions;
   const Dimensions m_dimensions;
 };
