@@ -507,12 +507,12 @@ Variable &Variable::operator+=(const Variable &other) {
 }
 
 Variable &Variable::operator-=(const Variable &other) {
-  if (m_unit != other.m_unit)
+  if (unit() != other.unit())
     throw std::runtime_error("Cannot subtract Variables: Units do not match.");
   if (dimensions().contains(other.dimensions())) {
     if (valueTypeIs<Data::Events>())
       throw std::runtime_error("Subtraction of events lists not implemented.");
-    m_object.access() -= *other.m_object;
+    m_object.access() -= other.data();
   } else {
     throw std::runtime_error(
         "Cannot subtract Variables: Dimensions do not match.");
