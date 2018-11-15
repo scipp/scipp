@@ -38,7 +38,6 @@ public:
   virtual std::unique_ptr<VariableConcept>
   operator+(const VariableConcept &other) const = 0;
   virtual gsl::index size() const = 0;
-  virtual void resize(const gsl::index) = 0;
   virtual void copy(const VariableConcept &otherConcept, const Dim dim,
                     const gsl::index offset, const gsl::index otherBegin,
                     const gsl::index otherEnd) = 0;
@@ -46,7 +45,6 @@ public:
                            const std::vector<gsl::index> &indices) = 0;
 
   const Dimensions &dimensions() const { return m_dimensions; }
-  void setDimensions(const Dimensions &dimensions);
 
   friend class Variable;
 

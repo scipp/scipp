@@ -180,13 +180,6 @@ DISABLE_REBIN(std::string)
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
-void VariableConcept::setDimensions(const Dimensions &dimensions) {
-  // TODO Zero data? Or guarentee that equivalent data is moved to correct
-  // target position?
-  m_dimensions = dimensions;
-  resize(m_dimensions.volume());
-}
-
 template <class T> class VariableModel final : public VariableConcept {
 public:
   VariableModel(const Dimensions &dimensions)
@@ -311,7 +304,6 @@ public:
   }
 
   gsl::index size() const override { return m_model.size(); }
-  void resize(const gsl::index size) override { m_model.resize(size); }
 
   void copy(const VariableConcept &otherConcept, const Dim dim,
             const gsl::index offset, const gsl::index otherBegin,
