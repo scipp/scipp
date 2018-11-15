@@ -14,6 +14,9 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
   static void apply(Vector<T> &a, const Vector<T> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
+  static void apply(Vector<T> &a, const gsl::span<const T> &b) {
+    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
+  }
   static void apply(const Vector<T> &a, const VariableView<const Vector<T>> &b,
                     Vector<T> &out) {
     std::transform(a.begin(), a.end(), b.begin(), out.begin(), Op<T>());
@@ -180,6 +183,27 @@ DISABLE_REBIN(std::string)
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
+template <class T> struct IsContiguous {
+  static bool get() { return false; }
+};
+template <class T> struct IsContiguous<Vector<T>> {
+  static bool get() { return true; }
+  static bool get(const VariableConcept &concept, const Dimensions &dims) {
+    return concept.dimensions() == dims;
+  }
+};
+
+template <class T> struct CastHelper {
+  static auto getSpan(const VariableConcept &concept) {
+    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
+    return gsl::make_span(model);
+  }
+  static auto getView(const VariableConcept &concept, const Dimensions &dims) {
+    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
+    return VariableView<const T>(model, dims, concept.dimensions());
+  }
+};
+
 template <class T> class VariableModel final : public VariableConcept {
 public:
   VariableModel(const Dimensions &dimensions)
@@ -201,6 +225,8 @@ public:
     return std::make_shared<VariableModel<T>>(dims);
   }
 
+  bool isContiguous() const override { return IsContiguous<T>::get(); }
+
   bool operator==(const VariableConcept &other) const override {
     return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
   }
@@ -210,13 +236,12 @@ public:
     try {
       const auto &otherModel =
           dynamic_cast<const VariableModel<T> &>(other).m_model;
-      if (dimensions() == other.dimensions()) {
-        ArithmeticHelper<Op, typename T::value_type>::apply(m_model,
-                                                            otherModel);
+      if (IsContiguous<T>::get(other, dimensions())) {
+        ArithmeticHelper<Op, typename T::value_type>::apply(
+            m_model, CastHelper<T>::getSpan(other));
       } else {
         ArithmeticHelper<Op, typename T::value_type>::apply(
-            m_model, VariableView<const T>(otherModel, dimensions(),
-                                           other.dimensions()));
+            m_model, CastHelper<T>::getView(other, dimensions()));
       }
     } catch (const std::bad_cast &) {
       throw std::runtime_error("Cannot apply arithmetic operation to "

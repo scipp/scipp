@@ -29,6 +29,9 @@ public:
   virtual std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
+
+  virtual bool isContiguous() const = 0;
+
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
                      const VariableConcept &newCoord) = 0;
