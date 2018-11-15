@@ -71,3 +71,35 @@ TEST(Dimensions, contains_other) {
   // Order does not matter.
   EXPECT_TRUE(a.contains(b));
 }
+
+TEST(Dimensions, isContiguousIn) {
+  Dimensions parent({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 2}});
+
+  EXPECT_TRUE(parent.isContiguousIn(parent));
+
+  EXPECT_TRUE(Dimensions({Dim::X, 0}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({Dim::X, 1}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({Dim::X, 2}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({Dim::X, 4}).isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({Dim::X, 5}).isContiguousIn(parent));
+
+  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 0}}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 1}}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 2}}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}}).isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({{Dim::X, 4}, {Dim::Y, 4}}).isContiguousIn(parent));
+
+  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 0}})
+                  .isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 1}})
+                  .isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 2}})
+                  .isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 3}})
+                   .isContiguousIn(parent));
+
+  EXPECT_FALSE(Dimensions({Dim::Y, 3}).isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({Dim::Z, 2}).isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({{Dim::X, 4}, {Dim::Z, 2}}).isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({{Dim::Y, 3}, {Dim::Z, 2}}).isContiguousIn(parent));
+}

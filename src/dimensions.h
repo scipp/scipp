@@ -99,10 +99,10 @@ public:
     return false;
   }
 
-  Dim inner() const { return m_dims[ndim() - 1]; }
-  Dim outer() const { return m_dims[0]; }
-
   bool contains(const Dimensions &other) const;
+
+  bool isContiguousIn(const Dimensions &parent) const;
+
   Dimension label(const gsl::index i) const;
   gsl::index size(const gsl::index i) const;
   gsl::index size(const Dimension label) const;

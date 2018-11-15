@@ -23,6 +23,32 @@ bool Dimensions::contains(const Dimensions &other) const {
   return true;
 }
 
+/// Returns true if *this forms a contiguous block within parent, i.e.,
+/// dimensions are not transposed, missing dimensions are outer dimensions in
+/// parent, only the outermost dimensions may be shorter than the corresponding
+/// dimension in parent.
+bool Dimensions::isContiguousIn(const Dimensions &parent) const {
+  if (parent == *this)
+    return true;
+  int32_t offset = parent.count() - count();
+  if (offset < 0)
+    return false;
+  for (int32_t i = 0; i < count(); ++i) {
+    // All shared dimension labels must match.
+    if (parent.label(i) != label(i))
+      return false;
+    // Outermost dimension of *this can be a section of parent.
+    // All but outermost must match.
+    if (i == count() - 1) {
+      if (parent.size(i) < size(i))
+        return false;
+    } else if (parent.size(i) != size(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 Dimension Dimensions::label(const gsl::index i) const { return m_dims[i]; }
 
 gsl::index Dimensions::size(const gsl::index i) const { return m_shape[i]; }
