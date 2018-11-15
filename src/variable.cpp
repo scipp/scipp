@@ -283,32 +283,6 @@ public:
     }
   }
 
-  template <template <class> class Op>
-  std::unique_ptr<VariableConcept>
-  applyBinary(const VariableConcept &other) const {
-    auto result = std::make_unique<VariableModel<T>>(dimensions());
-    auto &resultModel = result->m_model;
-    try {
-      // TODO We can use static_cast if the tag matches.
-      const auto &otherModel =
-          dynamic_cast<const VariableModel<T> &>(other).m_model;
-      if (dimensions() == other.dimensions()) {
-        ArithmeticHelper<Op, typename T::value_type>::apply(m_model, otherModel,
-                                                            resultModel);
-      } else {
-        ArithmeticHelper<Op, typename T::value_type>::apply(
-            m_model,
-            VariableView<const T>(otherModel, dimensions(), other.dimensions()),
-            resultModel);
-      }
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error("Cannot apply arithmetic operation to "
-                               "Variables: Underlying data types do not "
-                               "match.");
-    }
-    return result;
-  }
-
   VariableConcept &operator+=(const VariableConcept &other) override {
     return apply<std::plus>(other);
   }
@@ -319,11 +293,6 @@ public:
 
   VariableConcept &operator*=(const VariableConcept &other) override {
     return apply<std::multiplies>(other);
-  }
-
-  std::unique_ptr<VariableConcept>
-  operator+(const VariableConcept &other) const override {
-    return applyBinary<std::plus>(other);
   }
 
   gsl::index size() const override { return m_model.size(); }
@@ -478,15 +447,7 @@ Variable &Variable::operator+=(const Variable &other) {
     if (dimensions().contains(other.dimensions())) {
       // Note: This will broadcast/transpose the RHS if required. We do not
       // support changing the dimensions of the LHS though!
-      if (m_object.unique()) {
-        m_object.access() += *other.m_object;
-      } else {
-        // Handling special case to avoid copy should reduce data movement
-        // from/to memory --- making copy requires 2 load + 1 store, `+=` is 2
-        // load + 1 store, `+` is 3 load + 1 store. In practive I did not
-        // observe a significant speedup though, need more benchmarks.
-        m_object = *m_object + *other.m_object;
-      }
+      m_object.access() += *other.m_object;
     } else {
       throw std::runtime_error(
           "Cannot add Variables: Dimensions do not match.");
