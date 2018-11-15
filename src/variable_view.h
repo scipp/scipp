@@ -91,4 +91,10 @@ private:
   const Dimensions m_dimensions;
 };
 
+template <class T>
+auto makeVariableView(T &variable, const Dimensions &targetDimensions,
+                      const Dimensions &dimensions) {
+  return VariableView<T>(variable, targetDimensions, dimensions);
+}
+
 #endif // VARIABLE_VIEW_H

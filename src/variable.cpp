@@ -207,8 +207,8 @@ template <class T> struct CastHelper {
   }
 
   template <class Concept>
-  static auto getSpan(Concept &concept, const Dim dim,
-                      const gsl::index begin, const gsl::index end) {
+  static auto getSpan(Concept &concept, const Dim dim, const gsl::index begin,
+                      const gsl::index end) {
     auto &model = CastHelper<T>::getModel(concept);
     if (!concept.dimensions().contains(dim)) {
       if (begin != 0 || end != 1)
@@ -226,14 +226,15 @@ template <class T> struct CastHelper {
     return VariableView<const T>(model, dims, concept.dimensions());
   }
 
-  static auto getView(const VariableConcept &concept, const Dimensions &dims,
-                      const Dim dim, const gsl::index begin) {
-    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
+  template <class Concept>
+  static auto getView(Concept &concept, const Dimensions &dims, const Dim dim,
+                      const gsl::index begin) {
+    auto &model = CastHelper<T>::getModel(concept);
     gsl::index beginOffset = concept.dimensions().contains(dim)
                                  ? begin * concept.dimensions().offset(dim)
                                  : begin * concept.dimensions().volume();
-    return VariableView<const decltype(model.data())>(
-        model.data() + beginOffset, dims, concept.dimensions());
+    auto data = model.data() + beginOffset;
+    return makeVariableView(data, dims, concept.dimensions());
   }
 };
 
@@ -364,9 +365,8 @@ public:
                                             dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    //bool otherIsContiguous = otherDims.label(thisDims.count() - 1) == dim;
-    bool otherIsContiguous =
-        IsContiguous<T>::get(otherConcept, thisDims);
+    // bool otherIsContiguous = otherDims.label(thisDims.count() - 1) == dim;
+    bool otherIsContiguous = IsContiguous<T>::get(otherConcept, thisDims);
     if (thisDims.label(thisDims.count() - 1) == dim) {
       if (otherIsContiguous && iterationDimensions == other.dimensions()) {
         // Case 1: Output range is contiguous, input is contiguous and not
@@ -378,8 +378,8 @@ public:
         std::copy(otherView.begin(), otherView.end(), target.begin());
       }
     } else {
-      VariableView<decltype(target)> view(target, iterationDimensions,
-                                          dimensions());
+      auto view =
+          CastHelper<T>::getView(*this, iterationDimensions, dim, offset);
       if (otherIsContiguous && iterationDimensions == other.dimensions()) {
         // Case 3: Output range is not contiguous, input is contiguous and not
         // transposed.
