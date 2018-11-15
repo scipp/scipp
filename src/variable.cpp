@@ -203,8 +203,9 @@ public:
     return std::make_shared<VariableModel<T>>(dimensions(), m_model);
   }
 
-  std::shared_ptr<VariableConcept> cloneEmpty() const override {
-    return std::make_shared<VariableModel<T>>(Dimensions{}, T(1));
+  std::shared_ptr<VariableConcept>
+  clone(const Dimensions &dims) const override {
+    return std::make_shared<VariableModel<T>>(dims);
   }
 
   bool operator==(const VariableConcept &other) const override {
@@ -398,8 +399,7 @@ Variable::Variable(uint32_t id, const Unit::Id unit,
 void Variable::setDimensions(const Dimensions &dimensions) {
   if (dimensions == m_object->dimensions())
     return;
-  m_object = m_object->cloneEmpty();
-  m_object.access().setDimensions(dimensions);
+  m_object = m_object->clone(dimensions);
 }
 
 template <class T> const T &Variable::cast() const {

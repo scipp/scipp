@@ -26,7 +26,8 @@ public:
   virtual ~VariableConcept() = default;
   // This is dropped into a cow_ptr so we prefer shared_ptr over unique_ptr.
   virtual std::shared_ptr<VariableConcept> clone() const = 0;
-  virtual std::shared_ptr<VariableConcept> cloneEmpty() const = 0;
+  virtual std::shared_ptr<VariableConcept>
+  clone(const Dimensions &dims) const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
