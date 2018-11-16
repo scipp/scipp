@@ -18,21 +18,20 @@ template <class T> struct CloneHelper<VariableView<T>> {
 };
 
 template <template <class> class Op, class T> struct ArithmeticHelper {
-  static void apply(VariableView<Vector<T>> &a,
-                    const VariableView<const Vector<T>> &b) {
+  static void apply(VariableView<T> &a, const VariableView<const T> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(VariableView<Vector<T>> &a, const gsl::span<const T> &b) {
+  static void apply(VariableView<T> &a, const gsl::span<const T> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(const gsl::span<T> &a,
-                    const VariableView<const Vector<T>> &b) {
+  static void apply(const gsl::span<T> &a, const VariableView<const T> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
   static void apply(const gsl::span<T> &a, const gsl::span<const T> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(const gsl::span<const T> &a, const gsl::span<const T> &b) {
+  template <class Other>
+  static void apply(const gsl::span<const T> &a, const Other &b) {
     throw std::runtime_error("Cannot modify data via const view.");
   }
 };
@@ -51,11 +50,12 @@ template <class T> struct CopyHelper<const T> {
 
 template <class T> class VariableModel;
 template <class T> struct RebinHelper {
-  static void rebin(const Dim dim, const T &oldModel, T &newModel,
-                    const VariableView<const T> &oldCoordView,
-                    const gsl::index oldOffset,
-                    const VariableView<const T> &newCoordView,
-                    const gsl::index newOffset) {
+  static void
+  rebin(const Dim dim, const T &oldModel, T &newModel,
+        const VariableView<const typename T::value_type> &oldCoordView,
+        const gsl::index oldOffset,
+        const VariableView<const typename T::value_type> &newCoordView,
+        const gsl::index newOffset) {
 
     auto oldCoordIt = oldCoordView.begin();
     auto newCoordIt = newCoordView.begin();
@@ -232,6 +232,7 @@ template <class T> struct IsContiguous<Vector<T>> {
 
 template <class T> struct CastHelper {
   template <class Concept> static auto &getModel(Concept &concept) {
+    // TODO Need to cast to VariableMode<VariableView<T>> if concept is a view.
     return dynamic_cast<std::conditional_t<std::is_const<Concept>::value,
                                            const VariableModel<T> &,
                                            VariableModel<T> &>>(concept)
@@ -261,7 +262,7 @@ template <class T> struct CastHelper {
 
   static auto getView(const VariableConcept &concept, const Dimensions &dims) {
     const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
-    return VariableView<const T>(model, dims, concept.dimensions());
+    return makeVariableView(model.data(), dims, concept.dimensions());
   }
 
   template <class Concept>
@@ -278,35 +279,36 @@ template <class T> struct CastHelper {
 
 template <class T> struct CastHelper<VariableView<T>> {
   template <class Concept> static auto &getModel(Concept &concept) {
-    return dynamic_cast<std::conditional_t<std::is_const<Concept>::value,
-                                           const VariableModel<T> &,
-                                           VariableModel<T> &>>(concept)
+    return dynamic_cast<std::conditional_t<
+        std::is_const<Concept>::value, const VariableModel<VariableView<T>> &,
+        VariableModel<VariableView<T>> &>>(concept)
         .m_model;
   }
 
   template <class Concept> static auto getSpan(Concept &concept) {
-    auto &model = CastHelper<T>::getModel(concept);
-    return gsl::make_span(model);
+    // TODO
+    auto &model = CastHelper<VariableView<T>>::getModel(concept);
+    return gsl::make_span(model.data(), model.data());
   }
 
   template <class Concept>
   static auto getSpan(Concept &concept, const Dim dim, const gsl::index begin,
                       const gsl::index end) {
     // TODO
-    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
-    return gsl::make_span(model);
+    auto &model = CastHelper<VariableView<T>>::getModel(concept);
+    return gsl::make_span(model.data(), model.data());
   }
 
   static auto getView(const VariableConcept &concept, const Dimensions &dims) {
     // TODO
-    return CastHelper<T>::getModel(concept);
+    return CastHelper<VariableView<T>>::getModel(concept);
   }
 
   template <class Concept>
   static auto getView(Concept &concept, const Dimensions &dims, const Dim dim,
                       const gsl::index begin) {
     // TODO
-    return CastHelper<T>::getModel(concept);
+    return CastHelper<VariableView<T>>::getModel(concept);
   }
 };
 

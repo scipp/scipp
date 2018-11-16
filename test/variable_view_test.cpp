@@ -13,7 +13,7 @@ TEST(VariableView, full_volume) {
   Dimensions dims({{Dim::X, 2}, {Dim::Y, 4}});
   std::vector<double> variable(dims.volume());
   std::iota(variable.begin(), variable.end(), 0);
-  VariableView<std::vector<double>> view(variable, dims, dims);
+  VariableView<double> view(variable.data(), dims, dims);
   auto it = view.begin();
   ASSERT_EQ(std::distance(it, view.end()), 8);
   EXPECT_EQ(*it++, 0.0);
@@ -32,7 +32,7 @@ TEST(VariableView, subvolume) {
   std::iota(variable.begin(), variable.end(), 0);
 
   Dimensions variableDims({{Dim::X, 1}, {Dim::Y, 3}});
-  VariableView<std::vector<double>> view(variable, variableDims, dims);
+  VariableView<double> view(variable.data(), variableDims, dims);
   auto it = view.begin();
   ASSERT_EQ(std::distance(it, view.end()), 3);
   EXPECT_EQ(*it++, 0.0);
@@ -46,7 +46,7 @@ TEST(VariableView, edges_first) {
   std::vector<double> variable(edgeDims.volume());
   std::iota(variable.begin(), variable.end(), 0);
 
-  VariableView<std::vector<double>> view(variable, dims, edgeDims);
+  VariableView<double> view(variable.data(), dims, edgeDims);
   auto it = view.begin();
   ASSERT_EQ(std::distance(it, view.end()), 8);
   EXPECT_EQ(*it++, 0.0);
@@ -57,7 +57,6 @@ TEST(VariableView, edges_first) {
   EXPECT_EQ(*it++, 7.0);
   EXPECT_EQ(*it++, 9.0);
   EXPECT_EQ(*it++, 10.0);
-
 }
 
 TEST(VariableView, edges_second) {
@@ -66,7 +65,7 @@ TEST(VariableView, edges_second) {
   std::vector<double> variable(edgeDims.volume());
   std::iota(variable.begin(), variable.end(), 0);
 
-  VariableView<std::vector<double>> view(variable, dims, edgeDims);
+  VariableView<double> view(variable.data(), dims, edgeDims);
   auto it = view.begin();
   ASSERT_EQ(std::distance(it, view.end()), 8);
   EXPECT_EQ(*it++, 0.0);
