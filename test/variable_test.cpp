@@ -455,6 +455,11 @@ TEST(VariableSlice, minus_equals_slice_outer) {
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
   EXPECT_EQ(data[3], 2.0);
+  var -= VariableSlice(copy, Dim::Y, 1);
+  EXPECT_EQ(data[0], -3.0);
+  EXPECT_EQ(data[1], -4.0);
+  EXPECT_EQ(data[2], -1.0);
+  EXPECT_EQ(data[3], -2.0);
 }
 
 TEST(VariableSlice, minus_equals_slice_inner) {
@@ -468,4 +473,9 @@ TEST(VariableSlice, minus_equals_slice_inner) {
   EXPECT_EQ(data[1], 1.0);
   EXPECT_EQ(data[2], 0.0);
   EXPECT_EQ(data[3], 1.0);
+  var -= VariableSlice(copy, Dim::X, 1);
+  EXPECT_EQ(data[0], -2.0);
+  EXPECT_EQ(data[1], -1.0);
+  EXPECT_EQ(data[2], -4.0);
+  EXPECT_EQ(data[3], -3.0);
 }
