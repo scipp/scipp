@@ -31,6 +31,16 @@ public:
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
+  VariableView(const VariableView &other, const Dimensions &targetDimensions,
+               const Dim dim, const gsl::index begin)
+      : m_variable(other.m_variable), m_targetDimensions(targetDimensions) {
+    m_variable += begin * other.m_dimensions.offset(dim);
+    m_dimensions = other.m_dimensions;
+    for (const auto label : m_dimensions.labels())
+      if (!other.m_targetDimensions.contains(label))
+        m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
+  }
+
   class iterator
       : public boost::iterator_facade<iterator, T,
                                       boost::random_access_traversal_tag> {

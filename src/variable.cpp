@@ -323,11 +323,9 @@ template <class T> struct CastHelper<VariableView<T>> {
   }
 
   template <class Concept>
-  static auto getView(Concept &concept, const Dimensions &dims, const Dim dim,
-                      const gsl::index begin) {
-    // TODO
-    throw std::runtime_error("Creating sub-view is not implemented.");
-    return CastHelper<VariableView<T>>::getView(concept, dims);
+  static VariableView<const T> getView(Concept &concept, const Dimensions &dims,
+                                       const Dim dim, const gsl::index begin) {
+    return {CastHelper<VariableView<T>>::getModel(concept), dims, dim, begin};
   }
 };
 
@@ -351,13 +349,6 @@ public:
   }
 
   std::unique_ptr<VariableConcept>
-  makeView(const Dimensions &dims) const override {
-    return std::make_unique<
-        VariableModel<decltype(CastHelper<T>::getView(*this, dims))>>(
-        dims, CastHelper<T>::getView(*this, dims));
-  }
-
-  std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end) const override {
     auto dims = dimensions();
@@ -365,9 +356,9 @@ public:
       dims.erase(dim);
     else
       dims.resize(dim, end - begin);
-    return std::make_unique<
-        VariableModel<decltype(CastHelper<T>::getView(*this, dims, dim, begin))>>(
-        dims, CastHelper<T>::getView(*this, dims, dim ,begin));
+    return std::make_unique<VariableModel<decltype(
+        CastHelper<T>::getView(*this, dims, dim, begin))>>(
+        dims, CastHelper<T>::getView(*this, dims, dim, begin));
   }
 
   bool isContiguous() const override { return IsContiguous<T>::get(); }
@@ -617,6 +608,11 @@ void Variable::setSlice(const Variable &slice, const Dimension dim,
   if (!dimensions().contains(slice.dimensions()))
     throw std::runtime_error("Cannot set slice: Dimensions do not match.");
   data().copy(slice.data(), dim, index, 0, 1);
+}
+
+VariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
+                                   const gsl::index end) const {
+  return VariableSlice(*this, dim, begin, end);
 }
 
 Variable operator+(Variable a, const Variable &b) { return a += b; }

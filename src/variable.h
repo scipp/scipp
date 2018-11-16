@@ -29,8 +29,6 @@ public:
   virtual std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
   virtual std::unique_ptr<VariableConcept>
-  makeView(const Dimensions &dims) const = 0;
-  virtual std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end = -1) const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
@@ -90,6 +88,7 @@ private:
 };
 
 template <class... Tags> class LinearView;
+class VariableSlice;
 
 class Variable {
 public:
@@ -173,6 +172,9 @@ public:
     return gsl::make_span(cast<Vector<typename Tag::type>>());
   }
 
+  VariableSlice operator()(const Dim dim, const gsl::index begin,
+                           const gsl::index end = -1) const;
+
   template <class... Tags> friend class LinearView;
 
 private:
@@ -215,21 +217,30 @@ Variable makeVariable(const Dimensions &dimensions,
 }
 
 class VariableSlice {
-  public:
-    VariableSlice(const Variable &variable, const Dim dim,
-                  const gsl::index begin, const gsl::index end = -1)
-        : m_variable(variable),
-          m_view(variable.data().makeView(dim, begin, end)) {}
+public:
+  VariableSlice(const Variable &variable, const Dim dim, const gsl::index begin,
+                const gsl::index end = -1)
+      : m_variable(variable),
+        m_view(variable.data().makeView(dim, begin, end)) {}
+  VariableSlice(const VariableSlice &slice, const Dim dim,
+                const gsl::index begin, const gsl::index end = -1)
+      : m_variable(slice.m_variable),
+        m_view(slice.data().makeView(dim, begin, end)) {}
 
-    const Unit &unit() const { return m_variable.unit(); }
-    gsl::index size() const { return m_view->size(); }
-    const Dimensions &dimensions() const { return m_view->dimensions(); }
-    const VariableConcept &data() const { return *m_view; }
-    VariableConcept &data() { return *m_view; }
+  VariableSlice operator()(const Dim dim, const gsl::index begin,
+                           const gsl::index end = -1) const {
+    return VariableSlice(*this, dim, begin, end);
+  }
 
-  private:
-    const Variable &m_variable;
-    deep_ptr<VariableConcept> m_view;
+  const Unit &unit() const { return m_variable.unit(); }
+  gsl::index size() const { return m_view->size(); }
+  const Dimensions &dimensions() const { return m_view->dimensions(); }
+  const VariableConcept &data() const { return *m_view; }
+  VariableConcept &data() { return *m_view; }
+
+private:
+  const Variable &m_variable;
+  deep_ptr<VariableConcept> m_view;
 };
 
 Variable operator+(Variable a, const Variable &b);

@@ -432,7 +432,7 @@ TEST(VariableSlice, self_overlapping_view_operation_broken) {
   auto var = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
                                        {1.0, 2.0, 3.0, 4.0});
 
-  var -= VariableSlice(var, Dim::Y, 0);
+  var -= var(Dim::Y, 0);
   const auto data = var.get<const Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
@@ -449,13 +449,13 @@ TEST(VariableSlice, minus_equals_slice_outer) {
                                        {1.0, 2.0, 3.0, 4.0});
   auto copy(var);
 
-  var -= VariableSlice(copy, Dim::Y, 0);
+  var -= copy(Dim::Y, 0);
   const auto data = var.get<const Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
   EXPECT_EQ(data[3], 2.0);
-  var -= VariableSlice(copy, Dim::Y, 1);
+  var -= copy(Dim::Y, 1);
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -4.0);
   EXPECT_EQ(data[2], -1.0);
@@ -467,15 +467,28 @@ TEST(VariableSlice, minus_equals_slice_inner) {
                                        {1.0, 2.0, 3.0, 4.0});
   auto copy(var);
 
-  var -= VariableSlice(copy, Dim::X, 0);
+  var -= copy(Dim::X, 0);
   const auto data = var.get<const Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 1.0);
   EXPECT_EQ(data[2], 0.0);
   EXPECT_EQ(data[3], 1.0);
-  var -= VariableSlice(copy, Dim::X, 1);
+  var -= copy(Dim::X, 1);
   EXPECT_EQ(data[0], -2.0);
   EXPECT_EQ(data[1], -1.0);
   EXPECT_EQ(data[2], -4.0);
   EXPECT_EQ(data[3], -3.0);
+}
+
+TEST(VariableSlice, minus_equals_slice_of_slice) {
+  auto var = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
+                                       {1.0, 2.0, 3.0, 4.0});
+  auto copy(var);
+
+  var -= copy(Dim::X, 1)(Dim::Y, 1);
+  const auto data = var.get<const Data::Value>();
+  EXPECT_EQ(data[0], -3.0);
+  EXPECT_EQ(data[1], -2.0);
+  EXPECT_EQ(data[2], -1.0);
+  EXPECT_EQ(data[3], 0.0);
 }
