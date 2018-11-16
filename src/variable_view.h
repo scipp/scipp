@@ -90,6 +90,8 @@ public:
     return std::equal(begin(), end(), other.begin());
   }
 
+  const Dimensions &parentDimensions() const { return m_dimensions; }
+
 private:
   T *m_variable;
   const Dimensions m_targetDimensions;

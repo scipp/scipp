@@ -217,23 +217,16 @@ DISABLE_REBIN_VIEW();
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
-template <class T> struct IsView {
-  static bool get() { return false; }
-};
-template <class T> struct IsView<VariableView<T>> {
-  static bool get() { return true; }
-};
-
-template <class T> struct IsContiguous {
-  static bool get() { return false; }
-  static bool get(const VariableConcept &concept, const Dimensions &dims) {
-    return false;
+template <class T> struct ViewHelper {
+  static bool isView() { return false; }
+  static const Dimensions &parentDimensions(const T &model) {
+    throw std::runtime_error("Not a view. Parent dimensions not defined.");
   }
 };
-template <class T> struct IsContiguous<Vector<T>> {
-  static bool get() { return true; }
-  static bool get(const VariableConcept &concept, const Dimensions &dims) {
-    return dims.isContiguousIn(concept.dimensions());
+template <class T> struct ViewHelper<VariableView<T>> {
+  static bool isView() { return true; }
+  static const Dimensions &parentDimensions(const VariableView<T> &view) {
+    return view.parentDimensions();
   }
 };
 
@@ -361,8 +354,13 @@ public:
         dims, CastHelper<T>::getView(*this, dims, dim, begin));
   }
 
-  bool isContiguous() const override { return IsContiguous<T>::get(); }
-  bool isView() const override { return IsView<T>::get(); }
+  bool isContiguous() const override {
+    if (!isView())
+      return true;
+    return dimensions().isContiguousIn(
+        ViewHelper<T>::parentDimensions(m_model));
+  }
+  bool isView() const override { return ViewHelper<T>::isView(); }
 
   bool operator==(const VariableConcept &other) const override {
     return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
@@ -371,8 +369,8 @@ public:
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
     try {
-      // TODO Combine this check into a single virtual method?
-      if (other.isContiguous() && IsContiguous<T>::get(other, dimensions())) {
+      if (other.isContiguous() &&
+          dimensions().isContiguousIn(other.dimensions())) {
         // TODO Do not use getSpan for this unless contiguous
         ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
             apply(CastHelper<T>::getSpan(*this), CastHelper<T>::getSpan(other));
@@ -442,16 +440,16 @@ public:
     auto otherView = CastHelper<T>::getView(other, iterDims, dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    if (IsContiguous<T>::get(*this, iterDims)) {
+    if (isContiguous() && iterDims.isContiguousIn(dimensions())) {
       auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
-      if (other.isContiguous() && IsContiguous<T>::get(other, iterDims)) {
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
         CopyHelper<typename T::value_type>::copy(source, target);
       } else {
         CopyHelper<typename T::value_type>::copy(otherView, target);
       }
     } else {
       auto view = CastHelper<T>::getView(*this, iterDims, dim, offset);
-      if (other.isContiguous() && IsContiguous<T>::get(other, iterDims)) {
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
         CopyHelper<typename T::value_type>::copy(source, view);
       } else {
         CopyHelper<typename T::value_type>::copy(otherView, view);
