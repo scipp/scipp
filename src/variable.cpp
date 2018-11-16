@@ -7,22 +7,45 @@
 #include "dataset.h"
 #include "variable_view.h"
 
+template <class T> struct CloneHelper {
+  static T getModel(const Dimensions &dims) { return T(dims.volume()); }
+};
+
+template <class T> struct CloneHelper<VariableView<T>> {
+  static VariableView<T> getModel(const Dimensions &dims) {
+    throw std::runtime_error("Cannot resize view.");
+  }
+};
+
 template <template <class> class Op, class T> struct ArithmeticHelper {
-  static void apply(Vector<T> &a, const VariableView<const Vector<T>> &b) {
+  static void apply(VariableView<Vector<T>> &a,
+                    const VariableView<const Vector<T>> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(Vector<T> &a, const Vector<T> &b) {
+  static void apply(VariableView<Vector<T>> &a, const gsl::span<const T> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(Vector<T> &a, const gsl::span<const T> &b) {
+  static void apply(const gsl::span<T> &a,
+                    const VariableView<const Vector<T>> &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(const Vector<T> &a, const VariableView<const Vector<T>> &b,
-                    Vector<T> &out) {
-    std::transform(a.begin(), a.end(), b.begin(), out.begin(), Op<T>());
+  static void apply(const gsl::span<T> &a, const gsl::span<const T> &b) {
+    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(const Vector<T> &a, const Vector<T> &b, Vector<T> &out) {
-    std::transform(a.begin(), a.end(), b.begin(), out.begin(), Op<T>());
+  static void apply(const gsl::span<const T> &a, const gsl::span<const T> &b) {
+    throw std::runtime_error("Cannot modify data via const view.");
+  }
+};
+
+template <class T> struct CopyHelper {
+  template <class T1, class T2> static void copy(T1 &view1, T2 &view2) {
+    std::copy(view1.begin(), view1.end(), view2.begin());
+  }
+};
+
+template <class T> struct CopyHelper<const T> {
+  template <class T1, class T2> static void copy(T1 &view1, T2 &view2) {
+    throw std::runtime_error("Cannot modify data via const view.");
   }
 };
 
@@ -170,6 +193,16 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
     }                                                                          \
   };
 
+#define DISABLE_REBIN_VIEW()                                                   \
+  template <class T> struct RebinHelper<VariableView<T>> {                     \
+    template <class... Args> static void rebin(Args &&...) {                   \
+      throw std::runtime_error("Cannot rebin VariableView.");                  \
+    }                                                                          \
+    template <class... Args> static void rebinInner(Args &&...) {              \
+      throw std::runtime_error("Cannot rebin VariableView.");                  \
+    }                                                                          \
+  };
+
 DISABLE_REBIN_T(std::shared_ptr<T>)
 DISABLE_REBIN_T(std::array<T, 4>)
 DISABLE_REBIN_T(std::array<T, 3>)
@@ -179,12 +212,16 @@ DISABLE_REBIN_T(std::pair<T, T>)
 DISABLE_REBIN_T(ValueWithDelta<T>)
 DISABLE_REBIN(Dataset)
 DISABLE_REBIN(std::string)
+DISABLE_REBIN_VIEW();
 
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
 template <class T> struct IsContiguous {
   static bool get() { return false; }
+  static bool get(const VariableConcept &concept, const Dimensions &dims) {
+    return false;
+  }
 };
 template <class T> struct IsContiguous<Vector<T>> {
   static bool get() { return true; }
@@ -201,8 +238,8 @@ template <class T> struct CastHelper {
         .m_model;
   }
 
-  static auto getSpan(const VariableConcept &concept) {
-    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
+  template <class Concept> static auto getSpan(Concept &concept) {
+    auto &model = CastHelper<T>::getModel(concept);
     return gsl::make_span(model);
   }
 
@@ -239,11 +276,42 @@ template <class T> struct CastHelper {
   }
 };
 
+template <class T> struct CastHelper<VariableView<T>> {
+  template <class Concept> static auto &getModel(Concept &concept) {
+    return dynamic_cast<std::conditional_t<std::is_const<Concept>::value,
+                                           const VariableModel<T> &,
+                                           VariableModel<T> &>>(concept)
+        .m_model;
+  }
+
+  template <class Concept> static auto getSpan(Concept &concept) {
+    auto &model = CastHelper<T>::getModel(concept);
+    return gsl::make_span(model);
+  }
+
+  template <class Concept>
+  static auto getSpan(Concept &concept, const Dim dim, const gsl::index begin,
+                      const gsl::index end) {
+    // TODO
+    const auto &model = dynamic_cast<const VariableModel<T> &>(concept).m_model;
+    return gsl::make_span(model);
+  }
+
+  static auto getView(const VariableConcept &concept, const Dimensions &dims) {
+    // TODO
+    return CastHelper<T>::getModel(concept);
+  }
+
+  template <class Concept>
+  static auto getView(Concept &concept, const Dimensions &dims, const Dim dim,
+                      const gsl::index begin) {
+    // TODO
+    return CastHelper<T>::getModel(concept);
+  }
+};
+
 template <class T> class VariableModel final : public VariableConcept {
 public:
-  VariableModel(const Dimensions &dimensions)
-      : VariableConcept(dimensions), m_model(this->dimensions().volume()) {}
-
   VariableModel(const Dimensions &dimensions, T model)
       : VariableConcept(std::move(dimensions)), m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
@@ -257,7 +325,15 @@ public:
 
   std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const override {
-    return std::make_shared<VariableModel<T>>(dims);
+    return std::make_shared<VariableModel<T>>(dims,
+                                              CloneHelper<T>::getModel(dims));
+  }
+
+  std::unique_ptr<VariableConcept>
+  makeView(const Dimensions &dims) const override {
+    return std::make_unique<
+        VariableModel<decltype(CastHelper<T>::getView(*this, dims))>>(
+        dims, CastHelper<T>::getView(*this, dims));
   }
 
   bool isContiguous() const override { return IsContiguous<T>::get(); }
@@ -270,11 +346,13 @@ public:
   VariableConcept &apply(const VariableConcept &other) {
     try {
       if (IsContiguous<T>::get(other, dimensions())) {
-        ArithmeticHelper<Op, typename T::value_type>::apply(
-            m_model, CastHelper<T>::getSpan(other));
+        // TODO Do not use getSpan for this unless contiguous
+        ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+            apply(CastHelper<T>::getSpan(*this), CastHelper<T>::getSpan(other));
       } else {
-        ArithmeticHelper<Op, typename T::value_type>::apply(
-            m_model, CastHelper<T>::getView(other, dimensions()));
+        ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+            apply(CastHelper<T>::getSpan(*this),
+                  CastHelper<T>::getView(other, dimensions()));
       }
     } catch (const std::bad_cast &) {
       throw std::runtime_error("Cannot apply arithmetic operation to "
@@ -298,18 +376,12 @@ public:
     } else {
       const auto &oldModel =
           dynamic_cast<const VariableModel<T> &>(old).m_model;
-      const auto &oldCoordModel =
-          dynamic_cast<const VariableModel<T> &>(oldCoord).m_model;
-      const auto &newCoordModel =
-          dynamic_cast<const VariableModel<T> &>(newCoord).m_model;
       auto oldCoordDims = oldCoord.dimensions();
       oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
       auto newCoordDims = newCoord.dimensions();
       newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
-      VariableView<const T> oldCoordView(oldCoordModel, dimensions(),
-                                         oldCoordDims);
-      VariableView<const T> newCoordView(newCoordModel, dimensions(),
-                                         newCoordDims);
+      auto oldCoordView = CastHelper<T>::getView(oldCoord, dimensions());
+      auto newCoordView = CastHelper<T>::getView(newCoord, dimensions());
       const auto oldOffset = oldCoordDims.offset(dim);
       const auto newOffset = newCoordDims.offset(dim);
 
@@ -347,16 +419,16 @@ public:
     if (IsContiguous<T>::get(*this, iterDims)) {
       auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
       if (IsContiguous<T>::get(other, iterDims)) {
-        std::copy(source.begin(), source.end(), target.begin());
+        CopyHelper<typename T::value_type>::copy(source, target);
       } else {
-        std::copy(otherView.begin(), otherView.end(), target.begin());
+        CopyHelper<typename T::value_type>::copy(otherView, target);
       }
     } else {
       auto view = CastHelper<T>::getView(*this, iterDims, dim, offset);
       if (IsContiguous<T>::get(other, iterDims)) {
-        std::copy(source.begin(), source.end(), view.begin());
+        CopyHelper<typename T::value_type>::copy(source, view);
       } else {
-        std::copy(otherView.begin(), otherView.end(), view.begin());
+        CopyHelper<typename T::value_type>::copy(otherView, view);
       }
     }
   }
@@ -473,7 +545,7 @@ Variable &Variable::operator+=(const Variable &other) {
   return *this;
 }
 
-Variable &Variable::operator-=(const Variable &other) {
+template <class T> Variable &Variable::operator-=(const T &other) {
   if (unit() != other.unit())
     throw std::runtime_error("Cannot subtract Variables: Units do not match.");
   if (dimensions().contains(other.dimensions())) {
@@ -487,6 +559,9 @@ Variable &Variable::operator-=(const Variable &other) {
 
   return *this;
 }
+
+template Variable &Variable::operator-=(const Variable &);
+template Variable &Variable::operator-=(const VariableSlice &);
 
 Variable &Variable::operator*=(const Variable &other) {
   if (!dimensions().contains(other.dimensions()))

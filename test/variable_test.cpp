@@ -419,3 +419,10 @@ TEST(Variable, rebin) {
   ASSERT_EQ(rebinned.get<const Data::Value>().size(), 1);
   EXPECT_EQ(rebinned.get<const Data::Value>()[0], 3.0);
 }
+
+TEST(VariableSlice, minus_equals) {
+  auto var = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
+                                       {1.0, 2.0, 3.0, 4.0});
+  VariableSlice view(var, {Dim::X, 2});
+  var -= view;
+}

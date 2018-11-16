@@ -6,6 +6,8 @@
 #ifndef VARIABLE_VIEW_H
 #define VARIABLE_VIEW_H
 
+#include <algorithm>
+
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "dimensions.h"
@@ -36,6 +38,9 @@ template <class T> struct GetPtr<T *const> {
 
 template <class T> class VariableView {
 public:
+  using value_type = typename ValueType<T>::type;
+  //using value_type = std::remove_const_t<typename ValueType<T>::type>;
+
   VariableView(T &variable, const Dimensions &targetDimensions,
                const Dimensions &dimensions)
       : m_variable(GetPtr<T>::get(variable)),
@@ -81,8 +86,15 @@ public:
     return {m_variable, m_targetDimensions, m_dimensions, 0};
   }
   iterator end() const {
-    return {m_variable, m_targetDimensions, m_dimensions,
-            m_targetDimensions.volume()};
+    return {m_variable, m_targetDimensions, m_dimensions, size()};
+  }
+
+  gsl::index size() const { return m_targetDimensions.volume(); }
+
+  bool operator==(const VariableView<T> &other) const {
+    if (m_targetDimensions != other.m_targetDimensions)
+      return false;
+    return std::equal(begin(), end(), other.begin());
   }
 
 private:

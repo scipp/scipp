@@ -28,6 +28,8 @@ public:
   virtual std::shared_ptr<VariableConcept> clone() const = 0;
   virtual std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
+  virtual std::unique_ptr<VariableConcept>
+  makeView(const Dimensions &dims) const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
@@ -110,7 +112,7 @@ public:
   bool operator==(const Variable &other) const;
   bool operator!=(const Variable &other) const;
   Variable &operator+=(const Variable &other);
-  Variable &operator-=(const Variable &other);
+  template <class T> Variable &operator-=(const T &other);
   Variable &operator*=(const Variable &other);
   void setSlice(const Variable &slice, const Dimension dim,
                 const gsl::index index);
@@ -207,6 +209,35 @@ Variable makeVariable(const Dimensions &dimensions,
   return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
+
+/*
+class VariableSlice : public VariableConcept {
+  public:
+    VariableSlice(const Variable &variable, const Dimension &shape)
+        : VariableConcept(shape), m_variable(variable) {}
+
+  private:
+    const Variable &m_variable;
+};
+*/
+
+class VariableSlice {
+  public:
+    VariableSlice(const Variable &variable, const Dimensions &dimensions)
+        : m_variable(variable), m_dimensions(dimensions),
+          m_view(variable.data().makeView(dimensions)) {}
+
+    const Unit &unit() const { return m_variable.unit(); }
+    gsl::index size() const { return m_view->size(); }
+    const Dimensions &dimensions() const { return m_dimensions; }
+    const VariableConcept &data() const { return *m_view; }
+    VariableConcept &data() { return *m_view; }
+
+  private:
+    const Variable &m_variable;
+    const Dimensions m_dimensions;
+    deep_ptr<VariableConcept> m_view;
+};
 
 Variable operator+(Variable a, const Variable &b);
 Variable operator-(Variable a, const Variable &b);

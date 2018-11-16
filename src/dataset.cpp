@@ -293,7 +293,6 @@ template <class T> Dataset &Dataset::operator-=(const T &other) {
   return minus_equals(*this, other);
 }
 
-// template <>
 template <class T>
 Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
   return minus_equals(base(), other);
