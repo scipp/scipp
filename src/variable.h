@@ -30,6 +30,9 @@ public:
   clone(const Dimensions &dims) const = 0;
   virtual std::unique_ptr<VariableConcept>
   makeView(const Dimensions &dims) const = 0;
+  virtual std::unique_ptr<VariableConcept>
+  makeView(const Dim dim, const gsl::index begin,
+           const gsl::index end = -1) const = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
@@ -213,8 +216,10 @@ Variable makeVariable(const Dimensions &dimensions,
 
 class VariableSlice {
   public:
-    VariableSlice(const Variable &variable, const Dimensions &dimensions)
-        : m_variable(variable), m_view(variable.data().makeView(dimensions)) {}
+    VariableSlice(const Variable &variable, const Dim dim,
+                  const gsl::index begin, const gsl::index end = -1)
+        : m_variable(variable),
+          m_view(variable.data().makeView(dim, begin, end)) {}
 
     const Unit &unit() const { return m_variable.unit(); }
     gsl::index size() const { return m_view->size(); }

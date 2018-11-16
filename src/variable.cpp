@@ -357,6 +357,19 @@ public:
         dims, CastHelper<T>::getView(*this, dims));
   }
 
+  std::unique_ptr<VariableConcept>
+  makeView(const Dim dim, const gsl::index begin,
+           const gsl::index end) const override {
+    auto dims = dimensions();
+    if (end == -1)
+      dims.erase(dim);
+    else
+      dims.resize(dim, end - begin);
+    return std::make_unique<
+        VariableModel<decltype(CastHelper<T>::getView(*this, dims, dim, begin))>>(
+        dims, CastHelper<T>::getView(*this, dims, dim ,begin));
+  }
+
   bool isContiguous() const override { return IsContiguous<T>::get(); }
   bool isView() const override { return IsView<T>::get(); }
 

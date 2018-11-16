@@ -424,8 +424,7 @@ TEST(VariableSlice, minus_equals_failures) {
   auto var = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
                                        {1.0, 2.0, 3.0, 4.0});
 
-  EXPECT_THROW_MSG(var -= VariableSlice(var, {{Dim::X, 2}, {Dim::Y, 1}}),
-                   std::runtime_error,
+  EXPECT_THROW_MSG(var -= VariableSlice(var, Dim::X, 0, 1), std::runtime_error,
                    "Cannot subtract Variables: Dimensions do not match.");
 }
 
@@ -433,22 +432,22 @@ TEST(VariableSlice, minus_equals_slice_outer) {
   auto var = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
                                        {1.0, 2.0, 3.0, 4.0});
 
-  var -= VariableSlice(var, {Dim::X, 2});
+  var -= VariableSlice(var, Dim::Y, 0);
   const auto data = var.get<const Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
-  EXPECT_EQ(data[2], 3.0);
-  EXPECT_EQ(data[3], 4.0);
+  EXPECT_EQ(data[2], 2.0);
+  EXPECT_EQ(data[3], 2.0);
 }
 
 TEST(VariableSlice, minus_equals_slice_inner) {
   auto var = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
                                        {1.0, 2.0, 3.0, 4.0});
 
-  var -= VariableSlice(var, {Dim::Y, 2});
+  var -= VariableSlice(var, Dim::X, 0);
   const auto data = var.get<const Data::Value>();
   EXPECT_EQ(data[0], 0.0);
-  EXPECT_EQ(data[1], 2.0);
+  EXPECT_EQ(data[1], 1.0);
   EXPECT_EQ(data[2], 0.0);
-  EXPECT_EQ(data[3], 4.0);
+  EXPECT_EQ(data[3], 1.0);
 }
