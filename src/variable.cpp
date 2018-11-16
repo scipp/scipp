@@ -210,9 +210,10 @@ template <class T> struct CastHelper {
   static auto getSpan(Concept &concept, const Dim dim, const gsl::index begin,
                       const gsl::index end) {
     auto &model = CastHelper<T>::getModel(concept);
-    if (!concept.dimensions().contains(dim)) {
-      if (begin != 0 || end != 1)
-        throw std::runtime_error("VariableConcept: Slice index out of range.");
+    if (!concept.dimensions().contains(dim) && (begin != 0 || end != 1))
+      throw std::runtime_error("VariableConcept: Slice index out of range.");
+    if (!concept.dimensions().contains(dim) ||
+        concept.dimensions().size(dim) == end - begin) {
       return gsl::make_span(model);
     }
     const auto &dims = concept.dimensions();
@@ -335,36 +336,33 @@ public:
             const gsl::index offset, const gsl::index otherBegin,
             const gsl::index otherEnd) override {
     auto iterationDimensions = dimensions();
-    auto thisDims = dimensions();
     if (!iterationDimensions.contains(dim) && offset != 0)
       throw std::runtime_error("VariableConcept::copy: Output offset must be 0 "
                                "if dimension is not contained.");
     if (!otherConcept.dimensions().contains(dim)) {
       if (iterationDimensions.contains(dim))
         iterationDimensions.erase(dim);
-      // Add fake dim such that we can use Dimensions::offset below.
       if (otherBegin != 0 || otherEnd != 1)
         throw std::runtime_error(
             "VariableConcept::copy: Slice index out of range.");
     } else {
       if (iterationDimensions.contains(dim))
         iterationDimensions.resize(dim, otherEnd - otherBegin);
-      else
-        thisDims.add(dim, 1);
     }
 
-    auto target = CastHelper<T>::getSpan(*this, dim, offset,
-                                         offset + otherEnd - otherBegin);
     auto source =
         CastHelper<T>::getSpan(otherConcept, dim, otherBegin, otherEnd);
     auto otherView = CastHelper<T>::getView(otherConcept, iterationDimensions,
                                             dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    bool otherIsContiguous = IsContiguous<T>::get(otherConcept, thisDims);
-    if (thisDims.label(thisDims.count() - 1) == dim) {
-      if (otherIsContiguous &&
-          iterationDimensions == otherConcept.dimensions()) {
+    // Do we need reverse arg order?
+    bool otherIsContiguous =
+        IsContiguous<T>::get(otherConcept, iterationDimensions);
+    if (IsContiguous<T>::get(*this, iterationDimensions)) {
+      auto target = CastHelper<T>::getSpan(*this, dim, offset,
+                                           offset + otherEnd - otherBegin);
+      if (otherIsContiguous) {
         // Case 1: Output range is contiguous, input is contiguous and not
         // transposed.
         std::copy(source.begin(), source.end(), target.begin());
@@ -376,8 +374,7 @@ public:
     } else {
       auto view =
           CastHelper<T>::getView(*this, iterationDimensions, dim, offset);
-      if (otherIsContiguous &&
-          iterationDimensions == otherConcept.dimensions()) {
+      if (otherIsContiguous) {
         // Case 3: Output range is not contiguous, input is contiguous and not
         // transposed.
         std::copy(source.begin(), source.end(), view.begin());
