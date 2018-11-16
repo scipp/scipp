@@ -217,6 +217,13 @@ DISABLE_REBIN_VIEW();
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
+template <class T> struct IsView {
+  static bool get() { return false; }
+};
+template <class T> struct IsView<VariableView<T>> {
+  static bool get() { return true; }
+};
+
 template <class T> struct IsContiguous {
   static bool get() { return false; }
   static bool get(const VariableConcept &concept, const Dimensions &dims) {
@@ -232,8 +239,7 @@ template <class T> struct IsContiguous<Vector<T>> {
 
 template <class T> struct CastHelper {
   template <class Concept> static auto *getData(Concept &concept) {
-    // TODO Need to cast to VariableMode<VariableView<T>> if concept is a view.
-    if (concept.isContiguous())
+    if (!concept.isView())
       return dynamic_cast<std::conditional_t<std::is_const<Concept>::value,
                                              const VariableModel<T> &,
                                              VariableModel<T> &>>(concept)
@@ -266,9 +272,9 @@ template <class T> struct CastHelper {
   }
 
   static auto getView(const VariableConcept &concept, const Dimensions &dims) {
-    if (concept.isContiguous()) {
-    auto *data = CastHelper<T>::getData(concept);
-    return makeVariableView(data, dims, concept.dimensions());
+    if (!concept.isView()) {
+      auto *data = CastHelper<T>::getData(concept);
+      return makeVariableView(data, dims, concept.dimensions());
     } else {
       return CastHelper<VariableView<const typename T::value_type>>::getView(
           concept, dims);
@@ -306,7 +312,7 @@ template <class T> struct CastHelper<VariableView<T>> {
   template <class Concept>
   static auto getSpan(Concept &concept, const Dim dim, const gsl::index begin,
                       const gsl::index end) {
-    // TODO
+    throw std::runtime_error("Creating sub-span of view is not implemented.");
     auto *data = CastHelper<VariableView<T>>::getData(concept);
     return gsl::make_span(data, data);
   }
@@ -314,10 +320,6 @@ template <class T> struct CastHelper<VariableView<T>> {
   static VariableView<const T> getView(const VariableConcept &concept,
                                        const Dimensions &dims) {
     return {CastHelper<VariableView<T>>::getModel(concept), dims};
-    //if (concept.dimensions() != dims)
-    //  throw std::runtime_error("Creating sub-view is not implemented.");
-    //return dynamic_cast<const VariableModel<VariableView<T>> &>(concept)
-    //    .m_model;
   }
 
   template <class Concept>
@@ -356,6 +358,7 @@ public:
   }
 
   bool isContiguous() const override { return IsContiguous<T>::get(); }
+  bool isView() const override { return IsView<T>::get(); }
 
   bool operator==(const VariableConcept &other) const override {
     return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
@@ -384,8 +387,6 @@ public:
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
-
-    /*
     // Dimensions of *this and old are guaranteed to be the same.
     if (dimensions().label(0) == dim && oldCoord.dimensions().count() == 1 &&
         newCoord.dimensions().count() == 1) {
@@ -408,7 +409,6 @@ public:
       RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
                             newCoordView, newOffset);
     }
-    */
   }
 
   VariableConcept &operator+=(const VariableConcept &other) override {

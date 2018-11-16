@@ -33,6 +33,7 @@ public:
   virtual bool operator==(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
+  virtual bool isView() const = 0;
 
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
