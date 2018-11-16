@@ -23,6 +23,14 @@ public:
       : m_variable(variable), m_targetDimensions(targetDimensions),
         m_dimensions(dimensions) {}
 
+  VariableView(const VariableView &other, const Dimensions &targetDimensions)
+      : m_variable(other.m_variable), m_targetDimensions(targetDimensions) {
+    m_dimensions = other.m_dimensions;
+    for (const auto label : m_dimensions.labels())
+      if (!other.m_targetDimensions.contains(label))
+        m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
+  }
+
   class iterator
       : public boost::iterator_facade<iterator, T,
                                       boost::random_access_traversal_tag> {
@@ -75,12 +83,13 @@ public:
 private:
   T *m_variable;
   const Dimensions m_targetDimensions;
-  const Dimensions m_dimensions;
+  Dimensions m_dimensions;
 };
 
 template <class T>
-auto makeVariableView(T *variable, const Dimensions &targetDimensions,
-                      const Dimensions &dimensions) {
+VariableView<T> makeVariableView(T *variable,
+                                 const Dimensions &targetDimensions,
+                                 const Dimensions &dimensions) {
   return VariableView<T>(variable, targetDimensions, dimensions);
 }
 

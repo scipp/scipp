@@ -210,32 +210,19 @@ Variable makeVariable(const Dimensions &dimensions,
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
-/*
-class VariableSlice : public VariableConcept {
-  public:
-    VariableSlice(const Variable &variable, const Dimension &shape)
-        : VariableConcept(shape), m_variable(variable) {}
-
-  private:
-    const Variable &m_variable;
-};
-*/
-
 class VariableSlice {
   public:
     VariableSlice(const Variable &variable, const Dimensions &dimensions)
-        : m_variable(variable), m_dimensions(dimensions),
-          m_view(variable.data().makeView(dimensions)) {}
+        : m_variable(variable), m_view(variable.data().makeView(dimensions)) {}
 
     const Unit &unit() const { return m_variable.unit(); }
     gsl::index size() const { return m_view->size(); }
-    const Dimensions &dimensions() const { return m_dimensions; }
+    const Dimensions &dimensions() const { return m_view->dimensions(); }
     const VariableConcept &data() const { return *m_view; }
     VariableConcept &data() { return *m_view; }
 
   private:
     const Variable &m_variable;
-    const Dimensions m_dimensions;
     deep_ptr<VariableConcept> m_view;
 };
 

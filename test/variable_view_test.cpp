@@ -77,3 +77,28 @@ TEST(VariableView, edges_second) {
   EXPECT_EQ(*it++, 6.0);
   EXPECT_EQ(*it++, 7.0);
 }
+
+TEST(VariableView, subview) {
+  Dimensions dims({{Dim::X, 2}, {Dim::Y, 3}});
+  std::vector<double> variable(dims.volume());
+  std::iota(variable.begin(), variable.end(), 0);
+
+  Dimensions variableDims({{Dim::Y, 3}});
+  VariableView<double> view(variable.data(), variableDims, dims);
+  auto it = view.begin();
+  ASSERT_EQ(std::distance(it, view.end()), 3);
+  EXPECT_EQ(*it++, 0.0);
+  EXPECT_EQ(*it++, 2.0);
+  EXPECT_EQ(*it++, 4.0);
+
+  Dimensions subDims({{Dim::X, 2}, {Dim::Y, 3}});
+  VariableView<double> subView(view, subDims);
+  it = subView.begin();
+  ASSERT_EQ(std::distance(it, subView.end()), 6);
+  EXPECT_EQ(*it++, 0.0);
+  EXPECT_EQ(*it++, 0.0);
+  EXPECT_EQ(*it++, 2.0);
+  EXPECT_EQ(*it++, 2.0);
+  EXPECT_EQ(*it++, 4.0);
+  EXPECT_EQ(*it++, 4.0);
+}
