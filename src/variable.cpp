@@ -332,41 +332,30 @@ public:
 
   gsl::index size() const override { return m_model.size(); }
 
-  void copy(const VariableConcept &otherConcept, const Dim dim,
+  void copy(const VariableConcept &other, const Dim dim,
             const gsl::index offset, const gsl::index otherBegin,
             const gsl::index otherEnd) override {
-    auto iterationDimensions = dimensions();
-    if (iterationDimensions.contains(dim))
-      iterationDimensions.resize(dim, otherEnd - otherBegin);
+    auto iterDims = dimensions();
+    const gsl::index delta = otherEnd - otherBegin;
+    if (iterDims.contains(dim))
+      iterDims.resize(dim, delta);
 
-    auto source =
-        CastHelper<T>::getSpan(otherConcept, dim, otherBegin, otherEnd);
-    auto otherView = CastHelper<T>::getView(otherConcept, iterationDimensions,
-                                            dim, otherBegin);
+    auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
+    auto otherView = CastHelper<T>::getView(other, iterDims, dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    if (IsContiguous<T>::get(*this, iterationDimensions)) {
-      auto target = CastHelper<T>::getSpan(*this, dim, offset,
-                                           offset + otherEnd - otherBegin);
-      if (IsContiguous<T>::get(otherConcept, iterationDimensions)) {
-        // Case 1: Output range is contiguous, input is contiguous and not
-        // transposed.
+    if (IsContiguous<T>::get(*this, iterDims)) {
+      auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
+      if (IsContiguous<T>::get(other, iterDims)) {
         std::copy(source.begin(), source.end(), target.begin());
       } else {
-        // Case 2: Output range is contiguous, input is not contiguous or
-        // transposed.
         std::copy(otherView.begin(), otherView.end(), target.begin());
       }
     } else {
-      auto view =
-          CastHelper<T>::getView(*this, iterationDimensions, dim, offset);
-      if (IsContiguous<T>::get(otherConcept, iterationDimensions)) {
-        // Case 3: Output range is not contiguous, input is contiguous and not
-        // transposed.
+      auto view = CastHelper<T>::getView(*this, iterDims, dim, offset);
+      if (IsContiguous<T>::get(other, iterDims)) {
         std::copy(source.begin(), source.end(), view.begin());
       } else {
-        // Case 4: Output range is not contiguous, input is not contiguous or
-        // transposed.
         std::copy(otherView.begin(), otherView.end(), view.begin());
       }
     }
