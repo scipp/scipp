@@ -371,7 +371,8 @@ public:
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
     try {
-      if (IsContiguous<T>::get(other, dimensions())) {
+      // TODO Combine this check into a single virtual method?
+      if (other.isContiguous() && IsContiguous<T>::get(other, dimensions())) {
         // TODO Do not use getSpan for this unless contiguous
         ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
             apply(CastHelper<T>::getSpan(*this), CastHelper<T>::getSpan(other));
@@ -443,14 +444,14 @@ public:
     // range where possible.
     if (IsContiguous<T>::get(*this, iterDims)) {
       auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
-      if (IsContiguous<T>::get(other, iterDims)) {
+      if (other.isContiguous() && IsContiguous<T>::get(other, iterDims)) {
         CopyHelper<typename T::value_type>::copy(source, target);
       } else {
         CopyHelper<typename T::value_type>::copy(otherView, target);
       }
     } else {
       auto view = CastHelper<T>::getView(*this, iterDims, dim, offset);
-      if (IsContiguous<T>::get(other, iterDims)) {
+      if (other.isContiguous() && IsContiguous<T>::get(other, iterDims)) {
         CopyHelper<typename T::value_type>::copy(source, view);
       } else {
         CopyHelper<typename T::value_type>::copy(otherView, view);

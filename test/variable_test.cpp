@@ -492,3 +492,45 @@ TEST(VariableSlice, minus_equals_slice_of_slice) {
   EXPECT_EQ(data[2], -1.0);
   EXPECT_EQ(data[3], 0.0);
 }
+
+TEST(VariableSlice, minus_equals_nontrivial_slices) {
+  auto source = makeVariable<Data::Value>(
+      {{Dim::X, 3}, {Dim::Y, 3}},
+      {11.0, 12.0, 13.0, 21.0, 22.0, 23.0, 31.0, 32.0, 33.0});
+  {
+    auto target = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}});
+    target -= source(Dim::X, 0, 2)(Dim::Y, 0, 2);
+    const auto data = target.get<const Data::Value>();
+    EXPECT_EQ(data[0], -11.0);
+    EXPECT_EQ(data[1], -12.0);
+    EXPECT_EQ(data[2], -21.0);
+    EXPECT_EQ(data[3], -22.0);
+  }
+  {
+    auto target = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}});
+    target -= source(Dim::X, 1, 3)(Dim::Y, 0, 2);
+    const auto data = target.get<const Data::Value>();
+    EXPECT_EQ(data[0], -12.0);
+    EXPECT_EQ(data[1], -13.0);
+    EXPECT_EQ(data[2], -22.0);
+    EXPECT_EQ(data[3], -23.0);
+  }
+  {
+    auto target = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}});
+    target -= source(Dim::X, 0, 2)(Dim::Y, 1, 3);
+    const auto data = target.get<const Data::Value>();
+    EXPECT_EQ(data[0], -21.0);
+    EXPECT_EQ(data[1], -22.0);
+    EXPECT_EQ(data[2], -31.0);
+    EXPECT_EQ(data[3], -32.0);
+  }
+  {
+    auto target = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}});
+    target -= source(Dim::X, 1, 3)(Dim::Y, 1, 3);
+    const auto data = target.get<const Data::Value>();
+    EXPECT_EQ(data[0], -22.0);
+    EXPECT_EQ(data[1], -23.0);
+    EXPECT_EQ(data[2], -32.0);
+    EXPECT_EQ(data[3], -33.0);
+  }
+}
