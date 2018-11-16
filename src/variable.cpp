@@ -336,19 +336,8 @@ public:
             const gsl::index offset, const gsl::index otherBegin,
             const gsl::index otherEnd) override {
     auto iterationDimensions = dimensions();
-    if (!iterationDimensions.contains(dim) && offset != 0)
-      throw std::runtime_error("VariableConcept::copy: Output offset must be 0 "
-                               "if dimension is not contained.");
-    if (!otherConcept.dimensions().contains(dim)) {
-      if (iterationDimensions.contains(dim))
-        iterationDimensions.erase(dim);
-      if (otherBegin != 0 || otherEnd != 1)
-        throw std::runtime_error(
-            "VariableConcept::copy: Slice index out of range.");
-    } else {
-      if (iterationDimensions.contains(dim))
-        iterationDimensions.resize(dim, otherEnd - otherBegin);
-    }
+    if (iterationDimensions.contains(dim))
+      iterationDimensions.resize(dim, otherEnd - otherBegin);
 
     auto source =
         CastHelper<T>::getSpan(otherConcept, dim, otherBegin, otherEnd);
@@ -356,13 +345,10 @@ public:
                                             dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    // Do we need reverse arg order?
-    bool otherIsContiguous =
-        IsContiguous<T>::get(otherConcept, iterationDimensions);
     if (IsContiguous<T>::get(*this, iterationDimensions)) {
       auto target = CastHelper<T>::getSpan(*this, dim, offset,
                                            offset + otherEnd - otherBegin);
-      if (otherIsContiguous) {
+      if (IsContiguous<T>::get(otherConcept, iterationDimensions)) {
         // Case 1: Output range is contiguous, input is contiguous and not
         // transposed.
         std::copy(source.begin(), source.end(), target.begin());
@@ -374,7 +360,7 @@ public:
     } else {
       auto view =
           CastHelper<T>::getView(*this, iterationDimensions, dim, offset);
-      if (otherIsContiguous) {
+      if (IsContiguous<T>::get(otherConcept, iterationDimensions)) {
         // Case 3: Output range is not contiguous, input is contiguous and not
         // transposed.
         std::copy(source.begin(), source.end(), view.begin());
