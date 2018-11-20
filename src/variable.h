@@ -88,7 +88,7 @@ private:
 };
 
 template <class... Tags> class LinearView;
-class VariableSlice;
+template <class V> class VariableSlice;
 
 class Variable {
 public:
@@ -172,8 +172,12 @@ public:
     return gsl::make_span(cast<Vector<typename Tag::type>>());
   }
 
-  VariableSlice operator()(const Dim dim, const gsl::index begin,
-                           const gsl::index end = -1) const;
+  VariableSlice<const Variable> operator()(const Dim dim,
+                                           const gsl::index begin,
+                                           const gsl::index end = -1) const;
+
+  VariableSlice<Variable> operator()(const Dim dim, const gsl::index begin,
+                                     const gsl::index end = -1);
 
   template <class... Tags> friend class LinearView;
 
@@ -216,9 +220,18 @@ Variable makeVariable(const Dimensions &dimensions,
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
-class VariableSlice {
+template <class Base> class VariableSliceMutableMixin {};
+
+template <> class VariableSliceMutableMixin<VariableSlice<Variable>> {
 public:
-  VariableSlice(const Variable &variable, const Dim dim, const gsl::index begin,
+  template <class T> Variable &operator-=(const T &other);
+};
+
+// V is either Variable or const Variable.
+template <class V>
+class VariableSlice : public VariableSliceMutableMixin<VariableSlice<V>> {
+public:
+  VariableSlice(V &variable, const Dim dim, const gsl::index begin,
                 const gsl::index end = -1)
       : m_variable(variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
@@ -236,10 +249,11 @@ public:
   gsl::index size() const { return m_view->size(); }
   const Dimensions &dimensions() const { return m_view->dimensions(); }
   const VariableConcept &data() const { return *m_view; }
+  // Move to mutable mixin?
   VariableConcept &data() { return *m_view; }
 
 private:
-  const Variable &m_variable;
+  V &m_variable;
   deep_ptr<VariableConcept> m_view;
 };
 

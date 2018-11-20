@@ -585,7 +585,14 @@ template <class T> Variable &Variable::operator-=(const T &other) {
 }
 
 template Variable &Variable::operator-=(const Variable &);
-template Variable &Variable::operator-=(const VariableSlice &);
+template Variable &Variable::operator-=(const VariableSlice<const Variable> &);
+template Variable &Variable::operator-=(const VariableSlice<Variable> &);
+
+template <class T>
+Variable &VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator-=(const T &other) {
+  throw std::runtime_error("TODO");
+}
 
 Variable &Variable::operator*=(const Variable &other) {
   if (!dimensions().contains(other.dimensions()))
@@ -609,9 +616,14 @@ void Variable::setSlice(const Variable &slice, const Dimension dim,
   data().copy(slice.data(), dim, index, 0, 1);
 }
 
-VariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
-                                   const gsl::index end) const {
-  return VariableSlice(*this, dim, begin, end);
+VariableSlice<const Variable> Variable::
+operator()(const Dim dim, const gsl::index begin, const gsl::index end) const {
+  return {*this, dim, begin, end};
+}
+
+VariableSlice<Variable> Variable::
+operator()(const Dim dim, const gsl::index begin, const gsl::index end) {
+  return {*this, dim, begin, end};
 }
 
 Variable operator+(Variable a, const Variable &b) { return a += b; }

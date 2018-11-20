@@ -424,7 +424,7 @@ TEST(VariableSlice, minus_equals_failures) {
   auto var = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
                                        {1.0, 2.0, 3.0, 4.0});
 
-  EXPECT_THROW_MSG(var -= VariableSlice(var, Dim::X, 0, 1), std::runtime_error,
+  EXPECT_THROW_MSG(var -= var(Dim::X, 0, 1), std::runtime_error,
                    "Cannot subtract Variables: Dimensions do not match.");
 }
 
