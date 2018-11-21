@@ -18,21 +18,22 @@ template <class T> struct CloneHelper<VariableView<T>> {
 };
 
 template <template <class> class Op, class T> struct ArithmeticHelper {
-  static void apply(VariableView<T> &a, const VariableView<const T> &b) {
+  template <class InputView, class OutputView>
+  static void apply(const OutputView &a, const InputView &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
   }
-  static void apply(VariableView<T> &a, const gsl::span<const T> &b) {
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
-  }
-  static void apply(const gsl::span<T> &a, const VariableView<const T> &b) {
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
-  }
-  static void apply(const gsl::span<T> &a, const gsl::span<const T> &b) {
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
-  }
+  // These overloads exist only to make the compiler happy, if they are ever
+  // called it probably indicates that something is wrong in the call chain.
   template <class Other>
   static void apply(const gsl::span<const T> &a, const Other &b) {
     throw std::runtime_error("Cannot modify data via const view.");
+  }
+  template <class Other>
+  static void apply(const VariableView<const T> &a, const Other &b) {
+    throw std::runtime_error("Cannot modify data via const view.");
+  }
+  template <class Other> static void apply(const Vector<T> &a, const Other &b) {
+    throw std::runtime_error("Passed vector to apply, this should not happen.");
   }
 };
 
@@ -219,13 +220,22 @@ VariableConcept::VariableConcept(const Dimensions &dimensions)
 
 template <class T> struct ViewHelper {
   static bool isView() { return false; }
+  static bool isConstView() { return false; }
   static const Dimensions &parentDimensions(const T &model) {
     throw std::runtime_error("Not a view. Parent dimensions not defined.");
   }
 };
 template <class T> struct ViewHelper<VariableView<T>> {
   static bool isView() { return true; }
+  static bool isConstView() { return false; }
   static const Dimensions &parentDimensions(const VariableView<T> &view) {
+    return view.parentDimensions();
+  }
+};
+template <class T> struct ViewHelper<VariableView<const T>> {
+  static bool isView() { return true; }
+  static bool isConstView() { return true; }
+  static const Dimensions &parentDimensions(const VariableView<const T> &view) {
     return view.parentDimensions();
   }
 };
@@ -310,15 +320,21 @@ template <class T> struct CastHelper<VariableView<T>> {
     return gsl::make_span(data, data);
   }
 
-  static VariableView<const T> getView(const VariableConcept &concept,
-                                       const Dimensions &dims) {
-    return {CastHelper<VariableView<T>>::getModel(concept), dims};
+  static VariableView<T> getView(const VariableConcept &concept,
+                                 const Dimensions &dims) {
+    if (concept.isConstView())
+      return {CastHelper<VariableView<T>>::getModel(concept), dims};
+    else
+      return {
+          CastHelper<VariableView<std::remove_const_t<T>>>::getModel(concept),
+          dims};
   }
 
   template <class Concept>
-  static VariableView<const T> getView(Concept &concept, const Dimensions &dims,
-                                       const Dim dim, const gsl::index begin) {
-    return {CastHelper<VariableView<T>>::getModel(concept), dims, dim, begin};
+  static auto getView(Concept &concept, const Dimensions &dims, const Dim dim,
+                      const gsl::index begin) {
+    return VariableView<T>(CastHelper<VariableView<T>>::getModel(concept), dims,
+                           dim, begin);
   }
 };
 
@@ -354,6 +370,19 @@ public:
         dims, CastHelper<T>::getView(*this, dims, dim, begin));
   }
 
+  std::unique_ptr<VariableConcept> makeView(const Dim dim,
+                                            const gsl::index begin,
+                                            const gsl::index end) override {
+    auto dims = dimensions();
+    if (end == -1)
+      dims.erase(dim);
+    else
+      dims.resize(dim, end - begin);
+    return std::make_unique<VariableModel<decltype(
+        CastHelper<T>::getView(*this, dims, dim, begin))>>(
+        dims, CastHelper<T>::getView(*this, dims, dim, begin));
+  }
+
   bool isContiguous() const override {
     if (!isView())
       return true;
@@ -361,6 +390,7 @@ public:
         ViewHelper<T>::parentDimensions(m_model));
   }
   bool isView() const override { return ViewHelper<T>::isView(); }
+  bool isConstView() const override { return ViewHelper<T>::isConstView(); }
 
   bool operator==(const VariableConcept &other) const override {
     return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
@@ -369,15 +399,27 @@ public:
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
     try {
-      if (other.isContiguous() &&
-          dimensions().isContiguousIn(other.dimensions())) {
-        // TODO Do not use getSpan for this unless contiguous
-        ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-            apply(CastHelper<T>::getSpan(*this), CastHelper<T>::getSpan(other));
+      if (isContiguous()) {
+        if (other.isContiguous() &&
+            dimensions().isContiguousIn(other.dimensions())) {
+          // TODO Do not use getSpan for this unless contiguous
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(CastHelper<T>::getSpan(*this),
+                    CastHelper<T>::getSpan(other));
+        } else {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(CastHelper<T>::getSpan(*this),
+                    CastHelper<T>::getView(other, dimensions()));
+        }
       } else {
-        ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-            apply(CastHelper<T>::getSpan(*this),
-                  CastHelper<T>::getView(other, dimensions()));
+        if (other.isContiguous() &&
+            dimensions().isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(m_model, CastHelper<T>::getSpan(other));
+        } else {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(m_model, CastHelper<T>::getView(other, dimensions()));
+        }
       }
     } catch (const std::bad_cast &) {
       throw std::runtime_error("Cannot apply arithmetic operation to "
@@ -589,10 +631,41 @@ template Variable &Variable::operator-=(const VariableSlice<const Variable> &);
 template Variable &Variable::operator-=(const VariableSlice<Variable> &);
 
 template <class T>
-Variable &VariableSliceMutableMixin<VariableSlice<Variable>>::
-operator-=(const T &other) {
-  throw std::runtime_error("TODO");
+VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::operator-=(const T &other) {
+  if (base().unit() != other.unit())
+    throw std::runtime_error("Cannot subtract Variables: Units do not match.");
+  if (base().dimensions().contains(other.dimensions())) {
+    if (base().valueTypeIs<Data::Events>())
+      throw std::runtime_error("Subtraction of events lists not implemented.");
+    base().data() -= other.data();
+  } else {
+    throw std::runtime_error(
+        "Cannot subtract Variables: Dimensions do not match.");
+  }
+
+  return *this;
 }
+
+const VariableSlice<Variable> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::base() const {
+  return static_cast<const VariableSlice<Variable> &>(*this);
+}
+
+VariableSlice<Variable> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::base() {
+  return static_cast<VariableSlice<Variable> &>(*this);
+}
+
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator-=(const Variable &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator-=(const VariableSlice<const Variable> &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator-=(const VariableSlice<Variable> &);
 
 Variable &Variable::operator*=(const Variable &other) {
   if (!dimensions().contains(other.dimensions()))

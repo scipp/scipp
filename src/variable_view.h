@@ -23,7 +23,8 @@ public:
       : m_variable(variable), m_targetDimensions(targetDimensions),
         m_dimensions(dimensions) {}
 
-  VariableView(const VariableView &other, const Dimensions &targetDimensions)
+  template <class Other>
+  VariableView(const Other &other, const Dimensions &targetDimensions)
       : m_variable(other.m_variable), m_targetDimensions(targetDimensions) {
     m_dimensions = other.m_dimensions;
     for (const auto label : m_dimensions.labels())
@@ -40,6 +41,9 @@ public:
       if (!other.m_targetDimensions.contains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
+
+  friend class VariableView<std::remove_const_t<T>>;
+  friend class VariableView<const T>;
 
   class iterator
       : public boost::iterator_facade<iterator, T,

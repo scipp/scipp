@@ -31,10 +31,14 @@ public:
   virtual std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end = -1) const = 0;
+  virtual std::unique_ptr<VariableConcept>
+  makeView(const Dim dim, const gsl::index begin,
+           const gsl::index end = -1) = 0;
   virtual bool operator==(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
   virtual bool isView() const = 0;
+  virtual bool isConstView() const = 0;
 
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
@@ -224,7 +228,13 @@ template <class Base> class VariableSliceMutableMixin {};
 
 template <> class VariableSliceMutableMixin<VariableSlice<Variable>> {
 public:
-  template <class T> Variable &operator-=(const T &other);
+  template <class T>
+  VariableSliceMutableMixin<VariableSlice<Variable>> &
+  operator-=(const T &other);
+
+private:
+  const VariableSlice<Variable> &base() const;
+  VariableSlice<Variable> &base();
 };
 
 // V is either Variable or const Variable.
@@ -248,6 +258,9 @@ public:
   const Unit &unit() const { return m_variable.unit(); }
   gsl::index size() const { return m_view->size(); }
   const Dimensions &dimensions() const { return m_view->dimensions(); }
+  template <class Tag> bool valueTypeIs() const {
+    return m_variable.template valueTypeIs<Tag>();
+  }
   const VariableConcept &data() const { return *m_view; }
   // Move to mutable mixin?
   VariableConcept &data() { return *m_view; }
