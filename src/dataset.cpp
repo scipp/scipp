@@ -58,6 +58,16 @@ Slice<Dataset> Dataset::operator[](const std::string &name) {
   return Slice<Dataset>(*this, name);
 }
 
+Slice<const Dataset> Dataset::operator()(const Dim dim, const gsl::index begin,
+                                         const gsl::index end) const {
+  return Slice<const Dataset>(*this)(dim, begin, end);
+}
+
+Slice<Dataset> Dataset::operator()(const Dim dim, const gsl::index begin,
+                                   const gsl::index end) {
+  return Slice<Dataset>(*this)(dim, begin, end);
+}
+
 void Dataset::insert(Variable variable) {
   if (variable.isCoord() && count(variable.type()))
     throw std::runtime_error("Attempt to insert duplicate coordinate.");

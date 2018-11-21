@@ -41,6 +41,10 @@ public:
   const Variable &operator[](const gsl::index i) { return m_variables[i]; }
   Slice<const Dataset> operator[](const std::string &name) const;
   Slice<Dataset> operator[](const std::string &name);
+  Slice<const Dataset> operator()(const Dim dim, const gsl::index begin,
+                                  const gsl::index end = -1) const;
+  Slice<Dataset> operator()(const Dim dim, const gsl::index begin,
+                            const gsl::index end = -1);
 
   auto begin() const { return m_variables.begin(); }
   auto end() const { return m_variables.end(); }
@@ -246,6 +250,12 @@ makeSlice(Var &variable,
 // D is either Dataset or const Dataset.
 template <class D> class Slice : public SliceMutableMixin<Slice<D>> {
 public:
+  Slice(D &dataset) : m_dataset(dataset) {
+    // Select everything.
+    for (gsl::index i = 0; i < dataset.size(); ++i)
+      m_indices.push_back(i);
+  }
+
   Slice(D &dataset, const std::string &select) : m_dataset(dataset) {
     for (gsl::index i = 0; i < dataset.size(); ++i) {
       const auto &var = dataset[i];

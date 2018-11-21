@@ -801,6 +801,23 @@ TEST(DatasetSlice, slice_spatial) {
   d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
   d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}},
                         {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}},
+                           {1, 2, 3, 4, 5, 6, 7, 8});
+
+  auto view_x13 = d(Dim::X, 1, 3);
+  ASSERT_EQ(view_x13.size(), 4);
+  EXPECT_EQ(view_x13[0].dimensions(), (Dimensions{Dim::X, 2}));
+  EXPECT_EQ(view_x13[1].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_x13[2].dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_EQ(view_x13[3].dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+}
+
+TEST(DatasetSlice, subset_slice_spatial) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 4}, {1, 2, 3, 4});
+  d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
+  d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}},
+                        {1, 2, 3, 4, 5, 6, 7, 8});
   d.insert<Data::Value>("b", {{Dim::X, 4}, {Dim::Y, 2}},
                         {1, 2, 3, 4, 5, 6, 7, 8});
   d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}},
@@ -829,6 +846,11 @@ TEST(DatasetSlice, slice_spatial) {
   EXPECT_TRUE(equals(d.get<const Coord::X>(), {1, 2, 3, 4}));
   EXPECT_TRUE(equals(d.get<const Coord::Y>(), {1, 2}));
   EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {1, 1, 3, 4, 5, 1, 7, 8}));
+  EXPECT_TRUE(
+      equals(d.get<const Data::Variance>("a"), {1, 1, 3, 4, 5, 1, 7, 8}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {1, 2, 3, 4, 5, 6, 7, 8}));
+  EXPECT_TRUE(
+      equals(d.get<const Data::Variance>("b"), {1, 2, 3, 4, 5, 6, 7, 8}));
 
   // If we slice with a range index the corresponding coordinate (and dimension)
   // is preserved, even if the range has size 1. Thus the operation fails due to
