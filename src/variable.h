@@ -28,6 +28,8 @@ public:
   virtual std::shared_ptr<VariableConcept> clone() const = 0;
   virtual std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
+  virtual std::unique_ptr<VariableConcept> makeView() const = 0;
+  virtual std::unique_ptr<VariableConcept> makeView() = 0;
   virtual std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end = -1) const = 0;
@@ -247,6 +249,8 @@ private:
 template <class V>
 class VariableSlice : public VariableSliceMutableMixin<VariableSlice<V>> {
 public:
+  explicit VariableSlice(V &variable)
+      : m_variable(variable), m_view(variable.data().makeView()) {}
   VariableSlice(V &variable, const Dim dim, const gsl::index begin,
                 const gsl::index end = -1)
       : m_variable(variable),
@@ -261,12 +265,14 @@ public:
     return VariableSlice(*this, dim, begin, end);
   }
 
+  const std::string &name() const { return m_variable.name(); }
   const Unit &unit() const { return m_variable.unit(); }
   gsl::index size() const { return m_view->size(); }
   const Dimensions &dimensions() const { return m_view->dimensions(); }
   template <class Tag> bool valueTypeIs() const {
     return m_variable.template valueTypeIs<Tag>();
   }
+  uint16_t type() const { return m_variable.type(); }
   const VariableConcept &data() const { return *m_view; }
   // Move to mutable mixin?
   VariableConcept &data() { return *m_view; }

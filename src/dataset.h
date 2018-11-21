@@ -235,8 +235,8 @@ public:
   const Dataset &dataset() const { return m_dataset; }
 
   gsl::index size() const { return m_indices.size(); }
-  const Variable &operator[](const gsl::index i) const {
-    return m_dataset[m_indices[i]];
+  VariableSlice<const Variable> operator[](const gsl::index i) const {
+    return VariableSlice<const Variable>(m_dataset[m_indices[i]]);
   }
 
   dataset_slice_iterator<const Dataset> begin() const {
@@ -250,6 +250,7 @@ private:
   friend class SliceMutableMixin<Slice<D>>;
   D &m_dataset;
   std::vector<gsl::index> m_indices;
+  std::vector<std::tuple<Dim, gsl::index, gsl::index>> m_slices;
 };
 
 Dataset operator+(Dataset a, const Dataset &b);

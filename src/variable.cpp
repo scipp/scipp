@@ -275,13 +275,17 @@ template <class T> struct CastHelper {
   }
 
   template <class Concept>
-  static auto getView(Concept &concept, const Dimensions &dims) {
+  static VariableView<
+      std::conditional_t<std::is_const<Concept>::value,
+                         const typename T::value_type, typename T::value_type>>
+  getView(Concept &concept, const Dimensions &dims) {
     if (!concept.isView()) {
       auto *data = CastHelper<T>::getData(concept);
       return makeVariableView(data, dims, concept.dimensions());
     } else {
-      return CastHelper<VariableView<const typename T::value_type>>::getView(
-          concept, dims);
+      return CastHelper<VariableView<std::conditional_t<
+          std::is_const<Concept>::value, const typename T::value_type,
+          typename T::value_type>>>::getView(concept, dims);
     }
   }
 
@@ -366,6 +370,20 @@ public:
   clone(const Dimensions &dims) const override {
     return std::make_shared<VariableModel<T>>(dims,
                                               CloneHelper<T>::getModel(dims));
+  }
+
+  std::unique_ptr<VariableConcept> makeView() const override {
+    auto &dims = dimensions();
+    return std::make_unique<
+        VariableModel<decltype(CastHelper<T>::getView(*this, dims))>>(
+        dims, CastHelper<T>::getView(*this, dims));
+  }
+
+  std::unique_ptr<VariableConcept> makeView() override {
+    auto &dims = dimensions();
+    return std::make_unique<
+        VariableModel<decltype(CastHelper<T>::getView(*this, dims))>>(
+        dims, CastHelper<T>::getView(*this, dims));
   }
 
   std::unique_ptr<VariableConcept>
