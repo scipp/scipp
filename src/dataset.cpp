@@ -304,17 +304,20 @@ Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
   return minus_equals(base(), other);
 }
 
-Variable &SliceMutableMixin<Slice<Dataset>>::get(const gsl::index i) {
-  return detail::makeAccess(base().m_dataset)[base().m_indices[i]];
+VariableSlice<Variable>
+SliceMutableMixin<Slice<Dataset>>::get(const gsl::index i) {
+  return detail::makeSlice(
+      detail::makeAccess(base().m_dataset)[base().m_indices[i]],
+      base().m_slices);
 }
 
 dataset_slice_iterator<Dataset>
 SliceMutableMixin<Slice<Dataset>>::mutableBegin() const {
-  return {base().m_dataset, base().m_indices, 0};
+  return {base().m_dataset, base().m_indices, base().m_slices, 0};
 }
 dataset_slice_iterator<Dataset>
 SliceMutableMixin<Slice<Dataset>>::mutableEnd() const {
-  return {base().m_dataset, base().m_indices,
+  return {base().m_dataset, base().m_indices, base().m_slices,
           static_cast<gsl::index>(base().m_indices.size())};
 }
 const Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::base() const {
@@ -446,9 +449,8 @@ template <class Value>
 VariableSlice<
     std::conditional_t<std::is_const<Value>::value, const Variable, Variable>>
 dataset_slice_iterator<Value>::dereference() const {
-  return VariableSlice<std::conditional_t<std::is_const<Value>::value,
-                                          const Variable, Variable>>(
-      detail::makeAccess(m_dataset)[m_indices[m_index]]);
+  return detail::makeSlice(detail::makeAccess(m_dataset)[m_indices[m_index]],
+                           m_slices);
 }
 
 template class dataset_slice_iterator<Dataset>;

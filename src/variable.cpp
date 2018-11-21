@@ -364,7 +364,10 @@ template <class T> struct CastHelper<VariableView<T>> {
     if (!concept.isView())
       return CastHelper<Vector<T>>::getView(concept, dims);
     if (concept.isConstView())
-      return {CastHelper<VariableView<T>>::getModel(concept), dims};
+      return {
+          CastHelper<VariableView<std::conditional_t<
+              std::is_const<Concept>::value, const T, T>>>::getModel(concept),
+          dims};
     else
       return {
           CastHelper<VariableView<std::remove_const_t<T>>>::getModel(concept),

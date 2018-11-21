@@ -122,16 +122,6 @@ TEST(LinearView, iterator_1_variable) {
   EXPECT_EQ(it, view.end());
 }
 
-template <class T1, class T2>
-bool equals(const gsl::span<T1> &a, const std::initializer_list<T2> &b) {
-  if (a.size() != b.size())
-    return false;
-  for (gsl::index i = 0; i < a.size(); ++i)
-    if (a[i] != b.begin()[i])
-      return false;
-  return true;
-}
-
 TEST(LinearView, iterator_modify) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 3}, {1.0, 2.0, 3.0});

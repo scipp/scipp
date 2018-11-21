@@ -794,3 +794,48 @@ TEST(DatasetSlice, minus_equals) {
   EXPECT_EQ(d.get<const Data::Variance>("a")[0], -1.0);
   EXPECT_EQ(d.get<const Data::Variance>("b")[0], 1.0);
 }
+
+TEST(DatasetSlice, slice_spatial) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 4}, {1, 2, 3, 4});
+  d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
+  d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}},
+                        {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert<Data::Value>("b", {{Dim::X, 4}, {Dim::Y, 2}},
+                        {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}},
+                           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert<Data::Variance>("b", {{Dim::X, 4}, {Dim::Y, 2}},
+                           {1, 2, 3, 4, 5, 6, 7, 8});
+
+  auto view_a_x0 = d["a"](Dim::X, 0);
+
+  // Slice with single index (not range) => corresponding dimension coordinate
+  // is removed.
+  ASSERT_EQ(view_a_x0.size(), 3);
+  EXPECT_EQ(view_a_x0[0].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0[1].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0[2].dimensions(), (Dimensions{Dim::Y, 2}));
+
+  auto view_a_x1 = d["a"](Dim::X, 1);
+
+  ASSERT_EQ(view_a_x1.size(), 3);
+  EXPECT_EQ(view_a_x1[0].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1[1].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1[2].dimensions(), (Dimensions{Dim::Y, 2}));
+
+  EXPECT_NO_THROW(view_a_x1 -= view_a_x0);
+
+  EXPECT_TRUE(equals(d.get<const Coord::X>(), {1, 2, 3, 4}));
+  EXPECT_TRUE(equals(d.get<const Coord::Y>(), {1, 2}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {1, 1, 3, 4, 5, 1, 7, 8}));
+
+  // If we slice with a range index the corresponding coordinate (and dimension)
+  // is preserved, even if the range has size 1. Thus the operation fails due to
+  // coordinate mismatch, as it should.
+  auto view_a_x01 = d["a"](Dim::X, 0, 1);
+  auto view_a_x12 = d["a"](Dim::X, 1, 2);
+  EXPECT_THROW_MSG(
+      view_a_x12 -= view_a_x01, std::runtime_error,
+      "Coordinates of datasets do not match. Cannot perform subtraction.");
+}

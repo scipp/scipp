@@ -183,9 +183,12 @@ class dataset_slice_iterator
           VariableSlice<std::conditional_t<std::is_const<Value>::value,
                                            const Variable, Variable>>> {
 public:
-  dataset_slice_iterator(Value &dataset, const std::vector<gsl::index> &indices,
-                         const gsl::index index)
-      : m_dataset(dataset), m_indices(indices), m_index(index) {}
+  dataset_slice_iterator(
+      Value &dataset, const std::vector<gsl::index> &indices,
+      const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &slices,
+      const gsl::index index)
+      : m_dataset(dataset), m_indices(indices), m_slices(slices),
+        m_index(index) {}
 
 private:
   friend class boost::iterator_core_access;
@@ -203,8 +206,10 @@ private:
     return other.m_index - m_index;
   }
 
+  // TODO Just reference Slice instead of all its contents here.
   Value &m_dataset;
   const std::vector<gsl::index> &m_indices;
+  const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &m_slices;
   gsl::index m_index;
 };
 
@@ -215,7 +220,7 @@ public:
   template <class T> Slice<Dataset> &operator-=(const T &other);
 
 private:
-  Variable &get(const gsl::index i);
+  VariableSlice<Variable> get(const gsl::index i);
   dataset_slice_iterator<Dataset> mutableBegin() const;
   dataset_slice_iterator<Dataset> mutableEnd() const;
 
@@ -223,6 +228,20 @@ private:
   const Slice<Dataset> &base() const;
   Slice<Dataset> &base();
 };
+
+namespace detail {
+template <class Var>
+VariableSlice<Var>
+makeSlice(Var &variable,
+          const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &slices) {
+  auto slice = VariableSlice<Var>(variable);
+  for (const auto &s : slices) {
+    if (variable.dimensions().contains(std::get<Dim>(s)))
+      slice = slice(std::get<0>(s), std::get<1>(s), std::get<2>(s));
+  }
+  return slice;
+}
+} // namespace detail
 
 // D is either Dataset or const Dataset.
 template <class D> class Slice : public SliceMutableMixin<Slice<D>> {
@@ -235,22 +254,46 @@ public:
     }
   }
 
+  Slice operator()(const Dim dim, const gsl::index begin,
+                   const gsl::index end = -1) const {
+    auto slice(*this);
+    for (auto &s : slice.m_slices) {
+      if (std::get<Dim>(s) == dim) {
+        std::get<1>(s) = begin;
+        std::get<2>(s) = end;
+        return slice;
+      }
+    }
+    slice.m_slices.emplace_back(dim, begin, end);
+    if (end == -1) {
+      for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
+        if (coordDimension[m_dataset[*it].type()] == dim)
+          it = slice.m_indices.erase(it);
+        else
+          ++it;
+      }
+    }
+    return slice;
+  }
+
   const Dataset &dataset() const { return m_dataset; }
 
   gsl::index size() const { return m_indices.size(); }
   VariableSlice<const Variable> operator[](const gsl::index i) const {
-    return VariableSlice<const Variable>(m_dataset[m_indices[i]]);
+    return detail::makeSlice(m_dataset[m_indices[i]], m_slices);
   }
 
   dataset_slice_iterator<const Dataset> begin() const {
-    return {dataset(), m_indices, 0};
+    return {dataset(), m_indices, m_slices, 0};
   }
   dataset_slice_iterator<const Dataset> end() const {
-    return {dataset(), m_indices, static_cast<gsl::index>(m_indices.size())};
+    return {dataset(), m_indices, m_slices,
+            static_cast<gsl::index>(m_indices.size())};
   }
 
 private:
   friend class SliceMutableMixin<Slice<D>>;
+
   D &m_dataset;
   std::vector<gsl::index> m_indices;
   std::vector<std::tuple<Dim, gsl::index, gsl::index>> m_slices;
