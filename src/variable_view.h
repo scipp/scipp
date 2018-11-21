@@ -84,6 +84,7 @@ public:
   iterator end() const {
     return {m_variable, m_targetDimensions, m_dimensions, size()};
   }
+  auto &operator[](const gsl::index i) const { return *(begin() + i); }
 
   const T *data() const { return m_variable; }
   T *data() { return m_variable; }

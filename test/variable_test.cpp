@@ -420,6 +420,11 @@ TEST(Variable, rebin) {
   EXPECT_EQ(rebinned.get<const Data::Value>()[0], 3.0);
 }
 
+TEST(VariableSlice, get) {
+  const auto var = makeVariable<Data::Value>({Dim::X, 3}, {1, 2, 3});
+  EXPECT_EQ(var(Dim::X, 1, 2).get<const Data::Value>()[0], 2.0);
+}
+
 TEST(VariableSlice, slicing_does_not_transpose) {
   auto var = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
   Dimensions expected{{Dim::X, 1}, {Dim::Y, 1}};

@@ -794,6 +794,15 @@ operator==(const VariableSlice<const Variable> &) const;
 template bool VariableSlice<Variable>::
 operator==(const VariableSlice<const Variable> &) const;
 
+template <class V>
+template <class T> const VariableView<const T> &VariableSlice<V>::cast() const {
+  return dynamic_cast<const VariableModel<VariableView<const T>> &>(data())
+      .m_model;
+}
+
+template const VariableView<const double> &
+VariableSlice<const Variable>::cast<double>() const;
+
 Variable &Variable::operator*=(const Variable &other) {
   if (!dimensions().contains(other.dimensions()))
     throw std::runtime_error(

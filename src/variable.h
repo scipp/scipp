@@ -16,6 +16,7 @@
 #include "dimensions.h"
 #include "tags.h"
 #include "unit.h"
+#include "variable_view.h"
 #include "vector.h"
 
 class Variable;
@@ -284,9 +285,29 @@ public:
   bool isAttr() const { return m_variable->isAttr(); }
   bool isData() const { return m_variable->isData(); }
 
+  template <class Tag> auto get() const {
+    static_assert(
+        std::is_const<Tag>::value,
+        "VariableSlice is `const`, must use const-qualified tag in call "
+        "to `get`, e.g., `get<const Coord::X>()` instead of "
+        "`get<Coord::X>()`");
+    return cast<typename Tag::type>();
+  }
+
+  //template <class Tag>
+  //auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
+  //  return const_cast<const Variable *>(this)->get<Tag>();
+  //}
+
+  //template <class Tag>
+  //auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+  //  return gsl::make_span(cast<Vector<typename Tag::type>>());
+  //}
+
   template <class T> bool operator==(const T &other) const;
 
 private:
+  template <class T> const VariableView<const T> &cast() const;
   V *m_variable;
   deep_ptr<VariableConcept> m_view;
 };
