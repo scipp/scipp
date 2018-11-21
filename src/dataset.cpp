@@ -34,7 +34,9 @@ public:
 
   auto begin() const { return m_data.mutableBegin(); }
   auto end() const { return m_data.mutableEnd(); }
-  Variable &operator[](const gsl::index i) const { return m_data.get(i); }
+  VariableSlice<Variable> operator[](const gsl::index i) const {
+    return VariableSlice<Variable>(m_data.get(i));
+  }
 
 private:
   Slice<Dataset> &m_data;
@@ -260,8 +262,10 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
                                  "left-hand-side.");
       }
     }
+    using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
+                                      Variable &, VariableSlice<Variable>>;
     if (index >= 0) {
-      auto &var1 = detail::makeAccess(dataset)[index];
+      VarRef var1 = detail::makeAccess(dataset)[index];
       if (var1.isCoord()) {
         if (!(var1 == var2))
           throw std::runtime_error(
@@ -273,11 +277,13 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
     } else {
       // Not a coordinate, subtract from all.
       gsl::index count = 0;
-      for (auto &var1 : detail::makeAccess(dataset)) {
+      for (VarRef var1 : detail::makeAccess(dataset)) {
         if (var1.type() == var2.type()) {
           ++count;
           var1 -= var2;
-          var1.setName(var1.name() + " - " + var2.name());
+          // TODO Cannot change name from slice, what should we do here?
+          if (!var1.data().isView())
+            var1.setName(var1.name() + " - " + var2.name());
         }
       }
       if (count == 0)
@@ -437,9 +443,12 @@ void Dataset::setSlice(const Dataset &slice, const Dimension dim,
 }
 
 template <class Value>
-std::conditional_t<std::is_const<Value>::value, const Variable, Variable> &
+VariableSlice<
+    std::conditional_t<std::is_const<Value>::value, const Variable, Variable>>
 dataset_slice_iterator<Value>::dereference() const {
-  return detail::makeAccess(m_dataset)[m_indices[m_index]];
+  return VariableSlice<std::conditional_t<std::is_const<Value>::value,
+                                          const Variable, Variable>>(
+      detail::makeAccess(m_dataset)[m_indices[m_index]]);
 }
 
 template class dataset_slice_iterator<Dataset>;

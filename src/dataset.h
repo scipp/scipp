@@ -177,9 +177,11 @@ template <class Value>
 class dataset_slice_iterator
     : public boost::iterator_facade<
           dataset_slice_iterator<Value>,
-          std::conditional_t<std::is_const<Value>::value, const Variable,
-                             Variable>,
-          boost::random_access_traversal_tag> {
+          VariableSlice<std::conditional_t<std::is_const<Value>::value,
+                                           const Variable, Variable>>,
+          boost::random_access_traversal_tag,
+          VariableSlice<std::conditional_t<std::is_const<Value>::value,
+                                           const Variable, Variable>>> {
 public:
   dataset_slice_iterator(Value &dataset, const std::vector<gsl::index> &indices,
                          const gsl::index index)
@@ -192,7 +194,8 @@ private:
     return m_index == other.m_index;
   }
   void increment() { ++m_index; }
-  std::conditional_t<std::is_const<Value>::value, const Variable, Variable> &
+  VariableSlice<
+      std::conditional_t<std::is_const<Value>::value, const Variable, Variable>>
   dereference() const;
   void decrement() { --m_index; }
   void advance(int64_t delta) { m_index += delta; }

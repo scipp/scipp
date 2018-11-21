@@ -49,6 +49,10 @@ template <class T> struct CopyHelper<const T> {
   }
 };
 
+template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
+  return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
+}
+
 template <class T> class VariableModel;
 template <class T> struct RebinHelper {
   static void
@@ -253,7 +257,15 @@ template <class T> struct CastHelper {
           typename T::value_type>>>::getData(concept);
   }
 
-  template <class Concept> static auto getSpan(Concept &concept) {
+  template <class Concept>
+  static gsl::span<
+      std::conditional_t<std::is_const<Concept>::value,
+                         const typename T::value_type, typename T::value_type>>
+  getSpan(Concept &concept) {
+    if (concept.isView())
+      return CastHelper<VariableView<std::conditional_t<
+          std::is_const<Concept>::value, const typename T::value_type,
+          typename T::value_type>>>::getSpan(concept);
     auto *data = CastHelper<T>::getData(concept);
     return gsl::make_span(data, data + concept.size());
   }
@@ -312,19 +324,37 @@ template <class T> struct CastHelper<VariableView<T>> {
     return CastHelper<VariableView<T>>::getModel(concept).data();
   }
 
-  template <class Concept> static auto getSpan(Concept &concept) {
+  template <class Concept>
+  static gsl::span<
+      std::conditional_t<std::is_const<Concept>::value, const T, T>>
+  getSpan(Concept &concept) {
     if (!concept.isView())
       return CastHelper<Vector<T>>::getSpan(concept);
-    auto *data = CastHelper<VariableView<T>>::getData(concept);
-    return gsl::make_span(data, data + concept.size());
+    if (concept.isConstView()) {
+      auto *data = CastHelper<VariableView<std::conditional_t<
+          std::is_const<Concept>::value, const T, T>>>::getData(concept);
+      return gsl::make_span(data, data + concept.size());
+    } else {
+      auto *data =
+          CastHelper<VariableView<std::remove_const_t<T>>>::getData(concept);
+      return gsl::make_span(data, data + concept.size());
+    }
   }
 
   template <class Concept>
-  static auto getSpan(Concept &concept, const Dim dim, const gsl::index begin,
-                      const gsl::index end) {
+  static gsl::span<
+      std::conditional_t<std::is_const<Concept>::value, const T, T>>
+  getSpan(Concept &concept, const Dim dim, const gsl::index begin,
+          const gsl::index end) {
     throw std::runtime_error("Creating sub-span of view is not implemented.");
-    auto *data = CastHelper<VariableView<T>>::getData(concept);
-    return gsl::make_span(data, data);
+    if (concept.isConstView()) {
+      auto *data = CastHelper<VariableView<T>>::getData(concept);
+      return gsl::make_span(data, data);
+    } else {
+      auto *data =
+          CastHelper<VariableView<std::remove_const_t<T>>>::getData(concept);
+      return gsl::make_span(data, data);
+    }
   }
 
   template <class Concept>
@@ -422,7 +452,25 @@ public:
   bool isConstView() const override { return ViewHelper<T>::isConstView(); }
 
   bool operator==(const VariableConcept &other) const override {
-    return m_model == dynamic_cast<const VariableModel<T> &>(other).m_model;
+    if (dimensions() != other.dimensions())
+      return false;
+    if (isContiguous()) {
+      if (other.isContiguous() &&
+          dimensions().isContiguousIn(other.dimensions())) {
+        return equal(CastHelper<T>::getSpan(*this),
+                     CastHelper<T>::getSpan(other));
+      } else {
+        return equal(CastHelper<T>::getSpan(*this),
+                     CastHelper<T>::getView(other, dimensions()));
+      }
+    } else {
+      if (other.isContiguous() &&
+          dimensions().isContiguousIn(other.dimensions())) {
+        return equal(m_model, CastHelper<T>::getSpan(other));
+      } else {
+        return equal(m_model, CastHelper<T>::getView(other, dimensions()));
+      }
+    }
   }
 
   template <template <class> class Op>
@@ -577,27 +625,45 @@ INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(std::shared_ptr<std::array<double, 100>>)
 
-bool Variable::operator==(const Variable &other) const {
+template <class T> bool Variable::operator==(const T &other) const {
   // Compare even before pointer comparison since data may be shared even if
   // names differ.
-  if (m_name != other.m_name) {
-    if (m_name == nullptr || other.m_name == nullptr)
-      return false;
-    if (*m_name != *other.m_name)
-      return false;
-  }
-  if (m_unit != other.m_unit)
+  if (name() != other.name())
+    return false;
+  if (unit() != other.unit())
+    return false;
+  // See specialization for trivial case of comparing two Variable instances:
+  // Pointers are equal
+  // Deep comparison
+  if (type() != other.type())
+    return false;
+  if (!(dimensions() == other.dimensions()))
+    return false;
+  return data() == other.data();
+}
+
+template <> bool Variable::operator==(const Variable &other) const {
+  // Compare even before pointer comparison since data may be shared even if
+  // names differ.
+  if (name() != other.name())
+    return false;
+  if (unit() != other.unit())
     return false;
   // Trivial case: Pointers are equal
   if (m_object == other.m_object)
     return true;
   // Deep comparison
-  if (m_type != other.m_type)
+  if (type() != other.type())
     return false;
   if (!(dimensions() == other.dimensions()))
     return false;
-  return *m_object == *other.m_object;
+  return data() == other.data();
 }
+
+template bool Variable::operator==(const Variable &other) const;
+template bool Variable::operator==(const VariableSlice<Variable> &other) const;
+template bool Variable::
+operator==(const VariableSlice<const Variable> &other) const;
 
 bool Variable::operator!=(const Variable &other) const {
   return !(*this == other);
@@ -694,6 +760,36 @@ operator-=(const VariableSlice<const Variable> &);
 template VariableSliceMutableMixin<VariableSlice<Variable>> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator-=(const VariableSlice<Variable> &);
+
+template <class V>
+template <class T>
+bool VariableSlice<V>::operator==(const T &other) const {
+  // TODO use same implementation as Variable.
+  // Compare even before pointer comparison since data may be shared even if
+  // names differ.
+  if (name() != other.name())
+    return false;
+  if (unit() != other.unit())
+    return false;
+  // Deep comparison (pointer comparison does not make sense since we may be
+  // looking at a different section).
+  if (type() != other.type())
+    return false;
+  if (!(dimensions() == other.dimensions()))
+    return false;
+  return data() == other.data();
+}
+
+template bool VariableSlice<const Variable>::operator==(const Variable &) const;
+template bool VariableSlice<Variable>::operator==(const Variable &) const;
+template bool VariableSlice<const Variable>::
+operator==(const VariableSlice<Variable> &) const;
+template bool VariableSlice<Variable>::
+operator==(const VariableSlice<Variable> &) const;
+template bool VariableSlice<const Variable>::
+operator==(const VariableSlice<const Variable> &) const;
+template bool VariableSlice<Variable>::
+operator==(const VariableSlice<const Variable> &) const;
 
 Variable &Variable::operator*=(const Variable &other) {
   if (!dimensions().contains(other.dimensions()))

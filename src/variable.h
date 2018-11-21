@@ -118,7 +118,7 @@ public:
     else
       m_name = std::make_unique<std::string>(name);
   }
-  bool operator==(const Variable &other) const;
+  template <class T> bool operator==(const T &other) const;
   bool operator!=(const Variable &other) const;
   Variable &operator+=(const Variable &other);
   template <class T> Variable &operator-=(const T &other);
@@ -266,6 +266,9 @@ public:
   }
 
   const std::string &name() const { return m_variable.name(); }
+  void setName(const std::string &) {
+    throw std::runtime_error("Cannot rename Variable via slice view.");
+  }
   const Unit &unit() const { return m_variable.unit(); }
   gsl::index size() const { return m_view->size(); }
   const Dimensions &dimensions() const { return m_view->dimensions(); }
@@ -276,6 +279,12 @@ public:
   const VariableConcept &data() const { return *m_view; }
   // Move to mutable mixin?
   VariableConcept &data() { return *m_view; }
+
+  bool isCoord() const { return m_variable.isCoord(); }
+  bool isAttr() const { return m_variable.isAttr(); }
+  bool isData() const { return m_variable.isData(); }
+
+  template <class T> bool operator==(const T &other) const;
 
 private:
   V &m_variable;

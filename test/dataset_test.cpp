@@ -785,11 +785,12 @@ TEST(DatasetSlice, minus_equals) {
   EXPECT_EQ(d.get<const Data::Variance>("a")[0], 0.0);
   EXPECT_EQ(d.get<const Data::Variance>("b")[0], 1.0);
 
-  EXPECT_NO_THROW(d["a"] -= d["b"]);
+  ASSERT_NO_THROW(d["a"] -= d["b"]);
 
   ASSERT_EQ(d.size(), 6);
-  EXPECT_EQ(d.get<const Data::Value>("a - b")[0], -1.0);
+  // Note: Variable not renamed when operating with slices.
+  EXPECT_EQ(d.get<const Data::Value>("a")[0], -1.0);
   EXPECT_EQ(d.get<const Data::Value>("b")[0], 1.0);
-  EXPECT_EQ(d.get<const Data::Variance>("a - b")[0], -1.0);
+  EXPECT_EQ(d.get<const Data::Variance>("a")[0], -1.0);
   EXPECT_EQ(d.get<const Data::Variance>("b")[0], 1.0);
 }
