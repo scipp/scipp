@@ -238,6 +238,12 @@ private:
 };
 
 // V is either Variable or const Variable.
+// Note/TODO: The call to `data()` will trigger the copy-on-write mechanism.
+// Const-correctness is therefore important when we want to create a slice view
+// without triggering a copy unintentionally. This will also happen in Python we
+// we do not have const-ness, so we need to figure out if this copy-triggering
+// behavior is acceptable. An alternative may be to delay getting data until a
+// mutating method of the slice view is called.
 template <class V>
 class VariableSlice : public VariableSliceMutableMixin<VariableSlice<V>> {
 public:

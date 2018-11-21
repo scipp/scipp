@@ -402,7 +402,6 @@ public:
       if (isContiguous()) {
         if (other.isContiguous() &&
             dimensions().isContiguousIn(other.dimensions())) {
-          // TODO Do not use getSpan for this unless contiguous
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
               apply(CastHelper<T>::getSpan(*this),
                     CastHelper<T>::getSpan(other));
