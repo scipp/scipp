@@ -420,6 +420,13 @@ TEST(Variable, rebin) {
   EXPECT_EQ(rebinned.get<const Data::Value>()[0], 3.0);
 }
 
+TEST(VariableSlice, slicing_does_not_transpose) {
+  auto var = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
+  Dimensions expected{{Dim::X, 1}, {Dim::Y, 1}};
+  EXPECT_EQ(var(Dim::X, 1, 2)(Dim::Y, 1, 2).dimensions(), expected);
+  EXPECT_EQ(var(Dim::Y, 1, 2)(Dim::X, 1, 2).dimensions(), expected);
+}
+
 TEST(VariableSlice, minus_equals_failures) {
   auto var = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
                                        {1.0, 2.0, 3.0, 4.0});
@@ -709,4 +716,19 @@ TEST(VariableSlice, nontrivial_slice_minus_equals_slice) {
     EXPECT_EQ(data[7], -21.0);
     EXPECT_EQ(data[8], -22.0);
   }
+}
+
+TEST(VariableSlice, slice_minus_lower_dimensional) {
+  auto target = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}});
+  auto source = makeVariable<Data::Value>({Dim::X, 2}, {1.0, 2.0});
+  EXPECT_EQ(target(Dim::Y, 1, 2).dimensions(),
+            (Dimensions{{Dim::X, 2}, {Dim::Y, 1}}));
+
+  target(Dim::Y, 1, 2) -= source;
+
+  const auto data = target.get<const Data::Value>();
+  EXPECT_EQ(data[0], 0.0);
+  EXPECT_EQ(data[1], 0.0);
+  EXPECT_EQ(data[2], -1.0);
+  EXPECT_EQ(data[3], -2.0);
 }
