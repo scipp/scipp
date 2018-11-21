@@ -32,7 +32,8 @@ public:
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
-  VariableView(const VariableView &other, const Dimensions &targetDimensions,
+  template <class Other>
+  VariableView(const Other &other, const Dimensions &targetDimensions,
                const Dim dim, const gsl::index begin)
       : m_variable(other.m_variable), m_targetDimensions(targetDimensions) {
     m_variable += begin * other.m_dimensions.offset(dim);
@@ -84,7 +85,8 @@ public:
     return {m_variable, m_targetDimensions, m_dimensions, size()};
   }
 
-  T *data() const { return m_variable; }
+  const T *data() const { return m_variable; }
+  T *data() { return m_variable; }
 
   gsl::index size() const { return m_targetDimensions.volume(); }
 

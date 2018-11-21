@@ -274,7 +274,8 @@ template <class T> struct CastHelper {
     return gsl::make_span(data + beginOffset, data + endOffset);
   }
 
-  static auto getView(const VariableConcept &concept, const Dimensions &dims) {
+  template <class Concept>
+  static auto getView(Concept &concept, const Dimensions &dims) {
     if (!concept.isView()) {
       auto *data = CastHelper<T>::getData(concept);
       return makeVariableView(data, dims, concept.dimensions());
@@ -308,6 +309,8 @@ template <class T> struct CastHelper<VariableView<T>> {
   }
 
   template <class Concept> static auto getSpan(Concept &concept) {
+    if (!concept.isView())
+      return CastHelper<Vector<T>>::getSpan(concept);
     auto *data = CastHelper<VariableView<T>>::getData(concept);
     return gsl::make_span(data, data + concept.size());
   }
@@ -320,8 +323,12 @@ template <class T> struct CastHelper<VariableView<T>> {
     return gsl::make_span(data, data);
   }
 
-  static VariableView<T> getView(const VariableConcept &concept,
-                                 const Dimensions &dims) {
+  template <class Concept>
+  static VariableView<
+      std::conditional_t<std::is_const<Concept>::value, const T, T>>
+  getView(Concept &concept, const Dimensions &dims) {
+    if (!concept.isView())
+      return CastHelper<Vector<T>>::getView(concept, dims);
     if (concept.isConstView())
       return {CastHelper<VariableView<T>>::getModel(concept), dims};
     else
@@ -331,10 +338,14 @@ template <class T> struct CastHelper<VariableView<T>> {
   }
 
   template <class Concept>
-  static auto getView(Concept &concept, const Dimensions &dims, const Dim dim,
-                      const gsl::index begin) {
-    return VariableView<T>(CastHelper<VariableView<T>>::getModel(concept), dims,
-                           dim, begin);
+  static VariableView<T> getView(Concept &concept, const Dimensions &dims,
+                                 const Dim dim, const gsl::index begin) {
+    if (concept.isConstView())
+      return {CastHelper<VariableView<T>>::getModel(concept), dims, dim, begin};
+    else
+      return {
+          CastHelper<VariableView<std::remove_const_t<T>>>::getModel(concept),
+          dims, dim, begin};
   }
 };
 

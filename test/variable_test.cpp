@@ -576,3 +576,22 @@ TEST(VariableSlice, slice_outer_minus_equals) {
   EXPECT_EQ(data[2], 3.0);
   EXPECT_EQ(data[3], 4.0);
 }
+
+TEST(VariableSlice, nontrivial_slice_minus_equals) {
+  auto target = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
+  {
+    auto source = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}},
+                                            {11.0, 12.0, 21.0, 22.0});
+    target(Dim::X, 0, 2)(Dim::Y, 0, 2) -= source;
+    const auto data = target.get<const Data::Value>();
+    EXPECT_EQ(data[0], -11.0);
+    EXPECT_EQ(data[1], -12.0);
+    EXPECT_EQ(data[2], 0.0);
+    EXPECT_EQ(data[3], -21.0);
+    EXPECT_EQ(data[4], -22.0);
+    EXPECT_EQ(data[5], 0.0);
+    EXPECT_EQ(data[6], 0.0);
+    EXPECT_EQ(data[7], 0.0);
+    EXPECT_EQ(data[8], 0.0);
+  }
+}
