@@ -96,6 +96,7 @@ private:
 
 template <class... Tags> class LinearView;
 template <class V> class VariableSlice;
+template <class Base> class VariableSliceMutableMixin;
 
 class Variable {
 public:
@@ -176,6 +177,8 @@ public:
 
   template <class Tag>
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+    // TODO There is a bug here... this is accepting any tag that has the
+    // matching type.
     return gsl::make_span(cast<typename Tag::type>());
   }
 
@@ -187,6 +190,7 @@ public:
                                      const gsl::index end = -1);
 
   template <class... Tags> friend class LinearView;
+  template <class Base> friend class VariableSliceMutableMixin;
 
 private:
   template <class T> const Vector<T> &cast() const;
@@ -241,6 +245,8 @@ public:
 private:
   const VariableSlice<Variable> &base() const;
   VariableSlice<Variable> &base();
+
+  template <class T> const VariableView<T> &cast();
 };
 
 // V is either Variable or const Variable.
@@ -310,6 +316,9 @@ public:
   template <class T> bool operator==(const T &other) const;
 
 private:
+  friend class Variable;
+  template <class Base> friend class VariableSliceMutableMixin;
+
   template <class T> const VariableView<const T> &cast() const;
   V *m_variable;
   deep_ptr<VariableConcept> m_view;

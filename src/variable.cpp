@@ -688,14 +688,16 @@ template <class T> Variable &Variable::operator+=(const T &other) {
     }
   } else {
     if (dimensions() == other.dimensions()) {
-      // TODO Need to support Data::Table as well. It seems to be working
-      // anyway, I think this is a bug in get<>?
-      const auto otherDatasets = other.template get<const Data::Events>();
+      using ConstViewOrRef =
+          std::conditional_t<std::is_same<T, Variable>::value,
+                             const Vector<Dataset> &,
+                             const VariableView<const Dataset>>;
+      ConstViewOrRef otherDatasets = other.template cast<Dataset>();
       if (otherDatasets.size() > 0 &&
           otherDatasets[0].dimensions().count() != 1)
         throw std::runtime_error(
             "Cannot add Variable: Nested Dataset dimension must be 1.");
-      auto datasets = get<Data::Events>();
+      auto &datasets = cast<Dataset>();
       const Dim dim = datasets[0].dimensions().label(0);
 #pragma omp parallel for
       for (gsl::index i = 0; i < datasets.size(); ++i)
@@ -746,8 +748,25 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::operator+=(const T &other) {
           "Cannot add Variables: Dimensions do not match.");
     }
   } else {
-    throw std::runtime_error(
-        "Addition of event lists or tables via views is not implemented yet.");
+    if (base().dimensions() == other.dimensions()) {
+      using ConstViewOrRef =
+          std::conditional_t<std::is_same<T, Variable>::value,
+                             const Vector<Dataset> &,
+                             const VariableView<const Dataset>>;
+      ConstViewOrRef otherDatasets = other.template cast<Dataset>();
+      if (otherDatasets.size() > 0 &&
+          otherDatasets[0].dimensions().count() != 1)
+        throw std::runtime_error(
+            "Cannot add Variable: Nested Dataset dimension must be 1.");
+      auto &datasets = cast<Dataset>();
+      const Dim dim = datasets[0].dimensions().label(0);
+#pragma omp parallel for
+      for (gsl::index i = 0; i < datasets.size(); ++i)
+        datasets[i] = concatenate(datasets[i], otherDatasets[i], dim);
+    } else {
+      throw std::runtime_error(
+          "Cannot add Variables: Dimensions do not match.");
+    }
   }
 
   return *this;
@@ -839,6 +858,16 @@ const VariableView<const T> &VariableSlice<V>::cast() const {
 
 template const VariableView<const double> &
 VariableSlice<const Variable>::cast<double>() const;
+
+template <class T>
+const VariableView<T> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast() {
+  return dynamic_cast<const VariableModel<VariableView<T>> &>(base().data())
+      .m_model;
+}
+
+template const VariableView<double> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
 
 Variable &Variable::operator*=(const Variable &other) {
   if (!dimensions().contains(other.dimensions()))
