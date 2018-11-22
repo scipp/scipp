@@ -282,11 +282,10 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
               "Coordinates of datasets do not match. Cannot "
               "perform subtraction.");
       } else if (var1.isData()) {
-        // TODO Fix propagation of uncertainties
-        // if (var1.type() == tag_id<Data::Variance>)
-        //  var1 += var2;
-        // else
-        var1 -= var2;
+        if (var1.type() == tag_id<Data::Variance>)
+          var1 += var2;
+        else
+          var1 -= var2;
       }
     } else {
       // Not a coordinate, subtract from all.
@@ -294,7 +293,10 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
       for (VarRef var1 : detail::makeAccess(dataset)) {
         if (var1.type() == var2.type()) {
           ++count;
-          var1 -= var2;
+          if (var1.type() == tag_id<Data::Variance>)
+            var1 += var2;
+          else
+            var1 -= var2;
           // TODO Cannot change name from slice, what should we do here?
           if (!var1.data().isView())
             var1.setName(var1.name() + " - " + var2.name());

@@ -121,7 +121,7 @@ public:
   }
   template <class T> bool operator==(const T &other) const;
   bool operator!=(const Variable &other) const;
-  Variable &operator+=(const Variable &other);
+  template <class T> Variable &operator+=(const T &other);
   template <class T> Variable &operator-=(const T &other);
   Variable &operator*=(const Variable &other);
   void setSlice(const Variable &slice, const Dimension dim,
@@ -233,6 +233,9 @@ template <> class VariableSliceMutableMixin<VariableSlice<Variable>> {
 public:
   template <class T>
   VariableSliceMutableMixin<VariableSlice<Variable>> &
+  operator+=(const T &other);
+  template <class T>
+  VariableSliceMutableMixin<VariableSlice<Variable>> &
   operator-=(const T &other);
 
 private:
@@ -294,13 +297,13 @@ public:
     return cast<typename Tag::type>();
   }
 
-  //template <class Tag>
-  //auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
+  // template <class Tag>
+  // auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
   //  return const_cast<const Variable *>(this)->get<Tag>();
   //}
 
-  //template <class Tag>
-  //auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+  // template <class Tag>
+  // auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
   //  return gsl::make_span(cast<Vector<typename Tag::type>>());
   //}
 

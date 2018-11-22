@@ -782,7 +782,7 @@ TEST(DatasetSlice, minus_equals) {
 
   EXPECT_EQ(d.get<const Data::Value>("a")[0], 0.0);
   EXPECT_EQ(d.get<const Data::Value>("b")[0], 1.0);
-  EXPECT_EQ(d.get<const Data::Variance>("a")[0], 0.0);
+  EXPECT_EQ(d.get<const Data::Variance>("a")[0], 2.0);
   EXPECT_EQ(d.get<const Data::Variance>("b")[0], 1.0);
 
   ASSERT_NO_THROW(d["a"] -= d["b"]);
@@ -791,7 +791,7 @@ TEST(DatasetSlice, minus_equals) {
   // Note: Variable not renamed when operating with slices.
   EXPECT_EQ(d.get<const Data::Value>("a")[0], -1.0);
   EXPECT_EQ(d.get<const Data::Value>("b")[0], 1.0);
-  EXPECT_EQ(d.get<const Data::Variance>("a")[0], -1.0);
+  EXPECT_EQ(d.get<const Data::Variance>("a")[0], 3.0);
   EXPECT_EQ(d.get<const Data::Variance>("b")[0], 1.0);
 }
 
@@ -847,7 +847,7 @@ TEST(DatasetSlice, subset_slice_spatial) {
   EXPECT_TRUE(equals(d.get<const Coord::Y>(), {1, 2}));
   EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {1, 1, 3, 4, 5, 1, 7, 8}));
   EXPECT_TRUE(
-      equals(d.get<const Data::Variance>("a"), {1, 1, 3, 4, 5, 1, 7, 8}));
+      equals(d.get<const Data::Variance>("a"), {1, 3, 3, 4, 5, 11, 7, 8}));
   EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {1, 2, 3, 4, 5, 6, 7, 8}));
   EXPECT_TRUE(
       equals(d.get<const Data::Variance>("b"), {1, 2, 3, 4, 5, 6, 7, 8}));

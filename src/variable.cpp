@@ -672,29 +672,31 @@ bool Variable::operator!=(const Variable &other) const {
   return !(*this == other);
 }
 
-Variable &Variable::operator+=(const Variable &other) {
+template <class T> Variable &Variable::operator+=(const T &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in VariableModel::operator+=.
   // Different name is ok for addition.
-  if (m_unit != other.m_unit)
+  if (unit() != other.unit())
     throw std::runtime_error("Cannot add Variables: Units do not match.");
   if (!valueTypeIs<Data::Events>() && !valueTypeIs<Data::Table>()) {
     if (dimensions().contains(other.dimensions())) {
       // Note: This will broadcast/transpose the RHS if required. We do not
       // support changing the dimensions of the LHS though!
-      m_object.access() += *other.m_object;
+      m_object.access() += other.data();
     } else {
       throw std::runtime_error(
           "Cannot add Variables: Dimensions do not match.");
     }
   } else {
     if (dimensions() == other.dimensions()) {
-      const auto otherDatasets = gsl::make_span(other.cast<Vector<Dataset>>());
+      // TODO Need to support Data::Table as well. It seems to be working
+      // anyway, I think this is a bug in get<>?
+      const auto otherDatasets = other.template get<const Data::Events>();
       if (otherDatasets.size() > 0 &&
           otherDatasets[0].dimensions().count() != 1)
         throw std::runtime_error(
             "Cannot add Variable: Nested Dataset dimension must be 1.");
-      auto datasets = gsl::make_span(cast<Vector<Dataset>>());
+      auto datasets = get<Data::Events>();
       const Dim dim = datasets[0].dimensions().label(0);
 #pragma omp parallel for
       for (gsl::index i = 0; i < datasets.size(); ++i)
@@ -707,6 +709,10 @@ Variable &Variable::operator+=(const Variable &other) {
 
   return *this;
 }
+
+template Variable &Variable::operator+=(const Variable &);
+template Variable &Variable::operator+=(const VariableSlice<const Variable> &);
+template Variable &Variable::operator+=(const VariableSlice<Variable> &);
 
 template <class T> Variable &Variable::operator-=(const T &other) {
   if (unit() != other.unit())
@@ -726,6 +732,37 @@ template <class T> Variable &Variable::operator-=(const T &other) {
 template Variable &Variable::operator-=(const Variable &);
 template Variable &Variable::operator-=(const VariableSlice<const Variable> &);
 template Variable &Variable::operator-=(const VariableSlice<Variable> &);
+
+template <class T>
+VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::operator+=(const T &other) {
+  if (base().unit() != other.unit())
+    throw std::runtime_error("Cannot add Variables: Units do not match.");
+  if (!base().valueTypeIs<Data::Events>() &&
+      !base().valueTypeIs<Data::Table>()) {
+    if (base().dimensions().contains(other.dimensions())) {
+      base().data() += other.data();
+    } else {
+      throw std::runtime_error(
+          "Cannot add Variables: Dimensions do not match.");
+    }
+  } else {
+    throw std::runtime_error(
+        "Addition of event lists or tables via views is not implemented yet.");
+  }
+
+  return *this;
+}
+
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator+=(const Variable &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator+=(const VariableSlice<const Variable> &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator+=(const VariableSlice<Variable> &);
 
 template <class T>
 VariableSliceMutableMixin<VariableSlice<Variable>> &
@@ -795,7 +832,8 @@ template bool VariableSlice<Variable>::
 operator==(const VariableSlice<const Variable> &) const;
 
 template <class V>
-template <class T> const VariableView<const T> &VariableSlice<V>::cast() const {
+template <class T>
+const VariableView<const T> &VariableSlice<V>::cast() const {
   return dynamic_cast<const VariableModel<VariableView<const T>> &>(data())
       .m_model;
 }
