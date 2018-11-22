@@ -594,20 +594,19 @@ void Variable::setDimensions(const Dimensions &dimensions) {
   m_object = m_object->clone(dimensions);
 }
 
-template <class T> const T &Variable::cast() const {
-  return dynamic_cast<const VariableModel<T> &>(*m_object).m_model;
+template <class T> const Vector<T> &Variable::cast() const {
+  return dynamic_cast<const VariableModel<Vector<T>> &>(*m_object).m_model;
 }
 
-template <class T> T &Variable::cast() {
-  return dynamic_cast<VariableModel<T> &>(m_object.access()).m_model;
+template <class T> Vector<T> &Variable::cast() {
+  return dynamic_cast<VariableModel<Vector<T>> &>(m_object.access()).m_model;
 }
 
 #define INSTANTIATE(...)                                                       \
   template Variable::Variable(uint32_t, const Unit::Id, const Dimensions &,    \
                               Vector<__VA_ARGS__>);                            \
-  template Vector<__VA_ARGS__> &Variable::cast<Vector<__VA_ARGS__>>();         \
-  template const Vector<__VA_ARGS__> &Variable::cast<Vector<__VA_ARGS__>>()    \
-      const;
+  template Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>();                 \
+  template const Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>() const;
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)

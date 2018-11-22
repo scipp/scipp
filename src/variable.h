@@ -166,7 +166,7 @@ public:
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).
-    return gsl::make_span(cast<Vector<typename Tag::type>>());
+    return gsl::make_span(cast<typename Tag::type>());
   }
 
   template <class Tag>
@@ -176,7 +176,7 @@ public:
 
   template <class Tag>
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
-    return gsl::make_span(cast<Vector<typename Tag::type>>());
+    return gsl::make_span(cast<typename Tag::type>());
   }
 
   VariableSlice<const Variable> operator()(const Dim dim,
@@ -189,8 +189,8 @@ public:
   template <class... Tags> friend class LinearView;
 
 private:
-  template <class T> const T &cast() const;
-  template <class T> T &cast();
+  template <class T> const Vector<T> &cast() const;
+  template <class T> Vector<T> &cast();
   // Used by LinearView. Need to find a better way instead of having everyone as
   // friend.
   Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }

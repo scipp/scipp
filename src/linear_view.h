@@ -63,7 +63,7 @@ public:
                          .mutableDimensions()...};
     m_data =
         std::make_tuple(&dataset.m_variables[dataset.findUnique(tag_id<Tags>)]
-                             .template cast<Vector<typename Tags::type>>()...);
+                             .template cast<typename Tags::type>()...);
   }
 
   template <size_t... Is> auto makeView(std::index_sequence<Is...>) {
