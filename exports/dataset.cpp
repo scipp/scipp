@@ -282,6 +282,24 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<Coord::Z>(m, "CoordZ");
 
   py::class_<Variable>(m, "Variable");
+  py::class_<Slice<Dataset>>(m, "DatasetView")
+      .def("__getitem__",
+           [](Slice<Dataset> &self, const std::tuple<Dim, gsl::index> &index) {
+             return self(std::get<Dim>(index), std::get<gsl::index>(index));
+           })
+      .def("__getitem__", [](Slice<Dataset> &self,
+                             const std::tuple<Dim, const py::slice> &index) {
+        const Dim dim = std::get<Dim>(index);
+        const auto indices = std::get<const py::slice>(index);
+        size_t start, stop, step, slicelength;
+        // TODO This is wrong: Slice<Dataset> needs derived dimensions!
+        if (!indices.compute(self.dataset().dimensions().size(dim), &start,
+                             &stop, &step, &slicelength))
+          throw py::error_already_set();
+        if (step != 1)
+          throw std::runtime_error("Step must be 1");
+        return self(dim, start, stop);
+      });
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
@@ -289,6 +307,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__", detail::getCoord<Coord::Y>)
       .def("__getitem__", detail::getCoord<Coord::Z>)
       .def("__getitem__", detail::getData<Data::Value>)
+      .def("__getitem__",
+           [](Dataset &self, const std::string &name) { return self[name]; })
       .def("__setitem__", detail::setData<Data::Value>)
       .def("insert", detail::insertCoord<Coord::X>)
       .def("insert", detail::insertCoord<Coord::Y>)
