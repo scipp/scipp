@@ -606,7 +606,7 @@ Variable::Variable(uint32_t id, const Unit::Id unit,
 
 template <class VarSlice> Variable &Variable::operator=(const VarSlice &slice) {
   m_type = slice.type();
-  setName(slice.name());
+  m_name = slice.m_variable->m_name;
   setUnit(slice.unit());
   setDimensions(slice.dimensions());
   data().copy(slice.data(), Dim::Invalid, 0, 0, 1);

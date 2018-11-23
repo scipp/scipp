@@ -295,7 +295,6 @@ public:
   }
   uint16_t type() const { return m_variable->type(); }
   const VariableConcept &data() const { return *m_view; }
-  // Move to mutable mixin?
   VariableConcept &data() { return *m_view; }
 
   bool isCoord() const { return m_variable->isCoord(); }

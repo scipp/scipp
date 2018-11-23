@@ -50,12 +50,12 @@ auto makeAccess(Slice<Dataset> &dataset) {
 
 } // namespace detail
 
-template <class View> Dataset::Dataset(const Slice<const Dataset> &view) {
+Dataset::Dataset(const Slice<const Dataset> &view) {
   for (const auto &var : view)
     insert(var);
 }
 
-template <class View> Dataset::Dataset(const Slice<Dataset> &view) {
+Dataset::Dataset(const Slice<Dataset> &view) {
   for (const auto &var : view)
     insert(var);
 }
