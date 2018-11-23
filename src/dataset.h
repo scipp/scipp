@@ -42,7 +42,7 @@ public:
   }
   // WARNING: This returns `const Variable &` ON PURPOSE. We do not provide
   // non-const access to Variable since it could break the dataset, e.g., by
-  // assigning a variable with a different shape. Nevetheless we need to
+  // assigning a variable with a different shape. Nevetheless we need the
   // non-const overload to avoid compiler warnings about ambiguous overloads
   // with the std::string version.
   const Variable &operator[](const gsl::index i) { return m_variables[i]; }
