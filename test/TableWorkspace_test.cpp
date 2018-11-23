@@ -72,6 +72,12 @@ TEST(TableWorkspace, basics) {
   EXPECT_EQ(parts[0], table);
   EXPECT_EQ(parts[1], table);
 
+  // Remove rows from the middle of a table.
+  auto recombined = concatenate(mergedTable(Dim::Row, 0, 2),
+                                mergedTable(Dim::Row, 4, 6), Dim::Row);
+  EXPECT_EQ(asStrings(recombined[0]),
+            std::vector<std::string>({"a", "b", "b", "c"}));
+
   // Other basics (to be implemented): cut/truncate/chop/extract (naming
   // unclear), filter, etc.
 }

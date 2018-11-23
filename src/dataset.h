@@ -29,6 +29,13 @@ template <class T> class Slice;
 
 class Dataset {
 public:
+  Dataset() = default;
+  // Allowing implicit construction from views facilities calling functions that
+  // do not explicitly support views. It is open for discussion whether this is
+  // a good idea or not.
+  Dataset(const Slice<const Dataset> &view);
+  Dataset(const Slice<Dataset> &view);
+
   gsl::index size() const { return m_variables.size(); }
   const Variable &operator[](const gsl::index i) const {
     return m_variables[i];

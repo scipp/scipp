@@ -100,9 +100,17 @@ template <class Base> class VariableSliceMutableMixin;
 
 class Variable {
 public:
+  // TODO Having this non-explicit is convenient when passing (potential)
+  // variable slices to functions that do not support slices, but implicit
+  // conversion may introduce risks, so there is a trade-of here.
+  Variable(const VariableSlice<const Variable> &slice);
+  Variable(const VariableSlice<Variable> &slice);
+
   template <class T>
   Variable(uint32_t id, const Unit::Id unit, const Dimensions &dimensions,
            T object);
+
+  template <class VarSlice> Variable &operator=(const VarSlice &slice);
 
   const std::string &name() const {
     static const std::string empty;

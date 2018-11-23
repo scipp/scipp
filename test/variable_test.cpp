@@ -737,3 +737,47 @@ TEST(VariableSlice, slice_minus_lower_dimensional) {
   EXPECT_EQ(data[2], -1.0);
   EXPECT_EQ(data[3], -2.0);
 }
+
+TEST(VariableSlice, variable_copy_from_slice) {
+  const auto source = makeVariable<Data::Value>(
+      {{Dim::X, 3}, {Dim::Y, 3}}, {11, 12, 13, 21, 22, 23, 31, 32, 33});
+
+  Variable target1(source(Dim::X, 0, 2)(Dim::Y, 0, 2));
+  EXPECT_EQ(target1.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_TRUE(equals(target1.get<const Data::Value>(), {11, 12, 21, 22}));
+
+  Variable target2(source(Dim::X, 1, 3)(Dim::Y, 0, 2));
+  EXPECT_EQ(target2.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_TRUE(equals(target2.get<const Data::Value>(), {12, 13, 22, 23}));
+
+  Variable target3(source(Dim::X, 0, 2)(Dim::Y, 1, 3));
+  EXPECT_EQ(target3.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_TRUE(equals(target3.get<const Data::Value>(), {21, 22, 31, 32}));
+
+  Variable target4(source(Dim::X, 1, 3)(Dim::Y, 1, 3));
+  EXPECT_EQ(target4.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_TRUE(equals(target4.get<const Data::Value>(), {22, 23, 32, 33}));
+}
+
+TEST(VariableSlice, variable_assign_from_slice) {
+  auto target =
+      makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}}, {1, 2, 3, 4});
+  const auto source = makeVariable<Data::Value>(
+      {{Dim::X, 3}, {Dim::Y, 3}}, {11, 12, 13, 21, 22, 23, 31, 32, 33});
+
+  target = source(Dim::X, 0, 2)(Dim::Y, 0, 2);
+  EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_TRUE(equals(target.get<const Data::Value>(), {11, 12, 21, 22}));
+
+  target = source(Dim::X, 1, 3)(Dim::Y, 0, 2);
+  EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_TRUE(equals(target.get<const Data::Value>(), {12, 13, 22, 23}));
+
+  target = source(Dim::X, 0, 2)(Dim::Y, 1, 3);
+  EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_TRUE(equals(target.get<const Data::Value>(), {21, 22, 31, 32}));
+
+  target = source(Dim::X, 1, 3)(Dim::Y, 1, 3);
+  EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_TRUE(equals(target.get<const Data::Value>(), {22, 23, 32, 33}));
+}

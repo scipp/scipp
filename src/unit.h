@@ -17,12 +17,13 @@ public:
     CountsVariance
   };
   // TODO should this be explicit?
+  Unit() = default;
   Unit(const Unit::Id id) : m_id(id) {}
 
   const Unit::Id &id() const { return m_id; }
 
 private:
-  Id m_id;
+  Id m_id = Id::Dimensionless;
   // TODO need to support scale
 };
 

@@ -304,11 +304,17 @@ template <class T> struct CastHelper {
   template <class Concept>
   static auto getView(Concept &concept, const Dimensions &dims, const Dim dim,
                       const gsl::index begin) {
-    auto *data = CastHelper<T>::getData(concept);
-    gsl::index beginOffset = concept.dimensions().contains(dim)
-                                 ? begin * concept.dimensions().offset(dim)
-                                 : begin * concept.dimensions().volume();
-    return makeVariableView(data + beginOffset, dims, concept.dimensions());
+    if (!concept.isView()) {
+      auto *data = CastHelper<T>::getData(concept);
+      gsl::index beginOffset = concept.dimensions().contains(dim)
+                                   ? begin * concept.dimensions().offset(dim)
+                                   : begin * concept.dimensions().volume();
+      return makeVariableView(data + beginOffset, dims, concept.dimensions());
+    } else {
+      return CastHelper<VariableView<std::conditional_t<
+          std::is_const<Concept>::value, const typename T::value_type,
+          typename T::value_type>>>::getView(concept, dims, dim, begin);
+    }
   }
 };
 
@@ -581,12 +587,34 @@ public:
   T m_model;
 };
 
+Variable::Variable(const VariableSlice<const Variable> &slice)
+    : Variable(*slice.m_variable) {
+  *this = slice;
+}
+
+Variable::Variable(const VariableSlice<Variable> &slice)
+    : Variable(*slice.m_variable) {
+  *this = slice;
+}
+
 template <class T>
 Variable::Variable(uint32_t id, const Unit::Id unit,
                    const Dimensions &dimensions, T object)
     : m_type(id), m_unit{unit},
       m_object(std::make_unique<VariableModel<T>>(std::move(dimensions),
                                                   std::move(object))) {}
+
+template <class VarSlice> Variable &Variable::operator=(const VarSlice &slice) {
+  m_type = slice.type();
+  setName(slice.name());
+  setUnit(slice.unit());
+  setDimensions(slice.dimensions());
+  data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
+  return *this;
+}
+
+template Variable &Variable::operator=(const VariableSlice<const Variable> &);
+template Variable &Variable::operator=(const VariableSlice<Variable> &);
 
 void Variable::setDimensions(const Dimensions &dimensions) {
   if (dimensions == m_object->dimensions())
