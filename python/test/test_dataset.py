@@ -58,7 +58,27 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(view.size(), 4)
 
     def test_slice_dataset(self):
-        view = self.dataset[Dim.X, 0]
+        for x in range(2):
+            view = self.dataset[Dim.X, x]
+            self.assertRaisesRegex(RuntimeError, 'Dataset does not contain such a variable.', view.__getitem__, Coord.X)
+            np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
+            np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
+            np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,:,x])
+            np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,:,x])
+        for y in range(3):
+            view = self.dataset[Dim.Y, y]
+            np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
+            self.assertRaisesRegex(RuntimeError, 'Dataset does not contain such a variable.', view.__getitem__, Coord.Y)
+            np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
+            np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,y,:])
+            np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,y,:])
+        for z in range(4):
+            view = self.dataset[Dim.Z, z]
+            np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
+            np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
+            self.assertRaisesRegex(RuntimeError, 'Dataset does not contain such a variable.', view.__getitem__, Coord.Z)
+            np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z,:,:])
+            np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z,:,:])
 
 if __name__ == '__main__':
     unittest.main()
