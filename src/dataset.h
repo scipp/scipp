@@ -164,16 +164,6 @@ private:
   // modified in a way that would break the dataset.
   Variable &get(gsl::index i) { return m_variables[i]; }
 
-  // The way the Python exports are written we require non-const references to
-  // variables. Note that setting breaking attributes is not exported, so we
-  // should be safe.
-  template <class Tag>
-  friend detail::VariableView<Tag> detail::getCoord(Dataset &, const Tag);
-  template <class Tag>
-  friend detail::VariableView<Tag>
-  detail::getData(Dataset &, const std::pair<const Tag, const std::string> &);
-  template <class... Tags> friend class LinearView;
-
   gsl::index count(const uint16_t id) const;
   gsl::index count(const uint16_t id, const std::string &name) const;
   void mergeDimensions(const Dimensions &dims, const Dim coordDim);
@@ -223,6 +213,15 @@ private:
   const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &m_slices;
   gsl::index m_index;
 };
+
+// T can be Dataset or Slice.
+template <class T>
+gsl::index find(const T &dataset, const uint16_t id, const std::string &name) {
+  for (gsl::index i = 0; i < dataset.size(); ++i)
+    if (dataset[i].type() == id && dataset[i].name() == name)
+      return i;
+  throw std::runtime_error("Dataset does not contain such a variable.");
+}
 
 template <class Base> class SliceMutableMixin {};
 
@@ -294,8 +293,25 @@ public:
   }
 
   const Dataset &dataset() const { return m_dataset; }
+  std::vector<std::tuple<Dim, gsl::index>> dimensions() {
+    std::vector<std::tuple<Dim, gsl::index>> dims;
+    for (gsl::index i = 0; i < m_dataset.dimensions().count(); ++i) {
+      const Dim dim = m_dataset.dimensions().label(i);
+      gsl::index size = m_dataset.dimensions().size(i);
+      for (const auto &slice : m_slices)
+        if (std::get<Dim>(slice) == dim) {
+          if (std::get<2>(slice) == -1)
+            size = -1;
+          else
+            size = std::get<2>(slice) - std::get<1>(slice);
+        }
+      dims.emplace_back(dim, size);
+    }
+    return dims;
+  }
 
   gsl::index size() const { return m_indices.size(); }
+
   VariableSlice<const Variable> operator[](const gsl::index i) const {
     return detail::makeSlice(m_dataset[m_indices[i]], m_slices);
   }
@@ -315,6 +331,45 @@ private:
   std::vector<gsl::index> m_indices;
   std::vector<std::tuple<Dim, gsl::index, gsl::index>> m_slices;
 };
+
+namespace detail {
+template <class Data> class Access;
+
+template <> class Access<Dataset> {
+public:
+  Access(Dataset &dataset) : m_data(dataset) {}
+
+  auto begin() const { return m_data.m_variables.begin(); }
+  auto end() const { return m_data.m_variables.end(); }
+  Variable &operator[](const gsl::index i) const {
+    return m_data.m_variables[i];
+  }
+
+private:
+  Dataset &m_data;
+};
+
+template <> class Access<Slice<Dataset>> {
+public:
+  Access(Slice<Dataset> &dataset) : m_data(dataset) {}
+
+  auto begin() const { return m_data.mutableBegin(); }
+  auto end() const { return m_data.mutableEnd(); }
+  VariableSlice<Variable> operator[](const gsl::index i) const {
+    return VariableSlice<Variable>(m_data.get(i));
+  }
+
+private:
+  Slice<Dataset> &m_data;
+};
+
+inline const Dataset &makeAccess(const Dataset &dataset) { return dataset; }
+inline auto makeAccess(Dataset &dataset) { return Access<Dataset>(dataset); }
+inline auto makeAccess(Slice<Dataset> &dataset) {
+  return Access<Slice<Dataset>>(dataset);
+}
+
+} // namespace detail
 
 Dataset operator+(Dataset a, const Dataset &b);
 Dataset operator-(Dataset a, const Dataset &b);

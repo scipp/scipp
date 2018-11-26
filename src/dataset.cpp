@@ -11,45 +11,6 @@
 
 #include "dataset.h"
 
-namespace detail {
-template <class Data> class Access;
-
-template <> class Access<Dataset> {
-public:
-  Access(Dataset &dataset) : m_data(dataset) {}
-
-  auto begin() const { return m_data.m_variables.begin(); }
-  auto end() const { return m_data.m_variables.end(); }
-  Variable &operator[](const gsl::index i) const {
-    return m_data.m_variables[i];
-  }
-
-private:
-  Dataset &m_data;
-};
-
-template <> class Access<Slice<Dataset>> {
-public:
-  Access(Slice<Dataset> &dataset) : m_data(dataset) {}
-
-  auto begin() const { return m_data.mutableBegin(); }
-  auto end() const { return m_data.mutableEnd(); }
-  VariableSlice<Variable> operator[](const gsl::index i) const {
-    return VariableSlice<Variable>(m_data.get(i));
-  }
-
-private:
-  Slice<Dataset> &m_data;
-};
-
-const Dataset &makeAccess(const Dataset &dataset) { return dataset; }
-auto makeAccess(Dataset &dataset) { return Access<Dataset>(dataset); }
-auto makeAccess(Slice<Dataset> &dataset) {
-  return Access<Slice<Dataset>>(dataset);
-}
-
-} // namespace detail
-
 Dataset::Dataset(const Slice<const Dataset> &view) {
   for (const auto &var : view)
     insert(var);
@@ -108,15 +69,6 @@ Dataset Dataset::extract(const std::string &name) {
     throw std::runtime_error(
         "Dataset::extract(): No matching variable found in Dataset.");
   return subset;
-}
-
-// T can be Dataset or Slice.
-template <class T>
-gsl::index find(const T &dataset, const uint16_t id, const std::string &name) {
-  for (gsl::index i = 0; i < dataset.size(); ++i)
-    if (dataset[i].type() == id && dataset[i].name() == name)
-      return i;
-  throw std::runtime_error("Dataset does not contain such a variable.");
 }
 
 gsl::index Dataset::find(const uint16_t id, const std::string &name) const {

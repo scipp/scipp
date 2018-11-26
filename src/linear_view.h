@@ -59,11 +59,12 @@ public:
       throw std::runtime_error(
           "LinearView supports only 1-dimensional datasets.");
 
-    m_dimensions = {&dataset.m_variables[dataset.findUnique(tag_id<Tags>)]
-                         .mutableDimensions()...};
-    m_data =
-        std::make_tuple(&dataset.m_variables[dataset.findUnique(tag_id<Tags>)]
-                             .template cast<typename Tags::type>()...);
+    m_dimensions = {
+        &detail::makeAccess(dataset)[dataset.findUnique(tag_id<Tags>)]
+             .mutableDimensions()...};
+    m_data = std::make_tuple(
+        &detail::makeAccess(dataset)[dataset.findUnique(tag_id<Tags>)]
+             .template cast<typename Tags::type>()...);
   }
 
   template <size_t... Is> auto makeView(std::index_sequence<Is...>) {

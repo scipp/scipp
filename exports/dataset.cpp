@@ -119,14 +119,17 @@ private:
   Dimensions m_dimensions;
 };
 
-template <class Tag> VariableView<Tag> getCoord(Dataset &self, const Tag) {
-  return {self.get(self.find(tag_id<Tag>, ""))};
+// The way the Python exports are written we require non-const references to
+// variables. Note that setting breaking attributes is not exported, so we
+// should be safe.
+template <class Tag, class T> VariableView<Tag> getCoord(T &self, const Tag) {
+  return {detail::makeAccess(self)[find(self, tag_id<Tag>, "")]};
 }
 
-template <class Tag>
-VariableView<Tag> getData(Dataset &self,
+template <class Tag, class T>
+VariableView<Tag> getData(T &self,
                           const std::pair<const Tag, const std::string> &key) {
-  return {self.get(self.find(tag_id<Tag>, key.second))};
+  return {detail::makeAccess(self)[find(self, tag_id<Tag>, key.second)]};
 }
 
 template <class Tag>
@@ -292,9 +295,13 @@ PYBIND11_MODULE(dataset, m) {
         const Dim dim = std::get<Dim>(index);
         const auto indices = std::get<const py::slice>(index);
         size_t start, stop, step, slicelength;
-        // TODO This is wrong: Slice<Dataset> needs derived dimensions!
-        if (!indices.compute(self.dataset().dimensions().size(dim), &start,
-                             &stop, &step, &slicelength))
+        gsl::index size = -1;
+        for (const auto &dimSize : self.dimensions())
+          if (std::get<Dim>(dimSize) == dim)
+            size = std::get<gsl::index>(dimSize);
+        if (size == -1)
+          throw std::runtime_error("Dataset does not contain this dimension.");
+        if (!indices.compute(size, &start, &stop, &step, &slicelength))
           throw py::error_already_set();
         if (step != 1)
           throw std::runtime_error("Step must be 1");
@@ -303,10 +310,10 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
-      .def("__getitem__", detail::getCoord<Coord::X>)
-      .def("__getitem__", detail::getCoord<Coord::Y>)
-      .def("__getitem__", detail::getCoord<Coord::Z>)
-      .def("__getitem__", detail::getData<Data::Value>)
+      .def("__getitem__", detail::getCoord<Coord::X, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::Y, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::Z, Dataset>)
+      .def("__getitem__", detail::getData<Data::Value, Dataset>)
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
       .def("__setitem__", detail::setData<Data::Value>)
