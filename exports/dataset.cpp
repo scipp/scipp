@@ -47,12 +47,6 @@ void insert(Dataset &self, const Tag, const std::string &name,
   self.insert<const Tag>(name, dims, data);
 }
 
-template <class Tag>
-auto get(const Dataset &self, const Tag, const std::string &name)
-    -> decltype(self.get<const Tag>(name)) {
-  return self.get<const Tag>(name);
-}
-
 std::vector<gsl::index> numpy_shape(const Dimensions &dims) {
   std::vector<gsl::index> shape(dims.count());
   for (gsl::index i = 0; i < shape.size(); ++i)
@@ -322,9 +316,6 @@ PYBIND11_MODULE(dataset, m) {
       .def("insert", detail::insertCoord<Coord::Z>)
       .def("insert", detail::insert<Data::Value>)
       .def("insert", detail::insert<Data::Variance>)
-      .def("get", detail::get<Data::Value>)
-      .def("get", detail::get<Data::Variance>)
-      .def("get", detail::get<Data::String>)
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
