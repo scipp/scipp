@@ -27,6 +27,7 @@ public:
   virtual ~VariableConcept() = default;
   // This is dropped into a cow_ptr so we prefer shared_ptr over unique_ptr.
   virtual std::shared_ptr<VariableConcept> clone() const = 0;
+  virtual std::unique_ptr<VariableConcept> cloneUnique() const = 0;
   virtual std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() const = 0;
@@ -62,17 +63,28 @@ private:
   Dimensions m_dimensions;
 };
 
+namespace detail {
+template <class T> std::unique_ptr<T> clone(const T &other) {
+  return std::make_unique<T>(other);
+}
+
+template <>
+inline std::unique_ptr<VariableConcept> clone(const VariableConcept &other) {
+  return other.cloneUnique();
+}
+} // namespace detail
+
 template <class T> class deep_ptr {
 public:
   deep_ptr() = default;
   deep_ptr(std::unique_ptr<T> &&other) : m_data(std::move(other)) {}
   deep_ptr(const deep_ptr<T> &other)
-      : m_data(other ? std::make_unique<T>(*other) : nullptr) {}
+      : m_data(other ? detail::clone(*other) : nullptr) {}
   deep_ptr(deep_ptr<T> &&) = default;
   constexpr deep_ptr(std::nullptr_t){};
   deep_ptr<T> &operator=(const deep_ptr<T> &other) {
     if (&other != this && other)
-      m_data = std::make_unique<T>(*other);
+      m_data = detail::clone(*other);
     return *this;
   }
   deep_ptr<T> &operator=(deep_ptr<T> &&) = default;
@@ -241,6 +253,15 @@ Variable makeVariable(const Dimensions &dimensions,
 
 template <class Base> class VariableSliceMutableMixin {};
 
+template <> class VariableSliceMutableMixin<VariableSlice<const Variable>> {
+protected:
+  template <class T> const VariableView<const T> &cast() const;
+
+private:
+  const VariableSlice<const Variable> &base() const;
+  VariableSlice<const Variable> &base();
+};
+
 template <> class VariableSliceMutableMixin<VariableSlice<Variable>> {
 public:
   template <class T>
@@ -250,11 +271,13 @@ public:
   VariableSliceMutableMixin<VariableSlice<Variable>> &
   operator-=(const T &other);
 
+protected:
+  template <class T> const VariableView<const T> &cast() const;
+  template <class T> const VariableView<T> &cast();
+
 private:
   const VariableSlice<Variable> &base() const;
   VariableSlice<Variable> &base();
-
-  template <class T> const VariableView<T> &cast();
 };
 
 // V is either Variable or const Variable.
@@ -269,6 +292,7 @@ class VariableSlice : public VariableSliceMutableMixin<VariableSlice<V>> {
 public:
   explicit VariableSlice(V &variable)
       : m_variable(&variable), m_view(variable.data().makeView()) {}
+  VariableSlice(const VariableSlice &other) = default;
   VariableSlice(V &variable, const Dim dim, const gsl::index begin,
                 const gsl::index end = -1)
       : m_variable(&variable),
@@ -289,7 +313,20 @@ public:
   }
   const Unit &unit() const { return m_variable->unit(); }
   gsl::index size() const { return m_view->size(); }
+
   const Dimensions &dimensions() const { return m_view->dimensions(); }
+  std::vector<gsl::index> strides() const {
+    const auto parent = m_variable->dimensions();
+    std::vector<gsl::index> strides;
+    gsl::index stride = 1;
+    for(gsl::index i=0; i<parent.count(); ++i) {
+      if (dimensions().contains(parent.label(i)))
+        strides.emplace_back(stride);
+      stride *= parent.size(i);
+    }
+    return strides;
+  }
+
   template <class Tag> bool valueTypeIs() const {
     return m_variable->template valueTypeIs<Tag>();
   }
@@ -307,18 +344,18 @@ public:
         "VariableSlice is `const`, must use const-qualified tag in call "
         "to `get`, e.g., `get<const Coord::X>()` instead of "
         "`get<Coord::X>()`");
-    return cast<typename Tag::type>();
+    return this->template cast<typename Tag::type>();
   }
 
-  // template <class Tag>
-  // auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
-  //  return const_cast<const Variable *>(this)->get<Tag>();
-  //}
+  template <class Tag>
+  auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
+    return const_cast<const VariableSlice *>(this)->get<Tag>();
+  }
 
-  // template <class Tag>
-  // auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
-  //  return gsl::make_span(cast<Vector<typename Tag::type>>());
-  //}
+  template <class Tag>
+  auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+    return this->template cast<typename Tag::type>();
+  }
 
   template <class T> bool operator==(const T &other) const;
 
@@ -326,7 +363,6 @@ private:
   friend class Variable;
   template <class Base> friend class VariableSliceMutableMixin;
 
-  template <class T> const VariableView<const T> &cast() const;
   V *m_variable;
   deep_ptr<VariableConcept> m_view;
 };

@@ -405,6 +405,10 @@ public:
     return std::make_shared<VariableModel<T>>(dimensions(), m_model);
   }
 
+  std::unique_ptr<VariableConcept> cloneUnique() const override {
+    return std::make_unique<VariableModel<T>>(dimensions(), m_model);
+  }
+
   std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const override {
     return std::make_shared<VariableModel<T>>(dims,
@@ -827,6 +831,16 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::operator-=(const T &other) {
   return *this;
 }
 
+const VariableSlice<const Variable> &
+VariableSliceMutableMixin<VariableSlice<const Variable>>::base() const {
+  return static_cast<const VariableSlice<const Variable> &>(*this);
+}
+
+VariableSlice<const Variable> &
+VariableSliceMutableMixin<VariableSlice<const Variable>>::base() {
+  return static_cast<VariableSlice<const Variable> &>(*this);
+}
+
 const VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::base() const {
   return static_cast<const VariableSlice<Variable> &>(*this);
@@ -877,15 +891,24 @@ operator==(const VariableSlice<const Variable> &) const;
 template bool VariableSlice<Variable>::
 operator==(const VariableSlice<const Variable> &) const;
 
-template <class V>
 template <class T>
-const VariableView<const T> &VariableSlice<V>::cast() const {
-  return dynamic_cast<const VariableModel<VariableView<const T>> &>(data())
+const VariableView<const T> &
+VariableSliceMutableMixin<VariableSlice<const Variable>>::cast() const {
+  return dynamic_cast<const VariableModel<VariableView<const T>> &>(
+             base().data())
       .m_model;
 }
 
 template const VariableView<const double> &
-VariableSlice<const Variable>::cast<double>() const;
+VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<double>() const;
+
+template <class T>
+const VariableView<const T> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const {
+  return dynamic_cast<const VariableModel<VariableView<const T>> &>(
+             base().data())
+      .m_model;
+}
 
 template <class T>
 const VariableView<T> &
@@ -894,6 +917,8 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::cast() {
       .m_model;
 }
 
+template const VariableView<const double> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<double> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
 
