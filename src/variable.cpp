@@ -903,11 +903,12 @@ template const VariableView<const double> &
 VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<double>() const;
 
 template <class T>
-const VariableView<const T> &
+const VariableView<const T>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const {
-  return dynamic_cast<const VariableModel<VariableView<const T>> &>(
-             base().data())
-      .m_model;
+  // Make a const view from the mutable one.
+  return {dynamic_cast<const VariableModel<VariableView<T>> &>(base().data())
+              .m_model,
+          base().dimensions()};
 }
 
 template <class T>
@@ -917,7 +918,7 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::cast() {
       .m_model;
 }
 
-template const VariableView<const double> &
+template const VariableView<const double>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<double> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast();

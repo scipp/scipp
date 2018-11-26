@@ -272,7 +272,7 @@ public:
   operator-=(const T &other);
 
 protected:
-  template <class T> const VariableView<const T> &cast() const;
+  template <class T> const VariableView<const T> cast() const;
   template <class T> const VariableView<T> &cast();
 
 private:
