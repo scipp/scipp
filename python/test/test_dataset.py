@@ -80,5 +80,18 @@ class TestDataset(unittest.TestCase):
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z,:,:])
 
+    def test_numpy_interoperable(self):
+        self.dataset[Data.Value, 'data2'] = np.exp(self.dataset[Data.Value, 'data1'])
+        np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, np.exp(self.reference_data1))
+        # Restore original value.
+        self.dataset[Data.Value, 'data2'] = self.reference_data2
+        np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, self.reference_data2)
+
+    def test_slice_numpy_interoperable(self):
+        # TODO Both of these should work (must unify slicing syntax for Dataset and Variable first):
+        #self.dataset[Dim.X, 0][Data.Value, 'data1'] = np.exp(self.dataset[Dim.X, 1][Data.Value, 'data1'])
+        #self.dataset[Data.Value, 'data1'][Dim.X, 0] = np.exp(self.dataset[Data.Value, 'data1'][Dim.X, 1])
+        pass
+
 if __name__ == '__main__':
     unittest.main()
