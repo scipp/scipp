@@ -54,17 +54,6 @@ std::vector<gsl::index> numpy_shape(const Dimensions &dims) {
   return shape;
 }
 
-template <class Tag>
-std::vector<gsl::index> numpy_strides(const Dimensions &dims) {
-  std::vector<gsl::index> strides(dims.count());
-  gsl::index stride = sizeof(typename Tag::type);
-  for (gsl::index i = strides.size() - 1; i >= 0; --i) {
-    strides[i] = stride;
-    stride *= dims.size(strides.size() - 1 - i);
-  }
-  return strides;
-}
-
 // Reverse strides s and add size factor.
 template <class Tag>
 std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
