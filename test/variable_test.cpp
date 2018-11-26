@@ -420,6 +420,29 @@ TEST(Variable, rebin) {
   EXPECT_EQ(rebinned.get<const Data::Value>()[0], 3.0);
 }
 
+TEST(VariableSlice, strides) {
+  auto var = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
+  EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<gsl::index>{3}));
+  EXPECT_EQ(var(Dim::X, 1).strides(), (std::vector<gsl::index>{3}));
+  EXPECT_EQ(var(Dim::Y, 0).strides(), (std::vector<gsl::index>{1}));
+  EXPECT_EQ(var(Dim::Y, 1).strides(), (std::vector<gsl::index>{1}));
+  EXPECT_EQ(var(Dim::X, 0, 1).strides(), (std::vector<gsl::index>{1, 3}));
+  EXPECT_EQ(var(Dim::X, 1, 2).strides(), (std::vector<gsl::index>{1, 3}));
+  EXPECT_EQ(var(Dim::Y, 0, 1).strides(), (std::vector<gsl::index>{1, 3}));
+  EXPECT_EQ(var(Dim::Y, 1, 2).strides(), (std::vector<gsl::index>{1, 3}));
+  EXPECT_EQ(var(Dim::X, 0, 2).strides(), (std::vector<gsl::index>{1, 3}));
+  EXPECT_EQ(var(Dim::X, 1, 3).strides(), (std::vector<gsl::index>{1, 3}));
+  EXPECT_EQ(var(Dim::Y, 0, 2).strides(), (std::vector<gsl::index>{1, 3}));
+  EXPECT_EQ(var(Dim::Y, 1, 3).strides(), (std::vector<gsl::index>{1, 3}));
+
+  EXPECT_EQ(var(Dim::X, 0, 1)(Dim::Y, 0, 1).strides(),
+            (std::vector<gsl::index>{1, 3}));
+
+  auto var3D = makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+  EXPECT_EQ(var3D(Dim::X, 0, 1)(Dim::Z, 0, 1).strides(),
+            (std::vector<gsl::index>{1, 2, 6}));
+}
+
 TEST(VariableSlice, get) {
   const auto var = makeVariable<Data::Value>({Dim::X, 3}, {1, 2, 3});
   EXPECT_EQ(var(Dim::X, 1, 2).get<const Data::Value>()[0], 2.0);

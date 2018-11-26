@@ -58,10 +58,9 @@ std::vector<gsl::index> numpy_shape(const Dimensions &dims) {
 template <class Tag>
 std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
   std::vector<gsl::index> strides(s.size());
-  gsl::index stride = sizeof(typename Tag::type);
+  gsl::index elemSize = sizeof(typename Tag::type);
   for (gsl::index i = strides.size() - 1; i >= 0; --i) {
-    strides[i] = stride;
-    stride *= s[strides.size() - 1 - i];
+    strides[i] = elemSize * s[strides.size() - 1 - i];
   }
   return strides;
 }
@@ -251,30 +250,53 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Variable>(m, "Variable");
   py::class_<Slice<Dataset>>(m, "DatasetView")
+      .def("size", &Slice<Dataset>::size)
       .def("__getitem__",
            [](Slice<Dataset> &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
            })
-      .def("__getitem__", [](Slice<Dataset> &self,
-                             const std::tuple<Dim, const py::slice> &index) {
-        const Dim dim = std::get<Dim>(index);
-        const auto indices = std::get<const py::slice>(index);
-        size_t start, stop, step, slicelength;
-        gsl::index size = -1;
-        for (const auto &dimSize : self.dimensions())
-          if (std::get<Dim>(dimSize) == dim)
-            size = std::get<gsl::index>(dimSize);
-        if (size == -1)
-          throw std::runtime_error("Dataset does not contain this dimension.");
-        if (!indices.compute(size, &start, &stop, &step, &slicelength))
-          throw py::error_already_set();
-        if (step != 1)
-          throw std::runtime_error("Step must be 1");
-        return self(dim, start, stop);
-      });
+      .def("__getitem__",
+           [](Slice<Dataset> &self,
+              const std::tuple<Dim, const py::slice> &index) {
+             const Dim dim = std::get<Dim>(index);
+             const auto indices = std::get<const py::slice>(index);
+             size_t start, stop, step, slicelength;
+             gsl::index size = -1;
+             for (const auto &dimSize : self.dimensions())
+               if (std::get<Dim>(dimSize) == dim)
+                 size = std::get<gsl::index>(dimSize);
+             if (size == -1)
+               throw std::runtime_error(
+                   "Dataset does not contain this dimension.");
+             if (!indices.compute(size, &start, &stop, &step, &slicelength))
+               throw py::error_already_set();
+             if (step != 1)
+               throw std::runtime_error("Step must be 1");
+             return self(dim, start, stop);
+           })
+      .def("__getitem__", detail::getCoord<Coord::X, Slice<Dataset>>)
+      .def("__getitem__", detail::getCoord<Coord::Y, Slice<Dataset>>)
+      .def("__getitem__", detail::getCoord<Coord::Z, Slice<Dataset>>)
+      .def("__getitem__", detail::getData<Data::Value, Slice<Dataset>>);
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
+      .def("__getitem__",
+           [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
+             return self(std::get<Dim>(index), std::get<gsl::index>(index));
+           })
+      .def("__getitem__",
+           [](Dataset &self, const std::tuple<Dim, const py::slice> &index) {
+             const Dim dim = std::get<Dim>(index);
+             const auto indices = std::get<const py::slice>(index);
+             size_t start, stop, step, slicelength;
+             const auto size = self.dimensions().size(dim);
+             if (!indices.compute(size, &start, &stop, &step, &slicelength))
+               throw py::error_already_set();
+             if (step != 1)
+               throw std::runtime_error("Step must be 1");
+             return self(dim, start, stop);
+           })
       .def("__getitem__", detail::getCoord<Coord::X, Dataset>)
       .def("__getitem__", detail::getCoord<Coord::Y, Dataset>)
       .def("__getitem__", detail::getCoord<Coord::Z, Dataset>)
