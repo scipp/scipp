@@ -48,11 +48,26 @@ TEST(Dimensions, offset) {
 
 TEST(Dimensions, erase) {
   Dimensions dims;
-  dims.add(Dimension::Tof, 3);
-  dims.add(Dimension::Q, 2);
-  dims.erase(Dimension::Tof);
-  EXPECT_FALSE(dims.contains(Dimension::Tof));
-  EXPECT_TRUE(dims.contains(Dimension::Q));
+  dims.add(Dimension::X, 2);
+  dims.add(Dimension::Y, 3);
+  dims.add(Dimension::Z, 4);
+  dims.erase(Dimension::Y);
+  EXPECT_TRUE(dims.contains(Dimension::X));
+  EXPECT_FALSE(dims.contains(Dimension::Y));
+  EXPECT_TRUE(dims.contains(Dimension::Z));
+  EXPECT_EQ(dims.volume(), 8);
+}
+
+TEST(Dimensions, erase_inner) {
+  Dimensions dims;
+  dims.add(Dimension::X, 2);
+  dims.add(Dimension::Y, 3);
+  dims.add(Dimension::Z, 4);
+  dims.erase(Dimension::X);
+  EXPECT_FALSE(dims.contains(Dimension::X));
+  EXPECT_TRUE(dims.contains(Dimension::Y));
+  EXPECT_TRUE(dims.contains(Dimension::Z));
+  EXPECT_EQ(dims.volume(), 12);
 }
 
 TEST(Dimensions, contains_other) {
