@@ -19,9 +19,14 @@ class TestDataset(unittest.TestCase):
         self.reference_z = np.arange(lz)
         self.reference_data1 = np.arange(24).reshape(4,3,2)
         self.reference_data2 = np.ones(24).reshape(4,3,2)
+        self.reference_data3 = np.arange(8).reshape(4,2)
 
         self.dataset.insert(Data.Value, "data1", dims, np.arange(24))
         self.dataset.insert(Data.Value, "data2", dims, np.ones(24))
+        dimsXZ = Dimensions()
+        dimsXZ.add(Dim.X, lx)
+        dimsXZ.add(Dim.Z, lz)
+        self.dataset.insert(Data.Value, "data3", dimsXZ, np.arange(8))
 
         dimsX = Dimensions()
         dimsX.add(Dim.X, lx)
@@ -34,8 +39,8 @@ class TestDataset(unittest.TestCase):
         self.dataset.insert(Coord.Z, dimsZ, self.reference_z)
 
     def test_size(self):
-        # X, Y, Z, 2xData::Value
-        self.assertEqual(self.dataset.size(), 5)
+        # X, Y, Z, 3 x Data::Value
+        self.assertEqual(self.dataset.size(), 6)
 
     def test_dimensions(self):
         self.assertEqual(self.dataset.dimensions().size(Dim.X), 2)
@@ -48,6 +53,7 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(self.dataset[Coord.Z].numpy, self.reference_z)
         np.testing.assert_array_equal(self.dataset[Data.Value, "data1"].numpy, self.reference_data1)
         np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, self.reference_data2)
+        np.testing.assert_array_equal(self.dataset[Data.Value, "data3"].numpy, self.reference_data3)
 
     def test_view_subdata(self):
         view = self.dataset["data1"]
@@ -65,6 +71,7 @@ class TestDataset(unittest.TestCase):
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,:,x])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,:,x])
+            np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[:,x])
         for y in range(3):
             view = self.dataset[Dim.Y, y]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
@@ -72,6 +79,7 @@ class TestDataset(unittest.TestCase):
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,y,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,y,:])
+            np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3)
         for z in range(4):
             view = self.dataset[Dim.Z, z]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
@@ -79,6 +87,34 @@ class TestDataset(unittest.TestCase):
             self.assertRaisesRegex(RuntimeError, 'Dataset does not contain such a variable.', view.__getitem__, Coord.Z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z,:,:])
+            np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z,:])
+        for x in range(2):
+            for delta in range(3-x):
+                view = self.dataset[Dim.X, x:x+delta]
+                np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x[x:x+delta])
+                np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
+                np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
+                np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,:,x:x+delta])
+                np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,:,x:x+delta])
+                np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[:,x:x+delta])
+        for y in range(3):
+            for delta in range(4-y):
+                view = self.dataset[Dim.Y, y:y+delta]
+                np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
+                np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y[y:y+delta])
+                np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
+                np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,y:y+delta,:])
+                np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,y:y+delta,:])
+                np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3)
+        for z in range(4):
+            for delta in range(5-z):
+                view = self.dataset[Dim.Z, z:z+delta]
+                np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
+                np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
+                np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z[z:z+delta])
+                np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z:z+delta,:,:])
+                np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z:z+delta,:,:])
+                np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z:z+delta,:])
 
     def test_numpy_interoperable(self):
         self.dataset[Data.Value, 'data2'] = np.exp(self.dataset[Data.Value, 'data1'])
