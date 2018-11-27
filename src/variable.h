@@ -265,6 +265,8 @@ private:
 template <> class VariableSliceMutableMixin<VariableSlice<Variable>> {
 public:
   template <class T>
+  VariableSliceMutableMixin<VariableSlice<Variable>> &copyFrom(const T &other);
+  template <class T>
   VariableSliceMutableMixin<VariableSlice<Variable>> &
   operator+=(const T &other);
   template <class T>
@@ -297,13 +299,30 @@ public:
                 const gsl::index end = -1)
       : m_variable(&variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
+  // Do we need conversions from mutable to const views here? There is something
+  // not quite right here logically, related to constness of the VariableSlice
+  // vs. constness of the referenced Variable.
   VariableSlice(const VariableSlice &slice, const Dim dim,
                 const gsl::index begin, const gsl::index end = -1)
+      : m_variable(slice.m_variable),
+        m_view(slice.data().makeView(dim, begin, end)) {}
+  VariableSlice(VariableSlice &slice, const Dim dim, const gsl::index begin,
+                const gsl::index end = -1)
       : m_variable(slice.m_variable),
         m_view(slice.data().makeView(dim, begin, end)) {}
 
   VariableSlice operator()(const Dim dim, const gsl::index begin,
                            const gsl::index end = -1) const {
+    return VariableSlice(*this, dim, begin, end);
+  }
+  // I think this does not make sense: We should be able to create a mutable
+  // slice also from a const VariableSlice. Just like const gsl::span<double>,
+  // and other modifications. This is related to const-correctness of makeView.
+  // Can we fix it if getView uses a custom is_const<Concept> instead of
+  // std::is_const<Concept>? The custom implementation would consider the
+  // const-ness of the slice data, not the const of the slice instance.
+  VariableSlice operator()(const Dim dim, const gsl::index begin,
+                           const gsl::index end = -1) {
     return VariableSlice(*this, dim, begin, end);
   }
 
@@ -319,7 +338,7 @@ public:
     const auto parent = m_variable->dimensions();
     std::vector<gsl::index> strides;
     gsl::index stride = 1;
-    for(gsl::index i=0; i<parent.count(); ++i) {
+    for (gsl::index i = 0; i < parent.count(); ++i) {
       if (dimensions().contains(parent.label(i)))
         strides.emplace_back(stride);
       stride *= parent.size(i);

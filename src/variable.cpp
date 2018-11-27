@@ -5,6 +5,7 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include "variable.h"
 #include "dataset.h"
+#include "except.h"
 #include "variable_view.h"
 
 template <class T> struct CloneHelper {
@@ -302,8 +303,11 @@ template <class T> struct CastHelper {
   }
 
   template <class Concept>
-  static auto getView(Concept &concept, const Dimensions &dims, const Dim dim,
-                      const gsl::index begin) {
+  static VariableView<
+      std::conditional_t<std::is_const<Concept>::value,
+                         const typename T::value_type, typename T::value_type>>
+  getView(Concept &concept, const Dimensions &dims, const Dim dim,
+          const gsl::index begin) {
     if (!concept.isView()) {
       auto *data = CastHelper<T>::getData(concept);
       gsl::index beginOffset = concept.dimensions().contains(dim)
@@ -352,6 +356,8 @@ template <class T> struct CastHelper<VariableView<T>> {
       std::conditional_t<std::is_const<Concept>::value, const T, T>>
   getSpan(Concept &concept, const Dim dim, const gsl::index begin,
           const gsl::index end) {
+    if (!concept.isView())
+      return CastHelper<Vector<T>>::getSpan(concept, dim, begin, end);
     throw std::runtime_error("Creating sub-span of view is not implemented.");
     if (concept.isConstView()) {
       auto *data = CastHelper<VariableView<T>>::getData(concept);
@@ -381,10 +387,17 @@ template <class T> struct CastHelper<VariableView<T>> {
   }
 
   template <class Concept>
-  static VariableView<T> getView(Concept &concept, const Dimensions &dims,
-                                 const Dim dim, const gsl::index begin) {
+  static VariableView<
+      std::conditional_t<std::is_const<Concept>::value, const T, T>>
+  getView(Concept &concept, const Dimensions &dims, const Dim dim,
+          const gsl::index begin) {
+    if (!concept.isView())
+      return CastHelper<Vector<T>>::getView(concept, dims, dim, begin);
     if (concept.isConstView())
-      return {CastHelper<VariableView<T>>::getModel(concept), dims, dim, begin};
+      return {
+          CastHelper<VariableView<std::conditional_t<
+              std::is_const<Concept>::value, const T, T>>>::getModel(concept),
+          dims, dim, begin};
     else
       return {
           CastHelper<VariableView<std::remove_const_t<T>>>::getModel(concept),
@@ -567,13 +580,13 @@ public:
     if (iterDims.contains(dim))
       iterDims.resize(dim, delta);
 
-    auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
     auto otherView = CastHelper<T>::getView(other, iterDims, dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
     if (isContiguous() && iterDims.isContiguousIn(dimensions())) {
       auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+        auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
         CopyHelper<typename T::value_type>::copy(source, target);
       } else {
         CopyHelper<typename T::value_type>::copy(otherView, target);
@@ -581,6 +594,7 @@ public:
     } else {
       auto view = CastHelper<T>::getView(*this, iterDims, dim, offset);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+        auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
         CopyHelper<typename T::value_type>::copy(source, view);
       } else {
         CopyHelper<typename T::value_type>::copy(otherView, view);
@@ -765,6 +779,31 @@ template <class T> Variable &Variable::operator-=(const T &other) {
 template Variable &Variable::operator-=(const Variable &);
 template Variable &Variable::operator-=(const VariableSlice<const Variable> &);
 template Variable &Variable::operator-=(const VariableSlice<Variable> &);
+
+template <class T>
+VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(const T &other) {
+  // TODO Should mismatching tags be allowed, as long as the type matches?
+  if (base().type() != other.type())
+    throw std::runtime_error("Cannot assign to slice: Type mismatch.");
+  // Name mismatch ok, but do not assign it.
+  if (base().unit() != other.unit())
+    throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
+  if (base().dimensions() != other.dimensions())
+    throw dataset::except::DimensionMismatchError(base().dimensions(),
+                                                  other.dimensions());
+  base().data().copy(other.data(), Dim::Invalid, 0, 0, 1);
+  return *this;
+}
+
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(const Variable &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(
+    const VariableSlice<const Variable> &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(
+    const VariableSlice<Variable> &);
 
 template <class T>
 VariableSliceMutableMixin<VariableSlice<Variable>> &

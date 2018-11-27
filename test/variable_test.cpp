@@ -804,3 +804,39 @@ TEST(VariableSlice, variable_assign_from_slice) {
   EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
   EXPECT_TRUE(equals(target.get<const Data::Value>(), {22, 23, 32, 33}));
 }
+
+TEST(VariableSlice, slice_assign_from_variable) {
+  const auto source =
+      makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 2}}, {11, 12, 21, 22});
+
+  // We might want to mimick Python's __setitem__, but operator= would (and
+  // should!?) assign the view contents, not the data.
+  {
+    auto target = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
+    target(Dim::X, 0, 2)(Dim::Y, 0, 2).copyFrom(source);
+    EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 3}, {Dim::Y, 3}}));
+    EXPECT_TRUE(equals(target.get<const Data::Value>(),
+                       {11, 12, 0, 21, 22, 0, 0, 0, 0}));
+  }
+  {
+    auto target = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
+    target(Dim::X, 1, 3)(Dim::Y, 0, 2).copyFrom(source);
+    EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 3}, {Dim::Y, 3}}));
+    EXPECT_TRUE(equals(target.get<const Data::Value>(),
+                       {0, 11, 12, 0, 21, 22, 0, 0, 0}));
+  }
+  {
+    auto target = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
+    target(Dim::X, 0, 2)(Dim::Y, 1, 3).copyFrom(source);
+    EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 3}, {Dim::Y, 3}}));
+    EXPECT_TRUE(equals(target.get<const Data::Value>(),
+                       {0, 0, 0, 11, 12, 0, 21, 22, 0}));
+  }
+  {
+    auto target = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
+    target(Dim::X, 1, 3)(Dim::Y, 1, 3).copyFrom(source);
+    EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::X, 3}, {Dim::Y, 3}}));
+    EXPECT_TRUE(equals(target.get<const Data::Value>(),
+                       {0, 0, 0, 0, 11, 12, 0, 21, 22}));
+  }
+}
