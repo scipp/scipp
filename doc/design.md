@@ -1210,7 +1210,7 @@ A high level overview of an implementation path is given in the figure below.
 - Red lines indicate completion major outcomes/milestones grouped into phases.
   - `Phase 2+WB` (`Workbench` integration) is flexible and relatively disconnected.
     It may be done sooner or later in the second phase, or even after.
-- In `Phase 2+X` the precise plan is deliberately unclear, with various options.
+- In `Phase 2+X` the precise plan is deliberately unspecified, i.e., we list various options.
   We firmly believe that it is impossible to make a qualified decision on this part before we have at least completed `Phase 1` and parts of `Phase 2`.
   At this point it is entirely unclear how and how quickly `Dataset` would be adopted, so the decision is postponed.
   Note that this is possible because everything in `Phase 1`, `Phase 2`, and even `Phase 2+WB` is independent of the choice for completing (or not completing) the rollout.
@@ -1219,149 +1219,107 @@ A more detailed discussion of the individual tasks and components is given after
 
 ![figure: implementation flow chart](implementation-flow.png)
 
-#### Option description
 
-##### Option 1.) No new design
+#### Phase 1
 
-Keep the current workspaces and keep using workarounds for new features.
-
-*2-year timescale:*
-
-- No benefit over current solution.
-- Cost is low. Implementing new features will take as long as it takes now.
-- Very little risk since we have a working solution.
-
-*5-year timescale:*
-
-- No benefit over current solution.
-- Cost is rising. Implementing new features or changes will take longer and longer(this can already be observed in Mantid right now).
-- Little risk for running facilities since we have a working solution. Risk for new facilities is higher, anticipating the high risk at 10-year timescale.
-
-*10-year timescale:*
-
-- No benefit over current solution.
-- Cost is rising even more or can be extreme in case of total breakdown.
-- High to extremely high risk of total breakdown, due to total reliance on 20-year old components with no modularity.
-  Change to a new design will be even harder than it is now.
-
-##### Option 2a.) This design, keep `MatrixWorkspace`
-
-Implement `Dataset` roughly as proposed.
-Replace only less-used workspace and keep `MatrixWorkspace`.
-This implies keeping `Workspace2D` and `EventWorkspace`.
-
-*2-year timescale:*
-
-- Some benefit from using `Dataset` for simple Python-based workflows independent of most current algorithms.
-- Moderate cost for implementation of `Dataset` basics.
-- Some risk due to potentially wasted effort.
-
-*5-year timescale:*
-
-- Some benefit from using `Dataset` for less-used workspaces.
-- Moderate to high cost for rollout of `Dataset` for less-used workspaces.
-- Some risk due to potentially wasted effort and introduction of bugs during algorithm refactoring.
-
-*10-year timescale:*
-
-- Unclear benefit since the ubiquitous use of `MatrixWorkspace` may turn out very limiting.
-- High cost due to increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent.
-- High risk since reliance on `MatrixWorkspace` is not eliminated, codebase may be harder to maintain than it is now since due to duplication of concepts (`MatrixWorkspace` and `Dataset`).
-  Note that risk is not considered extreme since `Dataset` provides an escape route.
-
-##### Option 2b.) This design, deprecate algorithms using `MatrixWorkspace`
-
-Implement `Dataset` roughly as proposed.
-Implement new algorithms based on `Dataset`, potentially making high-level algorithms compatible.
-In the long run, deprecate and remove `MatrixWorkspace` as well as all algorithms that will still depend on it.
-
-*2-year timescale:*
-
-- Some benefit from using `Dataset` for simple Python-based workflows independent of most current algorithms.
-- Moderate cost for implementation of `Dataset` basics.
-- Some risk due to potentially wasted effort.
-
-*5-year timescale:*
-
-- Moderate to high benefit from using `Dataset` with new algorithms in Python and in the GUI to a limited extent.
-- High cost for implementing/refactoring all required functionality.
-  Potentially some cost savings in other subprojects, such as Instrument-2.0, where refactoring to remove Instrument-1.0 will not be necessary anymore.
-- High risk due to temporary split between "old" and "new" algorithms, risk of bugs.
-
-*10-year timescale:*
-
-- Full benefits, with fully functional Python, C++, and GUI.
-- Low cost since the big phase of change is over.
-  Hopefully less cost for new features than now due to better modularity and flexibility of data structures.
-- Low risk since the big phase of change is over.
-
-##### Option 2c.) This design, refactor `MatrixWorkspace` API and use `Dataset` internally
-
-Implement `Dataset` roughly as proposed.
-Replace less-used workspace and refactor the `MatrixWorkspace` API such that it can use `Dataset` internally.
-
-*2-year timescale:*
-
-- Some benefit from using `Dataset` for simple Python-based workflows independent of most current algorithms.
-- High cost for implementation of `Dataset` basics and refactoring to make the `MatrixWorkspace` API compatible.
-- High risk due to potentially wasted effort and introduction of bugs during `MatrixWorkspace` API refactoring.
-
-*5-year timescale:*
-
-- Some benefit from using `Dataset` for less-used workspaces.
-- Moderate to high cost for rollout of `Dataset` for less-used workspaces.
-- Some risk due to potentially wasted effort and introduction of bugs during algorithm refactoring.
-
-*10-year timescale:*
-
-- Some benefit if we slowly manage to refactor old algorithms using `MatrixWorkspace` to natively use `Dataset`.
-- High cost due to either (i) increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent, or (ii) refactoring old algorithms to natively use `Dataset`.
-- High risk since reliance on `MatrixWorkspace` is not eliminated, codebase may be harder to maintain than it is now since due to duplication of concepts (`MatrixWorkspace` and `Dataset`).
-  Note that risk is not considered extreme since `Dataset` provides an escape route.
-
-##### Option 3a.) Different design compatible with `MatrixWorkspace` API
-
-There is not concrete proposal for this option.
-Nevertheless, we attempt to guess potential benefits, costs, and risks.
-
-*2-year timescale:*
-
-- Some benefit from using new workspace types provided by the new design.
-- Moderate cost for implementation of new workspace types.
-- Some risk due to potentially wasted effort and bugs introduced by refactoring.
-
-*5-year timescale:*
-
-- Some benefit from using new workspace types provided by the new design.
-- Moderate to high cost for implementation of new workspace types and maintenance of an even larger variety of workspace types.
-- Some risk due to potentially wasted effort and introduction of bugs during algorithm refactoring.
-
-*10-year timescale:*
-
-- Unclear benefit since the ubiquitous use of `MatrixWorkspace` may turn out very limiting.
-- High cost due to increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent.
-- High risk (or possible very high) since reliance on `MatrixWorkspace` is not eliminated and codebase may be harder to maintain than it is now since the number of workspace only got larger, potentially without solving the existing problems.
-
-##### Option 3b.) Different design not compatible with `MatrixWorkspace` API
-
-There is no concrete proposal for this option.
-Benefits, costs, and risks or likely similar to one of the suboptions of option 2.), depending on the choice for implementation.
+- Detailed API design.
+- Core implementation.
+  - `Dataset`, `Variable`, assortment of views.
+  - Units.
+  - Various helpers.
+  - Basic operations.
+- Python exports.
+  This is probably relatively simple since almost everything is just a 1:1 export of a corresponding C++ function or method.
+  - `numpy` interoperability is almost out of the box.
+  - `xarray` interoperability would likely provided via a zero-copy wrapper, with certain exceptions (event data, bin edges converted to bin centers).
+    This will also immediately give access to 1D and 2D plotting via `matplotlib`, see [plotting in xarray](http://xarray.pydata.org/en/stable/plotting.html).
+    Higher-dimensional visualization in shape of, e.g., a simplified slice viewer is also available via other libraries compatible with `xarray`, e.g., [HoloViews](http://holoviews.org/) or [hvplot](https://hvplot.pyviz.org/user_guide/Gridded_Data.html).
+- Converters from `Workspace2D` and `EventWorkspace` will support testing with real data and early adoption.
 
 
-#### Option discussion
+#### Phase 2
 
-- Start with 2a) and transition into 2b)?
-  The idea would be to smoothen out and decrease the peak in risk and effort associated with 2b), while at the same time avoiding the long-term rise on cost and risk associated with 2a).
+- More-custom visualization:
+  - Support `Dataset` natively in `InstrumentView`.
+  - Support in `SliceViewer`.
+  - Provide a table viewer.
+  - Support 1D and 2D plotting a `Dataset` natively in the `matplotlib` wrappers and widgets that are part of the new `Workbench`.
+- Implement realistic workflows.
+  This servers several purposes:
+  - Drive the implementation of supporting libraries on top of the generic core functionality.
+  - Weed out issues with the API, bugs in the implementation, and performance issues.
+  - Provide real-life examples that demonstrate the power of `Dataset` in actual workflows.
+- Port/adapt the Mantid fitting module (`CuverFitting`).
+  - Fitting is an essential part of Mantid and must be supported rather sooner than later.
+    The module is currently coupled to the current workspace APIs and needs to be refactored to make it usable without making use of converters.
+- Native `Dataset` I/O.
+  - Initially this would mainly be for saving processed data (equivalent to `SaveNexusProcessed`).
+  - Medium-term we will want to provide native support for directly loading event-NeXus files, instead of using `LoadEventNexus` with a subsequent conversion step.
+  - If we support saving `Dataset`, we must at this point consider how to handle recording of history.
+    Due to a more Python-based workflow with potentially a lot of use of `numpy` we cannot realistically hope that tracking algorithm execution in the current way is giving sufficient coverage of the actual history of data.
+    - Can we somehow save the full Python script?
+    - If we run in the GUI, can we just copy the executed Python code into a generic tracking-helper algorithm and add that to the history?
+      Maybe this is possible even without the GUI if we somehow hook into the interpreter?
+
+
+#### Phase 2+WB
+
+- Implement a thin wrapper of `Dataset`, inheriting `API::Workspace`.
+  - Named `DataObjects::DatasetWorkspace`?
+  - Might not even forward methods, just provide access to held dataset.
+  - Provides `AnalysisDataService` (ADS) support, i.e., `DatasetWorkspace` can be shown in the workspace list widget.
+  - Provides processing history.
+  - Using `DatasetWorkspace` in Python will be as broken as for all other workspaces.
+- Wrap functions for working with `Dataset` as new algorithms.
+  - Inherit `API::Algorithm` as usual.
+  - Will automatically show up in history of `DatasetWorkspace`.
+  - To avoid confusion and name clashes all algorithms for `DatasetWorkspace` are prefixed with `dataset.`, i.e., the newly added algorithms are part of a new namespace.
+    - Examples: `dataset.Plus`, `dataset.Rebin`.
+    - If there are concerns about confusion we can provide the option to hide these algorithms from the algorithm list.
+    - This will be no more confusing than the current distinction between "normal" algorithms and "MD" algorithms.
+- Provide algorithms for inserting a dataset into and extracting a dataset from the ADS.
+  - Can leverage the power of Python working directly with `Dataset`.
+  - Insert into the ADS wrapped into `DatasetWorkspace`, passing ownership to the ADS if GUI interaction is required.
+  - Extract from ADS, passing ownership back to Python to return to pythonic operation.
+
+It should be emphasised that we do *not* intend to use `DatasetWorkspace` for everything.
+This is only meant for GUI integration in they way we are used to it.
+In many cases it will be advantageous to use `Dataset` directly due to the higher flexibility.
+
+
+#### Phase 2+X
+
+
+Maybe none (i.e., just keep old things going, do not deprecate, do not port)!
+
+- keep `MatrixWorkspace`
+  Replace only less-used workspace and keep `MatrixWorkspace`. -> bugs from replacing
+  This implies keeping `Workspace2D` and `EventWorkspace`.
+  - Unclear benefit since the ubiquitous use of `MatrixWorkspace` may turn out very limiting.
+- deprecate algorithms using `MatrixWorkspace`
+  Implement new algorithms based on `Dataset`, potentially making high-level algorithms compatible.
+  In the long run, deprecate and remove `MatrixWorkspace` as well as all algorithms that will still depend on it.
+  - High cost for implementing/refactoring all required functionality.
+    Potentially some cost savings in other subprojects, such as Instrument-2.0, where refactoring to remove Instrument-1.0 will not be necessary anymore.
+  - High risk due to temporary split between "old" and "new" algorithms, risk of bugs.
+
+
+- refactor `MatrixWorkspace` API and use `Dataset` internally -> overall no benefit, why not just keep?
+  Replace less-used workspace and refactor the `MatrixWorkspace` API such that it can use `Dataset` internally.
+  - High cost for implementation of `Dataset` basics and refactoring to make the `MatrixWorkspace` API compatible.
+  - High risk due to potentially wasted effort and introduction of bugs during `MatrixWorkspace` API refactoring.
+  - Some benefit if we slowly manage to refactor old algorithms using `MatrixWorkspace` to natively use `Dataset`.
+  - High cost due to either (i) increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent, or (ii) refactoring old algorithms to natively use `Dataset`.
+  - High risk since reliance on `MatrixWorkspace` is not eliminated, codebase may be harder to maintain than it is now since due to duplication of concepts (`MatrixWorkspace` and `Dataset`).
+
 - *Criticism:* Two types of algorithms and workspaces that are not compatible with each other.
   - In a sense we have that now, see `MatrixWorkspace` and `MDHistoWorkspace` with their respective algorithms, e.g., `Plus` and `PlusMD`.
-  - How to separate the two in the GUI?
+  - How to separate the two in the GUI? -> see `Phase 2+WB`.
 - We do not want to repeat the issues with the Python interface.
   - How does that affect our choice, in particular if we want to support running with workspaces and datasets in parallel?
   - Explicitly copy into ADS? Introspection? Just use Jupyter Notebooks? Look at what Spyder does?
-- Do not support the GUI initially?
-  - Even if not full GUI support, we would probably need key widgets like `InstrumentView`, a slice viewer, 1D and 2D plotting.
-  - Use only for auto-reduction, script-reduction, and Jupyter Notebooks?
-- Rollout technique-by-technique or Workspace-by-workspace?
+    See `Phase 2+WB`, basically this suggests explicitly passing ownership between Python and ADS, `Dataset` on the one side, `DatasetWorkspace` on the other.
+- Rollout technique-by-technique or Workspace-by-workspace or method-by-method or not at all?
   - Is a workspace-by-workspace rollout useful, unless we intend to ultimately keep all those algorithms?
     - `PlusMD` will be gone (or merged into a common `Plus`), why spend time on refactoring it to use a new data container?
       Should the refactoring to use the new workspace type include refactoring related algorithms completely, i.e., they may be renamed, dropped, or have major interface changes?
@@ -1369,13 +1327,6 @@ Benefits, costs, and risks or likely similar to one of the suboptions of option 
     - `TableWorkspace` is used in 128 C++ algorithms, the related `PeaksWorkspace` in 72 C++ algorithms, `MDHistoWorkspace` in 57 C++ algorithms.
   - Instead of replacing existing workspaces, what about adding new but required ones, i.e., for imaging, constant-wavelength, etc., which cannot be supported at all or only based on workarounds right now?
 - Keep using `Run`.
-- Can we reuse `History`, unless we wrap all functionality in algorithms?
-- How to integrate with Mantid algorithms (property system and validators)?
-  - Wrap each dataset in a `Workspace`.
-  - Make and `Algorithm` wrapper for each function operating on `Dataset`.
-
-  The consequence would be that we are back to the problem of the broken handling of workspaces in Python.
-  Can this be solved independently, or does it have to be done in the same step?
 
 
 ### <a name="implementation-goals-and-non-goals"></a>Goals and non-goals
