@@ -62,6 +62,10 @@
   - [Supporting libraries](#design-details-supporting-libraries)
 - [Implementation](#implementation)
   - [Implementation path](#implementation-path)
+    - [Phase 1](#implementation-phase-1)
+    - [Phase 2](#implementation-phase-2)
+    - [Phase 2+WB](#implementation-phase-2-wb)
+    - [Phase 2+X](#implementation-phase-2-x)
   - [Goals and non-goals](#implementation-goals-and-non-goals)
   - [Milestones](#implementation-milestones)
   - [Further steps](#implementation-further-steps)
@@ -1220,7 +1224,7 @@ A more detailed discussion of the individual tasks and components is given after
 ![figure: implementation flow chart](implementation-flow.png)
 
 
-#### Phase 1
+#### <a name="implementation-phase-1"></a>Phase 1
 
 - Detailed API design.
 - Core implementation.
@@ -1237,7 +1241,7 @@ A more detailed discussion of the individual tasks and components is given after
 - Converters from `Workspace2D` and `EventWorkspace` will support testing with real data and early adoption.
 
 
-#### Phase 2
+#### <a name="implementation-phase-2"></a>Phase 2
 
 - More-custom visualization:
   - Support `Dataset` natively in `InstrumentView`.
@@ -1262,13 +1266,13 @@ A more detailed discussion of the individual tasks and components is given after
       Maybe this is possible even without the GUI if we somehow hook into the interpreter?
 
 
-#### Phase 2+WB
+#### <a name="implementation-phase-2-wb"></a>Phase 2+WB
 
 - Implement a thin wrapper of `Dataset`, inheriting `API::Workspace`.
   - Named `DataObjects::DatasetWorkspace`?
   - Might not even forward methods, just provide access to held dataset.
-  - Provides `AnalysisDataService` (ADS) support, i.e., `DatasetWorkspace` can be shown in the workspace list widget.
-  - Provides processing history.
+  - The base class provides `AnalysisDataService` (ADS) support, i.e., `DatasetWorkspace` can be shown in the workspace list widget.
+  - The base class Provides processing history.
   - Using `DatasetWorkspace` in Python will be as broken as for all other workspaces.
 - Wrap functions for working with `Dataset` as new algorithms.
   - Inherit `API::Algorithm` as usual.
@@ -1283,14 +1287,31 @@ A more detailed discussion of the individual tasks and components is given after
   - Extract from ADS, passing ownership back to Python to return to pythonic operation.
 
 It should be emphasised that we do *not* intend to use `DatasetWorkspace` for everything.
-This is only meant for GUI integration in they way we are used to it.
+This is only meant for GUI integration in the way we are used to it.
 In many cases it will be advantageous to use `Dataset` directly due to the higher flexibility.
 
 
-#### Phase 2+X
+#### <a name="implementation-phase-2-x"></a>Phase 2+X
+
+After completion of `Phase 2` and `Phase 2+WB` there will be a series of things that is required to increase the adoption of `Dataset`.
+An incomplete list of potential requirements is:
+
+- Improved performance to motivate transition.
+- Ported or newly implemented technique-specific or instrument-specific algorithms and workflow algorithms.
+- Support in more interfaces for visualization.
+- Support in more technique specific interfaces.
+
+As discussed earlier this will be done in an agile manner since there are no benefits to defining a precise plan or strategy now.
+
+Note that this list does deliberately not include refactoring all existing workspace types or all existing algorithms.
+It is certainly possible that refactoring is what we will want to do, but the connected effort would be massive and the benefits may be limited (on top of the downside of introducing many bugs during refactoring).
+That is, we would need very good reasons to do so.
+A better option may be to simple let `Dataset` and workspaces coexist with their respective algorithms.
+*Note:
+It has been criticised that this would mean we have two types of workspaces and algorithms that are not compatible.
+However, this is not a valid argument since we already have this situation right now, e.g., with `MDWorkspace` and `MatrixWorkspace` and the respective algorithms such as `PlusMD` and `Plus`.*
 
 
-Maybe none (i.e., just keep old things going, do not deprecate, do not port)!
 
 - keep `MatrixWorkspace`
   Replace only less-used workspace and keep `MatrixWorkspace`. -> bugs from replacing
@@ -1312,9 +1333,6 @@ Maybe none (i.e., just keep old things going, do not deprecate, do not port)!
   - High cost due to either (i) increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent, or (ii) refactoring old algorithms to natively use `Dataset`.
   - High risk since reliance on `MatrixWorkspace` is not eliminated, codebase may be harder to maintain than it is now since due to duplication of concepts (`MatrixWorkspace` and `Dataset`).
 
-- *Criticism:* Two types of algorithms and workspaces that are not compatible with each other.
-  - In a sense we have that now, see `MatrixWorkspace` and `MDHistoWorkspace` with their respective algorithms, e.g., `Plus` and `PlusMD`.
-  - How to separate the two in the GUI? -> see `Phase 2+WB`.
 - We do not want to repeat the issues with the Python interface.
   - How does that affect our choice, in particular if we want to support running with workspaces and datasets in parallel?
   - Explicitly copy into ADS? Introspection? Just use Jupyter Notebooks? Look at what Spyder does?
