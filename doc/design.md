@@ -16,6 +16,7 @@
 
 - [Context](#context)
 - [High level design overview](#overview)
+  - [Why not `xarray`?](#overview-why-not-xarray)
   - [Examples](#overview-examples)
   - [Elements](#overview-elements)
   - [Operations](#overview-operations)
@@ -56,7 +57,9 @@
   - [Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given](#design-details-exception-safety)
   - [No processing history, for the time being](#design-details-no-processing-history)
   - [Floating-point precision can be set at compile time](#design-details-floating-point-precision-compile-time)
+  - [Performance opportunities](#design-details-performance-opportunities)
   - [Slicing](#design-details-slicing)
+  - [Supporting libraries](#design-details-supporting-libraries)
 - [Implementation](#implementation)
   - [Options](#implementation-options)
   - [Goals and non-goals](#implementation-goals-and-non-goals)
@@ -108,6 +111,26 @@ This includes not just `MatrixWorkspace` and its child classes `Workspace2D` and
 In addition, `Dataset` can likely also replace `Histogram`, `EventList`, and data structure introduced as part of **Instrument-2.0**.
 `Dataset` provides a *uniform interface* in a *single type* for all of these.
 Furthermore, `Dataset` covers many other cases that are currently impossible to represent in a single workspace or in an intuitive manner.
+
+It should be noted at this point that the API of `Dataset` is not compatible with the API of the existing workspaces it would be replacing.
+Therefore, this proposal also implies that basic algorithms would need to be reimplemented.
+Higher-level algorithms such as workflow-algorithms may be ported or refactored, but this will depend on the strategy we pick for implementation and rollout, see [Implementation](#implementation).
+
+
+### <a name="overview-why-not-xarray"></a>Why not `xarray`?
+
+Given the similarity to `xarray.Dataset` we need to justify why we should not simple use `xarray`.
+For our purposes the following is missing in `xarray`:
+
+- Unit handling.
+- Propagation of uncertainties.
+- Support of histograms, i.e., we cannot have a bin-edge axis, which is by 1 longer than the other variables in that dimension.
+- Support for event data.
+
+Probably many of these things could be added to `xarray`, but the involved complexities imply that the resulting effort is not less than a from-scratch implementation. Furthermore, `xarray` seems to be less than 5 years old with very few active contributors, so building everything on top of it is an additional (albeit probably small) risk.
+
+Furthermore, while `xarray` uses `numpy` internally and performance is thus adequate in many situations, having a C++ library enables us to get maximum performance if needed, i.e., there are better opportunities for performance improvements.
+
 
 ### <a name="overview-examples"></a>Examples
 
@@ -164,6 +187,8 @@ The respective extents of `Dim::X` must match.*
 *Exception:
 Coordinates can represent bin edges.
 In that case the extent will be larger by 1.*
+*Note: Matching dimensions refers only to matching *extents*.
+We *do* explicitly support *multi-dimensional* coordinates to implement the current "ragged"-workspace behavior of `Workspace2D`, where the X axis for every histogram can be different ([with exception of its length](#design-details-no-length-variation)).*
 A zero-dimensional variable corresponds to a point, i.e., it will contain a single data item.
 
 Variables come in two classes, distinguished by their tag:
@@ -200,9 +225,14 @@ The tag defines the underlying data type.
 Experiment logs (`API::Run` in Mantid) are probably a special case, see the section on [Attributes](#design-details-attributes) below.
 
 We furthermore define:
-- Coordinate variables do not have a name and are thus identified only by their tag.
+- Coordinate variables generally do not have a name and are thus identified only by their tag.
   Since `Dataset` is a set this implies that there cannot be two coordinate variable with the same tag in the same dataset.
   *Example: Having two variables `Coord::X` representing an X coordinate in a dataset is forbidden, and would indeed not make sense.*
+  However, we may also want to support names for coordinates, there are two cases for this:
+  - User defined coordinates, i.e., coordinates that do not have a matching tag.
+  - Experiment logs, e.g., multiple temperature sensors.
+    This probably applies only if we intend to use `Dataset` in place of `API::Run`.
+
 - Coordinate variables have an implicit unit that cannot be changed (at least apart from its scale) since it is implied by the tag defining the coordinate.
   *Example: The X coordinate would always have a unit representing a *length*, e.g., `m` or `mm`.*
 - Data variables have a name in addition to their tag.
@@ -230,8 +260,6 @@ A mostly but not entirely complete list of operations to be supported is:
 1. Boolean/logical operations for mask operations
 1. `integrate`
 1. Basic statistics operations such as min, max, mean, and standard deviation
-1. Serialization and deserialization, mainly for saving to and loading from disk
-   *Question: Should disk I/O live in a separate module/library?*
 
 As discussed earlier, coordinate variables are not operated on in operations between datasets.
 To modify a coordinate variable, we operate directly on the variable-level.
@@ -325,6 +353,19 @@ A one-dimensional dataset without coordinate variables can be used to represent 
 - `sort` provides sorting by time-of-flight or pulse-time.
 - `filter` provides filtering by time-of-flight or pulse-time.
 
+##### DataObjects::WorkspaceGroup
+
+`Dataset` does in general not intend to replace all uses of `DataObjects::WorkspaceGroup`.
+Nevertheless the design implies that many of the current use cases will be eliminated:
+
+- Several runs? -> Use extra dimension.
+- Several samples? -> Use several variables.
+- Sample and background? -> Use several variables.
+- Fit results? -> Add a several new variables.
+- Polarization? -> Use extra dimension or use multiple variables.
+
+Some use-cases of `WorkspaceGroup` may be left, and depending on how we integrate Dataset and its algorithms into Mantid we may just continue using the current `API::Algorithm` and `WorkspaceGroup` for those cases.
+
 
 ### <a name="overview-python-exports"></a>Python exports
 
@@ -417,9 +458,6 @@ This could enable MPI support, cache blocking for more efficient use of the CPU 
 
 A dimension is identified by a tag.
 This is simply an `enum class Dim`.
-*Note:
-In the prototype this is currently named `enum class Dimension`, but we suggest renaming this to `enum class Dim` for brevity.
-Despite the abbreviation this should be clear and may actually improve code readability since it is more concise when used frequently?*
 
 An incomplete list of dimension tags:
 - `Dim::X`, `Dim::Y`, `Dim::Z`.
@@ -798,6 +836,8 @@ Many groups seem to be looking for solutions to similar problems.
 - All operations propagate attributes unchanged, without matching them.
 - Support special behavior for certain operations, e.g., merging attributes in `operator+`.
 
+See also a [working example](../test/Run_test.cpp) that shows automatic matching, merging, and propagation of meta data purely based on `Dataset`.
+
 ##### Rationale
 
 - This is contrary to what `xarray` does, but it seems to be more in line with the needs for Mantid and also how Mantid behaves currently.
@@ -872,7 +912,7 @@ Note that assignment (`operator=`) [is not a sequence point in C++](https://en.c
 - Use a copy-on-write mechanism that is hidden in the API and simply handled internally in `Variable`:
   A copy-on-write pointer holds a `VariableConcept`.
   To maintain sharing we only require code to be `const`-correct.
-  *Question: Cannot use `const` in Python, need methods/tags with different names that explicitly request mutable or immutable access. What is the best naming convention?*
+  *Note: In Python there is no `const` concept. We can default to read-only access, which is quite natural for the functional non-in-place operation of typical Python code. In combination with a `__setitem__` this should cover most cases.*
   - Do not expose the copy-on-write mechanism on the API.
     For the interface of `API::MatrixWorkspace` (and in connection to that `HistogramData::Histogram`) this has led to an interface that is too complicated, with different API functions for read-only access, write-access, and access for sharing.
 - Documentation as well as developer and user training needs to be *very* clear about the implication for iterators, references, and other forms of views.
@@ -938,6 +978,23 @@ This will require having a unit for "counts", i.e., we cannot simply use "dimens
 We need to establish whether it is possible to write clean client code based on the unit-driven mechanism.
 Apart from that there should not be any major implementation difficulties.
 
+Example:
+
+- Count data has `Unit::Counts`.
+  Note that this is not the same as `Unit::Dimensionless`.
+- Anything with a unit `Unit::Count/<unit of x axis>` is "frequencies" (aka "distribution"), as is probably also any other unit `<some unit>/<unit of x axis>` (I am not sure the latter actually exists in practice?).
+- I think we can also have any other unit `<some unit>`, which in Mantid right now would probably by labeled "distribution" (but I am not sure that is correct?).
+
+A vanadium normalization would compute:
+
+```
+(counts/angstrom) / ((vanadium_)counts/angstrom) = dimensionless
+```
+
+The division by the bin width is "undone" by the normalization.
+See also the related problem [as highlighted recently](https://github.com/mantidproject/documents/blob/fix-divide-distribution/Design/DistributionsAndDimensionlessData.md).
+Would this suggestion actually solve the issue?
+
 
 ### <a name="design-details-no-progress-reporting-no-cancellation"></a>No progress reporting and no cancellation
 
@@ -945,26 +1002,48 @@ Apart from that there should not be any major implementation difficulties.
 
 - Most operations are simple and thus fast.
 - Cancellation and progress reporting can be implemented in higher-level algorithms that *use* `Dataset`.
+  For example, a workflow algorithm that calls many "child" algorithms can provide interruption points after each child call.
 - Cancellation leads to undefined side effects for in-place operation, i.e., it breaks data.
+  Cancellation for non-in-place operation would be possible.
 - Adds complexity and complicates the interface.
 - `numpy` operations cannot be cancelled and do not report progress.
 
+##### Footnotes
 
-### <a name="design-details-no-length-variation"></a>No support for histograms with varying length
+If it turns out to be required after all, a callback-based system such as VTK's would be an option.
+
+- See, e.g., this [example in Mantid](https://github.com/mantidproject/mantid/blob/21b138884c35d8daaac103c5d7f5c890f6a50c56/qt/paraview_ext/VatesAlgorithms/src/SaveMDWorkspaceToVTKImpl.cpp#L231)
+- In any case, this is probably possible only for `Dataset` operation, with interruption points between processing individual variables:
+  Processing each variable is typically mainly only due to memory allocation, which cannot be interrupted since it is a single large block, contrary to the individual histograms in Mantid.
+
+
+### <a name="design-details-no-length-variation"></a>No support for histograms with varying length in a contiguous multidimensional block
 
 ##### Rationale
 
-This has not been supported in `DataObjects::Workspace2D` for 10 years, until a very recent change, i.e., it does not appear to be strictly necessary.
+This has not been supported in `DataObjects::Workspace2D` for 10 years, until a very recent change, i.e., it does not appear to be strictly necessary since it can be solved in other ways (see below).
 Support has been considered and prototyped, however there are two strong reasons it is not part of the final design:
 - Significant complication of implementation for all operations, leading to larger initial development cost and more difficult long-term maintenance.
 - Negatively affects the performance of iteration via `DatasetView`, *even if the length does not vary*.
 
-##### Workaround
+##### Alternative solutions and workarounds
 
-It is possible to store a variable holding datasets in a dataset.
-The result could be very similar to a current `DataObjects::Workspace2D`.
-In general we should discourage doing this since most of the other functionality we provide would not work nicely with such as nested dataset.
-However, if a varying histogram length is essential for some purpose it is absolutely possible.
+There are several options to support varied-length data:
+
+1. Use `NaN` padding. This is what also `xarray` does, and is the strategy adopted most in Mantid.
+   There are several ways to make this more convenient to use than the current system:
+   - Be very clear about the meaning of `NaN` in coordinate variables.
+   - Use masking or region-of-interest variables for clarity, e.g., `Coord::Mask` or `Coord::ROI`, in addition to the `NaN` values.
+   - Implement helper views that provide a view restricted to the valid region of data.
+     This can be done using normal slice views (like the `numpy` slicing notation), but a convenience wrapper that finds the valid region on its own would be more useful.
+
+   A similar solution is provided also by `numpy` with its [masked arrays](https://docs.scipy.org/doc/numpy/reference/maskedarray.html)
+
+1. It is possible to store a variable holding datasets in a dataset, e.g., 1-dimensions histograms.
+   The result would be very similar to our current `DataObjects::Workspace2D`.
+   In general we should discourage doing this since most of the other functionality we provide would not work nicely with such as nested dataset.
+   However, if a varying histogram length is essential for some purpose it is absolutely possible.
+   Even mixing histograms and event lists would be possible.
 
 
 ### <a name="design-details-threading"></a>Operations are threaded using OpenMP
@@ -1016,9 +1095,13 @@ As a corollary from the "no magic" strategy above, there will be very few occasi
 Logging can be implemented in higher-level algorithms, or potentially in some Python wrappers.
 Adding logging functionality would increase complexity and add extra dependencies.
 
-##### Workaround
+##### Alternatives
 
-If required we could log to `stdout` using `std::cout`, which can be redirected and filtered.
+- If required we could log to `stdout` using `std::cout`, which can be redirected and filtered.
+- It would be possible to provide an empty wrapper for logging, which avoids introducing dependencies.
+  If a client requires logging they can implement the wrapper and forward to the logging system of their choice.
+  This is basically what also Qt provides by [installing as message handler](http://doc.qt.io/qt-5/qtglobal.html#qInstallMessageHandler).
+
 
 
 ### <a name="design-details-exception-safety"></a>Operations have strong exception guarantee or clear data if only a basic exception guarantee can be given
@@ -1074,6 +1157,19 @@ More code is likely to require templating for the precision (`double` and `singl
 However, the development cost for this library itself would be rather minor, so there is very little risk involved in supporting it from the beginning.
 
 
+### <a name="design-details-performance-opportunities"></a>Performance opportunities
+
+For very basic in-place operations we can hardly improve upon what is provided in Mantid.
+For example, `operator+=` is bound by memory bandwidth.
+
+Nevertheless, there is a series of things we can do to improve performance in other cases.
+We do not suggest implementing this initially, but the prototype has been used to show that these are feasible options that give us opportunities for improvement in the future:
+
+- Use custom allocators or memory pools to overcome allocation cost.
+- Use object pools to overcome allocation/initialization cost.
+- Process data in small chunks that fit into cache to overcome the memory bandwidth limit.
+
+
 ### <a name="design-details-slicing"></a>Slicing
 
 We would like to support slicing as in `numpy` and `xarray`, e.g., `array[2:4,10:20, :]` in the case of slicing `Variable` (or the equivalent with named dimensions in the case of slicing `Dataset`, as supported in `xarray`).
@@ -1084,6 +1180,21 @@ The ownership and copying discussion in the section [Copy-on-write mechanism](#d
   - The view itself can stay valid since it references the variable, not its data.
 - Contrary to the `numpy` behavior, if the owning `Variable` goes out of scope all views should probably become invalid.
   To support views that stay valid we would need to wrap all variables in `Dataset` into a `shared_ptr` and the benefit does not seem to justify this additional complexity at this point.
+
+
+### <a name="design-details-supporting-libraries"></a>Supporting libraries
+
+The core `Dataset` library is intended to be small and generic.
+More specific but very useful functionality would be provided in supporting libraries.
+Potential examples include:
+
+- Serialization and I/O.
+- Helpers for creating common "standard" datasets, e.g., equivalents to `Workspace2D` or `EventWorkspace`.
+- Helpers for adding an instrument to a dataset.
+- Conversions between workspaces and datasets.
+- Validators.
+
+There will be many more than these, but they will generally added if needed instead of deciding up-front.
 
 
 ## <a name="implementation"></a>Implementation
@@ -1273,7 +1384,7 @@ Benefits, costs, and risks or likely similar to one of the suboptions of option 
    - Constant-wavelength (reactor) workflows, which currently use `API::MatrixWorkspace` with length-1 histograms as a workaround.
    - Imaging workflows, which would benefit from presenting data as a stack of images rather than a list of histograms, i.e., the dimension order would be the opposite of what we are used to in `API::MatrixWorkspace`.
    - Workflow with parameter scan or polarization analysis to demonstrate new capabilities of extra dimensions and/or multiple data variables.
-1. If applicable, demonstrate performance gain over existing Mantid workflow.
+1. If applicable, demonstrate performance gain over an existing Mantid workflow, e.g., for histogram data on `WISH` at ISIS and for `PEWGEN` at SNS.
 
 ##### Non-goals
 
