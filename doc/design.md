@@ -61,7 +61,7 @@
   - [Slicing](#design-details-slicing)
   - [Supporting libraries](#design-details-supporting-libraries)
 - [Implementation](#implementation)
-  - [Options](#implementation-options)
+  - [Implementation path](#implementation-path)
   - [Goals and non-goals](#implementation-goals-and-non-goals)
   - [Milestones](#implementation-milestones)
   - [Further steps](#implementation-further-steps)
@@ -1200,12 +1200,24 @@ There will be many more than these, but they will generally added if needed inst
 ## <a name="implementation"></a>Implementation
 
 
-### <a name="implementation-options"></a>Options
+### <a name="implementation-path"></a>Implementation path
 
-A high level summary of the options for implementation is given in the following figure.
-The reasoning behind the estimates/guesses for benefit, cost, and risk is discussed afterwards.
+A high level overview of an implementation path is given in the figure below.
+- Time flows roughly from top to bottom.
+- The size of blocks is often *not* an indication of the required effort.
+  See the section on [Effort](#implementation-effort) for the required resources.
+- Outcomes are shown encircled.
+- Red lines indicate completion major outcomes/milestones grouped into phases.
+  - `Phase 2+WB` (`Workbench` integration) is flexible and relatively disconnected.
+    It may be done sooner or later in the second phase, or even after.
+- In `Phase 2+X` the precise plan is deliberately unclear, with various options.
+  We firmly believe that it is impossible to make a qualified decision on this part before we have at least completed `Phase 1` and parts of `Phase 2`.
+  At this point it is entirely unclear how and how quickly `Dataset` would be adopted, so the decision is postponed.
+  Note that this is possible because everything in `Phase 1`, `Phase 2`, and even `Phase 2+WB` is independent of the choice for completing (or not completing) the rollout.
 
-![figure: implementation options with benefit, cost, and risk indication](implementation-options.png)
+A more detailed discussion of the individual tasks and components is given after the diagram.
+
+![figure: implementation flow chart](implementation-flow.png)
 
 #### Option description
 
