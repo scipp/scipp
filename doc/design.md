@@ -66,9 +66,9 @@
     - [Phase 2](#implementation-phase-2)
     - [Phase 2+WB](#implementation-phase-2-wb)
     - [Phase 2+X](#implementation-phase-2-x)
+  - [Notes on reuse](#implementation-notes-on-reuse)
   - [Goals and non-goals](#implementation-goals-and-non-goals)
   - [Milestones](#implementation-milestones)
-  - [Further steps](#implementation-further-steps)
   - [Effort](#implementation-effort)
 - [Discussion](#discussion)
   - [Impact](#discussion-impact)
@@ -1311,47 +1311,90 @@ A better option may be to simple let `Dataset` and workspaces coexist with their
 It has been criticised that this would mean we have two types of workspaces and algorithms that are not compatible.
 However, this is not a valid argument since we already have this situation right now, e.g., with `MDWorkspace` and `MatrixWorkspace` and the respective algorithms such as `PlusMD` and `Plus`.*
 
+##### Random notes on various rollout options
+
+1. In the long run it would be nice if we could use `Dataset` in the GUI without a wrapping `DatasetWorkspace` as decribed in `Phase 2+WB`.
+   However, `Dataset` must remain a valid Python object, i.e., the issues with the Python interface for current workspaces must not be reintroduced for `Dataset` at this point.
+   The solution for providing workspace-list integration is not clear, but there are probably a couple of options, e.g., based on introspection.
+   For example, [Spyder](https://www.spyder-ide.org/) provides a similar variable explorer.
+
+2. It has been suggested to refactor `MatrixWorkspace` to use `Dataset` internally.
+   However, we believe that the involved effort and risk of bugs would be large, with no real benefit:
+   If we a bound be the `MatrixWorkspace` API there is no advantage to using `Dataset` internally.
+   On the contrary:
+   `Dataset` works in a different way so we will put even more restrictions on the use of `MatrixWorkspace`, e.g., when implementing multi-threading in algorithms.
+
+3. Another option is to keep `MatrixWorkspace` and its child classes untouched, replacing less-used workspaces by `Dataset`.
+   - However, even the "less" used workspaces like `TableWorkspace` show up a lot, that is the connected effort would also be major:
+     `TableWorkspace` is used in 128 C++ algorithms, the related `PeaksWorkspace` in 72 C++ algorithms, `MDHistoWorkspace` in 57 C++ algorithms.
+   - Unclear benefit since the ubiquitous use of `MatrixWorkspace` (`Workspace2D` and `EventWorkspace`) may turn out very limiting.
+   - Is a workspace-by-workspace rollout useful, unless we intend to ultimately keep all those algorithms?
+     - `PlusMD` will be gone (or merged into a common `Plus`), why spend time on refactoring it to use a new data container?
+       Should the refactoring to use the new workspace type include refactoring related algorithms completely, i.e., they may be renamed, dropped, or have major interface changes?
+   - Instead of replacing existing workspaces, what about adding new but required ones, i.e., for imaging, constant-wavelength, etc., which cannot be supported at all or only based on workarounds right now?
+
+4. Yet another option would be to do an "atomic" rollout.
+   Instead of attempting to change a whole workspace type at once to `Dataset`, we could replace individual methods, step by step.
+   For example, we could start by putting the spectrum numbers into a dataset with `Coord::SpectrumNumber`.
+   As a next step, we can move other coordinates, or units.
+
+Overall, it seems we have roughly 4 options for the long-term strategy regarding workspaces and algorithms:
+
+1. Rollout workspace-by-workspace (replace existing workspace type by `Dataset`).
+2. Rollout algorithm-by-algorithm (add equivalent algorithm for `Dataset`, deprecate and remove old algorithms once not needed anymore).
+3. Rollout method-by-method (replace individual methods in all workspace types by access to equivalent data in a dataset stored as member in workspaces).
+4. Coexistence (implement algorithms for `Dataset` as needed, make no attempt to replace existing workspace types or algorithms). 
 
 
-- keep `MatrixWorkspace`
-  Replace only less-used workspace and keep `MatrixWorkspace`. -> bugs from replacing
-  This implies keeping `Workspace2D` and `EventWorkspace`.
-  - Unclear benefit since the ubiquitous use of `MatrixWorkspace` may turn out very limiting.
-- deprecate algorithms using `MatrixWorkspace`
-  Implement new algorithms based on `Dataset`, potentially making high-level algorithms compatible.
-  In the long run, deprecate and remove `MatrixWorkspace` as well as all algorithms that will still depend on it.
-  - High cost for implementing/refactoring all required functionality.
-    Potentially some cost savings in other subprojects, such as Instrument-2.0, where refactoring to remove Instrument-1.0 will not be necessary anymore.
-  - High risk due to temporary split between "old" and "new" algorithms, risk of bugs.
+### <a name="implementation-notes-on-reuse"></a>Notes on reuse
 
+At this point we would like to clarify which existing components and could and should be reused with `Dataset`.
+Otherwise the above discussion may give the impression that `Dataset` would amount to a rewrite of Mantid, which it certainly is not.
+The following key parts of Mantid will be reusable when working with `Dataset`:
 
-- refactor `MatrixWorkspace` API and use `Dataset` internally -> overall no benefit, why not just keep?
-  Replace less-used workspace and refactor the `MatrixWorkspace` API such that it can use `Dataset` internally.
-  - High cost for implementation of `Dataset` basics and refactoring to make the `MatrixWorkspace` API compatible.
-  - High risk due to potentially wasted effort and introduction of bugs during `MatrixWorkspace` API refactoring.
-  - Some benefit if we slowly manage to refactor old algorithms using `MatrixWorkspace` to natively use `Dataset`.
-  - High cost due to either (i) increasing difficulty of change and implementation effort of new features, as for option 1.) but to a slightly lesser extent, or (ii) refactoring old algorithms to natively use `Dataset`.
-  - High risk since reliance on `MatrixWorkspace` is not eliminated, codebase may be harder to maintain than it is now since due to duplication of concepts (`MatrixWorkspace` and `Dataset`).
+1. Metadata and handling of metadata.
+   `API::Run` would simply be stored as a variable in `Dataset`.
+   Consequently existing code to handle metadata such as for event filtering would be reused.
+   *Note: The structure of `Dataset` is actually very similar to that of `API::Run` and `Kernel::TimeSeriesProperty` so there is the option to eventually replace those two classes to obtain a more uniform interface.
+   However, it is *not* suggested to do this initially.*
 
-- We do not want to repeat the issues with the Python interface.
-  - How does that affect our choice, in particular if we want to support running with workspaces and datasets in parallel?
-  - Explicitly copy into ADS? Introspection? Just use Jupyter Notebooks? Look at what Spyder does?
-    See `Phase 2+WB`, basically this suggests explicitly passing ownership between Python and ADS, `Dataset` on the one side, `DatasetWorkspace` on the other.
-- Rollout technique-by-technique or Workspace-by-workspace or method-by-method or not at all?
-  - Is a workspace-by-workspace rollout useful, unless we intend to ultimately keep all those algorithms?
-    - `PlusMD` will be gone (or merged into a common `Plus`), why spend time on refactoring it to use a new data container?
-      Should the refactoring to use the new workspace type include refactoring related algorithms completely, i.e., they may be renamed, dropped, or have major interface changes?
-  - Even the "less" used workspaces like `TableWorkspace` show up a lot, that is the connected effort would also be major:
-    - `TableWorkspace` is used in 128 C++ algorithms, the related `PeaksWorkspace` in 72 C++ algorithms, `MDHistoWorkspace` in 57 C++ algorithms.
-  - Instead of replacing existing workspaces, what about adding new but required ones, i.e., for imaging, constant-wavelength, etc., which cannot be supported at all or only based on workarounds right now?
-- Keep using `Run`.
+2. The instrument and related code in `Geometry`.
+   Components that have been refactored as part of the Instrument-2.0 effort (`Beamline::DetectorInfo` and `Beamline::ComponentInfo`) are already in the same data layout that is required for `Dataset`.
+   The corresponding data will simply be moved over, additional functionality would be part of helper classes, without changes.
+   The legacy instrument (including the parameter map, etc.) could simply be stored as a variable in `Dataset`, without change.
+
+3. Most `Load` and `Save` algorithms would be leveraged via converters (the `DataHandling` module amounts to about `146 kLOC` of algorithm code).
+   Apart from key algorithms like `LoadEventNexus` there is no intention to reimplement any, unless there is an actual requirement to do so, e.g., for performance reasons.
+
+4. Fitting code (the `CurveFitting` module amounts to about `105 kLOC` of (algorithm) code).
+   Some adaption/refactoring will be required to make use of this since it is currently coupled to `MatrixWorkspace` and `TableWorkspace`.
+
+5. The `Workbench`.
+
+6. 1D and 2D plotting functionality.
+   Minor adaption and refactoring will be required.
+
+7. The `InstrumentView`.
+   Some adaption and refactoring will be required.
+
+8. The `SliceViewer`.
+   Some adaption and refactoring will be required.
+
+9. `MDEventWorkspace` and corresponding algorithms.
+   The recursively refined data structure is not a good fit for `Dataset` so it will be kept as is.
+   Some adaption/refactoring for algorithms transition from `Dataset` to `MDEventWorkspace` would be required.
+
+10. Existing algorithms would not be removed and are still accessible via converters, albeit not recommended for standard operation.
+
+There may be many more smaller components that would be reusable without major change, such as technique-specific or instrument-specific interfaces or workflow scripts.
 
 
 ### <a name="implementation-goals-and-non-goals"></a>Goals and non-goals
 
-##### Goals in this implementation phase
+##### Goals in `Phase 1` and `Phase 2`
 
 1. Provide a simple, lightweight, functional and well-tested library that can replace and enhance most of the workspaces types existing in Mantid.
+   *Note: "Replace" is not meant to imply that the old workspaces would disappear, simply that a workflow could be implemented using `Dataset` in place of those workspace types.*
 1. Reach a point where this library (in combination with some supporting libraries) is useful in practice.
    We define useful as:
    - Complete low-level functionality in C++ and Python.
@@ -1362,14 +1405,14 @@ However, this is not a valid argument since we already have this situation right
    - Can leverage existing Mantid code such as `DataHandling::LoadEventNexus` by a subsequent conversion into a `Dataset`.
 1. Demonstrate usefulness on at least two real examples, ideally bringing them to a production ready stage.
    Candidates are:
-   - Constant-wavelength (reactor) workflows, which currently use `API::MatrixWorkspace` with length-1 histograms as a workaround.
-   - Imaging workflows, which would benefit from presenting data as a stack of images rather than a list of histograms, i.e., the dimension order would be the opposite of what we are used to in `API::MatrixWorkspace`.
+   - Histogram-based and event-based workflow, e.g., for `WISH` at ISIS and for `POWGEN` at SNS, demonstrating a performance gain if applicable.
    - Workflow with parameter scan or polarization analysis to demonstrate new capabilities of extra dimensions and/or multiple data variables.
-1. If applicable, demonstrate performance gain over an existing Mantid workflow, e.g., for histogram data on `WISH` at ISIS and for `PEWGEN` at SNS.
+   - Imaging workflows, which would benefit from presenting data as a stack of images rather than a list of histograms, i.e., the dimension order would be the opposite of what we are used to in `API::MatrixWorkspace`.
+   - Constant-wavelength (reactor) workflows, which currently use `API::MatrixWorkspace` with length-1 histograms as a workaround.
 
-##### Non-goals
+##### Non-goals in `Phase 1` and `Phase 2`
 
-Even beyond this implementation phase, we have the following non-goals:
+We have the following non-goals, and this may continue even beyond those implementation phases:
 
 1. It is a non-goal to provide a drop-in replacement for all existing workspaces, i.e., there will by no type compatibility.
 1. It is a non-goal to convert all 970 algorithms to use `Dataset` instead of `API::Workspace`.
@@ -1397,48 +1440,9 @@ It is justified as follows:
 
 ### <a name="implementation-milestones"></a>Milestones
 
-*To do:
-This needs a lot of work.
-It is quite unclear what belongs to which milestone, the idea is the have something more usable at every step.
-Also, do we have any ideas that can ultimately avoid a hard and risky "drop all the old stuff" step?
-*
-
-##### Milestone 1
-
-- Mostly useable in C++ and Python but basics not 100% complete.
-- Guerilla usability testing at user/dev workshop 2019.
-
-##### Milestone 2
-
-- Basics complete.
-- I/O, or at least converters from Mantid workspaces.
-- Useful for interested developers and power users working in Python in combination with `numpy`.
-- User/developer testing before reaching milestone.
-
-##### Milestone 3
-
-- Widgets for visualization available from Python.
-- Demonstration workflows.
-- User/developer testing before reaching milestone.
-
-##### Milestone 4
-
-- Basic Mantid integration available.
-  - Can convert (most) existing workspace types to `Dataset`.
-- Demonstrate performance gains.
-- User/developer testing before reaching milestone.
-
-
-### <a name="implementation-further-steps"></a>Further steps
-
-It is not clear where to go after above milestones have been completed.
-A lot will depend on how the first implementation phase goes, what difficulties we face, and how it is accepted by the developer and user community.
-Options for follow up steps include, in no particular order:
-- Replace less-used workspace types, such as `DataObjects::MaskWorkspace`, `DataObjects::GroupWorkspace`, `DataObjects::TableWorkspace`, and `DataObjects::MDHistoWorkspace`.
-- Complete integration in the Mantid workbench (Mantid-4.0), including solving issues regarding adding Python objects to the `API::AnalysisDataService`.
-- Develop algorithm libraries beyond core functionality, e.g., technique specifics.
-- Record processing history via Python API.
-- Implement a stand-alone `DatasetViewer` application.
+The milestones for implementation are given by the diagram in section [Implementation path](#implementation-path).
+We note that user/developer testing when reaching milestone is used to ensure that the project is on track and stays in line with what is actually required.
+Driving implementation of supporting libraries by means of implementing actual workflows is another tool to ensure that we end up with a product that matches the actual needs.
 
 
 ### <a name="implementation-effort"></a>Effort
