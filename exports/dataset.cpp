@@ -76,6 +76,23 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   self.insert<const Tag>(name, dims, ptr, ptr + dims.volume());
 }
 
+template <class Tag>
+void insertDefaultInit(
+    Dataset &self, const std::pair<Tag, const std::string &> &key,
+    const std::tuple<const std::vector<Dim> &, py::tuple> &data) {
+  const auto &labels = std::get<0>(data);
+  const auto &shape = std::get<1>(data);
+  if (shape.size() != labels.size())
+    throw std::runtime_error(
+        "Number of dimensions tags does not match shape of data.");
+  Dimensions dims;
+  for (gsl::index i = labels.size() - 1; i >= 0; --i)
+    dims.add(labels[i], shape[i].cast<size_t>());
+
+  const auto &name = std::get<const std::string &>(key);
+  self.insert<const Tag>(name, dims);
+}
+
 std::vector<gsl::index> numpy_shape(const Dimensions &dims) {
   std::vector<gsl::index> shape(dims.count());
   for (gsl::index i = 0; i < shape.size(); ++i)
@@ -390,6 +407,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insertCoord<Coord::Z>)
       .def("__setitem__", detail::insert<Data::Value>)
       .def("__setitem__", detail::insert<Data::Variance>)
+      .def("__setitem__", detail::insertDefaultInit<Data::Value>)
+      .def("__setitem__", detail::insertDefaultInit<Data::Variance>)
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())

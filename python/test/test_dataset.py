@@ -23,6 +23,12 @@ class TestDataset(unittest.TestCase):
         self.dataset[Coord.Y] = ([Dim.Y], self.reference_y)
         self.dataset[Coord.Z] = ([Dim.Z], self.reference_z)
 
+    def test_insert_default_init(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ((Dim.Z, Dim.Y, Dim.X), (4,3,2))
+        self.assertEqual(len(d), 1)
+        np.testing.assert_array_equal(d[Data.Value, "data1"].numpy, np.zeros(shape=(4,3,2)))
+
     def test_insert(self):
         d = Dataset()
         d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))

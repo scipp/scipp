@@ -32,12 +32,12 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
 
   // "X" axis (shared for all spectra).
-  d.insert<Coord::Tof>({Dimension::Tof, 1000}, 1000);
+  d.insert<Coord::Tof>({Dimension::Tof, 1000});
   Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
   // Y
-  d.insert<Data::Value>("sample", dims, dims.volume());
+  d.insert<Data::Value>("sample", dims);
   // E
-  d.insert<Data::Variance>("sample", dims, dims.volume());
+  d.insert<Data::Variance>("sample", dims);
 
   // Monitors
   // Temporarily disabled until we fixed Dataset::m_dimensions to not use
