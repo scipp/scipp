@@ -220,18 +220,8 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
            [](const detail::VariableView<Tag> &self,
               const std::map<Dimension, const py::slice> d) {
              auto slice(self);
-             for (auto item : d) {
-               const Dim dim = item.first;
-               size_t start, stop, step, slicelength;
-               const auto size = self().dimensions().size(dim);
-               if (!item.second.compute(size, &start, &stop, &step,
-                                        &slicelength))
-                 throw py::error_already_set();
-               if (step != 1)
-                 throw std::runtime_error("Step must be 1");
-
-               slice() = slice()(dim, start, stop);
-             }
+             for (auto item : d)
+               slice = slice(item);
              return slice;
            })
       .def("__setitem__", &detail::setVariableSlice<Tag>)
