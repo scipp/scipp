@@ -21,17 +21,17 @@ public:
       throw std::runtime_error("MultiIndex supports at most 4 subindices.");
     m_dims = parentDimensions.count();
     for (gsl::index d = 0; d < m_dims; ++d)
-      m_extent[d] = parentDimensions.size(d);
+      m_extent[d] = parentDimensions.size(m_dims - 1 - d);
 
     m_numberOfSubindices = subdimensions.size();
     for (gsl::index j = 0; j < m_numberOfSubindices; ++j) {
       const auto &dimensions = subdimensions[j];
       gsl::index factor{1};
       gsl::index k = 0;
-      for (gsl::index i = 0; i < dimensions.count(); ++i) {
+      for (gsl::index i = dimensions.count() - 1; i >= 0; --i) {
         const auto dimension = dimensions.label(i);
         if (parentDimensions.contains(dimension)) {
-          m_offsets[j][k] = parentDimensions.index(dimension);
+          m_offsets[j][k] = m_dims - 1 - parentDimensions.index(dimension);
           m_factors[j][k] = factor;
           ++k;
         }

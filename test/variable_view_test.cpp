@@ -10,7 +10,7 @@
 #include "variable_view.h"
 
 TEST(VariableView, full_volume) {
-  Dimensions dims({{Dim::X, 2}, {Dim::Y, 4}});
+  Dimensions dims({{Dim::Y, 4}, {Dim::X, 2}});
   std::vector<double> variable(dims.volume());
   std::iota(variable.begin(), variable.end(), 0);
   VariableView<double> view(variable.data(), dims, dims);
@@ -27,11 +27,11 @@ TEST(VariableView, full_volume) {
 }
 
 TEST(VariableView, subvolume) {
-  Dimensions dims({{Dim::X, 2}, {Dim::Y, 4}});
+  Dimensions dims({{Dim::Y, 4}, {Dim::X, 2}});
   std::vector<double> variable(dims.volume());
   std::iota(variable.begin(), variable.end(), 0);
 
-  Dimensions variableDims({{Dim::X, 1}, {Dim::Y, 3}});
+  Dimensions variableDims({{Dim::Y, 3}, {Dim::X, 1}});
   VariableView<double> view(variable.data(), variableDims, dims);
   auto it = view.begin();
   ASSERT_EQ(std::distance(it, view.end()), 3);
@@ -41,8 +41,8 @@ TEST(VariableView, subvolume) {
 }
 
 TEST(VariableView, edges_first) {
-  Dimensions dims({{Dim::X, 2}, {Dim::Y, 4}});
-  Dimensions edgeDims({{Dim::X, 3}, {Dim::Y, 4}});
+  Dimensions dims({{Dim::Y, 4}, {Dim::X, 2}});
+  Dimensions edgeDims({{Dim::Y, 4}, {Dim::X, 3}});
   std::vector<double> variable(edgeDims.volume());
   std::iota(variable.begin(), variable.end(), 0);
 
@@ -60,8 +60,8 @@ TEST(VariableView, edges_first) {
 }
 
 TEST(VariableView, edges_second) {
-  Dimensions dims({{Dim::X, 2}, {Dim::Y, 4}});
-  Dimensions edgeDims({{Dim::X, 2}, {Dim::Y, 5}});
+  Dimensions dims({{Dim::Y, 4}, {Dim::X, 2}});
+  Dimensions edgeDims({{Dim::Y, 5}, {Dim::X, 2}});
   std::vector<double> variable(edgeDims.volume());
   std::iota(variable.begin(), variable.end(), 0);
 
@@ -79,7 +79,7 @@ TEST(VariableView, edges_second) {
 }
 
 TEST(VariableView, subview) {
-  Dimensions dims({{Dim::X, 2}, {Dim::Y, 3}});
+  Dimensions dims({{Dim::Y, 3}, {Dim::X, 2}});
   std::vector<double> variable(dims.volume());
   std::iota(variable.begin(), variable.end(), 0);
 
@@ -91,7 +91,7 @@ TEST(VariableView, subview) {
   EXPECT_EQ(*it++, 2.0);
   EXPECT_EQ(*it++, 4.0);
 
-  Dimensions subDims({{Dim::X, 2}, {Dim::Y, 3}});
+  Dimensions subDims({{Dim::Y, 3}, {Dim::X, 2}});
   VariableView<double> subView(view, subDims);
   it = subView.begin();
   ASSERT_EQ(std::distance(it, subView.end()), 6);
