@@ -35,6 +35,12 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
+std::string format(const Dimensions &dims) {
+  // TODO reverse order to match numpy convention.
+  std::string out = "Dimensions = " + dataset::to_string(dims);
+  return out;
+}
+
 template <class Tag>
 void insertCoord(Dataset &self, const Tag, const Dimensions &dims,
                  const std::vector<double> &data) {
@@ -66,9 +72,23 @@ std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
 }
 
 template <class Tag> struct VariableView {
-  const VariableSlice<Variable> &operator()() const { return view; }
-  VariableSlice<Variable> &operator()() { return view; }
-  VariableSlice<Variable> view;
+  const VariableSlice<Variable> &operator()() const { return m_view; }
+  VariableSlice<Variable> &operator()() { return m_view; }
+  VariableView operator()(const std::tuple<Dim, const py::slice> &index) const {
+    auto slice(*this);
+    const Dim dim = std::get<Dim>(index);
+    const auto indices = std::get<const py::slice>(index);
+    size_t start, stop, step, slicelength;
+    const auto size = slice().dimensions().size(dim);
+    if (!indices.compute(size, &start, &stop, &step, &slicelength))
+      throw py::error_already_set();
+    if (step != 1)
+      throw std::runtime_error("Step must be 1");
+    slice() = slice()(dim, start, stop);
+    return slice;
+  }
+
+  VariableSlice<Variable> m_view;
 };
 
 // The way the Python exports are written we require non-const references to
@@ -86,24 +106,54 @@ VariableView<Tag> getData(T &self,
       detail::makeAccess(self)[find(self, tag_id<Tag>, key.second)])};
 }
 
-template <class Tag>
-void setData(Dataset &self, const std::pair<const Tag, const std::string> &key,
+template <class Tag, class T>
+void setData(T &self, const std::pair<const Tag, const std::string> &key,
              py::array_t<typename Tag::type> &data) {
-  const auto &dims = self.dimensions<Tag>(key.second);
+  const gsl::index index = find(self, tag_id<Tag>, key.second);
+  const auto &dims = self[index].dimensions();
   py::buffer_info info = data.request();
   if (info.shape != detail::numpy_shape(dims))
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
-  auto buf = self.get<Tag>(key.second);
+  auto buf = detail::makeAccess(self)[index].template get<Tag>();
   double *ptr = (double *)info.ptr;
   std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
 
-std::string format(const Dimensions &dims) {
-  // TODO reverse order to match numpy convention.
-  std::string out = "Dimensions = " + dataset::to_string(dims);
-  return out;
+template <class Tag>
+void setVariableSlice(const VariableView<Tag> &self,
+                      const std::tuple<Dim, gsl::index> &index,
+                      py::array_t<typename Tag::type> &data) {
+  auto slice(self);
+  slice() = slice()(std::get<Dim>(index), std::get<gsl::index>(index));
+
+  const auto &dims = slice().dimensions();
+  py::buffer_info info = data.request();
+  if (info.shape != detail::numpy_shape(dims))
+    throw std::runtime_error(
+        "Shape mismatch when setting data from numpy array.");
+
+  auto buf = slice().template get<Tag>();
+  double *ptr = (double *)info.ptr;
+  std::copy(ptr, ptr + dims.volume(), buf.begin());
+}
+
+template <class Tag>
+void setVariableSliceRange(const VariableView<Tag> &self,
+                           const std::tuple<Dim, const py::slice> &index,
+                           py::array_t<typename Tag::type> &data) {
+  auto slice = self(index);
+
+  const auto &dims = slice().dimensions();
+  py::buffer_info info = data.request();
+  if (info.shape != detail::numpy_shape(dims))
+    throw std::runtime_error(
+        "Shape mismatch when setting data from numpy array.");
+
+  auto buf = slice().template get<Tag>();
+  double *ptr = (double *)info.ptr;
+  std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
 } // namespace detail
 
@@ -147,6 +197,19 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
           [](const detail::VariableView<Tag> &self) { return self().name(); })
       .def("__getitem__",
            [](const detail::VariableView<Tag> &self,
+              const std::tuple<Dim, gsl::index> &index) {
+             auto slice(self);
+             slice() =
+                 slice()(std::get<Dim>(index), std::get<gsl::index>(index));
+             return slice;
+           })
+      .def("__getitem__",
+           [](const detail::VariableView<Tag> &self,
+              const std::tuple<Dim, const py::slice> &index) {
+             return self(index);
+           })
+      .def("__getitem__",
+           [](const detail::VariableView<Tag> &self,
               const std::map<Dimension, const gsl::index> d) {
              auto slice(self);
              for (auto item : d)
@@ -171,6 +234,8 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
              }
              return slice;
            })
+      .def("__setitem__", &detail::setVariableSlice<Tag>)
+      .def("__setitem__", &detail::setVariableSliceRange<Tag>)
       .def_property(
           "numpy",
           [](py::object &obj) {
@@ -277,7 +342,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__", detail::getCoord<Coord::X, Slice<Dataset>>)
       .def("__getitem__", detail::getCoord<Coord::Y, Slice<Dataset>>)
       .def("__getitem__", detail::getCoord<Coord::Z, Slice<Dataset>>)
-      .def("__getitem__", detail::getData<Data::Value, Slice<Dataset>>);
+      .def("__getitem__", detail::getData<Data::Value, Slice<Dataset>>)
+      .def("__setitem__", detail::setData<Data::Value, Slice<Dataset>>);
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
@@ -303,7 +369,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__", detail::getData<Data::Value, Dataset>)
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
-      .def("__setitem__", detail::setData<Data::Value>)
+      .def("__setitem__", detail::setData<Data::Value, Dataset>)
       .def("insert", detail::insertCoord<Coord::X>)
       .def("insert", detail::insertCoord<Coord::Y>)
       .def("insert", detail::insertCoord<Coord::Z>)

@@ -333,7 +333,12 @@ public:
   const Unit &unit() const { return m_variable->unit(); }
   gsl::index size() const { return m_view->size(); }
 
-  const Dimensions &dimensions() const { return m_view->dimensions(); }
+  // TODO Currently VariableSlice is returned by value from dataset slices, so
+  // we risk referencing a member of a temporary. Returning by value for rvalue
+  // case. Need the same for some other methods?
+  const Dimensions &dimensions() const & { return m_view->dimensions(); }
+  Dimensions dimensions() const && { return m_view->dimensions(); }
+
   std::vector<gsl::index> strides() const {
     const auto parent = m_variable->dimensions();
     std::vector<gsl::index> strides;

@@ -124,10 +124,22 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, self.reference_data2)
 
     def test_slice_numpy_interoperable(self):
-        # TODO Both of these should work (must unify slicing syntax for Dataset and Variable first):
-        #self.dataset[Dim.X, 0][Data.Value, 'data1'] = np.exp(self.dataset[Dim.X, 1][Data.Value, 'data1'])
-        #self.dataset[Data.Value, 'data1'][Dim.X, 0] = np.exp(self.dataset[Data.Value, 'data1'][Dim.X, 1])
-        pass
+        # Dataset subset then view single variable
+        self.dataset['data2'][Data.Value, 'data2'] = np.exp(self.dataset[Data.Value, 'data1'])
+        np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, np.exp(self.reference_data1))
+        # Slice view of dataset then view single variable
+        self.dataset[Dim.X, 0][Data.Value, 'data2'] = np.exp(self.dataset[Dim.X, 1][Data.Value, 'data1'])
+        np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy[...,0], np.exp(self.reference_data1[...,1]))
+        # View single variable then slice view
+        self.dataset[Data.Value, 'data2'][Dim.X, 1] = np.exp(self.dataset[Data.Value, 'data1'][Dim.X, 0])
+        np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy[...,1], np.exp(self.reference_data1[...,0]))
+        # View single variable then view range of slices
+        self.dataset[Data.Value, 'data2'][Dim.Y, 1:3] = np.exp(self.dataset[Data.Value, 'data1'][Dim.Y, 0:2])
+        np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy[:,1:3,:], np.exp(self.reference_data1[:,0:2,:]))
+
+        # Restore original value.
+        self.dataset[Data.Value, 'data2'] = self.reference_data2
+        np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, self.reference_data2)
 
 if __name__ == '__main__':
     unittest.main()
