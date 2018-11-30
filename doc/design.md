@@ -70,6 +70,10 @@
   - [Goals and non-goals](#implementation-goals-and-non-goals)
   - [Milestones](#implementation-milestones)
   - [Effort](#implementation-effort)
+    - [Phase 1](#implementation-effort-phase-1)
+    - [Phase 2](#implementation-effort-phase-2)
+    - [Phase 2+WB](#implementation-effort-phase-2-wb)
+    - [Phase 2+X](#implementation-effort-phase-2-x)
 - [Discussion](#discussion)
   - [Impact](#discussion-impact)
   - [New challenges](#discussion-new-challenges)
@@ -1447,40 +1451,76 @@ Driving implementation of supporting libraries by means of implementing actual w
 
 ### <a name="implementation-effort"></a>Effort
 
-*To do: Split into milestones and improve estimates after initial design review iterations.*
-In no particular order:
+The following estimates for the required effort are as usual not very precise.
+Most of it is based on gut feeling from spending approximately 100 working days on the design and prototype.
+The prototyped scope is roughly equivalent to what is contained in `Phase 1`.
+If we arbitrarily assume that the prototype amounts to 10% of the actual required effort we obtain 1000 days for phase 1, which is in the same ballpark as the sum of the listed subtasks.
+
+
+#### <a name="implementation-effort-phase-1"></a>Phase 1
+
 
 | Task | Weeks min | Weeks max | Comment |
 | --- | --- | --- | --- |
+| detailed design | 4 | 8 | interface details, investigate open design questions, evaluate candidates, motivate choice to get TSC approval |
 | `Dataset` | 1 | 2 |
 | `Variable` | 1 | 2 |
-| `DatasetView` | 2 | 3 |
+| views for `Dataset` and `Variable` | 8 | 16 | variety of views, crucial for a lot of basic usage |
 | `Dimensions` | 2 | 3 |
 | units | 2 | 8 | scope/requirements unclear thus extra effort |
-| other classes | 1 | 2 |
+| helpers and other classes | 4 | 8 |
 | exception system | 0.5 | 1 |
 | operations: essentials | 4 | 8 | arithmetics and shape operations |
-| operations: I/O | 1 | 2 | only basic types, no NeXus |
-| operations: other | 4 | 8 | beyond basic arithmetics and shape operations
-| performance optimization | 3 | 6 |
+| performance optimization | 1 | 2 |
 | Python exports | 4 | 8 | includes `numpy` interoperability |
 | doc: internal | 1 | 2 |
 | doc: C++ API | 0.5 | 1 |
 | doc: Python API | 0.5 | 1 |
 | doc: Usage examples | 2 | 3 |
-| build system | 2 | 4 |
+| build system and packaging | 2 | 4 |
 | ramp-up time for every additional developer | 2 | 3 |
 | converters: `API::MatrixWorkspace` and `DataObjects::MDHistoWorkspace` to `Dataset` | 2 | 4 |
-| slice viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
-| table viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
-| instrument viewer support | 2 | 4 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
-| workspace list support | 2 | 8 | wrap in `API::Workspace`? Need to define interaction with `API::AnalysisDataService`, should use a different mechanism such as Python introspection, do *not* break Python by making variables global via the ADS. |
+| code reviews by multiple parties | 4 | 8 |
+
+
+#### <a name="implementation-effort-phase-2"></a>Phase 2
+
+| Task | Weeks min | Weeks max | Comment |
+| --- | --- | --- | --- |
+| core consolidation | 4 | 8 |
+| build system and packaging | 2 | 4 | need to link/bundle with Mantid somehow |
+| adapt `CurveFitting` module | 4 | 12 |
+| operations: other | 4 | 8 | beyond basic arithmetics and shape operations |
 | converters: instrument | 2 | 4 |
 | helpers for instrument | 1 | 2 | e.g., functionality that is now in `Beamline::ComponentInfo` |
-| code reviews by multiple parties | 4 | 8 |
-| detailed design | 4 | 8 | interface details, investigate open design questions, evaluate candidates, motivate choice to get TSC approval |
+| implement real workflow 1 | 8 | 12 |
+| implement real workflow 2 | 6 | 10 |
+| implement real workflow 3 | 4 | 8 |
+| implement real workflow 4 | 4 | 8 |
+| 1D and 2D plotting support | 1 | 2 | same as in Mantid-4.0 |
+| slice viewer support | 3 | 6 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
+| table viewer support | 1 | 2 | should be same as in Mantid-4.0, only effort for making it compatible is listed |
+| `InstrumentView` support | 3 | 6 |
+| performance optimization | 4 | 8 |
+| documentation | 4 | 6 |
+| operations: I/O | 2 | 6 | only basic types, no NeXus |
 
-Note that several of these tasks refer the development outside the core library, i.e., in additional building blocks that are based on `Dataset`.
+
+#### <a name="implementation-effort-phase-2-wb"></a>Phase 2+WB
+
+| Task | Weeks min | Weeks max | Comment |
+| --- | --- | --- | --- |
+| wrap `Dataset` in `API::Workspace` | 0.5 | 1 |
+| wrap `Dataset` functions in `API::Algorithm` | 1 | 3 | may be very simple, can we have a Python meta class doing the work? |
+| documentation | 1 | 2 |
+| build system and packaging | 1 | 3 | need to link/bundle with Mantid somehow |
+| `Workbench` adaptions | 2 | 8 | smooth GUI integration, e.g., right-click menus in workspace list |
+
+
+#### <a name="implementation-effort-phase-2-x"></a>Phase 2+X
+
+Undefined scope and flexible plan.
+Effort estimates cannot be given.
 
 
 ## <a name="discussion"></a>Discussion
@@ -1524,8 +1564,3 @@ Based on the limited experience when working with the prototype, there are a cou
      One example might be standards for naming variables.
    - Implementing algorithms for completely generic datasets may be more challenging, e.g., if multiple data variables are present.
 1. Type-erasure makes some code slightly more cumbersome and verbose.
-
-
-### <a name="discussion-summary"></a>Summary
-
-*(to be added after first review cycles)*
