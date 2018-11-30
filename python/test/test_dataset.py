@@ -8,35 +8,26 @@ class TestDataset(unittest.TestCase):
         lx = 2
         ly = 3
         lz = 4
-        self.dataset = Dataset()
-        dims = Dimensions()
-        dims.add(Dim.X, lx)
-        dims.add(Dim.Y, ly)
-        dims.add(Dim.Z, lz)
-
         self.reference_x = np.arange(lx)
         self.reference_y = np.arange(ly)
         self.reference_z = np.arange(lz)
-        self.reference_data1 = np.arange(24).reshape(4,3,2)
-        self.reference_data2 = np.ones(24).reshape(4,3,2)
-        self.reference_data3 = np.arange(8).reshape(4,2)
+        self.reference_data1 = np.arange(lx*ly*lz).reshape(lz,ly,lx)
+        self.reference_data2 = np.ones(lx*ly*lz).reshape(lz,ly,lx)
+        self.reference_data3 = np.arange(lx*lz).reshape(lz,lx)
 
-        self.dataset.insert(Data.Value, "data1", dims, np.arange(24))
-        self.dataset.insert(Data.Value, "data2", dims, np.ones(24))
-        dimsXZ = Dimensions()
-        dimsXZ.add(Dim.X, lx)
-        dimsXZ.add(Dim.Z, lz)
-        self.dataset.insert(Data.Value, "data3", dimsXZ, np.arange(8))
+        self.dataset = Dataset()
+        self.dataset[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], self.reference_data1)
+        self.dataset[Data.Value, "data2"] = ([Dim.Z, Dim.Y, Dim.X], self.reference_data2)
+        self.dataset[Data.Value, "data3"] = ([Dim.Z, Dim.X], self.reference_data3)
+        self.dataset[Coord.X] = ([Dim.X], self.reference_x)
+        self.dataset[Coord.Y] = ([Dim.Y], self.reference_y)
+        self.dataset[Coord.Z] = ([Dim.Z], self.reference_z)
 
-        dimsX = Dimensions()
-        dimsX.add(Dim.X, lx)
-        self.dataset.insert(Coord.X, dimsX, self.reference_x)
-        dimsY = Dimensions()
-        dimsY.add(Dim.Y, ly)
-        self.dataset.insert(Coord.Y, dimsY, self.reference_y)
-        dimsZ = Dimensions()
-        dimsZ.add(Dim.Z, lz)
-        self.dataset.insert(Coord.Z, dimsZ, self.reference_z)
+    def test_insert(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+        self.assertEqual(len(d), 1)
+        np.testing.assert_array_equal(d[Data.Value, "data1"].numpy, self.reference_data1)
 
     def test_size(self):
         # X, Y, Z, 3 x Data::Value

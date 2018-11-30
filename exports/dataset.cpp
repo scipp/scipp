@@ -42,15 +42,38 @@ std::string format(const Dimensions &dims) {
 }
 
 template <class Tag>
-void insertCoord(Dataset &self, const Tag, const Dimensions &dims,
-                 const std::vector<double> &data) {
-  self.insert<const Tag>(dims, data);
+void insertCoord(Dataset &self, const Tag,
+                 const std::tuple<const std::vector<Dim> &,
+                                  py::array_t<typename Tag::type> &> &data) {
+  const auto &labels = std::get<0>(data);
+  const py::buffer_info info = std::get<1>(data).request();
+  if (info.ndim != labels.size())
+    throw std::runtime_error(
+        "Number of dimensions tags does not match shape of data.");
+  Dimensions dims;
+  for (gsl::index i = labels.size() - 1; i >= 0; --i)
+    dims.add(labels[i], info.shape[i]);
+
+  auto *ptr = (typename Tag::type *)info.ptr;
+  self.insert<const Tag>(dims, ptr, ptr + dims.volume());
 }
 
 template <class Tag>
-void insert(Dataset &self, const Tag, const std::string &name,
-            const Dimensions &dims, const std::vector<double> &data) {
-  self.insert<const Tag>(name, dims, data);
+void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
+            const std::tuple<const std::vector<Dim> &,
+                             py::array_t<typename Tag::type> &> &data) {
+  const auto &labels = std::get<0>(data);
+  const py::buffer_info info = std::get<1>(data).request();
+  if (info.ndim != labels.size())
+    throw std::runtime_error(
+        "Number of dimensions tags does not match shape of data.");
+  Dimensions dims;
+  for (gsl::index i = labels.size() - 1; i >= 0; --i)
+    dims.add(labels[i], info.shape[i]);
+
+  auto *ptr = (typename Tag::type *)info.ptr;
+  const auto &name = std::get<const std::string &>(key);
+  self.insert<const Tag>(name, dims, ptr, ptr + dims.volume());
 }
 
 std::vector<gsl::index> numpy_shape(const Dimensions &dims) {
@@ -293,6 +316,7 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
       .def("__repr__", &detail::format)
+      .def("__len__", &Dimensions::count)
       .def_property_readonly("labels", &Dimensions::labels)
       .def("add", &Dimensions::add)
       .def("size",
@@ -337,6 +361,7 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
+      .def("__len__", &Dataset::size)
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
@@ -360,11 +385,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
       .def("__setitem__", detail::setData<Data::Value, Dataset>)
-      .def("insert", detail::insertCoord<Coord::X>)
-      .def("insert", detail::insertCoord<Coord::Y>)
-      .def("insert", detail::insertCoord<Coord::Z>)
-      .def("insert", detail::insert<Data::Value>)
-      .def("insert", detail::insert<Data::Variance>)
+      .def("__setitem__", detail::insertCoord<Coord::X>)
+      .def("__setitem__", detail::insertCoord<Coord::Y>)
+      .def("__setitem__", detail::insertCoord<Coord::Z>)
+      .def("__setitem__", detail::insert<Data::Value>)
+      .def("__setitem__", detail::insert<Data::Variance>)
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
