@@ -11,7 +11,9 @@
 
 TEST(Dimensions, footprint) {
   EXPECT_EQ(sizeof(Dimensions), 64);
-  EXPECT_EQ(std::alignment_of<Dimensions>(), 64);
+  // TODO Do we want to align this? Need to run benchmarks when implementation
+  // is more mature.
+  // EXPECT_EQ(std::alignment_of<Dimensions>(), 64);
 }
 
 TEST(Dimensions, construct) {
@@ -38,6 +40,13 @@ TEST(Dimensions, count_and_volume) {
   EXPECT_EQ(dims.volume(), 6);
 }
 
+TEST(Dimensions, offset_from_list_init) {
+  // Leftmost is outer dimension, rightmost is inner dimension.
+  Dimensions dims{{Dim::Q, 2}, {Dim::Tof, 3}};
+  EXPECT_EQ(dims.offset(Dimension::Tof), 1);
+  EXPECT_EQ(dims.offset(Dimension::Q), 3);
+}
+
 TEST(Dimensions, offset) {
   Dimensions dims;
   dims.add(Dimension::Tof, 3);
@@ -56,6 +65,8 @@ TEST(Dimensions, erase) {
   EXPECT_FALSE(dims.contains(Dimension::Y));
   EXPECT_TRUE(dims.contains(Dimension::Z));
   EXPECT_EQ(dims.volume(), 8);
+  EXPECT_EQ(dims.index(Dim::Z), 0);
+  EXPECT_EQ(dims.index(Dim::X), 1);
 }
 
 TEST(Dimensions, erase_inner) {
@@ -88,7 +99,7 @@ TEST(Dimensions, contains_other) {
 }
 
 TEST(Dimensions, isContiguousIn) {
-  Dimensions parent({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 2}});
+  Dimensions parent({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}});
 
   EXPECT_TRUE(parent.isContiguousIn(parent));
 
@@ -98,23 +109,23 @@ TEST(Dimensions, isContiguousIn) {
   EXPECT_TRUE(Dimensions({Dim::X, 4}).isContiguousIn(parent));
   EXPECT_FALSE(Dimensions({Dim::X, 5}).isContiguousIn(parent));
 
-  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 0}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 1}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 2}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::X, 4}, {Dim::Y, 4}}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::Y, 0}, {Dim::X, 4}}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::Y, 1}, {Dim::X, 4}}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::Y, 2}, {Dim::X, 4}}).isContiguousIn(parent));
+  EXPECT_TRUE(Dimensions({{Dim::Y, 3}, {Dim::X, 4}}).isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({{Dim::Y, 4}, {Dim::X, 4}}).isContiguousIn(parent));
 
-  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 0}})
+  EXPECT_TRUE(Dimensions({{Dim::Z, 0}, {Dim::Y, 3}, {Dim::X, 4}})
                   .isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 1}})
+  EXPECT_TRUE(Dimensions({{Dim::Z, 1}, {Dim::Y, 3}, {Dim::X, 4}})
                   .isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 2}})
+  EXPECT_TRUE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}})
                   .isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 3}})
+  EXPECT_FALSE(Dimensions({{Dim::Z, 3}, {Dim::Y, 3}, {Dim::X, 4}})
                    .isContiguousIn(parent));
 
   EXPECT_FALSE(Dimensions({Dim::Y, 3}).isContiguousIn(parent));
   EXPECT_FALSE(Dimensions({Dim::Z, 2}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::X, 4}, {Dim::Z, 2}}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Y, 3}, {Dim::Z, 2}}).isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::X, 4}}).isContiguousIn(parent));
+  EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}}).isContiguousIn(parent));
 }

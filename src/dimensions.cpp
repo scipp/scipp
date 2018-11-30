@@ -35,14 +35,14 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
     return false;
   for (int32_t i = 0; i < count(); ++i) {
     // All shared dimension labels must match.
-    if (parent.label(i) != label(i))
+    if (parent.label(i + offset) != label(i))
       return false;
     // Outermost dimension of *this can be a section of parent.
     // All but outermost must match.
-    if (i == count() - 1) {
-      if (parent.size(i) < size(i))
+    if (i == 0) {
+      if (parent.size(offset) < size(0))
         return false;
-    } else if (parent.size(i) != size(i)) {
+    } else if (parent.size(i + offset) != size(i)) {
       return false;
     }
   }
@@ -61,7 +61,7 @@ gsl::index Dimensions::size(const Dimension label) const {
 /// array defined by this.
 gsl::index Dimensions::offset(const Dimension label) const {
   gsl::index offset{1};
-  for (int32_t i = 0; i < m_ndim; ++i) {
+  for (int32_t i = m_ndim - 1; i >= 0; --i) {
     if (m_dims[i] == label)
       return offset;
     offset *= m_shape[i];
@@ -92,11 +92,16 @@ void Dimensions::erase(const Dimension label) {
 }
 
 void Dimensions::add(const Dimension label, const gsl::index size) {
+  if (contains(label))
+    throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)
     throw std::runtime_error("More than 6 dimensions are not supported.");
-  // TODO check duplicate dimensions
-  m_shape[m_ndim] = size;
-  m_dims[m_ndim] = label;
+  for (int32_t i = m_ndim - 1; i >= 0; --i) {
+    m_shape[i + 1] = m_shape[i];
+    m_dims[i + 1] = m_dims[i];
+  }
+  m_shape[0] = size;
+  m_dims[0] = label;
   ++m_ndim;
 }
 

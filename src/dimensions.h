@@ -104,9 +104,7 @@ public:
   bool isContiguousIn(const Dimensions &parent) const;
 
   Dimension label(const gsl::index i) const;
-  void relabel(const gsl::index i, const Dimension label) {
-    m_dims[i] = label;
-  }
+  void relabel(const gsl::index i, const Dimension label) { m_dims[i] = label; }
   gsl::index size(const gsl::index i) const;
   gsl::index size(const Dimension label) const;
   gsl::index offset(const Dimension label) const;
