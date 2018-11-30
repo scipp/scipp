@@ -174,7 +174,7 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
     gsl::index offset = 1;
     const auto &dims = dataset.dimensions<Tag>();
     const auto &actual = dataset.dimensions();
-    for(gsl::index i=0; i<dims.ndim(); ++i) {
+    for (gsl::index i = dims.ndim() - 1; i >= 0; --i) {
       if (dims.size(i) != actual.size(dims.label(i)))
         break;
       offset *= dims.size(i);

@@ -107,19 +107,18 @@ gsl::index Dataset::findUnique(const uint16_t id) const {
 }
 
 void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
-  gsl::index j = 0;
   gsl::index found = 0;
   for (gsl::index i = 0; i < dims.count(); ++i) {
     const auto dim = dims.label(i);
     auto size = dims.size(i);
     bool found = false;
-    for (; j < m_dimensions.count(); ++j) {
+    for (gsl::index j = 0; j < m_dimensions.count(); ++j) {
       if (m_dimensions.label(j) == dim) {
         if (m_dimensions.size(j) == size) {
           found = true;
           break;
         }
-        // coordDim is `Dim::Invalid` if there is no coordinate dimesion.
+        // coordDim is `Dim::Invalid` if there is no coordinate dimension.
         if (dim == coordDim) {
           if (m_dimensions.size(j) == size - 1) {
             // This is an edge coordinate, merge reduced dimension.

@@ -234,7 +234,7 @@ TEST(Dataset, operator_plus_equal_broadcast) {
   a.insert<Coord::X>({Dimension::X, 1}, {0.1});
   a.insert<Data::Value>(
       "name1",
-      Dimensions({{Dimension::X, 1}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
+      Dimensions({{Dimension::Z, 3}, {Dimension::Y, 2}, {Dimension::X, 1}}),
       {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   Dataset b;
   b.insert<Coord::X>({Dimension::X, 1}, {0.1});
@@ -256,12 +256,12 @@ TEST(Dataset, operator_plus_equal_transpose) {
   a.insert<Coord::X>({Dimension::X, 1}, {0.1});
   a.insert<Data::Value>(
       "name1",
-      Dimensions({{Dimension::X, 1}, {Dimension::Y, 2}, {Dimension::Z, 3}}),
+      Dimensions({{Dimension::Z, 3}, {Dimension::Y, 2}, {Dimension::X, 1}}),
       {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   Dataset b;
   b.insert<Coord::X>({Dimension::X, 1}, {0.1});
   b.insert<Data::Value>("name1",
-                        Dimensions({{Dimension::Z, 3}, {Dimension::Y, 2}}),
+                        Dimensions({{Dimension::Y, 2}, {Dimension::Z, 3}}),
                         {0.1, 0.2, 0.3, 0.1, 0.2, 0.3});
 
   EXPECT_NO_THROW(a += b);
@@ -492,8 +492,7 @@ TEST(Dataset, operator_plus_with_temporary_avoids_copy) {
 TEST(Dataset, slice) {
   Dataset d;
   d.insert<Coord::X>({Dimension::X, 2}, {0.0, 0.1});
-  d.insert<Data::Value>("data",
-                        Dimensions({{Dimension::X, 2}, {Dimension::Y, 3}}),
+  d.insert<Data::Value>("data", {{Dim::Y, 3}, {Dim::X, 2}},
                         {0.0, 1.0, 2.0, 3.0, 4.0, 5.0});
   for (const gsl::index i : {0, 1}) {
     auto sliceX = slice(d, Dimension::X, i);
@@ -688,7 +687,7 @@ TEST(Dataset, sort_2D) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
   d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
-  d.insert<Data::Value>("", {{Dim::X, 4}, {Dim::Y, 2}},
+  d.insert<Data::Value>("", {{Dim::Y, 2}, {Dim::X, 4}},
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
 
   auto sorted = sort(d, tag<Coord::X>);
@@ -718,7 +717,7 @@ TEST(Dataset, filter) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
   d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
-  d.insert<Data::Value>("", {{Dim::X, 4}, {Dim::Y, 2}},
+  d.insert<Data::Value>("", {{Dim::Y, 2}, {Dim::X, 4}},
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   auto select =
       makeVariable<Coord::Mask>({Dim::X, 4}, {false, true, false, true});
@@ -743,10 +742,10 @@ TEST(DatasetSlice, basics) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4});
   d.insert<Coord::Y>({Dim::Y, 2});
-  d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}});
-  d.insert<Data::Value>("b", {{Dim::X, 4}, {Dim::Y, 2}});
-  d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}});
-  d.insert<Data::Variance>("b", {{Dim::X, 4}, {Dim::Y, 2}});
+  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}});
+  d.insert<Data::Value>("b", {{Dim::Y, 2}, {Dim::X, 4}});
+  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}});
+  d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}});
 
   Slice<const Dataset> viewA(d, "a");
   Slice<const Dataset> viewB(d, "b");
@@ -773,10 +772,10 @@ TEST(DatasetSlice, minus_equals) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4});
   d.insert<Coord::Y>({Dim::Y, 2});
-  d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}}, 8, 1.0);
-  d.insert<Data::Value>("b", {{Dim::X, 4}, {Dim::Y, 2}}, 8, 1.0);
-  d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}}, 8, 1.0);
-  d.insert<Data::Variance>("b", {{Dim::X, 4}, {Dim::Y, 2}}, 8, 1.0);
+  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
+  d.insert<Data::Value>("b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
+  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
+  d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
 
   EXPECT_NO_THROW(d -= d["a"]);
 
@@ -799,30 +798,30 @@ TEST(DatasetSlice, slice_spatial) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4}, {1, 2, 3, 4});
   d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
-  d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}},
+  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}},
                         {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}},
+  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}},
                            {1, 2, 3, 4, 5, 6, 7, 8});
 
   auto view_x13 = d(Dim::X, 1, 3);
   ASSERT_EQ(view_x13.size(), 4);
   EXPECT_EQ(view_x13[0].dimensions(), (Dimensions{Dim::X, 2}));
   EXPECT_EQ(view_x13[1].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_x13[2].dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
-  EXPECT_EQ(view_x13[3].dimensions(), (Dimensions{{Dim::X, 2}, {Dim::Y, 2}}));
+  EXPECT_EQ(view_x13[2].dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
+  EXPECT_EQ(view_x13[3].dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
 }
 
 TEST(DatasetSlice, subset_slice_spatial) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4}, {1, 2, 3, 4});
   d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
-  d.insert<Data::Value>("a", {{Dim::X, 4}, {Dim::Y, 2}},
+  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}},
                         {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Value>("b", {{Dim::X, 4}, {Dim::Y, 2}},
+  d.insert<Data::Value>("b", {{Dim::Y, 2}, {Dim::X, 4}},
                         {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Variance>("a", {{Dim::X, 4}, {Dim::Y, 2}},
+  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}},
                            {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Variance>("b", {{Dim::X, 4}, {Dim::Y, 2}},
+  d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}},
                            {1, 2, 3, 4, 5, 6, 7, 8});
 
   auto view_a_x0 = d["a"](Dim::X, 0);

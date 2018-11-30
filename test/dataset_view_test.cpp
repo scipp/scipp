@@ -188,8 +188,7 @@ TEST(DatasetView, multi_column_orthogonal_fail) {
 
 TEST(DatasetView, nested_DatasetView) {
   Dataset d;
-  d.insert<Data::Value>("name1",
-                        Dimensions({{Dimension::X, 2}, {Dimension::Y, 3}}),
+  d.insert<Data::Value>("name1", {{Dim::Y, 3}, {Dim::X, 2}},
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   d.insert<Data::Int>("name2", {Dimension::X, 2}, {10, 20});
   DatasetView<DatasetView<const Data::Value>, const Data::Int> view(
@@ -211,7 +210,7 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
   Dataset d;
   d.insert<Data::Value>(
       "name1",
-      Dimensions({{Dimension::X, 4}, {Dimension::Y, 3}, {Dimension::Z, 2}}),
+      Dimensions({{Dimension::Z, 2}, {Dimension::Y, 3}, {Dimension::X, 4}}),
       {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
        14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
@@ -320,7 +319,7 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
 TEST(DatasetView, nested_DatasetView_constant_variable) {
   Dataset d;
   d.insert<Data::Value>("name1",
-                        Dimensions({{Dimension::X, 4}, {Dimension::Z, 2}}),
+                        Dimensions({{Dimension::Z, 2}, {Dimension::X, 4}}),
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   d.insert<Coord::X>({Dimension::X, 4}, {10.0, 20.0, 30.0, 40.0});
 
@@ -355,9 +354,9 @@ TEST(DatasetView, nested_DatasetView_constant_variable) {
 TEST(DatasetView, nested_DatasetView_copy_on_write) {
   Dataset d;
   d.insert<Data::Value>("name1",
-                        Dimensions({{Dimension::X, 2}, {Dimension::Y, 2}}),
+                        Dimensions({{Dimension::Y, 2}, {Dimension::X, 2}}),
                         {1.0, 2.0, 3.0, 4.0});
-  d.insert<Coord::X>(Dimensions({{Dimension::X, 2}, {Dimension::Y, 2}}),
+  d.insert<Coord::X>(Dimensions({{Dimension::Y, 2}, {Dimension::X, 2}}),
                      {10.0, 20.0, 30.0, 40.0});
 
   auto copy(d);
@@ -520,7 +519,7 @@ TEST(DatasetView, multi_column_edges) {
 
 TEST(DatasetView, multi_dimensional_edges) {
   Dataset d;
-  d.insert<Coord::X>(Dimensions({{Dimension::X, 3}, {Dimension::Y, 2}}),
+  d.insert<Coord::X>(Dimensions({{Dimension::Y, 2}, {Dimension::X, 3}}),
                      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   // TODO There is currently a bug in DatasetView: If `Bin` iteration is
   // requested but the dataset contains only edges the shape calculation gives
@@ -543,7 +542,7 @@ TEST(DatasetView, multi_dimensional_edges) {
 
 TEST(DatasetView, edges_are_not_inner_dimension) {
   Dataset d;
-  d.insert<Coord::Y>(Dimensions({{Dimension::X, 3}, {Dimension::Y, 2}}),
+  d.insert<Coord::Y>(Dimensions({{Dimension::Y, 2}, {Dimension::X, 3}}),
                      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   d.insert<Data::Value>("", {Dimension::Y, 1});
 
