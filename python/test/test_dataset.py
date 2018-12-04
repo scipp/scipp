@@ -225,6 +225,7 @@ class TestDataset(unittest.TestCase):
     def test_sort(self):
         dataset = Dataset()
         dataset[Data.Value, "data"] = ([Dim.X], np.arange(4))
+        dataset[Data.Value, "data2"] = ([Dim.X], np.arange(4))
         dataset[Coord.X] = ([Dim.X], np.array([3,2,4,1]))
         dataset = sort(dataset, Coord.X)
         np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array([3,1,0,2]))
@@ -241,6 +242,27 @@ class TestDataset(unittest.TestCase):
         dataset = filter(dataset, select)
         np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array([1,3]))
         np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([2,1]))
+
+class TestDatasetExamples(unittest.TestCase):
+    def test_table_example(self):
+        table = Dataset()
+        table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
+        #self.assertEqual(table[Coord.RowLabel].numpy[0], 'a')
+        table[Data.Value, "col1"] = ([Dim.Row], [3,2,1,0])
+        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4))
+        self.assertEqual(len(table), 3)
+
+        table = concatenate(table, table, Dim.Row)
+        np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,2,1,0, 3,2,1,0]))
+
+        table = concatenate(table[Dim.Row, 0:2], table[Dim.Row, 5:7], Dim.Row)
+        np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,2,2,1]))
+
+        table = sort(table, Data.Value, "col1")
+        np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([1,2,2,3]))
+
+        table = sort(table, Coord.RowLabel)
+        np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,2,2,1]))
 
 if __name__ == '__main__':
     unittest.main()

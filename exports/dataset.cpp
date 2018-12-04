@@ -62,6 +62,10 @@ struct PythonCoord {
     using type = Coord::Z;
     Z() : Tag(::tag<type>) {}
   };
+  struct RowLabel : public Tag {
+    using type = Coord::RowLabel;
+    RowLabel() : Tag(::tag<type>) {}
+  };
 };
 
 template <class Tag>
@@ -120,6 +124,21 @@ void insertCoord(
 
   auto *ptr = (typename Tag::type::type *)info.ptr;
   self.insert<const typename Tag::type>(dims, ptr, ptr + dims.volume());
+}
+
+template <class Tag>
+void insertCoord1D(
+    Dataset &self, const Tag,
+    const std::tuple<const std::vector<Dim> &,
+                     std::vector<typename Tag::type::type> &> &data) {
+  const auto &labels = std::get<0>(data);
+  const auto &values = std::get<1>(data);
+  if (labels.size() != 1)
+    throw std::runtime_error(
+        "Number of dimensions tags does not match shape of data.");
+  Dimensions dims{labels[0], static_cast<gsl::index>(values.size())};
+
+  self.insert<const typename Tag::type>(dims, values);
 }
 
 template <class Tag>
@@ -370,6 +389,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
 
 PYBIND11_MODULE(dataset, m) {
   py::enum_<Dimension>(m, "Dim")
+      .value("Row", Dimension::Row)
       .value("X", Dimension::X)
       .value("Y", Dimension::Y)
       .value("Z", Dimension::Z);
@@ -387,10 +407,12 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<detail::PythonCoord::X, Tag>(coord_tags, "_X");
   py::class_<detail::PythonCoord::Y, Tag>(coord_tags, "_Y");
   py::class_<detail::PythonCoord::Z, Tag>(coord_tags, "_Z");
+  py::class_<detail::PythonCoord::RowLabel, Tag>(coord_tags, "_RowLabel");
   coord_tags.attr("Mask") = detail::PythonCoord::Mask{};
   coord_tags.attr("X") = detail::PythonCoord::X{};
   coord_tags.attr("Y") = detail::PythonCoord::Y{};
   coord_tags.attr("Z") = detail::PythonCoord::Z{};
+  coord_tags.attr("RowLabel") = detail::PythonCoord::RowLabel{};
 
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
@@ -409,6 +431,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<Coord::X>(m, "CoordX");
   declare_VariableView<Coord::Y>(m, "CoordY");
   declare_VariableView<Coord::Z>(m, "CoordZ");
+  //declare_VariableView<Coord::RowLabel>(m, "CoordRowLabel");
 
   py::class_<Variable>(m, "Variable")
       .def(py::init(&detail::makeVariable<detail::PythonCoord::Mask>))
@@ -460,6 +483,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            detail::getCoord<detail::PythonCoord::Z, Slice<Dataset>>)
       .def("__getitem__",
+           detail::getCoord<detail::PythonCoord::RowLabel, Slice<Dataset>>)
+      .def("__getitem__",
            detail::getData<detail::PythonData::Value, Slice<Dataset>>)
       .def("__setitem__",
            detail::setData<detail::PythonData::Value, Slice<Dataset>>);
@@ -502,6 +527,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__", detail::getCoord<detail::PythonCoord::X, Dataset>)
       .def("__getitem__", detail::getCoord<detail::PythonCoord::Y, Dataset>)
       .def("__getitem__", detail::getCoord<detail::PythonCoord::Z, Dataset>)
+      .def("__getitem__", detail::getCoord<detail::PythonCoord::RowLabel, Dataset>)
       .def("__getitem__", detail::getData<detail::PythonData::Value, Dataset>)
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
@@ -509,6 +535,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insertCoord<detail::PythonCoord::X>)
       .def("__setitem__", detail::insertCoord<detail::PythonCoord::Y>)
       .def("__setitem__", detail::insertCoord<detail::PythonCoord::Z>)
+      .def("__setitem__", detail::insertCoord1D<detail::PythonCoord::RowLabel>)
       .def("__setitem__", detail::insert<detail::PythonData::Value>)
       .def("__setitem__", detail::insert<detail::PythonData::Variance>)
       .def("__setitem__", detail::insertDefaultInit<detail::PythonData::Value>)

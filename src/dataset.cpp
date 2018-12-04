@@ -642,7 +642,7 @@ template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
   auto const_axis = d.get<const Tag>(name);
   if (d.dimensions<Tag>(name).count() != 1)
     throw std::runtime_error("Axis for sorting must be 1-dimensional.");
-  const auto sortDim = d.dimensions<Tag>().label(0);
+  const auto sortDim = d.dimensions<Tag>(name).label(0);
   if (const_axis.size() != d.dimensions().size(sortDim))
     throw std::runtime_error("Axis for sorting cannot be a bin-edge axis.");
   if (std::is_sorted(const_axis.begin(), const_axis.end()))
@@ -677,6 +677,7 @@ template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
 
 Dataset sort(const Dataset &d, const Tag t, const std::string &name) {
   switch (t.value()) {
+    CASE_RETURN(Coord::RowLabel, sort, d, name);
     CASE_RETURN(Coord::X, sort, d, name);
     CASE_RETURN(Data::Value, sort, d, name);
   default:
