@@ -184,6 +184,27 @@ class TestDataset(unittest.TestCase):
         self.dataset[Data.Value, 'data2'] = self.reference_data2
         np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, self.reference_data2)
 
+    def test_split(self):
+        dataset = Dataset()
+        dataset[Data.Value, "data"] = ([Dim.X], np.arange(4))
+        dataset[Coord.X] = ([Dim.X], np.array([3,2,4,1]))
+        datasets = split(dataset, Dim.X, [2])
+        self.assertEqual(len(datasets), 2)
+        d0 = datasets[0]
+        np.testing.assert_array_equal(d0[Coord.X].numpy, np.array([3,2]))
+        np.testing.assert_array_equal(d0[Data.Value, "data"].numpy, np.array([0,1]))
+        d1 = datasets[1]
+        np.testing.assert_array_equal(d1[Coord.X].numpy, np.array([4,1]))
+        np.testing.assert_array_equal(d1[Data.Value, "data"].numpy, np.array([2,3]))
+
+    def test_concatenate(self):
+        dataset = Dataset()
+        dataset[Data.Value, "data"] = ([Dim.X], np.arange(4))
+        dataset[Coord.X] = ([Dim.X], np.array([3,2,4,1]))
+        dataset = concatenate(dataset, dataset, Dim.X)
+        np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([3,2,4,1, 3,2,4,1]))
+        np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array([0,1,2,3, 0,1,2,3]))
+
     def test_sort(self):
         dataset = Dataset()
         dataset[Data.Value, "data"] = ([Dim.X], np.arange(4))

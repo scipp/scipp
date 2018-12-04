@@ -493,6 +493,10 @@ PYBIND11_MODULE(dataset, m) {
           py::overload_cast<const Dataset &, const Dimension, const gsl::index>(
               &slice),
           py::call_guard<py::gil_scoped_release>());
+  m.def("split",
+        py::overload_cast<const Dataset &, const Dimension,
+                          const std::vector<gsl::index> &>(&split),
+        py::call_guard<py::gil_scoped_release>());
   m.def("concatenate",
         py::overload_cast<const Dataset &, const Dataset &, const Dimension>(
             &concatenate),
