@@ -36,7 +36,6 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
 
 namespace detail {
 std::string format(const Dimensions &dims) {
-  // TODO reverse order to match numpy convention.
   std::string out = "Dimensions = " + dataset::to_string(dims);
   return out;
 }
@@ -93,20 +92,13 @@ void insertDefaultInit(
   self.insert<const Tag>(name, dims);
 }
 
-std::vector<gsl::index> numpy_shape(const Dimensions &dims) {
-  std::vector<gsl::index> shape(dims.count());
-  for (gsl::index i = 0; i < shape.size(); ++i)
-    shape[i] = dims.size(shape.size() - 1 - i);
-  return shape;
-}
-
-// Reverse strides s and add size factor.
+// Add size factor.
 template <class Tag>
 std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
   std::vector<gsl::index> strides(s.size());
   gsl::index elemSize = sizeof(typename Tag::type);
-  for (gsl::index i = strides.size() - 1; i >= 0; --i) {
-    strides[i] = elemSize * s[strides.size() - 1 - i];
+  for (gsl::index i = 0; i < strides.size(); ++i) {
+    strides[i] = elemSize * s[i];
   }
   return strides;
 }
@@ -152,7 +144,8 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
   const gsl::index index = find(self, tag_id<Tag>, key.second);
   const auto &dims = self[index].dimensions();
   py::buffer_info info = data.request();
-  if (info.shape != detail::numpy_shape(dims))
+  if (!std::equal(info.shape.begin(), info.shape.end(), dims.shape().begin(),
+                  dims.shape().end()))
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
@@ -170,7 +163,8 @@ void setVariableSlice(const VariableView<Tag> &self,
 
   const auto &dims = slice().dimensions();
   py::buffer_info info = data.request();
-  if (info.shape != detail::numpy_shape(dims))
+  if (!std::equal(info.shape.begin(), info.shape.end(), dims.shape().begin(),
+                  dims.shape().end()))
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
@@ -187,7 +181,8 @@ void setVariableSliceRange(const VariableView<Tag> &self,
 
   const auto &dims = slice().dimensions();
   py::buffer_info info = data.request();
-  if (info.shape != detail::numpy_shape(dims))
+  if (!std::equal(info.shape.begin(), info.shape.end(), dims.shape().begin(),
+                  dims.shape().end()))
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
@@ -213,8 +208,8 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
             py::format_descriptor<typename Tag::type>::format(), /* Python
                                                        struct-style format
                                                        descriptor */
-            self().dimensions().count(),              /* Number of dimensions */
-            detail::numpy_shape(self().dimensions()), /* Buffer dimensions */
+            self().dimensions().count(), /* Number of dimensions */
+            self().dimensions().shape(), /* Buffer dimensions */
             detail::numpy_strides<Tag>(
                 self().strides()) /* Strides (in bytes) for each index */
         );
@@ -271,7 +266,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
           [](py::object &obj) {
             auto &view = obj.cast<detail::VariableView<Tag> &>();
             auto array = py::array_t<typename Tag::type>{
-                detail::numpy_shape(view().dimensions()),
+                view().dimensions().shape(),
                 detail::numpy_strides<Tag>(view().strides()),
                 view().template get<const Tag>().data(), obj};
             // See https://github.com/pybind/pybind11/issues/481.
@@ -282,7 +277,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
           [](py::object &obj, const py::array_t<typename Tag::type> &data) {
             auto &view = obj.cast<detail::VariableView<Tag> &>();
             py::array_t<typename Tag::type>{
-                detail::numpy_shape(view().dimensions()),
+                view().dimensions().shape(),
                 detail::numpy_strides<Tag>(view().strides()),
                 view().template get<Tag>().data(), obj} = data;
           })
@@ -291,14 +286,14 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
           [](py::object &obj) {
             auto &view = obj.cast<detail::VariableView<Tag> &>();
             return py::array_t<typename Tag::type>{
-                detail::numpy_shape(view().dimensions()),
+                view().dimensions().shape(),
                 detail::numpy_strides<Tag>(view().strides()),
                 view().template get<Tag>().data(), obj};
           },
           [](py::object &obj, const py::array_t<typename Tag::type> &data) {
             auto &view = obj.cast<detail::VariableView<Tag> &>();
             py::array_t<typename Tag::type>{
-                detail::numpy_shape(view().dimensions()),
+                view().dimensions().shape(),
                 detail::numpy_strides<Tag>(view().strides()),
                 view().template get<Tag>().data(), obj} = data;
           });

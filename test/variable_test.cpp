@@ -419,27 +419,27 @@ TEST(Variable, rebin) {
 }
 
 TEST(VariableSlice, strides) {
-  auto var = makeVariable<Data::Value>({{Dim::X, 3}, {Dim::Y, 3}});
+  auto var = makeVariable<Data::Value>({{Dim::Y, 3}, {Dim::X, 3}});
   EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<gsl::index>{3}));
   EXPECT_EQ(var(Dim::X, 1).strides(), (std::vector<gsl::index>{3}));
   EXPECT_EQ(var(Dim::Y, 0).strides(), (std::vector<gsl::index>{1}));
   EXPECT_EQ(var(Dim::Y, 1).strides(), (std::vector<gsl::index>{1}));
-  EXPECT_EQ(var(Dim::X, 0, 1).strides(), (std::vector<gsl::index>{1, 3}));
-  EXPECT_EQ(var(Dim::X, 1, 2).strides(), (std::vector<gsl::index>{1, 3}));
-  EXPECT_EQ(var(Dim::Y, 0, 1).strides(), (std::vector<gsl::index>{1, 3}));
-  EXPECT_EQ(var(Dim::Y, 1, 2).strides(), (std::vector<gsl::index>{1, 3}));
-  EXPECT_EQ(var(Dim::X, 0, 2).strides(), (std::vector<gsl::index>{1, 3}));
-  EXPECT_EQ(var(Dim::X, 1, 3).strides(), (std::vector<gsl::index>{1, 3}));
-  EXPECT_EQ(var(Dim::Y, 0, 2).strides(), (std::vector<gsl::index>{1, 3}));
-  EXPECT_EQ(var(Dim::Y, 1, 3).strides(), (std::vector<gsl::index>{1, 3}));
+  EXPECT_EQ(var(Dim::X, 0, 1).strides(), (std::vector<gsl::index>{3, 1}));
+  EXPECT_EQ(var(Dim::X, 1, 2).strides(), (std::vector<gsl::index>{3, 1}));
+  EXPECT_EQ(var(Dim::Y, 0, 1).strides(), (std::vector<gsl::index>{3, 1}));
+  EXPECT_EQ(var(Dim::Y, 1, 2).strides(), (std::vector<gsl::index>{3, 1}));
+  EXPECT_EQ(var(Dim::X, 0, 2).strides(), (std::vector<gsl::index>{3, 1}));
+  EXPECT_EQ(var(Dim::X, 1, 3).strides(), (std::vector<gsl::index>{3, 1}));
+  EXPECT_EQ(var(Dim::Y, 0, 2).strides(), (std::vector<gsl::index>{3, 1}));
+  EXPECT_EQ(var(Dim::Y, 1, 3).strides(), (std::vector<gsl::index>{3, 1}));
 
   EXPECT_EQ(var(Dim::X, 0, 1)(Dim::Y, 0, 1).strides(),
-            (std::vector<gsl::index>{1, 3}));
+            (std::vector<gsl::index>{3, 1}));
 
   auto var3D =
-      makeVariable<Data::Value>({{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+      makeVariable<Data::Value>({{Dim::Z, 4}, {Dim::Y, 3}, {Dim::X, 2}});
   EXPECT_EQ(var3D(Dim::X, 0, 1)(Dim::Z, 0, 1).strides(),
-            (std::vector<gsl::index>{1, 2, 6}));
+            (std::vector<gsl::index>{6, 2, 1}));
 }
 
 TEST(VariableSlice, get) {

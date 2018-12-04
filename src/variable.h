@@ -342,12 +342,9 @@ public:
   std::vector<gsl::index> strides() const {
     const auto parent = m_variable->dimensions();
     std::vector<gsl::index> strides;
-    gsl::index stride = 1;
-    for (gsl::index i = 0; i < parent.count(); ++i) {
-      if (dimensions().contains(parent.label(i)))
-        strides.emplace_back(stride);
-      stride *= parent.size(i);
-    }
+    for (const auto &label : parent.labels())
+      if (dimensions().contains(label))
+        strides.emplace_back(parent.offset(label));
     return strides;
   }
 
