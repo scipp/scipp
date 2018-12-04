@@ -46,6 +46,10 @@ struct PythonData {
   };
 };
 struct PythonCoord {
+  struct Mask : public Tag {
+    using type = Coord::Mask;
+    Mask() : Tag(::tag<type>) {}
+  };
   struct X : public Tag {
     using type = Coord::X;
     X() : Tag(::tag<type>) {}
@@ -379,9 +383,11 @@ PYBIND11_MODULE(dataset, m) {
   data_tags.attr("Variance") = detail::PythonData::Variance{};
 
   auto coord_tags = m.def_submodule("Coord");
+  py::class_<detail::PythonCoord::Mask, Tag>(coord_tags, "_Mask");
   py::class_<detail::PythonCoord::X, Tag>(coord_tags, "_X");
   py::class_<detail::PythonCoord::Y, Tag>(coord_tags, "_Y");
   py::class_<detail::PythonCoord::Z, Tag>(coord_tags, "_Z");
+  coord_tags.attr("Mask") = detail::PythonCoord::Mask{};
   coord_tags.attr("X") = detail::PythonCoord::X{};
   coord_tags.attr("Y") = detail::PythonCoord::Y{};
   coord_tags.attr("Z") = detail::PythonCoord::Z{};
@@ -405,8 +411,12 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<Coord::Z>(m, "CoordZ");
 
   py::class_<Variable>(m, "Variable")
+      .def(py::init(&detail::makeVariable<detail::PythonCoord::Mask>))
       .def(py::init(&detail::makeVariable<detail::PythonCoord::X>))
+      .def(py::init(&detail::makeVariable<detail::PythonCoord::Y>))
+      .def(py::init(&detail::makeVariable<detail::PythonCoord::Z>))
       .def(py::init(&detail::makeVariable<detail::PythonData::Value>))
+      .def(py::init(&detail::makeVariable<detail::PythonData::Variance>))
       .def(py::init<const VariableSlice<Variable> &>())
       .def_property("name", &Variable::name, &Variable::setName)
       .def("dimensions", &Variable::dimensions);

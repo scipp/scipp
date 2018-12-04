@@ -224,5 +224,14 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.arange(4))
         np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([3,2,4,1]))
 
+    def test_filter(self):
+        dataset = Dataset()
+        dataset[Data.Value, "data"] = ([Dim.X], np.arange(4))
+        dataset[Coord.X] = ([Dim.X], np.array([3,2,4,1]))
+        select = Variable(Coord.Mask, [Dim.X], np.array([False, True, False, True]))
+        dataset = filter(dataset, select)
+        np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array([1,3]))
+        np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([2,1]))
+
 if __name__ == '__main__':
     unittest.main()
