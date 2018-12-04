@@ -23,6 +23,10 @@ class TestDataset(unittest.TestCase):
         self.dataset[Coord.Y] = ([Dim.Y], self.reference_y)
         self.dataset[Coord.Z] = ([Dim.Z], self.reference_z)
 
+    def test_size(self):
+        # X, Y, Z, 3 x Data::Value
+        self.assertEqual(len(self.dataset), 6)
+
     def test_contains(self):
         self.assertTrue(Coord.X in self.dataset)
         self.assertTrue(Coord.Y in self.dataset)
@@ -78,10 +82,6 @@ class TestDataset(unittest.TestCase):
 
         self.assertRaisesRegex(RuntimeError, "Cannot insert variable into Dataset: Dimensions do not match.",
                 d.__setitem__, (Data.Value, "data2"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,2,3)))
-
-    def test_size(self):
-        # X, Y, Z, 3 x Data::Value
-        self.assertEqual(self.dataset.size(), 6)
 
     def test_dimensions(self):
         self.assertEqual(self.dataset.dimensions().size(Dim.X), 2)
@@ -183,6 +183,17 @@ class TestDataset(unittest.TestCase):
         # Restore original value.
         self.dataset[Data.Value, 'data2'] = self.reference_data2
         np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, self.reference_data2)
+
+    def test_sort(self):
+        dataset = Dataset()
+        dataset[Data.Value, "data"] = ([Dim.X], np.arange(4))
+        dataset[Coord.X] = ([Dim.X], np.array([3,2,4,1]))
+        dataset = sort(dataset, Coord.X)
+        np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array([3,1,0,2]))
+        np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([1,2,3,4]))
+        dataset = sort(dataset, Data.Value, "data")
+        np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.arange(4))
+        np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([3,2,4,1]))
 
 if __name__ == '__main__':
     unittest.main()

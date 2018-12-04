@@ -35,6 +35,31 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
+struct PythonData {
+  struct Value : public Tag {
+    using type = Data::Value;
+    Value() : Tag(::tag<type>) {}
+  };
+  struct Variance : public Tag {
+    using type = Data::Variance;
+    Variance() : Tag(::tag<type>) {}
+  };
+};
+struct PythonCoord {
+  struct X : public Tag {
+    using type = Coord::X;
+    X() : Tag(::tag<type>) {}
+  };
+  struct Y : public Tag {
+    using type = Coord::Y;
+    Y() : Tag(::tag<type>) {}
+  };
+  struct Z : public Tag {
+    using type = Coord::Z;
+    Z() : Tag(::tag<type>) {}
+  };
+};
+
 std::string format(const Dimensions &dims) {
   std::string out = "Dimensions = " + dataset::to_string(dims);
   return out;
@@ -61,9 +86,10 @@ void erase(Dataset &self,
 }
 
 template <class Tag>
-void insertCoord(Dataset &self, const Tag,
-                 const std::tuple<const std::vector<Dim> &,
-                                  py::array_t<typename Tag::type> &> &data) {
+void insertCoord(
+    Dataset &self, const Tag,
+    const std::tuple<const std::vector<Dim> &,
+                     py::array_t<typename Tag::type::type> &> &data) {
   const auto &labels = std::get<0>(data);
   const py::buffer_info info = std::get<1>(data).request();
   if (info.ndim != labels.size())
@@ -73,14 +99,14 @@ void insertCoord(Dataset &self, const Tag,
   for (gsl::index i = labels.size() - 1; i >= 0; --i)
     dims.add(labels[i], info.shape[i]);
 
-  auto *ptr = (typename Tag::type *)info.ptr;
-  self.insert<const Tag>(dims, ptr, ptr + dims.volume());
+  auto *ptr = (typename Tag::type::type *)info.ptr;
+  self.insert<const typename Tag::type>(dims, ptr, ptr + dims.volume());
 }
 
 template <class Tag>
 void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
             const std::tuple<const std::vector<Dim> &,
-                             py::array_t<typename Tag::type> &> &data) {
+                             py::array_t<typename Tag::type::type> &> &data) {
   const auto &labels = std::get<0>(data);
   const py::buffer_info info = std::get<1>(data).request();
   if (info.ndim != labels.size())
@@ -90,9 +116,9 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   for (gsl::index i = labels.size() - 1; i >= 0; --i)
     dims.add(labels[i], info.shape[i]);
 
-  auto *ptr = (typename Tag::type *)info.ptr;
+  auto *ptr = (typename Tag::type::type *)info.ptr;
   const auto &name = std::get<const std::string &>(key);
-  self.insert<const Tag>(name, dims, ptr, ptr + dims.volume());
+  self.insert<const typename Tag::type>(name, dims, ptr, ptr + dims.volume());
 }
 
 template <class Tag>
@@ -109,7 +135,7 @@ void insertDefaultInit(
     dims.add(labels[i], shape[i].cast<size_t>());
 
   const auto &name = std::get<const std::string &>(key);
-  self.insert<const Tag>(name, dims);
+  self.insert<const typename Tag::type>(name, dims);
 }
 
 // Add size factor.
@@ -146,22 +172,23 @@ template <class Tag> struct VariableView {
 // The way the Python exports are written we require non-const references to
 // variables. Note that setting breaking attributes is not exported, so we
 // should be safe.
-template <class Tag, class T> VariableView<Tag> getCoord(T &self, const Tag) {
+template <class Tag, class T>
+VariableView<typename Tag::type> getCoord(T &self, const Tag) {
   return {VariableSlice<Variable>(
-      detail::makeAccess(self)[find(self, tag_id<Tag>, "")])};
+      detail::makeAccess(self)[find(self, tag_id<typename Tag::type>, "")])};
 }
 
 template <class Tag, class T>
-VariableView<Tag> getData(T &self,
-                          const std::pair<const Tag, const std::string> &key) {
-  return {VariableSlice<Variable>(
-      detail::makeAccess(self)[find(self, tag_id<Tag>, key.second)])};
+VariableView<typename Tag::type>
+getData(T &self, const std::pair<const Tag, const std::string> &key) {
+  return {VariableSlice<Variable>(detail::makeAccess(
+      self)[find(self, tag_id<typename Tag::type>, key.second)])};
 }
 
 template <class Tag, class T>
 void setData(T &self, const std::pair<const Tag, const std::string> &key,
-             py::array_t<typename Tag::type> &data) {
-  const gsl::index index = find(self, tag_id<Tag>, key.second);
+             py::array_t<typename Tag::type::type> &data) {
+  const gsl::index index = find(self, tag_id<typename Tag::type>, key.second);
   const auto &dims = self[index].dimensions();
   py::buffer_info info = data.request();
   const auto &shape = dims.shape();
@@ -170,7 +197,7 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
-  auto buf = detail::makeAccess(self)[index].template get<Tag>();
+  auto buf = detail::makeAccess(self)[index].template get<typename Tag::type>();
   double *ptr = (double *)info.ptr;
   std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
@@ -328,21 +355,21 @@ PYBIND11_MODULE(dataset, m) {
       .value("Y", Dimension::Y)
       .value("Z", Dimension::Z);
 
+  py::class_<Tag>(m, "Tag");
+
   auto data_tags = m.def_submodule("Data");
-  py::class_<Data::Value>(data_tags, "_Value");
-  py::class_<Data::Variance>(data_tags, "_Variance");
-  py::class_<Data::String>(data_tags, "_String");
-  data_tags.attr("Value") = Data::Value{};
-  data_tags.attr("Variance") = Data::Variance{};
-  data_tags.attr("String") = Data::String{};
+  py::class_<detail::PythonData::Value, Tag>(data_tags, "_Value");
+  py::class_<detail::PythonData::Variance, Tag>(data_tags, "_Variance");
+  data_tags.attr("Value") = detail::PythonData::Value{};
+  data_tags.attr("Variance") = detail::PythonData::Variance{};
 
   auto coord_tags = m.def_submodule("Coord");
-  py::class_<Coord::X>(coord_tags, "_X");
-  py::class_<Coord::Y>(coord_tags, "_Y");
-  py::class_<Coord::Z>(coord_tags, "_Z");
-  coord_tags.attr("X") = Coord::X{};
-  coord_tags.attr("Y") = Coord::Y{};
-  coord_tags.attr("Z") = Coord::Z{};
+  py::class_<detail::PythonCoord::X, Tag>(coord_tags, "_X");
+  py::class_<detail::PythonCoord::Y, Tag>(coord_tags, "_Y");
+  py::class_<detail::PythonCoord::Z, Tag>(coord_tags, "_Z");
+  coord_tags.attr("X") = detail::PythonCoord::X{};
+  coord_tags.attr("Y") = detail::PythonCoord::Y{};
+  coord_tags.attr("Z") = detail::PythonCoord::Z{};
 
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
@@ -365,10 +392,13 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Variable>(m, "Variable");
   py::class_<Slice<Dataset>>(m, "DatasetView")
       .def("__len__", &Slice<Dataset>::size)
-      .def("__contains__", detail::containsUnnamed<Coord::X, Slice<Dataset>>)
-      .def("__contains__", detail::containsUnnamed<Coord::Y, Slice<Dataset>>)
-      .def("__contains__", detail::containsUnnamed<Coord::Z, Slice<Dataset>>)
-      .def("__contains__", detail::contains<Data::Value, Slice<Dataset>>)
+      .def("__contains__", &Slice<Dataset>::contains, py::arg("tag"),
+           py::arg("name") = "")
+      .def("__contains__",
+           [](const Slice<Dataset> &self,
+              const std::tuple<const Tag, const std::string> &key) {
+             return self.contains(std::get<0>(key), std::get<1>(key));
+           })
       .def("__getitem__",
            [](Slice<Dataset> &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
@@ -392,23 +422,35 @@ PYBIND11_MODULE(dataset, m) {
                throw std::runtime_error("Step must be 1");
              return self(dim, start, stop);
            })
-      .def("__getitem__", detail::getCoord<Coord::X, Slice<Dataset>>)
-      .def("__getitem__", detail::getCoord<Coord::Y, Slice<Dataset>>)
-      .def("__getitem__", detail::getCoord<Coord::Z, Slice<Dataset>>)
-      .def("__getitem__", detail::getData<Data::Value, Slice<Dataset>>)
-      .def("__setitem__", detail::setData<Data::Value, Slice<Dataset>>);
+      .def("__getitem__",
+           detail::getCoord<detail::PythonCoord::X, Slice<Dataset>>)
+      .def("__getitem__",
+           detail::getCoord<detail::PythonCoord::Y, Slice<Dataset>>)
+      .def("__getitem__",
+           detail::getCoord<detail::PythonCoord::Z, Slice<Dataset>>)
+      .def("__getitem__",
+           detail::getData<detail::PythonData::Value, Slice<Dataset>>)
+      .def("__setitem__",
+           detail::setData<detail::PythonData::Value, Slice<Dataset>>);
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
       .def("__len__", &Dataset::size)
-      .def("__contains__", detail::containsUnnamed<Coord::X, Dataset>)
-      .def("__contains__", detail::containsUnnamed<Coord::Y, Dataset>)
-      .def("__contains__", detail::containsUnnamed<Coord::Z, Dataset>)
-      .def("__contains__", detail::contains<Data::Value, Dataset>)
-      .def("__delitem__", detail::eraseUnnamed<Coord::X>)
-      .def("__delitem__", detail::eraseUnnamed<Coord::Y>)
-      .def("__delitem__", detail::eraseUnnamed<Coord::Z>)
-      .def("__delitem__", detail::erase<Data::Value>)
+      .def("__contains__", &Dataset::contains, py::arg("tag"),
+           py::arg("name") = "")
+      .def("__contains__",
+           [](const Dataset &self,
+              const std::tuple<const Tag, const std::string> &key) {
+             return self.contains(std::get<0>(key), std::get<1>(key));
+           })
+      .def("__delitem__",
+           py::overload_cast<const Tag, const std::string &>(&Dataset::erase),
+           py::arg("tag"), py::arg("name") = "")
+      .def("__delitem__",
+           [](Dataset &self,
+              const std::tuple<const Tag, const std::string> &key) {
+             self.erase(std::get<0>(key), std::get<1>(key));
+           })
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
@@ -425,20 +467,21 @@ PYBIND11_MODULE(dataset, m) {
                throw std::runtime_error("Step must be 1");
              return self(dim, start, stop);
            })
-      .def("__getitem__", detail::getCoord<Coord::X, Dataset>)
-      .def("__getitem__", detail::getCoord<Coord::Y, Dataset>)
-      .def("__getitem__", detail::getCoord<Coord::Z, Dataset>)
-      .def("__getitem__", detail::getData<Data::Value, Dataset>)
+      .def("__getitem__", detail::getCoord<detail::PythonCoord::X, Dataset>)
+      .def("__getitem__", detail::getCoord<detail::PythonCoord::Y, Dataset>)
+      .def("__getitem__", detail::getCoord<detail::PythonCoord::Z, Dataset>)
+      .def("__getitem__", detail::getData<detail::PythonData::Value, Dataset>)
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
-      .def("__setitem__", detail::setData<Data::Value, Dataset>)
-      .def("__setitem__", detail::insertCoord<Coord::X>)
-      .def("__setitem__", detail::insertCoord<Coord::Y>)
-      .def("__setitem__", detail::insertCoord<Coord::Z>)
-      .def("__setitem__", detail::insert<Data::Value>)
-      .def("__setitem__", detail::insert<Data::Variance>)
-      .def("__setitem__", detail::insertDefaultInit<Data::Value>)
-      .def("__setitem__", detail::insertDefaultInit<Data::Variance>)
+      .def("__setitem__", detail::setData<detail::PythonData::Value, Dataset>)
+      .def("__setitem__", detail::insertCoord<detail::PythonCoord::X>)
+      .def("__setitem__", detail::insertCoord<detail::PythonCoord::Y>)
+      .def("__setitem__", detail::insertCoord<detail::PythonCoord::Z>)
+      .def("__setitem__", detail::insert<detail::PythonData::Value>)
+      .def("__setitem__", detail::insert<detail::PythonData::Variance>)
+      .def("__setitem__", detail::insertDefaultInit<detail::PythonData::Value>)
+      .def("__setitem__",
+           detail::insertDefaultInit<detail::PythonData::Variance>)
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
@@ -449,10 +492,16 @@ PYBIND11_MODULE(dataset, m) {
           "slice",
           py::overload_cast<const Dataset &, const Dimension, const gsl::index>(
               &slice),
-          py::call_guard<py::gil_scoped_release>())
-      .def("size", &Dataset::size);
+          py::call_guard<py::gil_scoped_release>());
   m.def("concatenate",
         py::overload_cast<const Dataset &, const Dataset &, const Dimension>(
             &concatenate),
+        py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "sort",
+      py::overload_cast<const Dataset &, const Tag, const std::string &>(&sort),
+      py::arg("dataset"), py::arg("tag"), py::arg("name") = "",
+      py::call_guard<py::gil_scoped_release>());
+  m.def("filter", py::overload_cast<const Dataset &, const Variable &>(&filter),
         py::call_guard<py::gil_scoped_release>());
 }

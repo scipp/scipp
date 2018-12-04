@@ -675,7 +675,7 @@ template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
   case tag<TAG>.value():                                                       \
     return FUNC<TAG>(__VA_ARGS__);
 
-Dataset sort(const Dataset &d, Tag t, const std::string &name) {
+Dataset sort(const Dataset &d, const Tag t, const std::string &name) {
   switch (t.value()) {
     CASE_RETURN(Coord::X, sort, d, name);
     CASE_RETURN(Data::Value, sort, d, name);
