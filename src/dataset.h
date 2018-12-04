@@ -92,8 +92,11 @@ public:
     insert(std::move(a));
   }
 
+  bool contains(const Tag tag, const std::string &name = "") const;
+  void erase(const Tag tag, const std::string &name = "");
+
   template <class Tag> void erase() {
-    const auto it = m_variables.begin() + findUnique(tag_id<Tag>);
+    const auto it = m_variables.begin() + findUnique(tag<Tag>);
     const auto dims = it->dimensions();
     m_variables.erase(it);
     for (const auto dim : dims.labels()) {
@@ -114,7 +117,7 @@ public:
   }
 
   template <class Tag> auto get() const {
-    return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
+    return m_variables[findUnique(tag<Tag>)].template get<Tag>();
   }
 
   template <class Tag> auto get(const std::string &name) const {
@@ -122,7 +125,7 @@ public:
   }
 
   template <class Tag> auto get() {
-    return m_variables[findUnique(tag_id<Tag>)].template get<Tag>();
+    return m_variables[findUnique(tag<Tag>)].template get<Tag>();
   }
 
   template <class Tag> auto get(const std::string &name) {
@@ -132,7 +135,7 @@ public:
   const Dimensions &dimensions() const { return m_dimensions; }
 
   template <class Tag> const Dimensions &dimensions() const {
-    return m_variables[findUnique(tag_id<Tag>)].dimensions();
+    return m_variables[findUnique(tag<Tag>)].dimensions();
   }
 
   template <class Tag>
@@ -141,7 +144,7 @@ public:
   }
 
   template <class Tag> const Unit &unit() const {
-    return m_variables[findUnique(tag_id<Tag>)].unit();
+    return m_variables[findUnique(tag<Tag>)].unit();
   }
 
   template <class Tag> const Unit &unit(const std::string &name) const {
@@ -149,7 +152,7 @@ public:
   }
 
   gsl::index find(const uint16_t id, const std::string &name) const;
-  gsl::index findUnique(const uint16_t id) const;
+  gsl::index findUnique(const Tag tag) const;
 
   bool operator==(const Dataset &other) const;
   Dataset &operator+=(const Dataset &other);
@@ -292,7 +295,10 @@ public:
     return slice;
   }
 
+  bool contains(const Tag tag, const std::string &name = "") const;
+
   const Dataset &dataset() const { return m_dataset; }
+
   std::vector<std::tuple<Dim, gsl::index>> dimensions() {
     std::vector<std::tuple<Dim, gsl::index>> dims;
     for (gsl::index i = 0; i < m_dataset.dimensions().count(); ++i) {

@@ -40,6 +40,16 @@ std::string format(const Dimensions &dims) {
   return out;
 }
 
+template <class Tag, class T> bool containsUnnamed(const T &self, const Tag) {
+  return self.contains(tag<Tag>);
+}
+
+template <class Tag, class T>
+bool contains(const T &self,
+              const std::tuple<const Tag, const std::string &> &key) {
+  return self.contains(tag<Tag>, std::get<const std::string &>(key));
+}
+
 template <class Tag>
 void insertCoord(Dataset &self, const Tag,
                  const std::tuple<const std::vector<Dim> &,
@@ -344,7 +354,11 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Variable>(m, "Variable");
   py::class_<Slice<Dataset>>(m, "DatasetView")
-      .def("size", &Slice<Dataset>::size)
+      .def("__len__", &Slice<Dataset>::size)
+      .def("__contains__", detail::containsUnnamed<Coord::X, Slice<Dataset>>)
+      .def("__contains__", detail::containsUnnamed<Coord::Y, Slice<Dataset>>)
+      .def("__contains__", detail::containsUnnamed<Coord::Z, Slice<Dataset>>)
+      .def("__contains__", detail::contains<Data::Value, Slice<Dataset>>)
       .def("__getitem__",
            [](Slice<Dataset> &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
@@ -377,6 +391,10 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
       .def("__len__", &Dataset::size)
+      .def("__contains__", detail::containsUnnamed<Coord::X, Dataset>)
+      .def("__contains__", detail::containsUnnamed<Coord::Y, Dataset>)
+      .def("__contains__", detail::containsUnnamed<Coord::Z, Dataset>)
+      .def("__contains__", detail::contains<Data::Value, Dataset>)
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));

@@ -55,6 +55,33 @@ void Dataset::insert(Variable variable) {
   m_variables.push_back(std::move(variable));
 }
 
+// T can be Dataset or Slice.
+template <class T>
+bool contains(const T &dataset, const Tag tag, const std::string &name) {
+  for (gsl::index i = 0; i < dataset.size(); ++i)
+    if (dataset[i].type() == tag.value() && dataset[i].name() == name)
+      return true;
+  return false;
+}
+
+bool Dataset::contains(const Tag tag, const std::string &name) const {
+  return ::contains(*this, tag, name);
+}
+
+void Dataset::erase(const Tag tag, const std::string &name) {
+  const auto it = m_variables.begin() + findUnique(tag);
+  const auto dims = it->dimensions();
+  m_variables.erase(it);
+  for (const auto dim : dims.labels()) {
+    bool found = false;
+    for (const auto &var : m_variables)
+      if (var.dimensions().contains(dim))
+        found = true;
+    if (!found)
+      m_dimensions.erase(dim);
+  }
+}
+
 Dataset Dataset::extract(const std::string &name) {
   Dataset subset;
   for (auto it = m_variables.begin(); it != m_variables.end();) {
@@ -91,10 +118,10 @@ gsl::index Dataset::count(const uint16_t id, const std::string &name) const {
   return n;
 }
 
-gsl::index Dataset::findUnique(const uint16_t id) const {
+gsl::index Dataset::findUnique(const Tag tag) const {
   gsl::index index = -1;
   for (gsl::index i = 0; i < size(); ++i) {
-    if (m_variables[i].type() == id) {
+    if (m_variables[i].type() == tag.value()) {
       if (index != -1)
         throw std::runtime_error(
             "Given variable tag is not unique. Must provide a name.");
@@ -275,6 +302,15 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
 template <class T> Dataset &Dataset::operator-=(const T &other) {
   return minus_equals(*this, other);
 }
+
+template <class D>
+bool Slice<D>::contains(const Tag tag, const std::string &name) const {
+  return ::contains(*this, tag, name);
+}
+
+template bool Slice<Dataset>::contains(const Tag, const std::string &) const;
+template bool Slice<const Dataset>::contains(const Tag,
+                                             const std::string &) const;
 
 template <class T>
 Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
@@ -566,7 +602,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   if (!isContinuous(dim))
     throw std::runtime_error(
         "The provided rebin coordinate is not a continuous coordinate.");
-  const auto &oldCoord = d[d.findUnique(newCoord.type())];
+  const auto &oldCoord = d[d.findUnique(Tag(newCoord.type()))];
   const auto &oldDims = oldCoord.dimensions();
   const auto &datasetDims = d.dimensions();
   if (!oldDims.contains(dim))

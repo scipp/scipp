@@ -23,6 +23,25 @@ class TestDataset(unittest.TestCase):
         self.dataset[Coord.Y] = ([Dim.Y], self.reference_y)
         self.dataset[Coord.Z] = ([Dim.Z], self.reference_z)
 
+    def test_contains(self):
+        self.assertTrue(Coord.X in self.dataset)
+        self.assertTrue(Coord.Y in self.dataset)
+        self.assertTrue(Coord.Z in self.dataset)
+        self.assertTrue((Data.Value, "data1") in self.dataset)
+        self.assertTrue((Data.Value, "data2") in self.dataset)
+        self.assertTrue((Data.Value, "data3") in self.dataset)
+        self.assertFalse((Data.Value, "data4") in self.dataset)
+
+    def test_view_contains(self):
+        view = self.dataset["data2"]
+        self.assertTrue(Coord.X in view)
+        self.assertTrue(Coord.Y in view)
+        self.assertTrue(Coord.Z in view)
+        self.assertFalse((Data.Value, "data1") in view)
+        self.assertTrue((Data.Value, "data2") in view)
+        self.assertFalse((Data.Value, "data3") in view)
+        self.assertFalse((Data.Value, "data4") in view)
+
     def test_insert_default_init(self):
         d = Dataset()
         d[Data.Value, "data1"] = ((Dim.Z, Dim.Y, Dim.X), (4,3,2))
@@ -65,7 +84,7 @@ class TestDataset(unittest.TestCase):
         #self.assertEqual(view.dimensions().size(Dim.X), 2)
         #self.assertEqual(view.dimensions().size(Dim.Y), 3)
         #self.assertEqual(view.dimensions().size(Dim.Z), 4)
-        self.assertEqual(view.size(), 4)
+        self.assertEqual(len(view), 4)
 
     def test_slice_dataset(self):
         for x in range(2):

@@ -59,11 +59,10 @@ public:
       throw std::runtime_error(
           "LinearView supports only 1-dimensional datasets.");
 
-    m_dimensions = {
-        &detail::makeAccess(dataset)[dataset.findUnique(tag_id<Tags>)]
-             .mutableDimensions()...};
+    m_dimensions = {&detail::makeAccess(dataset)[dataset.findUnique(tag<Tags>)]
+                         .mutableDimensions()...};
     m_data = std::make_tuple(
-        &detail::makeAccess(dataset)[dataset.findUnique(tag_id<Tags>)]
+        &detail::makeAccess(dataset)[dataset.findUnique(tag<Tags>)]
              .template cast<typename Tags::type>()...);
   }
 
