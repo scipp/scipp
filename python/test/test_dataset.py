@@ -205,6 +205,14 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([3,2,4,1, 3,2,4,1]))
         np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array([0,1,2,3, 0,1,2,3]))
 
+    def test_concatenate_with_slice(self):
+        dataset = Dataset()
+        dataset[Data.Value, "data"] = ([Dim.X], np.arange(4))
+        dataset[Coord.X] = ([Dim.X], np.array([3,2,4,1]))
+        dataset = concatenate(dataset, dataset[Dim.X, 0:2], Dim.X)
+        np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([3,2,4,1, 3,2]))
+        np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array([0,1,2,3, 0,1]))
+
     def test_sort(self):
         dataset = Dataset()
         dataset[Data.Value, "data"] = ([Dim.X], np.arange(4))

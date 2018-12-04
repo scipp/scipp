@@ -435,6 +435,7 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
+      .def(py::init<const Slice<Dataset> &>())
       .def("__len__", &Dataset::size)
       .def("__contains__", &Dataset::contains, py::arg("tag"),
            py::arg("name") = "")
@@ -493,6 +494,9 @@ PYBIND11_MODULE(dataset, m) {
           py::overload_cast<const Dataset &, const Dimension, const gsl::index>(
               &slice),
           py::call_guard<py::gil_scoped_release>());
+
+  py::implicitly_convertible<Slice<Dataset>, Dataset>();
+
   m.def("split",
         py::overload_cast<const Dataset &, const Dimension,
                           const std::vector<gsl::index> &>(&split),
