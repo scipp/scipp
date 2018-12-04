@@ -536,6 +536,8 @@ PYBIND11_MODULE(dataset, m) {
         py::overload_cast<const Dataset &, const Dataset &, const Dimension>(
             &concatenate),
         py::call_guard<py::gil_scoped_release>());
+  m.def("rebin", py::overload_cast<const Dataset &, const Variable &>(&rebin),
+        py::call_guard<py::gil_scoped_release>());
   m.def(
       "sort",
       py::overload_cast<const Dataset &, const Tag, const std::string &>(&sort),

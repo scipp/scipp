@@ -391,7 +391,7 @@ Dataset convert(const Dataset &d, const Dimension from, const Dimension to);
 // Not verified, likely wrong in some cases
 Dataset rebin(const Dataset &d, const Variable &newCoord);
 
-Dataset sort(const Dataset &d, Tag t, const std::string &name = "");
+Dataset sort(const Dataset &d, const Tag t, const std::string &name = "");
 // Note: Can provide stable_sort for sorting by multiple columns, e.g., for a
 // QTableView.
 
