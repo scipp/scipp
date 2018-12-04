@@ -29,3 +29,11 @@ You can now do, e.g.,
 ```python
 from dataset import Dataset
 ```
+
+## Running the unit tests
+
+To run the Python tests, run the following in directory `python/`:
+
+```sh
+python3 -m unittest discover test
+```
