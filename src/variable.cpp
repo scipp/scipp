@@ -961,6 +961,8 @@ template const VariableView<const double>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<double> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
+template const VariableView<std::string> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
 
 Variable &Variable::operator*=(const Variable &other) {
   if (!dimensions().contains(other.dimensions()))

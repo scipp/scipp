@@ -34,6 +34,15 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
   mutable_span_methods<T>::add(span);
 }
 
+template <class T> void declare_VariableView(py::module &m, const std::string &suffix) {
+  py::class_<VariableView<T>> view(m, (std::string("VariableView_") + suffix).c_str());
+  view.def("__getitem__", &VariableView<T>::operator[])
+      .def("__len__", &VariableView<T>::size)
+      .def("__iter__", [](const VariableView<T> &self) {
+        return py::make_iterator(self.begin(), self.end());
+      });
+}
+
 namespace detail {
 struct PythonData {
   struct Value : public Tag {
@@ -280,31 +289,83 @@ void setVariableSliceRange(const VariableView<Tag> &self,
 }
 } // namespace detail
 
+template <class Tag> struct PyVariableView_maybe_buffer_protocol {
+  static auto make(py::module &m, const std::string &suffix) {
+    py::class_<detail::VariableView<Tag>> view(
+        m, (std::string("VariableView_") + suffix).c_str(),
+        py::buffer_protocol());
+    view.def_buffer([](detail::VariableView<Tag> &self) {
+          // Note: Currently this always triggers copy-on-write ---
+          // py::buffer_info does currently not support the `readonly` flag of
+          // the Python buffer protocol. We can probably get this fixed
+          // upstream, see discussion and sample implementation here:
+          // https://github.com/pybind/pybind11/issues/863.
+          return py::buffer_info(
+              self().template get<Tag>().data(), /* Pointer to buffer */
+              sizeof(typename Tag::type),        /* Size of one scalar */
+              py::format_descriptor<typename Tag::type>::format(), /* Python
+                                                         struct-style format
+                                                         descriptor */
+              self().dimensions().count(), /* Number of dimensions */
+              self().dimensions().shape(), /* Buffer dimensions */
+              detail::numpy_strides<Tag>(
+                  self().strides()) /* Strides (in bytes) for each index */
+          );
+        })
+        .def("__setitem__", &detail::setVariableSlice<Tag>)
+        .def("__setitem__", &detail::setVariableSliceRange<Tag>)
+        .def_property(
+            "numpy",
+            [](py::object &obj) {
+              auto &view = obj.cast<detail::VariableView<Tag> &>();
+              auto array = py::array_t<typename Tag::type>{
+                  view().dimensions().shape(),
+                  detail::numpy_strides<Tag>(view().strides()),
+                  view().template get<const Tag>().data(), obj};
+              // See https://github.com/pybind/pybind11/issues/481.
+              reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())
+                  ->flags &= ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+              return array;
+            },
+            [](py::object &obj, const py::array_t<typename Tag::type> &data) {
+              auto &view = obj.cast<detail::VariableView<Tag> &>();
+              py::array_t<typename Tag::type>{
+                  view().dimensions().shape(),
+                  detail::numpy_strides<Tag>(view().strides()),
+                  view().template get<Tag>().data(), obj} = data;
+            })
+        .def_property(
+            "numpy_mutable",
+            [](py::object &obj) {
+              auto &view = obj.cast<detail::VariableView<Tag> &>();
+              return py::array_t<typename Tag::type>{
+                  view().dimensions().shape(),
+                  detail::numpy_strides<Tag>(view().strides()),
+                  view().template get<Tag>().data(), obj};
+            },
+            [](py::object &obj, const py::array_t<typename Tag::type> &data) {
+              auto &view = obj.cast<detail::VariableView<Tag> &>();
+              py::array_t<typename Tag::type>{
+                  view().dimensions().shape(),
+                  detail::numpy_strides<Tag>(view().strides()),
+                  view().template get<Tag>().data(), obj} = data;
+            });
+    return view;
+  }
+};
+template <> struct PyVariableView_maybe_buffer_protocol<Coord::RowLabel> {
+  static auto make(py::module &m, const std::string &suffix) {
+    return py::class_<detail::VariableView<Coord::RowLabel>>(
+        m, (std::string("VariableView_") + suffix).c_str());
+  }
+};
+
 template <class Tag>
-void declare_VariableView(py::module &m, const std::string &suffix) {
-  py::class_<detail::VariableView<Tag>>(
-      m, (std::string("VariableView_") + suffix).c_str(), py::buffer_protocol())
-      .def_buffer([](detail::VariableView<Tag> &self) {
-        // Note: Currently this always triggers copy-on-write ---
-        // py::buffer_info does currently not support the `readonly` flag of the
-        // Python buffer protocol. We can probably get this fixed upstream, see
-        // discussion and sample implementation here:
-        // https://github.com/pybind/pybind11/issues/863.
-        return py::buffer_info(
-            self().template get<Tag>().data(), /* Pointer to buffer */
-            sizeof(typename Tag::type),        /* Size of one scalar */
-            py::format_descriptor<typename Tag::type>::format(), /* Python
-                                                       struct-style format
-                                                       descriptor */
-            self().dimensions().count(), /* Number of dimensions */
-            self().dimensions().shape(), /* Buffer dimensions */
-            detail::numpy_strides<Tag>(
-                self().strides()) /* Strides (in bytes) for each index */
-        );
-      })
-      // Careful: Do not expose setName, setDimensions, and assignment,
-      // otherwise we can break the dataset.
-      .def_property_readonly("dimensions",
+void declare_PyVariableView(py::module &m, const std::string &suffix) {
+  auto view = PyVariableView_maybe_buffer_protocol<Tag>::make(m, suffix);
+  // Careful: Do not expose setName, setDimensions, and assignment,
+  // otherwise we can break the dataset.
+  view.def_property_readonly("dimensions",
                              [](const detail::VariableView<Tag> &self) {
                                return self().dimensions();
                              })
@@ -347,44 +408,9 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
                slice = slice(item);
              return slice;
            })
-      .def("__setitem__", &detail::setVariableSlice<Tag>)
-      .def("__setitem__", &detail::setVariableSliceRange<Tag>)
-      .def_property(
-          "numpy",
-          [](py::object &obj) {
-            auto &view = obj.cast<detail::VariableView<Tag> &>();
-            auto array = py::array_t<typename Tag::type>{
-                view().dimensions().shape(),
-                detail::numpy_strides<Tag>(view().strides()),
-                view().template get<const Tag>().data(), obj};
-            // See https://github.com/pybind/pybind11/issues/481.
-            reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())->flags &=
-                ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-            return array;
-          },
-          [](py::object &obj, const py::array_t<typename Tag::type> &data) {
-            auto &view = obj.cast<detail::VariableView<Tag> &>();
-            py::array_t<typename Tag::type>{
-                view().dimensions().shape(),
-                detail::numpy_strides<Tag>(view().strides()),
-                view().template get<Tag>().data(), obj} = data;
-          })
-      .def_property(
-          "numpy_mutable",
-          [](py::object &obj) {
-            auto &view = obj.cast<detail::VariableView<Tag> &>();
-            return py::array_t<typename Tag::type>{
-                view().dimensions().shape(),
-                detail::numpy_strides<Tag>(view().strides()),
-                view().template get<Tag>().data(), obj};
-          },
-          [](py::object &obj, const py::array_t<typename Tag::type> &data) {
-            auto &view = obj.cast<detail::VariableView<Tag> &>();
-            py::array_t<typename Tag::type>{
-                view().dimensions().shape(),
-                detail::numpy_strides<Tag>(view().strides()),
-                view().template get<Tag>().data(), obj} = data;
-          });
+      .def_property_readonly("data", [](detail::VariableView<Tag> &self) {
+        return self().template get<Tag>();
+      });
 }
 
 PYBIND11_MODULE(dataset, m) {
@@ -418,6 +444,9 @@ PYBIND11_MODULE(dataset, m) {
   declare_span<const double>(m, "double_const");
   declare_span<const std::string>(m, "string_const");
 
+  declare_VariableView<double>(m, "double");
+  declare_VariableView<std::string>(m, "string");
+
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
       .def("__repr__", &detail::format)
@@ -427,11 +456,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("size",
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
 
-  declare_VariableView<Data::Value>(m, "DataValue");
-  declare_VariableView<Coord::X>(m, "CoordX");
-  declare_VariableView<Coord::Y>(m, "CoordY");
-  declare_VariableView<Coord::Z>(m, "CoordZ");
-  //declare_VariableView<Coord::RowLabel>(m, "CoordRowLabel");
+  declare_PyVariableView<Data::Value>(m, "DataValue");
+  declare_PyVariableView<Coord::X>(m, "CoordX");
+  declare_PyVariableView<Coord::Y>(m, "CoordY");
+  declare_PyVariableView<Coord::Z>(m, "CoordZ");
+  declare_PyVariableView<Coord::RowLabel>(m, "CoordRowLabel");
 
   py::class_<Variable>(m, "Variable")
       .def(py::init(&detail::makeVariable<detail::PythonCoord::Mask>))

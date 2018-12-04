@@ -89,6 +89,13 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(self.dataset.dimensions().size(Dim.Z), 4)
 
     def test_data(self):
+        self.assertEqual(len(self.dataset[Coord.X].data), 2)
+        self.assertSequenceEqual(self.dataset[Coord.X].data, [0,1])
+        # `data` property provides a flat view
+        self.assertEqual(len(self.dataset[Data.Value, "data1"].data), 24)
+        self.assertSequenceEqual(self.dataset[Data.Value, "data1"].data, range(24))
+
+    def test_numpy_data(self):
         np.testing.assert_array_equal(self.dataset[Coord.X].numpy, self.reference_x)
         np.testing.assert_array_equal(self.dataset[Coord.Y].numpy, self.reference_y)
         np.testing.assert_array_equal(self.dataset[Coord.Z].numpy, self.reference_z)
@@ -247,7 +254,7 @@ class TestDatasetExamples(unittest.TestCase):
     def test_table_example(self):
         table = Dataset()
         table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
-        #self.assertEqual(table[Coord.RowLabel].numpy[0], 'a')
+        self.assertSequenceEqual(table[Coord.RowLabel].data, ['a', 'bb', 'ccc', 'dddd'])
         table[Data.Value, "col1"] = ([Dim.Row], [3,2,1,0])
         table[Data.Value, "col2"] = ([Dim.Row], np.arange(4))
         self.assertEqual(len(table), 3)
