@@ -42,6 +42,24 @@ class TestDataset(unittest.TestCase):
         self.assertFalse((Data.Value, "data3") in view)
         self.assertFalse((Data.Value, "data4") in view)
 
+    def test_delitem(self):
+        dataset = Dataset()
+        dataset[Data.Value, "data"] = ([Dim.Z, Dim.Y, Dim.X], (1,2,3))
+        self.assertTrue((Data.Value, "data") in dataset)
+        self.assertEqual(len(dataset.dimensions()), 3)
+        del dataset[Data.Value, "data"]
+        self.assertFalse((Data.Value, "data") in dataset)
+        self.assertEqual(len(dataset.dimensions()), 0)
+
+        dataset[Data.Value, "data"] = ([Dim.Z, Dim.Y, Dim.X], (1,2,3))
+        dataset[Coord.X] = ([Dim.X], np.arange(3))
+        del dataset[Data.Value, "data"]
+        self.assertFalse((Data.Value, "data") in dataset)
+        self.assertEqual(len(dataset.dimensions()), 1)
+        del dataset[Coord.X]
+        self.assertFalse(Coord.X in dataset)
+        self.assertEqual(len(dataset.dimensions()), 0)
+
     def test_insert_default_init(self):
         d = Dataset()
         d[Data.Value, "data1"] = ((Dim.Z, Dim.Y, Dim.X), (4,3,2))

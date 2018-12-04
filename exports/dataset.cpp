@@ -50,6 +50,16 @@ bool contains(const T &self,
   return self.contains(tag<Tag>, std::get<const std::string &>(key));
 }
 
+template <class Tag> void eraseUnnamed(Dataset &self, const Tag) {
+  self.erase(tag<Tag>);
+}
+
+template <class Tag>
+void erase(Dataset &self,
+           const std::tuple<const Tag, const std::string &> &key) {
+  self.erase(tag<Tag>, std::get<const std::string &>(key));
+}
+
 template <class Tag>
 void insertCoord(Dataset &self, const Tag,
                  const std::tuple<const std::vector<Dim> &,
@@ -395,6 +405,10 @@ PYBIND11_MODULE(dataset, m) {
       .def("__contains__", detail::containsUnnamed<Coord::Y, Dataset>)
       .def("__contains__", detail::containsUnnamed<Coord::Z, Dataset>)
       .def("__contains__", detail::contains<Data::Value, Dataset>)
+      .def("__delitem__", detail::eraseUnnamed<Coord::X>)
+      .def("__delitem__", detail::eraseUnnamed<Coord::Y>)
+      .def("__delitem__", detail::eraseUnnamed<Coord::Z>)
+      .def("__delitem__", detail::erase<Data::Value>)
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
