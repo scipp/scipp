@@ -144,8 +144,9 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
   const gsl::index index = find(self, tag_id<Tag>, key.second);
   const auto &dims = self[index].dimensions();
   py::buffer_info info = data.request();
-  if (!std::equal(info.shape.begin(), info.shape.end(), dims.shape().begin(),
-                  dims.shape().end()))
+  const auto &shape = dims.shape();
+  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
+                  shape.end()))
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
@@ -163,8 +164,9 @@ void setVariableSlice(const VariableView<Tag> &self,
 
   const auto &dims = slice().dimensions();
   py::buffer_info info = data.request();
-  if (!std::equal(info.shape.begin(), info.shape.end(), dims.shape().begin(),
-                  dims.shape().end()))
+  const auto &shape = dims.shape();
+  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
+                  shape.end()))
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
@@ -181,8 +183,9 @@ void setVariableSliceRange(const VariableView<Tag> &self,
 
   const auto &dims = slice().dimensions();
   py::buffer_info info = data.request();
-  if (!std::equal(info.shape.begin(), info.shape.end(), dims.shape().begin(),
-                  dims.shape().end()))
+  const auto &shape = dims.shape();
+  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
+                  shape.end()))
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 

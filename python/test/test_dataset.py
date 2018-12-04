@@ -121,6 +121,8 @@ class TestDataset(unittest.TestCase):
                 np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z:z+delta,:])
 
     def test_numpy_interoperable(self):
+        # TODO: Need also __setitem__ with view.
+        # self.dataset[Data.Value, 'data2'] = self.dataset[Data.Value, 'data1']
         self.dataset[Data.Value, 'data2'] = np.exp(self.dataset[Data.Value, 'data1'])
         np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, np.exp(self.reference_data1))
         # Restore original value.
