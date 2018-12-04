@@ -60,6 +60,21 @@ struct PythonCoord {
   };
 };
 
+template <class Tag>
+Variable makeVariable(const Tag, const std::vector<Dim> &labels,
+                      py::array_t<typename Tag::type::type> &data) {
+  const py::buffer_info info = data.request();
+  if (info.ndim != labels.size())
+    throw std::runtime_error(
+        "Number of dimensions tags does not match shape of data.");
+  Dimensions dims;
+  for (gsl::index i = labels.size() - 1; i >= 0; --i)
+    dims.add(labels[i], info.shape[i]);
+
+  auto *ptr = (typename Tag::type::type *)info.ptr;
+  return makeVariable<const typename Tag::type>(dims, ptr, ptr + dims.volume());
+}
+
 std::string format(const Dimensions &dims) {
   std::string out = "Dimensions = " + dataset::to_string(dims);
   return out;
@@ -389,7 +404,13 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<Coord::Y>(m, "CoordY");
   declare_VariableView<Coord::Z>(m, "CoordZ");
 
-  py::class_<Variable>(m, "Variable");
+  py::class_<Variable>(m, "Variable")
+      .def(py::init(&detail::makeVariable<detail::PythonCoord::X>))
+      .def(py::init(&detail::makeVariable<detail::PythonData::Value>))
+      .def(py::init<const VariableSlice<Variable> &>())
+      .def_property("name", &Variable::name, &Variable::setName)
+      .def("dimensions", &Variable::dimensions);
+
   py::class_<Slice<Dataset>>(m, "DatasetView")
       .def("__len__", &Slice<Dataset>::size)
       .def("__contains__", &Slice<Dataset>::contains, py::arg("tag"),
