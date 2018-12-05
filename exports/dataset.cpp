@@ -573,6 +573,10 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__", detail::getData<detail::PythonData::Value, Dataset>)
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
+      // Careful: The order of overloads is really important here, otherwise
+      // Slice<Dataset> matches the overload below for py::array_t. I have not
+      // understood all details of this yet though. See also
+      // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index,
               const Slice<Dataset> &other) {
