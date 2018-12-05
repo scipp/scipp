@@ -222,6 +222,16 @@ template <class Tag> struct VariableView : public VariableSlice<Variable> {
     return {copy.operator()(dim, begin, end)};
   }
 
+  VariableView operator+=(const VariableSlice<Variable> &other) {
+    return VariableView(VariableSlice<Variable>::operator+=(other));
+  }
+  VariableView operator-=(const VariableSlice<Variable> &other) {
+    return VariableView(VariableSlice<Variable>::operator-=(other));
+  }
+  VariableView operator*=(const VariableSlice<Variable> &other) {
+    return VariableView(VariableSlice<Variable>::operator*=(other));
+  }
+
 private:
   using VariableSlice<Variable>::operator();
 };
@@ -423,9 +433,13 @@ void declare_PyVariableView(py::module &m, const std::string &suffix) {
                slice = slice.doSlice(item);
              return slice;
            })
-      .def_property_readonly("data", [](detail::VariableView<Tag> &self) {
-        return self.template get<Tag>();
-      });
+      .def_property_readonly("data",
+                             [](detail::VariableView<Tag> &self) {
+                               return self.template get<Tag>();
+                             })
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
 }
 
 PYBIND11_MODULE(dataset, m) {

@@ -826,8 +826,8 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(
     const VariableSlice<Variable> &);
 
 template <class T>
-VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::operator+=(const T &other) {
+VariableSlice<Variable> &VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator+=(const T &other) {
   if (base().unit() != other.unit())
     throw std::runtime_error("Cannot add Variables: Units do not match.");
   if (!base().valueTypeIs<Data::Events>() &&
@@ -860,22 +860,22 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::operator+=(const T &other) {
     }
   }
 
-  return *this;
+  return base();
 }
 
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator+=(const Variable &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator+=(const VariableSlice<const Variable> &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator+=(const VariableSlice<Variable> &);
 
 template <class T>
-VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::operator-=(const T &other) {
+VariableSlice<Variable> &VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator-=(const T &other) {
   if (base().unit() != other.unit())
     throw std::runtime_error("Cannot subtract Variables: Units do not match.");
   if (base().dimensions().contains(other.dimensions())) {
@@ -887,22 +887,22 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::operator-=(const T &other) {
         "Cannot subtract Variables: Dimensions do not match.");
   }
 
-  return *this;
+  return base();
 }
 
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator-=(const Variable &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator-=(const VariableSlice<const Variable> &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator-=(const VariableSlice<Variable> &);
 
 template <class T>
-VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::operator*=(const T &other) {
+VariableSlice<Variable> &VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator*=(const T &other) {
   if (!base().dimensions().contains(other.dimensions()))
     throw std::runtime_error(
         "Cannot multiply Variables: Dimensions do not match.");
@@ -911,16 +911,16 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::operator*=(const T &other) {
   // setUnit is catching bad cases of changing units (if view is just a slice).
   base().setUnit(base().unit() * other.unit());
   base().data() *= other.data();
-  return *this;
+  return base();
 }
 
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator*=(const Variable &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator*=(const VariableSlice<const Variable> &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
+template VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::
 operator*=(const VariableSlice<Variable> &);
 

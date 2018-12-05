@@ -266,15 +266,9 @@ template <> class VariableSliceMutableMixin<VariableSlice<Variable>> {
 public:
   template <class T>
   VariableSliceMutableMixin<VariableSlice<Variable>> &copyFrom(const T &other);
-  template <class T>
-  VariableSliceMutableMixin<VariableSlice<Variable>> &
-  operator+=(const T &other);
-  template <class T>
-  VariableSliceMutableMixin<VariableSlice<Variable>> &
-  operator-=(const T &other);
-  template <class T>
-  VariableSliceMutableMixin<VariableSlice<Variable>> &
-  operator*=(const T &other);
+  template <class T> VariableSlice<Variable> &operator+=(const T &other);
+  template <class T> VariableSlice<Variable> &operator-=(const T &other);
+  template <class T> VariableSlice<Variable> &operator*=(const T &other);
 
   void setUnit(const Unit &unit);
 

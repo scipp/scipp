@@ -276,5 +276,12 @@ class TestDatasetExamples(unittest.TestCase):
 
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,5,7,8]))
 
+        table[Data.Value, "exp1"] = ([Dim.Row], np.exp(table[Data.Value, "col1"]))
+        table[Data.Value, "exp1"] -= table[Data.Value, "col1"]
+        np.testing.assert_array_equal(table[Data.Value, "exp1"].numpy, np.exp(np.array([3,5,7,8]))-np.array([3,5,7,8]))
+
+        table += table
+        self.assertSequenceEqual(table[Coord.RowLabel].data, ['a', 'bb', 'bb', 'ccc'])
+
 if __name__ == '__main__':
     unittest.main()
