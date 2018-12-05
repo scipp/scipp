@@ -34,8 +34,10 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
   mutable_span_methods<T>::add(span);
 }
 
-template <class T> void declare_VariableView(py::module &m, const std::string &suffix) {
-  py::class_<VariableView<T>> view(m, (std::string("VariableView_") + suffix).c_str());
+template <class T>
+void declare_VariableView(py::module &m, const std::string &suffix) {
+  py::class_<VariableView<T>> view(
+      m, (std::string("VariableView_") + suffix).c_str());
   view.def("__getitem__", &VariableView<T>::operator[])
       .def("__len__", &VariableView<T>::size)
       .def("__iter__", [](const VariableView<T> &self) {
@@ -523,7 +525,10 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            detail::getData<detail::PythonData::Value, Slice<Dataset>>)
       .def("__setitem__",
-           detail::setData<detail::PythonData::Value, Slice<Dataset>>);
+           detail::setData<detail::PythonData::Value, Slice<Dataset>>)
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
@@ -563,10 +568,21 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__", detail::getCoord<detail::PythonCoord::X, Dataset>)
       .def("__getitem__", detail::getCoord<detail::PythonCoord::Y, Dataset>)
       .def("__getitem__", detail::getCoord<detail::PythonCoord::Z, Dataset>)
-      .def("__getitem__", detail::getCoord<detail::PythonCoord::RowLabel, Dataset>)
+      .def("__getitem__",
+           detail::getCoord<detail::PythonCoord::RowLabel, Dataset>)
       .def("__getitem__", detail::getData<detail::PythonData::Value, Dataset>)
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
+      .def("__setitem__",
+           [](Dataset &self, const std::tuple<Dim, gsl::index> &index,
+              const Slice<Dataset> &other) {
+             auto slice =
+                 self(std::get<Dim>(index), std::get<gsl::index>(index));
+             if (slice == other)
+               return;
+             throw std::runtime_error("Non-self-assignment of Dataset slices "
+                                      "is not implemented yet.\n");
+           })
       .def("__setitem__", detail::setData<detail::PythonData::Value, Dataset>)
       .def("__setitem__", detail::insertCoord<detail::PythonCoord::X>)
       .def("__setitem__", detail::insertCoord<detail::PythonCoord::Y>)
@@ -577,8 +593,13 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insertDefaultInit<detail::PythonData::Value>)
       .def("__setitem__",
            detail::insertDefaultInit<detail::PythonData::Variance>)
+      // Note: As it is this will always implicitly convert a RHS view into a
+      // Dataset, i.e., makes a copy. Need to expose the operator overloads for
+      // views as well.
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())

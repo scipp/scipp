@@ -245,9 +245,9 @@ template <class Base> class SliceMutableMixin {};
 
 template <> class SliceMutableMixin<Slice<Dataset>> {
 public:
-  template <class T> Slice<Dataset> &operator+=(const T &other);
-  template <class T> Slice<Dataset> &operator-=(const T &other);
-  template <class T> Slice<Dataset> &operator*=(const T &other);
+  template <class T> Slice<Dataset> operator+=(const T &other);
+  template <class T> Slice<Dataset> operator-=(const T &other);
+  template <class T> Slice<Dataset> operator*=(const T &other);
 
 private:
   VariableSlice<Variable> get(const gsl::index i);
@@ -303,6 +303,8 @@ public:
     slice.m_slices.emplace_back(dim, begin, end);
     if (end == -1) {
       for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
+        // TODO Should all coordinates with matching dimension be removed, or
+        // only dimension-coordinates?
         if (coordDimension[m_dataset[*it].type()] == dim)
           it = slice.m_indices.erase(it);
         else
@@ -345,6 +347,13 @@ public:
   dataset_slice_iterator<const Dataset> end() const {
     return {dataset(), m_indices, m_slices,
             static_cast<gsl::index>(m_indices.size())};
+  }
+
+  bool operator==(const Slice<D> &other) const {
+    if ((m_dataset == other.m_dataset) && (m_indices == other.m_indices) &&
+        (m_slices == other.m_slices))
+      return true;
+    return std::equal(begin(), end(), other.begin(), other.end());
   }
 
 private:

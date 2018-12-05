@@ -267,6 +267,7 @@ template <> constexpr bool is_dimension_coordinate<Coord::Y> = true;
 template <> constexpr bool is_dimension_coordinate<Coord::Z> = true;
 template <>
 constexpr bool is_dimension_coordinate<Coord::SpectrumNumber> = true;
+template <> constexpr bool is_dimension_coordinate<Coord::RowLabel> = true;
 
 template <class Tag> constexpr Dimension coordinate_dimension = Dim::Invalid;
 template <> constexpr Dimension coordinate_dimension<Coord::Tof> = Dim::Tof;
@@ -275,6 +276,8 @@ template <> constexpr Dimension coordinate_dimension<Coord::Y> = Dim::Y;
 template <> constexpr Dimension coordinate_dimension<Coord::Z> = Dim::Z;
 template <>
 constexpr Dimension coordinate_dimension<Coord::SpectrumNumber> = Dim::Spectrum;
+template <>
+constexpr Dimension coordinate_dimension<Coord::RowLabel> = Dim::Row;
 
 template <class... Ts>
 constexpr std::array<bool, std::tuple_size<Tags>::value>

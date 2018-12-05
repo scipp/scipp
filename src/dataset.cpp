@@ -407,17 +407,17 @@ template bool Slice<const Dataset>::contains(const Tag,
                                              const std::string &) const;
 
 template <class T>
-Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator+=(const T &other) {
+Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::operator+=(const T &other) {
   return plus_equals(base(), other);
 }
 
 template <class T>
-Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
+Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
   return minus_equals(base(), other);
 }
 
 template <class T>
-Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator*=(const T &other) {
+Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::operator*=(const T &other) {
   return times_equals(base(), other);
 }
 
@@ -454,23 +454,23 @@ template Dataset &Dataset::operator*=(const Dataset &);
 template Dataset &Dataset::operator*=(const Slice<const Dataset> &);
 template Dataset &Dataset::operator*=(const Slice<Dataset> &);
 
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator+=(const Dataset &);
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator+=(const Slice<const Dataset> &);
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator+=(const Slice<Dataset> &);
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator-=(const Dataset &);
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator-=(const Slice<const Dataset> &);
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator-=(const Slice<Dataset> &);
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator*=(const Dataset &);
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator*=(const Slice<const Dataset> &);
-template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
 operator*=(const Slice<Dataset> &);
 
 void Dataset::setSlice(const Dataset &slice, const Dimension dim,

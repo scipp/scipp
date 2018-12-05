@@ -271,5 +271,10 @@ class TestDatasetExamples(unittest.TestCase):
         table = sort(table, Coord.RowLabel)
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,2,2,1]))
 
+        for i in range(1, len(table[Coord.RowLabel])):
+            table[Dim.Row, i] += table[Dim.Row, i-1]
+
+        np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,5,7,8]))
+
 if __name__ == '__main__':
     unittest.main()
