@@ -155,9 +155,9 @@ public:
   gsl::index findUnique(const Tag tag) const;
 
   bool operator==(const Dataset &other) const;
-  Dataset &operator+=(const Dataset &other);
+  template <class T> Dataset &operator+=(const T &other);
   template <class T> Dataset &operator-=(const T &other);
-  Dataset &operator*=(const Dataset &other);
+  template <class T> Dataset &operator*=(const T &other);
   void setSlice(const Dataset &slice, const Dimension dim,
                 const gsl::index index);
 
@@ -167,8 +167,6 @@ private:
   // modified in a way that would break the dataset.
   Variable &get(gsl::index i) { return m_variables[i]; }
 
-  gsl::index count(const uint16_t id) const;
-  gsl::index count(const uint16_t id, const std::string &name) const;
   void mergeDimensions(const Dimensions &dims, const Dim coordDim);
 
   // TODO These dimensions do not imply any ordering, should use another class
@@ -176,6 +174,23 @@ private:
   Dimensions m_dimensions;
   boost::container::small_vector<Variable, 4> m_variables;
 };
+
+template <class T> gsl::index count(const T &dataset, const uint16_t id) {
+  gsl::index n = 0;
+  for (const auto &item : dataset)
+    if (item.type() == id)
+      ++n;
+  return n;
+}
+
+template <class T>
+gsl::index count(const T &dataset, const uint16_t id, const std::string &name) {
+  gsl::index n = 0;
+  for (const auto &item : dataset)
+    if (item.type() == id && item.name() == name)
+      ++n;
+  return n;
+}
 
 template <class Value>
 class dataset_slice_iterator
@@ -230,7 +245,9 @@ template <class Base> class SliceMutableMixin {};
 
 template <> class SliceMutableMixin<Slice<Dataset>> {
 public:
+  template <class T> Slice<Dataset> &operator+=(const T &other);
   template <class T> Slice<Dataset> &operator-=(const T &other);
+  template <class T> Slice<Dataset> &operator*=(const T &other);
 
 private:
   VariableSlice<Variable> get(const gsl::index i);

@@ -713,9 +713,14 @@ template bool Variable::operator==(const VariableSlice<Variable> &other) const;
 template bool Variable::
 operator==(const VariableSlice<const Variable> &other) const;
 
-bool Variable::operator!=(const Variable &other) const {
+template <class T> bool Variable::operator!=(const T &other) const {
   return !(*this == other);
 }
+
+template bool Variable::operator!=(const Variable &other) const;
+template bool Variable::operator!=(const VariableSlice<Variable> &other) const;
+template bool Variable::
+operator!=(const VariableSlice<const Variable> &other) const;
 
 template <class T> Variable &Variable::operator+=(const T &other) {
   // Addition with different Variable type is supported, mismatch of underlying
@@ -779,6 +784,21 @@ template <class T> Variable &Variable::operator-=(const T &other) {
 template Variable &Variable::operator-=(const Variable &);
 template Variable &Variable::operator-=(const VariableSlice<const Variable> &);
 template Variable &Variable::operator-=(const VariableSlice<Variable> &);
+
+template <class T> Variable &Variable::operator*=(const T &other) {
+  if (!dimensions().contains(other.dimensions()))
+    throw std::runtime_error(
+        "Cannot multiply Variables: Dimensions do not match.");
+  if (valueTypeIs<Data::Events>())
+    throw std::runtime_error("Multiplication of events lists not implemented.");
+  m_unit = unit() * other.unit();
+  m_object.access() *= other.data();
+  return *this;
+}
+
+template Variable &Variable::operator*=(const Variable &);
+template Variable &Variable::operator*=(const VariableSlice<const Variable> &);
+template Variable &Variable::operator*=(const VariableSlice<Variable> &);
 
 template <class T>
 VariableSliceMutableMixin<VariableSlice<Variable>> &
@@ -870,6 +890,40 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::operator-=(const T &other) {
   return *this;
 }
 
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator-=(const Variable &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator-=(const VariableSlice<const Variable> &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator-=(const VariableSlice<Variable> &);
+
+template <class T>
+VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::operator*=(const T &other) {
+  if (!base().dimensions().contains(other.dimensions()))
+    throw std::runtime_error(
+        "Cannot multiply Variables: Dimensions do not match.");
+  if (base().valueTypeIs<Data::Events>())
+    throw std::runtime_error("Multiplication of events lists not implemented.");
+  // setUnit is catching bad cases of changing units (if view is just a slice).
+  base().setUnit(base().unit() * other.unit());
+  base().data() *= other.data();
+  return *this;
+}
+
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator*=(const Variable &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator*=(const VariableSlice<const Variable> &);
+template VariableSliceMutableMixin<VariableSlice<Variable>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::
+operator*=(const VariableSlice<Variable> &);
+
 const VariableSlice<const Variable> &
 VariableSliceMutableMixin<VariableSlice<const Variable>>::base() const {
   return static_cast<const VariableSlice<const Variable> &>(*this);
@@ -889,16 +943,6 @@ VariableSlice<Variable> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::base() {
   return static_cast<VariableSlice<Variable> &>(*this);
 }
-
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
-operator-=(const Variable &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
-operator-=(const VariableSlice<const Variable> &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
-operator-=(const VariableSlice<Variable> &);
 
 template <class V>
 template <class T>
@@ -930,6 +974,35 @@ operator==(const VariableSlice<const Variable> &) const;
 template bool VariableSlice<Variable>::
 operator==(const VariableSlice<const Variable> &) const;
 
+template <class V>
+template <class T>
+bool VariableSlice<V>::operator!=(const T &other) const {
+  return !(*this == other);
+}
+
+template bool VariableSlice<const Variable>::operator!=(const Variable &) const;
+template bool VariableSlice<Variable>::operator!=(const Variable &) const;
+template bool VariableSlice<const Variable>::
+operator!=(const VariableSlice<Variable> &) const;
+template bool VariableSlice<Variable>::
+operator!=(const VariableSlice<Variable> &) const;
+template bool VariableSlice<const Variable>::
+operator!=(const VariableSlice<const Variable> &) const;
+template bool VariableSlice<Variable>::
+operator!=(const VariableSlice<const Variable> &) const;
+
+void VariableSliceMutableMixin<VariableSlice<Variable>>::setUnit(
+    const Unit &unit) {
+  // TODO Should we forbid setting the unit altogether? I think it is useful in
+  // particular since views onto subsets of dataset do not imply slicing of
+  // variables but return slice views.
+  if ((base().unit() != unit) &&
+      (base().dimensions() != base().m_variable->dimensions()))
+    throw std::runtime_error("Partial view on data of variable cannot be used "
+                             "to change the unit.\n");
+  base().m_variable->setUnit(unit);
+}
+
 template <class T>
 const VariableView<const T> &
 VariableSliceMutableMixin<VariableSlice<const Variable>>::cast() const {
@@ -940,9 +1013,12 @@ VariableSliceMutableMixin<VariableSlice<const Variable>>::cast() const {
 
 template const VariableView<const double> &
 VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<double>() const;
+template const VariableView<const std::vector<std::string>> &
+VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<
+    std::vector<std::string>>() const;
 
 template <class T>
-const VariableView<const T>
+VariableView<const T>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const {
   // Make a const view from the mutable one.
   return {dynamic_cast<const VariableModel<VariableView<T>> &>(base().data())
@@ -957,23 +1033,16 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::cast() {
       .m_model;
 }
 
-template const VariableView<const double>
+template VariableView<const double>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<double> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
 template const VariableView<std::string> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
-
-Variable &Variable::operator*=(const Variable &other) {
-  if (!dimensions().contains(other.dimensions()))
-    throw std::runtime_error(
-        "Cannot multiply Variables: Dimensions do not match.");
-  if (valueTypeIs<Data::Events>())
-    throw std::runtime_error("Multiplication of events lists not implemented.");
-  m_unit = m_unit * other.m_unit;
-  m_object.access() *= *other.m_object;
-  return *this;
-}
+template VariableView<const std::vector<std::string>>
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
+template const VariableView<std::vector<std::string>> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
 
 void Variable::setSlice(const Variable &slice, const Dimension dim,
                         const gsl::index index) {

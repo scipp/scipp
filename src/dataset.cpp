@@ -40,7 +40,7 @@ Slice<Dataset> Dataset::operator()(const Dim dim, const gsl::index begin,
 }
 
 void Dataset::insert(Variable variable) {
-  if (variable.isCoord() && count(variable.type()))
+  if (variable.isCoord() && count(*this, variable.type()))
     throw std::runtime_error("Attempt to insert duplicate coordinate.");
   if (!variable.isCoord()) {
     for (const auto &item : m_variables)
@@ -100,22 +100,6 @@ Dataset Dataset::extract(const std::string &name) {
 
 gsl::index Dataset::find(const uint16_t id, const std::string &name) const {
   return ::find(*this, id, name);
-}
-
-gsl::index Dataset::count(const uint16_t id) const {
-  gsl::index n = 0;
-  for (auto &item : m_variables)
-    if (item.type() == id)
-      ++n;
-  return n;
-}
-
-gsl::index Dataset::count(const uint16_t id, const std::string &name) const {
-  gsl::index n = 0;
-  for (auto &item : m_variables)
-    if (item.type() == id && item.name() == name)
-      ++n;
-  return n;
 }
 
 gsl::index Dataset::findUnique(const Tag tag) const {
@@ -190,20 +174,22 @@ bool Dataset::operator==(const Dataset &other) const {
          (m_variables == other.m_variables);
 }
 
-Dataset &Dataset::operator+=(const Dataset &other) {
-  for (const auto &var2 : other.m_variables) {
+template <class T1, class T2> T1 &plus_equals(T1 &dataset, const T2 &other) {
+  for (const auto &var2 : other) {
     // Handling of missing variables:
     // - Skip if this contains more (automatic by having enclosing loop over
     //   other instead of *this).
     // - Fail if other contains more.
     gsl::index index;
     try {
-      index = find(var2.type(), var2.name());
+      index = find(dataset, var2.type(), var2.name());
     } catch (const std::runtime_error &) {
       throw std::runtime_error("Right-hand-side in addition contains variable "
                                "that is not present in left-hand-side.");
     }
-    auto &var1 = m_variables[index];
+    using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
+                                      Variable &, VariableSlice<Variable>>;
+    VarRef var1 = detail::makeAccess(dataset)[index];
     if (var1.isCoord()) {
       // Coordinate variables must match
       // Strictly speaking we should allow "equivalent" coordinates, i.e., match
@@ -215,13 +201,13 @@ Dataset &Dataset::operator+=(const Dataset &other) {
       // beneficial would depend on the shared reference count in var1 and var2:
       // var1 = var2;
     } else if (var1.isData()) {
-      if (var1.valueTypeIs<Data::History>()) {
-        auto hists = var1.get<Data::History>();
+      if (var1.template valueTypeIs<Data::History>()) {
+        auto hists = var1.template get<Data::History>();
         if (hists.size() != 1)
           throw std::runtime_error("TODO: History should be 0-dimensions. "
                                    "Flatten it? Prevent creation? Do we need "
                                    "history with dimensions?");
-        const auto &hist2 = var2.get<const Data::History>()[0];
+        const auto &hist2 = var2.template get<const Data::History>()[0];
         const gsl::index size = hist2.size();
         for (gsl::index i = 0; i < size; ++i)
           hists[0].push_back("other." + hist2[i]);
@@ -237,7 +223,7 @@ Dataset &Dataset::operator+=(const Dataset &other) {
         var1 += var2;
     }
   }
-  return *this;
+  return dataset;
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
@@ -299,8 +285,116 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
   return dataset;
 }
 
+namespace aligned {
+// Helpers to define a pointer to aligned memory.
+// alignas cannot be used like this, e.g., clang rejects it. Need to find
+// another way.
+// template <class T> using type alignas(32) = T;
+template <class T> using type = T;
+template <class T> using ptr = type<T> *;
+
+// Using restrict does not seem to help much?
+#define RESTRICT __restrict
+void multiply(const gsl::index size, ptr<double> RESTRICT v1,
+              ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
+              ptr<const double> RESTRICT e2) {
+  for (gsl::index i = 0; i < size; ++i) {
+    e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
+    v1[i] *= v2[i];
+  }
+}
+} // namespace aligned
+
+template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
+  // See operator+= for additional comments.
+  for (const auto &var2 : other) {
+    gsl::index index;
+    try {
+      index = find(dataset, var2.type(), var2.name());
+    } catch (const std::runtime_error &) {
+      throw std::runtime_error("Right-hand-side in addition contains variable "
+                               "that is not present in left-hand-side.");
+    }
+    if (var2.type() == tag_id<Data::Variance>) {
+      try {
+        find(dataset, tag_id<Data::Value>, var2.name());
+        find(other, tag_id<Data::Value>, var2.name());
+      } catch (const std::runtime_error &) {
+        throw std::runtime_error("Cannot multiply datasets that contain a "
+                                 "variance but no corresponding value.");
+      }
+    }
+    using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
+                                      Variable &, VariableSlice<Variable>>;
+    VarRef var1 = detail::makeAccess(dataset)[index];
+    if (var1.isCoord()) {
+      // Coordinate variables must match
+      if (!(var1 == var2))
+        throw std::runtime_error(
+            "Coordinates of datasets do not match. Cannot perform addition");
+    } else if (var1.isData()) {
+      // Data variables are added
+      if (var2.type() == tag_id<Data::Value>) {
+        if (count(dataset, tag_id<Data::Variance>, var2.name()) !=
+            count(other, tag_id<Data::Variance>, var2.name()))
+          throw std::runtime_error("Either both or none of the operands must "
+                                   "have a variance for their values.");
+        if (count(dataset, tag_id<Data::Variance>, var2.name()) != 0) {
+          auto error_index1 =
+              find(dataset, tag_id<Data::Variance>, var2.name());
+          auto error_index2 = find(other, tag_id<Data::Variance>, var2.name());
+          VarRef error1 = detail::makeAccess(dataset)[error_index1];
+          const auto &error2 = other[error_index2];
+          if ((var1.dimensions() == var2.dimensions()) &&
+              (var1.dimensions() == error1.dimensions()) &&
+              (var1.dimensions() == error2.dimensions())) {
+            // Optimization if all dimensions match, avoiding allocation of
+            // temporaries and redundant streaming from memory of large array.
+            error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
+                           var1.unit() * var1.unit() * error2.unit());
+            var1.setUnit(var1.unit() * var2.unit());
+
+            auto v1 = var1.template get<Data::Value>();
+            const auto v2 = var2.template get<const Data::Value>();
+            auto e1 = error1.template get<Data::Value>();
+            const auto e2 = error2.template get<const Data::Value>();
+            aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
+                              e2.data());
+          } else {
+            // TODO Do we need to write this differently if the two operands are
+            // the same? For example,
+            // error1 = error1 * (var2 * var2) + var1 * var1 * error2;
+            error1 *= (var2 * var2);
+            error1 += var1 * var1 * error2;
+            // TODO: Catch errors from unit propagation here and give a better
+            // error message.
+            var1 *= var2;
+          }
+        } else {
+          // No variance found, continue without.
+          var1 *= var2;
+        }
+      } else if (var2.type() == tag_id<Data::Variance>) {
+        // Do nothing, math for variance is done when processing corresponding
+        // value.
+      } else {
+        var1 *= var2;
+      }
+    }
+  }
+  return dataset;
+}
+
+template <class T> Dataset &Dataset::operator+=(const T &other) {
+  return plus_equals(*this, other);
+}
+
 template <class T> Dataset &Dataset::operator-=(const T &other) {
   return minus_equals(*this, other);
+}
+
+template <class T> Dataset &Dataset::operator*=(const T &other) {
+  return times_equals(*this, other);
 }
 
 template <class D>
@@ -313,8 +407,18 @@ template bool Slice<const Dataset>::contains(const Tag,
                                              const std::string &) const;
 
 template <class T>
+Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator+=(const T &other) {
+  return plus_equals(base(), other);
+}
+
+template <class T>
 Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
   return minus_equals(base(), other);
+}
+
+template <class T>
+Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::operator*=(const T &other) {
+  return times_equals(base(), other);
 }
 
 VariableSlice<Variable>
@@ -340,109 +444,34 @@ Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::base() {
   return static_cast<Slice<Dataset> &>(*this);
 }
 
+template Dataset &Dataset::operator+=(const Dataset &);
+template Dataset &Dataset::operator+=(const Slice<const Dataset> &);
+template Dataset &Dataset::operator+=(const Slice<Dataset> &);
 template Dataset &Dataset::operator-=(const Dataset &);
 template Dataset &Dataset::operator-=(const Slice<const Dataset> &);
 template Dataset &Dataset::operator-=(const Slice<Dataset> &);
+template Dataset &Dataset::operator*=(const Dataset &);
+template Dataset &Dataset::operator*=(const Slice<const Dataset> &);
+template Dataset &Dataset::operator*=(const Slice<Dataset> &);
 
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator+=(const Dataset &);
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator+=(const Slice<const Dataset> &);
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator+=(const Slice<Dataset> &);
 template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
 operator-=(const Dataset &);
 template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
 operator-=(const Slice<const Dataset> &);
 template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
 operator-=(const Slice<Dataset> &);
-
-namespace aligned {
-// Helpers to define a pointer to aligned memory.
-// alignas cannot be used like this, e.g., clang rejects it. Need to find
-// another way.
-// template <class T> using type alignas(32) = T;
-template <class T> using type = T;
-template <class T> using ptr = type<T> *;
-
-// Using restrict does not seem to help much?
-#define RESTRICT __restrict
-void multiply(const gsl::index size, ptr<double> RESTRICT v1,
-              ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
-              ptr<const double> RESTRICT e2) {
-  for (gsl::index i = 0; i < size; ++i) {
-    e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
-    v1[i] *= v2[i];
-  }
-}
-} // namespace aligned
-
-Dataset &Dataset::operator*=(const Dataset &other) {
-  // See operator+= for additional comments.
-  for (const auto &var2 : other.m_variables) {
-    gsl::index index;
-    try {
-      index = find(var2.type(), var2.name());
-    } catch (const std::runtime_error &) {
-      throw std::runtime_error("Right-hand-side in addition contains variable "
-                               "that is not present in left-hand-side.");
-    }
-    if (var2.type() == tag_id<Data::Variance>) {
-      try {
-        find(tag_id<Data::Value>, var2.name());
-        other.find(tag_id<Data::Value>, var2.name());
-      } catch (const std::runtime_error &) {
-        throw std::runtime_error("Cannot multiply datasets that contain a "
-                                 "variance but no corresponding value.");
-      }
-    }
-    auto &var1 = m_variables[index];
-    if (var1.isCoord()) {
-      // Coordinate variables must match
-      if (!(var1 == var2))
-        throw std::runtime_error(
-            "Coordinates of datasets do not match. Cannot perform addition");
-    } else if (var1.isData()) {
-      // Data variables are added
-      if (var2.type() == tag_id<Data::Value>) {
-        if (count(tag_id<Data::Variance>, var2.name()) !=
-            other.count(tag_id<Data::Variance>, var2.name()))
-          throw std::runtime_error("Either both or none of the operands must "
-                                   "have a variance for their values.");
-        if (count(tag_id<Data::Variance>, var2.name()) != 0) {
-          auto error_index1 = find(tag_id<Data::Variance>, var2.name());
-          auto error_index2 = other.find(tag_id<Data::Variance>, var2.name());
-          auto &error1 = m_variables[error_index1];
-          auto &error2 = other.m_variables[error_index2];
-          if ((var1.dimensions() == var2.dimensions()) &&
-              (var1.dimensions() == error1.dimensions()) &&
-              (var1.dimensions() == error2.dimensions())) {
-            // Optimization if all dimensions match, avoiding allocation of
-            // temporaries and redundant streaming from memory of large array.
-            error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
-                           var1.unit() * var1.unit() * error2.unit());
-            var1.setUnit(var1.unit() * var2.unit());
-
-            auto v1 = var1.get<Data::Value>();
-            auto v2 = var2.get<const Data::Value>();
-            auto e1 = error1.get<Data::Value>();
-            auto e2 = error2.get<const Data::Value>();
-            aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
-                              e2.data());
-          } else {
-            error1 = error1 * (var2 * var2) + var1 * var1 * error2;
-            // TODO: Catch errors from unit propagation here and give a better
-            // error message.
-            var1 *= var2;
-          }
-        } else {
-          // No variance found, continue without.
-          var1 *= var2;
-        }
-      } else if (var2.type() == tag_id<Data::Variance>) {
-        // Do nothing, math for variance is done when processing corresponding
-        // value.
-      } else {
-        var1 *= var2;
-      }
-    }
-  }
-  return *this;
-}
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator*=(const Dataset &);
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator*=(const Slice<const Dataset> &);
+template Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::
+operator*=(const Slice<Dataset> &);
 
 void Dataset::setSlice(const Dataset &slice, const Dimension dim,
                        const gsl::index index) {
@@ -453,7 +482,7 @@ void Dataset::setSlice(const Dataset &slice, const Dimension dim,
     else
       var1 = var2;
   }
-  if (count(tag_id<Data::History>) == 1)
+  if (count(*this, tag_id<Data::History>) == 1)
     get<Data::History>()[0].push_back("this->setSlice(slice, dim, " +
                                       std::to_string(index) + ");");
 }

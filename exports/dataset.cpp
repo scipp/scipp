@@ -369,6 +369,13 @@ void declare_PyVariableView(py::module &m, const std::string &suffix) {
                              [](const detail::VariableView<Tag> &self) {
                                return self().dimensions();
                              })
+      .def("__len__",
+           [](const detail::VariableView<Tag> &self) {
+             const auto &dims = self().dimensions();
+             if (dims.count() == 0)
+               throw std::runtime_error("len() of unsized object.");
+             return dims.shape()[0];
+           })
       .def_property_readonly("is_coord",
                              [](const detail::VariableView<Tag> &self) {
                                return self().isCoord();

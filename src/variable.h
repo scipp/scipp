@@ -141,10 +141,10 @@ public:
       m_name = std::make_unique<std::string>(name);
   }
   template <class T> bool operator==(const T &other) const;
-  bool operator!=(const Variable &other) const;
+  template <class T> bool operator!=(const T &other) const;
   template <class T> Variable &operator+=(const T &other);
   template <class T> Variable &operator-=(const T &other);
-  Variable &operator*=(const Variable &other);
+  template <class T> Variable &operator*=(const T &other);
   void setSlice(const Variable &slice, const Dimension dim,
                 const gsl::index index);
 
@@ -272,9 +272,16 @@ public:
   template <class T>
   VariableSliceMutableMixin<VariableSlice<Variable>> &
   operator-=(const T &other);
+  template <class T>
+  VariableSliceMutableMixin<VariableSlice<Variable>> &
+  operator*=(const T &other);
+
+  void setUnit(const Unit &unit);
 
 protected:
-  template <class T> const VariableView<const T> cast() const;
+  // Special version creating const view from mutable view. Note that this does
+  // not return a reference but by value.
+  template <class T> VariableView<const T> cast() const;
   template <class T> const VariableView<T> &cast();
 
 private:
@@ -379,6 +386,7 @@ public:
   }
 
   template <class T> bool operator==(const T &other) const;
+  template <class T> bool operator!=(const T &other) const;
 
 private:
   friend class Variable;
