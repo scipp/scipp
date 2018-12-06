@@ -98,7 +98,7 @@ Variable makeVariable(const Tag, const std::vector<Dim> &labels,
 
 template <class Tag>
 Variable makeVariableDefaultInit(const Tag, const std::vector<Dim> &labels,
-                             const py::tuple &shape) {
+                                 const py::tuple &shape) {
   if (shape.size() != labels.size())
     throw std::runtime_error(
         "Number of dimensions tags does not match shape of data.");
@@ -212,44 +212,6 @@ std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
   return strides;
 }
 
-template <class Tag> struct VariableView : public VariableSlice<Variable> {
-  VariableView(const VariableSlice<Variable> &view)
-      : VariableSlice<Variable>(view) {}
-
-  VariableView doSlice(const std::tuple<Dim, const py::slice> &index) const {
-    const Dim dim = std::get<Dim>(index);
-    const auto indices = std::get<const py::slice>(index);
-    size_t start, stop, step, slicelength;
-    const auto size = dimensions().size(dim);
-    if (!indices.compute(size, &start, &stop, &step, &slicelength))
-      throw py::error_already_set();
-    if (step != 1)
-      throw std::runtime_error("Step must be 1");
-    // Bypass some current issues with const-correctness in VariableSlice.
-    auto copy(*this);
-    return {copy.operator()(dim, start, stop)};
-  }
-
-  VariableView doSlice(const Dim dim, const gsl::index begin,
-                       const gsl::index end = -1) const {
-    auto copy(*this);
-    return {copy.operator()(dim, begin, end)};
-  }
-
-  VariableView operator+=(const VariableSlice<Variable> &other) {
-    return VariableView(VariableSlice<Variable>::operator+=(other));
-  }
-  VariableView operator-=(const VariableSlice<Variable> &other) {
-    return VariableView(VariableSlice<Variable>::operator-=(other));
-  }
-  VariableView operator*=(const VariableSlice<Variable> &other) {
-    return VariableView(VariableSlice<Variable>::operator*=(other));
-  }
-
-private:
-  using VariableSlice<Variable>::operator();
-};
-
 // The way the Python exports are written we require non-const references to
 // variables. Note that setting breaking attributes is not exported, so we
 // should be safe.
@@ -282,179 +244,7 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
   double *ptr = (double *)info.ptr;
   std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
-
-template <class Tag>
-void setVariableSlice(const VariableView<Tag> &self,
-                      const std::tuple<Dim, gsl::index> &index,
-                      py::array_t<typename Tag::type> &data) {
-  auto slice = self.doSlice(std::get<Dim>(index), std::get<gsl::index>(index));
-
-  const auto &dims = slice.dimensions();
-  py::buffer_info info = data.request();
-  const auto &shape = dims.shape();
-  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
-                  shape.end()))
-    throw std::runtime_error(
-        "Shape mismatch when setting data from numpy array.");
-
-  auto buf = slice.template get<Tag>();
-  double *ptr = (double *)info.ptr;
-  std::copy(ptr, ptr + dims.volume(), buf.begin());
-}
-
-template <class Tag>
-void setVariableSliceRange(const VariableView<Tag> &self,
-                           const std::tuple<Dim, const py::slice> &index,
-                           py::array_t<typename Tag::type> &data) {
-  auto slice = self.doSlice(index);
-
-  const auto &dims = slice.dimensions();
-  py::buffer_info info = data.request();
-  const auto &shape = dims.shape();
-  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
-                  shape.end()))
-    throw std::runtime_error(
-        "Shape mismatch when setting data from numpy array.");
-
-  auto buf = slice.template get<Tag>();
-  double *ptr = (double *)info.ptr;
-  std::copy(ptr, ptr + dims.volume(), buf.begin());
-}
 } // namespace detail
-
-template <class Tag> struct PyVariableView_maybe_buffer_protocol {
-  static auto make(py::module &m, const std::string &suffix) {
-    py::class_<detail::VariableView<Tag>> view(
-        m, (std::string("VariableView_") + suffix).c_str(),
-        py::buffer_protocol());
-    view.def_buffer([](detail::VariableView<Tag> &self) {
-          // Note: Currently this always triggers copy-on-write ---
-          // py::buffer_info does currently not support the `readonly` flag of
-          // the Python buffer protocol. We can probably get this fixed
-          // upstream, see discussion and sample implementation here:
-          // https://github.com/pybind/pybind11/issues/863.
-          return py::buffer_info(
-              self.template get<Tag>().data(), /* Pointer to buffer */
-              sizeof(typename Tag::type),      /* Size of one scalar */
-              py::format_descriptor<typename Tag::type>::format(), /* Python
-                                                         struct-style format
-                                                         descriptor */
-              self.dimensions().count(), /* Number of dimensions */
-              self.dimensions().shape(), /* Buffer dimensions */
-              detail::numpy_strides<Tag>(
-                  self.strides()) /* Strides (in bytes) for each index */
-          );
-        })
-        .def("__setitem__", &detail::setVariableSlice<Tag>)
-        .def("__setitem__", &detail::setVariableSliceRange<Tag>)
-        .def_property(
-            "numpy",
-            [](py::object &obj) {
-              auto &view = obj.cast<detail::VariableView<Tag> &>();
-              auto array = py::array_t<typename Tag::type>{
-                  view.dimensions().shape(),
-                  detail::numpy_strides<Tag>(view.strides()),
-                  view.template get<const Tag>().data(), obj};
-              // See https://github.com/pybind/pybind11/issues/481.
-              reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())
-                  ->flags &= ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-              return array;
-            },
-            [](py::object &obj, const py::array_t<typename Tag::type> &data) {
-              auto &view = obj.cast<detail::VariableView<Tag> &>();
-              py::array_t<typename Tag::type>{
-                  view.dimensions().shape(),
-                  detail::numpy_strides<Tag>(view.strides()),
-                  view.template get<Tag>().data(), obj} = data;
-            })
-        .def_property(
-            "numpy_mutable",
-            [](py::object &obj) {
-              auto &view = obj.cast<detail::VariableView<Tag> &>();
-              return py::array_t<typename Tag::type>{
-                  view.dimensions().shape(),
-                  detail::numpy_strides<Tag>(view.strides()),
-                  view.template get<Tag>().data(), obj};
-            },
-            [](py::object &obj, const py::array_t<typename Tag::type> &data) {
-              auto &view = obj.cast<detail::VariableView<Tag> &>();
-              py::array_t<typename Tag::type>{
-                  view.dimensions().shape(),
-                  detail::numpy_strides<Tag>(view.strides()),
-                  view.template get<Tag>().data(), obj} = data;
-            });
-    return view;
-  }
-};
-template <> struct PyVariableView_maybe_buffer_protocol<Coord::RowLabel> {
-  static auto make(py::module &m, const std::string &suffix) {
-    return py::class_<detail::VariableView<Coord::RowLabel>>(
-        m, (std::string("VariableView_") + suffix).c_str());
-  }
-};
-
-template <class Tag>
-void declare_PyVariableView(py::module &m, const std::string &suffix) {
-  auto view = PyVariableView_maybe_buffer_protocol<Tag>::make(m, suffix);
-  // Careful: Do not expose setName, setDimensions, and assignment,
-  // otherwise we can break the dataset.
-  view.def_property_readonly("dimensions",
-                             [](const detail::VariableView<Tag> &self) {
-                               return self.dimensions();
-                             })
-      .def("__len__",
-           [](const detail::VariableView<Tag> &self) {
-             const auto &dims = self.dimensions();
-             if (dims.count() == 0)
-               throw std::runtime_error("len() of unsized object.");
-             return dims.shape()[0];
-           })
-      .def_property_readonly(
-          "is_coord",
-          [](const detail::VariableView<Tag> &self) { return self.isCoord(); })
-      .def_property_readonly(
-          "type",
-          [](const detail::VariableView<Tag> &self) { return self.type(); })
-      .def_property_readonly(
-          "name",
-          [](const detail::VariableView<Tag> &self) { return self.name(); })
-      .def("__getitem__",
-           [](const detail::VariableView<Tag> &self,
-              const std::tuple<Dim, gsl::index> &index) {
-             auto slice(self);
-             slice = slice.doSlice(std::get<Dim>(index),
-                                   std::get<gsl::index>(index));
-             return slice;
-           })
-      .def("__getitem__",
-           [](const detail::VariableView<Tag> &self,
-              const std::tuple<Dim, const py::slice> &index) {
-             return self.doSlice(index);
-           })
-      .def("__getitem__",
-           [](const detail::VariableView<Tag> &self,
-              const std::map<Dimension, const gsl::index> d) {
-             auto slice(self);
-             for (auto item : d)
-               slice = slice.doSlice(item.first, item.second);
-             return slice;
-           })
-      .def("__getitem__",
-           [](const detail::VariableView<Tag> &self,
-              const std::map<Dimension, const py::slice> d) {
-             auto slice(self);
-             for (auto item : d)
-               slice = slice.doSlice(item);
-             return slice;
-           })
-      .def_property_readonly("data",
-                             [](detail::VariableView<Tag> &self) {
-                               return self.template get<Tag>();
-                             })
-      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
-}
 
 VariableSlice<Variable> pySlice(VariableSlice<Variable> &view,
                                 const std::tuple<Dim, const py::slice> &index) {
@@ -557,11 +347,11 @@ template <class... Ts>
 std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   auto &view = obj.cast<VariableSlice<Variable> &>();
   switch (view.type()) {
-    case tag<Coord::X>.value():
+  case tag<Coord::X>.value():
     return {as_py_array_t<Coord::X>(obj, view)};
-    case tag<Coord::Y>.value():
+  case tag<Coord::Y>.value():
     return {as_py_array_t<Coord::Y>(obj, view)};
-    case tag<Coord::Z>.value():
+  case tag<Coord::Z>.value():
     return {as_py_array_t<Coord::Z>(obj, view)};
   case tag<Data::Value>.value():
     return {as_py_array_t<Data::Value>(obj, view)};
@@ -635,12 +425,6 @@ PYBIND11_MODULE(dataset, m) {
       .def("size",
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
 
-  declare_PyVariableView<Data::Value>(m, "DataValue");
-  declare_PyVariableView<Coord::X>(m, "CoordX");
-  declare_PyVariableView<Coord::Y>(m, "CoordY");
-  declare_PyVariableView<Coord::Z>(m, "CoordZ");
-  declare_PyVariableView<Coord::RowLabel>(m, "CoordRowLabel");
-
   py::class_<Variable>(m, "Variable")
       .def(py::init(&detail::makeVariable<detail::PythonCoord::Mask>))
       .def(py::init(&detail::makeVariable<detail::PythonCoord::X>))
@@ -648,12 +432,15 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable<detail::PythonCoord::Z>))
       .def(py::init(&detail::makeVariable<detail::PythonData::Value>))
       .def(py::init(&detail::makeVariable<detail::PythonData::Variance>))
-      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Mask>))
+      .def(
+          py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Mask>))
       .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::X>))
       .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Y>))
       .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Z>))
-      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonData::Value>))
-      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonData::Variance>))
+      .def(
+          py::init(&detail::makeVariableDefaultInit<detail::PythonData::Value>))
+      .def(py::init(
+          &detail::makeVariableDefaultInit<detail::PythonData::Variance>))
       .def(py::init<const VariableSlice<Variable> &>())
       .def_property_readonly("type", &Variable::type)
       .def_property("name", &Variable::name, &Variable::setName)
