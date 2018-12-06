@@ -33,7 +33,7 @@
   - [Units](#design-components-units)
   - [Exceptions](#design-components-exceptions)
 - [Examples](#examples)
-  - [Python example](#examples-python)
+  - [Python examples](#examples-python)
   - [C++ example](#examples-cpp)
 - [Design details](#design-details)
   - [Dependencies](#design-details-dependencies)
@@ -600,8 +600,8 @@ d[Coord.Y] = ([Dim.Y], np.arange(L))
 d[Coord.Z] = ([Dim.Z], np.arange(L))
 d[Data.Value, "temperature"] = ([Dim.X, Dim.Y, Dim.Z], np.random.normal(size=L*L*L).reshape([L,L,L]))
 
-dataset = as_xarray(d['temperature'])
-dataset['Value:temperature'][10, ...].plot()
+xr_ds = as_xarray(d)
+xr_ds['Value:temperature'][10, ...].plot()
 ```
 
 The resulting figure is:
