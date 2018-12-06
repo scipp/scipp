@@ -259,6 +259,14 @@ class TestDatasetExamples(unittest.TestCase):
         table[Data.Value, "col2"] = ([Dim.Row], np.arange(4))
         self.assertEqual(len(table), 3)
 
+        table[Data.Value, "sum"] = ([Dim.Row], (len(table[Coord.RowLabel]),))
+
+        for col in table:
+            if not col.is_coord and col.name is not "sum":
+                table[Data.Value, "sum"] += col
+        np.testing.assert_array_equal(table[Data.Value, "col2"].numpy, np.array([0,1,2,3]))
+        np.testing.assert_array_equal(table[Data.Value, "sum"].numpy, np.array([6,6,6,6]))
+
         table = concatenate(table, table, Dim.Row)
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,2,1,0, 3,2,1,0]))
 

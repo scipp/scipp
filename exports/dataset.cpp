@@ -490,7 +490,16 @@ PYBIND11_MODULE(dataset, m) {
                              &as_VariableView_variant<double, std::string>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](VariableSlice<Variable> &a, Variable &b) { return a += b; },
+           py::is_operator())
+      .def("__isub__",
+           [](VariableSlice<Variable> &a, Variable &b) { return a -= b; },
+           py::is_operator())
+      .def("__imul__",
+           [](VariableSlice<Variable> &a, Variable &b) { return a *= b; },
+           py::is_operator());
 
   py::class_<Slice<Dataset>>(m, "DatasetView")
       .def(py::init<Dataset &>())
