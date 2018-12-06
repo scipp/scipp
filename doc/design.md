@@ -78,6 +78,7 @@
   - [Impact](#discussion-impact)
   - [New challenges](#discussion-new-challenges)
   - [Summary](#discussion-summary)
+- [Further reading](#further-reading)
 
 
 ## <a name="context"></a>Context
@@ -1053,6 +1054,8 @@ There are several options to support varied-length data:
    However, if a varying histogram length is essential for some purpose it is absolutely possible.
    Even mixing histograms and event lists would be possible.
 
+A look into [Apache Arrow](https://arrow.apache.org/) may also provide further ideas for implementation of handling missing data.
+
 
 ### <a name="design-details-threading"></a>Operations are threaded using OpenMP
 
@@ -1564,3 +1567,13 @@ Based on the limited experience when working with the prototype, there are a cou
      One example might be standards for naming variables.
    - Implementing algorithms for completely generic datasets may be more challenging, e.g., if multiple data variables are present.
 1. Type-erasure makes some code slightly more cumbersome and verbose.
+
+
+
+# <a name="further-reading"></a>Further reading
+
+- [`xtensor`](https://github.com/QuantStack/xtensor) and [`xframe`](https://github.com/QuantStack/xframe) may be of interest for implementation details.
+- For an internal serialization format [`TileDB`](https://tiledb.io/) could a solution.
+- [NEP 22 -- Duck typing for NumPy arrays](https://www.numpy.org/neps/nep-0022-ndarray-duck-typing-overview.html) discusses a potential future change to NumPy which would make implementation of features we need for `Dataset` easier in, e.g., `xarray`.
+- [NEP 20 -- Expansion of Generalized Universal Function Signatures](https://www.numpy.org/neps/nep-0020-gufunc-signature-enhancement.html) also discusses future NumPy features that we should keep in mind and potentially make use of or support in a similar manner.
+- [Iris](https://scitools.org.uk/iris/docs/latest/) is another project for multi-dimensional data, building on NumPy and Dask like `xarray`.
