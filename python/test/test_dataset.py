@@ -329,16 +329,36 @@ class TestDatasetExamples(unittest.TestCase):
         # Arithmetics with tables (here: add two tables)
         table += table
 
-    def test_MDHistoWorkspace_example(self):
+    def test_MDHistoWorkspace_plotting_example(self):
         d = Dataset()
         L = 30
         d[Coord.X] = ([Dim.X], np.arange(L))
         d[Coord.Y] = ([Dim.Y], np.arange(L))
         d[Coord.Z] = ([Dim.Z], np.arange(L))
-        d[Data.Value, "temperature"] = ([Dim.X, Dim.Y, Dim.Z], np.random.normal(size=L*L*L).reshape([L,L,L]))
+        d[Data.Value, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
 
         dataset = as_xarray(d['temperature'])
         dataset['Value:temperature'][10, ...].plot()
+        #plt.savefig('test.png')
+
+    def test_MDHistoWorkspace_example(self):
+        L = 30
+        d = Dataset()
+
+        # Add bin-edge axes
+        d[Coord.X] = ([Dim.X], np.arange(L+1))
+        d[Coord.Y] = ([Dim.Y], np.arange(L+1))
+        d[Coord.Z] = ([Dim.Z], np.arange(L+1))
+
+        # Add data variables
+        d[Data.Value, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
+        d[Data.Value, "pressure"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
+
+        # Rebin the X axis
+        d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2)))
+
+        # Truncate Y and Z axes
+        d = Dataset(d[Dim.Y, 10:20][Dim.Z, 10:20])
 
 
 if __name__ == '__main__':
