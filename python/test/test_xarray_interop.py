@@ -38,9 +38,9 @@ class TestXarrayInterop(unittest.TestCase):
         self.assertSequenceEqual(table[ds.Coord.RowLabel].data, ['a', 'bb', 'bb', 'ccc'])
 
         dataset = ds.as_xarray(table['col1'])
-        print(dataset)
+        #print(dataset)
         dataset['Value:col1'].plot()
-        plt.savefig('test.png')
+        #plt.savefig('test.png')
 
 if __name__ == '__main__':
     unittest.main()

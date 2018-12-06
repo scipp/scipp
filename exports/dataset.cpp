@@ -96,6 +96,18 @@ Variable makeVariable(const Tag, const std::vector<Dim> &labels,
   return makeVariable<const typename Tag::type>(dims, ptr, ptr + dims.volume());
 }
 
+template <class Tag>
+Variable makeVariableDefaultInit(const Tag, const std::vector<Dim> &labels,
+                             const py::tuple &shape) {
+  if (shape.size() != labels.size())
+    throw std::runtime_error(
+        "Number of dimensions tags does not match shape of data.");
+  Dimensions dims;
+  for (gsl::index i = labels.size() - 1; i >= 0; --i)
+    dims.add(labels[i], shape[i].cast<size_t>());
+  return makeVariable<const typename Tag::type>(dims);
+}
+
 std::string format(const Dimensions &dims) {
   std::string out = "Dimensions = " + dataset::to_string(dims);
   return out;
@@ -242,16 +254,16 @@ private:
 // variables. Note that setting breaking attributes is not exported, so we
 // should be safe.
 template <class Tag, class T>
-VariableView<typename Tag::type> getCoord(T &self, const Tag) {
-  return {VariableSlice<Variable>(
-      detail::makeAccess(self)[find(self, tag_id<typename Tag::type>, "")])};
+VariableSlice<Variable> getCoord(T &self, const Tag) {
+  return VariableSlice<Variable>(
+      detail::makeAccess(self)[find(self, tag_id<typename Tag::type>, "")]);
 }
 
 template <class Tag, class T>
-VariableView<typename Tag::type>
+VariableSlice<Variable>
 getData(T &self, const std::pair<const Tag, const std::string> &key) {
-  return {VariableSlice<Variable>(detail::makeAccess(
-      self)[find(self, tag_id<typename Tag::type>, key.second)])};
+  return VariableSlice<Variable>(detail::makeAccess(
+      self)[find(self, tag_id<typename Tag::type>, key.second)]);
 }
 
 template <class Tag, class T>
@@ -444,6 +456,92 @@ void declare_PyVariableView(py::module &m, const std::string &suffix) {
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
 }
 
+VariableSlice<Variable> pySlice(VariableSlice<Variable> &view,
+                                const std::tuple<Dim, const py::slice> &index) {
+  const Dim dim = std::get<Dim>(index);
+  const auto indices = std::get<const py::slice>(index);
+  size_t start, stop, step, slicelength;
+  const auto size = view.dimensions().size(dim);
+  if (!indices.compute(size, &start, &stop, &step, &slicelength))
+    throw py::error_already_set();
+  if (step != 1)
+    throw std::runtime_error("Step must be 1");
+  return view(dim, start, stop);
+}
+
+template <class Tag>
+py::buffer_info make_py_buffer_info_t(VariableSlice<Variable> &view) {
+  // Note: Currently this always triggers copy-on-write ---
+  // py::buffer_info does currently not support the `readonly` flag of
+  // the Python buffer protocol. We can probably get this fixed
+  // upstream, see discussion and sample implementation here:
+  // https://github.com/pybind/pybind11/issues/863.
+  return py::buffer_info(
+      view.template get<Tag>().data(), /* Pointer to buffer */
+      sizeof(typename Tag::type),      /* Size of one scalar */
+      py::format_descriptor<typename Tag::type>::format(), /* Python
+                                                 struct-style format
+                                                 descriptor */
+      view.dimensions().count(), /* Number of dimensions */
+      view.dimensions().shape(), /* Buffer dimensions */
+      detail::numpy_strides<Tag>(
+          view.strides()) /* Strides (in bytes) for each index */
+  );
+}
+
+py::buffer_info make_py_buffer_info(VariableSlice<Variable> &view) {
+  switch (view.type()) {
+  case tag<Coord::X>.value():
+    return make_py_buffer_info_t<Coord::X>(view);
+  case tag<Coord::Y>.value():
+    return make_py_buffer_info_t<Coord::Y>(view);
+  case tag<Coord::Z>.value():
+    return make_py_buffer_info_t<Coord::Z>(view);
+  case tag<Data::Value>.value():
+    return make_py_buffer_info_t<Data::Value>(view);
+  default:
+    throw std::runtime_error("non implemented for this type.");
+  }
+}
+
+template <class Tag>
+void setVariableSlice(VariableSlice<Variable> &self,
+                      const std::tuple<Dim, gsl::index> &index,
+                      py::array_t<typename Tag::type> &data) {
+  auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
+
+  const auto &dims = slice.dimensions();
+  py::buffer_info info = data.request();
+  const auto &shape = dims.shape();
+  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
+                  shape.end()))
+    throw std::runtime_error(
+        "Shape mismatch when setting data from numpy array.");
+
+  auto buf = slice.template get<Tag>();
+  double *ptr = (double *)info.ptr;
+  std::copy(ptr, ptr + dims.volume(), buf.begin());
+}
+
+template <class Tag>
+void setVariableSliceRange(VariableSlice<Variable> &self,
+                           const std::tuple<Dim, const py::slice> &index,
+                           py::array_t<typename Tag::type> &data) {
+  auto slice = pySlice(self, index);
+
+  const auto &dims = slice.dimensions();
+  py::buffer_info info = data.request();
+  const auto &shape = dims.shape();
+  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
+                  shape.end()))
+    throw std::runtime_error(
+        "Shape mismatch when setting data from numpy array.");
+
+  auto buf = slice.template get<Tag>();
+  double *ptr = (double *)info.ptr;
+  std::copy(ptr, ptr + dims.volume(), buf.begin());
+}
+
 template <class Tag>
 auto as_py_array_t(py::object &obj, VariableSlice<Variable> &view) {
   auto array = py::array_t<typename Tag::type>{
@@ -461,6 +559,10 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   switch (view.type()) {
     case tag<Coord::X>.value():
     return {as_py_array_t<Coord::X>(obj, view)};
+    case tag<Coord::Y>.value():
+    return {as_py_array_t<Coord::Y>(obj, view)};
+    case tag<Coord::Z>.value():
+    return {as_py_array_t<Coord::Z>(obj, view)};
   case tag<Data::Value>.value():
     return {as_py_array_t<Data::Value>(obj, view)};
   default:
@@ -472,19 +574,24 @@ template <class... Ts>
 std::variant<VariableView<Ts>...>
 as_VariableView_variant(VariableSlice<Variable> &view) {
   switch (view.type()) {
+  case tag<Coord::X>.value():
+    return {view.get<Coord::X>()};
+  case tag<Coord::Y>.value():
+    return {view.get<Coord::Y>()};
+  case tag<Coord::Z>.value():
+    return {view.get<Coord::Z>()};
   case tag<Coord::RowLabel>.value():
     return {view.get<Coord::RowLabel>()};
+  case tag<Data::Value>.value():
+    return {view.get<Data::Value>()};
+  case tag<Data::Variance>.value():
+    return {view.get<Data::Variance>()};
   default:
     throw std::runtime_error("non implemented for this type.");
   }
 }
 
 PYBIND11_MODULE(dataset, m) {
-  m.def("variant", [](int id) {
-    if (id == 0)
-      return std::variant<int, std::string>(42);
-    return std::variant<int, std::string>("sdfsdf");
-  });
   py::enum_<Dimension>(m, "Dim")
       .value("Row", Dim::Row)
       .value("X", Dim::X)
@@ -541,13 +648,25 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable<detail::PythonCoord::Z>))
       .def(py::init(&detail::makeVariable<detail::PythonData::Value>))
       .def(py::init(&detail::makeVariable<detail::PythonData::Variance>))
+      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Mask>))
+      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::X>))
+      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Y>))
+      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Z>))
+      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonData::Value>))
+      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonData::Variance>))
       .def(py::init<const VariableSlice<Variable> &>())
+      .def_property_readonly("type", &Variable::type)
       .def_property("name", &Variable::name, &Variable::setName)
       .def_property_readonly("is_coord", &Variable::isCoord)
-      .def_property_readonly("dimensions", &Variable::dimensions);
+      .def_property_readonly("dimensions", &Variable::dimensions)
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
 
-  py::class_<VariableSlice<Variable>>(m, "VariableSlice")
-      .def_property_readonly(
+  py::class_<VariableSlice<Variable>> view(m, "VariableSlice",
+                                           py::buffer_protocol());
+  view.def_buffer(&make_py_buffer_info);
+  view.def_property_readonly(
           "dimensions",
           [](const VariableSlice<Variable> &self) { return self.dimensions(); },
           py::return_value_policy::copy)
@@ -561,45 +680,27 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("is_coord", &VariableSlice<Variable>::isCoord)
       .def_property_readonly("type", &VariableSlice<Variable>::type)
       .def_property_readonly("name", &VariableSlice<Variable>::name)
-      //.def("__getitem__",
-      //     [](const VariableSlice<Variable> &self,
-      //        const std::tuple<Dim, gsl::index> &index) {
-      //       auto slice(self);
-      //       slice = slice.doSlice(std::get<Dim>(index),
-      //                             std::get<gsl::index>(index));
-      //       return slice;
-      //     })
-      //.def("__getitem__",
-      //     [](const VariableSlice<Variable> &self,
-      //        const std::tuple<Dim, const py::slice> &index) {
-      //       return self.doSlice(index);
-      //     })
       .def("__getitem__",
-           [](const VariableSlice<Variable> &self,
+           [](VariableSlice<Variable> &self,
+              const std::tuple<Dim, gsl::index> &index) {
+             return self(std::get<Dim>(index), std::get<gsl::index>(index));
+           })
+      .def("__getitem__", &pySlice)
+      .def("__getitem__",
+           [](VariableSlice<Variable> &self,
               const std::map<Dimension, const gsl::index> d) {
              auto slice(self);
              for (auto item : d)
                slice = slice(item.first, item.second);
              return slice;
            })
-      //.def("__getitem__",
-      //     [](const VariableSlice<Variable> &self,
-      //        const std::map<Dimension, const py::slice> d) {
-      //       auto slice(self);
-      //       for (auto item : d)
-      //         slice = slice.doSlice(item);
-      //       return slice;
-      //     })
-      //.def_property_readonly("data",
-      //                       [](VariableSlice<Variable> &self) {
-      //                         return self.template get<Tag>();
-      //                       })
-      .def_property_readonly("numpy",
-                             [](py::object &obj) {
-                               return as_py_array_t_variant<double, int64_t>(
-                                   obj);
-                             })
-      .def_property_readonly("data", &as_VariableView_variant<std::string>)
+      // TODO Make these using py::array instead of py::array_t, then cast based
+      // on tag?
+      .def("__setitem__", &setVariableSlice<Data::Value>)
+      .def("__setitem__", &setVariableSliceRange<Data::Value>)
+      .def_property_readonly("numpy", &as_py_array_t_variant<double, int64_t>)
+      .def_property_readonly("data",
+                             &as_VariableView_variant<double, std::string>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
