@@ -1,6 +1,6 @@
 set ( PY_FILES
   __init__.py
-  dataset_collection.py
+  xarray_compat.py
   )
 
 install ( FILES ${PY_FILES} DESTINATION "dataset" )

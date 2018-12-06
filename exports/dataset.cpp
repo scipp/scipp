@@ -3,6 +3,8 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <variant>
+
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -442,12 +444,52 @@ void declare_PyVariableView(py::module &m, const std::string &suffix) {
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
 }
 
+template <class Tag>
+auto as_py_array_t(py::object &obj, VariableSlice<Variable> &view) {
+  auto array = py::array_t<typename Tag::type>{
+      view.dimensions().shape(), detail::numpy_strides<Tag>(view.strides()),
+      view.template get<const Tag>().data(), obj};
+  // See https://github.com/pybind/pybind11/issues/481.
+  reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())->flags &=
+      ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+  return array;
+}
+
+template <class... Ts>
+std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
+  auto &view = obj.cast<VariableSlice<Variable> &>();
+  switch (view.type()) {
+    case tag<Coord::X>.value():
+    return {as_py_array_t<Coord::X>(obj, view)};
+  case tag<Data::Value>.value():
+    return {as_py_array_t<Data::Value>(obj, view)};
+  default:
+    throw std::runtime_error("non implemented for this type.");
+  }
+}
+
+template <class... Ts>
+std::variant<VariableView<Ts>...>
+as_VariableView_variant(VariableSlice<Variable> &view) {
+  switch (view.type()) {
+  case tag<Coord::RowLabel>.value():
+    return {view.get<Coord::RowLabel>()};
+  default:
+    throw std::runtime_error("non implemented for this type.");
+  }
+}
+
 PYBIND11_MODULE(dataset, m) {
+  m.def("variant", [](int id) {
+    if (id == 0)
+      return std::variant<int, std::string>(42);
+    return std::variant<int, std::string>("sdfsdf");
+  });
   py::enum_<Dimension>(m, "Dim")
-      .value("Row", Dimension::Row)
-      .value("X", Dimension::X)
-      .value("Y", Dimension::Y)
-      .value("Z", Dimension::Z);
+      .value("Row", Dim::Row)
+      .value("X", Dim::X)
+      .value("Y", Dim::Y)
+      .value("Z", Dim::Z);
 
   py::class_<Tag>(m, "Tag");
 
@@ -472,6 +514,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
   declare_span<const std::string>(m, "string_const");
+  declare_span<const Dim>(m, "Dim_const");
 
   declare_VariableView<double>(m, "double");
   declare_VariableView<std::string>(m, "string");
@@ -500,10 +543,75 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable<detail::PythonData::Variance>))
       .def(py::init<const VariableSlice<Variable> &>())
       .def_property("name", &Variable::name, &Variable::setName)
-      .def("dimensions", &Variable::dimensions);
+      .def_property_readonly("is_coord", &Variable::isCoord)
+      .def_property_readonly("dimensions", &Variable::dimensions);
+
+  py::class_<VariableSlice<Variable>>(m, "VariableSlice")
+      .def_property_readonly(
+          "dimensions",
+          [](const VariableSlice<Variable> &self) { return self.dimensions(); },
+          py::return_value_policy::copy)
+      .def("__len__",
+           [](const VariableSlice<Variable> &self) {
+             const auto &dims = self.dimensions();
+             if (dims.count() == 0)
+               throw std::runtime_error("len() of unsized object.");
+             return dims.shape()[0];
+           })
+      .def_property_readonly("is_coord", &VariableSlice<Variable>::isCoord)
+      .def_property_readonly("type", &VariableSlice<Variable>::type)
+      .def_property_readonly("name", &VariableSlice<Variable>::name)
+      //.def("__getitem__",
+      //     [](const VariableSlice<Variable> &self,
+      //        const std::tuple<Dim, gsl::index> &index) {
+      //       auto slice(self);
+      //       slice = slice.doSlice(std::get<Dim>(index),
+      //                             std::get<gsl::index>(index));
+      //       return slice;
+      //     })
+      //.def("__getitem__",
+      //     [](const VariableSlice<Variable> &self,
+      //        const std::tuple<Dim, const py::slice> &index) {
+      //       return self.doSlice(index);
+      //     })
+      .def("__getitem__",
+           [](const VariableSlice<Variable> &self,
+              const std::map<Dimension, const gsl::index> d) {
+             auto slice(self);
+             for (auto item : d)
+               slice = slice(item.first, item.second);
+             return slice;
+           })
+      //.def("__getitem__",
+      //     [](const VariableSlice<Variable> &self,
+      //        const std::map<Dimension, const py::slice> d) {
+      //       auto slice(self);
+      //       for (auto item : d)
+      //         slice = slice.doSlice(item);
+      //       return slice;
+      //     })
+      //.def_property_readonly("data",
+      //                       [](VariableSlice<Variable> &self) {
+      //                         return self.template get<Tag>();
+      //                       })
+      .def_property_readonly("numpy",
+                             [](py::object &obj) {
+                               return as_py_array_t_variant<double, int64_t>(
+                                   obj);
+                             })
+      .def_property_readonly("data", &as_VariableView_variant<std::string>)
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
 
   py::class_<Slice<Dataset>>(m, "DatasetView")
+      .def(py::init<Dataset &>())
       .def("__len__", &Slice<Dataset>::size)
+      .def("__iter__",
+           [](Slice<Dataset> &self) {
+             return py::make_iterator(detail::makeAccess(self).begin(),
+                                      detail::makeAccess(self).end());
+           })
       .def("__contains__", &Slice<Dataset>::contains, py::arg("tag"),
            py::arg("name") = "")
       .def("__contains__",
@@ -554,6 +662,10 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init<>())
       .def(py::init<const Slice<Dataset> &>())
       .def("__len__", &Dataset::size)
+      .def("__iter__",
+           [](const Dataset &self) {
+             return py::make_iterator(self.begin(), self.end());
+           })
       .def("__contains__", &Dataset::contains, py::arg("tag"),
            py::arg("name") = "")
       .def("__contains__",

@@ -1,6 +1,7 @@
 from distributed.protocol import dask_serialize, dask_deserialize
 
 from .dataset import *
+from .xarray_compat import as_xarray
 
 # For a distributed run, registering the serialiers for Dataset must happen somewhere that will cause them to be imported by all workers, for now in the __init__.py seems to work.
 @dask_serialize.register(Dataset)
