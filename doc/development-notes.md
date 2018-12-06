@@ -581,11 +581,22 @@ Outstanding tasks:
       What if the dimension is only partial, would a special tag like `PartialDimension::Spectrum` make sense?
       How can we know that combining partial dimensions yields a full dimension?
       Should `class Dimensions` store the full length also?
+      - Could store full extents and a *linear* start and end index, requiring that chunking only happens in outer dimension(s).
+        - `merge` could keep track of this and would need to feel if merged chunks are not neighbors.
+      - Store full extents and start and end for outermost dimension, supporting chunking only in 1D.
+        `bool Dimensions::isChunked(const Dimension dim) const`?
+      - Using a distinct dimension name provides and easier and clearer interface.
+        Need special code for merging all chunks, transforming the dimension name.
+        Could keep a variable in the dataset that keeps track of the chunking, e.g., a variable `Coord::ChunkDimensionAndPosition` with `Dimension::Chunk`.
+        This could be used to merge things back together in a safe way.
     - How do we handle this when building `DatasetIndex`, which would do a global validation --- not possible in serial processing?
     - Do we need an equivalent to `ExecutionMode::MasterOnly`?
       If based on partial dimensions we cannot distinguish between `StorageMode::Cloned` and `StorageMode::MasterOnly`.
       The current need for `ExecutionMode::Master` only stems from the strategy to run the same Python script on all ranks.
       If this could be changed, e.g., by pushing only the relevant section to non-master ranks we would not need it, I think.
+      - Simply use a zero dimension extent on non-master ranks and make sure all operations support that?
+        Will cause some overhead from potentially unnecessary synchronization --- master rank would need to know that it has all the data.
+        If `Dimensions` provides this information we might be ok?
 
 - Related to MPI and cache-blocking, investigate `dask` integration or `dask`-like processing.
   - Process each spectrum independently until the "reduction" step of the workflow.
