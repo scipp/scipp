@@ -15,14 +15,15 @@ def as_xarray(dataset):
             return names[var.type] + ':' + var.name
     for var in dataset:
         dims = var.dimensions
+        labels = dims.labels
         if var.is_coord:
             try:
-                d.coords[xarray_name(var)] = ([dim_name[dim] for dim in dims.labels], var.numpy)
+                d.coords[xarray_name(var)] = ([dim_name[dim] for dim in labels], var.numpy)
             except:
-                d.coords[xarray_name(var)] = ([dim_name[dim] for dim in dims.labels], var.data)
+                d.coords[xarray_name(var)] = ([dim_name[dim] for dim in labels], var.data)
         else:
             try:
-                d[xarray_name(var)] = ([dim_name[dim] for dim in dims.labels], var.numpy)
+                d[xarray_name(var)] = ([dim_name[dim] for dim in labels], var.numpy)
             except:
-                d[xarray_name(var)] = ([dim_name[dim] for dim in dims.labels], var.data)
+                d[xarray_name(var)] = ([dim_name[dim] for dim in labels], var.data)
     return d

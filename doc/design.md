@@ -590,9 +590,26 @@ xr_ds['Value:col1'].plot()
 Note the need for translating tags into strings, so the indexing looks a bit different on the `xarray` side.
 
 
-##### Example 2
+##### Example 2: Creating a 3D volume and plotting of slices
 
-TODO
+```python
+d = Dataset()
+L = 30
+d[Coord.X] = ([Dim.X], np.arange(L))
+d[Coord.Y] = ([Dim.Y], np.arange(L))
+d[Coord.Z] = ([Dim.Z], np.arange(L))
+d[Data.Value, "temperature"] = ([Dim.X, Dim.Y, Dim.Z], np.random.normal(size=L*L*L).reshape([L,L,L]))
+
+dataset = as_xarray(d['temperature'])
+dataset['Value:temperature'][10, ...].plot()
+```
+
+The resulting figure is:
+
+![figure: 2D color-fill plot of random noise](plotting-2d-example.png)
+
+
+##### Example 3: 
 
 
 ### <a name="examples-cpp"></a>C++ example

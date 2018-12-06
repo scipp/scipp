@@ -2,6 +2,7 @@ import unittest
 
 from dataset import *
 import numpy as np
+import matplotlib.pyplot as plt
 
 class TestDataset(unittest.TestCase):
     def setUp(self):
@@ -327,6 +328,18 @@ class TestDatasetExamples(unittest.TestCase):
 
         # Arithmetics with tables (here: add two tables)
         table += table
+
+    def test_MDHistoWorkspace_example(self):
+        d = Dataset()
+        L = 30
+        d[Coord.X] = ([Dim.X], np.arange(L))
+        d[Coord.Y] = ([Dim.Y], np.arange(L))
+        d[Coord.Z] = ([Dim.Z], np.arange(L))
+        d[Data.Value, "temperature"] = ([Dim.X, Dim.Y, Dim.Z], np.random.normal(size=L*L*L).reshape([L,L,L]))
+
+        dataset = as_xarray(d['temperature'])
+        dataset['Value:temperature'][10, ...].plot()
+
 
 if __name__ == '__main__':
     unittest.main()
