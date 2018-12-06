@@ -578,6 +578,8 @@ table[Data.Value, "exp1"] = np.sin(table[Data.Value, "exp1"])
 table += table
 ```
 
+Note that we are considering dropping the requirement of specifying the dimension in case the dataset is 1-dimensional.
+
 Continuing from above we can wrap the table as an `xarray.Dataset` and use its builtin `matplotlib` plotting functionality:
 
 ```python
