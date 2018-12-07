@@ -429,6 +429,17 @@ TEST(Variable, sum) {
   EXPECT_TRUE(equals(sumY.get<const Data::Value>(), {4.0, 6.0}));
 }
 
+TEST(Variable, mean) {
+  auto var = makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 2}},
+                                       {1.0, 2.0, 3.0, 4.0});
+  auto meanX = mean(var, Dim::X);
+  ASSERT_EQ(meanX.dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_TRUE(equals(meanX.get<const Data::Value>(), {1.5, 3.5}));
+  auto meanY = mean(var, Dim::Y);
+  ASSERT_EQ(meanY.dimensions(), (Dimensions{Dim::X, 2}));
+  EXPECT_TRUE(equals(meanY.get<const Data::Value>(), {2.0, 3.0}));
+}
+
 TEST(VariableSlice, strides) {
   auto var = makeVariable<Data::Value>({{Dim::Y, 3}, {Dim::X, 3}});
   EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<gsl::index>{3}));

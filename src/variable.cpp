@@ -1232,3 +1232,9 @@ Variable sum(const Variable &var, const Dim dim) {
   summed.data() += var.data();
   return summed;
 }
+
+Variable mean(const Variable &var, const Dim dim) {
+  auto summed = sum(var, dim);
+  double scale = 1.0/var.dimensions().size(dim);
+  return summed * makeVariable<Data::Value>({}, {scale});
+}

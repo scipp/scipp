@@ -408,5 +408,6 @@ Variable permute(const Variable &var, const Dimension dim,
                  const std::vector<gsl::index> &indices);
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
+Variable mean(const Variable &var, const Dim dim);
 
 #endif // VARIABLE_H

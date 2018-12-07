@@ -371,8 +371,10 @@ class TestDatasetExamples(unittest.TestCase):
         # Truncate Y and Z axes
         d = Dataset(d[Dim.Y, 10:20][Dim.Z, 10:20])
 
-        # Sum over Y axis
-        d = sum(d, Dim.Y)
+        # Mean along Y axis
+        meanY = mean(d, Dim.Y)
+        # Subtract from original, making use of automatic broadcasting
+        d -= meanY
 
         # Extract a Z slice
         d = Dataset(d[Dim.Z, 7])

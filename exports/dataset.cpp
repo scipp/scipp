@@ -693,4 +693,6 @@ PYBIND11_MODULE(dataset, m) {
         py::call_guard<py::gil_scoped_release>());
   m.def("sum", py::overload_cast<const Dataset &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>());
+  m.def("mean", py::overload_cast<const Dataset &, const Dim>(&mean),
+        py::call_guard<py::gil_scoped_release>());
 }

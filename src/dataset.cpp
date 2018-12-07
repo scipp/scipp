@@ -742,3 +742,27 @@ Dataset sum(const Dataset &d, const Dim dim) {
   }
   return summed;
 }
+
+Dataset mean(const Dataset &d, const Dim dim) {
+  // TODO This is a naive mean not taking into account the axis. Should this do
+  // something smarter for unevenly spaced data?
+  Dataset m;
+  for (auto &var : d) {
+    if (var.dimensions().contains(dim)) {
+      if (var.isData()) {
+        if (var.type() == tag<Data::Variance>.value()) {
+          // Standard deviation of the mean has an extra 1/sqrt(N). Note that
+          // this is not included by the stand-alone mean(Variable), since that
+          // would be confusing.
+          double scale = 1.0 / sqrt(var.dimensions().size(dim));
+          m.insert(mean(var, dim) * makeVariable<Data::Value>({}, {scale}));
+        } else {
+          m.insert(mean(var, dim));
+        }
+      }
+    } else {
+      m.insert(var);
+    }
+  }
+  return m;
+}
