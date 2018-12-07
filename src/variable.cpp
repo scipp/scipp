@@ -1025,6 +1025,8 @@ VariableSliceMutableMixin<VariableSlice<const Variable>>::cast() const {
 
 template const VariableView<const double> &
 VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<double>() const;
+template const VariableView<const int32_t> &
+VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<int32_t>() const;
 template const VariableView<const std::vector<std::string>> &
 VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<
     std::vector<std::string>>() const;
@@ -1048,6 +1050,10 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::cast() {
 template VariableView<const double>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<double> &
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
+template VariableView<const int32_t>
+VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
+template const VariableView<int32_t> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
 template const VariableView<std::string> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast();

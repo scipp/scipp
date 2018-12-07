@@ -746,6 +746,18 @@ Dataset sum(const Dataset &d, const Dim dim) {
 Dataset mean(const Dataset &d, const Dim dim) {
   // TODO This is a naive mean not taking into account the axis. Should this do
   // something smarter for unevenly spaced data?
+  for (auto &var : d) {
+    const Dim coordDim = coordDimension[var.type()];
+    if (coordDim != Dim::Invalid && coordDim != dim) {
+      if (var.dimensions().contains(dim))
+        throw std::runtime_error(
+            std::string("Cannot compute mean along ") +
+            dataset::to_string(dim).c_str() +
+            ": Dimension coordinate for dimension " +
+            dataset::to_string(coordDim).c_str() +
+            " depends also on the dimension. Rebin to common axis first.");
+    }
+  }
   Dataset m;
   for (auto &var : d) {
     if (var.dimensions().contains(dim)) {

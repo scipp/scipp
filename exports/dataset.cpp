@@ -59,6 +59,10 @@ struct PythonData {
   };
 };
 struct PythonCoord {
+  struct Tof : public Tag {
+    using type = Coord::Tof;
+    Tof() : Tag(::tag<type>) {}
+  };
   struct Mask : public Tag {
     using type = Coord::Mask;
     Mask() : Tag(::tag<type>) {}
@@ -78,6 +82,10 @@ struct PythonCoord {
   struct RowLabel : public Tag {
     using type = Coord::RowLabel;
     RowLabel() : Tag(::tag<type>) {}
+  };
+  struct SpectrumNumber : public Tag {
+    using type = Coord::SpectrumNumber;
+    SpectrumNumber() : Tag(::tag<type>) {}
   };
 };
 
@@ -300,6 +308,10 @@ py::buffer_info make_py_buffer_info(VariableSlice<Variable> &view) {
     return make_py_buffer_info_t<Coord::Y>(view);
   case tag<Coord::Z>.value():
     return make_py_buffer_info_t<Coord::Z>(view);
+  case tag<Coord::Tof>.value():
+    return make_py_buffer_info_t<Coord::Tof>(view);
+  case tag<Coord::SpectrumNumber>.value():
+    return make_py_buffer_info_t<Coord::SpectrumNumber>(view);
   case tag<Data::Value>.value():
     return make_py_buffer_info_t<Data::Value>(view);
   case tag<Data::Variance>.value():
@@ -368,6 +380,10 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
     return {as_py_array_t<Coord::Y>(obj, view)};
   case tag<Coord::Z>.value():
     return {as_py_array_t<Coord::Z>(obj, view)};
+  case tag<Coord::Tof>.value():
+    return {as_py_array_t<Coord::Tof>(obj, view)};
+  case tag<Coord::SpectrumNumber>.value():
+    return {as_py_array_t<Coord::SpectrumNumber>(obj, view)};
   case tag<Data::Value>.value():
     return {as_py_array_t<Data::Value>(obj, view)};
   case tag<Data::Variance>.value():
@@ -387,8 +403,12 @@ as_VariableView_variant(VariableSlice<Variable> &view) {
     return {view.get<Coord::Y>()};
   case tag<Coord::Z>.value():
     return {view.get<Coord::Z>()};
+  case tag<Coord::Tof>.value():
+    return {view.get<Coord::Tof>()};
   case tag<Coord::RowLabel>.value():
     return {view.get<Coord::RowLabel>()};
+  case tag<Coord::SpectrumNumber>.value():
+    return {view.get<Coord::SpectrumNumber>()};
   case tag<Data::Value>.value():
     return {view.get<Data::Value>()};
   case tag<Data::Variance>.value():
@@ -401,6 +421,8 @@ as_VariableView_variant(VariableSlice<Variable> &view) {
 PYBIND11_MODULE(dataset, m) {
   py::enum_<Dimension>(m, "Dim")
       .value("Row", Dim::Row)
+      .value("Spectrum", Dim::Spectrum)
+      .value("Tof", Dim::Tof)
       .value("X", Dim::X)
       .value("Y", Dim::Y)
       .value("Z", Dim::Z);
@@ -418,12 +440,17 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<detail::PythonCoord::X, Tag>(coord_tags, "_X");
   py::class_<detail::PythonCoord::Y, Tag>(coord_tags, "_Y");
   py::class_<detail::PythonCoord::Z, Tag>(coord_tags, "_Z");
+  py::class_<detail::PythonCoord::Tof, Tag>(coord_tags, "_Tof");
   py::class_<detail::PythonCoord::RowLabel, Tag>(coord_tags, "_RowLabel");
+  py::class_<detail::PythonCoord::SpectrumNumber, Tag>(coord_tags,
+                                                       "_SpectrumNumber");
   coord_tags.attr("Mask") = detail::PythonCoord::Mask{};
   coord_tags.attr("X") = detail::PythonCoord::X{};
   coord_tags.attr("Y") = detail::PythonCoord::Y{};
   coord_tags.attr("Z") = detail::PythonCoord::Z{};
+  coord_tags.attr("Tof") = detail::PythonCoord::Tof{};
   coord_tags.attr("RowLabel") = detail::PythonCoord::RowLabel{};
+  coord_tags.attr("SpectrumNumber") = detail::PythonCoord::SpectrumNumber{};
 
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
@@ -502,9 +529,10 @@ PYBIND11_MODULE(dataset, m) {
       // on tag?
       .def("__setitem__", &setVariableSlice<Data::Value>)
       .def("__setitem__", &setVariableSliceRange<Data::Value>)
-      .def_property_readonly("numpy", &as_py_array_t_variant<double, int64_t>)
-      .def_property_readonly("data",
-                             &as_VariableView_variant<double, std::string>)
+      .def_property_readonly("numpy",
+                             &as_py_array_t_variant<double, int64_t, int32_t>)
+      .def_property_readonly(
+          "data", &as_VariableView_variant<double, int32_t, std::string>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -563,7 +591,12 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            detail::getCoord<detail::PythonCoord::Z, Slice<Dataset>>)
       .def("__getitem__",
+           detail::getCoord<detail::PythonCoord::Tof, Slice<Dataset>>)
+      .def("__getitem__",
            detail::getCoord<detail::PythonCoord::RowLabel, Slice<Dataset>>)
+      .def(
+          "__getitem__",
+          detail::getCoord<detail::PythonCoord::SpectrumNumber, Slice<Dataset>>)
       .def("__getitem__",
            detail::getData<detail::PythonData::Value, Slice<Dataset>>)
       .def("__getitem__",
@@ -616,8 +649,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__", detail::getCoord<detail::PythonCoord::X, Dataset>)
       .def("__getitem__", detail::getCoord<detail::PythonCoord::Y, Dataset>)
       .def("__getitem__", detail::getCoord<detail::PythonCoord::Z, Dataset>)
+      .def("__getitem__", detail::getCoord<detail::PythonCoord::Tof, Dataset>)
       .def("__getitem__",
            detail::getCoord<detail::PythonCoord::RowLabel, Dataset>)
+      .def("__getitem__",
+           detail::getCoord<detail::PythonCoord::SpectrumNumber, Dataset>)
       .def("__getitem__", detail::getData<detail::PythonData::Value, Dataset>)
       .def("__getitem__",
            detail::getData<detail::PythonData::Variance, Dataset>)
@@ -641,7 +677,10 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insertCoord<detail::PythonCoord::X>)
       .def("__setitem__", detail::insertCoord<detail::PythonCoord::Y>)
       .def("__setitem__", detail::insertCoord<detail::PythonCoord::Z>)
+      .def("__setitem__", detail::insertCoord<detail::PythonCoord::Tof>)
       .def("__setitem__", detail::insertCoord1D<detail::PythonCoord::RowLabel>)
+      .def("__setitem__",
+           detail::insertCoord<detail::PythonCoord::SpectrumNumber>)
       .def("__setitem__", detail::insert<detail::PythonData::Value>)
       .def("__setitem__", detail::insert<detail::PythonData::Variance>)
       .def("__setitem__", detail::insert<detail::PythonData::Value, Variable>)

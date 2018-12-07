@@ -363,7 +363,7 @@ class TestDatasetExamples(unittest.TestCase):
         # Rebin the X axis
         d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2)))
         # Rebin to different axis for every y
-        d = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2])))
+        rebinned = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2])))
 
         # Do something with numpy and insert result
         d[Data.Value, "dz(p)"] = ([Dim.Z, Dim.Y, Dim.X], np.gradient(d[Data.Value, "pressure"], d[Coord.Z], axis=0))
@@ -378,6 +378,22 @@ class TestDatasetExamples(unittest.TestCase):
 
         # Extract a Z slice
         d = Dataset(d[Dim.Z, 7])
+
+    def test_Workspace2D_example(self):
+        d = Dataset()
+
+        d[Coord.SpectrumNumber] = ([Dim.Spectrum], np.arange(1, 101))
+
+        # Add a (common) time-of-flight axis
+        d[Coord.Tof] = ([Dim.Tof], np.arange(1000))
+
+        # Add data with uncertainties
+        d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.poisson(size=100*1000).reshape([100, 1000]))
+        d[Data.Variance, "sample1"] = d[Data.Value, "sample1"]
+
+        # Create a mask and use it to extract some of the spectra
+        select = Variable(Coord.Mask, [Dim.Spectrum], np.isin(d[Coord.SpectrumNumber], np.arange(10, 20)))
+        d = filter(d, select)
 
 
 if __name__ == '__main__':
