@@ -184,6 +184,19 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   self.insert<const typename Tag::type>(name, dims, ptr, ptr + dims.volume());
 }
 
+template <class Tag, class Var>
+void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
+            const Var &var) {
+  const auto &tag = std::get<Tag>(key);
+  const auto &name = std::get<const std::string &>(key);
+  if (self.contains(tag, name))
+    if (self[self.find(tag.value(), name)] == var)
+      return;
+  const auto &data = var.template get<const typename Tag::type>();
+  self.insert<typename Tag::type>(name, var.dimensions(), data.begin(),
+                                  data.end());
+}
+
 template <class Tag>
 void insertDefaultInit(
     Dataset &self, const std::pair<Tag, const std::string &> &key,
@@ -289,6 +302,8 @@ py::buffer_info make_py_buffer_info(VariableSlice<Variable> &view) {
     return make_py_buffer_info_t<Coord::Z>(view);
   case tag<Data::Value>.value():
     return make_py_buffer_info_t<Data::Value>(view);
+  case tag<Data::Variance>.value():
+    return make_py_buffer_info_t<Data::Variance>(view);
   default:
     throw std::runtime_error("non implemented for this type.");
   }
@@ -355,6 +370,8 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
     return {as_py_array_t<Coord::Z>(obj, view)};
   case tag<Data::Value>.value():
     return {as_py_array_t<Data::Value>(obj, view)};
+  case tag<Data::Variance>.value():
+    return {as_py_array_t<Data::Variance>(obj, view)};
   default:
     throw std::runtime_error("non implemented for this type.");
   }
@@ -549,6 +566,8 @@ PYBIND11_MODULE(dataset, m) {
            detail::getCoord<detail::PythonCoord::RowLabel, Slice<Dataset>>)
       .def("__getitem__",
            detail::getData<detail::PythonData::Value, Slice<Dataset>>)
+      .def("__getitem__",
+           detail::getData<detail::PythonData::Variance, Slice<Dataset>>)
       .def("__setitem__",
            detail::setData<detail::PythonData::Value, Slice<Dataset>>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
@@ -601,6 +620,8 @@ PYBIND11_MODULE(dataset, m) {
            detail::getCoord<detail::PythonCoord::RowLabel, Dataset>)
       .def("__getitem__", detail::getData<detail::PythonData::Value, Dataset>)
       .def("__getitem__",
+           detail::getData<detail::PythonData::Variance, Dataset>)
+      .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
       // Careful: The order of overloads is really important here, otherwise
       // Slice<Dataset> matches the overload below for py::array_t. I have not
@@ -623,6 +644,14 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insertCoord1D<detail::PythonCoord::RowLabel>)
       .def("__setitem__", detail::insert<detail::PythonData::Value>)
       .def("__setitem__", detail::insert<detail::PythonData::Variance>)
+      .def("__setitem__", detail::insert<detail::PythonData::Value, Variable>)
+      .def("__setitem__",
+           detail::insert<detail::PythonData::Variance, Variable>)
+      .def("__setitem__",
+           detail::insert<detail::PythonData::Value, VariableSlice<Variable>>)
+      .def(
+          "__setitem__",
+          detail::insert<detail::PythonData::Variance, VariableSlice<Variable>>)
       .def("__setitem__", detail::insertDefaultInit<detail::PythonData::Value>)
       .def("__setitem__",
            detail::insertDefaultInit<detail::PythonData::Variance>)
