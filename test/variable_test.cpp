@@ -418,6 +418,17 @@ TEST(Variable, rebin) {
   EXPECT_EQ(rebinned.get<const Data::Value>()[0], 3.0);
 }
 
+TEST(Variable, sum) {
+  auto var = makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 2}},
+                                       {1.0, 2.0, 3.0, 4.0});
+  auto sumX = sum(var, Dim::X);
+  ASSERT_EQ(sumX.dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_TRUE(equals(sumX.get<const Data::Value>(), {3.0, 7.0}));
+  auto sumY = sum(var, Dim::Y);
+  ASSERT_EQ(sumY.dimensions(), (Dimensions{Dim::X, 2}));
+  EXPECT_TRUE(equals(sumY.get<const Data::Value>(), {4.0, 6.0}));
+}
+
 TEST(VariableSlice, strides) {
   auto var = makeVariable<Data::Value>({{Dim::Y, 3}, {Dim::X, 3}});
   EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<gsl::index>{3}));

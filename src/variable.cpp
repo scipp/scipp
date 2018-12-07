@@ -502,7 +502,7 @@ public:
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
     try {
-      if (isContiguous()) {
+      if (isContiguous() && dimensions().contains(other.dimensions())) {
         if (other.isContiguous() &&
             dimensions().isContiguousIn(other.dimensions())) {
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
@@ -513,7 +513,7 @@ public:
               apply(CastHelper<T>::getSpan(*this),
                     CastHelper<T>::getView(other, dimensions()));
         }
-      } else {
+      } else if (dimensions().contains(other.dimensions())) {
         if (other.isContiguous() &&
             dimensions().isContiguousIn(other.dimensions())) {
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
@@ -521,6 +521,18 @@ public:
         } else {
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
               apply(m_model, CastHelper<T>::getView(other, dimensions()));
+        }
+      } else {
+        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+        if (other.isContiguous() &&
+            dimensions().isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(CastHelper<T>::getView(*this, other.dimensions()),
+                    CastHelper<T>::getSpan(other));
+        } else {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(CastHelper<T>::getView(*this, other.dimensions()),
+                    CastHelper<T>::getView(other, other.dimensions()));
         }
       }
     } catch (const std::bad_cast &) {
@@ -1209,4 +1221,14 @@ Variable filter(const Variable &var, const Variable &filter) {
     if (mask[iIn])
       out.data().copy(var.data(), dim, iOut++, iIn, iIn + 1);
   return out;
+}
+
+Variable sum(const Variable &var, const Dim dim) {
+  auto summed(var);
+  auto dims = summed.dimensions();
+  dims.erase(dim);
+  // setDimensions zeros the data
+  summed.setDimensions(dims);
+  summed.data() += var.data();
+  return summed;
 }

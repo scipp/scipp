@@ -356,9 +356,14 @@ class TestDatasetExamples(unittest.TestCase):
 
         # Rebin the X axis
         d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2)))
+        # Rebin to different axis for every y
+        d = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2])))
 
         # Truncate Y and Z axes
         d = Dataset(d[Dim.Y, 10:20][Dim.Z, 10:20])
+
+        # Sum over Y axis
+        d = sum(d, Dim.Y)
 
 
 if __name__ == '__main__':

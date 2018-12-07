@@ -729,3 +729,16 @@ Dataset filter(const Dataset &d, const Variable &select) {
       filtered.insert(var);
   return filtered;
 }
+
+Dataset sum(const Dataset &d, const Dim dim) {
+  Dataset summed;
+  for (auto &var : d) {
+    if (var.dimensions().contains(dim)) {
+      if (var.isData())
+        summed.insert(sum(var, dim));
+    } else {
+      summed.insert(var);
+    }
+  }
+  return summed;
+}
