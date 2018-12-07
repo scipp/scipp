@@ -472,6 +472,8 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init<>())
       .def("__repr__", &detail::format)
       .def("__len__", &Dimensions::count)
+      .def("__contains__", [](const Dimensions &self,
+                              const Dim dim) { return self.contains(dim); })
       .def_property_readonly("labels", &Dimensions::labels)
       .def("add", &Dimensions::add)
       .def("size",

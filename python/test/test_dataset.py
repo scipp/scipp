@@ -381,7 +381,7 @@ class TestDatasetExamples(unittest.TestCase):
         d -= meanY
 
         # Extract a Z slice
-        d = Dataset(d[Dim.Z, 7])
+        sliceZ = Dataset(d[Dim.Z, 7])
 
     def test_Workspace2D_example(self):
         d = Dataset()

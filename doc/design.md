@@ -650,7 +650,19 @@ meanY = mean(d, Dim.Y)
 d -= meanY
 
 # Extract a Z slice
-d = Dataset(d[Dim.Z, 7])
+sliceZ = Dataset(d[Dim.Z, 7])
+```
+
+Continuing from above we can wrap our dataset as an `xarray.Dataset` and use `hvplot` and `holoplot` for a rudimentary interactive slice viewer:
+
+```python
+# pip3 install hvplot holoplot
+import hvplot.xarray
+import holoplot
+
+xr_ds = as_xarray(d)
+sliceview = xr_ds['Value:pressure'].hvplot.image(groupby='Z',height=1000,width=1000)
+holoplot.show(sliceview)
 ```
 
 
