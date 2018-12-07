@@ -574,6 +574,9 @@ table[Data.Value, "exp1"] = ([Dim.Row], np.exp(table[Data.Value, "col1"]))
 # ... or as an existing column
 table[Data.Value, "exp1"] = np.sin(table[Data.Value, "exp1"])
 
+# Remove column
+del table[Data.Value, "exp1"]
+
 # Arithmetics with tables (here: add two tables)
 table += table
 ```
@@ -609,7 +612,87 @@ The resulting figure is:
 ![figure: 2D color-fill plot of random noise](plotting-2d-example.png)
 
 
-##### Example 3: 
+##### Example 3: 3D volume handling
+
+```python
+L = 30
+d = Dataset()
+
+# Add bin-edge axis for X
+d[Coord.X] = ([Dim.X], np.arange(L+1))
+# ... and normal axes for Y and Z
+d[Coord.Y] = ([Dim.Y], np.arange(L))
+d[Coord.Z] = ([Dim.Z], np.arange(L))
+
+# Add data variables
+d[Data.Value, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
+d[Data.Value, "pressure"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
+# Add uncertainties, matching name implicitly links it to corresponding data
+d[Data.Variance, "temperature"] = d[Data.Value, "temperature"]
+
+# Uncertainties are propagated using grouping mechanism based on name
+square = d * d
+
+# Rebin the X axis
+d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2)))
+# Rebin to different axis for every y
+rebinned = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2])))
+
+# Do something with numpy and insert result
+d[Data.Value, "dz(p)"] = ([Dim.Z, Dim.Y, Dim.X], np.gradient(d[Data.Value, "pressure"], d[Coord.Z], axis=0))
+
+# Truncate Y and Z axes
+d = Dataset(d[Dim.Y, 10:20][Dim.Z, 10:20])
+
+# Mean along Y axis
+meanY = mean(d, Dim.Y)
+# Subtract from original, making use of automatic broadcasting
+d -= meanY
+
+# Extract a Z slice
+d = Dataset(d[Dim.Z, 7])
+```
+
+
+##### Example 4: Handling spectrum data
+
+```python
+d = Dataset()
+
+d[Coord.SpectrumNumber] = ([Dim.Spectrum], np.arange(1, 101))
+
+# Add a (common) time-of-flight axis
+d[Coord.Tof] = ([Dim.Tof], np.arange(1000))
+
+# Add data with uncertainties
+d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.poisson(size=100*1000).reshape([100, 1000]))
+d[Data.Variance, "sample1"] = d[Data.Value, "sample1"]
+
+# Create a mask and use it to extract some of the spectra
+select = Variable(Coord.Mask, [Dim.Spectrum], np.isin(d[Coord.SpectrumNumber], np.arange(10, 20)))
+spectra = filter(d, select)
+
+# Direct representation of a simple instrument (more standard Mantid instrument
+# representation is of course supported, this is just to demonstrate the flexibility)
+steps = np.arange(-0.45, 0.46, 0.1)
+x = np.tile(steps,(10,))
+y = x.reshape([10,10]).transpose().flatten()
+d[Coord.X] = ([Dim.Spectrum], x)
+d[Coord.Y] = ([Dim.Spectrum], y)
+d[Coord.Z] = ([], 10.0)
+
+# Mask some spectra based on distance from beam center
+r = np.sqrt(np.square(d[Coord.X]) + np.square(d[Coord.Y]))
+d[Coord.Mask] = ([Dim.Spectrum], np.less(r, 0.2))
+
+# Do something for each spectrum (here: apply mask)
+d[Coord.Mask].data
+for i, masked in enumerate(d[Coord.Mask].numpy):
+    spec = d[Dim.Spectrum, i]
+    if masked:
+        spec[Data.Value, "sample1"] = np.zeros(1000)
+        spec[Data.Variance, "sample1"] = np.zeros(1000)
+```
 
 
 ### <a name="examples-cpp"></a>C++ example

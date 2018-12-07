@@ -69,7 +69,7 @@ bool Dataset::contains(const Tag tag, const std::string &name) const {
 }
 
 void Dataset::erase(const Tag tag, const std::string &name) {
-  const auto it = m_variables.begin() + findUnique(tag);
+  const auto it = m_variables.begin() + find(tag.value(), name);
   const auto dims = it->dimensions();
   m_variables.erase(it);
   for (const auto dim : dims.labels()) {
