@@ -665,6 +665,10 @@ sliceview = xr_ds['Value:pressure'].hvplot.image(groupby='Z',height=1000,width=1
 holoplot.show(sliceview)
 ```
 
+The resulting interactive plot in the browser looks as follows:
+
+![figure: Slice view using holoplot](plotting-holoplot.png)
+
 
 ##### Example 4: Handling spectrum data
 
