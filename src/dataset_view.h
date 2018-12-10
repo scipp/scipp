@@ -304,13 +304,15 @@ template <class... Ts> struct type_to_id<DatasetViewImpl<Ts...>> {
 };
 
 template <int32_t N>
+using get_elem_type =
+    detail::TagImpl<std::tuple_element_t<(N - 1) / 4, detail::Tags>>;
+
+template <int32_t N>
 using get_type = std::conditional_t<
     N % 2 == 0,
-    std::conditional_t<N % 4 == 0,
-                       Bin<std::tuple_element_t<(N - 1) / 4, ::Tags>>,
-                       const Bin<std::tuple_element_t<(N - 1) / 4, ::Tags>>>,
-    std::conditional_t<N % 4 == 3, std::tuple_element_t<(N - 1) / 4, ::Tags>,
-                       const std::tuple_element_t<(N - 1) / 4, ::Tags>>>;
+    std::conditional_t<N % 4 == 0, Bin<get_elem_type<N>>,
+                       const Bin<get_elem_type<N>>>,
+    std::conditional_t<N % 4 == 3, get_elem_type<N>, const get_elem_type<N>>>;
 
 template <int32_t N> struct id_to_type {
   using type = std::conditional_t<

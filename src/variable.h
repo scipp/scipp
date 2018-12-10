@@ -170,10 +170,12 @@ public:
   template <class Tag> bool valueTypeIs() const { return Tag{} == m_tag; }
 
   Tag tag() const { return m_tag; }
-  bool isCoord() const { return m_tag < std::tuple_size<Coord::tags>::value; }
+  bool isCoord() const {
+    return m_tag < std::tuple_size<detail::CoordDef::tags>::value;
+  }
   bool isAttr() const {
-    return m_tag >= std::tuple_size<Coord::tags>::value +
-                        std::tuple_size<Data::tags>::value;
+    return m_tag >= std::tuple_size<detail::CoordDef::tags>::value +
+                        std::tuple_size<detail::DataDef::tags>::value;
   }
   bool isData() const { return !isCoord() && !isAttr(); }
 

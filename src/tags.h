@@ -267,8 +267,7 @@ template <class T>
 static constexpr uint16_t tag_id =
     detail::index<std::remove_const_t<T>, Tags>::value;
 
-template <class TagDefinition>
-struct TagImpl : public Tag, TagDefinition {
+template <class TagDefinition> struct TagImpl : public Tag, TagDefinition {
   constexpr TagImpl() : Tag(tag_id<TagDefinition>) {}
 };
 
@@ -315,15 +314,6 @@ struct Coord {
   using DetectorParent = detail::TagImpl<detail::CoordDef::DetectorParent>;
   using DetectorScale = detail::TagImpl<detail::CoordDef::DetectorScale>;
   using DetectorShape = detail::TagImpl<detail::CoordDef::DetectorShape>;
-
-  using tags = std::tuple<
-      X, Y, Z, Tof, MonitorTof, DetectorId, SpectrumNumber, DetectorIsMonitor,
-      DetectorMask, DetectorRotation, DetectorPosition, DetectorGrouping,
-      SpectrumPosition, RowLabel, Polarization, Temperature, FuzzyTemperature,
-      Time, TimeInterval, Mask, ComponentRotation, ComponentPosition,
-      ComponentParent, ComponentChildren, ComponentScale, ComponentShape,
-      ComponentName, ComponentSubtree, DetectorSubtree, ComponentSubtreeRange,
-      DetectorSubtreeRange, DetectorParent, DetectorScale, DetectorShape>;
 };
 
 struct Data {
@@ -338,61 +328,57 @@ struct Data {
   using History = detail::TagImpl<detail::DataDef::History>;
   using Events = detail::TagImpl<detail::DataDef::Events>;
   using Table = detail::TagImpl<detail::DataDef::Table>;
-
-  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
-                          DimensionSize, String, History, Events, Table>;
 };
 
 struct Attr {
   using ExperimentLog = detail::TagImpl<detail::AttrDef::ExperimentLog>;
-
-  using tags = std::tuple<ExperimentLog>;
 };
 
-using Tags = decltype(std::tuple_cat(std::declval<Coord::tags>(),
-                                     std::declval<Data::tags>(),
-                                     std::declval<Attr::tags>()));
-
 template <class T>
-static constexpr bool is_coord = T{} < std::tuple_size<Coord::tags>::value;
+static constexpr bool is_coord =
+    T{} < std::tuple_size<detail::CoordDef::tags>::value;
 template <class T>
-static constexpr bool is_attr = T{} >= std::tuple_size<Coord::tags>::value +
-                                           std::tuple_size<Data::tags>::value;
+static constexpr bool is_attr =
+    T{} >= std::tuple_size<detail::CoordDef::tags>::value +
+               std::tuple_size<detail::DataDef::tags>::value;
 template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 
+namespace detail {
 template <class Tag> constexpr bool is_dimension_coordinate = false;
-template <> constexpr bool is_dimension_coordinate<Coord::Tof> = true;
-template <> constexpr bool is_dimension_coordinate<Coord::X> = true;
-template <> constexpr bool is_dimension_coordinate<Coord::Y> = true;
-template <> constexpr bool is_dimension_coordinate<Coord::Z> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Tof> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::X> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Y> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Z> = true;
 template <>
-constexpr bool is_dimension_coordinate<Coord::SpectrumNumber> = true;
-template <> constexpr bool is_dimension_coordinate<Coord::RowLabel> = true;
+constexpr bool is_dimension_coordinate<CoordDef::SpectrumNumber> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::RowLabel> = true;
 
 template <class Tag> constexpr Dimension coordinate_dimension = Dim::Invalid;
-template <> constexpr Dimension coordinate_dimension<Coord::Tof> = Dim::Tof;
-template <> constexpr Dimension coordinate_dimension<Coord::X> = Dim::X;
-template <> constexpr Dimension coordinate_dimension<Coord::Y> = Dim::Y;
-template <> constexpr Dimension coordinate_dimension<Coord::Z> = Dim::Z;
+template <> constexpr Dimension coordinate_dimension<CoordDef::Tof> = Dim::Tof;
+template <> constexpr Dimension coordinate_dimension<CoordDef::X> = Dim::X;
+template <> constexpr Dimension coordinate_dimension<CoordDef::Y> = Dim::Y;
+template <> constexpr Dimension coordinate_dimension<CoordDef::Z> = Dim::Z;
 template <>
-constexpr Dimension coordinate_dimension<Coord::SpectrumNumber> = Dim::Spectrum;
+constexpr Dimension coordinate_dimension<CoordDef::SpectrumNumber> =
+    Dim::Spectrum;
 template <>
-constexpr Dimension coordinate_dimension<Coord::RowLabel> = Dim::Row;
+constexpr Dimension coordinate_dimension<CoordDef::RowLabel> = Dim::Row;
+} // namespace detail
 
 template <class... Ts>
-constexpr std::array<bool, std::tuple_size<Tags>::value>
+constexpr std::array<bool, std::tuple_size<detail::Tags>::value>
 make_is_dimension_coordinate(const std::tuple<Ts...> &) {
-  return {is_dimension_coordinate<Ts>...};
+  return {detail::is_dimension_coordinate<Ts>...};
 }
 
 template <class... Ts>
-constexpr std::array<Dim, std::tuple_size<Tags>::value>
+constexpr std::array<Dim, std::tuple_size<detail::Tags>::value>
 make_coordinate_dimension(const std::tuple<Ts...> &) {
-  return {coordinate_dimension<Ts>...};
+  return {detail::coordinate_dimension<Ts>...};
 }
 
-constexpr auto isDimensionCoord = make_is_dimension_coordinate(Tags{});
-constexpr auto coordDimension = make_coordinate_dimension(Tags{});
+constexpr auto isDimensionCoord = make_is_dimension_coordinate(detail::Tags{});
+constexpr auto coordDimension = make_coordinate_dimension(detail::Tags{});
 
 class DataBin {
 public:
