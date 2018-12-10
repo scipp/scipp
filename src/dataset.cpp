@@ -269,9 +269,6 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
             var1 += var2;
           else
             var1 -= var2;
-          // TODO Cannot change name from slice, what should we do here?
-          if (!var1.data().isView())
-            var1.setName(var1.name() + " - " + var2.name());
         }
       }
       if (count == 0)
