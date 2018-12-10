@@ -191,21 +191,6 @@ std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
   return strides;
 }
 
-// The way the Python exports are written we require non-const references to
-// variables. Note that setting breaking attributes is not exported, so we
-// should be safe.
-template <class Tag, class T>
-VariableSlice<Variable> getCoord(T &self, const Tag tag) {
-  return VariableSlice<Variable>(detail::makeAccess(self)[find(self, tag, "")]);
-}
-
-template <class Tag, class T>
-VariableSlice<Variable>
-getData(T &self, const std::pair<const Tag, const std::string> &key) {
-  return VariableSlice<Variable>(
-      detail::makeAccess(self)[find(self, key.first, key.second)]);
-}
-
 template <class Tag, class T>
 void setData(T &self, const std::pair<const Tag, const std::string> &key,
              py::array_t<typename Tag::type> &data) {
@@ -547,15 +532,13 @@ PYBIND11_MODULE(dataset, m) {
                throw std::runtime_error("Step must be 1");
              return self(dim, start, stop);
            })
-      .def("__getitem__", detail::getCoord<Coord::X, Slice<Dataset>>)
-      .def("__getitem__", detail::getCoord<Coord::Y, Slice<Dataset>>)
-      .def("__getitem__", detail::getCoord<Coord::Z, Slice<Dataset>>)
-      .def("__getitem__", detail::getCoord<Coord::Tof, Slice<Dataset>>)
-      .def("__getitem__", detail::getCoord<Coord::RowLabel, Slice<Dataset>>)
       .def("__getitem__",
-           detail::getCoord<Coord::SpectrumNumber, Slice<Dataset>>)
-      .def("__getitem__", detail::getData<Data::Value, Slice<Dataset>>)
-      .def("__getitem__", detail::getData<Data::Variance, Slice<Dataset>>)
+           [](Slice<Dataset> &self, const Tag &tag) { return self(tag); })
+      .def("__getitem__",
+           [](Slice<Dataset> &self,
+              const std::pair<Tag, const std::string> &key) {
+             return self(key.first, key.second);
+           })
       .def("__setitem__", detail::setData<Data::Value, Slice<Dataset>>)
       .def("__setitem__", detail::setData<Data::Variance, Slice<Dataset>>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
@@ -601,15 +584,12 @@ PYBIND11_MODULE(dataset, m) {
                throw std::runtime_error("Step must be 1");
              return self(dim, start, stop);
            })
-      .def("__getitem__", detail::getCoord<Coord::X, Dataset>)
-      .def("__getitem__", detail::getCoord<Coord::Y, Dataset>)
-      .def("__getitem__", detail::getCoord<Coord::Z, Dataset>)
-      .def("__getitem__", detail::getCoord<Coord::Tof, Dataset>)
-      .def("__getitem__", detail::getCoord<Coord::Mask, Dataset>)
-      .def("__getitem__", detail::getCoord<Coord::RowLabel, Dataset>)
-      .def("__getitem__", detail::getCoord<Coord::SpectrumNumber, Dataset>)
-      .def("__getitem__", detail::getData<Data::Value, Dataset>)
-      .def("__getitem__", detail::getData<Data::Variance, Dataset>)
+      .def("__getitem__",
+           [](Dataset &self, const Tag &tag) { return self(tag); })
+      .def("__getitem__",
+           [](Dataset &self, const std::pair<Tag, const std::string> &key) {
+             return self(key.first, key.second);
+           })
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
       // Careful: The order of overloads is really important here, otherwise

@@ -130,6 +130,21 @@ TEST(Dataset, can_use_normal_insert_to_copy_edges) {
     EXPECT_NO_THROW(copy.insert(var));
 }
 
+TEST(Dataset, get_variable_view) {
+  Dataset d;
+  d.insert<Data::Value>("", {});
+  d.insert<Data::Value>("name", {});
+  d.insert<Coord::X>({});
+
+  EXPECT_EQ(d(Coord::X{}).tag(), Coord::X{});
+  EXPECT_EQ(d(Data::Value{}).tag(), Data::Value{});
+  EXPECT_EQ(d(Data::Value{}).name(), "");
+  EXPECT_EQ(d(Data::Value{}, "name").tag(), Data::Value{});
+  EXPECT_EQ(d(Data::Value{}, "name").name(), "name");
+  EXPECT_THROW_MSG(d(Coord::Y{}), std::runtime_error,
+                   "Dataset does not contain such a variable.");
+}
+
 TEST(Dataset, extract) {
   Dataset d;
   d.insert<Data::Value>("name1", Dimensions{}, {1.1});

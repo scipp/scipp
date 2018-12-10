@@ -39,6 +39,11 @@ Slice<Dataset> Dataset::operator()(const Dim dim, const gsl::index begin,
   return Slice<Dataset>(*this)(dim, begin, end);
 }
 
+VariableSlice<Variable> Dataset::operator()(const Tag tag,
+                                            const std::string &name) {
+  return VariableSlice<Variable>(m_variables[find(tag, name)]);
+}
+
 void Dataset::insert(Variable variable) {
   if (variable.isCoord() && count(*this, variable.tag()))
     throw std::runtime_error("Attempt to insert duplicate coordinate.");
@@ -173,6 +178,11 @@ void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
 bool Dataset::operator==(const Dataset &other) const {
   return (m_dimensions == other.m_dimensions) &&
          (m_variables == other.m_variables);
+}
+
+VariableSlice<Variable> SliceMutableMixin<Slice<Dataset>>::
+operator()(const Tag tag, const std::string &name) {
+  return VariableSlice<Variable>(base().get(find(base(), tag, name)));
 }
 
 template <class T1, class T2> T1 &plus_equals(T1 &dataset, const T2 &other) {

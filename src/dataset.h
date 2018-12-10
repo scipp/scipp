@@ -52,6 +52,8 @@ public:
                                   const gsl::index end = -1) const;
   Slice<Dataset> operator()(const Dim dim, const gsl::index begin,
                             const gsl::index end = -1);
+  VariableSlice<Variable> operator()(const Tag tag,
+                                     const std::string &name = "");
 
   auto begin() const { return m_variables.begin(); }
   auto end() const { return m_variables.end(); }
@@ -241,7 +243,11 @@ gsl::index find(const T &dataset, const Tag tag, const std::string &name) {
   throw std::runtime_error("Dataset does not contain such a variable.");
 }
 
-template <class Base> class SliceMutableMixin {};
+template <class Base> class SliceMutableMixin {
+public:
+  VariableSlice<Variable> operator()(const Tag tag,
+                                     const std::string &name = "");
+};
 
 template <> class SliceMutableMixin<Slice<Dataset>> {
 public:
@@ -249,8 +255,12 @@ public:
   template <class T> Slice<Dataset> operator-=(const T &other);
   template <class T> Slice<Dataset> operator*=(const T &other);
 
+  VariableSlice<Variable> operator()(const Tag tag,
+                                     const std::string &name = "");
+
 private:
   VariableSlice<Variable> get(const gsl::index i);
+
   dataset_slice_iterator<Dataset> mutableBegin() const;
   dataset_slice_iterator<Dataset> mutableEnd() const;
 
@@ -355,6 +365,8 @@ public:
       return true;
     return std::equal(begin(), end(), other.begin(), other.end());
   }
+
+  using SliceMutableMixin<Slice<D>>::operator();
 
 private:
   friend class SliceMutableMixin<Slice<D>>;
