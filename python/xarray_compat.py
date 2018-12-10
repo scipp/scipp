@@ -8,11 +8,16 @@ def as_xarray(dataset):
     data = dict()
     coords = dict()
     def xarray_name(var):
-        names = {0:'X', 1:'Y', 2:'Z', 13:'RowLabel', 36:'Value'}
+        names = {ds.Coord.X:'X', ds.Coord.Y:'Y', ds.Coord.Z:'Z', ds.Coord.RowLabel:'RowLabel', ds.Data.Value:'Value'}
         if var.is_coord:
-            return names[var.type]
+            # var.tag returns the `Tag` base class, so dict lookup does not work. How can we fix this?
+            for key in names:
+                if var.tag == key:
+                    return names[key]
         else:
-            return names[var.type] + ':' + var.name
+            for key in names:
+                if var.tag == key:
+                    return names[key] + ':' + var.name
     for var in dataset:
         dims = var.dimensions
         labels = dims.labels

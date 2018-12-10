@@ -390,7 +390,7 @@ PYBIND11_MODULE(dataset, m) {
       .value("Y", Dim::Y)
       .value("Z", Dim::Z);
 
-  py::class_<Tag>(m, "Tag");
+  py::class_<Tag>(m, "Tag").def(py::self == py::self);
 
   auto data_tags = m.def_submodule("Data");
   py::class_<Data::Value, Tag>(data_tags, "_Value");
@@ -449,7 +449,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit<Data::Value>))
       .def(py::init(&detail::makeVariableDefaultInit<Data::Variance>))
       .def(py::init<const VariableSlice<Variable> &>())
-      .def_property_readonly("type", &Variable::tag)
+      .def_property_readonly("tag", &Variable::tag)
       .def_property("name", &Variable::name, &Variable::setName)
       .def_property_readonly("is_coord", &Variable::isCoord)
       .def_property_readonly("dimensions", &Variable::dimensions)
@@ -472,7 +472,7 @@ PYBIND11_MODULE(dataset, m) {
              return dims.shape()[0];
            })
       .def_property_readonly("is_coord", &VariableSlice<Variable>::isCoord)
-      .def_property_readonly("type", &VariableSlice<Variable>::tag)
+      .def_property_readonly("tag", &VariableSlice<Variable>::tag)
       .def_property_readonly("name", &VariableSlice<Variable>::name)
       .def("__getitem__",
            [](VariableSlice<Variable> &self,
