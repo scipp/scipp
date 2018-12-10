@@ -10,7 +10,14 @@
 - Design document reviewers:
   Owen Arnold,
   Lamar Moore,
-  Neil Vaytet
+  Neil Vaytet,
+  Martyn Gigg,
+  Nick Draper,
+  Gagic Vardanyan
+  Antti Soininen
+  Andrei Savici
+  Thomas Caswell
+
 
 ## Contents
 
@@ -139,6 +146,9 @@ For our purposes the following is missing in `xarray`:
 Probably many of these things could be added to `xarray`, but the involved complexities imply that the resulting effort is not less than a from-scratch implementation. Furthermore, `xarray` seems to be less than 5 years old with very few active contributors, so building everything on top of it is an additional (albeit probably small) risk.
 
 Furthermore, while `xarray` uses `numpy` internally and performance is thus adequate in many situations, having a C++ library enables us to get maximum performance if needed, i.e., there are better opportunities for performance improvements.
+
+Since we intend to reuse large parts of Mantid that have been written in C++, having a core data structure that is based on Python may be very limiting.
+It would probably possible to wrap it as C++ types using, e.g., `pybind11`, but it is likely an inconvenient way of working and comes with significant performance penalties.
 
 
 ### <a name="overview-examples"></a>Examples
