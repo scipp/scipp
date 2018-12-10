@@ -40,18 +40,19 @@ Slice<Dataset> Dataset::operator()(const Dim dim, const gsl::index begin,
 }
 
 void Dataset::insert(Variable variable) {
-  if (variable.isCoord() && count(*this, variable.type()))
+  if (variable.isCoord() && count(*this, variable.tag()))
     throw std::runtime_error("Attempt to insert duplicate coordinate.");
   if (!variable.isCoord()) {
     for (const auto &item : m_variables)
-      if (item.type() == variable.type() && item.name() == variable.name())
+      if (item.tag() == variable.tag() && item.name() == variable.name())
         throw std::runtime_error(
             "Attempt to insert data of same type with duplicate name.");
   }
   // TODO special handling for special variables types like
   // Data::Histogram (either prevent adding, or extract into underlying
   // variables).
-  mergeDimensions(variable.dimensions(), coordDimension[variable.type()]);
+  mergeDimensions(variable.dimensions(),
+                  coordDimension[variable.tag().value()]);
   m_variables.push_back(std::move(variable));
 }
 
@@ -59,7 +60,7 @@ void Dataset::insert(Variable variable) {
 template <class T>
 bool contains(const T &dataset, const Tag tag, const std::string &name) {
   for (gsl::index i = 0; i < dataset.size(); ++i)
-    if (dataset[i].type() == tag.value() && dataset[i].name() == name)
+    if (dataset[i].tag() == tag && dataset[i].name() == name)
       return true;
   return false;
 }
@@ -69,7 +70,7 @@ bool Dataset::contains(const Tag tag, const std::string &name) const {
 }
 
 void Dataset::erase(const Tag tag, const std::string &name) {
-  const auto it = m_variables.begin() + find(tag.value(), name);
+  const auto it = m_variables.begin() + find(tag, name);
   const auto dims = it->dimensions();
   m_variables.erase(it);
   for (const auto dim : dims.labels()) {
@@ -98,14 +99,14 @@ Dataset Dataset::extract(const std::string &name) {
   return subset;
 }
 
-gsl::index Dataset::find(const uint16_t id, const std::string &name) const {
-  return ::find(*this, id, name);
+gsl::index Dataset::find(const Tag tag, const std::string &name) const {
+  return ::find(*this, tag, name);
 }
 
 gsl::index Dataset::findUnique(const Tag tag) const {
   gsl::index index = -1;
   for (gsl::index i = 0; i < size(); ++i) {
-    if (m_variables[i].type() == tag.value()) {
+    if (m_variables[i].tag() == tag) {
       if (index != -1)
         throw std::runtime_error(
             "Given variable tag is not unique. Must provide a name.");
@@ -148,7 +149,7 @@ void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
             bool canShrink = true;
             for (const auto &var : m_variables) {
               if (var.dimensions().contains(dim) &&
-                  coordDimension[var.type()] != dim)
+                  coordDimension[var.tag().value()] != dim)
                 canShrink = false;
             }
             if (canShrink) {
@@ -182,7 +183,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &dataset, const T2 &other) {
     // - Fail if other contains more.
     gsl::index index;
     try {
-      index = find(dataset, var2.type(), var2.name());
+      index = find(dataset, var2.tag(), var2.name());
     } catch (const std::runtime_error &) {
       throw std::runtime_error("Right-hand-side in addition contains variable "
                                "that is not present in left-hand-side.");
@@ -235,7 +236,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
   for (const auto &var2 : other) {
     gsl::index index;
     try {
-      index = find(dataset, var2.type(), var2.name());
+      index = find(dataset, var2.tag(), var2.name());
     } catch (const std::runtime_error &) {
       if (var2.isData() && names.size() == 1) {
         // Only a single (named) variable in RHS, subtract from all.
@@ -256,7 +257,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
               "Coordinates of datasets do not match. Cannot "
               "perform subtraction.");
       } else if (var1.isData()) {
-        if (var1.type() == tag_id<Data::Variance>)
+        if (var1.tag() == Data::Variance{})
           var1 += var2;
         else
           var1 -= var2;
@@ -265,9 +266,9 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
       // Not a coordinate, subtract from all.
       gsl::index count = 0;
       for (VarRef var1 : detail::makeAccess(dataset)) {
-        if (var1.type() == var2.type()) {
+        if (var1.tag() == var2.tag()) {
           ++count;
-          if (var1.type() == tag_id<Data::Variance>)
+          if (var1.tag() == Data::Variance{})
             var1 += var2;
           else
             var1 -= var2;
@@ -310,15 +311,15 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
   for (const auto &var2 : other) {
     gsl::index index;
     try {
-      index = find(dataset, var2.type(), var2.name());
+      index = find(dataset, var2.tag(), var2.name());
     } catch (const std::runtime_error &) {
       throw std::runtime_error("Right-hand-side in addition contains variable "
                                "that is not present in left-hand-side.");
     }
-    if (var2.type() == tag_id<Data::Variance>) {
+    if (var2.tag() == Data::Variance{}) {
       try {
-        find(dataset, tag_id<Data::Value>, var2.name());
-        find(other, tag_id<Data::Value>, var2.name());
+        find(dataset, Data::Value{}, var2.name());
+        find(other, Data::Value{}, var2.name());
       } catch (const std::runtime_error &) {
         throw std::runtime_error("Cannot multiply datasets that contain a "
                                  "variance but no corresponding value.");
@@ -334,15 +335,14 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
             "Coordinates of datasets do not match. Cannot perform addition");
     } else if (var1.isData()) {
       // Data variables are added
-      if (var2.type() == tag_id<Data::Value>) {
-        if (count(dataset, tag_id<Data::Variance>, var2.name()) !=
-            count(other, tag_id<Data::Variance>, var2.name()))
+      if (var2.tag() == Data::Value{}) {
+        if (count(dataset, Data::Variance{}, var2.name()) !=
+            count(other, Data::Variance{}, var2.name()))
           throw std::runtime_error("Either both or none of the operands must "
                                    "have a variance for their values.");
-        if (count(dataset, tag_id<Data::Variance>, var2.name()) != 0) {
-          auto error_index1 =
-              find(dataset, tag_id<Data::Variance>, var2.name());
-          auto error_index2 = find(other, tag_id<Data::Variance>, var2.name());
+        if (count(dataset, Data::Variance{}, var2.name()) != 0) {
+          auto error_index1 = find(dataset, Data::Variance{}, var2.name());
+          auto error_index2 = find(other, Data::Variance{}, var2.name());
           VarRef error1 = detail::makeAccess(dataset)[error_index1];
           const auto &error2 = other[error_index2];
           if ((var1.dimensions() == var2.dimensions()) &&
@@ -374,7 +374,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
           // No variance found, continue without.
           var1 *= var2;
         }
-      } else if (var2.type() == tag_id<Data::Variance>) {
+      } else if (var2.tag() == Data::Variance{}) {
         // Do nothing, math for variance is done when processing corresponding
         // value.
       } else {
@@ -476,13 +476,13 @@ operator*=(const Slice<Dataset> &);
 void Dataset::setSlice(const Dataset &slice, const Dimension dim,
                        const gsl::index index) {
   for (const auto &var2 : slice.m_variables) {
-    auto &var1 = m_variables[find(var2.type(), var2.name())];
+    auto &var1 = m_variables[find(var2.tag(), var2.name())];
     if (var1.dimensions().contains(dim))
       var1.setSlice(var2, dim, index);
     else
       var1 = var2;
   }
-  if (count(*this, tag_id<Data::History>) == 1)
+  if (count(*this, Data::History{}) == 1)
     get<Data::History>()[0].push_back("this->setSlice(slice, dim, " +
                                       std::to_string(index) + ");");
 }
@@ -566,7 +566,7 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
   Dataset out;
   for (gsl::index i1 = 0; i1 < d1.size(); ++i1) {
     const auto &var1 = d1[i1];
-    const auto &var2 = d2[d2.find(var1.type(), var1.name())];
+    const auto &var2 = d2[d2.find(var1.tag(), var1.name())];
     // TODO may need to extend things along constant dimensions to match shapes!
     if (var1.dimensions().contains(dim)) {
       out.insert(concatenate(var1, var2, dim));
@@ -613,6 +613,7 @@ Dataset convert(const Dataset &d, const Dimension from, const Dimension to) {
   // This is a *derived* coordinate, no need to store it explicitly? May even be
   // prevented?
   // DatasetView<const Coord::TwoTheta>(dataset);
+  return d;
 }
 
 Dataset rebin(const Dataset &d, const Variable &newCoord) {
@@ -620,7 +621,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   if (!newCoord.isCoord())
     throw std::runtime_error(
         "The provided rebin coordinate is not a coordinate variable.");
-  const auto dim = coordDimension[newCoord.type()];
+  const auto dim = coordDimension[newCoord.tag().value()];
   if (dim == Dim::Invalid)
     throw std::runtime_error(
         "The provided rebin coordinate is not a dimension coordinate.");
@@ -631,7 +632,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   if (!isContinuous(dim))
     throw std::runtime_error(
         "The provided rebin coordinate is not a continuous coordinate.");
-  const auto &oldCoord = d[d.findUnique(Tag(newCoord.type()))];
+  const auto &oldCoord = d[d.findUnique(Tag(newCoord.tag().value()))];
   const auto &oldDims = oldCoord.dimensions();
   const auto &datasetDims = d.dimensions();
   if (!oldDims.contains(dim))
@@ -656,7 +657,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   for (const auto &var : d) {
     if (!var.dimensions().contains(dim)) {
       out.insert(var);
-    } else if (var.type() == newCoord.type()) {
+    } else if (var.tag() == newCoord.tag()) {
       out.insert(newCoord);
     } else {
       out.insert(rebin(var, oldCoord, newCoord));
@@ -678,7 +679,7 @@ template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
     return d;
 
   Dataset sorted;
-  auto axisVar = d[d.find(tag_id<Tag>, name)];
+  auto axisVar = d[d.find(Tag{}, name)];
   auto axis = axisVar.template get<Tag>();
   std::vector<gsl::index> indices(axis.size());
   std::iota(indices.begin(), indices.end(), 0);
@@ -692,7 +693,7 @@ template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
   for (const auto &var : d) {
     if (!var.dimensions().contains(sortDim))
       sorted.insert(var);
-    else if (var.type() == tag_id<Tag> && var.name() == name)
+    else if (var.tag() == Tag{} && var.name() == name)
       sorted.insert(axisVar);
     else
       sorted.insert(permute(var, sortDim, indices));
@@ -747,7 +748,7 @@ Dataset mean(const Dataset &d, const Dim dim) {
   // TODO This is a naive mean not taking into account the axis. Should this do
   // something smarter for unevenly spaced data?
   for (auto &var : d) {
-    const Dim coordDim = coordDimension[var.type()];
+    const Dim coordDim = coordDimension[var.tag().value()];
     if (coordDim != Dim::Invalid && coordDim != dim) {
       if (var.dimensions().contains(dim))
         throw std::runtime_error(
@@ -762,7 +763,7 @@ Dataset mean(const Dataset &d, const Dim dim) {
   for (auto &var : d) {
     if (var.dimensions().contains(dim)) {
       if (var.isData()) {
-        if (var.type() == tag<Data::Variance>.value()) {
+        if (var.tag() == Data::Variance{}) {
           // Standard deviation of the mean has an extra 1/sqrt(N). Note that
           // this is not included by the stand-alone mean(Variable), since that
           // would be confusing.

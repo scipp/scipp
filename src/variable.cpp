@@ -628,14 +628,14 @@ Variable::Variable(const VariableSlice<Variable> &slice)
 }
 
 template <class T>
-Variable::Variable(uint32_t id, const Unit::Id unit,
+Variable::Variable(const Tag tag, const Unit::Id unit,
                    const Dimensions &dimensions, T object)
-    : m_type(id), m_unit{unit},
+    : m_tag(tag), m_unit{unit},
       m_object(std::make_unique<VariableModel<T>>(std::move(dimensions),
                                                   std::move(object))) {}
 
 template <class VarSlice> Variable &Variable::operator=(const VarSlice &slice) {
-  m_type = slice.type();
+  m_tag = slice.tag();
   m_name = slice.m_variable->m_name;
   setUnit(slice.unit());
   setDimensions(slice.dimensions());
@@ -661,7 +661,7 @@ template <class T> Vector<T> &Variable::cast() {
 }
 
 #define INSTANTIATE(...)                                                       \
-  template Variable::Variable(uint32_t, const Unit::Id, const Dimensions &,    \
+  template Variable::Variable(const Tag, const Unit::Id, const Dimensions &,   \
                               Vector<__VA_ARGS__>);                            \
   template Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>();                 \
   template const Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>() const;
@@ -695,7 +695,7 @@ template <class T> bool Variable::operator==(const T &other) const {
   // See specialization for trivial case of comparing two Variable instances:
   // Pointers are equal
   // Deep comparison
-  if (type() != other.type())
+  if (tag() != other.tag())
     return false;
   if (!(dimensions() == other.dimensions()))
     return false;
@@ -713,14 +713,13 @@ template <> bool Variable::operator==(const Variable &other) const {
   if (m_object == other.m_object)
     return true;
   // Deep comparison
-  if (type() != other.type())
+  if (tag() != other.tag())
     return false;
   if (!(dimensions() == other.dimensions()))
     return false;
   return data() == other.data();
 }
 
-template bool Variable::operator==(const Variable &other) const;
 template bool Variable::operator==(const VariableSlice<Variable> &other) const;
 template bool Variable::
 operator==(const VariableSlice<const Variable> &other) const;
@@ -816,7 +815,7 @@ template <class T>
 VariableSliceMutableMixin<VariableSlice<Variable>> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(const T &other) {
   // TODO Should mismatching tags be allowed, as long as the type matches?
-  if (base().type() != other.type())
+  if (base().tag() != other.tag())
     throw std::runtime_error("Cannot assign to slice: Type mismatch.");
   // Name mismatch ok, but do not assign it.
   if (base().unit() != other.unit())
@@ -968,7 +967,7 @@ bool VariableSlice<V>::operator==(const T &other) const {
     return false;
   // Deep comparison (pointer comparison does not make sense since we may be
   // looking at a different section).
-  if (type() != other.type())
+  if (tag() != other.tag())
     return false;
   if (!(dimensions() == other.dimensions()))
     return false;
@@ -1135,7 +1134,7 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
 
 Variable concatenate(const Variable &a1, const Variable &a2,
                      const Dimension dim) {
-  if (a1.type() != a2.type())
+  if (a1.tag() != a2.tag())
     throw std::runtime_error(
         "Cannot concatenate Variables: Data types do not match.");
   if (a1.unit() != a2.unit())
@@ -1196,7 +1195,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord) {
   auto rebinned(var);
   auto dims = rebinned.dimensions();
-  const Dim dim = coordDimension[newCoord.type()];
+  const Dim dim = coordDimension[newCoord.tag().value()];
   dims.resize(dim, newCoord.dimensions().size(dim) - 1);
   rebinned.setDimensions(dims);
   // TODO take into account unit if values have been divided by bin width.
@@ -1250,6 +1249,6 @@ Variable sum(const Variable &var, const Dim dim) {
 
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
-  double scale = 1.0/var.dimensions().size(dim);
+  double scale = 1.0 / var.dimensions().size(dim);
   return summed * makeVariable<Data::Value>({}, {scale});
 }

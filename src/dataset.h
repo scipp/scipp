@@ -117,41 +117,41 @@ public:
   }
 
   template <class Tag> auto get() const {
-    return m_variables[findUnique(tag<Tag>)].template get<Tag>();
+    return m_variables[findUnique(Tag{})].template get<Tag>();
   }
 
   template <class Tag> auto get(const std::string &name) const {
-    return m_variables[find(tag_id<Tag>, name)].template get<Tag>();
+    return m_variables[find(Tag{}, name)].template get<Tag>();
   }
 
   template <class Tag> auto get() {
-    return m_variables[findUnique(tag<Tag>)].template get<Tag>();
+    return m_variables[findUnique(Tag{})].template get<Tag>();
   }
 
   template <class Tag> auto get(const std::string &name) {
-    return m_variables[find(tag_id<Tag>, name)].template get<Tag>();
+    return m_variables[find(Tag{}, name)].template get<Tag>();
   }
 
   const Dimensions &dimensions() const { return m_dimensions; }
 
   template <class Tag> const Dimensions &dimensions() const {
-    return m_variables[findUnique(tag<Tag>)].dimensions();
+    return m_variables[findUnique(Tag{})].dimensions();
   }
 
   template <class Tag>
   const Dimensions &dimensions(const std::string &name) const {
-    return m_variables[find(tag_id<Tag>, name)].dimensions();
+    return m_variables[find(Tag{}, name)].dimensions();
   }
 
   template <class Tag> const Unit &unit() const {
-    return m_variables[findUnique(tag<Tag>)].unit();
+    return m_variables[findUnique(Tag{})].unit();
   }
 
   template <class Tag> const Unit &unit(const std::string &name) const {
-    return m_variables[find(tag_id<Tag>, name)].unit();
+    return m_variables[find(Tag{}, name)].unit();
   }
 
-  gsl::index find(const uint16_t id, const std::string &name) const;
+  gsl::index find(const Tag tag, const std::string &name) const;
   gsl::index findUnique(const Tag tag) const;
 
   bool operator==(const Dataset &other) const;
@@ -175,19 +175,19 @@ private:
   boost::container::small_vector<Variable, 4> m_variables;
 };
 
-template <class T> gsl::index count(const T &dataset, const uint16_t id) {
+template <class T> gsl::index count(const T &dataset, const Tag tag) {
   gsl::index n = 0;
   for (const auto &item : dataset)
-    if (item.type() == id)
+    if (item.tag() == tag)
       ++n;
   return n;
 }
 
 template <class T>
-gsl::index count(const T &dataset, const uint16_t id, const std::string &name) {
+gsl::index count(const T &dataset, const Tag tag, const std::string &name) {
   gsl::index n = 0;
   for (const auto &item : dataset)
-    if (item.type() == id && item.name() == name)
+    if (item.tag() == tag && item.name() == name)
       ++n;
   return n;
 }
@@ -234,9 +234,9 @@ private:
 
 // T can be Dataset or Slice.
 template <class T>
-gsl::index find(const T &dataset, const uint16_t id, const std::string &name) {
+gsl::index find(const T &dataset, const Tag tag, const std::string &name) {
   for (gsl::index i = 0; i < dataset.size(); ++i)
-    if (dataset[i].type() == id && dataset[i].name() == name)
+    if (dataset[i].tag() == tag && dataset[i].name() == name)
       return i;
   throw std::runtime_error("Dataset does not contain such a variable.");
 }
@@ -305,7 +305,7 @@ public:
       for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
         // TODO Should all coordinates with matching dimension be removed, or
         // only dimension-coordinates?
-        if (coordDimension[m_dataset[*it].type()] == dim)
+        if (coordDimension[m_dataset[*it].tag().value()] == dim)
           it = slice.m_indices.erase(it);
         else
           ++it;

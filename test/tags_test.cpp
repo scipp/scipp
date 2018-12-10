@@ -8,9 +8,9 @@
 #include "tags.h"
 
 TEST(Tags, isDimensionCoord) {
-  EXPECT_TRUE(isDimensionCoord[tag_id<Coord::Tof>]);
-  EXPECT_TRUE(isDimensionCoord[tag_id<Coord::X>]);
-  EXPECT_TRUE(isDimensionCoord[tag_id<Coord::Y>]);
-  EXPECT_TRUE(isDimensionCoord[tag_id<Coord::Z>]);
-  EXPECT_FALSE(isDimensionCoord[tag_id<Coord::DetectorPosition>]);
+  EXPECT_TRUE(isDimensionCoord[Coord::Tof{}.value()]);
+  EXPECT_TRUE(isDimensionCoord[Coord::X{}.value()]);
+  EXPECT_TRUE(isDimensionCoord[Coord::Y{}.value()]);
+  EXPECT_TRUE(isDimensionCoord[Coord::Z{}.value()]);
+  EXPECT_FALSE(isDimensionCoord[Coord::DetectorPosition{}.value()]);
 }

@@ -119,7 +119,7 @@ public:
   Variable(const VariableSlice<Variable> &slice);
 
   template <class T>
-  Variable(uint32_t id, const Unit::Id unit, const Dimensions &dimensions,
+  Variable(Tag tag, const Unit::Id unit, const Dimensions &dimensions,
            T object);
 
   template <class VarSlice> Variable &operator=(const VarSlice &slice);
@@ -167,15 +167,13 @@ public:
   const VariableConcept &data() const { return *m_object; }
   VariableConcept &data() { return m_object.access(); }
 
-  template <class Tag> bool valueTypeIs() const {
-    return tag_id<Tag> == m_type;
-  }
+  template <class Tag> bool valueTypeIs() const { return ::tag<Tag> == m_tag; }
 
-  uint16_t type() const { return m_type; }
-  bool isCoord() const { return m_type < std::tuple_size<Coord::tags>::value; }
+  Tag tag() const { return m_tag; }
+  bool isCoord() const { return m_tag < std::tuple_size<Coord::tags>::value; }
   bool isAttr() const {
-    return m_type >= std::tuple_size<Coord::tags>::value +
-                         std::tuple_size<Data::tags>::value;
+    return m_tag >= std::tuple_size<Coord::tags>::value +
+                        std::tuple_size<Data::tags>::value;
   }
   bool isData() const { return !isCoord() && !isAttr(); }
 
@@ -219,27 +217,27 @@ private:
   // friend.
   Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }
 
-  uint16_t m_type;
+  Tag m_tag;
   Unit m_unit;
   deep_ptr<std::string> m_name;
   cow_ptr<VariableConcept> m_object;
 };
 
 template <class Tag> Variable makeVariable(const Dimensions &dimensions) {
-  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+  return Variable(Tag{}, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(dimensions.volume()));
 }
 
 template <class Tag, class... Args>
 Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
-  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+  return Variable(Tag{}, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(std::forward<Args>(args)...));
 }
 
 template <class Tag, class T>
 Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T> values) {
-  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+  return Variable(Tag{}, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
@@ -247,7 +245,7 @@ template <class Tag, class T>
 Variable makeVariable(const Dimensions &dimensions,
                       const std::vector<T> &values) {
   // Copy to aligned memory.
-  return Variable(tag_id<Tag>, Tag::unit, std::move(dimensions),
+  return Variable(Tag{}, Tag::unit, std::move(dimensions),
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
@@ -352,7 +350,7 @@ public:
   template <class Tag> bool valueTypeIs() const {
     return m_variable->template valueTypeIs<Tag>();
   }
-  uint16_t type() const { return m_variable->type(); }
+  Tag tag() const { return m_variable->tag(); }
   const VariableConcept &data() const { return *m_view; }
   VariableConcept &data() { return *m_view; }
 

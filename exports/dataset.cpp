@@ -198,7 +198,7 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   const auto &tag = std::get<Tag>(key);
   const auto &name = std::get<const std::string &>(key);
   if (self.contains(tag, name))
-    if (self[self.find(tag.value(), name)] == var)
+    if (self[self.find(tag, name)] == var)
       return;
   const auto &data = var.template get<const typename Tag::type>();
   self.insert<typename Tag::type>(name, var.dimensions(), data.begin(),
@@ -237,22 +237,21 @@ std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
 // variables. Note that setting breaking attributes is not exported, so we
 // should be safe.
 template <class Tag, class T>
-VariableSlice<Variable> getCoord(T &self, const Tag) {
-  return VariableSlice<Variable>(
-      detail::makeAccess(self)[find(self, tag_id<typename Tag::type>, "")]);
+VariableSlice<Variable> getCoord(T &self, const Tag tag) {
+  return VariableSlice<Variable>(detail::makeAccess(self)[find(self, tag, "")]);
 }
 
 template <class Tag, class T>
 VariableSlice<Variable>
 getData(T &self, const std::pair<const Tag, const std::string> &key) {
-  return VariableSlice<Variable>(detail::makeAccess(
-      self)[find(self, tag_id<typename Tag::type>, key.second)]);
+  return VariableSlice<Variable>(
+      detail::makeAccess(self)[find(self, key.first, key.second)]);
 }
 
 template <class Tag, class T>
 void setData(T &self, const std::pair<const Tag, const std::string> &key,
              py::array_t<typename Tag::type::type> &data) {
-  const gsl::index index = find(self, tag_id<typename Tag::type>, key.second);
+  const gsl::index index = find(self, key.first, key.second);
   const auto &dims = self[index].dimensions();
   py::buffer_info info = data.request();
   const auto &shape = dims.shape();
@@ -301,22 +300,22 @@ py::buffer_info make_py_buffer_info_t(VariableSlice<Variable> &view) {
 }
 
 py::buffer_info make_py_buffer_info(VariableSlice<Variable> &view) {
-  switch (view.type()) {
-  case tag<Coord::X>.value():
+  switch (view.tag().value()) {
+  case Coord::X{}.value():
     return make_py_buffer_info_t<Coord::X>(view);
-  case tag<Coord::Y>.value():
+  case Coord::Y{}.value():
     return make_py_buffer_info_t<Coord::Y>(view);
-  case tag<Coord::Z>.value():
+  case Coord::Z{}.value():
     return make_py_buffer_info_t<Coord::Z>(view);
-  case tag<Coord::Tof>.value():
+  case Coord::Tof{}.value():
     return make_py_buffer_info_t<Coord::Tof>(view);
-  case tag<Coord::Mask>.value():
+  case Coord::Mask{}.value():
     return make_py_buffer_info_t<Coord::Mask>(view);
-  case tag<Coord::SpectrumNumber>.value():
+  case Coord::SpectrumNumber{}.value():
     return make_py_buffer_info_t<Coord::SpectrumNumber>(view);
-  case tag<Data::Value>.value():
+  case Data::Value{}.value():
     return make_py_buffer_info_t<Data::Value>(view);
-  case tag<Data::Variance>.value():
+  case Data::Variance{}.value():
     return make_py_buffer_info_t<Data::Variance>(view);
   default:
     throw std::runtime_error("non implemented for this type.");
@@ -375,22 +374,22 @@ auto as_py_array_t(py::object &obj, VariableSlice<Variable> &view) {
 template <class... Ts>
 std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   auto &view = obj.cast<VariableSlice<Variable> &>();
-  switch (view.type()) {
-  case tag<Coord::X>.value():
+  switch (view.tag().value()) {
+  case Coord::X{}.value():
     return {as_py_array_t<Coord::X>(obj, view)};
-  case tag<Coord::Y>.value():
+  case Coord::Y{}.value():
     return {as_py_array_t<Coord::Y>(obj, view)};
-  case tag<Coord::Z>.value():
+  case Coord::Z{}.value():
     return {as_py_array_t<Coord::Z>(obj, view)};
-  case tag<Coord::Tof>.value():
+  case Coord::Tof{}.value():
     return {as_py_array_t<Coord::Tof>(obj, view)};
-  case tag<Coord::Mask>.value():
+  case Coord::Mask{}.value():
     return {as_py_array_t<Coord::Mask>(obj, view)};
-  case tag<Coord::SpectrumNumber>.value():
+  case Coord::SpectrumNumber{}.value():
     return {as_py_array_t<Coord::SpectrumNumber>(obj, view)};
-  case tag<Data::Value>.value():
+  case Data::Value{}.value():
     return {as_py_array_t<Data::Value>(obj, view)};
-  case tag<Data::Variance>.value():
+  case Data::Variance{}.value():
     return {as_py_array_t<Data::Variance>(obj, view)};
   default:
     throw std::runtime_error("non implemented for this type.");
@@ -400,24 +399,24 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
 template <class... Ts>
 std::variant<VariableView<Ts>...>
 as_VariableView_variant(VariableSlice<Variable> &view) {
-  switch (view.type()) {
-  case tag<Coord::X>.value():
+  switch (view.tag().value()) {
+  case Coord::X{}.value():
     return {view.get<Coord::X>()};
-  case tag<Coord::Y>.value():
+  case Coord::Y{}.value():
     return {view.get<Coord::Y>()};
-  case tag<Coord::Z>.value():
+  case Coord::Z{}.value():
     return {view.get<Coord::Z>()};
-  case tag<Coord::Tof>.value():
+  case Coord::Tof{}.value():
     return {view.get<Coord::Tof>()};
-  case tag<Coord::Mask>.value():
+  case Coord::Mask{}.value():
     return {view.get<Coord::Mask>()};
-  case tag<Coord::RowLabel>.value():
+  case Coord::RowLabel{}.value():
     return {view.get<Coord::RowLabel>()};
-  case tag<Coord::SpectrumNumber>.value():
+  case Coord::SpectrumNumber{}.value():
     return {view.get<Coord::SpectrumNumber>()};
-  case tag<Data::Value>.value():
+  case Data::Value{}.value():
     return {view.get<Data::Value>()};
-  case tag<Data::Variance>.value():
+  case Data::Variance{}.value():
     return {view.get<Data::Variance>()};
   default:
     throw std::runtime_error("non implemented for this type.");
@@ -496,7 +495,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(
           &detail::makeVariableDefaultInit<detail::PythonData::Variance>))
       .def(py::init<const VariableSlice<Variable> &>())
-      .def_property_readonly("type", &Variable::type)
+      .def_property_readonly("type", &Variable::tag)
       .def_property("name", &Variable::name, &Variable::setName)
       .def_property_readonly("is_coord", &Variable::isCoord)
       .def_property_readonly("dimensions", &Variable::dimensions)
@@ -519,7 +518,7 @@ PYBIND11_MODULE(dataset, m) {
              return dims.shape()[0];
            })
       .def_property_readonly("is_coord", &VariableSlice<Variable>::isCoord)
-      .def_property_readonly("type", &VariableSlice<Variable>::type)
+      .def_property_readonly("type", &VariableSlice<Variable>::tag)
       .def_property_readonly("name", &VariableSlice<Variable>::name)
       .def("__getitem__",
            [](VariableSlice<Variable> &self,

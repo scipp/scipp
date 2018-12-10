@@ -18,11 +18,38 @@
 #include "unit.h"
 #include "value_with_delta.h"
 
+class Tag {
+public:
+  constexpr Tag() : m_value(0) {}
+  constexpr explicit Tag(uint16_t value) : m_value(value) {}
+  constexpr uint16_t value() const { return m_value; }
+
+  constexpr bool operator==(const Tag other) const {
+    return m_value == other.m_value;
+  }
+  constexpr bool operator!=(const Tag other) const {
+    return m_value != other.m_value;
+  }
+
+  constexpr bool operator<(const int32_t value) const {
+    return m_value < value;
+  }
+  constexpr bool operator>=(const int32_t value) const {
+    return m_value >= value;
+  }
+
+private:
+  uint16_t m_value;
+};
+
 namespace detail {
 struct ReturnByValuePolicy {};
 } // namespace detail
 
-struct Coord {
+class Dataset;
+
+namespace detail {
+struct CoordDef {
   struct X {
     using type = double;
     static constexpr auto unit = Unit::Id::Length;
@@ -173,8 +200,7 @@ struct Coord {
       DetectorSubtreeRange, DetectorParent, DetectorScale, DetectorShape>;
 };
 
-class Dataset;
-struct Data {
+struct DataDef {
   struct Tof {
     using type = double;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -223,7 +249,7 @@ struct Data {
                           DimensionSize, String, History, Events, Table>;
 };
 
-struct Attr {
+struct AttrDef {
   struct ExperimentLog {
     using type = Dataset;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -232,33 +258,112 @@ struct Attr {
   using tags = std::tuple<ExperimentLog>;
 };
 
-using Tags = decltype(std::tuple_cat(std::declval<Coord::tags>(),
-                                     std::declval<Data::tags>(),
-                                     std::declval<Attr::tags>()));
+using Tags = decltype(std::tuple_cat(std::declval<detail::CoordDef::tags>(),
+                                     std::declval<detail::DataDef::tags>(),
+                                     std::declval<detail::AttrDef::tags>()));
 template <class T>
 static constexpr uint16_t tag_id =
     detail::index<std::remove_const_t<T>, Tags>::value;
-template <class T>
-static constexpr bool is_coord =
-    tag_id<T> < std::tuple_size<Coord::tags>::value;
-template <class T>
-static constexpr bool is_attr =
-    tag_id<T> >=
-    std::tuple_size<Coord::tags>::value + std::tuple_size<Data::tags>::value;
-template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 
-class Tag {
-public:
-  constexpr explicit Tag(uint16_t value) : m_value(value) {}
-  constexpr uint16_t value() const { return m_value; }
-
-private:
-  uint16_t m_value;
+template <class TagDefinition>
+struct TagImpl : public Tag, public TagDefinition {
+  constexpr TagImpl() : Tag(tag_id<TagDefinition>) {}
 };
+
+} // namespace detail
+
+struct Coord {
+  using X = detail::TagImpl<detail::CoordDef::X>;
+  using Y = detail::TagImpl<detail::CoordDef::Y>;
+  using Z = detail::TagImpl<detail::CoordDef::Z>;
+  using Tof = detail::TagImpl<detail::CoordDef::Tof>;
+  using MonitorTof = detail::TagImpl<detail::CoordDef::MonitorTof>;
+  using DetectorId = detail::TagImpl<detail::CoordDef::DetectorId>;
+  using SpectrumNumber = detail::TagImpl<detail::CoordDef::SpectrumNumber>;
+  using DetectorIsMonitor =
+      detail::TagImpl<detail::CoordDef::DetectorIsMonitor>;
+  using DetectorMask = detail::TagImpl<detail::CoordDef::DetectorMask>;
+  using DetectorRotation = detail::TagImpl<detail::CoordDef::DetectorRotation>;
+  using DetectorPosition = detail::TagImpl<detail::CoordDef::DetectorPosition>;
+  using DetectorGrouping = detail::TagImpl<detail::CoordDef::DetectorGrouping>;
+  using SpectrumPosition = detail::TagImpl<detail::CoordDef::SpectrumPosition>;
+  using RowLabel = detail::TagImpl<detail::CoordDef::RowLabel>;
+  using Polarization = detail::TagImpl<detail::CoordDef::Polarization>;
+  using Temperature = detail::TagImpl<detail::CoordDef::Temperature>;
+  using FuzzyTemperature = detail::TagImpl<detail::CoordDef::FuzzyTemperature>;
+  using Time = detail::TagImpl<detail::CoordDef::Time>;
+  using TimeInterval = detail::TagImpl<detail::CoordDef::TimeInterval>;
+  using Mask = detail::TagImpl<detail::CoordDef::Mask>;
+  using ComponentRotation =
+      detail::TagImpl<detail::CoordDef::ComponentRotation>;
+  using ComponentPosition =
+      detail::TagImpl<detail::CoordDef::ComponentPosition>;
+  using ComponentParent = detail::TagImpl<detail::CoordDef::ComponentParent>;
+  using ComponentChildren =
+      detail::TagImpl<detail::CoordDef::ComponentChildren>;
+  using ComponentScale = detail::TagImpl<detail::CoordDef::ComponentScale>;
+  using ComponentShape = detail::TagImpl<detail::CoordDef::ComponentShape>;
+  using ComponentName = detail::TagImpl<detail::CoordDef::ComponentName>;
+  using ComponentSubtree = detail::TagImpl<detail::CoordDef::ComponentSubtree>;
+  using DetectorSubtree = detail::TagImpl<detail::CoordDef::DetectorSubtree>;
+  using ComponentSubtreeRange =
+      detail::TagImpl<detail::CoordDef::ComponentSubtreeRange>;
+  using DetectorSubtreeRange =
+      detail::TagImpl<detail::CoordDef::DetectorSubtreeRange>;
+  using DetectorParent = detail::TagImpl<detail::CoordDef::DetectorParent>;
+  using DetectorScale = detail::TagImpl<detail::CoordDef::DetectorScale>;
+  using DetectorShape = detail::TagImpl<detail::CoordDef::DetectorShape>;
+
+  using tags = std::tuple<
+      X, Y, Z, Tof, MonitorTof, DetectorId, SpectrumNumber, DetectorIsMonitor,
+      DetectorMask, DetectorRotation, DetectorPosition, DetectorGrouping,
+      SpectrumPosition, RowLabel, Polarization, Temperature, FuzzyTemperature,
+      Time, TimeInterval, Mask, ComponentRotation, ComponentPosition,
+      ComponentParent, ComponentChildren, ComponentScale, ComponentShape,
+      ComponentName, ComponentSubtree, DetectorSubtree, ComponentSubtreeRange,
+      DetectorSubtreeRange, DetectorParent, DetectorScale, DetectorShape>;
+};
+
+struct Data {
+  using Tof = detail::TagImpl<detail::DataDef::Tof>;
+  using PulseTime = detail::TagImpl<detail::DataDef::PulseTime>;
+  using Value = detail::TagImpl<detail::DataDef::Value>;
+  using Variance = detail::TagImpl<detail::DataDef::Variance>;
+  using StdDev = detail::TagImpl<detail::DataDef::StdDev>;
+  using Int = detail::TagImpl<detail::DataDef::Int>;
+  using DimensionSize = detail::TagImpl<detail::DataDef::DimensionSize>;
+  using String = detail::TagImpl<detail::DataDef::String>;
+  using History = detail::TagImpl<detail::DataDef::History>;
+  using Events = detail::TagImpl<detail::DataDef::Events>;
+  using Table = detail::TagImpl<detail::DataDef::Table>;
+
+  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
+                          DimensionSize, String, History, Events, Table>;
+};
+
+struct Attr {
+  using ExperimentLog = detail::TagImpl<detail::AttrDef::ExperimentLog>;
+
+  using tags = std::tuple<ExperimentLog>;
+};
+
+using Tags = decltype(std::tuple_cat(std::declval<Coord::tags>(),
+                                     std::declval<Data::tags>(),
+                                     std::declval<Attr::tags>()));
+
+template <class T>
+static constexpr uint16_t tag_id =
+    detail::index<std::remove_const_t<T>, detail::Tags>::value;
+template <class T>
+static constexpr bool is_coord = T{} < std::tuple_size<Coord::tags>::value;
+template <class T>
+static constexpr bool is_attr = T{} >= std::tuple_size<Coord::tags>::value +
+                                           std::tuple_size<Data::tags>::value;
+template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 
 // TODO We should use this everywhere instead of the non-type-safe uint16_t
 // provided by tag_id.
-template <class T> static constexpr Tag tag = Tag(tag_id<T>);
+template <class T> static constexpr Tag tag = Tag(T{});
 
 template <class Tag> constexpr bool is_dimension_coordinate = false;
 template <> constexpr bool is_dimension_coordinate<Coord::Tof> = true;

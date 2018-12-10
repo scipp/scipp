@@ -285,11 +285,11 @@ namespace detail {
 // specifying tags.
 template <class T> struct type_to_id {
   static constexpr int32_t value =
-      std::is_const<T>::value ? 4 * tag_id<T> + 1 : 4 * tag_id<T> + 3;
+      std::is_const<T>::value ? 4 * T{}.value() + 1 : 4 * T{}.value() + 3;
 };
 template <class T> struct type_to_id<Bin<T>> {
   static constexpr int32_t value =
-      std::is_const<T>::value ? 4 * tag_id<T> + 2 : 4 * tag_id<T> + 4;
+      std::is_const<T>::value ? 4 * T{}.value() + 2 : 4 * T{}.value() + 4;
 };
 // Nested DatasetView gets an ID based on the IDs of all child tags.
 template <class... Ts> struct type_to_id<DatasetViewImpl<Ts...>> {
@@ -306,10 +306,11 @@ template <class... Ts> struct type_to_id<DatasetViewImpl<Ts...>> {
 template <int32_t N>
 using get_type = std::conditional_t<
     N % 2 == 0,
-    std::conditional_t<N % 4 == 0, Bin<std::tuple_element_t<(N - 1) / 4, Tags>>,
-                       const Bin<std::tuple_element_t<(N - 1) / 4, Tags>>>,
-    std::conditional_t<N % 4 == 3, std::tuple_element_t<(N - 1) / 4, Tags>,
-                       const std::tuple_element_t<(N - 1) / 4, Tags>>>;
+    std::conditional_t<N % 4 == 0,
+                       Bin<std::tuple_element_t<(N - 1) / 4, ::Tags>>,
+                       const Bin<std::tuple_element_t<(N - 1) / 4, ::Tags>>>,
+    std::conditional_t<N % 4 == 3, std::tuple_element_t<(N - 1) / 4, ::Tags>,
+                       const std::tuple_element_t<(N - 1) / 4, ::Tags>>>;
 
 template <int32_t N> struct id_to_type {
   using type = std::conditional_t<
