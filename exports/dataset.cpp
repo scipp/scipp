@@ -80,28 +80,6 @@ std::string format(const Dimensions &dims) {
   return out;
 }
 
-template <class Tag, class T>
-bool containsUnnamed(const T &self, const Tag tag) {
-  return self.contains(tag);
-}
-
-template <class Tag, class T>
-bool contains(const T &self,
-              const std::tuple<const Tag, const std::string &> &key) {
-  return self.contains(std::get<const Tag>(key),
-                       std::get<const std::string &>(key));
-}
-
-template <class Tag> void eraseUnnamed(Dataset &self, const Tag tag) {
-  self.erase(tag);
-}
-
-template <class Tag>
-void erase(Dataset &self,
-           const std::tuple<const Tag, const std::string &> &key) {
-  self.erase(std::get<const Tag>(key), std::get<const std::string &>(key));
-}
-
 template <class Tag>
 void insertCoord(Dataset &self, const Tag,
                  const std::tuple<const std::vector<Dim> &,
