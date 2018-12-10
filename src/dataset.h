@@ -118,38 +118,22 @@ public:
       insert(var);
   }
 
-  template <class Tag> auto get() const {
-    return m_variables[findUnique(Tag{})].template get<Tag>();
-  }
-
-  template <class Tag> auto get(const std::string &name) const {
+  template <class Tag> auto get(const std::string &name = "") const {
     return m_variables[find(Tag{}, name)].template get<Tag>();
   }
 
-  template <class Tag> auto get() {
-    return m_variables[findUnique(Tag{})].template get<Tag>();
-  }
-
-  template <class Tag> auto get(const std::string &name) {
+  template <class Tag> auto get(const std::string &name = "") {
     return m_variables[find(Tag{}, name)].template get<Tag>();
   }
 
   const Dimensions &dimensions() const { return m_dimensions; }
 
-  template <class Tag> const Dimensions &dimensions() const {
-    return m_variables[findUnique(Tag{})].dimensions();
-  }
-
   template <class Tag>
-  const Dimensions &dimensions(const std::string &name) const {
+  const Dimensions &dimensions(const std::string &name = "") const {
     return m_variables[find(Tag{}, name)].dimensions();
   }
 
-  template <class Tag> const Unit &unit() const {
-    return m_variables[findUnique(Tag{})].unit();
-  }
-
-  template <class Tag> const Unit &unit(const std::string &name) const {
+  template <class Tag> const Unit &unit(const std::string &name = "") const {
     return m_variables[find(Tag{}, name)].unit();
   }
 

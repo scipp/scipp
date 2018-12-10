@@ -212,21 +212,8 @@ template <class T1, class T2> T1 &plus_equals(T1 &dataset, const T2 &other) {
       // beneficial would depend on the shared reference count in var1 and var2:
       // var1 = var2;
     } else if (var1.isData()) {
-      if (var1.template valueTypeIs<Data::History>()) {
-        auto hists = var1.template get<Data::History>();
-        if (hists.size() != 1)
-          throw std::runtime_error("TODO: History should be 0-dimensions. "
-                                   "Flatten it? Prevent creation? Do we need "
-                                   "history with dimensions?");
-        const auto &hist2 = var2.template get<const Data::History>()[0];
-        const gsl::index size = hist2.size();
-        for (gsl::index i = 0; i < size; ++i)
-          hists[0].push_back("other." + hist2[i]);
-        hists[0].push_back("operator+=");
-      } else {
-        // Data variables are added
-        var1 += var2;
-      }
+      // Data variables are added
+      var1 += var2;
     } else {
       // Attribute variables are added
       // TODO Does it make sense to do this only if mismatched?
@@ -492,9 +479,6 @@ void Dataset::setSlice(const Dataset &slice, const Dimension dim,
     else
       var1 = var2;
   }
-  if (count(*this, Data::History{}) == 1)
-    get<Data::History>()[0].push_back("this->setSlice(slice, dim, " +
-                                      std::to_string(index) + ");");
 }
 
 template <class Value>
@@ -523,11 +507,6 @@ Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {
       out.insert(slice(var, dim, index));
     else
       out.insert(var);
-  }
-  try {
-    out.get<Data::History>()[0].push_back("slice(., dim, " +
-                                          std::to_string(index) + ");");
-  } catch (std::runtime_error &) { // no history
   }
   return out;
 }

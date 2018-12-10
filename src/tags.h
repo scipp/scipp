@@ -234,10 +234,6 @@ struct DataDef {
     using type = std::string;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct History {
-    using type = std::vector<std::string>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
   struct Events {
     using type = Dataset;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -248,7 +244,7 @@ struct DataDef {
   };
 
   using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
-                          DimensionSize, String, History, Events, Table>;
+                          DimensionSize, String, Events, Table>;
 };
 
 struct AttrDef {
@@ -325,7 +321,6 @@ struct Data {
   using Int = detail::TagImpl<detail::DataDef::Int>;
   using DimensionSize = detail::TagImpl<detail::DataDef::DimensionSize>;
   using String = detail::TagImpl<detail::DataDef::String>;
-  using History = detail::TagImpl<detail::DataDef::History>;
   using Events = detail::TagImpl<detail::DataDef::Events>;
   using Table = detail::TagImpl<detail::DataDef::Table>;
 };

@@ -304,23 +304,6 @@ TEST(Dataset, operator_plus_equal_different_content) {
   EXPECT_NO_THROW(b += a);
 }
 
-TEST(Dataset, operator_plus_equal_history) {
-  Dataset a;
-  a.insert<Coord::X>({Dimension::X, 1}, {0.1});
-  a.insert<Data::Value>("name1", {Dimension::X, 1}, {2.2});
-  a.insert<Data::History>("history", {}, 1);
-  a += a;
-  EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
-  EXPECT_EQ(a.get<Data::Value>()[0], 4.4);
-  EXPECT_EQ(a.get<Data::History>()[0].size(), 1);
-  EXPECT_EQ(a.get<Data::History>()[0][0], "operator+=");
-  a += a;
-  // Merged history, so it contains 3 operations, not 2.
-  EXPECT_EQ(a.get<Data::History>()[0].size(), 3);
-  EXPECT_EQ(a.get<Data::History>()[0][1], "other.operator+=");
-  EXPECT_EQ(a.get<Data::History>()[0][2], "operator+=");
-}
-
 TEST(Dataset, operator_plus_equal_with_attributes) {
   Dataset a;
   a.insert<Coord::X>({Dimension::X, 1}, {0.1});
@@ -334,33 +317,6 @@ TEST(Dataset, operator_plus_equal_with_attributes) {
   // For now there is no special merging behavior, just keep attributes of first
   // operand.
   EXPECT_EQ(a.get<Attr::ExperimentLog>()[0], logs);
-}
-
-TEST(Dataset, history_with_slicing) {
-  Dataset d;
-  d.insert<Coord::X>({Dimension::X, 3}, {0.1, 0.2, 0.3});
-  d.insert<Data::Value>("name", {Dimension::X, 3}, {1.1, 2.2, 3.3});
-  d.insert<Data::History>("history", {}, 1);
-  d += d;
-  for (gsl::index i = 0; i < 3; ++i) {
-    auto s = slice(d, Dimension::X, i);
-    // For the purpose of using slicing for cache blocking we do not want a
-    // polluted history. One option is to remove the history from all by one
-    // slice before processing, as well as the history entries related to
-    // slicing. The outline history management would be part of a class/function
-    // performing the blocking and would not be exposed to the user.
-    if (i != 0)
-      s.erase<Data::History>();
-    else
-      s.get<Data::History>()[0].pop_back();
-    s += s;
-    d.setSlice(s, Dimension::X, i);
-    d.get<Data::History>()[0].pop_back();
-  }
-  EXPECT_EQ(d.get<Data::History>()[0].size(), 3);
-  EXPECT_EQ(d.get<Data::History>()[0][0], "operator+=");
-  EXPECT_EQ(d.get<Data::History>()[0][1], "other.operator+=");
-  EXPECT_EQ(d.get<Data::History>()[0][2], "operator+=");
 }
 
 TEST(Dataset, operator_times_equal) {
