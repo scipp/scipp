@@ -103,6 +103,7 @@ struct CoordDef {
   };
   struct SpectrumPosition : public detail::ReturnByValuePolicy {
     using type = double;
+    static constexpr auto unit = Unit::Id::Length;
   };
   struct RowLabel {
     using type = std::string;
@@ -219,6 +220,7 @@ struct DataDef {
   };
   struct StdDev : public detail::ReturnByValuePolicy {
     using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct Int {
     using type = int64_t;
@@ -266,7 +268,7 @@ static constexpr uint16_t tag_id =
     detail::index<std::remove_const_t<T>, Tags>::value;
 
 template <class TagDefinition>
-struct TagImpl : public Tag, public TagDefinition {
+struct TagImpl : public Tag, TagDefinition {
   constexpr TagImpl() : Tag(tag_id<TagDefinition>) {}
 };
 
@@ -352,18 +354,11 @@ using Tags = decltype(std::tuple_cat(std::declval<Coord::tags>(),
                                      std::declval<Attr::tags>()));
 
 template <class T>
-static constexpr uint16_t tag_id =
-    detail::index<std::remove_const_t<T>, detail::Tags>::value;
-template <class T>
 static constexpr bool is_coord = T{} < std::tuple_size<Coord::tags>::value;
 template <class T>
 static constexpr bool is_attr = T{} >= std::tuple_size<Coord::tags>::value +
                                            std::tuple_size<Data::tags>::value;
 template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
-
-// TODO We should use this everywhere instead of the non-type-safe uint16_t
-// provided by tag_id.
-template <class T> static constexpr Tag tag = Tag(T{});
 
 template <class Tag> constexpr bool is_dimension_coordinate = false;
 template <> constexpr bool is_dimension_coordinate<Coord::Tof> = true;

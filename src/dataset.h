@@ -96,7 +96,7 @@ public:
   void erase(const Tag tag, const std::string &name = "");
 
   template <class Tag> void erase() {
-    const auto it = m_variables.begin() + findUnique(tag<Tag>);
+    const auto it = m_variables.begin() + findUnique(Tag{});
     const auto dims = it->dimensions();
     m_variables.erase(it);
     for (const auto dim : dims.labels()) {

@@ -48,50 +48,9 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
-struct PythonData {
-  struct Value : public Tag {
-    using type = Data::Value;
-    Value() : Tag(::tag<type>) {}
-  };
-  struct Variance : public Tag {
-    using type = Data::Variance;
-    Variance() : Tag(::tag<type>) {}
-  };
-};
-struct PythonCoord {
-  struct Tof : public Tag {
-    using type = Coord::Tof;
-    Tof() : Tag(::tag<type>) {}
-  };
-  struct Mask : public Tag {
-    using type = Coord::Mask;
-    Mask() : Tag(::tag<type>) {}
-  };
-  struct X : public Tag {
-    using type = Coord::X;
-    X() : Tag(::tag<type>) {}
-  };
-  struct Y : public Tag {
-    using type = Coord::Y;
-    Y() : Tag(::tag<type>) {}
-  };
-  struct Z : public Tag {
-    using type = Coord::Z;
-    Z() : Tag(::tag<type>) {}
-  };
-  struct RowLabel : public Tag {
-    using type = Coord::RowLabel;
-    RowLabel() : Tag(::tag<type>) {}
-  };
-  struct SpectrumNumber : public Tag {
-    using type = Coord::SpectrumNumber;
-    SpectrumNumber() : Tag(::tag<type>) {}
-  };
-};
-
 template <class Tag>
 Variable makeVariable(const Tag, const std::vector<Dim> &labels,
-                      py::array_t<typename Tag::type::type> &data) {
+                      py::array_t<typename Tag::type> &data) {
   const py::buffer_info info = data.request();
   if (info.ndim != labels.size())
     throw std::runtime_error(
@@ -100,8 +59,8 @@ Variable makeVariable(const Tag, const std::vector<Dim> &labels,
   for (gsl::index i = labels.size() - 1; i >= 0; --i)
     dims.add(labels[i], info.shape[i]);
 
-  auto *ptr = (typename Tag::type::type *)info.ptr;
-  return makeVariable<const typename Tag::type>(dims, ptr, ptr + dims.volume());
+  auto *ptr = (typename Tag::type *)info.ptr;
+  return makeVariable<const Tag>(dims, ptr, ptr + dims.volume());
 }
 
 template <class Tag>
@@ -113,7 +72,7 @@ Variable makeVariableDefaultInit(const Tag, const std::vector<Dim> &labels,
   Dimensions dims;
   for (gsl::index i = labels.size() - 1; i >= 0; --i)
     dims.add(labels[i], shape[i].cast<size_t>());
-  return makeVariable<const typename Tag::type>(dims);
+  return makeVariable<const Tag>(dims);
 }
 
 std::string format(const Dimensions &dims) {
@@ -121,31 +80,32 @@ std::string format(const Dimensions &dims) {
   return out;
 }
 
-template <class Tag, class T> bool containsUnnamed(const T &self, const Tag) {
-  return self.contains(tag<Tag>);
+template <class Tag, class T>
+bool containsUnnamed(const T &self, const Tag tag) {
+  return self.contains(tag);
 }
 
 template <class Tag, class T>
 bool contains(const T &self,
               const std::tuple<const Tag, const std::string &> &key) {
-  return self.contains(tag<Tag>, std::get<const std::string &>(key));
+  return self.contains(std::get<const Tag>(key),
+                       std::get<const std::string &>(key));
 }
 
-template <class Tag> void eraseUnnamed(Dataset &self, const Tag) {
-  self.erase(tag<Tag>);
+template <class Tag> void eraseUnnamed(Dataset &self, const Tag tag) {
+  self.erase(tag);
 }
 
 template <class Tag>
 void erase(Dataset &self,
            const std::tuple<const Tag, const std::string &> &key) {
-  self.erase(tag<Tag>, std::get<const std::string &>(key));
+  self.erase(std::get<const Tag>(key), std::get<const std::string &>(key));
 }
 
 template <class Tag>
-void insertCoord(
-    Dataset &self, const Tag,
-    const std::tuple<const std::vector<Dim> &,
-                     py::array_t<typename Tag::type::type> &> &data) {
+void insertCoord(Dataset &self, const Tag,
+                 const std::tuple<const std::vector<Dim> &,
+                                  py::array_t<typename Tag::type> &> &data) {
   const auto &labels = std::get<0>(data);
   const py::buffer_info info = std::get<1>(data).request();
   if (info.ndim != labels.size())
@@ -155,15 +115,14 @@ void insertCoord(
   for (gsl::index i = labels.size() - 1; i >= 0; --i)
     dims.add(labels[i], info.shape[i]);
 
-  auto *ptr = (typename Tag::type::type *)info.ptr;
-  self.insert<const typename Tag::type>(dims, ptr, ptr + dims.volume());
+  auto *ptr = (typename Tag::type *)info.ptr;
+  self.insert<const Tag>(dims, ptr, ptr + dims.volume());
 }
 
 template <class Tag>
-void insertCoord1D(
-    Dataset &self, const Tag,
-    const std::tuple<const std::vector<Dim> &,
-                     std::vector<typename Tag::type::type> &> &data) {
+void insertCoord1D(Dataset &self, const Tag,
+                   const std::tuple<const std::vector<Dim> &,
+                                    std::vector<typename Tag::type> &> &data) {
   const auto &labels = std::get<0>(data);
   const auto &values = std::get<1>(data);
   if (labels.size() != 1)
@@ -171,13 +130,13 @@ void insertCoord1D(
         "Number of dimensions tags does not match shape of data.");
   Dimensions dims{labels[0], static_cast<gsl::index>(values.size())};
 
-  self.insert<const typename Tag::type>(dims, values);
+  self.insert<const Tag>(dims, values);
 }
 
 template <class Tag>
 void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
             const std::tuple<const std::vector<Dim> &,
-                             py::array_t<typename Tag::type::type> &> &data) {
+                             py::array_t<typename Tag::type> &> &data) {
   const auto &labels = std::get<0>(data);
   const py::buffer_info info = std::get<1>(data).request();
   if (info.ndim != labels.size())
@@ -187,9 +146,9 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   for (gsl::index i = labels.size() - 1; i >= 0; --i)
     dims.add(labels[i], info.shape[i]);
 
-  auto *ptr = (typename Tag::type::type *)info.ptr;
+  auto *ptr = (typename Tag::type *)info.ptr;
   const auto &name = std::get<const std::string &>(key);
-  self.insert<const typename Tag::type>(name, dims, ptr, ptr + dims.volume());
+  self.insert<const Tag>(name, dims, ptr, ptr + dims.volume());
 }
 
 template <class Tag, class Var>
@@ -200,9 +159,8 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   if (self.contains(tag, name))
     if (self[self.find(tag, name)] == var)
       return;
-  const auto &data = var.template get<const typename Tag::type>();
-  self.insert<typename Tag::type>(name, var.dimensions(), data.begin(),
-                                  data.end());
+  const auto &data = var.template get<const Tag>();
+  self.insert<Tag>(name, var.dimensions(), data.begin(), data.end());
 }
 
 template <class Tag>
@@ -219,7 +177,7 @@ void insertDefaultInit(
     dims.add(labels[i], shape[i].cast<size_t>());
 
   const auto &name = std::get<const std::string &>(key);
-  self.insert<const typename Tag::type>(name, dims);
+  self.insert<const Tag>(name, dims);
 }
 
 // Add size factor.
@@ -250,7 +208,7 @@ getData(T &self, const std::pair<const Tag, const std::string> &key) {
 
 template <class Tag, class T>
 void setData(T &self, const std::pair<const Tag, const std::string> &key,
-             py::array_t<typename Tag::type::type> &data) {
+             py::array_t<typename Tag::type> &data) {
   const gsl::index index = find(self, key.first, key.second);
   const auto &dims = self[index].dimensions();
   py::buffer_info info = data.request();
@@ -260,7 +218,7 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
-  auto buf = detail::makeAccess(self)[index].template get<typename Tag::type>();
+  auto buf = detail::makeAccess(self)[index].template get<Tag>();
   double *ptr = (double *)info.ptr;
   std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
@@ -435,27 +393,26 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Tag>(m, "Tag");
 
   auto data_tags = m.def_submodule("Data");
-  py::class_<detail::PythonData::Value, Tag>(data_tags, "_Value");
-  py::class_<detail::PythonData::Variance, Tag>(data_tags, "_Variance");
-  data_tags.attr("Value") = detail::PythonData::Value{};
-  data_tags.attr("Variance") = detail::PythonData::Variance{};
+  py::class_<Data::Value, Tag>(data_tags, "_Value");
+  py::class_<Data::Variance, Tag>(data_tags, "_Variance");
+  data_tags.attr("Value") = Data::Value{};
+  data_tags.attr("Variance") = Data::Variance{};
 
   auto coord_tags = m.def_submodule("Coord");
-  py::class_<detail::PythonCoord::Mask, Tag>(coord_tags, "_Mask");
-  py::class_<detail::PythonCoord::X, Tag>(coord_tags, "_X");
-  py::class_<detail::PythonCoord::Y, Tag>(coord_tags, "_Y");
-  py::class_<detail::PythonCoord::Z, Tag>(coord_tags, "_Z");
-  py::class_<detail::PythonCoord::Tof, Tag>(coord_tags, "_Tof");
-  py::class_<detail::PythonCoord::RowLabel, Tag>(coord_tags, "_RowLabel");
-  py::class_<detail::PythonCoord::SpectrumNumber, Tag>(coord_tags,
-                                                       "_SpectrumNumber");
-  coord_tags.attr("Mask") = detail::PythonCoord::Mask{};
-  coord_tags.attr("X") = detail::PythonCoord::X{};
-  coord_tags.attr("Y") = detail::PythonCoord::Y{};
-  coord_tags.attr("Z") = detail::PythonCoord::Z{};
-  coord_tags.attr("Tof") = detail::PythonCoord::Tof{};
-  coord_tags.attr("RowLabel") = detail::PythonCoord::RowLabel{};
-  coord_tags.attr("SpectrumNumber") = detail::PythonCoord::SpectrumNumber{};
+  py::class_<Coord::Mask, Tag>(coord_tags, "_Mask");
+  py::class_<Coord::X, Tag>(coord_tags, "_X");
+  py::class_<Coord::Y, Tag>(coord_tags, "_Y");
+  py::class_<Coord::Z, Tag>(coord_tags, "_Z");
+  py::class_<Coord::Tof, Tag>(coord_tags, "_Tof");
+  py::class_<Coord::RowLabel, Tag>(coord_tags, "_RowLabel");
+  py::class_<Coord::SpectrumNumber, Tag>(coord_tags, "_SpectrumNumber");
+  coord_tags.attr("Mask") = Coord::Mask{};
+  coord_tags.attr("X") = Coord::X{};
+  coord_tags.attr("Y") = Coord::Y{};
+  coord_tags.attr("Z") = Coord::Z{};
+  coord_tags.attr("Tof") = Coord::Tof{};
+  coord_tags.attr("RowLabel") = Coord::RowLabel{};
+  coord_tags.attr("SpectrumNumber") = Coord::SpectrumNumber{};
 
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
@@ -479,21 +436,18 @@ PYBIND11_MODULE(dataset, m) {
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
 
   py::class_<Variable>(m, "Variable")
-      .def(py::init(&detail::makeVariable<detail::PythonCoord::Mask>))
-      .def(py::init(&detail::makeVariable<detail::PythonCoord::X>))
-      .def(py::init(&detail::makeVariable<detail::PythonCoord::Y>))
-      .def(py::init(&detail::makeVariable<detail::PythonCoord::Z>))
-      .def(py::init(&detail::makeVariable<detail::PythonData::Value>))
-      .def(py::init(&detail::makeVariable<detail::PythonData::Variance>))
-      .def(
-          py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Mask>))
-      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::X>))
-      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Y>))
-      .def(py::init(&detail::makeVariableDefaultInit<detail::PythonCoord::Z>))
-      .def(
-          py::init(&detail::makeVariableDefaultInit<detail::PythonData::Value>))
-      .def(py::init(
-          &detail::makeVariableDefaultInit<detail::PythonData::Variance>))
+      .def(py::init(&detail::makeVariable<Coord::Mask>))
+      .def(py::init(&detail::makeVariable<Coord::X>))
+      .def(py::init(&detail::makeVariable<Coord::Y>))
+      .def(py::init(&detail::makeVariable<Coord::Z>))
+      .def(py::init(&detail::makeVariable<Data::Value>))
+      .def(py::init(&detail::makeVariable<Data::Variance>))
+      .def(py::init(&detail::makeVariableDefaultInit<Coord::Mask>))
+      .def(py::init(&detail::makeVariableDefaultInit<Coord::X>))
+      .def(py::init(&detail::makeVariableDefaultInit<Coord::Y>))
+      .def(py::init(&detail::makeVariableDefaultInit<Coord::Z>))
+      .def(py::init(&detail::makeVariableDefaultInit<Data::Value>))
+      .def(py::init(&detail::makeVariableDefaultInit<Data::Variance>))
       .def(py::init<const VariableSlice<Variable> &>())
       .def_property_readonly("type", &Variable::tag)
       .def_property("name", &Variable::name, &Variable::setName)
@@ -593,27 +547,17 @@ PYBIND11_MODULE(dataset, m) {
                throw std::runtime_error("Step must be 1");
              return self(dim, start, stop);
            })
+      .def("__getitem__", detail::getCoord<Coord::X, Slice<Dataset>>)
+      .def("__getitem__", detail::getCoord<Coord::Y, Slice<Dataset>>)
+      .def("__getitem__", detail::getCoord<Coord::Z, Slice<Dataset>>)
+      .def("__getitem__", detail::getCoord<Coord::Tof, Slice<Dataset>>)
+      .def("__getitem__", detail::getCoord<Coord::RowLabel, Slice<Dataset>>)
       .def("__getitem__",
-           detail::getCoord<detail::PythonCoord::X, Slice<Dataset>>)
-      .def("__getitem__",
-           detail::getCoord<detail::PythonCoord::Y, Slice<Dataset>>)
-      .def("__getitem__",
-           detail::getCoord<detail::PythonCoord::Z, Slice<Dataset>>)
-      .def("__getitem__",
-           detail::getCoord<detail::PythonCoord::Tof, Slice<Dataset>>)
-      .def("__getitem__",
-           detail::getCoord<detail::PythonCoord::RowLabel, Slice<Dataset>>)
-      .def(
-          "__getitem__",
-          detail::getCoord<detail::PythonCoord::SpectrumNumber, Slice<Dataset>>)
-      .def("__getitem__",
-           detail::getData<detail::PythonData::Value, Slice<Dataset>>)
-      .def("__getitem__",
-           detail::getData<detail::PythonData::Variance, Slice<Dataset>>)
-      .def("__setitem__",
-           detail::setData<detail::PythonData::Value, Slice<Dataset>>)
-      .def("__setitem__",
-           detail::setData<detail::PythonData::Variance, Slice<Dataset>>)
+           detail::getCoord<Coord::SpectrumNumber, Slice<Dataset>>)
+      .def("__getitem__", detail::getData<Data::Value, Slice<Dataset>>)
+      .def("__getitem__", detail::getData<Data::Variance, Slice<Dataset>>)
+      .def("__setitem__", detail::setData<Data::Value, Slice<Dataset>>)
+      .def("__setitem__", detail::setData<Data::Variance, Slice<Dataset>>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
@@ -657,18 +601,15 @@ PYBIND11_MODULE(dataset, m) {
                throw std::runtime_error("Step must be 1");
              return self(dim, start, stop);
            })
-      .def("__getitem__", detail::getCoord<detail::PythonCoord::X, Dataset>)
-      .def("__getitem__", detail::getCoord<detail::PythonCoord::Y, Dataset>)
-      .def("__getitem__", detail::getCoord<detail::PythonCoord::Z, Dataset>)
-      .def("__getitem__", detail::getCoord<detail::PythonCoord::Tof, Dataset>)
-      .def("__getitem__", detail::getCoord<detail::PythonCoord::Mask, Dataset>)
-      .def("__getitem__",
-           detail::getCoord<detail::PythonCoord::RowLabel, Dataset>)
-      .def("__getitem__",
-           detail::getCoord<detail::PythonCoord::SpectrumNumber, Dataset>)
-      .def("__getitem__", detail::getData<detail::PythonData::Value, Dataset>)
-      .def("__getitem__",
-           detail::getData<detail::PythonData::Variance, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::X, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::Y, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::Z, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::Tof, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::Mask, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::RowLabel, Dataset>)
+      .def("__getitem__", detail::getCoord<Coord::SpectrumNumber, Dataset>)
+      .def("__getitem__", detail::getData<Data::Value, Dataset>)
+      .def("__getitem__", detail::getData<Data::Variance, Dataset>)
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
       // Careful: The order of overloads is really important here, otherwise
@@ -685,30 +626,24 @@ PYBIND11_MODULE(dataset, m) {
              throw std::runtime_error("Non-self-assignment of Dataset slices "
                                       "is not implemented yet.\n");
            })
-      .def("__setitem__", detail::setData<detail::PythonData::Value, Dataset>)
+      .def("__setitem__", detail::setData<Data::Value, Dataset>)
+      .def("__setitem__", detail::setData<Data::Variance, Dataset>)
+      .def("__setitem__", detail::insertCoord<Coord::X>)
+      .def("__setitem__", detail::insertCoord<Coord::Y>)
+      .def("__setitem__", detail::insertCoord<Coord::Z>)
+      .def("__setitem__", detail::insertCoord<Coord::Tof>)
+      .def("__setitem__", detail::insertCoord<Coord::Mask>)
+      .def("__setitem__", detail::insertCoord1D<Coord::RowLabel>)
+      .def("__setitem__", detail::insertCoord<Coord::SpectrumNumber>)
+      .def("__setitem__", detail::insert<Data::Value>)
+      .def("__setitem__", detail::insert<Data::Variance>)
+      .def("__setitem__", detail::insert<Data::Value, Variable>)
+      .def("__setitem__", detail::insert<Data::Variance, Variable>)
+      .def("__setitem__", detail::insert<Data::Value, VariableSlice<Variable>>)
       .def("__setitem__",
-           detail::setData<detail::PythonData::Variance, Dataset>)
-      .def("__setitem__", detail::insertCoord<detail::PythonCoord::X>)
-      .def("__setitem__", detail::insertCoord<detail::PythonCoord::Y>)
-      .def("__setitem__", detail::insertCoord<detail::PythonCoord::Z>)
-      .def("__setitem__", detail::insertCoord<detail::PythonCoord::Tof>)
-      .def("__setitem__", detail::insertCoord<detail::PythonCoord::Mask>)
-      .def("__setitem__", detail::insertCoord1D<detail::PythonCoord::RowLabel>)
-      .def("__setitem__",
-           detail::insertCoord<detail::PythonCoord::SpectrumNumber>)
-      .def("__setitem__", detail::insert<detail::PythonData::Value>)
-      .def("__setitem__", detail::insert<detail::PythonData::Variance>)
-      .def("__setitem__", detail::insert<detail::PythonData::Value, Variable>)
-      .def("__setitem__",
-           detail::insert<detail::PythonData::Variance, Variable>)
-      .def("__setitem__",
-           detail::insert<detail::PythonData::Value, VariableSlice<Variable>>)
-      .def(
-          "__setitem__",
-          detail::insert<detail::PythonData::Variance, VariableSlice<Variable>>)
-      .def("__setitem__", detail::insertDefaultInit<detail::PythonData::Value>)
-      .def("__setitem__",
-           detail::insertDefaultInit<detail::PythonData::Variance>)
+           detail::insert<Data::Variance, VariableSlice<Variable>>)
+      .def("__setitem__", detail::insertDefaultInit<Data::Value>)
+      .def("__setitem__", detail::insertDefaultInit<Data::Variance>)
       // Note: As it is this will always implicitly convert a RHS view into a
       // Dataset, i.e., makes a copy. Need to expose the operator overloads for
       // views as well.

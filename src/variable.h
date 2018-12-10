@@ -167,7 +167,7 @@ public:
   const VariableConcept &data() const { return *m_object; }
   VariableConcept &data() { return m_object.access(); }
 
-  template <class Tag> bool valueTypeIs() const { return ::tag<Tag> == m_tag; }
+  template <class Tag> bool valueTypeIs() const { return Tag{} == m_tag; }
 
   Tag tag() const { return m_tag; }
   bool isCoord() const { return m_tag < std::tuple_size<Coord::tags>::value; }

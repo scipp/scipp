@@ -664,7 +664,7 @@ TEST(Dataset, sort) {
   d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
   d.insert<Data::Value>("", {Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
 
-  auto sorted = sort(d, tag<Coord::X>);
+  auto sorted = sort(d, Coord::X{});
 
   ASSERT_EQ(sorted.get<const Coord::X>().size(), 4);
   EXPECT_EQ(sorted.get<const Coord::X>()[0], 0.0);
@@ -690,7 +690,7 @@ TEST(Dataset, sort_2D) {
   d.insert<Data::Value>("", {{Dim::Y, 2}, {Dim::X, 4}},
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
 
-  auto sorted = sort(d, tag<Coord::X>);
+  auto sorted = sort(d, Coord::X{});
 
   ASSERT_EQ(sorted.get<const Coord::X>().size(), 4);
   EXPECT_EQ(sorted.get<const Coord::X>()[0], 0.0);

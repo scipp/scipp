@@ -702,7 +702,7 @@ template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
 }
 
 #define CASE_RETURN(TAG, FUNC, ...)                                            \
-  case tag<TAG>.value():                                                       \
+  case TAG{}.value():                                                          \
     return FUNC<TAG>(__VA_ARGS__);
 
 Dataset sort(const Dataset &d, const Tag t, const std::string &name) {

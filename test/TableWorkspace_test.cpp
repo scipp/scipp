@@ -58,7 +58,7 @@ TEST(TableWorkspace, basics) {
   EXPECT_EQ(rows.get<const Coord::RowLabel>()[2], "a");
 
   // Can sort by arbitrary column.
-  auto sortedTable = sort(table, tag<Data::Value>, "Data");
+  auto sortedTable = sort(table, Data::Value{}, "Data");
   EXPECT_EQ(asStrings(sortedTable[0]),
             std::vector<std::string>({"b", "a", "c"}));
   EXPECT_EQ(asStrings(sortedTable[1]),
