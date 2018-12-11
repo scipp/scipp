@@ -245,6 +245,8 @@ template <class T> struct ViewHelper<VariableView<const T>> {
   }
 };
 
+template <class T> class VariableViewModel;
+
 template <class T> struct CastHelper {
   template <class Concept> static auto *getData(Concept &concept) {
     if (!concept.isView())
@@ -324,9 +326,11 @@ template <class T> struct CastHelper {
 
 template <class T> struct CastHelper<VariableView<T>> {
   template <class Concept> static auto &getModel(Concept &concept) {
-    return dynamic_cast<std::conditional_t<
-        std::is_const<Concept>::value, const VariableModel<VariableView<T>> &,
-        VariableModel<VariableView<T>> &>>(concept)
+    return dynamic_cast<
+               std::conditional_t<std::is_const<Concept>::value,
+                                  const VariableViewModel<VariableView<T>> &,
+                                  VariableViewModel<VariableView<T>> &>>(
+               concept)
         .m_model;
   }
 
@@ -439,14 +443,14 @@ public:
   std::unique_ptr<VariableConcept> makeView() const override {
     auto &dims = this->dimensions();
     return std::make_unique<
-        VariableModel<decltype(CastHelper<T>::getView(*this, dims))>>(
+        VariableViewModel<decltype(CastHelper<T>::getView(*this, dims))>>(
         dims, CastHelper<T>::getView(*this, dims));
   }
 
   std::unique_ptr<VariableConcept> makeView() override {
     auto &dims = this->dimensions();
     return std::make_unique<
-        VariableModel<decltype(CastHelper<T>::getView(*this, dims))>>(
+        VariableViewModel<decltype(CastHelper<T>::getView(*this, dims))>>(
         dims, CastHelper<T>::getView(*this, dims));
   }
 
@@ -458,7 +462,7 @@ public:
       dims.erase(dim);
     else
       dims.resize(dim, end - begin);
-    return std::make_unique<VariableModel<decltype(
+    return std::make_unique<VariableViewModel<decltype(
         CastHelper<T>::getView(*this, dims, dim, begin))>>(
         dims, CastHelper<T>::getView(*this, dims, dim, begin));
   }
@@ -471,7 +475,7 @@ public:
       dims.erase(dim);
     else
       dims.resize(dim, end - begin);
-    return std::make_unique<VariableModel<decltype(
+    return std::make_unique<VariableViewModel<decltype(
         CastHelper<T>::getView(*this, dims, dim, begin))>>(
         dims, CastHelper<T>::getView(*this, dims, dim, begin));
   }
@@ -566,6 +570,222 @@ public:
     } else {
       const auto &oldModel =
           dynamic_cast<const VariableModel<T> &>(old).m_model;
+      auto oldCoordDims = oldCoord.dimensions();
+      oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
+      auto newCoordDims = newCoord.dimensions();
+      newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
+      auto oldCoordView = CastHelper<T>::getView(oldCoord, this->dimensions());
+      auto newCoordView = CastHelper<T>::getView(newCoord, this->dimensions());
+      const auto oldOffset = oldCoordDims.offset(dim);
+      const auto newOffset = newCoordDims.offset(dim);
+
+      RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
+                            newCoordView, newOffset);
+    }
+  }
+
+  VariableConcept &operator+=(const VariableConcept &other) override {
+    return apply<std::plus>(other);
+  }
+
+  VariableConcept &operator-=(const VariableConcept &other) override {
+    return apply<std::minus>(other);
+  }
+
+  VariableConcept &operator*=(const VariableConcept &other) override {
+    return apply<std::multiplies>(other);
+  }
+
+  gsl::index size() const override { return m_model.size(); }
+
+  void copy(const VariableConcept &other, const Dim dim,
+            const gsl::index offset, const gsl::index otherBegin,
+            const gsl::index otherEnd) override {
+    auto iterDims = this->dimensions();
+    const gsl::index delta = otherEnd - otherBegin;
+    if (iterDims.contains(dim))
+      iterDims.resize(dim, delta);
+
+    auto otherView = CastHelper<T>::getView(other, iterDims, dim, otherBegin);
+    // Four cases for minimizing use of VariableView --- just copy contiguous
+    // range where possible.
+    if (isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
+      auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+        auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
+        CopyHelper<typename T::value_type>::copy(source, target);
+      } else {
+        CopyHelper<typename T::value_type>::copy(otherView, target);
+      }
+    } else {
+      auto view = CastHelper<T>::getView(*this, iterDims, dim, offset);
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+        auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
+        CopyHelper<typename T::value_type>::copy(source, view);
+      } else {
+        CopyHelper<typename T::value_type>::copy(otherView, view);
+      }
+    }
+  }
+
+  T m_model;
+};
+
+template <class T>
+class VariableViewModel : public VariableConceptT<typename T::value_type> {
+public:
+  VariableViewModel(const Dimensions &dimensions, T model)
+      : VariableConceptT<typename T::value_type>(std::move(dimensions)),
+        m_model(std::move(model)) {
+    if (this->dimensions().volume() != m_model.size())
+      throw std::runtime_error("Creating Variable: data size does not match "
+                               "volume given by dimension extents");
+  }
+
+  std::shared_ptr<VariableConcept> clone() const override {
+    return std::make_shared<VariableViewModel<T>>(this->dimensions(), m_model);
+  }
+
+  std::unique_ptr<VariableConcept> cloneUnique() const override {
+    return std::make_unique<VariableViewModel<T>>(this->dimensions(), m_model);
+  }
+
+  std::shared_ptr<VariableConcept>
+  clone(const Dimensions &dims) const override {
+    return std::make_shared<VariableViewModel<T>>(
+        dims, CloneHelper<T>::getModel(dims));
+  }
+
+  std::unique_ptr<VariableConcept> makeView() const override {
+    auto &dims = this->dimensions();
+    return std::make_unique<
+        VariableViewModel<decltype(CastHelper<T>::getView(*this, dims))>>(
+        dims, CastHelper<T>::getView(*this, dims));
+  }
+
+  std::unique_ptr<VariableConcept> makeView() override {
+    auto &dims = this->dimensions();
+    return std::make_unique<
+        VariableViewModel<decltype(CastHelper<T>::getView(*this, dims))>>(
+        dims, CastHelper<T>::getView(*this, dims));
+  }
+
+  std::unique_ptr<VariableConcept>
+  makeView(const Dim dim, const gsl::index begin,
+           const gsl::index end) const override {
+    auto dims = this->dimensions();
+    if (end == -1)
+      dims.erase(dim);
+    else
+      dims.resize(dim, end - begin);
+    return std::make_unique<VariableViewModel<decltype(
+        CastHelper<T>::getView(*this, dims, dim, begin))>>(
+        dims, CastHelper<T>::getView(*this, dims, dim, begin));
+  }
+
+  std::unique_ptr<VariableConcept> makeView(const Dim dim,
+                                            const gsl::index begin,
+                                            const gsl::index end) override {
+    auto dims = this->dimensions();
+    if (end == -1)
+      dims.erase(dim);
+    else
+      dims.resize(dim, end - begin);
+    return std::make_unique<VariableViewModel<decltype(
+        CastHelper<T>::getView(*this, dims, dim, begin))>>(
+        dims, CastHelper<T>::getView(*this, dims, dim, begin));
+  }
+
+  bool isContiguous() const override {
+    if (!isView())
+      return true;
+    return this->dimensions().isContiguousIn(
+        ViewHelper<T>::parentDimensions(m_model));
+  }
+  bool isView() const override { return ViewHelper<T>::isView(); }
+  bool isConstView() const override { return ViewHelper<T>::isConstView(); }
+
+  bool operator==(const VariableConcept &other) const override {
+    if (this->dimensions() != other.dimensions())
+      return false;
+    if (isContiguous()) {
+      if (other.isContiguous() &&
+          this->dimensions().isContiguousIn(other.dimensions())) {
+        return equal(CastHelper<T>::getSpan(*this),
+                     CastHelper<T>::getSpan(other));
+      } else {
+        return equal(CastHelper<T>::getSpan(*this),
+                     CastHelper<T>::getView(other, this->dimensions()));
+      }
+    } else {
+      if (other.isContiguous() &&
+          this->dimensions().isContiguousIn(other.dimensions())) {
+        return equal(m_model, CastHelper<T>::getSpan(other));
+      } else {
+        return equal(m_model,
+                     CastHelper<T>::getView(other, this->dimensions()));
+      }
+    }
+  }
+
+  template <template <class> class Op>
+  VariableConcept &apply(const VariableConcept &other) {
+    try {
+      if (isContiguous() && this->dimensions().contains(other.dimensions())) {
+        if (other.isContiguous() &&
+            this->dimensions().isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(CastHelper<T>::getSpan(*this),
+                    CastHelper<T>::getSpan(other));
+        } else {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(CastHelper<T>::getSpan(*this),
+                    CastHelper<T>::getView(other, this->dimensions()));
+        }
+      } else if (this->dimensions().contains(other.dimensions())) {
+        if (other.isContiguous() &&
+            this->dimensions().isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(m_model, CastHelper<T>::getSpan(other));
+        } else {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(m_model, CastHelper<T>::getView(other, this->dimensions()));
+        }
+      } else {
+        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+        if (other.isContiguous() &&
+            this->dimensions().isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(CastHelper<T>::getView(*this, other.dimensions()),
+                    CastHelper<T>::getSpan(other));
+        } else {
+          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
+              apply(CastHelper<T>::getView(*this, other.dimensions()),
+                    CastHelper<T>::getView(other, other.dimensions()));
+        }
+      }
+    } catch (const std::bad_cast &) {
+      throw std::runtime_error("Cannot apply arithmetic operation to "
+                               "Variables: Underlying data types do not "
+                               "match.");
+    }
+    return *this;
+  }
+
+  void rebin(const VariableConcept &old, const Dim dim,
+             const VariableConcept &oldCoord,
+             const VariableConcept &newCoord) override {
+    // Dimensions of *this and old are guaranteed to be the same.
+    if (this->dimensions().label(0) == dim &&
+        oldCoord.dimensions().count() == 1 &&
+        newCoord.dimensions().count() == 1) {
+      RebinHelper<T>::rebinInner(
+          dim, dynamic_cast<const VariableViewModel<T> &>(old), *this,
+          dynamic_cast<const VariableViewModel<T> &>(oldCoord),
+          dynamic_cast<const VariableViewModel<T> &>(newCoord));
+    } else {
+      const auto &oldModel =
+          dynamic_cast<const VariableViewModel<T> &>(old).m_model;
       auto oldCoordDims = oldCoord.dimensions();
       oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
       auto newCoordDims = newCoord.dimensions();
@@ -1027,7 +1247,7 @@ void VariableSliceMutableMixin<VariableSlice<Variable>>::setUnit(
 template <class T>
 const VariableView<const T> &
 VariableSliceMutableMixin<VariableSlice<const Variable>>::cast() const {
-  return dynamic_cast<const VariableModel<VariableView<const T>> &>(
+  return dynamic_cast<const VariableViewModel<VariableView<const T>> &>(
              base().data())
       .m_model;
 }
@@ -1046,15 +1266,16 @@ template <class T>
 VariableView<const T>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const {
   // Make a const view from the mutable one.
-  return {dynamic_cast<const VariableModel<VariableView<T>> &>(base().data())
-              .m_model,
-          base().dimensions()};
+  return {
+      dynamic_cast<const VariableViewModel<VariableView<T>> &>(base().data())
+          .m_model,
+      base().dimensions()};
 }
 
 template <class T>
 const VariableView<T> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() {
-  return dynamic_cast<const VariableModel<VariableView<T>> &>(base().data())
+  return dynamic_cast<const VariableViewModel<VariableView<T>> &>(base().data())
       .m_model;
 }
 
