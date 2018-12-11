@@ -74,6 +74,7 @@ inline std::unique_ptr<VariableConcept> clone(const VariableConcept &other) {
 }
 } // namespace detail
 
+/// Like std::unique_ptr, but copy causes a deep copy.
 template <class T> class deep_ptr {
 public:
   deep_ptr() = default;
@@ -97,10 +98,8 @@ public:
     return m_data != other.m_data;
   }
 
-  const T &operator*() const { return *m_data; }
-  T &operator*() { return *m_data; }
-  const T *operator->() const { return m_data.get(); }
-  T *operator->() { return m_data.get(); }
+  T &operator*() const { return *m_data; }
+  T *operator->() const { return m_data.get(); }
 
 private:
   std::unique_ptr<T> m_data;
@@ -300,30 +299,13 @@ public:
                 const gsl::index end = -1)
       : m_variable(&variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
-  // Do we need conversions from mutable to const views here? There is something
-  // not quite right here logically, related to constness of the VariableSlice
-  // vs. constness of the referenced Variable.
   VariableSlice(const VariableSlice &slice, const Dim dim,
                 const gsl::index begin, const gsl::index end = -1)
       : m_variable(slice.m_variable),
-        m_view(slice.data().makeView(dim, begin, end)) {}
-  VariableSlice(VariableSlice &slice, const Dim dim, const gsl::index begin,
-                const gsl::index end = -1)
-      : m_variable(slice.m_variable),
-        m_view(slice.data().makeView(dim, begin, end)) {}
+        m_view(slice.m_view->makeView(dim, begin, end)) {}
 
   VariableSlice operator()(const Dim dim, const gsl::index begin,
                            const gsl::index end = -1) const {
-    return VariableSlice(*this, dim, begin, end);
-  }
-  // I think this does not make sense: We should be able to create a mutable
-  // slice also from a const VariableSlice. Just like const gsl::span<double>,
-  // and other modifications. This is related to const-correctness of makeView.
-  // Can we fix it if getView uses a custom is_const<Concept> instead of
-  // std::is_const<Concept>? The custom implementation would consider the
-  // const-ness of the slice data, not the const of the slice instance.
-  VariableSlice operator()(const Dim dim, const gsl::index begin,
-                           const gsl::index end = -1) {
     return VariableSlice(*this, dim, begin, end);
   }
 
