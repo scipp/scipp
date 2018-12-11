@@ -440,6 +440,30 @@ TEST(Variable, mean) {
   EXPECT_TRUE(equals(meanY.get<const Data::Value>(), {2.0, 3.0}));
 }
 
+TEST(VariableSlice, copy_on_write_const_view) {
+  const auto var = makeVariable<Coord::X>({{Dim::X, 3}});
+  auto copy(var);
+  auto view = var(Dim::X, 0);
+  EXPECT_EQ(copy.get<const Coord::X>().data(),
+            view.get<const Coord::X>().data());
+}
+
+TEST(VariableSlice, copy_on_write_mutable_view) {
+  auto var = makeVariable<Coord::X>({{Dim::X, 3}});
+  auto copy(var);
+  auto view = var(Dim::X, 0);
+  EXPECT_EQ(copy.get<const Coord::X>().data(),
+            view.get<const Coord::X>().data());
+}
+
+TEST(VariableSlice, copy_on_write_nested_mutable_view) {
+  auto var = makeVariable<Coord::X>({{Dim::Y, 3}, {Dim::X, 3}});
+  auto copy(var);
+  auto view = var(Dim::X, 0)(Dim::Y, 0);
+  EXPECT_EQ(copy.get<const Coord::X>().data(),
+            view.get<const Coord::X>().data());
+}
+
 TEST(VariableSlice, strides) {
   auto var = makeVariable<Data::Value>({{Dim::Y, 3}, {Dim::X, 3}});
   EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<gsl::index>{3}));

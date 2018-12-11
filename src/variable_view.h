@@ -18,14 +18,15 @@ template <class T> class VariableView {
 public:
   using value_type = T;
 
-  VariableView(T *variable, const Dimensions &targetDimensions,
-               const Dimensions &dimensions)
-      : m_variable(variable), m_targetDimensions(targetDimensions),
-        m_dimensions(dimensions) {}
+  VariableView(T *variable, const gsl::index offset,
+               const Dimensions &targetDimensions, const Dimensions &dimensions)
+      : m_variable(variable), m_offset(offset),
+        m_targetDimensions(targetDimensions), m_dimensions(dimensions) {}
 
   template <class Other>
   VariableView(const Other &other, const Dimensions &targetDimensions)
-      : m_variable(other.m_variable), m_targetDimensions(targetDimensions) {
+      : m_variable(other.m_variable), m_offset(other.m_offset),
+        m_targetDimensions(targetDimensions) {
     m_dimensions = other.m_dimensions;
     for (const auto label : m_dimensions.labels())
       if (!other.m_targetDimensions.contains(label))
@@ -35,13 +36,20 @@ public:
   template <class Other>
   VariableView(const Other &other, const Dimensions &targetDimensions,
                const Dim dim, const gsl::index begin)
-      : m_variable(other.m_variable), m_targetDimensions(targetDimensions) {
+      : m_variable(other.m_variable), m_offset(other.m_offset),
+        m_targetDimensions(targetDimensions) {
     m_dimensions = other.m_dimensions;
     if (begin != 0 || dim != Dim::Invalid)
-      m_variable += begin * m_dimensions.offset(dim);
+      m_offset += begin * m_dimensions.offset(dim);
     for (const auto label : m_dimensions.labels())
       if (!other.m_targetDimensions.contains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
+  }
+
+  VariableView<std::remove_const_t<T>>
+  createMutable(std::remove_const_t<T> *variable) const {
+    return VariableView<std::remove_const_t<T>>(
+        variable, m_offset, m_targetDimensions, m_dimensions);
   }
 
   friend class VariableView<std::remove_const_t<T>>;
@@ -80,15 +88,15 @@ public:
   };
 
   iterator begin() const {
-    return {m_variable, m_targetDimensions, m_dimensions, 0};
+    return {m_variable + m_offset, m_targetDimensions, m_dimensions, 0};
   }
   iterator end() const {
-    return {m_variable, m_targetDimensions, m_dimensions, size()};
+    return {m_variable + m_offset, m_targetDimensions, m_dimensions, size()};
   }
   auto &operator[](const gsl::index i) const { return *(begin() + i); }
 
-  const T *data() const { return m_variable; }
-  T *data() { return m_variable; }
+  const T *data() const { return m_variable + m_offset; }
+  T *data() { return m_variable + m_offset; }
 
   gsl::index size() const { return m_targetDimensions.volume(); }
 
@@ -102,15 +110,16 @@ public:
 
 private:
   T *m_variable;
+  gsl::index m_offset{0};
   const Dimensions m_targetDimensions;
   Dimensions m_dimensions;
 };
 
 template <class T>
-VariableView<T> makeVariableView(T *variable,
+VariableView<T> makeVariableView(T *variable, const gsl::index offset,
                                  const Dimensions &targetDimensions,
                                  const Dimensions &dimensions) {
-  return VariableView<T>(variable, targetDimensions, dimensions);
+  return VariableView<T>(variable, offset, targetDimensions, dimensions);
 }
 
 #endif // VARIABLE_VIEW_H

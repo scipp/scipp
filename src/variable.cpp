@@ -413,20 +413,20 @@ public:
   }
 
   VariableView<value_type> getView(const Dimensions &dims) override {
-    return makeVariableView(m_model.data(), dims, this->dimensions());
+    return makeVariableView(m_model.data(), 0, dims, this->dimensions());
   }
   VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
                                    const gsl::index begin) override {
     gsl::index beginOffset = this->dimensions().contains(dim)
                                  ? begin * this->dimensions().offset(dim)
                                  : begin * this->dimensions().volume();
-    return makeVariableView(m_model.data() + beginOffset, dims,
+    return makeVariableView(m_model.data(), beginOffset, dims,
                             this->dimensions());
   }
 
   VariableView<const value_type>
   getView(const Dimensions &dims) const override {
-    return makeVariableView(m_model.data(), dims, this->dimensions());
+    return makeVariableView(m_model.data(), 0, dims, this->dimensions());
   }
   VariableView<const value_type>
   getView(const Dimensions &dims, const Dim dim,
@@ -434,7 +434,7 @@ public:
     gsl::index beginOffset = this->dimensions().contains(dim)
                                  ? begin * this->dimensions().offset(dim)
                                  : begin * this->dimensions().volume();
-    return makeVariableView(m_model.data() + beginOffset, dims,
+    return makeVariableView(m_model.data(), beginOffset, dims,
                             this->dimensions());
   }
 
@@ -444,6 +444,11 @@ public:
 
   std::unique_ptr<VariableConcept> cloneUnique() const override {
     return std::make_unique<DataModel<T>>(this->dimensions(), m_model);
+  }
+
+  std::unique_ptr<VariableConcept>
+  cloneMutable(VariableConcept &mutableData) const override {
+    throw std::runtime_error("DataModel::cloneMutable() should not be called.");
   }
 
   std::shared_ptr<VariableConcept>
@@ -518,7 +523,7 @@ public:
   VariableView<value_type> getView(const Dimensions &dims) override {
     requireMutable();
     if constexpr (std::is_const<typename T::value_type>::value)
-      return VariableView<value_type>(nullptr, {}, {});
+      return VariableView<value_type>(nullptr, 0, {}, {});
     else
       return {m_model, dims};
   }
@@ -526,7 +531,7 @@ public:
                                    const gsl::index begin) override {
     requireMutable();
     if constexpr (std::is_const<typename T::value_type>::value)
-      return VariableView<value_type>(nullptr, {}, {});
+      return VariableView<value_type>(nullptr, 0, {}, {});
     else
       return {m_model, dims, dim, begin};
   }
@@ -547,6 +552,15 @@ public:
 
   std::unique_ptr<VariableConcept> cloneUnique() const override {
     return std::make_unique<ViewModel<T>>(this->dimensions(), m_model);
+  }
+
+  std::unique_ptr<VariableConcept>
+  cloneMutable(VariableConcept &mutableData) const override {
+    auto *data = dynamic_cast<VariableConceptT<value_type> &>(mutableData)
+                     .getSpan()
+                     .data();
+    return std::make_unique<ViewModel<VariableView<value_type>>>(
+        this->dimensions(), m_model.createMutable(data));
   }
 
   std::shared_ptr<VariableConcept>
@@ -984,6 +998,11 @@ VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<
 template <class T>
 VariableView<const T>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const {
+  if (base().m_view->isConstView())
+    return {
+        dynamic_cast<const ViewModel<VariableView<const T>> &>(base().data())
+            .m_model,
+        base().dimensions()};
   // Make a const view from the mutable one.
   return {
       dynamic_cast<const ViewModel<VariableView<T>> &>(base().data()).m_model,

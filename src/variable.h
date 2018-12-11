@@ -28,6 +28,8 @@ public:
   // This is dropped into a cow_ptr so we prefer shared_ptr over unique_ptr.
   virtual std::shared_ptr<VariableConcept> clone() const = 0;
   virtual std::unique_ptr<VariableConcept> cloneUnique() const = 0;
+  virtual std::unique_ptr<VariableConcept>
+  cloneMutable(VariableConcept &mutableData) const = 0;
   virtual std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() const = 0;
@@ -283,22 +285,18 @@ private:
 };
 
 // V is either Variable or const Variable.
-// Note/TODO: The call to `data()` will trigger the copy-on-write mechanism.
-// Const-correctness is therefore important when we want to create a slice view
-// without triggering a copy unintentionally. This will also happen in Python we
-// we do not have const-ness, so we need to figure out if this copy-triggering
-// behavior is acceptable. An alternative may be to delay getting data until a
-// mutating method of the slice view is called.
 template <class V>
 class VariableSlice : public VariableSliceMutableMixin<VariableSlice<V>> {
 public:
   explicit VariableSlice(V &variable)
       : m_variable(&variable), m_view(variable.data().makeView()) {}
   VariableSlice(const VariableSlice &other) = default;
+  // Note: We are calling `Variable::data() const` to delay breaking sharing.
   VariableSlice(V &variable, const Dim dim, const gsl::index begin,
                 const gsl::index end = -1)
       : m_variable(&variable),
-        m_view(variable.data().makeView(dim, begin, end)) {}
+        m_view(static_cast<const V &>(variable).data().makeView(dim, begin,
+                                                                end)) {}
   VariableSlice(const VariableSlice &slice, const Dim dim,
                 const gsl::index begin, const gsl::index end = -1)
       : m_variable(slice.m_variable),
@@ -336,7 +334,11 @@ public:
   }
   Tag tag() const { return m_variable->tag(); }
   const VariableConcept &data() const { return *m_view; }
-  VariableConcept &data() { return *m_view; }
+  VariableConcept &data() {
+    if (m_view->isConstView())
+      m_view = m_view->cloneMutable(m_variable->data());
+    return *m_view;
+  }
 
   bool isCoord() const { return m_variable->isCoord(); }
   bool isAttr() const { return m_variable->isAttr(); }
