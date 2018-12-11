@@ -464,6 +464,58 @@ public:
       }
     }
   }
+
+  template <template <class> class Op>
+  VariableConcept &apply(const VariableConcept &other) {
+    try {
+      const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
+      if (isContiguous() && dimensions().contains(other.dimensions())) {
+        if (other.isContiguous() &&
+            dimensions().isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, T>::apply(getSpan(), otherT.getSpan());
+        } else {
+          ArithmeticHelper<Op, T>::apply(getSpan(),
+                                         otherT.getView(dimensions()));
+        }
+      } else if (this->dimensions().contains(other.dimensions())) {
+        if (other.isContiguous() &&
+            dimensions().isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, T>::apply(getView(dimensions()),
+                                         otherT.getSpan());
+        } else {
+          ArithmeticHelper<Op, T>::apply(getView(dimensions()),
+                                         otherT.getView(dimensions()));
+        }
+      } else {
+        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+        if (other.isContiguous() &&
+            dimensions().isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, T>::apply(getView(other.dimensions()),
+                                         otherT.getSpan());
+        } else {
+          ArithmeticHelper<Op, T>::apply(getView(other.dimensions()),
+                                         otherT.getView(other.dimensions()));
+        }
+      }
+    } catch (const std::bad_cast &) {
+      throw std::runtime_error("Cannot apply arithmetic operation to "
+                               "Variables: Underlying data types do not "
+                               "match.");
+    }
+    return *this;
+  }
+
+  VariableConcept &operator+=(const VariableConcept &other) override {
+    return apply<std::plus>(other);
+  }
+
+  VariableConcept &operator-=(const VariableConcept &other) override {
+    return apply<std::minus>(other);
+  }
+
+  VariableConcept &operator*=(const VariableConcept &other) override {
+    return apply<std::multiplies>(other);
+  }
 };
 
 template <class T>
@@ -530,50 +582,6 @@ public:
   bool isView() const override { return false; }
   bool isConstView() const override { return false; }
 
-  template <template <class> class Op>
-  VariableConcept &apply(const VariableConcept &other) {
-    try {
-      if (isContiguous() && this->dimensions().contains(other.dimensions())) {
-        if (other.isContiguous() &&
-            this->dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(CastHelper<T>::getSpan(*this),
-                    CastHelper<T>::getSpan(other));
-        } else {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(CastHelper<T>::getSpan(*this),
-                    CastHelper<T>::getView(other, this->dimensions()));
-        }
-      } else if (this->dimensions().contains(other.dimensions())) {
-        if (other.isContiguous() &&
-            this->dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(m_model, CastHelper<T>::getSpan(other));
-        } else {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(m_model, CastHelper<T>::getView(other, this->dimensions()));
-        }
-      } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        if (other.isContiguous() &&
-            this->dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(CastHelper<T>::getView(*this, other.dimensions()),
-                    CastHelper<T>::getSpan(other));
-        } else {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(CastHelper<T>::getView(*this, other.dimensions()),
-                    CastHelper<T>::getView(other, other.dimensions()));
-        }
-      }
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error("Cannot apply arithmetic operation to "
-                               "Variables: Underlying data types do not "
-                               "match.");
-    }
-    return *this;
-  }
-
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
@@ -600,18 +608,6 @@ public:
       RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
                             newCoordView, newOffset);
     }
-  }
-
-  VariableConcept &operator+=(const VariableConcept &other) override {
-    return apply<std::plus>(other);
-  }
-
-  VariableConcept &operator-=(const VariableConcept &other) override {
-    return apply<std::minus>(other);
-  }
-
-  VariableConcept &operator*=(const VariableConcept &other) override {
-    return apply<std::multiplies>(other);
   }
 
   gsl::index size() const override { return m_model.size(); }
@@ -734,50 +730,6 @@ public:
     return std::is_const<typename T::value_type>::value;
   }
 
-  template <template <class> class Op>
-  VariableConcept &apply(const VariableConcept &other) {
-    try {
-      if (isContiguous() && this->dimensions().contains(other.dimensions())) {
-        if (other.isContiguous() &&
-            this->dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(CastHelper<T>::getSpan(*this),
-                    CastHelper<T>::getSpan(other));
-        } else {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(CastHelper<T>::getSpan(*this),
-                    CastHelper<T>::getView(other, this->dimensions()));
-        }
-      } else if (this->dimensions().contains(other.dimensions())) {
-        if (other.isContiguous() &&
-            this->dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(m_model, CastHelper<T>::getSpan(other));
-        } else {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(m_model, CastHelper<T>::getView(other, this->dimensions()));
-        }
-      } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        if (other.isContiguous() &&
-            this->dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(CastHelper<T>::getView(*this, other.dimensions()),
-                    CastHelper<T>::getSpan(other));
-        } else {
-          ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(CastHelper<T>::getView(*this, other.dimensions()),
-                    CastHelper<T>::getView(other, other.dimensions()));
-        }
-      }
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error("Cannot apply arithmetic operation to "
-                               "Variables: Underlying data types do not "
-                               "match.");
-    }
-    return *this;
-  }
-
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
@@ -804,18 +756,6 @@ public:
       RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
                             newCoordView, newOffset);
     }
-  }
-
-  VariableConcept &operator+=(const VariableConcept &other) override {
-    return apply<std::plus>(other);
-  }
-
-  VariableConcept &operator-=(const VariableConcept &other) override {
-    return apply<std::minus>(other);
-  }
-
-  VariableConcept &operator*=(const VariableConcept &other) override {
-    return apply<std::multiplies>(other);
   }
 
   gsl::index size() const override { return m_model.size(); }
