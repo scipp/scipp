@@ -391,6 +391,36 @@ template <class T> class VariableConceptT : public VariableConcept {
 public:
   VariableConceptT(const Dimensions &dimensions)
       : VariableConcept(dimensions) {}
+
+  virtual gsl::span<T> getSpan() = 0;
+  virtual gsl::span<const T> getSpan() const = 0;
+  virtual VariableView<T> getView(const Dimensions &dims) = 0;
+  virtual VariableView<T> getView(const Dimensions &dims, const Dim dim,
+                                  const gsl::index begin) = 0;
+  virtual VariableView<const T> getView(const Dimensions &dims) const = 0;
+  virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
+                                        const gsl::index begin) const = 0;
+
+  bool operator==(const VariableConcept &other) const override {
+    if (dimensions() != other.dimensions())
+      return false;
+    const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
+    if (isContiguous()) {
+      if (other.isContiguous() &&
+          dimensions().isContiguousIn(other.dimensions())) {
+        return equal(getSpan(), otherT.getSpan());
+      } else {
+        return equal(getSpan(), otherT.getView(dimensions()));
+      }
+    } else {
+      if (other.isContiguous() &&
+          dimensions().isContiguousIn(other.dimensions())) {
+        return equal(getView(dimensions()), otherT.getSpan());
+      } else {
+        return equal(getView(dimensions()), otherT.getView(dimensions()));
+      }
+    }
+  }
 };
 
 template <class T>
@@ -402,6 +432,41 @@ public:
     if (this->dimensions().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
+  }
+
+  gsl::span<typename T::value_type> getSpan() override {
+    return gsl::make_span(m_model.data(), m_model.data() + size());
+  }
+  gsl::span<const typename T::value_type> getSpan() const override {
+    return gsl::make_span(m_model.data(), m_model.data() + size());
+  }
+
+  VariableView<typename T::value_type>
+  getView(const Dimensions &dims) override {
+    return makeVariableView(m_model.data(), dims, this->dimensions());
+  }
+  VariableView<typename T::value_type>
+  getView(const Dimensions &dims, const Dim dim,
+          const gsl::index begin) override {
+    gsl::index beginOffset = this->dimensions().contains(dim)
+                                 ? begin * this->dimensions().offset(dim)
+                                 : begin * this->dimensions().volume();
+    return makeVariableView(m_model.data() + beginOffset, dims,
+                            this->dimensions());
+  }
+
+  VariableView<const typename T::value_type>
+  getView(const Dimensions &dims) const override {
+    return makeVariableView(m_model.data(), dims, this->dimensions());
+  }
+  VariableView<const typename T::value_type>
+  getView(const Dimensions &dims, const Dim dim,
+          const gsl::index begin) const override {
+    gsl::index beginOffset = this->dimensions().contains(dim)
+                                 ? begin * this->dimensions().offset(dim)
+                                 : begin * this->dimensions().volume();
+    return makeVariableView(m_model.data() + beginOffset, dims,
+                            this->dimensions());
   }
 
   std::shared_ptr<VariableConcept> clone() const override {
@@ -461,29 +526,6 @@ public:
   bool isContiguous() const override { return true; }
   bool isView() const override { return false; }
   bool isConstView() const override { return false; }
-
-  bool operator==(const VariableConcept &other) const override {
-    if (this->dimensions() != other.dimensions())
-      return false;
-    if (isContiguous()) {
-      if (other.isContiguous() &&
-          this->dimensions().isContiguousIn(other.dimensions())) {
-        return equal(CastHelper<T>::getSpan(*this),
-                     CastHelper<T>::getSpan(other));
-      } else {
-        return equal(CastHelper<T>::getSpan(*this),
-                     CastHelper<T>::getView(other, this->dimensions()));
-      }
-    } else {
-      if (other.isContiguous() &&
-          this->dimensions().isContiguousIn(other.dimensions())) {
-        return equal(m_model, CastHelper<T>::getSpan(other));
-      } else {
-        return equal(m_model,
-                     CastHelper<T>::getView(other, this->dimensions()));
-      }
-    }
-  }
 
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
@@ -605,14 +647,66 @@ public:
 };
 
 template <class T>
-class VariableViewModel : public VariableConceptT<typename T::value_type> {
+class VariableViewModel
+    : public VariableConceptT<std::remove_const_t<typename T::value_type>> {
+  using value_type = std::remove_const_t<typename T::value_type>;
+
 public:
   VariableViewModel(const Dimensions &dimensions, T model)
-      : VariableConceptT<typename T::value_type>(std::move(dimensions)),
+      : VariableConceptT<value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
+  }
+
+  gsl::span<value_type> getSpan() override {
+    if (isConstView())
+      throw std::runtime_error(
+          "View is const, cannot get mutable range of data.");
+    if (!isContiguous())
+      throw std::runtime_error(
+          "View is not contiguous, cannot get contiguous range of data.");
+    if constexpr (std::is_const<typename T::value_type>::value)
+      return gsl::span<value_type>();
+    else
+      return gsl::make_span(m_model.data(), m_model.data() + size());
+  }
+  gsl::span<const value_type> getSpan() const override {
+    if (!isContiguous())
+      throw std::runtime_error(
+          "View is not contiguous, cannot get contiguous range of data.");
+    return gsl::make_span(m_model.data(), m_model.data() + size());
+  }
+
+  VariableView<value_type> getView(const Dimensions &dims) override {
+    if (isConstView())
+      throw std::runtime_error(
+          "View is const, cannot get mutable range of data.");
+    if constexpr (std::is_const<typename T::value_type>::value)
+      return VariableView<value_type>(nullptr, {}, {});
+    else
+      return {m_model, dims};
+  }
+  VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
+                                   const gsl::index begin) override {
+    if (isConstView())
+      throw std::runtime_error(
+          "View is const, cannot get mutable range of data.");
+    if constexpr (std::is_const<typename T::value_type>::value)
+      return VariableView<value_type>(nullptr, {}, {});
+    else
+      return {m_model, dims, dim, begin};
+  }
+
+  VariableView<const value_type>
+  getView(const Dimensions &dims) const override {
+    return {m_model, dims};
+  }
+  VariableView<const value_type>
+  getView(const Dimensions &dims, const Dim dim,
+          const gsl::index begin) const override {
+    return {m_model, dims, dim, begin};
   }
 
   std::shared_ptr<VariableConcept> clone() const override {
@@ -675,29 +769,6 @@ public:
   bool isView() const override { return true; }
   bool isConstView() const override {
     return std::is_const<typename T::value_type>::value;
-  }
-
-  bool operator==(const VariableConcept &other) const override {
-    if (this->dimensions() != other.dimensions())
-      return false;
-    if (isContiguous()) {
-      if (other.isContiguous() &&
-          this->dimensions().isContiguousIn(other.dimensions())) {
-        return equal(CastHelper<T>::getSpan(*this),
-                     CastHelper<T>::getSpan(other));
-      } else {
-        return equal(CastHelper<T>::getSpan(*this),
-                     CastHelper<T>::getView(other, this->dimensions()));
-      }
-    } else {
-      if (other.isContiguous() &&
-          this->dimensions().isContiguousIn(other.dimensions())) {
-        return equal(m_model, CastHelper<T>::getSpan(other));
-      } else {
-        return equal(m_model,
-                     CastHelper<T>::getView(other, this->dimensions()));
-      }
-    }
   }
 
   template <template <class> class Op>
