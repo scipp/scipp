@@ -199,7 +199,7 @@ public:
                                         const gsl::index begin) const = 0;
 
   std::unique_ptr<VariableConcept> makeView() const override {
-    auto &dims = this->dimensions();
+    auto &dims = dimensions();
     return std::make_unique<VariableViewModel<decltype(getView(dims))>>(
         dims, getView(dims));
   }
@@ -207,7 +207,7 @@ public:
   std::unique_ptr<VariableConcept> makeView() override {
     if (isConstView())
       return const_cast<const VariableConceptT &>(*this).makeView();
-    auto &dims = this->dimensions();
+    auto &dims = dimensions();
     return std::make_unique<VariableViewModel<decltype(getView(dims))>>(
         dims, getView(dims));
   }
@@ -215,7 +215,7 @@ public:
   std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end) const override {
-    auto dims = this->dimensions();
+    auto dims = dimensions();
     if (end == -1)
       dims.erase(dim);
     else
@@ -231,7 +231,7 @@ public:
     if (isConstView())
       return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
                                                                   end);
-    auto dims = this->dimensions();
+    auto dims = dimensions();
     if (end == -1)
       dims.erase(dim);
     else
@@ -274,7 +274,7 @@ public:
           ArithmeticHelper<Op, T>::apply(getSpan(),
                                          otherT.getView(dimensions()));
         }
-      } else if (this->dimensions().contains(other.dimensions())) {
+      } else if (dimensions().contains(other.dimensions())) {
         if (other.isContiguous() &&
             dimensions().isContiguousIn(other.dimensions())) {
           ArithmeticHelper<Op, T>::apply(getView(dimensions()),
@@ -317,7 +317,7 @@ public:
   void copy(const VariableConcept &other, const Dim dim,
             const gsl::index offset, const gsl::index otherBegin,
             const gsl::index otherEnd) override {
-    auto iterDims = this->dimensions();
+    auto iterDims = dimensions();
     const gsl::index delta = otherEnd - otherBegin;
     if (iterDims.contains(dim))
       iterDims.resize(dim, delta);
@@ -372,7 +372,22 @@ public:
 };
 
 template <class T>
+auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
+              const gsl::index begin, const gsl::index end) {
+  if (!dims.contains(dim) && (begin != 0 || end != 1))
+    throw std::runtime_error("VariableConcept: Slice index out of range.");
+  if (!dims.contains(dim) || dims.size(dim) == end - begin) {
+    return gsl::make_span(model.data(), model.data() + model.size());
+  }
+  const gsl::index beginOffset = begin * dims.offset(dim);
+  const gsl::index endOffset = end * dims.offset(dim);
+  return gsl::make_span(model.data() + beginOffset, model.data() + endOffset);
+}
+
+template <class T>
 class VariableModel : public VariableConceptT<typename T::value_type> {
+  using value_type = std::remove_const_t<typename T::value_type>;
+
 public:
   VariableModel(const Dimensions &dimensions, T model)
       : VariableConceptT<typename T::value_type>(std::move(dimensions)),
@@ -382,49 +397,27 @@ public:
                                "volume given by dimension extents");
   }
 
-  gsl::span<typename T::value_type> getSpan() override {
+  gsl::span<value_type> getSpan() override {
     return gsl::make_span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<typename T::value_type> getSpan(const Dim dim,
-                                            const gsl::index begin,
-                                            const gsl::index end) override {
-    const auto &dims = this->dimensions();
-    if (!dims.contains(dim) && (begin != 0 || end != 1))
-      throw std::runtime_error("VariableConcept: Slice index out of range.");
-    if (!dims.contains(dim) || dims.size(dim) == end - begin) {
-      return gsl::make_span(m_model.data(), m_model.data() + size());
-    }
-    gsl::index beginOffset = begin * dims.offset(dim);
-    gsl::index endOffset = end * dims.offset(dim);
-    return gsl::make_span(m_model.data() + beginOffset,
-                          m_model.data() + endOffset);
+  gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
+                                const gsl::index end) override {
+    return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
-  gsl::span<const typename T::value_type> getSpan() const override {
+  gsl::span<const value_type> getSpan() const override {
     return gsl::make_span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<const typename T::value_type>
-  getSpan(const Dim dim, const gsl::index begin,
-          const gsl::index end) const override {
-    const auto &dims = this->dimensions();
-    if (!dims.contains(dim) && (begin != 0 || end != 1))
-      throw std::runtime_error("VariableConcept: Slice index out of range.");
-    if (!dims.contains(dim) || dims.size(dim) == end - begin) {
-      return gsl::make_span(m_model.data(), m_model.data() + size());
-    }
-    gsl::index beginOffset = begin * dims.offset(dim);
-    gsl::index endOffset = end * dims.offset(dim);
-    return gsl::make_span(m_model.data() + beginOffset,
-                          m_model.data() + endOffset);
+  gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
+                                      const gsl::index end) const override {
+    return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
-  VariableView<typename T::value_type>
-  getView(const Dimensions &dims) override {
+  VariableView<value_type> getView(const Dimensions &dims) override {
     return makeVariableView(m_model.data(), dims, this->dimensions());
   }
-  VariableView<typename T::value_type>
-  getView(const Dimensions &dims, const Dim dim,
-          const gsl::index begin) override {
+  VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
+                                   const gsl::index begin) override {
     gsl::index beginOffset = this->dimensions().contains(dim)
                                  ? begin * this->dimensions().offset(dim)
                                  : begin * this->dimensions().volume();
@@ -432,11 +425,11 @@ public:
                             this->dimensions());
   }
 
-  VariableView<const typename T::value_type>
+  VariableView<const value_type>
   getView(const Dimensions &dims) const override {
     return makeVariableView(m_model.data(), dims, this->dimensions());
   }
-  VariableView<const typename T::value_type>
+  VariableView<const value_type>
   getView(const Dimensions &dims, const Dim dim,
           const gsl::index begin) const override {
     gsl::index beginOffset = this->dimensions().contains(dim)
@@ -505,16 +498,7 @@ public:
     if constexpr (std::is_const<typename T::value_type>::value) {
       return gsl::span<value_type>();
     } else {
-      const auto &dims = this->dimensions();
-      if (!dims.contains(dim) && (begin != 0 || end != 1))
-        throw std::runtime_error("VariableConcept: Slice index out of range.");
-      if (!dims.contains(dim) || dims.size(dim) == end - begin) {
-        return gsl::make_span(m_model.data(), m_model.data() + size());
-      }
-      gsl::index beginOffset = begin * dims.offset(dim);
-      gsl::index endOffset = end * dims.offset(dim);
-      return gsl::make_span(m_model.data() + beginOffset,
-                            m_model.data() + endOffset);
+      return makeSpan(m_model, this->dimensions(), dim, begin, end);
     }
   }
 
@@ -529,16 +513,7 @@ public:
     if (!isContiguous())
       throw std::runtime_error(
           "View is not contiguous, cannot get contiguous range of data.");
-    const auto &dims = this->dimensions();
-    if (!dims.contains(dim) && (begin != 0 || end != 1))
-      throw std::runtime_error("VariableConcept: Slice index out of range.");
-    if (!dims.contains(dim) || dims.size(dim) == end - begin) {
-      return gsl::make_span(m_model.data(), m_model.data() + size());
-    }
-    gsl::index beginOffset = begin * dims.offset(dim);
-    gsl::index endOffset = end * dims.offset(dim);
-    return gsl::make_span(m_model.data() + beginOffset,
-                          m_model.data() + endOffset);
+    return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
   VariableView<value_type> getView(const Dimensions &dims) override {
