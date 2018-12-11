@@ -405,21 +405,29 @@ template <class T> struct CastHelper<VariableView<T>> {
   }
 };
 
-template <class T> class VariableModel final : public VariableConcept {
+template <class T> class VariableConceptT : public VariableConcept {
+public:
+  VariableConceptT(const Dimensions &dimensions)
+      : VariableConcept(dimensions) {}
+};
+
+template <class T>
+class VariableModel : public VariableConceptT<typename T::value_type> {
 public:
   VariableModel(const Dimensions &dimensions, T model)
-      : VariableConcept(std::move(dimensions)), m_model(std::move(model)) {
+      : VariableConceptT<typename T::value_type>(std::move(dimensions)),
+        m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
 
   std::shared_ptr<VariableConcept> clone() const override {
-    return std::make_shared<VariableModel<T>>(dimensions(), m_model);
+    return std::make_shared<VariableModel<T>>(this->dimensions(), m_model);
   }
 
   std::unique_ptr<VariableConcept> cloneUnique() const override {
-    return std::make_unique<VariableModel<T>>(dimensions(), m_model);
+    return std::make_unique<VariableModel<T>>(this->dimensions(), m_model);
   }
 
   std::shared_ptr<VariableConcept>
@@ -429,14 +437,14 @@ public:
   }
 
   std::unique_ptr<VariableConcept> makeView() const override {
-    auto &dims = dimensions();
+    auto &dims = this->dimensions();
     return std::make_unique<
         VariableModel<decltype(CastHelper<T>::getView(*this, dims))>>(
         dims, CastHelper<T>::getView(*this, dims));
   }
 
   std::unique_ptr<VariableConcept> makeView() override {
-    auto &dims = dimensions();
+    auto &dims = this->dimensions();
     return std::make_unique<
         VariableModel<decltype(CastHelper<T>::getView(*this, dims))>>(
         dims, CastHelper<T>::getView(*this, dims));
@@ -445,7 +453,7 @@ public:
   std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end) const override {
-    auto dims = dimensions();
+    auto dims = this->dimensions();
     if (end == -1)
       dims.erase(dim);
     else
@@ -458,7 +466,7 @@ public:
   std::unique_ptr<VariableConcept> makeView(const Dim dim,
                                             const gsl::index begin,
                                             const gsl::index end) override {
-    auto dims = dimensions();
+    auto dims = this->dimensions();
     if (end == -1)
       dims.erase(dim);
     else
@@ -471,30 +479,31 @@ public:
   bool isContiguous() const override {
     if (!isView())
       return true;
-    return dimensions().isContiguousIn(
+    return this->dimensions().isContiguousIn(
         ViewHelper<T>::parentDimensions(m_model));
   }
   bool isView() const override { return ViewHelper<T>::isView(); }
   bool isConstView() const override { return ViewHelper<T>::isConstView(); }
 
   bool operator==(const VariableConcept &other) const override {
-    if (dimensions() != other.dimensions())
+    if (this->dimensions() != other.dimensions())
       return false;
     if (isContiguous()) {
       if (other.isContiguous() &&
-          dimensions().isContiguousIn(other.dimensions())) {
+          this->dimensions().isContiguousIn(other.dimensions())) {
         return equal(CastHelper<T>::getSpan(*this),
                      CastHelper<T>::getSpan(other));
       } else {
         return equal(CastHelper<T>::getSpan(*this),
-                     CastHelper<T>::getView(other, dimensions()));
+                     CastHelper<T>::getView(other, this->dimensions()));
       }
     } else {
       if (other.isContiguous() &&
-          dimensions().isContiguousIn(other.dimensions())) {
+          this->dimensions().isContiguousIn(other.dimensions())) {
         return equal(m_model, CastHelper<T>::getSpan(other));
       } else {
-        return equal(m_model, CastHelper<T>::getView(other, dimensions()));
+        return equal(m_model,
+                     CastHelper<T>::getView(other, this->dimensions()));
       }
     }
   }
@@ -502,30 +511,30 @@ public:
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
     try {
-      if (isContiguous() && dimensions().contains(other.dimensions())) {
+      if (isContiguous() && this->dimensions().contains(other.dimensions())) {
         if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
+            this->dimensions().isContiguousIn(other.dimensions())) {
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
               apply(CastHelper<T>::getSpan(*this),
                     CastHelper<T>::getSpan(other));
         } else {
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
               apply(CastHelper<T>::getSpan(*this),
-                    CastHelper<T>::getView(other, dimensions()));
+                    CastHelper<T>::getView(other, this->dimensions()));
         }
-      } else if (dimensions().contains(other.dimensions())) {
+      } else if (this->dimensions().contains(other.dimensions())) {
         if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
+            this->dimensions().isContiguousIn(other.dimensions())) {
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
               apply(m_model, CastHelper<T>::getSpan(other));
         } else {
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
-              apply(m_model, CastHelper<T>::getView(other, dimensions()));
+              apply(m_model, CastHelper<T>::getView(other, this->dimensions()));
         }
       } else {
         // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
         if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
+            this->dimensions().isContiguousIn(other.dimensions())) {
           ArithmeticHelper<Op, std::remove_const_t<typename T::value_type>>::
               apply(CastHelper<T>::getView(*this, other.dimensions()),
                     CastHelper<T>::getSpan(other));
@@ -547,7 +556,8 @@ public:
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
     // Dimensions of *this and old are guaranteed to be the same.
-    if (dimensions().label(0) == dim && oldCoord.dimensions().count() == 1 &&
+    if (this->dimensions().label(0) == dim &&
+        oldCoord.dimensions().count() == 1 &&
         newCoord.dimensions().count() == 1) {
       RebinHelper<T>::rebinInner(
           dim, dynamic_cast<const VariableModel<T> &>(old), *this,
@@ -560,8 +570,8 @@ public:
       oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
       auto newCoordDims = newCoord.dimensions();
       newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
-      auto oldCoordView = CastHelper<T>::getView(oldCoord, dimensions());
-      auto newCoordView = CastHelper<T>::getView(newCoord, dimensions());
+      auto oldCoordView = CastHelper<T>::getView(oldCoord, this->dimensions());
+      auto newCoordView = CastHelper<T>::getView(newCoord, this->dimensions());
       const auto oldOffset = oldCoordDims.offset(dim);
       const auto newOffset = newCoordDims.offset(dim);
 
@@ -587,7 +597,7 @@ public:
   void copy(const VariableConcept &other, const Dim dim,
             const gsl::index offset, const gsl::index otherBegin,
             const gsl::index otherEnd) override {
-    auto iterDims = dimensions();
+    auto iterDims = this->dimensions();
     const gsl::index delta = otherEnd - otherBegin;
     if (iterDims.contains(dim))
       iterDims.resize(dim, delta);
@@ -595,7 +605,7 @@ public:
     auto otherView = CastHelper<T>::getView(other, iterDims, dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    if (isContiguous() && iterDims.isContiguousIn(dimensions())) {
+    if (isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
       auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
         auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
