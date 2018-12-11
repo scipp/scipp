@@ -697,25 +697,26 @@ template bool Variable::operator!=(const VariableSlice<Variable> &other) const;
 template bool Variable::
 operator!=(const VariableSlice<const Variable> &other) const;
 
-template <class T> Variable &Variable::operator+=(const T &other) {
+template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
-  if (unit() != other.unit())
+  if (variable.unit() != other.unit())
     throw std::runtime_error("Cannot add Variables: Units do not match.");
-  if (!valueTypeIs<Data::Events>() && !valueTypeIs<Data::Table>()) {
-    if (dimensions().contains(other.dimensions())) {
+  if (!variable.template valueTypeIs<Data::Events>() &&
+      !variable.template valueTypeIs<Data::Table>()) {
+    if (variable.dimensions().contains(other.dimensions())) {
       // Note: This will broadcast/transpose the RHS if required. We do not
       // support changing the dimensions of the LHS though!
-      m_object.access() += other.data();
+      variable.data() += other.data();
     } else {
       throw std::runtime_error(
           "Cannot add Variables: Dimensions do not match.");
     }
   } else {
-    if (dimensions() == other.dimensions()) {
+    if (variable.dimensions() == other.dimensions()) {
       using ConstViewOrRef =
-          std::conditional_t<std::is_same<T, Variable>::value,
+          std::conditional_t<std::is_same<T2, Variable>::value,
                              const Vector<Dataset> &,
                              const VariableView<const Dataset>>;
       ConstViewOrRef otherDatasets = other.template cast<Dataset>();
@@ -723,7 +724,7 @@ template <class T> Variable &Variable::operator+=(const T &other) {
           otherDatasets[0].dimensions().count() != 1)
         throw std::runtime_error(
             "Cannot add Variable: Nested Dataset dimension must be 1.");
-      auto &datasets = cast<Dataset>();
+      auto &datasets = variable.template cast<Dataset>();
       const Dim dim = datasets[0].dimensions().label(0);
 #pragma omp parallel for
       for (gsl::index i = 0; i < datasets.size(); ++i)
@@ -733,8 +734,11 @@ template <class T> Variable &Variable::operator+=(const T &other) {
           "Cannot add Variables: Dimensions do not match.");
     }
   }
+  return variable;
+}
 
-  return *this;
+template <class T> Variable &Variable::operator+=(const T &other) {
+  return plus_equals(*this, other);
 }
 
 template Variable &Variable::operator+=(const Variable &);
@@ -776,8 +780,8 @@ template Variable &Variable::operator*=(const VariableSlice<const Variable> &);
 template Variable &Variable::operator*=(const VariableSlice<Variable> &);
 
 template <class T>
-VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(const T &other) {
+MutableMixin<VariableSlice<Variable>> &
+MutableMixin<VariableSlice<Variable>>::copyFrom(const T &other) {
   // TODO Should mismatching tags be allowed, as long as the type matches?
   if (base().tag() != other.tag())
     throw std::runtime_error("Cannot assign to slice: Type mismatch.");
@@ -791,65 +795,32 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(const T &other) {
   return *this;
 }
 
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(const Variable &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(
+template MutableMixin<VariableSlice<Variable>> &
+MutableMixin<VariableSlice<Variable>>::copyFrom(const Variable &);
+template MutableMixin<VariableSlice<Variable>> &
+MutableMixin<VariableSlice<Variable>>::copyFrom(
     const VariableSlice<const Variable> &);
-template VariableSliceMutableMixin<VariableSlice<Variable>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::copyFrom(
+template MutableMixin<VariableSlice<Variable>> &
+MutableMixin<VariableSlice<Variable>>::copyFrom(
     const VariableSlice<Variable> &);
 
-template <class T>
-VariableSlice<Variable> &VariableSliceMutableMixin<VariableSlice<Variable>>::
-operator+=(const T &other) {
-  if (base().unit() != other.unit())
-    throw std::runtime_error("Cannot add Variables: Units do not match.");
-  if (!base().valueTypeIs<Data::Events>() &&
-      !base().valueTypeIs<Data::Table>()) {
-    if (base().dimensions().contains(other.dimensions())) {
-      base().data() += other.data();
-    } else {
-      throw std::runtime_error(
-          "Cannot add Variables: Dimensions do not match.");
-    }
-  } else {
-    if (base().dimensions() == other.dimensions()) {
-      using ConstViewOrRef =
-          std::conditional_t<std::is_same<T, Variable>::value,
-                             const Vector<Dataset> &,
-                             const VariableView<const Dataset>>;
-      ConstViewOrRef otherDatasets = other.template cast<Dataset>();
-      if (otherDatasets.size() > 0 &&
-          otherDatasets[0].dimensions().count() != 1)
-        throw std::runtime_error(
-            "Cannot add Variable: Nested Dataset dimension must be 1.");
-      auto &datasets = cast<Dataset>();
-      const Dim dim = datasets[0].dimensions().label(0);
-#pragma omp parallel for
-      for (gsl::index i = 0; i < datasets.size(); ++i)
-        datasets[i] = concatenate(datasets[i], otherDatasets[i], dim);
-    } else {
-      throw std::runtime_error(
-          "Cannot add Variables: Dimensions do not match.");
-    }
-  }
-
-  return base();
+VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
+operator+=(const Variable &other) {
+  return plus_equals(base(), other);
 }
 
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
-operator+=(const Variable &);
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
-operator+=(const VariableSlice<const Variable> &);
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
-operator+=(const VariableSlice<Variable> &);
+VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
+operator+=(const VariableSlice<const Variable> &other) {
+  return plus_equals(base(), other);
+}
+
+VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
+operator+=(const VariableSlice<Variable> &other) {
+  return plus_equals(base(), other);
+}
 
 template <class T>
-VariableSlice<Variable> &VariableSliceMutableMixin<VariableSlice<Variable>>::
+VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
 operator-=(const T &other) {
   if (base().unit() != other.unit())
     throw std::runtime_error("Cannot subtract Variables: Units do not match.");
@@ -865,18 +836,15 @@ operator-=(const T &other) {
   return base();
 }
 
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
+template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
 operator-=(const Variable &);
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
+template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
 operator-=(const VariableSlice<const Variable> &);
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
+template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
 operator-=(const VariableSlice<Variable> &);
 
 template <class T>
-VariableSlice<Variable> &VariableSliceMutableMixin<VariableSlice<Variable>>::
+VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
 operator*=(const T &other) {
   if (!base().dimensions().contains(other.dimensions()))
     throw std::runtime_error(
@@ -889,33 +857,29 @@ operator*=(const T &other) {
   return base();
 }
 
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
+template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
 operator*=(const Variable &);
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
+template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
 operator*=(const VariableSlice<const Variable> &);
-template VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::
+template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
 operator*=(const VariableSlice<Variable> &);
 
 const VariableSlice<const Variable> &
-VariableSliceMutableMixin<VariableSlice<const Variable>>::base() const {
+MutableMixin<VariableSlice<const Variable>>::base() const {
   return static_cast<const VariableSlice<const Variable> &>(*this);
 }
 
 VariableSlice<const Variable> &
-VariableSliceMutableMixin<VariableSlice<const Variable>>::base() {
+MutableMixin<VariableSlice<const Variable>>::base() {
   return static_cast<VariableSlice<const Variable> &>(*this);
 }
 
 const VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::base() const {
+MutableMixin<VariableSlice<Variable>>::base() const {
   return static_cast<const VariableSlice<Variable> &>(*this);
 }
 
-VariableSlice<Variable> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::base() {
+VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::base() {
   return static_cast<VariableSlice<Variable> &>(*this);
 }
 
@@ -966,8 +930,7 @@ operator!=(const VariableSlice<const Variable> &) const;
 template bool VariableSlice<Variable>::
 operator!=(const VariableSlice<const Variable> &) const;
 
-void VariableSliceMutableMixin<VariableSlice<Variable>>::setUnit(
-    const Unit &unit) {
+void MutableMixin<VariableSlice<Variable>>::setUnit(const Unit &unit) {
   // TODO Should we forbid setting the unit altogether? I think it is useful in
   // particular since views onto subsets of dataset do not imply slicing of
   // variables but return slice views.
@@ -980,24 +943,23 @@ void VariableSliceMutableMixin<VariableSlice<Variable>>::setUnit(
 
 template <class T>
 const VariableView<const T> &
-VariableSliceMutableMixin<VariableSlice<const Variable>>::cast() const {
+MutableMixin<VariableSlice<const Variable>>::cast() const {
   return dynamic_cast<const ViewModel<VariableView<const T>> &>(base().data())
       .m_model;
 }
 
 template const VariableView<const double> &
-VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<double>() const;
+MutableMixin<VariableSlice<const Variable>>::cast<double>() const;
 template const VariableView<const int32_t> &
-VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<int32_t>() const;
+MutableMixin<VariableSlice<const Variable>>::cast<int32_t>() const;
 template const VariableView<const char> &
-VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<char>() const;
+MutableMixin<VariableSlice<const Variable>>::cast<char>() const;
 template const VariableView<const std::vector<std::string>> &
-VariableSliceMutableMixin<VariableSlice<const Variable>>::cast<
-    std::vector<std::string>>() const;
+MutableMixin<VariableSlice<const Variable>>::cast<std::vector<std::string>>()
+    const;
 
 template <class T>
-VariableView<const T>
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const {
+VariableView<const T> MutableMixin<VariableSlice<Variable>>::cast() const {
   if (base().m_view->isConstView())
     return {
         dynamic_cast<const ViewModel<VariableView<const T>> &>(base().data())
@@ -1010,33 +972,32 @@ VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const {
 }
 
 template <class T>
-const VariableView<T> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast() {
+const VariableView<T> &MutableMixin<VariableSlice<Variable>>::cast() {
   return dynamic_cast<const ViewModel<VariableView<T>> &>(base().data())
       .m_model;
 }
 
 template VariableView<const double>
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
+MutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<double> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
+MutableMixin<VariableSlice<Variable>>::cast();
 
 template VariableView<const int32_t>
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
+MutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<int32_t> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
+MutableMixin<VariableSlice<Variable>>::cast();
 
 template VariableView<const char>
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
+MutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<char> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
+MutableMixin<VariableSlice<Variable>>::cast();
 
 template const VariableView<std::string> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
+MutableMixin<VariableSlice<Variable>>::cast();
 template VariableView<const std::vector<std::string>>
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const;
+MutableMixin<VariableSlice<Variable>>::cast() const;
 template const VariableView<std::vector<std::string>> &
-VariableSliceMutableMixin<VariableSlice<Variable>>::cast();
+MutableMixin<VariableSlice<Variable>>::cast();
 
 void Variable::setSlice(const Variable &slice, const Dimension dim,
                         const gsl::index index) {

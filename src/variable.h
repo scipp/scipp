@@ -109,7 +109,7 @@ private:
 
 template <class... Tags> class LinearView;
 template <class V> class VariableSlice;
-template <class Base> class VariableSliceMutableMixin;
+template <class Base> class MutableMixin;
 
 class Variable {
 public:
@@ -211,11 +211,12 @@ public:
                                      const gsl::index end = -1);
 
   template <class... Tags> friend class LinearView;
-  template <class Base> friend class VariableSliceMutableMixin;
+  template <class Base> friend class MutableMixin;
 
-private:
   template <class T> const Vector<T> &cast() const;
   template <class T> Vector<T> &cast();
+
+private:
   // Used by LinearView. Need to find a better way instead of having everyone as
   // friend.
   Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }
@@ -252,10 +253,10 @@ Variable makeVariable(const Dimensions &dimensions,
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
-template <class Base> class VariableSliceMutableMixin {};
+template <class Base> class MutableMixin {};
 
-template <> class VariableSliceMutableMixin<VariableSlice<const Variable>> {
-protected:
+template <> class MutableMixin<VariableSlice<const Variable>> {
+public:
   template <class T> const VariableView<const T> &cast() const;
 
 private:
@@ -263,17 +264,19 @@ private:
   VariableSlice<const Variable> &base();
 };
 
-template <> class VariableSliceMutableMixin<VariableSlice<Variable>> {
+template <> class MutableMixin<VariableSlice<Variable>> {
 public:
   template <class T>
-  VariableSliceMutableMixin<VariableSlice<Variable>> &copyFrom(const T &other);
-  template <class T> VariableSlice<Variable> &operator+=(const T &other);
+  MutableMixin<VariableSlice<Variable>> &copyFrom(const T &other);
+  VariableSlice<Variable> &operator+=(const Variable &other);
+  VariableSlice<Variable> &
+  operator+=(const VariableSlice<const Variable> &other);
+  VariableSlice<Variable> &operator+=(const VariableSlice<Variable> &other);
   template <class T> VariableSlice<Variable> &operator-=(const T &other);
   template <class T> VariableSlice<Variable> &operator*=(const T &other);
 
   void setUnit(const Unit &unit);
 
-protected:
   // Special version creating const view from mutable view. Note that this does
   // not return a reference but by value.
   template <class T> VariableView<const T> cast() const;
@@ -285,8 +288,7 @@ private:
 };
 
 // V is either Variable or const Variable.
-template <class V>
-class VariableSlice : public VariableSliceMutableMixin<VariableSlice<V>> {
+template <class V> class VariableSlice : public MutableMixin<VariableSlice<V>> {
 public:
   explicit VariableSlice(V &variable)
       : m_variable(&variable), m_view(variable.data().makeView()) {}
@@ -368,7 +370,7 @@ public:
 
 private:
   friend class Variable;
-  template <class Base> friend class VariableSliceMutableMixin;
+  template <class Base> friend class MutableMixin;
 
   V *m_variable;
   deep_ptr<VariableConcept> m_view;
