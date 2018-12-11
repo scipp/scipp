@@ -948,16 +948,6 @@ MutableMixin<VariableSlice<const Variable>>::cast() const {
       .m_model;
 }
 
-template const VariableView<const double> &
-MutableMixin<VariableSlice<const Variable>>::cast<double>() const;
-template const VariableView<const int32_t> &
-MutableMixin<VariableSlice<const Variable>>::cast<int32_t>() const;
-template const VariableView<const char> &
-MutableMixin<VariableSlice<const Variable>>::cast<char>() const;
-template const VariableView<const std::vector<std::string>> &
-MutableMixin<VariableSlice<const Variable>>::cast<std::vector<std::string>>()
-    const;
-
 template <class T>
 VariableView<const T> MutableMixin<VariableSlice<Variable>>::cast() const {
   if (base().m_view->isConstView())
@@ -977,27 +967,18 @@ const VariableView<T> &MutableMixin<VariableSlice<Variable>>::cast() {
       .m_model;
 }
 
-template VariableView<const double>
-MutableMixin<VariableSlice<Variable>>::cast() const;
-template const VariableView<double> &
-MutableMixin<VariableSlice<Variable>>::cast();
+#define INSTANTIATE_SLICEVIEW(...)                                             \
+  template const VariableView<const __VA_ARGS__>                               \
+      &MutableMixin<VariableSlice<const Variable>>::cast<__VA_ARGS__>() const; \
+  template VariableView<const __VA_ARGS__>                                     \
+  MutableMixin<VariableSlice<Variable>>::cast() const;                         \
+  template const VariableView<__VA_ARGS__>                                     \
+      &MutableMixin<VariableSlice<Variable>>::cast();
 
-template VariableView<const int32_t>
-MutableMixin<VariableSlice<Variable>>::cast() const;
-template const VariableView<int32_t> &
-MutableMixin<VariableSlice<Variable>>::cast();
-
-template VariableView<const char>
-MutableMixin<VariableSlice<Variable>>::cast() const;
-template const VariableView<char> &
-MutableMixin<VariableSlice<Variable>>::cast();
-
-template const VariableView<std::string> &
-MutableMixin<VariableSlice<Variable>>::cast();
-template VariableView<const std::vector<std::string>>
-MutableMixin<VariableSlice<Variable>>::cast() const;
-template const VariableView<std::vector<std::string>> &
-MutableMixin<VariableSlice<Variable>>::cast();
+INSTANTIATE_SLICEVIEW(double);
+INSTANTIATE_SLICEVIEW(int32_t);
+INSTANTIATE_SLICEVIEW(char);
+INSTANTIATE_SLICEVIEW(std::string);
 
 void Variable::setSlice(const Variable &slice, const Dimension dim,
                         const gsl::index index) {
