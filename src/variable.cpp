@@ -223,28 +223,6 @@ DISABLE_REBIN_VIEW();
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
-template <class T> struct ViewHelper {
-  static bool isView() { return false; }
-  static bool isConstView() { return false; }
-  static const Dimensions &parentDimensions(const T &model) {
-    throw std::runtime_error("Not a view. Parent dimensions not defined.");
-  }
-};
-template <class T> struct ViewHelper<VariableView<T>> {
-  static bool isView() { return true; }
-  static bool isConstView() { return false; }
-  static const Dimensions &parentDimensions(const VariableView<T> &view) {
-    return view.parentDimensions();
-  }
-};
-template <class T> struct ViewHelper<VariableView<const T>> {
-  static bool isView() { return true; }
-  static bool isConstView() { return true; }
-  static const Dimensions &parentDimensions(const VariableView<const T> &view) {
-    return view.parentDimensions();
-  }
-};
-
 template <class T> class VariableViewModel;
 
 template <class T> struct CastHelper {
@@ -480,14 +458,9 @@ public:
         dims, CastHelper<T>::getView(*this, dims, dim, begin));
   }
 
-  bool isContiguous() const override {
-    if (!isView())
-      return true;
-    return this->dimensions().isContiguousIn(
-        ViewHelper<T>::parentDimensions(m_model));
-  }
-  bool isView() const override { return ViewHelper<T>::isView(); }
-  bool isConstView() const override { return ViewHelper<T>::isConstView(); }
+  bool isContiguous() const override { return true; }
+  bool isView() const override { return false; }
+  bool isConstView() const override { return false; }
 
   bool operator==(const VariableConcept &other) const override {
     if (this->dimensions() != other.dimensions())
@@ -697,13 +670,12 @@ public:
   }
 
   bool isContiguous() const override {
-    if (!isView())
-      return true;
-    return this->dimensions().isContiguousIn(
-        ViewHelper<T>::parentDimensions(m_model));
+    return this->dimensions().isContiguousIn(m_model.parentDimensions());
   }
-  bool isView() const override { return ViewHelper<T>::isView(); }
-  bool isConstView() const override { return ViewHelper<T>::isConstView(); }
+  bool isView() const override { return true; }
+  bool isConstView() const override {
+    return std::is_const<typename T::value_type>::value;
+  }
 
   bool operator==(const VariableConcept &other) const override {
     if (this->dimensions() != other.dimensions())
