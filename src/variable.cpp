@@ -401,6 +401,49 @@ public:
   virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
                                         const gsl::index begin) const = 0;
 
+  std::unique_ptr<VariableConcept> makeView() const override {
+    auto &dims = this->dimensions();
+    return std::make_unique<VariableViewModel<decltype(getView(dims))>>(
+        dims, getView(dims));
+  }
+
+  std::unique_ptr<VariableConcept> makeView() override {
+    if (isConstView())
+      return const_cast<const VariableConceptT &>(*this).makeView();
+    auto &dims = this->dimensions();
+    return std::make_unique<VariableViewModel<decltype(getView(dims))>>(
+        dims, getView(dims));
+  }
+
+  std::unique_ptr<VariableConcept>
+  makeView(const Dim dim, const gsl::index begin,
+           const gsl::index end) const override {
+    auto dims = this->dimensions();
+    if (end == -1)
+      dims.erase(dim);
+    else
+      dims.resize(dim, end - begin);
+    return std::make_unique<
+        VariableViewModel<decltype(getView(dims, dim, begin))>>(
+        dims, getView(dims, dim, begin));
+  }
+
+  std::unique_ptr<VariableConcept> makeView(const Dim dim,
+                                            const gsl::index begin,
+                                            const gsl::index end) override {
+    if (isConstView())
+      return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
+                                                                  end);
+    auto dims = this->dimensions();
+    if (end == -1)
+      dims.erase(dim);
+    else
+      dims.resize(dim, end - begin);
+    return std::make_unique<
+        VariableViewModel<decltype(getView(dims, dim, begin))>>(
+        dims, getView(dims, dim, begin));
+  }
+
   bool operator==(const VariableConcept &other) const override {
     if (dimensions() != other.dimensions())
       return false;
@@ -481,46 +524,6 @@ public:
   clone(const Dimensions &dims) const override {
     return std::make_shared<VariableModel<T>>(dims,
                                               CloneHelper<T>::getModel(dims));
-  }
-
-  std::unique_ptr<VariableConcept> makeView() const override {
-    auto &dims = this->dimensions();
-    return std::make_unique<
-        VariableViewModel<decltype(CastHelper<T>::getView(*this, dims))>>(
-        dims, CastHelper<T>::getView(*this, dims));
-  }
-
-  std::unique_ptr<VariableConcept> makeView() override {
-    auto &dims = this->dimensions();
-    return std::make_unique<
-        VariableViewModel<decltype(CastHelper<T>::getView(*this, dims))>>(
-        dims, CastHelper<T>::getView(*this, dims));
-  }
-
-  std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const gsl::index begin,
-           const gsl::index end) const override {
-    auto dims = this->dimensions();
-    if (end == -1)
-      dims.erase(dim);
-    else
-      dims.resize(dim, end - begin);
-    return std::make_unique<VariableViewModel<decltype(
-        CastHelper<T>::getView(*this, dims, dim, begin))>>(
-        dims, CastHelper<T>::getView(*this, dims, dim, begin));
-  }
-
-  std::unique_ptr<VariableConcept> makeView(const Dim dim,
-                                            const gsl::index begin,
-                                            const gsl::index end) override {
-    auto dims = this->dimensions();
-    if (end == -1)
-      dims.erase(dim);
-    else
-      dims.resize(dim, end - begin);
-    return std::make_unique<VariableViewModel<decltype(
-        CastHelper<T>::getView(*this, dims, dim, begin))>>(
-        dims, CastHelper<T>::getView(*this, dims, dim, begin));
   }
 
   bool isContiguous() const override { return true; }
@@ -721,46 +724,6 @@ public:
   clone(const Dimensions &dims) const override {
     return std::make_shared<VariableViewModel<T>>(
         dims, CloneHelper<T>::getModel(dims));
-  }
-
-  std::unique_ptr<VariableConcept> makeView() const override {
-    auto &dims = this->dimensions();
-    return std::make_unique<
-        VariableViewModel<decltype(CastHelper<T>::getView(*this, dims))>>(
-        dims, CastHelper<T>::getView(*this, dims));
-  }
-
-  std::unique_ptr<VariableConcept> makeView() override {
-    auto &dims = this->dimensions();
-    return std::make_unique<
-        VariableViewModel<decltype(CastHelper<T>::getView(*this, dims))>>(
-        dims, CastHelper<T>::getView(*this, dims));
-  }
-
-  std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const gsl::index begin,
-           const gsl::index end) const override {
-    auto dims = this->dimensions();
-    if (end == -1)
-      dims.erase(dim);
-    else
-      dims.resize(dim, end - begin);
-    return std::make_unique<VariableViewModel<decltype(
-        CastHelper<T>::getView(*this, dims, dim, begin))>>(
-        dims, CastHelper<T>::getView(*this, dims, dim, begin));
-  }
-
-  std::unique_ptr<VariableConcept> makeView(const Dim dim,
-                                            const gsl::index begin,
-                                            const gsl::index end) override {
-    auto dims = this->dimensions();
-    if (end == -1)
-      dims.erase(dim);
-    else
-      dims.resize(dim, end - begin);
-    return std::make_unique<VariableViewModel<decltype(
-        CastHelper<T>::getView(*this, dims, dim, begin))>>(
-        dims, CastHelper<T>::getView(*this, dims, dim, begin));
   }
 
   bool isContiguous() const override {
