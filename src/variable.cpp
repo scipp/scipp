@@ -38,30 +38,19 @@ template <template <class> class Op, class T> struct ArithmeticHelper {
   }
 };
 
-template <class T> struct CopyHelper {
-  template <class T1, class T2> static void copy(T1 &view1, T2 &view2) {
-    std::copy(view1.begin(), view1.end(), view2.begin());
-  }
-};
-
-template <class T> struct CopyHelper<const T> {
-  template <class T1, class T2> static void copy(T1 &view1, T2 &view2) {
-    throw std::runtime_error("Cannot modify data via const view.");
-  }
-};
-
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
 
 template <class T> class VariableModel;
+template <class T> class VariableConceptT;
 template <class T> struct RebinHelper {
-  static void
-  rebin(const Dim dim, const T &oldModel, T &newModel,
-        const VariableView<const typename T::value_type> &oldCoordView,
-        const gsl::index oldOffset,
-        const VariableView<const typename T::value_type> &newCoordView,
-        const gsl::index newOffset) {
+  static void rebin(const Dim dim, const gsl::span<const T> &oldModel,
+                    const gsl::span<T> &newModel,
+                    const VariableView<const T> &oldCoordView,
+                    const gsl::index oldOffset,
+                    const VariableView<const T> &newCoordView,
+                    const gsl::index newOffset) {
 
     auto oldCoordIt = oldCoordView.begin();
     auto newCoordIt = newCoordView.begin();
@@ -109,17 +98,17 @@ template <class T> struct RebinHelper {
   }
 
   // Special rebin version for rebinning inner dimension to a joint new coord.
-  static void rebinInner(const Dim dim, const VariableModel<T> &oldModel,
-                         VariableModel<T> &newModel,
-                         const VariableModel<T> &oldCoord,
-                         const VariableModel<T> &newCoord) {
-    const auto &oldData = oldModel.m_model;
-    auto &newData = newModel.m_model;
-    const auto oldSize = oldModel.dimensions().size(dim);
-    const auto newSize = newModel.dimensions().size(dim);
-    const auto count = oldModel.dimensions().volume() / oldSize;
-    const auto *xold = &*oldCoord.m_model.begin();
-    const auto *xnew = &*newCoord.m_model.begin();
+  static void rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
+                         VariableConceptT<T> &newT,
+                         const VariableConceptT<T> &oldCoordT,
+                         const VariableConceptT<T> &newCoordT) {
+    const auto &oldData = oldT.getSpan();
+    auto newData = newT.getSpan();
+    const auto oldSize = oldT.dimensions().size(dim);
+    const auto newSize = newT.dimensions().size(dim);
+    const auto count = oldT.dimensions().volume() / oldSize;
+    const auto *xold = &*oldCoordT.getSpan().begin();
+    const auto *xnew = &*newCoordT.getSpan().begin();
 #pragma omp parallel for
     for (gsl::index c = 0; c < count; ++c) {
       gsl::index iold = 0;
@@ -180,7 +169,7 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
 };
 
 #define DISABLE_REBIN_T(...)                                                   \
-  template <class T> struct RebinHelper<Vector<__VA_ARGS__>> {                 \
+  template <class T> struct RebinHelper<__VA_ARGS__> {                         \
     template <class... Args> static void rebin(Args &&...) {                   \
       throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
     }                                                                          \
@@ -190,22 +179,12 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
   };
 
 #define DISABLE_REBIN(...)                                                     \
-  template <> struct RebinHelper<Vector<__VA_ARGS__>> {                        \
+  template <> struct RebinHelper<__VA_ARGS__> {                                \
     template <class... Args> static void rebin(Args &&...) {                   \
       throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
     }                                                                          \
     template <class... Args> static void rebinInner(Args &&...) {              \
       throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-  };
-
-#define DISABLE_REBIN_VIEW()                                                   \
-  template <class T> struct RebinHelper<VariableView<T>> {                     \
-    template <class... Args> static void rebin(Args &&...) {                   \
-      throw std::runtime_error("Cannot rebin VariableView.");                  \
-    }                                                                          \
-    template <class... Args> static void rebinInner(Args &&...) {              \
-      throw std::runtime_error("Cannot rebin VariableView.");                  \
     }                                                                          \
   };
 
@@ -218,174 +197,11 @@ DISABLE_REBIN_T(std::pair<T, T>)
 DISABLE_REBIN_T(ValueWithDelta<T>)
 DISABLE_REBIN(Dataset)
 DISABLE_REBIN(std::string)
-DISABLE_REBIN_VIEW();
 
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
 template <class T> class VariableViewModel;
-
-template <class T> struct CastHelper {
-  template <class Concept> static auto *getData(Concept &concept) {
-    if (!concept.isView())
-      return dynamic_cast<std::conditional_t<std::is_const<Concept>::value,
-                                             const VariableModel<T> &,
-                                             VariableModel<T> &>>(concept)
-          .m_model.data();
-    else
-      return CastHelper<VariableView<std::conditional_t<
-          std::is_const<Concept>::value, const typename T::value_type,
-          typename T::value_type>>>::getData(concept);
-  }
-
-  template <class Concept>
-  static gsl::span<
-      std::conditional_t<std::is_const<Concept>::value,
-                         const typename T::value_type, typename T::value_type>>
-  getSpan(Concept &concept) {
-    if (concept.isView())
-      return CastHelper<VariableView<std::conditional_t<
-          std::is_const<Concept>::value, const typename T::value_type,
-          typename T::value_type>>>::getSpan(concept);
-    auto *data = CastHelper<T>::getData(concept);
-    return gsl::make_span(data, data + concept.size());
-  }
-
-  template <class Concept>
-  static auto getSpan(Concept &concept, const Dim dim, const gsl::index begin,
-                      const gsl::index end) {
-    auto *data = CastHelper<T>::getData(concept);
-    if (!concept.dimensions().contains(dim) && (begin != 0 || end != 1))
-      throw std::runtime_error("VariableConcept: Slice index out of range.");
-    if (!concept.dimensions().contains(dim) ||
-        concept.dimensions().size(dim) == end - begin) {
-      return gsl::make_span(data, data + concept.size());
-    }
-    const auto &dims = concept.dimensions();
-    gsl::index beginOffset = begin * dims.offset(dim);
-    gsl::index endOffset = end * dims.offset(dim);
-    return gsl::make_span(data + beginOffset, data + endOffset);
-  }
-
-  template <class Concept>
-  static VariableView<
-      std::conditional_t<std::is_const<Concept>::value,
-                         const typename T::value_type, typename T::value_type>>
-  getView(Concept &concept, const Dimensions &dims) {
-    if (!concept.isView()) {
-      auto *data = CastHelper<T>::getData(concept);
-      return makeVariableView(data, dims, concept.dimensions());
-    } else {
-      return CastHelper<VariableView<std::conditional_t<
-          std::is_const<Concept>::value, const typename T::value_type,
-          typename T::value_type>>>::getView(concept, dims);
-    }
-  }
-
-  template <class Concept>
-  static VariableView<
-      std::conditional_t<std::is_const<Concept>::value,
-                         const typename T::value_type, typename T::value_type>>
-  getView(Concept &concept, const Dimensions &dims, const Dim dim,
-          const gsl::index begin) {
-    if (!concept.isView()) {
-      auto *data = CastHelper<T>::getData(concept);
-      gsl::index beginOffset = concept.dimensions().contains(dim)
-                                   ? begin * concept.dimensions().offset(dim)
-                                   : begin * concept.dimensions().volume();
-      return makeVariableView(data + beginOffset, dims, concept.dimensions());
-    } else {
-      return CastHelper<VariableView<std::conditional_t<
-          std::is_const<Concept>::value, const typename T::value_type,
-          typename T::value_type>>>::getView(concept, dims, dim, begin);
-    }
-  }
-};
-
-template <class T> struct CastHelper<VariableView<T>> {
-  template <class Concept> static auto &getModel(Concept &concept) {
-    return dynamic_cast<
-               std::conditional_t<std::is_const<Concept>::value,
-                                  const VariableViewModel<VariableView<T>> &,
-                                  VariableViewModel<VariableView<T>> &>>(
-               concept)
-        .m_model;
-  }
-
-  template <class Concept> static auto *getData(Concept &concept) {
-    return CastHelper<VariableView<T>>::getModel(concept).data();
-  }
-
-  template <class Concept>
-  static gsl::span<
-      std::conditional_t<std::is_const<Concept>::value, const T, T>>
-  getSpan(Concept &concept) {
-    if (!concept.isView())
-      return CastHelper<Vector<T>>::getSpan(concept);
-    if (concept.isConstView()) {
-      auto *data = CastHelper<VariableView<std::conditional_t<
-          std::is_const<Concept>::value, const T, T>>>::getData(concept);
-      return gsl::make_span(data, data + concept.size());
-    } else {
-      auto *data =
-          CastHelper<VariableView<std::remove_const_t<T>>>::getData(concept);
-      return gsl::make_span(data, data + concept.size());
-    }
-  }
-
-  template <class Concept>
-  static gsl::span<
-      std::conditional_t<std::is_const<Concept>::value, const T, T>>
-  getSpan(Concept &concept, const Dim dim, const gsl::index begin,
-          const gsl::index end) {
-    if (!concept.isView())
-      return CastHelper<Vector<T>>::getSpan(concept, dim, begin, end);
-    throw std::runtime_error("Creating sub-span of view is not implemented.");
-    if (concept.isConstView()) {
-      auto *data = CastHelper<VariableView<T>>::getData(concept);
-      return gsl::make_span(data, data);
-    } else {
-      auto *data =
-          CastHelper<VariableView<std::remove_const_t<T>>>::getData(concept);
-      return gsl::make_span(data, data);
-    }
-  }
-
-  template <class Concept>
-  static VariableView<
-      std::conditional_t<std::is_const<Concept>::value, const T, T>>
-  getView(Concept &concept, const Dimensions &dims) {
-    if (!concept.isView())
-      return CastHelper<Vector<T>>::getView(concept, dims);
-    if (concept.isConstView())
-      return {
-          CastHelper<VariableView<std::conditional_t<
-              std::is_const<Concept>::value, const T, T>>>::getModel(concept),
-          dims};
-    else
-      return {
-          CastHelper<VariableView<std::remove_const_t<T>>>::getModel(concept),
-          dims};
-  }
-
-  template <class Concept>
-  static VariableView<
-      std::conditional_t<std::is_const<Concept>::value, const T, T>>
-  getView(Concept &concept, const Dimensions &dims, const Dim dim,
-          const gsl::index begin) {
-    if (!concept.isView())
-      return CastHelper<Vector<T>>::getView(concept, dims, dim, begin);
-    if (concept.isConstView())
-      return {
-          CastHelper<VariableView<std::conditional_t<
-              std::is_const<Concept>::value, const T, T>>>::getModel(concept),
-          dims, dim, begin};
-    else
-      return {
-          CastHelper<VariableView<std::remove_const_t<T>>>::getModel(concept),
-          dims, dim, begin};
-  }
-};
 
 template <class T> class VariableConceptT : public VariableConcept {
 public:
@@ -393,7 +209,11 @@ public:
       : VariableConcept(dimensions) {}
 
   virtual gsl::span<T> getSpan() = 0;
+  virtual gsl::span<T> getSpan(const Dim dim, const gsl::index begin,
+                               const gsl::index end) = 0;
   virtual gsl::span<const T> getSpan() const = 0;
+  virtual gsl::span<const T> getSpan(const Dim dim, const gsl::index begin,
+                                     const gsl::index end) const = 0;
   virtual VariableView<T> getView(const Dimensions &dims) = 0;
   virtual VariableView<T> getView(const Dimensions &dims, const Dim dim,
                                   const gsl::index begin) = 0;
@@ -516,6 +336,62 @@ public:
   VariableConcept &operator*=(const VariableConcept &other) override {
     return apply<std::multiplies>(other);
   }
+
+  void copy(const VariableConcept &other, const Dim dim,
+            const gsl::index offset, const gsl::index otherBegin,
+            const gsl::index otherEnd) override {
+    auto iterDims = this->dimensions();
+    const gsl::index delta = otherEnd - otherBegin;
+    if (iterDims.contains(dim))
+      iterDims.resize(dim, delta);
+
+    const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
+    auto otherView = otherT.getView(iterDims, dim, otherBegin);
+    // Four cases for minimizing use of VariableView --- just copy contiguous
+    // range where possible.
+    if (isContiguous() && iterDims.isContiguousIn(dimensions())) {
+      auto target = getSpan(dim, offset, offset + delta);
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+        auto source = otherT.getSpan(dim, otherBegin, otherEnd);
+        std::copy(source.begin(), source.end(), target.begin());
+      } else {
+        std::copy(otherView.begin(), otherView.end(), target.begin());
+      }
+    } else {
+      auto view = getView(iterDims, dim, offset);
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+        auto source = otherT.getSpan(dim, otherBegin, otherEnd);
+        std::copy(source.begin(), source.end(), view.begin());
+      } else {
+        std::copy(otherView.begin(), otherView.end(), view.begin());
+      }
+    }
+  }
+
+  void rebin(const VariableConcept &old, const Dim dim,
+             const VariableConcept &oldCoord,
+             const VariableConcept &newCoord) override {
+    // Dimensions of *this and old are guaranteed to be the same.
+    const auto &oldT = dynamic_cast<const VariableConceptT &>(old);
+    const auto &oldCoordT = dynamic_cast<const VariableConceptT &>(oldCoord);
+    const auto &newCoordT = dynamic_cast<const VariableConceptT &>(newCoord);
+    if (dimensions().label(0) == dim && oldCoord.dimensions().count() == 1 &&
+        newCoord.dimensions().count() == 1) {
+      RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
+    } else {
+      auto oldCoordDims = oldCoord.dimensions();
+      oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
+      auto newCoordDims = newCoord.dimensions();
+      newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
+      auto oldCoordView = oldCoordT.getView(dimensions());
+      auto newCoordView = newCoordT.getView(dimensions());
+      const auto oldOffset = oldCoordDims.offset(dim);
+      const auto newOffset = newCoordDims.offset(dim);
+
+      RebinHelper<T>::rebin(dim, oldT.getSpan(), getSpan(), oldCoordView,
+                            oldOffset, newCoordView, newOffset);
+    }
+  }
 };
 
 template <class T>
@@ -532,8 +408,37 @@ public:
   gsl::span<typename T::value_type> getSpan() override {
     return gsl::make_span(m_model.data(), m_model.data() + size());
   }
+  gsl::span<typename T::value_type> getSpan(const Dim dim,
+                                            const gsl::index begin,
+                                            const gsl::index end) override {
+    const auto &dims = this->dimensions();
+    if (!dims.contains(dim) && (begin != 0 || end != 1))
+      throw std::runtime_error("VariableConcept: Slice index out of range.");
+    if (!dims.contains(dim) || dims.size(dim) == end - begin) {
+      return gsl::make_span(m_model.data(), m_model.data() + size());
+    }
+    gsl::index beginOffset = begin * dims.offset(dim);
+    gsl::index endOffset = end * dims.offset(dim);
+    return gsl::make_span(m_model.data() + beginOffset,
+                          m_model.data() + endOffset);
+  }
+
   gsl::span<const typename T::value_type> getSpan() const override {
     return gsl::make_span(m_model.data(), m_model.data() + size());
+  }
+  gsl::span<const typename T::value_type>
+  getSpan(const Dim dim, const gsl::index begin,
+          const gsl::index end) const override {
+    const auto &dims = this->dimensions();
+    if (!dims.contains(dim) && (begin != 0 || end != 1))
+      throw std::runtime_error("VariableConcept: Slice index out of range.");
+    if (!dims.contains(dim) || dims.size(dim) == end - begin) {
+      return gsl::make_span(m_model.data(), m_model.data() + size());
+    }
+    gsl::index beginOffset = begin * dims.offset(dim);
+    gsl::index endOffset = end * dims.offset(dim);
+    return gsl::make_span(m_model.data() + beginOffset,
+                          m_model.data() + endOffset);
   }
 
   VariableView<typename T::value_type>
@@ -582,65 +487,7 @@ public:
   bool isView() const override { return false; }
   bool isConstView() const override { return false; }
 
-  void rebin(const VariableConcept &old, const Dim dim,
-             const VariableConcept &oldCoord,
-             const VariableConcept &newCoord) override {
-    // Dimensions of *this and old are guaranteed to be the same.
-    if (this->dimensions().label(0) == dim &&
-        oldCoord.dimensions().count() == 1 &&
-        newCoord.dimensions().count() == 1) {
-      RebinHelper<T>::rebinInner(
-          dim, dynamic_cast<const VariableModel<T> &>(old), *this,
-          dynamic_cast<const VariableModel<T> &>(oldCoord),
-          dynamic_cast<const VariableModel<T> &>(newCoord));
-    } else {
-      const auto &oldModel =
-          dynamic_cast<const VariableModel<T> &>(old).m_model;
-      auto oldCoordDims = oldCoord.dimensions();
-      oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
-      auto newCoordDims = newCoord.dimensions();
-      newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
-      auto oldCoordView = CastHelper<T>::getView(oldCoord, this->dimensions());
-      auto newCoordView = CastHelper<T>::getView(newCoord, this->dimensions());
-      const auto oldOffset = oldCoordDims.offset(dim);
-      const auto newOffset = newCoordDims.offset(dim);
-
-      RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
-                            newCoordView, newOffset);
-    }
-  }
-
   gsl::index size() const override { return m_model.size(); }
-
-  void copy(const VariableConcept &other, const Dim dim,
-            const gsl::index offset, const gsl::index otherBegin,
-            const gsl::index otherEnd) override {
-    auto iterDims = this->dimensions();
-    const gsl::index delta = otherEnd - otherBegin;
-    if (iterDims.contains(dim))
-      iterDims.resize(dim, delta);
-
-    auto otherView = CastHelper<T>::getView(other, iterDims, dim, otherBegin);
-    // Four cases for minimizing use of VariableView --- just copy contiguous
-    // range where possible.
-    if (isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
-      auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
-      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
-        auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
-        CopyHelper<typename T::value_type>::copy(source, target);
-      } else {
-        CopyHelper<typename T::value_type>::copy(otherView, target);
-      }
-    } else {
-      auto view = CastHelper<T>::getView(*this, iterDims, dim, offset);
-      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
-        auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
-        CopyHelper<typename T::value_type>::copy(source, view);
-      } else {
-        CopyHelper<typename T::value_type>::copy(otherView, view);
-      }
-    }
-  }
 
   T m_model;
 };
@@ -671,11 +518,51 @@ public:
     else
       return gsl::make_span(m_model.data(), m_model.data() + size());
   }
+  gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
+                                const gsl::index end) override {
+    if (isConstView())
+      throw std::runtime_error(
+          "View is const, cannot get mutable range of data.");
+    if (!isContiguous())
+      throw std::runtime_error(
+          "View is not contiguous, cannot get contiguous range of data.");
+    if constexpr (std::is_const<typename T::value_type>::value) {
+      return gsl::span<value_type>();
+    } else {
+      const auto &dims = this->dimensions();
+      if (!dims.contains(dim) && (begin != 0 || end != 1))
+        throw std::runtime_error("VariableConcept: Slice index out of range.");
+      if (!dims.contains(dim) || dims.size(dim) == end - begin) {
+        return gsl::make_span(m_model.data(), m_model.data() + size());
+      }
+      gsl::index beginOffset = begin * dims.offset(dim);
+      gsl::index endOffset = end * dims.offset(dim);
+      return gsl::make_span(m_model.data() + beginOffset,
+                            m_model.data() + endOffset);
+    }
+  }
+
   gsl::span<const value_type> getSpan() const override {
     if (!isContiguous())
       throw std::runtime_error(
           "View is not contiguous, cannot get contiguous range of data.");
     return gsl::make_span(m_model.data(), m_model.data() + size());
+  }
+  gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
+                                      const gsl::index end) const override {
+    if (!isContiguous())
+      throw std::runtime_error(
+          "View is not contiguous, cannot get contiguous range of data.");
+    const auto &dims = this->dimensions();
+    if (!dims.contains(dim) && (begin != 0 || end != 1))
+      throw std::runtime_error("VariableConcept: Slice index out of range.");
+    if (!dims.contains(dim) || dims.size(dim) == end - begin) {
+      return gsl::make_span(m_model.data(), m_model.data() + size());
+    }
+    gsl::index beginOffset = begin * dims.offset(dim);
+    gsl::index endOffset = end * dims.offset(dim);
+    return gsl::make_span(m_model.data() + beginOffset,
+                          m_model.data() + endOffset);
   }
 
   VariableView<value_type> getView(const Dimensions &dims) override {
@@ -730,65 +617,7 @@ public:
     return std::is_const<typename T::value_type>::value;
   }
 
-  void rebin(const VariableConcept &old, const Dim dim,
-             const VariableConcept &oldCoord,
-             const VariableConcept &newCoord) override {
-    // Dimensions of *this and old are guaranteed to be the same.
-    if (this->dimensions().label(0) == dim &&
-        oldCoord.dimensions().count() == 1 &&
-        newCoord.dimensions().count() == 1) {
-      RebinHelper<T>::rebinInner(
-          dim, dynamic_cast<const VariableViewModel<T> &>(old), *this,
-          dynamic_cast<const VariableViewModel<T> &>(oldCoord),
-          dynamic_cast<const VariableViewModel<T> &>(newCoord));
-    } else {
-      const auto &oldModel =
-          dynamic_cast<const VariableViewModel<T> &>(old).m_model;
-      auto oldCoordDims = oldCoord.dimensions();
-      oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
-      auto newCoordDims = newCoord.dimensions();
-      newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
-      auto oldCoordView = CastHelper<T>::getView(oldCoord, this->dimensions());
-      auto newCoordView = CastHelper<T>::getView(newCoord, this->dimensions());
-      const auto oldOffset = oldCoordDims.offset(dim);
-      const auto newOffset = newCoordDims.offset(dim);
-
-      RebinHelper<T>::rebin(dim, oldModel, m_model, oldCoordView, oldOffset,
-                            newCoordView, newOffset);
-    }
-  }
-
   gsl::index size() const override { return m_model.size(); }
-
-  void copy(const VariableConcept &other, const Dim dim,
-            const gsl::index offset, const gsl::index otherBegin,
-            const gsl::index otherEnd) override {
-    auto iterDims = this->dimensions();
-    const gsl::index delta = otherEnd - otherBegin;
-    if (iterDims.contains(dim))
-      iterDims.resize(dim, delta);
-
-    auto otherView = CastHelper<T>::getView(other, iterDims, dim, otherBegin);
-    // Four cases for minimizing use of VariableView --- just copy contiguous
-    // range where possible.
-    if (isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
-      auto target = CastHelper<T>::getSpan(*this, dim, offset, offset + delta);
-      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
-        auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
-        CopyHelper<typename T::value_type>::copy(source, target);
-      } else {
-        CopyHelper<typename T::value_type>::copy(otherView, target);
-      }
-    } else {
-      auto view = CastHelper<T>::getView(*this, iterDims, dim, offset);
-      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
-        auto source = CastHelper<T>::getSpan(other, dim, otherBegin, otherEnd);
-        CopyHelper<typename T::value_type>::copy(source, view);
-      } else {
-        CopyHelper<typename T::value_type>::copy(otherView, view);
-      }
-    }
-  }
 
   T m_model;
 };
