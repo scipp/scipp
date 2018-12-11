@@ -8,33 +8,10 @@
 #include "except.h"
 #include "variable_view.h"
 
-template <class T> struct CloneHelper {
-  static T getModel(const Dimensions &dims) { return T(dims.volume()); }
-};
-
-template <class T> struct CloneHelper<VariableView<T>> {
-  static VariableView<T> getModel(const Dimensions &dims) {
-    throw std::runtime_error("Cannot resize view.");
-  }
-};
-
 template <template <class> class Op, class T> struct ArithmeticHelper {
   template <class InputView, class OutputView>
   static void apply(const OutputView &a, const InputView &b) {
     std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
-  }
-  // These overloads exist only to make the compiler happy, if they are ever
-  // called it probably indicates that something is wrong in the call chain.
-  template <class Other>
-  static void apply(const gsl::span<const T> &a, const Other &b) {
-    throw std::runtime_error("Cannot modify data via const view.");
-  }
-  template <class Other>
-  static void apply(const VariableView<const T> &a, const Other &b) {
-    throw std::runtime_error("Cannot modify data via const view.");
-  }
-  template <class Other> static void apply(const Vector<T> &a, const Other &b) {
-    throw std::runtime_error("Passed vector to apply, this should not happen.");
   }
 };
 
@@ -479,8 +456,7 @@ public:
 
   std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const override {
-    return std::make_shared<VariableModel<T>>(dims,
-                                              CloneHelper<T>::getModel(dims));
+    return std::make_shared<VariableModel<T>>(dims, T(dims.volume()));
   }
 
   bool isContiguous() const override { return true; }
@@ -605,8 +581,7 @@ public:
 
   std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const override {
-    return std::make_shared<VariableViewModel<T>>(
-        dims, CloneHelper<T>::getModel(dims));
+    throw std::runtime_error("Cannot resize view.");
   }
 
   bool isContiguous() const override {
