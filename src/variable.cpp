@@ -649,21 +649,25 @@ INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(std::shared_ptr<std::array<double, 100>>)
 
-template <class T> bool Variable::operator==(const T &other) const {
+template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   // Compare even before pointer comparison since data may be shared even if
   // names differ.
-  if (name() != other.name())
+  if (a.name() != b.name())
     return false;
-  if (unit() != other.unit())
+  if (a.unit() != b.unit())
     return false;
+  // Deep comparison
+  if (a.tag() != b.tag())
+    return false;
+  if (!(a.dimensions() == b.dimensions()))
+    return false;
+  return a.data() == b.data();
+}
+
+template <class T> bool Variable::operator==(const T &other) const {
   // See specialization for trivial case of comparing two Variable instances:
   // Pointers are equal
-  // Deep comparison
-  if (tag() != other.tag())
-    return false;
-  if (!(dimensions() == other.dimensions()))
-    return false;
-  return data() == other.data();
+  return equals(*this, other);
 }
 
 template <> bool Variable::operator==(const Variable &other) const {
@@ -886,20 +890,9 @@ VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::base() {
 template <class V>
 template <class T>
 bool VariableSlice<V>::operator==(const T &other) const {
-  // TODO use same implementation as Variable.
-  // Compare even before pointer comparison since data may be shared even if
-  // names differ.
-  if (name() != other.name())
-    return false;
-  if (unit() != other.unit())
-    return false;
-  // Deep comparison (pointer comparison does not make sense since we may be
-  // looking at a different section).
-  if (tag() != other.tag())
-    return false;
-  if (!(dimensions() == other.dimensions()))
-    return false;
-  return data() == other.data();
+  // Always use deep comparison (pointer comparison does not make sense since we
+  // may be looking at a different section).
+  return equals(*this, other);
 }
 
 template bool VariableSlice<const Variable>::operator==(const Variable &) const;
