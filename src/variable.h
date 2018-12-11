@@ -108,7 +108,8 @@ private:
 };
 
 template <class... Tags> class LinearView;
-template <class V> class VariableSlice;
+class ConstVariableSlice;
+class VariableSlice;
 template <class Base> class MutableMixin;
 
 class Variable {
@@ -116,14 +117,13 @@ public:
   // TODO Having this non-explicit is convenient when passing (potential)
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
-  Variable(const VariableSlice<const Variable> &slice);
-  Variable(const VariableSlice<Variable> &slice);
+  Variable(const ConstVariableSlice &slice);
 
   template <class T>
   Variable(Tag tag, const Unit::Id unit, const Dimensions &dimensions,
            T object);
 
-  template <class VarSlice> Variable &operator=(const VarSlice &slice);
+  Variable &operator=(const ConstVariableSlice &slice);
 
   const std::string &name() const {
     static const std::string empty;
@@ -141,9 +141,12 @@ public:
     else
       m_name = std::make_unique<std::string>(name);
   }
-  template <class T> bool operator==(const T &other) const;
-  template <class T> bool operator!=(const T &other) const;
-  template <class T> Variable &operator+=(const T &other);
+  bool operator==(const Variable &other) const;
+  bool operator==(const ConstVariableSlice &other) const;
+  bool operator!=(const Variable &other) const;
+  bool operator!=(const ConstVariableSlice &other) const;
+  Variable &operator+=(const Variable &other);
+  Variable &operator+=(const ConstVariableSlice &other);
   template <class T> Variable &operator-=(const T &other);
   template <class T> Variable &operator*=(const T &other);
   void setSlice(const Variable &slice, const Dimension dim,
@@ -203,12 +206,11 @@ public:
     return gsl::make_span(cast<typename Tag::type>());
   }
 
-  VariableSlice<const Variable> operator()(const Dim dim,
-                                           const gsl::index begin,
-                                           const gsl::index end = -1) const;
+  ConstVariableSlice operator()(const Dim dim, const gsl::index begin,
+                                const gsl::index end = -1) const;
 
-  VariableSlice<Variable> operator()(const Dim dim, const gsl::index begin,
-                                     const gsl::index end = -1);
+  VariableSlice operator()(const Dim dim, const gsl::index begin,
+                           const gsl::index end = -1);
 
   template <class... Tags> friend class LinearView;
   template <class Base> friend class MutableMixin;
@@ -253,60 +255,23 @@ Variable makeVariable(const Dimensions &dimensions,
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
-template <class Base> class MutableMixin {};
-
-template <> class MutableMixin<VariableSlice<const Variable>> {
+class ConstVariableSlice {
 public:
-  template <class T> const VariableView<const T> &cast() const;
-
-private:
-  const VariableSlice<const Variable> &base() const;
-  VariableSlice<const Variable> &base();
-};
-
-template <> class MutableMixin<VariableSlice<Variable>> {
-public:
-  template <class T>
-  MutableMixin<VariableSlice<Variable>> &copyFrom(const T &other);
-  VariableSlice<Variable> &operator+=(const Variable &other);
-  VariableSlice<Variable> &
-  operator+=(const VariableSlice<const Variable> &other);
-  VariableSlice<Variable> &operator+=(const VariableSlice<Variable> &other);
-  template <class T> VariableSlice<Variable> &operator-=(const T &other);
-  template <class T> VariableSlice<Variable> &operator*=(const T &other);
-
-  void setUnit(const Unit &unit);
-
-  // Special version creating const view from mutable view. Note that this does
-  // not return a reference but by value.
-  template <class T> VariableView<const T> cast() const;
-  template <class T> const VariableView<T> &cast();
-
-private:
-  const VariableSlice<Variable> &base() const;
-  VariableSlice<Variable> &base();
-};
-
-// V is either Variable or const Variable.
-template <class V> class VariableSlice : public MutableMixin<VariableSlice<V>> {
-public:
-  explicit VariableSlice(V &variable)
+  explicit ConstVariableSlice(const Variable &variable)
       : m_variable(&variable), m_view(variable.data().makeView()) {}
-  VariableSlice(const VariableSlice &other) = default;
-  // Note: We are calling `Variable::data() const` to delay breaking sharing.
-  VariableSlice(V &variable, const Dim dim, const gsl::index begin,
-                const gsl::index end = -1)
+  ConstVariableSlice(const ConstVariableSlice &other) = default;
+  ConstVariableSlice(const Variable &variable, const Dim dim,
+                     const gsl::index begin, const gsl::index end = -1)
       : m_variable(&variable),
-        m_view(static_cast<const V &>(variable).data().makeView(dim, begin,
-                                                                end)) {}
-  VariableSlice(const VariableSlice &slice, const Dim dim,
-                const gsl::index begin, const gsl::index end = -1)
+        m_view(variable.data().makeView(dim, begin, end)) {}
+  ConstVariableSlice(const ConstVariableSlice &slice, const Dim dim,
+                     const gsl::index begin, const gsl::index end = -1)
       : m_variable(slice.m_variable),
         m_view(slice.m_view->makeView(dim, begin, end)) {}
 
-  VariableSlice operator()(const Dim dim, const gsl::index begin,
-                           const gsl::index end = -1) const {
-    return VariableSlice(*this, dim, begin, end);
+  ConstVariableSlice operator()(const Dim dim, const gsl::index begin,
+                                const gsl::index end = -1) const {
+    return ConstVariableSlice(*this, dim, begin, end);
   }
 
   const std::string &name() const { return m_variable->name(); }
@@ -336,11 +301,6 @@ public:
   }
   Tag tag() const { return m_variable->tag(); }
   const VariableConcept &data() const { return *m_view; }
-  VariableConcept &data() {
-    if (m_view->isConstView())
-      m_view = m_view->cloneMutable(m_variable->data());
-    return *m_view;
-  }
 
   bool isCoord() const { return m_variable->isCoord(); }
   bool isAttr() const { return m_variable->isAttr(); }
@@ -355,6 +315,49 @@ public:
     return this->template cast<typename Tag::type>();
   }
 
+  template <class T> bool operator==(const T &other) const;
+  template <class T> bool operator!=(const T &other) const;
+
+  template <class T> const VariableView<const T> &cast() const;
+
+protected:
+  friend class Variable;
+
+  const Variable *m_variable;
+  deep_ptr<VariableConcept> m_view;
+};
+
+class VariableSlice : public ConstVariableSlice {
+public:
+  explicit VariableSlice(Variable &variable)
+      : ConstVariableSlice(variable), m_mutableVariable(&variable) {}
+  VariableSlice(const VariableSlice &other) = default;
+  VariableSlice(Variable &variable, const Dim dim, const gsl::index begin,
+                const gsl::index end = -1)
+      : ConstVariableSlice(variable, dim, begin, end),
+        m_mutableVariable(&variable) {}
+  VariableSlice(const VariableSlice &slice, const Dim dim,
+                const gsl::index begin, const gsl::index end = -1)
+      : ConstVariableSlice(slice, dim, begin, end),
+        m_mutableVariable(slice.m_mutableVariable) {}
+
+  VariableSlice operator()(const Dim dim, const gsl::index begin,
+                           const gsl::index end = -1) const {
+    return VariableSlice(*this, dim, begin, end);
+  }
+
+  void setName(const std::string &) {
+    throw std::runtime_error("Cannot rename Variable via slice view.");
+  }
+
+  using ConstVariableSlice::data;
+  using ConstVariableSlice::get;
+  VariableConcept &data() {
+    if (m_view->isConstView())
+      m_view = m_view->cloneMutable(m_mutableVariable->data());
+    return *m_view;
+  }
+
   template <class Tag>
   auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
     return const_cast<const VariableSlice *>(this)->get<Tag>();
@@ -364,16 +367,23 @@ public:
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
     return this->template cast<typename Tag::type>();
   }
+  template <class T> VariableSlice &copyFrom(const T &other);
+  VariableSlice &operator+=(const Variable &other);
+  VariableSlice &operator+=(const ConstVariableSlice &other);
+  template <class T> VariableSlice &operator-=(const T &other);
+  template <class T> VariableSlice &operator*=(const T &other);
 
-  template <class T> bool operator==(const T &other) const;
-  template <class T> bool operator!=(const T &other) const;
+  void setUnit(const Unit &unit);
+
+  // Special version creating const view from mutable view. Note that this does
+  // not return a reference but by value.
+  template <class T> VariableView<const T> cast() const;
+  template <class T> const VariableView<T> &cast();
 
 private:
   friend class Variable;
-  template <class Base> friend class MutableMixin;
 
-  V *m_variable;
-  deep_ptr<VariableConcept> m_view;
+  Variable *m_mutableVariable;
 };
 
 Variable operator+(Variable a, const Variable &b);

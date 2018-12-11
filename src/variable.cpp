@@ -581,12 +581,7 @@ public:
   T m_model;
 };
 
-Variable::Variable(const VariableSlice<const Variable> &slice)
-    : Variable(*slice.m_variable) {
-  *this = slice;
-}
-
-Variable::Variable(const VariableSlice<Variable> &slice)
+Variable::Variable(const ConstVariableSlice &slice)
     : Variable(*slice.m_variable) {
   *this = slice;
 }
@@ -598,7 +593,7 @@ Variable::Variable(const Tag tag, const Unit::Id unit,
       m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
                                               std::move(object))) {}
 
-template <class VarSlice> Variable &Variable::operator=(const VarSlice &slice) {
+Variable &Variable::operator=(const ConstVariableSlice &slice) {
   m_tag = slice.tag();
   m_name = slice.m_variable->m_name;
   setUnit(slice.unit());
@@ -606,9 +601,6 @@ template <class VarSlice> Variable &Variable::operator=(const VarSlice &slice) {
   data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
   return *this;
 }
-
-template Variable &Variable::operator=(const VariableSlice<const Variable> &);
-template Variable &Variable::operator=(const VariableSlice<Variable> &);
 
 void Variable::setDimensions(const Dimensions &dimensions) {
   if (dimensions == m_object->dimensions())
@@ -664,13 +656,7 @@ template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   return a.data() == b.data();
 }
 
-template <class T> bool Variable::operator==(const T &other) const {
-  // See specialization for trivial case of comparing two Variable instances:
-  // Pointers are equal
-  return equals(*this, other);
-}
-
-template <> bool Variable::operator==(const Variable &other) const {
+bool Variable::operator==(const Variable &other) const {
   // Compare even before pointer comparison since data may be shared even if
   // names differ.
   if (name() != other.name())
@@ -688,18 +674,17 @@ template <> bool Variable::operator==(const Variable &other) const {
   return data() == other.data();
 }
 
-template bool Variable::operator==(const VariableSlice<Variable> &other) const;
-template bool Variable::
-operator==(const VariableSlice<const Variable> &other) const;
+bool Variable::operator==(const ConstVariableSlice &other) const {
+  return equals(*this, other);
+}
 
-template <class T> bool Variable::operator!=(const T &other) const {
+bool Variable::operator!=(const Variable &other) const {
   return !(*this == other);
 }
 
-template bool Variable::operator!=(const Variable &other) const;
-template bool Variable::operator!=(const VariableSlice<Variable> &other) const;
-template bool Variable::
-operator!=(const VariableSlice<const Variable> &other) const;
+bool Variable::operator!=(const ConstVariableSlice &other) const {
+  return !(*this == other);
+}
 
 template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Addition with different Variable type is supported, mismatch of underlying
@@ -741,13 +726,12 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
-template <class T> Variable &Variable::operator+=(const T &other) {
+Variable &Variable::operator+=(const Variable &other) {
   return plus_equals(*this, other);
 }
-
-template Variable &Variable::operator+=(const Variable &);
-template Variable &Variable::operator+=(const VariableSlice<const Variable> &);
-template Variable &Variable::operator+=(const VariableSlice<Variable> &);
+Variable &Variable::operator+=(const ConstVariableSlice &other) {
+  return plus_equals(*this, other);
+}
 
 template <class T> Variable &Variable::operator-=(const T &other) {
   if (unit() != other.unit())
@@ -765,8 +749,8 @@ template <class T> Variable &Variable::operator-=(const T &other) {
 }
 
 template Variable &Variable::operator-=(const Variable &);
-template Variable &Variable::operator-=(const VariableSlice<const Variable> &);
-template Variable &Variable::operator-=(const VariableSlice<Variable> &);
+template Variable &Variable::operator-=(const ConstVariableSlice &);
+template Variable &Variable::operator-=(const VariableSlice &);
 
 template <class T> Variable &Variable::operator*=(const T &other) {
   if (!dimensions().contains(other.dimensions()))
@@ -780,193 +764,120 @@ template <class T> Variable &Variable::operator*=(const T &other) {
 }
 
 template Variable &Variable::operator*=(const Variable &);
-template Variable &Variable::operator*=(const VariableSlice<const Variable> &);
-template Variable &Variable::operator*=(const VariableSlice<Variable> &);
+template Variable &Variable::operator*=(const ConstVariableSlice &);
+template Variable &Variable::operator*=(const VariableSlice &);
 
-template <class T>
-MutableMixin<VariableSlice<Variable>> &
-MutableMixin<VariableSlice<Variable>>::copyFrom(const T &other) {
+template <class T> VariableSlice &VariableSlice::copyFrom(const T &other) {
   // TODO Should mismatching tags be allowed, as long as the type matches?
-  if (base().tag() != other.tag())
+  if (tag() != other.tag())
     throw std::runtime_error("Cannot assign to slice: Type mismatch.");
   // Name mismatch ok, but do not assign it.
-  if (base().unit() != other.unit())
+  if (unit() != other.unit())
     throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
-  if (base().dimensions() != other.dimensions())
-    throw dataset::except::DimensionMismatchError(base().dimensions(),
+  if (dimensions() != other.dimensions())
+    throw dataset::except::DimensionMismatchError(dimensions(),
                                                   other.dimensions());
-  base().data().copy(other.data(), Dim::Invalid, 0, 0, 1);
+  data().copy(other.data(), Dim::Invalid, 0, 0, 1);
   return *this;
 }
 
-template MutableMixin<VariableSlice<Variable>> &
-MutableMixin<VariableSlice<Variable>>::copyFrom(const Variable &);
-template MutableMixin<VariableSlice<Variable>> &
-MutableMixin<VariableSlice<Variable>>::copyFrom(
-    const VariableSlice<const Variable> &);
-template MutableMixin<VariableSlice<Variable>> &
-MutableMixin<VariableSlice<Variable>>::copyFrom(
-    const VariableSlice<Variable> &);
+template VariableSlice &VariableSlice::copyFrom(const Variable &);
+template VariableSlice &VariableSlice::copyFrom(const ConstVariableSlice &);
 
-VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator+=(const Variable &other) {
-  return plus_equals(base(), other);
+VariableSlice &VariableSlice::operator+=(const Variable &other) {
+  return plus_equals(*this, other);
 }
 
-VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator+=(const VariableSlice<const Variable> &other) {
-  return plus_equals(base(), other);
+VariableSlice &VariableSlice::operator+=(const ConstVariableSlice &other) {
+  return plus_equals(*this, other);
 }
 
-VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator+=(const VariableSlice<Variable> &other) {
-  return plus_equals(base(), other);
-}
-
-template <class T>
-VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator-=(const T &other) {
-  if (base().unit() != other.unit())
+template <class T> VariableSlice &VariableSlice::operator-=(const T &other) {
+  if (unit() != other.unit())
     throw std::runtime_error("Cannot subtract Variables: Units do not match.");
-  if (base().dimensions().contains(other.dimensions())) {
-    if (base().valueTypeIs<Data::Events>())
+  if (dimensions().contains(other.dimensions())) {
+    if (valueTypeIs<Data::Events>())
       throw std::runtime_error("Subtraction of events lists not implemented.");
-    base().data() -= other.data();
+    data() -= other.data();
   } else {
     throw std::runtime_error(
         "Cannot subtract Variables: Dimensions do not match.");
   }
 
-  return base();
+  return *this;
 }
 
-template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator-=(const Variable &);
-template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator-=(const VariableSlice<const Variable> &);
-template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator-=(const VariableSlice<Variable> &);
+template VariableSlice &VariableSlice::operator-=(const Variable &);
+template VariableSlice &VariableSlice::operator-=(const ConstVariableSlice &);
+template VariableSlice &VariableSlice::operator-=(const VariableSlice &);
 
-template <class T>
-VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator*=(const T &other) {
-  if (!base().dimensions().contains(other.dimensions()))
+template <class T> VariableSlice &VariableSlice::operator*=(const T &other) {
+  if (!dimensions().contains(other.dimensions()))
     throw std::runtime_error(
         "Cannot multiply Variables: Dimensions do not match.");
-  if (base().valueTypeIs<Data::Events>())
+  if (valueTypeIs<Data::Events>())
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if view is just a slice).
-  base().setUnit(base().unit() * other.unit());
-  base().data() *= other.data();
-  return base();
+  setUnit(unit() * other.unit());
+  data() *= other.data();
+  return *this;
 }
 
-template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator*=(const Variable &);
-template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator*=(const VariableSlice<const Variable> &);
-template VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::
-operator*=(const VariableSlice<Variable> &);
+template VariableSlice &VariableSlice::operator*=(const Variable &);
+template VariableSlice &VariableSlice::operator*=(const ConstVariableSlice &);
+template VariableSlice &VariableSlice::operator*=(const VariableSlice &);
 
-const VariableSlice<const Variable> &
-MutableMixin<VariableSlice<const Variable>>::base() const {
-  return static_cast<const VariableSlice<const Variable> &>(*this);
-}
-
-VariableSlice<const Variable> &
-MutableMixin<VariableSlice<const Variable>>::base() {
-  return static_cast<VariableSlice<const Variable> &>(*this);
-}
-
-const VariableSlice<Variable> &
-MutableMixin<VariableSlice<Variable>>::base() const {
-  return static_cast<const VariableSlice<Variable> &>(*this);
-}
-
-VariableSlice<Variable> &MutableMixin<VariableSlice<Variable>>::base() {
-  return static_cast<VariableSlice<Variable> &>(*this);
-}
-
-template <class V>
-template <class T>
-bool VariableSlice<V>::operator==(const T &other) const {
+template <class T> bool ConstVariableSlice::operator==(const T &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
   return equals(*this, other);
 }
 
-template bool VariableSlice<const Variable>::operator==(const Variable &) const;
-template bool VariableSlice<Variable>::operator==(const Variable &) const;
-template bool VariableSlice<const Variable>::
-operator==(const VariableSlice<Variable> &) const;
-template bool VariableSlice<Variable>::
-operator==(const VariableSlice<Variable> &) const;
-template bool VariableSlice<const Variable>::
-operator==(const VariableSlice<const Variable> &) const;
-template bool VariableSlice<Variable>::
-operator==(const VariableSlice<const Variable> &) const;
+template bool ConstVariableSlice::operator==(const Variable &) const;
+template bool ConstVariableSlice::operator==(const ConstVariableSlice &) const;
 
-template <class V>
-template <class T>
-bool VariableSlice<V>::operator!=(const T &other) const {
+template <class T> bool ConstVariableSlice::operator!=(const T &other) const {
   return !(*this == other);
 }
 
-template bool VariableSlice<const Variable>::operator!=(const Variable &) const;
-template bool VariableSlice<Variable>::operator!=(const Variable &) const;
-template bool VariableSlice<const Variable>::
-operator!=(const VariableSlice<Variable> &) const;
-template bool VariableSlice<Variable>::
-operator!=(const VariableSlice<Variable> &) const;
-template bool VariableSlice<const Variable>::
-operator!=(const VariableSlice<const Variable> &) const;
-template bool VariableSlice<Variable>::
-operator!=(const VariableSlice<const Variable> &) const;
+template bool ConstVariableSlice::operator!=(const Variable &) const;
+template bool ConstVariableSlice::operator!=(const ConstVariableSlice &) const;
 
-void MutableMixin<VariableSlice<Variable>>::setUnit(const Unit &unit) {
+void VariableSlice::setUnit(const Unit &unit) {
   // TODO Should we forbid setting the unit altogether? I think it is useful in
   // particular since views onto subsets of dataset do not imply slicing of
   // variables but return slice views.
-  if ((base().unit() != unit) &&
-      (base().dimensions() != base().m_variable->dimensions()))
+  if ((this->unit() != unit) &&
+      (dimensions() != m_mutableVariable->dimensions()))
     throw std::runtime_error("Partial view on data of variable cannot be used "
                              "to change the unit.\n");
-  base().m_variable->setUnit(unit);
+  m_mutableVariable->setUnit(unit);
 }
 
 template <class T>
-const VariableView<const T> &
-MutableMixin<VariableSlice<const Variable>>::cast() const {
-  return dynamic_cast<const ViewModel<VariableView<const T>> &>(base().data())
-      .m_model;
+const VariableView<const T> &ConstVariableSlice::cast() const {
+  return dynamic_cast<const ViewModel<VariableView<const T>> &>(data()).m_model;
 }
 
-template <class T>
-VariableView<const T> MutableMixin<VariableSlice<Variable>>::cast() const {
-  if (base().m_view->isConstView())
+template <class T> VariableView<const T> VariableSlice::cast() const {
+  if (m_view->isConstView())
     return {
-        dynamic_cast<const ViewModel<VariableView<const T>> &>(base().data())
-            .m_model,
-        base().dimensions()};
+        dynamic_cast<const ViewModel<VariableView<const T>> &>(data()).m_model,
+        dimensions()};
   // Make a const view from the mutable one.
-  return {
-      dynamic_cast<const ViewModel<VariableView<T>> &>(base().data()).m_model,
-      base().dimensions()};
+  return {dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model,
+          dimensions()};
 }
 
-template <class T>
-const VariableView<T> &MutableMixin<VariableSlice<Variable>>::cast() {
-  return dynamic_cast<const ViewModel<VariableView<T>> &>(base().data())
-      .m_model;
+template <class T> const VariableView<T> &VariableSlice::cast() {
+  return dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model;
 }
 
 #define INSTANTIATE_SLICEVIEW(...)                                             \
   template const VariableView<const __VA_ARGS__>                               \
-      &MutableMixin<VariableSlice<const Variable>>::cast<__VA_ARGS__>() const; \
-  template VariableView<const __VA_ARGS__>                                     \
-  MutableMixin<VariableSlice<Variable>>::cast() const;                         \
-  template const VariableView<__VA_ARGS__>                                     \
-      &MutableMixin<VariableSlice<Variable>>::cast();
+      &ConstVariableSlice::cast<__VA_ARGS__>() const;                          \
+  template VariableView<const __VA_ARGS__> VariableSlice::cast() const;        \
+  template const VariableView<__VA_ARGS__> &VariableSlice::cast();
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(int32_t);
@@ -984,13 +895,13 @@ void Variable::setSlice(const Variable &slice, const Dimension dim,
   data().copy(slice.data(), dim, index, 0, 1);
 }
 
-VariableSlice<const Variable> Variable::
-operator()(const Dim dim, const gsl::index begin, const gsl::index end) const {
+ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
+                                        const gsl::index end) const {
   return {*this, dim, begin, end};
 }
 
-VariableSlice<Variable> Variable::
-operator()(const Dim dim, const gsl::index begin, const gsl::index end) {
+VariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
+                                   const gsl::index end) {
   return {*this, dim, begin, end};
 }
 

@@ -52,8 +52,7 @@ public:
                                   const gsl::index end = -1) const;
   Slice<Dataset> operator()(const Dim dim, const gsl::index begin,
                             const gsl::index end = -1);
-  VariableSlice<Variable> operator()(const Tag tag,
-                                     const std::string &name = "");
+  VariableSlice operator()(const Tag tag, const std::string &name = "");
 
   auto begin() const { return m_variables.begin(); }
   auto end() const { return m_variables.end(); }
@@ -198,11 +197,11 @@ template <class Value>
 class dataset_slice_iterator
     : public boost::iterator_facade<
           dataset_slice_iterator<Value>,
-          VariableSlice<std::conditional_t<std::is_const<Value>::value,
-                                           const Variable, Variable>>,
+          std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
+                             VariableSlice>,
           boost::random_access_traversal_tag,
-          VariableSlice<std::conditional_t<std::is_const<Value>::value,
-                                           const Variable, Variable>>> {
+          std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
+                             VariableSlice>> {
 public:
   dataset_slice_iterator(
       Value &dataset, const std::vector<gsl::index> &indices,
@@ -218,8 +217,8 @@ private:
     return m_index == other.m_index;
   }
   void increment() { ++m_index; }
-  VariableSlice<
-      std::conditional_t<std::is_const<Value>::value, const Variable, Variable>>
+  std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
+                     VariableSlice>
   dereference() const;
   void decrement() { --m_index; }
   void advance(int64_t delta) { m_index += delta; }
@@ -245,8 +244,7 @@ gsl::index find(const T &dataset, const Tag tag, const std::string &name) {
 
 template <class Base> class SliceMutableMixin {
 public:
-  VariableSlice<Variable> operator()(const Tag tag,
-                                     const std::string &name = "");
+  VariableSlice operator()(const Tag tag, const std::string &name = "");
 };
 
 template <> class SliceMutableMixin<Slice<Dataset>> {
@@ -255,11 +253,10 @@ public:
   template <class T> Slice<Dataset> operator-=(const T &other);
   template <class T> Slice<Dataset> operator*=(const T &other);
 
-  VariableSlice<Variable> operator()(const Tag tag,
-                                     const std::string &name = "");
+  VariableSlice operator()(const Tag tag, const std::string &name = "");
 
 private:
-  VariableSlice<Variable> get(const gsl::index i);
+  VariableSlice get(const gsl::index i);
 
   dataset_slice_iterator<Dataset> mutableBegin() const;
   dataset_slice_iterator<Dataset> mutableEnd() const;
@@ -271,10 +268,11 @@ private:
 
 namespace detail {
 template <class Var>
-VariableSlice<Var>
-makeSlice(Var &variable,
-          const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &slices) {
-  auto slice = VariableSlice<Var>(variable);
+auto makeSlice(
+    Var &variable,
+    const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &slices) {
+  auto slice = std::conditional_t<std::is_const<Var>::value, ConstVariableSlice,
+                                  VariableSlice>(variable);
   for (const auto &s : slices) {
     if (variable.dimensions().contains(std::get<Dim>(s)))
       slice = slice(std::get<0>(s), std::get<1>(s), std::get<2>(s));
@@ -347,7 +345,7 @@ public:
 
   gsl::index size() const { return m_indices.size(); }
 
-  VariableSlice<const Variable> operator[](const gsl::index i) const {
+  ConstVariableSlice operator[](const gsl::index i) const {
     return detail::makeSlice(m_dataset[m_indices[i]], m_slices);
   }
 
@@ -399,8 +397,8 @@ public:
 
   auto begin() const { return m_data.mutableBegin(); }
   auto end() const { return m_data.mutableEnd(); }
-  VariableSlice<Variable> operator[](const gsl::index i) const {
-    return VariableSlice<Variable>(m_data.get(i));
+  VariableSlice operator[](const gsl::index i) const {
+    return VariableSlice(m_data.get(i));
   }
 
 private:

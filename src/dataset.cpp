@@ -39,9 +39,8 @@ Slice<Dataset> Dataset::operator()(const Dim dim, const gsl::index begin,
   return Slice<Dataset>(*this)(dim, begin, end);
 }
 
-VariableSlice<Variable> Dataset::operator()(const Tag tag,
-                                            const std::string &name) {
-  return VariableSlice<Variable>(m_variables[find(tag, name)]);
+VariableSlice Dataset::operator()(const Tag tag, const std::string &name) {
+  return VariableSlice(m_variables[find(tag, name)]);
 }
 
 void Dataset::insert(Variable variable) {
@@ -180,9 +179,9 @@ bool Dataset::operator==(const Dataset &other) const {
          (m_variables == other.m_variables);
 }
 
-VariableSlice<Variable> SliceMutableMixin<Slice<Dataset>>::
+VariableSlice SliceMutableMixin<Slice<Dataset>>::
 operator()(const Tag tag, const std::string &name) {
-  return VariableSlice<Variable>(base().get(find(base(), tag, name)));
+  return VariableSlice(base().get(find(base(), tag, name)));
 }
 
 template <class T1, class T2> T1 &plus_equals(T1 &dataset, const T2 &other) {
@@ -199,7 +198,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &dataset, const T2 &other) {
                                "that is not present in left-hand-side.");
     }
     using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
-                                      Variable &, VariableSlice<Variable>>;
+                                      Variable &, VariableSlice>;
     VarRef var1 = detail::makeAccess(dataset)[index];
     if (var1.isCoord()) {
       // Coordinate variables must match
@@ -245,7 +244,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
       }
     }
     using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
-                                      Variable &, VariableSlice<Variable>>;
+                                      Variable &, VariableSlice>;
     if (index >= 0) {
       VarRef var1 = detail::makeAccess(dataset)[index];
       if (var1.isCoord()) {
@@ -320,7 +319,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
       }
     }
     using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
-                                      Variable &, VariableSlice<Variable>>;
+                                      Variable &, VariableSlice>;
     VarRef var1 = detail::makeAccess(dataset)[index];
     if (var1.isCoord()) {
       // Coordinate variables must match
@@ -415,8 +414,7 @@ Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::operator*=(const T &other) {
   return times_equals(base(), other);
 }
 
-VariableSlice<Variable>
-SliceMutableMixin<Slice<Dataset>>::get(const gsl::index i) {
+VariableSlice SliceMutableMixin<Slice<Dataset>>::get(const gsl::index i) {
   return detail::makeSlice(
       detail::makeAccess(base().m_dataset)[base().m_indices[i]],
       base().m_slices);
@@ -479,8 +477,8 @@ void Dataset::setSlice(const Dataset &slice, const Dimension dim,
 }
 
 template <class Value>
-VariableSlice<
-    std::conditional_t<std::is_const<Value>::value, const Variable, Variable>>
+std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
+                   VariableSlice>
 dataset_slice_iterator<Value>::dereference() const {
   return detail::makeSlice(detail::makeAccess(m_dataset)[m_indices[m_index]],
                            m_slices);
