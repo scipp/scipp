@@ -19,7 +19,7 @@ template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
 
-template <class T> class VariableModel;
+template <class T> class DataModel;
 template <class T> class VariableConceptT;
 template <class T> struct RebinHelper {
   static void rebin(const Dim dim, const gsl::span<const T> &oldModel,
@@ -178,7 +178,7 @@ DISABLE_REBIN(std::string)
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
-template <class T> class VariableViewModel;
+template <class T> class ViewModel;
 
 template <class T> class VariableConceptT : public VariableConcept {
 public:
@@ -200,16 +200,16 @@ public:
 
   std::unique_ptr<VariableConcept> makeView() const override {
     auto &dims = dimensions();
-    return std::make_unique<VariableViewModel<decltype(getView(dims))>>(
-        dims, getView(dims));
+    return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
+                                                                getView(dims));
   }
 
   std::unique_ptr<VariableConcept> makeView() override {
     if (isConstView())
       return const_cast<const VariableConceptT &>(*this).makeView();
     auto &dims = dimensions();
-    return std::make_unique<VariableViewModel<decltype(getView(dims))>>(
-        dims, getView(dims));
+    return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
+                                                                getView(dims));
   }
 
   std::unique_ptr<VariableConcept>
@@ -220,8 +220,7 @@ public:
       dims.erase(dim);
     else
       dims.resize(dim, end - begin);
-    return std::make_unique<
-        VariableViewModel<decltype(getView(dims, dim, begin))>>(
+    return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
         dims, getView(dims, dim, begin));
   }
 
@@ -236,8 +235,7 @@ public:
       dims.erase(dim);
     else
       dims.resize(dim, end - begin);
-    return std::make_unique<
-        VariableViewModel<decltype(getView(dims, dim, begin))>>(
+    return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
         dims, getView(dims, dim, begin));
   }
 
@@ -384,12 +382,13 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
   return gsl::make_span(model.data() + beginOffset, model.data() + endOffset);
 }
 
+/// Implementation of VariableConcept that holds data.
 template <class T>
-class VariableModel : public VariableConceptT<typename T::value_type> {
+class DataModel : public VariableConceptT<typename T::value_type> {
   using value_type = std::remove_const_t<typename T::value_type>;
 
 public:
-  VariableModel(const Dimensions &dimensions, T model)
+  DataModel(const Dimensions &dimensions, T model)
       : VariableConceptT<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
@@ -440,16 +439,16 @@ public:
   }
 
   std::shared_ptr<VariableConcept> clone() const override {
-    return std::make_shared<VariableModel<T>>(this->dimensions(), m_model);
+    return std::make_shared<DataModel<T>>(this->dimensions(), m_model);
   }
 
   std::unique_ptr<VariableConcept> cloneUnique() const override {
-    return std::make_unique<VariableModel<T>>(this->dimensions(), m_model);
+    return std::make_unique<DataModel<T>>(this->dimensions(), m_model);
   }
 
   std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const override {
-    return std::make_shared<VariableModel<T>>(dims, T(dims.volume()));
+    return std::make_shared<DataModel<T>>(dims, T(dims.volume()));
   }
 
   bool isContiguous() const override { return true; }
@@ -461,13 +460,25 @@ public:
   T m_model;
 };
 
+/// Implementation of VariableConcept that represents a view onto data.
 template <class T>
-class VariableViewModel
+class ViewModel
     : public VariableConceptT<std::remove_const_t<typename T::value_type>> {
   using value_type = std::remove_const_t<typename T::value_type>;
 
+  void requireMutable() const {
+    if (isConstView())
+      throw std::runtime_error(
+          "View is const, cannot get mutable range of data.");
+  }
+  void requireContiguous() const {
+    if (!isContiguous())
+      throw std::runtime_error(
+          "View is not contiguous, cannot get contiguous range of data.");
+  }
+
 public:
-  VariableViewModel(const Dimensions &dimensions, T model)
+  ViewModel(const Dimensions &dimensions, T model)
       : VariableConceptT<value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
@@ -476,12 +487,8 @@ public:
   }
 
   gsl::span<value_type> getSpan() override {
-    if (isConstView())
-      throw std::runtime_error(
-          "View is const, cannot get mutable range of data.");
-    if (!isContiguous())
-      throw std::runtime_error(
-          "View is not contiguous, cannot get contiguous range of data.");
+    requireMutable();
+    requireContiguous();
     if constexpr (std::is_const<typename T::value_type>::value)
       return gsl::span<value_type>();
     else
@@ -489,12 +496,8 @@ public:
   }
   gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
                                 const gsl::index end) override {
-    if (isConstView())
-      throw std::runtime_error(
-          "View is const, cannot get mutable range of data.");
-    if (!isContiguous())
-      throw std::runtime_error(
-          "View is not contiguous, cannot get contiguous range of data.");
+    requireMutable();
+    requireContiguous();
     if constexpr (std::is_const<typename T::value_type>::value) {
       return gsl::span<value_type>();
     } else {
@@ -503,23 +506,17 @@ public:
   }
 
   gsl::span<const value_type> getSpan() const override {
-    if (!isContiguous())
-      throw std::runtime_error(
-          "View is not contiguous, cannot get contiguous range of data.");
+    requireContiguous();
     return gsl::make_span(m_model.data(), m_model.data() + size());
   }
   gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
                                       const gsl::index end) const override {
-    if (!isContiguous())
-      throw std::runtime_error(
-          "View is not contiguous, cannot get contiguous range of data.");
+    requireContiguous();
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
   VariableView<value_type> getView(const Dimensions &dims) override {
-    if (isConstView())
-      throw std::runtime_error(
-          "View is const, cannot get mutable range of data.");
+    requireMutable();
     if constexpr (std::is_const<typename T::value_type>::value)
       return VariableView<value_type>(nullptr, {}, {});
     else
@@ -527,9 +524,7 @@ public:
   }
   VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
                                    const gsl::index begin) override {
-    if (isConstView())
-      throw std::runtime_error(
-          "View is const, cannot get mutable range of data.");
+    requireMutable();
     if constexpr (std::is_const<typename T::value_type>::value)
       return VariableView<value_type>(nullptr, {}, {});
     else
@@ -547,11 +542,11 @@ public:
   }
 
   std::shared_ptr<VariableConcept> clone() const override {
-    return std::make_shared<VariableViewModel<T>>(this->dimensions(), m_model);
+    return std::make_shared<ViewModel<T>>(this->dimensions(), m_model);
   }
 
   std::unique_ptr<VariableConcept> cloneUnique() const override {
-    return std::make_unique<VariableViewModel<T>>(this->dimensions(), m_model);
+    return std::make_unique<ViewModel<T>>(this->dimensions(), m_model);
   }
 
   std::shared_ptr<VariableConcept>
@@ -586,8 +581,8 @@ template <class T>
 Variable::Variable(const Tag tag, const Unit::Id unit,
                    const Dimensions &dimensions, T object)
     : m_tag(tag), m_unit{unit},
-      m_object(std::make_unique<VariableModel<T>>(std::move(dimensions),
-                                                  std::move(object))) {}
+      m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
+                                              std::move(object))) {}
 
 template <class VarSlice> Variable &Variable::operator=(const VarSlice &slice) {
   m_tag = slice.tag();
@@ -608,11 +603,11 @@ void Variable::setDimensions(const Dimensions &dimensions) {
 }
 
 template <class T> const Vector<T> &Variable::cast() const {
-  return dynamic_cast<const VariableModel<Vector<T>> &>(*m_object).m_model;
+  return dynamic_cast<const DataModel<Vector<T>> &>(*m_object).m_model;
 }
 
 template <class T> Vector<T> &Variable::cast() {
-  return dynamic_cast<VariableModel<Vector<T>> &>(m_object.access()).m_model;
+  return dynamic_cast<DataModel<Vector<T>> &>(m_object.access()).m_model;
 }
 
 #define INSTANTIATE(...)                                                       \
@@ -690,7 +685,7 @@ operator!=(const VariableSlice<const Variable> &other) const;
 
 template <class T> Variable &Variable::operator+=(const T &other) {
   // Addition with different Variable type is supported, mismatch of underlying
-  // element types is handled in VariableModel::operator+=.
+  // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
   if (unit() != other.unit())
     throw std::runtime_error("Cannot add Variables: Units do not match.");
@@ -972,8 +967,7 @@ void VariableSliceMutableMixin<VariableSlice<Variable>>::setUnit(
 template <class T>
 const VariableView<const T> &
 VariableSliceMutableMixin<VariableSlice<const Variable>>::cast() const {
-  return dynamic_cast<const VariableViewModel<VariableView<const T>> &>(
-             base().data())
+  return dynamic_cast<const ViewModel<VariableView<const T>> &>(base().data())
       .m_model;
 }
 
@@ -992,15 +986,14 @@ VariableView<const T>
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() const {
   // Make a const view from the mutable one.
   return {
-      dynamic_cast<const VariableViewModel<VariableView<T>> &>(base().data())
-          .m_model,
+      dynamic_cast<const ViewModel<VariableView<T>> &>(base().data()).m_model,
       base().dimensions()};
 }
 
 template <class T>
 const VariableView<T> &
 VariableSliceMutableMixin<VariableSlice<Variable>>::cast() {
-  return dynamic_cast<const VariableViewModel<VariableView<T>> &>(base().data())
+  return dynamic_cast<const ViewModel<VariableView<T>> &>(base().data())
       .m_model;
 }
 
