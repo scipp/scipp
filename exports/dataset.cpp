@@ -187,8 +187,8 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
 }
 } // namespace detail
 
-VariableSlice<Variable> pySlice(VariableSlice<Variable> &view,
-                                const std::tuple<Dim, const py::slice> &index) {
+VariableSlice pySlice(VariableSlice &view,
+                      const std::tuple<Dim, const py::slice> &index) {
   const Dim dim = std::get<Dim>(index);
   const auto indices = std::get<const py::slice>(index);
   size_t start, stop, step, slicelength;
@@ -201,7 +201,7 @@ VariableSlice<Variable> pySlice(VariableSlice<Variable> &view,
 }
 
 template <class Tag>
-py::buffer_info make_py_buffer_info_t(VariableSlice<Variable> &view) {
+py::buffer_info make_py_buffer_info_t(VariableSlice &view) {
   // Note: Currently this always triggers copy-on-write ---
   // py::buffer_info does currently not support the `readonly` flag of
   // the Python buffer protocol. We can probably get this fixed
@@ -220,7 +220,7 @@ py::buffer_info make_py_buffer_info_t(VariableSlice<Variable> &view) {
   );
 }
 
-py::buffer_info make_py_buffer_info(VariableSlice<Variable> &view) {
+py::buffer_info make_py_buffer_info(VariableSlice &view) {
   switch (view.tag().value()) {
   case Coord::X{}.value():
     return make_py_buffer_info_t<Coord::X>(view);
@@ -244,7 +244,7 @@ py::buffer_info make_py_buffer_info(VariableSlice<Variable> &view) {
 }
 
 template <class Tag>
-void setVariableSlice(VariableSlice<Variable> &self,
+void setVariableSlice(VariableSlice &self,
                       const std::tuple<Dim, gsl::index> &index,
                       py::array_t<typename Tag::type> &data) {
   auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
@@ -263,7 +263,7 @@ void setVariableSlice(VariableSlice<Variable> &self,
 }
 
 template <class Tag>
-void setVariableSliceRange(VariableSlice<Variable> &self,
+void setVariableSliceRange(VariableSlice &self,
                            const std::tuple<Dim, const py::slice> &index,
                            py::array_t<typename Tag::type> &data) {
   auto slice = pySlice(self, index);
@@ -281,8 +281,7 @@ void setVariableSliceRange(VariableSlice<Variable> &self,
   std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
 
-template <class Tag>
-auto as_py_array_t(py::object &obj, VariableSlice<Variable> &view) {
+template <class Tag> auto as_py_array_t(py::object &obj, VariableSlice &view) {
   auto array = py::array_t<typename Tag::type>{
       view.dimensions().shape(), detail::numpy_strides<Tag>(view.strides()),
       view.template get<const Tag>().data(), obj};
@@ -294,7 +293,7 @@ auto as_py_array_t(py::object &obj, VariableSlice<Variable> &view) {
 
 template <class... Ts>
 std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
-  auto &view = obj.cast<VariableSlice<Variable> &>();
+  auto &view = obj.cast<VariableSlice &>();
   switch (view.tag().value()) {
   case Coord::X{}.value():
     return {as_py_array_t<Coord::X>(obj, view)};
@@ -318,8 +317,7 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
 }
 
 template <class... Ts>
-std::variant<VariableView<Ts>...>
-as_VariableView_variant(VariableSlice<Variable> &view) {
+std::variant<VariableView<Ts>...> as_VariableView_variant(VariableSlice &view) {
   switch (view.tag().value()) {
   case Coord::X{}.value():
     return {view.get<Coord::X>()};
@@ -411,7 +409,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit<Coord::Z>))
       .def(py::init(&detail::makeVariableDefaultInit<Data::Value>))
       .def(py::init(&detail::makeVariableDefaultInit<Data::Variance>))
-      .def(py::init<const VariableSlice<Variable> &>())
+      .def(py::init<const VariableSlice &>())
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", &Variable::name, &Variable::setName)
       .def_property_readonly("is_coord", &Variable::isCoord)
@@ -420,31 +418,29 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
 
-  py::class_<VariableSlice<Variable>> view(m, "VariableSlice",
-                                           py::buffer_protocol());
+  py::class_<VariableSlice> view(m, "VariableSlice", py::buffer_protocol());
   view.def_buffer(&make_py_buffer_info);
   view.def_property_readonly(
           "dimensions",
-          [](const VariableSlice<Variable> &self) { return self.dimensions(); },
+          [](const VariableSlice &self) { return self.dimensions(); },
           py::return_value_policy::copy)
       .def("__len__",
-           [](const VariableSlice<Variable> &self) {
+           [](const VariableSlice &self) {
              const auto &dims = self.dimensions();
              if (dims.count() == 0)
                throw std::runtime_error("len() of unsized object.");
              return dims.shape()[0];
            })
-      .def_property_readonly("is_coord", &VariableSlice<Variable>::isCoord)
-      .def_property_readonly("tag", &VariableSlice<Variable>::tag)
-      .def_property_readonly("name", &VariableSlice<Variable>::name)
+      .def_property_readonly("is_coord", &VariableSlice::isCoord)
+      .def_property_readonly("tag", &VariableSlice::tag)
+      .def_property_readonly("name", &VariableSlice::name)
       .def("__getitem__",
-           [](VariableSlice<Variable> &self,
-              const std::tuple<Dim, gsl::index> &index) {
+           [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
            })
       .def("__getitem__", &pySlice)
       .def("__getitem__",
-           [](VariableSlice<Variable> &self,
+           [](VariableSlice &self,
               const std::map<Dimension, const gsl::index> d) {
              auto slice(self);
              for (auto item : d)
@@ -462,14 +458,11 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
-      .def("__iadd__",
-           [](VariableSlice<Variable> &a, Variable &b) { return a += b; },
+      .def("__iadd__", [](VariableSlice &a, Variable &b) { return a += b; },
            py::is_operator())
-      .def("__isub__",
-           [](VariableSlice<Variable> &a, Variable &b) { return a -= b; },
+      .def("__isub__", [](VariableSlice &a, Variable &b) { return a -= b; },
            py::is_operator())
-      .def("__imul__",
-           [](VariableSlice<Variable> &a, Variable &b) { return a *= b; },
+      .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
            py::is_operator());
 
   py::class_<Slice<Dataset>>(m, "DatasetView")
@@ -597,9 +590,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insert<Data::Variance>)
       .def("__setitem__", detail::insert<Data::Value, Variable>)
       .def("__setitem__", detail::insert<Data::Variance, Variable>)
-      .def("__setitem__", detail::insert<Data::Value, VariableSlice<Variable>>)
-      .def("__setitem__",
-           detail::insert<Data::Variance, VariableSlice<Variable>>)
+      .def("__setitem__", detail::insert<Data::Value, VariableSlice>)
+      .def("__setitem__", detail::insert<Data::Variance, VariableSlice>)
       .def("__setitem__", detail::insertDefaultInit<Data::Value>)
       .def("__setitem__", detail::insertDefaultInit<Data::Variance>)
       // Note: As it is this will always implicitly convert a RHS view into a
