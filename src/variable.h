@@ -110,7 +110,7 @@ private:
 template <class... Tags> class LinearView;
 class ConstVariableSlice;
 class VariableSlice;
-template <class Base> class MutableMixin;
+template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
 
 class Variable {
 public:
@@ -215,12 +215,12 @@ public:
                            const gsl::index end = -1);
 
   template <class... Tags> friend class LinearView;
-  template <class Base> friend class MutableMixin;
+  template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
+private:
   template <class T> const Vector<T> &cast() const;
   template <class T> Vector<T> &cast();
 
-private:
   // Used by LinearView. Need to find a better way instead of having everyone as
   // friend.
   Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }
@@ -320,10 +320,11 @@ public:
   template <class T> bool operator==(const T &other) const;
   template <class T> bool operator!=(const T &other) const;
 
-  template <class T> const VariableView<const T> &cast() const;
-
 protected:
   friend class Variable;
+  template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
+
+  template <class T> const VariableView<const T> &cast() const;
 
   const Variable *m_variable;
   deep_ptr<VariableConcept> m_view;
@@ -379,13 +380,14 @@ public:
 
   void setUnit(const Unit &unit);
 
+private:
+  friend class Variable;
+  template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
+
   // Special version creating const view from mutable view. Note that this does
   // not return a reference but by value.
   template <class T> VariableView<const T> cast() const;
   template <class T> const VariableView<T> &cast();
-
-private:
-  friend class Variable;
 
   Variable *m_mutableVariable;
 };
