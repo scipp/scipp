@@ -279,33 +279,14 @@ public:
 
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
                                const gsl::index end = -1) const {
-    auto slice(*this);
-    for (auto &s : slice.m_slices) {
-      if (std::get<Dim>(s) == dim) {
-        std::get<1>(s) = begin;
-        std::get<2>(s) = end;
-        return slice;
-      }
-    }
-    slice.m_slices.emplace_back(dim, begin, end);
-    if (end == -1) {
-      for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
-        // TODO Should all coordinates with matching dimension be removed, or
-        // only dimension-coordinates?
-        if (coordDimension[m_dataset[*it].tag().value()] == dim)
-          it = slice.m_indices.erase(it);
-        else
-          ++it;
-      }
-    }
-    return slice;
+    return makeSubslice(*this, dim, begin, end);
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
 
   const Dataset &dataset() const { return m_dataset; }
 
-  std::vector<std::tuple<Dim, gsl::index>> dimensions() {
+  std::vector<std::tuple<Dim, gsl::index>> dimensions() const {
     std::vector<std::tuple<Dim, gsl::index>> dims;
     for (gsl::index i = 0; i < m_dataset.dimensions().count(); ++i) {
       const Dim dim = m_dataset.dimensions().label(i);
@@ -347,18 +328,10 @@ protected:
   const Dataset &m_dataset;
   std::vector<gsl::index> m_indices;
   std::vector<std::tuple<Dim, gsl::index, gsl::index>> m_slices;
-};
 
-class DatasetSlice : public ConstDatasetSlice {
-public:
-  DatasetSlice(Dataset &dataset)
-      : ConstDatasetSlice(dataset), m_mutableDataset(dataset) {}
-  DatasetSlice(Dataset &dataset, const std::string &select)
-      : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
-
-  DatasetSlice operator()(const Dim dim, const gsl::index begin,
-                          const gsl::index end = -1) const {
-    auto slice(*this);
+  template <class D>
+  D makeSubslice(D slice, const Dim dim, const gsl::index begin,
+                 const gsl::index end) const {
     for (auto &s : slice.m_slices) {
       if (std::get<Dim>(s) == dim) {
         std::get<1>(s) = begin;
@@ -371,13 +344,26 @@ public:
       for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
         // TODO Should all coordinates with matching dimension be removed, or
         // only dimension-coordinates?
-        if (coordDimension[m_dataset[*it].tag().value()] == dim)
+        if (coordDimension[slice.m_dataset[*it].tag().value()] == dim)
           it = slice.m_indices.erase(it);
         else
           ++it;
       }
     }
     return slice;
+  }
+};
+
+class DatasetSlice : public ConstDatasetSlice {
+public:
+  DatasetSlice(Dataset &dataset)
+      : ConstDatasetSlice(dataset), m_mutableDataset(dataset) {}
+  DatasetSlice(Dataset &dataset, const std::string &select)
+      : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
+
+  DatasetSlice operator()(const Dim dim, const gsl::index begin,
+                          const gsl::index end = -1) const {
+    return makeSubslice(*this, dim, begin, end);
   }
 
   DatasetSlice &operator+=(const Dataset &other);
