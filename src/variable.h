@@ -314,6 +314,8 @@ public:
         "VariableSlice is `const`, must use const-qualified tag in call "
         "to `get`, e.g., `get<const Coord::X>()` instead of "
         "`get<Coord::X>()`");
+    if (Tag{} != tag())
+      throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
   }
 
@@ -368,6 +370,8 @@ public:
 
   template <class Tag>
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+    if (Tag{} != tag())
+      throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
   }
   template <class T> VariableSlice &assign(const T &other);
