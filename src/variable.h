@@ -369,7 +369,7 @@ public:
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
     return this->template cast<typename Tag::type>();
   }
-  template <class T> VariableSlice &copyFrom(const T &other);
+  template <class T> VariableSlice &assign(const T &other);
   VariableSlice &operator+=(const Variable &other);
   VariableSlice &operator+=(const ConstVariableSlice &other);
   VariableSlice &operator-=(const Variable &other);

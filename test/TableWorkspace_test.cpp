@@ -27,10 +27,10 @@ std::vector<std::string> asStrings(const Variable &variable) {
 
 TEST(TableWorkspace, basics) {
   Dataset table;
-  table.insert<Coord::RowLabel>({Dimension::Row, 3},
+  table.insert<Coord::RowLabel>({Dim::Row, 3},
                                 Vector<std::string>{"a", "b", "c"});
-  table.insert<Data::Value>("Data", {Dimension::Row, 3}, {1.0, -2.0, 3.0});
-  table.insert<Data::String>("Comment", {Dimension::Row, 3}, 3);
+  table.insert<Data::Value>("Data", {Dim::Row, 3}, {1.0, -2.0, 3.0});
+  table.insert<Data::String>("Comment", {Dim::Row, 3}, 3);
 
   // Modify table with know columns.
   DatasetView<const Data::Value, Data::String> view(table);
@@ -46,12 +46,12 @@ TEST(TableWorkspace, basics) {
             std::vector<std::string>({"", "why is this negative?", ""}));
 
   // Standard shape operations provide basic things required for tables:
-  auto mergedTable = concatenate(table, table, Dimension::Row);
-  auto row = slice(table, Dimension::Row, 1);
+  auto mergedTable = concatenate(table, table, Dim::Row);
+  Dataset row = table(Dim::Row, 1, 2);
   EXPECT_EQ(row.get<const Coord::RowLabel>()[0], "b");
 
   // Slice a range to obtain a new table with a subset of rows.
-  auto rows = slice(mergedTable, Dimension::Row, 1, 4);
+  Dataset rows = mergedTable(Dim::Row, 1, 4);
   ASSERT_EQ(rows.get<const Coord::RowLabel>().size(), 3);
   EXPECT_EQ(rows.get<const Coord::RowLabel>()[0], "b");
   EXPECT_EQ(rows.get<const Coord::RowLabel>()[1], "c");
@@ -67,7 +67,7 @@ TEST(TableWorkspace, basics) {
             std::vector<std::string>({"why is this negative?", "", ""}));
 
   // Split (opposite of concatenate).
-  auto parts = split(mergedTable, Dimension::Row, {3});
+  auto parts = split(mergedTable, Dim::Row, {3});
   ASSERT_EQ(parts.size(), 2);
   EXPECT_EQ(parts[0], table);
   EXPECT_EQ(parts[1], table);

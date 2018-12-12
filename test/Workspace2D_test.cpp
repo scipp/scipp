@@ -20,20 +20,18 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // Instrument
   // Scalar part of instrument, e.g., something like this:
   // d.insert<Coord::Instrument>({}, Beamline::ComponentInfo{});
-  d.insert<Coord::DetectorId>({Dimension::Detector, 4},
-                              {1001, 1002, 1003, 1004});
-  d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
-                                    {1.0, 2.0, 4.0, 8.0});
+  d.insert<Coord::DetectorId>({Dim::Detector, 4}, {1001, 1002, 1003, 1004});
+  d.insert<Coord::DetectorPosition>({Dim::Detector, 4}, {1.0, 2.0, 4.0, 8.0});
 
   // Spectrum to detector mapping and spectrum numbers.
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
       {0, 2}, {1}, {}};
-  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
-  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
+  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
+  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
 
   // "X" axis (shared for all spectra).
-  d.insert<Coord::Tof>({Dimension::Tof, 1000});
-  Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
+  d.insert<Coord::Tof>({Dim::Tof, 1000});
+  Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
   // Y
   d.insert<Data::Value>("sample", dims);
   // E
@@ -42,8 +40,8 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // Monitors
   // Temporarily disabled until we fixed Dataset::m_dimensions to not use
   // Dimensions.
-  // dims = Dimensions({{Dimension::MonitorTof, 222}, {Dimension::Monitor, 2}});
-  // d.insert<Coord::MonitorTof>({Dimension::MonitorTof, 222}, 222);
+  // dims = Dimensions({{Dim::MonitorTof, 222}, {Dim::Monitor, 2}});
+  // d.insert<Coord::MonitorTof>({Dim::MonitorTof, 222}, 222);
   // d.insert<Data::Value>("monitor", dims, dims.volume());
   // d.insert<Data::Variance>("monitor", dims, dims.volume());
 
@@ -60,10 +58,9 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
 
   // Combine data for spin-up and spin-down in same dataset, polarization is an
   // extra dimension.
-  auto combined = concatenate(spinUp, spinDown, Dimension::Polarization);
+  auto combined = concatenate(spinUp, spinDown, Dim::Polarization);
   combined.insert<Coord::Polarization>(
-      {Dimension::Polarization, 2},
-      Vector<std::string>{"spin-up", "spin-down"});
+      {Dim::Polarization, 2}, Vector<std::string>{"spin-up", "spin-down"});
 
   // Do a temperature scan, adding a new temperature dimension to the dataset.
   combined.insert<Coord::Temperature>({}, {300.0});
@@ -72,27 +69,29 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   for (const auto temperature : {273.0, 200.0, 100.0, 10.0, 4.2}) {
     dataPoint.get<Coord::Temperature>()[0] = temperature;
     dataPoint.get<Data::Value>("sample")[0] = exp(-0.001 * temperature);
-    combined = concatenate(combined, dataPoint, Dimension::Temperature);
+    combined = concatenate(combined, dataPoint, Dim::Temperature);
   }
 
   // Compute spin difference.
   DatasetIndex<Coord::Polarization> spin(combined);
   combined.erase<Coord::Polarization>();
-  auto delta = slice(combined, Dimension::Polarization, spin["spin-up"]) -
-               slice(combined, Dimension::Polarization, spin["spin-down"]);
+  Dataset delta = combined(Dim::Polarization, spin["spin-up"]) -
+                  combined(Dim::Polarization, spin["spin-down"]);
 
   // Extract a single Tof slice.
-  delta = slice(delta, Dimension::Tof, 0);
+  delta = delta(Dim::Tof, 0);
 
   using PointData = DatasetView<const Coord::Temperature, const Data::Value,
                                 const Data::Variance>;
-  DatasetView<PointData, const Coord::SpectrumNumber> view(
-      delta, "sample", {Dimension::Temperature});
+  DatasetView<PointData, const Coord::SpectrumNumber> view(delta, "sample",
+                                                           {Dim::Temperature});
 
   auto tempDependence =
-      std::find_if(view.begin(), view.end(), [](const auto &item) {
-        return item.template get<Coord::SpectrumNumber>() == 1;
-      })->get<PointData>();
+      std::find_if(view.begin(), view.end(),
+                   [](const auto &item) {
+                     return item.template get<Coord::SpectrumNumber>() == 1;
+                   })
+          ->get<PointData>();
 
   // Do something with the resulting point data, e.g., plot:
   // for (const auto &point : tempDependence)
@@ -103,9 +102,9 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
 TEST(Workspace2D, multiple_data) {
   Dataset d;
 
-  d.insert<Coord::Tof>({Dimension::Tof, 1000}, 1000);
+  d.insert<Coord::Tof>({Dim::Tof, 1000}, 1000);
 
-  Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
+  Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
 
   // Sample
   d.insert<Data::Value>("sample", dims, dims.volume());
@@ -116,8 +115,8 @@ TEST(Workspace2D, multiple_data) {
   d.insert<Data::Variance>("background", dims, dims.volume());
 
   // Monitors
-  dims = Dimensions({{Dimension::MonitorTof, 222}, {Dimension::Monitor, 2}});
-  d.insert<Coord::MonitorTof>({Dimension::MonitorTof, 222}, 222);
+  dims = Dimensions({{Dim::MonitorTof, 222}, {Dim::Monitor, 2}});
+  d.insert<Coord::MonitorTof>({Dim::MonitorTof, 222}, 222);
   d.insert<Data::Value>("monitor", dims, dims.volume());
   d.insert<Data::Variance>("monitor", dims, dims.volume());
 
@@ -136,10 +135,8 @@ TEST(Workspace2D, scanning) {
 
   // Scalar part of instrument, e.g.:
   // d.insert<Coord::Instrument>({}, Beamline::ComponentInfo{});
-  d.insert<Coord::DetectorId>({Dimension::Detector, 4},
-                              {1001, 1002, 1003, 1004});
-  d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
-                                    {1.0, 2.0, 3.0, 4.0});
+  d.insert<Coord::DetectorId>({Dim::Detector, 4}, {1001, 1002, 1003, 1004});
+  d.insert<Coord::DetectorPosition>({Dim::Detector, 4}, {1.0, 2.0, 3.0, 4.0});
 
   // In the current implementation in Mantid, ComponentInfo holds a reference to
   // DetectorInfo. Now the contents of DetectorInfo are simply variables in the
@@ -149,7 +146,7 @@ TEST(Workspace2D, scanning) {
   // class InstrumentView {
   //   InstrumentView(Dataset &d);
   //   void setPosition(const gsl::index i, const Eigen::Vector3d &pos) {
-  //     if (i < m_dataset.dimensions().size(Dimension::Detector))
+  //     if (i < m_dataset.dimensions().size(Dim::Detector))
   //       m_detPos[i] = pos;
   //     else {
   //       // recursive move as implemented in Beamline::ComponentInfo
@@ -160,9 +157,9 @@ TEST(Workspace2D, scanning) {
   for (auto &pos : moved.get<Coord::DetectorPosition>())
     pos += 0.5;
 
-  auto scanning = concatenate(d, moved, Dimension::DetectorScan);
+  auto scanning = concatenate(d, moved, Dim::DetectorScan);
   scanning.insert<Coord::TimeInterval>(
-      {Dimension::DetectorScan, 2},
+      {Dim::DetectorScan, 2},
       {std::make_pair(0l, 10l), std::make_pair(10l, 20l)});
 
   // Spectrum to detector mapping and spectrum numbers. Currently this mapping
@@ -171,12 +168,12 @@ TEST(Workspace2D, scanning) {
   // indices we need to take this into account in the implementation of
   // slicing/dicing and merging operations such that indices are updated
   // accordingly. Probably the easiest solution is to forbid shape operations on
-  // Dimension::Detector and Dimension::DetectorScan if Coord::DetectorGrouping
+  // Dim::Detector and Dim::DetectorScan if Coord::DetectorGrouping
   // is present.
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
       {0}, {2}, {4}};
-  scanning.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
-  scanning.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
+  scanning.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
+  scanning.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
 
   DatasetView<Coord::SpectrumPosition> view(scanning);
   ASSERT_EQ(view.size(), 3);
@@ -191,8 +188,8 @@ TEST(Workspace2D, masking) {
 
   Dataset d;
 
-  d.insert<Coord::Tof>({Dimension::Tof, 1000}, 1000);
-  Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
+  d.insert<Coord::Tof>({Dim::Tof, 1000}, 1000);
+  Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
   // Sample
   d.insert<Data::Value>("sample", dims, dims.volume());
   d.insert<Data::Variance>("sample", dims, dims.volume());
@@ -203,7 +200,7 @@ TEST(Workspace2D, masking) {
   // Spectra mask.
   // Can be in its own Dataset to support loading, saving, and manipulation.
   Dataset mask;
-  mask.insert<Coord::Mask>({Dimension::Spectrum, 3}, Vector<char>{0, 0, 1});
+  mask.insert<Coord::Mask>({Dim::Spectrum, 3}, Vector<char>{0, 0, 1});
 
   // Add mask to Dataset, not touching data.
   auto d_masked(d);
@@ -228,7 +225,7 @@ TEST(Workspace2D, masking) {
   d_masked.erase<Coord::Mask>();
 
   // Skip processing spectrum if it is masked.
-  EXPECT_FALSE(d_masked2.dimensions<Coord::Mask>().contains(Dimension::Tof));
+  EXPECT_FALSE(d_masked2.dimensions<Coord::Mask>().contains(Dim::Tof));
   DatasetView<DatasetView<Data::Value>, const Coord::Mask> spectra(d_masked2,
                                                                    "sample");
   for (auto &item : spectra)
@@ -250,9 +247,9 @@ TEST(Workspace2D, masking) {
 
   // Bin mask.
   mask = Dataset();
-  mask.insert<Coord::Mask>({Dimension::Tof, 1000}, 1000);
+  mask.insert<Coord::Mask>({Dim::Tof, 1000}, 1000);
   mask.get<Coord::Mask>()[0] = 1;
-  // mask has no Dimension::Spectrum so this masks the first bin of all spectra.
+  // mask has no Dim::Spectrum so this masks the first bin of all spectra.
   d_masked.merge(mask);
   // Different bin masking for all spectra.
   mask = Dataset();

@@ -162,8 +162,6 @@ public:
   Dataset &operator-=(const ConstDatasetSlice &other);
   Dataset &operator*=(const Dataset &other);
   Dataset &operator*=(const ConstDatasetSlice &other);
-  void setSlice(const Dataset &slice, const Dimension dim,
-                const gsl::index index);
 
 private:
   template <class Data> friend class detail::Access;
@@ -332,6 +330,10 @@ protected:
   template <class D>
   D makeSubslice(D slice, const Dim dim, const gsl::index begin,
                  const gsl::index end) const {
+    if (!m_dataset.dimensions().contains(dim) &&
+        (begin != 0 || !(end == 1 || end == -1)))
+      throw dataset::except::DimensionNotFoundError(m_dataset.dimensions(),
+                                                    dim);
     for (auto &s : slice.m_slices) {
       if (std::get<Dim>(s) == dim) {
         std::get<1>(s) = begin;
@@ -366,6 +368,8 @@ public:
     return makeSubslice(*this, dim, begin, end);
   }
 
+  DatasetSlice &assign(const Dataset &other);
+  DatasetSlice &assign(const ConstDatasetSlice &other);
   DatasetSlice &operator+=(const Dataset &other);
   DatasetSlice &operator+=(const ConstDatasetSlice &other);
   DatasetSlice &operator-=(const Dataset &other);
@@ -428,9 +432,6 @@ inline auto makeAccess(DatasetSlice &dataset) {
 Dataset operator+(Dataset a, const Dataset &b);
 Dataset operator-(Dataset a, const Dataset &b);
 Dataset operator*(Dataset a, const Dataset &b);
-Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index);
-Dataset slice(const Dataset &d, const Dimension dim, const gsl::index begin,
-              const gsl::index end);
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices);
 Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dimension dim);

@@ -30,9 +30,9 @@ BENCHMARK(BM_Dataset_get_with_many_columns)
 static void BM_Dataset_as_Histogram(benchmark::State &state) {
   gsl::index nPoint = state.range(0);
   Dataset d;
-  d.insert<Coord::Tof>({Dimension::Tof, nPoint}, nPoint);
-  d.insert<Data::Value>("", {Dimension::Tof, nPoint}, nPoint);
-  d.insert<Data::Variance>("", {Dimension::Tof, nPoint}, nPoint);
+  d.insert<Coord::Tof>({Dim::Tof, nPoint}, nPoint);
+  d.insert<Data::Value>("", {Dim::Tof, nPoint}, nPoint);
+  d.insert<Data::Variance>("", {Dim::Tof, nPoint}, nPoint);
   std::vector<Dataset> histograms;
   gsl::index nSpec = std::min(1000000l, 10000000 / (nPoint + 1));
   for (gsl::index i = 0; i < nSpec; ++i) {
@@ -56,16 +56,16 @@ BENCHMARK(BM_Dataset_as_Histogram)->RangeMultiplier(2)->Range(0, 2 << 14);
 
 static void BM_Dataset_as_Histogram_with_slice(benchmark::State &state) {
   Dataset d;
-  d.insert<Coord::Tof>({Dimension::Tof, 1000}, 1000);
+  d.insert<Coord::Tof>({Dim::Tof, 1000}, 1000);
   gsl::index nSpec = 10000;
-  Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, nSpec}});
+  Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, nSpec}});
   d.insert<Data::Value>("sample", dims, dims.volume());
   d.insert<Data::Variance>("sample", dims, dims.volume());
 
   for (auto _ : state) {
-    auto sum = slice(d, Dimension::Spectrum, 0);
+    auto sum = d(Dim::Spectrum, 0);
     for (gsl::index i = 1; i < nSpec; ++i)
-      sum += slice(d, Dimension::Spectrum, i);
+      sum += d(Dim::Spectrum, i);
   }
   state.SetItemsProcessed(state.iterations() * nSpec);
   state.SetBytesProcessed(state.iterations() * nSpec * 1000 * 2 *
@@ -76,13 +76,13 @@ BENCHMARK(BM_Dataset_as_Histogram_with_slice);
 Dataset makeSingleDataDataset(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
 
-  d.insert<Coord::DetectorId>({Dimension::Detector, nSpec}, nSpec);
-  d.insert<Coord::DetectorPosition>({Dimension::Detector, nSpec}, nSpec);
-  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, nSpec}, nSpec);
-  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, nSpec}, nSpec);
+  d.insert<Coord::DetectorId>({Dim::Detector, nSpec}, nSpec);
+  d.insert<Coord::DetectorPosition>({Dim::Detector, nSpec}, nSpec);
+  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, nSpec}, nSpec);
+  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, nSpec}, nSpec);
 
-  d.insert<Coord::Tof>({Dimension::Tof, nPoint}, nPoint);
-  Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
+  d.insert<Coord::Tof>({Dim::Tof, nPoint}, nPoint);
+  Dimensions dims({{Dim::Tof, nPoint}, {Dim::Spectrum, nSpec}});
   d.insert<Data::Value>("sample", dims, dims.volume());
   d.insert<Data::Variance>("sample", dims, dims.volume());
 
@@ -92,13 +92,13 @@ Dataset makeSingleDataDataset(const gsl::index nSpec, const gsl::index nPoint) {
 Dataset makeDataset(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
 
-  d.insert<Coord::DetectorId>({Dimension::Detector, nSpec}, nSpec);
-  d.insert<Coord::DetectorPosition>({Dimension::Detector, nSpec}, nSpec);
-  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, nSpec}, nSpec);
-  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, nSpec}, nSpec);
+  d.insert<Coord::DetectorId>({Dim::Detector, nSpec}, nSpec);
+  d.insert<Coord::DetectorPosition>({Dim::Detector, nSpec}, nSpec);
+  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, nSpec}, nSpec);
+  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, nSpec}, nSpec);
 
-  d.insert<Coord::Tof>({Dimension::Tof, nPoint}, nPoint);
-  Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
+  d.insert<Coord::Tof>({Dim::Tof, nPoint}, nPoint);
+  Dimensions dims({{Dim::Tof, nPoint}, {Dim::Spectrum, nSpec}});
   d.insert<Data::Value>("sample", dims, dims.volume());
   d.insert<Data::Variance>("sample", dims, dims.volume());
   d.insert<Data::Value>("background", dims, dims.volume());
@@ -196,8 +196,7 @@ static void BM_Dataset_cache_blocking(benchmark::State &state) {
   auto d = makeDataset(nSpec, nPoint);
   for (auto _ : state) {
     for (gsl::index i = 0; i < nSpec; ++i) {
-      d.setSlice(doWork(slice(d, Dimension::Spectrum, i)), Dimension::Spectrum,
-                 i);
+      d(Dim::Spectrum, i).assign(doWork(d(Dim::Spectrum, i)));
     }
   }
   state.SetItemsProcessed(state.iterations() * nSpec);
@@ -216,7 +215,7 @@ static void BM_Dataset_cache_blocking_no_slicing(benchmark::State &state) {
   const auto d = makeDataset(nSpec, nPoint);
   std::vector<Dataset> slices;
   for (gsl::index i = 0; i < nSpec; ++i) {
-    slices.emplace_back(slice(d, Dimension::Spectrum, i));
+    slices.emplace_back(d(Dim::Spectrum, i));
   }
 
   for (auto _ : state) {
@@ -237,35 +236,35 @@ BENCHMARK(BM_Dataset_cache_blocking_no_slicing)
 Dataset makeBeamline(const gsl::index nComp, const gsl::index nDet) {
   Dataset d;
 
-  d.insert<Coord::DetectorId>({Dimension::Detector, nDet});
-  d.insert<Coord::DetectorIsMonitor>({Dimension::Detector, nDet});
-  d.insert<Coord::DetectorMask>({Dimension::Detector, nDet});
-  d.insert<Coord::DetectorPosition>({Dimension::Detector, nDet});
-  d.insert<Coord::DetectorRotation>({Dimension::Detector, nDet});
-  d.insert<Coord::DetectorParent>({Dimension::Detector, nDet});
-  d.insert<Coord::DetectorScale>({Dimension::Detector, nDet});
+  d.insert<Coord::DetectorId>({Dim::Detector, nDet});
+  d.insert<Coord::DetectorIsMonitor>({Dim::Detector, nDet});
+  d.insert<Coord::DetectorMask>({Dim::Detector, nDet});
+  d.insert<Coord::DetectorPosition>({Dim::Detector, nDet});
+  d.insert<Coord::DetectorRotation>({Dim::Detector, nDet});
+  d.insert<Coord::DetectorParent>({Dim::Detector, nDet});
+  d.insert<Coord::DetectorScale>({Dim::Detector, nDet});
   // TODO As it is, this will break coordinate matching. We need a special
   // comparison for referenced shapes, or a shape factory.
-  // d.insert<Coord::DetectorShape>({Dimension::Detector, nDet}, nDet,
+  // d.insert<Coord::DetectorShape>({Dim::Detector, nDet}, nDet,
   //                               std::make_shared<std::array<double, 100>>());
 
-  d.insert<Coord::ComponentChildren>({Dimension::Component, nComp});
-  d.insert<Coord::ComponentName>({Dimension::Component, nComp});
-  d.insert<Coord::ComponentParent>({Dimension::Component, nComp});
-  d.insert<Coord::ComponentPosition>({Dimension::Component, nComp});
-  d.insert<Coord::ComponentRotation>({Dimension::Component, nComp});
-  d.insert<Coord::ComponentScale>({Dimension::Component, nComp});
-  d.insert<Coord::ComponentShape>({Dimension::Component, nComp});
-  d.insert<Coord::ComponentSubtreeRange>({Dimension::Component, nComp});
-  d.insert<Coord::DetectorSubtreeRange>({Dimension::Component, nComp});
+  d.insert<Coord::ComponentChildren>({Dim::Component, nComp});
+  d.insert<Coord::ComponentName>({Dim::Component, nComp});
+  d.insert<Coord::ComponentParent>({Dim::Component, nComp});
+  d.insert<Coord::ComponentPosition>({Dim::Component, nComp});
+  d.insert<Coord::ComponentRotation>({Dim::Component, nComp});
+  d.insert<Coord::ComponentScale>({Dim::Component, nComp});
+  d.insert<Coord::ComponentShape>({Dim::Component, nComp});
+  d.insert<Coord::ComponentSubtreeRange>({Dim::Component, nComp});
+  d.insert<Coord::DetectorSubtreeRange>({Dim::Component, nComp});
 
   d.insert<Attr::ExperimentLog>("NeXus logs", {});
 
   // These are special, length is same, but there is no association with the
   // index in the dimension. Should handle this differently? Put it into a
   // zero-dimensional variable?
-  d.insert<Coord::DetectorSubtree>({Dimension::Detector, nDet});
-  d.insert<Coord::ComponentSubtree>({Dimension::Component, nComp});
+  d.insert<Coord::DetectorSubtree>({Dim::Detector, nDet});
+  d.insert<Coord::ComponentSubtree>({Dim::Component, nComp});
 
   auto ids = d.get<Coord::DetectorId>();
   std::iota(ids.begin(), ids.end(), 1);
@@ -276,8 +275,8 @@ Dataset makeBeamline(const gsl::index nComp, const gsl::index nDet) {
 Dataset makeSpectra(const gsl::index nSpec) {
   Dataset d;
 
-  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, nSpec});
-  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, nSpec});
+  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, nSpec});
+  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, nSpec});
   auto groups = d.get<Coord::DetectorGrouping>();
   for (gsl::index i = 0; i < groups.size(); ++i)
     groups[i] = {i};
@@ -289,10 +288,10 @@ Dataset makeSpectra(const gsl::index nSpec) {
 
 Dataset makeData(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
-  d.insert<Coord::Tof>({Dimension::Tof, nPoint + 1});
+  d.insert<Coord::Tof>({Dim::Tof, nPoint + 1});
   auto tofs = d.get<Coord::Tof>();
   std::iota(tofs.begin(), tofs.end(), 0.0);
-  Dimensions dims({{Dimension::Tof, nPoint}, {Dimension::Spectrum, nSpec}});
+  Dimensions dims({{Dim::Tof, nPoint}, {Dim::Spectrum, nSpec}});
   d.insert<Data::Value>("sample", dims);
   d.insert<Data::Variance>("sample", dims);
   return d;
@@ -345,9 +344,9 @@ static void BM_Dataset_Workspace2D_rebin(benchmark::State &state) {
   gsl::index nSpec = state.range(0) * 1024;
   gsl::index nPoint = 1024;
 
-  auto newCoord = makeVariable<Coord::Tof>({Dimension::Tof, nPoint / 2});
+  auto newCoord = makeVariable<Coord::Tof>({Dim::Tof, nPoint / 2});
   double value = 0.0;
-  for(auto &tof : newCoord.get<Coord::Tof>()) {
+  for (auto &tof : newCoord.get<Coord::Tof>()) {
     tof = value;
     value += 3.0;
   }
@@ -371,23 +370,23 @@ Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
   auto d = makeBeamline(nSpec / 100, nSpec);
   d.merge(makeSpectra(nSpec));
 
-  d.insert<Coord::Tof>({Dimension::Tof, 2});
+  d.insert<Coord::Tof>({Dim::Tof, 2});
 
-  d.insert<Data::Events>("events", {Dimension::Spectrum, nSpec});
+  d.insert<Data::Events>("events", {Dim::Spectrum, nSpec});
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<int> dist(0, nEvent);
   Dataset empty;
-  empty.insert<Data::Tof>("", {Dimension::Event, 0});
-  empty.insert<Data::PulseTime>("", {Dimension::Event, 0});
+  empty.insert<Data::Tof>("", {Dim::Event, 0});
+  empty.insert<Data::PulseTime>("", {Dim::Event, 0});
   for (auto &eventList : d.get<Data::Events>()) {
     // 1/4 of the event lists is empty
     gsl::index count = std::max(0l, dist(mt) - nEvent / 4);
     if (count == 0)
       eventList = empty;
     else {
-      eventList.insert<Data::Tof>("", {Dimension::Event, count});
-      eventList.insert<Data::PulseTime>("", {Dimension::Event, count});
+      eventList.insert<Data::Tof>("", {Dim::Event, count});
+      eventList.insert<Data::PulseTime>("", {Dim::Event, count});
     }
   }
 
@@ -439,7 +438,7 @@ static void BM_Dataset_EventWorkspace_plus(benchmark::State &state) {
 
   gsl::index actualEvents = 0;
   for (auto &eventList : d.get<const Data::Events>())
-    actualEvents += eventList.dimensions().size(Dimension::Event);
+    actualEvents += eventList.dimensions().size(Dim::Event);
   state.SetItemsProcessed(state.iterations());
   // 2 for Tof and PulseTime
   // 1+1+2+2 for loads and save
@@ -465,7 +464,7 @@ static void BM_Dataset_EventWorkspace_grow(benchmark::State &state) {
 
   gsl::index actualEvents = 0;
   for (auto &eventList : update.get<const Data::Events>())
-    actualEvents += eventList.dimensions().size(Dimension::Event);
+    actualEvents += eventList.dimensions().size(Dim::Event);
   state.SetItemsProcessed(state.iterations() * actualEvents);
 }
 BENCHMARK(BM_Dataset_EventWorkspace_grow)

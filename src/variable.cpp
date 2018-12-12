@@ -773,7 +773,7 @@ Variable &Variable::operator*=(const ConstVariableSlice &other) {
   return times_equals(*this, other);
 }
 
-template <class T> VariableSlice &VariableSlice::copyFrom(const T &other) {
+template <class T> VariableSlice &VariableSlice::assign(const T &other) {
   // TODO Should mismatching tags be allowed, as long as the type matches?
   if (tag() != other.tag())
     throw std::runtime_error("Cannot assign to slice: Type mismatch.");
@@ -787,8 +787,8 @@ template <class T> VariableSlice &VariableSlice::copyFrom(const T &other) {
   return *this;
 }
 
-template VariableSlice &VariableSlice::copyFrom(const Variable &);
-template VariableSlice &VariableSlice::copyFrom(const ConstVariableSlice &);
+template VariableSlice &VariableSlice::assign(const Variable &);
+template VariableSlice &VariableSlice::assign(const ConstVariableSlice &);
 
 VariableSlice &VariableSlice::operator+=(const Variable &other) {
   return plus_equals(*this, other);

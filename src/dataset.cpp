@@ -397,6 +397,42 @@ bool ConstDatasetSlice::contains(const Tag tag, const std::string &name) const {
   return ::contains(*this, tag, name);
 }
 
+template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
+  for (const auto &var2 : other) {
+    gsl::index index;
+    try {
+      index = find(dataset, var2.tag(), var2.name());
+    } catch (const std::runtime_error &) {
+      throw std::runtime_error(
+          "Right-hand-side in assignment contains variable "
+          "that is not present in left-hand-side.");
+    }
+    using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
+                                      Variable &, VariableSlice>;
+    VarRef var1 = detail::makeAccess(dataset)[index];
+    if (var1.isCoord()) {
+      if (!(var1 == var2))
+        throw std::runtime_error(
+            "Coordinates of datasets do not match. Cannot assign.");
+    } else if (var1.isData()) {
+      // Data variables are assigned
+      var1.assign(var2);
+    } else {
+      // Attribute variables are assigned
+      if (var1 != var2)
+        var1 += var2;
+    }
+  }
+  return dataset;
+}
+
+DatasetSlice &DatasetSlice::assign(const Dataset &other) {
+  return ::assign(*this, other);
+}
+DatasetSlice &DatasetSlice::assign(const ConstDatasetSlice &other) {
+  return ::assign(*this, other);
+}
+
 DatasetSlice &DatasetSlice::operator+=(const Dataset &other) {
   return plus_equals(*this, other);
 }
@@ -430,17 +466,6 @@ dataset_slice_iterator<Dataset> DatasetSlice::mutableEnd() const {
   return {m_mutableDataset, m_indices, m_slices,
           static_cast<gsl::index>(m_indices.size())};
 }
-void Dataset::setSlice(const Dataset &slice, const Dimension dim,
-                       const gsl::index index) {
-  for (const auto &var2 : slice.m_variables) {
-    auto &var1 = m_variables[find(var2.tag(), var2.name())];
-    if (var1.dimensions().contains(dim))
-      var1.setSlice(var2, dim, index);
-    else
-      var1 = var2;
-  }
-}
-
 template <class Value>
 std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
                    VariableSlice>
@@ -455,35 +480,6 @@ template class dataset_slice_iterator<const Dataset>;
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
 Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
 Dataset operator*(Dataset a, const Dataset &b) { return a *= b; }
-
-Dataset slice(const Dataset &d, const Dimension dim, const gsl::index index) {
-  // TODO It is up for debate whether this should always throw if the dimension
-  // is not contained or only with non-zero index.
-  if (!d.dimensions().contains(dim) && index != 0)
-    throw std::runtime_error("Slice index out of range");
-  Dataset out;
-  for (const auto &var : d) {
-    if (var.dimensions().contains(dim))
-      out.insert(slice(var, dim, index));
-    else
-      out.insert(var);
-  }
-  return out;
-}
-
-Dataset slice(const Dataset &d, const Dimension dim, const gsl::index begin,
-              const gsl::index end) {
-  if (!d.dimensions().contains(dim) && (begin != 0 || end != 1))
-    throw std::runtime_error("Slice index out of range");
-  Dataset out;
-  for (const auto &var : d) {
-    if (var.dimensions().contains(dim))
-      out.insert(slice(var, dim, begin, end));
-    else
-      out.insert(var);
-  }
-  return out;
-}
 
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {

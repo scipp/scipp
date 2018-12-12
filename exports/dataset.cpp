@@ -604,12 +604,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
-      .def("dimensions", [](const Dataset &self) { return self.dimensions(); })
-      .def(
-          "slice",
-          py::overload_cast<const Dataset &, const Dimension, const gsl::index>(
-              &slice),
-          py::call_guard<py::gil_scoped_release>());
+      .def("dimensions", [](const Dataset &self) { return self.dimensions(); });
 
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
