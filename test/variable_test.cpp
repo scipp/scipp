@@ -181,19 +181,19 @@ TEST(Variable, setSlice) {
   auto d(empty);
   EXPECT_NE(parent, d);
   for (const gsl::index index : {0, 1, 2, 3})
-    d.setSlice(slice(parent, Dim::X, index), Dim::X, index);
+    d(Dim::X, index).assign(parent(Dim::X, index));
   EXPECT_EQ(parent, d);
 
   d = empty;
   EXPECT_NE(parent, d);
   for (const gsl::index index : {0, 1})
-    d.setSlice(slice(parent, Dim::Y, index), Dim::Y, index);
+    d(Dim::Y, index).assign(parent(Dim::Y, index));
   EXPECT_EQ(parent, d);
 
   d = empty;
   EXPECT_NE(parent, d);
   for (const gsl::index index : {0, 1, 2})
-    d.setSlice(slice(parent, Dim::Z, index), Dim::Z, index);
+    d(Dim::Z, index).assign(parent(Dim::Z, index));
   EXPECT_EQ(parent, d);
 }
 
@@ -205,7 +205,7 @@ TEST(Variable, slice) {
        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
   for (const gsl::index index : {0, 1, 2, 3}) {
-    auto sliceX = slice(parent, Dim::X, index);
+    Variable sliceX = parent(Dim::X, index);
     ASSERT_EQ(sliceX.dimensions(), Dimensions({{Dim::Z, 3}, {Dim::Y, 2}}));
     EXPECT_EQ(sliceX.get<const Data::Value>()[0], index + 1.0);
     EXPECT_EQ(sliceX.get<const Data::Value>()[1], index + 5.0);
@@ -216,7 +216,7 @@ TEST(Variable, slice) {
   }
 
   for (const gsl::index index : {0, 1}) {
-    auto sliceY = slice(parent, Dim::Y, index);
+    Variable sliceY = parent(Dim::Y, index);
     ASSERT_EQ(sliceY.dimensions(), Dimensions({{Dim::Z, 3}, {Dim::X, 4}}));
     const auto &data = sliceY.get<const Data::Value>();
     for (const gsl::index z : {0, 1, 2}) {
@@ -228,7 +228,7 @@ TEST(Variable, slice) {
   }
 
   for (const gsl::index index : {0, 1, 2}) {
-    auto sliceZ = slice(parent, Dim::Z, index);
+    Variable sliceZ = parent(Dim::Z, index);
     ASSERT_EQ(sliceZ.dimensions(), Dimensions({{Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.get<const Data::Value>();
     for (gsl::index xy = 0; xy < 8; ++xy)
@@ -244,7 +244,7 @@ TEST(Variable, slice_range) {
        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
   for (const gsl::index index : {0, 1, 2, 3}) {
-    auto sliceX = slice(parent, Dim::X, index, index + 1);
+    Variable sliceX = parent(Dim::X, index, index + 1);
     ASSERT_EQ(sliceX.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}));
     EXPECT_EQ(sliceX.get<const Data::Value>()[0], index + 1.0);
@@ -256,7 +256,7 @@ TEST(Variable, slice_range) {
   }
 
   for (const gsl::index index : {0, 1, 2}) {
-    auto sliceX = slice(parent, Dim::X, index, index + 2);
+    Variable sliceX = parent(Dim::X, index, index + 2);
     ASSERT_EQ(sliceX.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}}));
     EXPECT_EQ(sliceX.get<const Data::Value>()[0], index + 1.0);
@@ -274,7 +274,7 @@ TEST(Variable, slice_range) {
   }
 
   for (const gsl::index index : {0, 1}) {
-    auto sliceY = slice(parent, Dim::Y, index, index + 1);
+    Variable sliceY = parent(Dim::Y, index, index + 1);
     ASSERT_EQ(sliceY.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 1}, {Dim::X, 4}}));
     const auto &data = sliceY.get<const Data::Value>();
@@ -287,12 +287,12 @@ TEST(Variable, slice_range) {
   }
 
   for (const gsl::index index : {0}) {
-    auto sliceY = slice(parent, Dim::Y, index, index + 2);
+    Variable sliceY = parent(Dim::Y, index, index + 2);
     EXPECT_EQ(sliceY, parent);
   }
 
   for (const gsl::index index : {0, 1, 2}) {
-    auto sliceZ = slice(parent, Dim::Z, index, index + 1);
+    Variable sliceZ = parent(Dim::Z, index, index + 1);
     ASSERT_EQ(sliceZ.dimensions(),
               Dimensions({{Dim::Z, 1}, {Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.get<const Data::Value>();
@@ -301,7 +301,7 @@ TEST(Variable, slice_range) {
   }
 
   for (const gsl::index index : {0, 1}) {
-    auto sliceZ = slice(parent, Dim::Z, index, index + 2);
+    Variable sliceZ = parent(Dim::Z, index, index + 2);
     ASSERT_EQ(sliceZ.dimensions(),
               Dimensions({{Dim::Z, 2}, {Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.get<const Data::Value>();

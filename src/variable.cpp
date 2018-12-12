@@ -868,17 +868,6 @@ INSTANTIATE_SLICEVIEW(int32_t);
 INSTANTIATE_SLICEVIEW(char);
 INSTANTIATE_SLICEVIEW(std::string);
 
-void Variable::setSlice(const Variable &slice, const Dimension dim,
-                        const gsl::index index) {
-  if (m_unit != slice.m_unit)
-    throw std::runtime_error("Cannot set slice: Units do not match.");
-  if (m_object == slice.m_object)
-    return;
-  if (!dimensions().contains(slice.dimensions()))
-    throw std::runtime_error("Cannot set slice: Dimensions do not match.");
-  data().copy(slice.data(), dim, index, 0, 1);
-}
-
 ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
                                         const gsl::index end) const {
   return {*this, dim, begin, end};
@@ -893,28 +882,6 @@ Variable operator+(Variable a, const Variable &b) { return a += b; }
 Variable operator-(Variable a, const Variable &b) { return a -= b; }
 Variable operator*(Variable a, const Variable &b) { return a *= b; }
 
-Variable slice(const Variable &var, const Dimension dim,
-               const gsl::index index) {
-  auto out(var);
-  auto dims = out.dimensions();
-  dims.erase(dim);
-  out.setDimensions(dims);
-  out.data().copy(var.data(), dim, 0, index, index + 1);
-  return out;
-}
-
-Variable slice(const Variable &var, const Dimension dim, const gsl::index begin,
-               const gsl::index end) {
-  auto out(var);
-  auto dims = out.dimensions();
-  dims.resize(dim, end - begin);
-  if (dims == out.dimensions())
-    return out;
-  out.setDimensions(dims);
-  out.data().copy(var.data(), dim, 0, begin, end);
-  return out;
-}
-
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
 std::vector<Variable> split(const Variable &var, const Dim dim,
@@ -922,11 +889,10 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   if (indices.empty())
     return {var};
   std::vector<Variable> vars;
-  vars.emplace_back(slice(var, dim, 0, indices.front()));
+  vars.emplace_back(var(dim, 0, indices.front()));
   for (gsl::index i = 0; i < indices.size() - 1; ++i)
-    vars.emplace_back(slice(var, dim, indices[i], indices[i + 1]));
-  vars.emplace_back(
-      slice(var, dim, indices.back(), var.dimensions().size(dim)));
+    vars.emplace_back(var(dim, indices[i], indices[i + 1]));
+  vars.emplace_back(var(dim, indices.back(), var.dimensions().size(dim)));
   return vars;
 }
 

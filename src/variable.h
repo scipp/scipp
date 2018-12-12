@@ -151,8 +151,6 @@ public:
   Variable &operator-=(const ConstVariableSlice &other);
   Variable &operator*=(const Variable &other);
   Variable &operator*=(const ConstVariableSlice &other);
-  void setSlice(const Variable &slice, const Dimension dim,
-                const gsl::index index);
 
   const Unit &unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
@@ -394,10 +392,6 @@ Variable operator+(Variable a, const Variable &b);
 Variable operator-(Variable a, const Variable &b);
 Variable operator*(Variable a, const Variable &b);
 
-Variable slice(const Variable &var, const Dimension dim,
-               const gsl::index index);
-Variable slice(const Variable &var, const Dimension dim, const gsl::index begin,
-               const gsl::index end);
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);
 Variable concatenate(const Variable &a1, const Variable &a2,
