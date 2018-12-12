@@ -343,8 +343,8 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
 
             auto v1 = var1.template get<Data::Value>();
             const auto v2 = var2.template get<const Data::Value>();
-            auto e1 = error1.template get<Data::Value>();
-            const auto e2 = error2.template get<const Data::Value>();
+            auto e1 = error1.template get<Data::Variance>();
+            const auto e2 = error2.template get<const Data::Variance>();
             aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
                               e2.data());
           } else {

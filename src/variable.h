@@ -191,6 +191,8 @@ public:
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).
+    if (Tag{} != tag())
+      throw std::runtime_error("Attempt to access variable with wrong tag.");
     return gsl::make_span(cast<typename Tag::type>());
   }
 
@@ -201,8 +203,8 @@ public:
 
   template <class Tag>
   auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
-    // TODO There is a bug here... this is accepting any tag that has the
-    // matching type.
+    if (Tag{} != tag())
+      throw std::runtime_error("Attempt to access variable with wrong tag.");
     return gsl::make_span(cast<typename Tag::type>());
   }
 
