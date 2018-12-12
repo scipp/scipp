@@ -811,21 +811,21 @@ VariableSlice &VariableSlice::operator*=(const ConstVariableSlice &other) {
   return times_equals(*this, other);
 }
 
-template <class T> bool ConstVariableSlice::operator==(const T &other) const {
+bool ConstVariableSlice::operator==(const Variable &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
   return equals(*this, other);
 }
-
-template bool ConstVariableSlice::operator==(const Variable &) const;
-template bool ConstVariableSlice::operator==(const ConstVariableSlice &) const;
-
-template <class T> bool ConstVariableSlice::operator!=(const T &other) const {
-  return !(*this == other);
+bool ConstVariableSlice::operator==(const ConstVariableSlice &other) const {
+  return equals(*this, other);
 }
 
-template bool ConstVariableSlice::operator!=(const Variable &) const;
-template bool ConstVariableSlice::operator!=(const ConstVariableSlice &) const;
+bool ConstVariableSlice::operator!=(const Variable &other) const {
+  return !(*this == other);
+}
+bool ConstVariableSlice::operator!=(const ConstVariableSlice &other) const {
+  return !(*this == other);
+}
 
 void VariableSlice::setUnit(const Unit &unit) {
   // TODO Should we forbid setting the unit altogether? I think it is useful in

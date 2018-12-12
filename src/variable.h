@@ -319,8 +319,10 @@ public:
     return this->template cast<typename Tag::type>();
   }
 
-  template <class T> bool operator==(const T &other) const;
-  template <class T> bool operator!=(const T &other) const;
+  bool operator==(const Variable &other) const;
+  bool operator==(const ConstVariableSlice &other) const;
+  bool operator!=(const Variable &other) const;
+  bool operator!=(const ConstVariableSlice &other) const;
 
 protected:
   friend class Variable;
