@@ -733,39 +733,45 @@ Variable &Variable::operator+=(const ConstVariableSlice &other) {
   return plus_equals(*this, other);
 }
 
-template <class T> Variable &Variable::operator-=(const T &other) {
-  if (unit() != other.unit())
+template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
+  if (variable.unit() != other.unit())
     throw std::runtime_error("Cannot subtract Variables: Units do not match.");
-  if (dimensions().contains(other.dimensions())) {
-    if (valueTypeIs<Data::Events>())
+  if (variable.dimensions().contains(other.dimensions())) {
+    if (variable.template valueTypeIs<Data::Events>())
       throw std::runtime_error("Subtraction of events lists not implemented.");
-    m_object.access() -= other.data();
+    variable.data() -= other.data();
   } else {
     throw std::runtime_error(
         "Cannot subtract Variables: Dimensions do not match.");
   }
-
-  return *this;
+  return variable;
 }
 
-template Variable &Variable::operator-=(const Variable &);
-template Variable &Variable::operator-=(const ConstVariableSlice &);
-template Variable &Variable::operator-=(const VariableSlice &);
+Variable &Variable::operator-=(const Variable &other) {
+  return minus_equals(*this, other);
+}
+Variable &Variable::operator-=(const ConstVariableSlice &other) {
+  return minus_equals(*this, other);
+}
 
-template <class T> Variable &Variable::operator*=(const T &other) {
-  if (!dimensions().contains(other.dimensions()))
+template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
+  if (!variable.dimensions().contains(other.dimensions()))
     throw std::runtime_error(
         "Cannot multiply Variables: Dimensions do not match.");
-  if (valueTypeIs<Data::Events>())
+  if (variable.template valueTypeIs<Data::Events>())
     throw std::runtime_error("Multiplication of events lists not implemented.");
-  m_unit = unit() * other.unit();
-  m_object.access() *= other.data();
-  return *this;
+  // setUnit is catching bad cases of changing units (if `variable` is a slice).
+  variable.setUnit(variable.unit() * other.unit());
+  variable.data() *= other.data();
+  return variable;
 }
 
-template Variable &Variable::operator*=(const Variable &);
-template Variable &Variable::operator*=(const ConstVariableSlice &);
-template Variable &Variable::operator*=(const VariableSlice &);
+Variable &Variable::operator*=(const Variable &other) {
+  return times_equals(*this, other);
+}
+Variable &Variable::operator*=(const ConstVariableSlice &other) {
+  return times_equals(*this, other);
+}
 
 template <class T> VariableSlice &VariableSlice::copyFrom(const T &other) {
   // TODO Should mismatching tags be allowed, as long as the type matches?
@@ -787,45 +793,23 @@ template VariableSlice &VariableSlice::copyFrom(const ConstVariableSlice &);
 VariableSlice &VariableSlice::operator+=(const Variable &other) {
   return plus_equals(*this, other);
 }
-
 VariableSlice &VariableSlice::operator+=(const ConstVariableSlice &other) {
   return plus_equals(*this, other);
 }
 
-template <class T> VariableSlice &VariableSlice::operator-=(const T &other) {
-  if (unit() != other.unit())
-    throw std::runtime_error("Cannot subtract Variables: Units do not match.");
-  if (dimensions().contains(other.dimensions())) {
-    if (valueTypeIs<Data::Events>())
-      throw std::runtime_error("Subtraction of events lists not implemented.");
-    data() -= other.data();
-  } else {
-    throw std::runtime_error(
-        "Cannot subtract Variables: Dimensions do not match.");
-  }
-
-  return *this;
+VariableSlice &VariableSlice::operator-=(const Variable &other) {
+  return minus_equals(*this, other);
+}
+VariableSlice &VariableSlice::operator-=(const ConstVariableSlice &other) {
+  return minus_equals(*this, other);
 }
 
-template VariableSlice &VariableSlice::operator-=(const Variable &);
-template VariableSlice &VariableSlice::operator-=(const ConstVariableSlice &);
-template VariableSlice &VariableSlice::operator-=(const VariableSlice &);
-
-template <class T> VariableSlice &VariableSlice::operator*=(const T &other) {
-  if (!dimensions().contains(other.dimensions()))
-    throw std::runtime_error(
-        "Cannot multiply Variables: Dimensions do not match.");
-  if (valueTypeIs<Data::Events>())
-    throw std::runtime_error("Multiplication of events lists not implemented.");
-  // setUnit is catching bad cases of changing units (if view is just a slice).
-  setUnit(unit() * other.unit());
-  data() *= other.data();
-  return *this;
+VariableSlice &VariableSlice::operator*=(const Variable &other) {
+  return times_equals(*this, other);
 }
-
-template VariableSlice &VariableSlice::operator*=(const Variable &);
-template VariableSlice &VariableSlice::operator*=(const ConstVariableSlice &);
-template VariableSlice &VariableSlice::operator*=(const VariableSlice &);
+VariableSlice &VariableSlice::operator*=(const ConstVariableSlice &other) {
+  return times_equals(*this, other);
+}
 
 template <class T> bool ConstVariableSlice::operator==(const T &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we

@@ -147,8 +147,10 @@ public:
   bool operator!=(const ConstVariableSlice &other) const;
   Variable &operator+=(const Variable &other);
   Variable &operator+=(const ConstVariableSlice &other);
-  template <class T> Variable &operator-=(const T &other);
-  template <class T> Variable &operator*=(const T &other);
+  Variable &operator-=(const Variable &other);
+  Variable &operator-=(const ConstVariableSlice &other);
+  Variable &operator*=(const Variable &other);
+  Variable &operator*=(const ConstVariableSlice &other);
   void setSlice(const Variable &slice, const Dimension dim,
                 const gsl::index index);
 
@@ -370,8 +372,10 @@ public:
   template <class T> VariableSlice &copyFrom(const T &other);
   VariableSlice &operator+=(const Variable &other);
   VariableSlice &operator+=(const ConstVariableSlice &other);
-  template <class T> VariableSlice &operator-=(const T &other);
-  template <class T> VariableSlice &operator*=(const T &other);
+  VariableSlice &operator-=(const Variable &other);
+  VariableSlice &operator-=(const ConstVariableSlice &other);
+  VariableSlice &operator*=(const Variable &other);
+  VariableSlice &operator*=(const ConstVariableSlice &other);
 
   void setUnit(const Unit &unit);
 
