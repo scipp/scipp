@@ -11,32 +11,27 @@
 
 #include "dataset.h"
 
-Dataset::Dataset(const Slice<const Dataset> &view) {
+Dataset::Dataset(const ConstDatasetSlice &view) {
   for (const auto &var : view)
     insert(var);
 }
 
-Dataset::Dataset(const Slice<Dataset> &view) {
-  for (const auto &var : view)
-    insert(var);
+ConstDatasetSlice Dataset::operator[](const std::string &name) const {
+  return ConstDatasetSlice(*this, name);
 }
 
-Slice<const Dataset> Dataset::operator[](const std::string &name) const {
-  return Slice<const Dataset>(*this, name);
+DatasetSlice Dataset::operator[](const std::string &name) {
+  return DatasetSlice(*this, name);
 }
 
-Slice<Dataset> Dataset::operator[](const std::string &name) {
-  return Slice<Dataset>(*this, name);
+ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
+                                      const gsl::index end) const {
+  return ConstDatasetSlice(*this)(dim, begin, end);
 }
 
-Slice<const Dataset> Dataset::operator()(const Dim dim, const gsl::index begin,
-                                         const gsl::index end) const {
-  return Slice<const Dataset>(*this)(dim, begin, end);
-}
-
-Slice<Dataset> Dataset::operator()(const Dim dim, const gsl::index begin,
-                                   const gsl::index end) {
-  return Slice<Dataset>(*this)(dim, begin, end);
+DatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
+                                 const gsl::index end) {
+  return DatasetSlice(*this)(dim, begin, end);
 }
 
 VariableSlice Dataset::operator()(const Tag tag, const std::string &name) {
@@ -179,9 +174,8 @@ bool Dataset::operator==(const Dataset &other) const {
          (m_variables == other.m_variables);
 }
 
-VariableSlice SliceMutableMixin<Slice<Dataset>>::
-operator()(const Tag tag, const std::string &name) {
-  return VariableSlice(base().get(find(base(), tag, name)));
+VariableSlice DatasetSlice::operator()(const Tag tag, const std::string &name) {
+  return VariableSlice(get(find(*this, tag, name)));
 }
 
 template <class T1, class T2> T1 &plus_equals(T1 &dataset, const T2 &other) {
@@ -378,93 +372,64 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
   return dataset;
 }
 
-template <class T> Dataset &Dataset::operator+=(const T &other) {
+Dataset &Dataset::operator+=(const Dataset &other) {
+  return plus_equals(*this, other);
+}
+Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
   return plus_equals(*this, other);
 }
 
-template <class T> Dataset &Dataset::operator-=(const T &other) {
+Dataset &Dataset::operator-=(const Dataset &other) {
+  return minus_equals(*this, other);
+}
+Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
   return minus_equals(*this, other);
 }
 
-template <class T> Dataset &Dataset::operator*=(const T &other) {
+Dataset &Dataset::operator*=(const Dataset &other) {
+  return times_equals(*this, other);
+}
+Dataset &Dataset::operator*=(const ConstDatasetSlice &other) {
   return times_equals(*this, other);
 }
 
-template <class D>
-bool Slice<D>::contains(const Tag tag, const std::string &name) const {
+bool ConstDatasetSlice::contains(const Tag tag, const std::string &name) const {
   return ::contains(*this, tag, name);
 }
 
-template bool Slice<Dataset>::contains(const Tag, const std::string &) const;
-template bool Slice<const Dataset>::contains(const Tag,
-                                             const std::string &) const;
-
-template <class T>
-Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::operator+=(const T &other) {
-  return plus_equals(base(), other);
+DatasetSlice &DatasetSlice::operator+=(const Dataset &other) {
+  return plus_equals(*this, other);
+}
+DatasetSlice &DatasetSlice::operator+=(const ConstDatasetSlice &other) {
+  return plus_equals(*this, other);
 }
 
-template <class T>
-Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::operator-=(const T &other) {
-  return minus_equals(base(), other);
+DatasetSlice &DatasetSlice::operator-=(const Dataset &other) {
+  return minus_equals(*this, other);
+}
+DatasetSlice &DatasetSlice::operator-=(const ConstDatasetSlice &other) {
+  return minus_equals(*this, other);
 }
 
-template <class T>
-Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::operator*=(const T &other) {
-  return times_equals(base(), other);
+DatasetSlice &DatasetSlice::operator*=(const Dataset &other) {
+  return times_equals(*this, other);
+}
+DatasetSlice &DatasetSlice::operator*=(const ConstDatasetSlice &other) {
+  return times_equals(*this, other);
 }
 
-VariableSlice SliceMutableMixin<Slice<Dataset>>::get(const gsl::index i) {
-  return detail::makeSlice(
-      detail::makeAccess(base().m_dataset)[base().m_indices[i]],
-      base().m_slices);
+VariableSlice DatasetSlice::get(const gsl::index i) {
+  return detail::makeSlice(detail::makeAccess(m_mutableDataset)[m_indices[i]],
+                           m_slices);
 }
 
-dataset_slice_iterator<Dataset>
-SliceMutableMixin<Slice<Dataset>>::mutableBegin() const {
-  return {base().m_dataset, base().m_indices, base().m_slices, 0};
+dataset_slice_iterator<Dataset> DatasetSlice::mutableBegin() const {
+  return {m_mutableDataset, m_indices, m_slices, 0};
 }
-dataset_slice_iterator<Dataset>
-SliceMutableMixin<Slice<Dataset>>::mutableEnd() const {
-  return {base().m_dataset, base().m_indices, base().m_slices,
-          static_cast<gsl::index>(base().m_indices.size())};
+dataset_slice_iterator<Dataset> DatasetSlice::mutableEnd() const {
+  return {m_mutableDataset, m_indices, m_slices,
+          static_cast<gsl::index>(m_indices.size())};
 }
-const Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::base() const {
-  return static_cast<const Slice<Dataset> &>(*this);
-}
-Slice<Dataset> &SliceMutableMixin<Slice<Dataset>>::base() {
-  return static_cast<Slice<Dataset> &>(*this);
-}
-
-template Dataset &Dataset::operator+=(const Dataset &);
-template Dataset &Dataset::operator+=(const Slice<const Dataset> &);
-template Dataset &Dataset::operator+=(const Slice<Dataset> &);
-template Dataset &Dataset::operator-=(const Dataset &);
-template Dataset &Dataset::operator-=(const Slice<const Dataset> &);
-template Dataset &Dataset::operator-=(const Slice<Dataset> &);
-template Dataset &Dataset::operator*=(const Dataset &);
-template Dataset &Dataset::operator*=(const Slice<const Dataset> &);
-template Dataset &Dataset::operator*=(const Slice<Dataset> &);
-
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator+=(const Dataset &);
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator+=(const Slice<const Dataset> &);
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator+=(const Slice<Dataset> &);
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator-=(const Dataset &);
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator-=(const Slice<const Dataset> &);
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator-=(const Slice<Dataset> &);
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator*=(const Dataset &);
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator*=(const Slice<const Dataset> &);
-template Slice<Dataset> SliceMutableMixin<Slice<Dataset>>::
-operator*=(const Slice<Dataset> &);
-
 void Dataset::setSlice(const Dataset &slice, const Dimension dim,
                        const gsl::index index) {
   for (const auto &var2 : slice.m_variables) {

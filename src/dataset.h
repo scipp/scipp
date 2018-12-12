@@ -25,7 +25,8 @@ VariableView<Tag> getData(Dataset &,
 template <class Data> class Access;
 } // namespace detail
 
-template <class T> class Slice;
+class ConstDatasetSlice;
+class DatasetSlice;
 
 class Dataset {
 public:
@@ -33,8 +34,7 @@ public:
   // Allowing implicit construction from views facilities calling functions that
   // do not explicitly support views. It is open for discussion whether this is
   // a good idea or not.
-  Dataset(const Slice<const Dataset> &view);
-  Dataset(const Slice<Dataset> &view);
+  Dataset(const ConstDatasetSlice &view);
 
   gsl::index size() const { return m_variables.size(); }
   const Variable &operator[](const gsl::index i) const {
@@ -46,12 +46,12 @@ public:
   // non-const overload to avoid compiler warnings about ambiguous overloads
   // with the std::string version.
   const Variable &operator[](const gsl::index i) { return m_variables[i]; }
-  Slice<const Dataset> operator[](const std::string &name) const;
-  Slice<Dataset> operator[](const std::string &name);
-  Slice<const Dataset> operator()(const Dim dim, const gsl::index begin,
-                                  const gsl::index end = -1) const;
-  Slice<Dataset> operator()(const Dim dim, const gsl::index begin,
-                            const gsl::index end = -1);
+  ConstDatasetSlice operator[](const std::string &name) const;
+  DatasetSlice operator[](const std::string &name);
+  ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
+                               const gsl::index end = -1) const;
+  DatasetSlice operator()(const Dim dim, const gsl::index begin,
+                          const gsl::index end = -1);
   VariableSlice operator()(const Tag tag, const std::string &name = "");
 
   auto begin() const { return m_variables.begin(); }
@@ -156,9 +156,12 @@ public:
   gsl::index findUnique(const Tag tag) const;
 
   bool operator==(const Dataset &other) const;
-  template <class T> Dataset &operator+=(const T &other);
-  template <class T> Dataset &operator-=(const T &other);
-  template <class T> Dataset &operator*=(const T &other);
+  Dataset &operator+=(const Dataset &other);
+  Dataset &operator+=(const ConstDatasetSlice &other);
+  Dataset &operator-=(const Dataset &other);
+  Dataset &operator-=(const ConstDatasetSlice &other);
+  Dataset &operator*=(const Dataset &other);
+  Dataset &operator*=(const ConstDatasetSlice &other);
   void setSlice(const Dataset &slice, const Dimension dim,
                 const gsl::index index);
 
@@ -242,30 +245,6 @@ gsl::index find(const T &dataset, const Tag tag, const std::string &name) {
   throw std::runtime_error("Dataset does not contain such a variable.");
 }
 
-template <class Base> class SliceMutableMixin {
-public:
-  VariableSlice operator()(const Tag tag, const std::string &name = "");
-};
-
-template <> class SliceMutableMixin<Slice<Dataset>> {
-public:
-  template <class T> Slice<Dataset> operator+=(const T &other);
-  template <class T> Slice<Dataset> operator-=(const T &other);
-  template <class T> Slice<Dataset> operator*=(const T &other);
-
-  VariableSlice operator()(const Tag tag, const std::string &name = "");
-
-private:
-  VariableSlice get(const gsl::index i);
-
-  dataset_slice_iterator<Dataset> mutableBegin() const;
-  dataset_slice_iterator<Dataset> mutableEnd() const;
-
-  friend class detail::Access<Slice<Dataset>>;
-  const Slice<Dataset> &base() const;
-  Slice<Dataset> &base();
-};
-
 namespace detail {
 template <class Var>
 auto makeSlice(
@@ -281,16 +260,16 @@ auto makeSlice(
 }
 } // namespace detail
 
-// D is either Dataset or const Dataset.
-template <class D> class Slice : public SliceMutableMixin<Slice<D>> {
+class ConstDatasetSlice {
 public:
-  Slice(D &dataset) : m_dataset(dataset) {
+  ConstDatasetSlice(const Dataset &dataset) : m_dataset(dataset) {
     // Select everything.
     for (gsl::index i = 0; i < dataset.size(); ++i)
       m_indices.push_back(i);
   }
 
-  Slice(D &dataset, const std::string &select) : m_dataset(dataset) {
+  ConstDatasetSlice(const Dataset &dataset, const std::string &select)
+      : m_dataset(dataset) {
     for (gsl::index i = 0; i < dataset.size(); ++i) {
       const auto &var = dataset[i];
       if (var.isCoord() || var.name() == select)
@@ -298,8 +277,8 @@ public:
     }
   }
 
-  Slice operator()(const Dim dim, const gsl::index begin,
-                   const gsl::index end = -1) const {
+  ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
+                               const gsl::index end = -1) const {
     auto slice(*this);
     for (auto &s : slice.m_slices) {
       if (std::get<Dim>(s) == dim) {
@@ -357,21 +336,68 @@ public:
             static_cast<gsl::index>(m_indices.size())};
   }
 
-  bool operator==(const Slice<D> &other) const {
+  bool operator==(const ConstDatasetSlice &other) const {
     if ((m_dataset == other.m_dataset) && (m_indices == other.m_indices) &&
         (m_slices == other.m_slices))
       return true;
     return std::equal(begin(), end(), other.begin(), other.end());
   }
 
-  using SliceMutableMixin<Slice<D>>::operator();
-
-private:
-  friend class SliceMutableMixin<Slice<D>>;
-
-  D &m_dataset;
+protected:
+  const Dataset &m_dataset;
   std::vector<gsl::index> m_indices;
   std::vector<std::tuple<Dim, gsl::index, gsl::index>> m_slices;
+};
+
+class DatasetSlice : public ConstDatasetSlice {
+public:
+  DatasetSlice(Dataset &dataset)
+      : ConstDatasetSlice(dataset), m_mutableDataset(dataset) {}
+  DatasetSlice(Dataset &dataset, const std::string &select)
+      : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
+
+  DatasetSlice operator()(const Dim dim, const gsl::index begin,
+                          const gsl::index end = -1) const {
+    auto slice(*this);
+    for (auto &s : slice.m_slices) {
+      if (std::get<Dim>(s) == dim) {
+        std::get<1>(s) = begin;
+        std::get<2>(s) = end;
+        return slice;
+      }
+    }
+    slice.m_slices.emplace_back(dim, begin, end);
+    if (end == -1) {
+      for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
+        // TODO Should all coordinates with matching dimension be removed, or
+        // only dimension-coordinates?
+        if (coordDimension[m_dataset[*it].tag().value()] == dim)
+          it = slice.m_indices.erase(it);
+        else
+          ++it;
+      }
+    }
+    return slice;
+  }
+
+  DatasetSlice &operator+=(const Dataset &other);
+  DatasetSlice &operator+=(const ConstDatasetSlice &other);
+  DatasetSlice &operator-=(const Dataset &other);
+  DatasetSlice &operator-=(const ConstDatasetSlice &other);
+  DatasetSlice &operator*=(const Dataset &other);
+  DatasetSlice &operator*=(const ConstDatasetSlice &other);
+
+  VariableSlice operator()(const Tag tag, const std::string &name = "");
+
+private:
+  friend class detail::Access<DatasetSlice>;
+
+  VariableSlice get(const gsl::index i);
+
+  dataset_slice_iterator<Dataset> mutableBegin() const;
+  dataset_slice_iterator<Dataset> mutableEnd() const;
+
+  Dataset &m_mutableDataset;
 };
 
 namespace detail {
@@ -391,9 +417,9 @@ private:
   Dataset &m_data;
 };
 
-template <> class Access<Slice<Dataset>> {
+template <> class Access<DatasetSlice> {
 public:
-  Access(Slice<Dataset> &dataset) : m_data(dataset) {}
+  Access(DatasetSlice &dataset) : m_data(dataset) {}
 
   auto begin() const { return m_data.mutableBegin(); }
   auto end() const { return m_data.mutableEnd(); }
@@ -402,13 +428,13 @@ public:
   }
 
 private:
-  Slice<Dataset> &m_data;
+  DatasetSlice &m_data;
 };
 
 inline const Dataset &makeAccess(const Dataset &dataset) { return dataset; }
 inline auto makeAccess(Dataset &dataset) { return Access<Dataset>(dataset); }
-inline auto makeAccess(Slice<Dataset> &dataset) {
-  return Access<Slice<Dataset>>(dataset);
+inline auto makeAccess(DatasetSlice &dataset) {
+  return Access<DatasetSlice>(dataset);
 }
 
 } // namespace detail

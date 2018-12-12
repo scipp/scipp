@@ -718,8 +718,8 @@ TEST(DatasetSlice, basics) {
   d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}});
   d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}});
 
-  Slice<const Dataset> viewA(d, "a");
-  Slice<const Dataset> viewB(d, "b");
+  ConstDatasetSlice viewA(d, "a");
+  ConstDatasetSlice viewB(d, "b");
 
   auto check = [](const auto &view, const std::string &name) {
     ASSERT_EQ(view.size(), 4);

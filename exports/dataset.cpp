@@ -465,27 +465,27 @@ PYBIND11_MODULE(dataset, m) {
       .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
            py::is_operator());
 
-  py::class_<Slice<Dataset>>(m, "DatasetView")
+  py::class_<DatasetSlice>(m, "DatasetView")
       .def(py::init<Dataset &>())
-      .def("__len__", &Slice<Dataset>::size)
+      .def("__len__", &DatasetSlice::size)
       .def("__iter__",
-           [](Slice<Dataset> &self) {
+           [](DatasetSlice &self) {
              return py::make_iterator(detail::makeAccess(self).begin(),
                                       detail::makeAccess(self).end());
            })
-      .def("__contains__", &Slice<Dataset>::contains, py::arg("tag"),
+      .def("__contains__", &DatasetSlice::contains, py::arg("tag"),
            py::arg("name") = "")
       .def("__contains__",
-           [](const Slice<Dataset> &self,
+           [](const DatasetSlice &self,
               const std::tuple<const Tag, const std::string> &key) {
              return self.contains(std::get<0>(key), std::get<1>(key));
            })
       .def("__getitem__",
-           [](Slice<Dataset> &self, const std::tuple<Dim, gsl::index> &index) {
+           [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
            })
       .def("__getitem__",
-           [](Slice<Dataset> &self,
+           [](DatasetSlice &self,
               const std::tuple<Dim, const py::slice> &index) {
              const Dim dim = std::get<Dim>(index);
              const auto indices = std::get<const py::slice>(index);
@@ -504,21 +504,21 @@ PYBIND11_MODULE(dataset, m) {
              return self(dim, start, stop);
            })
       .def("__getitem__",
-           [](Slice<Dataset> &self, const Tag &tag) { return self(tag); })
-      .def("__getitem__",
-           [](Slice<Dataset> &self,
-              const std::pair<Tag, const std::string> &key) {
-             return self(key.first, key.second);
-           })
-      .def("__setitem__", detail::setData<Data::Value, Slice<Dataset>>)
-      .def("__setitem__", detail::setData<Data::Variance, Slice<Dataset>>)
+           [](DatasetSlice &self, const Tag &tag) { return self(tag); })
+      .def(
+          "__getitem__",
+          [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
+            return self(key.first, key.second);
+          })
+      .def("__setitem__", detail::setData<Data::Value, DatasetSlice>)
+      .def("__setitem__", detail::setData<Data::Variance, DatasetSlice>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
-      .def(py::init<const Slice<Dataset> &>())
+      .def(py::init<const DatasetSlice &>())
       .def("__len__", &Dataset::size)
       .def("__iter__",
            [](const Dataset &self) {
@@ -564,12 +564,12 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](Dataset &self, const std::string &name) { return self[name]; })
       // Careful: The order of overloads is really important here, otherwise
-      // Slice<Dataset> matches the overload below for py::array_t. I have not
+      // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also
       // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index,
-              const Slice<Dataset> &other) {
+              const DatasetSlice &other) {
              auto slice =
                  self(std::get<Dim>(index), std::get<gsl::index>(index));
              if (slice == other)
@@ -611,7 +611,7 @@ PYBIND11_MODULE(dataset, m) {
               &slice),
           py::call_guard<py::gil_scoped_release>());
 
-  py::implicitly_convertible<Slice<Dataset>, Dataset>();
+  py::implicitly_convertible<DatasetSlice, Dataset>();
 
   m.def("split",
         py::overload_cast<const Dataset &, const Dimension,
