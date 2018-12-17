@@ -209,47 +209,32 @@ VariableSlice pySlice(VariableSlice &view,
   return view(dim, start, stop);
 }
 
-template <class Tag>
-py::buffer_info make_py_buffer_info_t(VariableSlice &view) {
-  // Note: Currently this always triggers copy-on-write ---
-  // py::buffer_info does currently not support the `readonly` flag of
-  // the Python buffer protocol. We can probably get this fixed
-  // upstream, see discussion and sample implementation here:
-  // https://github.com/pybind/pybind11/issues/863.
-  return py::buffer_info(
-      view.template get<Tag>().data(), /* Pointer to buffer */
-      sizeof(typename Tag::type),      /* Size of one scalar */
-      py::format_descriptor<typename Tag::type>::format(), /* Python
-                                                 struct-style format
-                                                 descriptor */
-      view.dimensions().count(), /* Number of dimensions */
-      view.dimensions().shape(), /* Buffer dimensions */
-      detail::numpy_strides<Tag>(
-          view.strides()) /* Strides (in bytes) for each index */
-  );
-}
+template <class Tag> struct MakePyBufferInfoT {
+  static py::buffer_info apply(VariableSlice &view) {
+    // Note: Currently this always triggers copy-on-write ---
+    // py::buffer_info does currently not support the `readonly` flag of
+    // the Python buffer protocol. We can probably get this fixed
+    // upstream, see discussion and sample implementation here:
+    // https://github.com/pybind/pybind11/issues/863.
+    return py::buffer_info(
+        view.template get<Tag>().data(), /* Pointer to buffer */
+        sizeof(typename Tag::type),      /* Size of one scalar */
+        py::format_descriptor<typename Tag::type>::format(), /* Python
+                                                   struct-style format
+                                                   descriptor */
+        view.dimensions().count(), /* Number of dimensions */
+        view.dimensions().shape(), /* Buffer dimensions */
+        detail::numpy_strides<Tag>(
+            view.strides()) /* Strides (in bytes) for each index */
+    );
+  }
+};
 
 py::buffer_info make_py_buffer_info(VariableSlice &view) {
-  switch (view.tag().value()) {
-  case Coord::X{}.value():
-    return make_py_buffer_info_t<Coord::X>(view);
-  case Coord::Y{}.value():
-    return make_py_buffer_info_t<Coord::Y>(view);
-  case Coord::Z{}.value():
-    return make_py_buffer_info_t<Coord::Z>(view);
-  case Coord::Tof{}.value():
-    return make_py_buffer_info_t<Coord::Tof>(view);
-  case Coord::Mask{}.value():
-    return make_py_buffer_info_t<Coord::Mask>(view);
-  case Coord::SpectrumNumber{}.value():
-    return make_py_buffer_info_t<Coord::SpectrumNumber>(view);
-  case Data::Value{}.value():
-    return make_py_buffer_info_t<Data::Value>(view);
-  case Data::Variance{}.value():
-    return make_py_buffer_info_t<Data::Variance>(view);
-  default:
-    throw std::runtime_error("non implemented for this type.");
-  }
+  return detail::Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof, Coord::Mask,
+                      Coord::SpectrumNumber, Data::Value,
+                      Data::Variance>::apply<MakePyBufferInfoT>(view.tag(),
+                                                                view);
 }
 
 template <class Tag>
