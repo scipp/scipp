@@ -178,6 +178,8 @@ VariableSlice DatasetSlice::operator()(const Tag tag, const std::string &name) {
   return VariableSlice(get(find(*this, tag, name)));
 }
 
+/// Unified implementation for any in-place binary operation that requires
+/// adding variances (+= and -=).
 template <class Op, class T1, class T2>
 T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
   std::set<std::string> names;
