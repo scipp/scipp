@@ -12,6 +12,7 @@
 
 #include "dataset.h"
 #include "except.h"
+#include "tag_util.h"
 
 namespace py = pybind11;
 
@@ -22,7 +23,7 @@ template <class T> struct mutable_span_methods {
   }
 };
 template <class T> struct mutable_span_methods<const T> {
-  static void add(py::class_<gsl::span<const T>> &span) {}
+  static void add(py::class_<gsl::span<const T>> &) {}
 };
 
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
@@ -48,18 +49,6 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
-template <class... Tags> struct Call {
-  template <template <class> class Callable, class... Args>
-  static auto apply(const Tag tag, Args &&... args) {
-    std::array funcs{Callable<Tags>::apply...};
-    std::array<Tag, sizeof...(Tags)> tags{Tags{}...};
-    for (gsl::index i = 0; i < tags.size(); ++i)
-      if (tags[i].value() == tag.value())
-        return funcs[i](std::forward<Args>(args)...);
-    throw std::runtime_error("Unsupported tag type.");
-  }
-};
-
 // Pybind11 converts py::array to py::array_t for us, with all sorts of
 // automatic conversions such as integer to double, if required. Therefore this
 // is in a separate function.
@@ -67,7 +56,7 @@ template <class Tag>
 Variable makeVariable(const Tag, const std::vector<Dim> &labels,
                       py::array_t<typename Tag::type> data) {
   const py::buffer_info info = data.request();
-  if (info.ndim != labels.size())
+  if (info.ndim != static_cast<gsl::index>(labels.size()))
     throw std::runtime_error(
         "Number of dimensions tags does not match shape of data.");
   Dimensions dims;
@@ -93,10 +82,10 @@ template <class Tag> struct MakeVariableDefaultInit {
 
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
                                  const py::tuple &shape) {
-  return detail::Call<
-      Coord::Mask, Coord::X, Coord::Y, Coord::Z, Data::Value,
-      Data::Variance>::apply<detail::MakeVariableDefaultInit>(tag, labels,
-                                                              shape);
+  return Call<Coord::Mask, Coord::X, Coord::Y, Coord::Z, Data::Value,
+              Data::Variance>::apply<detail::MakeVariableDefaultInit>(tag,
+                                                                      labels,
+                                                                      shape);
 }
 
 std::string format(const Dimensions &dims) {
@@ -182,7 +171,7 @@ template <class Tag>
 std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
   std::vector<gsl::index> strides(s.size());
   gsl::index elemSize = sizeof(typename Tag::type);
-  for (gsl::index i = 0; i < strides.size(); ++i) {
+  for (size_t i = 0; i < strides.size(); ++i) {
     strides[i] = elemSize * s[i];
   }
   return strides;
@@ -241,10 +230,9 @@ template <class Tag> struct MakePyBufferInfoT {
 };
 
 py::buffer_info make_py_buffer_info(VariableSlice &view) {
-  return detail::Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof, Coord::Mask,
-                      Coord::SpectrumNumber, Data::Value,
-                      Data::Variance>::apply<MakePyBufferInfoT>(view.tag(),
-                                                                view);
+  return Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof, Coord::Mask,
+              Coord::SpectrumNumber, Data::Value,
+              Data::Variance>::apply<MakePyBufferInfoT>(view.tag(), view);
 }
 
 template <class Tag>

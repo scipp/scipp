@@ -10,6 +10,7 @@
 #include "range/v3/view/zip.hpp"
 
 #include "dataset.h"
+#include "tag_util.h"
 
 Dataset::Dataset(const ConstDatasetSlice &view) {
   for (const auto &var : view)
@@ -602,52 +603,43 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
 
 // We can specialize this to switch to a more efficient variant when sorting
 // datasets that represent events lists, using LinearView.
-template <class Tag> Dataset sort(const Dataset &d, const std::string &name) {
-  auto const_axis = d.get<const Tag>(name);
-  if (d.dimensions<Tag>(name).count() != 1)
-    throw std::runtime_error("Axis for sorting must be 1-dimensional.");
-  const auto sortDim = d.dimensions<Tag>(name).label(0);
-  if (const_axis.size() != d.dimensions().size(sortDim))
-    throw std::runtime_error("Axis for sorting cannot be a bin-edge axis.");
-  if (std::is_sorted(const_axis.begin(), const_axis.end()))
-    return d;
+template <class Tag> struct Sort {
+  static Dataset apply(const Dataset &d, const std::string &name) {
+    auto const_axis = d.get<const Tag>(name);
+    if (d.dimensions<Tag>(name).count() != 1)
+      throw std::runtime_error("Axis for sorting must be 1-dimensional.");
+    const auto sortDim = d.dimensions<Tag>(name).label(0);
+    if (const_axis.size() != d.dimensions().size(sortDim))
+      throw std::runtime_error("Axis for sorting cannot be a bin-edge axis.");
+    if (std::is_sorted(const_axis.begin(), const_axis.end()))
+      return d;
 
-  Dataset sorted;
-  auto axisVar = d[d.find(Tag{}, name)];
-  auto axis = axisVar.template get<Tag>();
-  std::vector<gsl::index> indices(axis.size());
-  std::iota(indices.begin(), indices.end(), 0);
-  auto view = ranges::view::zip(axis, indices);
-  using ranges::sort;
-  sort(view.begin(), view.end(), [](const auto &a, const auto &b) {
-    return std::get<0>(a) < std::get<0>(b);
-  });
-  // Joint code for all tags, extract into function to reduce instantiated code
-  // size?
-  for (const auto &var : d) {
-    if (!var.dimensions().contains(sortDim))
-      sorted.insert(var);
-    else if (var.tag() == Tag{} && var.name() == name)
-      sorted.insert(axisVar);
-    else
-      sorted.insert(permute(var, sortDim, indices));
+    Dataset sorted;
+    auto axisVar = d[d.find(Tag{}, name)];
+    auto axis = axisVar.template get<Tag>();
+    std::vector<gsl::index> indices(axis.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    auto view = ranges::view::zip(axis, indices);
+    using ranges::sort;
+    sort(view.begin(), view.end(), [](const auto &a, const auto &b) {
+      return std::get<0>(a) < std::get<0>(b);
+    });
+    // Joint code for all tags, extract into function to reduce instantiated
+    // code size?
+    for (const auto &var : d) {
+      if (!var.dimensions().contains(sortDim))
+        sorted.insert(var);
+      else if (var.tag() == Tag{} && var.name() == name)
+        sorted.insert(axisVar);
+      else
+        sorted.insert(permute(var, sortDim, indices));
+    }
+    return sorted;
   }
-  return sorted;
-}
-
-#define CASE_RETURN(TAG, FUNC, ...)                                            \
-  case TAG{}.value():                                                          \
-    return FUNC<TAG>(__VA_ARGS__);
+};
 
 Dataset sort(const Dataset &d, const Tag t, const std::string &name) {
-  switch (t.value()) {
-    CASE_RETURN(Coord::RowLabel, sort, d, name);
-    CASE_RETURN(Coord::X, sort, d, name);
-    CASE_RETURN(Data::Value, sort, d, name);
-  default:
-    throw std::runtime_error(
-        "Sorting by this variable type has not been implemented.");
-  }
+  return Call<Coord::RowLabel, Coord::X, Data::Value>::apply<Sort>(t, d, name);
 }
 
 Dataset filter(const Dataset &d, const Variable &select) {
