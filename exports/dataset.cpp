@@ -48,9 +48,12 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
+// Pybind11 converts py::array to py::array_t for us, with all sorts of
+// automatic conversions such as integer to double, if required. Therefore this
+// is in a separate function.
 template <class Tag>
 Variable makeVariable(const Tag, const std::vector<Dim> &labels,
-                      py::array_t<typename Tag::type> &data) {
+                      py::array_t<typename Tag::type> data) {
   const py::buffer_info info = data.request();
   if (info.ndim != labels.size())
     throw std::runtime_error(
@@ -86,21 +89,19 @@ template <class Tag> struct InsertCoord {
         const std::tuple<const std::vector<Dim> &, py::array &> &data) {
     const auto &labels = std::get<0>(data);
     const auto &array = std::get<1>(data);
-    apply_t(self, labels, array);
+    self.insert(detail::makeVariable<Tag>(Tag{}, labels, array));
   }
+};
 
-  static void apply_t(Dataset &self, const std::vector<Dim> &labels,
-                      py::array_t<typename Tag::type> array) {
-    const py::buffer_info info = array.request();
-    if (info.ndim != labels.size())
-      throw std::runtime_error(
-          "Number of dimensions tags does not match shape of data.");
-    Dimensions dims;
-    for (gsl::index i = labels.size() - 1; i >= 0; --i)
-      dims.add(labels[i], info.shape[i]);
-
-    auto *ptr = (typename Tag::type *)info.ptr;
-    self.insert<const Tag>(dims, ptr, ptr + dims.volume());
+template <class Tag> struct InsertData {
+  static void
+  apply(const std::string &name, Dataset &self,
+        const std::tuple<const std::vector<Dim> &, py::array &> &data) {
+    const auto &labels = std::get<0>(data);
+    const auto &array = std::get<1>(data);
+    auto var = detail::makeVariable<Tag>(Tag{}, labels, array);
+    var.setName(name);
+    self.insert(std::move(var));
   }
 };
 
@@ -137,22 +138,13 @@ void insertCoord1D(Dataset &self, const Tag,
   self.insert<const Tag>(dims, values);
 }
 
-template <class Tag>
-void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
-            const std::tuple<const std::vector<Dim> &,
-                             py::array_t<typename Tag::type> &> &data) {
-  const auto &labels = std::get<0>(data);
-  const py::buffer_info info = std::get<1>(data).request();
-  if (info.ndim != labels.size())
-    throw std::runtime_error(
-        "Number of dimensions tags does not match shape of data.");
-  Dimensions dims;
-  for (gsl::index i = labels.size() - 1; i >= 0; --i)
-    dims.add(labels[i], info.shape[i]);
-
-  auto *ptr = (typename Tag::type *)info.ptr;
-  const auto &name = std::get<const std::string &>(key);
-  self.insert<const Tag>(name, dims, ptr, ptr + dims.volume());
+// Note the concretely typed py::array_t. If we use py::array it will not match
+// plain Python arrays. Need overloads when we add support for non-double data.
+void insertNamed(
+    Dataset &self, const std::pair<Tag, const std::string &> &key,
+    const std::tuple<const std::vector<Dim> &, py::array_t<double> &> &data) {
+  return Call<Data::Value, Data::Variance>::noReturn<InsertData>(
+      std::get<Tag>(key), std::get<const std::string &>(key), self, data);
 }
 
 template <class Tag, class Var>
@@ -607,8 +599,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<Data::Variance, Dataset>)
       .def("__setitem__", detail::insertCoord)
       .def("__setitem__", detail::insertCoord1D<Coord::RowLabel>)
-      .def("__setitem__", detail::insert<Data::Value>)
-      .def("__setitem__", detail::insert<Data::Variance>)
+      .def("__setitem__", detail::insertNamed)
       .def("__setitem__", detail::insert<Data::Value, Variable>)
       .def("__setitem__", detail::insert<Data::Variance, Variable>)
       .def("__setitem__", detail::insert<Data::Value, VariableSlice>)
