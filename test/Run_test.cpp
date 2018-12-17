@@ -120,7 +120,7 @@ TEST(Run, meta_data_fail_coord_mismatch) {
   run2.get<Coord::Polarization>()[0] = "Spin-Down";
   EXPECT_THROW_MSG(
       d1 += d2, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform addition");
+      "Coordinates of datasets do not match. Cannot perform binary operation.");
 }
 
 TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
@@ -132,7 +132,7 @@ TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
   run2.get<Coord::FuzzyTemperature>()[0] = ValueWithDelta<double>(4.0, 0.1);
   EXPECT_THROW_MSG(
       d1 += d2, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform addition");
+      "Coordinates of datasets do not match. Cannot perform binary operation.");
 }
 
 TEST(Run, meta_data_fail_missing) {

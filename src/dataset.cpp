@@ -178,67 +178,45 @@ VariableSlice DatasetSlice::operator()(const Tag tag, const std::string &name) {
   return VariableSlice(get(find(*this, tag, name)));
 }
 
-template <class T1, class T2> T1 &plus_equals(T1 &dataset, const T2 &other) {
-  for (const auto &var2 : other) {
-    // Handling of missing variables:
-    // - Skip if this contains more (automatic by having enclosing loop over
-    //   other instead of *this).
-    // - Fail if other contains more.
-    gsl::index index;
-    try {
-      index = find(dataset, var2.tag(), var2.name());
-    } catch (const std::runtime_error &) {
-      throw std::runtime_error("Right-hand-side in addition contains variable "
-                               "that is not present in left-hand-side.");
-    }
-    using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
-                                      Variable &, VariableSlice>;
-    VarRef var1 = detail::makeAccess(dataset)[index];
-    if (var1.isCoord()) {
-      // Coordinate variables must match
-      // Strictly speaking we should allow "equivalent" coordinates, i.e., match
-      // only after projecting out any constant dimensions.
-      if (!(var1 == var2))
-        throw std::runtime_error(
-            "Coordinates of datasets do not match. Cannot perform addition");
-      // TODO We could improve sharing here magically, but whether this is
-      // beneficial would depend on the shared reference count in var1 and var2:
-      // var1 = var2;
-    } else if (var1.isData()) {
-      // Data variables are added
-      var1 += var2;
-    } else {
-      // Attribute variables are added
-      // TODO Does it make sense to do this only if mismatched?
-      if (var1 != var2)
-        var1 += var2;
-    }
-  }
-  return dataset;
-}
-
-template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
+template <class Op, class T1, class T2>
+T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
   std::set<std::string> names;
   for (const auto &var2 : other)
     if (var2.isData())
       names.insert(var2.name());
 
   for (const auto &var2 : other) {
+    // Handling of missing variables:
+    // - Skip if this contains more (automatic by having enclosing loop over
+    //   other instead of *this).
+    // - Fail if other contains more.
     using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
                                       Variable &, VariableSlice>;
     try {
       VarRef var1 =
           detail::makeAccess(dataset)[find(dataset, var2.tag(), var2.name())];
       if (var1.isCoord()) {
+        // Coordinate variables must match
+        // Strictly speaking we should allow "equivalent" coordinates, i.e.,
+        // match only after projecting out any constant dimensions.
         if (!(var1 == var2))
           throw std::runtime_error(
               "Coordinates of datasets do not match. Cannot "
-              "perform subtraction.");
+              "perform binary operation.");
+        // TODO We could improve sharing here magically, but whether this is
+        // beneficial would depend on the shared reference count in var1 and
+        // var2: var1 = var2;
       } else if (var1.isData()) {
+        // Data variables are added
         if (var1.tag() == Data::Variance{})
           var1 += var2;
         else
-          var1 -= var2;
+          op(var1, var2);
+      } else {
+        // Attribute variables are added
+        // TODO Does it make sense to do this only if mismatched?
+        if (var1 != var2)
+          var1 += var2;
       }
     } catch (const dataset::except::VariableNotFoundError &) {
       // Note that this is handled via name, i.e., there may be values and
@@ -253,15 +231,15 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
             if (var1.tag() == Data::Variance{})
               var1 += var2;
             else
-              var1 -= var2;
+              op(var1, var2);
           }
         }
         if (count == 0)
-          throw std::runtime_error("Right-hand-side in subtraction contains "
-                                   "variable type that is not present in "
-                                   "left-hand-side.");
+          throw std::runtime_error("Right-hand-side in binary operation "
+                                   "contains variable type that is not present "
+                                   "in left-hand-side.");
       } else {
-        throw std::runtime_error("Right-hand-side in subtraction contains "
+        throw std::runtime_error("Right-hand-side in binary operation contains "
                                  "variable that is not present in "
                                  "left-hand-side.");
       }
@@ -370,17 +348,23 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
 }
 
 Dataset &Dataset::operator+=(const Dataset &other) {
-  return plus_equals(*this, other);
+  return binary_op_equals([](Variable &a, const Variable &b) { return a += b; },
+                          *this, other);
 }
 Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
-  return plus_equals(*this, other);
+  return binary_op_equals(
+      [](Variable &a, const ConstVariableSlice &b) { return a += b; }, *this,
+      other);
 }
 
 Dataset &Dataset::operator-=(const Dataset &other) {
-  return minus_equals(*this, other);
+  return binary_op_equals([](Variable &a, const Variable &b) { return a -= b; },
+                          *this, other);
 }
 Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
-  return minus_equals(*this, other);
+  return binary_op_equals(
+      [](Variable &a, const ConstVariableSlice &b) { return a -= b; }, *this,
+      other);
 }
 
 Dataset &Dataset::operator*=(const Dataset &other) {
@@ -431,17 +415,23 @@ DatasetSlice &DatasetSlice::assign(const ConstDatasetSlice &other) {
 }
 
 DatasetSlice &DatasetSlice::operator+=(const Dataset &other) {
-  return plus_equals(*this, other);
+  return binary_op_equals(
+      [](VariableSlice &a, const Variable &b) { return a += b; }, *this, other);
 }
 DatasetSlice &DatasetSlice::operator+=(const ConstDatasetSlice &other) {
-  return plus_equals(*this, other);
+  return binary_op_equals(
+      [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
+      *this, other);
 }
 
 DatasetSlice &DatasetSlice::operator-=(const Dataset &other) {
-  return minus_equals(*this, other);
+  return binary_op_equals(
+      [](VariableSlice &a, const Variable &b) { return a -= b; }, *this, other);
 }
 DatasetSlice &DatasetSlice::operator-=(const ConstDatasetSlice &other) {
-  return minus_equals(*this, other);
+  return binary_op_equals(
+      [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
+      *this, other);
 }
 
 DatasetSlice &DatasetSlice::operator*=(const Dataset &other) {

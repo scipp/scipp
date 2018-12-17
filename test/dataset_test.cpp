@@ -295,9 +295,8 @@ TEST(Dataset, operator_plus_equal_different_content) {
   b.insert<Data::Value>("name1", {Dim::X, 1}, {2.2});
   b.insert<Data::Value>("name2", {Dim::X, 1}, {3.3});
   EXPECT_THROW_MSG(a += b, std::runtime_error,
-                   "Right-hand-side in addition "
-                   "contains variable that is not "
-                   "present in left-hand-side.");
+                   "Right-hand-side in binary operation contains variable that "
+                   "is not present in left-hand-side.");
   EXPECT_NO_THROW(b += a);
 }
 
@@ -833,5 +832,5 @@ TEST(DatasetSlice, subset_slice_spatial) {
   auto view_a_x12 = d["a"](Dim::X, 1, 2);
   EXPECT_THROW_MSG(
       view_a_x12 -= view_a_x01, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform subtraction.");
+      "Coordinates of datasets do not match. Cannot perform binary operation.");
 }
