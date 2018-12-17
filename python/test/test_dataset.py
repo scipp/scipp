@@ -116,7 +116,7 @@ class TestDataset(unittest.TestCase):
     def test_slice_dataset(self):
         for x in range(2):
             view = self.dataset[Dim.X, x]
-            self.assertRaisesRegex(RuntimeError, 'Dataset does not contain such a variable.', view.__getitem__, Coord.X)
+            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::X and name ``.', view.__getitem__, Coord.X)
             np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,:,x])
@@ -125,7 +125,7 @@ class TestDataset(unittest.TestCase):
         for y in range(3):
             view = self.dataset[Dim.Y, y]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
-            self.assertRaisesRegex(RuntimeError, 'Dataset does not contain such a variable.', view.__getitem__, Coord.Y)
+            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::Y and name ``.', view.__getitem__, Coord.Y)
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,y,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,y,:])
@@ -134,7 +134,7 @@ class TestDataset(unittest.TestCase):
             view = self.dataset[Dim.Z, z]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
             np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
-            self.assertRaisesRegex(RuntimeError, 'Dataset does not contain such a variable.', view.__getitem__, Coord.Z)
+            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::Z and name ``.', view.__getitem__, Coord.Z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z,:])
@@ -359,7 +359,7 @@ class TestDatasetExamples(unittest.TestCase):
         d[Data.Value, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
         d[Data.Value, "pressure"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
         # Add uncertainties, matching name implicitly links it to corresponding data
-        d[Data.Variance, "temperature"] = d[Data.Value, "temperature"]
+        d[Data.Variance, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], d[Data.Value, "temperature"].numpy)
 
         # Uncertainties are propagated using grouping mechanism based on name
         square = d * d
@@ -393,7 +393,7 @@ class TestDatasetExamples(unittest.TestCase):
 
         # Add data with uncertainties
         d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.poisson(size=100*1000).reshape([100, 1000]))
-        d[Data.Variance, "sample1"] = d[Data.Value, "sample1"]
+        d[Data.Variance, "sample1"] = ([Dim.Spectrum, Dim.Tof], d[Data.Value, "sample1"].numpy)
 
         # Create a mask and use it to extract some of the spectra
         select = Variable(Coord.Mask, [Dim.Spectrum], np.isin(d[Coord.SpectrumNumber], np.arange(10, 20)))
