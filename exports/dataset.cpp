@@ -48,6 +48,19 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
+template <class... Tags>
+struct Call {
+  template <template <class> class Callable, class... Args>
+  static auto apply(const Tag tag, Args &&... args) {
+    std::array funcs{Callable<Tags>::apply...};
+    std::array<Tag, sizeof...(Tags)> tags{Tags{}...};
+    for (gsl::index i = 0; i < tags.size(); ++i)
+      if (tags[i].value() == tag.value())
+        return funcs[i](std::forward<Args>(args)...);
+    throw std::runtime_error("Unsupported tag type.");
+  }
+};
+
 // Pybind11 converts py::array to py::array_t for us, with all sorts of
 // automatic conversions such as integer to double, if required. Therefore this
 // is in a separate function.
@@ -67,16 +80,18 @@ Variable makeVariable(const Tag, const std::vector<Dim> &labels,
 }
 
 template <class Tag>
-Variable makeVariableDefaultInit(const Tag, const std::vector<Dim> &labels,
-                                 const py::tuple &shape) {
-  if (shape.size() != labels.size())
-    throw std::runtime_error(
-        "Number of dimensions tags does not match shape of data.");
-  Dimensions dims;
-  for (gsl::index i = labels.size() - 1; i >= 0; --i)
-    dims.add(labels[i], shape[i].cast<size_t>());
-  return makeVariable<const Tag>(dims);
-}
+struct MakeVariableDefaultInit {
+  static Variable apply(const std::vector<Dim> &labels,
+                        const py::tuple &shape) {
+    if (shape.size() != labels.size())
+      throw std::runtime_error(
+          "Number of dimensions tags does not match shape of data.");
+    Dimensions dims;
+    for (gsl::index i = labels.size() - 1; i >= 0; --i)
+      dims.add(labels[i], shape[i].cast<size_t>());
+    return makeVariable<const Tag>(dims);
+  }
+};
 
 std::string format(const Dimensions &dims) {
   std::string out = "Dimensions = " + dataset::to_string(dims);
@@ -89,19 +104,6 @@ template <class Tag> struct MakeVariable {
     const auto &labels = std::get<0>(data);
     const auto &array = std::get<1>(data);
     return detail::makeVariable<Tag>(Tag{}, labels, array);
-  }
-};
-
-template <class... Tags>
-struct Call {
-  template <template <class> class Callable, class... Args>
-  static auto apply(const Tag tag, Args &&... args) {
-    std::array funcs{Callable<Tags>::apply...};
-    std::array<Tag, sizeof...(Tags)> tags{Tags{}...};
-    for (gsl::index i = 0; i < tags.size(); ++i)
-      if (tags[i].value() == tag.value())
-        return funcs[i](std::forward<Args>(args)...);
-    throw std::runtime_error("Unsupported tag type.");
   }
 };
 
@@ -406,18 +408,19 @@ PYBIND11_MODULE(dataset, m) {
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
 
   py::class_<Variable>(m, "Variable")
+      .def(py::init([](const Tag tag, const std::vector<Dim> &labels,
+                       const py::tuple &shape) {
+        return detail::Call<
+            Coord::Mask, Coord::X, Coord::Y, Coord::Z, Data::Value,
+            Data::Variance>::apply<detail::MakeVariableDefaultInit>(tag, labels,
+                                                                    shape);
+      }))
       .def(py::init(&detail::makeVariable<Coord::Mask>))
       .def(py::init(&detail::makeVariable<Coord::X>))
       .def(py::init(&detail::makeVariable<Coord::Y>))
       .def(py::init(&detail::makeVariable<Coord::Z>))
       .def(py::init(&detail::makeVariable<Data::Value>))
       .def(py::init(&detail::makeVariable<Data::Variance>))
-      .def(py::init(&detail::makeVariableDefaultInit<Coord::Mask>))
-      .def(py::init(&detail::makeVariableDefaultInit<Coord::X>))
-      .def(py::init(&detail::makeVariableDefaultInit<Coord::Y>))
-      .def(py::init(&detail::makeVariableDefaultInit<Coord::Z>))
-      .def(py::init(&detail::makeVariableDefaultInit<Data::Value>))
-      .def(py::init(&detail::makeVariableDefaultInit<Data::Variance>))
       .def(py::init<const VariableSlice &>())
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", &Variable::name, &Variable::setName)
