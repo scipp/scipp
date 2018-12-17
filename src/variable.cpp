@@ -28,6 +28,8 @@ template <class T> struct RebinHelper {
                     const gsl::index oldOffset,
                     const VariableView<const T> &newCoordView,
                     const gsl::index newOffset) {
+    // Why is this not used. Bug?
+    static_cast<void>(dim);
 
     auto oldCoordIt = oldCoordView.begin();
     auto newCoordIt = newCoordView.begin();
@@ -391,7 +393,7 @@ public:
   DataModel(const Dimensions &dimensions, T model)
       : VariableConceptT<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
-    if (this->dimensions().volume() != m_model.size())
+    if (this->dimensions().volume() != static_cast<gsl::index>(m_model.size()))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
@@ -447,7 +449,7 @@ public:
   }
 
   std::unique_ptr<VariableConcept>
-  cloneMutable(VariableConcept &mutableData) const override {
+  cloneMutable(VariableConcept &) const override {
     throw std::runtime_error("DataModel::cloneMutable() should not be called.");
   }
 
@@ -564,7 +566,7 @@ public:
   }
 
   std::shared_ptr<VariableConcept>
-  clone(const Dimensions &dims) const override {
+  clone(const Dimensions &) const override {
     throw std::runtime_error("Cannot resize view.");
   }
 
@@ -716,7 +718,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
       auto &datasets = variable.template cast<Dataset>();
       const Dim dim = datasets[0].dimensions().label(0);
 #pragma omp parallel for
-      for (gsl::index i = 0; i < datasets.size(); ++i)
+      for (gsl::index i = 0; i < static_cast<gsl::index>(datasets.size()); ++i)
         datasets[i] = concatenate(datasets[i], otherDatasets[i], dim);
     } else {
       throw std::runtime_error(
@@ -890,7 +892,7 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
     return {var};
   std::vector<Variable> vars;
   vars.emplace_back(var(dim, 0, indices.front()));
-  for (gsl::index i = 0; i < indices.size() - 1; ++i)
+  for (gsl::index i = 0; i < static_cast<gsl::index>(indices.size()) - 1; ++i)
     vars.emplace_back(var(dim, indices[i], indices[i + 1]));
   vars.emplace_back(var(dim, indices.back(), var.dimensions().size(dim)));
   return vars;
@@ -970,7 +972,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
 Variable permute(const Variable &var, const Dimension dim,
                  const std::vector<gsl::index> &indices) {
   auto permuted(var);
-  for (gsl::index i = 0; i < indices.size(); ++i)
+  for (size_t i = 0; i < indices.size(); ++i)
     permuted.data().copy(var.data(), dim, i, indices[i], indices[i] + 1);
   return permuted;
 }
@@ -1013,6 +1015,6 @@ Variable sum(const Variable &var, const Dim dim) {
 
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
-  double scale = 1.0 / var.dimensions().size(dim);
+  double scale = 1.0 / static_cast<double>(var.dimensions().size(dim));
   return summed * makeVariable<Data::Value>({}, {scale});
 }

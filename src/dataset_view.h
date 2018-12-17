@@ -122,7 +122,7 @@ template <> struct ItemHelper<Coord::SpectrumPosition> {
     double position = 0.0;
     for (const auto det : data.second[index])
       position += data.first[det];
-    return position /= data.second[index].size();
+    return position /= static_cast<double>(data.second[index].size());
   }
 };
 

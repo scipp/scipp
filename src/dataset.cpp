@@ -118,7 +118,6 @@ gsl::index Dataset::findUnique(const Tag tag) const {
 }
 
 void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
-  gsl::index found = 0;
   for (gsl::index i = 0; i < dims.count(); ++i) {
     const auto dim = dims.label(i);
     auto size = dims.size(i);
@@ -476,7 +475,7 @@ std::vector<Dataset> split(const Dataset &d, const Dim dim,
   for (const auto &var : d) {
     if (var.dimensions().contains(dim)) {
       auto vars = split(var, dim, indices);
-      for (gsl::index i = 0; i < out.size(); ++i)
+      for (size_t i = 0; i < out.size(); ++i)
         out[i].insert(vars[i]);
     } else {
       for (auto &o : out)
@@ -523,6 +522,7 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
 }
 
 Dataset convert(const Dataset &d, const Dimension from, const Dimension to) {
+  static_cast<void>(to);
   // How to convert? There are several cases:
   // 1. Tof conversion as Mantid's ConvertUnits.
   // 2. Axis conversion as Mantid's ConvertSpectrumAxis.
@@ -701,7 +701,8 @@ Dataset mean(const Dataset &d, const Dim dim) {
           // Standard deviation of the mean has an extra 1/sqrt(N). Note that
           // this is not included by the stand-alone mean(Variable), since that
           // would be confusing.
-          double scale = 1.0 / sqrt(var.dimensions().size(dim));
+          double scale =
+              1.0 / sqrt(static_cast<double>(var.dimensions().size(dim)));
           m.insert(mean(var, dim) * makeVariable<Data::Value>({}, {scale}));
         } else {
           m.insert(mean(var, dim));

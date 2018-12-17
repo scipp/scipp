@@ -372,6 +372,9 @@ make_coordinate_dimension(const std::tuple<Ts...> &) {
   return {detail::coordinate_dimension<Ts>...};
 }
 
+// Coordinates linked to a specific dimension, e.g., Coord::X to Dim::X. See
+// also the xarray documentation regarding its distinction getween "dimension
+// coordinates" and "non-dimension coordinates".
 constexpr auto isDimensionCoord = make_is_dimension_coordinate(detail::Tags{});
 constexpr auto coordDimension = make_coordinate_dimension(detail::Tags{});
 

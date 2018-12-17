@@ -28,9 +28,9 @@ public:
       : Dimensions({{dim, size}}) {}
   Dimensions(const std::initializer_list<std::pair<Dim, gsl::index>> dims) {
     // TODO Check for duplicate dimension.
-    m_ndim = dims.size();
-    if (m_ndim > 6)
+    if (dims.size() > 6)
       throw std::runtime_error("At most 6 dimensions are supported.");
+    m_ndim = static_cast<int32_t>(dims.size());
     auto dim = dims.begin();
     for (gsl::index i = 0; i < m_ndim; ++i, ++dim) {
       m_dims[i] = dim->first;
@@ -117,7 +117,7 @@ public:
   // auto begin() const { return m_dims.begin(); }
   // auto end() const { return m_dims.end(); }
 
-  gsl::index index(const Dimension label) const;
+  int32_t index(const Dimension label) const;
 
 private:
   // This is 56 Byte, or would be 40 Byte for small size 1.
@@ -129,8 +129,5 @@ private:
   Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
-
-Dimensions concatenate(const Dimension dim, const Dimensions &dims1,
-                       const Dimensions &dims2);
 
 #endif // DIMENSIONS_H

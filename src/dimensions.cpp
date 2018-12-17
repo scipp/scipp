@@ -105,24 +105,9 @@ void Dimensions::add(const Dimension label, const gsl::index size) {
   ++m_ndim;
 }
 
-gsl::index Dimensions::index(const Dim dim) const {
+int32_t Dimensions::index(const Dim dim) const {
   for (int32_t i = 0; i < 6; ++i)
     if (m_dims[i] == dim)
       return i;
   throw dataset::except::DimensionNotFoundError(*this, dim);
-}
-
-Dimensions concatenate(const Dimension dim, const Dimensions &dims1,
-                       const Dimensions &dims2) {
-  if (dims1.contains(dim) && dims2.contains(dim)) {
-    // - all dimension labels must match and have same order.
-    // - if dim is ragged, all other dimensions must have matching size.
-    // - if dim is not ragged, one other dimension can have size mismatch
-    // (create ragged)
-  } else {
-    // - all dimension labels must match and have same order
-    // - in the result, up to one dimension may be ragged
-    // - if a dim is ragged, concatenate also ragged sizes
-    // - some more failure cases here
-  }
 }

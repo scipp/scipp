@@ -29,7 +29,7 @@ template <> struct UnitHelper<Coord::SpectrumPosition> {
   static Unit get(const Dataset &dataset) {
     return dataset.unit<Coord::DetectorPosition>();
   }
-  static Unit get(const Dataset &dataset, const std::string &name) {
+  static Unit get(const Dataset &dataset, const std::string &) {
     return dataset.unit<Coord::DetectorPosition>();
   }
 };
@@ -39,7 +39,7 @@ template <> struct UnitHelper<Data::StdDev> {
     return dataset.unit<Data::Variance>();
   }
   static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset.unit<Data::Variance>();
+    return dataset.unit<Data::Variance>(name);
   }
 };
 
@@ -74,10 +74,12 @@ template <class Tag> struct DimensionHelper {
 template <class Tag> struct DimensionHelper<Bin<Tag>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
     return dataset.dimensions<Tag>();
   }
   static Dimensions get(const Dataset &dataset, const std::string &name,
                         const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
     if (is_coord<Tag>)
       return dataset.dimensions<Tag>();
     else
@@ -88,10 +90,12 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
 template <> struct DimensionHelper<Coord::SpectrumPosition> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
     return dataset.dimensions<Coord::DetectorGrouping>();
   }
-  static Dimensions get(const Dataset &dataset, const std::string &name,
+  static Dimensions get(const Dataset &dataset, const std::string &,
                         const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
     return dataset.dimensions<Coord::DetectorGrouping>();
   }
 };
@@ -99,11 +103,13 @@ template <> struct DimensionHelper<Coord::SpectrumPosition> {
 template <> struct DimensionHelper<Data::StdDev> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
+    static_cast<void>(fixedDimensions);
     return dataset.dimensions<Data::Variance>();
   }
   static Dimensions get(const Dataset &dataset, const std::string &name,
                         const std::set<Dimension> &fixedDimensions) {
-    return dataset.dimensions<Data::Variance>();
+    static_cast<void>(fixedDimensions);
+    return dataset.dimensions<Data::Variance>(name);
   }
 };
 
@@ -153,12 +159,10 @@ template <class... Tags> struct DimensionHelper<DatasetViewImpl<Tags...>> {
 };
 
 template <class Tag> struct DataHelper {
-  static auto get(MaybeConstDataset<Tag> &dataset,
-                  const Dimensions &iterationDimensions) {
+  static auto get(MaybeConstDataset<Tag> &dataset, const Dimensions &) {
     return dataset.template get<detail::value_type_t<Tag>>();
   }
-  static auto get(MaybeConstDataset<Tag> &dataset,
-                  const Dimensions &iterationDimensions,
+  static auto get(MaybeConstDataset<Tag> &dataset, const Dimensions &,
                   const std::string &name) {
     if (is_coord<Tag>)
       return dataset.template get<detail::value_type_t<Tag>>();
@@ -168,8 +172,7 @@ template <class Tag> struct DataHelper {
 };
 
 template <class Tag> struct DataHelper<Bin<Tag>> {
-  static auto get(const Dataset &dataset,
-                  const Dimensions &iterationDimensions) {
+  static auto get(const Dataset &dataset, const Dimensions &) {
     // Compute offset to next edge.
     gsl::index offset = 1;
     const auto &dims = dataset.dimensions<Tag>();
@@ -184,20 +187,19 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
                                 dataset.get<const detail::value_type_t<Tag>>()};
   }
   static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
-                  const std::string &name) {
+                  const std::string &) {
     return get(dataset, iterationDimensions);
   }
 };
 
 template <> struct DataHelper<Coord::SpectrumPosition> {
-  static auto get(const Dataset &dataset,
-                  const Dimensions &iterationDimensions) {
+  static auto get(const Dataset &dataset, const Dimensions &) {
     return ref_type_t<Coord::SpectrumPosition>(
         dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
         dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
   }
-  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
-                  const std::string &name) {
+  static auto get(const Dataset &dataset, const Dimensions &,
+                  const std::string &) {
     return ref_type_t<Coord::SpectrumPosition>(
         dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
         dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
@@ -211,7 +213,8 @@ template <> struct DataHelper<Data::StdDev> {
   }
   static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
                   const std::string &name) {
-    return DataHelper<const Data::Variance>::get(dataset, iterationDimensions);
+    return DataHelper<const Data::Variance>::get(dataset, iterationDimensions,
+                                                 name);
   }
 };
 
@@ -256,7 +259,7 @@ Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
   // (note pass by value) since the extended length is required to compute the
   // correct offset into the variable.
   std::vector<bool> is_bins{detail::is_bins_t<Ts>::value...};
-  for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
+  for (size_t i = 0; i < sizeof...(Ts); ++i) {
     auto &dims = variableDimensions[i];
     if (is_bins[i]) {
       const auto &actual = dataset.dimensions();
@@ -275,7 +278,7 @@ Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
       largest.erase(dim);
 
   std::vector<bool> is_const{detail::is_const<Ts>::value...};
-  for (gsl::index i = 0; i < sizeof...(Ts); ++i) {
+  for (size_t i = 0; i < sizeof...(Ts); ++i) {
     auto dims = variableDimensions[i];
     for (const auto dim : fixedDimensions)
       if (dims.contains(dim))

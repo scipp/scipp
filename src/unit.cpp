@@ -12,16 +12,16 @@
 
 #include "unit.h"
 
-Unit makeUnit(const boost::units::si::dimensionless &u) {
+Unit makeUnit(const boost::units::si::dimensionless &) {
   return {Unit::Id::Dimensionless};
 }
-Unit makeUnit(const boost::units::si::length &u) { return {Unit::Id::Length}; }
-Unit makeUnit(const boost::units::si::area &u) { return {Unit::Id::Area}; }
+Unit makeUnit(const boost::units::si::length &) { return {Unit::Id::Length}; }
+Unit makeUnit(const boost::units::si::area &) { return {Unit::Id::Area}; }
 Unit makeUnit(const decltype(std::declval<boost::units::si::amount>() *
-                             std::declval<boost::units::si::amount>()) &u) {
+                             std::declval<boost::units::si::amount>()) &) {
   return {Unit::Id::CountsVariance};
 }
-template <class T> Unit makeUnit(const T &u) {
+template <class T> Unit makeUnit(const T &) {
   throw std::runtime_error("Unsupported unit combination");
 }
 
@@ -44,7 +44,7 @@ template <class A> Unit multiply(const A &a, const Unit &b) {
 }
 
 template <>
-Unit multiply<boost::units::si::area>(const boost::units::si::area &a,
+Unit multiply<boost::units::si::area>(const boost::units::si::area &,
                                       const Unit &b) {
   if (b == Unit{Unit::Id::Area})
     return Unit::Id::AreaVariance;

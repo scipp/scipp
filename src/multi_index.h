@@ -23,11 +23,11 @@ public:
     for (gsl::index d = 0; d < m_dims; ++d)
       m_extent[d] = parentDimensions.size(m_dims - 1 - d);
 
-    m_numberOfSubindices = subdimensions.size();
+    m_numberOfSubindices = static_cast<int32_t>(subdimensions.size());
     for (gsl::index j = 0; j < m_numberOfSubindices; ++j) {
       const auto &dimensions = subdimensions[j];
       gsl::index factor{1};
-      gsl::index k = 0;
+      int32_t k = 0;
       for (gsl::index i = dimensions.count() - 1; i >= 0; --i) {
         const auto dimension = dimensions.label(i);
         if (parentDimensions.contains(dimension)) {
