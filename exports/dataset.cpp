@@ -80,21 +80,47 @@ std::string format(const Dimensions &dims) {
   return out;
 }
 
-template <class Tag>
-void insertCoord(Dataset &self, const Tag,
-                 const std::tuple<const std::vector<Dim> &,
-                                  py::array_t<typename Tag::type> &> &data) {
-  const auto &labels = std::get<0>(data);
-  const py::buffer_info info = std::get<1>(data).request();
-  if (info.ndim != labels.size())
-    throw std::runtime_error(
-        "Number of dimensions tags does not match shape of data.");
-  Dimensions dims;
-  for (gsl::index i = labels.size() - 1; i >= 0; --i)
-    dims.add(labels[i], info.shape[i]);
+template <class Tag> struct InsertCoord {
+  static void
+  apply(Dataset &self,
+        const std::tuple<const std::vector<Dim> &, py::array &> &data) {
+    const auto &labels = std::get<0>(data);
+    const auto &array = std::get<1>(data);
+    apply_t(self, labels, array);
+  }
 
-  auto *ptr = (typename Tag::type *)info.ptr;
-  self.insert<const Tag>(dims, ptr, ptr + dims.volume());
+  static void apply_t(Dataset &self, const std::vector<Dim> &labels,
+                      py::array_t<typename Tag::type> array) {
+    const py::buffer_info info = array.request();
+    if (info.ndim != labels.size())
+      throw std::runtime_error(
+          "Number of dimensions tags does not match shape of data.");
+    Dimensions dims;
+    for (gsl::index i = labels.size() - 1; i >= 0; --i)
+      dims.add(labels[i], info.shape[i]);
+
+    auto *ptr = (typename Tag::type *)info.ptr;
+    self.insert<const Tag>(dims, ptr, ptr + dims.volume());
+  }
+};
+
+template <class... Tags> struct Call {
+  template <template <class> class Callable, class... Args>
+  static void noReturn(const Tag tag, Args &&... args) {
+    std::array funcs{Callable<Tags>::apply...};
+    std::array<Tag, sizeof...(Tags)> tags{Tags{}...};
+    for (gsl::index i = 0; i < tags.size(); ++i)
+      if (tags[i].value() == tag.value())
+        return funcs[i](std::forward<Args>(args)...);
+    throw std::runtime_error("Unsupported tag type.");
+  }
+};
+
+void insertCoord(
+    Dataset &self, const Tag tag,
+    const std::tuple<const std::vector<Dim> &, py::array &> &data) {
+  return Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof, Coord::Mask,
+              Coord::SpectrumNumber>::noReturn<InsertCoord>(tag, self, data);
 }
 
 template <class Tag>
@@ -579,13 +605,8 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", detail::setData<Data::Value, Dataset>)
       .def("__setitem__", detail::setData<Data::Variance, Dataset>)
-      .def("__setitem__", detail::insertCoord<Coord::X>)
-      .def("__setitem__", detail::insertCoord<Coord::Y>)
-      .def("__setitem__", detail::insertCoord<Coord::Z>)
-      .def("__setitem__", detail::insertCoord<Coord::Tof>)
-      .def("__setitem__", detail::insertCoord<Coord::Mask>)
+      .def("__setitem__", detail::insertCoord)
       .def("__setitem__", detail::insertCoord1D<Coord::RowLabel>)
-      .def("__setitem__", detail::insertCoord<Coord::SpectrumNumber>)
       .def("__setitem__", detail::insert<Data::Value>)
       .def("__setitem__", detail::insert<Data::Variance>)
       .def("__setitem__", detail::insert<Data::Value, Variable>)
