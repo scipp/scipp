@@ -224,23 +224,11 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
       names.insert(var2.name());
 
   for (const auto &var2 : other) {
-    gsl::index index;
-    try {
-      index = find(dataset, var2.tag(), var2.name());
-    } catch (const std::runtime_error &) {
-      if (var2.isData() && names.size() == 1) {
-        // Only a single (named) variable in RHS, subtract from all.
-        index = -1;
-      } else {
-        throw std::runtime_error("Right-hand-side in subtraction contains "
-                                 "variable that is not present in "
-                                 "left-hand-side.");
-      }
-    }
     using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
                                       Variable &, VariableSlice>;
-    if (index >= 0) {
-      VarRef var1 = detail::makeAccess(dataset)[index];
+    try {
+      VarRef var1 =
+          detail::makeAccess(dataset)[find(dataset, var2.tag(), var2.name())];
       if (var1.isCoord()) {
         if (!(var1 == var2))
           throw std::runtime_error(
@@ -252,22 +240,31 @@ template <class T1, class T2> T1 &minus_equals(T1 &dataset, const T2 &other) {
         else
           var1 -= var2;
       }
-    } else {
-      // Not a coordinate, subtract from all.
-      gsl::index count = 0;
-      for (VarRef var1 : detail::makeAccess(dataset)) {
-        if (var1.tag() == var2.tag()) {
-          ++count;
-          if (var1.tag() == Data::Variance{})
-            var1 += var2;
-          else
-            var1 -= var2;
+    } catch (const dataset::except::VariableNotFoundError &) {
+      // Note that this is handled via name, i.e., there may be values and
+      // variances, i.e., two variables.
+      if (var2.isData() && names.size() == 1) {
+        // Only a single (named) variable in RHS, subtract from all.
+        // Not a coordinate, subtract from all.
+        gsl::index count = 0;
+        for (VarRef var1 : detail::makeAccess(dataset)) {
+          if (var1.tag() == var2.tag()) {
+            ++count;
+            if (var1.tag() == Data::Variance{})
+              var1 += var2;
+            else
+              var1 -= var2;
+          }
         }
-      }
-      if (count == 0)
+        if (count == 0)
+          throw std::runtime_error("Right-hand-side in subtraction contains "
+                                   "variable type that is not present in "
+                                   "left-hand-side.");
+      } else {
         throw std::runtime_error("Right-hand-side in subtraction contains "
-                                 "variable type that is not present in "
+                                 "variable that is not present in "
                                  "left-hand-side.");
+      }
     }
   }
   return dataset;

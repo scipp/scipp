@@ -240,7 +240,7 @@ gsl::index find(const T &dataset, const Tag tag, const std::string &name) {
   for (gsl::index i = 0; i < dataset.size(); ++i)
     if (dataset[i].tag() == tag && dataset[i].name() == name)
       return i;
-  throw std::runtime_error("Dataset does not contain such a variable.");
+  throw dataset::except::VariableNotFoundError(dataset, tag, name);
 }
 
 namespace detail {

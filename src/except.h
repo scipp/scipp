@@ -7,7 +7,10 @@
 
 #include "dimension.h"
 
+class ConstDatasetSlice;
+class Dataset;
 class Dimensions;
+class Tag;
 
 namespace dataset {
 std::string to_string(const Dim dim);
@@ -20,24 +23,28 @@ struct DimensionError : public std::runtime_error {
 };
 
 struct DimensionMismatchError : public DimensionError {
-  DimensionMismatchError(const Dimensions &expected, const Dimensions &actual)
-      : DimensionError("Expected dimensions " + to_string(expected) + ", got " +
-                       to_string(actual) + ".") {}
+  DimensionMismatchError(const Dimensions &expected, const Dimensions &actual);
 };
 
 struct DimensionNotFoundError : public DimensionError {
-  DimensionNotFoundError(const Dimensions &expected, const Dim actual)
-      : DimensionError("Expected dimension to be in " + to_string(expected) +
-                       ", got " + to_string(actual) + ".") {}
+  DimensionNotFoundError(const Dimensions &expected, const Dim actual);
 };
 
 struct DimensionLengthError : public DimensionError {
   DimensionLengthError(const Dimensions &expected, const Dim actual,
-                       const gsl::index length)
-      : DimensionError("Expected dimension to be in " + to_string(expected) +
-                       ", got " + to_string(actual) +
-                       " with mismatching length " + std::to_string(length) +
-                       ".") {}
+                       const gsl::index length);
+};
+
+struct DatasetError : public std::runtime_error {
+  DatasetError(const Dataset &dataset, const std::string &message);
+  DatasetError(const ConstDatasetSlice &dataset, const std::string &message);
+};
+
+struct VariableNotFoundError : public DatasetError {
+  VariableNotFoundError(const Dataset &dataset, const Tag tag,
+                        const std::string &name);
+  VariableNotFoundError(const ConstDatasetSlice &dataset, const Tag tag,
+                        const std::string &name);
 };
 
 } // namespace except

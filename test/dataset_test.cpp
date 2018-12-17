@@ -141,8 +141,9 @@ TEST(Dataset, get_variable_view) {
   EXPECT_EQ(d(Data::Value{}).name(), "");
   EXPECT_EQ(d(Data::Value{}, "name").tag(), Data::Value{});
   EXPECT_EQ(d(Data::Value{}, "name").name(), "name");
-  EXPECT_THROW_MSG(d(Coord::Y{}), std::runtime_error,
-                   "Dataset does not contain such a variable.");
+  EXPECT_THROW_MSG(d(Coord::Y{}), dataset::except::VariableNotFoundError,
+                   "Dataset with 3 variables, could not find variable with tag "
+                   "Coord::Y and name ``.");
 }
 
 TEST(Dataset, extract) {
