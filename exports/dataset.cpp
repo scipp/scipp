@@ -238,11 +238,8 @@ py::buffer_info make_py_buffer_info(VariableSlice &view) {
 }
 
 template <class Tag>
-void setVariableSlice(VariableSlice &self,
-                      const std::tuple<Dim, gsl::index> &index,
+void doSetVariableSlice(VariableSlice &slice,
                       py::array_t<typename Tag::type> &data) {
-  auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
-
   const auto &dims = slice.dimensions();
   py::buffer_info info = data.request();
   const auto &shape = dims.shape();
@@ -257,22 +254,19 @@ void setVariableSlice(VariableSlice &self,
 }
 
 template <class Tag>
+void setVariableSlice(VariableSlice &self,
+                      const std::tuple<Dim, gsl::index> &index,
+                      py::array_t<typename Tag::type> &data) {
+  auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
+  doSetVariableSlice<Tag>(slice, data);
+}
+
+template <class Tag>
 void setVariableSliceRange(VariableSlice &self,
                            const std::tuple<Dim, const py::slice> &index,
                            py::array_t<typename Tag::type> &data) {
   auto slice = pySlice(self, index);
-
-  const auto &dims = slice.dimensions();
-  py::buffer_info info = data.request();
-  const auto &shape = dims.shape();
-  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
-                  shape.end()))
-    throw std::runtime_error(
-        "Shape mismatch when setting data from numpy array.");
-
-  auto buf = slice.template get<Tag>();
-  double *ptr = (double *)info.ptr;
-  std::copy(ptr, ptr + dims.volume(), buf.begin());
+  doSetVariableSlice<Tag>(slice, data);
 }
 
 template <class Tag> auto as_py_array_t(py::object &obj, VariableSlice &view) {
