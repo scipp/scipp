@@ -121,6 +121,16 @@ void insertCoord(
   self.insert(std::move(var));
 }
 
+template <class T>
+void insertCoordT(
+    Dataset &self, const Tag tag,
+    const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
+  auto var =
+      Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof>::apply<MakeVariable>(tag,
+                                                                          data);
+  self.insert(std::move(var));
+}
+
 template <class Tag>
 void insertCoord1D(Dataset &self, const Tag,
                    const std::tuple<const std::vector<Dim> &,
@@ -563,6 +573,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<Data::Value, Dataset>)
       .def("__setitem__", detail::setData<Data::Variance, Dataset>)
       .def("__setitem__", detail::insertCoord)
+      // TODO: Overloaded to cover non-numpy data such as a scalar value. This
+      // is handled by automatic conversion by PYbind11 when using py::array_t.
+      // See also the py::array::forcecast argument, we need to minimize
+      // implicit (and potentially expensive conversion).
+      .def("__setitem__", detail::insertCoordT<double>)
       .def("__setitem__", detail::insertCoord1D<Coord::RowLabel>)
       .def("__setitem__", detail::insertNamed)
       .def("__setitem__", detail::insert<Data::Value, Variable>)
