@@ -83,31 +83,19 @@ std::string format(const Dimensions &dims) {
   return out;
 }
 
-template <class Tag> struct InsertCoord {
-  static void
-  apply(Dataset &self,
-        const std::tuple<const std::vector<Dim> &, py::array &> &data) {
+template <class Tag> struct MakeVariable {
+  static Variable
+  apply(const std::tuple<const std::vector<Dim> &, py::array> &data) {
     const auto &labels = std::get<0>(data);
     const auto &array = std::get<1>(data);
-    self.insert(detail::makeVariable<Tag>(Tag{}, labels, array));
+    return detail::makeVariable<Tag>(Tag{}, labels, array);
   }
 };
 
-template <class Tag> struct InsertData {
-  static void
-  apply(const std::string &name, Dataset &self,
-        const std::tuple<const std::vector<Dim> &, py::array &> &data) {
-    const auto &labels = std::get<0>(data);
-    const auto &array = std::get<1>(data);
-    auto var = detail::makeVariable<Tag>(Tag{}, labels, array);
-    var.setName(name);
-    self.insert(std::move(var));
-  }
-};
-
-template <class... Tags> struct Call {
+template <class... Tags>
+struct Call {
   template <template <class> class Callable, class... Args>
-  static void noReturn(const Tag tag, Args &&... args) {
+  static auto apply(const Tag tag, Args &&... args) {
     std::array funcs{Callable<Tags>::apply...};
     std::array<Tag, sizeof...(Tags)> tags{Tags{}...};
     for (gsl::index i = 0; i < tags.size(); ++i)
@@ -120,8 +108,9 @@ template <class... Tags> struct Call {
 void insertCoord(
     Dataset &self, const Tag tag,
     const std::tuple<const std::vector<Dim> &, py::array &> &data) {
-  return Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof, Coord::Mask,
-              Coord::SpectrumNumber>::noReturn<InsertCoord>(tag, self, data);
+  auto var = Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof, Coord::Mask,
+                  Coord::SpectrumNumber>::apply<MakeVariable>(tag, data);
+  self.insert(std::move(var));
 }
 
 template <class Tag>
@@ -143,8 +132,10 @@ void insertCoord1D(Dataset &self, const Tag,
 void insertNamed(
     Dataset &self, const std::pair<Tag, const std::string &> &key,
     const std::tuple<const std::vector<Dim> &, py::array_t<double> &> &data) {
-  return Call<Data::Value, Data::Variance>::noReturn<InsertData>(
-      std::get<Tag>(key), std::get<const std::string &>(key), self, data);
+  auto var = Call<Data::Value, Data::Variance>::apply<MakeVariable>(
+      std::get<Tag>(key), data);
+  var.setName(std::get<const std::string &>(key));
+  self.insert(std::move(var));
 }
 
 template <class Tag, class Var>
