@@ -48,8 +48,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
 }
 
 namespace detail {
-template <class... Tags>
-struct Call {
+template <class... Tags> struct Call {
   template <template <class> class Callable, class... Args>
   static auto apply(const Tag tag, Args &&... args) {
     std::array funcs{Callable<Tags>::apply...};
@@ -79,8 +78,7 @@ Variable makeVariable(const Tag, const std::vector<Dim> &labels,
   return makeVariable<const Tag>(dims, ptr, ptr + dims.volume());
 }
 
-template <class Tag>
-struct MakeVariableDefaultInit {
+template <class Tag> struct MakeVariableDefaultInit {
   static Variable apply(const std::vector<Dim> &labels,
                         const py::tuple &shape) {
     if (shape.size() != labels.size())
@@ -92,6 +90,14 @@ struct MakeVariableDefaultInit {
     return makeVariable<const Tag>(dims);
   }
 };
+
+Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
+                                 const py::tuple &shape) {
+  return detail::Call<
+      Coord::Mask, Coord::X, Coord::Y, Coord::Z, Data::Value,
+      Data::Variance>::apply<detail::MakeVariableDefaultInit>(tag, labels,
+                                                              shape);
+}
 
 std::string format(const Dimensions &dims) {
   std::string out = "Dimensions = " + dataset::to_string(dims);
@@ -152,21 +158,13 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   self.insert<Tag>(name, var.dimensions(), data.begin(), data.end());
 }
 
-template <class Tag>
 void insertDefaultInit(
     Dataset &self, const std::pair<Tag, const std::string &> &key,
     const std::tuple<const std::vector<Dim> &, py::tuple> &data) {
-  const auto &labels = std::get<0>(data);
-  const auto &shape = std::get<1>(data);
-  if (shape.size() != labels.size())
-    throw std::runtime_error(
-        "Number of dimensions tags does not match shape of data.");
-  Dimensions dims;
-  for (gsl::index i = labels.size() - 1; i >= 0; --i)
-    dims.add(labels[i], shape[i].cast<size_t>());
-
-  const auto &name = std::get<const std::string &>(key);
-  self.insert<const Tag>(name, dims);
+  auto var = makeVariableDefaultInit(std::get<Tag>(key), std::get<0>(data),
+                                     std::get<1>(data));
+  var.setName(std::get<const std::string &>(key));
+  self.insert(std::move(var));
 }
 
 // Add size factor.
@@ -408,13 +406,7 @@ PYBIND11_MODULE(dataset, m) {
            py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
 
   py::class_<Variable>(m, "Variable")
-      .def(py::init([](const Tag tag, const std::vector<Dim> &labels,
-                       const py::tuple &shape) {
-        return detail::Call<
-            Coord::Mask, Coord::X, Coord::Y, Coord::Z, Data::Value,
-            Data::Variance>::apply<detail::MakeVariableDefaultInit>(tag, labels,
-                                                                    shape);
-      }))
+      .def(py::init(&detail::makeVariableDefaultInit))
       .def(py::init(&detail::makeVariable<Coord::Mask>))
       .def(py::init(&detail::makeVariable<Coord::X>))
       .def(py::init(&detail::makeVariable<Coord::Y>))
@@ -598,8 +590,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insert<Data::Variance, Variable>)
       .def("__setitem__", detail::insert<Data::Value, VariableSlice>)
       .def("__setitem__", detail::insert<Data::Variance, VariableSlice>)
-      .def("__setitem__", detail::insertDefaultInit<Data::Value>)
-      .def("__setitem__", detail::insertDefaultInit<Data::Variance>)
+      .def("__setitem__", detail::insertDefaultInit)
       // Note: As it is this will always implicitly convert a RHS view into a
       // Dataset, i.e., makes a copy. Need to expose the operator overloads for
       // views as well.
