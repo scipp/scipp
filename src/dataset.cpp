@@ -455,23 +455,6 @@ DatasetSlice &DatasetSlice::operator*=(const ConstDatasetSlice &other) {
   return times_equals(*this, other);
 }
 
-dataset_slice_iterator<Dataset> DatasetSlice::begin() {
-  return {m_mutableDataset, m_indices, m_slices, 0};
-}
-dataset_slice_iterator<Dataset> DatasetSlice::end() {
-  return {m_mutableDataset, m_indices, m_slices,
-          static_cast<gsl::index>(m_indices.size())};
-}
-template <class Value>
-std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
-                   VariableSlice>
-dataset_slice_iterator<Value>::dereference() const {
-  return detail::makeSlice(m_dataset[m_indices[m_index]], m_slices);
-}
-
-template class dataset_slice_iterator<Dataset>;
-template class dataset_slice_iterator<const Dataset>;
-
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
 Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
 Dataset operator*(Dataset a, const Dataset &b) { return a *= b; }

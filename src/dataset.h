@@ -183,46 +183,6 @@ gsl::index count(const T &dataset, const Tag tag, const std::string &name) {
   return n;
 }
 
-template <class Value>
-class dataset_slice_iterator
-    : public boost::iterator_facade<
-          dataset_slice_iterator<Value>,
-          std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
-                             VariableSlice>,
-          boost::random_access_traversal_tag,
-          std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
-                             VariableSlice>> {
-public:
-  dataset_slice_iterator(
-      Value &dataset, const std::vector<gsl::index> &indices,
-      const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &slices,
-      const gsl::index index)
-      : m_dataset(dataset), m_indices(indices), m_slices(slices),
-        m_index(index) {}
-
-private:
-  friend class boost::iterator_core_access;
-
-  bool equal(const dataset_slice_iterator &other) const {
-    return m_index == other.m_index;
-  }
-  void increment() { ++m_index; }
-  std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
-                     VariableSlice>
-  dereference() const;
-  void decrement() { --m_index; }
-  void advance(int64_t delta) { m_index += delta; }
-  int64_t distance_to(const dataset_slice_iterator &other) const {
-    return other.m_index - m_index;
-  }
-
-  // TODO Just reference Slice instead of all its contents here.
-  Value &m_dataset;
-  const std::vector<gsl::index> &m_indices;
-  const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &m_slices;
-  gsl::index m_index;
-};
-
 // T can be Dataset or Slice.
 template <class T>
 gsl::index find(const T &dataset, const Tag tag, const std::string &name) {
@@ -296,14 +256,16 @@ public:
   ConstVariableSlice operator[](const gsl::index i) const {
     return detail::makeSlice(m_dataset[m_indices[i]], m_slices);
   }
+  // TODO Really this should be private, used only by
+  // boost::make_transform_iterator, but it is unclear what we need to befriend
+  // to make it work.
+  ConstVariableSlice operator()(const gsl::index i) const {
+    // Note: Here i is already passed through m_indices, do not do it again.
+    return detail::makeSlice(m_dataset[i], m_slices);
+  }
 
-  dataset_slice_iterator<const Dataset> begin() const {
-    return {dataset(), m_indices, m_slices, 0};
-  }
-  dataset_slice_iterator<const Dataset> end() const {
-    return {dataset(), m_indices, m_slices,
-            static_cast<gsl::index>(m_indices.size())};
-  }
+  auto begin() const { return boost::make_transform_iterator(m_indices.begin(), *this); }
+  auto end() const { return boost::make_transform_iterator(m_indices.end(), *this); }
 
   bool operator==(const ConstDatasetSlice &other) const {
     if ((m_dataset == other.m_dataset) && (m_indices == other.m_indices) &&
@@ -354,20 +316,25 @@ public:
   DatasetSlice(Dataset &dataset, const std::string &select)
       : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
 
-  using ConstDatasetSlice::begin;
-  using ConstDatasetSlice::end;
-  dataset_slice_iterator<Dataset> begin();
-  dataset_slice_iterator<Dataset> end();
-
   using ConstDatasetSlice::operator[];
   VariableSlice operator[](const gsl::index i) {
     return detail::makeSlice(m_mutableDataset[m_indices[i]], m_slices);
+  }
+  VariableSlice operator()(const gsl::index i) const {
+    // Note: Here i is already passed through m_indices, do not do it again.
+    return detail::makeSlice(m_mutableDataset[i], m_slices);
   }
 
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
                           const gsl::index end = -1) const {
     return makeSubslice(*this, dim, begin, end);
   }
+
+  using ConstDatasetSlice::begin;
+  using ConstDatasetSlice::end;
+
+  auto begin() { return boost::make_transform_iterator(m_indices.begin(), *this); }
+  auto end() { return boost::make_transform_iterator(m_indices.end(), *this); }
 
   DatasetSlice &assign(const Dataset &other);
   DatasetSlice &assign(const ConstDatasetSlice &other);
