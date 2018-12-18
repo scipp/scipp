@@ -8,38 +8,38 @@
 using namespace detail;
 
 template <class Tag> struct UnitHelper {
-  static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
+  static Unit get(const Dataset &dataset) { return dataset(Tag{}).unit(); }
 
   static Unit get(const Dataset &dataset, const std::string &name) {
     if (is_coord<Tag>)
-      return dataset.unit<Tag>();
+      return dataset(Tag{}).unit();
     else
-      return dataset.unit<Tag>(name);
+      return dataset(Tag{}, name).unit();
   }
 };
 
 template <class Tag> struct UnitHelper<Bin<Tag>> {
-  static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
+  static Unit get(const Dataset &dataset) { return dataset(Tag{}).unit(); }
   static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset.unit<Tag>(name);
+    return dataset(Tag{}, name).unit();
   }
 };
 
 template <> struct UnitHelper<Coord::SpectrumPosition> {
   static Unit get(const Dataset &dataset) {
-    return dataset.unit<Coord::DetectorPosition>();
+    return dataset(Coord::DetectorPosition{}).unit();
   }
   static Unit get(const Dataset &dataset, const std::string &) {
-    return dataset.unit<Coord::DetectorPosition>();
+    return dataset(Coord::DetectorPosition{}).unit();
   }
 };
 
 template <> struct UnitHelper<Data::StdDev> {
   static Unit get(const Dataset &dataset) {
-    return dataset.unit<Data::Variance>();
+    return dataset(Data::Variance{}).unit();
   }
   static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset.unit<Data::Variance>(name);
+    return dataset(Data::Variance{}, name).unit();
   }
 };
 

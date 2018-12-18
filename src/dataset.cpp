@@ -35,6 +35,19 @@ DatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
   return DatasetSlice(*this)(dim, begin, end);
 }
 
+ConstVariableSlice Dataset::operator()(const Tag tag) const {
+  return ConstVariableSlice(m_variables[findUnique(tag)]);
+}
+
+VariableSlice Dataset::operator()(const Tag tag) {
+  return VariableSlice(m_variables[findUnique(tag)]);
+}
+
+ConstVariableSlice Dataset::operator()(const Tag tag,
+                                       const std::string &name) const {
+  return ConstVariableSlice(m_variables[find(tag, name)]);
+}
+
 VariableSlice Dataset::operator()(const Tag tag, const std::string &name) {
   return VariableSlice(m_variables[find(tag, name)]);
 }
@@ -114,7 +127,7 @@ gsl::index Dataset::findUnique(const Tag tag) const {
     }
   }
   if (index == -1)
-    throw std::runtime_error("Dataset does not contain such a variable.");
+    throw dataset::except::VariableNotFoundError(*this, tag, "<any>");
   return index;
 }
 

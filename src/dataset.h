@@ -50,7 +50,10 @@ public:
                                const gsl::index end = -1) const;
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
                           const gsl::index end = -1);
-  VariableSlice operator()(const Tag tag, const std::string &name = "");
+  ConstVariableSlice operator()(const Tag tag) const;
+  VariableSlice operator()(const Tag tag);
+  ConstVariableSlice operator()(const Tag tag, const std::string &name) const;
+  VariableSlice operator()(const Tag tag, const std::string &name);
 
   auto begin() const {
     return boost::make_transform_iterator(m_variables.begin(), makeConstSlice);
@@ -150,14 +153,6 @@ public:
   template <class Tag>
   const Dimensions &dimensions(const std::string &name) const {
     return m_variables[find(Tag{}, name)].dimensions();
-  }
-
-  template <class Tag> const Unit &unit() const {
-    return m_variables[findUnique(Tag{})].unit();
-  }
-
-  template <class Tag> const Unit &unit(const std::string &name) const {
-    return m_variables[find(Tag{}, name)].unit();
   }
 
   gsl::index find(const Tag tag, const std::string &name) const;

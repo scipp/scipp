@@ -137,13 +137,13 @@ TEST(Dataset, get_variable_view) {
   d.insert<Coord::X>({});
 
   EXPECT_EQ(d(Coord::X{}).tag(), Coord::X{});
-  EXPECT_EQ(d(Data::Value{}).tag(), Data::Value{});
-  EXPECT_EQ(d(Data::Value{}).name(), "");
+  EXPECT_EQ(d(Data::Value{}, "").tag(), Data::Value{});
+  EXPECT_EQ(d(Data::Value{}, "").name(), "");
   EXPECT_EQ(d(Data::Value{}, "name").tag(), Data::Value{});
   EXPECT_EQ(d(Data::Value{}, "name").name(), "name");
   EXPECT_THROW_MSG(d(Coord::Y{}), dataset::except::VariableNotFoundError,
                    "Dataset with 3 variables, could not find variable with tag "
-                   "Coord::Y and name ``.");
+                   "Coord::Y and name `<any>`.");
 }
 
 TEST(Dataset, extract) {
@@ -220,8 +220,9 @@ TEST(Dataset, get_fail) {
   d.insert<Data::Value>("name2", Dimensions{}, {1.1});
   EXPECT_THROW_MSG(d.get<Data::Value>(), std::runtime_error,
                    "Given variable tag is not unique. Must provide a name.");
-  EXPECT_THROW_MSG(d.get<Data::Int>(), std::runtime_error,
-                   "Dataset does not contain such a variable.");
+  EXPECT_THROW_MSG(d.get<Data::Int>(), dataset::except::VariableNotFoundError,
+                   "Dataset with 2 variables, could not find variable with tag "
+                   "Data::Int and name `<any>`.");
 }
 
 TEST(Dataset, get_named) {
@@ -406,8 +407,8 @@ TEST(Dataset, operator_times_equal_with_units) {
   a.insert(values);
   a.insert(variances);
   a *= a;
-  EXPECT_EQ(a.unit<Data::Value>(), Unit::Id::Area);
-  EXPECT_EQ(a.unit<Data::Variance>(), Unit::Id::AreaVariance);
+  EXPECT_EQ(a(Data::Value{}).unit(), Unit::Id::Area);
+  EXPECT_EQ(a(Data::Variance{}).unit(), Unit::Id::AreaVariance);
   EXPECT_EQ(a.get<Data::Variance>()[0], 36.0);
 }
 
@@ -574,8 +575,9 @@ TEST(Dataset, concatenate_with_attributes) {
 TEST(Dataset, rebin_failures) {
   Dataset d;
   auto coord = makeVariable<Coord::X>({Dim::X, 3}, {1.0, 3.0, 5.0});
-  EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
-                   "Dataset does not contain such a variable.");
+  EXPECT_THROW_MSG(rebin(d, coord), dataset::except::VariableNotFoundError,
+                   "Dataset with 0 variables, could not find variable with tag "
+                   "Coord::X and name `<any>`.");
   auto data = makeVariable<Data::Value>({Dim::X, 2}, {2.0, 4.0});
   EXPECT_THROW_MSG(
       rebin(d, data), std::runtime_error,
