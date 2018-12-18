@@ -448,6 +448,15 @@ TEST(VariableSlice, full_mutable_view) {
   EXPECT_NE(copy.get<const Coord::X>().data(), view.get<Coord::X>().data());
 }
 
+TEST(VariableSlice,
+     copy_on_write_variable_from_full_view_shares_original_data) {
+  const auto var = makeVariable<Coord::X>({{Dim::X, 3}});
+  ConstVariableSlice view(var);
+  Variable copy(view);
+  EXPECT_EQ(copy.get<const Coord::X>().data(),
+            var.get<const Coord::X>().data());
+}
+
 TEST(VariableSlice, copy_on_write_const_view) {
   const auto var = makeVariable<Coord::X>({{Dim::X, 3}});
   auto copy(var);
