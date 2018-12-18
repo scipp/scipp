@@ -22,12 +22,13 @@ include( GoogleBenchmark )
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --save-temps -march=native -fno-omit-frame-pointer")
 
-add_compile_options ( -Wall -Wextra -Wconversion -Winit-self -Wpointer-arith
-                      -Wcast-qual -Wcast-align -fno-common -Wno-deprecated
-                      -Wno-write-strings -Wno-unused-result )
-add_compile_options ( $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
-  $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
-)
+# These warning levels are unusable right now, need to disable warnings from external libraries somehow.
+#add_compile_options ( -Wall -Wextra -Wconversion -Winit-self -Wpointer-arith
+#                      -Wcast-qual -Wcast-align -fno-common -Wno-deprecated
+#                      -Wno-write-strings -Wno-unused-result )
+#add_compile_options ( $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
+#  $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
+#)
 
 add_subdirectory ( src )
 add_subdirectory ( test )

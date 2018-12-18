@@ -8,7 +8,7 @@ template <class... Tags> struct Call {
   static auto apply(const Tag tag, Args &&... args) {
     std::array funcs{Callable<Tags>::apply...};
     std::array<Tag, sizeof...(Tags)> tags{Tags{}...};
-    for (gsl::index i = 0; i < tags.size(); ++i)
+    for (size_t i = 0; i < tags.size(); ++i)
       if (tags[i].value() == tag.value())
         return funcs[i](std::forward<Args>(args)...);
     throw std::runtime_error("Unsupported tag type.");

@@ -431,6 +431,23 @@ TEST(Variable, mean) {
   EXPECT_TRUE(equals(meanY.get<const Data::Value>(), {2.0, 3.0}));
 }
 
+TEST(VariableSlice, full_const_view) {
+  const auto var = makeVariable<Coord::X>({{Dim::X, 3}});
+  auto copy(var);
+  ConstVariableSlice view(var);
+  EXPECT_EQ(copy.get<const Coord::X>().data(),
+            view.get<const Coord::X>().data());
+}
+
+TEST(VariableSlice, full_mutable_view) {
+  auto var = makeVariable<Coord::X>({{Dim::X, 3}});
+  auto copy(var);
+  VariableSlice view(var);
+  EXPECT_EQ(copy.get<const Coord::X>().data(),
+            view.get<const Coord::X>().data());
+  EXPECT_NE(copy.get<const Coord::X>().data(), view.get<Coord::X>().data());
+}
+
 TEST(VariableSlice, copy_on_write_const_view) {
   const auto var = makeVariable<Coord::X>({{Dim::X, 3}});
   auto copy(var);

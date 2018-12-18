@@ -565,8 +565,7 @@ public:
         this->dimensions(), m_model.createMutable(data));
   }
 
-  std::shared_ptr<VariableConcept>
-  clone(const Dimensions &) const override {
+  std::shared_ptr<VariableConcept> clone(const Dimensions &) const override {
     throw std::runtime_error("Cannot resize view.");
   }
 
@@ -841,11 +840,18 @@ void VariableSlice::setUnit(const Unit &unit) {
 }
 
 template <class T>
-const VariableView<const T> &ConstVariableSlice::cast() const {
-  return dynamic_cast<const ViewModel<VariableView<const T>> &>(data()).m_model;
+const VariableView<const T> ConstVariableSlice::cast() const {
+  if (m_view)
+    return dynamic_cast<const ViewModel<VariableView<const T>> &>(data())
+        .m_model;
+  return dynamic_cast<const DataModel<Vector<T>> &>(data()).getView(
+      dimensions());
 }
 
 template <class T> VariableView<const T> VariableSlice::cast() const {
+  if (!m_view)
+    return dynamic_cast<const DataModel<Vector<T>> &>(data()).getView(
+        dimensions());
   if (m_view->isConstView())
     return {
         dynamic_cast<const ViewModel<VariableView<const T>> &>(data()).m_model,
@@ -855,15 +861,17 @@ template <class T> VariableView<const T> VariableSlice::cast() const {
           dimensions()};
 }
 
-template <class T> const VariableView<T> &VariableSlice::cast() {
-  return dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model;
+template <class T> const VariableView<T> VariableSlice::cast() {
+  if (m_view)
+    return dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model;
+  return dynamic_cast<DataModel<Vector<T>> &>(data()).getView(dimensions());
 }
 
 #define INSTANTIATE_SLICEVIEW(...)                                             \
   template const VariableView<const __VA_ARGS__>                               \
-      &ConstVariableSlice::cast<__VA_ARGS__>() const;                          \
+  ConstVariableSlice::cast<__VA_ARGS__>() const;                               \
   template VariableView<const __VA_ARGS__> VariableSlice::cast() const;        \
-  template const VariableView<__VA_ARGS__> &VariableSlice::cast();
+  template const VariableView<__VA_ARGS__> VariableSlice::cast();
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(int32_t);

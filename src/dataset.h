@@ -15,13 +15,7 @@
 #include "tags.h"
 #include "variable.h"
 
-class Dataset;
 namespace detail {
-template <class Tag> class VariableView;
-template <class Tag> VariableView<Tag> getCoord(Dataset &, const Tag);
-template <class Tag>
-VariableView<Tag> getData(Dataset &,
-                          const std::pair<const Tag, const std::string> &);
 template <class Data> class Access;
 } // namespace detail
 

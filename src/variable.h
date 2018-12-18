@@ -260,7 +260,7 @@ Variable makeVariable(const Dimensions &dimensions,
 class ConstVariableSlice {
 public:
   explicit ConstVariableSlice(const Variable &variable)
-      : m_variable(&variable), m_view(variable.data().makeView()) {}
+      : m_variable(&variable) {}
   ConstVariableSlice(const ConstVariableSlice &other) = default;
   ConstVariableSlice(const Variable &variable, const Dim dim,
                      const gsl::index begin, const gsl::index end = -1)
@@ -269,7 +269,7 @@ public:
   ConstVariableSlice(const ConstVariableSlice &slice, const Dim dim,
                      const gsl::index begin, const gsl::index end = -1)
       : m_variable(slice.m_variable),
-        m_view(slice.m_view->makeView(dim, begin, end)) {}
+        m_view(slice.data().makeView(dim, begin, end)) {}
 
   ConstVariableSlice operator()(const Dim dim, const gsl::index begin,
                                 const gsl::index end = -1) const {
@@ -281,13 +281,28 @@ public:
     throw std::runtime_error("Cannot rename Variable via slice view.");
   }
   const Unit &unit() const { return m_variable->unit(); }
-  gsl::index size() const { return m_view->size(); }
+  gsl::index size() const {
+    if (m_view)
+      return m_view->size();
+    else
+      return m_variable->size();
+  }
 
   // TODO Currently VariableSlice is returned by value from dataset slices, so
   // we risk referencing a member of a temporary. Returning by value for rvalue
   // case. Need the same for some other methods?
-  const Dimensions &dimensions() const & { return m_view->dimensions(); }
-  Dimensions dimensions() const && { return m_view->dimensions(); }
+  const Dimensions &dimensions() const & {
+    if (m_view)
+      return m_view->dimensions();
+    else
+      return m_variable->dimensions();
+  }
+  Dimensions dimensions() const && {
+    if (m_view)
+      return m_view->dimensions();
+    else
+      return m_variable->dimensions();
+  }
 
   std::vector<gsl::index> strides() const {
     const auto parent = m_variable->dimensions();
@@ -302,7 +317,12 @@ public:
     return m_variable->template valueTypeIs<Tag>();
   }
   Tag tag() const { return m_variable->tag(); }
-  const VariableConcept &data() const { return *m_view; }
+  const VariableConcept &data() const {
+    if (m_view)
+      return *m_view;
+    else
+      return m_variable->data();
+  }
 
   bool isCoord() const { return m_variable->isCoord(); }
   bool isAttr() const { return m_variable->isAttr(); }
@@ -328,7 +348,7 @@ protected:
   friend class Variable;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
-  template <class T> const VariableView<const T> &cast() const;
+  template <class T> const VariableView<const T> cast() const;
 
   const Variable *m_variable;
   deep_ptr<VariableConcept> m_view;
@@ -360,6 +380,8 @@ public:
   using ConstVariableSlice::data;
   using ConstVariableSlice::get;
   VariableConcept &data() {
+    if (!m_view)
+      return m_mutableVariable->data();
     if (m_view->isConstView())
       m_view = m_view->cloneMutable(m_mutableVariable->data());
     return *m_view;
@@ -393,7 +415,7 @@ private:
   // Special version creating const view from mutable view. Note that this does
   // not return a reference but by value.
   template <class T> VariableView<const T> cast() const;
-  template <class T> const VariableView<T> &cast();
+  template <class T> const VariableView<T> cast();
 
   Variable *m_mutableVariable;
 };
