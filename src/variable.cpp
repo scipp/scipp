@@ -183,6 +183,11 @@ VariableConcept::VariableConcept(const Dimensions &dimensions)
 
 template <class T> class ViewModel;
 
+/// Partially typed implementation of VariableConcept. This is a common base
+/// class for DataModel<T> and ViewModel<T>. The former holds data in a
+/// contiguous array, whereas the latter is a (potentially non-contiguous) view
+/// into the former. This base class implements functionality that is common to
+/// both, for a specific T.
 template <class T> class VariableConceptT : public VariableConcept {
 public:
   VariableConceptT(const Dimensions &dimensions)

@@ -21,6 +21,9 @@
 
 class Variable;
 
+/// Abstract base class for any data that can be held by Variable. Also used to
+/// hold views to data by (Const)VariableSlice. This is using so-called
+/// concept-based polymorphism, see talks by Sean Parent.
 class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
@@ -112,6 +115,9 @@ class ConstVariableSlice;
 class VariableSlice;
 template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
 
+/// Variable is a type-erase handle to any data structure representing a
+/// multi-dimensional array. It has a name, a unit, and a set of named
+/// dimensions.
 class Variable {
 public:
   // TODO Having this non-explicit is convenient when passing (potential)
@@ -257,6 +263,7 @@ Variable makeVariable(const Dimensions &dimensions,
                   Vector<typename Tag::type>(values.begin(), values.end()));
 }
 
+/// Non-mutable view into (a subset of) a Variable.
 class ConstVariableSlice {
 public:
   explicit ConstVariableSlice(const Variable &variable)
@@ -354,6 +361,7 @@ protected:
   deep_ptr<VariableConcept> m_view;
 };
 
+/// Mutable view into (a subset of) a Variable.
 class VariableSlice : public ConstVariableSlice {
 public:
   explicit VariableSlice(Variable &variable)

@@ -19,6 +19,8 @@
 class ConstDatasetSlice;
 class DatasetSlice;
 
+/// Dataset is a set of Variables, identified with a unique (tag, name)
+/// identifier.
 class Dataset {
 private:
   static constexpr auto makeConstSlice = [](const Variable &var) {
@@ -257,6 +259,9 @@ auto makeSlice(
 }
 } // namespace detail
 
+/// Non-mutable view into (a subset of) a Dataset. It can be a subset both in
+/// terms of containing only a subset of the variables, as well as containing
+/// only a certain subspace (slice) of the dimension extents.
 class ConstDatasetSlice {
 public:
   ConstDatasetSlice(const Dataset &dataset) : m_dataset(dataset) {
@@ -355,6 +360,7 @@ protected:
   }
 };
 
+/// Mutable view into (a subset of) a Dataset.
 class DatasetSlice : public ConstDatasetSlice {
 public:
   DatasetSlice(Dataset &dataset)
