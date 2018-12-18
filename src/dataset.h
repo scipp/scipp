@@ -209,6 +209,16 @@ auto makeSlice(
 /// terms of containing only a subset of the variables, as well as containing
 /// only a certain subspace (slice) of the dimension extents.
 class ConstDatasetSlice {
+private:
+  struct IterAccess {
+    auto operator()(const gsl::index i) const {
+      return detail::makeSlice(m_view.m_dataset[i], m_view.m_slices);
+    }
+    const ConstDatasetSlice &m_view;
+  };
+
+  friend class IterAccess;
+
 public:
   ConstDatasetSlice(const Dataset &dataset) : m_dataset(dataset) {
     // Select everything.
@@ -256,16 +266,13 @@ public:
   ConstVariableSlice operator[](const gsl::index i) const {
     return detail::makeSlice(m_dataset[m_indices[i]], m_slices);
   }
-  // TODO Really this should be private, used only by
-  // boost::make_transform_iterator, but it is unclear what we need to befriend
-  // to make it work.
-  ConstVariableSlice operator()(const gsl::index i) const {
-    // Note: Here i is already passed through m_indices, do not do it again.
-    return detail::makeSlice(m_dataset[i], m_slices);
-  }
 
-  auto begin() const { return boost::make_transform_iterator(m_indices.begin(), *this); }
-  auto end() const { return boost::make_transform_iterator(m_indices.end(), *this); }
+  auto begin() const {
+    return boost::make_transform_iterator(m_indices.begin(), IterAccess{*this});
+  }
+  auto end() const {
+    return boost::make_transform_iterator(m_indices.end(), IterAccess{*this});
+  }
 
   bool operator==(const ConstDatasetSlice &other) const {
     if ((m_dataset == other.m_dataset) && (m_indices == other.m_indices) &&
@@ -310,6 +317,16 @@ protected:
 
 /// Mutable view into (a subset of) a Dataset.
 class DatasetSlice : public ConstDatasetSlice {
+private:
+  struct IterAccess {
+    auto operator()(const gsl::index i) const {
+      return detail::makeSlice(m_view.m_mutableDataset[i], m_view.m_slices);
+    }
+    const DatasetSlice &m_view;
+  };
+
+  friend class IterAccess;
+
 public:
   DatasetSlice(Dataset &dataset)
       : ConstDatasetSlice(dataset), m_mutableDataset(dataset) {}
@@ -320,10 +337,6 @@ public:
   VariableSlice operator[](const gsl::index i) {
     return detail::makeSlice(m_mutableDataset[m_indices[i]], m_slices);
   }
-  VariableSlice operator()(const gsl::index i) const {
-    // Note: Here i is already passed through m_indices, do not do it again.
-    return detail::makeSlice(m_mutableDataset[i], m_slices);
-  }
 
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
                           const gsl::index end = -1) const {
@@ -333,8 +346,12 @@ public:
   using ConstDatasetSlice::begin;
   using ConstDatasetSlice::end;
 
-  auto begin() { return boost::make_transform_iterator(m_indices.begin(), *this); }
-  auto end() { return boost::make_transform_iterator(m_indices.end(), *this); }
+  auto begin() {
+    return boost::make_transform_iterator(m_indices.begin(), IterAccess{*this});
+  }
+  auto end() {
+    return boost::make_transform_iterator(m_indices.end(), IterAccess{*this});
+  }
 
   DatasetSlice &assign(const Dataset &other);
   DatasetSlice &assign(const ConstDatasetSlice &other);
