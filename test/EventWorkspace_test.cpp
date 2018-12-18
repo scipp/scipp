@@ -78,6 +78,8 @@ TEST(EventWorkspace, basics) {
   // "X" axis (shared for all spectra).
   d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 1001), 1001);
 
+  // EventList using Dataset. There are probably better solutions so this likely
+  // to change, e.g., to use a proxy object.
   Dataset e;
   e.insert<Data::Tof>("", {Dimension::Event, 0}, 0);
   e.insert<Data::PulseTime>("", {Dimension::Event, 0}, 0);
@@ -110,6 +112,8 @@ TEST(EventWorkspace, basics) {
   for (const auto &item : view) {
     const auto &hist = item.get<Histogram>();
     const auto &events = item.get<Data::Events>();
+    static_cast<void>(hist);
+    static_cast<void>(events);
     // TODO: Implement rebin (better name: `makeHistogram`?).
     // makeHistogram(hist, events);
   }

@@ -68,7 +68,7 @@ TEST(TableWorkspace, basics) {
 
   // Split (opposite of concatenate).
   auto parts = split(mergedTable, Dim::Row, {3});
-  ASSERT_EQ(parts.size(), 2);
+  ASSERT_EQ(parts.size(), 2ul);
   EXPECT_EQ(parts[0], table);
   EXPECT_EQ(parts[1], table);
 

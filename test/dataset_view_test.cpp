@@ -19,10 +19,10 @@ TEST(DatasetView, construct) {
   d.insert<Data::Int>("name2", Dimensions{}, {2});
   // Empty view forbidden by static_assert:
   // DatasetView<> view(d);
-  ASSERT_NO_THROW(DatasetView<Data::Value> view(d));
-  ASSERT_NO_THROW(DatasetView<Data::Int> view(d));
-  ASSERT_NO_THROW(auto view = (DatasetView<Data::Int, Data::Value>(d)));
-  ASSERT_THROW(auto view = (DatasetView<Data::Int, Data::Variance>(d)),
+  ASSERT_NO_THROW(static_cast<void>(DatasetView<Data::Value>(d)));
+  ASSERT_NO_THROW(static_cast<void>(DatasetView<Data::Int>(d)));
+  ASSERT_NO_THROW(static_cast<void>(DatasetView<Data::Int, Data::Value>(d)));
+  ASSERT_THROW(static_cast<void>(DatasetView<Data::Int, Data::Variance>(d)),
                std::runtime_error);
 }
 
@@ -34,8 +34,8 @@ TEST(DatasetView, construct_with_const_Dataset) {
   EXPECT_NO_THROW(DatasetView<const Data::Value> view(const_d));
   EXPECT_NO_THROW(DatasetView<DatasetView<const Data::Value>> nested(
       const_d, {Dimension::X}));
-  EXPECT_NO_THROW(
-      auto view = (DatasetView<DatasetView<const Data::Value>, const Data::Int>(
+  EXPECT_NO_THROW(static_cast<void>(
+      DatasetView<DatasetView<const Data::Value>, const Data::Int>(
           const_d, {Dimension::X})));
 }
 
@@ -129,8 +129,8 @@ TEST(DatasetView, multi_column_mixed_dimension) {
   var[0] = 0.2;
   var[1] = 3.2;
 
-  ASSERT_ANY_THROW(auto view = (DatasetView<Data::Value, Data::Int>(d)));
-  ASSERT_NO_THROW(auto view = (DatasetView<Data::Value, const Data::Int>(d)));
+  ASSERT_ANY_THROW(static_cast<void>(DatasetView<Data::Value, Data::Int>(d)));
+  ASSERT_NO_THROW(static_cast<void>(DatasetView<Data::Value, const Data::Int>(d)));
   auto view = (DatasetView<Data::Value, const Data::Int>(d));
   auto it = view.begin();
   ASSERT_EQ(it->get<Data::Value>(), 0.2);
@@ -159,7 +159,7 @@ TEST(DatasetView, multi_column_transposed) {
   ASSERT_EQ(it->get<Data::Value>(), 2.0);
   ASSERT_EQ(it->get<Data::Int>(), 2);
   for (const auto &item : view)
-    ASSERT_EQ(it->get<Data::Value>(), it->get<Data::Int>());
+    ASSERT_EQ(item.get<Data::Value>(), item.get<Data::Int>());
 }
 
 TEST(DatasetView, multi_column_unrelated_dimension) {

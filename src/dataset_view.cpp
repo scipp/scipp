@@ -21,7 +21,7 @@ template <class Tag> struct UnitHelper {
 template <class Tag> struct UnitHelper<Bin<Tag>> {
   static Unit get(const Dataset &dataset) { return dataset.unit<Tag>(); }
   static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset.unit<Tag>();
+    return dataset.unit<Tag>(name);
   }
 };
 
@@ -135,7 +135,7 @@ template <class... Tags> struct DimensionHelper<DatasetViewImpl<Tags...>> {
     // comparison here.
     std::vector<bool> is_const{
         std::is_const<detail::value_type_t<Tags>>::value...};
-    for (gsl::index i = 0; i < sizeof...(Tags); ++i) {
+    for (size_t i = 0; i < sizeof...(Tags); ++i) {
       auto dims = variableDimensions[i];
       if (!((largest == dims) || is_const[i]))
         throw std::runtime_error("Variables requested for iteration have "

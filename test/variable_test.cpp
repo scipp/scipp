@@ -207,23 +207,25 @@ TEST(Variable, slice) {
   for (const gsl::index index : {0, 1, 2, 3}) {
     Variable sliceX = parent(Dim::X, index);
     ASSERT_EQ(sliceX.dimensions(), Dimensions({{Dim::Z, 3}, {Dim::Y, 2}}));
-    EXPECT_EQ(sliceX.get<const Data::Value>()[0], index + 1.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[1], index + 5.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[2], index + 9.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[3], index + 13.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[4], index + 17.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[5], index + 21.0);
+    auto base = static_cast<double>(index);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[0], base + 1.0);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[1], base + 5.0);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[2], base + 9.0);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[3], base + 13.0);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[4], base + 17.0);
+    EXPECT_EQ(sliceX.get<const Data::Value>()[5], base + 21.0);
   }
 
   for (const gsl::index index : {0, 1}) {
     Variable sliceY = parent(Dim::Y, index);
     ASSERT_EQ(sliceY.dimensions(), Dimensions({{Dim::Z, 3}, {Dim::X, 4}}));
     const auto &data = sliceY.get<const Data::Value>();
+    auto base = static_cast<double>(index);
     for (const gsl::index z : {0, 1, 2}) {
-      EXPECT_EQ(data[4 * z + 0], 4 * index + 8 * z + 1.0);
-      EXPECT_EQ(data[4 * z + 1], 4 * index + 8 * z + 2.0);
-      EXPECT_EQ(data[4 * z + 2], 4 * index + 8 * z + 3.0);
-      EXPECT_EQ(data[4 * z + 3], 4 * index + 8 * z + 4.0);
+      EXPECT_EQ(data[4 * z + 0], 4 * base + 8 * static_cast<double>(z) + 1.0);
+      EXPECT_EQ(data[4 * z + 1], 4 * base + 8 * static_cast<double>(z) + 2.0);
+      EXPECT_EQ(data[4 * z + 2], 4 * base + 8 * static_cast<double>(z) + 3.0);
+      EXPECT_EQ(data[4 * z + 3], 4 * base + 8 * static_cast<double>(z) + 4.0);
     }
   }
 

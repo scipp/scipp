@@ -23,8 +23,9 @@ public:
   Histogram &operator+=(const Histogram &other) {
     auto &ys = m_y.access();
     auto &other_ys = *other.m_y;
-    for (gsl::index i = 0; i < ys.size(); ++i)
+    for (size_t i = 0; i < ys.size(); ++i)
       ys[i] += other_ys[i];
+    return *this;
   }
 };
 
@@ -33,19 +34,19 @@ static void BM_Histogram_plus_equals(benchmark::State &state) {
   std::vector<Histogram> histograms(count, 0);
   std::vector<Histogram> histograms2(count, 0);
   const auto size = histograms.size();
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     // Create without sharing.
     histograms[i] = Histogram(state.range(0));
     histograms2[i] = Histogram(state.range(0));
   }
 // Warmup.
 #pragma omp parallel for num_threads(state.range(1))
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     histograms[i] += histograms2[i];
   }
   for (auto _ : state) {
 #pragma omp parallel for num_threads(state.range(1))
-    for (gsl::index i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       histograms[i] += histograms2[i];
     }
   }
@@ -61,19 +62,19 @@ BM_Histogram_plus_equals_allocation_from_threads(benchmark::State &state) {
   std::vector<Histogram> histograms2(count, 0);
   const auto size = histograms.size();
 #pragma omp parallel for num_threads(state.range(1))
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     // Create without sharing.
     histograms[i] = Histogram(state.range(0));
     histograms2[i] = Histogram(state.range(0));
   }
 // Warmup.
 #pragma omp parallel for num_threads(state.range(1))
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     histograms[i] += histograms2[i];
   }
   for (auto _ : state) {
 #pragma omp parallel for num_threads(state.range(1))
-    for (gsl::index i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       histograms[i] += histograms2[i];
     }
   }
@@ -87,13 +88,13 @@ static void BM_Histogram_plus_equals_breaking_sharing(benchmark::State &state) {
   std::vector<Histogram> histograms(count, 0);
   const auto size = histograms.size();
 #pragma omp parallel for num_threads(state.range(1))
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     // Create without sharing.
     histograms[i] = Histogram(state.range(0));
   }
 // Warmup.
 #pragma omp parallel for num_threads(state.range(1))
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     histograms[i] += histograms[i];
   }
   for (auto _ : state) {
@@ -101,7 +102,7 @@ static void BM_Histogram_plus_equals_breaking_sharing(benchmark::State &state) {
     std::vector<Histogram> histograms2(histograms);
     state.ResumeTiming();
 #pragma omp parallel for num_threads(state.range(1))
-    for (gsl::index i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       // Allocation/copy by cow_ptr.
       histograms2[i] += histograms[i];
     }
@@ -117,12 +118,12 @@ static void BM_bare_plus_equals(benchmark::State &state) {
   std::vector<double> histograms2(count * state.range(0));
   const auto size = histograms.size();
 #pragma omp parallel for num_threads(state.range(1))
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     histograms[i] += histograms2[i];
   }
   for (auto _ : state) {
 #pragma omp parallel for num_threads(state.range(1))
-    for (gsl::index i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       histograms[i] += histograms2[i];
     }
   }
@@ -136,14 +137,14 @@ static void BM_bare_plus_equals_breaking_sharing(benchmark::State &state) {
   std::vector<double> histograms(count * state.range(0));
   const auto size = histograms.size();
 #pragma omp parallel for num_threads(state.range(1))
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     histograms[i] += histograms[i];
   }
   for (auto _ : state) {
     // Allocation/copy would be done by cow_ptr in Variable, outside loop.
     auto histograms2(histograms);
 #pragma omp parallel for num_threads(state.range(1))
-    for (gsl::index i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       histograms2[i] += histograms[i];
     }
   }
@@ -158,7 +159,7 @@ BM_bare_plus_equals_breaking_sharing_optimized(benchmark::State &state) {
   std::vector<double> histograms(count * state.range(0));
   const auto size = histograms.size();
 #pragma omp parallel for num_threads(state.range(1))
-  for (gsl::index i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     histograms[i] += histograms[i];
   }
   for (auto _ : state) {
@@ -167,7 +168,7 @@ BM_bare_plus_equals_breaking_sharing_optimized(benchmark::State &state) {
     // 0-initialization, i.e., we pay for an extra read/write.
     double *histograms2 = new double[histograms.size()];
 #pragma omp parallel for num_threads(state.range(1))
-    for (gsl::index i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       histograms2[i] = histograms[i] + histograms[i];
     }
     delete[] histograms2;
@@ -188,7 +189,7 @@ static void BM_bare_plus_equals_no_fork_join(benchmark::State &state) {
   std::vector<double> histograms(count * state.range(0));
   std::vector<double> histograms2(count * state.range(0));
   for (auto _ : state) {
-#pragma omp parallel num_threads(state.range(1))
+#pragma omp parallel num_threads(num_threads)
     {
       const int thread = omp_get_thread_num();
       const int threads = omp_get_num_threads();

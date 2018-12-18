@@ -17,7 +17,7 @@
 
 template <class T1, class T2>
 bool equals(const gsl::span<T1> &a, const std::initializer_list<T2> &b) {
-  if (a.size() != b.size())
+  if (a.size() != static_cast<gsl::index>(b.size()))
     return false;
   for (gsl::index i = 0; i < a.size(); ++i)
     if (a[i] != b.begin()[i])

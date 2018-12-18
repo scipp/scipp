@@ -10,7 +10,7 @@
 #include "dimensions.h"
 
 TEST(Dimensions, footprint) {
-  EXPECT_EQ(sizeof(Dimensions), 64);
+  EXPECT_EQ(sizeof(Dimensions), 64ul);
   // TODO Do we want to align this? Need to run benchmarks when implementation
   // is more mature.
   // EXPECT_EQ(std::alignment_of<Dimensions>(), 64);

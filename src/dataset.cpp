@@ -387,8 +387,6 @@ template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
           "Right-hand-side in assignment contains variable "
           "that is not present in left-hand-side.");
     }
-    using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
-                                      Variable &, VariableSlice>;
     auto var1 = dataset[index];
     if (var1.isCoord()) {
       if (!(var1 == var2))

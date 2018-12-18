@@ -92,6 +92,7 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
                      return item.template get<Coord::SpectrumNumber>() == 1;
                    })
           ->get<PointData>();
+  static_cast<void>(tempDependence);
 
   // Do something with the resulting point data, e.g., plot:
   // for (const auto &point : tempDependence)

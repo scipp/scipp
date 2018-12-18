@@ -175,6 +175,7 @@ DISABLE_REBIN_T(boost::container::small_vector<T, 1>)
 DISABLE_REBIN_T(std::pair<T, T>)
 DISABLE_REBIN_T(ValueWithDelta<T>)
 DISABLE_REBIN(Dataset)
+DISABLE_REBIN(char)
 DISABLE_REBIN(std::string)
 
 VariableConcept::VariableConcept(const Dimensions &dimensions)
@@ -506,6 +507,9 @@ public:
     requireMutable();
     requireContiguous();
     if constexpr (std::is_const<typename T::value_type>::value) {
+      static_cast<void>(dim);
+      static_cast<void>(begin);
+      static_cast<void>(end);
       return gsl::span<value_type>();
     } else {
       return makeSpan(m_model, this->dimensions(), dim, begin, end);
@@ -524,18 +528,23 @@ public:
 
   VariableView<value_type> getView(const Dimensions &dims) override {
     requireMutable();
-    if constexpr (std::is_const<typename T::value_type>::value)
+    if constexpr (std::is_const<typename T::value_type>::value) {
+      static_cast<void>(dims);
       return VariableView<value_type>(nullptr, 0, {}, {});
-    else
+    } else {
       return {m_model, dims};
+    }
   }
   VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
                                    const gsl::index begin) override {
     requireMutable();
-    if constexpr (std::is_const<typename T::value_type>::value)
+    if constexpr (std::is_const<typename T::value_type>::value) {
+      static_cast<void>(dim);
+      static_cast<void>(begin);
       return VariableView<value_type>(nullptr, 0, {}, {});
-    else
+    } else {
       return {m_model, dims, dim, begin};
+    }
   }
 
   VariableView<const value_type>
