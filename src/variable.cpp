@@ -584,7 +584,8 @@ public:
 
 Variable::Variable(const ConstVariableSlice &slice)
     : Variable(*slice.m_variable) {
-  *this = slice;
+  if (slice.m_view)
+    *this = slice;
 }
 
 template <class T>

@@ -2,6 +2,9 @@
 # @author Simon Heybrock
 # Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 # National Laboratory, and European Spallation Source ERIC.
+add_executable ( variable_benchmark variable_benchmark.cpp )
+target_link_libraries ( variable_benchmark LINK_PRIVATE Dataset benchmark )
+
 add_executable ( dataset_benchmark dataset_benchmark.cpp )
 target_link_libraries ( dataset_benchmark LINK_PRIVATE Dataset benchmark )
 
