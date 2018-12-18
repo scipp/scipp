@@ -8,7 +8,6 @@
 
 #include <vector>
 
-#include <boost/iterator/iterator_facade.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <gsl/gsl_util>
 

@@ -84,6 +84,8 @@ public:
     }
 
     T *m_variable;
+    // TODO Should use something simpler (maybe faster) than MultiIndex here.
+    // Also, we can optimize this if data is contiguous by joining dimensions.
     MultiIndex m_index;
   };
 
