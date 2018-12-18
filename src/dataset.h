@@ -146,15 +146,6 @@ public:
 
   const Dimensions &dimensions() const { return m_dimensions; }
 
-  template <class Tag> const Dimensions &dimensions() const {
-    return m_variables[findUnique(Tag{})].dimensions();
-  }
-
-  template <class Tag>
-  const Dimensions &dimensions(const std::string &name) const {
-    return m_variables[find(Tag{}, name)].dimensions();
-  }
-
   gsl::index find(const Tag tag, const std::string &name) const;
   gsl::index findUnique(const Tag tag) const;
 

@@ -226,7 +226,7 @@ TEST(Workspace2D, masking) {
   d_masked.erase<Coord::Mask>();
 
   // Skip processing spectrum if it is masked.
-  EXPECT_FALSE(d_masked2.dimensions<Coord::Mask>().contains(Dim::Tof));
+  EXPECT_FALSE(d_masked2(Coord::Mask{}).dimensions().contains(Dim::Tof));
   DatasetView<DatasetView<Data::Value>, const Coord::Mask> spectra(d_masked2,
                                                                    "sample");
   for (auto &item : spectra)

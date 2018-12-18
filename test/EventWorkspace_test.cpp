@@ -29,7 +29,7 @@ TEST(EventWorkspace, EventList) {
   EXPECT_EQ(e.get<const Data::Tof>().size(), 6);
 
   // Can insert pulse times if needed.
-  e.insert<Data::PulseTime>("", e.dimensions<Data::Tof>(),
+  e.insert<Data::PulseTime>("", e(Data::Tof{}).dimensions(),
                             {2.0, 1.0, 2.1, 1.1, 3.0, 1.2});
 
   auto view = ranges::view::zip(e.get<Data::Tof>(), e.get<Data::PulseTime>());

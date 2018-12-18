@@ -57,7 +57,7 @@ template <class Tag> struct DimensionHelper {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
-    return dataset.dimensions<Tag>();
+    return dataset(Tag{}).dimensions();
   }
 
   static Dimensions get(const Dataset &dataset, const std::string &name,
@@ -65,9 +65,9 @@ template <class Tag> struct DimensionHelper {
     static_cast<void>(fixedDimensions);
     // TODO Do we need to check here if fixedDimensions are contained?
     if (is_coord<Tag>)
-      return dataset.dimensions<Tag>();
+      return dataset(Tag{}).dimensions();
     else
-      return dataset.dimensions<Tag>(name);
+      return dataset(Tag{}, name).dimensions();
   }
 };
 
@@ -75,15 +75,15 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
-    return dataset.dimensions<Tag>();
+    return dataset(Tag{}).dimensions();
   }
   static Dimensions get(const Dataset &dataset, const std::string &name,
                         const std::set<Dimension> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     if (is_coord<Tag>)
-      return dataset.dimensions<Tag>();
+      return dataset(Tag{}).dimensions();
     else
-      return dataset.dimensions<Tag>(name);
+      return dataset(Tag{}, name).dimensions();
   }
 };
 
@@ -91,12 +91,12 @@ template <> struct DimensionHelper<Coord::SpectrumPosition> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
-    return dataset.dimensions<Coord::DetectorGrouping>();
+    return dataset(Coord::DetectorGrouping{}).dimensions();
   }
   static Dimensions get(const Dataset &dataset, const std::string &,
                         const std::set<Dimension> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
-    return dataset.dimensions<Coord::DetectorGrouping>();
+    return dataset(Coord::DetectorGrouping{}).dimensions();
   }
 };
 
@@ -104,12 +104,12 @@ template <> struct DimensionHelper<Data::StdDev> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dimension> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
-    return dataset.dimensions<Data::Variance>();
+    return dataset(Data::Variance{}).dimensions();
   }
   static Dimensions get(const Dataset &dataset, const std::string &name,
                         const std::set<Dimension> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
-    return dataset.dimensions<Data::Variance>(name);
+    return dataset(Data::Variance{}, name).dimensions();
   }
 };
 
@@ -175,7 +175,7 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
   static auto get(const Dataset &dataset, const Dimensions &) {
     // Compute offset to next edge.
     gsl::index offset = 1;
-    const auto &dims = dataset.dimensions<Tag>();
+    const auto &dims = dataset(Tag{}).dimensions();
     const auto &actual = dataset.dimensions();
     for (gsl::index i = dims.ndim() - 1; i >= 0; --i) {
       if (dims.size(i) != actual.size(dims.label(i)))

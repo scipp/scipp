@@ -612,9 +612,9 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
 template <class Tag> struct Sort {
   static Dataset apply(const Dataset &d, const std::string &name) {
     auto const_axis = d.get<const Tag>(name);
-    if (d.dimensions<Tag>(name).count() != 1)
+    if (d(Tag{}, name).dimensions().count() != 1)
       throw std::runtime_error("Axis for sorting must be 1-dimensional.");
-    const auto sortDim = d.dimensions<Tag>(name).label(0);
+    const auto sortDim = d(Tag{}, name).dimensions().label(0);
     if (const_axis.size() != d.dimensions().size(sortDim))
       throw std::runtime_error("Axis for sorting cannot be a bin-edge axis.");
     if (std::is_sorted(const_axis.begin(), const_axis.end()))

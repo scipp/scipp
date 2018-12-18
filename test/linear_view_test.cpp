@@ -46,10 +46,10 @@ TEST(LinearView, push_back_1_variable) {
   LinearView<Coord::X> view(d);
   view.push_back({1.1});
   ASSERT_EQ(d.get<const Coord::X>().size(), 4);
-  ASSERT_EQ(d.dimensions<Coord::X>().size(0), 4);
+  ASSERT_EQ(d(Coord::X{}).dimensions().size(0), 4);
   view.push_back(2.2);
   ASSERT_EQ(d.get<const Coord::X>().size(), 5);
-  ASSERT_EQ(d.dimensions<Coord::X>().size(0), 5);
+  ASSERT_EQ(d(Coord::X{}).dimensions().size(0), 5);
   const auto data = d.get<const Coord::X>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
@@ -65,10 +65,10 @@ TEST(LinearView, push_back_2_variables) {
   LinearView<Coord::X, Data::Value> view(d);
   view.push_back({1.1, 1.2});
   ASSERT_EQ(d.get<const Coord::X>().size(), 3);
-  ASSERT_EQ(d.dimensions<Coord::X>().size(0), 3);
+  ASSERT_EQ(d(Coord::X{}).dimensions().size(0), 3);
   view.push_back({2.2, 2.3});
   ASSERT_EQ(d.get<const Coord::X>().size(), 4);
-  ASSERT_EQ(d.dimensions<Coord::X>().size(0), 4);
+  ASSERT_EQ(d(Coord::X{}).dimensions().size(0), 4);
 
   const auto coord = d.get<const Coord::X>();
   EXPECT_EQ(coord[0], 0.0);
@@ -94,9 +94,9 @@ TEST(LinearView, std_algorithm_generate_n_with_back_inserter) {
                   [&] { return std::make_tuple(rng(), rng()); });
 
   ASSERT_EQ(d.get<const Coord::X>().size(), 5);
-  ASSERT_EQ(d.dimensions<Coord::X>().size(0), 5);
+  ASSERT_EQ(d(Coord::X{}).dimensions().size(0), 5);
   ASSERT_EQ(d.get<const Data::Value>().size(), 5);
-  ASSERT_EQ(d.dimensions<Data::Value>().size(0), 5);
+  ASSERT_EQ(d(Data::Value{}).dimensions().size(0), 5);
 
   rng = std::mt19937{};
   for (const auto x : d.get<const Coord::X>()) {
