@@ -9,20 +9,25 @@
 #include <vector>
 
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 #include <gsl/gsl_util>
 
 #include "dimension.h"
 #include "tags.h"
 #include "variable.h"
 
-namespace detail {
-template <class Data> class Access;
-} // namespace detail
-
 class ConstDatasetSlice;
 class DatasetSlice;
 
 class Dataset {
+private:
+  static constexpr auto makeConstSlice = [](const Variable &var) {
+    return ConstVariableSlice(var);
+  };
+  static constexpr auto makeSlice = [](Variable &var) {
+    return VariableSlice(var);
+  };
+
 public:
   Dataset() = default;
   // Allowing implicit construction from views facilities calling functions that
@@ -31,15 +36,12 @@ public:
   Dataset(const ConstDatasetSlice &view);
 
   gsl::index size() const { return m_variables.size(); }
-  const Variable &operator[](const gsl::index i) const {
-    return m_variables[i];
+  ConstVariableSlice operator[](const gsl::index i) const {
+    return ConstVariableSlice{m_variables[i]};
   }
-  // WARNING: This returns `const Variable &` ON PURPOSE. We do not provide
-  // non-const access to Variable since it could break the dataset, e.g., by
-  // assigning a variable with a different shape. Nevetheless we need the
-  // non-const overload to avoid compiler warnings about ambiguous overloads
-  // with the std::string version.
-  const Variable &operator[](const gsl::index i) { return m_variables[i]; }
+  VariableSlice operator[](const gsl::index i) {
+    return VariableSlice{m_variables[i]};
+  }
   ConstDatasetSlice operator[](const std::string &name) const;
   DatasetSlice operator[](const std::string &name);
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
@@ -48,8 +50,18 @@ public:
                           const gsl::index end = -1);
   VariableSlice operator()(const Tag tag, const std::string &name = "");
 
-  auto begin() const { return m_variables.begin(); }
-  auto end() const { return m_variables.end(); }
+  auto begin() const {
+    return boost::make_transform_iterator(m_variables.begin(), makeConstSlice);
+  }
+  auto end() const {
+    return boost::make_transform_iterator(m_variables.end(), makeConstSlice);
+  }
+  auto begin() {
+    return boost::make_transform_iterator(m_variables.begin(), makeSlice);
+  }
+  auto end() {
+    return boost::make_transform_iterator(m_variables.end(), makeSlice);
+  }
 
   void insert(Variable variable);
 
@@ -158,11 +170,6 @@ public:
   Dataset &operator*=(const ConstDatasetSlice &other);
 
 private:
-  template <class Data> friend class detail::Access;
-  // This is private such that name and dimensions of variables cannot be
-  // modified in a way that would break the dataset.
-  Variable &get(gsl::index i) { return m_variables[i]; }
-
   void mergeDimensions(const Dimensions &dims, const Dim coordDim);
 
   // TODO These dimensions do not imply any ordering, should use another class
@@ -182,7 +189,7 @@ template <class T> gsl::index count(const T &dataset, const Tag tag) {
 template <class T>
 gsl::index count(const T &dataset, const Tag tag, const std::string &name) {
   gsl::index n = 0;
-  for (const auto &item : dataset)
+  for (const auto item : dataset)
     if (item.tag() == tag && item.name() == name)
       ++n;
   return n;
@@ -238,14 +245,12 @@ gsl::index find(const T &dataset, const Tag tag, const std::string &name) {
 }
 
 namespace detail {
-template <class Var>
+template <class VarSlice>
 auto makeSlice(
-    Var &variable,
+    VarSlice slice,
     const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &slices) {
-  auto slice = std::conditional_t<std::is_const<Var>::value, ConstVariableSlice,
-                                  VariableSlice>(variable);
   for (const auto &s : slices) {
-    if (variable.dimensions().contains(std::get<Dim>(s)))
+    if (slice.dimensions().contains(std::get<Dim>(s)))
       slice = slice(std::get<0>(s), std::get<1>(s), std::get<2>(s));
   }
   return slice;
@@ -357,6 +362,16 @@ public:
   DatasetSlice(Dataset &dataset, const std::string &select)
       : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
 
+  using ConstDatasetSlice::begin;
+  using ConstDatasetSlice::end;
+  dataset_slice_iterator<Dataset> begin();
+  dataset_slice_iterator<Dataset> end();
+
+  using ConstDatasetSlice::operator[];
+  VariableSlice operator[](const gsl::index i) {
+    return detail::makeSlice(m_mutableDataset[m_indices[i]], m_slices);
+  }
+
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
                           const gsl::index end = -1) const {
     return makeSubslice(*this, dim, begin, end);
@@ -374,54 +389,8 @@ public:
   VariableSlice operator()(const Tag tag, const std::string &name = "");
 
 private:
-  friend class detail::Access<DatasetSlice>;
-
-  VariableSlice get(const gsl::index i);
-
-  dataset_slice_iterator<Dataset> mutableBegin() const;
-  dataset_slice_iterator<Dataset> mutableEnd() const;
-
   Dataset &m_mutableDataset;
 };
-
-namespace detail {
-template <class Data> class Access;
-
-template <> class Access<Dataset> {
-public:
-  Access(Dataset &dataset) : m_data(dataset) {}
-
-  auto begin() const { return m_data.m_variables.begin(); }
-  auto end() const { return m_data.m_variables.end(); }
-  Variable &operator[](const gsl::index i) const {
-    return m_data.m_variables[i];
-  }
-
-private:
-  Dataset &m_data;
-};
-
-template <> class Access<DatasetSlice> {
-public:
-  Access(DatasetSlice &dataset) : m_data(dataset) {}
-
-  auto begin() const { return m_data.mutableBegin(); }
-  auto end() const { return m_data.mutableEnd(); }
-  VariableSlice operator[](const gsl::index i) const {
-    return VariableSlice(m_data.get(i));
-  }
-
-private:
-  DatasetSlice &m_data;
-};
-
-inline const Dataset &makeAccess(const Dataset &dataset) { return dataset; }
-inline auto makeAccess(Dataset &dataset) { return Access<Dataset>(dataset); }
-inline auto makeAccess(DatasetSlice &dataset) {
-  return Access<DatasetSlice>(dataset);
-}
-
-} // namespace detail
 
 Dataset operator+(Dataset a, const Dataset &b);
 Dataset operator-(Dataset a, const Dataset &b);

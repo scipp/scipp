@@ -379,6 +379,7 @@ public:
 
   using ConstVariableSlice::data;
   using ConstVariableSlice::get;
+
   VariableConcept &data() {
     if (!m_view)
       return m_mutableVariable->data();
@@ -410,6 +411,7 @@ public:
 
 private:
   friend class Variable;
+  template <class... Tags> friend class LinearView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
   // Special version creating const view from mutable view. Note that this does

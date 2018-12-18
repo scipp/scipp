@@ -175,7 +175,7 @@ bool Dataset::operator==(const Dataset &other) const {
 }
 
 VariableSlice DatasetSlice::operator()(const Tag tag, const std::string &name) {
-  return VariableSlice(get(find(*this, tag, name)));
+  return VariableSlice(operator[](find(*this, tag, name)));
 }
 
 /// Unified implementation for any in-place binary operation that requires
@@ -192,11 +192,8 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
     // - Skip if this contains more (automatic by having enclosing loop over
     //   other instead of *this).
     // - Fail if other contains more.
-    using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
-                                      Variable &, VariableSlice>;
     try {
-      VarRef var1 =
-          detail::makeAccess(dataset)[find(dataset, var2.tag(), var2.name())];
+      auto var1 = dataset[find(dataset, var2.tag(), var2.name())];
       if (var1.isCoord()) {
         // Coordinate variables must match
         // Strictly speaking we should allow "equivalent" coordinates, i.e.,
@@ -227,7 +224,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
         // Only a single (named) variable in RHS, subtract from all.
         // Not a coordinate, subtract from all.
         gsl::index count = 0;
-        for (VarRef var1 : detail::makeAccess(dataset)) {
+        for (auto var1 : dataset) {
           if (var1.tag() == var2.tag()) {
             ++count;
             if (var1.tag() == Data::Variance{})
@@ -289,9 +286,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
                                  "variance but no corresponding value.");
       }
     }
-    using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
-                                      Variable &, VariableSlice>;
-    VarRef var1 = detail::makeAccess(dataset)[index];
+    auto var1 = dataset[index];
     if (var1.isCoord()) {
       // Coordinate variables must match
       if (!(var1 == var2))
@@ -307,7 +302,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
         if (count(dataset, Data::Variance{}, var2.name()) != 0) {
           auto error_index1 = find(dataset, Data::Variance{}, var2.name());
           auto error_index2 = find(other, Data::Variance{}, var2.name());
-          VarRef error1 = detail::makeAccess(dataset)[error_index1];
+          auto error1 = dataset[error_index1];
           const auto &error2 = other[error_index2];
           if ((var1.dimensions() == var2.dimensions()) &&
               (var1.dimensions() == error1.dimensions()) &&
@@ -350,23 +345,25 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
 }
 
 Dataset &Dataset::operator+=(const Dataset &other) {
-  return binary_op_equals([](Variable &a, const Variable &b) { return a += b; },
-                          *this, other);
+  return binary_op_equals(
+      [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
+      *this, other);
 }
 Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
   return binary_op_equals(
-      [](Variable &a, const ConstVariableSlice &b) { return a += b; }, *this,
-      other);
+      [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
+      *this, other);
 }
 
 Dataset &Dataset::operator-=(const Dataset &other) {
-  return binary_op_equals([](Variable &a, const Variable &b) { return a -= b; },
-                          *this, other);
+  return binary_op_equals(
+      [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
+      *this, other);
 }
 Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
   return binary_op_equals(
-      [](Variable &a, const ConstVariableSlice &b) { return a -= b; }, *this,
-      other);
+      [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
+      *this, other);
 }
 
 Dataset &Dataset::operator*=(const Dataset &other) {
@@ -392,7 +389,7 @@ template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
     }
     using VarRef = std::conditional_t<std::is_same<T1, Dataset>::value,
                                       Variable &, VariableSlice>;
-    VarRef var1 = detail::makeAccess(dataset)[index];
+    auto var1 = dataset[index];
     if (var1.isCoord()) {
       if (!(var1 == var2))
         throw std::runtime_error(
@@ -443,15 +440,10 @@ DatasetSlice &DatasetSlice::operator*=(const ConstDatasetSlice &other) {
   return times_equals(*this, other);
 }
 
-VariableSlice DatasetSlice::get(const gsl::index i) {
-  return detail::makeSlice(detail::makeAccess(m_mutableDataset)[m_indices[i]],
-                           m_slices);
-}
-
-dataset_slice_iterator<Dataset> DatasetSlice::mutableBegin() const {
+dataset_slice_iterator<Dataset> DatasetSlice::begin() {
   return {m_mutableDataset, m_indices, m_slices, 0};
 }
-dataset_slice_iterator<Dataset> DatasetSlice::mutableEnd() const {
+dataset_slice_iterator<Dataset> DatasetSlice::end() {
   return {m_mutableDataset, m_indices, m_slices,
           static_cast<gsl::index>(m_indices.size())};
 }
@@ -459,8 +451,7 @@ template <class Value>
 std::conditional_t<std::is_const<Value>::value, ConstVariableSlice,
                    VariableSlice>
 dataset_slice_iterator<Value>::dereference() const {
-  return detail::makeSlice(detail::makeAccess(m_dataset)[m_indices[m_index]],
-                           m_slices);
+  return detail::makeSlice(m_dataset[m_indices[m_index]], m_slices);
 }
 
 template class dataset_slice_iterator<Dataset>;
@@ -615,7 +606,7 @@ template <class Tag> struct Sort {
       return d;
 
     Dataset sorted;
-    auto axisVar = d[d.find(Tag{}, name)];
+    Variable axisVar = d[d.find(Tag{}, name)];
     auto axis = axisVar.template get<Tag>();
     std::vector<gsl::index> indices(axis.size());
     std::iota(indices.begin(), indices.end(), 0);
@@ -649,7 +640,7 @@ Dataset filter(const Dataset &d, const Variable &select) {
   const auto dim = select.dimensions().labels()[0];
 
   Dataset filtered;
-  for (auto &var : d)
+  for (auto var : d)
     if (var.dimensions().contains(dim))
       filtered.insert(filter(var, select));
     else
@@ -659,7 +650,7 @@ Dataset filter(const Dataset &d, const Variable &select) {
 
 Dataset sum(const Dataset &d, const Dim dim) {
   Dataset summed;
-  for (auto &var : d) {
+  for (auto var : d) {
     if (var.dimensions().contains(dim)) {
       if (var.isData())
         summed.insert(sum(var, dim));
@@ -673,7 +664,7 @@ Dataset sum(const Dataset &d, const Dim dim) {
 Dataset mean(const Dataset &d, const Dim dim) {
   // TODO This is a naive mean not taking into account the axis. Should this do
   // something smarter for unevenly spaced data?
-  for (auto &var : d) {
+  for (auto var : d) {
     const Dim coordDim = coordDimension[var.tag().value()];
     if (coordDim != Dim::Invalid && coordDim != dim) {
       if (var.dimensions().contains(dim))
@@ -686,7 +677,7 @@ Dataset mean(const Dataset &d, const Dim dim) {
     }
   }
   Dataset m;
-  for (auto &var : d) {
+  for (auto var : d) {
     if (var.dimensions().contains(dim)) {
       if (var.isData()) {
         if (var.tag() == Data::Variance{}) {

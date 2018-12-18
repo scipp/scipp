@@ -126,7 +126,7 @@ TEST(Dataset, can_use_normal_insert_to_copy_edges) {
   d.insert<Coord::X>({Dim::X, 3});
 
   Dataset copy;
-  for (auto &var : d)
+  for (auto var : d)
     EXPECT_NO_THROW(copy.insert(var));
 }
 

@@ -189,7 +189,7 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
-  auto buf = detail::makeAccess(self)[index].template get<Tag>();
+  auto buf = self[index].template get<Tag>();
   double *ptr = (double *)info.ptr;
   std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
@@ -237,7 +237,7 @@ py::buffer_info make_py_buffer_info(VariableSlice &view) {
 
 template <class Tag>
 void doSetVariableSlice(VariableSlice &slice,
-                      py::array_t<typename Tag::type> &data) {
+                        py::array_t<typename Tag::type> &data) {
   const auto &dims = slice.dimensions();
   py::buffer_info info = data.request();
   const auto &shape = dims.shape();
@@ -451,8 +451,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__len__", &DatasetSlice::size)
       .def("__iter__",
            [](DatasetSlice &self) {
-             return py::make_iterator(detail::makeAccess(self).begin(),
-                                      detail::makeAccess(self).end());
+             return py::make_iterator(self.begin(), self.end());
            })
       .def("__contains__", &DatasetSlice::contains, py::arg("tag"),
            py::arg("name") = "")
@@ -502,7 +501,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init<const DatasetSlice &>())
       .def("__len__", &Dataset::size)
       .def("__iter__",
-           [](const Dataset &self) {
+           [](Dataset &self) {
              return py::make_iterator(self.begin(), self.end());
            })
       .def("__contains__", &Dataset::contains, py::arg("tag"),
