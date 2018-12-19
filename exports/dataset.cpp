@@ -56,13 +56,7 @@ template <class Tag>
 Variable makeVariable(const Tag, const std::vector<Dim> &labels,
                       py::array_t<typename Tag::type> data) {
   const py::buffer_info info = data.request();
-  if (info.ndim != static_cast<gsl::index>(labels.size()))
-    throw std::runtime_error(
-        "Number of dimensions tags does not match shape of data.");
-  Dimensions dims;
-  for (gsl::index i = labels.size() - 1; i >= 0; --i)
-    dims.add(labels[i], info.shape[i]);
-
+  Dimensions dims(labels, info.shape);
   auto *ptr = (typename Tag::type *)info.ptr;
   return makeVariable<const Tag>(dims, ptr, ptr + dims.volume());
 }
@@ -70,12 +64,7 @@ Variable makeVariable(const Tag, const std::vector<Dim> &labels,
 template <class Tag> struct MakeVariableDefaultInit {
   static Variable apply(const std::vector<Dim> &labels,
                         const py::tuple &shape) {
-    if (shape.size() != labels.size())
-      throw std::runtime_error(
-          "Number of dimensions tags does not match shape of data.");
-    Dimensions dims;
-    for (gsl::index i = labels.size() - 1; i >= 0; --i)
-      dims.add(labels[i], shape[i].cast<size_t>());
+    Dimensions dims(labels, shape.cast<std::vector<gsl::index>>());
     return makeVariable<const Tag>(dims);
   }
 };
@@ -126,11 +115,7 @@ void insertCoord1D(Dataset &self, const Tag,
                                     std::vector<typename Tag::type> &> &data) {
   const auto &labels = std::get<0>(data);
   const auto &values = std::get<1>(data);
-  if (labels.size() != 1)
-    throw std::runtime_error(
-        "Number of dimensions tags does not match shape of data.");
-  Dimensions dims{labels[0], static_cast<gsl::index>(values.size())};
-
+  Dimensions dims{labels, {static_cast<gsl::index>(values.size())}};
   self.insert<const Tag>(dims, values);
 }
 

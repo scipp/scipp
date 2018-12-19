@@ -26,6 +26,14 @@ public:
   Dimensions() noexcept {}
   Dimensions(const Dim dim, const gsl::index size)
       : Dimensions({{dim, size}}) {}
+  Dimensions(const std::vector<Dim> &labels,
+             const std::vector<gsl::index> &shape) {
+    if (labels.size() != shape.size())
+      throw std::runtime_error("Constructing Dimensions: Number of dimensions "
+                               "labels does not match shape.");
+    for (gsl::index i = labels.size() - 1; i >= 0; --i)
+      add(labels[i], shape[i]);
+  }
   Dimensions(const std::initializer_list<std::pair<Dim, gsl::index>> dims) {
     // TODO Check for duplicate dimension.
     if (dims.size() > 6)
