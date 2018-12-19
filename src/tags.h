@@ -364,16 +364,14 @@ template <>
 constexpr bool is_dimension_coordinate<CoordDef::SpectrumNumber> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::RowLabel> = true;
 
-template <class Tag> constexpr Dimension coordinate_dimension = Dim::Invalid;
-template <> constexpr Dimension coordinate_dimension<CoordDef::Tof> = Dim::Tof;
-template <> constexpr Dimension coordinate_dimension<CoordDef::X> = Dim::X;
-template <> constexpr Dimension coordinate_dimension<CoordDef::Y> = Dim::Y;
-template <> constexpr Dimension coordinate_dimension<CoordDef::Z> = Dim::Z;
+template <class Tag> constexpr Dim coordinate_dimension = Dim::Invalid;
+template <> constexpr Dim coordinate_dimension<CoordDef::Tof> = Dim::Tof;
+template <> constexpr Dim coordinate_dimension<CoordDef::X> = Dim::X;
+template <> constexpr Dim coordinate_dimension<CoordDef::Y> = Dim::Y;
+template <> constexpr Dim coordinate_dimension<CoordDef::Z> = Dim::Z;
 template <>
-constexpr Dimension coordinate_dimension<CoordDef::SpectrumNumber> =
-    Dim::Spectrum;
-template <>
-constexpr Dimension coordinate_dimension<CoordDef::RowLabel> = Dim::Row;
+constexpr Dim coordinate_dimension<CoordDef::SpectrumNumber> = Dim::Spectrum;
+template <> constexpr Dim coordinate_dimension<CoordDef::RowLabel> = Dim::Row;
 } // namespace detail
 
 template <class... Ts>

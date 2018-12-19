@@ -32,10 +32,10 @@ TEST(Dimensions, count_and_volume) {
   Dimensions dims;
   EXPECT_EQ(dims.count(), 0);
   EXPECT_EQ(dims.volume(), 1);
-  dims.add(Dimension::Tof, 3);
+  dims.add(Dim::Tof, 3);
   EXPECT_EQ(dims.count(), 1);
   EXPECT_EQ(dims.volume(), 3);
-  dims.add(Dimension::Q, 2);
+  dims.add(Dim::Q, 2);
   EXPECT_EQ(dims.count(), 2);
   EXPECT_EQ(dims.volume(), 6);
 }
@@ -43,27 +43,27 @@ TEST(Dimensions, count_and_volume) {
 TEST(Dimensions, offset_from_list_init) {
   // Leftmost is outer dimension, rightmost is inner dimension.
   Dimensions dims{{Dim::Q, 2}, {Dim::Tof, 3}};
-  EXPECT_EQ(dims.offset(Dimension::Tof), 1);
-  EXPECT_EQ(dims.offset(Dimension::Q), 3);
+  EXPECT_EQ(dims.offset(Dim::Tof), 1);
+  EXPECT_EQ(dims.offset(Dim::Q), 3);
 }
 
 TEST(Dimensions, offset) {
   Dimensions dims;
-  dims.add(Dimension::Tof, 3);
-  dims.add(Dimension::Q, 2);
-  EXPECT_EQ(dims.offset(Dimension::Tof), 1);
-  EXPECT_EQ(dims.offset(Dimension::Q), 3);
+  dims.add(Dim::Tof, 3);
+  dims.add(Dim::Q, 2);
+  EXPECT_EQ(dims.offset(Dim::Tof), 1);
+  EXPECT_EQ(dims.offset(Dim::Q), 3);
 }
 
 TEST(Dimensions, erase) {
   Dimensions dims;
-  dims.add(Dimension::X, 2);
-  dims.add(Dimension::Y, 3);
-  dims.add(Dimension::Z, 4);
-  dims.erase(Dimension::Y);
-  EXPECT_TRUE(dims.contains(Dimension::X));
-  EXPECT_FALSE(dims.contains(Dimension::Y));
-  EXPECT_TRUE(dims.contains(Dimension::Z));
+  dims.add(Dim::X, 2);
+  dims.add(Dim::Y, 3);
+  dims.add(Dim::Z, 4);
+  dims.erase(Dim::Y);
+  EXPECT_TRUE(dims.contains(Dim::X));
+  EXPECT_FALSE(dims.contains(Dim::Y));
+  EXPECT_TRUE(dims.contains(Dim::Z));
   EXPECT_EQ(dims.volume(), 8);
   EXPECT_EQ(dims.index(Dim::Z), 0);
   EXPECT_EQ(dims.index(Dim::X), 1);
@@ -71,29 +71,29 @@ TEST(Dimensions, erase) {
 
 TEST(Dimensions, erase_inner) {
   Dimensions dims;
-  dims.add(Dimension::X, 2);
-  dims.add(Dimension::Y, 3);
-  dims.add(Dimension::Z, 4);
-  dims.erase(Dimension::X);
-  EXPECT_FALSE(dims.contains(Dimension::X));
-  EXPECT_TRUE(dims.contains(Dimension::Y));
-  EXPECT_TRUE(dims.contains(Dimension::Z));
+  dims.add(Dim::X, 2);
+  dims.add(Dim::Y, 3);
+  dims.add(Dim::Z, 4);
+  dims.erase(Dim::X);
+  EXPECT_FALSE(dims.contains(Dim::X));
+  EXPECT_TRUE(dims.contains(Dim::Y));
+  EXPECT_TRUE(dims.contains(Dim::Z));
   EXPECT_EQ(dims.volume(), 12);
 }
 
 TEST(Dimensions, contains_other) {
   Dimensions a;
-  a.add(Dimension::Tof, 3);
-  a.add(Dimension::Q, 2);
+  a.add(Dim::Tof, 3);
+  a.add(Dim::Q, 2);
 
   EXPECT_TRUE(a.contains(Dimensions{}));
   EXPECT_TRUE(a.contains(a));
-  EXPECT_TRUE(a.contains(Dimensions(Dimension::Q, 2)));
-  EXPECT_FALSE(a.contains(Dimensions(Dimension::Q, 3)));
+  EXPECT_TRUE(a.contains(Dimensions(Dim::Q, 2)));
+  EXPECT_FALSE(a.contains(Dimensions(Dim::Q, 3)));
 
   Dimensions b;
-  b.add(Dimension::Q, 2);
-  b.add(Dimension::Tof, 3);
+  b.add(Dim::Q, 2);
+  b.add(Dim::Tof, 3);
   // Order does not matter.
   EXPECT_TRUE(a.contains(b));
 }

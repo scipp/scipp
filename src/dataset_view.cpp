@@ -55,13 +55,13 @@ template <class... Tags> struct UnitHelper<DatasetViewImpl<Tags...>> {
 
 template <class Tag> struct DimensionHelper {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     return dataset(Tag{}).dimensions();
   }
 
   static Dimensions get(const Dataset &dataset, const std::string &name,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     // TODO Do we need to check here if fixedDimensions are contained?
     if (is_coord<Tag>)
@@ -73,12 +73,12 @@ template <class Tag> struct DimensionHelper {
 
 template <class Tag> struct DimensionHelper<Bin<Tag>> {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     return dataset(Tag{}).dimensions();
   }
   static Dimensions get(const Dataset &dataset, const std::string &name,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     if (is_coord<Tag>)
       return dataset(Tag{}).dimensions();
@@ -89,12 +89,12 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
 
 template <> struct DimensionHelper<Coord::SpectrumPosition> {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     return dataset(Coord::DetectorGrouping{}).dimensions();
   }
   static Dimensions get(const Dataset &dataset, const std::string &,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     return dataset(Coord::DetectorGrouping{}).dimensions();
   }
@@ -102,12 +102,12 @@ template <> struct DimensionHelper<Coord::SpectrumPosition> {
 
 template <> struct DimensionHelper<Data::StdDev> {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     return dataset(Data::Variance{}).dimensions();
   }
   static Dimensions get(const Dataset &dataset, const std::string &name,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     static_cast<void>(fixedDimensions);
     return dataset(Data::Variance{}, name).dimensions();
   }
@@ -115,7 +115,7 @@ template <> struct DimensionHelper<Data::StdDev> {
 
 template <class... Tags> struct DimensionHelper<DatasetViewImpl<Tags...>> {
   static Dimensions getHelper(std::vector<Dimensions> variableDimensions,
-                              const std::set<Dimension> &fixedDimensions) {
+                              const std::set<Dim> &fixedDimensions) {
     // Remove fixed dimensions *before* finding largest --- outer iteration must
     // cover all contained non-fixed dimensions.
     for (auto &dims : variableDimensions)
@@ -145,13 +145,13 @@ template <class... Tags> struct DimensionHelper<DatasetViewImpl<Tags...>> {
   }
 
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     return getHelper({DimensionHelper<Tags>::get(dataset, fixedDimensions)...},
                      fixedDimensions);
   }
 
   static Dimensions get(const Dataset &dataset, const std::string &name,
-                        const std::set<Dimension> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions) {
     return getHelper(
         {DimensionHelper<Tags>::get(dataset, name, fixedDimensions)...},
         fixedDimensions);
@@ -222,7 +222,7 @@ template <class... Tags> struct DataHelper<DatasetViewImpl<Tags...>> {
   static auto get(MaybeConstDataset<Tags...> &dataset,
                   const Dimensions &iterationDimensions) {
     const auto labels = iterationDimensions.labels();
-    std::set<Dimension> fixedDimensions(labels.begin(), labels.end());
+    std::set<Dim> fixedDimensions(labels.begin(), labels.end());
     // For the nested case we create a DatasetView with the correct dimensions
     // and store it. It is later copied and initialized with the correct offset
     // in iterator::get.
@@ -236,7 +236,7 @@ template <class... Tags> struct DataHelper<DatasetViewImpl<Tags...>> {
                   const Dimensions &iterationDimensions,
                   const std::string &name) {
     const auto labels = iterationDimensions.labels();
-    std::set<Dimension> fixedDimensions(labels.begin(), labels.end());
+    std::set<Dim> fixedDimensions(labels.begin(), labels.end());
     // For the nested case we create a DatasetView with the correct dimensions
     // and store it. It is later copied and initialized with the correct offset
     // in iterator::get.
@@ -252,7 +252,7 @@ template <class... Ts>
 Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
     const Dataset &dataset,
     boost::container::small_vector<Dimensions, 4> variableDimensions,
-    const std::set<Dimension> &fixedDimensions) const {
+    const std::set<Dim> &fixedDimensions) const {
   // The dimensions for the variables may be longer by one if the variable is
   // an edge variable. For iteration dimensions we require the dimensions
   // without the extended length. The original variableDimensions is kept
@@ -299,21 +299,20 @@ Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
 }
 
 template <class... Ts>
-DatasetViewImpl<Ts...>::DatasetViewImpl(
-    MaybeConstDataset<Ts...> &dataset, const std::string &name,
-    const std::set<Dimension> &fixedDimensions)
+DatasetViewImpl<Ts...>::DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
+                                        const std::string &name,
+                                        const std::set<Dim> &fixedDimensions)
     : m_units{UnitHelper<Ts>::get(dataset, name)...},
       m_variables(makeVariables(dataset, name, fixedDimensions)) {}
 template <class... Ts>
-DatasetViewImpl<Ts...>::DatasetViewImpl(
-    MaybeConstDataset<Ts...> &dataset,
-    const std::set<Dimension> &fixedDimensions)
+DatasetViewImpl<Ts...>::DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
+                                        const std::set<Dim> &fixedDimensions)
     : m_units{UnitHelper<Ts>::get(dataset)...},
       m_variables(makeVariables(dataset, fixedDimensions)) {}
 template <class... Ts>
 DatasetViewImpl<Ts...>::DatasetViewImpl(
     MaybeConstDataset<Ts...> &dataset,
-    const std::initializer_list<Dimension> &fixedDimensions)
+    const std::initializer_list<Dim> &fixedDimensions)
     : m_units{UnitHelper<Ts>::get(dataset)...},
       m_variables(makeVariables(dataset, fixedDimensions)) {}
 
@@ -331,7 +330,7 @@ using makeVariableReturnType = std::tuple<const gsl::index, const MultiIndex,
 template <class... Ts>
 makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
     MaybeConstDataset<Ts...> &dataset, const std::string &name,
-    const std::set<Dimension> &fixedDimensions) const {
+    const std::set<Dim> &fixedDimensions) const {
   boost::container::small_vector<Dimensions, 4> subdimensions{
       DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...};
   Dimensions iterationDimensions(
@@ -346,7 +345,7 @@ makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
 template <class... Ts>
 makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
     MaybeConstDataset<Ts...> &dataset,
-    const std::set<Dimension> &fixedDimensions) const {
+    const std::set<Dim> &fixedDimensions) const {
   boost::container::small_vector<Dimensions, 4> subdimensions{
       DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
   Dimensions iterationDimensions(

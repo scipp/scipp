@@ -111,25 +111,25 @@ public:
 
   bool isContiguousIn(const Dimensions &parent) const;
 
-  Dimension label(const gsl::index i) const;
-  void relabel(const gsl::index i, const Dimension label) { m_dims[i] = label; }
+  Dim label(const gsl::index i) const;
+  void relabel(const gsl::index i, const Dim label) { m_dims[i] = label; }
   gsl::index size(const gsl::index i) const;
-  gsl::index size(const Dimension label) const;
-  gsl::index offset(const Dimension label) const;
-  void resize(const Dimension label, const gsl::index size);
+  gsl::index size(const Dim label) const;
+  gsl::index offset(const Dim label) const;
+  void resize(const Dim label, const gsl::index size);
   void resize(const gsl::index i, const gsl::index size);
-  void erase(const Dimension label);
+  void erase(const Dim label);
 
-  void add(const Dimension label, const gsl::index size);
+  void add(const Dim label, const gsl::index size);
 
   // auto begin() const { return m_dims.begin(); }
   // auto end() const { return m_dims.end(); }
 
-  int32_t index(const Dimension label) const;
+  int32_t index(const Dim label) const;
 
 private:
   // This is 56 Byte, or would be 40 Byte for small size 1.
-  // boost::container::small_vector<std::pair<Dimension, gsl::index>, 2> m_dims;
+  // boost::container::small_vector<std::pair<Dim, gsl::index>, 2> m_dims;
   // Support at most 6 dimensions, should be sufficient?
   // 6*8 Byte = 48 Byte
   gsl::index m_shape[6]{-1, -1, -1, -1, -1, -1};

@@ -377,9 +377,9 @@ Dataset operator-(Dataset a, const Dataset &b);
 Dataset operator*(Dataset a, const Dataset &b);
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices);
-Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dimension dim);
+Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim);
 // Not implemented
-Dataset convert(const Dataset &d, const Dimension from, const Dimension to);
+Dataset convert(const Dataset &d, const Dim from, const Dim to);
 // Not verified, likely wrong in some cases
 Dataset rebin(const Dataset &d, const Variable &newCoord);
 

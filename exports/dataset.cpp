@@ -306,7 +306,7 @@ std::variant<VariableView<Ts>...> as_VariableView_variant(VariableSlice &view) {
 }
 
 PYBIND11_MODULE(dataset, m) {
-  py::enum_<Dimension>(m, "Dim")
+  py::enum_<Dim>(m, "Dim")
       .value("Row", Dim::Row)
       .value("Spectrum", Dim::Spectrum)
       .value("Tof", Dim::Tof)
@@ -360,8 +360,7 @@ PYBIND11_MODULE(dataset, m) {
                               const Dim dim) { return self.contains(dim); })
       .def_property_readonly("labels", &Dimensions::labels)
       .def("add", &Dimensions::add)
-      .def("size",
-           py::overload_cast<const Dimension>(&Dimensions::size, py::const_));
+      .def("size", py::overload_cast<const Dim>(&Dimensions::size, py::const_));
 
   py::class_<Variable>(m, "Variable")
       .def(py::init(&detail::makeVariableDefaultInit))
@@ -402,8 +401,7 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__getitem__", &pySlice)
       .def("__getitem__",
-           [](VariableSlice &self,
-              const std::map<Dimension, const gsl::index> d) {
+           [](VariableSlice &self, const std::map<Dim, const gsl::index> d) {
              auto slice(self);
              for (auto item : d)
                slice = slice(item.first, item.second);
@@ -597,11 +595,11 @@ PYBIND11_MODULE(dataset, m) {
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
   m.def("split",
-        py::overload_cast<const Dataset &, const Dimension,
+        py::overload_cast<const Dataset &, const Dim,
                           const std::vector<gsl::index> &>(&split),
         py::call_guard<py::gil_scoped_release>());
   m.def("concatenate",
-        py::overload_cast<const Dataset &, const Dataset &, const Dimension>(
+        py::overload_cast<const Dataset &, const Dataset &, const Dim>(
             &concatenate),
         py::call_guard<py::gil_scoped_release>());
   m.def("rebin", py::overload_cast<const Dataset &, const Variable &>(&rebin),

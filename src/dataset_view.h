@@ -174,7 +174,7 @@ private:
   Dimensions relevantDimensions(
       const Dataset &dataset,
       boost::container::small_vector<Dimensions, 4> variableDimensions,
-      const std::set<Dimension> &fixedDimensions) const;
+      const std::set<Dim> &fixedDimensions) const;
 
 public:
   class iterator;
@@ -245,11 +245,11 @@ public:
 
   DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
                   const std::string &name,
-                  const std::set<Dimension> &fixedDimensions = {});
+                  const std::set<Dim> &fixedDimensions = {});
   DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
-                  const std::set<Dimension> &fixedDimensions = {});
+                  const std::set<Dim> &fixedDimensions = {});
   DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
-                  const std::initializer_list<Dimension> &fixedDimensions);
+                  const std::initializer_list<Dim> &fixedDimensions);
 
   DatasetViewImpl(const DatasetViewImpl &other,
                   const std::tuple<ref_type_t<Ts>...> &data);
@@ -268,11 +268,11 @@ private:
              const std::tuple<ref_type_t<Ts>...>>
   makeVariables(detail::MaybeConstDataset<Ts...> &dataset,
                 const std::string &name,
-                const std::set<Dimension> &fixedDimensions) const;
+                const std::set<Dim> &fixedDimensions) const;
   std::tuple<const gsl::index, const MultiIndex,
              const std::tuple<ref_type_t<Ts>...>>
   makeVariables(detail::MaybeConstDataset<Ts...> &dataset,
-                const std::set<Dimension> &fixedDimensions) const;
+                const std::set<Dim> &fixedDimensions) const;
 
   const std::tuple<detail::unit_t<Ts>...> m_units;
   const std::tuple<const gsl::index, const MultiIndex,

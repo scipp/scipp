@@ -28,21 +28,21 @@ TEST(DatasetView, construct) {
 
 TEST(DatasetView, construct_with_const_Dataset) {
   Dataset d;
-  d.insert<Data::Value>("name1", {Dimension::X, 1}, {1.1});
+  d.insert<Data::Value>("name1", {Dim::X, 1}, {1.1});
   d.insert<Data::Int>("name2", Dimensions{}, {2});
   const auto const_d(d);
   EXPECT_NO_THROW(DatasetView<const Data::Value> view(const_d));
-  EXPECT_NO_THROW(DatasetView<DatasetView<const Data::Value>> nested(
-      const_d, {Dimension::X}));
+  EXPECT_NO_THROW(
+      DatasetView<DatasetView<const Data::Value>> nested(const_d, {Dim::X}));
   EXPECT_NO_THROW(static_cast<void>(
-      DatasetView<DatasetView<const Data::Value>, const Data::Int>(
-          const_d, {Dimension::X})));
+      DatasetView<DatasetView<const Data::Value>, const Data::Int>(const_d,
+                                                                   {Dim::X})));
 }
 
 TEST(DatasetView, iterator) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{Dimension::X, 2}, {1.1, 1.2});
-  d.insert<Data::Int>("name2", Dimensions{Dimension::X, 2}, {2, 3});
+  d.insert<Data::Value>("name1", Dimensions{Dim::X, 2}, {1.1, 1.2});
+  d.insert<Data::Int>("name2", Dimensions{Dim::X, 2}, {2, 3});
   DatasetView<Data::Value> view(d);
   ASSERT_NO_THROW(view.begin());
   ASSERT_NO_THROW(view.end());
@@ -65,8 +65,8 @@ TEST(DatasetView, iterator) {
 
 TEST(DatasetView, copy_on_write) {
   Dataset d;
-  d.insert<Coord::X>({Dimension::X, 2}, 2);
-  d.insert<Coord::Y>({Dimension::X, 2}, 2);
+  d.insert<Coord::X>({Dim::X, 2}, 2);
+  d.insert<Coord::Y>({Dim::X, 2}, 2);
   const auto copy(d);
 
   DatasetView<const Coord::X> const_view(d);
@@ -85,8 +85,8 @@ TEST(DatasetView, copy_on_write) {
 
 TEST(DatasetView, single_column) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 10), 10);
-  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 10), 10);
+  d.insert<Data::Value>("name1", Dimensions(Dim::Tof, 10), 10);
+  d.insert<Data::Int>("name2", Dimensions(Dim::Tof, 10), 10);
   auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[3] = 3.2;
@@ -106,8 +106,8 @@ TEST(DatasetView, single_column) {
 
 TEST(DatasetView, multi_column) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
-  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Data::Value>("name1", Dimensions(Dim::Tof, 2), 2);
+  d.insert<Data::Int>("name2", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
@@ -123,14 +123,15 @@ TEST(DatasetView, multi_column) {
 
 TEST(DatasetView, multi_column_mixed_dimension) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Data::Value>("name1", Dimensions(Dim::Tof, 2), 2);
   d.insert<Data::Int>("name2", Dimensions{}, 1);
   auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
 
   ASSERT_ANY_THROW(static_cast<void>(DatasetView<Data::Value, Data::Int>(d)));
-  ASSERT_NO_THROW(static_cast<void>(DatasetView<Data::Value, const Data::Int>(d)));
+  ASSERT_NO_THROW(
+      static_cast<void>(DatasetView<Data::Value, const Data::Int>(d)));
   auto view = (DatasetView<Data::Value, const Data::Int>(d));
   auto it = view.begin();
   ASSERT_EQ(it->get<Data::Value>(), 0.2);
@@ -143,11 +144,11 @@ TEST(DatasetView, multi_column_mixed_dimension) {
 TEST(DatasetView, multi_column_transposed) {
   Dataset d;
   Dimensions dimsXY;
-  dimsXY.add(Dimension::X, 2);
-  dimsXY.add(Dimension::Y, 3);
+  dimsXY.add(Dim::X, 2);
+  dimsXY.add(Dim::Y, 3);
   Dimensions dimsYX;
-  dimsYX.add(Dimension::Y, 3);
-  dimsYX.add(Dimension::X, 2);
+  dimsYX.add(Dim::Y, 3);
+  dimsYX.add(Dim::X, 2);
 
   d.insert<Data::Value>("name1", dimsXY, {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   d.insert<Data::Int>("name2", dimsYX, {1, 3, 5, 2, 4, 6});
@@ -164,21 +165,21 @@ TEST(DatasetView, multi_column_transposed) {
 
 TEST(DatasetView, multi_column_unrelated_dimension) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dimension::X, 2), 2);
-  d.insert<Data::Int>("name2", Dimensions(Dimension::Y, 3), 3);
+  d.insert<Data::Value>("name1", Dimensions(Dim::X, 2), 2);
+  d.insert<Data::Int>("name2", Dimensions(Dim::Y, 3), 3);
   DatasetView<Data::Value> view(d);
   auto it = view.begin();
   ASSERT_TRUE(it < view.end());
   it += 2;
   // We iterate only Data::Value, so there should be no iteration in
-  // Dimension::Y.
+  // Dim::Y.
   ASSERT_EQ(it, view.end());
 }
 
 TEST(DatasetView, multi_column_orthogonal_fail) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dimension::X, 2), 2);
-  d.insert<Data::Int>("name2", Dimensions(Dimension::Y, 3), 3);
+  d.insert<Data::Value>("name1", Dimensions(Dim::X, 2), 2);
+  d.insert<Data::Int>("name2", Dimensions(Dim::Y, 3), 3);
   EXPECT_THROW_MSG((DatasetView<Data::Value, Data::Int>(d)), std::runtime_error,
                    "Variables requested for iteration do not span a joint "
                    "space. In case one of the variables represents bin edges "
@@ -190,9 +191,9 @@ TEST(DatasetView, nested_DatasetView) {
   Dataset d;
   d.insert<Data::Value>("name1", {{Dim::Y, 3}, {Dim::X, 2}},
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert<Data::Int>("name2", {Dimension::X, 2}, {10, 20});
-  DatasetView<DatasetView<const Data::Value>, const Data::Int> view(
-      d, {Dimension::Y});
+  d.insert<Data::Int>("name2", {Dim::X, 2}, {10, 20});
+  DatasetView<DatasetView<const Data::Value>, const Data::Int> view(d,
+                                                                    {Dim::Y});
   ASSERT_EQ(view.size(), 2);
   double base = 0.0;
   for (const auto &item : view) {
@@ -209,13 +210,11 @@ TEST(DatasetView, nested_DatasetView) {
 TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
   Dataset d;
   d.insert<Data::Value>(
-      "name1",
-      Dimensions({{Dimension::Z, 2}, {Dimension::Y, 3}, {Dimension::X, 4}}),
-      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
-       14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
+      "name1", Dimensions({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}}),
+      {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
+       13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
-  DatasetView<DatasetView<const Data::Value>> viewX(
-      d, {Dimension::Y, Dimension::Z});
+  DatasetView<DatasetView<const Data::Value>> viewX(d, {Dim::Y, Dim::Z});
   ASSERT_EQ(viewX.size(), 4);
   double base = 0.0;
   for (const auto &item : viewX) {
@@ -231,8 +230,7 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
     base += 1.0;
   }
 
-  DatasetView<DatasetView<const Data::Value>> viewY(
-      d, {Dimension::X, Dimension::Z});
+  DatasetView<DatasetView<const Data::Value>> viewY(d, {Dim::X, Dim::Z});
   ASSERT_EQ(viewY.size(), 3);
   base = 0.0;
   for (const auto &item : viewY) {
@@ -250,8 +248,7 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
     base += 4.0;
   }
 
-  DatasetView<DatasetView<const Data::Value>> viewZ(
-      d, {Dimension::X, Dimension::Y});
+  DatasetView<DatasetView<const Data::Value>> viewZ(d, {Dim::X, Dim::Y});
   ASSERT_EQ(viewZ.size(), 2);
   base = 0.0;
   for (const auto &item : viewZ) {
@@ -273,7 +270,7 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
     base += 12.0;
   }
 
-  DatasetView<DatasetView<const Data::Value>> viewYZ(d, {Dimension::X});
+  DatasetView<DatasetView<const Data::Value>> viewYZ(d, {Dim::X});
   ASSERT_EQ(viewYZ.size(), 6);
   base = 0.0;
   for (const auto &item : viewYZ) {
@@ -287,7 +284,7 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
     base += 4.0;
   }
 
-  DatasetView<DatasetView<const Data::Value>> viewXZ(d, {Dimension::Y});
+  DatasetView<DatasetView<const Data::Value>> viewXZ(d, {Dim::Y});
   ASSERT_EQ(viewXZ.size(), 8);
   base = 0.0;
   for (const auto &item : viewXZ) {
@@ -303,7 +300,7 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
       base += 8.0;
   }
 
-  DatasetView<DatasetView<const Data::Value>> viewXY(d, {Dimension::Z});
+  DatasetView<DatasetView<const Data::Value>> viewXY(d, {Dim::Z});
   ASSERT_EQ(viewXY.size(), 12);
   base = 0.0;
   for (const auto &item : viewXY) {
@@ -318,10 +315,9 @@ TEST(DatasetView, nested_DatasetView_all_subdimension_combinations_3D) {
 
 TEST(DatasetView, nested_DatasetView_constant_variable) {
   Dataset d;
-  d.insert<Data::Value>("name1",
-                        Dimensions({{Dimension::Z, 2}, {Dimension::X, 4}}),
+  d.insert<Data::Value>("name1", Dimensions({{Dim::Z, 2}, {Dim::X, 4}}),
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  d.insert<Coord::X>({Dimension::X, 4}, {10.0, 20.0, 30.0, 40.0});
+  d.insert<Coord::X>({Dim::X, 4}, {10.0, 20.0, 30.0, 40.0});
 
   // Coord::X has fewer dimensions, throws if not const when not nested...
   EXPECT_THROW_MSG(
@@ -329,13 +325,11 @@ TEST(DatasetView, nested_DatasetView_constant_variable) {
       "Variables requested for iteration have different dimensions");
   // ... and also when nested.
   EXPECT_THROW_MSG(
-      (DatasetView<DatasetView<const Data::Value, Coord::X>>(d,
-                                                             {Dimension::X})),
+      (DatasetView<DatasetView<const Data::Value, Coord::X>>(d, {Dim::X})),
       std::runtime_error,
       "Variables requested for iteration have different dimensions");
 
-  DatasetView<DatasetView<const Data::Value, const Coord::X>> view(
-      d, {Dimension::X});
+  DatasetView<DatasetView<const Data::Value, const Coord::X>> view(d, {Dim::X});
   ASSERT_EQ(view.size(), 2);
   double value = 0.0;
   for (const auto &item : view) {
@@ -353,16 +347,15 @@ TEST(DatasetView, nested_DatasetView_constant_variable) {
 
 TEST(DatasetView, nested_DatasetView_copy_on_write) {
   Dataset d;
-  d.insert<Data::Value>("name1",
-                        Dimensions({{Dimension::Y, 2}, {Dimension::X, 2}}),
+  d.insert<Data::Value>("name1", Dimensions({{Dim::Y, 2}, {Dim::X, 2}}),
                         {1.0, 2.0, 3.0, 4.0});
-  d.insert<Coord::X>(Dimensions({{Dimension::Y, 2}, {Dimension::X, 2}}),
+  d.insert<Coord::X>(Dimensions({{Dim::Y, 2}, {Dim::X, 2}}),
                      {10.0, 20.0, 30.0, 40.0});
 
   auto copy(d);
 
   DatasetView<DatasetView<const Data::Value, const Coord::X>> const_view(
-      copy, {Dimension::X});
+      copy, {Dim::X});
 
   EXPECT_EQ(&d.get<const Data::Value>()[0],
             &(const_view.begin()
@@ -376,7 +369,7 @@ TEST(DatasetView, nested_DatasetView_copy_on_write) {
                   ->get<Coord::X>()));
 
   DatasetView<DatasetView<const Data::Value, Coord::X>> partially_const_view(
-      copy, {Dimension::X});
+      copy, {Dim::X});
 
   EXPECT_EQ(&d.get<const Data::Value>()[0],
             &(partially_const_view.begin()
@@ -389,8 +382,7 @@ TEST(DatasetView, nested_DatasetView_copy_on_write) {
                   .begin()
                   ->get<Coord::X>()));
 
-  DatasetView<DatasetView<Data::Value, Coord::X>> nonconst_view(copy,
-                                                                {Dimension::X});
+  DatasetView<DatasetView<Data::Value, Coord::X>> nonconst_view(copy, {Dim::X});
 
   EXPECT_NE(&d.get<const Data::Value>()[0],
             &(nonconst_view.begin()
@@ -406,19 +398,19 @@ TEST(DatasetView, nested_DatasetView_copy_on_write) {
 
 TEST(DatasetView, histogram_using_nested_DatasetView) {
   Dataset d;
-  // Edges do not have Dimension::Spectrum, "shared" by all histograms.
-  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), {10.0, 20.0, 30.0});
+  // Edges do not have Dim::Spectrum, "shared" by all histograms.
+  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), {10.0, 20.0, 30.0});
   Dimensions dims;
-  dims.add(Dimension::Tof, 2);
-  dims.add(Dimension::Spectrum, 4);
+  dims.add(Dim::Tof, 2);
+  dims.add(Dim::Spectrum, 4);
   d.insert<Data::Value>("sample", dims,
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   d.insert<Data::Variance>("sample", dims, 8);
-  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 4}, {1, 2, 3, 4});
+  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 4}, {1, 2, 3, 4});
 
   using HistogramView =
       DatasetView<Bin<Coord::Tof>, Data::Value, Data::Variance>;
-  DatasetView<HistogramView, Coord::SpectrumNumber> view(d, {Dimension::Tof});
+  DatasetView<HistogramView, Coord::SpectrumNumber> view(d, {Dim::Tof});
 
   EXPECT_EQ(view.size(), 4);
   int32_t specNum = 1;
@@ -451,8 +443,8 @@ TEST(DatasetView, histogram_using_nested_DatasetView) {
 
 TEST(DatasetView, single_column_edges) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), 3);
+  d.insert<Data::Int>("name2", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
@@ -475,8 +467,8 @@ TEST(DatasetView, single_column_edges) {
 
 TEST(DatasetView, single_column_bins) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), 3);
+  d.insert<Data::Int>("name2", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
@@ -494,8 +486,8 @@ TEST(DatasetView, single_column_bins) {
 
 TEST(DatasetView, multi_column_edges) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
-  d.insert<Data::Int>("name2", Dimensions(Dimension::Tof, 2), 2);
+  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), 3);
+  d.insert<Data::Int>("name2", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get<Coord::Tof>();
   var[0] = 0.2;
   var[1] = 1.2;
@@ -519,12 +511,12 @@ TEST(DatasetView, multi_column_edges) {
 
 TEST(DatasetView, multi_dimensional_edges) {
   Dataset d;
-  d.insert<Coord::X>(Dimensions({{Dimension::Y, 2}, {Dimension::X, 3}}),
+  d.insert<Coord::X>(Dimensions({{Dim::Y, 2}, {Dim::X, 3}}),
                      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   // TODO There is currently a bug in DatasetView: If `Bin` iteration is
   // requested but the dataset contains only edges the shape calculation gives
   // wrong results.
-  d.insert<Data::Value>("", {Dimension::X, 2});
+  d.insert<Data::Value>("", {Dim::X, 2});
 
   DatasetView<Bin<Coord::X>> view(d);
   ASSERT_EQ(view.size(), 4);
@@ -542,9 +534,9 @@ TEST(DatasetView, multi_dimensional_edges) {
 
 TEST(DatasetView, edges_are_not_inner_dimension) {
   Dataset d;
-  d.insert<Coord::Y>(Dimensions({{Dimension::Y, 2}, {Dimension::X, 3}}),
+  d.insert<Coord::Y>(Dimensions({{Dim::Y, 2}, {Dim::X, 3}}),
                      {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert<Data::Value>("", {Dimension::Y, 1});
+  d.insert<Data::Value>("", {Dim::Y, 1});
 
   DatasetView<Bin<Coord::Y>> view(d);
   ASSERT_EQ(view.size(), 3);
@@ -560,7 +552,7 @@ TEST(DatasetView, edges_are_not_inner_dimension) {
 
 TEST(DatasetView, named_getter) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 3), 3);
+  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), 3);
   auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
@@ -596,11 +588,10 @@ TEST(DatasetView, named_variable_and_coordinate) {
 
 TEST(DatasetView, spectrum_position) {
   Dataset d;
-  d.insert<Coord::DetectorPosition>({Dimension::Detector, 4},
-                                    {1.0, 2.0, 4.0, 8.0});
+  d.insert<Coord::DetectorPosition>({Dim::Detector, 4}, {1.0, 2.0, 4.0, 8.0});
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
       {0, 2}, {1}, {}};
-  d.insert<Coord::DetectorGrouping>({Dimension::Spectrum, 3}, grouping);
+  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
 
   DatasetView<Coord::SpectrumPosition> view(d);
   auto it = view.begin();
@@ -616,7 +607,7 @@ TEST(DatasetView, spectrum_position) {
 
 TEST(DatasetView, derived_standard_deviation) {
   Dataset d;
-  d.insert<Data::Variance>("data", {Dimension::X, 3}, {4.0, 9.0, -1.0});
+  d.insert<Data::Variance>("data", {Dim::X, 3}, {4.0, 9.0, -1.0});
   DatasetView<Data::StdDev> view(d);
   auto it = view.begin();
   EXPECT_EQ(it->get<Data::StdDev>(), 2.0);

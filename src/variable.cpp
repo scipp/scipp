@@ -924,8 +924,7 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   return vars;
 }
 
-Variable concatenate(const Variable &a1, const Variable &a2,
-                     const Dimension dim) {
+Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   if (a1.tag() != a2.tag())
     throw std::runtime_error(
         "Cannot concatenate Variables: Data types do not match.");
@@ -995,7 +994,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
   return rebinned;
 }
 
-Variable permute(const Variable &var, const Dimension dim,
+Variable permute(const Variable &var, const Dim dim,
                  const std::vector<gsl::index> &indices) {
   auto permuted(var);
   for (size_t i = 0; i < indices.size(); ++i)

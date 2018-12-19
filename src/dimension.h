@@ -6,7 +6,7 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
-enum class Dimension : uint16_t {
+enum class Dim : uint16_t {
   Invalid,
   Event,
   Tof,
@@ -27,7 +27,6 @@ enum class Dimension : uint16_t {
   Row
 };
 
-using Dim = Dimension;
 constexpr bool isContinuous(const Dim dim) {
   if (dim == Dim::Tof || dim == Dim::X || dim == Dim::Y || dim == Dim::Z)
     return true;

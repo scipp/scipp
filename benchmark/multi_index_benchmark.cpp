@@ -9,13 +9,13 @@
 
 static void BM_MultiIndex(benchmark::State &state) {
   Dimensions dims1;
-  dims1.add(Dimension::X, 1000);
-  dims1.add(Dimension::Y, 2000);
-  dims1.add(Dimension::Z, 3000);
+  dims1.add(Dim::X, 1000);
+  dims1.add(Dim::Y, 2000);
+  dims1.add(Dim::Z, 3000);
   Dimensions dims2;
-  dims2.add(Dimension::Z, 3000);
-  dims2.add(Dimension::Y, 2000);
-  dims2.add(Dimension::X, 1000);
+  dims2.add(Dim::Z, 3000);
+  dims2.add(Dim::Y, 2000);
+  dims2.add(Dim::X, 1000);
   const auto count = dims1.volume();
 
   gsl::index result{0};

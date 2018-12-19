@@ -49,17 +49,15 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   return true;
 }
 
-Dimension Dimensions::label(const gsl::index i) const { return m_dims[i]; }
+Dim Dimensions::label(const gsl::index i) const { return m_dims[i]; }
 
 gsl::index Dimensions::size(const gsl::index i) const { return m_shape[i]; }
 
-gsl::index Dimensions::size(const Dimension label) const {
-  return operator[](label);
-}
+gsl::index Dimensions::size(const Dim label) const { return operator[](label); }
 
 /// Return the offset of elements along this dimension in a multi-dimensional
 /// array defined by this.
-gsl::index Dimensions::offset(const Dimension label) const {
+gsl::index Dimensions::offset(const Dim label) const {
   gsl::index offset{1};
   for (int32_t i = m_ndim - 1; i >= 0; --i) {
     if (m_dims[i] == label)
@@ -81,7 +79,7 @@ void Dimensions::resize(const gsl::index i, const gsl::index size) {
   m_shape[i] = size;
 }
 
-void Dimensions::erase(const Dimension label) {
+void Dimensions::erase(const Dim label) {
   for (int32_t i = index(label); i < m_ndim - 1; ++i) {
     m_shape[i] = m_shape[i + 1];
     m_dims[i] = m_dims[i + 1];
@@ -91,7 +89,7 @@ void Dimensions::erase(const Dimension label) {
   m_dims[m_ndim] = Dim::Invalid;
 }
 
-void Dimensions::add(const Dimension label, const gsl::index size) {
+void Dimensions::add(const Dim label, const gsl::index size) {
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)

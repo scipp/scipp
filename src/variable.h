@@ -439,11 +439,10 @@ Variable operator*(Variable a, const ConstVariableSlice &b);
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);
-Variable concatenate(const Variable &a1, const Variable &a2,
-                     const Dimension dim);
+Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim);
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord);
-Variable permute(const Variable &var, const Dimension dim,
+Variable permute(const Variable &var, const Dim dim,
                  const std::vector<gsl::index> &indices);
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);

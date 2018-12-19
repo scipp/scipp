@@ -15,18 +15,18 @@ public:
     const int xlen = 3;
     const int ylen = 5;
 
-    xy.add(Dimension::X, xlen);
-    xy.add(Dimension::Y, ylen);
+    xy.add(Dim::X, xlen);
+    xy.add(Dim::Y, ylen);
 
-    xy_x_edges.add(Dimension::X, xlen + 1);
-    xy_x_edges.add(Dimension::Y, ylen);
+    xy_x_edges.add(Dim::X, xlen + 1);
+    xy_x_edges.add(Dim::Y, ylen);
 
-    yx.add(Dimension::Y, ylen);
-    yx.add(Dimension::X, xlen);
+    yx.add(Dim::Y, ylen);
+    yx.add(Dim::X, xlen);
 
-    x.add(Dimension::X, xlen);
+    x.add(Dim::X, xlen);
 
-    y.add(Dimension::Y, ylen);
+    y.add(Dim::Y, ylen);
   }
 
 protected:
@@ -184,24 +184,24 @@ public:
     const int ylen = 5;
     const int zlen = 2;
 
-    xyz.add(Dimension::X, xlen);
-    xyz.add(Dimension::Y, ylen);
-    xyz.add(Dimension::Z, zlen);
+    xyz.add(Dim::X, xlen);
+    xyz.add(Dim::Y, ylen);
+    xyz.add(Dim::Z, zlen);
 
-    yxz.add(Dimension::Y, ylen);
-    yxz.add(Dimension::X, xlen);
-    yxz.add(Dimension::Z, zlen);
+    yxz.add(Dim::Y, ylen);
+    yxz.add(Dim::X, xlen);
+    yxz.add(Dim::Z, zlen);
 
-    zyx.add(Dimension::Z, zlen);
-    zyx.add(Dimension::Y, ylen);
-    zyx.add(Dimension::X, xlen);
+    zyx.add(Dim::Z, zlen);
+    zyx.add(Dim::Y, ylen);
+    zyx.add(Dim::X, xlen);
 
-    yx.add(Dimension::Y, ylen);
-    yx.add(Dimension::X, xlen);
+    yx.add(Dim::Y, ylen);
+    yx.add(Dim::X, xlen);
 
-    x.add(Dimension::X, xlen);
+    x.add(Dim::X, xlen);
 
-    y.add(Dimension::Y, ylen);
+    y.add(Dim::Y, ylen);
   }
 
 protected:

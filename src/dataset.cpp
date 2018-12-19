@@ -511,7 +511,7 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
   return out;
 }
 
-Dataset convert(const Dataset &d, const Dimension from, const Dimension to) {
+Dataset convert(const Dataset &d, const Dim from, const Dim to) {
   static_cast<void>(to);
   // How to convert? There are several cases:
   // 1. Tof conversion as Mantid's ConvertUnits.
@@ -628,6 +628,10 @@ template <class Tag> struct Sort {
 };
 
 Dataset sort(const Dataset &d, const Tag t, const std::string &name) {
+  // Another helper `callForSortableTag` that could be added in tag_util.h would
+  // allow for generic support for all valid tags. Would simply need to filter
+  // all tags based on whether Tag::type has `operator<`, using some meta
+  // programming.
   return Call<Coord::RowLabel, Coord::X, Data::Value>::apply<Sort>(t, d, name);
 }
 

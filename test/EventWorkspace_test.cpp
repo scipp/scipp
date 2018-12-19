@@ -14,7 +14,7 @@
 
 TEST(EventWorkspace, EventList) {
   Dataset e;
-  e.insert<Data::Tof>("", {Dimension::Event, 0}, 0);
+  e.insert<Data::Tof>("", {Dim::Event, 0}, 0);
   // `size()` gives number of variables, not the number of events in this case!
   // Do we need something like `count()`, returning the volume of the Dataset?
   EXPECT_EQ(e.size(), 1);
@@ -23,9 +23,9 @@ TEST(EventWorkspace, EventList) {
   // Cannot change size of Dataset easily right now, is that a problem here? Can
   // use concatenate, but there is no `push_back` or similar:
   Dataset e2;
-  e2.insert<Data::Tof>("", {Dimension::Event, 3}, {1.1, 2.2, 3.3});
-  e = concatenate(e, e2, Dimension::Event);
-  e = concatenate(e, e2, Dimension::Event);
+  e2.insert<Data::Tof>("", {Dim::Event, 3}, {1.1, 2.2, 3.3});
+  e = concatenate(e, e2, Dim::Event);
+  e = concatenate(e, e2, Dim::Event);
   EXPECT_EQ(e.get<const Data::Tof>().size(), 6);
 
   // Can insert pulse times if needed.
@@ -73,19 +73,19 @@ TEST(EventWorkspace, EventList) {
 
 TEST(EventWorkspace, basics) {
   Dataset d;
-  d.insert<Coord::SpectrumNumber>({Dimension::Spectrum, 3}, {1, 2, 3});
+  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
 
   // "X" axis (shared for all spectra).
-  d.insert<Coord::Tof>(Dimensions(Dimension::Tof, 1001), 1001);
+  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 1001), 1001);
 
   // EventList using Dataset. There are probably better solutions so this likely
   // to change, e.g., to use a proxy object.
   Dataset e;
-  e.insert<Data::Tof>("", {Dimension::Event, 0}, 0);
-  e.insert<Data::PulseTime>("", {Dimension::Event, 0}, 0);
+  e.insert<Data::Tof>("", {Dim::Event, 0}, 0);
+  e.insert<Data::PulseTime>("", {Dim::Event, 0}, 0);
 
   // Insert empty event lists.
-  d.insert<Data::Events>("", {Dimension::Spectrum, 3}, 3, e);
+  d.insert<Data::Events>("", {Dim::Spectrum, 3}, 3, e);
 
   // Get event lists for all spectra.
   auto eventLists = d.get<Data::Events>();
@@ -93,13 +93,13 @@ TEST(EventWorkspace, basics) {
 
   // Modify individual event lists.
   Dataset e2;
-  e2.insert<Data::Tof>("", {Dimension::Event, 3}, {1.1, 2.2, 3.3});
-  e2.insert<Data::PulseTime>("", {Dimension::Event, 3}, 3);
+  e2.insert<Data::Tof>("", {Dim::Event, 3}, {1.1, 2.2, 3.3});
+  e2.insert<Data::PulseTime>("", {Dim::Event, 3}, 3);
   eventLists[1] = e2;
-  eventLists[2] = concatenate(e2, e2, Dimension::Event);
+  eventLists[2] = concatenate(e2, e2, Dim::Event);
 
   // Insert variable for histogrammed data.
-  Dimensions dims({{Dimension::Tof, 1000}, {Dimension::Spectrum, 3}});
+  Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
   d.insert<Data::Value>("", dims, dims.volume());
   d.insert<Data::Variance>("", dims, dims.volume());
 
@@ -108,7 +108,7 @@ TEST(EventWorkspace, basics) {
   // event data type/unit imply which coordinate to use, in this case events
   // have type Data::Tof so the axis is Coord::Tof.
   using Histogram = DatasetView<Bin<Coord::Tof>, Data::Value, Data::Variance>;
-  DatasetView<Histogram, const Data::Events> view(d, {Dimension::Tof});
+  DatasetView<Histogram, const Data::Events> view(d, {Dim::Tof});
   for (const auto &item : view) {
     const auto &hist = item.get<Histogram>();
     const auto &events = item.get<Data::Events>();
@@ -130,11 +130,11 @@ TEST(EventWorkspace, plus) {
   Dataset d;
 
   Dataset e;
-  e.insert<Data::Tof>("", {Dimension::Event, 10});
-  e.insert<Data::PulseTime>("", {Dimension::Event, 10});
-  auto e2 = concatenate(e, e, Dimension::Event);
+  e.insert<Data::Tof>("", {Dim::Event, 10});
+  e.insert<Data::PulseTime>("", {Dim::Event, 10});
+  auto e2 = concatenate(e, e, Dim::Event);
 
-  d.insert<Data::Events>("", {Dimension::Spectrum, 2}, {e, e2});
+  d.insert<Data::Events>("", {Dim::Spectrum, 2}, {e, e2});
 
   EXPECT_THROW_MSG(d - d, std::runtime_error,
                    "Subtraction of events lists not implemented.");
