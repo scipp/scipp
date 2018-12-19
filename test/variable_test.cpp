@@ -904,3 +904,17 @@ TEST(VariableSlice, slice_assign_from_variable) {
                        {0, 0, 0, 0, 11, 12, 0, 21, 22}));
   }
 }
+
+TEST(VariableSlice, slice_binary_operations) {
+  auto v = makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  // Note: There does not seem to be a way to test whether this is using the
+  // operators that onvert the second argument to Variable (it should not), or
+  // keep it as a view. See variable_benchmark.cpp for an attempt to verify
+  // this.
+  auto sum = v(Dim::X, 0) + v(Dim::X, 1);
+  auto difference = v(Dim::X, 0) - v(Dim::X, 1);
+  auto product = v(Dim::X, 0) * v(Dim::X, 1);
+  EXPECT_TRUE(equals(sum.get<const Data::Value>(), {3, 7}));
+  EXPECT_TRUE(equals(difference.get<const Data::Value>(), {-1, -1}));
+  EXPECT_TRUE(equals(product.get<const Data::Value>(), {2, 12}));
+}

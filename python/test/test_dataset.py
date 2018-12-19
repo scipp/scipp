@@ -166,6 +166,13 @@ class TestDataset(unittest.TestCase):
                 np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z:z+delta,:,:])
                 np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z:z+delta,:])
 
+    def test_plus_equals_slice(self):
+        dataset = Dataset()
+        dataset[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], self.reference_data1)
+        a = Dataset(dataset[Dim.X, 0])
+        b = dataset[Dim.X, 1]
+        a += b
+
     def test_numpy_interoperable(self):
         # TODO: Need also __setitem__ with view.
         # self.dataset[Data.Value, 'data2'] = self.dataset[Data.Value, 'data1']

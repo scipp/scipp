@@ -572,10 +572,39 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insert<Data::Value, VariableSlice>)
       .def("__setitem__", detail::insert<Data::Variance, VariableSlice>)
       .def("__setitem__", detail::insertDefaultInit)
-      // Note: As it is this will always implicitly convert a RHS view into a
-      // Dataset, i.e., makes a copy. Need to expose the operator overloads for
-      // views as well.
+      // TODO Make sure we have all overloads covered to avoid implicit
+      // conversion of DatasetSlice to Dataset.
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self += other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self -= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self *= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self + other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self - other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self * other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())

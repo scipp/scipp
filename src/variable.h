@@ -433,6 +433,9 @@ private:
 Variable operator+(Variable a, const Variable &b);
 Variable operator-(Variable a, const Variable &b);
 Variable operator*(Variable a, const Variable &b);
+Variable operator+(Variable a, const ConstVariableSlice &b);
+Variable operator-(Variable a, const ConstVariableSlice &b);
+Variable operator*(Variable a, const ConstVariableSlice &b);
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);

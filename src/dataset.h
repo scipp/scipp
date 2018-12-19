@@ -54,6 +54,13 @@ public:
   ConstVariableSlice operator()(const Tag tag, const std::string &name) const;
   VariableSlice operator()(const Tag tag, const std::string &name);
 
+  // The iterators (and in fact all other public accessors to variables in
+  // Dataset) return *views* and *not* a `Variable &`. This is necessary to
+  // ensure that the dataset cannot be broken by modifying the name of a
+  // variable (which could lead to duplicate names in the dataset) or the
+  // dimensions of a variable (which could lead to inconsistent dimension
+  // extents in the dataset). By exposing variables via views we are limiting
+  // modifications to those that cannot break guarantees given by dataset.
   auto begin() const {
     return boost::make_transform_iterator(m_variables.begin(), makeConstSlice);
   }
@@ -240,8 +247,6 @@ public:
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
-
-  const Dataset &dataset() const { return m_dataset; }
 
   std::vector<std::tuple<Dim, gsl::index>> dimensions() const {
     std::vector<std::tuple<Dim, gsl::index>> dims;

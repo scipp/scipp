@@ -906,6 +906,9 @@ VariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
 Variable operator+(Variable a, const Variable &b) { return a += b; }
 Variable operator-(Variable a, const Variable &b) { return a -= b; }
 Variable operator*(Variable a, const Variable &b) { return a *= b; }
+Variable operator+(Variable a, const ConstVariableSlice &b) { return a += b; }
+Variable operator-(Variable a, const ConstVariableSlice &b) { return a -= b; }
+Variable operator*(Variable a, const ConstVariableSlice &b) { return a *= b; }
 
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
