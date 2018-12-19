@@ -53,8 +53,6 @@ Dim Dimensions::label(const gsl::index i) const { return m_dims[i]; }
 
 gsl::index Dimensions::size(const gsl::index i) const { return m_shape[i]; }
 
-gsl::index Dimensions::size(const Dim label) const { return operator[](label); }
-
 /// Return the offset of elements along this dimension in a multi-dimensional
 /// array defined by this.
 gsl::index Dimensions::offset(const Dim label) const {

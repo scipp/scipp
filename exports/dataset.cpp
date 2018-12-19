@@ -177,7 +177,7 @@ VariableSlice pySlice(VariableSlice &view,
   const Dim dim = std::get<Dim>(index);
   const auto indices = std::get<const py::slice>(index);
   size_t start, stop, step, slicelength;
-  const auto size = view.dimensions().size(dim);
+  const auto size = view.dimensions()[dim];
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
     throw py::error_already_set();
   if (step != 1)
@@ -360,7 +360,8 @@ PYBIND11_MODULE(dataset, m) {
                               const Dim dim) { return self.contains(dim); })
       .def_property_readonly("labels", &Dimensions::labels)
       .def("add", &Dimensions::add)
-      .def("size", py::overload_cast<const Dim>(&Dimensions::size, py::const_));
+      .def("size",
+           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_));
 
   py::class_<Variable>(m, "Variable")
       .def(py::init(&detail::makeVariableDefaultInit))
@@ -507,7 +508,7 @@ PYBIND11_MODULE(dataset, m) {
              const Dim dim = std::get<Dim>(index);
              const auto indices = std::get<const py::slice>(index);
              size_t start, stop, step, slicelength;
-             const auto size = self.dimensions().size(dim);
+             const auto size = self.dimensions()[dim];
              if (!indices.compute(size, &start, &stop, &step, &slicelength))
                throw py::error_already_set();
              if (step != 1)

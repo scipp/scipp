@@ -562,7 +562,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   if (!oldDims.contains(dim))
     throw std::runtime_error("Existing coordinate to be rebined lacks the "
                              "dimension corresponding to the new coordinate.");
-  if (oldDims.size(dim) != datasetDims.size(dim) + 1)
+  if (oldDims[dim] != datasetDims[dim] + 1)
     throw std::runtime_error("Existing coordinate to be rebinned is not a bin "
                              "edge coordinate. Use `resample` instead of rebin "
                              "or convert to histogram data first.");
@@ -571,7 +571,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
     if (newDim == dim)
       continue;
     if (datasetDims.contains(newDim)) {
-      if (datasetDims.size(newDim) != newDims.shape()[i])
+      if (datasetDims[newDim] != newDims.shape()[i])
         throw std::runtime_error(
             "Size mismatch in auxiliary dimension of new coordinate.");
     }
@@ -598,7 +598,7 @@ template <class Tag> struct Sort {
     if (d(Tag{}, name).dimensions().count() != 1)
       throw std::runtime_error("Axis for sorting must be 1-dimensional.");
     const auto sortDim = d(Tag{}, name).dimensions().label(0);
-    if (const_axis.size() != d.dimensions().size(sortDim))
+    if (const_axis.size() != d.dimensions()[sortDim])
       throw std::runtime_error("Axis for sorting cannot be a bin-edge axis.");
     if (std::is_sorted(const_axis.begin(), const_axis.end()))
       return d;
@@ -687,7 +687,7 @@ Dataset mean(const Dataset &d, const Dim dim) {
           // this is not included by the stand-alone mean(Variable), since that
           // would be confusing.
           double scale =
-              1.0 / sqrt(static_cast<double>(var.dimensions().size(dim)));
+              1.0 / sqrt(static_cast<double>(var.dimensions()[dim]));
           m.insert(mean(var, dim) * makeVariable<Data::Value>({}, {scale}));
         } else {
           m.insert(mean(var, dim));

@@ -114,7 +114,6 @@ public:
   Dim label(const gsl::index i) const;
   void relabel(const gsl::index i, const Dim label) { m_dims[i] = label; }
   gsl::index size(const gsl::index i) const;
-  gsl::index size(const Dim label) const;
   gsl::index offset(const Dim label) const;
   void resize(const Dim label, const gsl::index size);
   void resize(const gsl::index i, const gsl::index size);

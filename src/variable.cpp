@@ -83,8 +83,8 @@ template <class T> struct RebinHelper {
                          const VariableConceptT<T> &newCoordT) {
     const auto &oldData = oldT.getSpan();
     auto newData = newT.getSpan();
-    const auto oldSize = oldT.dimensions().size(dim);
-    const auto newSize = newT.dimensions().size(dim);
+    const auto oldSize = oldT.dimensions()[dim];
+    const auto newSize = newT.dimensions()[dim];
     const auto count = oldT.dimensions().volume() / oldSize;
     const auto *xold = &*oldCoordT.getSpan().begin();
     const auto *xnew = &*newCoordT.getSpan().begin();
@@ -363,9 +363,9 @@ public:
       RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
     } else {
       auto oldCoordDims = oldCoord.dimensions();
-      oldCoordDims.resize(dim, oldCoordDims.size(dim) - 1);
+      oldCoordDims.resize(dim, oldCoordDims[dim] - 1);
       auto newCoordDims = newCoord.dimensions();
-      newCoordDims.resize(dim, newCoordDims.size(dim) - 1);
+      newCoordDims.resize(dim, newCoordDims[dim] - 1);
       auto oldCoordView = oldCoordT.getView(dimensions());
       auto newCoordView = newCoordT.getView(dimensions());
       const auto oldOffset = oldCoordDims.offset(dim);
@@ -382,7 +382,7 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
               const gsl::index begin, const gsl::index end) {
   if (!dims.contains(dim) && (begin != 0 || end != 1))
     throw std::runtime_error("VariableConcept: Slice index out of range.");
-  if (!dims.contains(dim) || dims.size(dim) == end - begin) {
+  if (!dims.contains(dim) || dims[dim] == end - begin) {
     return gsl::make_span(model.data(), model.data() + model.size());
   }
   const gsl::index beginOffset = begin * dims.offset(dim);
@@ -920,7 +920,7 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   vars.emplace_back(var(dim, 0, indices.front()));
   for (gsl::index i = 0; i < static_cast<gsl::index>(indices.size()) - 1; ++i)
     vars.emplace_back(var(dim, indices[i], indices[i + 1]));
-  vars.emplace_back(var(dim, indices.back(), var.dimensions().size(dim)));
+  vars.emplace_back(var(dim, indices.back(), var.dimensions()[dim]));
   return vars;
 }
 
@@ -944,7 +944,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
       if (!dims2.contains(dim1))
         throw std::runtime_error(
             "Cannot concatenate Variables: Dimensions do not match.");
-      if (dims2.size(dim1) != dims1.size(dim1))
+      if (dims2[dim1] != dims1[dim1])
         throw std::runtime_error(
             "Cannot concatenate Variables: Dimension extents do not match.");
     }
@@ -967,9 +967,9 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   gsl::index extent1 = 1;
   gsl::index extent2 = 1;
   if (dims1.contains(dim))
-    extent1 += dims1.size(dim) - 1;
+    extent1 += dims1[dim] - 1;
   if (dims2.contains(dim))
-    extent2 += dims2.size(dim) - 1;
+    extent2 += dims2[dim] - 1;
   if (dims.contains(dim))
     dims.resize(dim, extent1 + extent2);
   else
@@ -987,7 +987,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
   auto rebinned(var);
   auto dims = rebinned.dimensions();
   const Dim dim = coordDimension[newCoord.tag().value()];
-  dims.resize(dim, newCoord.dimensions().size(dim) - 1);
+  dims.resize(dim, newCoord.dimensions()[dim] - 1);
   rebinned.setDimensions(dims);
   // TODO take into account unit if values have been divided by bin width.
   rebinned.data().rebin(var.data(), dim, oldCoord.data(), newCoord.data());
@@ -1015,7 +1015,7 @@ Variable filter(const Variable &var, const Variable &filter) {
 
   auto out(var);
   auto dims = out.dimensions();
-  dims.resize(dim, dims.size(dim) - removed);
+  dims.resize(dim, dims[dim] - removed);
   out.setDimensions(dims);
 
   gsl::index iOut = 0;
@@ -1040,6 +1040,6 @@ Variable sum(const Variable &var, const Dim dim) {
 
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
-  double scale = 1.0 / static_cast<double>(var.dimensions().size(dim));
+  double scale = 1.0 / static_cast<double>(var.dimensions()[dim]);
   return summed * makeVariable<Data::Value>({}, {scale});
 }

@@ -65,25 +65,25 @@ TEST(Dataset, insert_variables_different_order) {
 TEST(Dataset, insert_edges) {
   Dataset d;
   d.insert<Data::Value>("name1", {Dim::Tof, 2});
-  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
+  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
   EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
-  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
+  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
 }
 
 TEST(Dataset, insert_edges_first) {
   Dataset d;
   EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
-  EXPECT_EQ(d.dimensions().size(Dim::Tof), 3);
+  EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
   EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
-  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
+  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
 }
 
 TEST(Dataset, insert_edges_first_fail) {
   Dataset d;
   EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
-  EXPECT_EQ(d.dimensions().size(Dim::Tof), 3);
+  EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
   EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
-  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
+  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
   // Once we have edges and non-edges dimensions cannot change further.
   EXPECT_THROW_MSG(
       d.insert<Data::Value>("name2", {Dim::Tof, 1}), std::runtime_error,
@@ -95,7 +95,7 @@ TEST(Dataset, insert_edges_first_fail) {
 TEST(Dataset, insert_edges_fail) {
   Dataset d;
   EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
-  EXPECT_EQ(d.dimensions().size(Dim::Tof), 2);
+  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
   EXPECT_THROW_MSG(d.insert<Coord::Tof>({Dim::Tof, 4}), std::runtime_error,
                    "Cannot insert variable into Dataset: Variable is a "
                    "dimension coordiante, but the dimension length matches "
@@ -109,7 +109,7 @@ TEST(Dataset, insert_edges_fail) {
 TEST(Dataset, insert_edges_reverse_fail) {
   Dataset d;
   EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
-  EXPECT_EQ(d.dimensions().size(Dim::Tof), 3);
+  EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
   EXPECT_THROW_MSG(
       d.insert<Data::Value>("name1", Dimensions(Dim::Tof, 1)),
       std::runtime_error,

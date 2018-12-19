@@ -178,7 +178,7 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
     const auto &dims = dataset(Tag{}).dimensions();
     const auto &actual = dataset.dimensions();
     for (gsl::index i = dims.ndim() - 1; i >= 0; --i) {
-      if (dims.size(i) != actual.size(dims.label(i)))
+      if (dims.size(i) != actual[dims.label(i)])
         break;
       offset *= dims.size(i);
     }
@@ -264,7 +264,7 @@ Dimensions DatasetViewImpl<Ts...>::relevantDimensions(
     if (is_bins[i]) {
       const auto &actual = dataset.dimensions();
       for (auto &dim : dims.labels())
-        dims.resize(dim, actual.size(dim));
+        dims.resize(dim, actual[dim]);
     }
   }
 
