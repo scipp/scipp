@@ -125,8 +125,19 @@ public:
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);
 
+  // TODO Add remaining variants of the constructors templated with TagT and
+  // replace `makeVariable` everywhere.
+  template <class TagT>
+  Variable(TagT tag, const Dimensions &dimensions)
+      : Variable(tag, TagT::unit, std::move(dimensions),
+                 Vector<typename TagT::type>(dimensions.volume())) {}
+  template <class TagT>
+  Variable(TagT tag, const Dimensions &dimensions,
+           Vector<typename TagT::type> object)
+      : Variable(tag, TagT::unit, std::move(dimensions), std::move(object)) {}
+
   template <class T>
-  Variable(Tag tag, const Unit::Id unit, const Dimensions &dimensions,
+  Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,
            T object);
 
   Variable &operator=(const ConstVariableSlice &slice);
@@ -361,7 +372,10 @@ protected:
   deep_ptr<VariableConcept> m_view;
 };
 
-/// Mutable view into (a subset of) a Variable.
+/** Mutable view into (a subset of) a Variable.
+ *
+ * By inheriting from ConstVariableSlice any code that works for
+ * ConstVariableSlice will automatically work also for this mutable variant. */
 class VariableSlice : public ConstVariableSlice {
 public:
   explicit VariableSlice(Variable &variable)

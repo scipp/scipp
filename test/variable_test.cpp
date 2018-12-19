@@ -26,7 +26,7 @@ TEST(Variable, construct_fail) {
 }
 
 TEST(Variable, span_references_Variable) {
-  auto a = makeVariable<Data::Value>(Dimensions(Dim::Tof, 2), 2);
+  Variable a(Data::Value{}, Dimensions(Dim::Tof, 2));
   auto observer = a.get<const Data::Value>();
   // This line does not compile, const-correctness works:
   // observer[0] = 1.0;
