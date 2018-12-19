@@ -365,32 +365,25 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
   c.insert<Coord::X>({Dim::X, 1}, {0.1});
   c.insert<Data::Variance>("name1", {Dim::X, 1}, {2.0});
   EXPECT_THROW_MSG(a *= b, std::runtime_error,
-                   "Either both or none of the "
-                   "operands must have a variance "
+                   "Either both or none of the operands must have a variance "
                    "for their values.");
   EXPECT_THROW_MSG(b *= a, std::runtime_error,
-                   "Either both or none of the "
-                   "operands must have a variance "
+                   "Either both or none of the operands must have a variance "
                    "for their values.");
   EXPECT_THROW_MSG(c *= c, std::runtime_error,
-                   "Cannot multiply datasets that "
-                   "contain a variance but no "
+                   "Cannot multiply datasets that contain a variance but no "
                    "corresponding value.");
   EXPECT_THROW_MSG(a *= c, std::runtime_error,
-                   "Cannot multiply datasets that "
-                   "contain a variance but no "
+                   "Cannot multiply datasets that contain a variance but no "
                    "corresponding value.");
   EXPECT_THROW_MSG(c *= a, std::runtime_error,
-                   "Right-hand-side in addition "
-                   "contains variable that is not "
+                   "Right-hand-side in addition contains variable that is not "
                    "present in left-hand-side.");
   EXPECT_THROW_MSG(b *= c, std::runtime_error,
-                   "Right-hand-side in addition "
-                   "contains variable that is not "
+                   "Right-hand-side in addition contains variable that is not "
                    "present in left-hand-side.");
   EXPECT_THROW_MSG(c *= b, std::runtime_error,
-                   "Right-hand-side in addition "
-                   "contains variable that is not "
+                   "Right-hand-side in addition contains variable that is not "
                    "present in left-hand-side.");
 }
 

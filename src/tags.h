@@ -18,6 +18,22 @@
 #include "unit.h"
 #include "value_with_delta.h"
 
+// Adding new tags
+// ===============
+//
+// 1. Add the tag class to either CoordDef, DataDef, or AttrDef in namespace
+//    detail, and list the class in the corresponding`tags` tuple.
+// 2. Add a `using` clause for the tag in Coord, Data, or Attr.
+//
+// Optionally:
+// 3. If the underlying type is new, explicit instantiations in variable.cpp may
+//    need to be added.
+// 4. If the new tag corresponds to a dimension, `is_dimension_coordinate` and
+//    `coordinate_dimension` need to be set correctly.
+// 4. For support in Python, the tag needs to be exported in
+//    `exports/dataset.cpp` and a fair number of methods in the same file need
+//    to be modified to support the new tag.
+
 class Tag {
 public:
   constexpr Tag() : m_value(0) {}
