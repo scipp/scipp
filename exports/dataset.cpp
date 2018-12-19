@@ -71,15 +71,7 @@ template <class Tag> struct MakeVariableDefaultInit {
 
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
                                  const py::tuple &shape) {
-  return Call<Coord::Mask, Coord::X, Coord::Y, Coord::Z, Data::Value,
-              Data::Variance>::apply<detail::MakeVariableDefaultInit>(tag,
-                                                                      labels,
-                                                                      shape);
-}
-
-std::string format(const Dimensions &dims) {
-  std::string out = "Dimensions = " + dataset::to_string(dims);
-  return out;
+  return callForAnyTag<detail::MakeVariableDefaultInit>(tag, labels, shape);
 }
 
 template <class Tag> struct MakeVariable {
@@ -358,7 +350,11 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
-      .def("__repr__", &detail::format)
+      .def("__repr__",
+           [](const Dimensions &self) {
+             std::string out = "Dimensions = " + dataset::to_string(self);
+             return out;
+           })
       .def("__len__", &Dimensions::count)
       .def("__contains__", [](const Dimensions &self,
                               const Dim dim) { return self.contains(dim); })
