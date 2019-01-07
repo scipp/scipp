@@ -30,7 +30,7 @@
 //    need to be added.
 // 4. If the new tag corresponds to a dimension, `is_dimension_coordinate` and
 //    `coordinate_dimension` need to be set correctly.
-// 4. For support in Python, the tag needs to be exported in
+// 5. For support in Python, the tag needs to be exported in
 //    `exports/dataset.cpp` and a fair number of methods in the same file need
 //    to be modified to support the new tag.
 

@@ -31,9 +31,9 @@ private:
 
 public:
   Dataset() = default;
-  // Allowing implicit construction from views facilities calling functions that
-  // do not explicitly support views. It is open for discussion whether this is
-  // a good idea or not.
+  // Allowing implicit construction from views facilitates calling functions
+  // that do not explicitly support views. It is open for discussion whether
+  // this is a good idea or not.
   Dataset(const ConstDatasetSlice &view);
 
   gsl::index size() const { return m_variables.size(); }
