@@ -524,6 +524,40 @@ TEST(Dataset, concatenate) {
   EXPECT_EQ(xy.get<const Data::Value>().size(), 12);
 }
 
+TEST(Dataset, concatenate_with_bin_edges) {
+  Dataset ds;
+  ds.insert<Coord::X>({Dim::X, 2}, {0.1, 0.2});
+  ds.insert<Data::Value>("data", {Dim::X, 1}, {2.2});
+  EXPECT_NO_THROW(concatenate(ds, ds, Dim::Y));
+
+  Dataset not_edge;
+  not_edge.insert<Coord::X>({Dim::X, 1}, {0.3});
+  not_edge.insert<Data::Value>("data", {Dim::X, 1}, {2.2});
+  EXPECT_THROW_MSG(
+      concatenate(ds, not_edge, Dim::X), std::runtime_error,
+      "Cannot concatenate: Second variable is not an edge variable.");
+  not_edge.erase(Coord::X{});
+  not_edge.insert<Coord::X>({}, {0.3});
+  EXPECT_THROW_MSG(concatenate(ds, not_edge, Dim::X),
+                   dataset::except::DimensionNotFoundError,
+                   "Expected dimension to be in {}, got Dim::X.");
+
+  EXPECT_THROW_MSG(concatenate(ds, ds, Dim::X), std::runtime_error,
+                   "Cannot concatenate: Last bin edge of first edge variable "
+                   "does not match first bin edge of second edge variable.");
+
+  Dataset ds2;
+  ds2.insert<Coord::X>({Dim::X, 2}, {0.2, 0.3});
+  ds2.insert<Data::Value>("data", {Dim::X, 1}, {3.3});
+
+  Dataset merged;
+  EXPECT_NO_THROW(merged = concatenate(ds, ds2, Dim::X));
+  EXPECT_EQ(merged.dimensions().count(), 1);
+  EXPECT_TRUE(merged.dimensions().contains(Dim::X));
+  EXPECT_TRUE(equals(merged.get<const Coord::X>(), {0.1, 0.2, 0.3}));
+  EXPECT_TRUE(equals(merged.get<const Data::Value>(), {2.2, 3.3}));
+}
+
 TEST(Dataset, concatenate_with_attributes) {
   Dataset a;
   a.insert<Coord::X>({Dim::X, 1}, {0.1});

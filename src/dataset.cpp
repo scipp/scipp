@@ -492,7 +492,23 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
     const auto &var2 = d2[d2.find(var1.tag(), var1.name())];
     // TODO may need to extend things along constant dimensions to match shapes!
     if (var1.dimensions().contains(dim)) {
-      out.insert(concatenate(var1, var2, dim));
+      const auto extent = d1.dimensions()[dim];
+      if (var1.dimensions()[dim] == extent)
+        out.insert(concatenate(var1, var2, dim));
+      else {
+        // TODO Need exception types with extra custom messages for clarity.
+        if (var2.dimensions()[dim] == d2.dimensions()[dim])
+          throw std::runtime_error(
+              "Cannot concatenate: Second variable is not an edge variable.");
+        // Variable contains bin edges, check matching first/last boundary,
+        // avoid duplicating joint boundary.
+        if (var1(dim, extent) != var2(dim, 0))
+          throw std::runtime_error("Cannot concatenate: Last bin edge of first "
+                                   "edge variable does not match first bin "
+                                   "edge of second edge variable.");
+        out.insert(
+            concatenate(var1, var2(dim, 1, var2.dimensions()[dim]), dim));
+      }
     } else {
       if (var1 == var2) {
         out.insert(var1);
@@ -686,8 +702,7 @@ Dataset mean(const Dataset &d, const Dim dim) {
           // Standard deviation of the mean has an extra 1/sqrt(N). Note that
           // this is not included by the stand-alone mean(Variable), since that
           // would be confusing.
-          double scale =
-              1.0 / sqrt(static_cast<double>(var.dimensions()[dim]));
+          double scale = 1.0 / sqrt(static_cast<double>(var.dimensions()[dim]));
           m.insert(mean(var, dim) * makeVariable<Data::Value>({}, {scale}));
         } else {
           m.insert(mean(var, dim));
