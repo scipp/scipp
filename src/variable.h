@@ -188,8 +188,6 @@ public:
   const VariableConcept &data() const { return *m_object; }
   VariableConcept &data() { return m_object.access(); }
 
-  template <class Tag> bool valueTypeIs() const { return Tag{} == m_tag; }
-
   Tag tag() const { return m_tag; }
   bool isCoord() const {
     return m_tag < std::tuple_size<detail::CoordDef::tags>::value;
@@ -331,9 +329,6 @@ public:
     return strides;
   }
 
-  template <class Tag> bool valueTypeIs() const {
-    return m_variable->template valueTypeIs<Tag>();
-  }
   Tag tag() const { return m_variable->tag(); }
   const VariableConcept &data() const {
     if (m_view)

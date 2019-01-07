@@ -708,8 +708,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Different name is ok for addition.
   if (variable.unit() != other.unit())
     throw std::runtime_error("Cannot add Variables: Units do not match.");
-  if (!variable.template valueTypeIs<Data::Events>() &&
-      !variable.template valueTypeIs<Data::Table>()) {
+  if (variable.tag() != Data::Events{} && variable.tag() != Data::Table{}) {
     if (variable.dimensions().contains(other.dimensions())) {
       // Note: This will broadcast/transpose the RHS if required. We do not
       // support changing the dimensions of the LHS though!
@@ -753,7 +752,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   if (variable.unit() != other.unit())
     throw std::runtime_error("Cannot subtract Variables: Units do not match.");
   if (variable.dimensions().contains(other.dimensions())) {
-    if (variable.template valueTypeIs<Data::Events>())
+    if (variable.tag() == Data::Events{})
       throw std::runtime_error("Subtraction of events lists not implemented.");
     variable.data() -= other.data();
   } else {
@@ -774,7 +773,7 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   if (!variable.dimensions().contains(other.dimensions()))
     throw std::runtime_error(
         "Cannot multiply Variables: Dimensions do not match.");
-  if (variable.template valueTypeIs<Data::Events>())
+  if (variable.tag() == Data::Events{})
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
