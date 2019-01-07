@@ -496,18 +496,17 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
       if (var1.dimensions()[dim] == extent)
         out.insert(concatenate(var1, var2, dim));
       else {
-        // TODO Need exception types with extra custom messages for clarity.
-        if (var2.dimensions()[dim] == d2.dimensions()[dim])
+        // Variable contains bin edges, check matching first/last boundary,
+        // do not duplicate joint boundary.
+        const auto extent2 = var2.dimensions()[dim];
+        if (extent2 == d2.dimensions()[dim])
           throw std::runtime_error(
               "Cannot concatenate: Second variable is not an edge variable.");
-        // Variable contains bin edges, check matching first/last boundary,
-        // avoid duplicating joint boundary.
         if (var1(dim, extent) != var2(dim, 0))
           throw std::runtime_error("Cannot concatenate: Last bin edge of first "
                                    "edge variable does not match first bin "
                                    "edge of second edge variable.");
-        out.insert(
-            concatenate(var1, var2(dim, 1, var2.dimensions()[dim]), dim));
+        out.insert(concatenate(var1, var2(dim, 1, extent2), dim));
       }
     } else {
       if (var1 == var2) {

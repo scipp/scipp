@@ -558,6 +558,28 @@ TEST(Dataset, concatenate_with_bin_edges) {
   EXPECT_TRUE(equals(merged.get<const Data::Value>(), {2.2, 3.3}));
 }
 
+TEST(Dataset, concatenate_with_varying_bin_edges) {
+  Dataset ds;
+  ds.insert<Coord::X>({{Dim::Y, 2}, {Dim::X, 2}}, {0.1, 0.2, 0.11, 0.21});
+  ds.insert<Data::Value>("data", {{Dim::Y, 2}, {Dim::X, 1}}, {2.2, 3.3});
+
+  Dataset ds2;
+  ds2.insert<Coord::X>({{Dim::Y, 2}, {Dim::X, 2}}, {0.2, 0.3, 0.21, 0.31});
+  ds2.insert<Data::Value>("data", {{Dim::Y, 2}, {Dim::X, 1}}, {4.4, 5.5});
+
+  Dataset merged;
+  merged = concatenate(ds, ds2, Dim::X);
+  ASSERT_NO_THROW(merged = concatenate(ds, ds2, Dim::X));
+  ASSERT_EQ(merged.dimensions().count(), 2);
+  ASSERT_TRUE(merged.dimensions().contains(Dim::X));
+  ASSERT_TRUE(merged.dimensions().contains(Dim::Y));
+  EXPECT_EQ(merged.dimensions()[Dim::X], 2);
+  EXPECT_EQ(merged.dimensions()[Dim::Y], 2);
+  EXPECT_TRUE(
+      equals(merged.get<const Coord::X>(), {0.1, 0.2, 0.3, 0.11, 0.21, 0.31}));
+  EXPECT_TRUE(equals(merged.get<const Data::Value>(), {2.2, 4.4, 3.3, 5.5}));
+}
+
 TEST(Dataset, concatenate_with_attributes) {
   Dataset a;
   a.insert<Coord::X>({Dim::X, 1}, {0.1});
