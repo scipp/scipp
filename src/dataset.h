@@ -202,10 +202,16 @@ namespace detail {
 template <class VarSlice>
 auto makeSlice(
     VarSlice slice,
-    const std::vector<std::tuple<Dim, gsl::index, gsl::index>> &slices) {
+    const std::vector<std::tuple<Dim, gsl::index, gsl::index, gsl::index>>
+        &slices) {
   for (const auto &s : slices) {
-    if (slice.dimensions().contains(std::get<Dim>(s)))
-      slice = slice(std::get<0>(s), std::get<1>(s), std::get<2>(s));
+    const auto dim = std::get<Dim>(s);
+    if (slice.dimensions().contains(dim)) {
+      if (slice.dimensions()[dim] == std::get<1>(s))
+        slice = slice(dim, std::get<2>(s), std::get<3>(s));
+      else
+        slice = slice(dim, std::get<2>(s), std::get<3>(s) + 1);
+    }
   }
   return slice;
 }
@@ -248,19 +254,20 @@ public:
 
   bool contains(const Tag tag, const std::string &name = "") const;
 
-  std::vector<std::tuple<Dim, gsl::index>> dimensions() const {
-    std::vector<std::tuple<Dim, gsl::index>> dims;
+  std::map<Dim, gsl::index> dimensions() const {
+    std::map<Dim, gsl::index> dims;
     for (gsl::index i = 0; i < m_dataset.dimensions().count(); ++i) {
       const Dim dim = m_dataset.dimensions().label(i);
       gsl::index size = m_dataset.dimensions().size(i);
       for (const auto &slice : m_slices)
         if (std::get<Dim>(slice) == dim) {
-          if (std::get<2>(slice) == -1)
+          if (std::get<3>(slice) == -1)
             size = -1;
           else
-            size = std::get<2>(slice) - std::get<1>(slice);
+            size = std::get<3>(slice) - std::get<2>(slice);
         }
-      dims.emplace_back(dim, size);
+      if (size != -1)
+        dims[dim] = size;
     }
     return dims;
   }
@@ -288,23 +295,21 @@ public:
 protected:
   const Dataset &m_dataset;
   std::vector<gsl::index> m_indices;
-  std::vector<std::tuple<Dim, gsl::index, gsl::index>> m_slices;
+  // TODO Use a struct here. Tuple contains <Dim, size, begin, end>.
+  std::vector<std::tuple<Dim, gsl::index, gsl::index, gsl::index>> m_slices;
 
   template <class D>
   D makeSubslice(D slice, const Dim dim, const gsl::index begin,
                  const gsl::index end) const {
-    if (!m_dataset.dimensions().contains(dim) &&
-        (begin != 0 || !(end == 1 || end == -1)))
-      throw dataset::except::DimensionNotFoundError(m_dataset.dimensions(),
-                                                    dim);
+    const auto size = m_dataset.dimensions()[dim];
     for (auto &s : slice.m_slices) {
       if (std::get<Dim>(s) == dim) {
-        std::get<1>(s) = begin;
-        std::get<2>(s) = end;
+        std::get<2>(s) = begin;
+        std::get<3>(s) = end;
         return slice;
       }
     }
-    slice.m_slices.emplace_back(dim, begin, end);
+    slice.m_slices.emplace_back(dim, size, begin, end);
     if (end == -1) {
       for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
         // TODO Should all coordinates with matching dimension be removed, or

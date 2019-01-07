@@ -479,7 +479,9 @@ TEST(Dataset, slice) {
     EXPECT_EQ(sliceY.get<const Data::Value>()[0], 0.0 + 2 * i);
     EXPECT_EQ(sliceY.get<const Data::Value>()[1], 1.0 + 2 * i);
   }
-  EXPECT_NO_THROW(d(Dim::Z, 0));
+  EXPECT_THROW_MSG(
+      d(Dim::Z, 0), std::runtime_error,
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
   EXPECT_THROW_MSG(
       d(Dim::Z, 1), std::runtime_error,
       "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
@@ -883,5 +885,74 @@ TEST(DatasetSlice, subset_slice_spatial) {
   auto view_a_x12 = d["a"](Dim::X, 1, 2);
   EXPECT_THROW_MSG(
       view_a_x12 -= view_a_x01, std::runtime_error,
+      "Coordinates of datasets do not match. Cannot perform binary operation.");
+}
+
+TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 5}, {1, 2, 3, 4, 5});
+  d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
+  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}},
+                        {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert<Data::Value>("b", {{Dim::Y, 2}, {Dim::X, 4}},
+                        {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}},
+                           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}},
+                           {1, 2, 3, 4, 5, 6, 7, 8});
+
+  auto view_a_x0 = d["a"](Dim::X, 0);
+
+  // Slice with single index (not range) => corresponding dimension coordinate
+  // is removed.
+  ASSERT_EQ(view_a_x0.size(), 3);
+  EXPECT_EQ(view_a_x0[0].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0[1].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0[2].dimensions(), (Dimensions{Dim::Y, 2}));
+
+  auto view_a_x1 = d["a"](Dim::X, 1);
+
+  ASSERT_EQ(view_a_x1.size(), 3);
+  EXPECT_EQ(view_a_x1[0].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1[1].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1[2].dimensions(), (Dimensions{Dim::Y, 2}));
+
+  EXPECT_NO_THROW(view_a_x1 -= view_a_x0);
+
+  EXPECT_TRUE(equals(d.get<const Coord::X>(), {1, 2, 3, 4, 5}));
+  EXPECT_TRUE(equals(d.get<const Coord::Y>(), {1, 2}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {1, 1, 3, 4, 5, 1, 7, 8}));
+  EXPECT_TRUE(
+      equals(d.get<const Data::Variance>("a"), {1, 3, 3, 4, 5, 11, 7, 8}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {1, 2, 3, 4, 5, 6, 7, 8}));
+  EXPECT_TRUE(
+      equals(d.get<const Data::Variance>("b"), {1, 2, 3, 4, 5, 6, 7, 8}));
+
+  auto view_a_x01 = d["a"](Dim::X, 0, 1);
+  auto view_a_x12 = d["a"](Dim::X, 1, 2);
+  ASSERT_EQ(view_a_x01[0].tag(), Coord::X{});
+  // View extent is 1 so we get 2 edges.
+  ASSERT_EQ(view_a_x01.dimensions()[Dim::X], 1);
+  ASSERT_EQ(view_a_x01[0].dimensions()[Dim::X], 2);
+  EXPECT_TRUE(equals(view_a_x01[0].get<const Coord::X>(), {1, 2}));
+  EXPECT_TRUE(equals(view_a_x12[0].get<const Coord::X>(), {2, 3}));
+
+  auto view_a_x02 = d["a"](Dim::X, 0, 2);
+  auto view_a_x13 = d["a"](Dim::X, 1, 3);
+  ASSERT_EQ(view_a_x02[0].tag(), Coord::X{});
+  // View extent is 2 so we get 3 edges.
+  ASSERT_EQ(view_a_x02.dimensions()[Dim::X], 2);
+  ASSERT_EQ(view_a_x02[0].dimensions()[Dim::X], 3);
+  EXPECT_TRUE(equals(view_a_x02[0].get<const Coord::X>(), {1, 2, 3}));
+  EXPECT_TRUE(equals(view_a_x13[0].get<const Coord::X>(), {2, 3, 4}));
+
+  // If we slice with a range index the corresponding coordinate (and dimension)
+  // is preserved, even if the range has size 1. Thus the operation fails due to
+  // coordinate mismatch, as it should.
+  EXPECT_THROW_MSG(
+      view_a_x12 -= view_a_x01, std::runtime_error,
+      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  EXPECT_THROW_MSG(
+      view_a_x13 -= view_a_x02, std::runtime_error,
       "Coordinates of datasets do not match. Cannot perform binary operation.");
 }

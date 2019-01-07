@@ -450,13 +450,7 @@ PYBIND11_MODULE(dataset, m) {
              const Dim dim = std::get<Dim>(index);
              const auto indices = std::get<const py::slice>(index);
              size_t start, stop, step, slicelength;
-             gsl::index size = -1;
-             for (const auto &dimSize : self.dimensions())
-               if (std::get<Dim>(dimSize) == dim)
-                 size = std::get<gsl::index>(dimSize);
-             if (size == -1)
-               throw std::runtime_error(
-                   "Dataset does not contain this dimension.");
+             gsl::index size = self.dimensions()[dim];
              if (!indices.compute(size, &start, &stop, &step, &slicelength))
                throw py::error_already_set();
              if (step != 1)
