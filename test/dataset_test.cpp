@@ -765,6 +765,20 @@ TEST(Dataset, filter) {
   EXPECT_EQ(filtered.get<const Data::Value>()[3], 8.0);
 }
 
+TEST(Dataset, integrate) {
+  Dataset ds;
+  ds.insert<Coord::X>({Dim::X, 3}, {0.1, 0.2, 0.4});
+  ds.insert<Data::Value>("data", {Dim::X, 2}, {10.0, 20.0});
+
+  Dataset integral;
+  EXPECT_NO_THROW(integral = integrate(ds,Dim::X));
+  EXPECT_EQ(integral.dimensions().count(), 0);
+  EXPECT_FALSE(integral.contains(Coord::X{}));
+  // Note: The current implementation assumes that Data::Value is counts,
+  // handling of other data is not implemented yet.
+  EXPECT_TRUE(equals(integral.get<const Data::Value>(), {30.0}));
+}
+
 TEST(DatasetSlice, basics) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4});

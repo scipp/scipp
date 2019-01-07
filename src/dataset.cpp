@@ -713,3 +713,37 @@ Dataset mean(const Dataset &d, const Dim dim) {
   }
   return m;
 }
+
+Dataset integrate(const Dataset &d, const Dim dim) {
+  for (auto var : d) {
+    const Dim coordDim = coordDimension[var.tag().value()];
+    if (coordDim != Dim::Invalid && coordDim != dim) {
+      if (var.dimensions().contains(dim))
+        throw std::runtime_error(
+            std::string("Cannot compute mean along ") +
+            dataset::to_string(dim).c_str() +
+            ": Dimension coordinate for dimension " +
+            dataset::to_string(coordDim).c_str() +
+            " depends also on the dimension. Rebin to common axis first.");
+    }
+  }
+  for (auto var : d) {
+    const Dim coordDim = coordDimension[var.tag().value()];
+    if (coordDim == dim) {
+      const auto size = var.dimensions()[dim];
+      if (size != d.dimensions()[dim] + 1)
+        throw std::runtime_error("Cannot integrate: Implemented only for "
+                                 "histogram data (requires bin-edge "
+                                 "coordinate.");
+      const auto range = concatenate(var(dim, 0), var(dim, size - 1), dim);
+      const auto integral = rebin(d,  range);
+      // TODO Unless unit is "counts" we need to multiply by the interval
+      // length. To fix this properly we need support for non-count data in
+      // `rebin`.
+      // Return slice to automatically drop `dim` and corresponding coordinate.
+      return integral(dim, 0);
+    }
+  }
+  throw std::runtime_error(
+      "Integration required bin-edge dimension coordinate.");
+}

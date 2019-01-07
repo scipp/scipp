@@ -395,5 +395,6 @@ Dataset sort(const Dataset &d, const Tag t, const std::string &name = "");
 Dataset filter(const Dataset &d, const Variable &select);
 Dataset sum(const Dataset &d, const Dim dim);
 Dataset mean(const Dataset &d, const Dim dim);
+Dataset integrate(const Dataset &d, const Dim dim);
 
 #endif // DATASET_H
