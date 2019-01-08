@@ -272,6 +272,15 @@ public:
   VariableConcept &apply(const VariableConcept &other) {
     try {
       const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
+      if (getView(dimensions()).overlaps(otherT.getView(dimensions()))) {
+        // If there is an overlap between lhs and rhs we copy the rhs before
+        // applying the operation.
+        const auto &data = otherT.getView(otherT.dimensions());
+        DataModel<Vector<T>> copy(other.dimensions(),
+                                  Vector<T>(data.begin(), data.end()));
+        return apply<Op>(copy);
+      }
+
       if (isContiguous() && dimensions().contains(other.dimensions())) {
         if (other.isContiguous() &&
             dimensions().isContiguousIn(other.dimensions())) {

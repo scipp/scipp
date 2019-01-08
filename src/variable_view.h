@@ -110,6 +110,16 @@ public:
     return std::equal(begin(), end(), other.begin());
   }
 
+  bool overlaps(const VariableView<const T> &other) const {
+    // TODO We could be less restrictive here and use a more sophisticated check
+    // based on offsets and dimensions, if there is a performance issue due to
+    // this current stricter requirement.
+    if (m_variable == other.m_variable)
+      return (m_offset != other.m_offset) ||
+             (m_dimensions != other.m_dimensions);
+    return false;
+  }
+
   const Dimensions &parentDimensions() const { return m_dimensions; }
 
 private:

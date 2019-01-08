@@ -528,7 +528,7 @@ TEST(VariableSlice, minus_equals_failures) {
                    "1}, {Dim::Y, 2}}.");
 }
 
-TEST(VariableSlice, self_overlapping_view_operation_broken) {
+TEST(VariableSlice, self_overlapping_view_operation) {
   auto var = makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 2}},
                                        {1.0, 2.0, 3.0, 4.0});
 
@@ -536,12 +536,11 @@ TEST(VariableSlice, self_overlapping_view_operation_broken) {
   const auto data = var.get<const Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
-  // This is the broken part: After subtracting for y=0 the view points to data
-  // containing 0.0, so subsequently the subtraction will have no effect. Need
-  // to check for such overlaps and either throw or extract slice before the
-  // operation.
-  EXPECT_EQ(data[2], 3.0);
-  EXPECT_EQ(data[3], 4.0);
+  // This is the critical part: After subtracting for y=0 the view points to
+  // data containing 0.0, so subsequently the subtraction would have no effect
+  // if self-overlap was not taken into account by the implementation.
+  EXPECT_EQ(data[2], 2.0);
+  EXPECT_EQ(data[3], 2.0);
 }
 
 TEST(VariableSlice, minus_equals_slice_const_outer) {
