@@ -206,7 +206,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
     //   other instead of *this).
     // - Fail if other contains more.
     try {
-      auto var1 = dataset[find(dataset, var2.tag(), var2.name())];
+      auto var1 = dataset(var2.tag(), var2.name());
       if (var1.isCoord()) {
         // Coordinate variables must match
         // Strictly speaking we should allow "equivalent" coordinates, i.e.,
@@ -736,7 +736,7 @@ Dataset integrate(const Dataset &d, const Dim dim) {
                                  "histogram data (requires bin-edge "
                                  "coordinate.");
       const auto range = concatenate(var(dim, 0), var(dim, size - 1), dim);
-      const auto integral = rebin(d,  range);
+      const auto integral = rebin(d, range);
       // TODO Unless unit is "counts" we need to multiply by the interval
       // length. To fix this properly we need support for non-count data in
       // `rebin`.

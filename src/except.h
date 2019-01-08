@@ -48,6 +48,18 @@ struct VariableNotFoundError : public DatasetError {
 };
 
 } // namespace except
+
+namespace expect {
+template <class T>
+void contains(const T &a, const T &b,
+              const std::string &context = std::string{},
+              const std::string &solution = std::string{}) {
+  if (!a.contains(b))
+    throw std::runtime_error(std::string("While ") + context + ": " +
+                             to_string(a) + " must contain " + to_string(b) +
+                             ". " + solution);
+}
+} // namespace expect
 } // namespace dataset
 
 #endif // EXCEPT_H

@@ -125,8 +125,9 @@ TEST(Variable, operator_plus_equal_different_dimensions) {
 
   auto different_dimensions =
       makeVariable<Data::Value>({Dim::Y, 2}, {1.1, 2.2});
-  EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
-                   "Cannot add Variables: Dimensions do not match.");
+  EXPECT_THROW_MSG(
+      a += different_dimensions, std::runtime_error,
+      "While adding variables: {{Dim::X, 2}} must contain {{Dim::Y, 2}}. ");
 }
 
 TEST(Variable, operator_plus_equal_different_unit) {

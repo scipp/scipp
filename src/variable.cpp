@@ -709,14 +709,11 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   if (variable.unit() != other.unit())
     throw std::runtime_error("Cannot add Variables: Units do not match.");
   if (variable.tag() != Data::Events{} && variable.tag() != Data::Table{}) {
-    if (variable.dimensions().contains(other.dimensions())) {
-      // Note: This will broadcast/transpose the RHS if required. We do not
-      // support changing the dimensions of the LHS though!
-      variable.data() += other.data();
-    } else {
-      throw std::runtime_error(
-          "Cannot add Variables: Dimensions do not match.");
-    }
+    dataset::expect::contains(variable.dimensions(), other.dimensions(),
+                              "adding variables");
+    // Note: This will broadcast/transpose the RHS if required. We do not
+    // support changing the dimensions of the LHS though!
+    variable.data() += other.data();
   } else {
     if (variable.dimensions() == other.dimensions()) {
       using ConstViewOrRef =

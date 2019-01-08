@@ -14,6 +14,8 @@
 #include "multi_index.h"
 #include "vector.h"
 
+/// A view into multi-dimensional data, supporting slicing, index reordering,
+/// and broadcasting.
 template <class T> class VariableView {
 public:
   using value_type = T;
