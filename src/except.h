@@ -49,26 +49,23 @@ struct VariableNotFoundError : public DatasetError {
                         const std::string &name);
 };
 
+struct UnitError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
+struct UnitMismatchError : public UnitError {
+  UnitMismatchError(const Unit &a, const Unit &b);
+};
+
 } // namespace except
 
 namespace expect {
-template <class T>
-void equals(const T &a, const T &b, const std::string &context = std::string{},
-            const std::string &solution = std::string{}) {
-  if (!(a == b))
-    throw std::runtime_error(std::string("While ") + context + ": Expected " +
-                             to_string(a) + " be equal to " + to_string(b) +
-                             ". " + solution);
-}
+void equals(const Unit &a, const Unit &b);
 
-template <class T>
-void contains(const T &a, const T &b,
-              const std::string &context = std::string{},
-              const std::string &solution = std::string{}) {
+template <class T> void contains(const T &a, const T &b) {
   if (!a.contains(b))
-    throw std::runtime_error(std::string("While ") + context + ": Expected " +
-                             to_string(a) + " to contain " + to_string(b) +
-                             ". " + solution);
+    throw std::runtime_error("Expected " + to_string(a) + " to contain " +
+                             to_string(b) + ".");
 }
 } // namespace expect
 } // namespace dataset

@@ -706,10 +706,9 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
-  dataset::expect::equals(variable.unit(), other.unit(), "adding variables");
+  dataset::expect::equals(variable.unit(), other.unit());
   if (variable.tag() != Data::Events{} && variable.tag() != Data::Table{}) {
-    dataset::expect::contains(variable.dimensions(), other.dimensions(),
-                              "adding variables");
+    dataset::expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
     variable.data() += other.data();
@@ -745,10 +744,8 @@ Variable &Variable::operator+=(const ConstVariableSlice &other) {
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
-  dataset::expect::equals(variable.unit(), other.unit(),
-                          "subtracting variables");
-  dataset::expect::contains(variable.dimensions(), other.dimensions(),
-                            "subtracting variables");
+  dataset::expect::equals(variable.unit(), other.unit());
+  dataset::expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events{})
     throw std::runtime_error("Subtraction of events lists not implemented.");
   variable.data() -= other.data();
@@ -763,8 +760,7 @@ Variable &Variable::operator-=(const ConstVariableSlice &other) {
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  dataset::expect::contains(variable.dimensions(), other.dimensions(),
-                            "multiplying variables");
+  dataset::expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events{})
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).

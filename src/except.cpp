@@ -52,9 +52,9 @@ std::string to_string(const Tag tag) {
   switch (tag.value()) {
   case Coord::X{}.value():
     return "Coord::X";
-    case Coord::Y{}.value():
+  case Coord::Y{}.value():
     return "Coord::Y";
-    case Coord::Z{}.value():
+  case Coord::Z{}.value():
     return "Coord::Z";
   case Data::Value{}.value():
     return "Data::Value";
@@ -137,6 +137,17 @@ VariableNotFoundError::VariableNotFoundError(const ConstDatasetSlice &dataset,
                                              const std::string &name)
     : DatasetError(dataset, "could not find variable with tag " +
                                 to_string(tag) + " and name `" + name + "`.") {}
+
+UnitMismatchError::UnitMismatchError(const Unit &a, const Unit &b)
+    : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +
+                ".") {}
+
 } // namespace except
 
+namespace expect {
+void equals(const Unit &a, const Unit &b) {
+  if (!(a == b))
+    throw except::UnitMismatchError(a, b);
+}
+} // namespace expect
 } // namespace dataset
