@@ -11,10 +11,12 @@ class ConstDatasetSlice;
 class Dataset;
 class Dimensions;
 class Tag;
+class Unit;
 
 namespace dataset {
 std::string to_string(const Dim dim);
 std::string to_string(const Dimensions &dims);
+std::string to_string(const Unit &unit);
 
 namespace except {
 
@@ -51,12 +53,21 @@ struct VariableNotFoundError : public DatasetError {
 
 namespace expect {
 template <class T>
+void equals(const T &a, const T &b, const std::string &context = std::string{},
+            const std::string &solution = std::string{}) {
+  if (!(a == b))
+    throw std::runtime_error(std::string("While ") + context + ": Expected " +
+                             to_string(a) + " be equal to " + to_string(b) +
+                             ". " + solution);
+}
+
+template <class T>
 void contains(const T &a, const T &b,
               const std::string &context = std::string{},
               const std::string &solution = std::string{}) {
   if (!a.contains(b))
-    throw std::runtime_error(std::string("While ") + context + ": " +
-                             to_string(a) + " must contain " + to_string(b) +
+    throw std::runtime_error(std::string("While ") + context + ": Expected " +
+                             to_string(a) + " to contain " + to_string(b) +
                              ". " + solution);
 }
 } // namespace expect

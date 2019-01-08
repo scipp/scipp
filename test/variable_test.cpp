@@ -125,9 +125,9 @@ TEST(Variable, operator_plus_equal_different_dimensions) {
 
   auto different_dimensions =
       makeVariable<Data::Value>({Dim::Y, 2}, {1.1, 2.2});
-  EXPECT_THROW_MSG(
-      a += different_dimensions, std::runtime_error,
-      "While adding variables: {{Dim::X, 2}} must contain {{Dim::Y, 2}}. ");
+  EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
+                   "While adding variables: Expected {{Dim::X, 2}} to contain "
+                   "{{Dim::Y, 2}}. ");
 }
 
 TEST(Variable, operator_plus_equal_different_unit) {
@@ -136,7 +136,8 @@ TEST(Variable, operator_plus_equal_different_unit) {
   auto different_unit(a);
   different_unit.setUnit(Unit::Id::Length);
   EXPECT_THROW_MSG(a += different_unit, std::runtime_error,
-                   "Cannot add Variables: Units do not match.");
+                   "While adding variables: Expected Unit::Dimensionless be "
+                   "equal to Unit::Length. ");
 }
 
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
@@ -525,7 +526,8 @@ TEST(VariableSlice, minus_equals_failures) {
                                        {1.0, 2.0, 3.0, 4.0});
 
   EXPECT_THROW_MSG(var -= var(Dim::X, 0, 1), std::runtime_error,
-                   "Cannot subtract Variables: Dimensions do not match.");
+                   "While subtracting variables: Expected {{Dim::X, 2}, "
+                   "{Dim::Y, 2}} to contain {{Dim::X, 1}, {Dim::Y, 2}}. ");
 }
 
 TEST(VariableSlice, self_overlapping_view_operation_broken) {

@@ -50,7 +50,7 @@ std::string to_string(const Dim dim) {
 
 std::string to_string(const Tag tag) {
   switch (tag.value()) {
-    case Coord::X{}.value():
+  case Coord::X{}.value():
     return "Coord::X";
     case Coord::Y{}.value():
     return "Coord::Y";
@@ -77,6 +77,17 @@ std::string to_string(const Dimensions &dims) {
   s.resize(s.size() - 3);
   s += '}';
   return s;
+}
+
+std::string to_string(const Unit &unit) {
+  switch (unit.id()) {
+  case Unit::Id::Dimensionless:
+    return "Unit::Dimensionless";
+  case Unit::Id::Length:
+    return "Unit::Length";
+  default:
+    return "<unknown unit>";
+  }
 }
 
 std::string to_string(const Dataset &dataset) {

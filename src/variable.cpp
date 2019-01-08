@@ -706,8 +706,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
-  if (variable.unit() != other.unit())
-    throw std::runtime_error("Cannot add Variables: Units do not match.");
+  dataset::expect::equals(variable.unit(), other.unit(), "adding variables");
   if (variable.tag() != Data::Events{} && variable.tag() != Data::Table{}) {
     dataset::expect::contains(variable.dimensions(), other.dimensions(),
                               "adding variables");
@@ -746,16 +745,13 @@ Variable &Variable::operator+=(const ConstVariableSlice &other) {
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
-  if (variable.unit() != other.unit())
-    throw std::runtime_error("Cannot subtract Variables: Units do not match.");
-  if (variable.dimensions().contains(other.dimensions())) {
-    if (variable.tag() == Data::Events{})
-      throw std::runtime_error("Subtraction of events lists not implemented.");
-    variable.data() -= other.data();
-  } else {
-    throw std::runtime_error(
-        "Cannot subtract Variables: Dimensions do not match.");
-  }
+  dataset::expect::equals(variable.unit(), other.unit(),
+                          "subtracting variables");
+  dataset::expect::contains(variable.dimensions(), other.dimensions(),
+                            "subtracting variables");
+  if (variable.tag() == Data::Events{})
+    throw std::runtime_error("Subtraction of events lists not implemented.");
+  variable.data() -= other.data();
   return variable;
 }
 
@@ -767,9 +763,8 @@ Variable &Variable::operator-=(const ConstVariableSlice &other) {
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  if (!variable.dimensions().contains(other.dimensions()))
-    throw std::runtime_error(
-        "Cannot multiply Variables: Dimensions do not match.");
+  dataset::expect::contains(variable.dimensions(), other.dimensions(),
+                            "multiplying variables");
   if (variable.tag() == Data::Events{})
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
