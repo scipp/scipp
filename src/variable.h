@@ -120,7 +120,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
 /// dimensions.
 class Variable {
 public:
-  // TODO Having this non-explicit is convenient when passing (potential)
+  // Having this non-explicit is convenient when passing (potential)
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);

@@ -869,6 +869,17 @@ TEST(VariableSlice, variable_assign_from_slice) {
   EXPECT_TRUE(equals(target.get<const Data::Value>(), {22, 23, 32, 33}));
 }
 
+TEST(VariableSlice, variable_self_assign_via_slice) {
+  auto target = makeVariable<Data::Value>({{Dim::Y, 3}, {Dim::X, 3}},
+                                          {11, 12, 13, 21, 22, 23, 31, 32, 33});
+
+  target = target(Dim::X, 1, 3)(Dim::Y, 1, 3);
+  // Note: This test does not actually fail if self-assignment is broken. Had to
+  // run address sanitizer to see that it is reading from free'ed memory.
+  EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
+  EXPECT_TRUE(equals(target.get<const Data::Value>(), {22, 23, 32, 33}));
+}
+
 TEST(VariableSlice, slice_assign_from_variable) {
   const auto source =
       makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 2}}, {11, 12, 21, 22});
