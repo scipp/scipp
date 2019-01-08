@@ -489,7 +489,7 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
   Dataset out;
   for (gsl::index i1 = 0; i1 < d1.size(); ++i1) {
     const auto &var1 = d1[i1];
-    const auto &var2 = d2[d2.find(var1.tag(), var1.name())];
+    const auto &var2 = d2(var1.tag(), var1.name());
     // TODO may need to extend things along constant dimensions to match shapes!
     if (var1.dimensions().contains(dim)) {
       const auto extent = d1.dimensions()[dim];
@@ -571,7 +571,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   if (!isContinuous(dim))
     throw std::runtime_error(
         "The provided rebin coordinate is not a continuous coordinate.");
-  const auto &oldCoord = d[d.findUnique(Tag(newCoord.tag().value()))];
+  const auto &oldCoord = d(Tag(newCoord.tag().value()));
   const auto &oldDims = oldCoord.dimensions();
   const auto &datasetDims = d.dimensions();
   if (!oldDims.contains(dim))
@@ -619,7 +619,7 @@ template <class Tag> struct Sort {
       return d;
 
     Dataset sorted;
-    Variable axisVar = d[d.find(Tag{}, name)];
+    Variable axisVar = d(Tag{}, name);
     auto axis = axisVar.template get<Tag>();
     std::vector<gsl::index> indices(axis.size());
     std::iota(indices.begin(), indices.end(), 0);

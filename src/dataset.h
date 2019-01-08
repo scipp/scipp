@@ -152,9 +152,6 @@ public:
 
   const Dimensions &dimensions() const { return m_dimensions; }
 
-  gsl::index find(const Tag tag, const std::string &name) const;
-  gsl::index findUnique(const Tag tag) const;
-
   bool operator==(const Dataset &other) const;
   Dataset &operator+=(const Dataset &other);
   Dataset &operator+=(const ConstDatasetSlice &other);
@@ -164,6 +161,8 @@ public:
   Dataset &operator*=(const ConstDatasetSlice &other);
 
 private:
+  gsl::index find(const Tag tag, const std::string &name) const;
+  gsl::index findUnique(const Tag tag) const;
   void mergeDimensions(const Dimensions &dims, const Dim coordDim);
 
   // TODO These dimensions do not imply any ordering, should use another class
