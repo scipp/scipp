@@ -115,7 +115,7 @@ class ConstVariableSlice;
 class VariableSlice;
 template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
 
-/// Variable is a type-erase handle to any data structure representing a
+/// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
 /// dimensions.
 class Variable {
@@ -302,16 +302,9 @@ public:
       return m_variable->size();
   }
 
-  // TODO Currently VariableSlice is returned by value from dataset slices, so
-  // we risk referencing a member of a temporary. Returning by value for rvalue
-  // case. Need the same for some other methods?
-  const Dimensions &dimensions() const & {
-    if (m_view)
-      return m_view->dimensions();
-    else
-      return m_variable->dimensions();
-  }
-  Dimensions dimensions() const && {
+  // Note: Returning by value to avoid issues with referencing a temporary
+  // (VariableSlice is returned by-value from DatasetSlice).
+  Dimensions dimensions() const {
     if (m_view)
       return m_view->dimensions();
     else
