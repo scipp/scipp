@@ -140,8 +140,6 @@ public:
   Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,
            T object);
 
-  Variable &operator=(const ConstVariableSlice &slice);
-
   const std::string &name() const {
     static const std::string empty;
     if (!m_name)

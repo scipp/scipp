@@ -607,8 +607,13 @@ public:
 
 Variable::Variable(const ConstVariableSlice &slice)
     : Variable(*slice.m_variable) {
-  if (slice.m_view)
-    *this = slice;
+  if (slice.m_view) {
+    m_tag = slice.tag();
+    m_name = slice.m_variable->m_name;
+    setUnit(slice.unit());
+    setDimensions(slice.dimensions());
+    data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
+  }
 }
 
 template <class T>
@@ -617,18 +622,6 @@ Variable::Variable(const Tag tag, const Unit::Id unit,
     : m_tag(tag), m_unit{unit},
       m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
                                               std::move(object))) {}
-
-Variable &Variable::operator=(const ConstVariableSlice &slice) {
-  // Handle self assignment, avoiding reads from free'ed memory.
-  if (this == slice.m_variable)
-    return *this = Variable(slice);
-  m_tag = slice.tag();
-  m_name = slice.m_variable->m_name;
-  setUnit(slice.unit());
-  setDimensions(slice.dimensions());
-  data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
-  return *this;
-}
 
 void Variable::setDimensions(const Dimensions &dimensions) {
   if (dimensions == m_object->dimensions())
