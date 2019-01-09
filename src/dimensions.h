@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
 #include <gsl/span>
 
@@ -120,9 +119,6 @@ public:
   void erase(const Dim label);
 
   void add(const Dim label, const gsl::index size);
-
-  // auto begin() const { return m_dims.begin(); }
-  // auto end() const { return m_dims.end(); }
 
   int32_t index(const Dim label) const;
 
