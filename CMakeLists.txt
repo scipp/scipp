@@ -15,6 +15,10 @@ set ( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" )
 find_package (OpenMP 3.1 REQUIRED)
 find_package (Boost 1.59 REQUIRED)
 
+find_package(xtensor REQUIRED)
+#target_include_directories(your_target PUBLIC ${xtensor_INCLUDE_DIRS})
+#target_link_libraries(your_target PUBLIC xtensor)
+
 include( gsl )
 include( pybind11 )
 include( GoogleTest )

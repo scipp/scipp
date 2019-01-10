@@ -6,6 +6,12 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include "xtensor/xadapt.hpp"
+#include "xtensor/xarray.hpp"
+#include "xtensor/xlayout.hpp"
+#include "xtensor/xstrided_view.hpp"
+#include "xtensor/xview.hpp"
+
 #include "test_macros.h"
 
 #include "dimensions.h"
@@ -928,4 +934,43 @@ TEST(VariableSlice, slice_binary_operations) {
   EXPECT_TRUE(equals(sum.get<const Data::Value>(), {3, 7}));
   EXPECT_TRUE(equals(difference.get<const Data::Value>(), {-1, -1}));
   EXPECT_TRUE(equals(product.get<const Data::Value>(), {2, 12}));
+}
+
+TEST(Variable_xtensor, basics) {
+  Variable var(Data::Value{}, {Dim::X, 2});
+
+  // If we keep our current Variable-internal container we can adapt it.
+  auto data = var.get<Data::Value>();
+  std::vector<std::size_t> shape = {2};
+  auto a = xt::adapt(data.data(), data.size(), xt::no_ownership(), shape);
+
+  // Modify Variable using xtensor.
+  xt::xarray<double> b({3, 4});
+  a = b;
+  EXPECT_EQ(var.get<Data::Value>()[0], 3.0);
+  EXPECT_EQ(var.get<Data::Value>()[1], 4.0);
+
+  // Size changing operations fail, as they should.
+  xt::xarray<double> c({3});
+  ASSERT_ANY_THROW(a = c);
+
+  // Suppose we use xt::xarray internally to hold data in Variable, how to
+  // access it? We need to prevent size change.
+
+  // No official way to get a full but non-resizable view?
+  auto full = xt::transpose(xt::transpose(a));
+
+  // Unfortunately passing Variable::dimensions()::shape() does not work. Does
+  // it require a resizable container?
+  xt::xarray_container<std::vector<double>, xt::layout_type::row_major,
+                       Vector<gsl::index>>
+      test;
+
+  xt::xarray<int> a2({{1, 2}, {3, 4}});
+  xt::xarray<int> a3({3});
+  auto v1 = xt::view(a2, xt::all(), xt::all());
+  v1 = a3;
+  EXPECT_EQ(a2(0, 0), 3);
+  EXPECT_EQ(a2(0, 1), 3);
+  EXPECT_EQ(a2(1, 1), 3);
 }
