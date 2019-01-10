@@ -22,6 +22,15 @@ include( GoogleBenchmark )
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --save-temps -march=native -fno-omit-frame-pointer")
 
+option(WITH_ASAN "Enable address sanitizer" OFF)
+if(WITH_ASAN)
+  message(STATUS "Enabling address sanitizer")
+  add_compile_options(-fno-omit-frame-pointer -fno-common -fsanitize=address)
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address -lasan" )
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -lasan" )
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address -lasan" )
+endif()
+
 add_compile_options ( -Wall -Wextra -Winit-self -Wpointer-arith
                       -Wcast-qual -Wcast-align )
 add_compile_options ( $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
