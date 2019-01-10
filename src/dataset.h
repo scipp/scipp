@@ -22,6 +22,7 @@ class DatasetSlice;
 /// identifier.
 class Dataset {
 private:
+  // Helper lambdas for creating iterators.
   static constexpr auto makeConstSlice = [](const Variable &var) {
     return ConstVariableSlice(var);
   };
@@ -113,12 +114,11 @@ public:
   bool contains(const Tag tag, const std::string &name = "") const;
   void erase(const Tag tag, const std::string &name = "");
 
+  // TODO This should probably also include a copy of all or all relevant
+  // coordinates.
   Dataset extract(const std::string &name);
 
-  void merge(const Dataset &other) {
-    for (const auto &var : other)
-      insert(var);
-  }
+  void merge(const Dataset &other);
 
   template <class Tag> auto get(const std::string &name = std::string{}) const {
     return m_variables[find(Tag{}, name)].template get<Tag>();

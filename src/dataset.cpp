@@ -104,6 +104,17 @@ Dataset Dataset::extract(const std::string &name) {
   return subset;
 }
 
+void Dataset::merge(const Dataset &other) {
+  for (const auto &var : other) {
+    if (var.isCoord() && contains(var.tag(), var.name())) {
+      if (var != operator()(var.tag(), var.name()))
+        throw std::runtime_error("Cannot merge: Coordinates do not match.");
+    } else {
+      insert(var);
+    }
+  }
+}
+
 gsl::index Dataset::find(const Tag tag, const std::string &name) const {
   return ::find(*this, tag, name);
 }

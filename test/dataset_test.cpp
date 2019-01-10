@@ -178,6 +178,32 @@ TEST(Dataset, merge) {
   EXPECT_EQ(merged.size(), 4);
 }
 
+TEST(Dataset, merge_matching_coordinates) {
+  Dataset d1;
+  d1.insert<Coord::X>({Dim::X, 2}, {1.1, 2.2});
+  d1.insert<Data::Value>("data1", {Dim::X, 2});
+
+  Dataset d2;
+  d2.insert<Coord::X>({Dim::X, 2}, {1.1, 2.2});
+  d2.insert<Data::Value>("data2", {Dim::X, 2});
+
+  ASSERT_NO_THROW(d1.merge(d2));
+  EXPECT_EQ(d1.size(), 3);
+}
+
+TEST(Dataset, merge_coord_mismatch_fail) {
+  Dataset d1;
+  d1.insert<Coord::X>({Dim::X, 2}, {1.1, 2.2});
+  d1.insert<Data::Value>("data1", {Dim::X, 2});
+
+  Dataset d2;
+  d2.insert<Coord::X>({Dim::X, 2}, {1.1, 2.3});
+  d2.insert<Data::Value>("data2", {Dim::X, 2});
+
+  EXPECT_THROW_MSG(d1.merge(d2), std::runtime_error,
+                   "Cannot merge: Coordinates do not match.");
+}
+
 TEST(Dataset, const_get) {
   Dataset d;
   d.insert<Data::Value>("", Dimensions{}, {1.1});
