@@ -29,8 +29,8 @@ TEST(TableWorkspace, basics) {
   Dataset table;
   table.insert<Coord::RowLabel>({Dim::Row, 3},
                                 Vector<std::string>{"a", "b", "c"});
-  table.insert<Data::Value>("Data", {Dim::Row, 3}, {1.0, -2.0, 3.0});
-  table.insert<Data::String>("Comment", {Dim::Row, 3}, 3);
+  table.insert<Data::Value>("", {Dim::Row, 3}, {1.0, -2.0, 3.0});
+  table.insert<Data::String>("", {Dim::Row, 3}, 3);
 
   // Modify table with know columns.
   DatasetView<const Data::Value, Data::String> view(table);
@@ -58,7 +58,7 @@ TEST(TableWorkspace, basics) {
   EXPECT_EQ(rows.get<const Coord::RowLabel>()[2], "a");
 
   // Can sort by arbitrary column.
-  auto sortedTable = sort(table, Data::Value{}, "Data");
+  auto sortedTable = sort(table, Data::Value{});
   EXPECT_EQ(asStrings(sortedTable[0]),
             std::vector<std::string>({"b", "a", "c"}));
   EXPECT_EQ(asStrings(sortedTable[1]),

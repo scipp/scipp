@@ -16,6 +16,7 @@ class Unit;
 namespace dataset {
 std::string to_string(const Dim dim);
 std::string to_string(const Dimensions &dims);
+std::string to_string(const Tag tag);
 std::string to_string(const Unit &unit);
 
 namespace except {

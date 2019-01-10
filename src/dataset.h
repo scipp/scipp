@@ -49,10 +49,10 @@ public:
                                const gsl::index end = -1) const;
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
                           const gsl::index end = -1);
-  ConstVariableSlice operator()(const Tag tag) const;
-  VariableSlice operator()(const Tag tag);
-  ConstVariableSlice operator()(const Tag tag, const std::string &name) const;
-  VariableSlice operator()(const Tag tag, const std::string &name);
+  ConstVariableSlice operator()(const Tag tag,
+                                const std::string &name = std::string{}) const;
+  VariableSlice operator()(const Tag tag,
+                           const std::string &name = std::string{});
 
   // The iterators (and in fact all other public accessors to variables in
   // Dataset) return *views* and *not* a `Variable &`. This is necessary to
@@ -113,8 +113,8 @@ public:
   bool contains(const Tag tag, const std::string &name = "") const;
   void erase(const Tag tag, const std::string &name = "");
 
-  template <class Tag> void erase() {
-    const auto it = m_variables.begin() + findUnique(Tag{});
+  template <class Tag> void erase(const std::string &name = std::string{}) {
+    const auto it = m_variables.begin() + find(Tag{}, name);
     const auto dims = it->dimensions();
     m_variables.erase(it);
     for (const auto dim : dims.labels()) {
@@ -134,19 +134,11 @@ public:
       insert(var);
   }
 
-  template <class Tag> auto get() const {
-    return m_variables[findUnique(Tag{})].template get<Tag>();
-  }
-
-  template <class Tag> auto get(const std::string &name) const {
+  template <class Tag> auto get(const std::string &name = std::string{}) const {
     return m_variables[find(Tag{}, name)].template get<Tag>();
   }
 
-  template <class Tag> auto get() {
-    return m_variables[findUnique(Tag{})].template get<Tag>();
-  }
-
-  template <class Tag> auto get(const std::string &name) {
+  template <class Tag> auto get(const std::string &name = std::string{}) {
     return m_variables[find(Tag{}, name)].template get<Tag>();
   }
 
@@ -162,7 +154,6 @@ public:
 
 private:
   gsl::index find(const Tag tag, const std::string &name) const;
-  gsl::index findUnique(const Tag tag) const;
   void mergeDimensions(const Dimensions &dims, const Dim coordDim);
 
   // TODO These dimensions do not imply any ordering, should use another class

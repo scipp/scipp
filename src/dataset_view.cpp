@@ -8,9 +8,8 @@
 using namespace detail;
 
 template <class Tag> struct UnitHelper {
-  static Unit get(const Dataset &dataset) { return dataset(Tag{}).unit(); }
-
-  static Unit get(const Dataset &dataset, const std::string &name) {
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
     if (is_coord<Tag>)
       return dataset(Tag{}).unit();
     else
@@ -19,49 +18,41 @@ template <class Tag> struct UnitHelper {
 };
 
 template <class Tag> struct UnitHelper<Bin<Tag>> {
-  static Unit get(const Dataset &dataset) { return dataset(Tag{}).unit(); }
-  static Unit get(const Dataset &dataset, const std::string &name) {
-    return dataset(Tag{}, name).unit();
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
+    static_assert(is_coord<Tag>,
+                  "Only coordinates can be defined at bin edges");
+    static_cast<void>(name);
+    return dataset(Tag{}).unit();
   }
 };
 
 template <> struct UnitHelper<Coord::SpectrumPosition> {
-  static Unit get(const Dataset &dataset) {
-    return dataset(Coord::DetectorPosition{}).unit();
-  }
-  static Unit get(const Dataset &dataset, const std::string &) {
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
+    static_cast<void>(name);
     return dataset(Coord::DetectorPosition{}).unit();
   }
 };
 
 template <> struct UnitHelper<Data::StdDev> {
-  static Unit get(const Dataset &dataset) {
-    return dataset(Data::Variance{}).unit();
-  }
-  static Unit get(const Dataset &dataset, const std::string &name) {
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
     return dataset(Data::Variance{}, name).unit();
   }
 };
 
 template <class... Tags> struct UnitHelper<DatasetViewImpl<Tags...>> {
-  static detail::unit_t<DatasetViewImpl<Tags...>> get(const Dataset &dataset) {
-    return std::make_tuple(UnitHelper<Tags>::get(dataset)...);
-  }
-  static detail::unit_t<DatasetViewImpl<Tags...>> get(const Dataset &dataset,
-                                                      const std::string &name) {
+  static detail::unit_t<DatasetViewImpl<Tags...>>
+  get(const Dataset &dataset, const std::string &name = std::string{}) {
     return std::make_tuple(UnitHelper<Tags>::get(dataset, name)...);
   }
 };
 
 template <class Tag> struct DimensionHelper {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dim> &fixedDimensions) {
-    static_cast<void>(fixedDimensions);
-    return dataset(Tag{}).dimensions();
-  }
-
-  static Dimensions get(const Dataset &dataset, const std::string &name,
-                        const std::set<Dim> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
     static_cast<void>(fixedDimensions);
     // TODO Do we need to check here if fixedDimensions are contained?
     if (is_coord<Tag>)
@@ -73,12 +64,8 @@ template <class Tag> struct DimensionHelper {
 
 template <class Tag> struct DimensionHelper<Bin<Tag>> {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dim> &fixedDimensions) {
-    static_cast<void>(fixedDimensions);
-    return dataset(Tag{}).dimensions();
-  }
-  static Dimensions get(const Dataset &dataset, const std::string &name,
-                        const std::set<Dim> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
     static_cast<void>(fixedDimensions);
     if (is_coord<Tag>)
       return dataset(Tag{}).dimensions();
@@ -89,25 +76,18 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
 
 template <> struct DimensionHelper<Coord::SpectrumPosition> {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dim> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
     static_cast<void>(fixedDimensions);
-    return dataset(Coord::DetectorGrouping{}).dimensions();
-  }
-  static Dimensions get(const Dataset &dataset, const std::string &,
-                        const std::set<Dim> &fixedDimensions) {
-    static_cast<void>(fixedDimensions);
+    static_cast<void>(name);
     return dataset(Coord::DetectorGrouping{}).dimensions();
   }
 };
 
 template <> struct DimensionHelper<Data::StdDev> {
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dim> &fixedDimensions) {
-    static_cast<void>(fixedDimensions);
-    return dataset(Data::Variance{}).dimensions();
-  }
-  static Dimensions get(const Dataset &dataset, const std::string &name,
-                        const std::set<Dim> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
     static_cast<void>(fixedDimensions);
     return dataset(Data::Variance{}, name).dimensions();
   }
@@ -145,25 +125,17 @@ template <class... Tags> struct DimensionHelper<DatasetViewImpl<Tags...>> {
   }
 
   static Dimensions get(const Dataset &dataset,
-                        const std::set<Dim> &fixedDimensions) {
-    return getHelper({DimensionHelper<Tags>::get(dataset, fixedDimensions)...},
-                     fixedDimensions);
-  }
-
-  static Dimensions get(const Dataset &dataset, const std::string &name,
-                        const std::set<Dim> &fixedDimensions) {
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
     return getHelper(
-        {DimensionHelper<Tags>::get(dataset, name, fixedDimensions)...},
+        {DimensionHelper<Tags>::get(dataset, fixedDimensions, name)...},
         fixedDimensions);
   }
 };
 
 template <class Tag> struct DataHelper {
-  static auto get(MaybeConstDataset<Tag> &dataset, const Dimensions &) {
-    return dataset.template get<detail::value_type_t<Tag>>();
-  }
   static auto get(MaybeConstDataset<Tag> &dataset, const Dimensions &,
-                  const std::string &name) {
+                  const std::string &name = std::string{}) {
     if (is_coord<Tag>)
       return dataset.template get<detail::value_type_t<Tag>>();
     else
@@ -172,7 +144,10 @@ template <class Tag> struct DataHelper {
 };
 
 template <class Tag> struct DataHelper<Bin<Tag>> {
-  static auto get(const Dataset &dataset, const Dimensions &) {
+  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name = std::string{}) {
+    static_cast<void>(iterationDimensions);
+    static_cast<void>(name);
     // Compute offset to next edge.
     gsl::index offset = 1;
     const auto &dims = dataset(Tag{}).dimensions();
@@ -186,20 +161,12 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
     return ref_type_t<Bin<Tag>>{offset,
                                 dataset.get<const detail::value_type_t<Tag>>()};
   }
-  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
-                  const std::string &) {
-    return get(dataset, iterationDimensions);
-  }
 };
 
 template <> struct DataHelper<Coord::SpectrumPosition> {
-  static auto get(const Dataset &dataset, const Dimensions &) {
-    return ref_type_t<Coord::SpectrumPosition>(
-        dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
-        dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
-  }
   static auto get(const Dataset &dataset, const Dimensions &,
-                  const std::string &) {
+                  const std::string &name = std::string{}) {
+    static_cast<void>(name);
     return ref_type_t<Coord::SpectrumPosition>(
         dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
         dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
@@ -207,12 +174,8 @@ template <> struct DataHelper<Coord::SpectrumPosition> {
 };
 
 template <> struct DataHelper<Data::StdDev> {
-  static auto get(const Dataset &dataset,
-                  const Dimensions &iterationDimensions) {
-    return DataHelper<const Data::Variance>::get(dataset, iterationDimensions);
-  }
   static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
-                  const std::string &name) {
+                  const std::string &name = std::string{}) {
     return DataHelper<const Data::Variance>::get(dataset, iterationDimensions,
                                                  name);
   }
@@ -220,21 +183,8 @@ template <> struct DataHelper<Data::StdDev> {
 
 template <class... Tags> struct DataHelper<DatasetViewImpl<Tags...>> {
   static auto get(MaybeConstDataset<Tags...> &dataset,
-                  const Dimensions &iterationDimensions) {
-    const auto labels = iterationDimensions.labels();
-    std::set<Dim> fixedDimensions(labels.begin(), labels.end());
-    // For the nested case we create a DatasetView with the correct dimensions
-    // and store it. It is later copied and initialized with the correct offset
-    // in iterator::get.
-    return ref_type_t<DatasetViewImpl<Tags...>>{
-        MultiIndex(iterationDimensions,
-                   {DimensionHelper<Tags>::get(dataset, {})...}),
-        DatasetViewImpl<Tags...>(dataset, fixedDimensions),
-        std::make_tuple(DataHelper<Tags>::get(dataset, {})...)};
-  }
-  static auto get(MaybeConstDataset<Tags...> &dataset,
                   const Dimensions &iterationDimensions,
-                  const std::string &name) {
+                  const std::string &name = std::string{}) {
     const auto labels = iterationDimensions.labels();
     std::set<Dim> fixedDimensions(labels.begin(), labels.end());
     // For the nested case we create a DatasetView with the correct dimensions
@@ -242,7 +192,7 @@ template <class... Tags> struct DataHelper<DatasetViewImpl<Tags...>> {
     // in iterator::get.
     return ref_type_t<DatasetViewImpl<Tags...>>{
         MultiIndex(iterationDimensions,
-                   {DimensionHelper<Tags>::get(dataset, name, {})...}),
+                   {DimensionHelper<Tags>::get(dataset, {}, name)...}),
         DatasetViewImpl<Tags...>(dataset, name, fixedDimensions),
         std::make_tuple(DataHelper<Tags>::get(dataset, {}, name)...)};
   }
@@ -303,7 +253,7 @@ DatasetViewImpl<Ts...>::DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
                                         const std::string &name,
                                         const std::set<Dim> &fixedDimensions)
     : m_units{UnitHelper<Ts>::get(dataset, name)...},
-      m_variables(makeVariables(dataset, name, fixedDimensions)) {}
+      m_variables(makeVariables(dataset, fixedDimensions, name)) {}
 template <class... Ts>
 DatasetViewImpl<Ts...>::DatasetViewImpl(MaybeConstDataset<Ts...> &dataset,
                                         const std::set<Dim> &fixedDimensions)
@@ -328,11 +278,12 @@ using makeVariableReturnType = std::tuple<const gsl::index, const MultiIndex,
                                           const std::tuple<ref_type_t<Ts>...>>;
 
 template <class... Ts>
-makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
-    MaybeConstDataset<Ts...> &dataset, const std::string &name,
-    const std::set<Dim> &fixedDimensions) const {
+makeVariableReturnType<Ts...>
+DatasetViewImpl<Ts...>::makeVariables(MaybeConstDataset<Ts...> &dataset,
+                                      const std::set<Dim> &fixedDimensions,
+                                      const std::string &name) const {
   boost::container::small_vector<Dimensions, 4> subdimensions{
-      DimensionHelper<Ts>::get(dataset, name, fixedDimensions)...};
+      DimensionHelper<Ts>::get(dataset, fixedDimensions, name)...};
   Dimensions iterationDimensions(
       relevantDimensions(dataset, subdimensions, fixedDimensions));
   return std::tuple<const gsl::index, const MultiIndex,
@@ -341,21 +292,6 @@ makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
       MultiIndex(iterationDimensions, subdimensions),
       std::tuple<ref_type_t<Ts>...>{
           DataHelper<Ts>::get(dataset, iterationDimensions, name)...}};
-}
-template <class... Ts>
-makeVariableReturnType<Ts...> DatasetViewImpl<Ts...>::makeVariables(
-    MaybeConstDataset<Ts...> &dataset,
-    const std::set<Dim> &fixedDimensions) const {
-  boost::container::small_vector<Dimensions, 4> subdimensions{
-      DimensionHelper<Ts>::get(dataset, fixedDimensions)...};
-  Dimensions iterationDimensions(
-      relevantDimensions(dataset, subdimensions, fixedDimensions));
-  return std::tuple<const gsl::index, const MultiIndex,
-                    const std::tuple<ref_type_t<Ts>...>>{
-      iterationDimensions.volume(),
-      MultiIndex(iterationDimensions, subdimensions),
-      std::tuple<ref_type_t<Ts>...>{
-          DataHelper<Ts>::get(dataset, iterationDimensions)...}};
 }
 
 #define INSTANTIATE(...) template class DatasetViewImpl<__VA_ARGS__>;

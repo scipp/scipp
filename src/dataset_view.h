@@ -267,12 +267,8 @@ private:
   std::tuple<const gsl::index, const MultiIndex,
              const std::tuple<ref_type_t<Ts>...>>
   makeVariables(detail::MaybeConstDataset<Ts...> &dataset,
-                const std::string &name,
-                const std::set<Dim> &fixedDimensions) const;
-  std::tuple<const gsl::index, const MultiIndex,
-             const std::tuple<ref_type_t<Ts>...>>
-  makeVariables(detail::MaybeConstDataset<Ts...> &dataset,
-                const std::set<Dim> &fixedDimensions) const;
+                const std::set<Dim> &fixedDimensions,
+                const std::string &name = std::string{}) const;
 
   const std::tuple<detail::unit_t<Ts>...> m_units;
   const std::tuple<const gsl::index, const MultiIndex,

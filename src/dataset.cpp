@@ -35,14 +35,6 @@ DatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
   return DatasetSlice(*this)(dim, begin, end);
 }
 
-ConstVariableSlice Dataset::operator()(const Tag tag) const {
-  return ConstVariableSlice(m_variables[findUnique(tag)]);
-}
-
-VariableSlice Dataset::operator()(const Tag tag) {
-  return VariableSlice(m_variables[findUnique(tag)]);
-}
-
 ConstVariableSlice Dataset::operator()(const Tag tag,
                                        const std::string &name) const {
   return ConstVariableSlice(m_variables[find(tag, name)]);
@@ -114,21 +106,6 @@ Dataset Dataset::extract(const std::string &name) {
 
 gsl::index Dataset::find(const Tag tag, const std::string &name) const {
   return ::find(*this, tag, name);
-}
-
-gsl::index Dataset::findUnique(const Tag tag) const {
-  gsl::index index = -1;
-  for (gsl::index i = 0; i < size(); ++i) {
-    if (m_variables[i].tag() == tag) {
-      if (index != -1)
-        throw std::runtime_error(
-            "Given variable tag is not unique. Must provide a name.");
-      index = i;
-    }
-  }
-  if (index == -1)
-    throw dataset::except::VariableNotFoundError(*this, tag, "<any>");
-  return index;
 }
 
 void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {

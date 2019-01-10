@@ -50,6 +50,8 @@ std::string to_string(const Dim dim) {
 
 std::string to_string(const Tag tag) {
   switch (tag.value()) {
+  case Coord::Tof{}.value():
+    return "Coord::Tof";
   case Coord::X{}.value():
     return "Coord::X";
   case Coord::Y{}.value():

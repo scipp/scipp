@@ -43,7 +43,7 @@ TEST(Run, meta_data_propagation) {
   run2.get<Coord::FuzzyTemperature>()[0] = ValueWithDelta<double>(4.15, 0.1);
   run2.get<Data::Table>("comment")[0].get<Data::String>()[0] = "second run";
   run2.get<Data::Table>("generic_log")[0]
-      .get<Data::Table>()[0]
+      .get<Data::Table>("root")[0]
       .insert<Data::String>(
           "user comment", {},
           {"Spider walked through beam, verify data before publishing."});
@@ -61,7 +61,7 @@ TEST(Run, meta_data_propagation) {
   // are in different places in the internal dataset structure. For more
   // convenient access we should provide a view class that can be instantiated
   // on the fly.
-  const auto &run = d1.get<const Attr::ExperimentLog>()[0];
+  const auto &run = d1.get<const Attr::ExperimentLog>("sample_log")[0];
 
   // Example of a log entry that is accumulated:
   EXPECT_EQ(run.get<const Data::Value>("total_counts").size(), 1);
