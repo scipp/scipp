@@ -74,7 +74,7 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
 
   // Compute spin difference.
   DatasetIndex<Coord::Polarization> spin(combined);
-  combined.erase<Coord::Polarization>();
+  combined.erase(Coord::Polarization{});
   Dataset delta = combined(Dim::Polarization, spin["spin-up"]) -
                   combined(Dim::Polarization, spin["spin-down"]);
 
@@ -223,7 +223,7 @@ TEST(Workspace2D, masking) {
   EXPECT_ANY_THROW(d_masked2 += d_masked);
 
   // Remove mask.
-  d_masked.erase<Coord::Mask>();
+  d_masked.erase(Coord::Mask{});
 
   // Skip processing spectrum if it is masked.
   EXPECT_FALSE(d_masked2(Coord::Mask{}).dimensions().contains(Dim::Tof));

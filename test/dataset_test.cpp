@@ -651,13 +651,13 @@ TEST(Dataset, rebin_failures) {
   EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
                    "Existing coordinate to be rebined lacks the dimension "
                    "corresponding to the new coordinate.");
-  d.erase<Coord::X>();
+  d.erase(Coord::X{});
   d.insert(coord);
   EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
                    "Existing coordinate to be rebinned is not a bin edge "
                    "coordinate. Use `resample` instead of rebin or convert to "
                    "histogram data first.");
-  d.erase<Coord::X>();
+  d.erase(Coord::X{});
   d.insert(coord);
   d.insert<Data::Value>("badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
   auto badAuxDim =

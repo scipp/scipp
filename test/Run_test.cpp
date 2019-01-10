@@ -141,7 +141,7 @@ TEST(Run, meta_data_fail_missing) {
   Dataset d2(d1);
 
   auto &run2 = d2.get<Attr::ExperimentLog>("sample_log")[0];
-  run2.get<Data::Table>("comment")[0].erase<Data::String>();
+  run2.get<Data::Table>("comment")[0].erase(Data::String{});
   EXPECT_THROW_MSG(d1 += d2, std::runtime_error,
                    "Cannot add Variable: Nested Dataset dimension must be 1.");
 }

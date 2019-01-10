@@ -21,13 +21,13 @@ TEST(LinearView, construct_fail) {
   EXPECT_THROW_MSG(
       LinearView<Coord::X> view(d), std::runtime_error,
       "LinearView must be constructed based on *all* variables in a dataset.");
-  d.erase<Data::Value>();
+  d.erase(Data::Value{});
 
   d.insert<Data::Value>("", {});
   EXPECT_THROW_MSG((LinearView<Coord::X, Data::Value>(d)), std::runtime_error,
                    "LinearView supports only datasets where all variables are "
                    "1-dimensional.");
-  d.erase<Data::Value>();
+  d.erase(Data::Value{});
 
   d.insert<Coord::Y>({Dim::Y, 3});
   EXPECT_THROW_MSG((LinearView<Coord::X, Coord::Y>(d)), std::runtime_error,

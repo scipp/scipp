@@ -120,10 +120,10 @@ TEST(EventWorkspace, basics) {
 
   // Can keep events but drop, e.g., pulse time if not needed anymore.
   for (auto &e : d.get<Data::Events>())
-    e.erase<Data::PulseTime>();
+    e.erase(Data::PulseTime{});
 
   // Can delete events fully later.
-  d.erase<Data::Events>();
+  d.erase(Data::Events{});
 }
 
 TEST(EventWorkspace, plus) {

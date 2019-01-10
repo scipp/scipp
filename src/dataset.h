@@ -113,20 +113,6 @@ public:
   bool contains(const Tag tag, const std::string &name = "") const;
   void erase(const Tag tag, const std::string &name = "");
 
-  template <class Tag> void erase(const std::string &name = std::string{}) {
-    const auto it = m_variables.begin() + find(Tag{}, name);
-    const auto dims = it->dimensions();
-    m_variables.erase(it);
-    for (const auto dim : dims.labels()) {
-      bool found = false;
-      for (const auto &var : m_variables)
-        if (var.dimensions().contains(dim))
-          found = true;
-      if (!found)
-        m_dimensions.erase(dim);
-    }
-  }
-
   Dataset extract(const std::string &name);
 
   void merge(const Dataset &other) {
