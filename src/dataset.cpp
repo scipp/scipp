@@ -409,38 +409,36 @@ template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
   return dataset;
 }
 
-DatasetSlice &DatasetSlice::assign(const Dataset &other) {
-  return ::assign(*this, other);
-}
-DatasetSlice &DatasetSlice::assign(const ConstDatasetSlice &other) {
-  return ::assign(*this, other);
+void DatasetSlice::assign(const Dataset &other) { ::assign(*this, other); }
+void DatasetSlice::assign(const ConstDatasetSlice &other) {
+  ::assign(*this, other);
 }
 
-DatasetSlice &DatasetSlice::operator+=(const Dataset &other) {
-  return binary_op_equals(
-      [](VariableSlice &a, const Variable &b) { return a += b; }, *this, other);
+void DatasetSlice::operator+=(const Dataset &other) {
+  binary_op_equals([](VariableSlice &a, const Variable &b) { return a += b; },
+                   *this, other);
 }
-DatasetSlice &DatasetSlice::operator+=(const ConstDatasetSlice &other) {
-  return binary_op_equals(
+void DatasetSlice::operator+=(const ConstDatasetSlice &other) {
+  binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
 
-DatasetSlice &DatasetSlice::operator-=(const Dataset &other) {
-  return binary_op_equals(
-      [](VariableSlice &a, const Variable &b) { return a -= b; }, *this, other);
+void DatasetSlice::operator-=(const Dataset &other) {
+  binary_op_equals([](VariableSlice &a, const Variable &b) { return a -= b; },
+                   *this, other);
 }
-DatasetSlice &DatasetSlice::operator-=(const ConstDatasetSlice &other) {
-  return binary_op_equals(
+void DatasetSlice::operator-=(const ConstDatasetSlice &other) {
+  binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
 
-DatasetSlice &DatasetSlice::operator*=(const Dataset &other) {
-  return times_equals(*this, other);
+void DatasetSlice::operator*=(const Dataset &other) {
+  times_equals(*this, other);
 }
-DatasetSlice &DatasetSlice::operator*=(const ConstDatasetSlice &other) {
-  return times_equals(*this, other);
+void DatasetSlice::operator*=(const ConstDatasetSlice &other) {
+  times_equals(*this, other);
 }
 
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
