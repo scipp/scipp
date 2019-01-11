@@ -250,6 +250,9 @@ public:
 
   std::unique_ptr<VariableConcept>
   reshape(const Dimensions &dims) const override {
+    if (this->dimensions().volume() != dims.volume())
+      throw std::runtime_error(
+          "Cannot reshape to dimensions with different volume");
     return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
         dims, getReshaped(dims));
   }
@@ -463,9 +466,6 @@ public:
   }
   VariableView<const value_type>
   getReshaped(const Dimensions &dims) const override {
-    if (this->dimensions().volume() != dims.volume())
-      throw std::runtime_error(
-          "Cannot reshape to dimensions with different volume");
     return makeVariableView(m_model.data(), 0, dims, dims);
   }
 
@@ -587,9 +587,6 @@ public:
 
   VariableView<const value_type>
   getReshaped(const Dimensions &dims) const override {
-    if (this->dimensions().volume() != dims.volume())
-      throw std::runtime_error(
-          "Cannot reshape to dimensions with different volume");
     return {m_model, dims};
   }
 
