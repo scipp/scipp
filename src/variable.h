@@ -445,15 +445,20 @@ public:
     return this->template cast<typename Tag::type>();
   }
 
-  // Note: No need to delete rvalue overloads here, data is modified in
-  // underlying Variable.
-  template <class T> VariableSlice &assign(const T &other);
-  VariableSlice &operator+=(const Variable &other);
-  VariableSlice &operator+=(const ConstVariableSlice &other);
-  VariableSlice &operator-=(const Variable &other);
-  VariableSlice &operator-=(const ConstVariableSlice &other);
-  VariableSlice &operator*=(const Variable &other);
-  VariableSlice &operator*=(const ConstVariableSlice &other);
+  // Note: We want to support things like `var(Dim::X, 0) = var2`, i.e., when
+  // the left-hand-side is a temporary. This is ok since data is modified in
+  // underlying Variable. However, we do not return the typical `VariableSlice
+  // &` from these operations since that could reference a temporary. Other
+  // options would be to return `VariableSlice`, i.e., by value, or to have
+  // overloads for *this of types `&` and `&&` with distinct return types (which
+  // does not feel like a good solution).
+  template <class T> void assign(const T &other);
+  void operator+=(const Variable &other);
+  void operator+=(const ConstVariableSlice &other);
+  void operator-=(const Variable &other);
+  void operator-=(const ConstVariableSlice &other);
+  void operator*=(const Variable &other);
+  void operator*=(const ConstVariableSlice &other);
 
   void setUnit(const Unit &unit);
 
@@ -470,6 +475,9 @@ private:
   Variable *m_mutableVariable;
 };
 
+// Note: If the left-hand-side in an addition is a VariableSlice this simply
+// implicitly converts it to a Variable. A copy for the return value is required
+// anyway so this is a convenient way to avoid defining more overloads.
 Variable operator+(Variable a, const Variable &b);
 Variable operator-(Variable a, const Variable &b);
 Variable operator*(Variable a, const Variable &b);
