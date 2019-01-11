@@ -646,8 +646,11 @@ Variable::Variable(const Tag tag, const Unit::Id unit,
                                               std::move(object))) {}
 
 void Variable::setDimensions(const Dimensions &dimensions) {
-  if (dimensions == m_object->dimensions())
+  if (dimensions.volume() == m_object->dimensions().volume()) {
+    if (dimensions != m_object->dimensions())
+      data().m_dimensions = dimensions;
     return;
+  }
   m_object = m_object->clone(dimensions);
 }
 
@@ -941,8 +944,12 @@ ConstVariableSlice Variable::reshape(const Dimensions &dims) const {
   return {*this, dims};
 }
 
-ConstVariableSlice ConstVariableSlice::reshape(const Dimensions &dims) const {
-  return {*this, dims};
+Variable ConstVariableSlice::reshape(const Dimensions &dims) const {
+  // In general a variable slice is not contiguous. Therefore we cannot reshape
+  // without making a copy (except for special cases).
+  Variable reshaped(*this);
+  reshaped.setDimensions(dims);
+  return reshaped;
 }
 
 Variable operator+(Variable a, const Variable &b) { return a += b; }

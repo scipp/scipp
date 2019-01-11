@@ -970,9 +970,25 @@ TEST(Variable, reshape) {
   EXPECT_TRUE(equals(view2.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
 }
 
+TEST(Variable, reshape_fail) {
+  Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
+  EXPECT_THROW_MSG(var.reshape({Dim::Row, 5}), std::runtime_error,
+                   "Cannot reshape to dimensions with different volume");
+}
+
 TEST(Variable, reshape_and_slice) {
-  Variable var(Data::Value{}, {Dim::Spectrum, 100});
+  Variable var(Data::Value{}, {Dim::Spectrum, 16},
+               {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+
+  auto slice =
+      var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3);
+  EXPECT_TRUE(equals(slice.get<const Data::Value>(), {6, 7, 10, 11}));
+
   Variable center =
-      var.reshape({{Dim::X, 10}, {Dim::Y, 10}})(Dim::X, 2, 8)(Dim::Y, 2, 8)
-          .reshape({Dim::Spectrum, 36});
+      var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3)
+          .reshape({Dim::Spectrum, 4});
+
+  ASSERT_EQ(center.size(), 4);
+  ASSERT_EQ(center.dimensions(), Dimensions({Dim::Spectrum, 4}));
+  EXPECT_TRUE(equals(center.get<const Data::Value>(), {6, 7, 10, 11}));
 }

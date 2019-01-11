@@ -303,7 +303,9 @@ public:
     return ConstVariableSlice(*this, dim, begin, end);
   }
 
-  ConstVariableSlice reshape(const Dimensions &dims) const;
+  // Note the return type. Reshaping a non-contiguous slice cannot return a
+  // slice in general so we must return a copy of the data.
+  Variable reshape(const Dimensions &dims) const;
 
   const std::string &name() const { return m_variable->name(); }
   void setName(const std::string &) {
