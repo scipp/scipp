@@ -83,6 +83,15 @@ TEST(Variable, operator_equals) {
   EXPECT_FALSE(a == diff4);
 }
 
+TEST(Variable, operator_unary_minus) {
+  const Variable a(Data::Value{}, {Dim::X, 2}, {1.1, 2.2});
+  auto b = -a;
+  EXPECT_EQ(a.get<const Data::Value>()[0], 1.1);
+  EXPECT_EQ(a.get<const Data::Value>()[1], 2.2);
+  EXPECT_EQ(b.get<const Data::Value>()[0], -1.1);
+  EXPECT_EQ(b.get<const Data::Value>()[1], -2.2);
+}
+
 TEST(Variable, operator_plus_equal) {
   auto a = makeVariable<Data::Value>({Dim::X, 2}, {1.1, 2.2});
 
@@ -159,6 +168,14 @@ TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
   EXPECT_EQ(a.get<Data::Value>()[0], 3.0);
 }
 
+TEST(Variable, operator_plus_equal_scalar) {
+  auto a = makeVariable<Data::Value>({Dim::X, 2}, {1.1, 2.2});
+
+  EXPECT_NO_THROW(a += 1.0);
+  EXPECT_EQ(a.get<Data::Value>()[0], 2.1);
+  EXPECT_EQ(a.get<Data::Value>()[1], 3.2);
+}
+
 TEST(Variable, operator_times_equal) {
   auto a = makeVariable<Coord::X>({Dim::X, 2}, {2.0, 3.0});
 
@@ -167,6 +184,16 @@ TEST(Variable, operator_times_equal) {
   EXPECT_EQ(a.get<Coord::X>()[0], 4.0);
   EXPECT_EQ(a.get<Coord::X>()[1], 9.0);
   EXPECT_EQ(a.unit(), Unit::Id::Area);
+}
+
+TEST(Variable, operator_times_equal_scalar) {
+  auto a = makeVariable<Coord::X>({Dim::X, 2}, {2.0, 3.0});
+
+  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_NO_THROW(a *= 2.0);
+  EXPECT_EQ(a.get<Coord::X>()[0], 4.0);
+  EXPECT_EQ(a.get<Coord::X>()[1], 6.0);
+  EXPECT_EQ(a.unit(), Unit::Id::Length);
 }
 
 TEST(Variable, setSlice) {

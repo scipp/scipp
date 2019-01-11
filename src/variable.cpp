@@ -741,10 +741,25 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
+Variable Variable::operator-() const {
+  // TODO This implementation only works for variables containing doubles and
+  // will throw, e.g., for ints.
+  auto copy(*this);
+  copy *= -1.0;
+  return copy;
+}
+
 Variable &Variable::operator+=(const Variable &other) {
   return plus_equals(*this, other);
 }
 Variable &Variable::operator+=(const ConstVariableSlice &other) {
+  return plus_equals(*this, other);
+}
+Variable &Variable::operator+=(const double value) {
+  // TODO By not setting a unit here this operator is only usable if the
+  // variable is dimensionless. Should we ignore the unit for scalar operations,
+  // i.e., set the same unit as *this.unit()?
+  Variable other(Data::Value{}, {}, {value});
   return plus_equals(*this, other);
 }
 
@@ -778,6 +793,11 @@ Variable &Variable::operator*=(const Variable &other) {
   return times_equals(*this, other);
 }
 Variable &Variable::operator*=(const ConstVariableSlice &other) {
+  return times_equals(*this, other);
+}
+Variable &Variable::operator*=(const double value) {
+  Variable other(Data::Value{}, {}, {value});
+  other.setUnit(Unit::Id::Dimensionless);
   return times_equals(*this, other);
 }
 

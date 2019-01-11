@@ -160,12 +160,15 @@ public:
   bool operator==(const ConstVariableSlice &other) const;
   bool operator!=(const Variable &other) const;
   bool operator!=(const ConstVariableSlice &other) const;
+  Variable operator-() const;
   Variable &operator+=(const Variable &other);
   Variable &operator+=(const ConstVariableSlice &other);
+  Variable &operator+=(const double value);
   Variable &operator-=(const Variable &other);
   Variable &operator-=(const ConstVariableSlice &other);
   Variable &operator*=(const Variable &other);
   Variable &operator*=(const ConstVariableSlice &other);
+  Variable &operator*=(const double value);
 
   const Unit &unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
