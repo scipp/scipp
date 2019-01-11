@@ -205,6 +205,7 @@ public:
   virtual VariableView<const T> getView(const Dimensions &dims) const = 0;
   virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
                                         const gsl::index begin) const = 0;
+  virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
 
   std::unique_ptr<VariableConcept> makeView() const override {
     auto &dims = dimensions();
@@ -245,6 +246,12 @@ public:
       dims.resize(dim, end - begin);
     return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
         dims, getView(dims, dim, begin));
+  }
+
+  std::unique_ptr<VariableConcept>
+  reshape(const Dimensions &dims) const override {
+    return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
+        dims, getReshaped(dims));
   }
 
   bool operator==(const VariableConcept &other) const override {
@@ -454,6 +461,13 @@ public:
     return makeVariableView(m_model.data(), beginOffset, dims,
                             this->dimensions());
   }
+  VariableView<const value_type>
+  getReshaped(const Dimensions &dims) const override {
+    if (this->dimensions().volume() != dims.volume())
+      throw std::runtime_error(
+          "Cannot reshape to dimensions with different volume");
+    return makeVariableView(m_model.data(), 0, dims, dims);
+  }
 
   std::shared_ptr<VariableConcept> clone() const override {
     return std::make_shared<DataModel<T>>(this->dimensions(), m_model);
@@ -569,6 +583,14 @@ public:
   getView(const Dimensions &dims, const Dim dim,
           const gsl::index begin) const override {
     return {m_model, dims, dim, begin};
+  }
+
+  VariableView<const value_type>
+  getReshaped(const Dimensions &dims) const override {
+    if (this->dimensions().volume() != dims.volume())
+      throw std::runtime_error(
+          "Cannot reshape to dimensions with different volume");
+    return {m_model, dims};
   }
 
   std::shared_ptr<VariableConcept> clone() const override {
@@ -913,6 +935,14 @@ ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
 VariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
                                    const gsl::index end) {
   return {*this, dim, begin, end};
+}
+
+ConstVariableSlice Variable::reshape(const Dimensions &dims) const {
+  return {*this, dims};
+}
+
+ConstVariableSlice ConstVariableSlice::reshape(const Dimensions &dims) const {
+  return {*this, dims};
 }
 
 Variable operator+(Variable a, const Variable &b) { return a += b; }
