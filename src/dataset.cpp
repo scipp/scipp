@@ -17,30 +17,30 @@ Dataset::Dataset(const ConstDatasetSlice &view) {
     insert(var);
 }
 
-ConstDatasetSlice Dataset::operator[](const std::string &name) const {
+ConstDatasetSlice Dataset::operator[](const std::string &name) const & {
   return ConstDatasetSlice(*this, name);
 }
 
-DatasetSlice Dataset::operator[](const std::string &name) {
+DatasetSlice Dataset::operator[](const std::string &name) & {
   return DatasetSlice(*this, name);
 }
 
 ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
-                                      const gsl::index end) const {
+                                      const gsl::index end) const & {
   return ConstDatasetSlice(*this)(dim, begin, end);
 }
 
 DatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
-                                 const gsl::index end) {
+                                 const gsl::index end) & {
   return DatasetSlice(*this)(dim, begin, end);
 }
 
 ConstVariableSlice Dataset::operator()(const Tag tag,
-                                       const std::string &name) const {
+                                       const std::string &name) const & {
   return ConstVariableSlice(m_variables[find(tag, name)]);
 }
 
-VariableSlice Dataset::operator()(const Tag tag, const std::string &name) {
+VariableSlice Dataset::operator()(const Tag tag, const std::string &name) & {
   return VariableSlice(m_variables[find(tag, name)]);
 }
 

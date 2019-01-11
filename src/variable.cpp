@@ -771,13 +771,13 @@ Variable Variable::operator-() const {
   return copy;
 }
 
-Variable &Variable::operator+=(const Variable &other) {
+Variable &Variable::operator+=(const Variable &other) & {
   return plus_equals(*this, other);
 }
-Variable &Variable::operator+=(const ConstVariableSlice &other) {
+Variable &Variable::operator+=(const ConstVariableSlice &other) & {
   return plus_equals(*this, other);
 }
-Variable &Variable::operator+=(const double value) {
+Variable &Variable::operator+=(const double value) & {
   // TODO By not setting a unit here this operator is only usable if the
   // variable is dimensionless. Should we ignore the unit for scalar operations,
   // i.e., set the same unit as *this.unit()?
@@ -794,10 +794,10 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
-Variable &Variable::operator-=(const Variable &other) {
+Variable &Variable::operator-=(const Variable &other) & {
   return minus_equals(*this, other);
 }
-Variable &Variable::operator-=(const ConstVariableSlice &other) {
+Variable &Variable::operator-=(const ConstVariableSlice &other) & {
   return minus_equals(*this, other);
 }
 
@@ -811,13 +811,13 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
-Variable &Variable::operator*=(const Variable &other) {
+Variable &Variable::operator*=(const Variable &other) & {
   return times_equals(*this, other);
 }
-Variable &Variable::operator*=(const ConstVariableSlice &other) {
+Variable &Variable::operator*=(const ConstVariableSlice &other) & {
   return times_equals(*this, other);
 }
-Variable &Variable::operator*=(const double value) {
+Variable &Variable::operator*=(const double value) & {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return times_equals(*this, other);
@@ -928,16 +928,16 @@ INSTANTIATE_SLICEVIEW(char);
 INSTANTIATE_SLICEVIEW(std::string);
 
 ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
-                                        const gsl::index end) const {
+                                        const gsl::index end) const & {
   return {*this, dim, begin, end};
 }
 
 VariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
-                                   const gsl::index end) {
+                                   const gsl::index end) & {
   return {*this, dim, begin, end};
 }
 
-ConstVariableSlice Variable::reshape(const Dimensions &dims) const {
+ConstVariableSlice Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
 }
 

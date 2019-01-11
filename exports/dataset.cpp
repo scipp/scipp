@@ -373,9 +373,11 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable<Data::Variance>))
       .def(py::init<const VariableSlice &>())
       .def_property_readonly("tag", &Variable::tag)
-      .def_property("name", &Variable::name, &Variable::setName)
+      .def_property("name", [](const Variable &self) { return self.name(); },
+                    &Variable::setName)
       .def_property_readonly("is_coord", &Variable::isCoord)
-      .def_property_readonly("dimensions", &Variable::dimensions)
+      .def_property_readonly(
+          "dimensions", [](const Variable &self) { return self.dimensions(); })
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
