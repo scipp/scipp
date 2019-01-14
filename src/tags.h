@@ -135,10 +135,6 @@ struct CoordDef {
     using type = boost::container::small_vector<gsl::index, 1>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct SpectrumPosition : public detail::ReturnByValuePolicy {
-    using type = double;
-    static constexpr auto unit = Unit::Id::Length;
-  };
   struct RowLabel {
     using type = std::string;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -229,15 +225,16 @@ struct CoordDef {
     static constexpr auto unit = Unit::Id::Length;
   };
 
-  using tags = std::tuple<
-      Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof, DetectorId,
-      SpectrumNumber, DetectorIsMonitor, DetectorMask, DetectorRotation,
-      DetectorPosition, DetectorGrouping, SpectrumPosition, RowLabel,
-      Polarization, Temperature, FuzzyTemperature, Time, TimeInterval, Mask,
-      ComponentRotation, ComponentPosition, ComponentParent, ComponentChildren,
-      ComponentScale, ComponentShape, ComponentName, ComponentSubtree,
-      DetectorSubtree, ComponentSubtreeRange, DetectorSubtreeRange,
-      DetectorParent, DetectorScale, DetectorShape, Position>;
+  using tags =
+      std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof, DetectorId,
+                 SpectrumNumber, DetectorIsMonitor, DetectorMask,
+                 DetectorRotation, DetectorPosition, DetectorGrouping, RowLabel,
+                 Polarization, Temperature, FuzzyTemperature, Time,
+                 TimeInterval, Mask, ComponentRotation, ComponentPosition,
+                 ComponentParent, ComponentChildren, ComponentScale,
+                 ComponentShape, ComponentName, ComponentSubtree,
+                 DetectorSubtree, ComponentSubtreeRange, DetectorSubtreeRange,
+                 DetectorParent, DetectorScale, DetectorShape, Position>;
 };
 
 struct DataDef {
@@ -324,7 +321,6 @@ struct Coord {
   using DetectorRotation = detail::TagImpl<detail::CoordDef::DetectorRotation>;
   using DetectorPosition = detail::TagImpl<detail::CoordDef::DetectorPosition>;
   using DetectorGrouping = detail::TagImpl<detail::CoordDef::DetectorGrouping>;
-  using SpectrumPosition = detail::TagImpl<detail::CoordDef::SpectrumPosition>;
   using RowLabel = detail::TagImpl<detail::CoordDef::RowLabel>;
   using Polarization = detail::TagImpl<detail::CoordDef::Polarization>;
   using Temperature = detail::TagImpl<detail::CoordDef::Temperature>;

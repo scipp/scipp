@@ -27,14 +27,6 @@ template <class Tag> struct UnitHelper<Bin<Tag>> {
   }
 };
 
-template <> struct UnitHelper<Coord::SpectrumPosition> {
-  static Unit get(const Dataset &dataset,
-                  const std::string &name = std::string{}) {
-    static_cast<void>(name);
-    return dataset(Coord::DetectorPosition{}).unit();
-  }
-};
-
 template <> struct UnitHelper<const Coord::Position> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
@@ -82,16 +74,6 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
       return dataset(Tag{}).dimensions();
     else
       return dataset(Tag{}, name).dimensions();
-  }
-};
-
-template <> struct DimensionHelper<Coord::SpectrumPosition> {
-  static Dimensions get(const Dataset &dataset,
-                        const std::set<Dim> &fixedDimensions,
-                        const std::string &name = std::string{}) {
-    static_cast<void>(fixedDimensions);
-    static_cast<void>(name);
-    return dataset(Coord::DetectorGrouping{}).dimensions();
   }
 };
 
@@ -185,16 +167,6 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
 
     return ref_type_t<Bin<Tag>>{offset,
                                 dataset.get<const detail::value_type_t<Tag>>()};
-  }
-};
-
-template <> struct DataHelper<Coord::SpectrumPosition> {
-  static auto get(const Dataset &dataset, const Dimensions &,
-                  const std::string &name = std::string{}) {
-    static_cast<void>(name);
-    return ref_type_t<Coord::SpectrumPosition>(
-        dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
-        dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
   }
 };
 
@@ -354,7 +326,6 @@ INSTANTIATE(Coord::SpectrumNumber const,
                             Data::Variance const>)
 INSTANTIATE(Coord::SpectrumNumber,
             DatasetViewImpl<Bin<Coord::Tof>, Data::Value, Data::Variance>)
-INSTANTIATE(Coord::SpectrumPosition)
 INSTANTIATE(Coord::Position)
 INSTANTIATE(Coord::Position const)
 INSTANTIATE(Coord::Temperature const, Data::Value const, Data::Variance const)
