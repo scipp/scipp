@@ -77,7 +77,7 @@ Dataset makeSingleDataDataset(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
 
   d.insert<Coord::DetectorId>({Dim::Detector, nSpec}, nSpec);
-  d.insert<Coord::DetectorPosition>({Dim::Detector, nSpec}, nSpec);
+  d.insert<Coord::Position>({Dim::Detector, nSpec}, nSpec);
   d.insert<Coord::DetectorGrouping>({Dim::Spectrum, nSpec}, nSpec);
   d.insert<Coord::SpectrumNumber>({Dim::Spectrum, nSpec}, nSpec);
 
@@ -93,7 +93,7 @@ Dataset makeDataset(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
 
   d.insert<Coord::DetectorId>({Dim::Detector, nSpec}, nSpec);
-  d.insert<Coord::DetectorPosition>({Dim::Detector, nSpec}, nSpec);
+  d.insert<Coord::Position>({Dim::Detector, nSpec}, nSpec);
   d.insert<Coord::DetectorGrouping>({Dim::Spectrum, nSpec}, nSpec);
   d.insert<Coord::SpectrumNumber>({Dim::Spectrum, nSpec}, nSpec);
 
@@ -233,41 +233,20 @@ BENCHMARK(BM_Dataset_cache_blocking_no_slicing)
     ->RangeMultiplier(2)
     ->Range(2 << 9, 2 << 14);
 
-Dataset makeBeamline(const gsl::index nComp, const gsl::index nDet) {
-  Dataset d;
+Dataset makeBeamline(const gsl::index nDet) {
+  // TODO The created beamline is currently very incomplete so the full cost
+  // would be higher.
+  Dataset dets;
 
-  d.insert<Coord::DetectorId>({Dim::Detector, nDet});
-  d.insert<Coord::DetectorIsMonitor>({Dim::Detector, nDet});
-  d.insert<Coord::DetectorMask>({Dim::Detector, nDet});
-  d.insert<Coord::DetectorPosition>({Dim::Detector, nDet});
-  d.insert<Coord::DetectorRotation>({Dim::Detector, nDet});
-  d.insert<Coord::DetectorParent>({Dim::Detector, nDet});
-  d.insert<Coord::DetectorScale>({Dim::Detector, nDet});
-  // TODO As it is, this will break coordinate matching. We need a special
-  // comparison for referenced shapes, or a shape factory.
-  // d.insert<Coord::DetectorShape>({Dim::Detector, nDet}, nDet,
-  //                               std::make_shared<std::array<double, 100>>());
-
-  d.insert<Coord::ComponentChildren>({Dim::Component, nComp});
-  d.insert<Coord::ComponentName>({Dim::Component, nComp});
-  d.insert<Coord::ComponentParent>({Dim::Component, nComp});
-  d.insert<Coord::ComponentPosition>({Dim::Component, nComp});
-  d.insert<Coord::ComponentRotation>({Dim::Component, nComp});
-  d.insert<Coord::ComponentScale>({Dim::Component, nComp});
-  d.insert<Coord::ComponentShape>({Dim::Component, nComp});
-  d.insert<Coord::ComponentSubtreeRange>({Dim::Component, nComp});
-  d.insert<Coord::DetectorSubtreeRange>({Dim::Component, nComp});
-
-  d.insert<Attr::ExperimentLog>("NeXus logs", {});
-
-  // These are special, length is same, but there is no association with the
-  // index in the dimension. Should handle this differently? Put it into a
-  // zero-dimensional variable?
-  d.insert<Coord::DetectorSubtree>({Dim::Detector, nDet});
-  d.insert<Coord::ComponentSubtree>({Dim::Component, nComp});
-
-  auto ids = d.get<Coord::DetectorId>();
+  dets.insert<Coord::DetectorId>({Dim::Detector, nDet});
+  dets.insert<Coord::Mask>({Dim::Detector, nDet});
+  dets.insert<Coord::Position>({Dim::Detector, nDet});
+  auto ids = dets.get<Coord::DetectorId>();
   std::iota(ids.begin(), ids.end(), 1);
+
+  Dataset d;
+  d.insert<Coord::DetectorInfo>({}, {dets});
+  d.insert<Attr::ExperimentLog>("NeXus logs", {});
 
   return d;
 }
@@ -298,7 +277,7 @@ Dataset makeData(const gsl::index nSpec, const gsl::index nPoint) {
 }
 
 Dataset makeWorkspace2D(const gsl::index nSpec, const gsl::index nPoint) {
-  auto d = makeBeamline(nSpec / 100, nSpec);
+  auto d = makeBeamline(nSpec);
   d.merge(makeSpectra(nSpec));
   d.merge(makeData(nSpec, nPoint));
   return d;
@@ -367,7 +346,7 @@ BENCHMARK(BM_Dataset_Workspace2D_rebin)
     ->UseRealTime();
 
 Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
-  auto d = makeBeamline(nSpec / 100, nSpec);
+  auto d = makeBeamline(nSpec);
   d.merge(makeSpectra(nSpec));
 
   d.insert<Coord::Tof>({Dim::Tof, 2});

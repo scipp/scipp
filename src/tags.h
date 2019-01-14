@@ -112,24 +112,6 @@ struct CoordDef {
     using type = int32_t;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct DetectorIsMonitor {
-    using type = char;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct DetectorMask {
-    using type = char;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct DetectorRotation {
-    // Dummy for now, should be something like Eigen::Quaterniond.
-    using type = std::array<double, 4>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct DetectorPosition {
-    // Dummy for now, should be something like Eigen::Vector3d.
-    using type = double;
-    static constexpr auto unit = Unit::Id::Length;
-  };
   struct DetectorGrouping {
     // Dummy for now, or sufficient like this?
     using type = boost::container::small_vector<gsl::index, 1>;
@@ -160,62 +142,6 @@ struct CoordDef {
     using type = char;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct ComponentRotation {
-    using type = std::array<double, 4>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct ComponentPosition {
-    using type = std::array<double, 3>;
-    static constexpr auto unit = Unit::Id::Length;
-  };
-  struct ComponentParent {
-    using type = gsl::index;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct ComponentChildren {
-    using type = std::vector<gsl::index>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct ComponentScale {
-    using type = std::array<double, 3>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct ComponentShape {
-    using type = std::shared_ptr<std::array<double, 100>>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct ComponentName {
-    using type = std::string;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct ComponentSubtree {
-    using type = std::vector<gsl::index>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct DetectorSubtree {
-    using type = std::vector<gsl::index>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct ComponentSubtreeRange {
-    using type = std::pair<gsl::index, gsl::index>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct DetectorSubtreeRange {
-    using type = std::pair<gsl::index, gsl::index>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct DetectorParent {
-    using type = gsl::index;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct DetectorScale {
-    using type = std::array<double, 3>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct DetectorShape {
-    using type = std::shared_ptr<std::array<double, 100>>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
   struct FuzzyTemperature {
     using type = ValueWithDelta<double>;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -225,16 +151,10 @@ struct CoordDef {
     static constexpr auto unit = Unit::Id::Length;
   };
 
-  using tags =
-      std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof, DetectorId,
-                 SpectrumNumber, DetectorIsMonitor, DetectorMask,
-                 DetectorRotation, DetectorPosition, DetectorGrouping, RowLabel,
-                 Polarization, Temperature, FuzzyTemperature, Time,
-                 TimeInterval, Mask, ComponentRotation, ComponentPosition,
-                 ComponentParent, ComponentChildren, ComponentScale,
-                 ComponentShape, ComponentName, ComponentSubtree,
-                 DetectorSubtree, ComponentSubtreeRange, DetectorSubtreeRange,
-                 DetectorParent, DetectorScale, DetectorShape, Position>;
+  using tags = std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof,
+                          DetectorId, SpectrumNumber, DetectorGrouping,
+                          RowLabel, Polarization, Temperature, FuzzyTemperature,
+                          Time, TimeInterval, Mask, Position>;
 };
 
 struct DataDef {
@@ -315,11 +235,6 @@ struct Coord {
   using Tof = detail::TagImpl<detail::CoordDef::Tof>;
   using DetectorId = detail::TagImpl<detail::CoordDef::DetectorId>;
   using SpectrumNumber = detail::TagImpl<detail::CoordDef::SpectrumNumber>;
-  using DetectorIsMonitor =
-      detail::TagImpl<detail::CoordDef::DetectorIsMonitor>;
-  using DetectorMask = detail::TagImpl<detail::CoordDef::DetectorMask>;
-  using DetectorRotation = detail::TagImpl<detail::CoordDef::DetectorRotation>;
-  using DetectorPosition = detail::TagImpl<detail::CoordDef::DetectorPosition>;
   using DetectorGrouping = detail::TagImpl<detail::CoordDef::DetectorGrouping>;
   using RowLabel = detail::TagImpl<detail::CoordDef::RowLabel>;
   using Polarization = detail::TagImpl<detail::CoordDef::Polarization>;
@@ -328,25 +243,6 @@ struct Coord {
   using Time = detail::TagImpl<detail::CoordDef::Time>;
   using TimeInterval = detail::TagImpl<detail::CoordDef::TimeInterval>;
   using Mask = detail::TagImpl<detail::CoordDef::Mask>;
-  using ComponentRotation =
-      detail::TagImpl<detail::CoordDef::ComponentRotation>;
-  using ComponentPosition =
-      detail::TagImpl<detail::CoordDef::ComponentPosition>;
-  using ComponentParent = detail::TagImpl<detail::CoordDef::ComponentParent>;
-  using ComponentChildren =
-      detail::TagImpl<detail::CoordDef::ComponentChildren>;
-  using ComponentScale = detail::TagImpl<detail::CoordDef::ComponentScale>;
-  using ComponentShape = detail::TagImpl<detail::CoordDef::ComponentShape>;
-  using ComponentName = detail::TagImpl<detail::CoordDef::ComponentName>;
-  using ComponentSubtree = detail::TagImpl<detail::CoordDef::ComponentSubtree>;
-  using DetectorSubtree = detail::TagImpl<detail::CoordDef::DetectorSubtree>;
-  using ComponentSubtreeRange =
-      detail::TagImpl<detail::CoordDef::ComponentSubtreeRange>;
-  using DetectorSubtreeRange =
-      detail::TagImpl<detail::CoordDef::DetectorSubtreeRange>;
-  using DetectorParent = detail::TagImpl<detail::CoordDef::DetectorParent>;
-  using DetectorScale = detail::TagImpl<detail::CoordDef::DetectorScale>;
-  using DetectorShape = detail::TagImpl<detail::CoordDef::DetectorShape>;
   using Position = detail::TagImpl<detail::CoordDef::Position>;
 };
 

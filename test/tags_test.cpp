@@ -12,5 +12,5 @@ TEST(Tags, isDimensionCoord) {
   EXPECT_TRUE(isDimensionCoord[Coord::X{}.value()]);
   EXPECT_TRUE(isDimensionCoord[Coord::Y{}.value()]);
   EXPECT_TRUE(isDimensionCoord[Coord::Z{}.value()]);
-  EXPECT_FALSE(isDimensionCoord[Coord::DetectorPosition{}.value()]);
+  EXPECT_FALSE(isDimensionCoord[Coord::Position{}.value()]);
 }
