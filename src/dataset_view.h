@@ -83,6 +83,11 @@ template <> struct ref_type<Coord::SpectrumPosition> {
       std::pair<gsl::span<const typename Coord::DetectorPosition::type>,
                 gsl::span<const typename Coord::DetectorGrouping::type>>;
 };
+template <> struct ref_type<const Coord::Position> {
+  using type =
+      std::pair<gsl::span<const typename Coord::Position::type>,
+                gsl::span<const typename Coord::DetectorGrouping::type>>;
+};
 template <> struct ref_type<Data::StdDev> {
   using type = typename ref_type<const Data::Variance>::type;
 };
@@ -120,6 +125,23 @@ template <> struct ItemHelper<Coord::SpectrumPosition> {
       throw std::runtime_error(
           "Spectrum has no detectors, cannot get position.");
     double position = 0.0;
+    for (const auto det : data.second[index])
+      position += data.first[det];
+    return position /= static_cast<double>(data.second[index].size());
+  }
+};
+
+// Note: Special case! Coord::Position can be either derived based on detectors,
+// or stored directly.
+template <> struct ItemHelper<const Coord::Position> {
+  static element_return_type_t<const Coord::Position>
+  get(const ref_type_t<const Coord::Position> &data, gsl::index index) {
+    if (data.second.empty())
+      return data.first[index];
+    if (data.second[index].empty())
+      throw std::runtime_error(
+          "Spectrum has no detectors, cannot get position.");
+    Eigen::Vector3d position{0.0, 0.0, 0.0};
     for (const auto det : data.second[index])
       position += data.first[det];
     return position /= static_cast<double>(data.second[index].size());

@@ -10,9 +10,9 @@
 #include <tuple>
 #include <vector>
 
+#include <Eigen/Dense>
 #include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
-#include <Eigen/Dense>
 
 #include "dimension.h"
 #include "traits.h"
@@ -61,6 +61,13 @@ private:
 
 namespace detail {
 struct ReturnByValuePolicy {};
+// Returns by value for const access (allowing for deriving from other
+// variables), but by reference if access is non-const (other code must ensure
+// that no references to temporaries are returned). The main example for this is
+// a spectrum position: It can be derived from detector positions (averaged
+// using Coord::DetectorGrouping) or be provided directly. In the latter case
+// the positions may be modified.
+struct ReturnByValueIfConstPolicy {};
 } // namespace detail
 
 class Dataset;
@@ -217,7 +224,7 @@ struct CoordDef {
     using type = ValueWithDelta<double>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct Position {
+  struct Position : public detail::ReturnByValueIfConstPolicy {
     using type = Eigen::Vector3d;
     static constexpr auto unit = Unit::Id::Length;
   };
@@ -432,8 +439,12 @@ template <class Tag> struct element_return_type {
   using type = std::conditional_t<
       std::is_base_of<detail::ReturnByValuePolicy, Tag>::value,
       typename Tag::type,
-      std::conditional_t<std::is_const<Tag>::value, const typename Tag::type &,
-                         typename Tag::type &>>;
+      std::conditional_t<
+          std::is_const<Tag>::value,
+          std::conditional_t<
+              std::is_base_of<detail::ReturnByValueIfConstPolicy, Tag>::value,
+              typename Tag::type, const typename Tag::type &>,
+          typename Tag::type &>>;
 };
 
 template <class Tags> struct element_return_type<Bin<Tags>> {

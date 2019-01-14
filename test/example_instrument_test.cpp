@@ -11,16 +11,26 @@
 #include "dataset_view.h"
 
 TEST(ExampleInstrument, basics) {
-  gsl::index ndet = 10;
+  gsl::index ndet = 4;
 
   Dataset detectors;
-  detectors.insert<Coord::DetectorId>({Dim::Detector, ndet},
-                                 {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+  detectors.insert<Coord::DetectorId>({Dim::Detector, ndet}, {1, 2, 3, 4});
   detectors.insert<Coord::Position>({Dim::Detector, ndet}, ndet,
                                     Eigen::Vector3d{0.0, 0.0, 2.0});
-  for (auto &det :
-       DatasetView<const Coord::DetectorId, Coord::Position>(detectors))
-    det.get<Coord::Position>().x() = 0.01 * det.get<Coord::DetectorId>();
+  DatasetView<const Coord::DetectorId, Coord::Position> view(detectors);
+  for (auto &det : view) {
+    det.get<Coord::Position>()[0] = 0.1 * det.get<Coord::DetectorId>();
+    EXPECT_EQ(det.get<Coord::Position>()[0],
+              0.1 * det.get<Coord::DetectorId>());
+  }
+
+  // For const access we need to make sure that the implementation is not
+  // attempting to compute derived positions based on detector grouping (which
+  // does not exist in this case).
+  DatasetView<const Coord::Position> directConstView(detectors);
+  // If not implemented correctly this would actually segfault, not throw.
+  ASSERT_NO_THROW(directConstView.begin()->get<Coord::Position>());
+  EXPECT_EQ(directConstView.begin()->get<Coord::Position>()[0], 0.1);
 
   Dataset components;
   // Source and sample
@@ -29,6 +39,16 @@ TEST(ExampleInstrument, basics) {
       {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
 
   Dataset d;
+  Vector<boost::container::small_vector<gsl::index, 1>> grouping = {{0, 1},
+                                                                    {2, 3}};
+  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 2}, grouping);
   d.insert<Coord::DetectorInfo>({}, {detectors});
   d.insert<Coord::ComponentInfo>({}, {components});
+
+  EXPECT_ANY_THROW(static_cast<void>(DatasetView<Coord::Position>(d)));
+  ASSERT_NO_THROW(static_cast<void>(DatasetView<const Coord::Position>(d)));
+  DatasetView<const Coord::Position> specPos(d);
+  ASSERT_EQ(specPos.size(), 2);
+  EXPECT_DOUBLE_EQ(specPos.begin()->get<Coord::Position>()[0], 0.15);
+  EXPECT_DOUBLE_EQ((specPos.begin() + 1)->get<Coord::Position>()[0], 0.35);
 }
