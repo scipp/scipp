@@ -18,10 +18,12 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // d.insert<Coord::Run>({}, API::Run{});
 
   // Instrument
+  Dataset dets;
   // Scalar part of instrument, e.g., something like this:
   // d.insert<Coord::Instrument>({}, Beamline::ComponentInfo{});
-  d.insert<Coord::DetectorId>({Dim::Detector, 4}, {1001, 1002, 1003, 1004});
-  d.insert<Coord::DetectorPosition>({Dim::Detector, 4}, {1.0, 2.0, 4.0, 8.0});
+  dets.insert<Coord::DetectorId>({Dim::Detector, 4}, {1001, 1002, 1003, 1004});
+  dets.insert<Coord::Position>({Dim::Detector, 4});
+  d.insert<Coord::DetectorInfo>({}, {dets});
 
   // Spectrum to detector mapping and spectrum numbers.
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
@@ -130,7 +132,7 @@ TEST(Workspace2D, multiple_data) {
 
   EXPECT_NO_THROW(d.get<const Data::Value>("sample"));
   EXPECT_NO_THROW(d.get<const Data::Variance>("sample"));
-  //EXPECT_NO_THROW(d.get<const Data::Value>("monitor"));
+  // EXPECT_NO_THROW(d.get<const Data::Value>("monitor"));
   EXPECT_ANY_THROW(d.get<const Data::Value>("background"));
 }
 
@@ -139,8 +141,12 @@ TEST(Workspace2D, scanning) {
 
   // Scalar part of instrument, e.g.:
   // d.insert<Coord::Instrument>({}, Beamline::ComponentInfo{});
-  d.insert<Coord::DetectorId>({Dim::Detector, 4}, {1001, 1002, 1003, 1004});
-  d.insert<Coord::DetectorPosition>({Dim::Detector, 4}, {1.0, 2.0, 3.0, 4.0});
+  Dataset dets;
+  dets.insert<Coord::DetectorId>({Dim::Detector, 4}, {1001, 1002, 1003, 1004});
+  dets.insert<Coord::Position>(
+      {Dim::Detector, 4},
+      {Eigen::Vector3d{1.0, 0.0, 0.0}, Eigen::Vector3d{2.0, 0.0, 0.0},
+       Eigen::Vector3d{3.0, 0.0, 0.0}, Eigen::Vector3d{4.0, 0.0, 0.0}});
 
   // In the current implementation in Mantid, ComponentInfo holds a reference to
   // DetectorInfo. Now the contents of DetectorInfo are simply variables in the
@@ -157,14 +163,16 @@ TEST(Workspace2D, scanning) {
   //     }
   //   }
   // };
-  auto moved(d);
-  for (auto &pos : moved.get<Coord::DetectorPosition>())
-    pos += 0.5;
+  auto moved(dets);
+  for (auto &pos : moved.get<Coord::Position>())
+    pos += Eigen::Vector3d{0.5, 0.0, 0.0};
 
-  auto scanning = concatenate(d, moved, Dim::DetectorScan);
+  auto scanning = concatenate(dets, moved, Dim::DetectorScan);
   scanning.insert<Coord::TimeInterval>(
       {Dim::DetectorScan, 2},
       {std::make_pair(0l, 10l), std::make_pair(10l, 20l)});
+
+  d.insert<Coord::DetectorInfo>({}, {scanning});
 
   // Spectrum to detector mapping and spectrum numbers. Currently this mapping
   // is purely positional. We may consider changing this to an two-part
@@ -176,15 +184,15 @@ TEST(Workspace2D, scanning) {
   // is present.
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
       {0}, {2}, {4}};
-  scanning.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
-  scanning.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
+  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
+  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
 
-  DatasetView<Coord::SpectrumPosition> view(scanning);
+  DatasetView<const Coord::Position> view(d);
   ASSERT_EQ(view.size(), 3);
   auto it = view.begin();
-  EXPECT_EQ(it++->get<Coord::SpectrumPosition>(), 1.0);
-  EXPECT_EQ(it++->get<Coord::SpectrumPosition>(), 3.0);
-  EXPECT_EQ(it++->get<Coord::SpectrumPosition>(), 1.5);
+  EXPECT_EQ(it++->get<Coord::Position>()[0], 1.0);
+  EXPECT_EQ(it++->get<Coord::Position>()[0], 3.0);
+  EXPECT_EQ(it++->get<Coord::Position>()[0], 1.5);
 }
 
 TEST(Workspace2D, masking) {
