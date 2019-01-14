@@ -140,6 +140,9 @@ DISABLE_ARITHMETICS_T(boost::container::small_vector<T, 1>)
 DISABLE_ARITHMETICS_T(std::vector<T>)
 DISABLE_ARITHMETICS_T(std::pair<T, T>)
 DISABLE_ARITHMETICS_T(ValueWithDelta<T>)
+// TODO: + and - do actually work for Eigen::Vector3d would need a more
+// fine-grained way to disable specific operations, if required.
+DISABLE_ARITHMETICS_T(Eigen::Matrix<T, 3, 1>)
 
 template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
   template <class... Args> static void apply(Args &&...) {
@@ -177,6 +180,7 @@ DISABLE_REBIN_T(ValueWithDelta<T>)
 DISABLE_REBIN(Dataset)
 DISABLE_REBIN(char)
 DISABLE_REBIN(std::string)
+DISABLE_REBIN(Eigen::Vector3d)
 
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
@@ -683,6 +687,7 @@ INSTANTIATE(Dataset)
 INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(std::shared_ptr<std::array<double, 100>>)
+INSTANTIATE(Eigen::Vector3d)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   // Compare even before pointer comparison since data may be shared even if
