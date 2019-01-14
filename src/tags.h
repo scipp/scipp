@@ -12,6 +12,7 @@
 
 #include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
+#include <Eigen/Dense>
 
 #include "dimension.h"
 #include "traits.h"
@@ -66,6 +67,20 @@ class Dataset;
 
 namespace detail {
 struct CoordDef {
+  struct Monitor {
+    using type = Dataset;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  // TODO Should we name this `Detectors` and `Components` instead, or find some
+  // more generic terms?
+  struct DetectorInfo {
+    using type = Dataset;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct ComponentInfo {
+    using type = Dataset;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
   struct X {
     using type = double;
     static constexpr auto unit = Unit::Id::Length;
@@ -79,10 +94,6 @@ struct CoordDef {
     static constexpr auto unit = Unit::Id::Length;
   };
   struct Tof {
-    using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
-  struct MonitorTof {
     using type = double;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
@@ -208,13 +219,14 @@ struct CoordDef {
   };
 
   using tags = std::tuple<
-      X, Y, Z, Tof, MonitorTof, DetectorId, SpectrumNumber, DetectorIsMonitor,
-      DetectorMask, DetectorRotation, DetectorPosition, DetectorGrouping,
-      SpectrumPosition, RowLabel, Polarization, Temperature, FuzzyTemperature,
-      Time, TimeInterval, Mask, ComponentRotation, ComponentPosition,
-      ComponentParent, ComponentChildren, ComponentScale, ComponentShape,
-      ComponentName, ComponentSubtree, DetectorSubtree, ComponentSubtreeRange,
-      DetectorSubtreeRange, DetectorParent, DetectorScale, DetectorShape>;
+      Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof, DetectorId,
+      SpectrumNumber, DetectorIsMonitor, DetectorMask, DetectorRotation,
+      DetectorPosition, DetectorGrouping, SpectrumPosition, RowLabel,
+      Polarization, Temperature, FuzzyTemperature, Time, TimeInterval, Mask,
+      ComponentRotation, ComponentPosition, ComponentParent, ComponentChildren,
+      ComponentScale, ComponentShape, ComponentName, ComponentSubtree,
+      DetectorSubtree, ComponentSubtreeRange, DetectorSubtreeRange,
+      DetectorParent, DetectorScale, DetectorShape>;
 };
 
 struct DataDef {
@@ -258,9 +270,13 @@ struct DataDef {
     using type = Dataset;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct Position {
+    using type = Eigen::Vector3d;
+    static constexpr auto unit = Unit::Id::Length;
+  };
 
   using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
-                          DimensionSize, String, Events, Table>;
+                          DimensionSize, String, Events, Table, Position>;
 };
 
 struct AttrDef {
@@ -286,11 +302,13 @@ template <class TagDefinition> struct TagImpl : public Tag, TagDefinition {
 } // namespace detail
 
 struct Coord {
+  using Monitor = detail::TagImpl<detail::CoordDef::Monitor>;
+  using DetectorInfo = detail::TagImpl<detail::CoordDef::DetectorInfo>;
+  using ComponentInfo = detail::TagImpl<detail::CoordDef::ComponentInfo>;
   using X = detail::TagImpl<detail::CoordDef::X>;
   using Y = detail::TagImpl<detail::CoordDef::Y>;
   using Z = detail::TagImpl<detail::CoordDef::Z>;
   using Tof = detail::TagImpl<detail::CoordDef::Tof>;
-  using MonitorTof = detail::TagImpl<detail::CoordDef::MonitorTof>;
   using DetectorId = detail::TagImpl<detail::CoordDef::DetectorId>;
   using SpectrumNumber = detail::TagImpl<detail::CoordDef::SpectrumNumber>;
   using DetectorIsMonitor =
@@ -339,6 +357,7 @@ struct Data {
   using String = detail::TagImpl<detail::DataDef::String>;
   using Events = detail::TagImpl<detail::DataDef::Events>;
   using Table = detail::TagImpl<detail::DataDef::Table>;
+  using Position = detail::TagImpl<detail::DataDef::Position>;
 };
 
 struct Attr {

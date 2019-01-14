@@ -10,7 +10,6 @@ enum class Dim : uint16_t {
   Invalid,
   Event,
   Tof,
-  MonitorTof,
   Spectrum,
   Monitor,
   Run,

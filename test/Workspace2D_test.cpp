@@ -40,6 +40,8 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // Monitors
   // Temporarily disabled until we fixed Dataset::m_dimensions to not use
   // Dimensions.
+  // TODO Use variable containing datasets as in the C++ example in the design
+  // document.
   // dims = Dimensions({{Dim::MonitorTof, 222}, {Dim::Monitor, 2}});
   // d.insert<Coord::MonitorTof>({Dim::MonitorTof, 222}, 222);
   // d.insert<Data::Value>("monitor", dims, dims.volume());
@@ -116,10 +118,11 @@ TEST(Workspace2D, multiple_data) {
   d.insert<Data::Variance>("background", dims, dims.volume());
 
   // Monitors
-  dims = Dimensions({{Dim::MonitorTof, 222}, {Dim::Monitor, 2}});
-  d.insert<Coord::MonitorTof>({Dim::MonitorTof, 222}, 222);
-  d.insert<Data::Value>("monitor", dims, dims.volume());
-  d.insert<Data::Variance>("monitor", dims, dims.volume());
+  // TODO Use Coord::Monitor instead of the old idea using Dim::MonitorTof.
+  // dims = Dimensions({{Dim::MonitorTof, 222}, {Dim::Monitor, 2}});
+  // d.insert<Coord::MonitorTof>({Dim::MonitorTof, 222}, 222);
+  // d.insert<Data::Value>("monitor", dims, dims.volume());
+  // d.insert<Data::Variance>("monitor", dims, dims.volume());
 
   d.merge(d.extract("sample") - d.extract("background"));
   // Note: If we want to also keep "background" we can use:
@@ -127,7 +130,7 @@ TEST(Workspace2D, multiple_data) {
 
   EXPECT_NO_THROW(d.get<const Data::Value>("sample"));
   EXPECT_NO_THROW(d.get<const Data::Variance>("sample"));
-  EXPECT_NO_THROW(d.get<const Data::Value>("monitor"));
+  //EXPECT_NO_THROW(d.get<const Data::Value>("monitor"));
   EXPECT_ANY_THROW(d.get<const Data::Value>("background"));
 }
 

@@ -15,6 +15,7 @@ set ( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" )
 find_package (OpenMP 3.1 REQUIRED)
 find_package (Boost 1.59 REQUIRED)
 
+include( Eigen )
 include( gsl )
 include( pybind11 )
 include( GoogleTest )

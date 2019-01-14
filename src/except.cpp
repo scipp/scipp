@@ -18,8 +18,6 @@ std::string to_string(const Dim dim) {
     return "Dim::Event";
   case Dim::Tof:
     return "Dim::Tof";
-  case Dim::MonitorTof:
-    return "Dim::MonitorTof";
   case Dim::Spectrum:
     return "Dim::Spectrum";
   case Dim::Monitor:
