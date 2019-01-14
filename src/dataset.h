@@ -369,14 +369,14 @@ public:
   }
 
   // Returning void to avoid potentially returning references to temporaries.
-  void assign(const Dataset &other);
-  void assign(const ConstDatasetSlice &other);
-  void operator+=(const Dataset &other);
-  void operator+=(const ConstDatasetSlice &other);
-  void operator-=(const Dataset &other);
-  void operator-=(const ConstDatasetSlice &other);
-  void operator*=(const Dataset &other);
-  void operator*=(const ConstDatasetSlice &other);
+  DatasetSlice assign(const Dataset &other);
+  DatasetSlice assign(const ConstDatasetSlice &other);
+  DatasetSlice operator+=(const Dataset &other);
+  DatasetSlice operator+=(const ConstDatasetSlice &other);
+  DatasetSlice operator-=(const Dataset &other);
+  DatasetSlice operator-=(const ConstDatasetSlice &other);
+  DatasetSlice operator*=(const Dataset &other);
+  DatasetSlice operator*=(const ConstDatasetSlice &other);
 
   VariableSlice operator()(const Tag tag, const std::string &name = "");
 

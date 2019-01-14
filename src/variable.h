@@ -445,20 +445,27 @@ public:
     return this->template cast<typename Tag::type>();
   }
 
-  // Note: We want to support things like `var(Dim::X, 0) = var2`, i.e., when
+  // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in
   // underlying Variable. However, we do not return the typical `VariableSlice
-  // &` from these operations since that could reference a temporary. Other
-  // options would be to return `VariableSlice`, i.e., by value, or to have
-  // overloads for *this of types `&` and `&&` with distinct return types (which
-  // does not feel like a good solution).
-  template <class T> void assign(const T &other);
-  void operator+=(const Variable &other);
-  void operator+=(const ConstVariableSlice &other);
-  void operator-=(const Variable &other);
-  void operator-=(const ConstVariableSlice &other);
-  void operator*=(const Variable &other);
-  void operator*=(const ConstVariableSlice &other);
+  // &` from these operations since that could reference a temporary. Due to the
+  // way Python implements things like __iadd__ we must return an object
+  // referencing the data though. We therefore return by value (this is not for
+  // free since it involves a memory allocation but is probably relatively cheap
+  // compared to other things). If the return by value turns out to be a
+  // performance issue, another option is to have overloads for *this of types
+  // `&` and `&&` with distinct return types (by reference in the first case, by
+  // value in the second). In principle we may also change the implementation of
+  // the Python exports to return `a` after calling `a += b` instead of
+  // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
+  // (would this suffer from the same issue?).
+  template <class T> VariableSlice assign(const T &other);
+  VariableSlice operator+=(const Variable &other);
+  VariableSlice operator+=(const ConstVariableSlice &other);
+  VariableSlice operator-=(const Variable &other);
+  VariableSlice operator-=(const ConstVariableSlice &other);
+  VariableSlice operator*=(const Variable &other);
+  VariableSlice operator*=(const ConstVariableSlice &other);
 
   void setUnit(const Unit &unit);
 

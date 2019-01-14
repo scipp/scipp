@@ -823,7 +823,7 @@ Variable &Variable::operator*=(const double value) & {
   return times_equals(*this, other);
 }
 
-template <class T> void VariableSlice::assign(const T &other) {
+template <class T> VariableSlice VariableSlice::assign(const T &other) {
   // TODO Should mismatching tags be allowed, as long as the type matches?
   if (tag() != other.tag())
     throw std::runtime_error("Cannot assign to slice: Type mismatch.");
@@ -834,30 +834,31 @@ template <class T> void VariableSlice::assign(const T &other) {
     throw dataset::except::DimensionMismatchError(dimensions(),
                                                   other.dimensions());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
+  return *this;
 }
 
-template void VariableSlice::assign(const Variable &);
-template void VariableSlice::assign(const ConstVariableSlice &);
+template VariableSlice VariableSlice::assign(const Variable &);
+template VariableSlice VariableSlice::assign(const ConstVariableSlice &);
 
-void VariableSlice::operator+=(const Variable &other) {
-  plus_equals(*this, other);
+VariableSlice VariableSlice::operator+=(const Variable &other) {
+  return plus_equals(*this, other);
 }
-void VariableSlice::operator+=(const ConstVariableSlice &other) {
-  plus_equals(*this, other);
-}
-
-void VariableSlice::operator-=(const Variable &other) {
-  minus_equals(*this, other);
-}
-void VariableSlice::operator-=(const ConstVariableSlice &other) {
-  minus_equals(*this, other);
+VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) {
+  return plus_equals(*this, other);
 }
 
-void VariableSlice::operator*=(const Variable &other) {
-  times_equals(*this, other);
+VariableSlice VariableSlice::operator-=(const Variable &other) {
+  return minus_equals(*this, other);
 }
-void VariableSlice::operator*=(const ConstVariableSlice &other) {
-  times_equals(*this, other);
+VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) {
+  return minus_equals(*this, other);
+}
+
+VariableSlice VariableSlice::operator*=(const Variable &other) {
+  return times_equals(*this, other);
+}
+VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) {
+  return times_equals(*this, other);
 }
 
 bool ConstVariableSlice::operator==(const Variable &other) const {
