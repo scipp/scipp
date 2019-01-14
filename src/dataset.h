@@ -235,7 +235,7 @@ private:
     const ConstDatasetSlice &m_view;
   };
 
-  friend class IterAccess;
+  friend struct IterAccess;
 
 public:
   ConstDatasetSlice(const Dataset &dataset) : m_dataset(dataset) {
@@ -340,7 +340,7 @@ private:
     const DatasetSlice &m_view;
   };
 
-  friend class IterAccess;
+  friend struct IterAccess;
 
 public:
   DatasetSlice(Dataset &dataset)

@@ -421,6 +421,7 @@ static void BM_Dataset_EventWorkspace_copy_and_write(benchmark::State &state) {
   for (auto _ : state) {
     auto copy(d);
     auto eventLists = copy.get<Data::Events>();
+    static_cast<void>(eventLists);
   }
   state.SetItemsProcessed(state.iterations());
 }

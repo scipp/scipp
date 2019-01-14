@@ -22,6 +22,11 @@ include( GoogleBenchmark )
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --save-temps -march=native -fno-omit-frame-pointer")
 
+# See https://github.com/pybind/pybind11/issues/1604
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsized-deallocation")
+endif()
+
 option(WITH_ASAN "Enable address sanitizer" OFF)
 if(WITH_ASAN)
   message(STATUS "Enabling address sanitizer")
