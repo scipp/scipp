@@ -217,6 +217,10 @@ struct CoordDef {
     using type = ValueWithDelta<double>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct Position {
+    using type = Eigen::Vector3d;
+    static constexpr auto unit = Unit::Id::Length;
+  };
 
   using tags = std::tuple<
       Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof, DetectorId,
@@ -226,7 +230,7 @@ struct CoordDef {
       ComponentRotation, ComponentPosition, ComponentParent, ComponentChildren,
       ComponentScale, ComponentShape, ComponentName, ComponentSubtree,
       DetectorSubtree, ComponentSubtreeRange, DetectorSubtreeRange,
-      DetectorParent, DetectorScale, DetectorShape>;
+      DetectorParent, DetectorScale, DetectorShape, Position>;
 };
 
 struct DataDef {
@@ -270,13 +274,9 @@ struct DataDef {
     using type = Dataset;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct Position {
-    using type = Eigen::Vector3d;
-    static constexpr auto unit = Unit::Id::Length;
-  };
 
   using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
-                          DimensionSize, String, Events, Table, Position>;
+                          DimensionSize, String, Events, Table>;
 };
 
 struct AttrDef {
@@ -344,6 +344,7 @@ struct Coord {
   using DetectorParent = detail::TagImpl<detail::CoordDef::DetectorParent>;
   using DetectorScale = detail::TagImpl<detail::CoordDef::DetectorScale>;
   using DetectorShape = detail::TagImpl<detail::CoordDef::DetectorShape>;
+  using Position = detail::TagImpl<detail::CoordDef::Position>;
 };
 
 struct Data {
@@ -357,7 +358,6 @@ struct Data {
   using String = detail::TagImpl<detail::DataDef::String>;
   using Events = detail::TagImpl<detail::DataDef::Events>;
   using Table = detail::TagImpl<detail::DataDef::Table>;
-  using Position = detail::TagImpl<detail::DataDef::Position>;
 };
 
 struct Attr {

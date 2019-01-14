@@ -16,17 +16,17 @@ TEST(ExampleInstrument, basics) {
   Dataset detectors;
   detectors.insert<Coord::DetectorId>({Dim::Detector, ndet},
                                  {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-  detectors.insert<Data::Position>("", {Dim::Detector, ndet}, ndet,
-                                   Eigen::Vector3d{0.0, 0.0, 2.0});
+  detectors.insert<Coord::Position>({Dim::Detector, ndet}, ndet,
+                                    Eigen::Vector3d{0.0, 0.0, 2.0});
   for (auto &det :
-       DatasetView<const Coord::DetectorId, Data::Position>(detectors))
-    det.get<Data::Position>().x() = 0.01 * det.get<Coord::DetectorId>();
+       DatasetView<const Coord::DetectorId, Coord::Position>(detectors))
+    det.get<Coord::Position>().x() = 0.01 * det.get<Coord::DetectorId>();
 
   Dataset components;
-  components.insert<Data::Position>("source", {}, 1,
-                                    Eigen::Vector3d{0.0, 0.0, -10.0});
-  components.insert<Data::Position>("sample", {}, 1,
-                                    Eigen::Vector3d{0.0, 0.0, 0.0});
+  // Source and sample
+  components.insert<Coord::Position>(
+      {Dim::Component, 2},
+      {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
 
   Dataset d;
   d.insert<Coord::DetectorInfo>({}, {detectors});
