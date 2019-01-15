@@ -17,12 +17,15 @@ class Dataset;
 class Dimensions;
 class Tag;
 class Unit;
+class Variable;
 
 namespace dataset {
 std::string to_string(const Dim dim);
 std::string to_string(const Dimensions &dims);
 std::string to_string(const Tag tag);
 std::string to_string(const Unit &unit);
+std::string to_string(const Variable &variable);
+std::string to_string(const Dataset &dataset);
 
 namespace except {
 

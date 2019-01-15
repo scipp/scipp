@@ -95,6 +95,12 @@ std::string to_string(const Unit &unit) {
   }
 }
 
+std::string to_string(const Variable &variable) {
+  std::string s("Variable(");
+  s += to_string(variable.tag()) + ", " + variable.name() + ")";
+  return s;
+}
+
 std::string to_string(const Dataset &dataset) {
   std::string s("Dataset with ");
   s += std::to_string(dataset.size()) + " variables";

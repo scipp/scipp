@@ -646,6 +646,9 @@ Dataset histogram(const Variable &var, const Variable &coord) {
       // The iterator cannot see the last edge, we must add the offset to the
       // memory location, *not* to the iterator.
       const auto right = *(&*edge + nextEdgeOffset);
+      if (right < left)
+        throw std::runtime_error(
+            "Coordinate used for binning is not increasing.");
       const auto end = std::upper_bound(begin, tofs.end(), right);
       counts[cur] = std::distance(begin, end);
       begin = end;

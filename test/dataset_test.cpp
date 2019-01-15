@@ -736,6 +736,11 @@ TEST(Dataset, histogram_failures) {
       makeVariable<Coord::Tof>({{Dim::Spectrum, 3}, {Dim::Tof, 3}});
   EXPECT_THROW(histogram(d, coordWithLengthMismatch),
                dataset::except::DimensionLengthError);
+
+  auto coordNotIncreasing =
+      makeVariable<Coord::Tof>({Dim::Tof, 3}, {1.0, 1.5, 1.4});
+  EXPECT_THROW_MSG(histogram(d, coordNotIncreasing), std::runtime_error,
+                   "Coordinate used for binning is not increasing.");
 }
 
 TEST(Dataset, histogram) {
