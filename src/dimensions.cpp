@@ -87,6 +87,7 @@ void Dimensions::erase(const Dim label) {
   m_dims[m_ndim] = Dim::Invalid;
 }
 
+/// Add a new dimension, which will be the outermost dimension.
 void Dimensions::add(const Dim label, const gsl::index size) {
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
@@ -98,6 +99,17 @@ void Dimensions::add(const Dim label, const gsl::index size) {
   }
   m_shape[0] = size;
   m_dims[0] = label;
+  ++m_ndim;
+}
+
+/// Add a new dimension, which will be the innermost dimension.
+void Dimensions::addInner(const Dim label, const gsl::index size) {
+  if (contains(label))
+    throw std::runtime_error("Duplicate dimension.");
+  if (m_ndim == 6)
+    throw std::runtime_error("More than 6 dimensions are not supported.");
+  m_shape[m_ndim] = size;
+  m_dims[m_ndim] = label;
   ++m_ndim;
 }
 

@@ -708,6 +708,58 @@ TEST(Dataset, rebin) {
   EXPECT_EQ(rebinned.get<const Data::Value>()[0], 30.0);
 }
 
+Dataset makeEvents() {
+  Dataset e1;
+  e1.insert<Data::Tof>("", {Dim::Event, 5}, {1, 2, 3, 4, 5});
+  Dataset e2;
+  e2.insert<Data::Tof>("", {Dim::Event, 7}, {1, 2, 3, 4, 4, 5, 7});
+  Dataset d;
+  d.insert<Data::Events>("sample1", {Dim::Spectrum, 2}, {e1, e2});
+  return d;
+}
+
+TEST(Dataset, histogram) {
+  auto d = makeEvents();
+  auto coord = makeVariable<Coord::Tof>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
+  auto hist = histogram(d, coord);
+
+  ASSERT_TRUE(hist.contains(Coord::Tof{}));
+  EXPECT_EQ(hist(Coord::Tof{}), coord);
+  ASSERT_TRUE(hist.contains(Data::Value{}, "sample1"));
+  ASSERT_TRUE(hist.contains(Data::Variance{}, "sample1"));
+  EXPECT_TRUE(equals(hist.get<const Data::Value>("sample1"), {1, 3, 1, 4}));
+}
+
+TEST(Dataset, histogram_2D_coord) {
+  auto d = makeEvents();
+  auto coord = makeVariable<Coord::Tof>({{Dim::Spectrum, 2}, {Dim::Tof, 3}},
+                                        {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
+  auto hist = histogram(d, coord);
+
+  ASSERT_TRUE(hist.contains(Coord::Tof{}));
+  EXPECT_EQ(hist(Coord::Tof{}), coord);
+  ASSERT_TRUE(hist.contains(Data::Value{}, "sample1"));
+  ASSERT_TRUE(hist.contains(Data::Variance{}, "sample1"));
+  EXPECT_TRUE(equals(hist.get<const Data::Value>("sample1"), {1, 3, 4, 2}));
+}
+
+TEST(Dataset, histogram_2D_transpose_coord) {
+  auto d = makeEvents();
+  auto coord = makeVariable<Coord::Tof>({{Dim::Tof, 3}, {Dim::Spectrum, 2}},
+                                        {1.0, 1.5, 1.5, 4.5, 4.5, 7.5});
+  auto hist = histogram(d, coord);
+
+  ASSERT_TRUE(hist.contains(Coord::Tof{}));
+  EXPECT_EQ(hist(Coord::Tof{}), coord);
+  ASSERT_TRUE(hist.contains(Data::Value{}, "sample1"));
+  ASSERT_TRUE(hist.contains(Data::Variance{}, "sample1"));
+  // Dimensionality of output is determined by that of the input events, the bin
+  // dimension will almost be the innermost one.
+  ASSERT_EQ(hist(Data::Value{}, "sample1").dimensions(),
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Tof, 2}}));
+  EXPECT_TRUE(equals(hist.get<const Data::Value>("sample1"), {1, 3, 4, 2}));
+}
+
 TEST(Dataset, sort) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});

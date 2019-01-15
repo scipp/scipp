@@ -118,7 +118,9 @@ public:
   void resize(const gsl::index i, const gsl::index size);
   void erase(const Dim label);
 
+  // TODO Better names required.
   void add(const Dim label, const gsl::index size);
+  void addInner(const Dim label, const gsl::index size);
 
   int32_t index(const Dim label) const;
 

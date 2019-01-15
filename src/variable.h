@@ -509,4 +509,7 @@ Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
 
+template <class T>
+VariableView<const T> getView(const Variable &var, const Dimensions &dims);
+
 #endif // VARIABLE_H

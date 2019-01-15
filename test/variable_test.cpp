@@ -1005,3 +1005,39 @@ TEST(Variable, reshape_and_slice) {
   ASSERT_EQ(center.dimensions(), Dimensions({Dim::Spectrum, 4}));
   EXPECT_TRUE(equals(center.get<const Data::Value>(), {6, 7, 10, 11}));
 }
+
+TEST(Variable, access_typed_view) {
+  Variable var(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6});
+  const auto values =
+      getView<double>(var, {{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 3}});
+  ASSERT_EQ(values.size(), 24);
+
+  for (const auto z : {0, 1, 2, 3}) {
+    EXPECT_EQ(values[3 * z + 0], 1);
+    EXPECT_EQ(values[3 * z + 1], 2);
+    EXPECT_EQ(values[3 * z + 2], 3);
+  }
+  for (const auto z : {0, 1, 2, 3}) {
+    EXPECT_EQ(values[12 + 3 * z + 0], 4);
+    EXPECT_EQ(values[12 + 3 * z + 1], 5);
+    EXPECT_EQ(values[12 + 3 * z + 2], 6);
+  }
+}
+
+TEST(Variable, access_typed_view_edges) {
+  // If a variable contains bin edges we want to "skip" the last edge. Say bins
+  // is in direction Y:
+  Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
+  const auto values =
+      getView<double>(var, {{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 2}});
+  ASSERT_EQ(values.size(), 16);
+
+  for (const auto z : {0, 1, 2, 3}) {
+    EXPECT_EQ(values[2 * z + 0], 1);
+    EXPECT_EQ(values[2 * z + 1], 4);
+  }
+  for (const auto z : {0, 1, 2, 3}) {
+    EXPECT_EQ(values[8 + 2 * z + 0], 2);
+    EXPECT_EQ(values[8 + 2 * z + 1], 5);
+  }
+}

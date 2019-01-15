@@ -593,6 +593,67 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   return out;
 }
 
+Dataset histogram(const Variable &var, const Variable &coord) {
+  // TODO Check that dimensions that are in both var and coord match.
+  // TODO Check that the dimension the coord is for (the binning axis) is not
+  // part of var.
+  const auto &events = var.get<const Data::Events>();
+  dataset::expect::equals(events[0](Data::Tof{}).unit(), coord.unit());
+
+  // TODO Can we reuse the code for bin handling from DatasetView?
+  const auto binDim = coordDimension[coord.tag().value()];
+  const gsl::index nBin = coord.dimensions()[binDim] - 1;
+  Dimensions dims = var.dimensions();
+  dims.addInner(binDim, nBin);
+  // Compute offset to next edge.
+  const gsl::index offset = coord.dimensions().offset(binDim);
+
+  const auto edges = getView<double>(coord, dims);
+  Dataset hist;
+  hist.insert(coord);
+  hist.insert<Data::Value>(var.name(), dims);
+  hist.insert<Data::Variance>(var.name(), dims);
+
+  auto counts = hist.get<Data::Value>(var.name());
+  gsl::index cur = 0;
+  auto edge = edges.begin();
+  for (const auto &eventList : events) {
+    // TODO Change this to support generic data, not just Data::Tofs (do not
+    // encode unit in tag).
+    const auto tofs = eventList.get<const Data::Tof>();
+    if (!std::is_sorted(tofs.begin(), tofs.end()))
+      throw std::runtime_error(
+          "TODO: Histograms can currently only be created from sorted data.");
+    gsl::index bin = 0;
+    auto left = *edge;
+    auto begin = std::lower_bound(tofs.begin(), tofs.end(), left);
+    while (bin++ != nBin) {
+      // The iterator cannot see the last edge, we must add the offset to the
+      // memory location, *not* to the iterator.
+      const auto right = *(&*edge + offset);
+      const auto end = std::upper_bound(begin, tofs.end(), right);
+      //fprintf(stderr, "%lf %lf %ld %ld %lu\n", left, right, cur, offset, edge-edges.begin());
+      counts[cur] = std::distance(begin, end);
+      begin = end;
+      left = right;
+      ++edge;
+      ++cur;
+    }
+  }
+
+  // TODO Would need to add handling for weighted events etc. here.
+  return hist;
+}
+
+Dataset histogram(const Dataset &d, const Variable &coord) {
+  Dataset hist;
+  hist.insert(coord);
+  for (const auto &var : d)
+    if (var.tag() == Data::Events{})
+      hist.merge(histogram(var, coord));
+  return hist;
+}
+
 // We can specialize this to switch to a more efficient variant when sorting
 // datasets that represent events lists, using LinearView.
 template <class Tag> struct Sort {
