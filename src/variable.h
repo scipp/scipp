@@ -43,6 +43,10 @@ public:
   virtual std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end = -1) = 0;
+
+  virtual std::unique_ptr<VariableConcept>
+  reshape(const Dimensions &dims) const = 0;
+
   virtual bool operator==(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
@@ -230,6 +234,8 @@ public:
   VariableSlice operator()(const Dim dim, const gsl::index begin,
                            const gsl::index end = -1);
 
+  ConstVariableSlice reshape(const Dimensions &dims) const;
+
   template <class... Tags> friend class LinearView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
@@ -278,7 +284,11 @@ class ConstVariableSlice {
 public:
   explicit ConstVariableSlice(const Variable &variable)
       : m_variable(&variable) {}
+  ConstVariableSlice(const Variable &variable, const Dimensions &dims)
+      : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
   ConstVariableSlice(const ConstVariableSlice &other) = default;
+  ConstVariableSlice(const ConstVariableSlice &other, const Dimensions &dims)
+      : m_variable(other.m_variable), m_view(other.data().reshape(dims)) {}
   ConstVariableSlice(const Variable &variable, const Dim dim,
                      const gsl::index begin, const gsl::index end = -1)
       : m_variable(&variable),
@@ -292,6 +302,10 @@ public:
                                 const gsl::index end = -1) const {
     return ConstVariableSlice(*this, dim, begin, end);
   }
+
+  // Note the return type. Reshaping a non-contiguous slice cannot return a
+  // slice in general so we must return a copy of the data.
+  Variable reshape(const Dimensions &dims) const;
 
   const std::string &name() const { return m_variable->name(); }
   void setName(const std::string &) {

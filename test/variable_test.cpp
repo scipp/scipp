@@ -946,7 +946,7 @@ TEST(VariableSlice, slice_assign_from_variable) {
 TEST(VariableSlice, slice_binary_operations) {
   auto v = makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
   // Note: There does not seem to be a way to test whether this is using the
-  // operators that onvert the second argument to Variable (it should not), or
+  // operators that convert the second argument to Variable (it should not), or
   // keep it as a view. See variable_benchmark.cpp for an attempt to verify
   // this.
   auto sum = v(Dim::X, 0) + v(Dim::X, 1);
@@ -955,4 +955,40 @@ TEST(VariableSlice, slice_binary_operations) {
   EXPECT_TRUE(equals(sum.get<const Data::Value>(), {3, 7}));
   EXPECT_TRUE(equals(difference.get<const Data::Value>(), {-1, -1}));
   EXPECT_TRUE(equals(product.get<const Data::Value>(), {2, 12}));
+}
+
+TEST(Variable, reshape) {
+  Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
+  auto view = var.reshape({Dim::Row, 6});
+  ASSERT_EQ(view.size(), 6);
+  ASSERT_EQ(view.dimensions(), Dimensions({Dim::Row, 6}));
+  EXPECT_TRUE(equals(view.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
+
+  auto view2 = var.reshape({{Dim::Row, 3}, {Dim::Z, 2}});
+  ASSERT_EQ(view2.size(), 6);
+  ASSERT_EQ(view2.dimensions(), Dimensions({{Dim::Row, 3}, {Dim::Z, 2}}));
+  EXPECT_TRUE(equals(view2.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
+}
+
+TEST(Variable, reshape_fail) {
+  Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
+  EXPECT_THROW_MSG(var.reshape({Dim::Row, 5}), std::runtime_error,
+                   "Cannot reshape to dimensions with different volume");
+}
+
+TEST(Variable, reshape_and_slice) {
+  Variable var(Data::Value{}, {Dim::Spectrum, 16},
+               {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+
+  auto slice =
+      var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3);
+  EXPECT_TRUE(equals(slice.get<const Data::Value>(), {6, 7, 10, 11}));
+
+  Variable center =
+      var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3)
+          .reshape({Dim::Spectrum, 4});
+
+  ASSERT_EQ(center.size(), 4);
+  ASSERT_EQ(center.dimensions(), Dimensions({Dim::Spectrum, 4}));
+  EXPECT_TRUE(equals(center.get<const Data::Value>(), {6, 7, 10, 11}));
 }
