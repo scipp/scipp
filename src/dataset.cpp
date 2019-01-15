@@ -594,7 +594,18 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
 }
 
 Dataset histogram(const Variable &var, const Variable &coord) {
+  // TODO Is there are more generic way to find "histogrammable" data, not
+  // specific to (neutron) events? Something like Data::ValueVector, i.e., any
+  // data variable that contains a vector of values at each point?
   const auto &events = var.get<const Data::Events>();
+  // TODO This way of handling events (and their units) as nested Dataset feels
+  // a bit unwieldy. Would it be a better option to store TOF (or any derived
+  // values) as simple vectors in Data::Events? There would be a separate
+  // Data::PulseTimes (and Data::EventWeights). This can then be of arbitrary
+  // type, unit conversion is reflected in the unit of Data::Events. The
+  // implementation of `histogram` would then also be simplified since we do not
+  // need to distinguish between Data::Tof, etc. (which we are anyway not doing
+  // currently).
   dataset::expect::equals(events[0](Data::Tof{}).unit(), coord.unit());
 
   // TODO Can we reuse some code for bin handling from DatasetView?
@@ -619,11 +630,12 @@ Dataset histogram(const Variable &var, const Variable &coord) {
 
   auto counts = hist.get<Data::Value>(var.name());
   gsl::index cur = 0;
+  // The helper `getView` allows us to ignore the tag of coord, as long as the
+  // underlying type is `double`.
+  // TODO Need to add a branch for the `float` case.
   const auto edges = getView<double>(coord, dims);
   auto edge = edges.begin();
   for (const auto &eventList : events) {
-    // TODO Change this to support generic data, not just Data::Tofs (do not
-    // encode unit in tag).
     const auto tofs = eventList.get<const Data::Tof>();
     if (!std::is_sorted(tofs.begin(), tofs.end()))
       throw std::runtime_error(
