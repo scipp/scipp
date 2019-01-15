@@ -66,6 +66,8 @@ struct UnitMismatchError : public UnitError {
 } // namespace except
 
 namespace expect {
+void dimensionMatches(const Dimensions &dims, const Dim dim,
+                      const gsl::index length);
 void equals(const Unit &a, const Unit &b);
 
 template <class T> void contains(const T &a, const T &b) {

@@ -718,6 +718,26 @@ Dataset makeEvents() {
   return d;
 }
 
+TEST(Dataset, histogram_failures) {
+  auto d = makeEvents();
+
+  Dataset dependsOnBinDim;
+  dependsOnBinDim.insert(d(Data::Events{}, "sample1").reshape({Dim::Tof, 2}));
+  auto coord = makeVariable<Coord::Tof>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
+  EXPECT_THROW_MSG(histogram(dependsOnBinDim, coord), std::runtime_error,
+                   "Data to histogram depends on histogram dimension.");
+
+  auto coordWithExtraDim = makeVariable<Coord::Tof>(
+      {{Dim::X, 2}, {Dim::Tof, 3}}, {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
+  EXPECT_THROW(histogram(d, coordWithExtraDim),
+               dataset::except::DimensionNotFoundError);
+
+  auto coordWithLengthMismatch =
+      makeVariable<Coord::Tof>({{Dim::Spectrum, 3}, {Dim::Tof, 3}});
+  EXPECT_THROW(histogram(d, coordWithLengthMismatch),
+               dataset::except::DimensionLengthError);
+}
+
 TEST(Dataset, histogram) {
   auto d = makeEvents();
   auto coord = makeVariable<Coord::Tof>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
@@ -728,6 +748,7 @@ TEST(Dataset, histogram) {
   ASSERT_TRUE(hist.contains(Data::Value{}, "sample1"));
   ASSERT_TRUE(hist.contains(Data::Variance{}, "sample1"));
   EXPECT_TRUE(equals(hist.get<const Data::Value>("sample1"), {1, 3, 1, 4}));
+  EXPECT_TRUE(equals(hist.get<const Data::Variance>("sample1"), {1, 3, 1, 4}));
 }
 
 TEST(Dataset, histogram_2D_coord) {
@@ -741,6 +762,7 @@ TEST(Dataset, histogram_2D_coord) {
   ASSERT_TRUE(hist.contains(Data::Value{}, "sample1"));
   ASSERT_TRUE(hist.contains(Data::Variance{}, "sample1"));
   EXPECT_TRUE(equals(hist.get<const Data::Value>("sample1"), {1, 3, 4, 2}));
+  EXPECT_TRUE(equals(hist.get<const Data::Variance>("sample1"), {1, 3, 4, 2}));
 }
 
 TEST(Dataset, histogram_2D_transpose_coord) {
@@ -758,6 +780,7 @@ TEST(Dataset, histogram_2D_transpose_coord) {
   ASSERT_EQ(hist(Data::Value{}, "sample1").dimensions(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Tof, 2}}));
   EXPECT_TRUE(equals(hist.get<const Data::Value>("sample1"), {1, 3, 4, 2}));
+  EXPECT_TRUE(equals(hist.get<const Data::Variance>("sample1"), {1, 3, 4, 2}));
 }
 
 TEST(Dataset, sort) {

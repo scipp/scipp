@@ -150,6 +150,12 @@ UnitMismatchError::UnitMismatchError(const Unit &a, const Unit &b)
 } // namespace except
 
 namespace expect {
+void dimensionMatches(const Dimensions &dims, const Dim dim,
+                      const gsl::index length) {
+  if (dims[dim] != length)
+    throw except::DimensionLengthError(dims, dim, length);
+}
+
 void equals(const Unit &a, const Unit &b) {
   if (!(a == b))
     throw except::UnitMismatchError(a, b);
