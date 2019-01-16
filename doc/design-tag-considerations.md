@@ -209,7 +209,7 @@ auto data = dataset.get<const double>("sample1");
 auto errors = dataset.get<const double>("sample1-variance");
 
 // 5. Typed view of multiple variables.
-// 5. Views of named variables.
+// 6. Views of named variables.
 auto view =
     dataset.makeView(Label<const double>("Coord.X"), Label<double>("sample1"));
 
@@ -238,3 +238,14 @@ However, there would be two drawbacks to this:
 
 Also note that we support storing data and variances in separate variables.
 If the variance variable did not have a tag it would be impossible to tell what it is.
+
+As a counter argument, consider that for variables on their own it never actually makes a difference whether they represent coordinates, data, variances, other something else.
+The distinction becomes meaningful only once included in a dataset --- at which point we could support another mechanism to distinguish those concepts.
+It would however become more tricky and dangerous to move that auxiliary information from one dataset to another, consider
+
+```cpp
+// If tag is part of Variable:
+dataset.insert(variable);
+// If tags (or a similar concept) exist only on the Dataset level:
+dataset.insert(Coord::X, variable); // Prone bugs due to typos in tags.
+```
