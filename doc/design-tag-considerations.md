@@ -1,5 +1,7 @@
 ## Tags, names, and grouping variables in Dataset
 
+See also a [recent PR](https://github.com/mantidproject/dataset/pull/8) which was the final trigger to reconsider the tag mechanism.
+
 
 ### Current solution
 
@@ -103,10 +105,49 @@ For more specific operations like generating a histogram from event data this is
 - We can histogram any variable that has a compatible item type such as `std::vector<double>`.
 - Or we can histogram only variables with specific predefined tags, such as `Data::Events`.
 
+It feels like the first option is too zealous whereas the latter is too restrictive.
 Do we thus need another conceptional level?
 Currently we have `type < tag < name`, i.e., the tag defines a concept that is more specific than a type.
 Would it make sense to extend this to `type < concept < tag < name`?
 Probably not, we should rather make the type more specific, i.e., think of it as `concept < tag < name`?
+
+#### Dealing with flexible types
+
+In practice flexible types leads to a couple of things that need to be taken into consideration:
+
+- Client code may be written for a fixed type, e.g., assume that everything is holding values of type `double`.
+  This is perfectly fine in non-generic code.
+  It will simply lead to runtime failure if a dataset with other types is passed.
+- More generic code should support a range of types, `float` as well as `double`.
+  This is relatively simple to do.
+  Code is just templated on the type, and a call helper will generate the required runtime-to-compile time branching, see the [similar example](https://github.com/mantidproject/dataset/blob/d0957e4bfd87646010728656a9eb7512310238b1/src/dataset.cpp#L638) for the actually more complex case of supporting compile-time tags.
+
+The main limitation of this is that for operations with multiple involved variables we will either restrict this to have the same type in all variables, or deal with a combinatoric explosion of cases:
+Consider, e.g., the addition of two objects with associated errors where each can be stored in either single-precision or double-precision.
+This would lead to 2x2x2x2 = 16 cases.
+If also coordinates with flexible types are involved we quickly reach O(100) cases, which is unmanageable.
+Therefore, in practice we will need to put certain limitations on the type combinations that are supported, even for the more generic operations.
+
+
+#### Non-trivial and derived item types
+
+If the type is defined by the tag, we can also hide implementation complexity.
+For example, `Data::Events` could actually return something like `EventListProxy<Data::Tof, Data::PulseTime>`.
+We can probably simply use a `typedef` to keep this convenience,
+
+```cpp
+template <class T>
+using EventList = EventListProxy<Label<T, Data::Tof>, Label<int64_t, Data::PulseTime>>;
+auto eventLists = dataset.get<EventList>(Data::Events);
+```
+
+Another option is to specify only the precision in the getter, if we define a tag "category" at compile time and leave only the precision flexible:
+
+```cpp
+// Defined at compile time: Data::Events can only contain Data::Tof and
+// Data::PulseTime, but precision is determined at runtime.
+auto eventLists = dataset.get<double>(Data::Events);
+```
 
 
 ### No tags, just names and types
