@@ -941,6 +941,12 @@ ConstVariableSlice Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
 }
 
+Variable Variable::reshape(const Dimensions &dims) && {
+  Variable reshaped(std::move(*this));
+  reshaped.setDimensions(dims);
+  return reshaped;
+}
+
 Variable ConstVariableSlice::reshape(const Dimensions &dims) const {
   // In general a variable slice is not contiguous. Therefore we cannot reshape
   // without making a copy (except for special cases).

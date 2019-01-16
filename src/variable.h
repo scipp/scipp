@@ -246,7 +246,13 @@ public:
                            const gsl::index end = -1) && = delete;
 
   ConstVariableSlice reshape(const Dimensions &dims) const &;
-  ConstVariableSlice reshape(const Dimensions &dims) const && = delete;
+  // Note: Do we have to delete the `const &&` version? Consider
+  //   const Variable var;
+  //   std::move(var).reshape({});
+  // This calls `reshape() const &` but in this case it is not a temporary and
+  // will not go out of scope, so that is ok (unless someone changes var and
+  // expects the reshaped view to be still valid).
+  Variable reshape(const Dimensions &dims) &&;
 
   template <class... Tags> friend class LinearView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
