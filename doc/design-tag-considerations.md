@@ -140,6 +140,28 @@ This would lead to 2x2x2x2 = 16 cases.
 If also coordinates with flexible types are involved we quickly reach O(100) cases, which is unmanageable.
 Therefore, in practice we will need to put certain limitations on the type combinations that are supported, even for the more generic operations.
 
+One way to avoid combinatoric explosion may be to introduce a view that can convert precision on the fly.
+For example, when adding a variable containing `double` items to a variable containing `float` items, the former could be converted to a `float` view.
+
+```cpp
+// Assume we want to do a computation in double precision.
+template <class T>
+double compute(const T &view) {
+  double init = 0.0;
+  return std::accumulate(view.begin(), view.end(), init);
+}
+
+// Not actually including more than one input in this example, so there is no
+// "explosion", but the technique stays the same for multiple arguments.
+if (var.type() != Type::Double) {
+  auto doubleView = var.getConvertingView<float, double>();
+  return compute(doubleView);
+} else {
+  auto doubleSpan = var.get<double>();
+  return compute(doubleSpan);
+}
+```
+
 
 #### Non-trivial and derived item types
 
