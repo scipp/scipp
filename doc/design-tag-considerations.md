@@ -162,6 +162,9 @@ if (var.type() != Type::Double) {
 }
 ```
 
+On second thought though, this probably still suffers from the combinatoric explosion:
+The type of the converting view unfortunately also depends on the type it is converting from, so we only moved the problem to another place.
+
 
 #### Non-trivial and derived item types
 
