@@ -15,29 +15,34 @@ See also a [recent PR](https://github.com/mantidproject/dataset/pull/8) which wa
 The combination of defining a type and `const` qualification supports the following syntax:
 
 ```cpp
-// 1. Read-only access to a single variable. 
+// 1. Creating variables and type-erased access.
+dataset.insert<Data::Value>("sample1", {});
+dataset.insert<Data::Value>("sample2", {}, {0.1});
+auto dataView = dataset(Data::Value{}, "sample1");
+
+// 2. Read-only access to a single variable.
 auto data = dataset.get<const Data::Value>();
 
-// 2. Write access to a single variable.
+// 3. Write access to a single variable.
 auto data = dataset.get<Data::Value>();
 
-// 3. Associating variables with each other.
+// 4. Associating variables with each other.
 auto data = dataset.get<const Data::Value>("sample1");
 auto errors = dataset.get<const Data::Variance>("sample1");
 
-// 4. Typed view of multiple variables.
+// 5. Typed view of multiple variables.
 DatasetView<const Coord::X, Data::Value> view(dataset);
 
-// 5. Views of named variable.
+// 6. Views of named variable.
 DatasetView<const Coord::X, Data::Value> view(dataset, "sample1");
 
-// 6. Getters with compile-time tags.
+// 7. Getters with compile-time tags.
 auto &value = view.begin()->get<Data::Value>();
 
-// 7. Named getters.
+// 8. Named getters.
 auto &x = view.begin()->x();
 
-// 8. View of multiple named variables.
+// 9. View of multiple named variables.
 // Currently not supported since it requires an unclear mapping from template
 // arguments to name strings and, more importantly, it would require getters
 // with string arguments and comparisons, which would be very inefficient at
@@ -56,36 +61,43 @@ The examples are numbered and we will discuss alternative below.
 ### Runtime tags, flexible type
 
 ```cpp
-// 1. Read-only access to a single variable. 
+// 1. Creating variables and type-erased access.
+// If no data is given, the type must be specified explicitly.
+dataset.insert<double>(Data::Value, "sample1", {});
+// Variable type is deduced.
+dataset.insert(Data::Value, "sample1", {}, {0.1});
+auto dataView = dataset(Data::Value, "sample1");
+
+// 2. Read-only access to a single variable.
 auto data = dataset.get<const double>(Data::Value);
 
-// 2. Write access to a single variable.
+// 3. Write access to a single variable.
 auto data = dataset.get<double>(Data::Value);
 
-// 3. Associating variables with each other.
+// 4. Associating variables with each other.
 auto data = dataset.get<const double>(Data::Value, "sample1");
 auto errors = dataset.get<const double>(Data::Variance, "sample1");
 
-// 4. Typed view of multiple variables.
+// 5. Typed view of multiple variables.
 // This is awkward since we must mentally match a template argument to each tag.
 DatasetView<const double, double> view(dataset, Coord::X, Data::Value);
 // Clear but slightly more verbose.
 auto view = dataset.makeView(Label<const double, Coord::X>{},
                              Label<double, Data::Value>{});
 
-// 5. Views of named variables.
+// 6. Views of named variables.
 auto view = dataset.makeView(Label<const double, Coord::X>{},
                              Label<double, Data::Value>("sample1"));
 
-// 6. Getters with compile-time tags.
+// 7. Getters with compile-time tags.
 // It may at first seem like this is not possible since the tag does not imply a
 // type. However, the mapping from tag to type is fixed in the type of the view!
 auto &value = view.begin()->get<Data::Value>();
 
-// 7. Named getters.
+// 8. Named getters.
 auto &x = view.begin()->x();
 
-// 8. View of multiple named variables.
+// 9. View of multiple named variables.
 // This solves the problem of mapping tags to names, but the item-getter issue remains.
 auto view = dataset.makeView(Label<const double, Coord::X>{},
                              Label<double, Data::Value>("sample1"),
@@ -118,7 +130,7 @@ In practice flexible types leads to a couple of things that need to be taken int
 - Client code may be written for a fixed type, e.g., assume that everything is holding values of type `double`.
   This is perfectly fine in non-generic code.
   It will simply lead to runtime failure if a dataset with other types is passed.
-- More generic code should support a range of types, `float` as well as `double`.
+- More generic code should support a range of types, e.g., `float` as well as `double`.
   This is relatively simple to do.
   Code is just templated on the type, and a call helper will generate the required runtime-to-compile time branching, see the [similar example](https://github.com/mantidproject/dataset/blob/d0957e4bfd87646010728656a9eb7512310238b1/src/dataset.cpp#L638) for the actually more complex case of supporting compile-time tags.
 
@@ -153,29 +165,36 @@ auto eventLists = dataset.get<double>(Data::Events);
 ### No tags, just names and types
 
 ```cpp
-// 1. Read-only access to a single variable. 
-auto data = dataset.get<const double>("value");
+// 1. Creating variables and type-erased access.
+// If no data is given, the type must be specified explicitly.
+dataset.insert<double>("sample1", {});
+// Variable type is deduced.
+dataset.insert("sample1", {}, {0.1});
+auto dataView = dataset("sample1");
 
-// 2. Write access to a single variable.
-auto data = dataset.get<double>("value");
+// 2. Read-only access to a single variable.
+auto data = dataset.get<const double>("sample1");
 
-// 3. Associating variables with each other.
+// 3. Write access to a single variable.
+auto data = dataset.get<double>("sample1");
+
+// 4. Associating variables with each other.
 // Requires mechanism using string prefix/suffix and restrictions on names.
 auto data = dataset.get<const double>("sample1");
 auto errors = dataset.get<const double>("sample1-variance");
 
-// 4. Typed view of multiple variables.
+// 5. Typed view of multiple variables.
 // 5. Views of named variables.
 auto view =
-    dataset.makeView(Label<const double>("Coord.X"), Label<double>("value"));
+    dataset.makeView(Label<const double>("Coord.X"), Label<double>("sample1"));
 
-// 6. Getters with compile-time tags.
+// 7. Getters with compile-time tags.
 // Not possible unless we assign IDs when creating the view.
 
-// 7. Named getters.
+// 8. Named getters.
 // Not possible unless we assign IDs when creating the view.
 
-// 8. View of multiple named variables.
+// 9. View of multiple named variables.
 // See above.
 ```
 
