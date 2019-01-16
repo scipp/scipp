@@ -150,7 +150,7 @@ We can probably simply use a `typedef` to keep this convenience,
 ```cpp
 template <class T>
 using EventList = EventListProxy<Label<T, Data::Tof>, Label<int64_t, Data::PulseTime>>;
-auto eventLists = dataset.get<EventList>(Data::Events);
+auto eventLists = dataset.get<EventList<double>>(Data::Events);
 ```
 
 Another option is to specify only the precision in the getter, if we define a tag "category" at compile time and leave only the precision flexible:
