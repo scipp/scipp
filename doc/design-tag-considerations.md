@@ -311,32 +311,32 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
 
 Data::Tofs, Data::PulseTimes, Data::Weights, Data::Variances are all "List"? But we want the same name!
 
-Important: **Tags also define a *relationship* between variables!**
+Operations that combine two different concepts? Matrix-vector multiplication?
 
-(Value, Variance)
-(Offsets, PulseTimes, Weights, Variances) # not offsets after unit conversion (coord?), could be pulse index (it is a coord, if it matches we can add weighted data (not useful in practice?)!?)
-(Data::Events, Data::EventsBase
+#### Conclusion
 
+- At the `Variable` level:
+  - The tag has no more meaning than the name.
+    This is reinforced by what we see in the current implementation:
+    The `VariableConcept` member of `Variable` (which is used to implement all the operations) does not know the tag.
+  - The item type alone defines which operations can be applied to a variable.
+- At the `Dataset` level:
+  - Tags define a relationship between variables.
+    Tags come in groups, and operations are defined for specific groups.
+  - Names of variables define a "family" of variables.
+    Only variables from the same family are considered related when looking for variables with tags from the same tag group.
+- If we think in terms of concepts, which in turn define which operations can be applied:
+  - On the `Variable` level, the item type can fulfil specific concepts.
+  - On the `Dataset` level, the concrete tag group can fulfil specific concepts.
 
-Coord::Tofs
-Coord::PulseTimes
+  Another way to think about this is in terms of array-of-structures (AOS) instead of structure-of-arrays (SOA):
+  - For AOS the type fully defines which operations can be applied to it.
+    Everything could then be done on the `Variable`-lebel.
+  - `Dataset` is actually using SOA in many cases.
+    Therefore some of the concepts are not fully definable for `Variable`, i.e., we need a mechanism for this on the `Dataset` level.
+    A definition of tag groups (alongside implementation of operations) provides such a mechanism.
 
-Data::OffsetList # times at which numbers were measured?
-Data::BaseList # pulse times, or pulse index?
-Data::NumberList
-Data::NumberVarianceList
-
-Data::EventList
-Data::
-
-operations that combine two different concepts? Matrix-vector multiplication?
-
-
-Variable level: type -> concept (defined which ops are possible for variable)
-Dataset level: tag or group of tags -> concept (defines which ops are possible for dataset)
-(think of AOS instead of SOA: then the type would just imply the ops, since we do SOA we have to deal with this on a higher level (the dataset level))
-
-Custom handlers for custom groups of tags:
+A rough outline of how this could be implemented on the `Dataset` level, with custom handlers for custom groups of tags:
 
 ```cpp
 /// in dataset.cpp
@@ -366,7 +366,7 @@ public:
   }
 };
 
-Dataset &Dataset::operator+=(const Dataset &other) { 
+Dataset &Dataset::operator*=(const Dataset &other) {
   for (const auto &var : other) {
     // May be done already by being pulled in as group member from other tag
     if (done(var))
@@ -377,7 +377,8 @@ Dataset &Dataset::operator+=(const Dataset &other) {
     const auto otherVarGroup = other.getGroup(tagGroup);
     auto varGroup = getGroup(tagGroup);
     // Virtual call to the implementation for the dynamic group type.
-    varGroup *= otherVarGroup; // May throw if this group does not support the operation.
+    varGroup *= otherVarGroup; // May throw if this group does not support the
+                               // operation.
   }
 }
 ```
