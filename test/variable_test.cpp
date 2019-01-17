@@ -970,6 +970,19 @@ TEST(Variable, reshape) {
   EXPECT_TRUE(equals(view2.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
 }
 
+TEST(Variable, reshape_temporary) {
+  const Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Row, 4}},
+                     {1, 2, 3, 4, 5, 6, 7, 8});
+  auto reshaped = sum(var, Dim::X).reshape({{Dim::Y, 2}, {Dim::Z, 2}});
+  ASSERT_EQ(reshaped.size(), 4);
+  ASSERT_EQ(reshaped.dimensions(), Dimensions({{Dim::Y, 2}, {Dim::Z, 2}}));
+  EXPECT_TRUE(equals(reshaped.get<const Data::Value>(), {6, 8, 10, 12}));
+
+  // This is not a temporary, we get a view into `var`.
+  EXPECT_EQ(typeid(decltype(std::move(var).reshape({}))),
+            typeid(ConstVariableSlice));
+}
+
 TEST(Variable, reshape_fail) {
   Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
   EXPECT_THROW_MSG(var.reshape({Dim::Row, 5}), std::runtime_error,

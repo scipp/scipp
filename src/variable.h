@@ -144,7 +144,8 @@ public:
   Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,
            T object);
 
-  const std::string &name() const {
+  const std::string &name() const && = delete;
+  const std::string &name() const & {
     static const std::string empty;
     if (!m_name)
       return empty;
@@ -165,16 +166,16 @@ public:
   bool operator!=(const Variable &other) const;
   bool operator!=(const ConstVariableSlice &other) const;
   Variable operator-() const;
-  Variable &operator+=(const Variable &other);
-  Variable &operator+=(const ConstVariableSlice &other);
-  Variable &operator+=(const double value);
-  Variable &operator-=(const Variable &other);
-  Variable &operator-=(const ConstVariableSlice &other);
-  Variable &operator*=(const Variable &other);
-  Variable &operator*=(const ConstVariableSlice &other);
-  Variable &operator*=(const double value);
+  Variable &operator+=(const Variable &other) &;
+  Variable &operator+=(const ConstVariableSlice &other) &;
+  Variable &operator+=(const double value) &;
+  Variable &operator-=(const Variable &other) &;
+  Variable &operator-=(const ConstVariableSlice &other) &;
+  Variable &operator*=(const Variable &other) &;
+  Variable &operator*=(const ConstVariableSlice &other) &;
+  Variable &operator*=(const double value) &;
 
-  const Unit &unit() const { return m_unit; }
+  Unit unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
     // TODO
     // Some variables are special, e.g., Data::Tof, which must always have a
@@ -187,11 +188,14 @@ public:
 
   gsl::index size() const { return m_object->size(); }
 
-  const Dimensions &dimensions() const { return m_object->dimensions(); }
+  const Dimensions &dimensions() const && = delete;
+  const Dimensions &dimensions() const & { return m_object->dimensions(); }
   void setDimensions(const Dimensions &dimensions);
 
-  const VariableConcept &data() const { return *m_object; }
-  VariableConcept &data() { return m_object.access(); }
+  const VariableConcept &data() const && = delete;
+  const VariableConcept &data() const & { return *m_object; }
+  VariableConcept &data() && = delete;
+  VariableConcept &data() & { return m_object.access(); }
 
   Tag tag() const { return m_tag; }
   bool isCoord() const {
@@ -228,13 +232,27 @@ public:
     return gsl::make_span(cast<typename Tag::type>());
   }
 
+  // ATTENTION: It is really important to delete any function returning a
+  // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
+  // will point to free'ed memory.
   ConstVariableSlice operator()(const Dim dim, const gsl::index begin,
-                                const gsl::index end = -1) const;
+                                const gsl::index end = -1) const &;
+  ConstVariableSlice operator()(const Dim dim, const gsl::index begin,
+                                const gsl::index end = -1) const && = delete;
 
   VariableSlice operator()(const Dim dim, const gsl::index begin,
-                           const gsl::index end = -1);
+                           const gsl::index end = -1) &;
+  VariableSlice operator()(const Dim dim, const gsl::index begin,
+                           const gsl::index end = -1) && = delete;
 
-  ConstVariableSlice reshape(const Dimensions &dims) const;
+  ConstVariableSlice reshape(const Dimensions &dims) const &;
+  // Note: Do we have to delete the `const &&` version? Consider
+  //   const Variable var;
+  //   std::move(var).reshape({});
+  // This calls `reshape() const &` but in this case it is not a temporary and
+  // will not go out of scope, so that is ok (unless someone changes var and
+  // expects the reshaped view to be still valid).
+  Variable reshape(const Dimensions &dims) &&;
 
   template <class... Tags> friend class LinearView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
@@ -311,7 +329,7 @@ public:
   void setName(const std::string &) {
     throw std::runtime_error("Cannot rename Variable via slice view.");
   }
-  const Unit &unit() const { return m_variable->unit(); }
+  Unit unit() const { return m_variable->unit(); }
   gsl::index size() const {
     if (m_view)
       return m_view->size();
@@ -338,7 +356,8 @@ public:
   }
 
   Tag tag() const { return m_variable->tag(); }
-  const VariableConcept &data() const {
+  const VariableConcept &data() const && = delete;
+  const VariableConcept &data() const & {
     if (m_view)
       return *m_view;
     else
@@ -349,6 +368,11 @@ public:
   bool isAttr() const { return m_variable->isAttr(); }
   bool isData() const { return m_variable->isData(); }
 
+  // Note: This return a proxy object (a VariableView) that does reference
+  // members owner by *this. Therefore we can support this even for temporaries
+  // and we do not need to delete the rvalue overload, unlike for many other
+  // methods. The data is owned by the underlying variable so it will not be
+  // deleted even if *this is a temporary and gets deleted.
   template <class Tag> auto get() const {
     static_assert(
         std::is_const<Tag>::value,
@@ -405,7 +429,8 @@ public:
   using ConstVariableSlice::data;
   using ConstVariableSlice::get;
 
-  VariableConcept &data() {
+  VariableConcept &data() && = delete;
+  VariableConcept &data() & {
     if (!m_view)
       return m_mutableVariable->data();
     if (m_view->isConstView())
@@ -413,6 +438,7 @@ public:
     return *m_view;
   }
 
+  // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
   template <class Tag>
   auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
     return const_cast<const VariableSlice *>(this)->get<Tag>();
@@ -424,13 +450,28 @@ public:
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
   }
-  template <class T> VariableSlice &assign(const T &other);
-  VariableSlice &operator+=(const Variable &other);
-  VariableSlice &operator+=(const ConstVariableSlice &other);
-  VariableSlice &operator-=(const Variable &other);
-  VariableSlice &operator-=(const ConstVariableSlice &other);
-  VariableSlice &operator*=(const Variable &other);
-  VariableSlice &operator*=(const ConstVariableSlice &other);
+
+  // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
+  // the left-hand-side is a temporary. This is ok since data is modified in
+  // underlying Variable. However, we do not return the typical `VariableSlice
+  // &` from these operations since that could reference a temporary. Due to the
+  // way Python implements things like __iadd__ we must return an object
+  // referencing the data though. We therefore return by value (this is not for
+  // free since it involves a memory allocation but is probably relatively cheap
+  // compared to other things). If the return by value turns out to be a
+  // performance issue, another option is to have overloads for *this of types
+  // `&` and `&&` with distinct return types (by reference in the first case, by
+  // value in the second). In principle we may also change the implementation of
+  // the Python exports to return `a` after calling `a += b` instead of
+  // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
+  // (would this suffer from the same issue?).
+  template <class T> VariableSlice assign(const T &other);
+  VariableSlice operator+=(const Variable &other);
+  VariableSlice operator+=(const ConstVariableSlice &other);
+  VariableSlice operator-=(const Variable &other);
+  VariableSlice operator-=(const ConstVariableSlice &other);
+  VariableSlice operator*=(const Variable &other);
+  VariableSlice operator*=(const ConstVariableSlice &other);
 
   void setUnit(const Unit &unit);
 
@@ -447,6 +488,9 @@ private:
   Variable *m_mutableVariable;
 };
 
+// Note: If the left-hand-side in an addition is a VariableSlice this simply
+// implicitly converts it to a Variable. A copy for the return value is required
+// anyway so this is a convenient way to avoid defining more overloads.
 Variable operator+(Variable a, const Variable &b);
 Variable operator-(Variable a, const Variable &b);
 Variable operator*(Variable a, const Variable &b);

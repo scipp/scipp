@@ -38,22 +38,39 @@ public:
   Dataset(const ConstDatasetSlice &view);
 
   gsl::index size() const { return m_variables.size(); }
-  ConstVariableSlice operator[](const gsl::index i) const {
+
+  // ATTENTION: It is really important to delete any function returning a
+  // (Const)VariableSlice or (Const)DatasetSlice for rvalue Dataset. Otherwise
+  // the resulting slice will point to free'ed memory.
+  ConstVariableSlice operator[](const gsl::index i) const && = delete;
+  ConstVariableSlice operator[](const gsl::index i) const & {
     return ConstVariableSlice{m_variables[i]};
   }
-  VariableSlice operator[](const gsl::index i) {
+  VariableSlice operator[](const gsl::index i) && = delete;
+  VariableSlice operator[](const gsl::index i) & {
     return VariableSlice{m_variables[i]};
   }
-  ConstDatasetSlice operator[](const std::string &name) const;
-  DatasetSlice operator[](const std::string &name);
+  ConstDatasetSlice operator[](const std::string &name) const && = delete;
+  ConstDatasetSlice operator[](const std::string &name) const &;
+  DatasetSlice operator[](const std::string &name) && = delete;
+  DatasetSlice operator[](const std::string &name) &;
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
-                               const gsl::index end = -1) const;
+                               const gsl::index end = -1) const && = delete;
+  ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
+                               const gsl::index end = -1) const &;
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
-                          const gsl::index end = -1);
-  ConstVariableSlice operator()(const Tag tag,
-                                const std::string &name = std::string{}) const;
+                          const gsl::index end = -1) && = delete;
+  DatasetSlice operator()(const Dim dim, const gsl::index begin,
+                          const gsl::index end = -1) &;
+  ConstVariableSlice
+  operator()(const Tag tag,
+             const std::string &name = std::string{}) const && = delete;
+  ConstVariableSlice
+  operator()(const Tag tag, const std::string &name = std::string{}) const &;
   VariableSlice operator()(const Tag tag,
-                           const std::string &name = std::string{});
+                           const std::string &name = std::string{}) && = delete;
+  VariableSlice operator()(const Tag tag,
+                           const std::string &name = std::string{}) &;
 
   // The iterators (and in fact all other public accessors to variables in
   // Dataset) return *views* and *not* a `Variable &`. This is necessary to
@@ -62,16 +79,20 @@ public:
   // dimensions of a variable (which could lead to inconsistent dimension
   // extents in the dataset). By exposing variables via views we are limiting
   // modifications to those that cannot break guarantees given by dataset.
-  auto begin() const {
+  auto begin() const && = delete;
+  auto begin() const & {
     return boost::make_transform_iterator(m_variables.begin(), makeConstSlice);
   }
-  auto end() const {
+  auto end() const && = delete;
+  auto end() const & {
     return boost::make_transform_iterator(m_variables.end(), makeConstSlice);
   }
-  auto begin() {
+  auto begin() && = delete;
+  auto begin() & {
     return boost::make_transform_iterator(m_variables.begin(), makeSlice);
   }
-  auto end() {
+  auto end() && = delete;
+  auto end() & {
     return boost::make_transform_iterator(m_variables.end(), makeSlice);
   }
 
@@ -120,15 +141,24 @@ public:
 
   void merge(const Dataset &other);
 
-  template <class Tag> auto get(const std::string &name = std::string{}) const {
+  template <class Tag>
+  auto get(const std::string &name = std::string{}) const && = delete;
+  template <class Tag>
+  auto get(const std::string &name = std::string{}) const & {
     return m_variables[find(Tag{}, name)].template get<Tag>();
   }
 
-  template <class Tag> auto get(const std::string &name = std::string{}) {
+  template <class Tag>
+  auto get(const std::string &name = std::string{}) && = delete;
+  template <class Tag> auto get(const std::string &name = std::string{}) & {
     return m_variables[find(Tag{}, name)].template get<Tag>();
   }
 
-  const Dimensions &dimensions() const { return m_dimensions; }
+  // Currently `Dimensions` does not allocate memory so we could return by value
+  // instead of disabling this, but this way leaves more room for changes, I
+  // think.
+  const Dimensions &dimensions() const && = delete;
+  const Dimensions &dimensions() const & { return m_dimensions; }
 
   bool operator==(const Dataset &other) const;
   Dataset &operator+=(const Dataset &other);
@@ -205,7 +235,7 @@ private:
     const ConstDatasetSlice &m_view;
   };
 
-  friend class IterAccess;
+  friend struct IterAccess;
 
 public:
   ConstDatasetSlice(const Dataset &dataset) : m_dataset(dataset) {
@@ -310,7 +340,7 @@ private:
     const DatasetSlice &m_view;
   };
 
-  friend class IterAccess;
+  friend struct IterAccess;
 
 public:
   DatasetSlice(Dataset &dataset)
@@ -338,14 +368,15 @@ public:
     return boost::make_transform_iterator(m_indices.end(), IterAccess{*this});
   }
 
-  DatasetSlice &assign(const Dataset &other);
-  DatasetSlice &assign(const ConstDatasetSlice &other);
-  DatasetSlice &operator+=(const Dataset &other);
-  DatasetSlice &operator+=(const ConstDatasetSlice &other);
-  DatasetSlice &operator-=(const Dataset &other);
-  DatasetSlice &operator-=(const ConstDatasetSlice &other);
-  DatasetSlice &operator*=(const Dataset &other);
-  DatasetSlice &operator*=(const ConstDatasetSlice &other);
+  // Returning void to avoid potentially returning references to temporaries.
+  DatasetSlice assign(const Dataset &other);
+  DatasetSlice assign(const ConstDatasetSlice &other);
+  DatasetSlice operator+=(const Dataset &other);
+  DatasetSlice operator+=(const ConstDatasetSlice &other);
+  DatasetSlice operator-=(const Dataset &other);
+  DatasetSlice operator-=(const ConstDatasetSlice &other);
+  DatasetSlice operator*=(const Dataset &other);
+  DatasetSlice operator*=(const ConstDatasetSlice &other);
 
   VariableSlice operator()(const Tag tag, const std::string &name = "");
 

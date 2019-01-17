@@ -17,30 +17,30 @@ Dataset::Dataset(const ConstDatasetSlice &view) {
     insert(var);
 }
 
-ConstDatasetSlice Dataset::operator[](const std::string &name) const {
+ConstDatasetSlice Dataset::operator[](const std::string &name) const & {
   return ConstDatasetSlice(*this, name);
 }
 
-DatasetSlice Dataset::operator[](const std::string &name) {
+DatasetSlice Dataset::operator[](const std::string &name) & {
   return DatasetSlice(*this, name);
 }
 
 ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
-                                      const gsl::index end) const {
+                                      const gsl::index end) const & {
   return ConstDatasetSlice(*this)(dim, begin, end);
 }
 
 DatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
-                                 const gsl::index end) {
+                                 const gsl::index end) & {
   return DatasetSlice(*this)(dim, begin, end);
 }
 
 ConstVariableSlice Dataset::operator()(const Tag tag,
-                                       const std::string &name) const {
+                                       const std::string &name) const & {
   return ConstVariableSlice(m_variables[find(tag, name)]);
 }
 
-VariableSlice Dataset::operator()(const Tag tag, const std::string &name) {
+VariableSlice Dataset::operator()(const Tag tag, const std::string &name) & {
   return VariableSlice(m_variables[find(tag, name)]);
 }
 
@@ -409,37 +409,37 @@ template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
   return dataset;
 }
 
-DatasetSlice &DatasetSlice::assign(const Dataset &other) {
+DatasetSlice DatasetSlice::assign(const Dataset &other) {
   return ::assign(*this, other);
 }
-DatasetSlice &DatasetSlice::assign(const ConstDatasetSlice &other) {
+DatasetSlice DatasetSlice::assign(const ConstDatasetSlice &other) {
   return ::assign(*this, other);
 }
 
-DatasetSlice &DatasetSlice::operator+=(const Dataset &other) {
+DatasetSlice DatasetSlice::operator+=(const Dataset &other) {
   return binary_op_equals(
       [](VariableSlice &a, const Variable &b) { return a += b; }, *this, other);
 }
-DatasetSlice &DatasetSlice::operator+=(const ConstDatasetSlice &other) {
+DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
 
-DatasetSlice &DatasetSlice::operator-=(const Dataset &other) {
+DatasetSlice DatasetSlice::operator-=(const Dataset &other) {
   return binary_op_equals(
       [](VariableSlice &a, const Variable &b) { return a -= b; }, *this, other);
 }
-DatasetSlice &DatasetSlice::operator-=(const ConstDatasetSlice &other) {
+DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
 
-DatasetSlice &DatasetSlice::operator*=(const Dataset &other) {
+DatasetSlice DatasetSlice::operator*=(const Dataset &other) {
   return times_equals(*this, other);
 }
-DatasetSlice &DatasetSlice::operator*=(const ConstDatasetSlice &other) {
+DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) {
   return times_equals(*this, other);
 }
 
