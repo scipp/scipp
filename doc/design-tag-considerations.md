@@ -323,6 +323,8 @@ Operations that combine two different concepts? Matrix-vector multiplication?
 - At the `Dataset` level:
   - Tags define a relationship between variables.
     Tags come in groups, and operations are defined for specific groups.
+    - Example 1: A data value and a variance form a group (a value with uncertainty).
+    - Example 2: A list of time-of-flight values and (optionally) lists of pulse-times, weights, and uncertainties form a group (an event-list).
   - Names of variables define a "family" of variables.
     Only variables from the same family are considered related when looking for variables with tags from the same tag group.
 - If we think in terms of concepts, which in turn define which operations can be applied:
