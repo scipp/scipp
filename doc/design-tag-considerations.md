@@ -249,3 +249,135 @@ dataset.insert(variable);
 // If tags (or a similar concept) exist only on the Dataset level:
 dataset.insert(Coord::X, variable); // Prone bugs due to typos in tags.
 ```
+
+
+### Concepts
+
+```
+Number
+String
+Table
+Vector (in space, i.e., not std::vector but, e.g., Eigen::Vector3d)
+Matrix
+NumberList
+ComplexNumber?
+Continuous/Noncontinuous?
+
+Coordinates?
+CoordX = Number && Continuous
+CoordY = Number && Continuous # what is the difference to X?
+SpectrumNumber = Number # Integer?
+
+Dimension-coordinates?
+-> need concept of dimension, which is for the variable, not the element type!
+```
+
+https://github.com/ldionne/dyno
+
+
+`Variable` holds a `VariableConcept`.
+The latter is a bit too generic and requires manually disabling functionality for types that do not support certain operations.
+Can we adapt the mechanism?
+`VariableConcept` is generic, anything that can be stored in a variable should be able to fulfil the interface.
+Can we introduce another level to get to a more concrete/refined concept?
+ 
+```
+VariableConcept
+NumberVariableConcept # can apply binary operations
+NumberVariableT # ops for concrete type defined here
+DataModel<T> / ViewModel<T> # defines data layout, but not specific to concept?
+DataModel<T, Concept> # some implementation, but inherit specific concept to enable class of operations
+```
+
+How to get from VariableConcept to NumberVariableConcept:
+
+```cpp
+Variable operator+=(const Variable &other) {
+  // This does not work, since data() returns VariableConcept, which would not have +=.
+  data() += other.data();
+  // Instead:
+  dynamic_cast<NumberVariableConcept &>(data()) += other.data();
+  // Wrap it nicely:
+  require<NumberVariable>() += other.data();
+}
+
+Variable rebin(const Variable &var, const Variable &oldCoord,
+               const Variable &newCoord) {
+  return require<NumberVariable>().rebin(var.require<NumberVariable>(),
+                                         oldCoord.require<ContinuousCoord>(),
+                                         newCoord.require<ContinuousCoord>());
+}
+```
+
+Data::Tofs, Data::PulseTimes, Data::Weights, Data::Variances are all "List"? But we want the same name!
+
+Important: **Tags also define a *relationship* between variables!**
+
+(Value, Variance)
+(Offsets, PulseTimes, Weights, Variances) # not offsets after unit conversion (coord?), could be pulse index (it is a coord, if it matches we can add weighted data (not useful in practice?)!?)
+(Data::Events, Data::EventsBase
+
+
+Coord::Tofs
+Coord::PulseTimes
+
+Data::OffsetList # times at which numbers were measured?
+Data::BaseList # pulse times, or pulse index?
+Data::NumberList
+Data::NumberVarianceList
+
+Data::EventList
+Data::
+
+operations that combine two different concepts? Matrix-vector multiplication?
+
+
+Variable level: type -> concept (defined which ops are possible for variable)
+Dataset level: tag or group of tags -> concept (defines which ops are possible for dataset)
+(think of AOS instead of SOA: then the type would just imply the ops, since we do SOA we have to deal with this on a higher level (the dataset level))
+
+Custom handlers for custom groups of tags:
+
+```cpp
+/// in dataset.cpp
+
+class VariableGroup {
+public:
+  virtual void operator*=(const VariableGroup &other) = 0;
+
+protected:
+  // Probably need also a ConstVariableGroup
+  std::vector<Variable &> m_vars;
+};
+
+class ValueWithError : public VariableGroup {
+public:
+  // Somehow define which tags are in the group
+  // static auto tags() { return {Data::Value, Data::Variance}; }
+  ValueWithError(const std::vector<Variable &> vars) : VariableGroup(vars) {
+    assert(m_vars[0].tag() == Data::Value);
+    assert(m_vars[1].tag() == Data::Variance);
+  }
+
+  void operator*=(const VariableGroup &other) override {
+    m_vars[1] *= other.m_vars[0] * other.m_vars[0];
+    m_vars[1] += m_vars[0] * m_vars[0] * other.m_vars[1];
+    m_vars[0] *= other.m_vars[0];
+  }
+};
+
+Dataset &Dataset::operator+=(const Dataset &other) { 
+  for (const auto &var : other) {
+    // May be done already by being pulled in as group member from other tag
+    if (done(var))
+      continue;
+    // List of all tags in the group
+    const auto tagGroup = var.tag().group();
+    // Get complete groups of variables.
+    const auto otherVarGroup = other.getGroup(tagGroup);
+    auto varGroup = getGroup(tagGroup);
+    // Virtual call to the implementation for the dynamic group type.
+    varGroup *= otherVarGroup; // May throw if this group does not support the operation.
+  }
+}
+```
