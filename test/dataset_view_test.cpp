@@ -589,19 +589,25 @@ TEST(DatasetView, named_variable_and_coordinate) {
 }
 
 TEST(DatasetView, spectrum_position) {
+  Dataset dets;
+  dets.insert<Coord::Position>(
+      {Dim::Detector, 4},
+      {Eigen::Vector3d{1.0, 0.0, 0.0}, Eigen::Vector3d{2.0, 0.0, 0.0},
+       Eigen::Vector3d{4.0, 0.0, 0.0}, Eigen::Vector3d{8.0, 0.0, 0.0}});
+
   Dataset d;
-  d.insert<Coord::DetectorPosition>({Dim::Detector, 4}, {1.0, 2.0, 4.0, 8.0});
+  d.insert<Coord::DetectorInfo>({}, {dets});
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
       {0, 2}, {1}, {}};
   d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
 
-  DatasetView<Coord::SpectrumPosition> view(d);
+  DatasetView<const Coord::Position> view(d);
   auto it = view.begin();
-  EXPECT_EQ(it->get<Coord::SpectrumPosition>(), 2.5);
+  EXPECT_EQ(it->get<Coord::Position>()[0], 2.5);
   ++it;
-  EXPECT_EQ(it->get<Coord::SpectrumPosition>(), 2.0);
+  EXPECT_EQ(it->get<Coord::Position>()[0], 2.0);
   ++it;
-  EXPECT_THROW_MSG(it->get<Coord::SpectrumPosition>(), std::runtime_error,
+  EXPECT_THROW_MSG(it->get<Coord::Position>(), std::runtime_error,
                    "Spectrum has no detectors, cannot get position.");
   ++it;
   ASSERT_EQ(it, view.end());

@@ -78,9 +78,9 @@ template <class Tag> struct ref_type<Bin<Tag>> {
       std::pair<gsl::index,
                 gsl::span<const typename detail::value_type_t<Bin<Tag>>::type>>;
 };
-template <> struct ref_type<Coord::SpectrumPosition> {
+template <> struct ref_type<const Coord::Position> {
   using type =
-      std::pair<gsl::span<const typename Coord::DetectorPosition::type>,
+      std::pair<gsl::span<const typename Coord::Position::type>,
                 gsl::span<const typename Coord::DetectorGrouping::type>>;
 };
 template <> struct ref_type<Data::StdDev> {
@@ -105,7 +105,7 @@ template <class Tag> struct SubdataHelper<Bin<Tag>> {
 };
 
 /// Class with overloads used to handle "virtual" variables such as
-/// Coord::SpectrumPosition.
+/// Coord::Position.
 template <class Tag> struct ItemHelper {
   static element_return_type_t<Tag> get(const ref_type_t<Tag> &data,
                                         gsl::index index) {
@@ -113,13 +113,17 @@ template <class Tag> struct ItemHelper {
   }
 };
 
-template <> struct ItemHelper<Coord::SpectrumPosition> {
-  static element_return_type_t<Coord::SpectrumPosition>
-  get(const ref_type_t<Coord::SpectrumPosition> &data, gsl::index index) {
+// Note: Special case! Coord::Position can be either derived based on detectors,
+// or stored directly.
+template <> struct ItemHelper<const Coord::Position> {
+  static element_return_type_t<const Coord::Position>
+  get(const ref_type_t<const Coord::Position> &data, gsl::index index) {
+    if (data.second.empty())
+      return data.first[index];
     if (data.second[index].empty())
       throw std::runtime_error(
           "Spectrum has no detectors, cannot get position.");
-    double position = 0.0;
+    Eigen::Vector3d position{0.0, 0.0, 0.0};
     for (const auto det : data.second[index])
       position += data.first[det];
     return position /= static_cast<double>(data.second[index].size());

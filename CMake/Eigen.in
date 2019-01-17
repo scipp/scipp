@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(Eigen-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(Eigen
+  HG_REPOSITORY     https://bitbucket.org/eigen/eigen/
+  SOURCE_DIR        "${CMAKE_BINARY_DIR}/Eigen-src"
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)

@@ -27,11 +27,14 @@ template <class Tag> struct UnitHelper<Bin<Tag>> {
   }
 };
 
-template <> struct UnitHelper<Coord::SpectrumPosition> {
+template <> struct UnitHelper<const Coord::Position> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
-    return dataset(Coord::DetectorPosition{}).unit();
+    if (dataset.contains(Coord::Position{}))
+      return dataset(Coord::Position{}).unit();
+    return dataset.get<const Coord::DetectorInfo>()[0](Coord::Position{})
+        .unit();
   }
 };
 
@@ -74,12 +77,16 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
   }
 };
 
-template <> struct DimensionHelper<Coord::SpectrumPosition> {
+template <> struct DimensionHelper<const Coord::Position> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
     static_cast<void>(fixedDimensions);
     static_cast<void>(name);
+    if (dataset.contains(Coord::Position{}))
+      return dataset(Coord::Position{}).dimensions();
+    // Note: We do *not* return the dimensions of the nested positions in
+    // Coord::DetectorInfo since those are not dimensions of the dataset.
     return dataset(Coord::DetectorGrouping{}).dimensions();
   }
 };
@@ -163,12 +170,20 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
   }
 };
 
-template <> struct DataHelper<Coord::SpectrumPosition> {
+template <> struct DataHelper<const Coord::Position> {
   static auto get(const Dataset &dataset, const Dimensions &,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
-    return ref_type_t<Coord::SpectrumPosition>(
-        dataset.get<detail::value_type_t<const Coord::DetectorPosition>>(),
+    // TODO Probably we should throw if there is Coord::Position as well as
+    // Coord::DetectorGrouping/Coord::DetectorInfo. We should never have both, I
+    // think.
+    if (dataset.contains(Coord::Position{}))
+      return ref_type_t<const Coord::Position>(
+          dataset.get<detail::value_type_t<const Coord::Position>>(),
+          gsl::span<const typename Coord::DetectorGrouping::type>{});
+    const auto &detInfo = dataset.get<const Coord::DetectorInfo>()[0];
+    return ref_type_t<const Coord::Position>(
+        detInfo.get<detail::value_type_t<const Coord::Position>>(),
         dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
   }
 };
@@ -311,7 +326,8 @@ INSTANTIATE(Coord::SpectrumNumber const,
                             Data::Variance const>)
 INSTANTIATE(Coord::SpectrumNumber,
             DatasetViewImpl<Bin<Coord::Tof>, Data::Value, Data::Variance>)
-INSTANTIATE(Coord::SpectrumPosition)
+INSTANTIATE(Coord::Position)
+INSTANTIATE(Coord::Position const)
 INSTANTIATE(Coord::Temperature const, Data::Value const, Data::Variance const)
 INSTANTIATE(Coord::Tof)
 INSTANTIATE(Coord::Tof, Data::Int)
@@ -348,3 +364,4 @@ INSTANTIATE(Data::Value, Data::Int const)
 INSTANTIATE(Data::Value, Data::Variance)
 INSTANTIATE(Data::Value, Data::Variance const)
 INSTANTIATE(Data::Variance, Data::Int)
+INSTANTIATE(Coord::DetectorId const, Coord::Position)
