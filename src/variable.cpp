@@ -153,7 +153,7 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
-class NumberVariableConcept : public VariableConcept {
+class FloatingPointVariableConcept : public VariableConcept {
 public:
   using VariableConcept::VariableConcept;
   virtual void rebin(const VariableConcept &old, const Dim dim,
@@ -162,7 +162,7 @@ public:
 };
 
 template <class T> class ViewModel;
-template <class T> class NumberVariableConceptT;
+template <class T> class FloatingPointVariableConceptT;
 
 template <class T, typename Enable = void> struct concept {
   using type = VariableConcept;
@@ -170,8 +170,8 @@ template <class T, typename Enable = void> struct concept {
 };
 template <class T>
 struct concept<T, std::enable_if_t<std::is_floating_point<T>::value>> {
-  using type = NumberVariableConcept;
-  using typeT = NumberVariableConceptT<T>;
+  using type = FloatingPointVariableConcept;
+  using typeT = FloatingPointVariableConceptT<T>;
 };
 
 template <class T> using concept_t = typename concept<T>::type;
@@ -358,7 +358,8 @@ public:
   }
 };
 
-template <class T> class NumberVariableConceptT : public VariableConceptT<T> {
+template <class T>
+class FloatingPointVariableConceptT : public VariableConceptT<T> {
 public:
   using VariableConceptT<T>::VariableConceptT;
 
@@ -366,11 +367,11 @@ public:
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
     // Dimensions of *this and old are guaranteed to be the same.
-    const auto &oldT = dynamic_cast<const NumberVariableConceptT &>(old);
+    const auto &oldT = dynamic_cast<const FloatingPointVariableConceptT &>(old);
     const auto &oldCoordT =
-        dynamic_cast<const NumberVariableConceptT &>(oldCoord);
+        dynamic_cast<const FloatingPointVariableConceptT &>(oldCoord);
     const auto &newCoordT =
-        dynamic_cast<const NumberVariableConceptT &>(newCoord);
+        dynamic_cast<const FloatingPointVariableConceptT &>(newCoord);
     if (this->dimensions().label(0) == dim &&
         oldCoord.dimensions().count() == 1 &&
         newCoord.dimensions().count() == 1) {
@@ -1036,7 +1037,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
   dims.resize(dim, newCoord.dimensions()[dim] - 1);
   rebinned.setDimensions(dims);
   // TODO take into account unit if values have been divided by bin width.
-  dynamic_cast<NumberVariableConcept &>(rebinned.data())
+  dynamic_cast<FloatingPointVariableConcept &>(rebinned.data())
       .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
   return rebinned;
 }
