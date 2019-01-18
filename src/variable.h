@@ -53,9 +53,6 @@ public:
   virtual bool isView() const = 0;
   virtual bool isConstView() const = 0;
 
-  virtual void rebin(const VariableConcept &old, const Dim dim,
-                     const VariableConcept &oldCoord,
-                     const VariableConcept &newCoord) = 0;
   virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;

@@ -150,52 +150,41 @@ template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
   }
 };
 
-#define DISABLE_REBIN_T(...)                                                   \
-  template <class T> struct RebinHelper<__VA_ARGS__> {                         \
-    template <class... Args> static void rebin(Args &&...) {                   \
-      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-    template <class... Args> static void rebinInner(Args &&...) {              \
-      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-  };
-
-#define DISABLE_REBIN(...)                                                     \
-  template <> struct RebinHelper<__VA_ARGS__> {                                \
-    template <class... Args> static void rebin(Args &&...) {                   \
-      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-    template <class... Args> static void rebinInner(Args &&...) {              \
-      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-  };
-
-DISABLE_REBIN_T(std::shared_ptr<T>)
-DISABLE_REBIN_T(std::array<T, 4>)
-DISABLE_REBIN_T(std::array<T, 3>)
-DISABLE_REBIN_T(std::vector<T>)
-DISABLE_REBIN_T(boost::container::small_vector<T, 1>)
-DISABLE_REBIN_T(std::pair<T, T>)
-DISABLE_REBIN_T(ValueWithDelta<T>)
-DISABLE_REBIN(Dataset)
-DISABLE_REBIN(char)
-DISABLE_REBIN(std::string)
-DISABLE_REBIN(Eigen::Vector3d)
-
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
+class NumberVariableConcept : public VariableConcept {
+public:
+  using VariableConcept::VariableConcept;
+  virtual void rebin(const VariableConcept &old, const Dim dim,
+                     const VariableConcept &oldCoord,
+                     const VariableConcept &newCoord) = 0;
+};
+
 template <class T> class ViewModel;
+template <class T> class NumberVariableConceptT;
+
+template <class T, typename Enable = void> struct concept {
+  using type = VariableConcept;
+  using typeT = VariableConceptT<T>;
+};
+template <class T>
+struct concept<T, std::enable_if_t<std::is_floating_point<T>::value>> {
+  using type = NumberVariableConcept;
+  using typeT = NumberVariableConceptT<T>;
+};
+
+template <class T> using concept_t = typename concept<T>::type;
+template <class T> using conceptT_t = typename concept<T>::typeT;
 
 /// Partially typed implementation of VariableConcept. This is a common base
 /// class for DataModel<T> and ViewModel<T>. The former holds data in a
 /// contiguous array, whereas the latter is a (potentially non-contiguous) view
 /// into the former. This base class implements functionality that is common to
 /// both, for a specific T.
-template <class T> class VariableConceptT : public VariableConcept {
+template <class T> class VariableConceptT : public concept_t<T> {
 public:
-  VariableConceptT(const Dimensions &dimensions)
-      : VariableConcept(dimensions) {}
+  VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
   virtual gsl::span<T> getSpan() = 0;
   virtual gsl::span<T> getSpan(const Dim dim, const gsl::index begin,
@@ -212,15 +201,15 @@ public:
   virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
 
   std::unique_ptr<VariableConcept> makeView() const override {
-    auto &dims = dimensions();
+    auto &dims = this->dimensions();
     return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
                                                                 getView(dims));
   }
 
   std::unique_ptr<VariableConcept> makeView() override {
-    if (isConstView())
+    if (this->isConstView())
       return const_cast<const VariableConceptT &>(*this).makeView();
-    auto &dims = dimensions();
+    auto &dims = this->dimensions();
     return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
                                                                 getView(dims));
   }
@@ -228,7 +217,7 @@ public:
   std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end) const override {
-    auto dims = dimensions();
+    auto dims = this->dimensions();
     if (end == -1)
       dims.erase(dim);
     else
@@ -240,10 +229,10 @@ public:
   std::unique_ptr<VariableConcept> makeView(const Dim dim,
                                             const gsl::index begin,
                                             const gsl::index end) override {
-    if (isConstView())
+    if (this->isConstView())
       return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
                                                                   end);
-    auto dims = dimensions();
+    auto dims = this->dimensions();
     if (end == -1)
       dims.erase(dim);
     else
@@ -262,31 +251,31 @@ public:
   }
 
   bool operator==(const VariableConcept &other) const override {
-    if (dimensions() != other.dimensions())
+    const auto &dims = this->dimensions();
+    if (dims != other.dimensions())
       return false;
     const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
-    if (isContiguous()) {
-      if (other.isContiguous() &&
-          dimensions().isContiguousIn(other.dimensions())) {
+    if (this->isContiguous()) {
+      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
         return equal(getSpan(), otherT.getSpan());
       } else {
-        return equal(getSpan(), otherT.getView(dimensions()));
+        return equal(getSpan(), otherT.getView(dims));
       }
     } else {
-      if (other.isContiguous() &&
-          dimensions().isContiguousIn(other.dimensions())) {
-        return equal(getView(dimensions()), otherT.getSpan());
+      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+        return equal(getView(dims), otherT.getSpan());
       } else {
-        return equal(getView(dimensions()), otherT.getView(dimensions()));
+        return equal(getView(dims), otherT.getView(dims));
       }
     }
   }
 
   template <template <class> class Op>
   VariableConcept &apply(const VariableConcept &other) {
+    const auto &dims = this->dimensions();
     try {
       const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
-      if (getView(dimensions()).overlaps(otherT.getView(dimensions()))) {
+      if (getView(dims).overlaps(otherT.getView(dims))) {
         // If there is an overlap between lhs and rhs we copy the rhs before
         // applying the operation.
         const auto &data = otherT.getView(otherT.dimensions());
@@ -295,27 +284,21 @@ public:
         return apply<Op>(copy);
       }
 
-      if (isContiguous() && dimensions().contains(other.dimensions())) {
-        if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
+      if (this->isContiguous() && dims.contains(other.dimensions())) {
+        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
           ArithmeticHelper<Op, T>::apply(getSpan(), otherT.getSpan());
         } else {
-          ArithmeticHelper<Op, T>::apply(getSpan(),
-                                         otherT.getView(dimensions()));
+          ArithmeticHelper<Op, T>::apply(getSpan(), otherT.getView(dims));
         }
-      } else if (dimensions().contains(other.dimensions())) {
-        if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T>::apply(getView(dimensions()),
-                                         otherT.getSpan());
+      } else if (dims.contains(other.dimensions())) {
+        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, T>::apply(getView(dims), otherT.getSpan());
         } else {
-          ArithmeticHelper<Op, T>::apply(getView(dimensions()),
-                                         otherT.getView(dimensions()));
+          ArithmeticHelper<Op, T>::apply(getView(dims), otherT.getView(dims));
         }
       } else {
         // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
+        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
           ArithmeticHelper<Op, T>::apply(getView(other.dimensions()),
                                          otherT.getSpan());
         } else {
@@ -346,7 +329,7 @@ public:
   void copy(const VariableConcept &other, const Dim dim,
             const gsl::index offset, const gsl::index otherBegin,
             const gsl::index otherEnd) override {
-    auto iterDims = dimensions();
+    auto iterDims = this->dimensions();
     const gsl::index delta = otherEnd - otherBegin;
     if (iterDims.contains(dim))
       iterDims.resize(dim, delta);
@@ -355,7 +338,7 @@ public:
     auto otherView = otherT.getView(iterDims, dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    if (isContiguous() && iterDims.isContiguousIn(dimensions())) {
+    if (this->isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
       auto target = getSpan(dim, offset, offset + delta);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
         auto source = otherT.getSpan(dim, otherBegin, otherEnd);
@@ -373,15 +356,23 @@ public:
       }
     }
   }
+};
+
+template <class T> class NumberVariableConceptT : public VariableConceptT<T> {
+public:
+  using VariableConceptT<T>::VariableConceptT;
 
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
     // Dimensions of *this and old are guaranteed to be the same.
-    const auto &oldT = dynamic_cast<const VariableConceptT &>(old);
-    const auto &oldCoordT = dynamic_cast<const VariableConceptT &>(oldCoord);
-    const auto &newCoordT = dynamic_cast<const VariableConceptT &>(newCoord);
-    if (dimensions().label(0) == dim && oldCoord.dimensions().count() == 1 &&
+    const auto &oldT = dynamic_cast<const NumberVariableConceptT &>(old);
+    const auto &oldCoordT =
+        dynamic_cast<const NumberVariableConceptT &>(oldCoord);
+    const auto &newCoordT =
+        dynamic_cast<const NumberVariableConceptT &>(newCoord);
+    if (this->dimensions().label(0) == dim &&
+        oldCoord.dimensions().count() == 1 &&
         newCoord.dimensions().count() == 1) {
       RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
     } else {
@@ -389,12 +380,12 @@ public:
       oldCoordDims.resize(dim, oldCoordDims[dim] - 1);
       auto newCoordDims = newCoord.dimensions();
       newCoordDims.resize(dim, newCoordDims[dim] - 1);
-      auto oldCoordView = oldCoordT.getView(dimensions());
-      auto newCoordView = newCoordT.getView(dimensions());
+      auto oldCoordView = oldCoordT.getView(this->dimensions());
+      auto newCoordView = newCoordT.getView(this->dimensions());
       const auto oldOffset = oldCoordDims.offset(dim);
       const auto newOffset = newCoordDims.offset(dim);
 
-      RebinHelper<T>::rebin(dim, oldT.getSpan(), getSpan(), oldCoordView,
+      RebinHelper<T>::rebin(dim, oldT.getSpan(), this->getSpan(), oldCoordView,
                             oldOffset, newCoordView, newOffset);
     }
   }
@@ -414,13 +405,12 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
 }
 
 /// Implementation of VariableConcept that holds data.
-template <class T>
-class DataModel : public VariableConceptT<typename T::value_type> {
+template <class T> class DataModel : public conceptT_t<typename T::value_type> {
   using value_type = std::remove_const_t<typename T::value_type>;
 
 public:
   DataModel(const Dimensions &dimensions, T model)
-      : VariableConceptT<typename T::value_type>(std::move(dimensions)),
+      : conceptT_t<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
     if (this->dimensions().volume() != static_cast<gsl::index>(m_model.size()))
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -503,7 +493,7 @@ public:
 /// Implementation of VariableConcept that represents a view onto data.
 template <class T>
 class ViewModel
-    : public VariableConceptT<std::remove_const_t<typename T::value_type>> {
+    : public conceptT_t<std::remove_const_t<typename T::value_type>> {
   using value_type = std::remove_const_t<typename T::value_type>;
 
   void requireMutable() const {
@@ -519,7 +509,7 @@ class ViewModel
 
 public:
   ViewModel(const Dimensions &dimensions, T model)
-      : VariableConceptT<value_type>(std::move(dimensions)),
+      : conceptT_t<value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -604,9 +594,8 @@ public:
 
   std::unique_ptr<VariableConcept>
   cloneMutable(VariableConcept &mutableData) const override {
-    auto *data = dynamic_cast<VariableConceptT<value_type> &>(mutableData)
-                     .getSpan()
-                     .data();
+    auto *data =
+        dynamic_cast<conceptT_t<value_type> &>(mutableData).getSpan().data();
     return std::make_unique<ViewModel<VariableView<value_type>>>(
         this->dimensions(), m_model.createMutable(data));
   }
@@ -1047,7 +1036,8 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
   dims.resize(dim, newCoord.dimensions()[dim] - 1);
   rebinned.setDimensions(dims);
   // TODO take into account unit if values have been divided by bin width.
-  rebinned.data().rebin(var.data(), dim, oldCoord.data(), newCoord.data());
+  dynamic_cast<NumberVariableConcept &>(rebinned.data())
+      .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
   return rebinned;
 }
 
