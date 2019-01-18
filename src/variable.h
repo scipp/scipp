@@ -24,6 +24,11 @@ class Variable;
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableSlice. This is using so-called
 /// concept-based polymorphism, see talks by Sean Parent.
+///
+/// This is the most generic representation for a multi-dimensional array of
+/// data. Depending on the item type more functionality such as binary
+/// operations is supported. Virtual methods for these are added in
+/// child-classes. See, e.g., `ArithmeticVariableConcept`.
 class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);

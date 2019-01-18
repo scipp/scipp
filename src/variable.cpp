@@ -127,6 +127,8 @@ template <class T> struct RebinHelper {
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
+// Some types such as Dataset support `+` (effectively appending table rows),
+// but are not arithmetic.
 class AddableVariableConcept : public VariableConcept {
 public:
   static constexpr const char *name = "addable";
