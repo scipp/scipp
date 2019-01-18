@@ -53,9 +53,6 @@ public:
   virtual bool isView() const = 0;
   virtual bool isConstView() const = 0;
 
-  virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
-  virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
-  virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
   virtual gsl::index size() const = 0;
   virtual void copy(const VariableConcept &other, const Dim dim,
                     const gsl::index offset, const gsl::index otherBegin,

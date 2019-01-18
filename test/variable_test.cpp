@@ -150,7 +150,7 @@ TEST(Variable, operator_plus_equal_different_unit) {
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
   auto a = makeVariable<Data::String>({Dim::X, 1}, {std::string("test")});
   EXPECT_THROW_MSG(a += a, std::runtime_error,
-                   "Cannot add strings. Use append() instead.");
+                   "Cannot apply operation, requires addable type.");
 }
 
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
