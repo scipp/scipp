@@ -276,6 +276,28 @@ public:
   }
 };
 
+std::unique_ptr<VariableGroup> makeGroup(const Tag tag) {
+  switch(tag.value()) {
+    case Data::Value{}:
+    case Data::Variance{}:
+      return std::make_unique<ValueWithError>();
+    default:
+      return std::make_unique<VariableGroup>();
+  }
+};
+
+template <class T>
+std::unique_ptr<VariableGroup> getGroup(T1 &dataset, const Tag tag, const std::string&name) {
+for(const auto t : tagSiblings(tag)) {
+  // dynamically create correct VariableGroup child class
+  // find and add to group if available
+  // throw if group leading tag not found
+}
+// processing done via lead, return empty group
+if (not_lead(tag))
+  return nullptr;
+}
+
 /// Unified implementation for any in-place binary operation that requires
 /// adding variances (+= and -=).
 template <class Op, class T1, class T2>
