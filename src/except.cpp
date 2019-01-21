@@ -95,6 +95,12 @@ std::string to_string(const Unit &unit) {
   }
 }
 
+std::string to_string(const Variable &variable) {
+  std::string s("Variable(");
+  s += to_string(variable.tag()) + ", " + variable.name() + ")";
+  return s;
+}
+
 std::string to_string(const Dataset &dataset) {
   std::string s("Dataset with ");
   s += std::to_string(dataset.size()) + " variables";
@@ -150,6 +156,12 @@ UnitMismatchError::UnitMismatchError(const Unit &a, const Unit &b)
 } // namespace except
 
 namespace expect {
+void dimensionMatches(const Dimensions &dims, const Dim dim,
+                      const gsl::index length) {
+  if (dims[dim] != length)
+    throw except::DimensionLengthError(dims, dim, length);
+}
+
 void equals(const Unit &a, const Unit &b) {
   if (!(a == b))
     throw except::UnitMismatchError(a, b);

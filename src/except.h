@@ -17,12 +17,15 @@ class Dataset;
 class Dimensions;
 class Tag;
 class Unit;
+class Variable;
 
 namespace dataset {
 std::string to_string(const Dim dim);
 std::string to_string(const Dimensions &dims);
 std::string to_string(const Tag tag);
 std::string to_string(const Unit &unit);
+std::string to_string(const Variable &variable);
+std::string to_string(const Dataset &dataset);
 
 namespace except {
 
@@ -66,6 +69,8 @@ struct UnitMismatchError : public UnitError {
 } // namespace except
 
 namespace expect {
+void dimensionMatches(const Dimensions &dims, const Dim dim,
+                      const gsl::index length);
 void equals(const Unit &a, const Unit &b);
 
 template <class T> void contains(const T &a, const T &b) {

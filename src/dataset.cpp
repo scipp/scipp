@@ -593,6 +593,93 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   return out;
 }
 
+Dataset histogram(const Variable &var, const Variable &coord) {
+  // TODO Is there are more generic way to find "histogrammable" data, not
+  // specific to (neutron) events? Something like Data::ValueVector, i.e., any
+  // data variable that contains a vector of values at each point?
+  const auto &events = var.get<const Data::Events>();
+  // TODO This way of handling events (and their units) as nested Dataset feels
+  // a bit unwieldy. Would it be a better option to store TOF (or any derived
+  // values) as simple vectors in Data::Events? There would be a separate
+  // Data::PulseTimes (and Data::EventWeights). This can then be of arbitrary
+  // type, unit conversion is reflected in the unit of Data::Events. The
+  // implementation of `histogram` would then also be simplified since we do not
+  // need to distinguish between Data::Tof, etc. (which we are anyway not doing
+  // currently).
+  dataset::expect::equals(events[0](Data::Tof{}).unit(), coord.unit());
+
+  // TODO Can we reuse some code for bin handling from DatasetView?
+  const auto binDim = coordDimension[coord.tag().value()];
+  const gsl::index nBin = coord.dimensions()[binDim] - 1;
+  Dimensions dims = var.dimensions();
+  // Note that the event list contains, e.g, time-of-flight values, but *not* as
+  // a coordinate. Therefore, it should not depend on, e.g., Dim::Tof.
+  if (dims.contains(binDim))
+    throw std::runtime_error(
+        "Data to histogram depends on histogram dimension.");
+  for (const auto &dim : coord.dimensions().labels()) {
+    if (dim != binDim) {
+      dataset::expect::dimensionMatches(dims, dim, coord.dimensions()[dim]);
+    }
+  }
+
+  dims.addInner(binDim, nBin);
+  const gsl::index nextEdgeOffset = coord.dimensions().offset(binDim);
+
+  Dataset hist;
+  hist.insert(coord);
+  hist.insert<Data::Value>(var.name(), dims);
+
+  // Counts has outer dimensions as input, with a new inner dimension given by
+  // the binning dimensions. We iterate over all dimensions as a flat array.
+  auto counts = hist.get<Data::Value>(var.name());
+  gsl::index cur = 0;
+  // The helper `getView` allows us to ignore the tag of coord, as long as the
+  // underlying type is `double`. We view the edges with the same dimensions as
+  // the output. This abstracts the differences between either a shared binning
+  // axis or a potentially different binning for each event list.
+  // TODO Need to add a branch for the `float` case.
+  const auto edges = getView<double>(coord, dims);
+  auto edge = edges.begin();
+  for (const auto &eventList : events) {
+    const auto tofs = eventList.get<const Data::Tof>();
+    if (!std::is_sorted(tofs.begin(), tofs.end()))
+      throw std::runtime_error(
+          "TODO: Histograms can currently only be created from sorted data.");
+    auto left = *edge;
+    auto begin = std::lower_bound(tofs.begin(), tofs.end(), left);
+    for (gsl::index bin = 0; bin < nBin; ++bin) {
+      // The iterator cannot see the last edge, we must add the offset to the
+      // memory location, *not* to the iterator.
+      const auto right = *(&*edge + nextEdgeOffset);
+      if (right < left)
+        throw std::runtime_error(
+            "Coordinate used for binning is not increasing.");
+      const auto end = std::upper_bound(begin, tofs.end(), right);
+      counts[cur] = std::distance(begin, end);
+      begin = end;
+      left = right;
+      ++edge;
+      ++cur;
+    }
+  }
+
+  // TODO Would need to add handling for weighted events etc. here.
+  hist.insert<Data::Variance>(var.name(), dims, counts.begin(), counts.end());
+  return hist;
+}
+
+Dataset histogram(const Dataset &d, const Variable &coord) {
+  Dataset hist;
+  for (const auto &var : d)
+    if (var.tag() == Data::Events{})
+      hist.merge(histogram(var, coord));
+  if (hist.size() == 0)
+    throw std::runtime_error("Dataset does not contain any variables with "
+                             "event data, cannot histogram.");
+  return hist;
+}
+
 // We can specialize this to switch to a more efficient variant when sorting
 // datasets that represent events lists, using LinearView.
 template <class Tag> struct Sort {

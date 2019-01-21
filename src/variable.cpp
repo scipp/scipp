@@ -1100,3 +1100,10 @@ Variable mean(const Variable &var, const Dim dim) {
   double scale = 1.0 / static_cast<double>(var.dimensions()[dim]);
   return summed * makeVariable<Data::Value>({}, {scale});
 }
+
+template <>
+VariableView<const double> getView<double>(const Variable &var,
+                                           const Dimensions &dims) {
+  return dynamic_cast<const VariableConceptT<double> &>(var.data())
+      .getView(dims);
+}

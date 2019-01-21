@@ -394,6 +394,7 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim);
 Dataset convert(const Dataset &d, const Dim from, const Dim to);
 // Not verified, likely wrong in some cases
 Dataset rebin(const Dataset &d, const Variable &newCoord);
+Dataset histogram(const Dataset &d, const Variable &coord);
 
 Dataset sort(const Dataset &d, const Tag t, const std::string &name = "");
 // Note: Can provide stable_sort for sorting by multiple columns, e.g., for a
