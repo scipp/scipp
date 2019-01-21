@@ -874,8 +874,8 @@ template <class T> VariableSlice VariableSlice::assign(const T &other) {
   if (tag() != other.tag())
     throw std::runtime_error("Cannot assign to slice: Type mismatch.");
   // Name mismatch ok, but do not assign it.
-  if (unit() != other.unit())
-    throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
+  // Unit mismatch will lead to failure when assigning to partial slice.
+  setUnit(other.unit());
   if (dimensions() != other.dimensions())
     throw dataset::except::DimensionMismatchError(dimensions(),
                                                   other.dimensions());

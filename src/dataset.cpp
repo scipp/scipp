@@ -179,6 +179,103 @@ VariableSlice DatasetSlice::operator()(const Tag tag, const std::string &name) {
   return VariableSlice(operator[](find(*this, tag, name)));
 }
 
+namespace aligned {
+// Helpers to define a pointer to aligned memory.
+// alignas cannot be used like this, e.g., clang rejects it. Need to find
+// another way.
+// template <class T> using type alignas(32) = T;
+template <class T> using type = T;
+template <class T> using ptr = type<T> *;
+
+// Using restrict does not seem to help much?
+#define RESTRICT __restrict
+void multiply(const gsl::index size, ptr<double> RESTRICT v1,
+              ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
+              ptr<const double> RESTRICT e2) {
+  for (gsl::index i = 0; i < size; ++i) {
+    e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
+    v1[i] *= v2[i];
+  }
+}
+} // namespace aligned
+
+class ConstVariableGroup {
+public:
+  ConstVariableGroup(std::initializer_list<const ConstVariableSlice *> vars)
+      : m_vars(vars.begin(), vars.end()) {}
+  virtual ~ConstVariableGroup() = default;
+
+  std::vector<const ConstVariableSlice *> m_vars;
+};
+
+template <class T> class VariableGroup {
+public:
+  VariableGroup(std::initializer_list<T *> vars)
+      : m_vars(vars.begin(), vars.end()) {}
+  virtual ~VariableGroup() = default;
+
+  virtual void operator+=(const ConstVariableGroup &other) const {
+    *m_vars[0] += *other.m_vars[0];
+  }
+  virtual void operator-=(const ConstVariableGroup &other) const {
+    *m_vars[0] -= *other.m_vars[0];
+  }
+  virtual void operator*=(const ConstVariableGroup &other) const {
+    *m_vars[0] *= *other.m_vars[0];
+  }
+
+  std::vector<T *> m_vars;
+};
+
+template <class T> class ValueWithError : public VariableGroup<T> {
+public:
+  ValueWithError(T &value, T &error) : VariableGroup<T>{&value, &error} {
+    if (this->m_vars.size() != 2)
+      throw std::runtime_error("Value without uncertainty.");
+    assert(m_vars[0].tag() == Data::Value);
+    assert(m_vars[1].tag() == Data::Variance);
+  }
+
+  void operator+=(const ConstVariableGroup &other) const override {
+    *this->m_vars[0] += *other.m_vars[0];
+    *this->m_vars[1] += *other.m_vars[1];
+  }
+  void operator-=(const ConstVariableGroup &other) const override {
+    *this->m_vars[0] -= *other.m_vars[0];
+    *this->m_vars[1] += *other.m_vars[1];
+  }
+  void operator*=(const ConstVariableGroup &other) const override {
+    auto &var1 = *this->m_vars[0];
+    auto &var2 = *other.m_vars[0];
+    auto &error1 = *this->m_vars[1];
+    auto &error2 = *other.m_vars[1];
+    if ((var1.dimensions() == var2.dimensions()) &&
+        (var1.dimensions() == error1.dimensions()) &&
+        (var1.dimensions() == error2.dimensions())) {
+      // Optimization if all dimensions match, avoiding allocation of
+      // temporaries and redundant streaming from memory of large array.
+      error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
+                     var1.unit() * var1.unit() * error2.unit());
+      var1.setUnit(var1.unit() * var2.unit());
+
+      // TODO We are working with VariableSlice here, so get<> returns a
+      // view, not a span, i.e., it is less efficient. May need to do this
+      // differently for optimal performance.
+      auto v1 = var1.template get<Data::Value>();
+      const auto v2 = var2.template get<const Data::Value>();
+      auto e1 = error1.template get<Data::Variance>();
+      const auto e2 = error2.template get<const Data::Variance>();
+      // TODO Need to ensure that data is contiguous!
+      aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
+    } else {
+      // TODO: Catch errors from unit propagation here and give a better error
+      // message?
+      var1.assign(error1 * (var2 * var2) + error2 * (var1 * var1));
+      var1 *= var2;
+    }
+  }
+};
+
 /// Unified implementation for any in-place binary operation that requires
 /// adding variances (+= and -=).
 template <class Op, class T1, class T2>
@@ -248,26 +345,6 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
   return dataset;
 }
 
-namespace aligned {
-// Helpers to define a pointer to aligned memory.
-// alignas cannot be used like this, e.g., clang rejects it. Need to find
-// another way.
-// template <class T> using type alignas(32) = T;
-template <class T> using type = T;
-template <class T> using ptr = type<T> *;
-
-// Using restrict does not seem to help much?
-#define RESTRICT __restrict
-void multiply(const gsl::index size, ptr<double> RESTRICT v1,
-              ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
-              ptr<const double> RESTRICT e2) {
-  for (gsl::index i = 0; i < size; ++i) {
-    e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
-    v1[i] *= v2[i];
-  }
-}
-} // namespace aligned
-
 template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
   // See operator+= for additional comments.
   for (const auto &var2 : other) {
@@ -305,35 +382,10 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
           auto error_index2 = find(other, Data::Variance{}, var2.name());
           auto error1 = dataset[error_index1];
           const auto &error2 = other[error_index2];
-          if ((var1.dimensions() == var2.dimensions()) &&
-              (var1.dimensions() == error1.dimensions()) &&
-              (var1.dimensions() == error2.dimensions())) {
-            // Optimization if all dimensions match, avoiding allocation of
-            // temporaries and redundant streaming from memory of large array.
-            error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
-                           var1.unit() * var1.unit() * error2.unit());
-            var1.setUnit(var1.unit() * var2.unit());
 
-            // TODO We are working with VariableSlice here, so get<> returns a
-            // view, not a span, i.e., it is less efficient. May need to do this
-            // differently for optimal performance.
-            auto v1 = var1.template get<Data::Value>();
-            const auto v2 = var2.template get<const Data::Value>();
-            auto e1 = error1.template get<Data::Variance>();
-            const auto e2 = error2.template get<const Data::Variance>();
-            // TODO Need to ensure that data is contiguous!
-            aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
-                              e2.data());
-          } else {
-            // TODO Do we need to write this differently if the two operands are
-            // the same? For example,
-            // error1 = error1 * (var2 * var2) + var1 * var1 * error2;
-            error1 *= (var2 * var2);
-            error1 += var1 * var1 * error2;
-            // TODO: Catch errors from unit propagation here and give a better
-            // error message.
-            var1 *= var2;
-          }
+          const ValueWithError<VariableSlice> vars1(var1, error1);
+          const ConstVariableGroup vars2{&var2, &error2};
+          vars1 *= vars2;
         } else {
           // No variance found, continue without.
           var1 *= var2;
@@ -449,7 +501,8 @@ DatasetSlice DatasetSlice::assign(const ConstDatasetSlice &other) {
 
 DatasetSlice DatasetSlice::operator+=(const Dataset &other) {
   return binary_op_equals(
-      [](VariableSlice &a, const Variable &b) { return a += b; }, *this, other);
+      [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
+      *this, other);
 }
 DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) {
   return binary_op_equals(
@@ -465,7 +518,8 @@ DatasetSlice DatasetSlice::operator+=(const double value) {
 
 DatasetSlice DatasetSlice::operator-=(const Dataset &other) {
   return binary_op_equals(
-      [](VariableSlice &a, const Variable &b) { return a -= b; }, *this, other);
+      [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
+      *this, other);
 }
 DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) {
   return binary_op_equals(
