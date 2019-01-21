@@ -612,6 +612,8 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   const auto binDim = coordDimension[coord.tag().value()];
   const gsl::index nBin = coord.dimensions()[binDim] - 1;
   Dimensions dims = var.dimensions();
+  // Note that the event list contains, e.g, time-of-flight values, but *not* as
+  // a coordinate. Therefore, it should not depend on, e.g., Dim::Tof.
   if (dims.contains(binDim))
     throw std::runtime_error(
         "Data to histogram depends on histogram dimension.");
@@ -628,10 +630,14 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   hist.insert(coord);
   hist.insert<Data::Value>(var.name(), dims);
 
+  // Counts has outer dimensions as input, with a new inner dimension given by
+  // the binning dimensions. We iterate over all dimensions as a flat array.
   auto counts = hist.get<Data::Value>(var.name());
   gsl::index cur = 0;
   // The helper `getView` allows us to ignore the tag of coord, as long as the
-  // underlying type is `double`.
+  // underlying type is `double`. We view the edges with the same dimensions as
+  // the output. This abstracts the differences between either a shared binning
+  // axis or a potentially different binning for each event list.
   // TODO Need to add a branch for the `float` case.
   const auto edges = getView<double>(coord, dims);
   auto edge = edges.begin();
