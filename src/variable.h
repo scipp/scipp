@@ -468,10 +468,13 @@ public:
   template <class T> VariableSlice assign(const T &other);
   VariableSlice operator+=(const Variable &other);
   VariableSlice operator+=(const ConstVariableSlice &other);
+  VariableSlice operator+=(const double value);
   VariableSlice operator-=(const Variable &other);
   VariableSlice operator-=(const ConstVariableSlice &other);
+  VariableSlice operator-=(const double value);
   VariableSlice operator*=(const Variable &other);
   VariableSlice operator*=(const ConstVariableSlice &other);
+  VariableSlice operator*=(const double value);
 
   void setUnit(const Unit &unit);
 

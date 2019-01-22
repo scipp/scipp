@@ -1041,3 +1041,19 @@ TEST(Variable, access_typed_view_edges) {
     EXPECT_EQ(values[8 + 2 * z + 1], 5);
   }
 }
+
+TEST(VariableSlice, scalar_operations) {
+  auto var = makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 3}},
+                                       {11, 12, 13, 21, 22, 23});
+
+  var(Dim::X, 0) += 1;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 13, 22, 22, 23}));
+  var(Dim::Y, 1) += 1;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 13, 23, 23, 24}));
+  var(Dim::X, 1, 3) += 1;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 13, 14, 23, 24, 25}));
+  var(Dim::X, 1) -= 1;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 14, 23, 23, 25}));
+  var(Dim::X, 2) *= 0;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 0, 23, 23, 0}));
+}

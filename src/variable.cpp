@@ -851,6 +851,11 @@ VariableSlice VariableSlice::operator+=(const Variable &other) {
 VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) {
   return plus_equals(*this, other);
 }
+VariableSlice VariableSlice::operator+=(const double value) {
+  Variable other(Data::Value{}, {}, {value});
+  other.setUnit(Unit::Id::Dimensionless);
+  return plus_equals(*this, other);
+}
 
 VariableSlice VariableSlice::operator-=(const Variable &other) {
   return minus_equals(*this, other);
@@ -858,11 +863,21 @@ VariableSlice VariableSlice::operator-=(const Variable &other) {
 VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) {
   return minus_equals(*this, other);
 }
+VariableSlice VariableSlice::operator-=(const double value) {
+  Variable other(Data::Value{}, {}, {value});
+  other.setUnit(Unit::Id::Dimensionless);
+  return minus_equals(*this, other);
+}
 
 VariableSlice VariableSlice::operator*=(const Variable &other) {
   return times_equals(*this, other);
 }
 VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) {
+  return times_equals(*this, other);
+}
+VariableSlice VariableSlice::operator*=(const double value) {
+  Variable other(Data::Value{}, {}, {value});
+  other.setUnit(Unit::Id::Dimensionless);
   return times_equals(*this, other);
 }
 
