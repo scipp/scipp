@@ -681,7 +681,7 @@ Dataset histogram(const Dataset &d, const Variable &coord) {
 }
 
 // We can specialize this to switch to a more efficient variant when sorting
-// datasets that represent events lists, using LinearView.
+// datasets that represent events lists, using ZipView.
 template <class Tag> struct Sort {
   static Dataset apply(const Dataset &d, const std::string &name) {
     auto const_axis = d.get<const Tag>(name);
