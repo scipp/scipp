@@ -139,6 +139,20 @@ public:
   Variable(TagT tag, const Dimensions &dimensions,
            Vector<typename TagT::type> object)
       : Variable(tag, TagT::unit, std::move(dimensions), std::move(object)) {}
+  template <class TagT, class... Args>
+  Variable(TagT tag, const Dimensions &dimensions, Args &&... args)
+      : Variable(tag, TagT::unit, std::move(dimensions),
+                 Vector<typename TagT::type>(std::forward<Args>(args)...)) {}
+  template <class TagT, class T>
+  Variable(TagT tag, const Dimensions &dimensions,
+           std::initializer_list<T> values)
+      : Variable(tag, TagT::unit, std::move(dimensions),
+                 Vector<typename TagT::type>(values.begin(), values.end())) {}
+  template <class TagT, class T>
+  Variable(TagT tag, const Dimensions &dimensions, const std::vector<T> &values)
+      : Variable(tag, TagT::unit, std::move(dimensions),
+                 // Copy to aligned memory.
+                 Vector<typename TagT::type>(values.begin(), values.end())) {}
 
   template <class T>
   Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,

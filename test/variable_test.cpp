@@ -13,8 +13,9 @@
 #include "variable.h"
 
 TEST(Variable, construct) {
-  ASSERT_NO_THROW(makeVariable<Data::Value>(Dimensions(Dim::Tof, 2), 2));
-  const auto a = makeVariable<Data::Value>(Dimensions(Dim::Tof, 2), 2);
+  ASSERT_NO_THROW(Variable(Data::Value{}, Dimensions(Dim::Tof, 2)));
+  ASSERT_NO_THROW(Variable(Data::Value{}, Dimensions(Dim::Tof, 2), 2));
+  const Variable a(Data::Value{}, Dimensions(Dim::Tof, 2));
   const auto &data = a.get<const Data::Value>();
   EXPECT_EQ(data.size(), 2);
 }
