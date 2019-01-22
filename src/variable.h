@@ -171,6 +171,7 @@ public:
   Variable &operator+=(const double value) &;
   Variable &operator-=(const Variable &other) &;
   Variable &operator-=(const ConstVariableSlice &other) &;
+  Variable &operator-=(const double value) &;
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const ConstVariableSlice &other) &;
   Variable &operator*=(const double value) &;
@@ -500,6 +501,12 @@ Variable operator*(Variable a, const Variable &b);
 Variable operator+(Variable a, const ConstVariableSlice &b);
 Variable operator-(Variable a, const ConstVariableSlice &b);
 Variable operator*(Variable a, const ConstVariableSlice &b);
+Variable operator+(Variable a, const double b);
+Variable operator-(Variable a, const double b);
+Variable operator*(Variable a, const double b);
+Variable operator+(const double a, Variable b);
+Variable operator-(const double a, Variable b);
+Variable operator*(const double a, Variable b);
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);

@@ -805,6 +805,10 @@ Variable &Variable::operator-=(const Variable &other) & {
 Variable &Variable::operator-=(const ConstVariableSlice &other) & {
   return minus_equals(*this, other);
 }
+Variable &Variable::operator-=(const double value) & {
+  Variable other(Data::Value{}, {}, {value});
+  return minus_equals(*this, other);
+}
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   dataset::expect::contains(variable.dimensions(), other.dimensions());
@@ -981,6 +985,12 @@ Variable operator*(Variable a, const Variable &b) { return a *= b; }
 Variable operator+(Variable a, const ConstVariableSlice &b) { return a += b; }
 Variable operator-(Variable a, const ConstVariableSlice &b) { return a -= b; }
 Variable operator*(Variable a, const ConstVariableSlice &b) { return a *= b; }
+Variable operator+(Variable a, const double b) { return a += b; }
+Variable operator-(Variable a, const double b) { return a -= b; }
+Variable operator*(Variable a, const double b) { return a *= b; }
+Variable operator+(const double a, Variable b) { return b += a; }
+Variable operator-(const double a, Variable b) { return -(b -= a); }
+Variable operator*(const double a, Variable b) { return b *= a; }
 
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
