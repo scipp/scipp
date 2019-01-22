@@ -359,6 +359,12 @@ Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
+Dataset &Dataset::operator+=(const double value) {
+  for (auto &var : m_variables)
+    if (var.tag() == Data::Value{})
+      var += value;
+  return *this;
+}
 
 Dataset &Dataset::operator-=(const Dataset &other) {
   return binary_op_equals(
@@ -370,12 +376,26 @@ Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
+Dataset &Dataset::operator-=(const double value) {
+  for (auto &var : m_variables)
+    if (var.tag() == Data::Value{})
+      var -= value;
+  return *this;
+}
 
 Dataset &Dataset::operator*=(const Dataset &other) {
   return times_equals(*this, other);
 }
 Dataset &Dataset::operator*=(const ConstDatasetSlice &other) {
   return times_equals(*this, other);
+}
+Dataset &Dataset::operator*=(const double value) {
+  for (auto &var : m_variables)
+    if (var.tag() == Data::Value{})
+      var *= value;
+    else if (var.tag() == Data::Variance{})
+      var *= value * value;
+  return *this;
 }
 
 bool ConstDatasetSlice::contains(const Tag tag, const std::string &name) const {

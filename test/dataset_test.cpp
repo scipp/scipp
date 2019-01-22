@@ -1073,3 +1073,33 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
       view_a_x13 -= view_a_x02, std::runtime_error,
       "Coordinates of datasets do not match. Cannot perform binary operation.");
 }
+
+TEST(Dataset, binary_assign_with_scalar) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 2}, {1, 2});
+  d.insert<Data::Value>("a", {Dim::X, 2}, {1, 2});
+  d.insert<Data::Value>("b", {}, {3});
+  d.insert<Data::Variance>("a", {Dim::X, 2}, {4, 5});
+  d.insert<Data::Variance>("b", {}, {6});
+
+  d += 1;
+  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {2, 3}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {4}));
+  // Scalar treated as having 0 variance, `+` leaves variance unchanged.
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {4, 5}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {6}));
+
+  d -= 2;
+  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {0, 1}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {2}));
+  // Scalar treated as having 0 variance, `-` leaves variance unchanged.
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {4, 5}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {6}));
+
+  d *= 2;
+  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {0, 2}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {4}));
+  // Scalar treated as having 0 variance, `*` affects variance.
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {16, 20}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {24}));
+}
