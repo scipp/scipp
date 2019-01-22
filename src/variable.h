@@ -389,6 +389,7 @@ public:
   bool operator==(const ConstVariableSlice &other) const;
   bool operator!=(const Variable &other) const;
   bool operator!=(const ConstVariableSlice &other) const;
+  Variable operator-() const;
 
 protected:
   friend class Variable;

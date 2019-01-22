@@ -92,6 +92,14 @@ TEST(Variable, operator_unary_minus) {
   EXPECT_EQ(b.get<const Data::Value>()[1], -2.2);
 }
 
+TEST(VariableSlice, unary_minus) {
+  const Variable a(Data::Value{}, {Dim::X, 2}, {1.1, 2.2});
+  auto b = -a(Dim::X, 1);
+  EXPECT_EQ(a.get<const Data::Value>()[0], 1.1);
+  EXPECT_EQ(a.get<const Data::Value>()[1], 2.2);
+  EXPECT_EQ(b.get<const Data::Value>()[0], -2.2);
+}
+
 TEST(Variable, operator_plus_equal) {
   auto a = makeVariable<Data::Value>({Dim::X, 2}, {1.1, 2.2});
 

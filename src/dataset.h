@@ -161,6 +161,7 @@ public:
   const Dimensions &dimensions() const & { return m_dimensions; }
 
   bool operator==(const Dataset &other) const;
+  Dataset operator-() const;
   Dataset &operator+=(const Dataset &other);
   Dataset &operator+=(const ConstDatasetSlice &other);
   Dataset &operator+=(const double value);
@@ -301,6 +302,8 @@ public:
     return std::equal(begin(), end(), other.begin(), other.end());
   }
 
+  Dataset operator-() const;
+
 protected:
   const Dataset &m_dataset;
   std::vector<gsl::index> m_indices;
@@ -391,8 +394,17 @@ private:
 };
 
 Dataset operator+(Dataset a, const Dataset &b);
+Dataset operator+(Dataset a, const ConstDatasetSlice &b);
+Dataset operator+(Dataset a, const double b);
+Dataset operator+(const double a, Dataset b);
 Dataset operator-(Dataset a, const Dataset &b);
+Dataset operator-(Dataset a, const ConstDatasetSlice &b);
+Dataset operator-(Dataset a, const double b);
+Dataset operator-(const double a, Dataset b);
 Dataset operator*(Dataset a, const Dataset &b);
+Dataset operator*(Dataset a, const ConstDatasetSlice &b);
+Dataset operator*(Dataset a, const double b);
+Dataset operator*(const double a, Dataset b);
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices);
 Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim);

@@ -901,6 +901,11 @@ bool ConstVariableSlice::operator!=(const ConstVariableSlice &other) const {
   return !(*this == other);
 }
 
+Variable ConstVariableSlice::operator-() const {
+  Variable copy(*this);
+  return -copy;
+}
+
 void VariableSlice::setUnit(const Unit &unit) {
   // TODO Should we forbid setting the unit altogether? I think it is useful in
   // particular since views onto subsets of dataset do not imply slicing of

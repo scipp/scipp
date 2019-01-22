@@ -349,6 +349,12 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
   return dataset;
 }
 
+Dataset Dataset::operator-() const {
+  auto copy(*this);
+  copy *= -1.0;
+  return copy;
+}
+
 Dataset &Dataset::operator+=(const Dataset &other) {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
@@ -429,6 +435,11 @@ template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
   return dataset;
 }
 
+Dataset ConstDatasetSlice::operator-() const {
+  Dataset copy(*this);
+  return -copy;
+}
+
 DatasetSlice DatasetSlice::assign(const Dataset &other) {
   return ::assign(*this, other);
 }
@@ -486,6 +497,15 @@ DatasetSlice DatasetSlice::operator*=(const double value) {
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
 Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
 Dataset operator*(Dataset a, const Dataset &b) { return a *= b; }
+Dataset operator+(Dataset a, const ConstDatasetSlice &b) { return a += b; }
+Dataset operator-(Dataset a, const ConstDatasetSlice &b) { return a -= b; }
+Dataset operator*(Dataset a, const ConstDatasetSlice &b) { return a *= b; }
+Dataset operator+(Dataset a, const double b) { return a += b; }
+Dataset operator-(Dataset a, const double b) { return a -= b; }
+Dataset operator*(Dataset a, const double b) { return a *= b; }
+Dataset operator+(const double a, Dataset b) { return b += a; }
+Dataset operator-(const double a, Dataset b) { return -(b -= a); }
+Dataset operator*(const double a, Dataset b) { return b *= a; }
 
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {
