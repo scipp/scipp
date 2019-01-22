@@ -1103,3 +1103,39 @@ TEST(Dataset, binary_assign_with_scalar) {
   EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {16, 20}));
   EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {24}));
 }
+
+TEST(DatasetSlice, binary_assign_with_scalar) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 2}, {1, 2});
+  d.insert<Data::Value>("a", {Dim::X, 2}, {1, 2});
+  d.insert<Data::Value>("b", {}, {3});
+  d.insert<Data::Variance>("a", {Dim::X, 2}, {4, 5});
+  d.insert<Data::Variance>("b", {}, {6});
+
+  auto slice = d(Dim::X, 1);
+
+  slice += 1;
+  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {1, 3}));
+  // TODO This behavior should be reconsidered and probably change: A slice
+  // should not include variables that do not have the dimension, otherwise,
+  // e.g., looping over slices will apply an operation to that variable more
+  // than once.
+  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {4}));
+  // Scalar treated as having 0 variance, `+` leaves variance unchanged.
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {4, 5}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {6}));
+
+  slice -= 2;
+  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {1, 1}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {2}));
+  // Scalar treated as having 0 variance, `-` leaves variance unchanged.
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {4, 5}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {6}));
+
+  slice *= 2;
+  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {1, 2}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {4}));
+  // Scalar treated as having 0 variance, `*` affects variance.
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {4, 20}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {24}));
+}

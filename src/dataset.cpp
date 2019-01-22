@@ -445,6 +445,12 @@ DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
+DatasetSlice DatasetSlice::operator+=(const double value) {
+  for (auto var : *this)
+    if (var.tag() == Data::Value{})
+      var += value;
+  return *this;
+}
 
 DatasetSlice DatasetSlice::operator-=(const Dataset &other) {
   return binary_op_equals(
@@ -455,12 +461,26 @@ DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
+DatasetSlice DatasetSlice::operator-=(const double value) {
+  for (auto var : *this)
+    if (var.tag() == Data::Value{})
+      var -= value;
+  return *this;
+}
 
 DatasetSlice DatasetSlice::operator*=(const Dataset &other) {
   return times_equals(*this, other);
 }
 DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) {
   return times_equals(*this, other);
+}
+DatasetSlice DatasetSlice::operator*=(const double value) {
+  for (auto var : *this)
+    if (var.tag() == Data::Value{})
+      var *= value;
+    else if (var.tag() == Data::Variance{})
+      var *= value * value;
+  return *this;
 }
 
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
