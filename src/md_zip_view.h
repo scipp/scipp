@@ -3,8 +3,8 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#ifndef DATASET_VIEW_H
-#define DATASET_VIEW_H
+#ifndef MD_ZIP_VIEW_H
+#define MD_ZIP_VIEW_H
 
 #include <algorithm>
 #include <cmath>
@@ -31,7 +31,7 @@ template <class T> struct is_bins<Bin<T>> : public std::true_type {};
 template <class T> using is_bins_t = typename is_bins<T>::type;
 
 template <class Tag> struct unit { using type = Unit; };
-template <class... Tags> struct unit<DatasetViewImpl<Tags...>> {
+template <class... Tags> struct unit<MDZipViewImpl<Tags...>> {
   using type = std::tuple<typename unit<Tags>::type...>;
 };
 template <class... Tags> using unit_t = typename unit<Tags...>::type;
@@ -86,8 +86,8 @@ template <> struct ref_type<const Coord::Position> {
 template <> struct ref_type<Data::StdDev> {
   using type = typename ref_type<const Data::Variance>::type;
 };
-template <class... Tags> struct ref_type<DatasetViewImpl<Tags...>> {
-  using type = std::tuple<const MultiIndex, const DatasetViewImpl<Tags...>,
+template <class... Tags> struct ref_type<MDZipViewImpl<Tags...>> {
+  using type = std::tuple<const MultiIndex, const MDZipViewImpl<Tags...>,
                           std::tuple<typename ref_type<Tags>::type...>>;
 };
 template <class T> using ref_type_t = typename ref_type<T>::type;
@@ -145,26 +145,26 @@ template <class Tag> struct ItemHelper<Bin<Tag>> {
   }
 };
 
-template <class... Tags> struct ItemHelper<DatasetViewImpl<Tags...>> {
+template <class... Tags> struct ItemHelper<MDZipViewImpl<Tags...>> {
   template <class Tag>
   static constexpr auto subindex =
       detail::index<Tag, std::tuple<Tags...>>::value;
 
-  static element_return_type_t<DatasetViewImpl<Tags...>>
-  get(const ref_type_t<DatasetViewImpl<Tags...>> &data, gsl::index index) {
-    // Add offset to each span passed to the nested DatasetView.
+  static element_return_type_t<MDZipViewImpl<Tags...>>
+  get(const ref_type_t<MDZipViewImpl<Tags...>> &data, gsl::index index) {
+    // Add offset to each span passed to the nested MDZipView.
     MultiIndex nestedIndex = std::get<0>(data);
     nestedIndex.setIndex(index);
     auto subdata = std::make_tuple(
         SubdataHelper<Tags>::get(std::get<subindex<Tags>>(std::get<2>(data)),
                                  nestedIndex.get<subindex<Tags>>())...);
-    return DatasetViewImpl<Tags...>(std::get<1>(data), subdata);
+    return MDZipViewImpl<Tags...>(std::get<1>(data), subdata);
   }
 };
 
-template <class... Ts> class DatasetViewImpl {
+template <class... Ts> class MDZipViewImpl {
   static_assert(sizeof...(Ts),
-                "DatasetView requires at least one variable for iteration");
+                "MDZipView requires at least one variable for iteration");
 
 private:
   using tags = std::tuple<std::remove_const_t<Ts>...>;
@@ -194,7 +194,7 @@ public:
       // Should we allow passing const?
       static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
                                                 "for tags when accessing "
-                                                "DatasetView::iterator.");
+                                                "MDZipView::iterator.");
       constexpr auto variableIndex = tag_index<Tag>;
       return ItemHelper<maybe_const<Tag>>::get(
           std::get<variableIndex>(*m_variables), m_index.get<variableIndex>());
@@ -247,16 +247,16 @@ public:
     Item m_item;
   };
 
-  DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
-                  const std::string &name,
-                  const std::set<Dim> &fixedDimensions = {});
-  DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
-                  const std::set<Dim> &fixedDimensions = {});
-  DatasetViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
-                  const std::initializer_list<Dim> &fixedDimensions);
+  MDZipViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
+                const std::string &name,
+                const std::set<Dim> &fixedDimensions = {});
+  MDZipViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
+                const std::set<Dim> &fixedDimensions = {});
+  MDZipViewImpl(detail::MaybeConstDataset<Ts...> &dataset,
+                const std::initializer_list<Dim> &fixedDimensions);
 
-  DatasetViewImpl(const DatasetViewImpl &other,
-                  const std::tuple<ref_type_t<Ts>...> &data);
+  MDZipViewImpl(const MDZipViewImpl &other,
+                const std::tuple<ref_type_t<Ts>...> &data);
 
   gsl::index size() const { return std::get<0>(m_variables); }
   iterator begin() const {
@@ -281,7 +281,7 @@ private:
 };
 
 namespace detail {
-// Helpers used for making DatasetView independent of the order used when
+// Helpers used for making MDZipView independent of the order used when
 // specifying tags.
 template <class T> struct type_to_id {
   static constexpr int32_t value =
@@ -291,8 +291,8 @@ template <class T> struct type_to_id<Bin<T>> {
   static constexpr int32_t value =
       std::is_const<T>::value ? 4 * T{}.value() + 2 : 4 * T{}.value() + 4;
 };
-// Nested DatasetView gets an ID based on the IDs of all child tags.
-template <class... Ts> struct type_to_id<DatasetViewImpl<Ts...>> {
+// Nested MDZipView gets an ID based on the IDs of all child tags.
+template <class... Ts> struct type_to_id<MDZipViewImpl<Ts...>> {
   static constexpr std::array<int32_t, sizeof...(Ts)> ids{
       type_to_id<Ts>::value...};
   static constexpr int32_t value =
@@ -341,21 +341,21 @@ template <class... Ts> auto sort_types() {
       std::make_index_sequence<sizeof...(Ts)>{});
 }
 
-// Helper to return either Tag or translate tuple of tags into DatasetView.
+// Helper to return either Tag or translate tuple of tags into MDZipView.
 template <class Tag> struct tag { using type = Tag; };
 template <class... Tags> struct tag<std::tuple<Tags...>> {
-  using type = DatasetViewImpl<Tags...>;
+  using type = MDZipViewImpl<Tags...>;
 };
 
-// Helper to translate (potentially nested) tuple of Tags into DatasetView.
+// Helper to translate (potentially nested) tuple of Tags into MDZipView.
 template <class T> struct dataset_view;
 template <class... Ts> struct dataset_view<std::tuple<Ts...>> {
-  using type = DatasetViewImpl<typename tag<Ts>::type...>;
+  using type = MDZipViewImpl<typename tag<Ts>::type...>;
 };
 } // namespace detail
 
 template <class... Ts>
-using DatasetView =
+using MDZipView =
     typename detail::dataset_view<decltype(detail::sort_types<Ts...>())>::type;
 
-#endif // DATASET_VIEW_H
+#endif // MD_ZIP_VIEW_H

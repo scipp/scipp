@@ -343,9 +343,9 @@ template <class Tags> struct element_return_type<Bin<Tags>> {
   using type = DataBin;
 };
 
-template <class... Ts> class DatasetViewImpl;
-template <class... Tags> struct element_return_type<DatasetViewImpl<Tags...>> {
-  using type = DatasetViewImpl<Tags...>;
+template <class... Ts> class MDZipViewImpl;
+template <class... Tags> struct element_return_type<MDZipViewImpl<Tags...>> {
+  using type = MDZipViewImpl<Tags...>;
 };
 
 template <class Tag>

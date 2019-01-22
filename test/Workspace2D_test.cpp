@@ -8,7 +8,7 @@
 #include "test_macros.h"
 
 #include "dataset_index.h"
-#include "dataset_view.h"
+#include "md_zip_view.h"
 
 TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   Dataset d;
@@ -85,10 +85,10 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // Extract a single Tof slice.
   delta = delta(Dim::Tof, 0);
 
-  using PointData = DatasetView<const Coord::Temperature, const Data::Value,
-                                const Data::Variance>;
-  DatasetView<PointData, const Coord::SpectrumNumber> view(delta, "sample",
-                                                           {Dim::Temperature});
+  using PointData = MDZipView<const Coord::Temperature, const Data::Value,
+                              const Data::Variance>;
+  MDZipView<PointData, const Coord::SpectrumNumber> view(delta, "sample",
+                                                         {Dim::Temperature});
 
   auto tempDependence =
       std::find_if(view.begin(), view.end(),
@@ -187,7 +187,7 @@ TEST(Workspace2D, scanning) {
   d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
   d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
 
-  DatasetView<const Coord::Position> view(d);
+  MDZipView<const Coord::Position> view(d);
   ASSERT_EQ(view.size(), 3);
   auto it = view.begin();
   EXPECT_EQ(it++->get<Coord::Position>()[0], 1.0);
@@ -238,16 +238,16 @@ TEST(Workspace2D, masking) {
 
   // Skip processing spectrum if it is masked.
   EXPECT_FALSE(d_masked2(Coord::Mask{}).dimensions().contains(Dim::Tof));
-  DatasetView<DatasetView<Data::Value>, const Coord::Mask> spectra(d_masked2,
-                                                                   "sample");
+  MDZipView<MDZipView<Data::Value>, const Coord::Mask> spectra(d_masked2,
+                                                               "sample");
   for (auto &item : spectra)
     if (!item.get<Coord::Mask>())
-      for (auto &point : item.get<DatasetView<Data::Value>>())
+      for (auto &point : item.get<MDZipView<Data::Value>>())
         point.value() += 1.0;
 
   // Apply mask.
-  DatasetView<Data::Value, Data::Variance, const Coord::Mask> view(
-      d_masked2, "background");
+  MDZipView<Data::Value, Data::Variance, const Coord::Mask> view(d_masked2,
+                                                                 "background");
   for (auto &item : view) {
     item.value() *= item.get<Coord::Mask>();
     item.get<Data::Variance>() *= item.get<Coord::Mask>();
