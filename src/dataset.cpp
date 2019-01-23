@@ -634,6 +634,8 @@ Dataset tofToEnergy(const Dataset &d) {
       // would be to decouple the pointer holding VariableConcept from the COW
       // mechanism, i.e., to COW inside VariableConcept to hold the data
       // array?
+      // TODO Also need to check here if variable contains count/bin_width,
+      // should fail then?
       converted.insert(var.reshape(varDims));
     }
   }
