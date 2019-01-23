@@ -53,19 +53,19 @@ namespace detail {
 // automatic conversions such as integer to double, if required. Therefore this
 // is in a separate function.
 template <class Tag>
-Variable makeVariable(const Tag, const std::vector<Dim> &labels,
+Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
                       py::array_t<typename Tag::type> data) {
   const py::buffer_info info = data.request();
   Dimensions dims(labels, info.shape);
   auto *ptr = (typename Tag::type *)info.ptr;
-  return makeVariable<const Tag>(dims, ptr, ptr + dims.volume());
+  return Variable(tag, dims, ptr, ptr + dims.volume());
 }
 
 template <class Tag> struct MakeVariableDefaultInit {
   static Variable apply(const std::vector<Dim> &labels,
                         const py::tuple &shape) {
     Dimensions dims(labels, shape.cast<std::vector<gsl::index>>());
-    return makeVariable<const Tag>(dims);
+    return Variable(Tag{}, dims);
   }
 };
 

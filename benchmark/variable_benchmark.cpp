@@ -8,7 +8,7 @@
 #include "variable.h"
 
 static void BM_Variable_copy(benchmark::State &state) {
-  auto var = makeVariable<Coord::X>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  Variable var(Coord::X{}, {{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
 
   for (auto _ : state) {
     Variable copy(var);
@@ -17,7 +17,7 @@ static void BM_Variable_copy(benchmark::State &state) {
 BENCHMARK(BM_Variable_copy);
 
 static void BM_Variable_trivial_slice(benchmark::State &state) {
-  auto var = makeVariable<Coord::X>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  Variable var(Coord::X{}, {{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
 
   for (auto _ : state) {
     ConstVariableSlice view(var);
@@ -29,7 +29,7 @@ BENCHMARK(BM_Variable_trivial_slice);
 // The following two benchmarks "prove" that operator+ with a VariableSlice is
 // not unintentionally converting the second argument to a temporary Variable.
 static void BM_Variable_binary_with_Variable(benchmark::State &state) {
-  auto var = makeVariable<Coord::X>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  Variable var(Coord::X{}, {{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
   Variable a = var(Dim::Z, 0, 8);
 
   for (auto _ : state) {
@@ -38,7 +38,7 @@ static void BM_Variable_binary_with_Variable(benchmark::State &state) {
   }
 }
 static void BM_Variable_binary_with_VariableSlice(benchmark::State &state) {
-  auto b = makeVariable<Coord::X>({{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
+  Variable b(Coord::X{}, {{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
   Variable a = b(Dim::Z, 0, 8);
 
   for (auto _ : state) {

@@ -101,8 +101,7 @@ public:
   template <class Tag, class... Args>
   void insert(const Dimensions &dimensions, Args &&... args) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
-    auto a =
-        makeVariable<Tag>(std::move(dimensions), std::forward<Args>(args)...);
+    Variable a(Tag{}, std::move(dimensions), std::forward<Args>(args)...);
     insert(std::move(a));
   }
 
@@ -110,8 +109,7 @@ public:
   void insert(const std::string &name, const Dimensions &dimensions,
               Args &&... args) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
-    auto a =
-        makeVariable<Tag>(std::move(dimensions), std::forward<Args>(args)...);
+    Variable a(Tag{}, std::move(dimensions), std::forward<Args>(args)...);
     a.setName(name);
     insert(std::move(a));
   }
@@ -119,7 +117,7 @@ public:
   template <class Tag, class T>
   void insert(const Dimensions &dimensions, std::initializer_list<T> values) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
-    auto a = makeVariable<Tag>(std::move(dimensions), values);
+    Variable a(Tag{}, std::move(dimensions), values);
     insert(std::move(a));
   }
 
@@ -127,7 +125,7 @@ public:
   void insert(const std::string &name, const Dimensions &dimensions,
               std::initializer_list<T> values) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
-    auto a = makeVariable<Tag>(std::move(dimensions), values);
+    Variable a(Tag{}, std::move(dimensions), values);
     a.setName(name);
     insert(std::move(a));
   }

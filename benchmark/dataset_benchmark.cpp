@@ -323,7 +323,7 @@ static void BM_Dataset_Workspace2D_rebin(benchmark::State &state) {
   gsl::index nSpec = state.range(0) * 1024;
   gsl::index nPoint = 1024;
 
-  auto newCoord = makeVariable<Coord::Tof>({Dim::Tof, nPoint / 2});
+  Variable newCoord(Coord::Tof{}, {Dim::Tof, nPoint / 2});
   double value = 0.0;
   for (auto &tof : newCoord.get<Coord::Tof>()) {
     tof = value;
