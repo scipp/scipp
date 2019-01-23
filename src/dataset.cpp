@@ -605,20 +605,20 @@ Dataset tofToEnergy(const Dataset &d) {
   // 2. Transform variables
   Dataset converted;
   for (const auto &var : d) {
+    auto varDims = var.dimensions();
+    if (varDims.contains(Dim::Tof))
+      varDims.relabel(varDims.index(Dim::Tof), Dim::Energy);
     if (var.tag() == Coord::Tof{}) {
       // TODO Need to extend the broadcasting capabilities to broadcast to the
       // union of dimensions of both operands in a binary operation.
       auto dims = conversionFactor.dimensions();
-      auto varDims = var.dimensions();
       for (const Dim dim : varDims.labels())
         if (!dims.contains(dim))
           dims.addInner(dim, varDims[dim]);
-      dims.relabel(dims.index(Dim::Tof), Dim::Energy);
       // TODO Should have a broadcasting assign method?
       auto energy = makeVariable<Coord::Energy>(dims, dims.volume(), 1.0);
       energy *= conversionFactor;
       // TODO Change this to /= when implemented.
-      varDims.relabel(varDims.index(Dim::Tof), Dim::Energy);
       // The reshape is just to remap the dimension label, should probably do
       // this differently.
       energy *= (var * var).reshape(varDims);
@@ -627,22 +627,14 @@ Dataset tofToEnergy(const Dataset &d) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else {
-      if (var.dimensions().contains(Dim::Tof)) {
-        Variable copy(var);
-        auto dims = copy.dimensions();
-        dims.relabel(dims.index(Dim::Tof), Dim::Energy);
-        // TODO Changing Dim::Tof to Dim::Energy. Currently this is not possible
-        // without making a copy of the data, which is inefficient. If we cannot
-        // move the dimensions outside the cow_ptr in Variable, another option
-        // would be to support in-place modification. Probably a better solution
-        // would be to decouple the pointer holding VariableConcept from the COW
-        // mechanism, i.e., to COW inside VariableConcept to hold the data
-        // array?
-        copy.setDimensions(dims);
-        converted.insert(copy);
-      } else {
-        converted.insert(var);
-      }
+      // TODO Changing Dim::Tof to Dim::Energy. Currently this is not possible
+      // without making a copy of the data, which is inefficient. If we cannot
+      // move the dimensions outside the cow_ptr in Variable, another option
+      // would be to support in-place modification. Probably a better solution
+      // would be to decouple the pointer holding VariableConcept from the COW
+      // mechanism, i.e., to COW inside VariableConcept to hold the data
+      // array?
+      converted.insert(var.reshape(varDims));
     }
   }
 
