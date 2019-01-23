@@ -1239,3 +1239,47 @@ TEST(DatasetSlice, binary_with_scalar) {
   EXPECT_TRUE(equals(prod.get<const Data::Variance>("a"), {45}));
   EXPECT_TRUE(equals(prod.get<const Data::Variance>("b"), {54}));
 }
+
+TEST(Dataset, convert) {
+  Dataset tof;
+
+  tof.insert<Coord::Tof>({Dim::Tof, 4}, {1, 2, 3, 4});
+
+  Dataset components;
+  // Source and sample
+  components.insert<Coord::Position>(
+      {Dim::Component, 2},
+      {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
+  tof.insert<Coord::ComponentInfo>({}, {components});
+  tof.insert<Coord::Position>(
+      {Dim::Spectrum, 2},
+      {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.1, 0.0, 1.0}});
+
+  tof.insert<Data::Value>("", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
+                          {1, 2, 3, 4, 5, 6});
+
+  auto energy = convert(tof, Dim::Tof, Dim::Energy);
+
+  ASSERT_FALSE(energy.dimensions().contains(Dim::Tof));
+  ASSERT_TRUE(energy.dimensions().contains(Dim::Energy));
+  EXPECT_EQ(energy.dimensions()[Dim::Energy], 3);
+
+  ASSERT_FALSE(energy.contains(Coord::Tof{}));
+  ASSERT_TRUE(energy.contains(Coord::Energy{}));
+  const auto &coord = energy(Coord::Energy{});
+  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
+  ASSERT_EQ(coord.dimensions(),
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 4}}));
+  // TODO Check actual values here after conversion is fixed.
+  EXPECT_FALSE(
+      equals(coord.get<const Coord::Energy>(), {1, 2, 3, 4, 1, 2, 3, 4}));
+
+  ASSERT_TRUE(energy.contains(Data::Value{}));
+  const auto &data = energy(Data::Value{});
+  ASSERT_EQ(data.dimensions(),
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
+  EXPECT_TRUE(equals(data.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
+
+  ASSERT_TRUE(energy.contains(Coord::Position{}));
+  ASSERT_TRUE(energy.contains(Coord::ComponentInfo{}));
+}

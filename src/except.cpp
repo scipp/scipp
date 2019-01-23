@@ -18,6 +18,8 @@ std::string to_string(const Dim dim) {
     return "Dim::Event";
   case Dim::Tof:
     return "Dim::Tof";
+  case Dim::Energy:
+    return "Dim::Energy";
   case Dim::Spectrum:
     return "Dim::Spectrum";
   case Dim::Monitor:
@@ -55,6 +57,8 @@ std::string to_string(const Tag tag) {
   switch (tag.value()) {
   case Coord::Tof{}.value():
     return "Coord::Tof";
+  case Coord::Energy{}.value():
+    return "Coord::Energy";
   case Coord::X{}.value():
     return "Coord::X";
   case Coord::Y{}.value():

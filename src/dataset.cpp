@@ -10,6 +10,7 @@
 #include "range/v3/view/zip.hpp"
 
 #include "dataset.h"
+#include "md_zip_view.h"
 #include "tag_util.h"
 
 Dataset::Dataset(const ConstDatasetSlice &view) {
@@ -574,8 +575,87 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
   return out;
 }
 
+namespace neutron {
+namespace tof {
+Dataset tofToEnergy(const Dataset &d) {
+  // 1. Compute conversion factor
+  const auto &compPos =
+      d.get<const Coord::ComponentInfo>()[0].get<const Coord::Position>();
+  // TODO Need a better mechanism to identify source and sample.
+  const auto &sourcePos = compPos[0];
+  const auto &samplePos = compPos[1];
+  const double l1 = (sourcePos - samplePos).norm();
+
+  const auto &dims = d.contains(Coord::Position{})
+                         ? d(Coord::Position{}).dimensions()
+                         : d(Coord::DetectorGrouping{}).dimensions();
+  Variable conversionFactor(Data::Value{}, dims);
+
+  MDZipView<const Coord::Position> specPos(d);
+  const auto factor = [&](const auto &item) {
+    const auto &pos = item.template get<Coord::Position>();
+    double l_total = l1 + (samplePos - pos).norm();
+    // TODO Up to physical constants.
+    return l_total * l_total;
+  };
+  // TODO Must also update unit of conversionFactor.
+  std::transform(specPos.begin(), specPos.end(),
+                 conversionFactor.get<Data::Value>().begin(), factor);
+
+  // 2. Transform variables
+  Dataset converted;
+  for (const auto &var : d) {
+    if (var.tag() == Coord::Tof{}) {
+      // TODO Need to extend the broadcasting capabilities to broadcast to the
+      // union of dimensions of both operands in a binary operation.
+      auto dims = conversionFactor.dimensions();
+      auto varDims = var.dimensions();
+      for (const Dim dim : varDims.labels())
+        if (!dims.contains(dim))
+          dims.addInner(dim, varDims[dim]);
+      dims.relabel(dims.index(Dim::Tof), Dim::Energy);
+      // TODO Should have a broadcasting assign method?
+      auto energy = makeVariable<Coord::Energy>(dims, dims.volume(), 1.0);
+      energy *= conversionFactor;
+      // TODO Change this to /= when implemented.
+      varDims.relabel(varDims.index(Dim::Tof), Dim::Energy);
+      // The reshape is just to remap the dimension label, should probably do
+      // this differently.
+      energy *= (var * var).reshape(varDims);
+      converted.insert(energy);
+    } else if (var.tag() == Data::Events{}) {
+      throw std::runtime_error(
+          "TODO Converting units of event data not implemented yet.");
+    } else {
+      if (var.dimensions().contains(Dim::Tof)) {
+        Variable copy(var);
+        auto dims = copy.dimensions();
+        dims.relabel(dims.index(Dim::Tof), Dim::Energy);
+        // TODO Changing Dim::Tof to Dim::Energy. Currently this is not possible
+        // without making a copy of the data, which is inefficient. If we cannot
+        // move the dimensions outside the cow_ptr in Variable, another option
+        // would be to support in-place modification. Probably a better solution
+        // would be to decouple the pointer holding VariableConcept from the COW
+        // mechanism, i.e., to COW inside VariableConcept to hold the data
+        // array?
+        copy.setDimensions(dims);
+        converted.insert(copy);
+      } else {
+        converted.insert(var);
+      }
+    }
+  }
+
+  return converted;
+}
+} // namespace tof
+} // namespace neutron
+
 Dataset convert(const Dataset &d, const Dim from, const Dim to) {
-  static_cast<void>(to);
+  if ((from == Dim::Tof) && (to == Dim::Energy))
+    return neutron::tof::tofToEnergy(d);
+  throw std::runtime_error(
+      "Conversion between requested dimensions not implemented yet.");
   // How to convert? There are several cases:
   // 1. Tof conversion as Mantid's ConvertUnits.
   // 2. Axis conversion as Mantid's ConvertSpectrumAxis.
@@ -585,9 +665,6 @@ Dataset convert(const Dataset &d, const Dim from, const Dim to) {
   //    for input and output?
   // 4. Conversion from 1 to N or N to 1, e.g., Dim::Spectrum to X and Y pixel
   //    index.
-  if (!d.dimensions().contains(from))
-    throw std::runtime_error(
-        "Dataset does not contain the dimension requested for conversion.");
   // Can Dim::Spectrum be converted to anything? Should we require a matching
   // coordinate when doing a conversion? This does not make sense:
   // auto converted = convert(dataset, Dim::Spectrum, Dim::Tof);
@@ -600,7 +677,6 @@ Dataset convert(const Dataset &d, const Dim from, const Dim to) {
   // This is a *derived* coordinate, no need to store it explicitly? May even be
   // prevented?
   // MDZipView<const Coord::TwoTheta>(dataset);
-  return d;
 }
 
 Dataset rebin(const Dataset &d, const Variable &newCoord) {
