@@ -67,6 +67,8 @@
   - [Performance opportunities](#design-details-performance-opportunities)
   - [Slicing](#design-details-slicing)
   - [Supporting libraries](#design-details-supporting-libraries)
+- [Better Support Science](#better-support-science)
+  - [ISIS SANS](#isis-sans-science-support)
 - [Implementation](#implementation)
 - [Further reading](#further-reading)
 
@@ -1371,12 +1373,41 @@ Potential examples include:
 
 There will be many more than these, but they will generally added if needed instead of deciding up-front.
 
+## <a name="better-support-science"></a>Better Support Science
+  
+The [ORNL 5-year plan](https://github.com/mantidproject/documents/blob/master/Design/ORNL_Mantid_5yearplan.pdf) contains the first mention (Topic 5) under the heading *Workspace Types Need to More Efficiently Reflect The Science*. This document itself provides motivation with examples. Here are a few quotes to illustrate:
+
+* *"The structure of this container [Workspace2D] is designed to store minimally processed time-of-flight data"*. 
+* *"Mantid needs a clear way to support linking workspace together"*
+
+The following example is intended as illustrations of how dataset could be used to tackle some of the pre-documented problems in Mantid when representing the science. They are not meant to act as an exhaustive list of solutions or acceptance tests for either the design or implementation. 
+
+### <a name="isis-sans-science-support"></a> ISIS SANS
+
+ISIS SANS, like other large-scale-structure technique areas, require a number of runs to  calculate the differential scattering cross-section of a medium. The logical processing is defined [here](https://www.mantidproject.org/SANS_ISIS_Data_Reduction)
+
+* `Dataset` immediately provides a better logical "container" for this raw information. 
+[Six input](https://www.mantidproject.org/Using_the_SANS_GUI) runs are required for a single sample measurement to be reduced correctly, though it can be more, for example white-beam flood adjustments are also routinely used as part of the data collection. 
+Dataset offers a complete in-memory collection with usual copy semantics, and dimensionality enforcement, something not easily achieved with Workspace Groups. Indeed, owing to problems with Workspace Groups, the internal SANS backend, does not add things to groups until the final stage, and uses its own tracking mechanisms internally.
+* As a corollary to the above, dataset implicitly allows one variable to alias another until such a time that sharing is broken. 
+Direct beam measurements are frequently identical between "sample" and "can" runs. 
+This aliasing allows the consumer code to remain agnostic to the sharing. This level of read-only sharing, write-copy behaviour cannot be achieved with current workspaces implicitly, and requires additional bookeeping or facades. 
+One common approach taken in Mantid currently is to build bespoke-high level functionality around the AnalysisDataService and Workspace to service this needs. 
+For example, in batch data processing the current SANS backend implementation has an "Optimise" mode, where it attempts to hash reduction settings with the run-numbers to allow caching and reuse. This optimisation would be much easier to represent via dataset (variables accessable by Tag and Name), and does not require the ADS.
+* While the Can and Sample runs for SANS tend to be processed independently until the point `Qsample - Qcan`, one will note that [cross-section-calculation](https://www.mantidproject.org/SANS_ISIS_Data_Reduction) defines many factors that are invariant between the sample and can run in the divisor, such as `D`, `F`, `Omega`, `Cor` (see step 5). 
+Since dataset offers the ability to add further variables (or remove them) at any point, this gives the ability to easily store, reuse and dispose of intermediate outputs at will. 
+* As outlined [here](https://www.mantidproject.org/SANS_ISIS_Data_Reduction), specifically step 3. 
+A scale factor is applied. Scale factors are unique for low-angle and high-angle banks. 
+The existing workflows perform an early separation of the banks and separate processing so that scale and shift (5 step 3) can be independently performed. 
+Dataset offers the ability to internally track contributions (new variables) from high and low angle banks, so that scale and shift can be performed after the bulk of the main data reduction (as per the logical steps). 
+* For anisotropic scattering, users do their final processing to two dimensional Q via [QxQy](http://docs.mantidproject.org/nightly/algorithms/Qxy-v1.html) see step 5 part 4. 
+At this point in particular the Workspace2D does not represent a good data structure for the results. 
+Memory layout affects ease of export and in fact the efficiency with which the workspace can be read from and written to.
+Dataset on the other hand offers a contagious set of variables for image like storage, and allows tuneable floating point precision rather than double precision only.
 
 ## <a name="implementation"></a>Implementation
 
 Implementation of the proposed design is described in [a separate document](design-rollout.md).
-
-
 
 ## <a name="further-reading"></a>Further reading
 
