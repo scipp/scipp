@@ -8,8 +8,8 @@ target_link_libraries ( variable_benchmark LINK_PRIVATE Dataset benchmark )
 add_executable ( dataset_benchmark dataset_benchmark.cpp )
 target_link_libraries ( dataset_benchmark LINK_PRIVATE Dataset benchmark )
 
-add_executable ( dataset_view_benchmark dataset_view_benchmark.cpp )
-target_link_libraries ( dataset_view_benchmark LINK_PRIVATE Dataset benchmark )
+add_executable ( md_zip_view_benchmark md_zip_view_benchmark.cpp )
+target_link_libraries ( md_zip_view_benchmark LINK_PRIVATE Dataset benchmark )
 
 add_executable ( legacy_histogram_benchmark legacy_histogram_benchmark.cpp )
 target_link_libraries ( legacy_histogram_benchmark LINK_PRIVATE Dataset benchmark )

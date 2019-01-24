@@ -539,7 +539,7 @@ Dataset convert(const Dataset &d, const Dim from, const Dim to) {
   // auto converted = convert(dataset, Dim::Spectrum, Dim::TwoTheta);
   // This is a *derived* coordinate, no need to store it explicitly? May even be
   // prevented?
-  // DatasetView<const Coord::TwoTheta>(dataset);
+  // MDZipView<const Coord::TwoTheta>(dataset);
   return d;
 }
 
@@ -608,7 +608,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   // currently).
   dataset::expect::equals(events[0](Data::Tof{}).unit(), coord.unit());
 
-  // TODO Can we reuse some code for bin handling from DatasetView?
+  // TODO Can we reuse some code for bin handling from MDZipView?
   const auto binDim = coordDimension[coord.tag().value()];
   const gsl::index nBin = coord.dimensions()[binDim] - 1;
   Dimensions dims = var.dimensions();
@@ -681,7 +681,7 @@ Dataset histogram(const Dataset &d, const Variable &coord) {
 }
 
 // We can specialize this to switch to a more efficient variant when sorting
-// datasets that represent events lists, using LinearView.
+// datasets that represent events lists, using ZipView.
 template <class Tag> struct Sort {
   static Dataset apply(const Dataset &d, const std::string &name) {
     auto const_axis = d.get<const Tag>(name);

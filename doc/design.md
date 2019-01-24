@@ -35,7 +35,7 @@
   - [Variable tags](#design-components-variable-tags)
   - [`class Dimensions`](#design-components-dimensions)
   - [Dimension tags](#design-components-dimension-tags)
-  - [`class DatasetView`](#design-components-datasetview)
+  - [`class MDZipView`](#design-components-md-zip-view)
   - [`class DatasetIndex`](#design-components-datasetindex)
   - [Units](#design-components-units)
   - [Exceptions](#design-components-exceptions)
@@ -495,15 +495,16 @@ An incomplete list of dimension tags:
 In many cases there is a corresponding coordinate tag for a dimension.
 
 
-### <a name="design-components-datasetview"></a>`class DatasetView`
+### <a name="design-components-md-zip-view"></a>`class MDZipView`
 
 Due to the type-erasure we cannot simply treat `Dataset` as an array of structs, i.e., there is no equivalent to `API::MatrixWorkspace::getSpectrum(const size_t index)`.
 If only access to a single variable is required it can be accessed directly.
-For cases that require joint access to multiple variables we provide `class DatasetView`:
+For cases that require joint access to multiple variables we provide `class MDZipView`:
 - Effectively provides a "zip-iterator", with support for automatic on-the-fly broadcast or transposition of dimensions.
 - Nested view allows for accessing a histogram-like view.
 - Allows for joint iteration with bin-edge variables using a `Bin` wrapper, overcoming the old nuisance of having `length+1` bin edges.
-  See the [C++ example](#examples-cpp) for an example of how this would be used.
+
+See the [C++ example](#examples-cpp) for an example of how these features would be used.
 
 The current implementation seems to support all required features.
 Performance was originally a problem due to the multi-dimensional iteration, but has subsequently been optimized to the point where it should be sufficient for most applications.
@@ -816,7 +817,7 @@ Dataset tempEdges.insertAsEdge<Coord::Temperature>({Dim::Temperature, 6},
 // Empty dataset for accumulation.
 Dataset scan;
 auto dataPoint(combined);
-for (const auto temperature : DatasetView<Bin<Coord::Temperature>>(tempEdges)) {
+for (const auto temperature : MDZipView<Bin<Coord::Temperature>>(tempEdges)) {
   dataPoint.get<Data::Value>("sample - background")[0] =
       exp(-0.001 * temperature.center());
   // Note that concatenate will collapse dimensions of a variable if the
@@ -843,17 +844,17 @@ lambdaSlice.erase<Coord::Polarization>();
 lambdaSlice = slice(lambdaSlice, Dim::Polarization, spin[Spin::Up]) -
               slice(lambdaSlice, Dim::Polarization, spin[Spin::Down]);
 
-// Create a nested DatasetView, for "zip"-style iteration
+// Create a nested MDZipView, for "zip"-style iteration
 // Define an abbreviation for a nested view. For convenience, frequently
 // used variants could be provided as built-ins. Note the `Bin` wrapper,
 // which is used for joint iteration of bin-edge variables and other
 // variables.
-using Histogram = DatasetView<Bin<Coord::Temperature>, const Data::Value,
-                              const Data::StdDev>;
+using Histogram = MDZipView<Bin<Coord::Temperature>, const Data::Value,
+                            const Data::StdDev>;
 // We specify Dim::Temperature when creating the view, indicating that the
 // (outer) view will not iterate that dimension. This implies that it will
 // be the (only) dimension of the nested views.
-DatasetView<Histogram, const Coord::SpectrumNumber>
+MDZipView<Histogram, const Coord::SpectrumNumber>
     view(lambdaSlice, "sample - background", {Dim::Temperature});
 
 for (const auto &tempDependence : view) {
@@ -1148,8 +1149,8 @@ Having a clear and well defined strategy will reduce the risk of confusion.
 
 The go-to tag for storing uncertainties will be `Data::Variance`.
 `Data::StdDev` will exist, but is for *access* only, i.e., attempting to create a `Variable` with that tag should fail.
-Instead `Data::StdDev` can by used in combination with `DatasetView` to *read* the standard deviations if required, e.g., for visualization purposes.
-If it turns out to be useful it would also be possible to provide setters --- as opposed to a simple assignment which is possible if the actual underlying data is referenced --- for standard deviation using `DatasetView` .
+Instead `Data::StdDev` can by used in combination with `MDZipView` to *read* the standard deviations if required, e.g., for visualization purposes.
+If it turns out to be useful it would also be possible to provide setters --- as opposed to a simple assignment which is possible if the actual underlying data is referenced --- for standard deviation using `MDZipView` .
 
 
 ### <a name="design-details-distribution-histogram-distinguised-by-unit"></a>"Distributions" and "histogram data" are distinguished by their unit
@@ -1214,7 +1215,7 @@ If it turns out to be required after all, a callback-based system such as VTK's 
 This has not been supported in `DataObjects::Workspace2D` for 10 years, until a very recent change, i.e., it does not appear to be strictly necessary since it can be solved in other ways (see below).
 Support has been considered and prototyped, however there are two strong reasons it is not part of the final design:
 - Significant complication of implementation for all operations, leading to larger initial development cost and more difficult long-term maintenance.
-- Negatively affects the performance of iteration via `DatasetView`, *even if the length does not vary*.
+- Negatively affects the performance of iteration via `MDZipView`, *even if the length does not vary*.
 
 ##### Alternative solutions and workarounds
 

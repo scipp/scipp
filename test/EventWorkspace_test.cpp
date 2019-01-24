@@ -10,7 +10,7 @@
 
 #include "test_macros.h"
 
-#include "dataset_view.h"
+#include "md_zip_view.h"
 
 TEST(EventWorkspace, EventList) {
   Dataset e;
@@ -107,8 +107,8 @@ TEST(EventWorkspace, basics) {
   // Note that we could determine the correct X axis automatically, since the
   // event data type/unit imply which coordinate to use, in this case events
   // have type Data::Tof so the axis is Coord::Tof.
-  using Histogram = DatasetView<Bin<Coord::Tof>, Data::Value, Data::Variance>;
-  DatasetView<Histogram, const Data::Events> view(d, {Dim::Tof});
+  using Histogram = MDZipView<Bin<Coord::Tof>, Data::Value, Data::Variance>;
+  MDZipView<Histogram, const Data::Events> view(d, {Dim::Tof});
   for (const auto &item : view) {
     const auto &hist = item.get<Histogram>();
     const auto &events = item.get<Data::Events>();

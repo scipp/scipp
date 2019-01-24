@@ -6,7 +6,7 @@
 #include <array>
 #include <benchmark/benchmark.h>
 
-#include "dataset_view.h"
+#include "md_zip_view.h"
 
 std::array<gsl::index, 3> getIndex(gsl::index i,
                                    const std::array<gsl::index, 3> &size) {
@@ -54,8 +54,7 @@ BENCHMARK(BM_index_math_threaded)
     ->Arg(24)
     ->UseRealTime();
 
-static void
-BM_DatasetView_multi_column_mixed_dimension(benchmark::State &state) {
+static void BM_MDZipView_multi_column_mixed_dimension(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dim::Spectrum, state.range(0));
@@ -65,7 +64,7 @@ BM_DatasetView_multi_column_mixed_dimension(benchmark::State &state) {
   gsl::index elements = 1000 * state.range(0);
 
   for (auto _ : state) {
-    DatasetView<Data::Value, const Data::Int> view(d);
+    MDZipView<Data::Value, const Data::Int> view(d);
     auto it = view.begin();
     for (int i = 0; i < elements; ++i) {
       benchmark::DoNotOptimize(it->get<Data::Value>());
@@ -74,11 +73,11 @@ BM_DatasetView_multi_column_mixed_dimension(benchmark::State &state) {
   }
   state.SetItemsProcessed(state.iterations() * elements);
 }
-BENCHMARK(BM_DatasetView_multi_column_mixed_dimension)
+BENCHMARK(BM_MDZipView_multi_column_mixed_dimension)
     ->RangeMultiplier(2)
     ->Range(8, 8 << 10);
 
-static void BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
+static void BM_MDZipView_mixed_dimension_addition(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dim::Spectrum, state.range(0));
@@ -89,7 +88,7 @@ static void BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
   d.insert<Data::Value>("", dims, elements);
 
   for (auto _ : state) {
-    DatasetView<Data::Value, const Data::Variance> view(d);
+    MDZipView<Data::Value, const Data::Variance> view(d);
     const auto end = view.end();
     for (auto it = view.begin(); it != end; ++it) {
       it->get<Data::Value>() -= it->get<Data::Variance>();
@@ -98,13 +97,13 @@ static void BM_DatasetView_mixed_dimension_addition(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * elements);
   state.SetBytesProcessed(state.iterations() * elements * 3 * sizeof(double));
 }
-BENCHMARK(BM_DatasetView_mixed_dimension_addition)
+BENCHMARK(BM_MDZipView_mixed_dimension_addition)
     ->RangeMultiplier(2)
     ->Range(8, 8 << 14)
     ->UseRealTime();
 
 static void
-BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
+BM_MDZipView_mixed_dimension_addition_threaded(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dim::Spectrum, state.range(0));
@@ -115,7 +114,7 @@ BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
   d.insert<Data::Value>("", dims, elements);
 
   for (auto _ : state) {
-    DatasetView<Data::Value, const Data::Variance> view(d);
+    MDZipView<Data::Value, const Data::Variance> view(d);
     const auto end = view.end();
 #pragma omp parallel for num_threads(state.range(1))
     for (auto it = view.begin(); it < end; ++it) {
@@ -125,13 +124,13 @@ BM_DatasetView_mixed_dimension_addition_threaded(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * elements);
   state.SetBytesProcessed(state.iterations() * elements * 3 * sizeof(double));
 }
-BENCHMARK(BM_DatasetView_mixed_dimension_addition_threaded)
+BENCHMARK(BM_MDZipView_mixed_dimension_addition_threaded)
     ->RangeMultiplier(2)
     ->Ranges({{8, 8 << 14}, {1, 24}})
     ->UseRealTime();
 
 static void
-BM_DatasetView_multi_column_mixed_dimension_nested(benchmark::State &state) {
+BM_MDZipView_multi_column_mixed_dimension_nested(benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
   d.insert<Data::Int>("specnums", {Dim::Spectrum, nSpec}, nSpec);
@@ -140,13 +139,13 @@ BM_DatasetView_multi_column_mixed_dimension_nested(benchmark::State &state) {
   dims.add(Dim::Spectrum, nSpec);
   d.insert<Data::Value>("histograms", dims, nSpec * 1000);
   d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
-  DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dim::Tof});
+  MDZipView<MDZipView<Data::Value>, Data::Int> it(d, {Dim::Tof});
 
   for (auto _ : state) {
-    DatasetView<DatasetView<Data::Value, Data::Variance>, Data::Int> view(
+    MDZipView<MDZipView<Data::Value, Data::Variance>, Data::Int> view(
         d, {Dim::Tof});
     for (auto &item : view) {
-      for (auto &point : item.get<DatasetView<Data::Value, Data::Variance>>()) {
+      for (auto &point : item.get<MDZipView<Data::Value, Data::Variance>>()) {
         point.value() -= point.get<Data::Variance>();
       }
     }
@@ -155,12 +154,12 @@ BM_DatasetView_multi_column_mixed_dimension_nested(benchmark::State &state) {
   state.SetBytesProcessed(state.iterations() * nSpec * 1000 * 3 *
                           sizeof(double));
 }
-BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested)
+BENCHMARK(BM_MDZipView_multi_column_mixed_dimension_nested)
     ->RangeMultiplier(2)
     ->Range(8, 8 << 15);
 ;
 
-static void BM_DatasetView_multi_column_mixed_dimension_nested_threaded(
+static void BM_MDZipView_multi_column_mixed_dimension_nested_threaded(
     benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
@@ -170,16 +169,16 @@ static void BM_DatasetView_multi_column_mixed_dimension_nested_threaded(
   dims.add(Dim::Spectrum, nSpec);
   d.insert<Data::Value>("histograms", dims, nSpec * 1000);
   d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
-  DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dim::Tof});
+  MDZipView<MDZipView<Data::Value>, Data::Int> it(d, {Dim::Tof});
 
   for (auto _ : state) {
-    DatasetView<DatasetView<Data::Value, Data::Variance>, Data::Int> view(
+    MDZipView<MDZipView<Data::Value, Data::Variance>, Data::Int> view(
         d, {Dim::Tof});
     const auto end = view.end();
 #pragma omp parallel for num_threads(state.range(1))
     for (auto it = view.begin(); it < end; ++it) {
       auto &item = *it;
-      for (auto &point : item.get<DatasetView<Data::Value, Data::Variance>>()) {
+      for (auto &point : item.get<MDZipView<Data::Value, Data::Variance>>()) {
         point.value() -= point.get<Data::Variance>();
       }
     }
@@ -188,12 +187,12 @@ static void BM_DatasetView_multi_column_mixed_dimension_nested_threaded(
   state.SetBytesProcessed(state.iterations() * nSpec * 1000 * 3 *
                           sizeof(double));
 }
-BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested_threaded)
+BENCHMARK(BM_MDZipView_multi_column_mixed_dimension_nested_threaded)
     ->RangeMultiplier(2)
     ->Ranges({{8, 8 << 15}, {1, 24}})
     ->UseRealTime();
 
-static void BM_DatasetView_multi_column_mixed_dimension_nested_transpose(
+static void BM_MDZipView_multi_column_mixed_dimension_nested_transpose(
     benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
@@ -203,13 +202,13 @@ static void BM_DatasetView_multi_column_mixed_dimension_nested_transpose(
   dims.add(Dim::Tof, 1000);
   d.insert<Data::Value>("histograms", dims, nSpec * 1000);
   d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
-  DatasetView<DatasetView<Data::Value>, Data::Int> it(d, {Dim::Tof});
+  MDZipView<MDZipView<Data::Value>, Data::Int> it(d, {Dim::Tof});
 
   for (auto _ : state) {
-    DatasetView<DatasetView<Data::Value, Data::Variance>, Data::Int> view(
+    MDZipView<MDZipView<Data::Value, Data::Variance>, Data::Int> view(
         d, {Dim::Tof});
     for (auto &item : view) {
-      for (auto &point : item.get<DatasetView<Data::Value, Data::Variance>>()) {
+      for (auto &point : item.get<MDZipView<Data::Value, Data::Variance>>()) {
         point.value() -= point.get<Data::Variance>();
       }
     }
@@ -218,7 +217,7 @@ static void BM_DatasetView_multi_column_mixed_dimension_nested_transpose(
   state.SetBytesProcessed(state.iterations() * nSpec * 1000 * 3 *
                           sizeof(double));
 }
-BENCHMARK(BM_DatasetView_multi_column_mixed_dimension_nested_transpose)
+BENCHMARK(BM_MDZipView_multi_column_mixed_dimension_nested_transpose)
     ->RangeMultiplier(2)
     ->Range(8, 8 << 13);
 ;

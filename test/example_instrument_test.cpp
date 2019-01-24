@@ -8,7 +8,7 @@
 #include "test_macros.h"
 
 #include "dataset_index.h"
-#include "dataset_view.h"
+#include "md_zip_view.h"
 
 TEST(ExampleInstrument, basics) {
   gsl::index ndet = 4;
@@ -17,7 +17,7 @@ TEST(ExampleInstrument, basics) {
   detectors.insert<Coord::DetectorId>({Dim::Detector, ndet}, {1, 2, 3, 4});
   detectors.insert<Coord::Position>({Dim::Detector, ndet}, ndet,
                                     Eigen::Vector3d{0.0, 0.0, 2.0});
-  DatasetView<const Coord::DetectorId, Coord::Position> view(detectors);
+  MDZipView<const Coord::DetectorId, Coord::Position> view(detectors);
   for (auto &det : view) {
     det.get<Coord::Position>()[0] = 0.1 * det.get<Coord::DetectorId>();
     EXPECT_EQ(det.get<Coord::Position>()[0],
@@ -27,7 +27,7 @@ TEST(ExampleInstrument, basics) {
   // For const access we need to make sure that the implementation is not
   // attempting to compute derived positions based on detector grouping (which
   // does not exist in this case).
-  DatasetView<const Coord::Position> directConstView(detectors);
+  MDZipView<const Coord::Position> directConstView(detectors);
   // If not implemented correctly this would actually segfault, not throw.
   ASSERT_NO_THROW(directConstView.begin()->get<Coord::Position>());
   EXPECT_EQ(directConstView.begin()->get<Coord::Position>()[0], 0.1);
@@ -45,9 +45,9 @@ TEST(ExampleInstrument, basics) {
   d.insert<Coord::DetectorInfo>({}, {detectors});
   d.insert<Coord::ComponentInfo>({}, {components});
 
-  EXPECT_ANY_THROW(static_cast<void>(DatasetView<Coord::Position>(d)));
-  ASSERT_NO_THROW(static_cast<void>(DatasetView<const Coord::Position>(d)));
-  DatasetView<const Coord::Position> specPos(d);
+  EXPECT_ANY_THROW(static_cast<void>(MDZipView<Coord::Position>(d)));
+  ASSERT_NO_THROW(static_cast<void>(MDZipView<const Coord::Position>(d)));
+  MDZipView<const Coord::Position> specPos(d);
   ASSERT_EQ(specPos.size(), 2);
   EXPECT_DOUBLE_EQ(specPos.begin()->get<Coord::Position>()[0], 0.15);
   EXPECT_DOUBLE_EQ((specPos.begin() + 1)->get<Coord::Position>()[0], 0.35);

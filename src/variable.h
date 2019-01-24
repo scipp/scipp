@@ -113,7 +113,7 @@ private:
   std::unique_ptr<T> m_data;
 };
 
-template <class... Tags> class LinearView;
+template <class... Tags> class ZipView;
 class ConstVariableSlice;
 class VariableSlice;
 template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
@@ -253,14 +253,14 @@ public:
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
 
-  template <class... Tags> friend class LinearView;
+  template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
 private:
   template <class T> const Vector<T> &cast() const;
   template <class T> Vector<T> &cast();
 
-  // Used by LinearView. Need to find a better way instead of having everyone as
+  // Used by ZipView. Need to find a better way instead of having everyone as
   // friend.
   Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }
 
@@ -476,7 +476,7 @@ public:
 
 private:
   friend class Variable;
-  template <class... Tags> friend class LinearView;
+  template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
   // Special version creating const view from mutable view. Note that this does
