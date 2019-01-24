@@ -642,12 +642,108 @@ Dataset tofToEnergy(const Dataset &d) {
 
   return converted;
 }
+
+Dataset tofToDeltaE(const Dataset &d) {
+  // TODO Units and physical constants!
+
+  // There are two cases, direct inelastic and indirect inelastic. We can
+  // distinguish them by the content of d.
+  if (d.contains(Coord::Ei{}) && d.contains(Coord::Ef{}))
+    throw std::runtime_error("Dataset contains Coord::Ei as well as Coord::Ef, "
+                             "cannot have both for inelastic scattering.");
+
+  // 1. Compute conversion factors
+  const auto &compPos =
+      d.get<const Coord::ComponentInfo>()[0].get<const Coord::Position>();
+  const auto &sourcePos = compPos[0];
+  const auto &samplePos = compPos[1];
+  const double l1 = (sourcePos - samplePos).norm();
+
+  const auto &dims = d.contains(Coord::Position{})
+                         ? d(Coord::Position{}).dimensions()
+                         : d(Coord::DetectorGrouping{}).dimensions();
+  Variable tofShift(Data::Value{}, {});
+  Variable scale(Data::Value{}, {});
+
+  if (d.contains(Coord::Ei{})) {
+    // Direct-inelastic.
+
+    // This is how we support multi-Ei data!
+    tofShift.setDimensions(d(Coord::Ei{}).dimensions());
+    const auto &Ei = d.get<const Coord::Ei>();
+    std::transform(Ei.begin(), Ei.end(), tofShift.get<Data::Value>().begin(),
+                   [&](const double Ei) { return l1 / sqrt(Ei); });
+
+    scale.setDimensions(dims);
+    MDZipView<const Coord::Position> specPos(d);
+    std::transform(specPos.begin(), specPos.end(),
+                   scale.get<Data::Value>().begin(), [&](const auto &item) {
+                     const auto &pos = item.template get<Coord::Position>();
+                     const double l2 = (samplePos - pos).norm();
+                     return l2 * l2;
+                   });
+  } else if (d.contains(Coord::Ef{})) {
+    // Indirect-inelastic.
+
+    tofShift.setDimensions(dims);
+    // Ef can be different for every spectrum so we access it also via a view.
+    MDZipView<const Coord::Position, const Coord::Ef> geometry(d);
+    std::transform(geometry.begin(), geometry.end(),
+                   tofShift.get<Data::Value>().begin(), [&](const auto &item) {
+                     const auto &pos = item.template get<Coord::Position>();
+                     const auto &Ef = item.template get<Coord::Ef>();
+                     const double l2 = (samplePos - pos).norm();
+                     return l2 * l2 / sqrt(Ef);
+                   });
+
+    scale.setDimensions({});
+    scale.get<Data::Value>()[0] = l1 * l1;
+  } else {
+    throw std::runtime_error("Dataset contains neither Coord::Ei nor "
+                             "Coord::Ef, this does not look like "
+                             "inelastic-scattering data.");
+  }
+
+  // 2. Transform variables
+  Dataset converted;
+  for (const auto &var : d) {
+    auto varDims = var.dimensions();
+    if (varDims.contains(Dim::Tof))
+      varDims.relabel(varDims.index(Dim::Tof), Dim::DeltaE);
+    if (var.tag() == Coord::Tof{}) {
+      auto dims = scale.dimensions();
+      for (const Dim dim : varDims.labels())
+        if (!dims.contains(dim))
+          dims.addInner(dim, varDims[dim]);
+      auto E = makeVariable<Coord::DeltaE>(dims, dims.volume(), 1.0);
+      E *= var.reshape(varDims);
+      E -= tofShift;
+      E *= E;
+      // TODO First set E = inv(E) when implemented.
+      E *= scale;
+      if (d.contains(Coord::Ei{})) {
+        converted.insert(-(E - d(Coord::Ei{})));
+      } else {
+        converted.insert(E - d(Coord::Ef{}));
+      }
+    } else if (var.tag() == Data::Events{}) {
+      throw std::runtime_error(
+          "TODO Converting units of event data not implemented yet.");
+    } else {
+      converted.insert(var.reshape(varDims));
+    }
+  }
+
+  return converted;
+}
 } // namespace tof
 } // namespace neutron
 
 Dataset convert(const Dataset &d, const Dim from, const Dim to) {
   if ((from == Dim::Tof) && (to == Dim::Energy))
     return neutron::tof::tofToEnergy(d);
+  if ((from == Dim::Tof) && (to == Dim::DeltaE))
+    return neutron::tof::tofToDeltaE(d);
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
   // How to convert? There are several cases:

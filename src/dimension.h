@@ -11,6 +11,7 @@ enum class Dim : uint16_t {
   Event,
   Tof,
   Energy,
+  DeltaE,
   Spectrum,
   Monitor,
   Run,
