@@ -1094,31 +1094,31 @@ TEST(Dataset, unary_minus) {
 TEST(Dataset, binary_assign_with_scalar) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("a", {Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("b", {}, {3});
-  d.insert<Data::Variance>("a", {Dim::X, 2}, {4, 5});
-  d.insert<Data::Variance>("b", {}, {6});
+  d.insert<Data::Value>("d1", {Dim::X, 2}, {1, 2});
+  d.insert<Data::Value>("d2", {}, {3});
+  d.insert<Data::Variance>("d1", {Dim::X, 2}, {4, 5});
+  d.insert<Data::Variance>("d2", {}, {6});
 
   d += 1;
-  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {2, 3}));
-  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {4}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("d1"), {2, 3}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("d2"), {4}));
   // Scalar treated as having 0 variance, `+` leaves variance unchanged.
-  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {4, 5}));
-  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {6}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("d1"), {4, 5}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("d2"), {6}));
 
   d -= 2;
-  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {0, 1}));
-  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {2}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("d1"), {0, 1}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("d2"), {2}));
   // Scalar treated as having 0 variance, `-` leaves variance unchanged.
-  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {4, 5}));
-  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {6}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("d1"), {4, 5}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("d2"), {6}));
 
   d *= 2;
-  EXPECT_TRUE(equals(d.get<const Data::Value>("a"), {0, 2}));
-  EXPECT_TRUE(equals(d.get<const Data::Value>("b"), {4}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("d1"), {0, 2}));
+  EXPECT_TRUE(equals(d.get<const Data::Value>("d2"), {4}));
   // Scalar treated as having 0 variance, `*` affects variance.
-  EXPECT_TRUE(equals(d.get<const Data::Variance>("a"), {16, 20}));
-  EXPECT_TRUE(equals(d.get<const Data::Variance>("b"), {24}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("d1"), {16, 20}));
+  EXPECT_TRUE(equals(d.get<const Data::Variance>("d2"), {24}));
 }
 
 TEST(DatasetSlice, binary_assign_with_scalar) {
@@ -1196,5 +1196,52 @@ TEST(Dataset, binary_with_scalar) {
   EXPECT_TRUE(equals(prod.get<const Data::Value>("a"), {3, 6}));
   EXPECT_TRUE(equals(prod.get<const Data::Value>("b"), {9}));
   EXPECT_TRUE(equals(prod.get<const Data::Variance>("a"), {36, 45}));
+  EXPECT_TRUE(equals(prod.get<const Data::Variance>("b"), {54}));
+}
+
+TEST(DatasetSlice, binary_with_scalar) {
+  Dataset d;
+  d.insert<Coord::X>({Dim::X, 2}, {1, 2});
+  d.insert<Data::Value>("a", {Dim::X, 2}, {1, 2});
+  d.insert<Data::Value>("b", {}, {3});
+  d.insert<Data::Variance>("a", {Dim::X, 2}, {4, 5});
+  d.insert<Data::Variance>("b", {}, {6});
+
+  auto slice = d(Dim::X, 1);
+
+  // Note that these operations actually work by implicitly converting
+  // DatasetSlice to Dataset, so this test is actually testing that conversion,
+  // not the binary operation iteself.
+  auto sum = slice + 1;
+  EXPECT_TRUE(equals(sum.get<const Data::Value>("a"), {3}));
+  EXPECT_TRUE(equals(sum.get<const Data::Value>("b"), {4}));
+  EXPECT_TRUE(equals(sum.get<const Data::Variance>("a"), {5}));
+  EXPECT_TRUE(equals(sum.get<const Data::Variance>("b"), {6}));
+  sum = 2 + slice;
+  EXPECT_TRUE(equals(sum.get<const Data::Value>("a"), {4}));
+  EXPECT_TRUE(equals(sum.get<const Data::Value>("b"), {5}));
+  EXPECT_TRUE(equals(sum.get<const Data::Variance>("a"), {5}));
+  EXPECT_TRUE(equals(sum.get<const Data::Variance>("b"), {6}));
+
+  auto diff = slice - 1;
+  EXPECT_TRUE(equals(diff.get<const Data::Value>("a"), {1}));
+  EXPECT_TRUE(equals(diff.get<const Data::Value>("b"), {2}));
+  EXPECT_TRUE(equals(diff.get<const Data::Variance>("a"), {5}));
+  EXPECT_TRUE(equals(diff.get<const Data::Variance>("b"), {6}));
+  diff = 2 - slice;
+  EXPECT_TRUE(equals(diff.get<const Data::Value>("a"), {0}));
+  EXPECT_TRUE(equals(diff.get<const Data::Value>("b"), {-1}));
+  EXPECT_TRUE(equals(diff.get<const Data::Variance>("a"), {5}));
+  EXPECT_TRUE(equals(diff.get<const Data::Variance>("b"), {6}));
+
+  auto prod = slice * 2;
+  EXPECT_TRUE(equals(prod.get<const Data::Value>("a"), {4}));
+  EXPECT_TRUE(equals(prod.get<const Data::Value>("b"), {6}));
+  EXPECT_TRUE(equals(prod.get<const Data::Variance>("a"), {20}));
+  EXPECT_TRUE(equals(prod.get<const Data::Variance>("b"), {24}));
+  prod = 3 * slice;
+  EXPECT_TRUE(equals(prod.get<const Data::Value>("a"), {6}));
+  EXPECT_TRUE(equals(prod.get<const Data::Value>("b"), {9}));
+  EXPECT_TRUE(equals(prod.get<const Data::Variance>("a"), {45}));
   EXPECT_TRUE(equals(prod.get<const Data::Variance>("b"), {54}));
 }
