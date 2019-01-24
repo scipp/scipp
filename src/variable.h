@@ -24,6 +24,11 @@ class Variable;
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableSlice. This is using so-called
 /// concept-based polymorphism, see talks by Sean Parent.
+///
+/// This is the most generic representation for a multi-dimensional array of
+/// data. Depending on the item type more functionality such as binary
+/// operations is supported. Virtual methods for these are added in
+/// child-classes. See, e.g., `ArithmeticVariableConcept`.
 class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
@@ -53,12 +58,6 @@ public:
   virtual bool isView() const = 0;
   virtual bool isConstView() const = 0;
 
-  virtual void rebin(const VariableConcept &old, const Dim dim,
-                     const VariableConcept &oldCoord,
-                     const VariableConcept &newCoord) = 0;
-  virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
-  virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
-  virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
   virtual gsl::index size() const = 0;
   virtual void copy(const VariableConcept &other, const Dim dim,
                     const gsl::index offset, const gsl::index otherBegin,
@@ -114,7 +113,7 @@ private:
   std::unique_ptr<T> m_data;
 };
 
-template <class... Tags> class LinearView;
+template <class... Tags> class ZipView;
 class ConstVariableSlice;
 class VariableSlice;
 template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
@@ -254,14 +253,14 @@ public:
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
 
-  template <class... Tags> friend class LinearView;
+  template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
 private:
   template <class T> const Vector<T> &cast() const;
   template <class T> Vector<T> &cast();
 
-  // Used by LinearView. Need to find a better way instead of having everyone as
+  // Used by ZipView. Need to find a better way instead of having everyone as
   // friend.
   Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }
 
@@ -477,7 +476,7 @@ public:
 
 private:
   friend class Variable;
-  template <class... Tags> friend class LinearView;
+  template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
   // Special version creating const view from mutable view. Note that this does

@@ -7,7 +7,7 @@
 
 #include "test_macros.h"
 
-#include "dataset_view.h"
+#include "md_zip_view.h"
 
 // Quick and dirty conversion to strings, should probably be part of our library
 // of basic routines.
@@ -33,7 +33,7 @@ TEST(TableWorkspace, basics) {
   table.insert<Data::String>("", {Dim::Row, 3}, 3);
 
   // Modify table with know columns.
-  DatasetView<const Data::Value, Data::String> view(table);
+  MDZipView<const Data::Value, Data::String> view(table);
   for (auto &item : view)
     if (item.value() < 0.0)
       item.get<Data::String>() = "why is this negative?";

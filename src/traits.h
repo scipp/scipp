@@ -9,7 +9,7 @@
 #include <type_traits>
 
 class Dataset;
-template <class... Ts> class DatasetViewImpl;
+template <class... Ts> class MDZipViewImpl;
 
 namespace detail {
 template <class T, class Tuple> struct index;
@@ -27,12 +27,12 @@ struct and_<Cond, Conds...>
     : std::conditional<Cond::value, and_<Conds...>, std::false_type>::type {};
 
 // Cannot use std::is_const because we need to handle the special case of a
-// nested DatasetView.
+// nested MDZipView.
 template <class T> struct is_const : std::false_type {};
 template <class T> struct is_const<const T> : std::true_type {};
 
 template <class... Ts>
-struct is_const<DatasetViewImpl<Ts...>> : and_<is_const<Ts>...> {};
+struct is_const<MDZipViewImpl<Ts...>> : and_<is_const<Ts>...> {};
 
 template <class... Tags>
 using MaybeConstDataset =
