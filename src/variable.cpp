@@ -124,78 +124,71 @@ template <class T> struct RebinHelper {
   }
 };
 
-#define DISABLE_ARITHMETICS_T(...)                                             \
-  template <template <class> class Op, class T>                                \
-  struct ArithmeticHelper<Op, __VA_ARGS__> {                                   \
-    template <class... Args> static void apply(Args &&...) {                   \
-      throw std::runtime_error(                                                \
-          "Not an arithmetic type. Cannot apply operand.");                    \
-    }                                                                          \
-  };
-
-DISABLE_ARITHMETICS_T(std::shared_ptr<T>)
-DISABLE_ARITHMETICS_T(std::array<T, 4>)
-DISABLE_ARITHMETICS_T(std::array<T, 3>)
-DISABLE_ARITHMETICS_T(boost::container::small_vector<T, 1>)
-DISABLE_ARITHMETICS_T(std::vector<T>)
-DISABLE_ARITHMETICS_T(std::pair<T, T>)
-DISABLE_ARITHMETICS_T(ValueWithDelta<T>)
-// TODO: + and - do actually work for Eigen::Vector3d would need a more
-// fine-grained way to disable specific operations, if required.
-DISABLE_ARITHMETICS_T(Eigen::Matrix<T, 3, 1>)
-
-template <template <class> class Op> struct ArithmeticHelper<Op, std::string> {
-  template <class... Args> static void apply(Args &&...) {
-    throw std::runtime_error("Cannot add strings. Use append() instead.");
-  }
-};
-
-#define DISABLE_REBIN_T(...)                                                   \
-  template <class T> struct RebinHelper<__VA_ARGS__> {                         \
-    template <class... Args> static void rebin(Args &&...) {                   \
-      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-    template <class... Args> static void rebinInner(Args &&...) {              \
-      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-  };
-
-#define DISABLE_REBIN(...)                                                     \
-  template <> struct RebinHelper<__VA_ARGS__> {                                \
-    template <class... Args> static void rebin(Args &&...) {                   \
-      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-    template <class... Args> static void rebinInner(Args &&...) {              \
-      throw std::runtime_error("Not and arithmetic type. Cannot rebin.");      \
-    }                                                                          \
-  };
-
-DISABLE_REBIN_T(std::shared_ptr<T>)
-DISABLE_REBIN_T(std::array<T, 4>)
-DISABLE_REBIN_T(std::array<T, 3>)
-DISABLE_REBIN_T(std::vector<T>)
-DISABLE_REBIN_T(boost::container::small_vector<T, 1>)
-DISABLE_REBIN_T(std::pair<T, T>)
-DISABLE_REBIN_T(ValueWithDelta<T>)
-DISABLE_REBIN(Dataset)
-DISABLE_REBIN(char)
-DISABLE_REBIN(std::string)
-DISABLE_REBIN(Eigen::Vector3d)
-
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
+// Some types such as Dataset support `+` (effectively appending table rows),
+// but are not arithmetic.
+class AddableVariableConcept : public VariableConcept {
+public:
+  static constexpr const char *name = "addable";
+  using VariableConcept::VariableConcept;
+  virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
+};
+
+class ArithmeticVariableConcept : public AddableVariableConcept {
+public:
+  static constexpr const char *name = "arithmetic";
+  using AddableVariableConcept::AddableVariableConcept;
+  virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
+  virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
+};
+
+class FloatingPointVariableConcept : public ArithmeticVariableConcept {
+public:
+  static constexpr const char *name = "floating-point";
+  using ArithmeticVariableConcept::ArithmeticVariableConcept;
+  virtual void rebin(const VariableConcept &old, const Dim dim,
+                     const VariableConcept &oldCoord,
+                     const VariableConcept &newCoord) = 0;
+};
+
 template <class T> class ViewModel;
+template <class T> class AddableVariableConceptT;
+template <class T> class ArithmeticVariableConceptT;
+template <class T> class FloatingPointVariableConceptT;
+
+template <class T, typename Enable = void> struct concept {
+  using type = VariableConcept;
+  using typeT = VariableConceptT<T>;
+};
+template <class T>
+struct concept<T, std::enable_if_t<std::is_same<T, Dataset>::value>> {
+  using type = AddableVariableConcept;
+  using typeT = AddableVariableConceptT<T>;
+};
+template <class T>
+struct concept<T, std::enable_if_t<std::is_integral<T>::value>> {
+  using type = ArithmeticVariableConcept;
+  using typeT = ArithmeticVariableConceptT<T>;
+};
+template <class T>
+struct concept<T, std::enable_if_t<std::is_floating_point<T>::value>> {
+  using type = FloatingPointVariableConcept;
+  using typeT = FloatingPointVariableConceptT<T>;
+};
+
+template <class T> using concept_t = typename concept<T>::type;
+template <class T> using conceptT_t = typename concept<T>::typeT;
 
 /// Partially typed implementation of VariableConcept. This is a common base
 /// class for DataModel<T> and ViewModel<T>. The former holds data in a
 /// contiguous array, whereas the latter is a (potentially non-contiguous) view
 /// into the former. This base class implements functionality that is common to
 /// both, for a specific T.
-template <class T> class VariableConceptT : public VariableConcept {
+template <class T> class VariableConceptT : public concept_t<T> {
 public:
-  VariableConceptT(const Dimensions &dimensions)
-      : VariableConcept(dimensions) {}
+  VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
   virtual gsl::span<T> getSpan() = 0;
   virtual gsl::span<T> getSpan(const Dim dim, const gsl::index begin,
@@ -212,15 +205,15 @@ public:
   virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
 
   std::unique_ptr<VariableConcept> makeView() const override {
-    auto &dims = dimensions();
+    auto &dims = this->dimensions();
     return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
                                                                 getView(dims));
   }
 
   std::unique_ptr<VariableConcept> makeView() override {
-    if (isConstView())
+    if (this->isConstView())
       return const_cast<const VariableConceptT &>(*this).makeView();
-    auto &dims = dimensions();
+    auto &dims = this->dimensions();
     return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
                                                                 getView(dims));
   }
@@ -228,7 +221,7 @@ public:
   std::unique_ptr<VariableConcept>
   makeView(const Dim dim, const gsl::index begin,
            const gsl::index end) const override {
-    auto dims = dimensions();
+    auto dims = this->dimensions();
     if (end == -1)
       dims.erase(dim);
     else
@@ -240,10 +233,10 @@ public:
   std::unique_ptr<VariableConcept> makeView(const Dim dim,
                                             const gsl::index begin,
                                             const gsl::index end) override {
-    if (isConstView())
+    if (this->isConstView())
       return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
                                                                   end);
-    auto dims = dimensions();
+    auto dims = this->dimensions();
     if (end == -1)
       dims.erase(dim);
     else
@@ -262,91 +255,29 @@ public:
   }
 
   bool operator==(const VariableConcept &other) const override {
-    if (dimensions() != other.dimensions())
+    const auto &dims = this->dimensions();
+    if (dims != other.dimensions())
       return false;
     const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
-    if (isContiguous()) {
-      if (other.isContiguous() &&
-          dimensions().isContiguousIn(other.dimensions())) {
+    if (this->isContiguous()) {
+      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
         return equal(getSpan(), otherT.getSpan());
       } else {
-        return equal(getSpan(), otherT.getView(dimensions()));
+        return equal(getSpan(), otherT.getView(dims));
       }
     } else {
-      if (other.isContiguous() &&
-          dimensions().isContiguousIn(other.dimensions())) {
-        return equal(getView(dimensions()), otherT.getSpan());
+      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+        return equal(getView(dims), otherT.getSpan());
       } else {
-        return equal(getView(dimensions()), otherT.getView(dimensions()));
+        return equal(getView(dims), otherT.getView(dims));
       }
     }
-  }
-
-  template <template <class> class Op>
-  VariableConcept &apply(const VariableConcept &other) {
-    try {
-      const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
-      if (getView(dimensions()).overlaps(otherT.getView(dimensions()))) {
-        // If there is an overlap between lhs and rhs we copy the rhs before
-        // applying the operation.
-        const auto &data = otherT.getView(otherT.dimensions());
-        DataModel<Vector<T>> copy(other.dimensions(),
-                                  Vector<T>(data.begin(), data.end()));
-        return apply<Op>(copy);
-      }
-
-      if (isContiguous() && dimensions().contains(other.dimensions())) {
-        if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T>::apply(getSpan(), otherT.getSpan());
-        } else {
-          ArithmeticHelper<Op, T>::apply(getSpan(),
-                                         otherT.getView(dimensions()));
-        }
-      } else if (dimensions().contains(other.dimensions())) {
-        if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T>::apply(getView(dimensions()),
-                                         otherT.getSpan());
-        } else {
-          ArithmeticHelper<Op, T>::apply(getView(dimensions()),
-                                         otherT.getView(dimensions()));
-        }
-      } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        if (other.isContiguous() &&
-            dimensions().isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T>::apply(getView(other.dimensions()),
-                                         otherT.getSpan());
-        } else {
-          ArithmeticHelper<Op, T>::apply(getView(other.dimensions()),
-                                         otherT.getView(other.dimensions()));
-        }
-      }
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error("Cannot apply arithmetic operation to "
-                               "Variables: Underlying data types do not "
-                               "match.");
-    }
-    return *this;
-  }
-
-  VariableConcept &operator+=(const VariableConcept &other) override {
-    return apply<std::plus>(other);
-  }
-
-  VariableConcept &operator-=(const VariableConcept &other) override {
-    return apply<std::minus>(other);
-  }
-
-  VariableConcept &operator*=(const VariableConcept &other) override {
-    return apply<std::multiplies>(other);
   }
 
   void copy(const VariableConcept &other, const Dim dim,
             const gsl::index offset, const gsl::index otherBegin,
             const gsl::index otherEnd) override {
-    auto iterDims = dimensions();
+    auto iterDims = this->dimensions();
     const gsl::index delta = otherEnd - otherBegin;
     if (iterDims.contains(dim))
       iterDims.resize(dim, delta);
@@ -355,7 +286,7 @@ public:
     auto otherView = otherT.getView(iterDims, dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
-    if (isContiguous() && iterDims.isContiguousIn(dimensions())) {
+    if (this->isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
       auto target = getSpan(dim, offset, offset + delta);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
         auto source = otherT.getSpan(dim, otherBegin, otherEnd);
@@ -373,15 +304,92 @@ public:
       }
     }
   }
+};
+
+template <class T> class AddableVariableConceptT : public VariableConceptT<T> {
+public:
+  using VariableConceptT<T>::VariableConceptT;
+
+  template <template <class> class Op>
+  VariableConcept &apply(const VariableConcept &other) {
+    const auto &dims = this->dimensions();
+    try {
+      const auto &otherT = dynamic_cast<const VariableConceptT<T> &>(other);
+      if (this->getView(dims).overlaps(otherT.getView(dims))) {
+        // If there is an overlap between lhs and rhs we copy the rhs before
+        // applying the operation.
+        const auto &data = otherT.getView(otherT.dimensions());
+        DataModel<Vector<T>> copy(other.dimensions(),
+                                  Vector<T>(data.begin(), data.end()));
+        return apply<Op>(copy);
+      }
+
+      if (this->isContiguous() && dims.contains(other.dimensions())) {
+        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, T>::apply(this->getSpan(), otherT.getSpan());
+        } else {
+          ArithmeticHelper<Op, T>::apply(this->getSpan(), otherT.getView(dims));
+        }
+      } else if (dims.contains(other.dimensions())) {
+        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, T>::apply(this->getView(dims), otherT.getSpan());
+        } else {
+          ArithmeticHelper<Op, T>::apply(this->getView(dims),
+                                         otherT.getView(dims));
+        }
+      } else {
+        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+          ArithmeticHelper<Op, T>::apply(this->getView(other.dimensions()),
+                                         otherT.getSpan());
+        } else {
+          ArithmeticHelper<Op, T>::apply(this->getView(other.dimensions()),
+                                         otherT.getView(other.dimensions()));
+        }
+      }
+    } catch (const std::bad_cast &) {
+      throw std::runtime_error("Cannot apply arithmetic operation to "
+                               "Variables: Underlying data types do not "
+                               "match.");
+    }
+    return *this;
+  }
+
+  VariableConcept &operator+=(const VariableConcept &other) override {
+    return apply<std::plus>(other);
+  }
+};
+
+template <class T>
+class ArithmeticVariableConceptT : public AddableVariableConceptT<T> {
+public:
+  using AddableVariableConceptT<T>::AddableVariableConceptT;
+
+  VariableConcept &operator-=(const VariableConcept &other) override {
+    return this->template apply<std::minus>(other);
+  }
+
+  VariableConcept &operator*=(const VariableConcept &other) override {
+    return this->template apply<std::multiplies>(other);
+  }
+};
+
+template <class T>
+class FloatingPointVariableConceptT : public ArithmeticVariableConceptT<T> {
+public:
+  using ArithmeticVariableConceptT<T>::ArithmeticVariableConceptT;
 
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
     // Dimensions of *this and old are guaranteed to be the same.
-    const auto &oldT = dynamic_cast<const VariableConceptT &>(old);
-    const auto &oldCoordT = dynamic_cast<const VariableConceptT &>(oldCoord);
-    const auto &newCoordT = dynamic_cast<const VariableConceptT &>(newCoord);
-    if (dimensions().label(0) == dim && oldCoord.dimensions().count() == 1 &&
+    const auto &oldT = dynamic_cast<const FloatingPointVariableConceptT &>(old);
+    const auto &oldCoordT =
+        dynamic_cast<const FloatingPointVariableConceptT &>(oldCoord);
+    const auto &newCoordT =
+        dynamic_cast<const FloatingPointVariableConceptT &>(newCoord);
+    if (this->dimensions().label(0) == dim &&
+        oldCoord.dimensions().count() == 1 &&
         newCoord.dimensions().count() == 1) {
       RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
     } else {
@@ -389,12 +397,12 @@ public:
       oldCoordDims.resize(dim, oldCoordDims[dim] - 1);
       auto newCoordDims = newCoord.dimensions();
       newCoordDims.resize(dim, newCoordDims[dim] - 1);
-      auto oldCoordView = oldCoordT.getView(dimensions());
-      auto newCoordView = newCoordT.getView(dimensions());
+      auto oldCoordView = oldCoordT.getView(this->dimensions());
+      auto newCoordView = newCoordT.getView(this->dimensions());
       const auto oldOffset = oldCoordDims.offset(dim);
       const auto newOffset = newCoordDims.offset(dim);
 
-      RebinHelper<T>::rebin(dim, oldT.getSpan(), getSpan(), oldCoordView,
+      RebinHelper<T>::rebin(dim, oldT.getSpan(), this->getSpan(), oldCoordView,
                             oldOffset, newCoordView, newOffset);
     }
   }
@@ -414,13 +422,12 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
 }
 
 /// Implementation of VariableConcept that holds data.
-template <class T>
-class DataModel : public VariableConceptT<typename T::value_type> {
+template <class T> class DataModel : public conceptT_t<typename T::value_type> {
   using value_type = std::remove_const_t<typename T::value_type>;
 
 public:
   DataModel(const Dimensions &dimensions, T model)
-      : VariableConceptT<typename T::value_type>(std::move(dimensions)),
+      : conceptT_t<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
     if (this->dimensions().volume() != static_cast<gsl::index>(m_model.size()))
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -503,7 +510,7 @@ public:
 /// Implementation of VariableConcept that represents a view onto data.
 template <class T>
 class ViewModel
-    : public VariableConceptT<std::remove_const_t<typename T::value_type>> {
+    : public conceptT_t<std::remove_const_t<typename T::value_type>> {
   using value_type = std::remove_const_t<typename T::value_type>;
 
   void requireMutable() const {
@@ -519,7 +526,7 @@ class ViewModel
 
 public:
   ViewModel(const Dimensions &dimensions, T model)
-      : VariableConceptT<value_type>(std::move(dimensions)),
+      : conceptT_t<value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
     if (this->dimensions().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -604,9 +611,8 @@ public:
 
   std::unique_ptr<VariableConcept>
   cloneMutable(VariableConcept &mutableData) const override {
-    auto *data = dynamic_cast<VariableConceptT<value_type> &>(mutableData)
-                     .getSpan()
-                     .data();
+    auto *data =
+        dynamic_cast<conceptT_t<value_type> &>(mutableData).getSpan().data();
     return std::make_unique<ViewModel<VariableView<value_type>>>(
         this->dimensions(), m_model.createMutable(data));
   }
@@ -734,6 +740,15 @@ bool Variable::operator!=(const ConstVariableSlice &other) const {
   return !(*this == other);
 }
 
+template <class T, class C> auto &require(C &concept) {
+  try {
+    return dynamic_cast<T &>(concept);
+  } catch (const std::bad_cast &) {
+    throw std::runtime_error(std::string("Cannot apply operation, requires ") +
+                             T::name + " type.");
+  }
+}
+
 template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in DataModel::operator+=.
@@ -743,7 +758,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
     dataset::expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
-    variable.data() += other.data();
+    require<AddableVariableConcept>(variable.data()) += other.data();
   } else {
     if (variable.dimensions() == other.dimensions()) {
       using ConstViewOrRef =
@@ -795,7 +810,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   dataset::expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events{})
     throw std::runtime_error("Subtraction of events lists not implemented.");
-  variable.data() -= other.data();
+  require<ArithmeticVariableConcept>(variable.data()) -= other.data();
   return variable;
 }
 
@@ -816,7 +831,7 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
-  variable.data() *= other.data();
+  require<ArithmeticVariableConcept>(variable.data()) *= other.data();
   return variable;
 }
 
@@ -1077,7 +1092,8 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
   dims.resize(dim, newCoord.dimensions()[dim] - 1);
   rebinned.setDimensions(dims);
   // TODO take into account unit if values have been divided by bin width.
-  rebinned.data().rebin(var.data(), dim, oldCoord.data(), newCoord.data());
+  require<FloatingPointVariableConcept>(rebinned.data())
+      .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
   return rebinned;
 }
 
@@ -1121,7 +1137,7 @@ Variable sum(const Variable &var, const Dim dim) {
   dims.erase(dim);
   // setDimensions zeros the data
   summed.setDimensions(dims);
-  summed.data() += var.data();
+  require<ArithmeticVariableConcept>(summed.data()) += var.data();
   return summed;
 }
 

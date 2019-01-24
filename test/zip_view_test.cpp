@@ -11,39 +11,39 @@
 #include "test_macros.h"
 
 #include "dataset.h"
-#include "linear_view.h"
+#include "zip_view.h"
 
-TEST(LinearView, construct_fail) {
+TEST(ZipView, construct_fail) {
   Dataset d;
 
   d.insert<Coord::X>({Dim::X, 3});
   d.insert<Data::Value>("", {Dim::X, 3});
   EXPECT_THROW_MSG(
-      LinearView<Coord::X> view(d), std::runtime_error,
-      "LinearView must be constructed based on *all* variables in a dataset.");
+      ZipView<Coord::X> view(d), std::runtime_error,
+      "ZipView must be constructed based on *all* variables in a dataset.");
   d.erase(Data::Value{});
 
   d.insert<Data::Value>("", {});
-  EXPECT_THROW_MSG((LinearView<Coord::X, Data::Value>(d)), std::runtime_error,
-                   "LinearView supports only datasets where all variables are "
+  EXPECT_THROW_MSG((ZipView<Coord::X, Data::Value>(d)), std::runtime_error,
+                   "ZipView supports only datasets where all variables are "
                    "1-dimensional.");
   d.erase(Data::Value{});
 
   d.insert<Coord::Y>({Dim::Y, 3});
-  EXPECT_THROW_MSG((LinearView<Coord::X, Coord::Y>(d)), std::runtime_error,
-                   "LinearView supports only 1-dimensional datasets.");
+  EXPECT_THROW_MSG((ZipView<Coord::X, Coord::Y>(d)), std::runtime_error,
+                   "ZipView supports only 1-dimensional datasets.");
 }
 
-TEST(LinearView, construct) {
+TEST(ZipView, construct) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 3});
-  EXPECT_NO_THROW(LinearView<Coord::X> view(d));
+  EXPECT_NO_THROW(ZipView<Coord::X> view(d));
 }
 
-TEST(LinearView, push_back_1_variable) {
+TEST(ZipView, push_back_1_variable) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 3});
-  LinearView<Coord::X> view(d);
+  ZipView<Coord::X> view(d);
   view.push_back({1.1});
   ASSERT_EQ(d.get<const Coord::X>().size(), 4);
   ASSERT_EQ(d(Coord::X{}).dimensions().size(0), 4);
@@ -58,11 +58,11 @@ TEST(LinearView, push_back_1_variable) {
   EXPECT_EQ(data[4], 2.2);
 }
 
-TEST(LinearView, push_back_2_variables) {
+TEST(ZipView, push_back_2_variables) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 2});
   d.insert<Data::Value>("", {Dim::X, 2});
-  LinearView<Coord::X, Data::Value> view(d);
+  ZipView<Coord::X, Data::Value> view(d);
   view.push_back({1.1, 1.2});
   ASSERT_EQ(d.get<const Coord::X>().size(), 3);
   ASSERT_EQ(d(Coord::X{}).dimensions().size(0), 3);
@@ -82,12 +82,12 @@ TEST(LinearView, push_back_2_variables) {
   EXPECT_EQ(data[3], 2.3);
 }
 
-TEST(LinearView, std_algorithm_generate_n_with_back_inserter) {
+TEST(ZipView, std_algorithm_generate_n_with_back_inserter) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 0});
   d.insert<Data::Value>("", {Dim::X, 0});
 
-  LinearView<Coord::X, Data::Value> view(d);
+  ZipView<Coord::X, Data::Value> view(d);
 
   std::mt19937 rng;
   std::generate_n(std::back_inserter(view), 5, [&] {
@@ -113,10 +113,10 @@ TEST(LinearView, std_algorithm_generate_n_with_back_inserter) {
   }
 }
 
-TEST(LinearView, iterator_1_variable) {
+TEST(ZipView, iterator_1_variable) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 3}, {1.0, 2.0, 3.0});
-  LinearView<Coord::X> view(d);
+  ZipView<Coord::X> view(d);
   EXPECT_EQ(std::distance(view.begin(), view.end()), 3);
   auto it = view.begin();
   EXPECT_EQ(std::get<0>(*it++), 1.0);
@@ -125,11 +125,11 @@ TEST(LinearView, iterator_1_variable) {
   EXPECT_EQ(it, view.end());
 }
 
-TEST(LinearView, iterator_modify) {
+TEST(ZipView, iterator_modify) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 3}, {1.0, 2.0, 3.0});
   d.insert<Data::Value>("", {Dim::X, 3}, {1.1, 2.1, 3.1});
-  LinearView<Coord::X, Data::Value> view(d);
+  ZipView<Coord::X, Data::Value> view(d);
 
   // Note this peculiarity: `item` is returned by value but it is a proxy
   // object, i.e., it containts references that can be used to modify the
@@ -141,16 +141,16 @@ TEST(LinearView, iterator_modify) {
   EXPECT_TRUE(equals(d.get<const Data::Value>(), {2.2, 4.2, 6.2}));
 }
 
-TEST(LinearView, iterator_copy) {
+TEST(ZipView, iterator_copy) {
   Dataset source;
   source.insert<Coord::X>({Dim::X, 3}, {1.0, 2.0, 3.0});
   source.insert<Data::Value>("", {Dim::X, 3}, {1.1, 2.1, 3.1});
-  LinearView<Coord::X, Data::Value> source_view(source);
+  ZipView<Coord::X, Data::Value> source_view(source);
 
   Dataset d;
   d.insert<Coord::X>({Dim::X, 0});
   d.insert<Data::Value>("", {Dim::X, 0});
-  LinearView<Coord::X, Data::Value> view(d);
+  ZipView<Coord::X, Data::Value> view(d);
 
   std::copy(source_view.begin(), source_view.end(), std::back_inserter(view));
   std::copy(source_view.begin(), source_view.end(), std::back_inserter(view));
@@ -166,16 +166,16 @@ TEST(LinearView, iterator_copy) {
       equals(d.get<const Data::Value>(), {1.1, 1.1, 2.1, 3.1, 2.1, 3.1}));
 }
 
-TEST(LinearView, iterator_copy_if) {
+TEST(ZipView, iterator_copy_if) {
   Dataset source;
   source.insert<Coord::X>({Dim::X, 3}, {1.0, 2.0, 3.0});
   source.insert<Data::Value>("", {Dim::X, 3}, {1.1, 2.1, 3.1});
-  LinearView<Coord::X, Data::Value> source_view(source);
+  ZipView<Coord::X, Data::Value> source_view(source);
 
   Dataset d;
   d.insert<Coord::X>({Dim::X, 0});
   d.insert<Data::Value>("", {Dim::X, 0});
-  LinearView<Coord::X, Data::Value> view(d);
+  ZipView<Coord::X, Data::Value> view(d);
 
   std::copy_if(source_view.begin(), source_view.end(), std::back_inserter(view),
                [](const auto &item) { return std::get<1>(item) > 2.0; });
@@ -190,10 +190,10 @@ TEST(LinearView, iterator_copy_if) {
   EXPECT_TRUE(equals(d.get<const Data::Value>(), {2.1, 3.1, 2.1, 3.1}));
 }
 
-TEST(LinearView, iterator_sort) {
+TEST(ZipView, iterator_sort) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 4}, {3.0, 2.0, 1.0, 0.0});
-  LinearView<Coord::X> view(d);
+  ZipView<Coord::X> view(d);
 
   // Note: Unlike other std algorithms, std::sort does not work with these
   // iterators, must use ranges::sort.

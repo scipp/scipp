@@ -35,7 +35,7 @@
   - [Variable tags](#design-components-variable-tags)
   - [`class Dimensions`](#design-components-dimensions)
   - [Dimension tags](#design-components-dimension-tags)
-  - [`class DatasetView`](#design-components-datasetview)
+  - [`class MDZipView`](#design-components-md-zip-view)
   - [`class DatasetIndex`](#design-components-datasetindex)
   - [Units](#design-components-units)
   - [Exceptions](#design-components-exceptions)
@@ -495,15 +495,16 @@ An incomplete list of dimension tags:
 In many cases there is a corresponding coordinate tag for a dimension.
 
 
-### <a name="design-components-datasetview"></a>`class DatasetView`
+### <a name="design-components-md-zip-view"></a>`class MDZipView`
 
 Due to the type-erasure we cannot simply treat `Dataset` as an array of structs, i.e., there is no equivalent to `API::MatrixWorkspace::getSpectrum(const size_t index)`.
 If only access to a single variable is required it can be accessed directly.
-For cases that require joint access to multiple variables we provide `class DatasetView`:
+For cases that require joint access to multiple variables we provide `class MDZipView`:
 - Effectively provides a "zip-iterator", with support for automatic on-the-fly broadcast or transposition of dimensions.
 - Nested view allows for accessing a histogram-like view.
 - Allows for joint iteration with bin-edge variables using a `Bin` wrapper, overcoming the old nuisance of having `length+1` bin edges.
-  See the [C++ example](#examples-cpp) for an example of how this would be used.
+
+See the [C++ example](#examples-cpp) for an example of how these features would be used.
 
 The current implementation seems to support all required features.
 Performance was originally a problem due to the multi-dimensional iteration, but has subsequently been optimized to the point where it should be sufficient for most applications.
@@ -727,15 +728,19 @@ The following is a relatively complex example of the capabilities of `Dataset`.
 Apart from minor details and operations that have not been fully implemented yet, all features that are used below have been demonstrated to work in the prototype.
 
 ```cpp
-// Create an empty dataset.
-Dataset d;
-
+// Create dataset with detector information.
+Dataset detInfo;
 // Add some information about the instrument. This would likely be wrapped in
 // convenience functions.
 // Data passed as argument, e.g., initializer_list.
-d.insert<Coord::DetectorId>({Dim::Detector, 4}, {1, 2, 3, 4});
+detInfo.insert<Coord::DetectorId>({Dim::Detector, 4}, {1, 2, 3, 4});
 // No data passed, will be default-constructed.
-d.insert<Coord::DetectorPosition>({Dim::Detector, 4});
+detInfo.insert<Coord::Position>({Dim::Detector, 4});
+
+// Create an empty dataset.
+Dataset d;
+// Add detector information to main dataset.
+d.insert<Coord::DetectorInfo>({}, {detInfo});
 
 // Add spectrum-to-detector mapping and spectrum numbers.
 std::vector<std::vector<gsl::index>> grouping = {{0, 2}, {1}, {}};
@@ -755,29 +760,30 @@ d.insert<Data::Variance>("sample", dims);
 d.insert<Data::Value>("background", dims);
 d.insert<Data::Variance>("background", dims);
 
-// Add monitors as a nested dataset.
+// Add monitors as a nested dataset. In practice storing monitors as attribute
+// instead of as a coordinate may turn out to be more convenient.
 d.insert<Coord::MonitorName>({Dim::Monitor, 2}, "beam-status", "main");
-d.insert<Data::Monitor>("monitor", {Dim::Monitor, 2});
+d.insert<Coord::Monitor>({Dim::Monitor, 2});
 // Add data to monitors. Use DatasetIndex to do lookup by name.
 DatasetIndex<Coord::MonitorName> monitors(d);
 // First monitor has histogram data and is pixelated.
 int pixels = 10 * 10;
-auto &beam_mon = d.get<Data::Monitor>()[monitors["beam-status"]];
-beam_mon.insertAsEdge<Coord::Tof>("", {Dim::Tof, 101});
+auto &beam_mon = d.get<Coord::Monitor>()[monitors["beam-status"]];
+beam_mon.insert<Coord::Tof>("", {Dim::Tof, 101});
 beam_mon.insert<Data::Value>("", {{Dim::Tof, 100}, {Dim::Spectrum}},
                              100 * pixels);
 beam_mon.insert<Data::Variance>("", {{Dim::Tof, 100}, {Dim::Spectrum}},
                                 100 * pixels);
 // Second monitor is event-mode.
-auto &main_mon = d.get<Data::Monitor>()[monitors["main"]];
+auto &main_mon = d.get<Coord::Monitor>()[monitors["main"]];
 // Note that there is Coord::Tof and Data::Tof, the latter is used for events.
 main_mon.insert<Data::Tof>("", {Dim::Event, 238576});
 main_mon.insert<Data::PulseTime>("", {Dim::Event, 238576});
 
 // Convert monitor to histogram.
-auto mon = d.get<Data::Monitor>()[monitors["main"]];
+auto mon = d.get<Coord::Monitor>()[monitors["main"]];
 // Bin events using axis from d.
-auto mon_hist = binEvents(mon, d.at<Coord::Tof>());
+auto mon_hist = histogram(mon, d(Coord::Tof{}));
 // Merge histogram monitor data into monitor. Note that we can keep the
 // events if we want.
 mon.merge(mon_hist);
@@ -785,7 +791,7 @@ mon.merge(mon_hist);
 // Normalize "sample" and "background" to monitor. Note that the variables
 // in monitor do not have a name so it will affect all data variables with a
 // matching tag.
-d /= d.get<Data::Monitor>()[monitors["main"]];
+d /= d.get<Coord::Monitor>()[monitors["main"]];
 
 // Build equivalent to Mantid's WorkspaceSingleValue.
 Dataset offset;
@@ -795,28 +801,28 @@ offset.insert<Data::Variance>("sample", {}, {0.1});
 // other `Data` variables such as "background".
 d += offset;
 
-// Subtract the background. To get around name matching we extract data for
-// subtraction, removing it from the dataset to avoid failure in operator-.
-d.merge(d.extract("sample") - d.extract("background"));
+// Subtract the background. To get around name matching we operator on a view
+// that references only a subset of variables.
+d["sample"] - d["background"];
 
 // Copy the dataset. All variables use copy-on-write, so this is cheap.
 auto spinUp(d);
-spinUp.insert<Coord::Polarization>({}, Spin::Up);
+spinUp.insert<Coord::Polarization>({}, {Spin::Up});
 auto spinDown(d);
-spinDown.insert<Coord::Polarization>({}, Spin::Down);
+spinDown.insert<Coord::Polarization>({}, {Spin::Down});
 
 // Combine data for spin-up and spin-down in same dataset, polarization is
 // an extra dimension.
 auto combined = concatenate(Dim::Polarization, spinUp, spinDown);
 
 // Do a temperature scan, adding a new temperature dimension to the dataset.
-Dataset tempEdges.insertAsEdge<Coord::Temperature>({Dim::Temperature, 6},
-                                                   {273.0, 200.0, 100.0, 10.0,
-                                                    4.2, 4.1});
+Dataset tempEdges.insert<Coord::Temperature>({Dim::Temperature, 6},
+                                             {273.0, 200.0, 100.0, 10.0, 4.2,
+                                              4.1});
 // Empty dataset for accumulation.
 Dataset scan;
 auto dataPoint(combined);
-for (const auto temperature : DatasetView<Bin<Coord::Temperature>>(tempEdges)) {
+for (const auto temperature : MDZipView<Bin<Coord::Temperature>>(tempEdges)) {
   dataPoint.get<Data::Value>("sample - background")[0] =
       exp(-0.001 * temperature.center());
   // Note that concatenate will collapse dimensions of a variable if the
@@ -833,27 +839,26 @@ scan.merge(tempEdges);
 scan = convert(scan, Dim::Tof, Dim::Wavelength);
 
 // Extract a single wavelength slice.
-auto lambdaSlice = slice(scan, Dim::Wavelength, 10.5);
+Variable lambdaSlice = scan(Dim::Wavelength, 10.5);
 
 // Compute the spin difference.
 DatasetIndex<Coord::Polarization> spin(lambdaSlice);
-// If we want to subtract slices we need to remove mismatching coordinates
-// first, otherwise binary operations will fail.
-lambdaSlice.erase<Coord::Polarization>();
-lambdaSlice = slice(lambdaSlice, Dim::Polarization, spin[Spin::Up]) -
-              slice(lambdaSlice, Dim::Polarization, spin[Spin::Down]);
+// Slicing without range, i.e., with a single index, erases the corresponding
+// coordinate so the binary operation works.
+lambdaSlice = lambdaSlice(Dim::Polarization, spin[Spin::Up]) -
+              lambdaSlice(Dim::Polarization, spin[Spin::Down]);
 
-// Create a nested DatasetView, for "zip"-style iteration
+// Create a nested MDZipView, for "zip"-style iteration
 // Define an abbreviation for a nested view. For convenience, frequently
 // used variants could be provided as built-ins. Note the `Bin` wrapper,
 // which is used for joint iteration of bin-edge variables and other
 // variables.
-using Histogram = DatasetView<Bin<Coord::Temperature>, const Data::Value,
-                              const Data::StdDev>;
+using Histogram = MDZipView<Bin<Coord::Temperature>, const Data::Value,
+                            const Data::StdDev>;
 // We specify Dim::Temperature when creating the view, indicating that the
 // (outer) view will not iterate that dimension. This implies that it will
 // be the (only) dimension of the nested views.
-DatasetView<Histogram, const Coord::SpectrumNumber>
+MDZipView<Histogram, const Coord::SpectrumNumber>
     view(lambdaSlice, "sample - background", {Dim::Temperature});
 
 for (const auto &tempDependence : view) {
@@ -1148,8 +1153,8 @@ Having a clear and well defined strategy will reduce the risk of confusion.
 
 The go-to tag for storing uncertainties will be `Data::Variance`.
 `Data::StdDev` will exist, but is for *access* only, i.e., attempting to create a `Variable` with that tag should fail.
-Instead `Data::StdDev` can by used in combination with `DatasetView` to *read* the standard deviations if required, e.g., for visualization purposes.
-If it turns out to be useful it would also be possible to provide setters --- as opposed to a simple assignment which is possible if the actual underlying data is referenced --- for standard deviation using `DatasetView` .
+Instead `Data::StdDev` can by used in combination with `MDZipView` to *read* the standard deviations if required, e.g., for visualization purposes.
+If it turns out to be useful it would also be possible to provide setters --- as opposed to a simple assignment which is possible if the actual underlying data is referenced --- for standard deviation using `MDZipView` .
 
 
 ### <a name="design-details-distribution-histogram-distinguised-by-unit"></a>"Distributions" and "histogram data" are distinguished by their unit
@@ -1214,7 +1219,7 @@ If it turns out to be required after all, a callback-based system such as VTK's 
 This has not been supported in `DataObjects::Workspace2D` for 10 years, until a very recent change, i.e., it does not appear to be strictly necessary since it can be solved in other ways (see below).
 Support has been considered and prototyped, however there are two strong reasons it is not part of the final design:
 - Significant complication of implementation for all operations, leading to larger initial development cost and more difficult long-term maintenance.
-- Negatively affects the performance of iteration via `DatasetView`, *even if the length does not vary*.
+- Negatively affects the performance of iteration via `MDZipView`, *even if the length does not vary*.
 
 ##### Alternative solutions and workarounds
 
