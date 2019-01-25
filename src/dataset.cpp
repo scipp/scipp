@@ -349,6 +349,12 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
   return dataset;
 }
 
+Dataset Dataset::operator-() const {
+  auto copy(*this);
+  copy *= -1.0;
+  return copy;
+}
+
 Dataset &Dataset::operator+=(const Dataset &other) {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
@@ -358,6 +364,12 @@ Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
+}
+Dataset &Dataset::operator+=(const double value) {
+  for (auto &var : m_variables)
+    if (var.tag() == Data::Value{})
+      var += value;
+  return *this;
 }
 
 Dataset &Dataset::operator-=(const Dataset &other) {
@@ -370,12 +382,26 @@ Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
+Dataset &Dataset::operator-=(const double value) {
+  for (auto &var : m_variables)
+    if (var.tag() == Data::Value{})
+      var -= value;
+  return *this;
+}
 
 Dataset &Dataset::operator*=(const Dataset &other) {
   return times_equals(*this, other);
 }
 Dataset &Dataset::operator*=(const ConstDatasetSlice &other) {
   return times_equals(*this, other);
+}
+Dataset &Dataset::operator*=(const double value) {
+  for (auto &var : m_variables)
+    if (var.tag() == Data::Value{})
+      var *= value;
+    else if (var.tag() == Data::Variance{})
+      var *= value * value;
+  return *this;
 }
 
 bool ConstDatasetSlice::contains(const Tag tag, const std::string &name) const {
@@ -409,6 +435,11 @@ template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
   return dataset;
 }
 
+Dataset ConstDatasetSlice::operator-() const {
+  Dataset copy(*this);
+  return -copy;
+}
+
 DatasetSlice DatasetSlice::assign(const Dataset &other) {
   return ::assign(*this, other);
 }
@@ -425,6 +456,12 @@ DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
+DatasetSlice DatasetSlice::operator+=(const double value) {
+  for (auto var : *this)
+    if (var.tag() == Data::Value{})
+      var += value;
+  return *this;
+}
 
 DatasetSlice DatasetSlice::operator-=(const Dataset &other) {
   return binary_op_equals(
@@ -435,6 +472,12 @@ DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
+DatasetSlice DatasetSlice::operator-=(const double value) {
+  for (auto var : *this)
+    if (var.tag() == Data::Value{})
+      var -= value;
+  return *this;
+}
 
 DatasetSlice DatasetSlice::operator*=(const Dataset &other) {
   return times_equals(*this, other);
@@ -442,10 +485,27 @@ DatasetSlice DatasetSlice::operator*=(const Dataset &other) {
 DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) {
   return times_equals(*this, other);
 }
+DatasetSlice DatasetSlice::operator*=(const double value) {
+  for (auto var : *this)
+    if (var.tag() == Data::Value{})
+      var *= value;
+    else if (var.tag() == Data::Variance{})
+      var *= value * value;
+  return *this;
+}
 
 Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
 Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
 Dataset operator*(Dataset a, const Dataset &b) { return a *= b; }
+Dataset operator+(Dataset a, const ConstDatasetSlice &b) { return a += b; }
+Dataset operator-(Dataset a, const ConstDatasetSlice &b) { return a -= b; }
+Dataset operator*(Dataset a, const ConstDatasetSlice &b) { return a *= b; }
+Dataset operator+(Dataset a, const double b) { return a += b; }
+Dataset operator-(Dataset a, const double b) { return a -= b; }
+Dataset operator*(Dataset a, const double b) { return a *= b; }
+Dataset operator+(const double a, Dataset b) { return b += a; }
+Dataset operator-(const double a, Dataset b) { return -(b -= a); }
+Dataset operator*(const double a, Dataset b) { return b *= a; }
 
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {

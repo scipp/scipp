@@ -90,8 +90,11 @@ TEST(ZipView, std_algorithm_generate_n_with_back_inserter) {
   ZipView<Coord::X, Data::Value> view(d);
 
   std::mt19937 rng;
-  std::generate_n(std::back_inserter(view), 5,
-                  [&] { return std::make_tuple(rng(), rng()); });
+  std::generate_n(std::back_inserter(view), 5, [&] {
+    const double v = rng();
+    const double x = rng();
+    return std::make_tuple(x, v);
+  });
 
   ASSERT_EQ(d.get<const Coord::X>().size(), 5);
   ASSERT_EQ(d(Coord::X{}).dimensions().size(0), 5);

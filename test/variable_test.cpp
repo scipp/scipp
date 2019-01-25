@@ -92,6 +92,14 @@ TEST(Variable, operator_unary_minus) {
   EXPECT_EQ(b.get<const Data::Value>()[1], -2.2);
 }
 
+TEST(VariableSlice, unary_minus) {
+  const Variable a(Data::Value{}, {Dim::X, 2}, {1.1, 2.2});
+  auto b = -a(Dim::X, 1);
+  EXPECT_EQ(a.get<const Data::Value>()[0], 1.1);
+  EXPECT_EQ(a.get<const Data::Value>()[1], 2.2);
+  EXPECT_EQ(b.get<const Data::Value>()[0], -2.2);
+}
+
 TEST(Variable, operator_plus_equal) {
   auto a = makeVariable<Data::Value>({Dim::X, 2}, {1.1, 2.2});
 
@@ -1053,4 +1061,39 @@ TEST(Variable, access_typed_view_edges) {
     EXPECT_EQ(values[8 + 2 * z + 0], 2);
     EXPECT_EQ(values[8 + 2 * z + 1], 5);
   }
+}
+
+TEST(Variable, non_in_place_scalar_operations) {
+  auto var = makeVariable<Data::Value>({{Dim::X, 2}}, {1, 2});
+
+  auto sum = var + 1;
+  EXPECT_TRUE(equals(sum.get<const Data::Value>(), {2, 3}));
+  sum = 2 + var;
+  EXPECT_TRUE(equals(sum.get<const Data::Value>(), {3, 4}));
+
+  auto diff = var - 1;
+  EXPECT_TRUE(equals(diff.get<const Data::Value>(), {0, 1}));
+  diff = 2 - var;
+  EXPECT_TRUE(equals(diff.get<const Data::Value>(), {1, 0}));
+
+  auto prod = var * 2;
+  EXPECT_TRUE(equals(prod.get<const Data::Value>(), {2, 4}));
+  prod = 3 * var;
+  EXPECT_TRUE(equals(prod.get<const Data::Value>(), {3, 6}));
+}
+
+TEST(VariableSlice, scalar_operations) {
+  auto var = makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 3}},
+                                       {11, 12, 13, 21, 22, 23});
+
+  var(Dim::X, 0) += 1;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 13, 22, 22, 23}));
+  var(Dim::Y, 1) += 1;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 13, 23, 23, 24}));
+  var(Dim::X, 1, 3) += 1;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 13, 14, 23, 24, 25}));
+  var(Dim::X, 1) -= 1;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 14, 23, 23, 25}));
+  var(Dim::X, 2) *= 0;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 0, 23, 23, 0}));
 }

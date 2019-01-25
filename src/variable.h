@@ -171,6 +171,7 @@ public:
   Variable &operator+=(const double value) &;
   Variable &operator-=(const Variable &other) &;
   Variable &operator-=(const ConstVariableSlice &other) &;
+  Variable &operator-=(const double value) &;
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const ConstVariableSlice &other) &;
   Variable &operator*=(const double value) &;
@@ -387,6 +388,7 @@ public:
   bool operator==(const ConstVariableSlice &other) const;
   bool operator!=(const Variable &other) const;
   bool operator!=(const ConstVariableSlice &other) const;
+  Variable operator-() const;
 
 protected:
   friend class Variable;
@@ -469,10 +471,13 @@ public:
   template <class T> VariableSlice assign(const T &other);
   VariableSlice operator+=(const Variable &other);
   VariableSlice operator+=(const ConstVariableSlice &other);
+  VariableSlice operator+=(const double value);
   VariableSlice operator-=(const Variable &other);
   VariableSlice operator-=(const ConstVariableSlice &other);
+  VariableSlice operator-=(const double value);
   VariableSlice operator*=(const Variable &other);
   VariableSlice operator*=(const ConstVariableSlice &other);
+  VariableSlice operator*=(const double value);
 
   void setUnit(const Unit &unit);
 
@@ -498,6 +503,12 @@ Variable operator*(Variable a, const Variable &b);
 Variable operator+(Variable a, const ConstVariableSlice &b);
 Variable operator-(Variable a, const ConstVariableSlice &b);
 Variable operator*(Variable a, const ConstVariableSlice &b);
+Variable operator+(Variable a, const double b);
+Variable operator-(Variable a, const double b);
+Variable operator*(Variable a, const double b);
+Variable operator+(const double a, Variable b);
+Variable operator-(const double a, Variable b);
+Variable operator*(const double a, Variable b);
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);
