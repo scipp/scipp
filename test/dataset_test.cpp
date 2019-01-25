@@ -1240,7 +1240,7 @@ TEST(DatasetSlice, binary_with_scalar) {
   EXPECT_TRUE(equals(prod.get<const Data::Variance>("b"), {54}));
 }
 
-TEST(Dataset, convert) {
+Dataset makeTofDataForUnitConversion() {
   Dataset tof;
 
   tof.insert<Coord::Tof>({Dim::Tof, 4}, {1, 2, 3, 4});
@@ -1257,6 +1257,11 @@ TEST(Dataset, convert) {
 
   tof.insert<Data::Value>("", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
                           {1, 2, 3, 4, 5, 6});
+  return tof;
+}
+
+TEST(Dataset, convert) {
+  Dataset tof = makeTofDataForUnitConversion();
 
   auto energy = convert(tof, Dim::Tof, Dim::Energy);
 
@@ -1282,6 +1287,29 @@ TEST(Dataset, convert) {
 
   ASSERT_TRUE(energy.contains(Coord::Position{}));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo{}));
+}
+
+TEST(Dataset, convert_to_energy_fails_for_inelastic) {
+  Dataset tof = makeTofDataForUnitConversion();
+
+  // Note these conversion fail only because they are not implemented. It should
+  // definitely be possible to support this.
+
+  tof.insert<Coord::Ei>({}, {1});
+  EXPECT_THROW_MSG(convert(tof, Dim::Tof, Dim::Energy), std::runtime_error,
+                   "Dataset contains Coord::Ei or Coord::Ef. However, "
+                   "conversion to Dim::Energy is currently only supported for "
+                   "elastic scattering.");
+  tof.erase(Coord::Ei{});
+
+  tof.insert<Coord::Ef>({Dim::Spectrum, 2}, {1.0, 1.5});
+  EXPECT_THROW_MSG(convert(tof, Dim::Tof, Dim::Energy), std::runtime_error,
+                   "Dataset contains Coord::Ei or Coord::Ef. However, "
+                   "conversion to Dim::Energy is currently only supported for "
+                   "elastic scattering.");
+  tof.erase(Coord::Ef{});
+
+  EXPECT_NO_THROW(convert(tof, Dim::Tof, Dim::Energy));
 }
 
 TEST(Dataset, convert_direct_inelastic) {

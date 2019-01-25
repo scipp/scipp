@@ -578,6 +578,13 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
 namespace neutron {
 namespace tof {
 Dataset tofToEnergy(const Dataset &d) {
+  // TODO Could in principle also support inelastic. Note that the conversion in
+  // Mantid is wrong since it handles inelastic data as if it were elastic.
+  if (d.contains(Coord::Ei{}) || d.contains(Coord::Ef{}))
+    throw std::runtime_error("Dataset contains Coord::Ei or Coord::Ef. "
+                             "However, conversion to Dim::Energy is currently "
+                             "only supported for elastic scattering.");
+
   // 1. Compute conversion factor
   const auto &compPos =
       d.get<const Coord::ComponentInfo>()[0].get<const Coord::Position>();
