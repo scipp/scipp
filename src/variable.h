@@ -129,8 +129,6 @@ public:
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);
 
-  // TODO Add remaining variants of the constructors templated with TagT and
-  // replace `makeVariable` everywhere.
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
       : Variable(tag, TagT::unit, std::move(dimensions),
@@ -139,6 +137,20 @@ public:
   Variable(TagT tag, const Dimensions &dimensions,
            Vector<typename TagT::type> object)
       : Variable(tag, TagT::unit, std::move(dimensions), std::move(object)) {}
+  template <class TagT, class... Args>
+  Variable(TagT tag, const Dimensions &dimensions, Args &&... args)
+      : Variable(tag, TagT::unit, std::move(dimensions),
+                 Vector<typename TagT::type>(std::forward<Args>(args)...)) {}
+  template <class TagT, class T>
+  Variable(TagT tag, const Dimensions &dimensions,
+           std::initializer_list<T> values)
+      : Variable(tag, TagT::unit, std::move(dimensions),
+                 Vector<typename TagT::type>(values.begin(), values.end())) {}
+  template <class TagT, class T>
+  Variable(TagT tag, const Dimensions &dimensions, const std::vector<T> &values)
+      : Variable(tag, TagT::unit, std::move(dimensions),
+                 // Copy to aligned memory.
+                 Vector<typename TagT::type>(values.begin(), values.end())) {}
 
   template <class T>
   Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,
@@ -272,32 +284,6 @@ private:
   deep_ptr<std::string> m_name;
   cow_ptr<VariableConcept> m_object;
 };
-
-template <class Tag> Variable makeVariable(const Dimensions &dimensions) {
-  return Variable(Tag{}, Tag::unit, std::move(dimensions),
-                  Vector<typename Tag::type>(dimensions.volume()));
-}
-
-template <class Tag, class... Args>
-Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
-  return Variable(Tag{}, Tag::unit, std::move(dimensions),
-                  Vector<typename Tag::type>(std::forward<Args>(args)...));
-}
-
-template <class Tag, class T>
-Variable makeVariable(const Dimensions &dimensions,
-                      std::initializer_list<T> values) {
-  return Variable(Tag{}, Tag::unit, std::move(dimensions),
-                  Vector<typename Tag::type>(values.begin(), values.end()));
-}
-
-template <class Tag, class T>
-Variable makeVariable(const Dimensions &dimensions,
-                      const std::vector<T> &values) {
-  // Copy to aligned memory.
-  return Variable(Tag{}, Tag::unit, std::move(dimensions),
-                  Vector<typename Tag::type>(values.begin(), values.end()));
-}
 
 /// Non-mutable view into (a subset of) a Variable.
 class ConstVariableSlice {

@@ -1174,7 +1174,7 @@ Variable sum(const Variable &var, const Dim dim) {
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dimensions()[dim]);
-  return summed * makeVariable<Data::Value>({}, {scale});
+  return summed * Variable(Data::Value{}, {}, {scale});
 }
 
 template <>

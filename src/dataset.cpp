@@ -837,7 +837,7 @@ Dataset mean(const Dataset &d, const Dim dim) {
           // this is not included by the stand-alone mean(Variable), since that
           // would be confusing.
           double scale = 1.0 / sqrt(static_cast<double>(var.dimensions()[dim]));
-          m.insert(mean(var, dim) * makeVariable<Data::Value>({}, {scale}));
+          m.insert(mean(var, dim) * Variable(Data::Value{}, {}, {scale}));
         } else {
           m.insert(mean(var, dim));
         }

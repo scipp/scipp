@@ -415,10 +415,9 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
 TEST(Dataset, operator_times_equal_with_units) {
   Dataset a;
   a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  auto values = makeVariable<Data::Value>(Dimensions({{Dim::X, 1}}), {3.0});
+  Variable values(Data::Value{}, Dimensions({{Dim::X, 1}}), {3.0});
   values.setUnit(Unit::Id::Length);
-  auto variances =
-      makeVariable<Data::Variance>(Dimensions({{Dim::X, 1}}), {2.0});
+  Variable variances(Data::Variance{}, Dimensions({{Dim::X, 1}}), {2.0});
   variances.setUnit(Unit::Id::Area);
   a.insert(values);
   a.insert(variances);
@@ -431,11 +430,10 @@ TEST(Dataset, operator_times_equal_with_units) {
 TEST(Dataset, operator_times_equal_histogram_data) {
   Dataset a;
   a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  auto values = makeVariable<Data::Value>(Dimensions({{Dim::X, 1}}), {3.0});
+  Variable values(Data::Value{}, Dimensions({{Dim::X, 1}}), {3.0});
   values.setName("name1");
   values.setUnit(Unit::Id::Counts);
-  auto variances =
-      makeVariable<Data::Variance>(Dimensions({{Dim::X, 1}}), {2.0});
+  Variable variances(Data::Variance{}, Dimensions({{Dim::X, 1}}), {2.0});
   variances.setName("name1");
   variances.setUnit(Unit::Id::CountsVariance);
   a.insert(values);
@@ -649,29 +647,28 @@ TEST(Dataset, concatenate_with_attributes) {
 
 TEST(Dataset, rebin_failures) {
   Dataset d;
-  auto coord = makeVariable<Coord::X>({Dim::X, 3}, {1.0, 3.0, 5.0});
+  Variable coord(Coord::X{}, {Dim::X, 3}, {1.0, 3.0, 5.0});
   EXPECT_THROW_MSG(rebin(d, coord), dataset::except::VariableNotFoundError,
                    "Dataset with 0 variables, could not find variable with tag "
                    "Coord::X and name ``.");
-  auto data = makeVariable<Data::Value>({Dim::X, 2}, {2.0, 4.0});
+  Variable data(Data::Value{}, {Dim::X, 2}, {2.0, 4.0});
   EXPECT_THROW_MSG(
       rebin(d, data), std::runtime_error,
       "The provided rebin coordinate is not a coordinate variable.");
-  auto nonDimCoord = makeVariable<Coord::Position>({Dim::Detector, 2});
+  Variable nonDimCoord(Coord::Position{}, {Dim::Detector, 2});
   EXPECT_THROW_MSG(
       rebin(d, nonDimCoord), std::runtime_error,
       "The provided rebin coordinate is not a dimension coordinate.");
-  auto missingDimCoord = makeVariable<Coord::X>({Dim::Y, 2}, {2.0, 4.0});
+  Variable missingDimCoord(Coord::X{}, {Dim::Y, 2}, {2.0, 4.0});
   EXPECT_THROW_MSG(rebin(d, missingDimCoord), std::runtime_error,
                    "The provided rebin coordinate lacks the dimension "
                    "corresponding to the coordinate.");
-  auto nonContinuousCoord =
-      makeVariable<Coord::SpectrumNumber>({Dim::Spectrum, 2}, {2.0, 4.0});
+  Variable nonContinuousCoord(Coord::SpectrumNumber{}, {Dim::Spectrum, 2},
+                              {2.0, 4.0});
   EXPECT_THROW_MSG(
       rebin(d, nonContinuousCoord), std::runtime_error,
       "The provided rebin coordinate is not a continuous coordinate.");
-  auto oldMissingDimCoord =
-      makeVariable<Coord::X>({Dim::Y, 3}, {1.0, 3.0, 5.0});
+  Variable oldMissingDimCoord(Coord::X{}, {Dim::Y, 3}, {1.0, 3.0, 5.0});
   d.insert(oldMissingDimCoord);
   EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
                    "Existing coordinate to be rebined lacks the dimension "
@@ -685,8 +682,7 @@ TEST(Dataset, rebin_failures) {
   d.erase(Coord::X{});
   d.insert(coord);
   d.insert<Data::Value>("badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
-  auto badAuxDim =
-      makeVariable<Coord::X>(Dimensions({{Dim::X, 3}, {Dim::Y, 3}}));
+  Variable badAuxDim(Coord::X{}, Dimensions({{Dim::X, 3}, {Dim::Y, 3}}));
   EXPECT_THROW_MSG(rebin(d, badAuxDim), std::runtime_error,
                    "Size mismatch in auxiliary dimension of new coordinate.");
 }
@@ -694,7 +690,7 @@ TEST(Dataset, rebin_failures) {
 TEST(Dataset, rebin) {
   Dataset d;
   d.insert<Coord::X>({Dim::X, 3}, {1.0, 3.0, 5.0});
-  auto coordNew = makeVariable<Coord::X>({Dim::X, 2}, {1.0, 5.0});
+  Variable coordNew(Coord::X{}, {Dim::X, 2}, {1.0, 5.0});
   // With only the coord in the dataset there is no way to tell it is an edge,
   // so this fails.
   EXPECT_THROW_MSG(rebin(d, coordNew), std::runtime_error,
@@ -723,29 +719,28 @@ TEST(Dataset, histogram_failures) {
 
   Dataset dependsOnBinDim;
   dependsOnBinDim.insert(d(Data::Events{}, "sample1").reshape({Dim::Tof, 2}));
-  auto coord = makeVariable<Coord::Tof>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
+  Variable coord(Coord::Tof{}, {Dim::Tof, 3}, {1.0, 1.5, 4.5});
   EXPECT_THROW_MSG(histogram(dependsOnBinDim, coord), std::runtime_error,
                    "Data to histogram depends on histogram dimension.");
 
-  auto coordWithExtraDim = makeVariable<Coord::Tof>(
-      {{Dim::X, 2}, {Dim::Tof, 3}}, {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
+  Variable coordWithExtraDim(Coord::Tof{}, {{Dim::X, 2}, {Dim::Tof, 3}},
+                             {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
   EXPECT_THROW(histogram(d, coordWithExtraDim),
                dataset::except::DimensionNotFoundError);
 
-  auto coordWithLengthMismatch =
-      makeVariable<Coord::Tof>({{Dim::Spectrum, 3}, {Dim::Tof, 3}});
+  Variable coordWithLengthMismatch(Coord::Tof{},
+                                   {{Dim::Spectrum, 3}, {Dim::Tof, 3}});
   EXPECT_THROW(histogram(d, coordWithLengthMismatch),
                dataset::except::DimensionLengthError);
 
-  auto coordNotIncreasing =
-      makeVariable<Coord::Tof>({Dim::Tof, 3}, {1.0, 1.5, 1.4});
+  Variable coordNotIncreasing(Coord::Tof{}, {Dim::Tof, 3}, {1.0, 1.5, 1.4});
   EXPECT_THROW_MSG(histogram(d, coordNotIncreasing), std::runtime_error,
                    "Coordinate used for binning is not increasing.");
 }
 
 TEST(Dataset, histogram) {
   auto d = makeEvents();
-  auto coord = makeVariable<Coord::Tof>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
+  Variable coord(Coord::Tof{}, {Dim::Tof, 3}, {1.0, 1.5, 4.5});
   auto hist = histogram(d, coord);
 
   ASSERT_TRUE(hist.contains(Coord::Tof{}));
@@ -758,8 +753,8 @@ TEST(Dataset, histogram) {
 
 TEST(Dataset, histogram_2D_coord) {
   auto d = makeEvents();
-  auto coord = makeVariable<Coord::Tof>({{Dim::Spectrum, 2}, {Dim::Tof, 3}},
-                                        {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
+  Variable coord(Coord::Tof{}, {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
+                 {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
   auto hist = histogram(d, coord);
 
   ASSERT_TRUE(hist.contains(Coord::Tof{}));
@@ -772,8 +767,8 @@ TEST(Dataset, histogram_2D_coord) {
 
 TEST(Dataset, histogram_2D_transpose_coord) {
   auto d = makeEvents();
-  auto coord = makeVariable<Coord::Tof>({{Dim::Tof, 3}, {Dim::Spectrum, 2}},
-                                        {1.0, 1.5, 1.5, 4.5, 4.5, 7.5});
+  Variable coord(Coord::Tof{}, {{Dim::Tof, 3}, {Dim::Spectrum, 2}},
+                 {1.0, 1.5, 1.5, 4.5, 4.5, 7.5});
   auto hist = histogram(d, coord);
 
   ASSERT_TRUE(hist.contains(Coord::Tof{}));
@@ -849,8 +844,7 @@ TEST(Dataset, filter) {
   d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
   d.insert<Data::Value>("", {{Dim::Y, 2}, {Dim::X, 4}},
                         {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  auto select =
-      makeVariable<Coord::Mask>({Dim::X, 4}, {false, true, false, true});
+  Variable select(Coord::Mask{}, {Dim::X, 4}, {false, true, false, true});
 
   auto filtered = filter(d, select);
 
