@@ -1050,7 +1050,7 @@ TEST(Variable, access_typed_view_edges) {
 }
 
 TEST(Variable, non_in_place_scalar_operations) {
-  auto var = makeVariable<Data::Value>({{Dim::X, 2}}, {1, 2});
+  Variable var(Data::Value{}, {{Dim::X, 2}}, {1, 2});
 
   auto sum = var + 1;
   EXPECT_TRUE(equals(sum.get<const Data::Value>(), {2, 3}));
@@ -1069,8 +1069,8 @@ TEST(Variable, non_in_place_scalar_operations) {
 }
 
 TEST(VariableSlice, scalar_operations) {
-  auto var = makeVariable<Data::Value>({{Dim::Y, 2}, {Dim::X, 3}},
-                                       {11, 12, 13, 21, 22, 23});
+  Variable var(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 3}},
+               {11, 12, 13, 21, 22, 23});
 
   var(Dim::X, 0) += 1;
   EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 13, 22, 22, 23}));
