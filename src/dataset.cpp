@@ -625,10 +625,9 @@ Dataset tofToEnergy(const Dataset &d) {
       // TODO Should have a broadcasting assign method?
       Variable energy(Coord::Energy{}, dims, dims.volume(), 1.0);
       energy *= conversionFactor;
-      // TODO Change this to /= when implemented.
       // The reshape is just to remap the dimension label, should probably do
       // this differently.
-      energy *= (var * var).reshape(varDims);
+      energy /= (var * var).reshape(varDims);
       converted.insert(energy);
     } else if (var.tag() == Data::Events{}) {
       throw std::runtime_error(
@@ -726,12 +725,12 @@ Dataset tofToDeltaE(const Dataset &d) {
       E *= var.reshape(varDims);
       E -= tofShift;
       E *= E;
-      // TODO First set E = inv(E) when implemented.
+      E = 1.0 / std::move(E);
       E *= scale;
       if (d.contains(Coord::Ei{})) {
-        converted.insert(-(E - d(Coord::Ei{})));
+        converted.insert(-(std::move(E) - d(Coord::Ei{})));
       } else {
-        converted.insert(E - d(Coord::Ef{}));
+        converted.insert(std::move(E) - d(Coord::Ef{}));
       }
     } else if (var.tag() == Data::Events{}) {
       throw std::runtime_error(
