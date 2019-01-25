@@ -203,6 +203,7 @@ public:
   virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
                                         const gsl::index begin) const = 0;
   virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
+  virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
 
   std::unique_ptr<VariableConcept> makeView() const override {
     auto &dims = this->dimensions();
@@ -247,6 +248,14 @@ public:
 
   std::unique_ptr<VariableConcept>
   reshape(const Dimensions &dims) const override {
+    if (this->dimensions().volume() != dims.volume())
+      throw std::runtime_error(
+          "Cannot reshape to dimensions with different volume");
+    return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
+        dims, getReshaped(dims));
+  }
+
+  std::unique_ptr<VariableConcept> reshape(const Dimensions &dims) override {
     if (this->dimensions().volume() != dims.volume())
       throw std::runtime_error(
           "Cannot reshape to dimensions with different volume");
@@ -475,8 +484,12 @@ public:
     return makeVariableView(m_model.data(), beginOffset, dims,
                             this->dimensions());
   }
+
   VariableView<const value_type>
   getReshaped(const Dimensions &dims) const override {
+    return makeVariableView(m_model.data(), 0, dims, dims);
+  }
+  VariableView<value_type> getReshaped(const Dimensions &dims) override {
     return makeVariableView(m_model.data(), 0, dims, dims);
   }
 
@@ -599,6 +612,15 @@ public:
   VariableView<const value_type>
   getReshaped(const Dimensions &dims) const override {
     return {m_model, dims};
+  }
+  VariableView<value_type> getReshaped(const Dimensions &dims) override {
+    requireMutable();
+    if constexpr (std::is_const<typename T::value_type>::value) {
+      static_cast<void>(dims);
+      return VariableView<value_type>(nullptr, 0, {}, {});
+    } else {
+      return {m_model, dims};
+    }
   }
 
   std::shared_ptr<VariableConcept> clone() const override {
@@ -770,7 +792,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
           otherDatasets[0].dimensions().count() != 1)
         throw std::runtime_error(
             "Cannot add Variable: Nested Dataset dimension must be 1.");
-      auto &datasets = variable.template cast<Dataset>();
+      auto datasets = variable.template cast<Dataset>();
       const Dim dim = datasets[0].dimensions().label(0);
 #pragma omp parallel for
       for (gsl::index i = 0; i < static_cast<gsl::index>(datasets.size()); ++i)
@@ -910,11 +932,15 @@ void VariableSlice::setUnit(const Unit &unit) {
 
 template <class T>
 const VariableView<const T> ConstVariableSlice::cast() const {
-  if (m_view)
+  if (!m_view)
+    return dynamic_cast<const DataModel<Vector<T>> &>(data()).getView(
+        dimensions());
+  if (m_view->isConstView())
     return dynamic_cast<const ViewModel<VariableView<const T>> &>(data())
         .m_model;
-  return dynamic_cast<const DataModel<Vector<T>> &>(data()).getView(
-      dimensions());
+  // Make a const view from the mutable one.
+  return {dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model,
+          dimensions()};
 }
 
 template <class T> VariableView<const T> VariableSlice::cast() const {
@@ -930,7 +956,7 @@ template <class T> VariableView<const T> VariableSlice::cast() const {
           dimensions()};
 }
 
-template <class T> const VariableView<T> VariableSlice::cast() {
+template <class T> VariableView<T> VariableSlice::cast() {
   if (m_view)
     return dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model;
   return dynamic_cast<DataModel<Vector<T>> &>(data()).getView(dimensions());
@@ -940,7 +966,7 @@ template <class T> const VariableView<T> VariableSlice::cast() {
   template const VariableView<const __VA_ARGS__>                               \
   ConstVariableSlice::cast<__VA_ARGS__>() const;                               \
   template VariableView<const __VA_ARGS__> VariableSlice::cast() const;        \
-  template const VariableView<__VA_ARGS__> VariableSlice::cast();
+  template VariableView<__VA_ARGS__> VariableSlice::cast();
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(int32_t);
@@ -958,6 +984,10 @@ VariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
 }
 
 ConstVariableSlice Variable::reshape(const Dimensions &dims) const & {
+  return {*this, dims};
+}
+
+VariableSlice Variable::reshape(const Dimensions &dims) & {
   return {*this, dims};
 }
 

@@ -51,6 +51,7 @@ public:
 
   virtual std::unique_ptr<VariableConcept>
   reshape(const Dimensions &dims) const = 0;
+  virtual std::unique_ptr<VariableConcept> reshape(const Dimensions &dims) = 0;
 
   virtual bool operator==(const VariableConcept &other) const = 0;
 
@@ -245,6 +246,7 @@ public:
                            const gsl::index end = -1) && = delete;
 
   ConstVariableSlice reshape(const Dimensions &dims) const &;
+  VariableSlice reshape(const Dimensions &dims) &;
   // Note: Do we have to delete the `const &&` version? Consider
   //   const Variable var;
   //   std::move(var).reshape({});
@@ -304,8 +306,6 @@ public:
   ConstVariableSlice(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
   ConstVariableSlice(const ConstVariableSlice &other) = default;
-  ConstVariableSlice(const ConstVariableSlice &other, const Dimensions &dims)
-      : m_variable(other.m_variable), m_view(other.data().reshape(dims)) {}
   ConstVariableSlice(const Variable &variable, const Dim dim,
                      const gsl::index begin, const gsl::index end = -1)
       : m_variable(&variable),
@@ -406,6 +406,8 @@ class VariableSlice : public ConstVariableSlice {
 public:
   explicit VariableSlice(Variable &variable)
       : ConstVariableSlice(variable), m_mutableVariable(&variable) {}
+  VariableSlice(Variable &variable, const Dimensions &dims)
+      : ConstVariableSlice(variable, dims), m_mutableVariable(&variable) {}
   VariableSlice(const VariableSlice &other) = default;
   VariableSlice(Variable &variable, const Dim dim, const gsl::index begin,
                 const gsl::index end = -1)
@@ -482,7 +484,7 @@ private:
   // Special version creating const view from mutable view. Note that this does
   // not return a reference but by value.
   template <class T> VariableView<const T> cast() const;
-  template <class T> const VariableView<T> cast();
+  template <class T> VariableView<T> cast();
 
   Variable *m_mutableVariable;
 };

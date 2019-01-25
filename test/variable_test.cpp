@@ -958,7 +958,8 @@ TEST(VariableSlice, slice_binary_operations) {
 }
 
 TEST(Variable, reshape) {
-  Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
+  const Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Y, 3}},
+                     {1, 2, 3, 4, 5, 6});
   auto view = var.reshape({Dim::Row, 6});
   ASSERT_EQ(view.size(), 6);
   ASSERT_EQ(view.dimensions(), Dimensions({Dim::Row, 6}));
@@ -1004,6 +1005,18 @@ TEST(Variable, reshape_and_slice) {
   ASSERT_EQ(center.size(), 4);
   ASSERT_EQ(center.dimensions(), Dimensions({Dim::Spectrum, 4}));
   EXPECT_TRUE(equals(center.get<const Data::Value>(), {6, 7, 10, 11}));
+}
+
+TEST(Variable, reshape_mutable) {
+  Variable var(Data::Value{}, {{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
+  const auto copy(var);
+
+  auto view = var.reshape({Dim::Row, 6});
+  view.get<Data::Value>()[3] = 0;
+
+  EXPECT_TRUE(equals(view.get<const Data::Value>(), {1, 2, 3, 0, 5, 6}));
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {1, 2, 3, 0, 5, 6}));
+  EXPECT_TRUE(equals(copy.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
 }
 
 TEST(Variable, access_typed_view) {
