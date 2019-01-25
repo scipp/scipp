@@ -14,7 +14,8 @@ public:
     Area,
     AreaVariance,
     Counts,
-    CountsVariance
+    CountsVariance,
+    InverseLength
   };
   // TODO should this be explicit?
   Unit() = default;
@@ -34,5 +35,6 @@ inline bool operator!=(const Unit &a, const Unit &b) { return !(a == b); }
 
 Unit operator+(const Unit &a, const Unit &b);
 Unit operator*(const Unit &a, const Unit &b);
+Unit operator/(const Unit &a, const Unit &b);
 
 #endif // UNIT_H

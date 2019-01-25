@@ -142,12 +142,15 @@ public:
   using AddableVariableConcept::AddableVariableConcept;
   virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
+  virtual VariableConcept &operator/=(const VariableConcept &other) = 0;
 };
 
 class FloatingPointVariableConcept : public ArithmeticVariableConcept {
 public:
   static constexpr const char *name = "floating-point";
   using ArithmeticVariableConcept::ArithmeticVariableConcept;
+  /// Set x = value/x
+  virtual VariableConcept &reciprocal_times(const double value) = 0;
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
                      const VariableConcept &newCoord) = 0;
@@ -381,12 +384,25 @@ public:
   VariableConcept &operator*=(const VariableConcept &other) override {
     return this->template apply<std::multiplies>(other);
   }
+
+  VariableConcept &operator/=(const VariableConcept &other) override {
+    return this->template apply<std::divides>(other);
+  }
+};
+
+template <class T> struct ReciprocalTimes {
+  T operator()(const T a, const T b) { return b / a; };
 };
 
 template <class T>
 class FloatingPointVariableConceptT : public ArithmeticVariableConceptT<T> {
 public:
   using ArithmeticVariableConceptT<T>::ArithmeticVariableConceptT;
+
+  VariableConcept &reciprocal_times(const double value) override {
+    Variable other(Data::Value{}, {}, {value});
+    return this->template apply<ReciprocalTimes>(other.data());
+  }
 
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
@@ -869,6 +885,28 @@ Variable &Variable::operator*=(const double value) & {
   return times_equals(*this, other);
 }
 
+template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
+  dataset::expect::contains(variable.dimensions(), other.dimensions());
+  if (variable.tag() == Data::Events{})
+    throw std::runtime_error("Division of events lists not implemented.");
+  // setUnit is catching bad cases of changing units (if `variable` is a slice).
+  variable.setUnit(variable.unit() / other.unit());
+  require<ArithmeticVariableConcept>(variable.data()) /= other.data();
+  return variable;
+}
+
+Variable &Variable::operator/=(const Variable &other) & {
+  return divide_equals(*this, other);
+}
+Variable &Variable::operator/=(const ConstVariableSlice &other) & {
+  return divide_equals(*this, other);
+}
+Variable &Variable::operator/=(const double value) & {
+  Variable other(Data::Value{}, {}, {value});
+  other.setUnit(Unit::Id::Dimensionless);
+  return divide_equals(*this, other);
+}
+
 template <class T> VariableSlice VariableSlice::assign(const T &other) {
   // TODO Should mismatching tags be allowed, as long as the type matches?
   if (tag() != other.tag())
@@ -920,6 +958,18 @@ VariableSlice VariableSlice::operator*=(const double value) {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return times_equals(*this, other);
+}
+
+VariableSlice VariableSlice::operator/=(const Variable &other) {
+  return divide_equals(*this, other);
+}
+VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) {
+  return divide_equals(*this, other);
+}
+VariableSlice VariableSlice::operator/=(const double value) {
+  Variable other(Data::Value{}, {}, {value});
+  other.setUnit(Unit::Id::Dimensionless);
+  return divide_equals(*this, other);
 }
 
 bool ConstVariableSlice::operator==(const Variable &other) const {
@@ -1032,15 +1082,23 @@ Variable ConstVariableSlice::reshape(const Dimensions &dims) const {
 Variable operator+(Variable a, const Variable &b) { return a += b; }
 Variable operator-(Variable a, const Variable &b) { return a -= b; }
 Variable operator*(Variable a, const Variable &b) { return a *= b; }
+Variable operator/(Variable a, const Variable &b) { return a /= b; }
 Variable operator+(Variable a, const ConstVariableSlice &b) { return a += b; }
 Variable operator-(Variable a, const ConstVariableSlice &b) { return a -= b; }
 Variable operator*(Variable a, const ConstVariableSlice &b) { return a *= b; }
+Variable operator/(Variable a, const ConstVariableSlice &b) { return a /= b; }
 Variable operator+(Variable a, const double b) { return a += b; }
 Variable operator-(Variable a, const double b) { return a -= b; }
 Variable operator*(Variable a, const double b) { return a *= b; }
+Variable operator/(Variable a, const double b) { return a /= b; }
 Variable operator+(const double a, Variable b) { return b += a; }
 Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return b *= a; }
+Variable operator/(const double a, Variable b) {
+  b.setUnit(Unit::Id::Dimensionless / b.unit());
+  require<FloatingPointVariableConcept>(b.data()).reciprocal_times(a);
+  return b;
+}
 
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
