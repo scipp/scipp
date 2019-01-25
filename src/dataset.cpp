@@ -616,7 +616,7 @@ Dataset tofToEnergy(const Dataset &d) {
         if (!dims.contains(dim))
           dims.addInner(dim, varDims[dim]);
       // TODO Should have a broadcasting assign method?
-      auto energy = makeVariable<Coord::Energy>(dims, dims.volume(), 1.0);
+      Variable energy(Coord::Energy{}, dims, dims.volume(), 1.0);
       energy *= conversionFactor;
       // TODO Change this to /= when implemented.
       // The reshape is just to remap the dimension label, should probably do
@@ -715,7 +715,7 @@ Dataset tofToDeltaE(const Dataset &d) {
       for (const Dim dim : varDims.labels())
         if (!dims.contains(dim))
           dims.addInner(dim, varDims[dim]);
-      auto E = makeVariable<Coord::DeltaE>(dims, dims.volume(), 1.0);
+      Variable E(Coord::DeltaE{}, dims, dims.volume(), 1.0);
       E *= var.reshape(varDims);
       E -= tofShift;
       E *= E;
