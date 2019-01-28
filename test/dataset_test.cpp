@@ -7,6 +7,7 @@
 
 #include "test_macros.h"
 
+#include "convert.h"
 #include "dataset.h"
 #include "dimensions.h"
 

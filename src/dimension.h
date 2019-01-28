@@ -6,6 +6,8 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
+#include <cstdint>
+
 enum class Dim : uint16_t {
   Invalid,
   Event,
