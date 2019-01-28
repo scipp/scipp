@@ -678,7 +678,7 @@ Dataset tofToDeltaE(const Dataset &d) {
     tofShift.setDimensions(d(Coord::Ei{}).dimensions());
     const auto &Ei = d.get<const Coord::Ei>();
     std::transform(Ei.begin(), Ei.end(), tofShift.get<Data::Value>().begin(),
-                   [&](const double Ei) { return l1 / sqrt(Ei); });
+                   [&l1](const double Ei) { return l1 / sqrt(Ei); });
 
     scale.setDimensions(dims);
     MDZipView<const Coord::Position> specPos(d);
