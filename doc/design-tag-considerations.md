@@ -313,6 +313,106 @@ Data::Tofs, Data::PulseTimes, Data::Weights, Data::Variances are all "List"? But
 
 Operations that combine two different concepts? Matrix-vector multiplication?
 
+- Always specifying the data type is inconvenient in practice, consider, e.g.,
+
+  ```cpp
+  auto ids = d.get<boost::small_vector<int32_t, 1>>(Coord::DetectorGrouping);
+  // or
+  auto ids = d.get<DetectorGrouping>(Coord::DetectorGrouping);
+  ```
+
+  In practice, client code does not care about the actualy type, and the type is essentially always the same.
+  It would therefore be more convenient if it could be omitted:
+
+  ```cpp
+  // Coord::DetectorGrouping is now a constexpr instance and can be used to deduce
+  //  the return type. Note that we lose the ability to specify constness.
+  auto ids = d.get(Coord::DetectorGrouping);
+  ```
+
+- Do not support data-tags or attribute-tags that are not for "grouping" purposes!
+  - Should we drop `Data::Value`?
+    Otherwise untagged variables will not match data with uncertainties.
+    ```cpp
+    // Getting array access works (assuming untagged also implies data type).
+    auto data = dataset.get("sample1"); // default is double
+    auto vars = dataset.get(Data::Variance, "sample1");
+    auto strings = dataset.get<std::string>(Data::Value, "comment"); // custom type
+    // Variable view?
+    // This would return also the variance, how to get only data?
+    auto data = dataset("sample1");
+    // Maybe just make getting a subset more explicit:
+    DatasetSlice subset = dataset.subset("sample1"); // return coords and all vars with that name
+    VariableSlice data = dataset("sample1");
+    gsl::span<std:string> s = data.get<std::string>();
+    VariableSlice vars = dataset(Data::Value, "sample1");
+    VariableSlice vars = dataset(Data::Variance, "sample1");
+
+    DatasetSlice vars = dataset("sample1");
+    auto data = vars.get<double>(); // works if only a single variable is contained in vars
+    VariableSlice vars = dataset("sample1")(Data::Value);
+    VariableSlice vars = dataset("sample1")(Data::Variance);
+
+    dataset.subset("sample") -= dataset.subset("background");
+    // Dangerous trap: ignores variances! (currently syntax includes them)
+    dataset("sample") -= dataset("background");
+    ```
+  - Dropping `Data::Value` does not seem to work?
+    Should `Data::Value` be the default tag?
+
+- Should support data and attributes without tag!?
+  Also non-dimension coordinates without tag?
+
+  ```cpp
+  // If we support tag-less variables, should this still return a DatasetSlice?
+  // Yes, why not, it is then basically like an xarray.DataArray.
+  auto var = dataset("sample1");
+
+  // Using default type:
+  auto x = dataset.get(Coord::X);
+  auto mutable_x = dataset.getMutable(Coord::X);
+  // Custom type if default is not used:
+  // Note that we do not specify const-ness via type since that does not work
+  // for the default type. We need the `get` and `getMutable` accessors.
+  auto x = dataset.get<float>(Coord::X);
+  auto x = dataset.getMutable<float>(Coord::X);
+  // Tag-less variable:
+  auto data = dataset.get<double>("sample1");
+  auto data = dataset.getMutable<double>("sample1");
+  // Tagged and named:
+  // Can use default type
+  auto data = dataset.get(Data::Value, "sample1");
+  auto data = dataset.getMutable(Data::Value, "sample1");
+  // Or custom
+  auto data = dataset.get<float>(Data::Value, "sample1");
+  auto data = dataset.getMutable<float>(Data::Value, "sample1");
+
+  // Accessing Variable:
+  auto data = var.get<float>();
+  auto data = var.getMutable<float>();
+  // Use default type (and check tag at same time):
+  auto data = var.get(Coord::X);
+  auto data = var.getMutable(Coord::X);
+  // Use custom type (and check tag at same time):
+  auto data = var.get<float>(Coord::X);
+  auto data = var.getMutable<float>(Coord::X);
+
+  // Should we rely 100% on const-correctness? Would work for variable!
+  auto data = var.get<float>(); // trigger copy if var is not const
+  // What about Dataset, usually only some variables are to be modified?
+  // How can we get a const variable reference without being too verbose.
+  for (auto var : dataset) {
+    const auto &constVar = var;
+    if (constVar.get<float>()[0] == 0.0);
+      // ...
+  }
+  ```
+
+
+
+
+
+
 #### Conclusion
 
 - At the `Variable` level:
