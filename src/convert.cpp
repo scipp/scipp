@@ -3,6 +3,9 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2019 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
+#include <boost/units/systems/si/codata/neutron_constants.hpp>
+
 #include "convert.h"
 #include "dataset.h"
 #include "md_zip_view.h"
@@ -30,14 +33,25 @@ Dataset tofToEnergy(const Dataset &d) {
                          : d(Coord::DetectorGrouping{}).dimensions();
   Variable conversionFactor(Data::Value{}, dims);
 
+  // This scale factor should be obtained from the unit stored in the Tof
+  // coordinate, something like mus2_to_s2 = pow(tof.unit().si_scale(), 2);
+  const double mus2_to_s2 = 1e-12;
+  // Can we obtain this scale from the runtime unit? It contains joule, so it is
+  // not so obvious how to do this.
+  const auto meV = 1e-3 * boost::units::si::constants::codata::e.value() *
+                   boost::units::si::joule;
+  auto physicalConstants =
+      boost::units::si::constants::codata::m_n / (2.0 * meV * mus2_to_s2);
+
   MDZipView<const Coord::Position> specPos(d);
   const auto factor = [&](const auto &item) {
     const auto &pos = item.template get<Coord::Position>();
     double l_total = l1 + (samplePos - pos).norm();
-    // TODO Up to physical constants.
-    return l_total * l_total;
+    return l_total * l_total * physicalConstants.value();
   };
+
   // TODO Must also update unit of conversionFactor.
+  // convertFactor.unit() *= extractUnit(physicalConstants);
   std::transform(specPos.begin(), specPos.end(),
                  conversionFactor.get<Data::Value>().begin(), factor);
 

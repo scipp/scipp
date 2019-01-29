@@ -1244,7 +1244,7 @@ TEST(DatasetSlice, binary_with_scalar) {
 Dataset makeTofDataForUnitConversion() {
   Dataset tof;
 
-  tof.insert<Coord::Tof>({Dim::Tof, 4}, {1, 2, 3, 4});
+  tof.insert<Coord::Tof>({Dim::Tof, 4}, {1000, 2000, 3000, 4000});
 
   Dataset components;
   // Source and sample
@@ -1276,9 +1276,24 @@ TEST(Dataset, convert) {
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
   ASSERT_EQ(coord.dimensions(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 4}}));
-  // TODO Check actual values here after conversion is fixed.
-  EXPECT_FALSE(
-      equals(coord.get<const Coord::Energy>(), {1, 2, 3, 4, 1, 2, 3, 4}));
+  // TODO Check unit.
+
+  const auto values = coord.get<const Coord::Energy>();
+  // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
+  // v [m/s] = 437 * sqrt ( E[meV] )
+  Variable tof_in_seconds = tof(Coord::Tof{}) * 1e-6;
+  const auto tofs = tof_in_seconds.get<const Coord::Tof>();
+  // Spectrum 0 is 11 m from source
+  EXPECT_NEAR(values[0], pow((11.0 / tofs[0]) / 437.0, 2), values[0] * 0.01);
+  EXPECT_NEAR(values[1], pow((11.0 / tofs[1]) / 437.0, 2), values[1] * 0.01);
+  EXPECT_NEAR(values[2], pow((11.0 / tofs[2]) / 437.0, 2), values[2] * 0.01);
+  EXPECT_NEAR(values[3], pow((11.0 / tofs[3]) / 437.0, 2), values[3] * 0.01);
+  // Spectrum 1
+  const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
+  EXPECT_NEAR(values[4], pow((L / tofs[0]) / 437.0, 2), values[4] * 0.01);
+  EXPECT_NEAR(values[5], pow((L / tofs[1]) / 437.0, 2), values[5] * 0.01);
+  EXPECT_NEAR(values[6], pow((L / tofs[2]) / 437.0, 2), values[6] * 0.01);
+  EXPECT_NEAR(values[7], pow((L / tofs[3]) / 437.0, 2), values[7] * 0.01);
 
   ASSERT_TRUE(energy.contains(Data::Value{}));
   const auto &data = energy(Data::Value{});
