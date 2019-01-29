@@ -21,6 +21,10 @@ Unit makeUnit(const decltype(std::declval<boost::units::si::amount>() *
                              std::declval<boost::units::si::amount>()) &) {
   return {Unit::Id::CountsVariance};
 }
+Unit makeUnit(const decltype(std::declval<boost::units::si::dimensionless>() /
+                             std::declval<boost::units::si::length>()) &) {
+  return {Unit::Id::InverseLength};
+}
 template <class T> Unit makeUnit(const T &) {
   throw std::runtime_error("Unsupported unit combination");
 }
@@ -40,6 +44,18 @@ template <class A> Unit multiply(const A &a, const Unit &b) {
     return makeUnit(a * boost::units::si::area{});
   if (b == Unit{Unit::Id::Counts})
     return makeUnit(a * boost::units::si::amount{});
+  throw std::runtime_error("Unsupported unit on RHS");
+}
+
+template <class A> Unit divide(const A &a, const Unit &b) {
+  if (b == Unit{Unit::Id::Dimensionless})
+    return makeUnit(a);
+  if (b == Unit{Unit::Id::Length})
+    return makeUnit(a / boost::units::si::length{});
+  if (b == Unit{Unit::Id::Area})
+    return makeUnit(a / boost::units::si::area{});
+  if (b == Unit{Unit::Id::Counts})
+    return makeUnit(a / boost::units::si::amount{});
   throw std::runtime_error("Unsupported unit on RHS");
 }
 
@@ -63,5 +79,20 @@ Unit operator*(const Unit &a, const Unit &b) {
   // TODO Abusing another boost unit for now, need to define our own.
   if (a == Unit{Unit::Id::Counts})
     return multiply(boost::units::si::amount{}, b);
+  throw std::runtime_error("Unsupported unit on LHS");
+}
+
+Unit operator/(const Unit &a, const Unit &b) {
+  if (a == Unit{Unit::Id::Dimensionless})
+    return divide(boost::units::si::dimensionless{}, b);
+  if (b == Unit{Unit::Id::Dimensionless})
+    return a;
+  if (a == Unit{Unit::Id::Length})
+    return divide(boost::units::si::length{}, b);
+  if (a == Unit{Unit::Id::Area})
+    return divide(boost::units::si::area{}, b);
+  // TODO Abusing another boost unit for now, need to define our own.
+  if (a == Unit{Unit::Id::Counts})
+    return divide(boost::units::si::amount{}, b);
   throw std::runtime_error("Unsupported unit on LHS");
 }

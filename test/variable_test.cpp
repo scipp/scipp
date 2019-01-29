@@ -203,6 +203,37 @@ TEST(Variable, operator_times_equal_scalar) {
   EXPECT_EQ(a.unit(), Unit::Id::Length);
 }
 
+TEST(Variable, operator_divide_equal) {
+  Variable a(Data::Value{}, {Dim::X, 2}, {2.0, 3.0});
+  Variable b(Data::Value{}, {}, {2.0});
+  b.setUnit(Unit::Id::Length);
+
+  EXPECT_NO_THROW(a /= b);
+  EXPECT_EQ(a.get<Data::Value>()[0], 1.0);
+  EXPECT_EQ(a.get<Data::Value>()[1], 1.5);
+  EXPECT_EQ(a.unit(), Unit::Id::InverseLength);
+}
+
+TEST(Variable, operator_divide_equal_self) {
+  Variable a(Coord::X{}, {Dim::X, 2}, {2.0, 3.0});
+
+  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_NO_THROW(a /= a);
+  EXPECT_EQ(a.get<Coord::X>()[0], 1.0);
+  EXPECT_EQ(a.get<Coord::X>()[1], 1.0);
+  EXPECT_EQ(a.unit(), Unit::Id::Dimensionless);
+}
+
+TEST(Variable, operator_divide_equal_scalar) {
+  Variable a(Coord::X{}, {Dim::X, 2}, {2.0, 4.0});
+
+  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_NO_THROW(a /= 2.0);
+  EXPECT_EQ(a.get<Coord::X>()[0], 1.0);
+  EXPECT_EQ(a.get<Coord::X>()[1], 2.0);
+  EXPECT_EQ(a.unit(), Unit::Id::Length);
+}
+
 TEST(Variable, setSlice) {
   Dimensions dims(Dim::Tof, 1);
   const Variable parent(
@@ -946,9 +977,11 @@ TEST(VariableSlice, slice_binary_operations) {
   auto sum = v(Dim::X, 0) + v(Dim::X, 1);
   auto difference = v(Dim::X, 0) - v(Dim::X, 1);
   auto product = v(Dim::X, 0) * v(Dim::X, 1);
+  auto ratio = v(Dim::X, 0) / v(Dim::X, 1);
   EXPECT_TRUE(equals(sum.get<const Data::Value>(), {3, 7}));
   EXPECT_TRUE(equals(difference.get<const Data::Value>(), {-1, -1}));
   EXPECT_TRUE(equals(product.get<const Data::Value>(), {2, 12}));
+  EXPECT_TRUE(equals(ratio.get<const Data::Value>(), {1.0 / 2.0, 3.0 / 4.0}));
 }
 
 TEST(Variable, reshape) {
@@ -1066,6 +1099,11 @@ TEST(Variable, non_in_place_scalar_operations) {
   EXPECT_TRUE(equals(prod.get<const Data::Value>(), {2, 4}));
   prod = 3 * var;
   EXPECT_TRUE(equals(prod.get<const Data::Value>(), {3, 6}));
+
+  auto ratio = var / 2;
+  EXPECT_TRUE(equals(ratio.get<const Data::Value>(), {1.0 / 2.0, 1.0}));
+  ratio = 3 / var;
+  EXPECT_TRUE(equals(ratio.get<const Data::Value>(), {3.0, 1.5}));
 }
 
 TEST(VariableSlice, scalar_operations) {
@@ -1082,4 +1120,6 @@ TEST(VariableSlice, scalar_operations) {
   EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 14, 23, 23, 25}));
   var(Dim::X, 2) *= 0;
   EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 0, 23, 23, 0}));
+  var(Dim::Y, 0) /= 2;
+  EXPECT_TRUE(equals(var.get<const Data::Value>(), {6, 6, 0, 23, 23, 0}));
 }
