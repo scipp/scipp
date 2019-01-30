@@ -104,6 +104,22 @@ struct CoordDef {
     using type = double;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct Energy {
+    using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct DeltaE {
+    using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct Ei {
+    using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct Ef {
+    using type = double;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
   struct DetectorId {
     using type = int32_t;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -152,9 +168,9 @@ struct CoordDef {
   };
 
   using tags = std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof,
-                          DetectorId, SpectrumNumber, DetectorGrouping,
-                          RowLabel, Polarization, Temperature, FuzzyTemperature,
-                          Time, TimeInterval, Mask, Position>;
+                          Energy, DeltaE, Ei, Ef, DetectorId, SpectrumNumber,
+                          DetectorGrouping, RowLabel, Polarization, Temperature,
+                          FuzzyTemperature, Time, TimeInterval, Mask, Position>;
 };
 
 struct DataDef {
@@ -233,6 +249,10 @@ struct Coord {
   using Y = detail::TagImpl<detail::CoordDef::Y>;
   using Z = detail::TagImpl<detail::CoordDef::Z>;
   using Tof = detail::TagImpl<detail::CoordDef::Tof>;
+  using Energy = detail::TagImpl<detail::CoordDef::Energy>;
+  using DeltaE = detail::TagImpl<detail::CoordDef::DeltaE>;
+  using Ei = detail::TagImpl<detail::CoordDef::Ei>;
+  using Ef = detail::TagImpl<detail::CoordDef::Ef>;
   using DetectorId = detail::TagImpl<detail::CoordDef::DetectorId>;
   using SpectrumNumber = detail::TagImpl<detail::CoordDef::SpectrumNumber>;
   using DetectorGrouping = detail::TagImpl<detail::CoordDef::DetectorGrouping>;
@@ -275,6 +295,8 @@ template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 namespace detail {
 template <class Tag> constexpr bool is_dimension_coordinate = false;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Tof> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Energy> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::DeltaE> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::X> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Y> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Z> = true;
@@ -284,6 +306,8 @@ template <> constexpr bool is_dimension_coordinate<CoordDef::RowLabel> = true;
 
 template <class Tag> constexpr Dim coordinate_dimension = Dim::Invalid;
 template <> constexpr Dim coordinate_dimension<CoordDef::Tof> = Dim::Tof;
+template <> constexpr Dim coordinate_dimension<CoordDef::Energy> = Dim::Energy;
+template <> constexpr Dim coordinate_dimension<CoordDef::DeltaE> = Dim::DeltaE;
 template <> constexpr Dim coordinate_dimension<CoordDef::X> = Dim::X;
 template <> constexpr Dim coordinate_dimension<CoordDef::Y> = Dim::Y;
 template <> constexpr Dim coordinate_dimension<CoordDef::Z> = Dim::Z;
