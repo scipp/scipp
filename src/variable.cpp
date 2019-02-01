@@ -514,11 +514,6 @@ public:
   }
 
   std::unique_ptr<VariableConcept>
-  cloneMutable(VariableConcept &) const override {
-    throw std::runtime_error("DataModel::cloneMutable() should not be called.");
-  }
-
-  std::unique_ptr<VariableConcept>
   clone(const Dimensions &dims) const override {
     return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
   }
@@ -637,14 +632,6 @@ public:
 
   std::unique_ptr<VariableConcept> clone() const override {
     return std::make_unique<ViewModel<T>>(this->dimensions(), m_model);
-  }
-
-  std::unique_ptr<VariableConcept>
-  cloneMutable(VariableConcept &mutableData) const override {
-    auto *data =
-        dynamic_cast<conceptT_t<value_type> &>(mutableData).getSpan().data();
-    return std::make_unique<ViewModel<VariableView<value_type>>>(
-        this->dimensions(), m_model.createMutable(data));
   }
 
   std::unique_ptr<VariableConcept> clone(const Dimensions &) const override {

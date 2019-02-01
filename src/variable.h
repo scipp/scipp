@@ -35,8 +35,6 @@ public:
   virtual ~VariableConcept() = default;
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual std::unique_ptr<VariableConcept>
-  cloneMutable(VariableConcept &mutableData) const = 0;
-  virtual std::unique_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() = 0;
@@ -380,17 +378,23 @@ class VariableSlice : public ConstVariableSlice {
 public:
   explicit VariableSlice(Variable &variable)
       : ConstVariableSlice(variable), m_mutableVariable(&variable) {}
+  // Note that we use the basic constructor of ConstVariableSlice to avoid
+  // creation of a const m_view, which would be overwritten immediately.
   VariableSlice(Variable &variable, const Dimensions &dims)
-      : ConstVariableSlice(variable, dims), m_mutableVariable(&variable) {}
+      : ConstVariableSlice(variable), m_mutableVariable(&variable) {
+    m_view = variable.data().reshape(dims);
+  }
   VariableSlice(const VariableSlice &other) = default;
   VariableSlice(Variable &variable, const Dim dim, const gsl::index begin,
                 const gsl::index end = -1)
-      : ConstVariableSlice(variable, dim, begin, end),
-        m_mutableVariable(&variable) {}
+      : ConstVariableSlice(variable), m_mutableVariable(&variable) {
+    m_view = variable.data().makeView(dim, begin, end);
+  }
   VariableSlice(const VariableSlice &slice, const Dim dim,
                 const gsl::index begin, const gsl::index end = -1)
-      : ConstVariableSlice(slice, dim, begin, end),
-        m_mutableVariable(slice.m_mutableVariable) {}
+      : ConstVariableSlice(slice), m_mutableVariable(slice.m_mutableVariable) {
+    m_view = slice.data().makeView(dim, begin, end);
+  }
 
   VariableSlice operator()(const Dim dim, const gsl::index begin,
                            const gsl::index end = -1) const {
@@ -404,12 +408,10 @@ public:
   using ConstVariableSlice::data;
   using ConstVariableSlice::get;
 
-  VariableConcept &data() && = delete;
-  VariableConcept &data() & {
+  VariableConcept &data() const && = delete;
+  VariableConcept &data() const & {
     if (!m_view)
       return m_mutableVariable->data();
-    if (m_view->isConstView())
-      m_view = m_view->cloneMutable(m_mutableVariable->data());
     return *m_view;
   }
 
