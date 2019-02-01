@@ -22,10 +22,10 @@ While both instrument and logs/metadata themselves contain non-scalar data, the 
 Both instrument and metadata can be relatively large.
 For example, the instrument can consume several hundred of `Byte` per pixel, which translates to hundreds of `MByte` for large instruments, or even exceeding a `GByte`.
 
-Since there typically is only a single (or a few) instrument or log it can easily be wrapped in a `cow_ptr` or a `std::shared_ptr` in case memory/copy overhead becomes too significant.
+Since there typically is only a single (or a few) instrument and log, they can easily be wrapped in a `cow_ptr` or a `std::shared_ptr` in case memory/copy overhead becomes too significant.
 This does not require any design changes, we would simply change the item type of the respective variables from `Dataset` to `cow_ptr<Dataset>`.
 The burden of handling COW thus falls to the user of the instrument/logs and is not imposed on the design as a whole.
-For practical purposed access to the instrument/logs should then probably be handled via proxy objects (which is anyway the intended mode of operation for a series of other cases).
+For practical purposed access to the instrument/logs should then probably be handled via proxy objects, which is anyway the intended mode of operation for a series of other cases.
 
 #### 1.2 Coordinates
 
@@ -47,7 +47,7 @@ After unit-conversion we typically end up with non-aligned bins.
 The TOF-derived coordinate thus depends on the same dimensions as the data.
 Typically we store at least data and uncertainties, the "worst-case" overhead from non sharing the coordinate is thus:
 
-- 50% assuming there is a large number datasets that could share the coordinate.
+- 50% assuming there is a large number of datasets that could share the coordinate.
 - 20% if there are just two sharing datasets.
 - If sharing is not set up, e.g., if the datasets were created independently there is no overhead.
 
@@ -60,11 +60,12 @@ However, in particular with datasets containing multiple variables it is likely 
 Data variables typically take up more memory than coordinates, since they are almost always multi-dimensional or hold event-data.
 
 This case is hardest to evaluate since the exact amount of sharing depends a lot on how a workflow is written.
-It is easy to imagine a workflow written in a way that becomes really inefficient with COW.
+It is easy to imagine a workflow written in a way that becomes really inefficient without COW.
 However, it is certainly possible to write workflows without making too many copies, operating mostly in-place.
-The prime example for this is maybe Mantid's `EventWorkspace`.
-In contrast to histogrammed data, `EventWorkspace` does not use COW.
-Nevertheless many efficient workflows have been written in Mantid, utilizing in-place modifications wherever possible.
+
+- The prime example for this is maybe Mantid's `EventWorkspace`.
+  In contrast to histogrammed data, `EventWorkspace` does not use COW.
+  Nevertheless many efficient workflows have been written in Mantid, utilizing in-place modifications wherever possible.
 
 The take-away here is that we have to focus on in-place operation when performance is critical.
 
@@ -88,7 +89,7 @@ Assuming that reads have the same cost as writes, the worst-case overhead is thu
 
 #### 2.2 Copy overheads
 
-Operations that copy datasets are create new ones must also copy the coordinates.
+Operations that copy datasets or create new ones must also copy the coordinates.
 Assuming we can share only coordinates but not data, the worst case is again a multi-dimensional coordinate.
 Consider `+`, i.e., a non-in-place binary operation.
 It is not obvious what the cost of memory allocation and initialization is compared to the actual copy operation.
@@ -104,20 +105,43 @@ It is not obvious what the cost of memory allocation and initialization is compa
 
   The overhead is thus 50% (*including* the overhead from coordinate comparison) for this worst-case.
 
-  
-  
+As for the memory overhead, the recommendation to use in-place modification holds also here and would completely eliminate the overhead.
 
 
+### 3 Complexity and other aspects
+
+In addition to memory and compute overheads there is a series of other aspects to consider.
+The brevity of the listed items is not an indicator of their importance, in many cases they may weigh *more* than what was described in the previous sections.
+
+1. Without COW the implementation of the `Dataset` library is significantly simplified.
+
+1. Without COW the design of the public-facing API is much simpler.
+   COW would lock us into something that exposes a fair bit more of the underlying implementation than we would like.
+
+1. Without COW user (developer) training is simpler, reducing the need for documentation and the teaching effort.
+
+1. Implementation of multi-threaded code using `Dataset` has a fair number of pitfalls if COW is present.
+   Without COW it becomes pretty much straightforward.
+
+1. The "worst" that can happen in a design without COW is some waste of memory.
+   With COW, developers have to be aware of invalidation of iterators and invalidation of views such as slice-views.
+   The risk of subtle bugs is thus high.
+
+1. With COW, invalidation of iterators and views and the ensuing bugs will lead to instabilities.
+   In most cases an invalid iterator will temporarily still point to valid memory, but this may change randomly in multi-threaded environments and can lead to hard-to-reproduce crashes.
+
+1. To actually get any benefit out of COW, developers need to be aware of the concept and take care not to break sharing.
 
 
+### 4 Conclusion
 
+Considered in isolation, the worst-case overheads for memory and computation are not insignificant.
+In a realistic workflow the relative importance of these overheads is likely to reduce drastically.
 
+- Not all operations/data in a workflow falls into the worst case.
+- In practice sharing may happen less often than we would like to.
 
-compute overhead -> coord comp
-allocation overhead
-library implementation effort
-teaching effort
-API simplicity
-risk for bugs
-multi-threading
-undo
+We can thus conjecture that the overall effect might be less than 10%, or approach zero in many cases.
+
+In comparison to the various aspects listed in Sec. 3) we may thus argue that COW is not beneficial or even counter-productive (note that we still have the freedom to use COW for scalar data, without having it as part of the library design).
+Freeing up developer time (by not looking for subtle bugs, or having to think hard about COW) is likely to have a larger impact, e.g., by having time to optimize other aspects, or to work on science-related code.
