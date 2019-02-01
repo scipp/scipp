@@ -416,7 +416,7 @@ public:
   }
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
-  template <class Tag> auto get() {
+  template <class Tag> auto get() const {
     if (Tag{} != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
@@ -457,10 +457,7 @@ private:
   template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
-  // Special version creating const view from mutable view. Note that this does
-  // not return a reference but by value.
-  template <class T> VariableView<const T> cast() const;
-  template <class T> VariableView<T> cast();
+  template <class T> VariableView<T> cast() const;
 
   Variable *m_mutableVariable;
 };

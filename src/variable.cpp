@@ -993,20 +993,7 @@ const VariableView<const T> ConstVariableSlice::cast() const {
           dimensions()};
 }
 
-template <class T> VariableView<const T> VariableSlice::cast() const {
-  if (!m_view)
-    return dynamic_cast<const DataModel<Vector<T>> &>(data()).getView(
-        dimensions());
-  if (m_view->isConstView())
-    return {
-        dynamic_cast<const ViewModel<VariableView<const T>> &>(data()).m_model,
-        dimensions()};
-  // Make a const view from the mutable one.
-  return {dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model,
-          dimensions()};
-}
-
-template <class T> VariableView<T> VariableSlice::cast() {
+template <class T> VariableView<T> VariableSlice::cast() const {
   if (m_view)
     return dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model;
   return dynamic_cast<DataModel<Vector<T>> &>(data()).getView(dimensions());
@@ -1015,8 +1002,7 @@ template <class T> VariableView<T> VariableSlice::cast() {
 #define INSTANTIATE_SLICEVIEW(...)                                             \
   template const VariableView<const __VA_ARGS__>                               \
   ConstVariableSlice::cast<__VA_ARGS__>() const;                               \
-  template VariableView<const __VA_ARGS__> VariableSlice::cast() const;        \
-  template VariableView<__VA_ARGS__> VariableSlice::cast();
+  template VariableView<__VA_ARGS__> VariableSlice::cast() const;
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(int32_t);
