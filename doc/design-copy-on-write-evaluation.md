@@ -45,13 +45,74 @@ Nevertheless, if any two-dimensional data variable, or event-data is present, th
 
 After unit-conversion we typically end up with non-aligned bins.
 The TOF-derived coordinate thus depends on the same dimensions as the data.
-Typically we store data and uncertainties, the overhead from non sharing the coordinate is thus 50% (assuming there is a number datasets that could share the coordinate --- if there are just two the overhead is 20%, if sharing is not set up, e.g., if the datasets were created independently there is no overhead.
+Typically we store at least data and uncertainties, the "worst-case" overhead from non sharing the coordinate is thus:
+
+- 50% assuming there is a large number datasets that could share the coordinate.
+- 20% if there are just two sharing datasets.
+- If sharing is not set up, e.g., if the datasets were created independently there is no overhead.
 
 With the support of dataset for multiple data-variables in the same dataset the number of datasets in a given reduction workflow would typically also be lower than what we are used to from the number of workspaces in Mantid.
 
+#### 1.3 Data variables
+
+Data variables change more frequently than coordinates.
+However, in particular with datasets containing multiple variables it is likely that not all of them will change.
+Data variables typically take up more memory than coordinates, since they are almost always multi-dimensional or hold event-data.
+
+This case is hardest to evaluate since the exact amount of sharing depends a lot on how a workflow is written.
+It is easy to imagine a workflow written in a way that becomes really inefficient with COW.
+However, it is certainly possible to write workflows without making too many copies, operating mostly in-place.
+The prime example for this is maybe Mantid's `EventWorkspace`.
+In contrast to histogrammed data, `EventWorkspace` does not use COW.
+Nevertheless many efficient workflows have been written in Mantid, utilizing in-place modifications wherever possible.
+
+The take-away here is that we have to focus on in-place operation when performance is critical.
 
 
-memory overhead
+### 2 Compute overhead
+
+#### 2.1 Coordinate comparison in operations
+
+Operations between datasets compare coordinate-variables to ensure that they match.
+With COW, the comparison is essentially for free, provided that sharing is set up.
+If there is no sharing, the cost is the same without COW.
+
+If there is sharing, the worst case is again a multi-dimensional coordinate.
+Consider an in-place binary operation such as `+=` for data with uncertainty.
+This is bound by memory bandwidth so the cost is:
+
+- With COW (and sharing): 2+2 reads + 2 writes.
+- Without COW: 3+3 reads + 2 writes.
+
+Assuming that reads have the same cost as writes, the worst-case overhead is thus 33%.
+
+#### 2.2 Copy overheads
+
+Operations that copy datasets are create new ones must also copy the coordinates.
+Assuming we can share only coordinates but not data, the worst case is again a multi-dimensional coordinate.
+Consider `+`, i.e., a non-in-place binary operation.
+It is not obvious what the cost of memory allocation and initialization is compared to the actual copy operation.
+
+- If we assume the cost is dominated by the allocation/initialization we obtain an overhead of 50%.
+  In practice there should also be contributions from the actual copy operation and the addition.
+- There are opportunities for optimization, such as object pools which can nearly eliminate the allocation/initialization cost (assuming the pool is not at capacity), and streaming-stores which eliminate the read of the output buffer.
+  The overhead would thus only be a single write (for the coordinate) --- in addition to the reads for coordinate comparison.
+  We obtain for a (hypothetical) optimized implementation:
+
+  - With COW (and sharing): 2+2 reads + 2 writes.
+  - Without COW: 3+3 reads + 3 writes.
+
+  The overhead is thus 50% (*including* the overhead from coordinate comparison) for this worst-case.
+
+  
+  
+
+
+
+
+
+
+
 compute overhead -> coord comp
 allocation overhead
 library implementation effort
@@ -59,3 +120,4 @@ teaching effort
 API simplicity
 risk for bugs
 multi-threading
+undo
