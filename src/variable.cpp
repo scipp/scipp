@@ -509,11 +509,7 @@ public:
     return makeVariableView(m_model.data(), 0, dims, dims);
   }
 
-  std::shared_ptr<VariableConcept> clone() const override {
-    return std::make_shared<DataModel<T>>(this->dimensions(), m_model);
-  }
-
-  std::unique_ptr<VariableConcept> cloneUnique() const override {
+  std::unique_ptr<VariableConcept> clone() const override {
     return std::make_unique<DataModel<T>>(this->dimensions(), m_model);
   }
 
@@ -522,9 +518,9 @@ public:
     throw std::runtime_error("DataModel::cloneMutable() should not be called.");
   }
 
-  std::shared_ptr<VariableConcept>
+  std::unique_ptr<VariableConcept>
   clone(const Dimensions &dims) const override {
-    return std::make_shared<DataModel<T>>(dims, T(dims.volume()));
+    return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
   }
 
   bool isContiguous() const override { return true; }
@@ -639,11 +635,7 @@ public:
     }
   }
 
-  std::shared_ptr<VariableConcept> clone() const override {
-    return std::make_shared<ViewModel<T>>(this->dimensions(), m_model);
-  }
-
-  std::unique_ptr<VariableConcept> cloneUnique() const override {
+  std::unique_ptr<VariableConcept> clone() const override {
     return std::make_unique<ViewModel<T>>(this->dimensions(), m_model);
   }
 
@@ -655,7 +647,7 @@ public:
         this->dimensions(), m_model.createMutable(data));
   }
 
-  std::shared_ptr<VariableConcept> clone(const Dimensions &) const override {
+  std::unique_ptr<VariableConcept> clone(const Dimensions &) const override {
     throw std::runtime_error("Cannot resize view.");
   }
 
@@ -704,7 +696,7 @@ template <class T> const Vector<T> &Variable::cast() const {
 }
 
 template <class T> Vector<T> &Variable::cast() {
-  return dynamic_cast<DataModel<Vector<T>> &>(m_object.access()).m_model;
+  return dynamic_cast<DataModel<Vector<T>> &>(*m_object).m_model;
 }
 
 #define INSTANTIATE(...)                                                       \
@@ -755,9 +747,6 @@ bool Variable::operator==(const Variable &other) const {
     return false;
   if (unit() != other.unit())
     return false;
-  // Trivial case: Pointers are equal
-  if (m_object == other.m_object)
-    return true;
   // Deep comparison
   if (tag() != other.tag())
     return false;
@@ -1079,25 +1068,35 @@ Variable ConstVariableSlice::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
-Variable operator+(Variable a, const Variable &b) { return a += b; }
-Variable operator-(Variable a, const Variable &b) { return a -= b; }
-Variable operator*(Variable a, const Variable &b) { return a *= b; }
-Variable operator/(Variable a, const Variable &b) { return a /= b; }
-Variable operator+(Variable a, const ConstVariableSlice &b) { return a += b; }
-Variable operator-(Variable a, const ConstVariableSlice &b) { return a -= b; }
-Variable operator*(Variable a, const ConstVariableSlice &b) { return a *= b; }
-Variable operator/(Variable a, const ConstVariableSlice &b) { return a /= b; }
-Variable operator+(Variable a, const double b) { return a += b; }
-Variable operator-(Variable a, const double b) { return a -= b; }
-Variable operator*(Variable a, const double b) { return a *= b; }
-Variable operator/(Variable a, const double b) { return a /= b; }
-Variable operator+(const double a, Variable b) { return b += a; }
-Variable operator-(const double a, Variable b) { return -(b -= a); }
-Variable operator*(const double a, Variable b) { return b *= a; }
+// Note: The std::move here is necessary because RVO does not work for variables
+// that are function parameters.
+Variable operator+(Variable a, const Variable &b) { return std::move(a += b); }
+Variable operator-(Variable a, const Variable &b) { return std::move(a -= b); }
+Variable operator*(Variable a, const Variable &b) { return std::move(a *= b); }
+Variable operator/(Variable a, const Variable &b) { return std::move(a /= b); }
+Variable operator+(Variable a, const ConstVariableSlice &b) {
+  return std::move(a += b);
+}
+Variable operator-(Variable a, const ConstVariableSlice &b) {
+  return std::move(a -= b);
+}
+Variable operator*(Variable a, const ConstVariableSlice &b) {
+  return std::move(a *= b);
+}
+Variable operator/(Variable a, const ConstVariableSlice &b) {
+  return std::move(a /= b);
+}
+Variable operator+(Variable a, const double b) { return std::move(a += b); }
+Variable operator-(Variable a, const double b) { return std::move(a -= b); }
+Variable operator*(Variable a, const double b) { return std::move(a *= b); }
+Variable operator/(Variable a, const double b) { return std::move(a /= b); }
+Variable operator+(const double a, Variable b) { return std::move(b += a); }
+Variable operator-(const double a, Variable b) { return std::move(-(b -= a)); }
+Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(Unit::Id::Dimensionless / b.unit());
   require<FloatingPointVariableConcept>(b.data()).reciprocal_times(a);
-  return b;
+  return std::move(b);
 }
 
 // Example of a "derived" operation: Implementation does not require adding a

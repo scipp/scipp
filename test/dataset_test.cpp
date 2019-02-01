@@ -534,10 +534,6 @@ TEST(Dataset, concatenate) {
   EXPECT_TRUE(xy.dimensions().contains(Dim::Y));
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
   EXPECT_EQ(xy.get<const Data::Value>().size(), 4);
-  // Coord::X is shared since it it was the same in x and x2 and is thus
-  // "constant" along Dim::Y in xy.
-  EXPECT_EQ(&x.get<const Coord::X>()[0], &xy.get<const Coord::X>()[0]);
-  EXPECT_NE(&x.get<const Data::Value>()[0], &xy.get<const Data::Value>()[0]);
 
   xy = concatenate(xy, x, Dim::Y);
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
@@ -628,10 +624,6 @@ TEST(Dataset, concatenate_with_attributes) {
   EXPECT_TRUE(xy.dimensions().contains(Dim::Y));
   EXPECT_EQ(xy.get<const Coord::X>().size(), 2);
   EXPECT_EQ(xy.get<const Data::Value>().size(), 4);
-  // Coord::X is shared since it it was the same in x and x2 and is thus
-  // "constant" along Dim::Y in xy.
-  EXPECT_EQ(&x.get<const Coord::X>()[0], &xy.get<const Coord::X>()[0]);
-  EXPECT_NE(&x.get<const Data::Value>()[0], &xy.get<const Data::Value>()[0]);
   // Attributes get a dimension, no merging happens. This might be useful
   // behavior, e.g., when dealing with multiple runs in a single dataset?
   EXPECT_EQ(xy.get<const Attr::ExperimentLog>().size(), 2);
@@ -854,7 +846,8 @@ TEST(Dataset, filter) {
   EXPECT_EQ(filtered.get<const Coord::X>()[1], 0.0);
 
   ASSERT_EQ(filtered.get<const Coord::Y>().size(), 2);
-  ASSERT_EQ(&filtered.get<const Coord::Y>()[0], &d.get<const Coord::Y>()[0]);
+  EXPECT_EQ(filtered.get<const Coord::Y>()[0], 1.0);
+  EXPECT_EQ(filtered.get<const Coord::Y>()[1], 0.9);
 
   ASSERT_EQ(filtered.get<const Data::Value>().size(), 4);
   EXPECT_EQ(filtered.get<const Data::Value>()[0], 2.0);

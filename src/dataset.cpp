@@ -494,18 +494,26 @@ DatasetSlice DatasetSlice::operator*=(const double value) {
   return *this;
 }
 
-Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
-Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
-Dataset operator*(Dataset a, const Dataset &b) { return a *= b; }
-Dataset operator+(Dataset a, const ConstDatasetSlice &b) { return a += b; }
-Dataset operator-(Dataset a, const ConstDatasetSlice &b) { return a -= b; }
-Dataset operator*(Dataset a, const ConstDatasetSlice &b) { return a *= b; }
-Dataset operator+(Dataset a, const double b) { return a += b; }
-Dataset operator-(Dataset a, const double b) { return a -= b; }
-Dataset operator*(Dataset a, const double b) { return a *= b; }
-Dataset operator+(const double a, Dataset b) { return b += a; }
-Dataset operator-(const double a, Dataset b) { return -(b -= a); }
-Dataset operator*(const double a, Dataset b) { return b *= a; }
+// Note: The std::move here is necessary because RVO does not work for variables
+// that are function parameters.
+Dataset operator+(Dataset a, const Dataset &b) { return std::move(a += b); }
+Dataset operator-(Dataset a, const Dataset &b) { return std::move(a -= b); }
+Dataset operator*(Dataset a, const Dataset &b) { return std::move(a *= b); }
+Dataset operator+(Dataset a, const ConstDatasetSlice &b) {
+  return std::move(a += b);
+}
+Dataset operator-(Dataset a, const ConstDatasetSlice &b) {
+  return std::move(a -= b);
+}
+Dataset operator*(Dataset a, const ConstDatasetSlice &b) {
+  return std::move(a *= b);
+}
+Dataset operator+(Dataset a, const double b) { return std::move(a += b); }
+Dataset operator-(Dataset a, const double b) { return std::move(a -= b); }
+Dataset operator*(Dataset a, const double b) { return std::move(a *= b); }
+Dataset operator+(const double a, Dataset b) { return std::move(b += a); }
+Dataset operator-(const double a, Dataset b) { return std::move(-(b -= a)); }
+Dataset operator*(const double a, Dataset b) { return std::move(b *= a); }
 
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {

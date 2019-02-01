@@ -42,21 +42,13 @@ TEST(Variable, span_references_Variable) {
   EXPECT_EQ(observer[0], 1.0);
 }
 
-TEST(Variable, sharing) {
-  const Variable a1(Data::Value{}, {Dim::Tof, 2});
-  const auto a2(a1);
-  // TODO Should we require the use of `const` with the tag if Variable is
-  // const?
-  EXPECT_EQ(&a1.get<const Data::Value>()[0], &a2.get<const Data::Value>()[0]);
-}
-
 TEST(Variable, copy) {
   const Variable a1(Data::Value{}, {Dim::Tof, 2}, {1.1, 2.2});
   const auto &data1 = a1.get<const Data::Value>();
   EXPECT_EQ(data1[0], 1.1);
   EXPECT_EQ(data1[1], 2.2);
   auto a2(a1);
-  EXPECT_EQ(&a1.get<const Data::Value>()[0], &a2.get<const Data::Value>()[0]);
+  EXPECT_NE(&a1.get<const Data::Value>()[0], &a2.get<const Data::Value>()[0]);
   EXPECT_NE(&a1.get<const Data::Value>()[0], &a2.get<Data::Value>()[0]);
   const auto &data2 = a2.get<Data::Value>();
   EXPECT_EQ(data2[0], 1.1);
@@ -498,52 +490,17 @@ TEST(Variable, mean) {
 
 TEST(VariableSlice, full_const_view) {
   const Variable var(Coord::X{}, {{Dim::X, 3}});
-  auto copy(var);
   ConstVariableSlice view(var);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
+  EXPECT_EQ(var.get<const Coord::X>().data(),
             view.get<const Coord::X>().data());
 }
 
 TEST(VariableSlice, full_mutable_view) {
   Variable var(Coord::X{}, {{Dim::X, 3}});
-  auto copy(var);
   VariableSlice view(var);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
+  EXPECT_EQ(var.get<const Coord::X>().data(),
             view.get<const Coord::X>().data());
-  EXPECT_NE(copy.get<const Coord::X>().data(), view.get<Coord::X>().data());
-}
-
-TEST(VariableSlice,
-     copy_on_write_variable_from_full_view_shares_original_data) {
-  const Variable var(Coord::X{}, {{Dim::X, 3}});
-  ConstVariableSlice view(var);
-  Variable copy(view);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            var.get<const Coord::X>().data());
-}
-
-TEST(VariableSlice, copy_on_write_const_view) {
-  const Variable var(Coord::X{}, {{Dim::X, 3}});
-  auto copy(var);
-  auto view = var(Dim::X, 0);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            view.get<const Coord::X>().data());
-}
-
-TEST(VariableSlice, copy_on_write_mutable_view) {
-  Variable var(Coord::X{}, {{Dim::X, 3}});
-  auto copy(var);
-  auto view = var(Dim::X, 0);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            view.get<const Coord::X>().data());
-}
-
-TEST(VariableSlice, copy_on_write_nested_mutable_view) {
-  Variable var(Coord::X{}, {{Dim::Y, 3}, {Dim::X, 3}});
-  auto copy(var);
-  auto view = var(Dim::X, 0)(Dim::Y, 0);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            view.get<const Coord::X>().data());
+  EXPECT_EQ(var.get<const Coord::X>().data(), view.get<Coord::X>().data());
 }
 
 TEST(VariableSlice, strides) {

@@ -33,12 +33,10 @@ class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
-  // This is dropped into a cow_ptr so we prefer shared_ptr over unique_ptr.
-  virtual std::shared_ptr<VariableConcept> clone() const = 0;
-  virtual std::unique_ptr<VariableConcept> cloneUnique() const = 0;
+  virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual std::unique_ptr<VariableConcept>
   cloneMutable(VariableConcept &mutableData) const = 0;
-  virtual std::shared_ptr<VariableConcept>
+  virtual std::unique_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() = 0;
@@ -79,7 +77,7 @@ template <class T> std::unique_ptr<T> clone(const T &other) {
 
 template <>
 inline std::unique_ptr<VariableConcept> clone(const VariableConcept &other) {
-  return other.cloneUnique();
+  return other.clone();
 }
 } // namespace detail
 
@@ -211,7 +209,7 @@ public:
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
   VariableConcept &data() && = delete;
-  VariableConcept &data() & { return m_object.access(); }
+  VariableConcept &data() & { return *m_object; }
 
   Tag tag() const { return m_tag; }
   bool isCoord() const {
@@ -224,10 +222,6 @@ public:
   bool isData() const { return !isCoord() && !isAttr(); }
 
   template <class Tag> auto get() const {
-    static_assert(std::is_const<Tag>::value,
-                  "Variable is `const`, must use const-qualified tag in call "
-                  "to `get`, e.g., `get<const Coord::X>()` instead of "
-                  "`get<Coord::X>()`");
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).
@@ -280,12 +274,12 @@ private:
 
   // Used by ZipView. Need to find a better way instead of having everyone as
   // friend.
-  Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }
+  Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
   Tag m_tag;
   Unit m_unit;
   deep_ptr<std::string> m_name;
-  cow_ptr<VariableConcept> m_object;
+  deep_ptr<VariableConcept> m_object;
 };
 
 /// Non-mutable view into (a subset of) a Variable.
@@ -363,11 +357,6 @@ public:
   // methods. The data is owned by the underlying variable so it will not be
   // deleted even if *this is a temporary and gets deleted.
   template <class Tag> auto get() const {
-    static_assert(
-        std::is_const<Tag>::value,
-        "VariableSlice is `const`, must use const-qualified tag in call "
-        "to `get`, e.g., `get<const Coord::X>()` instead of "
-        "`get<Coord::X>()`");
     if (Tag{} != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();

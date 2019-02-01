@@ -63,26 +63,6 @@ TEST(MDZipView, iterator) {
   ASSERT_EQ(it, view.end());
 }
 
-TEST(MDZipView, copy_on_write) {
-  Dataset d;
-  d.insert<Coord::X>({Dim::X, 2}, 2);
-  d.insert<Coord::Y>({Dim::X, 2}, 2);
-  const auto copy(d);
-
-  MDZipView<const Coord::X> const_view(d);
-  EXPECT_EQ(&const_view.begin()->get<Coord::X>(),
-            &copy.get<const Coord::X>()[0]);
-  // Again, just to confirm that the call to `copy.get` is not the reason for
-  // breaking sharing:
-  EXPECT_EQ(&const_view.begin()->get<Coord::X>(),
-            &copy.get<const Coord::X>()[0]);
-
-  MDZipView<Coord::X, const Coord::Y> view(d);
-  EXPECT_NE(&view.begin()->get<Coord::X>(), &copy.get<const Coord::X>()[0]);
-  // Breaks sharing only for the non-const variables:
-  EXPECT_EQ(&view.begin()->get<Coord::Y>(), &copy.get<const Coord::Y>()[0]);
-}
-
 TEST(MDZipView, single_column) {
   Dataset d;
   d.insert<Data::Value>("", Dimensions(Dim::Tof, 10), 10);
@@ -342,57 +322,6 @@ TEST(MDZipView, nested_MDZipView_constant_variable) {
       EXPECT_EQ(subitem.get<Data::Value>(), value);
     }
   }
-}
-
-TEST(MDZipView, nested_MDZipView_copy_on_write) {
-  Dataset d;
-  d.insert<Data::Value>("", Dimensions({{Dim::Y, 2}, {Dim::X, 2}}),
-                        {1.0, 2.0, 3.0, 4.0});
-  d.insert<Coord::X>(Dimensions({{Dim::Y, 2}, {Dim::X, 2}}),
-                     {10.0, 20.0, 30.0, 40.0});
-
-  auto copy(d);
-
-  MDZipView<MDZipView<const Data::Value, const Coord::X>> const_view(copy,
-                                                                     {Dim::X});
-
-  EXPECT_EQ(&d.get<const Data::Value>()[0],
-            &(const_view.begin()
-                  ->get<MDZipView<const Data::Value, const Coord::X>>()
-                  .begin()
-                  ->get<Data::Value>()));
-  EXPECT_EQ(&d.get<const Coord::X>()[0],
-            &(const_view.begin()
-                  ->get<MDZipView<const Data::Value, const Coord::X>>()
-                  .begin()
-                  ->get<Coord::X>()));
-
-  MDZipView<MDZipView<const Data::Value, Coord::X>> partially_const_view(
-      copy, {Dim::X});
-
-  EXPECT_EQ(&d.get<const Data::Value>()[0],
-            &(partially_const_view.begin()
-                  ->get<MDZipView<const Data::Value, Coord::X>>()
-                  .begin()
-                  ->get<Data::Value>()));
-  EXPECT_NE(&d.get<const Coord::X>()[0],
-            &(partially_const_view.begin()
-                  ->get<MDZipView<const Data::Value, Coord::X>>()
-                  .begin()
-                  ->get<Coord::X>()));
-
-  MDZipView<MDZipView<Data::Value, Coord::X>> nonconst_view(copy, {Dim::X});
-
-  EXPECT_NE(&d.get<const Data::Value>()[0],
-            &(nonconst_view.begin()
-                  ->get<MDZipView<Data::Value, Coord::X>>()
-                  .begin()
-                  ->get<Data::Value>()));
-  EXPECT_NE(&d.get<const Coord::X>()[0],
-            &(nonconst_view.begin()
-                  ->get<MDZipView<Data::Value, Coord::X>>()
-                  .begin()
-                  ->get<Coord::X>()));
 }
 
 TEST(MDZipView, histogram_using_nested_MDZipView) {
