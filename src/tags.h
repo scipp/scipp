@@ -351,28 +351,29 @@ private:
 
 template <class T> struct Bin { using type = DataBin; };
 
-template <class Tag> struct element_return_type {
+template <class D, class Tag> struct element_return_type {
   using type = std::conditional_t<
       std::is_base_of<detail::ReturnByValuePolicy, Tag>::value,
       typename Tag::type,
       std::conditional_t<
-          std::is_const<Tag>::value,
+          std::is_const<D>::value || std::is_const<Tag>::value,
           std::conditional_t<
               std::is_base_of<detail::ReturnByValueIfConstPolicy, Tag>::value,
               typename Tag::type, const typename Tag::type &>,
           typename Tag::type &>>;
 };
 
-template <class Tags> struct element_return_type<Bin<Tags>> {
+template <class D, class Tags> struct element_return_type<D, Bin<Tags>> {
   using type = DataBin;
 };
 
-template <class... Ts> class MDZipViewImpl;
-template <class... Tags> struct element_return_type<MDZipViewImpl<Tags...>> {
-  using type = MDZipViewImpl<Tags...>;
+template <class D, class... Ts> class MDZipViewImpl;
+template <class D, class... Tags>
+struct element_return_type<D, MDZipViewImpl<D, Tags...>> {
+  using type = MDZipViewImpl<D, Tags...>;
 };
 
-template <class Tag>
-using element_return_type_t = typename element_return_type<Tag>::type;
+template <class D, class Tag>
+using element_return_type_t = typename element_return_type<D, Tag>::type;
 
 #endif // TAGS_H

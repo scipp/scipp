@@ -31,12 +31,12 @@ TEST(MDZipView, construct_with_const_Dataset) {
   d.insert<Data::Value>("", {Dim::X, 1}, {1.1});
   d.insert<Data::Int>("", Dimensions{}, {2});
   const auto const_d(d);
-  EXPECT_NO_THROW(MDZipView<const Data::Value> view(const_d));
+  EXPECT_NO_THROW(ConstMDZipView<Data::Value> view(const_d));
   EXPECT_NO_THROW(
-      MDZipView<MDZipView<const Data::Value>> nested(const_d, {Dim::X}));
-  EXPECT_NO_THROW(static_cast<void>(
-      MDZipView<MDZipView<const Data::Value>, const Data::Int>(const_d,
-                                                               {Dim::X})));
+      ConstMDZipView<ConstMDZipView<Data::Value>> nested(const_d, {Dim::X}));
+  EXPECT_NO_THROW(
+      static_cast<void>(ConstMDZipView<ConstMDZipView<Data::Value>, Data::Int>(
+          const_d, {Dim::X})));
 }
 
 TEST(MDZipView, iterator) {
@@ -568,8 +568,10 @@ TEST(MDZipView, type_sorting_nested) {
   data.insert<Coord::Y>({}, 1);
   MDZipView<Coord::X, MDZipView<Coord::Y>> a(data);
   MDZipView<MDZipView<Coord::Y>, Coord::X> b(data);
-  EXPECT_EQ(typeid(decltype(a)),
-            typeid(MDZipViewImpl<Coord::X, MDZipViewImpl<Coord::Y>>));
+  EXPECT_EQ(
+      typeid(decltype(a)),
+      typeid(
+          MDZipViewImpl<Dataset, Coord::X, MDZipViewImpl<Dataset, Coord::Y>>));
   EXPECT_EQ(typeid(decltype(a)), typeid(decltype(b)));
 }
 
@@ -583,12 +585,12 @@ TEST(MDZipView, type_sorting_two_nested) {
   MDZipView<MDZipView<Coord::Y, Coord::Z>, Coord::X> c(data);
   MDZipView<MDZipView<Coord::Z, Coord::Y>, Coord::X> d(data);
   EXPECT_EQ(typeid(decltype(a)),
-            typeid(MDZipViewImpl<Coord::X, MDZipViewImpl<Coord::Y, Coord::Z>>));
+            typeid(MDZipViewImpl<Dataset, Coord::X, MDZipViewImpl<Dataset, Coord::Y, Coord::Z>>));
   EXPECT_EQ(typeid(decltype(a)), typeid(decltype(b)));
   EXPECT_EQ(typeid(decltype(a)), typeid(decltype(c)));
   EXPECT_EQ(typeid(decltype(a)), typeid(decltype(d)));
-  MDZipView<Coord::X, MDZipView<const Coord::Y, Coord::Z>> a_const(data);
-  EXPECT_EQ(
-      typeid(decltype(a_const)),
-      typeid(MDZipViewImpl<Coord::X, MDZipViewImpl<const Coord::Y, Coord::Z>>));
+  MDZipView<Coord::X, MDZipView<Coord::Y, Coord::Z>> a_const(data);
+  EXPECT_EQ(typeid(decltype(a_const)),
+            typeid(MDZipViewImpl<Dataset, Coord::X,
+                                 MDZipViewImpl<Dataset, Coord::Y, Coord::Z>>));
 }
