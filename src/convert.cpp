@@ -43,7 +43,7 @@ Dataset tofToEnergy(const Dataset &d) {
   auto physicalConstants =
       boost::units::si::constants::codata::m_n / (2.0 * meV * mus2_to_s2);
 
-  ConstMDZipView<Coord::Position> specPos(d);
+  ConstMDZipView<const Coord::Position> specPos(d);
   const auto factor = [&](const auto &item) {
     const auto &pos = item.template get<Coord::Position>();
     double l_total = l1 + (samplePos - pos).norm();
@@ -79,13 +79,7 @@ Dataset tofToEnergy(const Dataset &d) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else {
-      // TODO Changing Dim::Tof to Dim::Energy. Currently this is not possible
-      // without making a copy of the data, which is inefficient. If we cannot
-      // move the dimensions outside the cow_ptr in Variable, another option
-      // would be to support in-place modification. Probably a better solution
-      // would be to decouple the pointer holding VariableConcept from the COW
-      // mechanism, i.e., to COW inside VariableConcept to hold the data
-      // array?
+      // Changing Dim::Tof to Dim::Energy.
       // TODO Also need to check here if variable contains count/bin_width,
       // should fail then?
       converted.insert(var.reshape(varDims));
