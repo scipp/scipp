@@ -436,21 +436,21 @@ public:
   // the Python exports to return `a` after calling `a += b` instead of
   // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
   // (would this suffer from the same issue?).
-  template <class T> VariableSlice assign(const T &other);
-  VariableSlice operator+=(const Variable &other);
-  VariableSlice operator+=(const ConstVariableSlice &other);
-  VariableSlice operator+=(const double value);
-  VariableSlice operator-=(const Variable &other);
-  VariableSlice operator-=(const ConstVariableSlice &other);
-  VariableSlice operator-=(const double value);
-  VariableSlice operator*=(const Variable &other);
-  VariableSlice operator*=(const ConstVariableSlice &other);
-  VariableSlice operator*=(const double value);
-  VariableSlice operator/=(const Variable &other);
-  VariableSlice operator/=(const ConstVariableSlice &other);
-  VariableSlice operator/=(const double value);
+  template <class T> VariableSlice assign(const T &other) const;
+  VariableSlice operator+=(const Variable &other) const;
+  VariableSlice operator+=(const ConstVariableSlice &other) const;
+  VariableSlice operator+=(const double value) const;
+  VariableSlice operator-=(const Variable &other) const;
+  VariableSlice operator-=(const ConstVariableSlice &other) const;
+  VariableSlice operator-=(const double value) const;
+  VariableSlice operator*=(const Variable &other) const;
+  VariableSlice operator*=(const ConstVariableSlice &other) const;
+  VariableSlice operator*=(const double value) const;
+  VariableSlice operator/=(const Variable &other) const;
+  VariableSlice operator/=(const ConstVariableSlice &other) const;
+  VariableSlice operator/=(const double value) const;
 
-  void setUnit(const Unit &unit);
+  void setUnit(const Unit &unit) const;
 
 private:
   friend class Variable;

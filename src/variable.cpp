@@ -883,7 +883,7 @@ Variable &Variable::operator/=(const double value) & {
   return divide_equals(*this, other);
 }
 
-template <class T> VariableSlice VariableSlice::assign(const T &other) {
+template <class T> VariableSlice VariableSlice::assign(const T &other) const {
   // TODO Should mismatching tags be allowed, as long as the type matches?
   if (tag() != other.tag())
     throw std::runtime_error("Cannot assign to slice: Type mismatch.");
@@ -897,52 +897,52 @@ template <class T> VariableSlice VariableSlice::assign(const T &other) {
   return *this;
 }
 
-template VariableSlice VariableSlice::assign(const Variable &);
-template VariableSlice VariableSlice::assign(const ConstVariableSlice &);
+template VariableSlice VariableSlice::assign(const Variable &) const;
+template VariableSlice VariableSlice::assign(const ConstVariableSlice &) const;
 
-VariableSlice VariableSlice::operator+=(const Variable &other) {
+VariableSlice VariableSlice::operator+=(const Variable &other) const {
   return plus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) {
+VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) const {
   return plus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator+=(const double value) {
+VariableSlice VariableSlice::operator+=(const double value) const {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return plus_equals(*this, other);
 }
 
-VariableSlice VariableSlice::operator-=(const Variable &other) {
+VariableSlice VariableSlice::operator-=(const Variable &other) const {
   return minus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) {
+VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) const {
   return minus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator-=(const double value) {
+VariableSlice VariableSlice::operator-=(const double value) const {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return minus_equals(*this, other);
 }
 
-VariableSlice VariableSlice::operator*=(const Variable &other) {
+VariableSlice VariableSlice::operator*=(const Variable &other) const {
   return times_equals(*this, other);
 }
-VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) {
+VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) const {
   return times_equals(*this, other);
 }
-VariableSlice VariableSlice::operator*=(const double value) {
+VariableSlice VariableSlice::operator*=(const double value) const {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return times_equals(*this, other);
 }
 
-VariableSlice VariableSlice::operator/=(const Variable &other) {
+VariableSlice VariableSlice::operator/=(const Variable &other) const {
   return divide_equals(*this, other);
 }
-VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) {
+VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) const {
   return divide_equals(*this, other);
 }
-VariableSlice VariableSlice::operator/=(const double value) {
+VariableSlice VariableSlice::operator/=(const double value) const {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return divide_equals(*this, other);
@@ -969,7 +969,7 @@ Variable ConstVariableSlice::operator-() const {
   return -copy;
 }
 
-void VariableSlice::setUnit(const Unit &unit) {
+void VariableSlice::setUnit(const Unit &unit) const {
   // TODO Should we forbid setting the unit altogether? I think it is useful in
   // particular since views onto subsets of dataset do not imply slicing of
   // variables but return slice views.
