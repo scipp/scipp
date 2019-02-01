@@ -1197,7 +1197,7 @@ Variable filter(const Variable &var, const Variable &filter) {
     throw std::runtime_error(
         "Cannot filter variable: The filter must by 1-dimensional.");
   const auto dim = filter.dimensions().labels()[0];
-  auto mask = filter.get<const Coord::Mask>();
+  auto mask = filter.get<Coord::Mask>();
 
   const gsl::index removed = std::count(mask.begin(), mask.end(), 0);
   if (removed == 0)

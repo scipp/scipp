@@ -230,13 +230,7 @@ public:
     return gsl::make_span(cast<typename Tag::type>());
   }
 
-  template <class Tag>
-  auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
-    return const_cast<const Variable *>(this)->get<Tag>();
-  }
-
-  template <class Tag>
-  auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+  template <class Tag> auto get() {
     if (Tag{} != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return gsl::make_span(cast<typename Tag::type>());
@@ -420,13 +414,7 @@ public:
   }
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
-  template <class Tag>
-  auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
-    return const_cast<const VariableSlice *>(this)->get<Tag>();
-  }
-
-  template <class Tag>
-  auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+  template <class Tag> auto get() {
     if (Tag{} != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
