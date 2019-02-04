@@ -99,33 +99,70 @@ public:
   void insert(Variable variable);
 
   template <class Tag, class... Args>
-  void insert(const Dimensions &dimensions, Args &&... args) {
+  void insert(const Tag tag, const Dimensions &dimensions, Args &&... args) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
-    Variable a(Tag{}, std::move(dimensions), std::forward<Args>(args)...);
+    Variable a(tag, std::move(dimensions), std::forward<Args>(args)...);
     insert(std::move(a));
   }
 
   template <class Tag, class... Args>
-  void insert(const std::string &name, const Dimensions &dimensions,
-              Args &&... args) {
+  void insert(const Tag tag, const std::string &name,
+              const Dimensions &dimensions, Args &&... args) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
-    Variable a(Tag{}, std::move(dimensions), std::forward<Args>(args)...);
+    Variable a(tag, std::move(dimensions), std::forward<Args>(args)...);
     a.setName(name);
     insert(std::move(a));
   }
 
   template <class Tag, class T>
-  void insert(const Dimensions &dimensions, std::initializer_list<T> values) {
+  void insert(const Tag tag, const Dimensions &dimensions,
+              std::initializer_list<T> values) {
     static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
-    Variable a(Tag{}, std::move(dimensions), values);
+    Variable a(tag, std::move(dimensions), values);
     insert(std::move(a));
   }
 
   template <class Tag, class T>
-  void insert(const std::string &name, const Dimensions &dimensions,
-              std::initializer_list<T> values) {
+  void insert(const Tag tag, const std::string &name,
+              const Dimensions &dimensions, std::initializer_list<T> values) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
-    Variable a(Tag{}, std::move(dimensions), values);
+    Variable a(tag, std::move(dimensions), values);
+    a.setName(name);
+    insert(std::move(a));
+  }
+
+  // Insert variants with custom type
+  template <class T, class Tag, class... Args>
+  void insert(const Tag tag, const Dimensions &dimensions, Args &&... args) {
+    static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
+    auto a = makeVariable<T>(tag, std::move(dimensions),
+                             std::forward<Args>(args)...);
+    insert(std::move(a));
+  }
+
+  template <class T, class Tag, class... Args>
+  void insert(const Tag tag, const std::string &name,
+              const Dimensions &dimensions, Args &&... args) {
+    static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
+    auto a = makeVariable<T>(tag, std::move(dimensions),
+                             std::forward<Args>(args)...);
+    a.setName(name);
+    insert(std::move(a));
+  }
+
+  template <class T, class Tag, class T2>
+  void insert(const Tag tag, const Dimensions &dimensions,
+              std::initializer_list<T2> values) {
+    static_assert(is_coord<Tag>, "Non-coordinate variable must have a name.");
+    auto a = makeVariable<T>(tag, std::move(dimensions), values);
+    insert(std::move(a));
+  }
+
+  template <class T, class Tag, class T2>
+  void insert(const Tag tag, const std::string &name,
+              const Dimensions &dimensions, std::initializer_list<T2> values) {
+    static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
+    auto a = makeVariable<T>(tag, std::move(dimensions), values);
     a.setName(name);
     insert(std::move(a));
   }
@@ -150,6 +187,21 @@ public:
   auto get(const std::string &name = std::string{}) && = delete;
   template <class Tag> auto get(const std::string &name = std::string{}) & {
     return m_variables[find(Tag{}, name)].template get<Tag>();
+  }
+
+  template <class T>
+  auto span(const Tag,
+            const std::string &name = std::string{}) const && = delete;
+  template <class T>
+  auto span(const Tag tag, const std::string &name = std::string{}) const & {
+    return m_variables[find(tag, name)].template span<T>();
+  }
+
+  template <class T>
+  auto span(const Tag, const std::string &name = std::string{}) && = delete;
+  template <class T>
+  auto span(const Tag tag, const std::string &name = std::string{}) & {
+    return m_variables[find(tag, name)].template span<T>();
   }
 
   // Currently `Dimensions` does not allocate memory so we could return by value

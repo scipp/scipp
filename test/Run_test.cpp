@@ -12,21 +12,22 @@
 
 Dataset makeRun() {
   Dataset run;
-  run.insert<Data::Value>("total_counts", {}, {1000});
-  run.insert<Coord::Polarization>({}, {"Spin-Up"});
-  run.insert<Coord::FuzzyTemperature>({}, {ValueWithDelta<double>(4.2, 0.1)});
+  run.insert(Data::Value{}, "total_counts", {}, {1000});
+  run.insert(Coord::Polarization{}, {}, {"Spin-Up"});
+  run.insert(Coord::FuzzyTemperature{}, {}, {ValueWithDelta<double>(4.2, 0.1)});
   Dataset comment;
-  comment.insert<Data::String>("", {Dim::Row, 1}, {"first run"});
-  run.insert<Data::Table>("comment", {}, {comment});
+  comment.insert(Data::String{}, "", {Dim::Row, 1}, {"first run"});
+  run.insert(Data::Table{}, "comment", {}, {comment});
   Dataset timeSeriesLog;
-  timeSeriesLog.insert<Coord::Time>({Dim::Time, 3}, {0, 1000, 1500});
-  timeSeriesLog.insert<Data::Value>("pressure1", {Dim::Time, 3},
-                                    {1013, 900, 800});
-  timeSeriesLog.insert<Data::Value>("pressure2", {Dim::Time, 3}, {100, 90, 80});
-  run.insert<Data::Table>("pressure_log", {}, {timeSeriesLog});
+  timeSeriesLog.insert(Coord::Time{}, {Dim::Time, 3}, {0, 1000, 1500});
+  timeSeriesLog.insert(Data::Value{}, "pressure1", {Dim::Time, 3},
+                       {1013, 900, 800});
+  timeSeriesLog.insert(Data::Value{}, "pressure2", {Dim::Time, 3},
+                       {100, 90, 80});
+  run.insert(Data::Table{}, "pressure_log", {}, {timeSeriesLog});
   Dataset otherLogEntries;
-  otherLogEntries.insert<Data::Table>("root", {Dim::Row, 1});
-  run.insert<Data::Table>("generic_log", {Dim::Row, 1}, {otherLogEntries});
+  otherLogEntries.insert(Data::Table{}, "root", {Dim::Row, 1});
+  run.insert(Data::Table{}, "generic_log", {Dim::Row, 1}, {otherLogEntries});
   return run;
 }
 
@@ -34,7 +35,7 @@ TEST(Run, meta_data_propagation) {
   Dataset run1 = makeRun();
 
   Dataset d1;
-  d1.insert<Attr::ExperimentLog>("sample_log", {}, {run1});
+  d1.insert(Attr::ExperimentLog{}, "sample_log", {}, {run1});
 
   EXPECT_NO_THROW(d1 += d1);
 
@@ -42,14 +43,12 @@ TEST(Run, meta_data_propagation) {
   run2.get<Data::Value>("total_counts")[0] = 1111;
   run2.get<Coord::FuzzyTemperature>()[0] = ValueWithDelta<double>(4.15, 0.1);
   run2.get<Data::Table>("comment")[0].get<Data::String>()[0] = "second run";
-  run2.get<Data::Table>("generic_log")[0]
-      .get<Data::Table>("root")[0]
-      .insert<Data::String>(
-          "user comment", {},
-          {"Spider walked through beam, verify data before publishing."});
+  run2.get<Data::Table>("generic_log")[0].get<Data::Table>("root")[0].insert(
+      Data::String{}, "user comment", {},
+      {"Spider walked through beam, verify data before publishing."});
 
   Dataset d2;
-  d2.insert<Attr::ExperimentLog>("sample_log", {}, {run2});
+  d2.insert(Attr::ExperimentLog{}, "sample_log", {}, {run2});
 
   // Behavior of `Attr` variables is specific to the implementation of each
   // operation. In most cases we simply copy the first one, exceptions are
@@ -113,7 +112,7 @@ TEST(Run, meta_data_propagation) {
 
 TEST(Run, meta_data_fail_coord_mismatch) {
   Dataset d1;
-  d1.insert<Attr::ExperimentLog>("sample_log", {}, {makeRun()});
+  d1.insert(Attr::ExperimentLog{}, "sample_log", {}, {makeRun()});
   Dataset d2(d1);
 
   auto &run2 = d2.get<Attr::ExperimentLog>("sample_log")[0];
@@ -125,7 +124,7 @@ TEST(Run, meta_data_fail_coord_mismatch) {
 
 TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
   Dataset d1;
-  d1.insert<Attr::ExperimentLog>("sample_log", {}, {makeRun()});
+  d1.insert(Attr::ExperimentLog{}, "sample_log", {}, {makeRun()});
   Dataset d2(d1);
 
   auto &run2 = d2.get<Attr::ExperimentLog>("sample_log")[0];
@@ -137,7 +136,7 @@ TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
 
 TEST(Run, meta_data_fail_missing) {
   Dataset d1;
-  d1.insert<Attr::ExperimentLog>("sample_log", {}, {makeRun()});
+  d1.insert(Attr::ExperimentLog{}, "sample_log", {}, {makeRun()});
   Dataset d2(d1);
 
   auto &run2 = d2.get<Attr::ExperimentLog>("sample_log")[0];

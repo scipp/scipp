@@ -27,10 +27,10 @@ std::vector<std::string> asStrings(const Variable &variable) {
 
 TEST(TableWorkspace, basics) {
   Dataset table;
-  table.insert<Coord::RowLabel>({Dim::Row, 3},
+  table.insert(Coord::RowLabel{}, {Dim::Row, 3},
                                 Vector<std::string>{"a", "b", "c"});
-  table.insert<Data::Value>("", {Dim::Row, 3}, {1.0, -2.0, 3.0});
-  table.insert<Data::String>("", {Dim::Row, 3}, 3);
+  table.insert(Data::Value{}, "", {Dim::Row, 3}, {1.0, -2.0, 3.0});
+  table.insert(Data::String{}, "", {Dim::Row, 3}, 3);
 
   // Modify table with know columns.
   MDZipView<const Data::Value, Data::String> view(table);

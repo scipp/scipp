@@ -108,7 +108,7 @@ void insertCoord1D(Dataset &self, const Tag,
   const auto &labels = std::get<0>(data);
   const auto &values = std::get<1>(data);
   Dimensions dims{labels, {static_cast<gsl::index>(values.size())}};
-  self.insert<const Tag>(dims, values);
+  self.insert(Tag{}, dims, values);
 }
 
 // Note the concretely typed py::array_t. If we use py::array it will not match
@@ -131,7 +131,7 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
     if (self(tag, name) == var)
       return;
   const auto &data = var.template get<const Tag>();
-  self.insert<Tag>(name, var.dimensions(), data.begin(), data.end());
+  self.insert(Tag{}, name, var.dimensions(), data.begin(), data.end());
 }
 
 void insertDefaultInit(

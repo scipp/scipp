@@ -14,30 +14,31 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   Dataset d;
 
   // Scalar metadata using existing Mantid classes:
-  // d.insert<Coord::Sample>({}, API::Sample{});
-  // d.insert<Coord::Run>({}, API::Run{});
+  // d.insert(Coord::Sample{}, {}, API::Sample{});
+  // d.insert(Coord::Run{}, {}, API::Run{});
 
   // Instrument
   Dataset dets;
   // Scalar part of instrument, e.g., something like this:
-  // d.insert<Coord::Instrument>({}, Beamline::ComponentInfo{});
-  dets.insert<Coord::DetectorId>({Dim::Detector, 4}, {1001, 1002, 1003, 1004});
-  dets.insert<Coord::Position>({Dim::Detector, 4});
-  d.insert<Coord::DetectorInfo>({}, {dets});
+  // d.insert(Coord::Instrument{}, {}, Beamline::ComponentInfo{});
+  dets.insert(Coord::DetectorId{}, {Dim::Detector, 4},
+              {1001, 1002, 1003, 1004});
+  dets.insert(Coord::Position{}, {Dim::Detector, 4});
+  d.insert(Coord::DetectorInfo{}, {}, {dets});
 
   // Spectrum to detector mapping and spectrum numbers.
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
       {0, 2}, {1}, {}};
-  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
-  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
+  d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, 3}, grouping);
+  d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, 3}, {1, 2, 3});
 
   // "X" axis (shared for all spectra).
-  d.insert<Coord::Tof>({Dim::Tof, 1000});
+  d.insert(Coord::Tof{}, {Dim::Tof, 1000});
   Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
   // Y
-  d.insert<Data::Value>("sample", dims);
+  d.insert(Data::Value{}, "sample", dims);
   // E
-  d.insert<Data::Variance>("sample", dims);
+  d.insert(Data::Variance{}, "sample", dims);
 
   // Monitors
   // Temporarily disabled until we fixed Dataset::m_dimensions to not use
@@ -45,17 +46,17 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // TODO Use variable containing datasets as in the C++ example in the design
   // document.
   // dims = Dimensions({{Dim::MonitorTof, 222}, {Dim::Monitor, 2}});
-  // d.insert<Coord::MonitorTof>({Dim::MonitorTof, 222}, 222);
-  // d.insert<Data::Value>("monitor", dims, dims.volume());
-  // d.insert<Data::Variance>("monitor", dims, dims.volume());
+  // d.insert(Coord::MonitorTof{}, {Dim::MonitorTof, 222}, 222);
+  // d.insert(Data::Value{}, "monitor", dims, dims.volume());
+  // d.insert(Data::Variance{}, "monitor", dims, dims.volume());
 
   auto spinUp(d);
   auto spinDown(d);
 
   // Aka WorkspaceSingleValue
   Dataset offset;
-  offset.insert<Data::Value>("sample", {}, {1.0});
-  offset.insert<Data::Variance>("sample", {}, {0.1});
+  offset.insert(Data::Value{}, "sample", {}, {1.0});
+  offset.insert(Data::Variance{}, "sample", {}, {0.1});
   // Note the use of name "sample" such that offset affects sample, not
   // other `Data` variables such as monitors.
   spinDown += offset;
@@ -63,11 +64,11 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // Combine data for spin-up and spin-down in same dataset, polarization is an
   // extra dimension.
   auto combined = concatenate(spinUp, spinDown, Dim::Polarization);
-  combined.insert<Coord::Polarization>(
-      {Dim::Polarization, 2}, Vector<std::string>{"spin-up", "spin-down"});
+  combined.insert(Coord::Polarization{}, {Dim::Polarization, 2},
+                  Vector<std::string>{"spin-up", "spin-down"});
 
   // Do a temperature scan, adding a new temperature dimension to the dataset.
-  combined.insert<Coord::Temperature>({}, {300.0});
+  combined.insert(Coord::Temperature{}, {}, {300.0});
   combined.get<Data::Value>("sample")[0] = exp(-0.001 * 300.0);
   auto dataPoint(combined);
   for (const auto temperature : {273.0, 200.0, 100.0, 10.0, 4.2}) {
@@ -107,24 +108,24 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
 TEST(Workspace2D, multiple_data) {
   Dataset d;
 
-  d.insert<Coord::Tof>({Dim::Tof, 1000}, 1000);
+  d.insert(Coord::Tof{}, {Dim::Tof, 1000}, 1000);
 
   Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
 
   // Sample
-  d.insert<Data::Value>("sample", dims, dims.volume());
-  d.insert<Data::Variance>("sample", dims, dims.volume());
+  d.insert(Data::Value{}, "sample", dims, dims.volume());
+  d.insert(Data::Variance{}, "sample", dims, dims.volume());
 
   // Background
-  d.insert<Data::Value>("background", dims, dims.volume());
-  d.insert<Data::Variance>("background", dims, dims.volume());
+  d.insert(Data::Value{}, "background", dims, dims.volume());
+  d.insert(Data::Variance{}, "background", dims, dims.volume());
 
   // Monitors
   // TODO Use Coord::Monitor instead of the old idea using Dim::MonitorTof.
   // dims = Dimensions({{Dim::MonitorTof, 222}, {Dim::Monitor, 2}});
-  // d.insert<Coord::MonitorTof>({Dim::MonitorTof, 222}, 222);
-  // d.insert<Data::Value>("monitor", dims, dims.volume());
-  // d.insert<Data::Variance>("monitor", dims, dims.volume());
+  // d.insert(Coord::MonitorTof{}, {Dim::MonitorTof, 222}, 222);
+  // d.insert(Data::Value{}, "monitor", dims, dims.volume());
+  // d.insert(Data::Variance{}, "monitor", dims, dims.volume());
 
   d.merge(d.extract("sample") - d.extract("background"));
   // Note: If we want to also keep "background" we can use:
@@ -140,13 +141,13 @@ TEST(Workspace2D, scanning) {
   Dataset d;
 
   // Scalar part of instrument, e.g.:
-  // d.insert<Coord::Instrument>({}, Beamline::ComponentInfo{});
+  // d.insert(Coord::Instrument{}, {}, Beamline::ComponentInfo{});
   Dataset dets;
-  dets.insert<Coord::DetectorId>({Dim::Detector, 4}, {1001, 1002, 1003, 1004});
-  dets.insert<Coord::Position>(
-      {Dim::Detector, 4},
-      {Eigen::Vector3d{1.0, 0.0, 0.0}, Eigen::Vector3d{2.0, 0.0, 0.0},
-       Eigen::Vector3d{3.0, 0.0, 0.0}, Eigen::Vector3d{4.0, 0.0, 0.0}});
+  dets.insert(Coord::DetectorId{}, {Dim::Detector, 4},
+              {1001, 1002, 1003, 1004});
+  dets.insert(Coord::Position{}, {Dim::Detector, 4},
+              {Eigen::Vector3d{1.0, 0.0, 0.0}, Eigen::Vector3d{2.0, 0.0, 0.0},
+               Eigen::Vector3d{3.0, 0.0, 0.0}, Eigen::Vector3d{4.0, 0.0, 0.0}});
 
   // In the current implementation in Mantid, ComponentInfo holds a reference to
   // DetectorInfo. Now the contents of DetectorInfo are simply variables in the
@@ -168,11 +169,10 @@ TEST(Workspace2D, scanning) {
     pos += Eigen::Vector3d{0.5, 0.0, 0.0};
 
   auto scanning = concatenate(dets, moved, Dim::DetectorScan);
-  scanning.insert<Coord::TimeInterval>(
-      {Dim::DetectorScan, 2},
-      {std::make_pair(0l, 10l), std::make_pair(10l, 20l)});
+  scanning.insert(Coord::TimeInterval{}, {Dim::DetectorScan, 2},
+                  {std::make_pair(0l, 10l), std::make_pair(10l, 20l)});
 
-  d.insert<Coord::DetectorInfo>({}, {scanning});
+  d.insert(Coord::DetectorInfo{}, {}, {scanning});
 
   // Spectrum to detector mapping and spectrum numbers. Currently this mapping
   // is purely positional. We may consider changing this to an two-part
@@ -184,8 +184,8 @@ TEST(Workspace2D, scanning) {
   // is present.
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
       {0}, {2}, {4}};
-  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
-  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
+  d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, 3}, grouping);
+  d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, 3}, {1, 2, 3});
 
   MDZipView<const Coord::Position> view(d);
   ASSERT_EQ(view.size(), 3);
@@ -200,19 +200,19 @@ TEST(Workspace2D, masking) {
 
   Dataset d;
 
-  d.insert<Coord::Tof>({Dim::Tof, 1000}, 1000);
+  d.insert(Coord::Tof{}, {Dim::Tof, 1000}, 1000);
   Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
   // Sample
-  d.insert<Data::Value>("sample", dims, dims.volume());
-  d.insert<Data::Variance>("sample", dims, dims.volume());
+  d.insert(Data::Value{}, "sample", dims, dims.volume());
+  d.insert(Data::Variance{}, "sample", dims, dims.volume());
   // Background
-  d.insert<Data::Value>("background", dims, dims.volume());
-  d.insert<Data::Variance>("background", dims, dims.volume());
+  d.insert(Data::Value{}, "background", dims, dims.volume());
+  d.insert(Data::Variance{}, "background", dims, dims.volume());
 
   // Spectra mask.
   // Can be in its own Dataset to support loading, saving, and manipulation.
   Dataset mask;
-  mask.insert<Coord::Mask>({Dim::Spectrum, 3}, Vector<char>{0, 0, 1});
+  mask.insert(Coord::Mask{}, {Dim::Spectrum, 3}, Vector<char>{0, 0, 1});
 
   // Add mask to Dataset, not touching data.
   auto d_masked(d);
@@ -259,11 +259,11 @@ TEST(Workspace2D, masking) {
 
   // Bin mask.
   mask = Dataset();
-  mask.insert<Coord::Mask>({Dim::Tof, 1000}, 1000);
+  mask.insert(Coord::Mask{}, {Dim::Tof, 1000}, 1000);
   mask.get<Coord::Mask>()[0] = 1;
   // mask has no Dim::Spectrum so this masks the first bin of all spectra.
   d_masked.merge(mask);
   // Different bin masking for all spectra.
   mask = Dataset();
-  mask.insert<Coord::Mask>(dims, dims.volume());
+  mask.insert(Coord::Mask{}, dims, dims.volume());
 }
