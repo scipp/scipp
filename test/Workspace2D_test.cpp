@@ -131,10 +131,10 @@ TEST(Workspace2D, multiple_data) {
   // Note: If we want to also keep "background" we can use:
   // d["sample"] -= d["background"];
 
-  EXPECT_NO_THROW(d.get<const Data::Value>("sample"));
-  EXPECT_NO_THROW(d.get<const Data::Variance>("sample"));
-  // EXPECT_NO_THROW(d.get<const Data::Value>("monitor"));
-  EXPECT_ANY_THROW(d.get<const Data::Value>("background"));
+  EXPECT_NO_THROW(d.get<Data::Value>("sample"));
+  EXPECT_NO_THROW(d.get<Data::Variance>("sample"));
+  // EXPECT_NO_THROW(d.get<Data::Value>("monitor"));
+  EXPECT_ANY_THROW(d.get<Data::Value>("background"));
 }
 
 TEST(Workspace2D, scanning) {

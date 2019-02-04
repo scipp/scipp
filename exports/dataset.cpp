@@ -130,7 +130,7 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   if (self.contains(tag, name))
     if (self(tag, name) == var)
       return;
-  const auto &data = var.template get<const Tag>();
+  const auto &data = var.template get<Tag>();
   self.insert(Tag{}, name, var.dimensions(), data.begin(), data.end());
 }
 

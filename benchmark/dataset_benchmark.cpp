@@ -417,7 +417,7 @@ static void BM_Dataset_EventWorkspace_plus(benchmark::State &state) {
   }
 
   gsl::index actualEvents = 0;
-  for (auto &eventList : d.get<const Data::Events>())
+  for (auto &eventList : d.get<Data::Events>())
     actualEvents += eventList.dimensions()[Dim::Event];
   state.SetItemsProcessed(state.iterations());
   // 2 for Tof and PulseTime
@@ -443,7 +443,7 @@ static void BM_Dataset_EventWorkspace_grow(benchmark::State &state) {
   }
 
   gsl::index actualEvents = 0;
-  for (auto &eventList : update.get<const Data::Events>())
+  for (auto &eventList : update.get<Data::Events>())
     actualEvents += eventList.dimensions()[Dim::Event];
   state.SetItemsProcessed(state.iterations() * actualEvents);
 }
