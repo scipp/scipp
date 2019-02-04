@@ -370,47 +370,25 @@ Operations that combine two different concepts? Matrix-vector multiplication?
 
   // Using default type:
   auto x = dataset.get(Coord::X);
-  auto mutable_x = dataset.getMutable(Coord::X);
   // Custom type if default is not used:
-  // Note that we do not specify const-ness via type since that does not work
-  // for the default type. We need the `get` and `getMutable` accessors.
   auto x = dataset.get<float>(Coord::X);
-  auto x = dataset.getMutable<float>(Coord::X);
   // Tag-less variable:
   auto data = dataset.get<double>("sample1");
-  auto data = dataset.getMutable<double>("sample1");
   // Tagged and named:
   // Can use default type
   auto data = dataset.get(Data::Value, "sample1");
-  auto data = dataset.getMutable(Data::Value, "sample1");
   // Or custom
   auto data = dataset.get<float>(Data::Value, "sample1");
-  auto data = dataset.getMutable<float>(Data::Value, "sample1");
 
   // Accessing Variable:
   auto data = var.get<float>();
-  auto data = var.getMutable<float>();
+  // Globally default to double?
+  auto data = var.get();
   // Use default type (and check tag at same time):
   auto data = var.get(Coord::X);
-  auto data = var.getMutable(Coord::X);
   // Use custom type (and check tag at same time):
   auto data = var.get<float>(Coord::X);
-  auto data = var.getMutable<float>(Coord::X);
-
-  // Should we rely 100% on const-correctness? Would work for variable!
-  auto data = var.get<float>(); // trigger copy if var is not const
-  // What about Dataset, usually only some variables are to be modified?
-  // How can we get a const variable reference without being too verbose.
-  for (auto var : dataset) {
-    const auto &constVar = var;
-    if (constVar.get<float>()[0] == 0.0);
-      // ...
-  }
   ```
-
-
-
-
 
 
 #### Conclusion
