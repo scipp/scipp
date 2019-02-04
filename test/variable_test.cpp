@@ -59,13 +59,13 @@ TEST(Variable, makeVariable_custom_type_initializer_list) {
 TEST(Variable, dtype) {
   auto doubles = makeVariable<double>(Data::Value{}, {});
   auto floats = makeVariable<float>(Data::Value{}, {});
-  EXPECT_EQ(doubles.data().dtype(), dtype<double>);
-  EXPECT_NE(doubles.data().dtype(), dtype<float>);
-  EXPECT_NE(floats.data().dtype(), dtype<double>);
-  EXPECT_EQ(floats.data().dtype(), dtype<float>);
-  EXPECT_EQ(doubles.data().dtype(), doubles.data().dtype());
-  EXPECT_EQ(floats.data().dtype(), floats.data().dtype());
-  EXPECT_NE(doubles.data().dtype(), floats.data().dtype());
+  EXPECT_EQ(doubles.dtype(), dtype<double>);
+  EXPECT_NE(doubles.dtype(), dtype<float>);
+  EXPECT_NE(floats.dtype(), dtype<double>);
+  EXPECT_EQ(floats.dtype(), dtype<float>);
+  EXPECT_EQ(doubles.dtype(), doubles.dtype());
+  EXPECT_EQ(floats.dtype(), floats.dtype());
+  EXPECT_NE(doubles.dtype(), floats.dtype());
 }
 
 TEST(Variable, span_references_Variable) {

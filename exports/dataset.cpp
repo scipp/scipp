@@ -185,7 +185,7 @@ VariableSlice pySlice(VariableSlice &view,
   return view(dim, start, stop);
 }
 
-template <class Tag> struct MakePyBufferInfoT {
+template <class T> struct MakePyBufferInfoT {
   static py::buffer_info apply(VariableSlice &view) {
     // Note: Currently this always triggers copy-on-write ---
     // py::buffer_info does currently not support the `readonly` flag of
@@ -193,23 +193,22 @@ template <class Tag> struct MakePyBufferInfoT {
     // upstream, see discussion and sample implementation here:
     // https://github.com/pybind/pybind11/issues/863.
     return py::buffer_info(
-        view.template get<Tag>().data(), /* Pointer to buffer */
-        sizeof(typename Tag::type),      /* Size of one scalar */
-        py::format_descriptor<typename Tag::type>::format(), /* Python
+        view.template span<T>().data(),     /* Pointer to buffer */
+        sizeof(T),                          /* Size of one scalar */
+        py::format_descriptor<T>::format(), /* Python
                                                    struct-style format
                                                    descriptor */
-        view.dimensions().count(), /* Number of dimensions */
-        view.dimensions().shape(), /* Buffer dimensions */
-        detail::numpy_strides<typename Tag::type>(
+        view.dimensions().count(),          /* Number of dimensions */
+        view.dimensions().shape(),          /* Buffer dimensions */
+        detail::numpy_strides<T>(
             view.strides()) /* Strides (in bytes) for each index */
     );
   }
 };
 
 py::buffer_info make_py_buffer_info(VariableSlice &view) {
-  return Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof, Coord::Mask,
-              Coord::SpectrumNumber, Data::Value,
-              Data::Variance>::apply<MakePyBufferInfoT>(view.tag(), view);
+  return CallDType<double, float, int64_t, int32_t,
+                   char>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
 template <class Tag>
@@ -253,7 +252,7 @@ template <class T> auto as_py_array_t(py::object &obj, VariableSlice &view) {
 template <class... Ts>
 std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   auto &view = obj.cast<VariableSlice &>();
-  switch (view.data().dtype()) {
+  switch (view.dtype()) {
   case dtype<double>:
     return {as_py_array_t<double>(obj, view)};
   case dtype<float>:
@@ -271,7 +270,7 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
 
 template <class... Ts>
 std::variant<VariableView<Ts>...> as_VariableView_variant(VariableSlice &view) {
-  switch (view.data().dtype()) {
+  switch (view.dtype()) {
   case dtype<double>:
     return {view.span<double>()};
   case dtype<float>:

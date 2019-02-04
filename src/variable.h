@@ -211,6 +211,7 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
 
+  DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_tag; }
   bool isCoord() const {
     return m_tag < std::tuple_size<detail::CoordDef::tags>::value;
@@ -348,6 +349,7 @@ public:
     return strides;
   }
 
+  DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_variable->tag(); }
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & {
