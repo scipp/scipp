@@ -26,6 +26,36 @@ TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(Variable(Data::Value{}, Dimensions(Dim::Tof, 3), 2));
 }
 
+TEST(Variable, makeVariable_custom_type) {
+  auto doubles = makeVariable<double>(Data::Value{}, {});
+  auto floats = makeVariable<float>(Data::Value{}, {});
+
+  ASSERT_NO_THROW(doubles.get<Data::Value>());
+  // Data::Value defaults to double, so this throws.
+  ASSERT_ANY_THROW(floats.get<Data::Value>());
+
+  ASSERT_NO_THROW(doubles.span<double>());
+  ASSERT_NO_THROW(floats.span<float>());
+
+  ASSERT_ANY_THROW(doubles.span<float>());
+  ASSERT_ANY_THROW(floats.span<double>());
+
+  ASSERT_TRUE((std::is_same<decltype(doubles.span<double>())::element_type,
+                            double>::value));
+  ASSERT_TRUE((std::is_same<decltype(floats.span<float>())::element_type,
+                            float>::value));
+}
+
+TEST(Variable, makeVariable_custom_type_initializer_list) {
+  Variable doubles(Data::Value{}, {Dim::X, 2}, {1, 2});
+  auto ints = makeVariable<int32_t>(Data::Value{}, {Dim::X, 2}, {1.1, 2.2});
+
+  // Passed ints but uses default type based on tag.
+  ASSERT_NO_THROW(doubles.span<double>());
+  // Passed doubles but explicit type overrides.
+  ASSERT_NO_THROW(ints.span<int32_t>());
+}
+
 TEST(Variable, span_references_Variable) {
   Variable a(Data::Value{}, Dimensions(Dim::Tof, 2));
   auto observer = a.get<Data::Value>();

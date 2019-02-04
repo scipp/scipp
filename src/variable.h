@@ -233,6 +233,9 @@ public:
     return gsl::make_span(cast<typename Tag::type>());
   }
 
+  template <class T> auto span() const { return gsl::make_span(cast<T>()); }
+  template <class T> auto span() { return gsl::make_span(cast<T>()); }
+
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
@@ -272,6 +275,19 @@ private:
   deep_ptr<std::string> m_name;
   deep_ptr<VariableConcept> m_object;
 };
+
+template <class T, class TagT>
+Variable makeVariable(TagT tag, const Dimensions &dimensions) {
+  return Variable(tag, TagT::unit, std::move(dimensions),
+                  Vector<T>(dimensions.volume()));
+}
+
+template <class T, class TagT, class T2>
+Variable makeVariable(TagT tag, const Dimensions &dimensions,
+                      std::initializer_list<T2> values) {
+  return Variable(tag, TagT::unit, std::move(dimensions),
+                  Vector<T>(values.begin(), values.end()));
+}
 
 /// Non-mutable view into (a subset of) a Variable.
 class ConstVariableSlice {
