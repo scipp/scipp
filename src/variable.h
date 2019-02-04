@@ -12,7 +12,6 @@
 #include <gsl/gsl_util>
 #include <gsl/span>
 
-#include "cow_ptr.h"
 #include "dimensions.h"
 #include "tags.h"
 #include "unit.h"
