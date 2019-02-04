@@ -715,52 +715,52 @@ Dataset detInfo;
 // Add some information about the instrument. This would likely be wrapped in
 // convenience functions.
 // Data passed as argument, e.g., initializer_list.
-detInfo.insert<Coord::DetectorId>({Dim::Detector, 4}, {1, 2, 3, 4});
+detInfo.insert(Coord::DetectorId{}, {Dim::Detector, 4}, {1, 2, 3, 4});
 // No data passed, will be default-constructed.
-detInfo.insert<Coord::Position>({Dim::Detector, 4});
+detInfo.insert(Coord::Position{}, {Dim::Detector, 4});
 
 // Create an empty dataset.
 Dataset d;
 // Add detector information to main dataset.
-d.insert<Coord::DetectorInfo>({}, {detInfo});
+d.insert(Coord::DetectorInfo{}, {}, {detInfo});
 
 // Add spectrum-to-detector mapping and spectrum numbers.
 std::vector<std::vector<gsl::index>> grouping = {{0, 2}, {1}, {}};
-d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
-d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 3}, {1, 2, 3});
+d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, 3}, grouping);
+d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, 3}, {1, 2, 3});
 
 // Add time-of-flight axis ("X" in current Mantid nomenclature) which
 // will be shared for all spectra.
-d.insert<Coord::Tof>({Dim::Tof, 1000});
+d.insert(Coord::Tof{}, {Dim::Tof, 1000});
 Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, 3}});
 
 // Add data and uncertainties ("Y" and "E" in current Mantid nomenclature).
-d.insert<Data::Value>("sample", dims);
-d.insert<Data::Variance>("sample", dims);
+d.insert(Data::Value{}, "sample", dims);
+d.insert(Data::Variance{}, "sample", dims);
 
 // Add another set of data and uncertainties.
-d.insert<Data::Value>("background", dims);
-d.insert<Data::Variance>("background", dims);
+d.insert(Data::Value{}, "background", dims);
+d.insert(Data::Variance{}, "background", dims);
 
 // Add monitors as a nested dataset. In practice storing monitors as attribute
 // instead of as a coordinate may turn out to be more convenient.
-d.insert<Coord::MonitorName>({Dim::Monitor, 2}, "beam-status", "main");
-d.insert<Coord::Monitor>({Dim::Monitor, 2});
+d.insert(Coord::MonitorName{}, {Dim::Monitor, 2}, "beam-status", "main");
+d.insert(Coord::Monitor{}, {Dim::Monitor, 2});
 // Add data to monitors. Use DatasetIndex to do lookup by name.
 DatasetIndex<Coord::MonitorName> monitors(d);
 // First monitor has histogram data and is pixelated.
 int pixels = 10 * 10;
 auto &beam_mon = d.get<Coord::Monitor>()[monitors["beam-status"]];
-beam_mon.insert<Coord::Tof>("", {Dim::Tof, 101});
-beam_mon.insert<Data::Value>("", {{Dim::Tof, 100}, {Dim::Spectrum}},
+beam_mon.insert(Coord::Tof{}, "", {Dim::Tof, 101});
+beam_mon.insert(Data::Value{}, "", {{Dim::Tof, 100}, {Dim::Spectrum}},
                              100 * pixels);
-beam_mon.insert<Data::Variance>("", {{Dim::Tof, 100}, {Dim::Spectrum}},
+beam_mon.insert(Data::Variance{}, "", {{Dim::Tof, 100}, {Dim::Spectrum}},
                                 100 * pixels);
 // Second monitor is event-mode.
 auto &main_mon = d.get<Coord::Monitor>()[monitors["main"]];
 // Note that there is Coord::Tof and Data::Tof, the latter is used for events.
-main_mon.insert<Data::Tof>("", {Dim::Event, 238576});
-main_mon.insert<Data::PulseTime>("", {Dim::Event, 238576});
+main_mon.insert(Data::Tof{}, "", {Dim::Event, 238576});
+main_mon.insert(Data::PulseTime{}, "", {Dim::Event, 238576});
 
 // Convert monitor to histogram.
 auto mon = d.get<Coord::Monitor>()[monitors["main"]];
@@ -777,8 +777,8 @@ d /= d.get<Coord::Monitor>()[monitors["main"]];
 
 // Build equivalent to Mantid's WorkspaceSingleValue.
 Dataset offset;
-offset.insert<Data::Value>("sample", {}, {1.0});
-offset.insert<Data::Variance>("sample", {}, {0.1});
+offset.insert(Data::Value{}, "sample", {}, {1.0});
+offset.insert(Data::Variance{}, "sample", {}, {0.1});
 // Note the use of name "sample" such that offset affects sample, not
 // other `Data` variables such as "background".
 d += offset;
@@ -789,16 +789,16 @@ d["sample"] - d["background"];
 
 // Copy the dataset. All variables use copy-on-write, so this is cheap.
 auto spinUp(d);
-spinUp.insert<Coord::Polarization>({}, {Spin::Up});
+spinUp.insert(Coord::Polarization{}, {}, {Spin::Up});
 auto spinDown(d);
-spinDown.insert<Coord::Polarization>({}, {Spin::Down});
+spinDown.insert(Coord::Polarization{}, {}, {Spin::Down});
 
 // Combine data for spin-up and spin-down in same dataset, polarization is
 // an extra dimension.
 auto combined = concatenate(Dim::Polarization, spinUp, spinDown);
 
 // Do a temperature scan, adding a new temperature dimension to the dataset.
-Dataset tempEdges.insert<Coord::Temperature>({Dim::Temperature, 6},
+Dataset tempEdges.insert(Coord::Temperature{}, {Dim::Temperature, 6},
                                              {273.0, 200.0, 100.0, 10.0, 4.2,
                                               4.1});
 // Empty dataset for accumulation.
