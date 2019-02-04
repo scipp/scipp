@@ -32,6 +32,9 @@ class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
+
+  virtual DType dtype() const noexcept = 0;
+
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual std::unique_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
@@ -369,6 +372,8 @@ public:
     return this->template cast<typename Tag::type>();
   }
 
+  template <class T> auto span() const { return cast<T>(); }
+
   bool operator==(const Variable &other) const;
   bool operator==(const ConstVariableSlice &other) const;
   bool operator!=(const Variable &other) const;
@@ -436,6 +441,8 @@ public:
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
   }
+
+  template <class T> auto span() { return cast<T>(); }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in

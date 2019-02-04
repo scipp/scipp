@@ -56,6 +56,18 @@ TEST(Variable, makeVariable_custom_type_initializer_list) {
   ASSERT_NO_THROW(ints.span<int32_t>());
 }
 
+TEST(Variable, dtype) {
+  auto doubles = makeVariable<double>(Data::Value{}, {});
+  auto floats = makeVariable<float>(Data::Value{}, {});
+  EXPECT_EQ(doubles.data().dtype(), dtype<double>);
+  EXPECT_NE(doubles.data().dtype(), dtype<float>);
+  EXPECT_NE(floats.data().dtype(), dtype<double>);
+  EXPECT_EQ(floats.data().dtype(), dtype<float>);
+  EXPECT_EQ(doubles.data().dtype(), doubles.data().dtype());
+  EXPECT_EQ(floats.data().dtype(), floats.data().dtype());
+  EXPECT_NE(doubles.data().dtype(), floats.data().dtype());
+}
+
 TEST(Variable, span_references_Variable) {
   Variable a(Data::Value{}, Dimensions(Dim::Tof, 2));
   auto observer = a.get<Data::Value>();

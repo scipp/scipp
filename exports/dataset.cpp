@@ -144,10 +144,10 @@ void insertDefaultInit(
 }
 
 // Add size factor.
-template <class Tag>
+template <class T>
 std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
   std::vector<gsl::index> strides(s.size());
-  gsl::index elemSize = sizeof(typename Tag::type);
+  gsl::index elemSize = sizeof(T);
   for (size_t i = 0; i < strides.size(); ++i) {
     strides[i] = elemSize * s[i];
   }
@@ -200,7 +200,7 @@ template <class Tag> struct MakePyBufferInfoT {
                                                    descriptor */
         view.dimensions().count(), /* Number of dimensions */
         view.dimensions().shape(), /* Buffer dimensions */
-        detail::numpy_strides<Tag>(
+        detail::numpy_strides<typename Tag::type>(
             view.strides()) /* Strides (in bytes) for each index */
     );
   }
@@ -244,36 +244,26 @@ void setVariableSliceRange(VariableSlice &self,
   doSetVariableSlice<Tag>(slice, data);
 }
 
-template <class Tag> auto as_py_array_t(py::object &obj, VariableSlice &view) {
-  auto array = py::array_t<typename Tag::type>{
-      view.dimensions().shape(), detail::numpy_strides<Tag>(view.strides()),
-      view.template get<const Tag>().data(), obj};
-  // See https://github.com/pybind/pybind11/issues/481.
-  reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())->flags &=
-      ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-  return array;
+template <class T> auto as_py_array_t(py::object &obj, VariableSlice &view) {
+  return py::array_t<T>{view.dimensions().shape(),
+                        detail::numpy_strides<T>(view.strides()),
+                        view.template span<T>().data(), obj};
 }
 
 template <class... Ts>
 std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   auto &view = obj.cast<VariableSlice &>();
-  switch (view.tag().value()) {
-  case Coord::X{}.value():
-    return {as_py_array_t<Coord::X>(obj, view)};
-  case Coord::Y{}.value():
-    return {as_py_array_t<Coord::Y>(obj, view)};
-  case Coord::Z{}.value():
-    return {as_py_array_t<Coord::Z>(obj, view)};
-  case Coord::Tof{}.value():
-    return {as_py_array_t<Coord::Tof>(obj, view)};
-  case Coord::Mask{}.value():
-    return {as_py_array_t<Coord::Mask>(obj, view)};
-  case Coord::SpectrumNumber{}.value():
-    return {as_py_array_t<Coord::SpectrumNumber>(obj, view)};
-  case Data::Value{}.value():
-    return {as_py_array_t<Data::Value>(obj, view)};
-  case Data::Variance{}.value():
-    return {as_py_array_t<Data::Variance>(obj, view)};
+  switch (view.data().dtype()) {
+  case dtype<double>:
+    return {as_py_array_t<double>(obj, view)};
+  case dtype<float>:
+    return {as_py_array_t<float>(obj, view)};
+  case dtype<int64_t>:
+    return {as_py_array_t<int64_t>(obj, view)};
+  case dtype<int32_t>:
+    return {as_py_array_t<int32_t>(obj, view)};
+  case dtype<char>:
+    return {as_py_array_t<char>(obj, view)};
   default:
     throw std::runtime_error("non implemented for this type.");
   }
@@ -281,25 +271,19 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
 
 template <class... Ts>
 std::variant<VariableView<Ts>...> as_VariableView_variant(VariableSlice &view) {
-  switch (view.tag().value()) {
-  case Coord::X{}.value():
-    return {view.get<Coord::X>()};
-  case Coord::Y{}.value():
-    return {view.get<Coord::Y>()};
-  case Coord::Z{}.value():
-    return {view.get<Coord::Z>()};
-  case Coord::Tof{}.value():
-    return {view.get<Coord::Tof>()};
-  case Coord::Mask{}.value():
-    return {view.get<Coord::Mask>()};
-  case Coord::RowLabel{}.value():
-    return {view.get<Coord::RowLabel>()};
-  case Coord::SpectrumNumber{}.value():
-    return {view.get<Coord::SpectrumNumber>()};
-  case Data::Value{}.value():
-    return {view.get<Data::Value>()};
-  case Data::Variance{}.value():
-    return {view.get<Data::Variance>()};
+  switch (view.data().dtype()) {
+  case dtype<double>:
+    return {view.span<double>()};
+  case dtype<float>:
+    return {view.span<float>()};
+  case dtype<int64_t>:
+    return {view.span<int64_t>()};
+  case dtype<int32_t>:
+    return {view.span<int32_t>()};
+  case dtype<char>:
+    return {view.span<char>()};
+  case dtype<std::string>:
+    return {view.span<std::string>()};
   default:
     throw std::runtime_error("non implemented for this type.");
   }
@@ -415,9 +399,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", &setVariableSlice<Data::Value>)
       .def("__setitem__", &setVariableSliceRange<Data::Value>)
       .def_property_readonly(
-          "numpy", &as_py_array_t_variant<double, int64_t, int32_t, char>)
+          "numpy",
+          &as_py_array_t_variant<double, float, int64_t, int32_t, char>)
       .def_property_readonly(
-          "data", &as_VariableView_variant<double, int32_t, std::string, char>)
+          "data", &as_VariableView_variant<double, float, int64_t, int32_t,
+                                           char, std::string>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())

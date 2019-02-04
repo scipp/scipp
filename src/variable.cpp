@@ -193,6 +193,8 @@ template <class T> class VariableConceptT : public concept_t<T> {
 public:
   VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
+  DType dtype() const noexcept override { return ::dtype<T>; }
+
   virtual gsl::span<T> getSpan() = 0;
   virtual gsl::span<T> getSpan(const Dim dim, const gsl::index begin,
                                const gsl::index end) = 0;
@@ -1006,6 +1008,8 @@ template <class T> VariableView<T> VariableSlice::cast() const {
   template VariableView<__VA_ARGS__> VariableSlice::cast() const;
 
 INSTANTIATE_SLICEVIEW(double);
+INSTANTIATE_SLICEVIEW(float);
+INSTANTIATE_SLICEVIEW(int64_t);
 INSTANTIATE_SLICEVIEW(int32_t);
 INSTANTIATE_SLICEVIEW(char);
 INSTANTIATE_SLICEVIEW(std::string);
