@@ -165,6 +165,27 @@ struct ItemHelper<D, MDZipViewImpl<D, Tags...>> {
   }
 };
 
+// MDLabel is a helper for constructing a MDZipView.
+template <class T, class TagT> struct MDLabelImpl {
+  using type = T;
+  using tag = TagT;
+  const std::string &name;
+};
+
+template <class TagT> auto MDLabel(const TagT, const std::string &name = "") {
+  return MDLabelImpl<const typename TagT::type, const TagT>{name};
+}
+template <class TagT>
+auto MutableMDLabel(const TagT, const std::string &name = "") {
+  return MDLabelImpl<typename TagT::type, TagT>{name};
+}
+template <class T, class TagT>
+auto MDLabel(const TagT, const std::string &name = "") {
+  return MDLabelImpl<T,
+                     std::conditional_t<std::is_const_v<T>, const TagT, TagT>>{
+      name};
+}
+
 template <class D, class... Ts> class MDZipViewImpl {
   static_assert(sizeof...(Ts),
                 "MDZipView requires at least one variable for iteration");
@@ -184,6 +205,7 @@ private:
       const std::set<Dim> &fixedDimensions) const;
 
 public:
+  using type = MDZipViewImpl; // For nested MDLabel.
   class iterator;
   class Item : public GetterMixin<Item, Ts>... {
   public:
@@ -283,6 +305,20 @@ private:
 template <class... Ts> using MDZipView = MDZipViewImpl<Dataset, Ts...>;
 template <class... Ts>
 using ConstMDZipView = MDZipViewImpl<const Dataset, Ts...>;
+
+template <class... Labels>
+auto zipMD(const Dataset &d,
+           Labels... labels) {
+  // TODO Names not supported yet.
+  return ConstMDZipView<typename Labels::tag...>(d);
+}
+
+// TODO Can we put fixedDimensions into the label?
+template <class... Labels>
+auto zipMD(const Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
+           Labels... labels) {
+  return ConstMDZipView<typename Labels::tag...>(d, fixedDimensions);
+}
 
 template <class D, class Tag> struct UnitHelper {
   static Unit get(const Dataset &dataset,

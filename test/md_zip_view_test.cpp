@@ -549,3 +549,47 @@ TEST(MDZipView, derived_standard_deviation) {
   ++it;
   EXPECT_TRUE(std::isnan(it->get<Data::StdDev>()));
 }
+
+TEST(MDZipView, create_from_labels) {
+  Dataset d;
+  d.insert(Data::Value{}, "", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Data::Int{}, "", Dimensions{}, 1);
+  auto var = d.get<Data::Value>();
+  var[0] = 0.2;
+  var[1] = 3.2;
+
+  ASSERT_ANY_THROW(
+      zipMD(d, MutableMDLabel(Data::Value{}), MutableMDLabel(Data::Int{})));
+  ASSERT_NO_THROW(
+      zipMD(d, MutableMDLabel(Data::Value{}), MDLabel(Data::Int{})));
+  auto view = zipMD(d, MutableMDLabel(Data::Value{}), MDLabel(Data::Int{}));
+  auto it = view.begin();
+  ASSERT_EQ(it->get<Data::Value>(), 0.2);
+  ASSERT_EQ(it->get<Data::Int>(), 0);
+  it++;
+  ASSERT_EQ(it->get<Data::Value>(), 3.2);
+  ASSERT_EQ(it->get<Data::Int>(), 0);
+}
+
+TEST(MDZipView, create_from_labels_nested) {
+  Dataset d;
+  d.insert(Data::Value{}, "", {{Dim::Y, 3}, {Dim::X, 2}}, {1, 2, 3, 4, 5, 6});
+  d.insert(Data::Int{}, "", {Dim::X, 2}, {10, 20});
+
+  using Nested = decltype(zipMD(d, MDLabel(Data::Value{})));
+  auto view =
+      zipMD(d, {Dim::Y}, MutableMDLabel(zipMD(d, MDLabel(Data::Value{}))),
+            MDLabel(Data::Int{}));
+
+  ASSERT_EQ(view.size(), 2);
+  double base = 0.0;
+  for (const auto &item : view) {
+    auto subview = item.get<Nested>();
+    ASSERT_EQ(subview.size(), 3);
+    auto it = subview.begin();
+    EXPECT_EQ(it++->get<Data::Value>(), base + 1.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 3.0);
+    EXPECT_EQ(it++->get<Data::Value>(), base + 5.0);
+    base += 1.0;
+  }
+}
