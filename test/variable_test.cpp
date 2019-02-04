@@ -205,6 +205,18 @@ TEST(Variable, operator_plus_equal_scalar) {
   EXPECT_EQ(a.get<Data::Value>()[1], 3.2);
 }
 
+TEST(Variable, operator_plus_equal_custom_type) {
+  auto a = makeVariable<float>(Data::Value{}, {Dim::X, 2}, {1.1f, 2.2f});
+
+  EXPECT_NO_THROW(a += a);
+  EXPECT_EQ(a.span<float>()[0], 2.2f);
+  EXPECT_EQ(a.span<float>()[1], 4.4f);
+
+  auto different_name(a);
+  different_name.setName("test");
+  EXPECT_NO_THROW(a += different_name);
+}
+
 TEST(Variable, operator_times_equal) {
   Variable a(Coord::X{}, {Dim::X, 2}, {2.0, 3.0});
 
