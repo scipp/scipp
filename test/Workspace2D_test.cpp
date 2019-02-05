@@ -69,11 +69,11 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
 
   // Do a temperature scan, adding a new temperature dimension to the dataset.
   combined.insert(Coord::Temperature{}, {}, {300.0});
-  combined.get<Data::Value>("sample")[0] = exp(-0.001 * 300.0);
+  combined.get(Data::Value{}, "sample")[0] = exp(-0.001 * 300.0);
   auto dataPoint(combined);
   for (const auto temperature : {273.0, 200.0, 100.0, 10.0, 4.2}) {
-    dataPoint.get<Coord::Temperature>()[0] = temperature;
-    dataPoint.get<Data::Value>("sample")[0] = exp(-0.001 * temperature);
+    dataPoint.get(Coord::Temperature{})[0] = temperature;
+    dataPoint.get(Data::Value{}, "sample")[0] = exp(-0.001 * temperature);
     combined = concatenate(combined, dataPoint, Dim::Temperature);
   }
 
@@ -133,10 +133,10 @@ TEST(Workspace2D, multiple_data) {
   // Note: If we want to also keep "background" we can use:
   // d["sample"] -= d["background"];
 
-  EXPECT_NO_THROW(d.get<Data::Value>("sample"));
-  EXPECT_NO_THROW(d.get<Data::Variance>("sample"));
-  // EXPECT_NO_THROW(d.get<Data::Value>("monitor"));
-  EXPECT_ANY_THROW(d.get<Data::Value>("background"));
+  EXPECT_NO_THROW(d.get(Data::Value{}, "sample"));
+  EXPECT_NO_THROW(d.get(Data::Variance{}, "sample"));
+  // EXPECT_NO_THROW(d.get(Data::Value{},"monitor"));
+  EXPECT_ANY_THROW(d.get(Data::Value{}, "background"));
 }
 
 TEST(Workspace2D, scanning) {
@@ -167,7 +167,7 @@ TEST(Workspace2D, scanning) {
   //   }
   // };
   auto moved(dets);
-  for (auto &pos : moved.get<Coord::Position>())
+  for (auto &pos : moved.get(Coord::Position{}))
     pos += Eigen::Vector3d{0.5, 0.0, 0.0};
 
   auto scanning = concatenate(dets, moved, Dim::DetectorScan);
@@ -226,7 +226,7 @@ TEST(Workspace2D, masking) {
   // Adding non-masked to masked works, is this sensible behavior?
   EXPECT_NO_THROW(d_masked += d);
 
-  mask.get<Coord::Mask>()[0] = 1;
+  mask.get(Coord::Mask{})[0] = 1;
   auto d_masked2(d);
   d_masked2.merge(mask);
 
@@ -265,7 +265,7 @@ TEST(Workspace2D, masking) {
   // Bin mask.
   mask = Dataset();
   mask.insert(Coord::Mask{}, {Dim::Tof, 1000}, 1000);
-  mask.get<Coord::Mask>()[0] = 1;
+  mask.get(Coord::Mask{})[0] = 1;
   // mask has no Dim::Spectrum so this masks the first bin of all spectra.
   d_masked.merge(mask);
   // Different bin masking for all spectra.

@@ -68,7 +68,7 @@ TEST(MDZipView, single_column) {
   Dataset d;
   d.insert(Data::Value{}, "", Dimensions(Dim::Tof, 10), 10);
   d.insert(Data::Int{}, "", Dimensions(Dim::Tof, 10), 10);
-  auto var = d.get<Data::Value>();
+  auto var = d.get(Data::Value{});
   var[0] = 0.2;
   var[3] = 3.2;
 
@@ -89,7 +89,7 @@ TEST(MDZipView, multi_column) {
   Dataset d;
   d.insert(Data::Value{}, "", Dimensions(Dim::Tof, 2), 2);
   d.insert(Data::Int{}, "", Dimensions(Dim::Tof, 2), 2);
-  auto var = d.get<Data::Value>();
+  auto var = d.get(Data::Value{});
   var[0] = 0.2;
   var[1] = 3.2;
 
@@ -106,7 +106,7 @@ TEST(MDZipView, multi_column_mixed_dimension) {
   Dataset d;
   d.insert(Data::Value{}, "", Dimensions(Dim::Tof, 2), 2);
   d.insert(Data::Int{}, "", Dimensions{}, 1);
-  auto var = d.get<Data::Value>();
+  auto var = d.get(Data::Value{});
   var[0] = 0.2;
   var[1] = 3.2;
 
@@ -373,7 +373,7 @@ TEST(MDZipView, histogram_using_nested_MDZipView) {
   ++bin;
   EXPECT_EQ(bin->value(), 2.0);
   bin->value() += 0.2;
-  EXPECT_EQ(d.get<Data::Value>("sample")[1], 2.2);
+  EXPECT_EQ(d.get(Data::Value{}, "sample")[1], 2.2);
   it++;
   EXPECT_EQ(it->get<HistogramView>().begin()->value(), 3.0);
 }
@@ -382,7 +382,7 @@ TEST(MDZipView, single_column_edges) {
   Dataset d;
   d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), 3);
   d.insert(Data::Int{}, "name2", Dimensions(Dim::Tof, 2), 2);
-  auto var = d.get<Coord::Tof>();
+  auto var = d.get(Coord::Tof{});
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[2] = 2.2;
@@ -406,7 +406,7 @@ TEST(MDZipView, single_column_bins) {
   Dataset d;
   d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), 3);
   d.insert(Data::Int{}, "name2", Dimensions(Dim::Tof, 2), 2);
-  auto var = d.get<Coord::Tof>();
+  auto var = d.get(Coord::Tof{});
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[1] = 1.2;
@@ -425,7 +425,7 @@ TEST(MDZipView, multi_column_edges) {
   Dataset d;
   d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), 3);
   d.insert(Data::Int{}, "", Dimensions(Dim::Tof, 2), 2);
-  auto var = d.get<Coord::Tof>();
+  auto var = d.get(Coord::Tof{});
   var[0] = 0.2;
   var[1] = 1.2;
   var[2] = 2.2;
@@ -491,7 +491,7 @@ TEST(MDZipView, edges_are_not_inner_dimension) {
 TEST(MDZipView, named_getter) {
   Dataset d;
   d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), 3);
-  auto var = d.get<Coord::Tof>();
+  auto var = d.get(Coord::Tof{});
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
   var[2] = 2.2;
@@ -564,7 +564,7 @@ TEST(MDZipView, create_from_labels) {
   Dataset d;
   d.insert(Data::Value{}, "", Dimensions(Dim::X, 2), 2);
   d.insert(Data::Int{}, "", Dimensions{}, 1);
-  auto var = d.get<Data::Value>();
+  auto var = d.get(Data::Value{});
   var[0] = 0.2;
   var[1] = 3.2;
 
@@ -583,7 +583,7 @@ TEST(MDZipView, create_from_labels_with_name) {
   Dataset d;
   d.insert(Data::Value{}, "name", Dimensions(Dim::X, 2), 2);
   d.insert(Data::Int{}, "name", Dimensions{}, 1);
-  auto var = d.get<Data::Value>("name");
+  auto var = d.get(Data::Value{}, "name");
   var[0] = 0.2;
   var[1] = 3.2;
 

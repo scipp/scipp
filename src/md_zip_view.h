@@ -389,8 +389,7 @@ template <class D> struct UnitHelper<D, const Coord::Position> {
     static_cast<void>(name);
     if (dataset.contains(Coord::Position{}))
       return dataset(Coord::Position{}).unit();
-    return dataset.get<const Coord::DetectorInfo>()[0](Coord::Position{})
-        .unit();
+    return dataset.get(Coord::DetectorInfo{})[0](Coord::Position{}).unit();
   }
 };
 
@@ -502,9 +501,9 @@ template <class D, class Tag> struct DataHelper {
   static auto get(D &dataset, const Dimensions &,
                   const std::string &name = std::string{}) {
     if (is_coord<Tag>)
-      return dataset.template get<detail::value_type_t<Tag>>();
+      return dataset.get(detail::value_type_t<Tag>{});
     else
-      return dataset.template get<detail::value_type_t<Tag>>(name);
+      return dataset.get(detail::value_type_t<Tag>{}, name);
   }
 };
 
@@ -523,8 +522,8 @@ template <class D, class Tag> struct DataHelper<D, Bin<Tag>> {
       offset *= dims.size(i);
     }
 
-    return ref_type_t<D, Bin<Tag>>{
-        offset, dataset.get<const detail::value_type_t<Tag>>()};
+    return ref_type_t<D, Bin<Tag>>{offset,
+                                   dataset.get(detail::value_type_t<Tag>{})};
   }
 };
 
@@ -537,12 +536,12 @@ template <class D> struct DataHelper<D, const Coord::Position> {
     // think.
     if (dataset.contains(Coord::Position{}))
       return ref_type_t<D, const Coord::Position>(
-          dataset.get<detail::value_type_t<Coord::Position>>(),
+          dataset.get(detail::value_type_t<Coord::Position>{}),
           gsl::span<const typename Coord::DetectorGrouping::type>{});
-    const auto &detInfo = dataset.get<Coord::DetectorInfo>()[0];
+    const auto &detInfo = dataset.get(Coord::DetectorInfo{})[0];
     return ref_type_t<D, const Coord::Position>(
-        detInfo.get<detail::value_type_t<Coord::Position>>(),
-        dataset.get<detail::value_type_t<Coord::DetectorGrouping>>());
+        detInfo.get(detail::value_type_t<Coord::Position>{}),
+        dataset.get(detail::value_type_t<Coord::DetectorGrouping>{}));
   }
 };
 

@@ -21,7 +21,7 @@ Dataset tofToEnergy(const Dataset &d) {
                              "only supported for elastic scattering.");
 
   // 1. Compute conversion factor
-  const auto &compPos = d.get<Coord::ComponentInfo>()[0].get<Coord::Position>();
+  const auto &compPos = d.get(Coord::ComponentInfo{})[0].get(Coord::Position{});
   // TODO Need a better mechanism to identify source and sample.
   const auto &sourcePos = compPos[0];
   const auto &samplePos = compPos[1];
@@ -98,7 +98,7 @@ Dataset tofToDeltaE(const Dataset &d) {
                              "cannot have both for inelastic scattering.");
 
   // 1. Compute conversion factors
-  const auto &compPos = d.get<Coord::ComponentInfo>()[0].get<Coord::Position>();
+  const auto &compPos = d.get(Coord::ComponentInfo{})[0].get(Coord::Position{});
   const auto &sourcePos = compPos[0];
   const auto &samplePos = compPos[1];
   const double l1 = (sourcePos - samplePos).norm();
@@ -114,7 +114,7 @@ Dataset tofToDeltaE(const Dataset &d) {
 
     // This is how we support multi-Ei data!
     tofShift.setDimensions(d(Coord::Ei{}).dimensions());
-    const auto &Ei = d.get<Coord::Ei>();
+    const auto &Ei = d.get(Coord::Ei{});
     std::transform(Ei.begin(), Ei.end(), tofShift.span<double>().begin(),
                    [&l1](const double Ei) { return l1 / sqrt(Ei); });
 

@@ -48,14 +48,14 @@ TEST(TableWorkspace, basics) {
   // Standard shape operations provide basic things required for tables:
   auto mergedTable = concatenate(table, table, Dim::Row);
   Dataset row = table(Dim::Row, 1, 2);
-  EXPECT_EQ(row.get<Coord::RowLabel>()[0], "b");
+  EXPECT_EQ(row.get(Coord::RowLabel{})[0], "b");
 
   // Slice a range to obtain a new table with a subset of rows.
   Dataset rows = mergedTable(Dim::Row, 1, 4);
-  ASSERT_EQ(rows.get<Coord::RowLabel>().size(), 3);
-  EXPECT_EQ(rows.get<Coord::RowLabel>()[0], "b");
-  EXPECT_EQ(rows.get<Coord::RowLabel>()[1], "c");
-  EXPECT_EQ(rows.get<Coord::RowLabel>()[2], "a");
+  ASSERT_EQ(rows.get(Coord::RowLabel{}).size(), 3);
+  EXPECT_EQ(rows.get(Coord::RowLabel{})[0], "b");
+  EXPECT_EQ(rows.get(Coord::RowLabel{})[1], "c");
+  EXPECT_EQ(rows.get(Coord::RowLabel{})[2], "a");
 
   // Can sort by arbitrary column.
   auto sortedTable = sort(table, Data::Value{});

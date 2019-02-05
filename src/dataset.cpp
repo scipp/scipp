@@ -671,7 +671,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
 
   // Counts has outer dimensions as input, with a new inner dimension given by
   // the binning dimensions. We iterate over all dimensions as a flat array.
-  auto counts = hist.get<Data::Value>(var.name());
+  auto counts = hist.get(Data::Value{}, var.name());
   gsl::index cur = 0;
   // The helper `getView` allows us to ignore the tag of coord, as long as the
   // underlying type is `double`. We view the edges with the same dimensions as
@@ -681,7 +681,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   const auto edges = getView<double>(coord, dims);
   auto edge = edges.begin();
   for (const auto &eventList : events) {
-    const auto tofs = eventList.get<Data::Tof>();
+    const auto tofs = eventList.get(Data::Tof{});
     if (!std::is_sorted(tofs.begin(), tofs.end()))
       throw std::runtime_error(
           "TODO: Histograms can currently only be created from sorted data.");
@@ -723,7 +723,7 @@ Dataset histogram(const Dataset &d, const Variable &coord) {
 // datasets that represent events lists, using ZipView.
 template <class Tag> struct Sort {
   static Dataset apply(const Dataset &d, const std::string &name) {
-    auto const_axis = d.get<Tag>(name);
+    auto const_axis = d.get(Tag{}, name);
     if (d(Tag{}, name).dimensions().count() != 1)
       throw std::runtime_error("Axis for sorting must be 1-dimensional.");
     const auto sortDim = d(Tag{}, name).dimensions().label(0);
@@ -734,7 +734,7 @@ template <class Tag> struct Sort {
 
     Dataset sorted;
     Variable axisVar = d(Tag{}, name);
-    auto axis = axisVar.template get(Tag{});
+    auto axis = axisVar.get(Tag{});
     std::vector<gsl::index> indices(axis.size());
     std::iota(indices.begin(), indices.end(), 0);
     auto view = ranges::view::zip(axis, indices);

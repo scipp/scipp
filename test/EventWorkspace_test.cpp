@@ -18,7 +18,7 @@ TEST(EventWorkspace, EventList) {
   // `size()` gives number of variables, not the number of events in this case!
   // Do we need something like `count()`, returning the volume of the Dataset?
   EXPECT_EQ(e.size(), 1);
-  EXPECT_EQ(e.get<Data::Tof>().size(), 0);
+  EXPECT_EQ(e.get(Data::Tof{}).size(), 0);
 
   // Cannot change size of Dataset easily right now, is that a problem here? Can
   // use concatenate, but there is no `push_back` or similar:
@@ -26,21 +26,21 @@ TEST(EventWorkspace, EventList) {
   e2.insert(Data::Tof{}, "", {Dim::Event, 3}, {1.1, 2.2, 3.3});
   e = concatenate(e, e2, Dim::Event);
   e = concatenate(e, e2, Dim::Event);
-  EXPECT_EQ(e.get<Data::Tof>().size(), 6);
+  EXPECT_EQ(e.get(Data::Tof{}).size(), 6);
 
   // Can insert pulse times if needed.
   e.insert(Data::PulseTime{}, "", e(Data::Tof{}).dimensions(),
            {2.0, 1.0, 2.1, 1.1, 3.0, 1.2});
 
-  auto view = ranges::view::zip(e.get<Data::Tof>(), e.get<Data::PulseTime>());
+  auto view = ranges::view::zip(e.get(Data::Tof{}), e.get(Data::PulseTime{}));
   // Sort by Tof:
   ranges::sort(
       view.begin(), view.end(),
       [](const std::pair<double, double> &a,
          const std::pair<double, double> &b) { return a.first < b.first; });
 
-  EXPECT_TRUE(equals(e.get<Data::Tof>(), {1.1, 1.1, 2.2, 2.2, 3.3, 3.3}));
-  EXPECT_TRUE(equals(e.get<Data::PulseTime>(), {2.0, 1.1, 1.0, 3.0, 2.1, 1.2}));
+  EXPECT_TRUE(equals(e.get(Data::Tof{}), {1.1, 1.1, 2.2, 2.2, 3.3, 3.3}));
+  EXPECT_TRUE(equals(e.get(Data::PulseTime{}), {2.0, 1.1, 1.0, 3.0, 2.1, 1.2}));
 
   // Sort by pulse time:
   ranges::sort(
@@ -48,8 +48,8 @@ TEST(EventWorkspace, EventList) {
       [](const std::pair<double, double> &a,
          const std::pair<double, double> &b) { return a.second < b.second; });
 
-  EXPECT_TRUE(equals(e.get<Data::Tof>(), {2.2, 1.1, 3.3, 1.1, 3.3, 2.2}));
-  EXPECT_TRUE(equals(e.get<Data::PulseTime>(), {1.0, 1.1, 1.2, 2.0, 2.1, 3.0}));
+  EXPECT_TRUE(equals(e.get(Data::Tof{}), {2.2, 1.1, 3.3, 1.1, 3.3, 2.2}));
+  EXPECT_TRUE(equals(e.get(Data::PulseTime{}), {1.0, 1.1, 1.2, 2.0, 2.1, 3.0}));
 
   // Sort by pulse time then tof:
   ranges::sort(view.begin(), view.end(),
@@ -58,8 +58,8 @@ TEST(EventWorkspace, EventList) {
                  return a.second < b.second && a.first < b.first;
                });
 
-  EXPECT_TRUE(equals(e.get<Data::Tof>(), {2.2, 1.1, 3.3, 1.1, 3.3, 2.2}));
-  EXPECT_TRUE(equals(e.get<Data::PulseTime>(), {1.0, 1.1, 1.2, 2.0, 2.1, 3.0}));
+  EXPECT_TRUE(equals(e.get(Data::Tof{}), {2.2, 1.1, 3.3, 1.1, 3.3, 2.2}));
+  EXPECT_TRUE(equals(e.get(Data::PulseTime{}), {1.0, 1.1, 1.2, 2.0, 2.1, 3.0}));
 }
 
 TEST(EventWorkspace, basics) {
@@ -79,7 +79,7 @@ TEST(EventWorkspace, basics) {
   d.insert(Data::Events{}, "", {Dim::Spectrum, 3}, 3, e);
 
   // Get event lists for all spectra.
-  auto eventLists = d.get<Data::Events>();
+  auto eventLists = d.get(Data::Events{});
   EXPECT_EQ(eventLists.size(), 3);
 
   // Modify individual event lists.
@@ -112,7 +112,7 @@ TEST(EventWorkspace, basics) {
   }
 
   // Can keep events but drop, e.g., pulse time if not needed anymore.
-  for (auto &e : d.get<Data::Events>())
+  for (auto &e : d.get(Data::Events{}))
     e.erase(Data::PulseTime{});
 
   // Can delete events fully later.
@@ -137,15 +137,15 @@ TEST(EventWorkspace, plus) {
   // Special handling: Adding datasets *concatenates* the event lists.
   auto sum = d + d;
 
-  auto eventLists = sum.get<Data::Events>();
+  auto eventLists = sum.get(Data::Events{});
   EXPECT_EQ(eventLists.size(), 2);
-  EXPECT_EQ(eventLists[0].get<Data::Tof>().size(), 2 * 10);
-  EXPECT_EQ(eventLists[1].get<Data::Tof>().size(), 2 * 20);
+  EXPECT_EQ(eventLists[0].get(Data::Tof{}).size(), 2 * 10);
+  EXPECT_EQ(eventLists[1].get(Data::Tof{}).size(), 2 * 20);
 
   sum += d;
 
-  eventLists = sum.get<Data::Events>();
+  eventLists = sum.get(Data::Events{});
   EXPECT_EQ(eventLists.size(), 2);
-  EXPECT_EQ(eventLists[0].get<Data::Tof>().size(), 3 * 10);
-  EXPECT_EQ(eventLists[1].get<Data::Tof>().size(), 3 * 20);
+  EXPECT_EQ(eventLists[0].get(Data::Tof{}).size(), 3 * 10);
+  EXPECT_EQ(eventLists[1].get(Data::Tof{}).size(), 3 * 20);
 }

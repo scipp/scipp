@@ -18,7 +18,7 @@ static void BM_Dataset_get_with_many_columns(benchmark::State &state) {
     d.insert(Data::Value{}, "name" + std::to_string(i), Dimensions{}, 1);
   d.insert(Data::Int{}, "name", Dimensions{}, 1);
   for (auto _ : state)
-    d.get<Data::Int>();
+    d.get(Data::Int{});
   state.SetItemsProcessed(state.iterations());
 }
 BENCHMARK(BM_Dataset_get_with_many_columns)
@@ -38,8 +38,8 @@ static void BM_Dataset_as_Histogram(benchmark::State &state) {
   for (gsl::index i = 0; i < nSpec; ++i) {
     auto hist(d);
     // Break sharing
-    hist.get<Data::Value>();
-    hist.get<Data::Variance>();
+    hist.get(Data::Value{});
+    hist.get(Data::Variance{});
     histograms.push_back(hist);
   }
 
@@ -241,7 +241,7 @@ Dataset makeBeamline(const gsl::index nDet) {
   dets.insert(Coord::DetectorId{}, {Dim::Detector, nDet});
   dets.insert(Coord::Mask{}, {Dim::Detector, nDet});
   dets.insert(Coord::Position{}, {Dim::Detector, nDet});
-  auto ids = dets.get<Coord::DetectorId>();
+  auto ids = dets.get(Coord::DetectorId{});
   std::iota(ids.begin(), ids.end(), 1);
 
   Dataset d;
@@ -256,10 +256,10 @@ Dataset makeSpectra(const gsl::index nSpec) {
 
   d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, nSpec});
   d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, nSpec});
-  auto groups = d.get<Coord::DetectorGrouping>();
+  auto groups = d.get(Coord::DetectorGrouping{});
   for (gsl::index i = 0; i < groups.size(); ++i)
     groups[i] = {i};
-  auto nums = d.get<Coord::SpectrumNumber>();
+  auto nums = d.get(Coord::SpectrumNumber{});
   std::iota(nums.begin(), nums.end(), 1);
 
   return d;
@@ -268,7 +268,7 @@ Dataset makeSpectra(const gsl::index nSpec) {
 Dataset makeData(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
   d.insert(Coord::Tof{}, {Dim::Tof, nPoint + 1});
-  auto tofs = d.get<Coord::Tof>();
+  auto tofs = d.get(Coord::Tof{});
   std::iota(tofs.begin(), tofs.end(), 0.0);
   Dimensions dims({{Dim::Tof, nPoint}, {Dim::Spectrum, nSpec}});
   d.insert(Data::Value{}, "sample", dims);
@@ -310,8 +310,8 @@ static void BM_Dataset_Workspace2D_copy_and_write(benchmark::State &state) {
   auto d = makeWorkspace2D(nSpec, nPoint);
   for (auto _ : state) {
     auto copy(d);
-    copy.get<Data::Value>()[0] = 1.0;
-    copy.get<Data::Variance>()[0] = 1.0;
+    copy.get(Data::Value{})[0] = 1.0;
+    copy.get(Data::Variance{})[0] = 1.0;
   }
   state.SetItemsProcessed(state.iterations());
 }
@@ -358,7 +358,7 @@ Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
   Dataset empty;
   empty.insert(Data::Tof{}, "", {Dim::Event, 0});
   empty.insert(Data::PulseTime{}, "", {Dim::Event, 0});
-  for (auto &eventList : d.get<Data::Events>()) {
+  for (auto &eventList : d.get(Data::Events{})) {
     // 1/4 of the event lists is empty
     gsl::index count = std::max(0l, dist(mt) - nEvent / 4);
     if (count == 0)
@@ -399,7 +399,7 @@ static void BM_Dataset_EventWorkspace_copy_and_write(benchmark::State &state) {
   auto d = makeEventWorkspace(nSpec, nEvent);
   for (auto _ : state) {
     auto copy(d);
-    auto eventLists = copy.get<Data::Events>();
+    auto eventLists = copy.get(Data::Events{});
     static_cast<void>(eventLists);
   }
   state.SetItemsProcessed(state.iterations());
@@ -417,7 +417,7 @@ static void BM_Dataset_EventWorkspace_plus(benchmark::State &state) {
   }
 
   gsl::index actualEvents = 0;
-  for (auto &eventList : d.get<Data::Events>())
+  for (auto &eventList : d.get(Data::Events{}))
     actualEvents += eventList.dimensions()[Dim::Event];
   state.SetItemsProcessed(state.iterations());
   // 2 for Tof and PulseTime
@@ -437,13 +437,13 @@ static void BM_Dataset_EventWorkspace_grow(benchmark::State &state) {
   for (auto _ : state) {
     state.PauseTiming();
     auto sum(d);
-    static_cast<void>(sum.get<Data::Events>());
+    static_cast<void>(sum.get(Data::Events{}));
     state.ResumeTiming();
     sum += update;
   }
 
   gsl::index actualEvents = 0;
-  for (auto &eventList : update.get<Data::Events>())
+  for (auto &eventList : update.get(Data::Events{}))
     actualEvents += eventList.dimensions()[Dim::Event];
   state.SetItemsProcessed(state.iterations() * actualEvents);
 }
