@@ -26,6 +26,48 @@ TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(Variable(Data::Value{}, Dimensions(Dim::Tof, 3), 2));
 }
 
+TEST(Variable, makeVariable_custom_type) {
+  auto doubles = makeVariable<double>(Data::Value{}, {});
+  auto floats = makeVariable<float>(Data::Value{}, {});
+
+  ASSERT_NO_THROW(doubles.get<Data::Value>());
+  // Data::Value defaults to double, so this throws.
+  ASSERT_ANY_THROW(floats.get<Data::Value>());
+
+  ASSERT_NO_THROW(doubles.span<double>());
+  ASSERT_NO_THROW(floats.span<float>());
+
+  ASSERT_ANY_THROW(doubles.span<float>());
+  ASSERT_ANY_THROW(floats.span<double>());
+
+  ASSERT_TRUE((std::is_same<decltype(doubles.span<double>())::element_type,
+                            double>::value));
+  ASSERT_TRUE((std::is_same<decltype(floats.span<float>())::element_type,
+                            float>::value));
+}
+
+TEST(Variable, makeVariable_custom_type_initializer_list) {
+  Variable doubles(Data::Value{}, {Dim::X, 2}, {1, 2});
+  auto ints = makeVariable<int32_t>(Data::Value{}, {Dim::X, 2}, {1.1, 2.2});
+
+  // Passed ints but uses default type based on tag.
+  ASSERT_NO_THROW(doubles.span<double>());
+  // Passed doubles but explicit type overrides.
+  ASSERT_NO_THROW(ints.span<int32_t>());
+}
+
+TEST(Variable, dtype) {
+  auto doubles = makeVariable<double>(Data::Value{}, {});
+  auto floats = makeVariable<float>(Data::Value{}, {});
+  EXPECT_EQ(doubles.dtype(), dtype<double>);
+  EXPECT_NE(doubles.dtype(), dtype<float>);
+  EXPECT_NE(floats.dtype(), dtype<double>);
+  EXPECT_EQ(floats.dtype(), dtype<float>);
+  EXPECT_EQ(doubles.dtype(), doubles.dtype());
+  EXPECT_EQ(floats.dtype(), floats.dtype());
+  EXPECT_NE(doubles.dtype(), floats.dtype());
+}
+
 TEST(Variable, span_references_Variable) {
   Variable a(Data::Value{}, Dimensions(Dim::Tof, 2));
   auto observer = a.get<Data::Value>();
@@ -173,6 +215,18 @@ TEST(Variable, operator_plus_equal_scalar) {
   EXPECT_NO_THROW(a += 1.0);
   EXPECT_EQ(a.get<Data::Value>()[0], 2.1);
   EXPECT_EQ(a.get<Data::Value>()[1], 3.2);
+}
+
+TEST(Variable, operator_plus_equal_custom_type) {
+  auto a = makeVariable<float>(Data::Value{}, {Dim::X, 2}, {1.1f, 2.2f});
+
+  EXPECT_NO_THROW(a += a);
+  EXPECT_EQ(a.span<float>()[0], 2.2f);
+  EXPECT_EQ(a.span<float>()[1], 4.4f);
+
+  auto different_name(a);
+  different_name.setName("test");
+  EXPECT_NO_THROW(a += different_name);
 }
 
 TEST(Variable, operator_times_equal) {

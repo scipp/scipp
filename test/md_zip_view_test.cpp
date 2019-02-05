@@ -15,8 +15,8 @@
 
 TEST(MDZipView, construct) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions{}, {1.1});
-  d.insert<Data::Int>("", Dimensions{}, {2});
+  d.insert(Data::Value{}, "", Dimensions{}, {1.1});
+  d.insert(Data::Int{}, "", Dimensions{}, {2});
   // Empty view forbidden by static_assert:
   // MDZipView<> view(d);
   ASSERT_NO_THROW(static_cast<void>(MDZipView<Data::Value>(d)));
@@ -28,8 +28,8 @@ TEST(MDZipView, construct) {
 
 TEST(MDZipView, construct_with_const_Dataset) {
   Dataset d;
-  d.insert<Data::Value>("", {Dim::X, 1}, {1.1});
-  d.insert<Data::Int>("", Dimensions{}, {2});
+  d.insert(Data::Value{}, "", {Dim::X, 1}, {1.1});
+  d.insert(Data::Int{}, "", Dimensions{}, {2});
   const auto const_d(d);
   EXPECT_NO_THROW(ConstMDZipView<Data::Value> view(const_d));
   EXPECT_NO_THROW(
@@ -41,8 +41,8 @@ TEST(MDZipView, construct_with_const_Dataset) {
 
 TEST(MDZipView, iterator) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions{Dim::X, 2}, {1.1, 1.2});
-  d.insert<Data::Int>("", Dimensions{Dim::X, 2}, {2, 3});
+  d.insert(Data::Value{}, "", Dimensions{Dim::X, 2}, {1.1, 1.2});
+  d.insert(Data::Int{}, "", Dimensions{Dim::X, 2}, {2, 3});
   MDZipView<Data::Value> view(d);
   ASSERT_NO_THROW(view.begin());
   ASSERT_NO_THROW(view.end());
@@ -65,8 +65,8 @@ TEST(MDZipView, iterator) {
 
 TEST(MDZipView, single_column) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions(Dim::Tof, 10), 10);
-  d.insert<Data::Int>("", Dimensions(Dim::Tof, 10), 10);
+  d.insert(Data::Value{}, "", Dimensions(Dim::Tof, 10), 10);
+  d.insert(Data::Int{}, "", Dimensions(Dim::Tof, 10), 10);
   auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[3] = 3.2;
@@ -86,8 +86,8 @@ TEST(MDZipView, single_column) {
 
 TEST(MDZipView, multi_column) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions(Dim::Tof, 2), 2);
-  d.insert<Data::Int>("", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Data::Value{}, "", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Data::Int{}, "", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
@@ -103,8 +103,8 @@ TEST(MDZipView, multi_column) {
 
 TEST(MDZipView, multi_column_mixed_dimension) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions(Dim::Tof, 2), 2);
-  d.insert<Data::Int>("", Dimensions{}, 1);
+  d.insert(Data::Value{}, "", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Data::Int{}, "", Dimensions{}, 1);
   auto var = d.get<Data::Value>();
   var[0] = 0.2;
   var[1] = 3.2;
@@ -130,8 +130,8 @@ TEST(MDZipView, multi_column_transposed) {
   dimsYX.add(Dim::Y, 3);
   dimsYX.add(Dim::X, 2);
 
-  d.insert<Data::Value>("", dimsXY, {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert<Data::Int>("", dimsYX, {1, 3, 5, 2, 4, 6});
+  d.insert(Data::Value{}, "", dimsXY, {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insert(Data::Int{}, "", dimsYX, {1, 3, 5, 2, 4, 6});
   // TODO Current dimension check is too strict and fails unless data with
   // transposed dimensions is accessed as const.
   MDZipView<Data::Value, const Data::Int> view(d);
@@ -145,8 +145,8 @@ TEST(MDZipView, multi_column_transposed) {
 
 TEST(MDZipView, multi_column_unrelated_dimension) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions(Dim::X, 2), 2);
-  d.insert<Data::Int>("", Dimensions(Dim::Y, 3), 3);
+  d.insert(Data::Value{}, "", Dimensions(Dim::X, 2), 2);
+  d.insert(Data::Int{}, "", Dimensions(Dim::Y, 3), 3);
   MDZipView<Data::Value> view(d);
   auto it = view.begin();
   ASSERT_TRUE(it < view.end());
@@ -158,8 +158,8 @@ TEST(MDZipView, multi_column_unrelated_dimension) {
 
 TEST(MDZipView, multi_column_orthogonal_fail) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions(Dim::X, 2), 2);
-  d.insert<Data::Int>("", Dimensions(Dim::Y, 3), 3);
+  d.insert(Data::Value{}, "", Dimensions(Dim::X, 2), 2);
+  d.insert(Data::Int{}, "", Dimensions(Dim::Y, 3), 3);
   EXPECT_THROW_MSG((MDZipView<Data::Value, Data::Int>(d)), std::runtime_error,
                    "Variables requested for iteration do not span a joint "
                    "space. In case one of the variables represents bin edges "
@@ -169,9 +169,9 @@ TEST(MDZipView, multi_column_orthogonal_fail) {
 
 TEST(MDZipView, nested_MDZipView) {
   Dataset d;
-  d.insert<Data::Value>("", {{Dim::Y, 3}, {Dim::X, 2}},
-                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert<Data::Int>("", {Dim::X, 2}, {10, 20});
+  d.insert(Data::Value{}, "", {{Dim::Y, 3}, {Dim::X, 2}},
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insert(Data::Int{}, "", {Dim::X, 2}, {10, 20});
   MDZipView<MDZipView<const Data::Value>, const Data::Int> view(d, {Dim::Y});
   ASSERT_EQ(view.size(), 2);
   double base = 0.0;
@@ -188,10 +188,10 @@ TEST(MDZipView, nested_MDZipView) {
 
 TEST(MDZipView, nested_MDZipView_all_subdimension_combinations_3D) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}}),
-                        {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,
-                         9.0,  10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
-                         17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
+  d.insert(
+      Data::Value{}, "", Dimensions({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}}),
+      {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
+       13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
   MDZipView<MDZipView<const Data::Value>> viewX(d, {Dim::Y, Dim::Z});
   ASSERT_EQ(viewX.size(), 4);
@@ -294,9 +294,9 @@ TEST(MDZipView, nested_MDZipView_all_subdimension_combinations_3D) {
 
 TEST(MDZipView, nested_MDZipView_constant_variable) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions({{Dim::Z, 2}, {Dim::X, 4}}),
-                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  d.insert<Coord::X>({Dim::X, 4}, {10.0, 20.0, 30.0, 40.0});
+  d.insert(Data::Value{}, "", Dimensions({{Dim::Z, 2}, {Dim::X, 4}}),
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+  d.insert(Coord::X{}, {Dim::X, 4}, {10.0, 20.0, 30.0, 40.0});
 
   // Coord::X has fewer dimensions, throws if not const when not nested...
   EXPECT_THROW_MSG(
@@ -327,14 +327,14 @@ TEST(MDZipView, nested_MDZipView_constant_variable) {
 TEST(MDZipView, histogram_using_nested_MDZipView) {
   Dataset d;
   // Edges do not have Dim::Spectrum, "shared" by all histograms.
-  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), {10.0, 20.0, 30.0});
+  d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), {10.0, 20.0, 30.0});
   Dimensions dims;
   dims.add(Dim::Tof, 2);
   dims.add(Dim::Spectrum, 4);
-  d.insert<Data::Value>("sample", dims,
-                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  d.insert<Data::Variance>("sample", dims, 8);
-  d.insert<Coord::SpectrumNumber>({Dim::Spectrum, 4}, {1, 2, 3, 4});
+  d.insert(Data::Value{}, "sample", dims,
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+  d.insert(Data::Variance{}, "sample", dims, 8);
+  d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, 4}, {1, 2, 3, 4});
 
   using HistogramView = MDZipView<Bin<Coord::Tof>, Data::Value, Data::Variance>;
   MDZipView<HistogramView, Coord::SpectrumNumber> view(d, "sample", {Dim::Tof});
@@ -370,8 +370,8 @@ TEST(MDZipView, histogram_using_nested_MDZipView) {
 
 TEST(MDZipView, single_column_edges) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), 3);
-  d.insert<Data::Int>("name2", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), 3);
+  d.insert(Data::Int{}, "name2", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
@@ -394,8 +394,8 @@ TEST(MDZipView, single_column_edges) {
 
 TEST(MDZipView, single_column_bins) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), 3);
-  d.insert<Data::Int>("name2", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), 3);
+  d.insert(Data::Int{}, "name2", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
@@ -413,8 +413,8 @@ TEST(MDZipView, single_column_bins) {
 
 TEST(MDZipView, multi_column_edges) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), 3);
-  d.insert<Data::Int>("", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), 3);
+  d.insert(Data::Int{}, "", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get<Coord::Tof>();
   var[0] = 0.2;
   var[1] = 1.2;
@@ -438,12 +438,12 @@ TEST(MDZipView, multi_column_edges) {
 
 TEST(MDZipView, multi_dimensional_edges) {
   Dataset d;
-  d.insert<Coord::X>(Dimensions({{Dim::Y, 2}, {Dim::X, 3}}),
-                     {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insert(Coord::X{}, Dimensions({{Dim::Y, 2}, {Dim::X, 3}}),
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   // TODO There is currently a bug in MDZipView: If `Bin` iteration is
   // requested but the dataset contains only edges the shape calculation gives
   // wrong results.
-  d.insert<Data::Value>("", {Dim::X, 2});
+  d.insert(Data::Value{}, "", {Dim::X, 2});
 
   MDZipView<Bin<Coord::X>> view(d);
   ASSERT_EQ(view.size(), 4);
@@ -461,9 +461,9 @@ TEST(MDZipView, multi_dimensional_edges) {
 
 TEST(MDZipView, edges_are_not_inner_dimension) {
   Dataset d;
-  d.insert<Coord::Y>(Dimensions({{Dim::Y, 2}, {Dim::X, 3}}),
-                     {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert<Data::Value>("", {Dim::Y, 1});
+  d.insert(Coord::Y{}, Dimensions({{Dim::Y, 2}, {Dim::X, 3}}),
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  d.insert(Data::Value{}, "", {Dim::Y, 1});
 
   MDZipView<Bin<Coord::Y>> view(d);
   ASSERT_EQ(view.size(), 3);
@@ -479,7 +479,7 @@ TEST(MDZipView, edges_are_not_inner_dimension) {
 
 TEST(MDZipView, named_getter) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions(Dim::Tof, 3), 3);
+  d.insert(Coord::Tof{}, Dimensions(Dim::Tof, 3), 3);
   auto var = d.get<Coord::Tof>();
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
@@ -496,8 +496,8 @@ TEST(MDZipView, named_getter) {
 
 TEST(MDZipView, duplicate_data_tag) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{}, 1);
-  d.insert<Data::Value>("name2", Dimensions{}, 1);
+  d.insert(Data::Value{}, "name1", Dimensions{}, 1);
+  d.insert(Data::Value{}, "name2", Dimensions{}, 1);
 
   EXPECT_THROW_MSG(MDZipView<Data::Value> view(d), std::runtime_error,
                    "Dataset with 2 variables, could not find variable with tag "
@@ -507,8 +507,8 @@ TEST(MDZipView, duplicate_data_tag) {
 
 TEST(MDZipView, named_variable_and_coordinate) {
   Dataset d;
-  d.insert<Coord::X>(Dimensions{}, 1);
-  d.insert<Data::Value>("name", Dimensions{}, 1);
+  d.insert(Coord::X{}, Dimensions{}, 1);
+  d.insert(Data::Value{}, "name", Dimensions{}, 1);
 
   EXPECT_NO_THROW((MDZipView<Coord::X, Data::Value>(d, "name")));
   (MDZipView<Coord::X, Data::Value>(d, "name"));
@@ -516,16 +516,15 @@ TEST(MDZipView, named_variable_and_coordinate) {
 
 TEST(MDZipView, spectrum_position) {
   Dataset dets;
-  dets.insert<Coord::Position>(
-      {Dim::Detector, 4},
-      {Eigen::Vector3d{1.0, 0.0, 0.0}, Eigen::Vector3d{2.0, 0.0, 0.0},
-       Eigen::Vector3d{4.0, 0.0, 0.0}, Eigen::Vector3d{8.0, 0.0, 0.0}});
+  dets.insert(Coord::Position{}, {Dim::Detector, 4},
+              {Eigen::Vector3d{1.0, 0.0, 0.0}, Eigen::Vector3d{2.0, 0.0, 0.0},
+               Eigen::Vector3d{4.0, 0.0, 0.0}, Eigen::Vector3d{8.0, 0.0, 0.0}});
 
   Dataset d;
-  d.insert<Coord::DetectorInfo>({}, {dets});
+  d.insert(Coord::DetectorInfo{}, {}, {dets});
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
       {0, 2}, {1}, {}};
-  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 3}, grouping);
+  d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, 3}, grouping);
 
   MDZipView<const Coord::Position> view(d);
   auto it = view.begin();
@@ -541,7 +540,7 @@ TEST(MDZipView, spectrum_position) {
 
 TEST(MDZipView, derived_standard_deviation) {
   Dataset d;
-  d.insert<Data::Variance>("", {Dim::X, 3}, {4.0, 9.0, -1.0});
+  d.insert(Data::Variance{}, "", {Dim::X, 3}, {4.0, 9.0, -1.0});
   MDZipView<Data::StdDev> view(d);
   auto it = view.begin();
   EXPECT_EQ(it->get<Data::StdDev>(), 2.0);
@@ -553,8 +552,8 @@ TEST(MDZipView, derived_standard_deviation) {
 
 TEST(MDZipView, type_sorting) {
   Dataset data;
-  data.insert<Coord::X>({}, 1);
-  data.insert<Coord::Y>({}, 1);
+  data.insert(Coord::X{}, {}, 1);
+  data.insert(Coord::Y{}, {}, 1);
   MDZipView<Coord::X, Coord::Y> a(data);
   MDZipView<Coord::Y, Coord::X> b(data);
   MDZipView<Coord::Y, const Coord::X> b_const(data);
@@ -564,8 +563,8 @@ TEST(MDZipView, type_sorting) {
 
 TEST(MDZipView, type_sorting_nested) {
   Dataset data;
-  data.insert<Coord::X>({}, 1);
-  data.insert<Coord::Y>({}, 1);
+  data.insert(Coord::X{}, {}, 1);
+  data.insert(Coord::Y{}, {}, 1);
   MDZipView<Coord::X, MDZipView<Coord::Y>> a(data);
   MDZipView<MDZipView<Coord::Y>, Coord::X> b(data);
   EXPECT_EQ(
@@ -577,15 +576,16 @@ TEST(MDZipView, type_sorting_nested) {
 
 TEST(MDZipView, type_sorting_two_nested) {
   Dataset data;
-  data.insert<Coord::X>({}, 1);
-  data.insert<Coord::Y>({}, 1);
-  data.insert<Coord::Z>({}, 1);
+  data.insert(Coord::X{}, {}, 1);
+  data.insert(Coord::Y{}, {}, 1);
+  data.insert(Coord::Z{}, {}, 1);
   MDZipView<Coord::X, MDZipView<Coord::Y, Coord::Z>> a(data);
   MDZipView<Coord::X, MDZipView<Coord::Z, Coord::Y>> b(data);
   MDZipView<MDZipView<Coord::Y, Coord::Z>, Coord::X> c(data);
   MDZipView<MDZipView<Coord::Z, Coord::Y>, Coord::X> d(data);
   EXPECT_EQ(typeid(decltype(a)),
-            typeid(MDZipViewImpl<Dataset, Coord::X, MDZipViewImpl<Dataset, Coord::Y, Coord::Z>>));
+            typeid(MDZipViewImpl<Dataset, Coord::X,
+                                 MDZipViewImpl<Dataset, Coord::Y, Coord::Z>>));
   EXPECT_EQ(typeid(decltype(a)), typeid(decltype(b)));
   EXPECT_EQ(typeid(decltype(a)), typeid(decltype(c)));
   EXPECT_EQ(typeid(decltype(a)), typeid(decltype(d)));

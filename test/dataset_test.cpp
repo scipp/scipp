@@ -17,9 +17,9 @@ TEST(Dataset, construct) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(Dataset, insert_coords) {
   Dataset d;
-  d.insert<Coord::Tof>(Dimensions{}, {1.1});
-  d.insert<Coord::SpectrumNumber>(Dimensions{}, {2});
-  EXPECT_THROW_MSG(d.insert<Coord::SpectrumNumber>(Dimensions{}, {2}),
+  d.insert(Coord::Tof{}, Dimensions{}, {1.1});
+  d.insert(Coord::SpectrumNumber{}, Dimensions{}, {2});
+  EXPECT_THROW_MSG(d.insert(Coord::SpectrumNumber{}, Dimensions{}, {2}),
                    std::runtime_error,
                    "Attempt to insert duplicate coordinate.");
   ASSERT_EQ(d.size(), 2);
@@ -27,9 +27,9 @@ TEST(Dataset, insert_coords) {
 
 TEST(Dataset, insert_data) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2});
-  EXPECT_THROW_MSG(d.insert<Data::Int>("name2", Dimensions{}, {2}),
+  d.insert(Data::Value{}, "name1", Dimensions{}, {1.1});
+  d.insert(Data::Int{}, "name2", Dimensions{}, {2});
+  EXPECT_THROW_MSG(d.insert(Data::Int{}, "name2", Dimensions{}, {2}),
                    std::runtime_error,
                    "Attempt to insert data of same type with duplicate name.");
   ASSERT_EQ(d.size(), 2);
@@ -37,8 +37,8 @@ TEST(Dataset, insert_data) {
 
 TEST(Dataset, insert_variables_with_dimensions) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions(Dim::Tof, 2), {1.1, 2.2});
-  d.insert<Data::Int>("name2", Dimensions{}, {2});
+  d.insert(Data::Value{}, "name1", Dimensions(Dim::Tof, 2), {1.1, 2.2});
+  d.insert(Data::Int{}, "name2", Dimensions{}, {2});
 }
 
 TEST(Dataset, insert_variables_different_order) {
@@ -53,55 +53,55 @@ TEST(Dataset, insert_variables_different_order) {
   yz.add(Dim::Z, 3);
 
   Dataset xyz;
-  xyz.insert<Data::Value>("name1", xy, 2);
-  EXPECT_NO_THROW(xyz.insert<Data::Value>("name2", yz, 6));
-  EXPECT_NO_THROW(xyz.insert<Data::Value>("name3", xz, 3));
+  xyz.insert(Data::Value{}, "name1", xy, 2);
+  EXPECT_NO_THROW(xyz.insert(Data::Value{}, "name2", yz, 6));
+  EXPECT_NO_THROW(xyz.insert(Data::Value{}, "name3", xz, 3));
 
   Dataset xzy;
-  xzy.insert<Data::Value>("name1", xz, 3);
-  EXPECT_NO_THROW(xzy.insert<Data::Value>("name2", xy, 2));
-  EXPECT_NO_THROW(xzy.insert<Data::Value>("name3", yz, 6));
+  xzy.insert(Data::Value{}, "name1", xz, 3);
+  EXPECT_NO_THROW(xzy.insert(Data::Value{}, "name2", xy, 2));
+  EXPECT_NO_THROW(xzy.insert(Data::Value{}, "name3", yz, 6));
 }
 
 TEST(Dataset, insert_edges) {
   Dataset d;
-  d.insert<Data::Value>("name1", {Dim::Tof, 2});
+  d.insert(Data::Value{}, "name1", {Dim::Tof, 2});
   EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
-  EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
+  EXPECT_NO_THROW(d.insert(Coord::Tof{}, {Dim::Tof, 3}));
   EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
 }
 
 TEST(Dataset, insert_edges_first) {
   Dataset d;
-  EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
+  EXPECT_NO_THROW(d.insert(Coord::Tof{}, {Dim::Tof, 3}));
   EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
-  EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
+  EXPECT_NO_THROW(d.insert(Data::Value{}, "name1", {Dim::Tof, 2}));
   EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
 }
 
 TEST(Dataset, insert_edges_first_fail) {
   Dataset d;
-  EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
+  EXPECT_NO_THROW(d.insert(Coord::Tof{}, {Dim::Tof, 3}));
   EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
-  EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
+  EXPECT_NO_THROW(d.insert(Data::Value{}, "name1", {Dim::Tof, 2}));
   EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
   // Once we have edges and non-edges dimensions cannot change further.
   EXPECT_THROW_MSG(
-      d.insert<Data::Value>("name2", {Dim::Tof, 1}), std::runtime_error,
+      d.insert(Data::Value{}, "name2", {Dim::Tof, 1}), std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match.");
-  EXPECT_THROW_MSG(d.insert<Coord::Tof>({Dim::Tof, 4}), std::runtime_error,
+  EXPECT_THROW_MSG(d.insert(Coord::Tof{}, {Dim::Tof, 4}), std::runtime_error,
                    "Attempt to insert duplicate coordinate.");
 }
 
 TEST(Dataset, insert_edges_fail) {
   Dataset d;
-  EXPECT_NO_THROW(d.insert<Data::Value>("name1", {Dim::Tof, 2}));
+  EXPECT_NO_THROW(d.insert(Data::Value{}, "name1", {Dim::Tof, 2}));
   EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
-  EXPECT_THROW_MSG(d.insert<Coord::Tof>({Dim::Tof, 4}), std::runtime_error,
+  EXPECT_THROW_MSG(d.insert(Coord::Tof{}, {Dim::Tof, 4}), std::runtime_error,
                    "Cannot insert variable into Dataset: Variable is a "
                    "dimension coordiante, but the dimension length matches "
                    "neither as default coordinate nor as edge coordinate.");
-  EXPECT_THROW_MSG(d.insert<Coord::Tof>({Dim::Tof, 1}), std::runtime_error,
+  EXPECT_THROW_MSG(d.insert(Coord::Tof{}, {Dim::Tof, 1}), std::runtime_error,
                    "Cannot insert variable into Dataset: Variable is a "
                    "dimension coordiante, but the dimension length matches "
                    "neither as default coordinate nor as edge coordinate.");
@@ -109,33 +109,53 @@ TEST(Dataset, insert_edges_fail) {
 
 TEST(Dataset, insert_edges_reverse_fail) {
   Dataset d;
-  EXPECT_NO_THROW(d.insert<Coord::Tof>({Dim::Tof, 3}));
+  EXPECT_NO_THROW(d.insert(Coord::Tof{}, {Dim::Tof, 3}));
   EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
   EXPECT_THROW_MSG(
-      d.insert<Data::Value>("name1", Dimensions(Dim::Tof, 1)),
+      d.insert(Data::Value{}, "name1", Dimensions(Dim::Tof, 1)),
       std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match.");
   EXPECT_THROW_MSG(
-      d.insert<Data::Value>("name1", Dimensions(Dim::Tof, 4)),
+      d.insert(Data::Value{}, "name1", Dimensions(Dim::Tof, 4)),
       std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match.");
 }
 
 TEST(Dataset, can_use_normal_insert_to_copy_edges) {
   Dataset d;
-  d.insert<Data::Value>("", {Dim::X, 2});
-  d.insert<Coord::X>({Dim::X, 3});
+  d.insert(Data::Value{}, "", {Dim::X, 2});
+  d.insert(Coord::X{}, {Dim::X, 3});
 
   Dataset copy;
   for (auto var : d)
     EXPECT_NO_THROW(copy.insert(var));
 }
 
+TEST(Dataset, custom_type) {
+  Dataset d;
+  d.insert<float>(Data::Value{}, "", {Dim::Tof, 2});
+  EXPECT_EQ(d(Data::Value{}, "").dtype(), dtype<float>);
+  EXPECT_TRUE(
+      (std::is_same<decltype(d(Data::Value{}, "").span<float>())::element_type,
+                    float>::value));
+}
+
+TEST(Dataset, mixed_type_operations_fails_currently) {
+  // This *currently* fails, but we would eventually want to support this.
+  Dataset d1;
+  d1.insert<float>(Data::Value{}, "", {});
+  Dataset d2;
+  d2.insert<double>(Data::Value{}, "", {});
+  EXPECT_NO_THROW(d1 += d1);
+  EXPECT_NO_THROW(d2 += d2);
+  EXPECT_ANY_THROW(d1 += d2);
+}
+
 TEST(Dataset, get_variable_view) {
   Dataset d;
-  d.insert<Data::Value>("", {});
-  d.insert<Data::Value>("name", {});
-  d.insert<Coord::X>({});
+  d.insert(Data::Value{}, "", {});
+  d.insert(Data::Value{}, "name", {});
+  d.insert(Coord::X{}, {});
 
   EXPECT_EQ(d(Coord::X{}).tag(), Coord::X{});
   EXPECT_EQ(d(Data::Value{}, "").tag(), Data::Value{});
@@ -149,9 +169,9 @@ TEST(Dataset, get_variable_view) {
 
 TEST(Dataset, extract) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Variance>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2});
+  d.insert(Data::Value{}, "name1", Dimensions{}, {1.1});
+  d.insert(Data::Variance{}, "name1", Dimensions{}, {1.1});
+  d.insert(Data::Int{}, "name2", Dimensions{}, {2});
   EXPECT_EQ(d.size(), 3);
   auto name1 = d.extract("name1");
   EXPECT_EQ(d.size(), 1);
@@ -163,9 +183,9 @@ TEST(Dataset, extract) {
 
 TEST(Dataset, merge) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Variance>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Int>("name2", Dimensions{}, {2});
+  d.insert(Data::Value{}, "name1", Dimensions{}, {1.1});
+  d.insert(Data::Variance{}, "name1", Dimensions{}, {1.1});
+  d.insert(Data::Int{}, "name2", Dimensions{}, {2});
 
   Dataset merged;
   merged.merge(d);
@@ -174,19 +194,19 @@ TEST(Dataset, merge) {
                    "Attempt to insert data of same type with duplicate name.");
 
   Dataset d2;
-  d2.insert<Data::Value>("name3", Dimensions{}, {1.1});
+  d2.insert(Data::Value{}, "name3", Dimensions{}, {1.1});
   merged.merge(d2);
   EXPECT_EQ(merged.size(), 4);
 }
 
 TEST(Dataset, merge_matching_coordinates) {
   Dataset d1;
-  d1.insert<Coord::X>({Dim::X, 2}, {1.1, 2.2});
-  d1.insert<Data::Value>("data1", {Dim::X, 2});
+  d1.insert(Coord::X{}, {Dim::X, 2}, {1.1, 2.2});
+  d1.insert(Data::Value{}, "data1", {Dim::X, 2});
 
   Dataset d2;
-  d2.insert<Coord::X>({Dim::X, 2}, {1.1, 2.2});
-  d2.insert<Data::Value>("data2", {Dim::X, 2});
+  d2.insert(Coord::X{}, {Dim::X, 2}, {1.1, 2.2});
+  d2.insert(Data::Value{}, "data2", {Dim::X, 2});
 
   ASSERT_NO_THROW(d1.merge(d2));
   EXPECT_EQ(d1.size(), 3);
@@ -194,12 +214,12 @@ TEST(Dataset, merge_matching_coordinates) {
 
 TEST(Dataset, merge_coord_mismatch_fail) {
   Dataset d1;
-  d1.insert<Coord::X>({Dim::X, 2}, {1.1, 2.2});
-  d1.insert<Data::Value>("data1", {Dim::X, 2});
+  d1.insert(Coord::X{}, {Dim::X, 2}, {1.1, 2.2});
+  d1.insert(Data::Value{}, "data1", {Dim::X, 2});
 
   Dataset d2;
-  d2.insert<Coord::X>({Dim::X, 2}, {1.1, 2.3});
-  d2.insert<Data::Value>("data2", {Dim::X, 2});
+  d2.insert(Coord::X{}, {Dim::X, 2}, {1.1, 2.3});
+  d2.insert(Data::Value{}, "data2", {Dim::X, 2});
 
   EXPECT_THROW_MSG(d1.merge(d2), std::runtime_error,
                    "Cannot merge: Coordinates do not match.");
@@ -207,8 +227,8 @@ TEST(Dataset, merge_coord_mismatch_fail) {
 
 TEST(Dataset, const_get) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions{}, {1.1});
-  d.insert<Data::Int>("", Dimensions{}, {2});
+  d.insert(Data::Value{}, "", Dimensions{}, {1.1});
+  d.insert(Data::Int{}, "", Dimensions{}, {2});
   const auto &const_d(d);
   auto view = const_d.get<Data::Value>();
   // No non-const access to variable if Dataset is const, will not compile:
@@ -221,8 +241,8 @@ TEST(Dataset, const_get) {
 
 TEST(Dataset, get) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions{}, {1.1});
-  d.insert<Data::Int>("", Dimensions{}, {2});
+  d.insert(Data::Value{}, "", Dimensions{}, {1.1});
+  d.insert(Data::Int{}, "", Dimensions{}, {2});
   auto view = d.get<Data::Value>();
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);
@@ -232,8 +252,8 @@ TEST(Dataset, get) {
 
 TEST(Dataset, get_const) {
   Dataset d;
-  d.insert<Data::Value>("", Dimensions{}, {1.1});
-  d.insert<Data::Int>("", Dimensions{}, {2});
+  d.insert(Data::Value{}, "", Dimensions{}, {1.1});
+  d.insert(Data::Int{}, "", Dimensions{}, {2});
   auto view = d.get<Data::Value>();
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);
@@ -243,8 +263,8 @@ TEST(Dataset, get_const) {
 
 TEST(Dataset, get_fail) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Value>("name2", Dimensions{}, {1.1});
+  d.insert(Data::Value{}, "name1", Dimensions{}, {1.1});
+  d.insert(Data::Value{}, "name2", Dimensions{}, {1.1});
   EXPECT_THROW_MSG(d.get<Data::Value>(), std::runtime_error,
                    "Dataset with 2 variables, could not find variable with tag "
                    "Data::Value and name ``.");
@@ -255,8 +275,8 @@ TEST(Dataset, get_fail) {
 
 TEST(Dataset, get_named) {
   Dataset d;
-  d.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  d.insert<Data::Value>("name2", Dimensions{}, {2.2});
+  d.insert(Data::Value{}, "name1", Dimensions{}, {1.1});
+  d.insert(Data::Value{}, "name2", Dimensions{}, {2.2});
   auto var1 = d.get<Data::Value>("name1");
   ASSERT_EQ(var1.size(), 1);
   EXPECT_EQ(var1[0], 1.1);
@@ -267,8 +287,8 @@ TEST(Dataset, get_named) {
 
 TEST(Dataset, operator_plus_equal) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", {Dim::X, 1}, {2.2});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "", {Dim::X, 1}, {2.2});
   a += a;
   EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
   EXPECT_EQ(a.get<Data::Value>()[0], 4.4);
@@ -276,12 +296,13 @@ TEST(Dataset, operator_plus_equal) {
 
 TEST(Dataset, operator_plus_equal_broadcast) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}),
-                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "",
+           Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}),
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   Dataset b;
-  b.insert<Coord::X>({Dim::X, 1}, {0.1});
-  b.insert<Data::Value>("", Dimensions({{Dim::Z, 3}}), {0.1, 0.2, 0.3});
+  b.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  b.insert(Data::Value{}, "", Dimensions({{Dim::Z, 3}}), {0.1, 0.2, 0.3});
 
   EXPECT_NO_THROW(a += b);
   EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
@@ -295,13 +316,14 @@ TEST(Dataset, operator_plus_equal_broadcast) {
 
 TEST(Dataset, operator_plus_equal_transpose) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}),
-                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "",
+           Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}),
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
   Dataset b;
-  b.insert<Coord::X>({Dim::X, 1}, {0.1});
-  b.insert<Data::Value>("", Dimensions({{Dim::Y, 2}, {Dim::Z, 3}}),
-                        {0.1, 0.2, 0.3, 0.1, 0.2, 0.3});
+  b.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  b.insert(Data::Value{}, "", Dimensions({{Dim::Y, 2}, {Dim::Z, 3}}),
+           {0.1, 0.2, 0.3, 0.1, 0.2, 0.3});
 
   EXPECT_NO_THROW(a += b);
   EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
@@ -315,12 +337,12 @@ TEST(Dataset, operator_plus_equal_transpose) {
 
 TEST(Dataset, operator_plus_equal_different_content) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("name1", {Dim::X, 1}, {2.2});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "name1", {Dim::X, 1}, {2.2});
   Dataset b;
-  b.insert<Coord::X>({Dim::X, 1}, {0.1});
-  b.insert<Data::Value>("name1", {Dim::X, 1}, {2.2});
-  b.insert<Data::Value>("name2", {Dim::X, 1}, {3.3});
+  b.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  b.insert(Data::Value{}, "name1", {Dim::X, 1}, {2.2});
+  b.insert(Data::Value{}, "name2", {Dim::X, 1}, {3.3});
   EXPECT_THROW_MSG(a += b, std::runtime_error,
                    "Right-hand-side in binary operation contains variable that "
                    "is not present in left-hand-side.");
@@ -329,11 +351,11 @@ TEST(Dataset, operator_plus_equal_different_content) {
 
 TEST(Dataset, operator_plus_equal_with_attributes) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", {Dim::X, 1}, {2.2});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "", {Dim::X, 1}, {2.2});
   Dataset logs;
-  logs.insert<Data::String>("comments", {}, {std::string("test")});
-  a.insert<Attr::ExperimentLog>("", {}, {logs});
+  logs.insert(Data::String{}, "comments", {}, {std::string("test")});
+  a.insert(Attr::ExperimentLog{}, "", {}, {logs});
   a += a;
   EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
   EXPECT_EQ(a.get<Data::Value>()[0], 4.4);
@@ -344,8 +366,8 @@ TEST(Dataset, operator_plus_equal_with_attributes) {
 
 TEST(Dataset, operator_times_equal) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", {Dim::X, 1}, {3.0});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "", {Dim::X, 1}, {3.0});
   a *= a;
   EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
   EXPECT_EQ(a.get<Data::Value>()[0], 9.0);
@@ -353,11 +375,11 @@ TEST(Dataset, operator_times_equal) {
 
 TEST(Dataset, operator_times_equal_with_attributes) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", {Dim::X, 1}, {3.0});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "", {Dim::X, 1}, {3.0});
   Dataset logs;
-  logs.insert<Data::String>("comments", {}, {std::string("test")});
-  a.insert<Attr::ExperimentLog>("", {}, {logs});
+  logs.insert(Data::String{}, "comments", {}, {std::string("test")});
+  a.insert(Attr::ExperimentLog{}, "", {}, {logs});
   a *= a;
   EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
   EXPECT_EQ(a.get<Data::Value>()[0], 9.0);
@@ -366,13 +388,13 @@ TEST(Dataset, operator_times_equal_with_attributes) {
 
 TEST(Dataset, operator_times_equal_with_uncertainty) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", {Dim::X, 1}, {3.0});
-  a.insert<Data::Variance>("", {Dim::X, 1}, {2.0});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "", {Dim::X, 1}, {3.0});
+  a.insert(Data::Variance{}, "", {Dim::X, 1}, {2.0});
   Dataset b;
-  b.insert<Coord::X>({Dim::X, 1}, {0.1});
-  b.insert<Data::Value>("", {Dim::X, 1}, {4.0});
-  b.insert<Data::Variance>("", {Dim::X, 1}, {3.0});
+  b.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  b.insert(Data::Value{}, "", {Dim::X, 1}, {4.0});
+  b.insert(Data::Variance{}, "", {Dim::X, 1}, {3.0});
   a *= b;
   EXPECT_EQ(a.get<Coord::X>()[0], 0.1);
   EXPECT_EQ(a.get<Data::Value>()[0], 12.0);
@@ -381,15 +403,15 @@ TEST(Dataset, operator_times_equal_with_uncertainty) {
 
 TEST(Dataset, operator_times_equal_uncertainty_failures) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("name1", {Dim::X, 1}, {3.0});
-  a.insert<Data::Variance>("name1", {Dim::X, 1}, {2.0});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "name1", {Dim::X, 1}, {3.0});
+  a.insert(Data::Variance{}, "name1", {Dim::X, 1}, {2.0});
   Dataset b;
-  b.insert<Coord::X>({Dim::X, 1}, {0.1});
-  b.insert<Data::Value>("name1", {Dim::X, 1}, {4.0});
+  b.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  b.insert(Data::Value{}, "name1", {Dim::X, 1}, {4.0});
   Dataset c;
-  c.insert<Coord::X>({Dim::X, 1}, {0.1});
-  c.insert<Data::Variance>("name1", {Dim::X, 1}, {2.0});
+  c.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  c.insert(Data::Variance{}, "name1", {Dim::X, 1}, {2.0});
   EXPECT_THROW_MSG(a *= b, std::runtime_error,
                    "Either both or none of the operands must have a variance "
                    "for their values.");
@@ -415,7 +437,7 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
 
 TEST(Dataset, operator_times_equal_with_units) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
   Variable values(Data::Value{}, Dimensions({{Dim::X, 1}}), {3.0});
   values.setUnit(Unit::Id::Length);
   Variable variances(Data::Variance{}, Dimensions({{Dim::X, 1}}), {2.0});
@@ -430,7 +452,7 @@ TEST(Dataset, operator_times_equal_with_units) {
 
 TEST(Dataset, operator_times_equal_histogram_data) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
   Variable values(Data::Value{}, Dimensions({{Dim::X, 1}}), {3.0});
   values.setName("name1");
   values.setUnit(Unit::Id::Counts);
@@ -441,9 +463,9 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   a.insert(variances);
 
   Dataset b;
-  b.insert<Coord::X>({Dim::X, 1}, {0.1});
-  b.insert<Data::Value>("name1", {Dim::X, 1}, {4.0});
-  b.insert<Data::Variance>("name1", {Dim::X, 1}, {4.0});
+  b.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  b.insert(Data::Value{}, "name1", {Dim::X, 1}, {4.0});
+  b.insert(Data::Variance{}, "name1", {Dim::X, 1}, {4.0});
 
   // Counts (aka "histogram data") times counts not possible.
   EXPECT_THROW_MSG(a *= a, std::runtime_error, "Unsupported unit on LHS");
@@ -457,7 +479,7 @@ TEST(Dataset, operator_times_equal_histogram_data) {
 
 TEST(Dataset, operator_plus_with_temporary_avoids_copy) {
   Dataset a;
-  a.insert<Data::Value>("", {Dim::X, 1}, {2.2});
+  a.insert(Data::Value{}, "", {Dim::X, 1}, {2.2});
   const auto a2(a);
   const auto b(a);
 
@@ -472,9 +494,9 @@ TEST(Dataset, operator_plus_with_temporary_avoids_copy) {
 
 TEST(Dataset, slice) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 2}, {0.0, 0.1});
-  d.insert<Data::Value>("", {{Dim::Y, 3}, {Dim::X, 2}},
-                        {0.0, 1.0, 2.0, 3.0, 4.0, 5.0});
+  d.insert(Coord::X{}, {Dim::X, 2}, {0.0, 0.1});
+  d.insert(Data::Value{}, "", {{Dim::Y, 3}, {Dim::X, 2}},
+           {0.0, 1.0, 2.0, 3.0, 4.0, 5.0});
   for (const gsl::index i : {0, 1}) {
     Dataset sliceX = d(Dim::X, i);
     ASSERT_EQ(sliceX.size(), 1);
@@ -511,8 +533,8 @@ TEST(Dataset, slice) {
 
 TEST(Dataset, concatenate_constant_dimension_broken) {
   Dataset a;
-  a.insert<Data::Value>("name1", Dimensions{}, {1.1});
-  a.insert<Data::Value>("name2", Dimensions{}, {2.2});
+  a.insert(Data::Value{}, "name1", Dimensions{}, {1.1});
+  a.insert(Data::Value{}, "name2", Dimensions{}, {2.2});
   auto d = concatenate(a, a, Dim::X);
   // TODO Special case: No variable depends on X so the result does not contain
   // this dimension either. Change this behavior?!
@@ -521,8 +543,8 @@ TEST(Dataset, concatenate_constant_dimension_broken) {
 
 TEST(Dataset, concatenate) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", {Dim::X, 1}, {2.2});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "", {Dim::X, 1}, {2.2});
   auto x = concatenate(a, a, Dim::X);
   EXPECT_TRUE(x.dimensions().contains(Dim::X));
   EXPECT_EQ(x.get<Coord::X>().size(), 2);
@@ -546,18 +568,18 @@ TEST(Dataset, concatenate) {
 
 TEST(Dataset, concatenate_with_bin_edges) {
   Dataset ds;
-  ds.insert<Coord::X>({Dim::X, 2}, {0.1, 0.2});
-  ds.insert<Data::Value>("", {Dim::X, 1}, {2.2});
+  ds.insert(Coord::X{}, {Dim::X, 2}, {0.1, 0.2});
+  ds.insert(Data::Value{}, "", {Dim::X, 1}, {2.2});
   EXPECT_NO_THROW(concatenate(ds, ds, Dim::Y));
 
   Dataset not_edge;
-  not_edge.insert<Coord::X>({Dim::X, 1}, {0.3});
-  not_edge.insert<Data::Value>("", {Dim::X, 1}, {2.2});
+  not_edge.insert(Coord::X{}, {Dim::X, 1}, {0.3});
+  not_edge.insert(Data::Value{}, "", {Dim::X, 1}, {2.2});
   EXPECT_THROW_MSG(
       concatenate(ds, not_edge, Dim::X), std::runtime_error,
       "Cannot concatenate: Second variable is not an edge variable.");
   not_edge.erase(Coord::X{});
-  not_edge.insert<Coord::X>({}, {0.3});
+  not_edge.insert(Coord::X{}, {}, {0.3});
   EXPECT_THROW_MSG(concatenate(ds, not_edge, Dim::X),
                    dataset::except::DimensionNotFoundError,
                    "Expected dimension to be in {}, got Dim::X.");
@@ -567,8 +589,8 @@ TEST(Dataset, concatenate_with_bin_edges) {
                    "does not match first bin edge of second edge variable.");
 
   Dataset ds2;
-  ds2.insert<Coord::X>({Dim::X, 2}, {0.2, 0.3});
-  ds2.insert<Data::Value>("", {Dim::X, 1}, {3.3});
+  ds2.insert(Coord::X{}, {Dim::X, 2}, {0.2, 0.3});
+  ds2.insert(Data::Value{}, "", {Dim::X, 1}, {3.3});
 
   Dataset merged;
   EXPECT_NO_THROW(merged = concatenate(ds, ds2, Dim::X));
@@ -580,12 +602,12 @@ TEST(Dataset, concatenate_with_bin_edges) {
 
 TEST(Dataset, concatenate_with_varying_bin_edges) {
   Dataset ds;
-  ds.insert<Coord::X>({{Dim::Y, 2}, {Dim::X, 2}}, {0.1, 0.2, 0.11, 0.21});
-  ds.insert<Data::Value>("", {{Dim::Y, 2}, {Dim::X, 1}}, {2.2, 3.3});
+  ds.insert(Coord::X{}, {{Dim::Y, 2}, {Dim::X, 2}}, {0.1, 0.2, 0.11, 0.21});
+  ds.insert(Data::Value{}, "", {{Dim::Y, 2}, {Dim::X, 1}}, {2.2, 3.3});
 
   Dataset ds2;
-  ds2.insert<Coord::X>({{Dim::Y, 2}, {Dim::X, 2}}, {0.2, 0.3, 0.21, 0.31});
-  ds2.insert<Data::Value>("", {{Dim::Y, 2}, {Dim::X, 1}}, {4.4, 5.5});
+  ds2.insert(Coord::X{}, {{Dim::Y, 2}, {Dim::X, 2}}, {0.2, 0.3, 0.21, 0.31});
+  ds2.insert(Data::Value{}, "", {{Dim::Y, 2}, {Dim::X, 1}}, {4.4, 5.5});
 
   Dataset merged;
   merged = concatenate(ds, ds2, Dim::X);
@@ -602,11 +624,11 @@ TEST(Dataset, concatenate_with_varying_bin_edges) {
 
 TEST(Dataset, concatenate_with_attributes) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 1}, {0.1});
-  a.insert<Data::Value>("", {Dim::X, 1}, {2.2});
+  a.insert(Coord::X{}, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value{}, "", {Dim::X, 1}, {2.2});
   Dataset logs;
-  logs.insert<Data::String>("comments", {}, {std::string("test")});
-  a.insert<Attr::ExperimentLog>("", {}, {logs});
+  logs.insert(Data::String{}, "comments", {}, {std::string("test")});
+  a.insert(Attr::ExperimentLog{}, "", {}, {logs});
 
   auto x = concatenate(a, a, Dim::X);
   EXPECT_TRUE(x.dimensions().contains(Dim::X));
@@ -674,7 +696,7 @@ TEST(Dataset, rebin_failures) {
                    "histogram data first.");
   d.erase(Coord::X{});
   d.insert(coord);
-  d.insert<Data::Value>("badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
+  d.insert(Data::Value{}, "badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
   Variable badAuxDim(Coord::X{}, Dimensions({{Dim::X, 3}, {Dim::Y, 3}}));
   EXPECT_THROW_MSG(rebin(d, badAuxDim), std::runtime_error,
                    "Size mismatch in auxiliary dimension of new coordinate.");
@@ -682,7 +704,7 @@ TEST(Dataset, rebin_failures) {
 
 TEST(Dataset, rebin) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 3}, {1.0, 3.0, 5.0});
+  d.insert(Coord::X{}, {Dim::X, 3}, {1.0, 3.0, 5.0});
   Variable coordNew(Coord::X{}, {Dim::X, 2}, {1.0, 5.0});
   // With only the coord in the dataset there is no way to tell it is an edge,
   // so this fails.
@@ -691,7 +713,7 @@ TEST(Dataset, rebin) {
                    "coordinate. Use `resample` instead of rebin or convert to "
                    "histogram data first.");
 
-  d.insert<Data::Value>("", {Dim::X, 2}, {10.0, 20.0});
+  d.insert(Data::Value{}, "", {Dim::X, 2}, {10.0, 20.0});
   auto rebinned = rebin(d, coordNew);
   EXPECT_EQ(rebinned.get<Data::Value>().size(), 1);
   EXPECT_EQ(rebinned.get<Data::Value>()[0], 30.0);
@@ -699,11 +721,11 @@ TEST(Dataset, rebin) {
 
 Dataset makeEvents() {
   Dataset e1;
-  e1.insert<Data::Tof>("", {Dim::Event, 5}, {1, 2, 3, 4, 5});
+  e1.insert(Data::Tof{}, "", {Dim::Event, 5}, {1, 2, 3, 4, 5});
   Dataset e2;
-  e2.insert<Data::Tof>("", {Dim::Event, 7}, {1, 2, 3, 4, 4, 5, 7});
+  e2.insert(Data::Tof{}, "", {Dim::Event, 7}, {1, 2, 3, 4, 4, 5, 7});
   Dataset d;
-  d.insert<Data::Events>("sample1", {Dim::Spectrum, 2}, {e1, e2});
+  d.insert(Data::Events{}, "sample1", {Dim::Spectrum, 2}, {e1, e2});
   return d;
 }
 
@@ -778,9 +800,9 @@ TEST(Dataset, histogram_2D_transpose_coord) {
 
 TEST(Dataset, sort) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
-  d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
-  d.insert<Data::Value>("", {Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
+  d.insert(Coord::X{}, {Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
+  d.insert(Coord::Y{}, {Dim::Y, 2}, {1.0, 0.9});
+  d.insert(Data::Value{}, "", {Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
 
   auto sorted = sort(d, Coord::X{});
 
@@ -803,10 +825,10 @@ TEST(Dataset, sort) {
 
 TEST(Dataset, sort_2D) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
-  d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
-  d.insert<Data::Value>("", {{Dim::Y, 2}, {Dim::X, 4}},
-                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+  d.insert(Coord::X{}, {Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
+  d.insert(Coord::Y{}, {Dim::Y, 2}, {1.0, 0.9});
+  d.insert(Data::Value{}, "", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
 
   auto sorted = sort(d, Coord::X{});
 
@@ -833,10 +855,10 @@ TEST(Dataset, sort_2D) {
 
 TEST(Dataset, filter) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
-  d.insert<Coord::Y>({Dim::Y, 2}, {1.0, 0.9});
-  d.insert<Data::Value>("", {{Dim::Y, 2}, {Dim::X, 4}},
-                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+  d.insert(Coord::X{}, {Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
+  d.insert(Coord::Y{}, {Dim::Y, 2}, {1.0, 0.9});
+  d.insert(Data::Value{}, "", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
   Variable select(Coord::Mask{}, {Dim::X, 4}, {false, true, false, true});
 
   auto filtered = filter(d, select);
@@ -858,8 +880,8 @@ TEST(Dataset, filter) {
 
 TEST(Dataset, integrate) {
   Dataset ds;
-  ds.insert<Coord::X>({Dim::X, 3}, {0.1, 0.2, 0.4});
-  ds.insert<Data::Value>("", {Dim::X, 2}, {10.0, 20.0});
+  ds.insert(Coord::X{}, {Dim::X, 3}, {0.1, 0.2, 0.4});
+  ds.insert(Data::Value{}, "", {Dim::X, 2}, {10.0, 20.0});
 
   Dataset integral;
   EXPECT_NO_THROW(integral = integrate(ds, Dim::X));
@@ -872,12 +894,12 @@ TEST(Dataset, integrate) {
 
 TEST(DatasetSlice, basics) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 4});
-  d.insert<Coord::Y>({Dim::Y, 2});
-  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}});
-  d.insert<Data::Value>("b", {{Dim::Y, 2}, {Dim::X, 4}});
-  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}});
-  d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}});
+  d.insert(Coord::X{}, {Dim::X, 4});
+  d.insert(Coord::Y{}, {Dim::Y, 2});
+  d.insert(Data::Value{}, "a", {{Dim::Y, 2}, {Dim::X, 4}});
+  d.insert(Data::Value{}, "b", {{Dim::Y, 2}, {Dim::X, 4}});
+  d.insert(Data::Variance{}, "a", {{Dim::Y, 2}, {Dim::X, 4}});
+  d.insert(Data::Variance{}, "b", {{Dim::Y, 2}, {Dim::X, 4}});
 
   ConstDatasetSlice viewA(d, "a");
   ConstDatasetSlice viewB(d, "b");
@@ -902,12 +924,12 @@ TEST(DatasetSlice, basics) {
 
 TEST(DatasetSlice, minus_equals) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 4});
-  d.insert<Coord::Y>({Dim::Y, 2});
-  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
-  d.insert<Data::Value>("b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
-  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
-  d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
+  d.insert(Coord::X{}, {Dim::X, 4});
+  d.insert(Coord::Y{}, {Dim::Y, 2});
+  d.insert(Data::Value{}, "a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
+  d.insert(Data::Value{}, "b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
+  d.insert(Data::Variance{}, "a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
+  d.insert(Data::Variance{}, "b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
 
   EXPECT_NO_THROW(d -= d["a"]);
 
@@ -928,12 +950,12 @@ TEST(DatasetSlice, minus_equals) {
 
 TEST(DatasetSlice, slice_spatial) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 4}, {1, 2, 3, 4});
-  d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
-  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}},
-                        {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}},
-                           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Coord::X{}, {Dim::X, 4}, {1, 2, 3, 4});
+  d.insert(Coord::Y{}, {Dim::Y, 2}, {1, 2});
+  d.insert(Data::Value{}, "a", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Data::Variance{}, "a", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
 
   auto view_x13 = d(Dim::X, 1, 3);
   ASSERT_EQ(view_x13.size(), 4);
@@ -945,16 +967,16 @@ TEST(DatasetSlice, slice_spatial) {
 
 TEST(DatasetSlice, subset_slice_spatial) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 4}, {1, 2, 3, 4});
-  d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
-  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}},
-                        {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Value>("b", {{Dim::Y, 2}, {Dim::X, 4}},
-                        {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}},
-                           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}},
-                           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Coord::X{}, {Dim::X, 4}, {1, 2, 3, 4});
+  d.insert(Coord::Y{}, {Dim::Y, 2}, {1, 2});
+  d.insert(Data::Value{}, "a", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Data::Value{}, "b", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Data::Variance{}, "a", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Data::Variance{}, "b", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
 
   auto view_a_x0 = d["a"](Dim::X, 0);
 
@@ -993,16 +1015,16 @@ TEST(DatasetSlice, subset_slice_spatial) {
 
 TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 5}, {1, 2, 3, 4, 5});
-  d.insert<Coord::Y>({Dim::Y, 2}, {1, 2});
-  d.insert<Data::Value>("a", {{Dim::Y, 2}, {Dim::X, 4}},
-                        {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Value>("b", {{Dim::Y, 2}, {Dim::X, 4}},
-                        {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Variance>("a", {{Dim::Y, 2}, {Dim::X, 4}},
-                           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert<Data::Variance>("b", {{Dim::Y, 2}, {Dim::X, 4}},
-                           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Coord::X{}, {Dim::X, 5}, {1, 2, 3, 4, 5});
+  d.insert(Coord::Y{}, {Dim::Y, 2}, {1, 2});
+  d.insert(Data::Value{}, "a", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Data::Value{}, "b", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Data::Variance{}, "a", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
+  d.insert(Data::Variance{}, "b", {{Dim::Y, 2}, {Dim::X, 4}},
+           {1, 2, 3, 4, 5, 6, 7, 8});
 
   auto view_a_x0 = d["a"](Dim::X, 0);
 
@@ -1060,11 +1082,11 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
 
 TEST(Dataset, unary_minus) {
   Dataset a;
-  a.insert<Coord::X>({Dim::X, 2}, {1, 2});
-  a.insert<Data::Value>("a", {Dim::X, 2}, {1, 2});
-  a.insert<Data::Value>("b", {}, {3});
-  a.insert<Data::Variance>("a", {Dim::X, 2}, {4, 5});
-  a.insert<Data::Variance>("b", {}, {6});
+  a.insert(Coord::X{}, {Dim::X, 2}, {1, 2});
+  a.insert(Data::Value{}, "a", {Dim::X, 2}, {1, 2});
+  a.insert(Data::Value{}, "b", {}, {3});
+  a.insert(Data::Variance{}, "a", {Dim::X, 2}, {4, 5});
+  a.insert(Data::Variance{}, "b", {}, {6});
 
   auto b = -a;
   EXPECT_EQ(b(Coord::X{}), a(Coord::X{}));
@@ -1077,11 +1099,11 @@ TEST(Dataset, unary_minus) {
 
 TEST(Dataset, binary_assign_with_scalar) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("d1", {Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("d2", {}, {3});
-  d.insert<Data::Variance>("d1", {Dim::X, 2}, {4, 5});
-  d.insert<Data::Variance>("d2", {}, {6});
+  d.insert(Coord::X{}, {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value{}, "d1", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value{}, "d2", {}, {3});
+  d.insert(Data::Variance{}, "d1", {Dim::X, 2}, {4, 5});
+  d.insert(Data::Variance{}, "d2", {}, {6});
 
   d += 1;
   EXPECT_TRUE(equals(d.get<Data::Value>("d1"), {2, 3}));
@@ -1107,11 +1129,11 @@ TEST(Dataset, binary_assign_with_scalar) {
 
 TEST(DatasetSlice, binary_assign_with_scalar) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("a", {Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("b", {}, {3});
-  d.insert<Data::Variance>("a", {Dim::X, 2}, {4, 5});
-  d.insert<Data::Variance>("b", {}, {6});
+  d.insert(Coord::X{}, {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value{}, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value{}, "b", {}, {3});
+  d.insert(Data::Variance{}, "a", {Dim::X, 2}, {4, 5});
+  d.insert(Data::Variance{}, "b", {}, {6});
 
   auto slice = d(Dim::X, 1);
 
@@ -1143,11 +1165,11 @@ TEST(DatasetSlice, binary_assign_with_scalar) {
 
 TEST(Dataset, binary_with_scalar) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("a", {Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("b", {}, {3});
-  d.insert<Data::Variance>("a", {Dim::X, 2}, {4, 5});
-  d.insert<Data::Variance>("b", {}, {6});
+  d.insert(Coord::X{}, {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value{}, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value{}, "b", {}, {3});
+  d.insert(Data::Variance{}, "a", {Dim::X, 2}, {4, 5});
+  d.insert(Data::Variance{}, "b", {}, {6});
 
   auto sum = d + 1;
   EXPECT_TRUE(equals(sum.get<Data::Value>("a"), {2, 3}));
@@ -1185,11 +1207,11 @@ TEST(Dataset, binary_with_scalar) {
 
 TEST(DatasetSlice, binary_with_scalar) {
   Dataset d;
-  d.insert<Coord::X>({Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("a", {Dim::X, 2}, {1, 2});
-  d.insert<Data::Value>("b", {}, {3});
-  d.insert<Data::Variance>("a", {Dim::X, 2}, {4, 5});
-  d.insert<Data::Variance>("b", {}, {6});
+  d.insert(Coord::X{}, {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value{}, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value{}, "b", {}, {3});
+  d.insert(Data::Variance{}, "a", {Dim::X, 2}, {4, 5});
+  d.insert(Data::Variance{}, "b", {}, {6});
 
   auto slice = d(Dim::X, 1);
 
@@ -1233,20 +1255,19 @@ TEST(DatasetSlice, binary_with_scalar) {
 Dataset makeTofDataForUnitConversion() {
   Dataset tof;
 
-  tof.insert<Coord::Tof>({Dim::Tof, 4}, {1000, 2000, 3000, 4000});
+  tof.insert(Coord::Tof{}, {Dim::Tof, 4}, {1000, 2000, 3000, 4000});
 
   Dataset components;
   // Source and sample
-  components.insert<Coord::Position>(
-      {Dim::Component, 2},
+  components.insert(
+      Coord::Position{}, {Dim::Component, 2},
       {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
-  tof.insert<Coord::ComponentInfo>({}, {components});
-  tof.insert<Coord::Position>(
-      {Dim::Spectrum, 2},
-      {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.1, 0.0, 1.0}});
+  tof.insert(Coord::ComponentInfo{}, {}, {components});
+  tof.insert(Coord::Position{}, {Dim::Spectrum, 2},
+             {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.1, 0.0, 1.0}});
 
-  tof.insert<Data::Value>("", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
-                          {1, 2, 3, 4, 5, 6});
+  tof.insert(Data::Value{}, "", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
+             {1, 2, 3, 4, 5, 6});
   return tof;
 }
 
@@ -1300,14 +1321,14 @@ TEST(Dataset, convert_to_energy_fails_for_inelastic) {
   // Note these conversion fail only because they are not implemented. It should
   // definitely be possible to support this.
 
-  tof.insert<Coord::Ei>({}, {1});
+  tof.insert(Coord::Ei{}, {}, {1});
   EXPECT_THROW_MSG(convert(tof, Dim::Tof, Dim::Energy), std::runtime_error,
                    "Dataset contains Coord::Ei or Coord::Ef. However, "
                    "conversion to Dim::Energy is currently only supported for "
                    "elastic scattering.");
   tof.erase(Coord::Ei{});
 
-  tof.insert<Coord::Ef>({Dim::Spectrum, 2}, {1.0, 1.5});
+  tof.insert(Coord::Ef{}, {Dim::Spectrum, 2}, {1.0, 1.5});
   EXPECT_THROW_MSG(convert(tof, Dim::Tof, Dim::Energy), std::runtime_error,
                    "Dataset contains Coord::Ei or Coord::Ef. However, "
                    "conversion to Dim::Energy is currently only supported for "
@@ -1320,23 +1341,22 @@ TEST(Dataset, convert_to_energy_fails_for_inelastic) {
 TEST(Dataset, convert_direct_inelastic) {
   Dataset tof;
 
-  tof.insert<Coord::Tof>({Dim::Tof, 4}, {1, 2, 3, 4});
+  tof.insert(Coord::Tof{}, {Dim::Tof, 4}, {1, 2, 3, 4});
 
   Dataset components;
   // Source and sample
-  components.insert<Coord::Position>(
-      {Dim::Component, 2},
+  components.insert(
+      Coord::Position{}, {Dim::Component, 2},
       {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
-  tof.insert<Coord::ComponentInfo>({}, {components});
-  tof.insert<Coord::Position>({Dim::Spectrum, 3},
-                              {Eigen::Vector3d{0.0, 0.0, 1.0},
-                               Eigen::Vector3d{0.0, 0.0, 1.0},
-                               Eigen::Vector3d{0.1, 0.0, 1.0}});
+  tof.insert(Coord::ComponentInfo{}, {}, {components});
+  tof.insert(Coord::Position{}, {Dim::Spectrum, 3},
+             {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.0, 0.0, 1.0},
+              Eigen::Vector3d{0.1, 0.0, 1.0}});
 
-  tof.insert<Data::Value>("", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
-                          {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  tof.insert(Data::Value{}, "", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
+             {1, 2, 3, 4, 5, 6, 7, 8, 9});
 
-  tof.insert<Coord::Ei>({}, {1});
+  tof.insert(Coord::Ei{}, {}, {1});
 
   auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
 
@@ -1371,25 +1391,24 @@ TEST(Dataset, convert_direct_inelastic) {
 TEST(Dataset, convert_direct_inelastic_multi_Ei) {
   Dataset tof;
 
-  tof.insert<Coord::Tof>({Dim::Tof, 4}, {1, 2, 3, 4});
+  tof.insert(Coord::Tof{}, {Dim::Tof, 4}, {1, 2, 3, 4});
 
   Dataset components;
   // Source and sample
-  components.insert<Coord::Position>(
-      {Dim::Component, 2},
+  components.insert(
+      Coord::Position{}, {Dim::Component, 2},
       {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
-  tof.insert<Coord::ComponentInfo>({}, {components});
-  tof.insert<Coord::Position>({Dim::Spectrum, 3},
-                              {Eigen::Vector3d{0.0, 0.0, 1.0},
-                               Eigen::Vector3d{0.0, 0.0, 1.0},
-                               Eigen::Vector3d{0.1, 0.0, 1.0}});
+  tof.insert(Coord::ComponentInfo{}, {}, {components});
+  tof.insert(Coord::Position{}, {Dim::Spectrum, 3},
+             {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.0, 0.0, 1.0},
+              Eigen::Vector3d{0.1, 0.0, 1.0}});
 
-  tof.insert<Data::Value>("", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
-                          {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  tof.insert(Data::Value{}, "", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
+             {1, 2, 3, 4, 5, 6, 7, 8, 9});
 
   // In practice not every spectrum would have a different Ei, more likely we
   // would have an extra dimension, Dim::Ei in addition to Dim::Spectrum.
-  tof.insert<Coord::Ei>({Dim::Spectrum, 3}, {1.0, 1.5, 2.0});
+  tof.insert(Coord::Ei{}, {Dim::Spectrum, 3}, {1.0, 1.5, 2.0});
 
   auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
 

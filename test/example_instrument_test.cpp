@@ -14,9 +14,9 @@ TEST(ExampleInstrument, basics) {
   gsl::index ndet = 4;
 
   Dataset detectors;
-  detectors.insert<Coord::DetectorId>({Dim::Detector, ndet}, {1, 2, 3, 4});
-  detectors.insert<Coord::Position>({Dim::Detector, ndet}, ndet,
-                                    Eigen::Vector3d{0.0, 0.0, 2.0});
+  detectors.insert(Coord::DetectorId{}, {Dim::Detector, ndet}, {1, 2, 3, 4});
+  detectors.insert(Coord::Position{}, {Dim::Detector, ndet}, ndet,
+                   Eigen::Vector3d{0.0, 0.0, 2.0});
   MDZipView<const Coord::DetectorId, Coord::Position> view(detectors);
   for (auto &det : view) {
     det.get<Coord::Position>()[0] = 0.1 * det.get<Coord::DetectorId>();
@@ -34,16 +34,16 @@ TEST(ExampleInstrument, basics) {
 
   Dataset components;
   // Source and sample
-  components.insert<Coord::Position>(
-      {Dim::Component, 2},
+  components.insert(
+      Coord::Position{}, {Dim::Component, 2},
       {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
 
   Dataset d;
   Vector<boost::container::small_vector<gsl::index, 1>> grouping = {{0, 1},
                                                                     {2, 3}};
-  d.insert<Coord::DetectorGrouping>({Dim::Spectrum, 2}, grouping);
-  d.insert<Coord::DetectorInfo>({}, {detectors});
-  d.insert<Coord::ComponentInfo>({}, {components});
+  d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, 2}, grouping);
+  d.insert(Coord::DetectorInfo{}, {}, {detectors});
+  d.insert(Coord::ComponentInfo{}, {}, {components});
 
   EXPECT_ANY_THROW(static_cast<void>(MDZipView<Coord::Position>(d)));
   ASSERT_NO_THROW(static_cast<void>(MDZipView<const Coord::Position>(d)));

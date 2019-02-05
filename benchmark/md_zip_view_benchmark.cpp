@@ -58,9 +58,9 @@ static void BM_MDZipView_multi_column_mixed_dimension(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dim::Spectrum, state.range(0));
-  d.insert<Data::Int>("specnums", dims, state.range(0));
+  d.insert(Data::Int{}, "specnums", dims, state.range(0));
   dims.add(Dim::Tof, 1000);
-  d.insert<Data::Value>("histograms", dims, state.range(0) * 1000);
+  d.insert(Data::Value{}, "histograms", dims, state.range(0) * 1000);
   gsl::index elements = 1000 * state.range(0);
 
   for (auto _ : state) {
@@ -81,11 +81,11 @@ static void BM_MDZipView_mixed_dimension_addition(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dim::Spectrum, state.range(0));
-  d.insert<Data::Variance>("", dims, state.range(0));
+  d.insert(Data::Variance{}, "", dims, state.range(0));
   dims.add(Dim::Tof, 100);
   dims.add(Dim::Run, 10);
   gsl::index elements = state.range(0) * 100 * 10;
-  d.insert<Data::Value>("", dims, elements);
+  d.insert(Data::Value{}, "", dims, elements);
 
   for (auto _ : state) {
     MDZipView<Data::Value, const Data::Variance> view(d);
@@ -107,11 +107,11 @@ BM_MDZipView_mixed_dimension_addition_threaded(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dim::Spectrum, state.range(0));
-  d.insert<Data::Variance>("", dims, state.range(0));
+  d.insert(Data::Variance{}, "", dims, state.range(0));
   dims.add(Dim::Tof, 100);
   dims.add(Dim::Run, 10);
   gsl::index elements = state.range(0) * 100 * 10;
-  d.insert<Data::Value>("", dims, elements);
+  d.insert(Data::Value{}, "", dims, elements);
 
   for (auto _ : state) {
     MDZipView<Data::Value, const Data::Variance> view(d);
@@ -133,12 +133,12 @@ static void
 BM_MDZipView_multi_column_mixed_dimension_nested(benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert<Data::Int>("specnums", {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Data::Int{}, "specnums", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dim::Tof, 1000);
   dims.add(Dim::Spectrum, nSpec);
-  d.insert<Data::Value>("histograms", dims, nSpec * 1000);
-  d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
+  d.insert(Data::Value{}, "histograms", dims, nSpec * 1000);
+  d.insert(Data::Variance{}, "histograms", dims, nSpec * 1000);
   MDZipView<MDZipView<Data::Value>, Data::Int> it(d, {Dim::Tof});
 
   for (auto _ : state) {
@@ -163,12 +163,12 @@ static void BM_MDZipView_multi_column_mixed_dimension_nested_threaded(
     benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert<Data::Int>("specnums", {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Data::Int{}, "specnums", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dim::Tof, 1000);
   dims.add(Dim::Spectrum, nSpec);
-  d.insert<Data::Value>("histograms", dims, nSpec * 1000);
-  d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
+  d.insert(Data::Value{}, "histograms", dims, nSpec * 1000);
+  d.insert(Data::Variance{}, "histograms", dims, nSpec * 1000);
   MDZipView<MDZipView<Data::Value>, Data::Int> it(d, {Dim::Tof});
 
   for (auto _ : state) {
@@ -196,12 +196,12 @@ static void BM_MDZipView_multi_column_mixed_dimension_nested_transpose(
     benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert<Data::Int>("specnums", {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Data::Int{}, "specnums", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dim::Spectrum, nSpec);
   dims.add(Dim::Tof, 1000);
-  d.insert<Data::Value>("histograms", dims, nSpec * 1000);
-  d.insert<Data::Variance>("histograms", dims, nSpec * 1000);
+  d.insert(Data::Value{}, "histograms", dims, nSpec * 1000);
+  d.insert(Data::Variance{}, "histograms", dims, nSpec * 1000);
   MDZipView<MDZipView<Data::Value>, Data::Int> it(d, {Dim::Tof});
 
   for (auto _ : state) {

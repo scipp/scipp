@@ -32,6 +32,9 @@ class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
+
+  virtual DType dtype() const noexcept = 0;
+
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual std::unique_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
@@ -208,6 +211,7 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
 
+  DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_tag; }
   bool isCoord() const {
     return m_tag < std::tuple_size<detail::CoordDef::tags>::value;
@@ -232,6 +236,9 @@ public:
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return gsl::make_span(cast<typename Tag::type>());
   }
+
+  template <class T> auto span() const { return gsl::make_span(cast<T>()); }
+  template <class T> auto span() { return gsl::make_span(cast<T>()); }
 
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
@@ -272,6 +279,23 @@ private:
   deep_ptr<std::string> m_name;
   deep_ptr<VariableConcept> m_object;
 };
+
+// TODO TagT template argument is not actually required, provided that we
+// refactor tags so unit can be obtained from the `Tag` base class. If we do
+// this, we can probably also unify a good amount of code in the Python exports,
+// which is currently requiring exporting for all tags for many methods.
+template <class T, class TagT>
+Variable makeVariable(TagT tag, const Dimensions &dimensions) {
+  return Variable(tag, TagT::unit, std::move(dimensions),
+                  Vector<T>(dimensions.volume()));
+}
+
+template <class T, class TagT, class T2>
+Variable makeVariable(TagT tag, const Dimensions &dimensions,
+                      std::initializer_list<T2> values) {
+  return Variable(tag, TagT::unit, std::move(dimensions),
+                  Vector<T>(values.begin(), values.end()));
+}
 
 /// Non-mutable view into (a subset of) a Variable.
 class ConstVariableSlice {
@@ -329,6 +353,7 @@ public:
     return strides;
   }
 
+  DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_variable->tag(); }
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & {
@@ -352,6 +377,8 @@ public:
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
   }
+
+  template <class T> auto span() const { return cast<T>(); }
 
   bool operator==(const Variable &other) const;
   bool operator==(const ConstVariableSlice &other) const;
@@ -420,6 +447,8 @@ public:
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
   }
+
+  template <class T> auto span() { return cast<T>(); }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in

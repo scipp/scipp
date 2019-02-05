@@ -667,7 +667,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
 
   Dataset hist;
   hist.insert(coord);
-  hist.insert<Data::Value>(var.name(), dims);
+  hist.insert(Data::Value{}, var.name(), dims);
 
   // Counts has outer dimensions as input, with a new inner dimension given by
   // the binning dimensions. We iterate over all dimensions as a flat array.
@@ -704,7 +704,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   }
 
   // TODO Would need to add handling for weighted events etc. here.
-  hist.insert<Data::Variance>(var.name(), dims, counts.begin(), counts.end());
+  hist.insert(Data::Variance{}, var.name(), dims, counts.begin(), counts.end());
   return hist;
 }
 

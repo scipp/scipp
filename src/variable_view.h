@@ -18,7 +18,8 @@
 /// and broadcasting.
 template <class T> class VariableView {
 public:
-  using value_type = T;
+  using element_type = T;
+  using value_type = std::remove_cv_t<T>;
 
   VariableView(T *variable, const gsl::index offset,
                const Dimensions &targetDimensions, const Dimensions &dimensions)

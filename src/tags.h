@@ -376,4 +376,13 @@ struct element_return_type<D, MDZipViewImpl<D, Tags...>> {
 template <class D, class Tag>
 using element_return_type_t = typename element_return_type<D, Tag>::type;
 
+enum class DType { Unknown, Double, Float, Int32, Int64, String, Char };
+template <class T> constexpr DType dtype = DType::Unknown;
+template <> constexpr DType dtype<double> = DType::Double;
+template <> constexpr DType dtype<float> = DType::Float;
+template <> constexpr DType dtype<int32_t> = DType::Int32;
+template <> constexpr DType dtype<int64_t> = DType::Int64;
+template <> constexpr DType dtype<std::string> = DType::String;
+template <> constexpr DType dtype<char> = DType::Char;
+
 #endif // TAGS_H

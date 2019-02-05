@@ -193,6 +193,8 @@ template <class T> class VariableConceptT : public concept_t<T> {
 public:
   VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
+  DType dtype() const noexcept override { return ::dtype<T>; }
+
   virtual gsl::span<T> getSpan() = 0;
   virtual gsl::span<T> getSpan(const Dim dim, const gsl::index begin,
                                const gsl::index end) = 0;
@@ -530,8 +532,8 @@ public:
 /// Implementation of VariableConcept that represents a view onto data.
 template <class T>
 class ViewModel
-    : public conceptT_t<std::remove_const_t<typename T::value_type>> {
-  using value_type = std::remove_const_t<typename T::value_type>;
+    : public conceptT_t<std::remove_const_t<typename T::element_type>> {
+  using value_type = typename T::value_type;
 
   void requireMutable() const {
     if (isConstView())
@@ -556,7 +558,7 @@ public:
   gsl::span<value_type> getSpan() override {
     requireMutable();
     requireContiguous();
-    if constexpr (std::is_const<typename T::value_type>::value)
+    if constexpr (std::is_const<typename T::element_type>::value)
       return gsl::span<value_type>();
     else
       return gsl::make_span(m_model.data(), m_model.data() + size());
@@ -565,7 +567,7 @@ public:
                                 const gsl::index end) override {
     requireMutable();
     requireContiguous();
-    if constexpr (std::is_const<typename T::value_type>::value) {
+    if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dim);
       static_cast<void>(begin);
       static_cast<void>(end);
@@ -587,7 +589,7 @@ public:
 
   VariableView<value_type> getView(const Dimensions &dims) override {
     requireMutable();
-    if constexpr (std::is_const<typename T::value_type>::value) {
+    if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dims);
       return VariableView<value_type>(nullptr, 0, {}, {});
     } else {
@@ -597,7 +599,7 @@ public:
   VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
                                    const gsl::index begin) override {
     requireMutable();
-    if constexpr (std::is_const<typename T::value_type>::value) {
+    if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dim);
       static_cast<void>(begin);
       return VariableView<value_type>(nullptr, 0, {}, {});
@@ -622,7 +624,7 @@ public:
   }
   VariableView<value_type> getReshaped(const Dimensions &dims) override {
     requireMutable();
-    if constexpr (std::is_const<typename T::value_type>::value) {
+    if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dims);
       return VariableView<value_type>(nullptr, 0, {}, {});
     } else {
@@ -643,7 +645,7 @@ public:
   }
   bool isView() const override { return true; }
   bool isConstView() const override {
-    return std::is_const<typename T::value_type>::value;
+    return std::is_const<typename T::element_type>::value;
   }
 
   gsl::index size() const override { return m_model.size(); }
@@ -694,6 +696,7 @@ template <class T> Vector<T> &Variable::cast() {
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)
+INSTANTIATE(float)
 INSTANTIATE(char)
 INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
@@ -1005,6 +1008,8 @@ template <class T> VariableView<T> VariableSlice::cast() const {
   template VariableView<__VA_ARGS__> VariableSlice::cast() const;
 
 INSTANTIATE_SLICEVIEW(double);
+INSTANTIATE_SLICEVIEW(float);
+INSTANTIATE_SLICEVIEW(int64_t);
 INSTANTIATE_SLICEVIEW(int32_t);
 INSTANTIATE_SLICEVIEW(char);
 INSTANTIATE_SLICEVIEW(std::string);
