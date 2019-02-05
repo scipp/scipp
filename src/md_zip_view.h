@@ -41,14 +41,18 @@ template <class Base, class T> struct GetterMixin {};
 
 // TODO Check const correctness here.
 #define GETTER_MIXIN(Tag, name)                                                \
-  template <class Base> struct GetterMixin<Base, Tag> {                        \
-    element_return_type_t<Dataset, Tag> name() const {                         \
-      return static_cast<const Base *>(this)->template get<Tag>();             \
+  template <class Base>                                                        \
+  struct GetterMixin<Base, std::remove_cv_t<decltype(Tag)>> {                  \
+    element_return_type_t<Dataset, std::remove_cv_t<decltype(Tag)>>            \
+    name() const {                                                             \
+      return static_cast<const Base *>(this)->template get(Tag);               \
     }                                                                          \
   };                                                                           \
-  template <class Base> struct GetterMixin<Base, const Tag> {                  \
-    element_return_type_t<const Dataset, Tag> name() const {                   \
-      return static_cast<const Base *>(this)->template get<Tag>();             \
+  template <class Base>                                                        \
+  struct GetterMixin<Base, const std::remove_cv_t<decltype(Tag)>> {            \
+    element_return_type_t<const Dataset, std::remove_cv_t<decltype(Tag)>>      \
+    name() const {                                                             \
+      return static_cast<const Base *>(this)->template get(Tag);               \
     }                                                                          \
   };
 
@@ -60,10 +64,10 @@ GETTER_MIXIN(Data::Variance, variance)
 template <class Base, class T> struct GetterMixin<Base, Bin<T>> {
   // Lift the getters of Bin into the iterator.
   double left() const {
-    return static_cast<const Base *>(this)->template get<Bin<T>>().left();
+    return static_cast<const Base *>(this)->get(Bin<T>{}).left();
   }
   double right() const {
-    return static_cast<const Base *>(this)->template get<Bin<T>>().right();
+    return static_cast<const Base *>(this)->get(Bin<T>{}).right();
   }
 };
 
@@ -78,13 +82,21 @@ template <class D, class Tag> struct ref_type<D, Bin<Tag>> {
       std::pair<gsl::index,
                 gsl::span<const typename detail::value_type_t<Bin<Tag>>::type>>;
 };
-template <class D> struct ref_type<D, const Coord::Position> {
-  using type =
-      std::pair<gsl::span<const typename Coord::Position::type>,
-                gsl::span<const typename Coord::DetectorGrouping::type>>;
+
+// TODO The need for the cumbersome std::remove_cv_t<decltype(...)> is legacy,
+// we can probably refactor a lot of the helpers to be constexpr based on the
+// value, rather then using detail::value_type_t, etc.
+template <class D>
+struct ref_type<D, const std::remove_cv_t<decltype(Coord::Position)>> {
+  using type = std::pair<gsl::span<const typename std::remove_cv_t<decltype(
+                             Coord::Position)>::type>,
+                         gsl::span<const typename std::remove_cv_t<decltype(
+                             Coord::DetectorGrouping)>::type>>;
 };
-template <class D> struct ref_type<D, Data::StdDev> {
-  using type = typename ref_type<D, Data::Variance>::type;
+template <class D>
+struct ref_type<D, std::remove_cv_t<decltype(Data::StdDev)>> {
+  using type =
+      typename ref_type<D, std::remove_cv_t<decltype(Data::Variance)>>::type;
 };
 template <class D, class... Tags>
 struct ref_type<D, MDZipViewImpl<D, Tags...>> {
@@ -117,9 +129,13 @@ template <class D, class Tag> struct ItemHelper {
 
 // Note: Special case! Coord::Position can be either derived based on detectors,
 // or stored directly.
-template <class D> struct ItemHelper<D, const Coord::Position> {
-  static element_return_type_t<D, const Coord::Position>
-  get(const ref_type_t<D, const Coord::Position> &data, gsl::index index) {
+template <class D>
+struct ItemHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
+  static element_return_type_t<
+      D, const std::remove_cv_t<decltype(Coord::Position)>>
+  get(const ref_type_t<D, const std::remove_cv_t<decltype(Coord::Position)>>
+          &data,
+      gsl::index index) {
     if (data.second.empty())
       return data.first[index];
     if (data.second[index].empty())
@@ -132,10 +148,14 @@ template <class D> struct ItemHelper<D, const Coord::Position> {
   }
 };
 
-template <class D> struct ItemHelper<D, Data::StdDev> {
-  static element_return_type_t<D, Data::StdDev>
-  get(const ref_type_t<D, Data::StdDev> &data, gsl::index index) {
-    return std::sqrt(ItemHelper<D, Data::Variance>::get(data, index));
+template <class D>
+struct ItemHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
+  static element_return_type_t<D, std::remove_cv_t<decltype(Data::StdDev)>>
+  get(const ref_type_t<D, std::remove_cv_t<decltype(Data::StdDev)>> &data,
+      gsl::index index) {
+    return std::sqrt(
+        ItemHelper<D, std::remove_cv_t<decltype(Data::Variance)>>::get(data,
+                                                                       index));
   }
 };
 
@@ -175,7 +195,8 @@ template <class T, class TagT> struct MDLabelImpl {
 template <class TagT> auto MDRead(const TagT, const std::string &name = "") {
   if constexpr (detail::is_bins<TagT>::value)
     return MDLabelImpl<const typename TagT::type, TagT>{name};
-  else if constexpr (std::is_same_v<Data::StdDev, TagT>)
+  else if constexpr (std::is_same_v<std::remove_cv_t<decltype(Data::StdDev)>,
+                                    TagT>)
     return MDLabelImpl<const typename TagT::type, TagT>{name};
   else
     return MDLabelImpl<const typename TagT::type, const TagT>{name};
@@ -219,14 +240,14 @@ public:
       setIndex(index);
     }
 
-    template <class Tag>
-    element_return_type_t<D, maybe_const<Tag>> get() const {
+    template <class TagT>
+    element_return_type_t<D, maybe_const<TagT>> get(const TagT) const {
       // Should we allow passing const?
-      static_assert(!std::is_const<Tag>::value, "Do not use `const` qualifier "
+      static_assert(!std::is_const<TagT>::value, "Do not use `const` qualifier "
                                                 "for tags when accessing "
                                                 "MDZipView::iterator.");
-      constexpr auto variableIndex = tag_index<Tag>;
-      return ItemHelper<D, maybe_const<Tag>>::get(
+      constexpr auto variableIndex = tag_index<TagT>;
+      return ItemHelper<D, maybe_const<TagT>>::get(
           std::get<variableIndex>(*m_variables), m_index.get<variableIndex>());
     }
 
@@ -383,20 +404,21 @@ template <class D, class Tag> struct UnitHelper<D, Bin<Tag>> {
   }
 };
 
-template <class D> struct UnitHelper<D, const Coord::Position> {
+template <class D>
+struct UnitHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
-    if (dataset.contains(Coord::Position{}))
-      return dataset(Coord::Position{}).unit();
-    return dataset.get(Coord::DetectorInfo{})[0](Coord::Position{}).unit();
+    if (dataset.contains(Coord::Position))
+      return dataset(Coord::Position).unit();
+    return dataset.get(Coord::DetectorInfo)[0](Coord::Position).unit();
   }
 };
 
-template <class D> struct UnitHelper<D, Data::StdDev> {
+template <class D> struct UnitHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
-    return dataset(Data::Variance{}, name).unit();
+    return dataset(Data::Variance, name).unit();
   }
 };
 
@@ -433,26 +455,28 @@ template <class D, class Tag> struct DimensionHelper<D, Bin<Tag>> {
   }
 };
 
-template <class D> struct DimensionHelper<D, const Coord::Position> {
+template <class D>
+struct DimensionHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
     static_cast<void>(fixedDimensions);
     static_cast<void>(name);
-    if (dataset.contains(Coord::Position{}))
-      return dataset(Coord::Position{}).dimensions();
+    if (dataset.contains(Coord::Position))
+      return dataset(Coord::Position).dimensions();
     // Note: We do *not* return the dimensions of the nested positions in
     // Coord::DetectorInfo since those are not dimensions of the dataset.
-    return dataset(Coord::DetectorGrouping{}).dimensions();
+    return dataset(Coord::DetectorGrouping).dimensions();
   }
 };
 
-template <class D> struct DimensionHelper<D, Data::StdDev> {
+template <class D>
+struct DimensionHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
     static_cast<void>(fixedDimensions);
-    return dataset(Data::Variance{}, name).dimensions();
+    return dataset(Data::Variance, name).dimensions();
   }
 };
 
@@ -527,29 +551,34 @@ template <class D, class Tag> struct DataHelper<D, Bin<Tag>> {
   }
 };
 
-template <class D> struct DataHelper<D, const Coord::Position> {
+template <class D>
+struct DataHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
   static auto get(const Dataset &dataset, const Dimensions &,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
     // TODO Probably we should throw if there is Coord::Position as well as
     // Coord::DetectorGrouping/Coord::DetectorInfo. We should never have both, I
     // think.
-    if (dataset.contains(Coord::Position{}))
-      return ref_type_t<D, const Coord::Position>(
-          dataset.get(detail::value_type_t<Coord::Position>{}),
-          gsl::span<const typename Coord::DetectorGrouping::type>{});
-    const auto &detInfo = dataset.get(Coord::DetectorInfo{})[0];
-    return ref_type_t<D, const Coord::Position>(
-        detInfo.get(detail::value_type_t<Coord::Position>{}),
-        dataset.get(detail::value_type_t<Coord::DetectorGrouping>{}));
+    if (dataset.contains(Coord::Position))
+      return ref_type_t<D, const std::remove_cv_t<decltype(Coord::Position)>>(
+          dataset.get(detail::value_type_t<
+                      std::remove_cv_t<decltype(Coord::Position)>>{}),
+          gsl::span<const typename std::remove_cv_t<decltype(
+              Coord::DetectorGrouping)>::type>{});
+    const auto &detInfo = dataset.get(Coord::DetectorInfo)[0];
+    return ref_type_t<D, const std::remove_cv_t<decltype(Coord::Position)>>(
+        detInfo.get(detail::value_type_t<
+                    std::remove_cv_t<decltype(Coord::Position)>>{}),
+        dataset.get(detail::value_type_t<
+                    std::remove_cv_t<decltype(Coord::DetectorGrouping)>>{}));
   }
 };
 
-template <class D> struct DataHelper<D, Data::StdDev> {
+template <class D> struct DataHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
   static auto get(D &dataset, const Dimensions &iterationDimensions,
                   const std::string &name = std::string{}) {
-    return DataHelper<D, Data::Variance>::get(dataset, iterationDimensions,
-                                              name);
+    return DataHelper<D, std::remove_cv_t<decltype(Data::Variance)>>::get(
+        dataset, iterationDimensions, name);
   }
 };
 

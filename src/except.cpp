@@ -57,27 +57,27 @@ std::string to_string(const Dim dim) {
 
 std::string to_string(const Tag tag) {
   switch (tag.value()) {
-  case Coord::Tof{}.value():
+  case Coord::Tof.value():
     return "Coord::Tof";
-  case Coord::Energy{}.value():
+  case Coord::Energy.value():
     return "Coord::Energy";
-  case Coord::DeltaE{}.value():
+  case Coord::DeltaE.value():
     return "Coord::DeltaE";
-  case Coord::X{}.value():
+  case Coord::X.value():
     return "Coord::X";
-  case Coord::Y{}.value():
+  case Coord::Y.value():
     return "Coord::Y";
-  case Coord::Z{}.value():
+  case Coord::Z.value():
     return "Coord::Z";
-  case Coord::Position{}.value():
+  case Coord::Position.value():
     return "Coord::Position";
-  case Coord::DetectorGrouping{}.value():
+  case Coord::DetectorGrouping.value():
     return "Coord::DetectorGrouping";
-  case Data::Value{}.value():
+  case Data::Value.value():
     return "Data::Value";
-  case Data::Variance{}.value():
+  case Data::Variance.value():
     return "Data::Variance";
-  case Data::Int{}.value():
+  case Data::Int.value():
     return "Data::Int";
   default:
     return "<unknown tag>";

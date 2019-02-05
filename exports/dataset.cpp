@@ -86,8 +86,10 @@ template <class Tag> struct MakeVariable {
 void insertCoord(
     Dataset &self, const Tag tag,
     const std::tuple<const std::vector<Dim> &, py::array &> &data) {
-  auto var = Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof, Coord::Mask,
-                  Coord::SpectrumNumber>::apply<MakeVariable>(tag, data);
+  auto var =
+      Call<decltype(Coord::X), decltype(Coord::Y), decltype(Coord::Z),
+           decltype(Coord::Tof), decltype(Coord::Mask),
+           decltype(Coord::SpectrumNumber)>::apply<MakeVariable>(tag, data);
   self.insert(std::move(var));
 }
 
@@ -95,9 +97,8 @@ template <class T>
 void insertCoordT(
     Dataset &self, const Tag tag,
     const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
-  auto var =
-      Call<Coord::X, Coord::Y, Coord::Z, Coord::Tof>::apply<MakeVariable>(tag,
-                                                                          data);
+  auto var = Call<decltype(Coord::X), decltype(Coord::Y), decltype(Coord::Z),
+                  decltype(Coord::Tof)>::apply<MakeVariable>(tag, data);
   self.insert(std::move(var));
 }
 
@@ -116,8 +117,10 @@ void insertCoord1D(Dataset &self, const Tag,
 void insertNamed(
     Dataset &self, const std::pair<Tag, const std::string &> &key,
     const std::tuple<const std::vector<Dim> &, py::array_t<double> &> &data) {
-  auto var = Call<Data::Value, Data::Variance>::apply<MakeVariable>(
-      std::get<Tag>(key), data);
+  auto var =
+      Call<decltype(Data::Value),
+           decltype(Data::Variance)>::apply<MakeVariable>(std::get<Tag>(key),
+                                                          data);
   var.setName(std::get<const std::string &>(key));
   self.insert(std::move(var));
 }
@@ -300,26 +303,26 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Tag>(m, "Tag").def(py::self == py::self);
 
   auto data_tags = m.def_submodule("Data");
-  py::class_<Data::Value, Tag>(data_tags, "_Value");
-  py::class_<Data::Variance, Tag>(data_tags, "_Variance");
-  data_tags.attr("Value") = Data::Value{};
-  data_tags.attr("Variance") = Data::Variance{};
+  // py::class_<Data::Value, Tag>(data_tags, "_Value");
+  // py::class_<Data::Variance, Tag>(data_tags, "_Variance");
+  data_tags.attr("Value") = Data::Value;
+  data_tags.attr("Variance") = Data::Variance;
 
   auto coord_tags = m.def_submodule("Coord");
-  py::class_<Coord::Mask, Tag>(coord_tags, "_Mask");
-  py::class_<Coord::X, Tag>(coord_tags, "_X");
-  py::class_<Coord::Y, Tag>(coord_tags, "_Y");
-  py::class_<Coord::Z, Tag>(coord_tags, "_Z");
-  py::class_<Coord::Tof, Tag>(coord_tags, "_Tof");
-  py::class_<Coord::RowLabel, Tag>(coord_tags, "_RowLabel");
-  py::class_<Coord::SpectrumNumber, Tag>(coord_tags, "_SpectrumNumber");
-  coord_tags.attr("Mask") = Coord::Mask{};
-  coord_tags.attr("X") = Coord::X{};
-  coord_tags.attr("Y") = Coord::Y{};
-  coord_tags.attr("Z") = Coord::Z{};
-  coord_tags.attr("Tof") = Coord::Tof{};
-  coord_tags.attr("RowLabel") = Coord::RowLabel{};
-  coord_tags.attr("SpectrumNumber") = Coord::SpectrumNumber{};
+  // py::class_<Coord::Mask, Tag>(coord_tags, "_Mask");
+  // py::class_<Coord::X, Tag>(coord_tags, "_X");
+  // py::class_<Coord::Y, Tag>(coord_tags, "_Y");
+  // py::class_<Coord::Z, Tag>(coord_tags, "_Z");
+  // py::class_<Coord::Tof, Tag>(coord_tags, "_Tof");
+  // py::class_<Coord::RowLabel, Tag>(coord_tags, "_RowLabel");
+  // py::class_<Coord::SpectrumNumber, Tag>(coord_tags, "_SpectrumNumber");
+  coord_tags.attr("Mask") = Coord::Mask;
+  coord_tags.attr("X") = Coord::X;
+  coord_tags.attr("Y") = Coord::Y;
+  coord_tags.attr("Z") = Coord::Z;
+  coord_tags.attr("Tof") = Coord::Tof;
+  coord_tags.attr("RowLabel") = Coord::RowLabel;
+  coord_tags.attr("SpectrumNumber") = Coord::SpectrumNumber;
 
   declare_span<double>(m, "double");
   declare_span<const double>(m, "double_const");
@@ -348,12 +351,12 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Variable>(m, "Variable")
       .def(py::init(&detail::makeVariableDefaultInit))
-      .def(py::init(&detail::makeVariable<Coord::Mask>))
-      .def(py::init(&detail::makeVariable<Coord::X>))
-      .def(py::init(&detail::makeVariable<Coord::Y>))
-      .def(py::init(&detail::makeVariable<Coord::Z>))
-      .def(py::init(&detail::makeVariable<Data::Value>))
-      .def(py::init(&detail::makeVariable<Data::Variance>))
+      .def(py::init(&detail::makeVariable<Coord::Mask_t>))
+      .def(py::init(&detail::makeVariable<Coord::X_t>))
+      .def(py::init(&detail::makeVariable<Coord::Y_t>))
+      .def(py::init(&detail::makeVariable<Coord::Z_t>))
+      .def(py::init(&detail::makeVariable<Data::Value_t>))
+      .def(py::init(&detail::makeVariable<Data::Variance_t>))
       .def(py::init<const VariableSlice &>())
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
@@ -395,8 +398,8 @@ PYBIND11_MODULE(dataset, m) {
            })
       // TODO Make these using py::array instead of py::array_t, then cast based
       // on tag?
-      .def("__setitem__", &setVariableSlice<Data::Value>)
-      .def("__setitem__", &setVariableSliceRange<Data::Value>)
+      .def("__setitem__", &setVariableSlice<Data::Value_t>)
+      .def("__setitem__", &setVariableSliceRange<Data::Value_t>)
       .def_property_readonly(
           "numpy",
           &as_py_array_t_variant<double, float, int64_t, int32_t, char>)
@@ -451,8 +454,8 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
-      .def("__setitem__", detail::setData<Data::Value, DatasetSlice>)
-      .def("__setitem__", detail::setData<Data::Variance, DatasetSlice>)
+      .def("__setitem__", detail::setData<Data::Value_t, DatasetSlice>)
+      .def("__setitem__", detail::setData<Data::Variance_t, DatasetSlice>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
@@ -518,20 +521,20 @@ PYBIND11_MODULE(dataset, m) {
              throw std::runtime_error("Non-self-assignment of Dataset slices "
                                       "is not implemented yet.\n");
            })
-      .def("__setitem__", detail::setData<Data::Value, Dataset>)
-      .def("__setitem__", detail::setData<Data::Variance, Dataset>)
+      .def("__setitem__", detail::setData<Data::Value_t, Dataset>)
+      .def("__setitem__", detail::setData<Data::Variance_t, Dataset>)
       .def("__setitem__", detail::insertCoord)
       // TODO: Overloaded to cover non-numpy data such as a scalar value. This
       // is handled by automatic conversion by PYbind11 when using py::array_t.
       // See also the py::array::forcecast argument, we need to minimize
       // implicit (and potentially expensive conversion).
       .def("__setitem__", detail::insertCoordT<double>)
-      .def("__setitem__", detail::insertCoord1D<Coord::RowLabel>)
+      .def("__setitem__", detail::insertCoord1D<Coord::RowLabel_t>)
       .def("__setitem__", detail::insertNamed)
-      .def("__setitem__", detail::insert<Data::Value, Variable>)
-      .def("__setitem__", detail::insert<Data::Variance, Variable>)
-      .def("__setitem__", detail::insert<Data::Value, VariableSlice>)
-      .def("__setitem__", detail::insert<Data::Variance, VariableSlice>)
+      .def("__setitem__", detail::insert<Data::Value_t, Variable>)
+      .def("__setitem__", detail::insert<Data::Variance_t, Variable>)
+      .def("__setitem__", detail::insert<Data::Value_t, VariableSlice>)
+      .def("__setitem__", detail::insert<Data::Variance_t, VariableSlice>)
       .def("__setitem__", detail::insertDefaultInit)
       // TODO Make sure we have all overloads covered to avoid implicit
       // conversion of DatasetSlice to Dataset.
