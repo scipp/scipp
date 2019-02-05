@@ -306,11 +306,29 @@ template <class... Ts> using MDZipView = MDZipViewImpl<Dataset, Ts...>;
 template <class... Ts>
 using ConstMDZipView = MDZipViewImpl<const Dataset, Ts...>;
 
-template <class... Labels>
-auto zipMD(const Dataset &d,
-           Labels... labels) {
-  // TODO Names not supported yet.
-  return ConstMDZipView<typename Labels::tag...>(d);
+template <class T> const std::string &commonName(const T &label) {
+  return label.name;
+}
+
+template <class T, class... Ts>
+const std::string &commonName(const T &label, const Ts &... labels) {
+  const auto &name = commonName(labels...);
+  if (label.name.empty())
+    return name;
+  if (name.empty() || (name == label.name))
+    return label.name;
+  throw std::runtime_error(
+      "MDZipView currently only supports a single variable name.");
+}
+
+template <class... Labels> auto zipMD(const Dataset &d, Labels... labels) {
+  // TODO Currently this will only extract a single common name and the
+  // consistency checking is not complete. Need to refactor MDZipView to support
+  // multiple names.
+  return ConstMDZipView<typename Labels::tag...>(d, commonName(labels...));
+}
+template <class... Labels> auto zipMD(Dataset &d, Labels... labels) {
+  return MDZipView<typename Labels::tag...>(d, commonName(labels...));
 }
 
 // TODO Can we put fixedDimensions into the label?
@@ -318,6 +336,11 @@ template <class... Labels>
 auto zipMD(const Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
            Labels... labels) {
   return ConstMDZipView<typename Labels::tag...>(d, fixedDimensions);
+}
+template <class... Labels>
+auto zipMD(Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
+           Labels... labels) {
+  return MDZipView<typename Labels::tag...>(d, fixedDimensions);
 }
 
 template <class D, class Tag> struct UnitHelper {
