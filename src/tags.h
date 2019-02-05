@@ -372,6 +372,16 @@ make_coordinate_dimension(const std::tuple<Ts...> &) {
 constexpr auto isDimensionCoord = make_is_dimension_coordinate(detail::Tags{});
 constexpr auto coordDimension = make_coordinate_dimension(detail::Tags{});
 
+namespace detail {
+template <class... Ts>
+constexpr std::array<Unit::Id, std::tuple_size<detail::Tags>::value>
+make_unit_table(const std::tuple<Ts...> &) {
+  return {Ts::unit...};
+}
+constexpr auto unit_table = make_unit_table(detail::Tags{});
+} // namespace detail
+constexpr auto unit(const Tag tag) { return detail::unit_table[tag.value()]; }
+
 class DataBin {
 public:
   DataBin(const double left, const double right)

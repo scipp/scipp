@@ -280,20 +280,16 @@ private:
   deep_ptr<VariableConcept> m_object;
 };
 
-// TODO TagT template argument is not actually required, provided that we
-// refactor tags so unit can be obtained from the `Tag` base class. If we do
-// this, we can probably also unify a good amount of code in the Python exports,
-// which is currently requiring exporting for all tags for many methods.
-template <class T, class TagT>
-Variable makeVariable(TagT tag, const Dimensions &dimensions) {
-  return Variable(tag, TagT::unit, std::move(dimensions),
+template <class T>
+Variable makeVariable(Tag tag, const Dimensions &dimensions) {
+  return Variable(tag, unit(tag), std::move(dimensions),
                   Vector<T>(dimensions.volume()));
 }
 
-template <class T, class TagT, class T2>
-Variable makeVariable(TagT tag, const Dimensions &dimensions,
+template <class T, class T2>
+Variable makeVariable(Tag tag, const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
-  return Variable(tag, TagT::unit, std::move(dimensions),
+  return Variable(tag, unit(tag), std::move(dimensions),
                   Vector<T>(values.begin(), values.end()));
 }
 
