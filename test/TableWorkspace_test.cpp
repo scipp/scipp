@@ -33,7 +33,7 @@ TEST(TableWorkspace, basics) {
   table.insert(Data::String{}, "", {Dim::Row, 3}, 3);
 
   // Modify table with know columns.
-  MDZipView<const Data::Value, Data::String> view(table);
+  auto view = zipMD(table, MDRead(Data::Value{}), MDWrite(Data::String{}));
   for (auto &item : view)
     if (item.value() < 0.0)
       item.get<Data::String>() = "why is this negative?";

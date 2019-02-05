@@ -42,7 +42,7 @@ Dataset tofToEnergy(const Dataset &d) {
   auto physicalConstants =
       boost::units::si::constants::codata::m_n / (2.0 * meV * mus2_to_s2);
 
-  ConstMDZipView<const Coord::Position> specPos(d);
+  auto specPos = zipMD(d, MDRead(Coord::Position{}));
   const auto factor = [&](const auto &item) {
     const auto &pos = item.template get<Coord::Position>();
     double l_total = l1 + (samplePos - pos).norm();
@@ -119,7 +119,7 @@ Dataset tofToDeltaE(const Dataset &d) {
                    [&l1](const double Ei) { return l1 / sqrt(Ei); });
 
     scale.setDimensions(dims);
-    ConstMDZipView<Coord::Position> specPos(d);
+    auto specPos = zipMD(d, MDRead(Coord::Position{}));
     std::transform(specPos.begin(), specPos.end(),
                    scale.get<Data::Value>().begin(), [&](const auto &item) {
                      const auto &pos = item.template get<Coord::Position>();
@@ -131,7 +131,7 @@ Dataset tofToDeltaE(const Dataset &d) {
 
     tofShift.setDimensions(dims);
     // Ef can be different for every spectrum so we access it also via a view.
-    ConstMDZipView<Coord::Position, Coord::Ef> geometry(d);
+    auto geometry = zipMD(d, MDRead(Coord::Position{}), MDRead(Coord::Ef{}));
     std::transform(geometry.begin(), geometry.end(),
                    tofShift.get<Data::Value>().begin(), [&](const auto &item) {
                      const auto &pos = item.template get<Coord::Position>();

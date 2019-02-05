@@ -306,10 +306,6 @@ private:
       m_variables;
 };
 
-template <class... Ts> using MDZipView = MDZipViewImpl<Dataset, Ts...>;
-template <class... Ts>
-using ConstMDZipView = MDZipViewImpl<const Dataset, Ts...>;
-
 inline const std::string &commonName() {
   static std::string empty;
   return empty;
@@ -333,24 +329,26 @@ template <class... Labels> auto zipMD(const Dataset &d, Labels... labels) {
   // TODO Currently this will only extract a single common name and the
   // consistency checking is not complete. Need to refactor MDZipView to support
   // multiple names.
-  return ConstMDZipView<typename Labels::tag...>(d, commonName(labels...));
+  return MDZipViewImpl<const Dataset, typename Labels::tag...>(
+      d, commonName(labels...));
 }
 template <class... Labels> auto zipMD(Dataset &d, Labels... labels) {
-  return MDZipView<typename Labels::tag...>(d, commonName(labels...));
+  return MDZipViewImpl<Dataset, typename Labels::tag...>(d,
+                                                         commonName(labels...));
 }
 
 // TODO Can we put fixedDimensions into the label?
 template <class... Labels>
 auto zipMD(const Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
            Labels... labels) {
-  return ConstMDZipView<typename Labels::tag...>(d, commonName(labels...),
-                                                 fixedDimensions);
+  return MDZipViewImpl<const Dataset, typename Labels::tag...>(
+      d, commonName(labels...), fixedDimensions);
 }
 template <class... Labels>
 auto zipMD(Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
            Labels... labels) {
-  return MDZipView<typename Labels::tag...>(d, commonName(labels...),
-                                            fixedDimensions);
+  return MDZipViewImpl<Dataset, typename Labels::tag...>(
+      d, commonName(labels...), fixedDimensions);
 }
 
 template <class... Labels> auto MDNested(Labels... labels) {

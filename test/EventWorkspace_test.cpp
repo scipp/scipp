@@ -98,8 +98,10 @@ TEST(EventWorkspace, basics) {
   // Note that we could determine the correct X axis automatically, since the
   // event data type/unit imply which coordinate to use, in this case events
   // have type Data::Tof so the axis is Coord::Tof.
-  using Histogram = MDZipView<Bin<Coord::Tof>, Data::Value, Data::Variance>;
-  MDZipView<Histogram, const Data::Events> view(d, {Dim::Tof});
+  auto histLabel = MDNested(MDRead(Bin<Coord::Tof>{}), MDWrite(Data::Value{}),
+                            MDWrite(Data::Variance{}));
+  using Histogram = decltype(histLabel)::type;
+  auto view = zipMD(d, {Dim::Tof}, histLabel, MDRead(Data::Events{}));
   for (const auto &item : view) {
     const auto &hist = item.get<Histogram>();
     const auto &events = item.get<Data::Events>();
