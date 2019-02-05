@@ -12,7 +12,6 @@
 #include <gsl/gsl_util>
 #include <gsl/span>
 
-#include "cow_ptr.h"
 #include "dimensions.h"
 #include "tags.h"
 #include "unit.h"
@@ -33,12 +32,8 @@ class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
-  // This is dropped into a cow_ptr so we prefer shared_ptr over unique_ptr.
-  virtual std::shared_ptr<VariableConcept> clone() const = 0;
-  virtual std::unique_ptr<VariableConcept> cloneUnique() const = 0;
+  virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual std::unique_ptr<VariableConcept>
-  cloneMutable(VariableConcept &mutableData) const = 0;
-  virtual std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() = 0;
@@ -79,7 +74,7 @@ template <class T> std::unique_ptr<T> clone(const T &other) {
 
 template <>
 inline std::unique_ptr<VariableConcept> clone(const VariableConcept &other) {
-  return other.cloneUnique();
+  return other.clone();
 }
 } // namespace detail
 
@@ -211,7 +206,7 @@ public:
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
   VariableConcept &data() && = delete;
-  VariableConcept &data() & { return m_object.access(); }
+  VariableConcept &data() & { return *m_object; }
 
   Tag tag() const { return m_tag; }
   bool isCoord() const {
@@ -224,10 +219,6 @@ public:
   bool isData() const { return !isCoord() && !isAttr(); }
 
   template <class Tag> auto get() const {
-    static_assert(std::is_const<Tag>::value,
-                  "Variable is `const`, must use const-qualified tag in call "
-                  "to `get`, e.g., `get<const Coord::X>()` instead of "
-                  "`get<Coord::X>()`");
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).
@@ -236,13 +227,7 @@ public:
     return gsl::make_span(cast<typename Tag::type>());
   }
 
-  template <class Tag>
-  auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
-    return const_cast<const Variable *>(this)->get<Tag>();
-  }
-
-  template <class Tag>
-  auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+  template <class Tag> auto get() {
     if (Tag{} != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return gsl::make_span(cast<typename Tag::type>());
@@ -280,12 +265,12 @@ private:
 
   // Used by ZipView. Need to find a better way instead of having everyone as
   // friend.
-  Dimensions &mutableDimensions() { return m_object.access().m_dimensions; }
+  Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
   Tag m_tag;
   Unit m_unit;
   deep_ptr<std::string> m_name;
-  cow_ptr<VariableConcept> m_object;
+  deep_ptr<VariableConcept> m_object;
 };
 
 /// Non-mutable view into (a subset of) a Variable.
@@ -363,11 +348,6 @@ public:
   // methods. The data is owned by the underlying variable so it will not be
   // deleted even if *this is a temporary and gets deleted.
   template <class Tag> auto get() const {
-    static_assert(
-        std::is_const<Tag>::value,
-        "VariableSlice is `const`, must use const-qualified tag in call "
-        "to `get`, e.g., `get<const Coord::X>()` instead of "
-        "`get<Coord::X>()`");
     if (Tag{} != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
@@ -397,17 +377,23 @@ class VariableSlice : public ConstVariableSlice {
 public:
   explicit VariableSlice(Variable &variable)
       : ConstVariableSlice(variable), m_mutableVariable(&variable) {}
+  // Note that we use the basic constructor of ConstVariableSlice to avoid
+  // creation of a const m_view, which would be overwritten immediately.
   VariableSlice(Variable &variable, const Dimensions &dims)
-      : ConstVariableSlice(variable, dims), m_mutableVariable(&variable) {}
+      : ConstVariableSlice(variable), m_mutableVariable(&variable) {
+    m_view = variable.data().reshape(dims);
+  }
   VariableSlice(const VariableSlice &other) = default;
   VariableSlice(Variable &variable, const Dim dim, const gsl::index begin,
                 const gsl::index end = -1)
-      : ConstVariableSlice(variable, dim, begin, end),
-        m_mutableVariable(&variable) {}
+      : ConstVariableSlice(variable), m_mutableVariable(&variable) {
+    m_view = variable.data().makeView(dim, begin, end);
+  }
   VariableSlice(const VariableSlice &slice, const Dim dim,
                 const gsl::index begin, const gsl::index end = -1)
-      : ConstVariableSlice(slice, dim, begin, end),
-        m_mutableVariable(slice.m_mutableVariable) {}
+      : ConstVariableSlice(slice), m_mutableVariable(slice.m_mutableVariable) {
+    m_view = slice.data().makeView(dim, begin, end);
+  }
 
   VariableSlice operator()(const Dim dim, const gsl::index begin,
                            const gsl::index end = -1) const {
@@ -421,23 +407,15 @@ public:
   using ConstVariableSlice::data;
   using ConstVariableSlice::get;
 
-  VariableConcept &data() && = delete;
-  VariableConcept &data() & {
+  VariableConcept &data() const && = delete;
+  VariableConcept &data() const & {
     if (!m_view)
       return m_mutableVariable->data();
-    if (m_view->isConstView())
-      m_view = m_view->cloneMutable(m_mutableVariable->data());
     return *m_view;
   }
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
-  template <class Tag>
-  auto get(std::enable_if_t<std::is_const<Tag>::value> * = nullptr) {
-    return const_cast<const VariableSlice *>(this)->get<Tag>();
-  }
-
-  template <class Tag>
-  auto get(std::enable_if_t<!std::is_const<Tag>::value> * = nullptr) {
+  template <class Tag> auto get() const {
     if (Tag{} != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
     return this->template cast<typename Tag::type>();
@@ -457,31 +435,28 @@ public:
   // the Python exports to return `a` after calling `a += b` instead of
   // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
   // (would this suffer from the same issue?).
-  template <class T> VariableSlice assign(const T &other);
-  VariableSlice operator+=(const Variable &other);
-  VariableSlice operator+=(const ConstVariableSlice &other);
-  VariableSlice operator+=(const double value);
-  VariableSlice operator-=(const Variable &other);
-  VariableSlice operator-=(const ConstVariableSlice &other);
-  VariableSlice operator-=(const double value);
-  VariableSlice operator*=(const Variable &other);
-  VariableSlice operator*=(const ConstVariableSlice &other);
-  VariableSlice operator*=(const double value);
-  VariableSlice operator/=(const Variable &other);
-  VariableSlice operator/=(const ConstVariableSlice &other);
-  VariableSlice operator/=(const double value);
+  template <class T> VariableSlice assign(const T &other) const;
+  VariableSlice operator+=(const Variable &other) const;
+  VariableSlice operator+=(const ConstVariableSlice &other) const;
+  VariableSlice operator+=(const double value) const;
+  VariableSlice operator-=(const Variable &other) const;
+  VariableSlice operator-=(const ConstVariableSlice &other) const;
+  VariableSlice operator-=(const double value) const;
+  VariableSlice operator*=(const Variable &other) const;
+  VariableSlice operator*=(const ConstVariableSlice &other) const;
+  VariableSlice operator*=(const double value) const;
+  VariableSlice operator/=(const Variable &other) const;
+  VariableSlice operator/=(const ConstVariableSlice &other) const;
+  VariableSlice operator/=(const double value) const;
 
-  void setUnit(const Unit &unit);
+  void setUnit(const Unit &unit) const;
 
 private:
   friend class Variable;
   template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
-  // Special version creating const view from mutable view. Note that this does
-  // not return a reference but by value.
-  template <class T> VariableView<const T> cast() const;
-  template <class T> VariableView<T> cast();
+  template <class T> VariableView<T> cast() const;
 
   Variable *m_mutableVariable;
 };

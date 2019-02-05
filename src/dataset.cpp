@@ -318,9 +318,9 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
             // view, not a span, i.e., it is less efficient. May need to do this
             // differently for optimal performance.
             auto v1 = var1.template get<Data::Value>();
-            const auto v2 = var2.template get<const Data::Value>();
+            const auto v2 = var2.template get<Data::Value>();
             auto e1 = error1.template get<Data::Variance>();
-            const auto e2 = error2.template get<const Data::Variance>();
+            const auto e2 = error2.template get<Data::Variance>();
             // TODO Need to ensure that data is contiguous!
             aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
                               e2.data());
@@ -494,18 +494,26 @@ DatasetSlice DatasetSlice::operator*=(const double value) {
   return *this;
 }
 
-Dataset operator+(Dataset a, const Dataset &b) { return a += b; }
-Dataset operator-(Dataset a, const Dataset &b) { return a -= b; }
-Dataset operator*(Dataset a, const Dataset &b) { return a *= b; }
-Dataset operator+(Dataset a, const ConstDatasetSlice &b) { return a += b; }
-Dataset operator-(Dataset a, const ConstDatasetSlice &b) { return a -= b; }
-Dataset operator*(Dataset a, const ConstDatasetSlice &b) { return a *= b; }
-Dataset operator+(Dataset a, const double b) { return a += b; }
-Dataset operator-(Dataset a, const double b) { return a -= b; }
-Dataset operator*(Dataset a, const double b) { return a *= b; }
-Dataset operator+(const double a, Dataset b) { return b += a; }
-Dataset operator-(const double a, Dataset b) { return -(b -= a); }
-Dataset operator*(const double a, Dataset b) { return b *= a; }
+// Note: The std::move here is necessary because RVO does not work for variables
+// that are function parameters.
+Dataset operator+(Dataset a, const Dataset &b) { return std::move(a += b); }
+Dataset operator-(Dataset a, const Dataset &b) { return std::move(a -= b); }
+Dataset operator*(Dataset a, const Dataset &b) { return std::move(a *= b); }
+Dataset operator+(Dataset a, const ConstDatasetSlice &b) {
+  return std::move(a += b);
+}
+Dataset operator-(Dataset a, const ConstDatasetSlice &b) {
+  return std::move(a -= b);
+}
+Dataset operator*(Dataset a, const ConstDatasetSlice &b) {
+  return std::move(a *= b);
+}
+Dataset operator+(Dataset a, const double b) { return std::move(a += b); }
+Dataset operator-(Dataset a, const double b) { return std::move(a -= b); }
+Dataset operator*(Dataset a, const double b) { return std::move(a *= b); }
+Dataset operator+(const double a, Dataset b) { return std::move(b += a); }
+Dataset operator-(const double a, Dataset b) { return std::move(-(b -= a)); }
+Dataset operator*(const double a, Dataset b) { return std::move(b *= a); }
 
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {
@@ -628,7 +636,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   // TODO Is there are more generic way to find "histogrammable" data, not
   // specific to (neutron) events? Something like Data::ValueVector, i.e., any
   // data variable that contains a vector of values at each point?
-  const auto &events = var.get<const Data::Events>();
+  const auto &events = var.get<Data::Events>();
   // TODO This way of handling events (and their units) as nested Dataset feels
   // a bit unwieldy. Would it be a better option to store TOF (or any derived
   // values) as simple vectors in Data::Events? There would be a separate
@@ -673,7 +681,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   const auto edges = getView<double>(coord, dims);
   auto edge = edges.begin();
   for (const auto &eventList : events) {
-    const auto tofs = eventList.get<const Data::Tof>();
+    const auto tofs = eventList.get<Data::Tof>();
     if (!std::is_sorted(tofs.begin(), tofs.end()))
       throw std::runtime_error(
           "TODO: Histograms can currently only be created from sorted data.");
@@ -715,7 +723,7 @@ Dataset histogram(const Dataset &d, const Variable &coord) {
 // datasets that represent events lists, using ZipView.
 template <class Tag> struct Sort {
   static Dataset apply(const Dataset &d, const std::string &name) {
-    auto const_axis = d.get<const Tag>(name);
+    auto const_axis = d.get<Tag>(name);
     if (d(Tag{}, name).dimensions().count() != 1)
       throw std::runtime_error("Axis for sorting must be 1-dimensional.");
     const auto sortDim = d(Tag{}, name).dimensions().label(0);

@@ -69,6 +69,10 @@ std::string to_string(const Tag tag) {
     return "Coord::Y";
   case Coord::Z{}.value():
     return "Coord::Z";
+  case Coord::Position{}.value():
+    return "Coord::Position";
+  case Coord::DetectorGrouping{}.value():
+    return "Coord::DetectorGrouping";
   case Data::Value{}.value():
     return "Data::Value";
   case Data::Variance{}.value():

@@ -7,7 +7,7 @@
 
 using namespace detail;
 
-template <class Tag> struct UnitHelper {
+template <class D, class Tag> struct UnitHelper {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
     if (is_coord<Tag>)
@@ -17,7 +17,7 @@ template <class Tag> struct UnitHelper {
   }
 };
 
-template <class Tag> struct UnitHelper<Bin<Tag>> {
+template <class D, class Tag> struct UnitHelper<D, Bin<Tag>> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
     static_assert(is_coord<Tag>,
@@ -27,7 +27,7 @@ template <class Tag> struct UnitHelper<Bin<Tag>> {
   }
 };
 
-template <> struct UnitHelper<const Coord::Position> {
+template <class D> struct UnitHelper<D, const Coord::Position> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
@@ -38,21 +38,22 @@ template <> struct UnitHelper<const Coord::Position> {
   }
 };
 
-template <> struct UnitHelper<Data::StdDev> {
+template <class D> struct UnitHelper<D, Data::StdDev> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
     return dataset(Data::Variance{}, name).unit();
   }
 };
 
-template <class... Tags> struct UnitHelper<MDZipViewImpl<Tags...>> {
-  static detail::unit_t<MDZipViewImpl<Tags...>>
+template <class D, class... Tags>
+struct UnitHelper<D, MDZipViewImpl<D, Tags...>> {
+  static detail::unit_t<MDZipViewImpl<D, Tags...>>
   get(const Dataset &dataset, const std::string &name = std::string{}) {
-    return std::make_tuple(UnitHelper<Tags>::get(dataset, name)...);
+    return std::make_tuple(UnitHelper<D, Tags>::get(dataset, name)...);
   }
 };
 
-template <class Tag> struct DimensionHelper {
+template <class D, class Tag> struct DimensionHelper {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
@@ -65,7 +66,7 @@ template <class Tag> struct DimensionHelper {
   }
 };
 
-template <class Tag> struct DimensionHelper<Bin<Tag>> {
+template <class D, class Tag> struct DimensionHelper<D, Bin<Tag>> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
@@ -77,7 +78,7 @@ template <class Tag> struct DimensionHelper<Bin<Tag>> {
   }
 };
 
-template <> struct DimensionHelper<const Coord::Position> {
+template <class D> struct DimensionHelper<D, const Coord::Position> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
@@ -91,7 +92,7 @@ template <> struct DimensionHelper<const Coord::Position> {
   }
 };
 
-template <> struct DimensionHelper<Data::StdDev> {
+template <class D> struct DimensionHelper<D, Data::StdDev> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
@@ -100,7 +101,8 @@ template <> struct DimensionHelper<Data::StdDev> {
   }
 };
 
-template <class... Tags> struct DimensionHelper<MDZipViewImpl<Tags...>> {
+template <class D, class... Tags>
+struct DimensionHelper<D, MDZipViewImpl<D, Tags...>> {
   static Dimensions getHelper(std::vector<Dimensions> variableDimensions,
                               const std::set<Dim> &fixedDimensions) {
     // Remove fixed dimensions *before* finding largest --- outer iteration must
@@ -135,13 +137,13 @@ template <class... Tags> struct DimensionHelper<MDZipViewImpl<Tags...>> {
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
     return getHelper(
-        {DimensionHelper<Tags>::get(dataset, fixedDimensions, name)...},
+        {DimensionHelper<D, Tags>::get(dataset, fixedDimensions, name)...},
         fixedDimensions);
   }
 };
 
-template <class Tag> struct DataHelper {
-  static auto get(MaybeConstDataset<Tag> &dataset, const Dimensions &,
+template <class D, class Tag> struct DataHelper {
+  static auto get(D &dataset, const Dimensions &,
                   const std::string &name = std::string{}) {
     if (is_coord<Tag>)
       return dataset.template get<detail::value_type_t<Tag>>();
@@ -150,7 +152,7 @@ template <class Tag> struct DataHelper {
   }
 };
 
-template <class Tag> struct DataHelper<Bin<Tag>> {
+template <class D, class Tag> struct DataHelper<D, Bin<Tag>> {
   static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
                   const std::string &name = std::string{}) {
     static_cast<void>(iterationDimensions);
@@ -165,12 +167,12 @@ template <class Tag> struct DataHelper<Bin<Tag>> {
       offset *= dims.size(i);
     }
 
-    return ref_type_t<Bin<Tag>>{offset,
-                                dataset.get<const detail::value_type_t<Tag>>()};
+    return ref_type_t<D, Bin<Tag>>{
+        offset, dataset.get<const detail::value_type_t<Tag>>()};
   }
 };
 
-template <> struct DataHelper<const Coord::Position> {
+template <class D> struct DataHelper<D, const Coord::Position> {
   static auto get(const Dataset &dataset, const Dimensions &,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
@@ -178,43 +180,43 @@ template <> struct DataHelper<const Coord::Position> {
     // Coord::DetectorGrouping/Coord::DetectorInfo. We should never have both, I
     // think.
     if (dataset.contains(Coord::Position{}))
-      return ref_type_t<const Coord::Position>(
-          dataset.get<detail::value_type_t<const Coord::Position>>(),
+      return ref_type_t<D, const Coord::Position>(
+          dataset.get<detail::value_type_t<Coord::Position>>(),
           gsl::span<const typename Coord::DetectorGrouping::type>{});
-    const auto &detInfo = dataset.get<const Coord::DetectorInfo>()[0];
-    return ref_type_t<const Coord::Position>(
-        detInfo.get<detail::value_type_t<const Coord::Position>>(),
-        dataset.get<detail::value_type_t<const Coord::DetectorGrouping>>());
+    const auto &detInfo = dataset.get<Coord::DetectorInfo>()[0];
+    return ref_type_t<D, const Coord::Position>(
+        detInfo.get<detail::value_type_t<Coord::Position>>(),
+        dataset.get<detail::value_type_t<Coord::DetectorGrouping>>());
   }
 };
 
-template <> struct DataHelper<Data::StdDev> {
-  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+template <class D> struct DataHelper<D, Data::StdDev> {
+  static auto get(D &dataset, const Dimensions &iterationDimensions,
                   const std::string &name = std::string{}) {
-    return DataHelper<const Data::Variance>::get(dataset, iterationDimensions,
-                                                 name);
+    return DataHelper<D, Data::Variance>::get(dataset, iterationDimensions,
+                                              name);
   }
 };
 
-template <class... Tags> struct DataHelper<MDZipViewImpl<Tags...>> {
-  static auto get(MaybeConstDataset<Tags...> &dataset,
-                  const Dimensions &iterationDimensions,
+template <class D, class... Tags>
+struct DataHelper<D, MDZipViewImpl<D, Tags...>> {
+  static auto get(D &dataset, const Dimensions &iterationDimensions,
                   const std::string &name = std::string{}) {
     const auto labels = iterationDimensions.labels();
     std::set<Dim> fixedDimensions(labels.begin(), labels.end());
     // For the nested case we create a MDZipView with the correct dimensions
     // and store it. It is later copied and initialized with the correct offset
     // in iterator::get.
-    return ref_type_t<MDZipViewImpl<Tags...>>{
+    return ref_type_t<D, MDZipViewImpl<D, Tags...>>{
         MultiIndex(iterationDimensions,
-                   {DimensionHelper<Tags>::get(dataset, {}, name)...}),
-        MDZipViewImpl<Tags...>(dataset, name, fixedDimensions),
-        std::make_tuple(DataHelper<Tags>::get(dataset, {}, name)...)};
+                   {DimensionHelper<D, Tags>::get(dataset, {}, name)...}),
+        MDZipViewImpl<D, Tags...>(dataset, name, fixedDimensions),
+        std::make_tuple(DataHelper<D, Tags>::get(dataset, {}, name)...)};
   }
 };
 
-template <class... Ts>
-Dimensions MDZipViewImpl<Ts...>::relevantDimensions(
+template <class D, class... Ts>
+Dimensions MDZipViewImpl<D, Ts...>::relevantDimensions(
     const Dataset &dataset,
     boost::container::small_vector<Dimensions, 4> variableDimensions,
     const std::set<Dim> &fixedDimensions) const {
@@ -263,53 +265,58 @@ Dimensions MDZipViewImpl<Ts...>::relevantDimensions(
   return largest;
 }
 
-template <class... Ts>
-MDZipViewImpl<Ts...>::MDZipViewImpl(MaybeConstDataset<Ts...> &dataset,
-                                    const std::string &name,
-                                    const std::set<Dim> &fixedDimensions)
-    : m_units{UnitHelper<Ts>::get(dataset, name)...},
+template <class D, class... Ts>
+MDZipViewImpl<D, Ts...>::MDZipViewImpl(D &dataset, const std::string &name,
+                                       const std::set<Dim> &fixedDimensions)
+    : m_units{UnitHelper<D, Ts>::get(dataset, name)...},
       m_variables(makeVariables(dataset, fixedDimensions, name)) {}
-template <class... Ts>
-MDZipViewImpl<Ts...>::MDZipViewImpl(MaybeConstDataset<Ts...> &dataset,
-                                    const std::set<Dim> &fixedDimensions)
-    : m_units{UnitHelper<Ts>::get(dataset)...},
+template <class D, class... Ts>
+MDZipViewImpl<D, Ts...>::MDZipViewImpl(D &dataset,
+                                       const std::set<Dim> &fixedDimensions)
+    : m_units{UnitHelper<D, Ts>::get(dataset)...},
       m_variables(makeVariables(dataset, fixedDimensions)) {}
-template <class... Ts>
-MDZipViewImpl<Ts...>::MDZipViewImpl(
-    MaybeConstDataset<Ts...> &dataset,
-    const std::initializer_list<Dim> &fixedDimensions)
-    : m_units{UnitHelper<Ts>::get(dataset)...},
+template <class D, class... Ts>
+MDZipViewImpl<D, Ts...>::MDZipViewImpl(
+    D &dataset, const std::initializer_list<Dim> &fixedDimensions)
+    : m_units{UnitHelper<D, Ts>::get(dataset)...},
       m_variables(makeVariables(dataset, fixedDimensions)) {}
 
-template <class... Ts>
-MDZipViewImpl<Ts...>::MDZipViewImpl(const MDZipViewImpl &other,
-                                    const std::tuple<ref_type_t<Ts>...> &data)
+template <class D, class... Ts>
+MDZipViewImpl<D, Ts...>::MDZipViewImpl(
+    const MDZipViewImpl &other, const std::tuple<ref_type_t<D, Ts>...> &data)
     : m_units(other.m_units),
       m_variables(std::get<0>(other.m_variables),
                   std::get<1>(other.m_variables), data) {}
 
-template <class... Ts>
-using makeVariableReturnType = std::tuple<const gsl::index, const MultiIndex,
-                                          const std::tuple<ref_type_t<Ts>...>>;
+template <class D, class... Ts>
+using makeVariableReturnType =
+    std::tuple<const gsl::index, const MultiIndex,
+               const std::tuple<ref_type_t<D, Ts>...>>;
 
-template <class... Ts>
-makeVariableReturnType<Ts...>
-MDZipViewImpl<Ts...>::makeVariables(MaybeConstDataset<Ts...> &dataset,
-                                    const std::set<Dim> &fixedDimensions,
-                                    const std::string &name) const {
+template <class D, class... Ts>
+makeVariableReturnType<D, Ts...>
+MDZipViewImpl<D, Ts...>::makeVariables(D &dataset,
+                                       const std::set<Dim> &fixedDimensions,
+                                       const std::string &name) const {
   boost::container::small_vector<Dimensions, 4> subdimensions{
-      DimensionHelper<Ts>::get(dataset, fixedDimensions, name)...};
+      DimensionHelper<D, Ts>::get(dataset, fixedDimensions, name)...};
   Dimensions iterationDimensions(
       relevantDimensions(dataset, subdimensions, fixedDimensions));
   return std::tuple<const gsl::index, const MultiIndex,
-                    const std::tuple<ref_type_t<Ts>...>>{
+                    const std::tuple<ref_type_t<D, Ts>...>>{
       iterationDimensions.volume(),
       MultiIndex(iterationDimensions, subdimensions),
-      std::tuple<ref_type_t<Ts>...>{
-          DataHelper<Ts>::get(dataset, iterationDimensions, name)...}};
+      std::tuple<ref_type_t<D, Ts>...>{
+          DataHelper<D, Ts>::get(dataset, iterationDimensions, name)...}};
 }
 
-#define INSTANTIATE(...) template class MDZipViewImpl<__VA_ARGS__>;
+#define INSTANTIATE(...)                                                       \
+  template class MDZipViewImpl<Dataset, __VA_ARGS__>;                          \
+  template class MDZipViewImpl<const Dataset, __VA_ARGS__>;
+#define INSTANTIATE_MUTABLE(...)                                               \
+  template class MDZipViewImpl<Dataset, __VA_ARGS__>;
+#define INSTANTIATE_CONST(...)                                                 \
+  template class MDZipViewImpl<const Dataset, __VA_ARGS__>;
 
 // For very special cases we should probably provide a header that includes the
 // definition, so we do not need to instantiate everything directly, but just
@@ -319,45 +326,55 @@ INSTANTIATE(Bin<Coord::Tof>, Data::Int)
 INSTANTIATE(Bin<Coord::Tof>, Data::Value, Data::Variance)
 INSTANTIATE(Bin<Coord::X>)
 INSTANTIATE(Bin<Coord::Y>)
-INSTANTIATE(Coord::Mask const, MDZipViewImpl<Data::Value>)
+INSTANTIATE_MUTABLE(Coord::Mask, MDZipViewImpl<Dataset, Data::Value>)
+INSTANTIATE_MUTABLE(Coord::Mask const, MDZipViewImpl<Dataset, Data::Value>)
+INSTANTIATE(Coord::Mask, Data::Value, Data::Variance)
 INSTANTIATE(Coord::Mask const, Data::Value, Data::Variance)
-INSTANTIATE(Coord::SpectrumNumber const,
-            MDZipViewImpl<Coord::Temperature const, Data::Value const,
-                          Data::Variance const>)
-INSTANTIATE(Coord::SpectrumNumber,
-            MDZipViewImpl<Bin<Coord::Tof>, Data::Value, Data::Variance>)
+INSTANTIATE_MUTABLE(Coord::SpectrumNumber const,
+                    MDZipViewImpl<Dataset, Coord::Temperature const,
+                                  Data::Value const, Data::Variance const>)
+INSTANTIATE_MUTABLE(
+    Coord::SpectrumNumber,
+    MDZipViewImpl<Dataset, Bin<Coord::Tof>, Data::Value, Data::Variance>)
+INSTANTIATE_MUTABLE(
+    Coord::SpectrumNumber const,
+    MDZipViewImpl<Dataset, Bin<Coord::Tof>, Data::Value, Data::Variance>)
 INSTANTIATE(Coord::Position)
 INSTANTIATE(Coord::Position const)
+INSTANTIATE(Coord::Temperature, Data::Value, Data::Variance)
+INSTANTIATE(Coord::Temperature const, Data::Value, Data::Variance)
 INSTANTIATE(Coord::Temperature const, Data::Value const, Data::Variance const)
 INSTANTIATE(Coord::Tof)
 INSTANTIATE(Coord::Tof, Data::Int)
-INSTANTIATE(Coord::X const)
-INSTANTIATE(Coord::X const, Coord::Y)
-INSTANTIATE(Coord::X const, Coord::Y const)
-INSTANTIATE(Coord::X const, Data::Value const)
+INSTANTIATE(Coord::X)
 INSTANTIATE(Coord::X, Coord::Y)
-INSTANTIATE(Coord::X, Coord::Y const)
-INSTANTIATE(Coord::X, MDZipViewImpl<Coord::Y>)
-INSTANTIATE(Coord::X, MDZipViewImpl<Coord::Y const, Coord::Z>)
-INSTANTIATE(Coord::X, MDZipViewImpl<Coord::Y, Coord::Z>)
+INSTANTIATE(Coord::X const, Coord::Y)
 INSTANTIATE(Coord::X, Data::Value)
 INSTANTIATE(Coord::X, Data::Value const)
+INSTANTIATE(Coord::X const, Data::Value const)
+INSTANTIATE_MUTABLE(Coord::X, MDZipViewImpl<Dataset, Coord::Y>)
+INSTANTIATE_MUTABLE(Coord::X, MDZipViewImpl<Dataset, Coord::Y, Coord::Z>)
 INSTANTIATE(Coord::Y)
-INSTANTIATE(Coord::Y const, Coord::Z)
 INSTANTIATE(Coord::Y, Coord::Z)
-INSTANTIATE(Data::Events const,
-            MDZipViewImpl<Bin<Coord::Tof>, Data::Value, Data::Variance>)
+INSTANTIATE_MUTABLE(
+    Data::Events const,
+    MDZipViewImpl<Dataset, Bin<Coord::Tof>, Data::Value, Data::Variance>)
 INSTANTIATE(Data::Int)
-INSTANTIATE(Data::Int const, MDZipViewImpl<Data::Value const>)
-INSTANTIATE(Data::Int, MDZipViewImpl<Data::Value>)
-INSTANTIATE(Data::Int, MDZipViewImpl<Data::Value, Data::Variance>)
-INSTANTIATE(MDZipViewImpl<Coord::X const, Data::Value const>)
-INSTANTIATE(MDZipViewImpl<Coord::X, Data::Value>)
-INSTANTIATE(MDZipViewImpl<Coord::X, Data::Value const>)
-INSTANTIATE(MDZipViewImpl<Data::Value const>)
+INSTANTIATE_MUTABLE(Data::Int, MDZipViewImpl<Dataset, Data::Value>)
+INSTANTIATE_MUTABLE(Data::Int const, MDZipViewImpl<Dataset, Data::Value const>)
+INSTANTIATE_CONST(Data::Int, MDZipViewImpl<const Dataset, Data::Value>)
+INSTANTIATE_MUTABLE(Data::Int,
+                    MDZipViewImpl<Dataset, Data::Value, Data::Variance>)
+INSTANTIATE_MUTABLE(MDZipViewImpl<Dataset, Coord::X, Data::Value>)
+INSTANTIATE_MUTABLE(MDZipViewImpl<Dataset, Coord::X, Data::Value const>)
+INSTANTIATE_MUTABLE(MDZipViewImpl<Dataset, Coord::X const, Data::Value const>)
+INSTANTIATE_MUTABLE(MDZipViewImpl<Dataset, Data::Value>)
+INSTANTIATE_MUTABLE(MDZipViewImpl<Dataset, Data::Value const>)
+INSTANTIATE_CONST(MDZipViewImpl<const Dataset, Data::Value>)
 INSTANTIATE(Data::StdDev)
 INSTANTIATE(Data::Value)
 INSTANTIATE(Data::Value const)
+INSTANTIATE(Data::Value, Data::String)
 INSTANTIATE(Data::Value const, Data::String)
 INSTANTIATE(Data::Value, Data::Int)
 INSTANTIATE(Data::Value, Data::Int const)
@@ -365,4 +382,4 @@ INSTANTIATE(Data::Value, Data::Variance)
 INSTANTIATE(Data::Value, Data::Variance const)
 INSTANTIATE(Data::Variance, Data::Int)
 INSTANTIATE(Coord::DetectorId const, Coord::Position)
-INSTANTIATE(Coord::Ef const, Coord::Position const)
+INSTANTIATE(Coord::Ef, Coord::Position)

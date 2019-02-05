@@ -246,7 +246,6 @@ The name of data variables is furthermore used to imply a grouping of variables.
 *Example: In a dataset containing data variables `Data::Value` and `Data::Variance` a matching variable name implies that the uncertainties stored in `Data::Variance` are associated with the data stored in `Data::Value`.*
 
 The data in `Variable` is held by a type-erased handle, i.e., a `Variable` can hold data of any type.
-The data handle also implements a copy-on-write mechanism, which makes `Variable` and `Dataset` cheap to copy and saves memory if only some variables in a dataset are modified.
 
 
 ### <a name="overview-operations"></a>Operations
@@ -404,8 +403,6 @@ There are very few methods for direct manipulation of `Dataset`:
 The current implementation in the prototype is mostly complete regarding the actual `Dataset` interface.
 Most other functionality would probably be added as free functions.
 - Some interface cleanup for finding variables or checking for existence of certain tags/names is required.
-- `merge` is currently a member method, but should probably be made a free function.
-  Given the copy-on-write mechanism there is no advantage in having it as a method.
 - Insertion mechanism for bin-edge variables needs to be clarified.
 
 
@@ -1034,6 +1031,10 @@ See also a [working example](../test/Run_test.cpp) that shows automatic matching
 
 ### <a name="design-details-copy-on-write-mechanism"></a>Copy-on-write mechanism
 
+##### Update: Copy-on-write removed during detailed-design evaluation
+
+See [copy-on-write evaluation](design-copy-on-write-evaluation.md).
+
 ##### Context
 
 From a high-level point of view there are two extremes that can be adopted when copying a `dict`-like object like `Dataset`:
@@ -1358,7 +1359,7 @@ We would like to support slicing as in `numpy` and `xarray`, e.g., `array[2:4,10
 In both `numpy` and `xarray` the returned object is a view, i.e., data is not extracted.
 
 The ownership and copying discussion in the section [Copy-on-write mechanism](#design-details-copy-on-write-mechanism) is related to such slice-views and implies:
-- Any iterator obtained from a view is invalidated if any non-`const` method on *any other view* to the same `Variable` is called.
+- Any iterator obtained from a view is invalidated if any non-`const` method on *any other view* to the same `Variable` is called (*Update: The copy-on-write mechanism was removed as part of detailed-design, so this is issue no longer present.*).
   - The view itself can stay valid since it references the variable, not its data.
 - Contrary to the `numpy` behavior, if the owning `Variable` goes out of scope all views should probably become invalid.
   To support views that stay valid we would need to wrap all variables in `Dataset` into a `shared_ptr` and the benefit does not seem to justify this additional complexity at this point.

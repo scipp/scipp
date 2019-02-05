@@ -16,7 +16,7 @@ TEST(Variable, construct) {
   ASSERT_NO_THROW(Variable(Data::Value{}, Dimensions(Dim::Tof, 2)));
   ASSERT_NO_THROW(Variable(Data::Value{}, Dimensions(Dim::Tof, 2), 2));
   const Variable a(Data::Value{}, Dimensions(Dim::Tof, 2));
-  const auto &data = a.get<const Data::Value>();
+  const auto &data = a.get<Data::Value>();
   EXPECT_EQ(data.size(), 2);
 }
 
@@ -28,7 +28,7 @@ TEST(Variable, construct_fail) {
 
 TEST(Variable, span_references_Variable) {
   Variable a(Data::Value{}, Dimensions(Dim::Tof, 2));
-  auto observer = a.get<const Data::Value>();
+  auto observer = a.get<Data::Value>();
   // This line does not compile, const-correctness works:
   // observer[0] = 1.0;
 
@@ -42,22 +42,14 @@ TEST(Variable, span_references_Variable) {
   EXPECT_EQ(observer[0], 1.0);
 }
 
-TEST(Variable, sharing) {
-  const Variable a1(Data::Value{}, {Dim::Tof, 2});
-  const auto a2(a1);
-  // TODO Should we require the use of `const` with the tag if Variable is
-  // const?
-  EXPECT_EQ(&a1.get<const Data::Value>()[0], &a2.get<const Data::Value>()[0]);
-}
-
 TEST(Variable, copy) {
   const Variable a1(Data::Value{}, {Dim::Tof, 2}, {1.1, 2.2});
-  const auto &data1 = a1.get<const Data::Value>();
+  const auto &data1 = a1.get<Data::Value>();
   EXPECT_EQ(data1[0], 1.1);
   EXPECT_EQ(data1[1], 2.2);
   auto a2(a1);
-  EXPECT_EQ(&a1.get<const Data::Value>()[0], &a2.get<const Data::Value>()[0]);
-  EXPECT_NE(&a1.get<const Data::Value>()[0], &a2.get<Data::Value>()[0]);
+  EXPECT_NE(&a1.get<Data::Value>()[0], &a2.get<Data::Value>()[0]);
+  EXPECT_NE(&a1.get<Data::Value>()[0], &a2.get<Data::Value>()[0]);
   const auto &data2 = a2.get<Data::Value>();
   EXPECT_EQ(data2[0], 1.1);
   EXPECT_EQ(data2[1], 2.2);
@@ -86,18 +78,18 @@ TEST(Variable, operator_equals) {
 TEST(Variable, operator_unary_minus) {
   const Variable a(Data::Value{}, {Dim::X, 2}, {1.1, 2.2});
   auto b = -a;
-  EXPECT_EQ(a.get<const Data::Value>()[0], 1.1);
-  EXPECT_EQ(a.get<const Data::Value>()[1], 2.2);
-  EXPECT_EQ(b.get<const Data::Value>()[0], -1.1);
-  EXPECT_EQ(b.get<const Data::Value>()[1], -2.2);
+  EXPECT_EQ(a.get<Data::Value>()[0], 1.1);
+  EXPECT_EQ(a.get<Data::Value>()[1], 2.2);
+  EXPECT_EQ(b.get<Data::Value>()[0], -1.1);
+  EXPECT_EQ(b.get<Data::Value>()[1], -2.2);
 }
 
 TEST(VariableSlice, unary_minus) {
   const Variable a(Data::Value{}, {Dim::X, 2}, {1.1, 2.2});
   auto b = -a(Dim::X, 1);
-  EXPECT_EQ(a.get<const Data::Value>()[0], 1.1);
-  EXPECT_EQ(a.get<const Data::Value>()[1], 2.2);
-  EXPECT_EQ(b.get<const Data::Value>()[0], -2.2);
+  EXPECT_EQ(a.get<Data::Value>()[0], 1.1);
+  EXPECT_EQ(a.get<Data::Value>()[1], 2.2);
+  EXPECT_EQ(b.get<Data::Value>()[0], -2.2);
 }
 
 TEST(Variable, operator_plus_equal) {
@@ -273,18 +265,18 @@ TEST(Variable, slice) {
     Variable sliceX = parent(Dim::X, index);
     ASSERT_EQ(sliceX.dimensions(), Dimensions({{Dim::Z, 3}, {Dim::Y, 2}}));
     auto base = static_cast<double>(index);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[0], base + 1.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[1], base + 5.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[2], base + 9.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[3], base + 13.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[4], base + 17.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[5], base + 21.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[0], base + 1.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[1], base + 5.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[2], base + 9.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[3], base + 13.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[4], base + 17.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[5], base + 21.0);
   }
 
   for (const gsl::index index : {0, 1}) {
     Variable sliceY = parent(Dim::Y, index);
     ASSERT_EQ(sliceY.dimensions(), Dimensions({{Dim::Z, 3}, {Dim::X, 4}}));
-    const auto &data = sliceY.get<const Data::Value>();
+    const auto &data = sliceY.get<Data::Value>();
     auto base = static_cast<double>(index);
     for (const gsl::index z : {0, 1, 2}) {
       EXPECT_EQ(data[4 * z + 0], 4 * base + 8 * static_cast<double>(z) + 1.0);
@@ -297,7 +289,7 @@ TEST(Variable, slice) {
   for (const gsl::index index : {0, 1, 2}) {
     Variable sliceZ = parent(Dim::Z, index);
     ASSERT_EQ(sliceZ.dimensions(), Dimensions({{Dim::Y, 2}, {Dim::X, 4}}));
-    const auto &data = sliceZ.get<const Data::Value>();
+    const auto &data = sliceZ.get<Data::Value>();
     for (gsl::index xy = 0; xy < 8; ++xy)
       EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
   }
@@ -314,37 +306,37 @@ TEST(Variable, slice_range) {
     Variable sliceX = parent(Dim::X, index, index + 1);
     ASSERT_EQ(sliceX.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}));
-    EXPECT_EQ(sliceX.get<const Data::Value>()[0], index + 1.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[1], index + 5.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[2], index + 9.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[3], index + 13.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[4], index + 17.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[5], index + 21.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[0], index + 1.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[1], index + 5.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[2], index + 9.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[3], index + 13.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[4], index + 17.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[5], index + 21.0);
   }
 
   for (const gsl::index index : {0, 1, 2}) {
     Variable sliceX = parent(Dim::X, index, index + 2);
     ASSERT_EQ(sliceX.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}}));
-    EXPECT_EQ(sliceX.get<const Data::Value>()[0], index + 1.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[1], index + 2.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[2], index + 5.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[3], index + 6.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[4], index + 9.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[5], index + 10.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[6], index + 13.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[7], index + 14.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[8], index + 17.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[9], index + 18.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[10], index + 21.0);
-    EXPECT_EQ(sliceX.get<const Data::Value>()[11], index + 22.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[0], index + 1.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[1], index + 2.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[2], index + 5.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[3], index + 6.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[4], index + 9.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[5], index + 10.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[6], index + 13.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[7], index + 14.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[8], index + 17.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[9], index + 18.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[10], index + 21.0);
+    EXPECT_EQ(sliceX.get<Data::Value>()[11], index + 22.0);
   }
 
   for (const gsl::index index : {0, 1}) {
     Variable sliceY = parent(Dim::Y, index, index + 1);
     ASSERT_EQ(sliceY.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 1}, {Dim::X, 4}}));
-    const auto &data = sliceY.get<const Data::Value>();
+    const auto &data = sliceY.get<Data::Value>();
     for (const gsl::index z : {0, 1, 2}) {
       EXPECT_EQ(data[4 * z + 0], 4 * index + 8 * z + 1.0);
       EXPECT_EQ(data[4 * z + 1], 4 * index + 8 * z + 2.0);
@@ -362,7 +354,7 @@ TEST(Variable, slice_range) {
     Variable sliceZ = parent(Dim::Z, index, index + 1);
     ASSERT_EQ(sliceZ.dimensions(),
               Dimensions({{Dim::Z, 1}, {Dim::Y, 2}, {Dim::X, 4}}));
-    const auto &data = sliceZ.get<const Data::Value>();
+    const auto &data = sliceZ.get<Data::Value>();
     for (gsl::index xy = 0; xy < 8; ++xy)
       EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
   }
@@ -371,7 +363,7 @@ TEST(Variable, slice_range) {
     Variable sliceZ = parent(Dim::Z, index, index + 2);
     ASSERT_EQ(sliceZ.dimensions(),
               Dimensions({{Dim::Z, 2}, {Dim::Y, 2}, {Dim::X, 4}}));
-    const auto &data = sliceZ.get<const Data::Value>();
+    const auto &data = sliceZ.get<Data::Value>();
     for (gsl::index xy = 0; xy < 8; ++xy)
       EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
     for (gsl::index xy = 0; xy < 8; ++xy)
@@ -395,14 +387,14 @@ TEST(Variable, concatenate) {
   const auto abba = concatenate(ab, ba, Dim::Q);
   ASSERT_EQ(abba.size(), 4);
   EXPECT_EQ(abba.dimensions().count(), 2);
-  const auto &data2 = abba.get<const Data::Value>();
+  const auto &data2 = abba.get<Data::Value>();
   EXPECT_EQ(data2[0], 1.0);
   EXPECT_EQ(data2[1], 2.0);
   EXPECT_EQ(data2[2], 2.0);
   EXPECT_EQ(data2[3], 1.0);
   const auto ababbaba = concatenate(abba, abba, Dim::Tof);
   ASSERT_EQ(ababbaba.size(), 8);
-  const auto &data3 = ababbaba.get<const Data::Value>();
+  const auto &data3 = ababbaba.get<Data::Value>();
   EXPECT_EQ(data3[0], 1.0);
   EXPECT_EQ(data3[1], 2.0);
   EXPECT_EQ(data3[2], 1.0);
@@ -413,7 +405,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data3[7], 1.0);
   const auto abbaabba = concatenate(abba, abba, Dim::Q);
   ASSERT_EQ(abbaabba.size(), 8);
-  const auto &data4 = abbaabba.get<const Data::Value>();
+  const auto &data4 = abbaabba.get<Data::Value>();
   EXPECT_EQ(data4[0], 1.0);
   EXPECT_EQ(data4[1], 2.0);
   EXPECT_EQ(data4[2], 2.0);
@@ -472,78 +464,41 @@ TEST(Variable, rebin) {
   auto rebinned = rebin(var, oldEdge, newEdge);
   ASSERT_EQ(rebinned.dimensions().count(), 1);
   ASSERT_EQ(rebinned.dimensions().volume(), 1);
-  ASSERT_EQ(rebinned.get<const Data::Value>().size(), 1);
-  EXPECT_EQ(rebinned.get<const Data::Value>()[0], 3.0);
+  ASSERT_EQ(rebinned.get<Data::Value>().size(), 1);
+  EXPECT_EQ(rebinned.get<Data::Value>()[0], 3.0);
 }
 
 TEST(Variable, sum) {
   Variable var(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   auto sumX = sum(var, Dim::X);
   ASSERT_EQ(sumX.dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_TRUE(equals(sumX.get<const Data::Value>(), {3.0, 7.0}));
+  EXPECT_TRUE(equals(sumX.get<Data::Value>(), {3.0, 7.0}));
   auto sumY = sum(var, Dim::Y);
   ASSERT_EQ(sumY.dimensions(), (Dimensions{Dim::X, 2}));
-  EXPECT_TRUE(equals(sumY.get<const Data::Value>(), {4.0, 6.0}));
+  EXPECT_TRUE(equals(sumY.get<Data::Value>(), {4.0, 6.0}));
 }
 
 TEST(Variable, mean) {
   Variable var(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   auto meanX = mean(var, Dim::X);
   ASSERT_EQ(meanX.dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_TRUE(equals(meanX.get<const Data::Value>(), {1.5, 3.5}));
+  EXPECT_TRUE(equals(meanX.get<Data::Value>(), {1.5, 3.5}));
   auto meanY = mean(var, Dim::Y);
   ASSERT_EQ(meanY.dimensions(), (Dimensions{Dim::X, 2}));
-  EXPECT_TRUE(equals(meanY.get<const Data::Value>(), {2.0, 3.0}));
+  EXPECT_TRUE(equals(meanY.get<Data::Value>(), {2.0, 3.0}));
 }
 
 TEST(VariableSlice, full_const_view) {
   const Variable var(Coord::X{}, {{Dim::X, 3}});
-  auto copy(var);
   ConstVariableSlice view(var);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            view.get<const Coord::X>().data());
+  EXPECT_EQ(var.get<Coord::X>().data(), view.get<Coord::X>().data());
 }
 
 TEST(VariableSlice, full_mutable_view) {
   Variable var(Coord::X{}, {{Dim::X, 3}});
-  auto copy(var);
   VariableSlice view(var);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            view.get<const Coord::X>().data());
-  EXPECT_NE(copy.get<const Coord::X>().data(), view.get<Coord::X>().data());
-}
-
-TEST(VariableSlice,
-     copy_on_write_variable_from_full_view_shares_original_data) {
-  const Variable var(Coord::X{}, {{Dim::X, 3}});
-  ConstVariableSlice view(var);
-  Variable copy(view);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            var.get<const Coord::X>().data());
-}
-
-TEST(VariableSlice, copy_on_write_const_view) {
-  const Variable var(Coord::X{}, {{Dim::X, 3}});
-  auto copy(var);
-  auto view = var(Dim::X, 0);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            view.get<const Coord::X>().data());
-}
-
-TEST(VariableSlice, copy_on_write_mutable_view) {
-  Variable var(Coord::X{}, {{Dim::X, 3}});
-  auto copy(var);
-  auto view = var(Dim::X, 0);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            view.get<const Coord::X>().data());
-}
-
-TEST(VariableSlice, copy_on_write_nested_mutable_view) {
-  Variable var(Coord::X{}, {{Dim::Y, 3}, {Dim::X, 3}});
-  auto copy(var);
-  auto view = var(Dim::X, 0)(Dim::Y, 0);
-  EXPECT_EQ(copy.get<const Coord::X>().data(),
-            view.get<const Coord::X>().data());
+  EXPECT_EQ(var.get<Coord::X>().data(), view.get<Coord::X>().data());
+  EXPECT_EQ(var.get<Coord::X>().data(), view.get<Coord::X>().data());
 }
 
 TEST(VariableSlice, strides) {
@@ -571,7 +526,7 @@ TEST(VariableSlice, strides) {
 
 TEST(VariableSlice, get) {
   const Variable var(Data::Value{}, {Dim::X, 3}, {1, 2, 3});
-  EXPECT_EQ(var(Dim::X, 1, 2).get<const Data::Value>()[0], 2.0);
+  EXPECT_EQ(var(Dim::X, 1, 2).get<Data::Value>()[0], 2.0);
 }
 
 TEST(VariableSlice, slicing_does_not_transpose) {
@@ -593,7 +548,7 @@ TEST(VariableSlice, self_overlapping_view_operation) {
   Variable var(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
   var -= var(Dim::Y, 0);
-  const auto data = var.get<const Data::Value>();
+  const auto data = var.get<Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
   // This is the critical part: After subtracting for y=0 the view points to
@@ -608,7 +563,7 @@ TEST(VariableSlice, minus_equals_slice_const_outer) {
   const auto copy(var);
 
   var -= copy(Dim::Y, 0);
-  const auto data = var.get<const Data::Value>();
+  const auto data = var.get<Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
@@ -625,7 +580,7 @@ TEST(VariableSlice, minus_equals_slice_outer) {
   auto copy(var);
 
   var -= copy(Dim::Y, 0);
-  const auto data = var.get<const Data::Value>();
+  const auto data = var.get<Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
@@ -642,7 +597,7 @@ TEST(VariableSlice, minus_equals_slice_inner) {
   auto copy(var);
 
   var -= copy(Dim::X, 0);
-  const auto data = var.get<const Data::Value>();
+  const auto data = var.get<Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 1.0);
   EXPECT_EQ(data[2], 0.0);
@@ -659,7 +614,7 @@ TEST(VariableSlice, minus_equals_slice_of_slice) {
   auto copy(var);
 
   var -= copy(Dim::X, 1)(Dim::Y, 1);
-  const auto data = var.get<const Data::Value>();
+  const auto data = var.get<Data::Value>();
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -2.0);
   EXPECT_EQ(data[2], -1.0);
@@ -672,7 +627,7 @@ TEST(VariableSlice, minus_equals_nontrivial_slices) {
   {
     Variable target(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}});
     target -= source(Dim::X, 0, 2)(Dim::Y, 0, 2);
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], -11.0);
     EXPECT_EQ(data[1], -12.0);
     EXPECT_EQ(data[2], -21.0);
@@ -681,7 +636,7 @@ TEST(VariableSlice, minus_equals_nontrivial_slices) {
   {
     Variable target(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}});
     target -= source(Dim::X, 1, 3)(Dim::Y, 0, 2);
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], -12.0);
     EXPECT_EQ(data[1], -13.0);
     EXPECT_EQ(data[2], -22.0);
@@ -690,7 +645,7 @@ TEST(VariableSlice, minus_equals_nontrivial_slices) {
   {
     Variable target(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}});
     target -= source(Dim::X, 0, 2)(Dim::Y, 1, 3);
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], -21.0);
     EXPECT_EQ(data[1], -22.0);
     EXPECT_EQ(data[2], -31.0);
@@ -699,7 +654,7 @@ TEST(VariableSlice, minus_equals_nontrivial_slices) {
   {
     Variable target(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}});
     target -= source(Dim::X, 1, 3)(Dim::Y, 1, 3);
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], -22.0);
     EXPECT_EQ(data[1], -23.0);
     EXPECT_EQ(data[2], -32.0);
@@ -711,7 +666,7 @@ TEST(VariableSlice, slice_inner_minus_equals) {
   Variable var(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
   var(Dim::X, 0) -= var(Dim::X, 1);
-  const auto data = var.get<const Data::Value>();
+  const auto data = var.get<Data::Value>();
   EXPECT_EQ(data[0], -1.0);
   EXPECT_EQ(data[1], 2.0);
   EXPECT_EQ(data[2], -1.0);
@@ -722,7 +677,7 @@ TEST(VariableSlice, slice_outer_minus_equals) {
   Variable var(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
   var(Dim::Y, 0) -= var(Dim::Y, 1);
-  const auto data = var.get<const Data::Value>();
+  const auto data = var.get<Data::Value>();
   EXPECT_EQ(data[0], -2.0);
   EXPECT_EQ(data[1], -2.0);
   EXPECT_EQ(data[2], 3.0);
@@ -735,7 +690,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals) {
     Variable source(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}},
                     {11.0, 12.0, 21.0, 22.0});
     target(Dim::X, 0, 2)(Dim::Y, 0, 2) -= source;
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], -11.0);
     EXPECT_EQ(data[1], -12.0);
     EXPECT_EQ(data[2], 0.0);
@@ -751,7 +706,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals) {
     Variable source(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}},
                     {11.0, 12.0, 21.0, 22.0});
     target(Dim::X, 1, 3)(Dim::Y, 0, 2) -= source;
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], -11.0);
     EXPECT_EQ(data[2], -12.0);
@@ -767,7 +722,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals) {
     Variable source(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}},
                     {11.0, 12.0, 21.0, 22.0});
     target(Dim::X, 0, 2)(Dim::Y, 1, 3) -= source;
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], 0.0);
     EXPECT_EQ(data[2], 0.0);
@@ -783,7 +738,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals) {
     Variable source(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 2}},
                     {11.0, 12.0, 21.0, 22.0});
     target(Dim::X, 1, 3)(Dim::Y, 1, 3) -= source;
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], 0.0);
     EXPECT_EQ(data[2], 0.0);
@@ -802,7 +757,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals_slice) {
     Variable source(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 3}},
                     {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
     target(Dim::X, 0, 2)(Dim::Y, 0, 2) -= source(Dim::X, 1, 3);
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], -11.0);
     EXPECT_EQ(data[1], -12.0);
     EXPECT_EQ(data[2], 0.0);
@@ -818,7 +773,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals_slice) {
     Variable source(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 3}},
                     {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
     target(Dim::X, 1, 3)(Dim::Y, 0, 2) -= source(Dim::X, 1, 3);
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], -11.0);
     EXPECT_EQ(data[2], -12.0);
@@ -834,7 +789,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals_slice) {
     Variable source(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 3}},
                     {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
     target(Dim::X, 0, 2)(Dim::Y, 1, 3) -= source(Dim::X, 1, 3);
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], 0.0);
     EXPECT_EQ(data[2], 0.0);
@@ -850,7 +805,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals_slice) {
     Variable source(Data::Value{}, {{Dim::Y, 2}, {Dim::X, 3}},
                     {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
     target(Dim::X, 1, 3)(Dim::Y, 1, 3) -= source(Dim::X, 1, 3);
-    const auto data = target.get<const Data::Value>();
+    const auto data = target.get<Data::Value>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], 0.0);
     EXPECT_EQ(data[2], 0.0);
@@ -871,7 +826,7 @@ TEST(VariableSlice, slice_minus_lower_dimensional) {
 
   target(Dim::Y, 1, 2) -= source;
 
-  const auto data = target.get<const Data::Value>();
+  const auto data = target.get<Data::Value>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], -1.0);
@@ -884,19 +839,19 @@ TEST(VariableSlice, variable_copy_from_slice) {
 
   Variable target1(source(Dim::X, 0, 2)(Dim::Y, 0, 2));
   EXPECT_EQ(target1.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target1.get<const Data::Value>(), {11, 12, 21, 22}));
+  EXPECT_TRUE(equals(target1.get<Data::Value>(), {11, 12, 21, 22}));
 
   Variable target2(source(Dim::X, 1, 3)(Dim::Y, 0, 2));
   EXPECT_EQ(target2.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target2.get<const Data::Value>(), {12, 13, 22, 23}));
+  EXPECT_TRUE(equals(target2.get<Data::Value>(), {12, 13, 22, 23}));
 
   Variable target3(source(Dim::X, 0, 2)(Dim::Y, 1, 3));
   EXPECT_EQ(target3.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target3.get<const Data::Value>(), {21, 22, 31, 32}));
+  EXPECT_TRUE(equals(target3.get<Data::Value>(), {21, 22, 31, 32}));
 
   Variable target4(source(Dim::X, 1, 3)(Dim::Y, 1, 3));
   EXPECT_EQ(target4.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target4.get<const Data::Value>(), {22, 23, 32, 33}));
+  EXPECT_TRUE(equals(target4.get<Data::Value>(), {22, 23, 32, 33}));
 }
 
 TEST(VariableSlice, variable_assign_from_slice) {
@@ -906,19 +861,19 @@ TEST(VariableSlice, variable_assign_from_slice) {
 
   target = source(Dim::X, 0, 2)(Dim::Y, 0, 2);
   EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.get<const Data::Value>(), {11, 12, 21, 22}));
+  EXPECT_TRUE(equals(target.get<Data::Value>(), {11, 12, 21, 22}));
 
   target = source(Dim::X, 1, 3)(Dim::Y, 0, 2);
   EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.get<const Data::Value>(), {12, 13, 22, 23}));
+  EXPECT_TRUE(equals(target.get<Data::Value>(), {12, 13, 22, 23}));
 
   target = source(Dim::X, 0, 2)(Dim::Y, 1, 3);
   EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.get<const Data::Value>(), {21, 22, 31, 32}));
+  EXPECT_TRUE(equals(target.get<Data::Value>(), {21, 22, 31, 32}));
 
   target = source(Dim::X, 1, 3)(Dim::Y, 1, 3);
   EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.get<const Data::Value>(), {22, 23, 32, 33}));
+  EXPECT_TRUE(equals(target.get<Data::Value>(), {22, 23, 32, 33}));
 }
 
 TEST(VariableSlice, variable_self_assign_via_slice) {
@@ -929,7 +884,7 @@ TEST(VariableSlice, variable_self_assign_via_slice) {
   // Note: This test does not actually fail if self-assignment is broken. Had to
   // run address sanitizer to see that it is reading from free'ed memory.
   EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.get<const Data::Value>(), {22, 23, 32, 33}));
+  EXPECT_TRUE(equals(target.get<Data::Value>(), {22, 23, 32, 33}));
 }
 
 TEST(VariableSlice, slice_assign_from_variable) {
@@ -942,29 +897,29 @@ TEST(VariableSlice, slice_assign_from_variable) {
     Variable target(Data::Value{}, {{Dim::Y, 3}, {Dim::X, 3}});
     target(Dim::X, 0, 2)(Dim::Y, 0, 2).assign(source);
     EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
-    EXPECT_TRUE(equals(target.get<const Data::Value>(),
-                       {11, 12, 0, 21, 22, 0, 0, 0, 0}));
+    EXPECT_TRUE(
+        equals(target.get<Data::Value>(), {11, 12, 0, 21, 22, 0, 0, 0, 0}));
   }
   {
     Variable target(Data::Value{}, {{Dim::Y, 3}, {Dim::X, 3}});
     target(Dim::X, 1, 3)(Dim::Y, 0, 2).assign(source);
     EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
-    EXPECT_TRUE(equals(target.get<const Data::Value>(),
-                       {0, 11, 12, 0, 21, 22, 0, 0, 0}));
+    EXPECT_TRUE(
+        equals(target.get<Data::Value>(), {0, 11, 12, 0, 21, 22, 0, 0, 0}));
   }
   {
     Variable target(Data::Value{}, {{Dim::Y, 3}, {Dim::X, 3}});
     target(Dim::X, 0, 2)(Dim::Y, 1, 3).assign(source);
     EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
-    EXPECT_TRUE(equals(target.get<const Data::Value>(),
-                       {0, 0, 0, 11, 12, 0, 21, 22, 0}));
+    EXPECT_TRUE(
+        equals(target.get<Data::Value>(), {0, 0, 0, 11, 12, 0, 21, 22, 0}));
   }
   {
     Variable target(Data::Value{}, {{Dim::Y, 3}, {Dim::X, 3}});
     target(Dim::X, 1, 3)(Dim::Y, 1, 3).assign(source);
     EXPECT_EQ(target.dimensions(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
-    EXPECT_TRUE(equals(target.get<const Data::Value>(),
-                       {0, 0, 0, 0, 11, 12, 0, 21, 22}));
+    EXPECT_TRUE(
+        equals(target.get<Data::Value>(), {0, 0, 0, 0, 11, 12, 0, 21, 22}));
   }
 }
 
@@ -978,10 +933,10 @@ TEST(VariableSlice, slice_binary_operations) {
   auto difference = v(Dim::X, 0) - v(Dim::X, 1);
   auto product = v(Dim::X, 0) * v(Dim::X, 1);
   auto ratio = v(Dim::X, 0) / v(Dim::X, 1);
-  EXPECT_TRUE(equals(sum.get<const Data::Value>(), {3, 7}));
-  EXPECT_TRUE(equals(difference.get<const Data::Value>(), {-1, -1}));
-  EXPECT_TRUE(equals(product.get<const Data::Value>(), {2, 12}));
-  EXPECT_TRUE(equals(ratio.get<const Data::Value>(), {1.0 / 2.0, 3.0 / 4.0}));
+  EXPECT_TRUE(equals(sum.get<Data::Value>(), {3, 7}));
+  EXPECT_TRUE(equals(difference.get<Data::Value>(), {-1, -1}));
+  EXPECT_TRUE(equals(product.get<Data::Value>(), {2, 12}));
+  EXPECT_TRUE(equals(ratio.get<Data::Value>(), {1.0 / 2.0, 3.0 / 4.0}));
 }
 
 TEST(Variable, reshape) {
@@ -990,12 +945,12 @@ TEST(Variable, reshape) {
   auto view = var.reshape({Dim::Row, 6});
   ASSERT_EQ(view.size(), 6);
   ASSERT_EQ(view.dimensions(), Dimensions({Dim::Row, 6}));
-  EXPECT_TRUE(equals(view.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
+  EXPECT_TRUE(equals(view.get<Data::Value>(), {1, 2, 3, 4, 5, 6}));
 
   auto view2 = var.reshape({{Dim::Row, 3}, {Dim::Z, 2}});
   ASSERT_EQ(view2.size(), 6);
   ASSERT_EQ(view2.dimensions(), Dimensions({{Dim::Row, 3}, {Dim::Z, 2}}));
-  EXPECT_TRUE(equals(view2.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
+  EXPECT_TRUE(equals(view2.get<Data::Value>(), {1, 2, 3, 4, 5, 6}));
 }
 
 TEST(Variable, reshape_temporary) {
@@ -1004,7 +959,7 @@ TEST(Variable, reshape_temporary) {
   auto reshaped = sum(var, Dim::X).reshape({{Dim::Y, 2}, {Dim::Z, 2}});
   ASSERT_EQ(reshaped.size(), 4);
   ASSERT_EQ(reshaped.dimensions(), Dimensions({{Dim::Y, 2}, {Dim::Z, 2}}));
-  EXPECT_TRUE(equals(reshaped.get<const Data::Value>(), {6, 8, 10, 12}));
+  EXPECT_TRUE(equals(reshaped.get<Data::Value>(), {6, 8, 10, 12}));
 
   // This is not a temporary, we get a view into `var`.
   EXPECT_EQ(typeid(decltype(std::move(var).reshape({}))),
@@ -1023,7 +978,7 @@ TEST(Variable, reshape_and_slice) {
 
   auto slice =
       var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3);
-  EXPECT_TRUE(equals(slice.get<const Data::Value>(), {6, 7, 10, 11}));
+  EXPECT_TRUE(equals(slice.get<Data::Value>(), {6, 7, 10, 11}));
 
   Variable center =
       var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3)
@@ -1031,7 +986,7 @@ TEST(Variable, reshape_and_slice) {
 
   ASSERT_EQ(center.size(), 4);
   ASSERT_EQ(center.dimensions(), Dimensions({Dim::Spectrum, 4}));
-  EXPECT_TRUE(equals(center.get<const Data::Value>(), {6, 7, 10, 11}));
+  EXPECT_TRUE(equals(center.get<Data::Value>(), {6, 7, 10, 11}));
 }
 
 TEST(Variable, reshape_mutable) {
@@ -1041,9 +996,9 @@ TEST(Variable, reshape_mutable) {
   auto view = var.reshape({Dim::Row, 6});
   view.get<Data::Value>()[3] = 0;
 
-  EXPECT_TRUE(equals(view.get<const Data::Value>(), {1, 2, 3, 0, 5, 6}));
-  EXPECT_TRUE(equals(var.get<const Data::Value>(), {1, 2, 3, 0, 5, 6}));
-  EXPECT_TRUE(equals(copy.get<const Data::Value>(), {1, 2, 3, 4, 5, 6}));
+  EXPECT_TRUE(equals(view.get<Data::Value>(), {1, 2, 3, 0, 5, 6}));
+  EXPECT_TRUE(equals(var.get<Data::Value>(), {1, 2, 3, 0, 5, 6}));
+  EXPECT_TRUE(equals(copy.get<Data::Value>(), {1, 2, 3, 4, 5, 6}));
 }
 
 TEST(Variable, access_typed_view) {
@@ -1086,24 +1041,24 @@ TEST(Variable, non_in_place_scalar_operations) {
   Variable var(Data::Value{}, {{Dim::X, 2}}, {1, 2});
 
   auto sum = var + 1;
-  EXPECT_TRUE(equals(sum.get<const Data::Value>(), {2, 3}));
+  EXPECT_TRUE(equals(sum.get<Data::Value>(), {2, 3}));
   sum = 2 + var;
-  EXPECT_TRUE(equals(sum.get<const Data::Value>(), {3, 4}));
+  EXPECT_TRUE(equals(sum.get<Data::Value>(), {3, 4}));
 
   auto diff = var - 1;
-  EXPECT_TRUE(equals(diff.get<const Data::Value>(), {0, 1}));
+  EXPECT_TRUE(equals(diff.get<Data::Value>(), {0, 1}));
   diff = 2 - var;
-  EXPECT_TRUE(equals(diff.get<const Data::Value>(), {1, 0}));
+  EXPECT_TRUE(equals(diff.get<Data::Value>(), {1, 0}));
 
   auto prod = var * 2;
-  EXPECT_TRUE(equals(prod.get<const Data::Value>(), {2, 4}));
+  EXPECT_TRUE(equals(prod.get<Data::Value>(), {2, 4}));
   prod = 3 * var;
-  EXPECT_TRUE(equals(prod.get<const Data::Value>(), {3, 6}));
+  EXPECT_TRUE(equals(prod.get<Data::Value>(), {3, 6}));
 
   auto ratio = var / 2;
-  EXPECT_TRUE(equals(ratio.get<const Data::Value>(), {1.0 / 2.0, 1.0}));
+  EXPECT_TRUE(equals(ratio.get<Data::Value>(), {1.0 / 2.0, 1.0}));
   ratio = 3 / var;
-  EXPECT_TRUE(equals(ratio.get<const Data::Value>(), {3.0, 1.5}));
+  EXPECT_TRUE(equals(ratio.get<Data::Value>(), {3.0, 1.5}));
 }
 
 TEST(VariableSlice, scalar_operations) {
@@ -1111,15 +1066,15 @@ TEST(VariableSlice, scalar_operations) {
                {11, 12, 13, 21, 22, 23});
 
   var(Dim::X, 0) += 1;
-  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 13, 22, 22, 23}));
+  EXPECT_TRUE(equals(var.get<Data::Value>(), {12, 12, 13, 22, 22, 23}));
   var(Dim::Y, 1) += 1;
-  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 13, 23, 23, 24}));
+  EXPECT_TRUE(equals(var.get<Data::Value>(), {12, 12, 13, 23, 23, 24}));
   var(Dim::X, 1, 3) += 1;
-  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 13, 14, 23, 24, 25}));
+  EXPECT_TRUE(equals(var.get<Data::Value>(), {12, 13, 14, 23, 24, 25}));
   var(Dim::X, 1) -= 1;
-  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 14, 23, 23, 25}));
+  EXPECT_TRUE(equals(var.get<Data::Value>(), {12, 12, 14, 23, 23, 25}));
   var(Dim::X, 2) *= 0;
-  EXPECT_TRUE(equals(var.get<const Data::Value>(), {12, 12, 0, 23, 23, 0}));
+  EXPECT_TRUE(equals(var.get<Data::Value>(), {12, 12, 0, 23, 23, 0}));
   var(Dim::Y, 0) /= 2;
-  EXPECT_TRUE(equals(var.get<const Data::Value>(), {6, 6, 0, 23, 23, 0}));
+  EXPECT_TRUE(equals(var.get<Data::Value>(), {6, 6, 0, 23, 23, 0}));
 }

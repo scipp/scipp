@@ -509,22 +509,13 @@ public:
     return makeVariableView(m_model.data(), 0, dims, dims);
   }
 
-  std::shared_ptr<VariableConcept> clone() const override {
-    return std::make_shared<DataModel<T>>(this->dimensions(), m_model);
-  }
-
-  std::unique_ptr<VariableConcept> cloneUnique() const override {
+  std::unique_ptr<VariableConcept> clone() const override {
     return std::make_unique<DataModel<T>>(this->dimensions(), m_model);
   }
 
   std::unique_ptr<VariableConcept>
-  cloneMutable(VariableConcept &) const override {
-    throw std::runtime_error("DataModel::cloneMutable() should not be called.");
-  }
-
-  std::shared_ptr<VariableConcept>
   clone(const Dimensions &dims) const override {
-    return std::make_shared<DataModel<T>>(dims, T(dims.volume()));
+    return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
   }
 
   bool isContiguous() const override { return true; }
@@ -639,23 +630,11 @@ public:
     }
   }
 
-  std::shared_ptr<VariableConcept> clone() const override {
-    return std::make_shared<ViewModel<T>>(this->dimensions(), m_model);
-  }
-
-  std::unique_ptr<VariableConcept> cloneUnique() const override {
+  std::unique_ptr<VariableConcept> clone() const override {
     return std::make_unique<ViewModel<T>>(this->dimensions(), m_model);
   }
 
-  std::unique_ptr<VariableConcept>
-  cloneMutable(VariableConcept &mutableData) const override {
-    auto *data =
-        dynamic_cast<conceptT_t<value_type> &>(mutableData).getSpan().data();
-    return std::make_unique<ViewModel<VariableView<value_type>>>(
-        this->dimensions(), m_model.createMutable(data));
-  }
-
-  std::shared_ptr<VariableConcept> clone(const Dimensions &) const override {
+  std::unique_ptr<VariableConcept> clone(const Dimensions &) const override {
     throw std::runtime_error("Cannot resize view.");
   }
 
@@ -704,7 +683,7 @@ template <class T> const Vector<T> &Variable::cast() const {
 }
 
 template <class T> Vector<T> &Variable::cast() {
-  return dynamic_cast<DataModel<Vector<T>> &>(m_object.access()).m_model;
+  return dynamic_cast<DataModel<Vector<T>> &>(*m_object).m_model;
 }
 
 #define INSTANTIATE(...)                                                       \
@@ -755,9 +734,6 @@ bool Variable::operator==(const Variable &other) const {
     return false;
   if (unit() != other.unit())
     return false;
-  // Trivial case: Pointers are equal
-  if (m_object == other.m_object)
-    return true;
   // Deep comparison
   if (tag() != other.tag())
     return false;
@@ -907,7 +883,7 @@ Variable &Variable::operator/=(const double value) & {
   return divide_equals(*this, other);
 }
 
-template <class T> VariableSlice VariableSlice::assign(const T &other) {
+template <class T> VariableSlice VariableSlice::assign(const T &other) const {
   // TODO Should mismatching tags be allowed, as long as the type matches?
   if (tag() != other.tag())
     throw std::runtime_error("Cannot assign to slice: Type mismatch.");
@@ -921,52 +897,52 @@ template <class T> VariableSlice VariableSlice::assign(const T &other) {
   return *this;
 }
 
-template VariableSlice VariableSlice::assign(const Variable &);
-template VariableSlice VariableSlice::assign(const ConstVariableSlice &);
+template VariableSlice VariableSlice::assign(const Variable &) const;
+template VariableSlice VariableSlice::assign(const ConstVariableSlice &) const;
 
-VariableSlice VariableSlice::operator+=(const Variable &other) {
+VariableSlice VariableSlice::operator+=(const Variable &other) const {
   return plus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) {
+VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) const {
   return plus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator+=(const double value) {
+VariableSlice VariableSlice::operator+=(const double value) const {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return plus_equals(*this, other);
 }
 
-VariableSlice VariableSlice::operator-=(const Variable &other) {
+VariableSlice VariableSlice::operator-=(const Variable &other) const {
   return minus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) {
+VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) const {
   return minus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator-=(const double value) {
+VariableSlice VariableSlice::operator-=(const double value) const {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return minus_equals(*this, other);
 }
 
-VariableSlice VariableSlice::operator*=(const Variable &other) {
+VariableSlice VariableSlice::operator*=(const Variable &other) const {
   return times_equals(*this, other);
 }
-VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) {
+VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) const {
   return times_equals(*this, other);
 }
-VariableSlice VariableSlice::operator*=(const double value) {
+VariableSlice VariableSlice::operator*=(const double value) const {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return times_equals(*this, other);
 }
 
-VariableSlice VariableSlice::operator/=(const Variable &other) {
+VariableSlice VariableSlice::operator/=(const Variable &other) const {
   return divide_equals(*this, other);
 }
-VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) {
+VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) const {
   return divide_equals(*this, other);
 }
-VariableSlice VariableSlice::operator/=(const double value) {
+VariableSlice VariableSlice::operator/=(const double value) const {
   Variable other(Data::Value{}, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return divide_equals(*this, other);
@@ -993,7 +969,7 @@ Variable ConstVariableSlice::operator-() const {
   return -copy;
 }
 
-void VariableSlice::setUnit(const Unit &unit) {
+void VariableSlice::setUnit(const Unit &unit) const {
   // TODO Should we forbid setting the unit altogether? I think it is useful in
   // particular since views onto subsets of dataset do not imply slicing of
   // variables but return slice views.
@@ -1017,20 +993,7 @@ const VariableView<const T> ConstVariableSlice::cast() const {
           dimensions()};
 }
 
-template <class T> VariableView<const T> VariableSlice::cast() const {
-  if (!m_view)
-    return dynamic_cast<const DataModel<Vector<T>> &>(data()).getView(
-        dimensions());
-  if (m_view->isConstView())
-    return {
-        dynamic_cast<const ViewModel<VariableView<const T>> &>(data()).m_model,
-        dimensions()};
-  // Make a const view from the mutable one.
-  return {dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model,
-          dimensions()};
-}
-
-template <class T> VariableView<T> VariableSlice::cast() {
+template <class T> VariableView<T> VariableSlice::cast() const {
   if (m_view)
     return dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model;
   return dynamic_cast<DataModel<Vector<T>> &>(data()).getView(dimensions());
@@ -1039,8 +1002,7 @@ template <class T> VariableView<T> VariableSlice::cast() {
 #define INSTANTIATE_SLICEVIEW(...)                                             \
   template const VariableView<const __VA_ARGS__>                               \
   ConstVariableSlice::cast<__VA_ARGS__>() const;                               \
-  template VariableView<const __VA_ARGS__> VariableSlice::cast() const;        \
-  template VariableView<__VA_ARGS__> VariableSlice::cast();
+  template VariableView<__VA_ARGS__> VariableSlice::cast() const;
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(int32_t);
@@ -1079,25 +1041,35 @@ Variable ConstVariableSlice::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
-Variable operator+(Variable a, const Variable &b) { return a += b; }
-Variable operator-(Variable a, const Variable &b) { return a -= b; }
-Variable operator*(Variable a, const Variable &b) { return a *= b; }
-Variable operator/(Variable a, const Variable &b) { return a /= b; }
-Variable operator+(Variable a, const ConstVariableSlice &b) { return a += b; }
-Variable operator-(Variable a, const ConstVariableSlice &b) { return a -= b; }
-Variable operator*(Variable a, const ConstVariableSlice &b) { return a *= b; }
-Variable operator/(Variable a, const ConstVariableSlice &b) { return a /= b; }
-Variable operator+(Variable a, const double b) { return a += b; }
-Variable operator-(Variable a, const double b) { return a -= b; }
-Variable operator*(Variable a, const double b) { return a *= b; }
-Variable operator/(Variable a, const double b) { return a /= b; }
-Variable operator+(const double a, Variable b) { return b += a; }
-Variable operator-(const double a, Variable b) { return -(b -= a); }
-Variable operator*(const double a, Variable b) { return b *= a; }
+// Note: The std::move here is necessary because RVO does not work for variables
+// that are function parameters.
+Variable operator+(Variable a, const Variable &b) { return std::move(a += b); }
+Variable operator-(Variable a, const Variable &b) { return std::move(a -= b); }
+Variable operator*(Variable a, const Variable &b) { return std::move(a *= b); }
+Variable operator/(Variable a, const Variable &b) { return std::move(a /= b); }
+Variable operator+(Variable a, const ConstVariableSlice &b) {
+  return std::move(a += b);
+}
+Variable operator-(Variable a, const ConstVariableSlice &b) {
+  return std::move(a -= b);
+}
+Variable operator*(Variable a, const ConstVariableSlice &b) {
+  return std::move(a *= b);
+}
+Variable operator/(Variable a, const ConstVariableSlice &b) {
+  return std::move(a /= b);
+}
+Variable operator+(Variable a, const double b) { return std::move(a += b); }
+Variable operator-(Variable a, const double b) { return std::move(a -= b); }
+Variable operator*(Variable a, const double b) { return std::move(a *= b); }
+Variable operator/(Variable a, const double b) { return std::move(a /= b); }
+Variable operator+(const double a, Variable b) { return std::move(b += a); }
+Variable operator-(const double a, Variable b) { return std::move(-(b -= a)); }
+Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(Unit::Id::Dimensionless / b.unit());
   require<FloatingPointVariableConcept>(b.data()).reciprocal_times(a);
-  return b;
+  return std::move(b);
 }
 
 // Example of a "derived" operation: Implementation does not require adding a
@@ -1198,7 +1170,7 @@ Variable filter(const Variable &var, const Variable &filter) {
     throw std::runtime_error(
         "Cannot filter variable: The filter must by 1-dimensional.");
   const auto dim = filter.dimensions().labels()[0];
-  auto mask = filter.get<const Coord::Mask>();
+  auto mask = filter.get<Coord::Mask>();
 
   const gsl::index removed = std::count(mask.begin(), mask.end(), 0);
   if (removed == 0)
