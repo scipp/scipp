@@ -165,6 +165,31 @@ struct ItemHelper<D, MDZipViewImpl<D, Tags...>> {
   }
 };
 
+// MDLabelImpl is a helper for constructing a MDZipView.
+template <class T, class TagT> struct MDLabelImpl {
+  using type = T;
+  using tag = TagT;
+  const std::string name;
+};
+
+template <class TagT> auto MDRead(const TagT, const std::string &name = "") {
+  if constexpr (detail::is_bins<TagT>::value)
+    return MDLabelImpl<const typename TagT::type, TagT>{name};
+  else if constexpr (std::is_same_v<Data::StdDev, TagT>)
+    return MDLabelImpl<const typename TagT::type, TagT>{name};
+  else
+    return MDLabelImpl<const typename TagT::type, const TagT>{name};
+}
+template <class TagT> auto MDWrite(const TagT, const std::string &name = "") {
+  return MDLabelImpl<typename TagT::type, TagT>{name};
+}
+template <class T, class TagT>
+auto MDRead(const TagT, const std::string &name = "") {
+  return MDLabelImpl<T,
+                     std::conditional_t<std::is_const_v<T>, const TagT, TagT>>{
+      name};
+}
+
 template <class D, class... Ts> class MDZipViewImpl {
   static_assert(sizeof...(Ts),
                 "MDZipView requires at least one variable for iteration");
@@ -184,6 +209,7 @@ private:
       const std::set<Dim> &fixedDimensions) const;
 
 public:
+  using type = MDZipViewImpl; // For nested MDLabelImpl.
   class iterator;
   class Item : public GetterMixin<Item, Ts>... {
   public:
@@ -280,89 +306,364 @@ private:
       m_variables;
 };
 
-namespace detail {
-// Helpers used for making MDZipView independent of the order used when
-// specifying tags.
-template <class T> struct type_to_id {
-  static constexpr int32_t value =
-      std::is_const<T>::value ? 4 * T{}.value() + 1 : 4 * T{}.value() + 3;
-};
-template <class T> struct type_to_id<Bin<T>> {
-  static constexpr int32_t value =
-      std::is_const<T>::value ? 4 * T{}.value() + 2 : 4 * T{}.value() + 4;
-};
-// Nested MDZipView gets an ID based on the IDs of all child tags.
-template <class D, class... Ts> struct type_to_id<MDZipViewImpl<D, Ts...>> {
-  static constexpr std::array<int32_t, sizeof...(Ts)> ids{
-      type_to_id<Ts>::value...};
-  static constexpr int32_t value =
-      200 * ((sizeof...(Ts) == 1)
-                 ? ids[0]
-                 : (sizeof...(Ts) == 2)
-                       ? 200 * ids[1] + ids[0]
-                       : 200 * 200 * ids[2] + 200 * ids[1] + ids[0]);
-};
-
-template <int32_t N>
-using get_elem_type =
-    detail::TagImpl<std::tuple_element_t<(N - 1) / 4, detail::Tags>>;
-
-template <int32_t N>
-using get_type = std::conditional_t<
-    N % 2 == 0,
-    std::conditional_t<N % 4 == 0, Bin<get_elem_type<N>>,
-                       const Bin<get_elem_type<N>>>,
-    std::conditional_t<N % 4 == 3, get_elem_type<N>, const get_elem_type<N>>>;
-
-template <int32_t N> struct id_to_type {
-  using type = std::conditional_t<
-      (N < 200), get_type<N % 200>,
-      std::conditional_t<
-          (N < 200 * 200), std::tuple<get_type<(N / 200) % 200>>,
-          std::conditional_t<
-              (N < 200 * 200 * 200),
-              std::tuple<get_type<(N / 200) % 200>,
-                         get_type<(N / (200 * 200)) % 200>>,
-              std::tuple<get_type<(N / 200) % 200>,
-                         get_type<(N / (200 * 200)) % 200>,
-                         get_type<(N / (200 * 200 * 200)) % 200>>>>>;
-};
-template <int32_t N> using id_to_type_t = typename id_to_type<N>::type;
-
-template <class Sorted, size_t... Is>
-auto sort_types_impl(std::index_sequence<Is...>) {
-  return std::tuple<
-      id_to_type_t<boost::mpl::at_c<Sorted, Is>::type::value>...>();
+inline const std::string &commonName() {
+  static std::string empty;
+  return empty;
+}
+template <class T> const std::string &commonName(const T &label) {
+  return label.name;
 }
 
-template <class... Ts> auto sort_types() {
-  using Unsorted = boost::mpl::vector_c<int, type_to_id<Ts>::value...>;
-  return sort_types_impl<typename boost::mpl::sort<Unsorted>::type>(
-      std::make_index_sequence<sizeof...(Ts)>{});
+template <class T, class... Ts>
+const std::string &commonName(const T &label, const Ts &... labels) {
+  const auto &name = commonName(labels...);
+  if (label.name.empty())
+    return name;
+  if (name.empty() || (name == label.name))
+    return label.name;
+  throw std::runtime_error(
+      "MDZipView currently only supports a single variable name.");
 }
 
-// Helper to return either Tag or translate tuple of tags into MDZipView.
-template <class D, class Tag> struct tag { using type = Tag; };
-template <class D, class... Tags> struct tag<D, std::tuple<Tags...>> {
-  using type = MDZipViewImpl<D, Tags...>;
+template <class... Labels> auto zipMD(const Dataset &d, Labels... labels) {
+  // TODO Currently this will only extract a single common name and the
+  // consistency checking is not complete. Need to refactor MDZipView to support
+  // multiple names.
+  return MDZipViewImpl<const Dataset, typename Labels::tag...>(
+      d, commonName(labels...));
+}
+template <class... Labels> auto zipMD(Dataset &d, Labels... labels) {
+  return MDZipViewImpl<Dataset, typename Labels::tag...>(d,
+                                                         commonName(labels...));
+}
+
+// TODO Can we put fixedDimensions into the label?
+template <class... Labels>
+auto zipMD(const Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
+           Labels... labels) {
+  return MDZipViewImpl<const Dataset, typename Labels::tag...>(
+      d, commonName(labels...), fixedDimensions);
+}
+template <class... Labels>
+auto zipMD(Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
+           Labels... labels) {
+  return MDZipViewImpl<Dataset, typename Labels::tag...>(
+      d, commonName(labels...), fixedDimensions);
+}
+
+template <class... Labels> auto MDNested(Labels... labels) {
+  Dataset d;
+  using type = decltype(zipMD(d, labels...));
+  return MDLabelImpl<type, type>{commonName(labels...)};
+}
+
+template <class... Labels> auto ConstMDNested(Labels... labels) {
+  const Dataset d;
+  using type = decltype(zipMD(d, labels...));
+  return MDLabelImpl<type, type>{commonName(labels...)};
+}
+
+template <class D, class Tag> struct UnitHelper {
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
+    if (is_coord<Tag>)
+      return dataset(Tag{}).unit();
+    else
+      return dataset(Tag{}, name).unit();
+  }
 };
 
-// Helper to translate (potentially nested) tuple of Tags into MDZipView.
-template <class D, class T> struct dataset_view;
-template <class D, class... Ts> struct dataset_view<D, std::tuple<Ts...>> {
-  using type = MDZipViewImpl<D, typename tag<D, Ts>::type...>;
+template <class D, class Tag> struct UnitHelper<D, Bin<Tag>> {
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
+    static_assert(is_coord<Tag>,
+                  "Only coordinates can be defined at bin edges");
+    static_cast<void>(name);
+    return dataset(Tag{}).unit();
+  }
 };
 
-} // namespace detail
+template <class D> struct UnitHelper<D, const Coord::Position> {
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
+    static_cast<void>(name);
+    if (dataset.contains(Coord::Position{}))
+      return dataset(Coord::Position{}).unit();
+    return dataset.get<const Coord::DetectorInfo>()[0](Coord::Position{})
+        .unit();
+  }
+};
 
-template <class... Ts>
-using MDZipView =
-    typename detail::dataset_view<Dataset,
-                                  decltype(detail::sort_types<Ts...>())>::type;
+template <class D> struct UnitHelper<D, Data::StdDev> {
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
+    return dataset(Data::Variance{}, name).unit();
+  }
+};
 
-template <class... Ts>
-using ConstMDZipView =
-    typename detail::dataset_view<const Dataset,
-                                  decltype(detail::sort_types<Ts...>())>::type;
+template <class D, class... Tags>
+struct UnitHelper<D, MDZipViewImpl<D, Tags...>> {
+  static detail::unit_t<MDZipViewImpl<D, Tags...>>
+  get(const Dataset &dataset, const std::string &name = std::string{}) {
+    return std::make_tuple(UnitHelper<D, Tags>::get(dataset, name)...);
+  }
+};
+
+template <class D, class Tag> struct DimensionHelper {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
+    static_cast<void>(fixedDimensions);
+    // TODO Do we need to check here if fixedDimensions are contained?
+    if (is_coord<Tag>)
+      return dataset(Tag{}).dimensions();
+    else
+      return dataset(Tag{}, name).dimensions();
+  }
+};
+
+template <class D, class Tag> struct DimensionHelper<D, Bin<Tag>> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
+    static_cast<void>(fixedDimensions);
+    if (is_coord<Tag>)
+      return dataset(Tag{}).dimensions();
+    else
+      return dataset(Tag{}, name).dimensions();
+  }
+};
+
+template <class D> struct DimensionHelper<D, const Coord::Position> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
+    static_cast<void>(fixedDimensions);
+    static_cast<void>(name);
+    if (dataset.contains(Coord::Position{}))
+      return dataset(Coord::Position{}).dimensions();
+    // Note: We do *not* return the dimensions of the nested positions in
+    // Coord::DetectorInfo since those are not dimensions of the dataset.
+    return dataset(Coord::DetectorGrouping{}).dimensions();
+  }
+};
+
+template <class D> struct DimensionHelper<D, Data::StdDev> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
+    static_cast<void>(fixedDimensions);
+    return dataset(Data::Variance{}, name).dimensions();
+  }
+};
+
+template <class D, class... Tags>
+struct DimensionHelper<D, MDZipViewImpl<D, Tags...>> {
+  static Dimensions getHelper(std::vector<Dimensions> variableDimensions,
+                              const std::set<Dim> &fixedDimensions) {
+    // Remove fixed dimensions *before* finding largest --- outer iteration must
+    // cover all contained non-fixed dimensions.
+    for (auto &dims : variableDimensions)
+      for (const auto dim : fixedDimensions)
+        if (dims.contains(dim))
+          dims.erase(dim);
+
+    auto largest =
+        *std::max_element(variableDimensions.begin(), variableDimensions.end(),
+                          [](const Dimensions &a, const Dimensions &b) {
+                            return a.count() < b.count();
+                          });
+
+    // Check that Tags have correct constness if dimensions do not match.
+    // Usually this happens in `relevantDimensions` but for the nested case we
+    // are returning only the largest set of dimensions so we have to do the
+    // comparison here.
+    std::vector<bool> is_const{
+        std::is_const<detail::value_type_t<Tags>>::value...};
+    for (size_t i = 0; i < sizeof...(Tags); ++i) {
+      auto dims = variableDimensions[i];
+      if (!((largest == dims) || is_const[i]))
+        throw std::runtime_error("Variables requested for iteration have "
+                                 "different dimensions");
+    }
+    return largest;
+  }
+
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
+    return getHelper(
+        {DimensionHelper<D, Tags>::get(dataset, fixedDimensions, name)...},
+        fixedDimensions);
+  }
+};
+
+template <class D, class Tag> struct DataHelper {
+  static auto get(D &dataset, const Dimensions &,
+                  const std::string &name = std::string{}) {
+    if (is_coord<Tag>)
+      return dataset.template get<detail::value_type_t<Tag>>();
+    else
+      return dataset.template get<detail::value_type_t<Tag>>(name);
+  }
+};
+
+template <class D, class Tag> struct DataHelper<D, Bin<Tag>> {
+  static auto get(const Dataset &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name = std::string{}) {
+    static_cast<void>(iterationDimensions);
+    static_cast<void>(name);
+    // Compute offset to next edge.
+    gsl::index offset = 1;
+    const auto &dims = dataset(Tag{}).dimensions();
+    const auto &actual = dataset.dimensions();
+    for (gsl::index i = dims.ndim() - 1; i >= 0; --i) {
+      if (dims.size(i) != actual[dims.label(i)])
+        break;
+      offset *= dims.size(i);
+    }
+
+    return ref_type_t<D, Bin<Tag>>{
+        offset, dataset.get<const detail::value_type_t<Tag>>()};
+  }
+};
+
+template <class D> struct DataHelper<D, const Coord::Position> {
+  static auto get(const Dataset &dataset, const Dimensions &,
+                  const std::string &name = std::string{}) {
+    static_cast<void>(name);
+    // TODO Probably we should throw if there is Coord::Position as well as
+    // Coord::DetectorGrouping/Coord::DetectorInfo. We should never have both, I
+    // think.
+    if (dataset.contains(Coord::Position{}))
+      return ref_type_t<D, const Coord::Position>(
+          dataset.get<detail::value_type_t<Coord::Position>>(),
+          gsl::span<const typename Coord::DetectorGrouping::type>{});
+    const auto &detInfo = dataset.get<Coord::DetectorInfo>()[0];
+    return ref_type_t<D, const Coord::Position>(
+        detInfo.get<detail::value_type_t<Coord::Position>>(),
+        dataset.get<detail::value_type_t<Coord::DetectorGrouping>>());
+  }
+};
+
+template <class D> struct DataHelper<D, Data::StdDev> {
+  static auto get(D &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name = std::string{}) {
+    return DataHelper<D, Data::Variance>::get(dataset, iterationDimensions,
+                                              name);
+  }
+};
+
+template <class D, class... Tags>
+struct DataHelper<D, MDZipViewImpl<D, Tags...>> {
+  static auto get(D &dataset, const Dimensions &iterationDimensions,
+                  const std::string &name = std::string{}) {
+    const auto labels = iterationDimensions.labels();
+    std::set<Dim> fixedDimensions(labels.begin(), labels.end());
+    // For the nested case we create a MDZipView with the correct dimensions
+    // and store it. It is later copied and initialized with the correct offset
+    // in iterator::get.
+    return ref_type_t<D, MDZipViewImpl<D, Tags...>>{
+        MultiIndex(iterationDimensions,
+                   {DimensionHelper<D, Tags>::get(dataset, {}, name)...}),
+        MDZipViewImpl<D, Tags...>(dataset, name, fixedDimensions),
+        std::make_tuple(DataHelper<D, Tags>::get(dataset, {}, name)...)};
+  }
+};
+
+template <class D, class... Ts>
+Dimensions MDZipViewImpl<D, Ts...>::relevantDimensions(
+    const Dataset &dataset,
+    boost::container::small_vector<Dimensions, 4> variableDimensions,
+    const std::set<Dim> &fixedDimensions) const {
+  // The dimensions for the variables may be longer by one if the variable is
+  // an edge variable. For iteration dimensions we require the dimensions
+  // without the extended length. The original variableDimensions is kept
+  // (note pass by value) since the extended length is required to compute the
+  // correct offset into the variable.
+  std::vector<bool> is_bins{detail::is_bins_t<Ts>::value...};
+  for (size_t i = 0; i < sizeof...(Ts); ++i) {
+    auto &dims = variableDimensions[i];
+    if (is_bins[i]) {
+      const auto &actual = dataset.dimensions();
+      for (auto &dim : dims.labels())
+        dims.resize(dim, actual[dim]);
+    }
+  }
+
+  auto largest =
+      *std::max_element(variableDimensions.begin(), variableDimensions.end(),
+                        [](const Dimensions &a, const Dimensions &b) {
+                          return a.count() < b.count();
+                        });
+  for (const auto dim : fixedDimensions)
+    if (largest.contains(dim))
+      largest.erase(dim);
+
+  std::vector<bool> is_const{detail::is_const<Ts>::value...};
+  for (size_t i = 0; i < sizeof...(Ts); ++i) {
+    auto dims = variableDimensions[i];
+    for (const auto dim : fixedDimensions)
+      if (dims.contains(dim))
+        dims.erase(dim);
+    // Largest must contain all other dimensions.
+    if (!largest.contains(dims))
+      throw std::runtime_error(
+          "Variables requested for iteration do not span a joint space. In "
+          "case one of the variables represents bin edges direct joint "
+          "iteration is not possible. Use the Bin<> wrapper to iterate over "
+          "bins defined by edges instead.");
+    // Must either be identical or access must be read-only.
+    if (!((largest == dims) || is_const[i]))
+      throw std::runtime_error("Variables requested for iteration have "
+                               "different dimensions");
+  }
+  return largest;
+}
+
+template <class D, class... Ts>
+MDZipViewImpl<D, Ts...>::MDZipViewImpl(D &dataset, const std::string &name,
+                                       const std::set<Dim> &fixedDimensions)
+    : m_units{UnitHelper<D, Ts>::get(dataset, name)...},
+      m_variables(makeVariables(dataset, fixedDimensions, name)) {}
+template <class D, class... Ts>
+MDZipViewImpl<D, Ts...>::MDZipViewImpl(D &dataset,
+                                       const std::set<Dim> &fixedDimensions)
+    : m_units{UnitHelper<D, Ts>::get(dataset)...},
+      m_variables(makeVariables(dataset, fixedDimensions)) {}
+template <class D, class... Ts>
+MDZipViewImpl<D, Ts...>::MDZipViewImpl(
+    D &dataset, const std::initializer_list<Dim> &fixedDimensions)
+    : m_units{UnitHelper<D, Ts>::get(dataset)...},
+      m_variables(makeVariables(dataset, fixedDimensions)) {}
+
+template <class D, class... Ts>
+MDZipViewImpl<D, Ts...>::MDZipViewImpl(
+    const MDZipViewImpl &other, const std::tuple<ref_type_t<D, Ts>...> &data)
+    : m_units(other.m_units),
+      m_variables(std::get<0>(other.m_variables),
+                  std::get<1>(other.m_variables), data) {}
+
+template <class D, class... Ts>
+using makeVariableReturnType =
+    std::tuple<const gsl::index, const MultiIndex,
+               const std::tuple<ref_type_t<D, Ts>...>>;
+
+template <class D, class... Ts>
+makeVariableReturnType<D, Ts...>
+MDZipViewImpl<D, Ts...>::makeVariables(D &dataset,
+                                       const std::set<Dim> &fixedDimensions,
+                                       const std::string &name) const {
+  boost::container::small_vector<Dimensions, 4> subdimensions{
+      DimensionHelper<D, Ts>::get(dataset, fixedDimensions, name)...};
+  Dimensions iterationDimensions(
+      relevantDimensions(dataset, subdimensions, fixedDimensions));
+  return std::tuple<const gsl::index, const MultiIndex,
+                    const std::tuple<ref_type_t<D, Ts>...>>{
+      iterationDimensions.volume(),
+      MultiIndex(iterationDimensions, subdimensions),
+      std::tuple<ref_type_t<D, Ts>...>{
+          DataHelper<D, Ts>::get(dataset, iterationDimensions, name)...}};
+}
 
 #endif // MD_ZIP_VIEW_H

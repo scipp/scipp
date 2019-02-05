@@ -86,10 +86,12 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // Extract a single Tof slice.
   delta = delta(Dim::Tof, 0);
 
-  using PointData = MDZipView<const Coord::Temperature, const Data::Value,
-                              const Data::Variance>;
-  MDZipView<PointData, const Coord::SpectrumNumber> view(delta, "sample",
-                                                         {Dim::Temperature});
+  auto nested =
+      MDNested(MDRead(Coord::Temperature{}), MDRead(Data::Value{}, "sample"),
+               MDRead(Data::Variance{}, "sample"));
+  using PointData = decltype(nested)::type;
+  auto view =
+      zipMD(delta, {Dim::Temperature}, nested, MDRead(Coord::SpectrumNumber{}));
 
   auto tempDependence =
       std::find_if(view.begin(), view.end(),
@@ -187,7 +189,7 @@ TEST(Workspace2D, scanning) {
   d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, 3}, grouping);
   d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, 3}, {1, 2, 3});
 
-  MDZipView<const Coord::Position> view(d);
+  auto view = zipMD(d, MDRead(Coord::Position{}));
   ASSERT_EQ(view.size(), 3);
   auto it = view.begin();
   EXPECT_EQ(it++->get<Coord::Position>()[0], 1.0);
@@ -238,16 +240,19 @@ TEST(Workspace2D, masking) {
 
   // Skip processing spectrum if it is masked.
   EXPECT_FALSE(d_masked2(Coord::Mask{}).dimensions().contains(Dim::Tof));
-  MDZipView<MDZipView<Data::Value>, const Coord::Mask> spectra(d_masked2,
-                                                               "sample");
+  auto spectra =
+      zipMD(d_masked2, {Dim::Tof}, MDNested(MDWrite(Data::Value{}, "sample")),
+            MDRead(Coord::Mask{}));
   for (auto &item : spectra)
     if (!item.get<Coord::Mask>())
-      for (auto &point : item.get<MDZipView<Data::Value>>())
+      for (auto &point :
+           item.get<decltype(MDNested(MDWrite(Data::Value{})))::type>())
         point.value() += 1.0;
 
   // Apply mask.
-  MDZipView<Data::Value, Data::Variance, const Coord::Mask> view(d_masked2,
-                                                                 "background");
+  auto view =
+      zipMD(d_masked2, MDWrite(Data::Value{}, "background"),
+            MDWrite(Data::Variance{}, "background"), MDRead(Coord::Mask{}));
   for (auto &item : view) {
     item.value() *= item.get<Coord::Mask>();
     item.get<Data::Variance>() *= item.get<Coord::Mask>();

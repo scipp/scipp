@@ -17,7 +17,8 @@ TEST(ExampleInstrument, basics) {
   detectors.insert(Coord::DetectorId{}, {Dim::Detector, ndet}, {1, 2, 3, 4});
   detectors.insert(Coord::Position{}, {Dim::Detector, ndet}, ndet,
                    Eigen::Vector3d{0.0, 0.0, 2.0});
-  MDZipView<const Coord::DetectorId, Coord::Position> view(detectors);
+  auto view =
+      zipMD(detectors, MDRead(Coord::DetectorId{}), MDWrite(Coord::Position{}));
   for (auto &det : view) {
     det.get<Coord::Position>()[0] = 0.1 * det.get<Coord::DetectorId>();
     EXPECT_EQ(det.get<Coord::Position>()[0],
@@ -27,7 +28,7 @@ TEST(ExampleInstrument, basics) {
   // For const access we need to make sure that the implementation is not
   // attempting to compute derived positions based on detector grouping (which
   // does not exist in this case).
-  MDZipView<const Coord::Position> directConstView(detectors);
+  auto directConstView = zipMD(detectors, MDRead(Coord::Position{}));
   // If not implemented correctly this would actually segfault, not throw.
   ASSERT_NO_THROW(directConstView.begin()->get<Coord::Position>());
   EXPECT_EQ(directConstView.begin()->get<Coord::Position>()[0], 0.1);
@@ -45,9 +46,9 @@ TEST(ExampleInstrument, basics) {
   d.insert(Coord::DetectorInfo{}, {}, {detectors});
   d.insert(Coord::ComponentInfo{}, {}, {components});
 
-  EXPECT_ANY_THROW(static_cast<void>(MDZipView<Coord::Position>(d)));
-  ASSERT_NO_THROW(static_cast<void>(MDZipView<const Coord::Position>(d)));
-  MDZipView<const Coord::Position> specPos(d);
+  EXPECT_ANY_THROW(zipMD(d, MDWrite(Coord::Position{})));
+  ASSERT_NO_THROW(zipMD(d, MDRead(Coord::Position{})));
+  auto specPos = zipMD(d, MDRead(Coord::Position{}));
   ASSERT_EQ(specPos.size(), 2);
   EXPECT_DOUBLE_EQ(specPos.begin()->get<Coord::Position>()[0], 0.15);
   EXPECT_DOUBLE_EQ((specPos.begin() + 1)->get<Coord::Position>()[0], 0.35);
