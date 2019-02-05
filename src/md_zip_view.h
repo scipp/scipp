@@ -165,22 +165,26 @@ struct ItemHelper<D, MDZipViewImpl<D, Tags...>> {
   }
 };
 
-// MDLabel is a helper for constructing a MDZipView.
+// MDLabelImpl is a helper for constructing a MDZipView.
 template <class T, class TagT> struct MDLabelImpl {
   using type = T;
   using tag = TagT;
-  const std::string &name;
+  const std::string name;
 };
 
-template <class TagT> auto MDLabel(const TagT, const std::string &name = "") {
-  return MDLabelImpl<const typename TagT::type, const TagT>{name};
+template <class TagT> auto MDRead(const TagT, const std::string &name = "") {
+  if constexpr (detail::is_bins<TagT>::value)
+    return MDLabelImpl<const typename TagT::type, TagT>{name};
+  else if constexpr (std::is_same_v<Data::StdDev, TagT>)
+    return MDLabelImpl<const typename TagT::type, TagT>{name};
+  else
+    return MDLabelImpl<const typename TagT::type, const TagT>{name};
 }
-template <class TagT>
-auto MutableMDLabel(const TagT, const std::string &name = "") {
+template <class TagT> auto MDWrite(const TagT, const std::string &name = "") {
   return MDLabelImpl<typename TagT::type, TagT>{name};
 }
 template <class T, class TagT>
-auto MDLabel(const TagT, const std::string &name = "") {
+auto MDRead(const TagT, const std::string &name = "") {
   return MDLabelImpl<T,
                      std::conditional_t<std::is_const_v<T>, const TagT, TagT>>{
       name};
@@ -205,7 +209,7 @@ private:
       const std::set<Dim> &fixedDimensions) const;
 
 public:
-  using type = MDZipViewImpl; // For nested MDLabel.
+  using type = MDZipViewImpl; // For nested MDLabelImpl.
   class iterator;
   class Item : public GetterMixin<Item, Ts>... {
   public:
@@ -306,6 +310,10 @@ template <class... Ts> using MDZipView = MDZipViewImpl<Dataset, Ts...>;
 template <class... Ts>
 using ConstMDZipView = MDZipViewImpl<const Dataset, Ts...>;
 
+inline const std::string &commonName() {
+  static std::string empty;
+  return empty;
+}
 template <class T> const std::string &commonName(const T &label) {
   return label.name;
 }
@@ -335,12 +343,26 @@ template <class... Labels> auto zipMD(Dataset &d, Labels... labels) {
 template <class... Labels>
 auto zipMD(const Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
            Labels... labels) {
-  return ConstMDZipView<typename Labels::tag...>(d, fixedDimensions);
+  return ConstMDZipView<typename Labels::tag...>(d, commonName(labels...),
+                                                 fixedDimensions);
 }
 template <class... Labels>
 auto zipMD(Dataset &d, const std::initializer_list<Dim> &fixedDimensions,
            Labels... labels) {
-  return MDZipView<typename Labels::tag...>(d, fixedDimensions);
+  return MDZipView<typename Labels::tag...>(d, commonName(labels...),
+                                            fixedDimensions);
+}
+
+template <class... Labels> auto MDNested(Labels... labels) {
+  Dataset d;
+  using type = decltype(zipMD(d, labels...));
+  return MDLabelImpl<type, type>{commonName(labels...)};
+}
+
+template <class... Labels> auto ConstMDNested(Labels... labels) {
+  const Dataset d;
+  using type = decltype(zipMD(d, labels...));
+  return MDLabelImpl<type, type>{commonName(labels...)};
 }
 
 template <class D, class Tag> struct UnitHelper {
