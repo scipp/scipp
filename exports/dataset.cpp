@@ -303,19 +303,19 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Tag>(m, "Tag").def(py::self == py::self);
 
   auto data_tags = m.def_submodule("Data");
-  // py::class_<Data::Value, Tag>(data_tags, "_Value");
-  // py::class_<Data::Variance, Tag>(data_tags, "_Variance");
+  py::class_<Data::Value_t, Tag>(data_tags, "_Value");
+  py::class_<Data::Variance_t, Tag>(data_tags, "_Variance");
   data_tags.attr("Value") = Data::Value;
   data_tags.attr("Variance") = Data::Variance;
 
   auto coord_tags = m.def_submodule("Coord");
-  // py::class_<Coord::Mask, Tag>(coord_tags, "_Mask");
-  // py::class_<Coord::X, Tag>(coord_tags, "_X");
-  // py::class_<Coord::Y, Tag>(coord_tags, "_Y");
-  // py::class_<Coord::Z, Tag>(coord_tags, "_Z");
-  // py::class_<Coord::Tof, Tag>(coord_tags, "_Tof");
-  // py::class_<Coord::RowLabel, Tag>(coord_tags, "_RowLabel");
-  // py::class_<Coord::SpectrumNumber, Tag>(coord_tags, "_SpectrumNumber");
+  py::class_<Coord::Mask_t, Tag>(coord_tags, "_Mask");
+  py::class_<Coord::X_t, Tag>(coord_tags, "_X");
+  py::class_<Coord::Y_t, Tag>(coord_tags, "_Y");
+  py::class_<Coord::Z_t, Tag>(coord_tags, "_Z");
+  py::class_<Coord::Tof_t, Tag>(coord_tags, "_Tof");
+  py::class_<Coord::RowLabel_t, Tag>(coord_tags, "_RowLabel");
+  py::class_<Coord::SpectrumNumber_t, Tag>(coord_tags, "_SpectrumNumber");
   coord_tags.attr("Mask") = Coord::Mask;
   coord_tags.attr("X") = Coord::X;
   coord_tags.attr("Y") = Coord::Y;

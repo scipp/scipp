@@ -255,11 +255,13 @@ struct Coord {
   using Ef_t = detail::TagImpl<detail::CoordDef::Ef>;
   using DetectorId_t = detail::TagImpl<detail::CoordDef::DetectorId>;
   using SpectrumNumber_t = detail::TagImpl<detail::CoordDef::SpectrumNumber>;
-  using DetectorGrouping_t = detail::TagImpl<detail::CoordDef::DetectorGrouping>;
+  using DetectorGrouping_t =
+      detail::TagImpl<detail::CoordDef::DetectorGrouping>;
   using RowLabel_t = detail::TagImpl<detail::CoordDef::RowLabel>;
   using Polarization_t = detail::TagImpl<detail::CoordDef::Polarization>;
   using Temperature_t = detail::TagImpl<detail::CoordDef::Temperature>;
-  using FuzzyTemperature_t = detail::TagImpl<detail::CoordDef::FuzzyTemperature>;
+  using FuzzyTemperature_t =
+      detail::TagImpl<detail::CoordDef::FuzzyTemperature>;
   using Time_t = detail::TagImpl<detail::CoordDef::Time>;
   using TimeInterval_t = detail::TagImpl<detail::CoordDef::TimeInterval>;
   using Mask_t = detail::TagImpl<detail::CoordDef::Mask>;
