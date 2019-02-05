@@ -325,7 +325,7 @@ static void BM_Dataset_Workspace2D_rebin(benchmark::State &state) {
 
   Variable newCoord(Coord::Tof{}, {Dim::Tof, nPoint / 2});
   double value = 0.0;
-  for (auto &tof : newCoord.get<Coord::Tof>()) {
+  for (auto &tof : newCoord.get(Coord::Tof{})) {
     tof = value;
     value += 3.0;
   }

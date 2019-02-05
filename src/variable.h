@@ -222,19 +222,19 @@ public:
   }
   bool isData() const { return !isCoord() && !isAttr(); }
 
-  template <class Tag> auto get() const {
+  template <class TagT> auto get(const TagT t) const {
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).
-    if (Tag{} != tag())
+    if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return gsl::make_span(cast<typename Tag::type>());
+    return gsl::make_span(cast<typename TagT::type>());
   }
 
-  template <class Tag> auto get() {
-    if (Tag{} != tag())
+  template <class TagT> auto get(const TagT t) {
+    if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return gsl::make_span(cast<typename Tag::type>());
+    return gsl::make_span(cast<typename TagT::type>());
   }
 
   template <class T> auto span() const { return gsl::make_span(cast<T>()); }
@@ -372,10 +372,10 @@ public:
   // and we do not need to delete the rvalue overload, unlike for many other
   // methods. The data is owned by the underlying variable so it will not be
   // deleted even if *this is a temporary and gets deleted.
-  template <class Tag> auto get() const {
-    if (Tag{} != tag())
+  template <class TagT> auto get(const TagT t) const {
+    if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return this->template cast<typename Tag::type>();
+    return this->template cast<typename TagT::type>();
   }
 
   template <class T> auto span() const { return cast<T>(); }
@@ -442,10 +442,10 @@ public:
   }
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
-  template <class Tag> auto get() const {
-    if (Tag{} != tag())
+  template <class TagT> auto get(const TagT t) const {
+    if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return this->template cast<typename Tag::type>();
+    return this->template cast<typename TagT::type>();
   }
 
   template <class T> auto span() { return cast<T>(); }

@@ -1057,8 +1057,8 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   // View extent is 1 so we get 2 edges.
   ASSERT_EQ(view_a_x01.dimensions()[Dim::X], 1);
   ASSERT_EQ(view_a_x01[0].dimensions()[Dim::X], 2);
-  EXPECT_TRUE(equals(view_a_x01[0].get<Coord::X>(), {1, 2}));
-  EXPECT_TRUE(equals(view_a_x12[0].get<Coord::X>(), {2, 3}));
+  EXPECT_TRUE(equals(view_a_x01[0].get(Coord::X{}), {1, 2}));
+  EXPECT_TRUE(equals(view_a_x12[0].get(Coord::X{}), {2, 3}));
 
   auto view_a_x02 = d["a"](Dim::X, 0, 2);
   auto view_a_x13 = d["a"](Dim::X, 1, 3);
@@ -1066,8 +1066,8 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   // View extent is 2 so we get 3 edges.
   ASSERT_EQ(view_a_x02.dimensions()[Dim::X], 2);
   ASSERT_EQ(view_a_x02[0].dimensions()[Dim::X], 3);
-  EXPECT_TRUE(equals(view_a_x02[0].get<Coord::X>(), {1, 2, 3}));
-  EXPECT_TRUE(equals(view_a_x13[0].get<Coord::X>(), {2, 3, 4}));
+  EXPECT_TRUE(equals(view_a_x02[0].get(Coord::X{}), {1, 2, 3}));
+  EXPECT_TRUE(equals(view_a_x13[0].get(Coord::X{}), {2, 3, 4}));
 
   // If we slice with a range index the corresponding coordinate (and dimension)
   // is preserved, even if the range has size 1. Thus the operation fails due to
@@ -1288,11 +1288,11 @@ TEST(Dataset, convert) {
             Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 4}}));
   // TODO Check unit.
 
-  const auto values = coord.get<Coord::Energy>();
+  const auto values = coord.get(Coord::Energy{});
   // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
   // v [m/s] = 437 * sqrt ( E[meV] )
   Variable tof_in_seconds = tof(Coord::Tof{}) * 1e-6;
-  const auto tofs = tof_in_seconds.get<Coord::Tof>();
+  const auto tofs = tof_in_seconds.get(Coord::Tof{});
   // Spectrum 0 is 11 m from source
   EXPECT_NEAR(values[0], pow((11.0 / tofs[0]) / 437.0, 2), values[0] * 0.01);
   EXPECT_NEAR(values[1], pow((11.0 / tofs[1]) / 437.0, 2), values[1] * 0.01);
@@ -1309,7 +1309,7 @@ TEST(Dataset, convert) {
   const auto &data = energy(Data::Value{});
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
-  EXPECT_TRUE(equals(data.get<Data::Value>(), {1, 2, 3, 4, 5, 6}));
+  EXPECT_TRUE(equals(data.get(Data::Value{}), {1, 2, 3, 4, 5, 6}));
 
   ASSERT_TRUE(energy.contains(Coord::Position{}));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo{}));
@@ -1372,16 +1372,16 @@ TEST(Dataset, convert_direct_inelastic) {
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 4}}));
   // TODO Check actual values here after conversion is fixed.
   EXPECT_FALSE(
-      equals(coord.get<Coord::DeltaE>(), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
+      equals(coord.get(Coord::DeltaE{}), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
   // 2 spectra at same position see same deltaE.
-  EXPECT_EQ(coord(Dim::Spectrum, 0).get<Coord::DeltaE>()[0],
-            coord(Dim::Spectrum, 1).get<Coord::DeltaE>()[0]);
+  EXPECT_EQ(coord(Dim::Spectrum, 0).get(Coord::DeltaE{})[0],
+            coord(Dim::Spectrum, 1).get(Coord::DeltaE{})[0]);
 
   ASSERT_TRUE(energy.contains(Data::Value{}));
   const auto &data = energy(Data::Value{});
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
-  EXPECT_TRUE(equals(data.get<Data::Value>(), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  EXPECT_TRUE(equals(data.get(Data::Value{}), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
 
   ASSERT_TRUE(energy.contains(Coord::Position{}));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo{}));
@@ -1424,17 +1424,17 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 4}}));
   // TODO Check actual values here after conversion is fixed.
   EXPECT_FALSE(
-      equals(coord.get<Coord::DeltaE>(), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
+      equals(coord.get(Coord::DeltaE{}), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
   // 2 spectra at same position, but now their Ei differs, so deltaE is also
   // different (compare to test for single Ei above).
-  EXPECT_NE(coord(Dim::Spectrum, 0).get<Coord::DeltaE>()[0],
-            coord(Dim::Spectrum, 1).get<Coord::DeltaE>()[0]);
+  EXPECT_NE(coord(Dim::Spectrum, 0).get(Coord::DeltaE{})[0],
+            coord(Dim::Spectrum, 1).get(Coord::DeltaE{})[0]);
 
   ASSERT_TRUE(energy.contains(Data::Value{}));
   const auto &data = energy(Data::Value{});
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
-  EXPECT_TRUE(equals(data.get<Data::Value>(), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  EXPECT_TRUE(equals(data.get(Data::Value{}), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
 
   ASSERT_TRUE(energy.contains(Coord::Position{}));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo{}));

@@ -180,13 +180,13 @@ public:
   auto get(const std::string &name = std::string{}) const && = delete;
   template <class Tag>
   auto get(const std::string &name = std::string{}) const & {
-    return m_variables[find(Tag{}, name)].template get<Tag>();
+    return m_variables[find(Tag{}, name)].get(Tag{});
   }
 
   template <class Tag>
   auto get(const std::string &name = std::string{}) && = delete;
   template <class Tag> auto get(const std::string &name = std::string{}) & {
-    return m_variables[find(Tag{}, name)].template get<Tag>();
+    return m_variables[find(Tag{}, name)].get(Tag{});
   }
 
   template <class T>

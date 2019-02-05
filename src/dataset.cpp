@@ -317,10 +317,10 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
             // TODO We are working with VariableSlice here, so get<> returns a
             // view, not a span, i.e., it is less efficient. May need to do this
             // differently for optimal performance.
-            auto v1 = var1.template get<Data::Value>();
-            const auto v2 = var2.template get<Data::Value>();
-            auto e1 = error1.template get<Data::Variance>();
-            const auto e2 = error2.template get<Data::Variance>();
+            auto v1 = var1.template span<double>();
+            const auto v2 = var2.template span<double>();
+            auto e1 = error1.template span<double>();
+            const auto e2 = error2.template span<double>();
             // TODO Need to ensure that data is contiguous!
             aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
                               e2.data());
@@ -636,7 +636,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   // TODO Is there are more generic way to find "histogrammable" data, not
   // specific to (neutron) events? Something like Data::ValueVector, i.e., any
   // data variable that contains a vector of values at each point?
-  const auto &events = var.get<Data::Events>();
+  const auto &events = var.get(Data::Events{});
   // TODO This way of handling events (and their units) as nested Dataset feels
   // a bit unwieldy. Would it be a better option to store TOF (or any derived
   // values) as simple vectors in Data::Events? There would be a separate
@@ -734,7 +734,7 @@ template <class Tag> struct Sort {
 
     Dataset sorted;
     Variable axisVar = d(Tag{}, name);
-    auto axis = axisVar.template get<Tag>();
+    auto axis = axisVar.template get(Tag{});
     std::vector<gsl::index> indices(axis.size());
     std::iota(indices.begin(), indices.end(), 0);
     auto view = ranges::view::zip(axis, indices);

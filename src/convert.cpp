@@ -52,7 +52,7 @@ Dataset tofToEnergy(const Dataset &d) {
   // TODO Must also update unit of conversionFactor.
   // convertFactor.unit() *= extractUnit(physicalConstants);
   std::transform(specPos.begin(), specPos.end(),
-                 conversionFactor.get<Data::Value>().begin(), factor);
+                 conversionFactor.span<double>().begin(), factor);
 
   // 2. Transform variables
   Dataset converted;
@@ -115,13 +115,13 @@ Dataset tofToDeltaE(const Dataset &d) {
     // This is how we support multi-Ei data!
     tofShift.setDimensions(d(Coord::Ei{}).dimensions());
     const auto &Ei = d.get<Coord::Ei>();
-    std::transform(Ei.begin(), Ei.end(), tofShift.get<Data::Value>().begin(),
+    std::transform(Ei.begin(), Ei.end(), tofShift.span<double>().begin(),
                    [&l1](const double Ei) { return l1 / sqrt(Ei); });
 
     scale.setDimensions(dims);
     auto specPos = zipMD(d, MDRead(Coord::Position{}));
-    std::transform(specPos.begin(), specPos.end(),
-                   scale.get<Data::Value>().begin(), [&](const auto &item) {
+    std::transform(specPos.begin(), specPos.end(), scale.span<double>().begin(),
+                   [&](const auto &item) {
                      const auto &pos = item.template get<Coord::Position>();
                      const double l2 = (samplePos - pos).norm();
                      return l2 * l2;
@@ -133,7 +133,7 @@ Dataset tofToDeltaE(const Dataset &d) {
     // Ef can be different for every spectrum so we access it also via a view.
     auto geometry = zipMD(d, MDRead(Coord::Position{}), MDRead(Coord::Ef{}));
     std::transform(geometry.begin(), geometry.end(),
-                   tofShift.get<Data::Value>().begin(), [&](const auto &item) {
+                   tofShift.span<double>().begin(), [&](const auto &item) {
                      const auto &pos = item.template get<Coord::Position>();
                      const auto &Ef = item.template get<Coord::Ef>();
                      const double l2 = (samplePos - pos).norm();
@@ -141,7 +141,7 @@ Dataset tofToDeltaE(const Dataset &d) {
                    });
 
     scale.setDimensions({});
-    scale.get<Data::Value>()[0] = l1 * l1;
+    scale.span<double>()[0] = l1 * l1;
   } else {
     throw std::runtime_error("Dataset contains neither Coord::Ei nor "
                              "Coord::Ef, this does not look like "

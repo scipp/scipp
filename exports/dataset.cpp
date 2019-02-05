@@ -130,7 +130,7 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   if (self.contains(tag, name))
     if (self(tag, name) == var)
       return;
-  const auto &data = var.template get<Tag>();
+  const auto &data = var.get(Tag{});
   self.insert(Tag{}, name, var.dimensions(), data.begin(), data.end());
 }
 
@@ -166,7 +166,7 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
-  auto buf = self[index].template get<Tag>();
+  auto buf = self[index].get(Tag{});
   double *ptr = (double *)info.ptr;
   std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
@@ -222,7 +222,7 @@ void doSetVariableSlice(VariableSlice &slice,
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
-  auto buf = slice.template get<Tag>();
+  auto buf = slice.get(Tag{});
   double *ptr = (double *)info.ptr;
   std::copy(ptr, ptr + dims.volume(), buf.begin());
 }
