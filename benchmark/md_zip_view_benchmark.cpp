@@ -166,8 +166,8 @@ static void BM_MDZipView_multi_column_mixed_dimension_nested_threaded(
   Dimensions dims;
   dims.add(Dim::Tof, 1000);
   dims.add(Dim::Spectrum, nSpec);
-  d.insert(Data::Value{}, "histograms", dims, nSpec * 1000);
-  d.insert(Data::Variance{}, "histograms", dims, nSpec * 1000);
+  d.insert(Data::Value{}, "", dims, nSpec * 1000);
+  d.insert(Data::Variance{}, "", dims, nSpec * 1000);
 
   for (auto _ : state) {
     auto nested = MDNested(MDWrite(Data::Value{}), MDWrite(Data::Variance{}));
@@ -194,12 +194,12 @@ static void BM_MDZipView_multi_column_mixed_dimension_nested_transpose(
     benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert(Data::Int{}, "specnums", {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Data::Int{}, "", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dim::Spectrum, nSpec);
   dims.add(Dim::Tof, 1000);
-  d.insert(Data::Value{}, "histograms", dims, nSpec * 1000);
-  d.insert(Data::Variance{}, "histograms", dims, nSpec * 1000);
+  d.insert(Data::Value{}, "", dims, nSpec * 1000);
+  d.insert(Data::Variance{}, "", dims, nSpec * 1000);
 
   for (auto _ : state) {
     auto nested = MDNested(MDWrite(Data::Value{}), MDWrite(Data::Variance{}));
