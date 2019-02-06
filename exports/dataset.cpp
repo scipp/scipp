@@ -66,25 +66,14 @@ DType convertDType(const py::dtype type) {
   if (type.is(py::dtype::of<int32_t>()))
     return dtype<int32_t>;
   throw std::runtime_error("unsupported dtype");
-
 }
 
 namespace detail {
-// Pybind11 converts py::array to py::array_t for us, with all sorts of
-// automatic conversions such as integer to double, if required. Therefore this
-// is in a separate function.
-template <class Tag>
-Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
-                      py::array_t<typename Tag::type> data) {
-  const py::buffer_info info = data.request();
-  Dimensions dims(labels, info.shape);
-  auto *ptr = (typename Tag::type *)info.ptr;
-  return Variable(tag, dims, ptr, ptr + dims.volume());
-}
-
 template <class T> struct MakeVariableT {
   static Variable apply(const Tag tag, const std::vector<Dim> &labels,
                         py::array data) {
+    // Pybind11 converts py::array to py::array_t for us, with all sorts of
+    // automatic conversions such as integer to double, if required.
     py::array_t<T> dataT(data);
     const py::buffer_info info = dataT.request();
     Dimensions dims(labels, info.shape);
@@ -101,7 +90,7 @@ template <class T> struct MakeVariableDefaultInitT {
   }
 };
 
-Variable makeVariable2(const Tag tag, const std::vector<Dim> &labels,
+Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
                       const py::array &data,
                       py::dtype dtype = py::dtype::of<Empty>()) {
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
@@ -126,14 +115,6 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
                                                                   shape);
 }
 
-template <class Tag> struct MakeVariable {
-  static Variable
-  apply(const std::tuple<const std::vector<Dim> &, py::array> &data) {
-    const auto & [ labels, array ] = data;
-    return detail::makeVariable<Tag>(Tag{}, labels, array);
-  }
-};
-
 void insertCoord(
     Dataset &self, const Tag tag,
     const std::tuple<const std::vector<Dim> &, py::array &> &data) {
@@ -149,8 +130,10 @@ template <class T>
 void insertCoordT(
     Dataset &self, const Tag tag,
     const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
-  auto var = Call<decltype(Coord::X), decltype(Coord::Y), decltype(Coord::Z),
-                  decltype(Coord::Tof)>::apply<MakeVariable>(tag, data);
+  const auto & [ labels, array ] = data;
+  // TODO This is converting back and forth between py::array and py::array_t,
+  // can we do this in a better way?
+  auto var = detail::MakeVariableT<T>::apply(tag, labels, array);
   self.insert(std::move(var));
 }
 
@@ -166,14 +149,16 @@ void insertCoord1D(Dataset &self, const Tag,
 
 // Note the concretely typed py::array_t. If we use py::array it will not match
 // plain Python arrays. Need overloads when we add support for non-double data.
+template <class T>
 void insertNamed(
     Dataset &self, const std::pair<Tag, const std::string &> &key,
-    const std::tuple<const std::vector<Dim> &, py::array_t<double> &> &data) {
-  auto var =
-      Call<decltype(Data::Value),
-           decltype(Data::Variance)>::apply<MakeVariable>(std::get<Tag>(key),
-                                                          data);
-  var.setName(std::get<const std::string &>(key));
+    const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
+  const auto & [ tag, name ] = key;
+  const auto & [ labels, array ] = data;
+  // TODO This is converting back and forth between py::array and py::array_t,
+  // can we do this in a better way?
+  auto var = detail::MakeVariableT<T>::apply(tag, labels, array);
+  var.setName(name);
   self.insert(std::move(var));
 }
 
@@ -412,7 +397,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
-      .def(py::init(&detail::makeVariable2), py::arg("tag"), py::arg("labels"),
+      .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def_property_readonly("tag", &Variable::tag)
@@ -592,7 +577,7 @@ PYBIND11_MODULE(dataset, m) {
       // implicit (and potentially expensive conversion).
       .def("__setitem__", detail::insertCoordT<double>)
       .def("__setitem__", detail::insertCoord1D<Coord::RowLabel_t>)
-      .def("__setitem__", detail::insertNamed)
+      .def("__setitem__", detail::insertNamed<double>)
       .def("__setitem__", detail::insert<Variable>)
       .def("__setitem__", detail::insert<VariableSlice>)
       .def("__setitem__", detail::insertDefaultInit)
