@@ -302,27 +302,29 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   case dtype<char>:
     return {as_py_array_t<char>(obj, view)};
   default:
-    throw std::runtime_error("non implemented for this type.");
+    throw std::runtime_error("not implemented for this type.");
   }
 }
 
-template <class... Ts>
-std::variant<VariableView<Ts>...> as_VariableView_variant(VariableSlice &view) {
+template <class Var, class... Ts>
+std::variant<std::conditional_t<std::is_same_v<Var, Variable>, gsl::span<Ts>,
+                                VariableView<Ts>>...>
+as_VariableView_variant(Var &view) {
   switch (view.dtype()) {
   case dtype<double>:
-    return {view.span<double>()};
+    return {view.template span<double>()};
   case dtype<float>:
-    return {view.span<float>()};
+    return {view.template span<float>()};
   case dtype<int64_t>:
-    return {view.span<int64_t>()};
+    return {view.template span<int64_t>()};
   case dtype<int32_t>:
-    return {view.span<int32_t>()};
+    return {view.template span<int32_t>()};
   case dtype<char>:
-    return {view.span<char>()};
+    return {view.template span<char>()};
   case dtype<std::string>:
-    return {view.span<std::string>()};
+    return {view.template span<std::string>()};
   default:
-    throw std::runtime_error("non implemented for this type.");
+    throw std::runtime_error("not implemented for this type.");
   }
 }
 
@@ -402,6 +404,9 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("numpy",
                              &as_py_array_t_variant<Variable, double, float,
                                                     int64_t, int32_t, char>)
+      .def_property_readonly(
+          "data", &as_VariableView_variant<Variable, double, float, int64_t,
+                                           int32_t, char, std::string>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
@@ -442,8 +447,8 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char>)
       .def_property_readonly(
-          "data", &as_VariableView_variant<double, float, int64_t, int32_t,
-                                           char, std::string>)
+          "data", &as_VariableView_variant<VariableSlice, double, float,
+                                           int64_t, int32_t, char, std::string>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
