@@ -7,10 +7,20 @@ class TestVariable(unittest.TestCase):
     def test_create_coord(self):
         var = Variable(Coord.X, [Dim.X], np.arange(4))
         self.assertEqual(var.name, "")
+        self.assertEqual(var.numpy.dtype, np.dtype(np.float64))
+        np.testing.assert_array_equal(var.numpy, np.arange(4))
+
+    def test_create_coord_different_default_dtype(self):
+        var = Variable(Coord.Mask, [Dim.X], np.arange(4))
+        self.assertEqual(var.name, "")
+        self.assertEqual(var.numpy.dtype, np.dtype(np.int8))
+        np.testing.assert_array_equal(var.numpy, np.arange(4))
 
     def test_create_data(self):
         var = Variable(Data.Value, [Dim.X], np.arange(4))
         self.assertEqual(var.name, "")
+        self.assertEqual(var.numpy.dtype, np.dtype(np.float64))
+        np.testing.assert_array_equal(var.numpy, np.arange(4))
 
     def test_create_default_init(self):
         var = Variable(Coord.X, [Dim.X], (4,))

@@ -82,6 +82,17 @@ Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
   return Variable(tag, dims, ptr, ptr + dims.volume());
 }
 
+template <class T> struct MakeVariableT {
+  static Variable apply(const Tag tag, const std::vector<Dim> &labels,
+                        py::array data) {
+    py::array_t<T> dataT(data);
+    const py::buffer_info info = dataT.request();
+    Dimensions dims(labels, info.shape);
+    auto *ptr = (T *)info.ptr;
+    return ::makeVariable<T>(tag, dims, ptr, ptr + dims.volume());
+  }
+};
+
 template <class T> struct MakeVariableDefaultInitT {
   static Variable apply(const Tag tag, const std::vector<Dim> &labels,
                         const py::tuple &shape) {
@@ -89,6 +100,16 @@ template <class T> struct MakeVariableDefaultInitT {
     return ::makeVariable<T>(tag, dims);
   }
 };
+
+Variable makeVariable2(const Tag tag, const std::vector<Dim> &labels,
+                      const py::array &data,
+                      py::dtype dtype = py::dtype::of<Empty>()) {
+  const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
+                                                         : convertDType(dtype);
+  return CallDType<double, float, int64_t, int32_t,
+                   char>::apply<detail::MakeVariableT>(dtypeTag, tag, labels,
+                                                       data);
+}
 
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
                                  const py::tuple &shape,
@@ -99,15 +120,16 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   // py::dtype?
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
-  return CallDType<double, float, int64_t, int32_t>::apply<
-      detail::MakeVariableDefaultInitT>(dtypeTag, tag, labels, shape);
+  return CallDType<double, float, int64_t, int32_t,
+                   char>::apply<detail::MakeVariableDefaultInitT>(dtypeTag, tag,
+                                                                  labels,
+                                                                  shape);
 }
 
 template <class Tag> struct MakeVariable {
   static Variable
   apply(const std::tuple<const std::vector<Dim> &, py::array> &data) {
-    const auto &labels = std::get<0>(data);
-    const auto &array = std::get<1>(data);
+    const auto & [ labels, array ] = data;
     return detail::makeVariable<Tag>(Tag{}, labels, array);
   }
 };
@@ -115,10 +137,11 @@ template <class Tag> struct MakeVariable {
 void insertCoord(
     Dataset &self, const Tag tag,
     const std::tuple<const std::vector<Dim> &, py::array &> &data) {
-  auto var =
-      Call<decltype(Coord::X), decltype(Coord::Y), decltype(Coord::Z),
-           decltype(Coord::Tof), decltype(Coord::Mask),
-           decltype(Coord::SpectrumNumber)>::apply<MakeVariable>(tag, data);
+  const auto dtypeTag = defaultDType(tag);
+  const auto & [ labels, array ] = data;
+  auto var = CallDType<double, float, int64_t, int32_t,
+                       char>::apply<detail::MakeVariableT>(dtypeTag, tag,
+                                                           labels, array);
   self.insert(std::move(var));
 }
 
@@ -389,12 +412,8 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
-      .def(py::init(&detail::makeVariable<Coord::Mask_t>))
-      .def(py::init(&detail::makeVariable<Coord::X_t>))
-      .def(py::init(&detail::makeVariable<Coord::Y_t>))
-      .def(py::init(&detail::makeVariable<Coord::Z_t>))
-      .def(py::init(&detail::makeVariable<Data::Value_t>))
-      .def(py::init(&detail::makeVariable<Data::Variance_t>))
+      .def(py::init(&detail::makeVariable2), py::arg("tag"), py::arg("labels"),
+           py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },

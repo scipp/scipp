@@ -294,6 +294,12 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions,
                   Vector<T>(values.begin(), values.end()));
 }
 
+template <class T, class... Args>
+Variable makeVariable(Tag tag, const Dimensions &dimensions, Args &&... args) {
+  return Variable(tag, defaultUnit(tag), std::move(dimensions),
+                  Vector<T>(std::forward<Args>(args)...));
+}
+
 /// Non-mutable view into (a subset of) a Variable.
 class ConstVariableSlice {
 public:
