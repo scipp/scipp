@@ -93,6 +93,10 @@ template <class T> struct MakeVariableDefaultInitT {
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
                                  const py::tuple &shape,
                                  py::dtype dtype = py::dtype::of<Empty>()) {
+  // TODO Numpy does not support strings, how can we specify std::string as a
+  // dtype? The same goes for other, more complex item types we need for
+  // variables. Do we need an overload with a dtype arg that does not use
+  // py::dtype?
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
   return CallDType<double, float, int64_t, int32_t>::apply<
@@ -184,6 +188,7 @@ std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
   return strides;
 }
 
+// TODO This needs to be refactored to support custom dtype.
 template <class Tag, class T>
 void setData(T &self, const std::pair<const Tag, const std::string> &key,
              py::array_t<typename Tag::type> &data) {
@@ -557,8 +562,10 @@ PYBIND11_MODULE(dataset, m) {
              throw std::runtime_error("Non-self-assignment of Dataset slices "
                                       "is not implemented yet.\n");
            })
+      // No dimensions argument, this will set data of existing item.
       .def("__setitem__", detail::setData<Data::Value_t, Dataset>)
       .def("__setitem__", detail::setData<Data::Variance_t, Dataset>)
+      // Variants with dimensions, inserting new item.
       .def("__setitem__", detail::insertCoord)
       // TODO: Overloaded to cover non-numpy data such as a scalar value. This
       // is handled by automatic conversion by PYbind11 when using py::array_t.
