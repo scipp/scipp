@@ -283,14 +283,14 @@ private:
 
 template <class T>
 Variable makeVariable(Tag tag, const Dimensions &dimensions) {
-  return Variable(tag, unit(tag), std::move(dimensions),
+  return Variable(tag, defaultUnit(tag), std::move(dimensions),
                   Vector<T>(dimensions.volume()));
 }
 
 template <class T, class T2>
 Variable makeVariable(Tag tag, const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
-  return Variable(tag, unit(tag), std::move(dimensions),
+  return Variable(tag, defaultUnit(tag), std::move(dimensions),
                   Vector<T>(values.begin(), values.end()));
 }
 

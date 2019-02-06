@@ -48,9 +48,26 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
       });
 }
 
+/// Helper to pass "default" dtype.
 struct Empty {
   char dummy;
 };
+
+DType convertDType(const py::dtype type) {
+  if (type.is(py::dtype::of<double>()))
+    return dtype<double>;
+  if (type.is(py::dtype::of<float>()))
+    return dtype<float>;
+  // See https://github.com/pybind/pybind11/pull/1329, int64_t not matching
+  // numpy.int64 correctly.
+  if (type.is(py::dtype::of<std::int64_t>()) ||
+      (type.kind() == 'i' && type.itemsize() == 8))
+    return dtype<int64_t>;
+  if (type.is(py::dtype::of<int32_t>()))
+    return dtype<int32_t>;
+  throw std::runtime_error("unsupported dtype");
+
+}
 
 namespace detail {
 // Pybind11 converts py::array to py::array_t for us, with all sorts of
@@ -65,35 +82,21 @@ Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
   return Variable(tag, dims, ptr, ptr + dims.volume());
 }
 
-template <class Tag> struct MakeVariableDefaultInit {
-  static Variable apply(const std::vector<Dim> &labels,
+template <class T> struct MakeVariableDefaultInitT {
+  static Variable apply(const Tag tag, const std::vector<Dim> &labels,
                         const py::tuple &shape) {
     Dimensions dims(labels, shape.cast<std::vector<gsl::index>>());
-    return Variable(Tag{}, dims);
+    return ::makeVariable<T>(tag, dims);
   }
 };
 
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
                                  const py::tuple &shape,
                                  py::dtype dtype = py::dtype::of<Empty>()) {
-  if (dtype.is(py::dtype::of<Empty>()))
-    return callForAnyTag<detail::MakeVariableDefaultInit>(tag, labels, shape);
-  if (dtype.is(py::dtype::of<double>()))
-    return ::makeVariable<double>(
-        tag, Dimensions(labels, shape.cast<std::vector<gsl::index>>()));
-  if (dtype.is(py::dtype::of<float>()))
-    return ::makeVariable<float>(
-        tag, Dimensions(labels, shape.cast<std::vector<gsl::index>>()));
-  if (dtype.is(py::dtype::of<int32_t>()))
-    return ::makeVariable<int32_t>(
-        tag, Dimensions(labels, shape.cast<std::vector<gsl::index>>()));
-  // See https://github.com/pybind/pybind11/pull/1329, int64_t not matching
-  // numpy.int64 correctly.
-  if (dtype.is(py::dtype::of<std::int64_t>()) ||
-      (dtype.kind() == 'i' && dtype.itemsize() == 8))
-    return ::makeVariable<int64_t>(
-        tag, Dimensions(labels, shape.cast<std::vector<gsl::index>>()));
-  throw std::runtime_error("unsupported dtype");
+  const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
+                                                         : convertDType(dtype);
+  return CallDType<double, float, int64_t, int32_t>::apply<
+      detail::MakeVariableDefaultInitT>(dtypeTag, tag, labels, shape);
 }
 
 template <class Tag> struct MakeVariable {
