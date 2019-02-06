@@ -16,7 +16,7 @@ make
 
 ### OSX
 * You will need to be running High Sierra 10.13. Lower version have incompatible libc++ implementations.
-* You will need to be using a modern clang version. You may use LLVM clang version > 6.x.x, this corresponds to XCode Apple clang 10.0 or greater. Though LLVM
+* You will need to be using a modern clang version. You may use LLVM Clang version > 6.x.x, this corresponds to Xcode Apple Clang 10.0 or greater. 
 * You will need to `brew install libomp` 
 
 ## Usage of the Python exports
