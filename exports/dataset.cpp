@@ -48,6 +48,10 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
       });
 }
 
+struct Empty {
+  char dummy;
+};
+
 namespace detail {
 // Pybind11 converts py::array to py::array_t for us, with all sorts of
 // automatic conversions such as integer to double, if required. Therefore this
@@ -70,8 +74,26 @@ template <class Tag> struct MakeVariableDefaultInit {
 };
 
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
-                                 const py::tuple &shape) {
-  return callForAnyTag<detail::MakeVariableDefaultInit>(tag, labels, shape);
+                                 const py::tuple &shape,
+                                 py::dtype dtype = py::dtype::of<Empty>()) {
+  if (dtype.is(py::dtype::of<Empty>()))
+    return callForAnyTag<detail::MakeVariableDefaultInit>(tag, labels, shape);
+  if (dtype.is(py::dtype::of<double>()))
+    return ::makeVariable<double>(
+        tag, Dimensions(labels, shape.cast<std::vector<gsl::index>>()));
+  if (dtype.is(py::dtype::of<float>()))
+    return ::makeVariable<float>(
+        tag, Dimensions(labels, shape.cast<std::vector<gsl::index>>()));
+  if (dtype.is(py::dtype::of<int32_t>()))
+    return ::makeVariable<int32_t>(
+        tag, Dimensions(labels, shape.cast<std::vector<gsl::index>>()));
+  // See https://github.com/pybind/pybind11/pull/1329, int64_t not matching
+  // numpy.int64 correctly.
+  if (dtype.is(py::dtype::of<std::int64_t>()) ||
+      (dtype.kind() == 'i' && dtype.itemsize() == 8))
+    return ::makeVariable<int64_t>(
+        tag, Dimensions(labels, shape.cast<std::vector<gsl::index>>()));
+  throw std::runtime_error("unsupported dtype");
 }
 
 template <class Tag> struct MakeVariable {
@@ -248,15 +270,17 @@ void setVariableSliceRange(VariableSlice &self,
   doSetVariableSlice<Tag>(slice, data);
 }
 
-template <class T> auto as_py_array_t(py::object &obj, VariableSlice &view) {
+template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
+  // TODO Should `Variable` also have a `strides` method?
+  const auto strides = VariableSlice(view).strides();
   return py::array_t<T>{view.dimensions().shape(),
-                        detail::numpy_strides<T>(view.strides()),
+                        detail::numpy_strides<T>(strides),
                         view.template span<T>().data(), obj};
 }
 
-template <class... Ts>
+template <class Var, class... Ts>
 std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
-  auto &view = obj.cast<VariableSlice &>();
+  auto &view = obj.cast<Var &>();
   switch (view.dtype()) {
   case dtype<double>:
     return {as_py_array_t<double>(obj, view)};
@@ -351,8 +375,12 @@ PYBIND11_MODULE(dataset, m) {
       .def("size",
            py::overload_cast<const Dim>(&Dimensions::operator[], py::const_));
 
+  PYBIND11_NUMPY_DTYPE(Empty, dummy);
+
   py::class_<Variable>(m, "Variable")
-      .def(py::init(&detail::makeVariableDefaultInit))
+      .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
+           py::arg("labels"), py::arg("shape"),
+           py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init(&detail::makeVariable<Coord::Mask_t>))
       .def(py::init(&detail::makeVariable<Coord::X_t>))
       .def(py::init(&detail::makeVariable<Coord::Y_t>))
@@ -366,6 +394,9 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("is_coord", &Variable::isCoord)
       .def_property_readonly(
           "dimensions", [](const Variable &self) { return self.dimensions(); })
+      .def_property_readonly("numpy",
+                             &as_py_array_t_variant<Variable, double, float,
+                                                    int64_t, int32_t, char>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
@@ -403,8 +434,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", &setVariableSlice<Data::Value_t>)
       .def("__setitem__", &setVariableSliceRange<Data::Value_t>)
       .def_property_readonly(
-          "numpy",
-          &as_py_array_t_variant<double, float, int64_t, int32_t, char>)
+          "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
+                                          int32_t, char>)
       .def_property_readonly(
           "data", &as_VariableView_variant<double, float, int64_t, int32_t,
                                            char, std::string>)
