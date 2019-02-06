@@ -228,11 +228,6 @@ VariableSlice pySlice(VariableSlice &view,
 
 template <class T> struct MakePyBufferInfoT {
   static py::buffer_info apply(VariableSlice &view) {
-    // Note: Currently this always triggers copy-on-write ---
-    // py::buffer_info does currently not support the `readonly` flag of
-    // the Python buffer protocol. We can probably get this fixed
-    // upstream, see discussion and sample implementation here:
-    // https://github.com/pybind/pybind11/issues/863.
     return py::buffer_info(
         view.template span<T>().data(),     /* Pointer to buffer */
         sizeof(T),                          /* Size of one scalar */
