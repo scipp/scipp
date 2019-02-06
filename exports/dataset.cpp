@@ -69,7 +69,7 @@ DType convertDType(const py::dtype type) {
 }
 
 namespace detail {
-template <class T> struct MakeVariableT {
+template <class T> struct MakeVariable {
   static Variable apply(const Tag tag, const std::vector<Dim> &labels,
                         py::array data) {
     // Pybind11 converts py::array to py::array_t for us, with all sorts of
@@ -82,7 +82,7 @@ template <class T> struct MakeVariableT {
   }
 };
 
-template <class T> struct MakeVariableDefaultInitT {
+template <class T> struct MakeVariableDefaultInit {
   static Variable apply(const Tag tag, const std::vector<Dim> &labels,
                         const py::tuple &shape) {
     Dimensions dims(labels, shape.cast<std::vector<gsl::index>>());
@@ -96,8 +96,8 @@ Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
   return CallDType<double, float, int64_t, int32_t,
-                   char>::apply<detail::MakeVariableT>(dtypeTag, tag, labels,
-                                                       data);
+                   char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
+                                                      data);
 }
 
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
@@ -110,9 +110,8 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
   return CallDType<double, float, int64_t, int32_t,
-                   char>::apply<detail::MakeVariableDefaultInitT>(dtypeTag, tag,
-                                                                  labels,
-                                                                  shape);
+                   char>::apply<detail::MakeVariableDefaultInit>(dtypeTag, tag,
+                                                                 labels, shape);
 }
 
 void insertCoord(
@@ -121,8 +120,8 @@ void insertCoord(
   const auto dtypeTag = defaultDType(tag);
   const auto & [ labels, array ] = data;
   auto var = CallDType<double, float, int64_t, int32_t,
-                       char>::apply<detail::MakeVariableT>(dtypeTag, tag,
-                                                           labels, array);
+                       char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
+                                                          array);
   self.insert(std::move(var));
 }
 
@@ -133,7 +132,7 @@ void insertCoordT(
   const auto & [ labels, array ] = data;
   // TODO This is converting back and forth between py::array and py::array_t,
   // can we do this in a better way?
-  auto var = detail::MakeVariableT<T>::apply(tag, labels, array);
+  auto var = detail::MakeVariable<T>::apply(tag, labels, array);
   self.insert(std::move(var));
 }
 
@@ -148,7 +147,7 @@ void insertCoord1D(Dataset &self, const Tag,
 }
 
 // Note the concretely typed py::array_t. If we use py::array it will not match
-// plain Python arrays. Need overloads when we add support for non-double data.
+// plain Python arrays.
 template <class T>
 void insertNamed(
     Dataset &self, const std::pair<Tag, const std::string &> &key,
@@ -157,7 +156,7 @@ void insertNamed(
   const auto & [ labels, array ] = data;
   // TODO This is converting back and forth between py::array and py::array_t,
   // can we do this in a better way?
-  auto var = detail::MakeVariableT<T>::apply(tag, labels, array);
+  auto var = detail::MakeVariable<T>::apply(tag, labels, array);
   var.setName(name);
   self.insert(std::move(var));
 }
@@ -165,8 +164,7 @@ void insertNamed(
 template <class Var>
 void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
             const Var &var) {
-  const auto &tag = std::get<Tag>(key);
-  const auto &name = std::get<const std::string &>(key);
+  const auto & [ tag, name ] = key;
   if (self.contains(tag, name))
     if (self(tag, name) == var)
       return;
@@ -576,7 +574,10 @@ PYBIND11_MODULE(dataset, m) {
       // See also the py::array::forcecast argument, we need to minimize
       // implicit (and potentially expensive conversion).
       .def("__setitem__", detail::insertCoordT<double>)
+      // py::array_t does not support non-POD types like std::string, so we need
+      // to handle them separately.
       .def("__setitem__", detail::insertCoord1D<Coord::RowLabel_t>)
+      // TODO There should be overloads with name also for other variants.
       .def("__setitem__", detail::insertNamed<double>)
       .def("__setitem__", detail::insert<Variable>)
       .def("__setitem__", detail::insert<VariableSlice>)
