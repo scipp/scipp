@@ -512,7 +512,7 @@ Dataset operator+(Dataset a, const double b) { return std::move(a += b); }
 Dataset operator-(Dataset a, const double b) { return std::move(a -= b); }
 Dataset operator*(Dataset a, const double b) { return std::move(a *= b); }
 Dataset operator+(const double a, Dataset b) { return std::move(b += a); }
-Dataset operator-(const double a, Dataset b) { return std::move(-(b -= a)); }
+Dataset operator-(const double a, Dataset b) { return -(b -= a); }
 Dataset operator*(const double a, Dataset b) { return std::move(b *= a); }
 
 std::vector<Dataset> split(const Dataset &d, const Dim dim,

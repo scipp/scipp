@@ -125,7 +125,7 @@ void insertNamed(
   self.insert(std::move(var));
 }
 
-template <class Tag, class Var>
+template <class Var>
 void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
             const Var &var) {
   const auto &tag = std::get<Tag>(key);
@@ -133,8 +133,10 @@ void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
   if (self.contains(tag, name))
     if (self(tag, name) == var)
       return;
-  const auto &data = var.get(Tag{});
-  self.insert(Tag{}, name, var.dimensions(), data.begin(), data.end());
+  Variable copy(var);
+  copy.setTag(tag);
+  copy.setName(name);
+  self.insert(std::move(copy));
 }
 
 void insertDefaultInit(
@@ -531,10 +533,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insertCoordT<double>)
       .def("__setitem__", detail::insertCoord1D<Coord::RowLabel_t>)
       .def("__setitem__", detail::insertNamed)
-      .def("__setitem__", detail::insert<Data::Value_t, Variable>)
-      .def("__setitem__", detail::insert<Data::Variance_t, Variable>)
-      .def("__setitem__", detail::insert<Data::Value_t, VariableSlice>)
-      .def("__setitem__", detail::insert<Data::Variance_t, VariableSlice>)
+      .def("__setitem__", detail::insert<Variable>)
+      .def("__setitem__", detail::insert<VariableSlice>)
       .def("__setitem__", detail::insertDefaultInit)
       // TODO Make sure we have all overloads covered to avoid implicit
       // conversion of DatasetSlice to Dataset.

@@ -85,6 +85,23 @@ class TestDataset(unittest.TestCase):
         self.assertRaisesRegex(RuntimeError, "Cannot insert variable into Dataset: Dimensions do not match.",
                 d.__setitem__, (Data.Value, "data2"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,2,3)))
 
+    def test_insert_variable(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+
+        var = Variable(Data.Value, [Dim.X], np.arange(2))
+        d[Data.Value, "data2"] = var
+        d[Data.Variance, "data2"] = var
+        self.assertEqual(len(d), 3)
+
+    def test_insert_variable_slice(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+
+        d[Data.Value, "data2"] = d[Data.Value, "data1"]
+        d[Data.Variance, "data2"] = d[Data.Value, "data1"]
+        self.assertEqual(len(d), 3)
+
     def test_dimensions(self):
         self.assertEqual(self.dataset.dimensions().size(Dim.X), 2)
         self.assertEqual(self.dataset.dimensions().size(Dim.Y), 3)

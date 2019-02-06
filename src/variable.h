@@ -213,6 +213,7 @@ public:
 
   DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_tag; }
+  void setTag(const Tag tag) { m_tag = tag; }
   bool isCoord() const {
     return m_tag < std::tuple_size<detail::CoordDef::tags>::value;
   }
