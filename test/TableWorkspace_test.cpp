@@ -13,30 +13,30 @@
 // of basic routines.
 std::vector<std::string> asStrings(const Variable &variable) {
   std::vector<std::string> strings;
-  if (variable.tag() == Coord::RowLabel{})
-    for (const auto &value : variable.get<Coord::RowLabel>())
+  if (variable.tag() == Coord::RowLabel)
+    for (const auto &value : variable.get(Coord::RowLabel))
       strings.emplace_back(value);
-  if (variable.tag() == Data::Value{})
-    for (const auto &value : variable.get<Data::Value>())
+  if (variable.tag() == Data::Value)
+    for (const auto &value : variable.get(Data::Value))
       strings.emplace_back(std::to_string(value));
-  else if (variable.tag() == Data::String{})
-    for (const auto &value : variable.get<Data::String>())
+  else if (variable.tag() == Data::String)
+    for (const auto &value : variable.get(Data::String))
       strings.emplace_back(value);
   return strings;
 }
 
 TEST(TableWorkspace, basics) {
   Dataset table;
-  table.insert(Coord::RowLabel{}, {Dim::Row, 3},
+  table.insert(Coord::RowLabel, {Dim::Row, 3},
                Vector<std::string>{"a", "b", "c"});
-  table.insert(Data::Value{}, "", {Dim::Row, 3}, {1.0, -2.0, 3.0});
-  table.insert(Data::String{}, "", {Dim::Row, 3}, 3);
+  table.insert(Data::Value, "", {Dim::Row, 3}, {1.0, -2.0, 3.0});
+  table.insert(Data::String, "", {Dim::Row, 3}, 3);
 
   // Modify table with know columns.
-  auto view = zipMD(table, MDRead(Data::Value{}), MDWrite(Data::String{}));
+  auto view = zipMD(table, MDRead(Data::Value), MDWrite(Data::String));
   for (auto &item : view)
     if (item.value() < 0.0)
-      item.get<Data::String>() = "why is this negative?";
+      item.get(Data::String) = "why is this negative?";
 
   // Get string representation of arbitrary table, e.g., for visualization.
   EXPECT_EQ(asStrings(table[0]), std::vector<std::string>({"a", "b", "c"}));
@@ -48,17 +48,17 @@ TEST(TableWorkspace, basics) {
   // Standard shape operations provide basic things required for tables:
   auto mergedTable = concatenate(table, table, Dim::Row);
   Dataset row = table(Dim::Row, 1, 2);
-  EXPECT_EQ(row.get<Coord::RowLabel>()[0], "b");
+  EXPECT_EQ(row.get(Coord::RowLabel)[0], "b");
 
   // Slice a range to obtain a new table with a subset of rows.
   Dataset rows = mergedTable(Dim::Row, 1, 4);
-  ASSERT_EQ(rows.get<Coord::RowLabel>().size(), 3);
-  EXPECT_EQ(rows.get<Coord::RowLabel>()[0], "b");
-  EXPECT_EQ(rows.get<Coord::RowLabel>()[1], "c");
-  EXPECT_EQ(rows.get<Coord::RowLabel>()[2], "a");
+  ASSERT_EQ(rows.get(Coord::RowLabel).size(), 3);
+  EXPECT_EQ(rows.get(Coord::RowLabel)[0], "b");
+  EXPECT_EQ(rows.get(Coord::RowLabel)[1], "c");
+  EXPECT_EQ(rows.get(Coord::RowLabel)[2], "a");
 
   // Can sort by arbitrary column.
-  auto sortedTable = sort(table, Data::Value{});
+  auto sortedTable = sort(table, Data::Value);
   EXPECT_EQ(asStrings(sortedTable[0]),
             std::vector<std::string>({"b", "a", "c"}));
   EXPECT_EQ(asStrings(sortedTable[1]),

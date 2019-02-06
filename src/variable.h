@@ -222,19 +222,19 @@ public:
   }
   bool isData() const { return !isCoord() && !isAttr(); }
 
-  template <class Tag> auto get() const {
+  template <class TagT> auto get(const TagT t) const {
     // For now we support only variables that are a std::vector. In principle we
     // could support anything that is convertible to gsl::span (or an adequate
     // replacement).
-    if (Tag{} != tag())
+    if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return gsl::make_span(cast<typename Tag::type>());
+    return gsl::make_span(cast<typename TagT::type>());
   }
 
-  template <class Tag> auto get() {
-    if (Tag{} != tag())
+  template <class TagT> auto get(const TagT t) {
+    if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return gsl::make_span(cast<typename Tag::type>());
+    return gsl::make_span(cast<typename TagT::type>());
   }
 
   template <class T> auto span() const { return gsl::make_span(cast<T>()); }
@@ -280,20 +280,16 @@ private:
   deep_ptr<VariableConcept> m_object;
 };
 
-// TODO TagT template argument is not actually required, provided that we
-// refactor tags so unit can be obtained from the `Tag` base class. If we do
-// this, we can probably also unify a good amount of code in the Python exports,
-// which is currently requiring exporting for all tags for many methods.
-template <class T, class TagT>
-Variable makeVariable(TagT tag, const Dimensions &dimensions) {
-  return Variable(tag, TagT::unit, std::move(dimensions),
+template <class T>
+Variable makeVariable(Tag tag, const Dimensions &dimensions) {
+  return Variable(tag, unit(tag), std::move(dimensions),
                   Vector<T>(dimensions.volume()));
 }
 
-template <class T, class TagT, class T2>
-Variable makeVariable(TagT tag, const Dimensions &dimensions,
+template <class T, class T2>
+Variable makeVariable(Tag tag, const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
-  return Variable(tag, TagT::unit, std::move(dimensions),
+  return Variable(tag, unit(tag), std::move(dimensions),
                   Vector<T>(values.begin(), values.end()));
 }
 
@@ -372,10 +368,10 @@ public:
   // and we do not need to delete the rvalue overload, unlike for many other
   // methods. The data is owned by the underlying variable so it will not be
   // deleted even if *this is a temporary and gets deleted.
-  template <class Tag> auto get() const {
-    if (Tag{} != tag())
+  template <class TagT> auto get(const TagT t) const {
+    if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return this->template cast<typename Tag::type>();
+    return this->template cast<typename TagT::type>();
   }
 
   template <class T> auto span() const { return cast<T>(); }
@@ -442,10 +438,10 @@ public:
   }
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
-  template <class Tag> auto get() const {
-    if (Tag{} != tag())
+  template <class TagT> auto get(const TagT t) const {
+    if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return this->template cast<typename Tag::type>();
+    return this->template cast<typename TagT::type>();
   }
 
   template <class T> auto span() { return cast<T>(); }

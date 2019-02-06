@@ -176,17 +176,19 @@ public:
 
   void merge(const Dataset &other);
 
-  template <class Tag>
-  auto get(const std::string &name = std::string{}) const && = delete;
-  template <class Tag>
-  auto get(const std::string &name = std::string{}) const & {
-    return m_variables[find(Tag{}, name)].template get<Tag>();
+  template <class TagT>
+  auto get(const TagT,
+           const std::string &name = std::string{}) const && = delete;
+  template <class TagT>
+  auto get(const TagT tag, const std::string &name = std::string{}) const & {
+    return m_variables[find(tag, name)].get(tag);
   }
 
-  template <class Tag>
-  auto get(const std::string &name = std::string{}) && = delete;
-  template <class Tag> auto get(const std::string &name = std::string{}) & {
-    return m_variables[find(Tag{}, name)].template get<Tag>();
+  template <class TagT>
+  auto get(const TagT, const std::string &name = std::string{}) && = delete;
+  template <class TagT>
+  auto get(const TagT tag, const std::string &name = std::string{}) & {
+    return m_variables[find(tag, name)].get(tag);
   }
 
   template <class T>

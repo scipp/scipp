@@ -208,7 +208,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
         // var2: var1 = var2;
       } else if (var1.isData()) {
         // Data variables are added
-        if (var1.tag() == Data::Variance{})
+        if (var1.tag() == Data::Variance)
           var1 += var2;
         else
           op(var1, var2);
@@ -228,7 +228,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
         for (auto var1 : dataset) {
           if (var1.tag() == var2.tag()) {
             ++count;
-            if (var1.tag() == Data::Variance{})
+            if (var1.tag() == Data::Variance)
               var1 += var2;
             else
               op(var1, var2);
@@ -278,10 +278,10 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
       throw std::runtime_error("Right-hand-side in addition contains variable "
                                "that is not present in left-hand-side.");
     }
-    if (var2.tag() == Data::Variance{}) {
+    if (var2.tag() == Data::Variance) {
       try {
-        find(dataset, Data::Value{}, var2.name());
-        find(other, Data::Value{}, var2.name());
+        find(dataset, Data::Value, var2.name());
+        find(other, Data::Value, var2.name());
       } catch (const std::runtime_error &) {
         throw std::runtime_error("Cannot multiply datasets that contain a "
                                  "variance but no corresponding value.");
@@ -295,14 +295,14 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
             "Coordinates of datasets do not match. Cannot perform addition");
     } else if (var1.isData()) {
       // Data variables are added
-      if (var2.tag() == Data::Value{}) {
-        if (count(dataset, Data::Variance{}, var2.name()) !=
-            count(other, Data::Variance{}, var2.name()))
+      if (var2.tag() == Data::Value) {
+        if (count(dataset, Data::Variance, var2.name()) !=
+            count(other, Data::Variance, var2.name()))
           throw std::runtime_error("Either both or none of the operands must "
                                    "have a variance for their values.");
-        if (count(dataset, Data::Variance{}, var2.name()) != 0) {
-          auto error_index1 = find(dataset, Data::Variance{}, var2.name());
-          auto error_index2 = find(other, Data::Variance{}, var2.name());
+        if (count(dataset, Data::Variance, var2.name()) != 0) {
+          auto error_index1 = find(dataset, Data::Variance, var2.name());
+          auto error_index2 = find(other, Data::Variance, var2.name());
           auto error1 = dataset[error_index1];
           const auto &error2 = other[error_index2];
           if ((var1.dimensions() == var2.dimensions()) &&
@@ -317,10 +317,10 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
             // TODO We are working with VariableSlice here, so get<> returns a
             // view, not a span, i.e., it is less efficient. May need to do this
             // differently for optimal performance.
-            auto v1 = var1.template get<Data::Value>();
-            const auto v2 = var2.template get<Data::Value>();
-            auto e1 = error1.template get<Data::Variance>();
-            const auto e2 = error2.template get<Data::Variance>();
+            auto v1 = var1.template span<double>();
+            const auto v2 = var2.template span<double>();
+            auto e1 = error1.template span<double>();
+            const auto e2 = error2.template span<double>();
             // TODO Need to ensure that data is contiguous!
             aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
                               e2.data());
@@ -338,7 +338,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
           // No variance found, continue without.
           var1 *= var2;
         }
-      } else if (var2.tag() == Data::Variance{}) {
+      } else if (var2.tag() == Data::Variance) {
         // Do nothing, math for variance is done when processing corresponding
         // value.
       } else {
@@ -367,7 +367,7 @@ Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
 }
 Dataset &Dataset::operator+=(const double value) {
   for (auto &var : m_variables)
-    if (var.tag() == Data::Value{})
+    if (var.tag() == Data::Value)
       var += value;
   return *this;
 }
@@ -384,7 +384,7 @@ Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
 }
 Dataset &Dataset::operator-=(const double value) {
   for (auto &var : m_variables)
-    if (var.tag() == Data::Value{})
+    if (var.tag() == Data::Value)
       var -= value;
   return *this;
 }
@@ -397,9 +397,9 @@ Dataset &Dataset::operator*=(const ConstDatasetSlice &other) {
 }
 Dataset &Dataset::operator*=(const double value) {
   for (auto &var : m_variables)
-    if (var.tag() == Data::Value{})
+    if (var.tag() == Data::Value)
       var *= value;
-    else if (var.tag() == Data::Variance{})
+    else if (var.tag() == Data::Variance)
       var *= value * value;
   return *this;
 }
@@ -458,7 +458,7 @@ DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) {
 }
 DatasetSlice DatasetSlice::operator+=(const double value) {
   for (auto var : *this)
-    if (var.tag() == Data::Value{})
+    if (var.tag() == Data::Value)
       var += value;
   return *this;
 }
@@ -474,7 +474,7 @@ DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) {
 }
 DatasetSlice DatasetSlice::operator-=(const double value) {
   for (auto var : *this)
-    if (var.tag() == Data::Value{})
+    if (var.tag() == Data::Value)
       var -= value;
   return *this;
 }
@@ -487,9 +487,9 @@ DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) {
 }
 DatasetSlice DatasetSlice::operator*=(const double value) {
   for (auto var : *this)
-    if (var.tag() == Data::Value{})
+    if (var.tag() == Data::Value)
       var *= value;
-    else if (var.tag() == Data::Variance{})
+    else if (var.tag() == Data::Variance)
       var *= value * value;
   return *this;
 }
@@ -636,7 +636,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   // TODO Is there are more generic way to find "histogrammable" data, not
   // specific to (neutron) events? Something like Data::ValueVector, i.e., any
   // data variable that contains a vector of values at each point?
-  const auto &events = var.get<Data::Events>();
+  const auto &events = var.get(Data::Events);
   // TODO This way of handling events (and their units) as nested Dataset feels
   // a bit unwieldy. Would it be a better option to store TOF (or any derived
   // values) as simple vectors in Data::Events? There would be a separate
@@ -645,7 +645,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   // implementation of `histogram` would then also be simplified since we do not
   // need to distinguish between Data::Tof, etc. (which we are anyway not doing
   // currently).
-  dataset::expect::equals(events[0](Data::Tof{}).unit(), coord.unit());
+  dataset::expect::equals(events[0](Data::Tof).unit(), coord.unit());
 
   // TODO Can we reuse some code for bin handling from MDZipView?
   const auto binDim = coordDimension[coord.tag().value()];
@@ -667,11 +667,11 @@ Dataset histogram(const Variable &var, const Variable &coord) {
 
   Dataset hist;
   hist.insert(coord);
-  hist.insert(Data::Value{}, var.name(), dims);
+  hist.insert(Data::Value, var.name(), dims);
 
   // Counts has outer dimensions as input, with a new inner dimension given by
   // the binning dimensions. We iterate over all dimensions as a flat array.
-  auto counts = hist.get<Data::Value>(var.name());
+  auto counts = hist.get(Data::Value, var.name());
   gsl::index cur = 0;
   // The helper `getView` allows us to ignore the tag of coord, as long as the
   // underlying type is `double`. We view the edges with the same dimensions as
@@ -681,7 +681,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   const auto edges = getView<double>(coord, dims);
   auto edge = edges.begin();
   for (const auto &eventList : events) {
-    const auto tofs = eventList.get<Data::Tof>();
+    const auto tofs = eventList.get(Data::Tof);
     if (!std::is_sorted(tofs.begin(), tofs.end()))
       throw std::runtime_error(
           "TODO: Histograms can currently only be created from sorted data.");
@@ -704,14 +704,14 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   }
 
   // TODO Would need to add handling for weighted events etc. here.
-  hist.insert(Data::Variance{}, var.name(), dims, counts.begin(), counts.end());
+  hist.insert(Data::Variance, var.name(), dims, counts.begin(), counts.end());
   return hist;
 }
 
 Dataset histogram(const Dataset &d, const Variable &coord) {
   Dataset hist;
   for (const auto &var : d)
-    if (var.tag() == Data::Events{})
+    if (var.tag() == Data::Events)
       hist.merge(histogram(var, coord));
   if (hist.size() == 0)
     throw std::runtime_error("Dataset does not contain any variables with "
@@ -721,20 +721,21 @@ Dataset histogram(const Dataset &d, const Variable &coord) {
 
 // We can specialize this to switch to a more efficient variant when sorting
 // datasets that represent events lists, using ZipView.
-template <class Tag> struct Sort {
-  static Dataset apply(const Dataset &d, const std::string &name) {
-    auto const_axis = d.get<Tag>(name);
-    if (d(Tag{}, name).dimensions().count() != 1)
+template <class T> struct Sort {
+  static Dataset apply(const Dataset &d, const Tag tag,
+                       const std::string &name) {
+    auto const_axis = d.span<T>(tag, name);
+    if (d(tag, name).dimensions().count() != 1)
       throw std::runtime_error("Axis for sorting must be 1-dimensional.");
-    const auto sortDim = d(Tag{}, name).dimensions().label(0);
+    const auto sortDim = d(tag, name).dimensions().label(0);
     if (const_axis.size() != d.dimensions()[sortDim])
       throw std::runtime_error("Axis for sorting cannot be a bin-edge axis.");
     if (std::is_sorted(const_axis.begin(), const_axis.end()))
       return d;
 
     Dataset sorted;
-    Variable axisVar = d(Tag{}, name);
-    auto axis = axisVar.template get<Tag>();
+    Variable axisVar = d(tag, name);
+    auto axis = axisVar.span<T>();
     std::vector<gsl::index> indices(axis.size());
     std::iota(indices.begin(), indices.end(), 0);
     auto view = ranges::view::zip(axis, indices);
@@ -747,7 +748,7 @@ template <class Tag> struct Sort {
     for (const auto &var : d) {
       if (!var.dimensions().contains(sortDim))
         sorted.insert(var);
-      else if (var.tag() == Tag{} && var.name() == name)
+      else if (var.tag() == tag && var.name() == name)
         sorted.insert(axisVar);
       else
         sorted.insert(permute(var, sortDim, indices));
@@ -757,11 +758,8 @@ template <class Tag> struct Sort {
 };
 
 Dataset sort(const Dataset &d, const Tag t, const std::string &name) {
-  // Another helper `callForSortableTag` that could be added in tag_util.h would
-  // allow for generic support for all valid tags. Would simply need to filter
-  // all tags based on whether Tag::type has `operator<`, using some meta
-  // programming.
-  return Call<Coord::RowLabel, Coord::X, Data::Value>::apply<Sort>(t, d, name);
+  return CallDType<double, float, int64_t, int32_t, std::string>::apply<Sort>(
+      d(t, name).dtype(), d, t, name);
 }
 
 Dataset filter(const Dataset &d, const Variable &select) {
@@ -811,12 +809,12 @@ Dataset mean(const Dataset &d, const Dim dim) {
   for (auto var : d) {
     if (var.dimensions().contains(dim)) {
       if (var.isData()) {
-        if (var.tag() == Data::Variance{}) {
+        if (var.tag() == Data::Variance) {
           // Standard deviation of the mean has an extra 1/sqrt(N). Note that
           // this is not included by the stand-alone mean(Variable), since that
           // would be confusing.
           double scale = 1.0 / sqrt(static_cast<double>(var.dimensions()[dim]));
-          m.insert(mean(var, dim) * Variable(Data::Value{}, {}, {scale}));
+          m.insert(mean(var, dim) * Variable(Data::Value, {}, {scale}));
         } else {
           m.insert(mean(var, dim));
         }

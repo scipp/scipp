@@ -242,45 +242,83 @@ template <class TagDefinition> struct TagImpl : public Tag, TagDefinition {
 } // namespace detail
 
 struct Coord {
-  using Monitor = detail::TagImpl<detail::CoordDef::Monitor>;
-  using DetectorInfo = detail::TagImpl<detail::CoordDef::DetectorInfo>;
-  using ComponentInfo = detail::TagImpl<detail::CoordDef::ComponentInfo>;
-  using X = detail::TagImpl<detail::CoordDef::X>;
-  using Y = detail::TagImpl<detail::CoordDef::Y>;
-  using Z = detail::TagImpl<detail::CoordDef::Z>;
-  using Tof = detail::TagImpl<detail::CoordDef::Tof>;
-  using Energy = detail::TagImpl<detail::CoordDef::Energy>;
-  using DeltaE = detail::TagImpl<detail::CoordDef::DeltaE>;
-  using Ei = detail::TagImpl<detail::CoordDef::Ei>;
-  using Ef = detail::TagImpl<detail::CoordDef::Ef>;
-  using DetectorId = detail::TagImpl<detail::CoordDef::DetectorId>;
-  using SpectrumNumber = detail::TagImpl<detail::CoordDef::SpectrumNumber>;
-  using DetectorGrouping = detail::TagImpl<detail::CoordDef::DetectorGrouping>;
-  using RowLabel = detail::TagImpl<detail::CoordDef::RowLabel>;
-  using Polarization = detail::TagImpl<detail::CoordDef::Polarization>;
-  using Temperature = detail::TagImpl<detail::CoordDef::Temperature>;
-  using FuzzyTemperature = detail::TagImpl<detail::CoordDef::FuzzyTemperature>;
-  using Time = detail::TagImpl<detail::CoordDef::Time>;
-  using TimeInterval = detail::TagImpl<detail::CoordDef::TimeInterval>;
-  using Mask = detail::TagImpl<detail::CoordDef::Mask>;
-  using Position = detail::TagImpl<detail::CoordDef::Position>;
+  using Monitor_t = detail::TagImpl<detail::CoordDef::Monitor>;
+  using DetectorInfo_t = detail::TagImpl<detail::CoordDef::DetectorInfo>;
+  using ComponentInfo_t = detail::TagImpl<detail::CoordDef::ComponentInfo>;
+  using X_t = detail::TagImpl<detail::CoordDef::X>;
+  using Y_t = detail::TagImpl<detail::CoordDef::Y>;
+  using Z_t = detail::TagImpl<detail::CoordDef::Z>;
+  using Tof_t = detail::TagImpl<detail::CoordDef::Tof>;
+  using Energy_t = detail::TagImpl<detail::CoordDef::Energy>;
+  using DeltaE_t = detail::TagImpl<detail::CoordDef::DeltaE>;
+  using Ei_t = detail::TagImpl<detail::CoordDef::Ei>;
+  using Ef_t = detail::TagImpl<detail::CoordDef::Ef>;
+  using DetectorId_t = detail::TagImpl<detail::CoordDef::DetectorId>;
+  using SpectrumNumber_t = detail::TagImpl<detail::CoordDef::SpectrumNumber>;
+  using DetectorGrouping_t =
+      detail::TagImpl<detail::CoordDef::DetectorGrouping>;
+  using RowLabel_t = detail::TagImpl<detail::CoordDef::RowLabel>;
+  using Polarization_t = detail::TagImpl<detail::CoordDef::Polarization>;
+  using Temperature_t = detail::TagImpl<detail::CoordDef::Temperature>;
+  using FuzzyTemperature_t =
+      detail::TagImpl<detail::CoordDef::FuzzyTemperature>;
+  using Time_t = detail::TagImpl<detail::CoordDef::Time>;
+  using TimeInterval_t = detail::TagImpl<detail::CoordDef::TimeInterval>;
+  using Mask_t = detail::TagImpl<detail::CoordDef::Mask>;
+  using Position_t = detail::TagImpl<detail::CoordDef::Position>;
+
+  static constexpr Monitor_t Monitor{};
+  static constexpr DetectorInfo_t DetectorInfo{};
+  static constexpr ComponentInfo_t ComponentInfo{};
+  static constexpr X_t X{};
+  static constexpr Y_t Y{};
+  static constexpr Z_t Z{};
+  static constexpr Tof_t Tof{};
+  static constexpr Energy_t Energy{};
+  static constexpr DeltaE_t DeltaE{};
+  static constexpr Ei_t Ei{};
+  static constexpr Ef_t Ef{};
+  static constexpr DetectorId_t DetectorId{};
+  static constexpr SpectrumNumber_t SpectrumNumber{};
+  static constexpr DetectorGrouping_t DetectorGrouping{};
+  static constexpr RowLabel_t RowLabel{};
+  static constexpr Polarization_t Polarization{};
+  static constexpr Temperature_t Temperature{};
+  static constexpr FuzzyTemperature_t FuzzyTemperature{};
+  static constexpr Time_t Time{};
+  static constexpr TimeInterval_t TimeInterval{};
+  static constexpr Mask_t Mask{};
+  static constexpr Position_t Position{};
 };
 
 struct Data {
-  using Tof = detail::TagImpl<detail::DataDef::Tof>;
-  using PulseTime = detail::TagImpl<detail::DataDef::PulseTime>;
-  using Value = detail::TagImpl<detail::DataDef::Value>;
-  using Variance = detail::TagImpl<detail::DataDef::Variance>;
-  using StdDev = detail::TagImpl<detail::DataDef::StdDev>;
-  using Int = detail::TagImpl<detail::DataDef::Int>;
-  using DimensionSize = detail::TagImpl<detail::DataDef::DimensionSize>;
-  using String = detail::TagImpl<detail::DataDef::String>;
-  using Events = detail::TagImpl<detail::DataDef::Events>;
-  using Table = detail::TagImpl<detail::DataDef::Table>;
+  using Tof_t = detail::TagImpl<detail::DataDef::Tof>;
+  using PulseTime_t = detail::TagImpl<detail::DataDef::PulseTime>;
+  using Value_t = detail::TagImpl<detail::DataDef::Value>;
+  using Variance_t = detail::TagImpl<detail::DataDef::Variance>;
+  using StdDev_t = detail::TagImpl<detail::DataDef::StdDev>;
+  using Int_t = detail::TagImpl<detail::DataDef::Int>;
+  using DimensionSize_t = detail::TagImpl<detail::DataDef::DimensionSize>;
+  using String_t = detail::TagImpl<detail::DataDef::String>;
+  using Events_t = detail::TagImpl<detail::DataDef::Events>;
+  using Table_t = detail::TagImpl<detail::DataDef::Table>;
+
+  static constexpr Tof_t Tof{};
+  static constexpr PulseTime_t PulseTime{};
+  static constexpr Value_t Value{};
+  static constexpr Variance_t Variance{};
+  static constexpr StdDev_t StdDev{};
+  static constexpr Int_t Int{};
+  static constexpr DimensionSize_t DimensionSize{};
+  static constexpr String_t String{};
+  static constexpr Events_t Events{};
+  static constexpr Table_t Table{};
 };
 
 struct Attr {
-  using ExperimentLog = detail::TagImpl<detail::AttrDef::ExperimentLog>;
+  using ExperimentLog_t = detail::TagImpl<detail::AttrDef::ExperimentLog>;
+
+  static constexpr ExperimentLog_t ExperimentLog{};
 };
 
 template <class T>
@@ -333,6 +371,16 @@ make_coordinate_dimension(const std::tuple<Ts...> &) {
 // coordinates" and "non-dimension coordinates".
 constexpr auto isDimensionCoord = make_is_dimension_coordinate(detail::Tags{});
 constexpr auto coordDimension = make_coordinate_dimension(detail::Tags{});
+
+namespace detail {
+template <class... Ts>
+constexpr std::array<Unit::Id, std::tuple_size<detail::Tags>::value>
+make_unit_table(const std::tuple<Ts...> &) {
+  return {Ts::unit...};
+}
+constexpr auto unit_table = make_unit_table(detail::Tags{});
+} // namespace detail
+constexpr auto unit(const Tag tag) { return detail::unit_table[tag.value()]; }
 
 class DataBin {
 public:

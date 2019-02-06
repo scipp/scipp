@@ -402,7 +402,7 @@ public:
   using ArithmeticVariableConceptT<T>::ArithmeticVariableConceptT;
 
   VariableConcept &reciprocal_times(const double value) override {
-    Variable other(Data::Value{}, {}, {value});
+    Variable other(Data::Value, {}, {value});
     return this->template apply<ReciprocalTimes>(other.data());
   }
 
@@ -771,7 +771,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
   dataset::expect::equals(variable.unit(), other.unit());
-  if (variable.tag() != Data::Events{} && variable.tag() != Data::Table{}) {
+  if (variable.tag() != Data::Events && variable.tag() != Data::Table) {
     dataset::expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
@@ -818,14 +818,14 @@ Variable &Variable::operator+=(const double value) & {
   // TODO By not setting a unit here this operator is only usable if the
   // variable is dimensionless. Should we ignore the unit for scalar operations,
   // i.e., set the same unit as *this.unit()?
-  Variable other(Data::Value{}, {}, {value});
+  Variable other(Data::Value, {}, {value});
   return plus_equals(*this, other);
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   dataset::expect::equals(variable.unit(), other.unit());
   dataset::expect::contains(variable.dimensions(), other.dimensions());
-  if (variable.tag() == Data::Events{})
+  if (variable.tag() == Data::Events)
     throw std::runtime_error("Subtraction of events lists not implemented.");
   require<ArithmeticVariableConcept>(variable.data()) -= other.data();
   return variable;
@@ -838,13 +838,13 @@ Variable &Variable::operator-=(const ConstVariableSlice &other) & {
   return minus_equals(*this, other);
 }
 Variable &Variable::operator-=(const double value) & {
-  Variable other(Data::Value{}, {}, {value});
+  Variable other(Data::Value, {}, {value});
   return minus_equals(*this, other);
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   dataset::expect::contains(variable.dimensions(), other.dimensions());
-  if (variable.tag() == Data::Events{})
+  if (variable.tag() == Data::Events)
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
@@ -859,14 +859,14 @@ Variable &Variable::operator*=(const ConstVariableSlice &other) & {
   return times_equals(*this, other);
 }
 Variable &Variable::operator*=(const double value) & {
-  Variable other(Data::Value{}, {}, {value});
+  Variable other(Data::Value, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return times_equals(*this, other);
 }
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
   dataset::expect::contains(variable.dimensions(), other.dimensions());
-  if (variable.tag() == Data::Events{})
+  if (variable.tag() == Data::Events)
     throw std::runtime_error("Division of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() / other.unit());
@@ -881,7 +881,7 @@ Variable &Variable::operator/=(const ConstVariableSlice &other) & {
   return divide_equals(*this, other);
 }
 Variable &Variable::operator/=(const double value) & {
-  Variable other(Data::Value{}, {}, {value});
+  Variable other(Data::Value, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return divide_equals(*this, other);
 }
@@ -910,7 +910,7 @@ VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) const {
   return plus_equals(*this, other);
 }
 VariableSlice VariableSlice::operator+=(const double value) const {
-  Variable other(Data::Value{}, {}, {value});
+  Variable other(Data::Value, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return plus_equals(*this, other);
 }
@@ -922,7 +922,7 @@ VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) const {
   return minus_equals(*this, other);
 }
 VariableSlice VariableSlice::operator-=(const double value) const {
-  Variable other(Data::Value{}, {}, {value});
+  Variable other(Data::Value, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return minus_equals(*this, other);
 }
@@ -934,7 +934,7 @@ VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) const {
   return times_equals(*this, other);
 }
 VariableSlice VariableSlice::operator*=(const double value) const {
-  Variable other(Data::Value{}, {}, {value});
+  Variable other(Data::Value, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return times_equals(*this, other);
 }
@@ -946,7 +946,7 @@ VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) const {
   return divide_equals(*this, other);
 }
 VariableSlice VariableSlice::operator/=(const double value) const {
-  Variable other(Data::Value{}, {}, {value});
+  Variable other(Data::Value, {}, {value});
   other.setUnit(Unit::Id::Dimensionless);
   return divide_equals(*this, other);
 }
@@ -1175,7 +1175,7 @@ Variable filter(const Variable &var, const Variable &filter) {
     throw std::runtime_error(
         "Cannot filter variable: The filter must by 1-dimensional.");
   const auto dim = filter.dimensions().labels()[0];
-  auto mask = filter.get<Coord::Mask>();
+  auto mask = filter.get(Coord::Mask);
 
   const gsl::index removed = std::count(mask.begin(), mask.end(), 0);
   if (removed == 0)
@@ -1209,7 +1209,7 @@ Variable sum(const Variable &var, const Dim dim) {
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dimensions()[dim]);
-  return summed * Variable(Data::Value{}, {}, {scale});
+  return summed * Variable(Data::Value, {}, {scale});
 }
 
 template <>

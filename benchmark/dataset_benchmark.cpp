@@ -15,10 +15,10 @@
 static void BM_Dataset_get_with_many_columns(benchmark::State &state) {
   Dataset d;
   for (int i = 0; i < state.range(0); ++i)
-    d.insert(Data::Value{}, "name" + std::to_string(i), Dimensions{}, 1);
-  d.insert(Data::Int{}, "name", Dimensions{}, 1);
+    d.insert(Data::Value, "name" + std::to_string(i), Dimensions{}, 1);
+  d.insert(Data::Int, "name", Dimensions{}, 1);
   for (auto _ : state)
-    d.get<Data::Int>();
+    d.get(Data::Int);
   state.SetItemsProcessed(state.iterations());
 }
 BENCHMARK(BM_Dataset_get_with_many_columns)
@@ -30,16 +30,16 @@ BENCHMARK(BM_Dataset_get_with_many_columns)
 static void BM_Dataset_as_Histogram(benchmark::State &state) {
   gsl::index nPoint = state.range(0);
   Dataset d;
-  d.insert(Coord::Tof{}, {Dim::Tof, nPoint}, nPoint);
-  d.insert(Data::Value{}, "", {Dim::Tof, nPoint}, nPoint);
-  d.insert(Data::Variance{}, "", {Dim::Tof, nPoint}, nPoint);
+  d.insert(Coord::Tof, {Dim::Tof, nPoint}, nPoint);
+  d.insert(Data::Value, "", {Dim::Tof, nPoint}, nPoint);
+  d.insert(Data::Variance, "", {Dim::Tof, nPoint}, nPoint);
   std::vector<Dataset> histograms;
   gsl::index nSpec = std::min(1000000l, 10000000 / (nPoint + 1));
   for (gsl::index i = 0; i < nSpec; ++i) {
     auto hist(d);
     // Break sharing
-    hist.get<Data::Value>();
-    hist.get<Data::Variance>();
+    hist.get(Data::Value);
+    hist.get(Data::Variance);
     histograms.push_back(hist);
   }
 
@@ -56,11 +56,11 @@ BENCHMARK(BM_Dataset_as_Histogram)->RangeMultiplier(2)->Range(0, 2 << 14);
 
 static void BM_Dataset_as_Histogram_with_slice(benchmark::State &state) {
   Dataset d;
-  d.insert(Coord::Tof{}, {Dim::Tof, 1000}, 1000);
+  d.insert(Coord::Tof, {Dim::Tof, 1000}, 1000);
   gsl::index nSpec = 10000;
   Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, nSpec}});
-  d.insert(Data::Value{}, "sample", dims, dims.volume());
-  d.insert(Data::Variance{}, "sample", dims, dims.volume());
+  d.insert(Data::Value, "sample", dims, dims.volume());
+  d.insert(Data::Variance, "sample", dims, dims.volume());
 
   for (auto _ : state) {
     auto sum = d(Dim::Spectrum, 0);
@@ -76,15 +76,15 @@ BENCHMARK(BM_Dataset_as_Histogram_with_slice);
 Dataset makeSingleDataDataset(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
 
-  d.insert(Coord::DetectorId{}, {Dim::Detector, nSpec}, nSpec);
-  d.insert(Coord::Position{}, {Dim::Detector, nSpec}, nSpec);
-  d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, nSpec}, nSpec);
-  d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Coord::DetectorId, {Dim::Detector, nSpec}, nSpec);
+  d.insert(Coord::Position, {Dim::Detector, nSpec}, nSpec);
+  d.insert(Coord::DetectorGrouping, {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Coord::SpectrumNumber, {Dim::Spectrum, nSpec}, nSpec);
 
-  d.insert(Coord::Tof{}, {Dim::Tof, nPoint}, nPoint);
+  d.insert(Coord::Tof, {Dim::Tof, nPoint}, nPoint);
   Dimensions dims({{Dim::Tof, nPoint}, {Dim::Spectrum, nSpec}});
-  d.insert(Data::Value{}, "sample", dims, dims.volume());
-  d.insert(Data::Variance{}, "sample", dims, dims.volume());
+  d.insert(Data::Value, "sample", dims, dims.volume());
+  d.insert(Data::Variance, "sample", dims, dims.volume());
 
   return d;
 }
@@ -92,17 +92,17 @@ Dataset makeSingleDataDataset(const gsl::index nSpec, const gsl::index nPoint) {
 Dataset makeDataset(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
 
-  d.insert(Coord::DetectorId{}, {Dim::Detector, nSpec}, nSpec);
-  d.insert(Coord::Position{}, {Dim::Detector, nSpec}, nSpec);
-  d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, nSpec}, nSpec);
-  d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Coord::DetectorId, {Dim::Detector, nSpec}, nSpec);
+  d.insert(Coord::Position, {Dim::Detector, nSpec}, nSpec);
+  d.insert(Coord::DetectorGrouping, {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Coord::SpectrumNumber, {Dim::Spectrum, nSpec}, nSpec);
 
-  d.insert(Coord::Tof{}, {Dim::Tof, nPoint}, nPoint);
+  d.insert(Coord::Tof, {Dim::Tof, nPoint}, nPoint);
   Dimensions dims({{Dim::Tof, nPoint}, {Dim::Spectrum, nSpec}});
-  d.insert(Data::Value{}, "sample", dims, dims.volume());
-  d.insert(Data::Variance{}, "sample", dims, dims.volume());
-  d.insert(Data::Value{}, "background", dims, dims.volume());
-  d.insert(Data::Variance{}, "background", dims, dims.volume());
+  d.insert(Data::Value, "sample", dims, dims.volume());
+  d.insert(Data::Variance, "sample", dims, dims.volume());
+  d.insert(Data::Value, "background", dims, dims.volume());
+  d.insert(Data::Variance, "background", dims, dims.volume());
 
   return d;
 }
@@ -238,15 +238,15 @@ Dataset makeBeamline(const gsl::index nDet) {
   // would be higher.
   Dataset dets;
 
-  dets.insert(Coord::DetectorId{}, {Dim::Detector, nDet});
-  dets.insert(Coord::Mask{}, {Dim::Detector, nDet});
-  dets.insert(Coord::Position{}, {Dim::Detector, nDet});
-  auto ids = dets.get<Coord::DetectorId>();
+  dets.insert(Coord::DetectorId, {Dim::Detector, nDet});
+  dets.insert(Coord::Mask, {Dim::Detector, nDet});
+  dets.insert(Coord::Position, {Dim::Detector, nDet});
+  auto ids = dets.get(Coord::DetectorId);
   std::iota(ids.begin(), ids.end(), 1);
 
   Dataset d;
-  d.insert(Coord::DetectorInfo{}, {}, {dets});
-  d.insert(Attr::ExperimentLog{}, "NeXus logs", {});
+  d.insert(Coord::DetectorInfo, {}, {dets});
+  d.insert(Attr::ExperimentLog, "NeXus logs", {});
 
   return d;
 }
@@ -254,12 +254,12 @@ Dataset makeBeamline(const gsl::index nDet) {
 Dataset makeSpectra(const gsl::index nSpec) {
   Dataset d;
 
-  d.insert(Coord::DetectorGrouping{}, {Dim::Spectrum, nSpec});
-  d.insert(Coord::SpectrumNumber{}, {Dim::Spectrum, nSpec});
-  auto groups = d.get<Coord::DetectorGrouping>();
+  d.insert(Coord::DetectorGrouping, {Dim::Spectrum, nSpec});
+  d.insert(Coord::SpectrumNumber, {Dim::Spectrum, nSpec});
+  auto groups = d.get(Coord::DetectorGrouping);
   for (gsl::index i = 0; i < groups.size(); ++i)
     groups[i] = {i};
-  auto nums = d.get<Coord::SpectrumNumber>();
+  auto nums = d.get(Coord::SpectrumNumber);
   std::iota(nums.begin(), nums.end(), 1);
 
   return d;
@@ -267,12 +267,12 @@ Dataset makeSpectra(const gsl::index nSpec) {
 
 Dataset makeData(const gsl::index nSpec, const gsl::index nPoint) {
   Dataset d;
-  d.insert(Coord::Tof{}, {Dim::Tof, nPoint + 1});
-  auto tofs = d.get<Coord::Tof>();
+  d.insert(Coord::Tof, {Dim::Tof, nPoint + 1});
+  auto tofs = d.get(Coord::Tof);
   std::iota(tofs.begin(), tofs.end(), 0.0);
   Dimensions dims({{Dim::Tof, nPoint}, {Dim::Spectrum, nSpec}});
-  d.insert(Data::Value{}, "sample", dims);
-  d.insert(Data::Variance{}, "sample", dims);
+  d.insert(Data::Value, "sample", dims);
+  d.insert(Data::Variance, "sample", dims);
   return d;
 }
 
@@ -310,8 +310,8 @@ static void BM_Dataset_Workspace2D_copy_and_write(benchmark::State &state) {
   auto d = makeWorkspace2D(nSpec, nPoint);
   for (auto _ : state) {
     auto copy(d);
-    copy.get<Data::Value>()[0] = 1.0;
-    copy.get<Data::Variance>()[0] = 1.0;
+    copy.get(Data::Value)[0] = 1.0;
+    copy.get(Data::Variance)[0] = 1.0;
   }
   state.SetItemsProcessed(state.iterations());
 }
@@ -323,9 +323,9 @@ static void BM_Dataset_Workspace2D_rebin(benchmark::State &state) {
   gsl::index nSpec = state.range(0) * 1024;
   gsl::index nPoint = 1024;
 
-  Variable newCoord(Coord::Tof{}, {Dim::Tof, nPoint / 2});
+  Variable newCoord(Coord::Tof, {Dim::Tof, nPoint / 2});
   double value = 0.0;
-  for (auto &tof : newCoord.get<Coord::Tof>()) {
+  for (auto &tof : newCoord.get(Coord::Tof)) {
     tof = value;
     value += 3.0;
   }
@@ -349,23 +349,23 @@ Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
   auto d = makeBeamline(nSpec);
   d.merge(makeSpectra(nSpec));
 
-  d.insert(Coord::Tof{}, {Dim::Tof, 2});
+  d.insert(Coord::Tof, {Dim::Tof, 2});
 
-  d.insert(Data::Events{}, "events", {Dim::Spectrum, nSpec});
+  d.insert(Data::Events, "events", {Dim::Spectrum, nSpec});
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<int> dist(0, nEvent);
   Dataset empty;
-  empty.insert(Data::Tof{}, "", {Dim::Event, 0});
-  empty.insert(Data::PulseTime{}, "", {Dim::Event, 0});
-  for (auto &eventList : d.get<Data::Events>()) {
+  empty.insert(Data::Tof, "", {Dim::Event, 0});
+  empty.insert(Data::PulseTime, "", {Dim::Event, 0});
+  for (auto &eventList : d.get(Data::Events)) {
     // 1/4 of the event lists is empty
     gsl::index count = std::max(0l, dist(mt) - nEvent / 4);
     if (count == 0)
       eventList = empty;
     else {
-      eventList.insert(Data::Tof{}, "", {Dim::Event, count});
-      eventList.insert(Data::PulseTime{}, "", {Dim::Event, count});
+      eventList.insert(Data::Tof, "", {Dim::Event, count});
+      eventList.insert(Data::PulseTime, "", {Dim::Event, count});
     }
   }
 
@@ -399,7 +399,7 @@ static void BM_Dataset_EventWorkspace_copy_and_write(benchmark::State &state) {
   auto d = makeEventWorkspace(nSpec, nEvent);
   for (auto _ : state) {
     auto copy(d);
-    auto eventLists = copy.get<Data::Events>();
+    auto eventLists = copy.get(Data::Events);
     static_cast<void>(eventLists);
   }
   state.SetItemsProcessed(state.iterations());
@@ -417,7 +417,7 @@ static void BM_Dataset_EventWorkspace_plus(benchmark::State &state) {
   }
 
   gsl::index actualEvents = 0;
-  for (auto &eventList : d.get<Data::Events>())
+  for (auto &eventList : d.get(Data::Events))
     actualEvents += eventList.dimensions()[Dim::Event];
   state.SetItemsProcessed(state.iterations());
   // 2 for Tof and PulseTime
@@ -437,13 +437,13 @@ static void BM_Dataset_EventWorkspace_grow(benchmark::State &state) {
   for (auto _ : state) {
     state.PauseTiming();
     auto sum(d);
-    static_cast<void>(sum.get<Data::Events>());
+    static_cast<void>(sum.get(Data::Events));
     state.ResumeTiming();
     sum += update;
   }
 
   gsl::index actualEvents = 0;
-  for (auto &eventList : update.get<Data::Events>())
+  for (auto &eventList : update.get(Data::Events))
     actualEvents += eventList.dimensions()[Dim::Event];
   state.SetItemsProcessed(state.iterations() * actualEvents);
 }

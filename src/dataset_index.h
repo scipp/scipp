@@ -13,7 +13,7 @@
 template <class Tag> class DatasetIndex {
 public:
   DatasetIndex(const Dataset &dataset) {
-    const auto &axis = dataset.get<Tag>();
+    const auto &axis = dataset.get(Tag{});
     gsl::index current = 0;
     for (auto item : axis)
       m_index[item] = current++;
