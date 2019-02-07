@@ -3,6 +3,7 @@ compiler:
   - gcc
   - clang
 dist: xenial
+pyenv: python3.7
 
 before_install:
   # C++17
