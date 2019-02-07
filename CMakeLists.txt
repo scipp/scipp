@@ -26,6 +26,9 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --save-temps -march=native -fno-omit-fr
 # See https://github.com/pybind/pybind11/issues/1604
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsized-deallocation")
+  if(APPLE)
+    add_compile_definitions(_APPLE_CLANG_)
+  endif()
 endif()
 
 option(WITH_ASAN "Enable address sanitizer" OFF)

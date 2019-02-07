@@ -14,6 +14,11 @@ cmake ..
 make
 ```
 
+### OSX
+* You will need to be running High Sierra 10.13. Lower version have incompatible libc++ implementations.
+* You will need to be using LLVM Clang version 7. Current latest XCode 10.1, does not support all language features used.  
+* You will need to `brew install libomp` 
+
 ## Usage of the Python exports
 
 Setup is as above, but the `install` target needs to be run to setup the Python files:
@@ -37,3 +42,9 @@ To run the Python tests, run the following in directory `python/`:
 ```sh
 python3 -m unittest discover test
 ```
+or via nose
+```
+nosetests --where test
+```
+
+Note that the tests bring in additional python dependencies. `python3 -m pip install -r python/requirements.txt` to obtain these.
