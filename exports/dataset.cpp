@@ -352,27 +352,19 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<Tag>(m, "Tag").def(py::self == py::self);
 
+  // Runtime tags are sufficient in Python, not exporting Tag child classes.
   auto data_tags = m.def_submodule("Data");
-  py::class_<Data::Value_t, Tag>(data_tags, "_Value");
-  py::class_<Data::Variance_t, Tag>(data_tags, "_Variance");
-  data_tags.attr("Value") = Data::Value;
-  data_tags.attr("Variance") = Data::Variance;
+  data_tags.attr("Value") = Tag(Data::Value);
+  data_tags.attr("Variance") = Tag(Data::Variance);
 
   auto coord_tags = m.def_submodule("Coord");
-  py::class_<Coord::Mask_t, Tag>(coord_tags, "_Mask");
-  py::class_<Coord::X_t, Tag>(coord_tags, "_X");
-  py::class_<Coord::Y_t, Tag>(coord_tags, "_Y");
-  py::class_<Coord::Z_t, Tag>(coord_tags, "_Z");
-  py::class_<Coord::Tof_t, Tag>(coord_tags, "_Tof");
-  py::class_<Coord::RowLabel_t, Tag>(coord_tags, "_RowLabel");
-  py::class_<Coord::SpectrumNumber_t, Tag>(coord_tags, "_SpectrumNumber");
-  coord_tags.attr("Mask") = Coord::Mask;
-  coord_tags.attr("X") = Coord::X;
-  coord_tags.attr("Y") = Coord::Y;
-  coord_tags.attr("Z") = Coord::Z;
-  coord_tags.attr("Tof") = Coord::Tof;
-  coord_tags.attr("RowLabel") = Coord::RowLabel;
-  coord_tags.attr("SpectrumNumber") = Coord::SpectrumNumber;
+  coord_tags.attr("Mask") = Tag(Coord::Mask);
+  coord_tags.attr("X") = Tag(Coord::X);
+  coord_tags.attr("Y") = Tag(Coord::Y);
+  coord_tags.attr("Z") = Tag(Coord::Z);
+  coord_tags.attr("Tof") = Tag(Coord::Tof);
+  coord_tags.attr("RowLabel") = Tag(Coord::RowLabel);
+  coord_tags.attr("SpectrumNumber") = Tag(Coord::SpectrumNumber);
 
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
