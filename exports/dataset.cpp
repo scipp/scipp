@@ -456,8 +456,6 @@ PYBIND11_MODULE(dataset, m) {
                slice = slice(item.first, item.second);
              return slice;
            })
-      // TODO Make these using py::array instead of py::array_t, then cast based
-      // on tag?
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
       .def_property_readonly(
