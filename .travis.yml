@@ -3,9 +3,6 @@ compiler:
   - gcc
   - clang
 dist: xenial
-#include:
-#  - python: "3.7"
-#pyenv: python3.7
 
 before_install:
   # C++17
@@ -15,8 +12,8 @@ before_install:
 
 install: 
   # C++17
-  - sudo apt-get install -qq g++-6
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
+  - sudo apt-get install -qq g++-7
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
   - sudo apt install libboost-dev
 
 script: 
