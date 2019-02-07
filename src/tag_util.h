@@ -10,23 +10,16 @@
 
 /**
  * At the time of writing older clang 6 lacks support for template
- * argument deduction of class templates 
+ * argument deduction of class templates (OSX only?)
  * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0620r0.html
  * https://clang.llvm.org/cxx_status.html
  *
  * This make helper uses function template argument deduction to solve
  * for std::array declarations.
  */
-template <typename... T>
-constexpr auto make_array(T&&... values) ->
-    std::array<
-       typename std::decay_t<
-           typename std::common_type_t<T...>>,
-       sizeof...(T)> {
-    return std::array<
-        typename std::decay_t<
-            typename std::common_type_t<T...>>,
-        sizeof...(T)>{std::forward<T>(values)...};
+template <typename... T> constexpr auto make_array(T &&... values) {
+  return std::array<std::decay_t<std::common_type_t<T...>>, sizeof...(T)>{
+      std::forward<T>(values)...};
 }
 
 template <template <class> class Callable, class... Tags, class... Args>
