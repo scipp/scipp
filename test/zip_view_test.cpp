@@ -152,7 +152,7 @@ TEST(ZipView, iterator_modify) {
 }
 // Two following tests disabled because of unresolved issues with
 // conversion from pair to tuple as part of copy and copy_if
-#ifndef _CLANG_
+#ifndef _APPLE_CLANG_
 
 TEST(ZipView, iterator_copy) {
   Dataset source;
