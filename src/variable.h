@@ -466,7 +466,7 @@ public:
     return this->template cast<typename TagT::type>();
   }
 
-  template <class T> auto span() { return cast<T>(); }
+  template <class T> auto span() const { return cast<T>(); }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in

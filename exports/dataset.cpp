@@ -187,8 +187,7 @@ void insert_1D(
 }
 
 template <class Var, class K>
-void insert(Dataset &self, const K &key,
-            const Var &var) {
+void insert(Dataset &self, const K &key, const Var &var) {
   const auto & [ tag, name ] = Key::get(key);
   if (self.contains(tag, name))
     if (self(tag, name) == var)
@@ -211,11 +210,22 @@ std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
   return strides;
 }
 
-// TODO This needs to be refactored to support custom dtype.
-template <class Tag, class T>
-void setData(T &self, const std::pair<const Tag, const std::string> &key,
-             py::array_t<typename Tag::type> &data) {
-  const gsl::index index = find(self, key.first, key.second);
+template <class T> struct SetData {
+  static void apply(const VariableSlice &slice, py::array &data) {
+    // Pybind11 converts py::array to py::array_t for us, with all sorts of
+    // automatic conversions such as integer to double, if required.
+    py::array_t<T> dataT(data);
+    const py::buffer_info info = dataT.request();
+    auto buf = slice.span<T>();
+    auto *ptr = (T *)info.ptr;
+    std::copy(ptr, ptr + slice.size(), buf.begin());
+  }
+};
+
+template <class T, class K>
+void setData(T &self, const K &key, py::array &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const gsl::index index = find(self, tag, name);
   const auto &dims = self[index].dimensions();
   py::buffer_info info = data.request();
   const auto &shape = dims.shape();
@@ -224,9 +234,8 @@ void setData(T &self, const std::pair<const Tag, const std::string> &key,
     throw std::runtime_error(
         "Shape mismatch when setting data from numpy array.");
 
-  auto buf = self[index].get(Tag{});
-  double *ptr = (double *)info.ptr;
-  std::copy(ptr, ptr + dims.volume(), buf.begin());
+  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
+      self[index].dtype(), self[index], data);
 }
 } // namespace detail
 
@@ -521,8 +530,8 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
-      .def("__setitem__", detail::setData<Data::Value_t, DatasetSlice>)
-      .def("__setitem__", detail::setData<Data::Variance_t, DatasetSlice>)
+      .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
+      .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
@@ -588,10 +597,12 @@ PYBIND11_MODULE(dataset, m) {
              throw std::runtime_error("Non-self-assignment of Dataset slices "
                                       "is not implemented yet.\n");
            })
-      // No dimensions argument, this will set data of existing item.
-      .def("__setitem__", detail::setData<Data::Value_t, Dataset>)
-      .def("__setitem__", detail::setData<Data::Variance_t, Dataset>)
-      // Variants with dimensions, inserting new item.
+
+      // A) No dimensions argument, this will set data of existing item.
+      .def("__setitem__", detail::setData<Dataset, detail::Key::Tag>)
+      .def("__setitem__", detail::setData<Dataset, detail::Key::TagName>)
+
+      // B) Variants with dimensions, inserting new item.
       // 0. Insertion with default init. TODO Should this be removed?
       .def("__setitem__", detail::insertDefaultInit<detail::Key::Tag>)
       .def("__setitem__", detail::insertDefaultInit<detail::Key::TagName>)
@@ -599,14 +610,17 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
       // 2. Insertion attempting forced conversion to array of double. This
-      //    is handled by automatic conversion by PYbind11 when using
+      //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
       //    py::array::forcecast argument, we need to minimize implicit (and
-      //    potentially expensive conversion).
+      //    potentially expensive conversion). If we wanted to avoid some
+      //    conversion we need to provide explicit variants for specific types,
+      //    same as or similar to insert_1D in case 3. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
       // 3. Insertion of numpy-incompatible data. py::array_t does not support
-      //    non-POD types like std::string, so we need to handle them separately.
+      //    non-POD types like std::string, so we need to handle them
+      //    separately.
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
       // 4. Insertion from Variable or Variable slice.
@@ -614,6 +628,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
       .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)
       .def("__setitem__", detail::insert<VariableSlice, detail::Key::TagName>)
+
       // TODO Make sure we have all overloads covered to avoid implicit
       // conversion of DatasetSlice to Dataset.
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())

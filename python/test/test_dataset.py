@@ -102,6 +102,16 @@ class TestDataset(unittest.TestCase):
         d[Data.Variance, "data2"] = d[Data.Value, "data1"]
         self.assertEqual(len(d), 3)
 
+    def test_set_data(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+        self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
+        d[Data.Value, "data1"] = np.arange(24).reshape(4,3,2)
+        self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
+        # For existing items we do *not* change the dtype, but convert.
+        d[Data.Value, "data1"] = np.arange(24.0).reshape(4,3,2)
+        self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
+
     def test_dimensions(self):
         self.assertEqual(self.dataset.dimensions().size(Dim.X), 2)
         self.assertEqual(self.dataset.dimensions().size(Dim.Y), 3)
