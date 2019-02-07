@@ -20,12 +20,12 @@
 template <typename... T>
 constexpr auto make_array(T&&... values) ->
     std::array<
-       typename std::decay<
-           typename std::common_type<T...>::type>::type,
+       typename std::decay_t<
+           typename std::common_type_t<T...>>,
        sizeof...(T)> {
     return std::array<
-        typename std::decay<
-            typename std::common_type<T...>::type>::type,
+        typename std::decay_t<
+            typename std::common_type_t<T...>>,
         sizeof...(T)>{std::forward<T>(values)...};
 }
 
