@@ -249,8 +249,8 @@ class TestDataset(unittest.TestCase):
     def test_rebin(self):
         dataset = Dataset()
         dataset[Data.Value, "data"] = ([Dim.X], np.array(10*[1]))
-        dataset[Coord.X] = ([Dim.X], np.arange(11))
-        new_coord = Variable(Coord.X, [Dim.X], np.arange(0, 11, 2))
+        dataset[Coord.X] = ([Dim.X], np.arange(11.0))
+        new_coord = Variable(Coord.X, [Dim.X], np.arange(0.0, 11, 2))
         dataset = rebin(dataset, new_coord)
         np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array(5*[2]))
         np.testing.assert_array_equal(dataset[Coord.X].numpy, np.arange(0, 11, 2))
@@ -374,7 +374,7 @@ class TestDatasetExamples(unittest.TestCase):
         d = Dataset()
 
         # Add bin-edge axis for X
-        d[Coord.X] = ([Dim.X], np.arange(L+1))
+        d[Coord.X] = ([Dim.X], np.arange(L+1).astype(np.float64))
         # ... and normal axes for Y and Z
         d[Coord.Y] = ([Dim.Y], np.arange(L))
         d[Coord.Z] = ([Dim.Z], np.arange(L))
@@ -389,9 +389,9 @@ class TestDatasetExamples(unittest.TestCase):
         square = d * d
 
         # Rebin the X axis
-        d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2)))
+        d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2).astype(np.float64)))
         # Rebin to different axis for every y
-        rebinned = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2])))
+        rebinned = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2]).astype(np.float64)))
 
         # Do something with numpy and insert result
         d[Data.Value, "dz(p)"] = ([Dim.Z, Dim.Y, Dim.X], np.gradient(d[Data.Value, "pressure"], d[Coord.Z], axis=0))

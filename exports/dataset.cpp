@@ -65,6 +65,9 @@ DType convertDType(const py::dtype type) {
     return dtype<int64_t>;
   if (type.is(py::dtype::of<int32_t>()))
     return dtype<int32_t>;
+  // TODO We should introduce our own Bool, instead of relying on char.
+  if (type.is(py::dtype::of<bool>()))
+    return dtype<char>;
   throw std::runtime_error("unsupported dtype");
 }
 
@@ -91,10 +94,13 @@ template <class T> struct MakeVariableDefaultInit {
 };
 
 Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
-                      const py::array &data,
+                      py::array &data,
                       py::dtype dtype = py::dtype::of<Empty>()) {
-  const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
-                                                         : convertDType(dtype);
+  const py::buffer_info info = data.request();
+  // Use custom dtype, otherwise dtype of data.
+  const auto dtypeTag = dtype.is(py::dtype::of<Empty>())
+                            ? convertDType(data.dtype())
+                            : convertDType(dtype);
   return CallDType<double, float, int64_t, int32_t,
                    char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
                                                       data);
@@ -228,14 +234,15 @@ VariableSlice pySlice(VariableSlice &view,
 
 template <class T> struct MakePyBufferInfoT {
   static py::buffer_info apply(VariableSlice &view) {
+    // TODO We should introduce our own Bool, instead of relying on char.
     return py::buffer_info(
-        view.template span<T>().data(),     /* Pointer to buffer */
-        sizeof(T),                          /* Size of one scalar */
-        py::format_descriptor<T>::format(), /* Python
-                                                   struct-style format
-                                                   descriptor */
-        view.dimensions().count(),          /* Number of dimensions */
-        view.dimensions().shape(),          /* Buffer dimensions */
+        view.template span<T>().data(), /* Pointer to buffer */
+        sizeof(T),                      /* Size of one scalar */
+        py::format_descriptor<
+            std::conditional_t<std::is_same_v<T, char>, bool, T>>::
+            format(),              /* Python struct-style format descriptor */
+        view.dimensions().count(), /* Number of dimensions */
+        view.dimensions().shape(), /* Buffer dimensions */
         detail::numpy_strides<T>(
             view.strides()) /* Strides (in bytes) for each index */
     );
@@ -282,9 +289,11 @@ void setVariableSliceRange(VariableSlice &self,
 template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
   // TODO Should `Variable` also have a `strides` method?
   const auto strides = VariableSlice(view).strides();
-  return py::array_t<T>{view.dimensions().shape(),
-                        detail::numpy_strides<T>(strides),
-                        view.template span<T>().data(), obj};
+  // TODO We should introduce our own Bool, instead of relying on char.
+  using py_T = std::conditional_t<std::is_same_v<T, char>, bool, T>;
+  return py::array_t<py_T>{view.dimensions().shape(),
+                           detail::numpy_strides<T>(strides),
+                           (py_T *)view.template span<T>().data(), obj};
 }
 
 template <class Var, class... Ts>
@@ -392,6 +401,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
+      // TODO Need to add overload for std::vector<std::string>, etc.
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
@@ -403,7 +413,7 @@ PYBIND11_MODULE(dataset, m) {
           "dimensions", [](const Variable &self) { return self.dimensions(); })
       .def_property_readonly("numpy",
                              &as_py_array_t_variant<Variable, double, float,
-                                                    int64_t, int32_t, char>)
+                                                    int64_t, int32_t, bool>)
       .def_property_readonly(
           "data", &as_VariableView_variant<Variable, double, float, int64_t,
                                            int32_t, char, std::string>)
@@ -445,7 +455,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", &setVariableSliceRange<Data::Value_t>)
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
-                                          int32_t, char>)
+                                          int32_t, bool>)
       .def_property_readonly(
           "data", &as_VariableView_variant<VariableSlice, double, float,
                                            int64_t, int32_t, char, std::string>)
