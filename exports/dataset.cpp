@@ -122,13 +122,25 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
 
 namespace Key {
 using Tag = Tag;
-using TagAndName = std::pair<Tag, const std::string &>;
+using TagName = std::pair<Tag, const std::string &>;
 auto get(const Key::Tag &key) {
   static const std::string empty;
   return std::tuple(key, empty);
 }
-auto get(const Key::TagAndName &key) { return key; }
+auto get(const Key::TagName &key) { return key; }
 } // namespace Key
+
+template <class K>
+void insertDefaultInit(
+    Dataset &self, const K &key,
+    const std::tuple<const std::vector<Dim> &, py::tuple> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
+  auto var = makeVariableDefaultInit(tag, labels, array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
 
 template <class K>
 void insert_ndarray(
@@ -161,36 +173,31 @@ void insert_conv(
   self.insert(std::move(var));
 }
 
-template <class Tag>
-void insertCoord1D(Dataset &self, const Tag,
-                   const std::tuple<const std::vector<Dim> &,
-                                    std::vector<typename Tag::type> &> &data) {
-  const auto &labels = std::get<0>(data);
-  const auto &values = std::get<1>(data);
-  Dimensions dims{labels, {static_cast<gsl::index>(values.size())}};
-  self.insert(Tag{}, dims, values);
+template <class T, class K>
+void insert_1D(
+    Dataset &self, const K &key,
+    const std::tuple<const std::vector<Dim> &, std::vector<T> &> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
+  Dimensions dims{labels, {static_cast<gsl::index>(array.size())}};
+  auto var = ::makeVariable<T>(tag, dims, array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
 }
 
-template <class Var>
-void insert(Dataset &self, const std::pair<Tag, const std::string &> &key,
+template <class Var, class K>
+void insert(Dataset &self, const K &key,
             const Var &var) {
-  const auto & [ tag, name ] = key;
+  const auto & [ tag, name ] = Key::get(key);
   if (self.contains(tag, name))
     if (self(tag, name) == var)
       return;
   Variable copy(var);
   copy.setTag(tag);
-  copy.setName(name);
+  if (!name.empty())
+    copy.setName(name);
   self.insert(std::move(copy));
-}
-
-void insertDefaultInit(
-    Dataset &self, const std::pair<Tag, const std::string &> &key,
-    const std::tuple<const std::vector<Dim> &, py::tuple> &data) {
-  auto var = makeVariableDefaultInit(std::get<Tag>(key), std::get<0>(data),
-                                     std::get<1>(data));
-  var.setName(std::get<const std::string &>(key));
-  self.insert(std::move(var));
 }
 
 // Add size factor.
@@ -585,21 +592,28 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<Data::Value_t, Dataset>)
       .def("__setitem__", detail::setData<Data::Variance_t, Dataset>)
       // Variants with dimensions, inserting new item.
+      // 0. Insertion with default init. TODO Should this be removed?
+      .def("__setitem__", detail::insertDefaultInit<detail::Key::Tag>)
+      .def("__setitem__", detail::insertDefaultInit<detail::Key::TagName>)
+      // 1. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
-      .def("__setitem__", detail::insert_ndarray<detail::Key::TagAndName>)
-      // TODO: Overloaded to cover non-numpy data such as a scalar value. This
-      // is handled by automatic conversion by PYbind11 when using py::array_t.
-      // See also the py::array::forcecast argument, we need to minimize
-      // implicit (and potentially expensive conversion).
+      .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
+      // 2. Insertion attempting forced conversion to array of double. This
+      //    is handled by automatic conversion by PYbind11 when using
+      //    py::array_t. Handles also scalar data. See also the
+      //    py::array::forcecast argument, we need to minimize implicit (and
+      //    potentially expensive conversion).
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_conv<double, detail::Key::TagAndName>)
-      // py::array_t does not support non-POD types like std::string, so we need
-      // to handle them separately.
-      .def("__setitem__", detail::insertCoord1D<Coord::RowLabel_t>)
-      // TODO There should be overloads with name also for other variants.
-      .def("__setitem__", detail::insert<Variable>)
-      .def("__setitem__", detail::insert<VariableSlice>)
-      .def("__setitem__", detail::insertDefaultInit)
+      .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
+      // 3. Insertion of numpy-incompatible data. py::array_t does not support
+      //    non-POD types like std::string, so we need to handle them separately.
+      .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
+      // 4. Insertion from Variable or Variable slice.
+      .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
+      .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
+      .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)
+      .def("__setitem__", detail::insert<VariableSlice, detail::Key::TagName>)
       // TODO Make sure we have all overloads covered to avoid implicit
       // conversion of DatasetSlice to Dataset.
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())

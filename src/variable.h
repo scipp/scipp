@@ -294,10 +294,25 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions,
                   Vector<T>(values.begin(), values.end()));
 }
 
+namespace detail {
+template <class... N> struct is_vector : std::false_type {};
+template <class N, class A>
+struct is_vector<std::vector<N, A>> : std::true_type {};
+} // namespace detail
+
 template <class T, class... Args>
 Variable makeVariable(Tag tag, const Dimensions &dimensions, Args &&... args) {
-  return Variable(tag, defaultUnit(tag), std::move(dimensions),
-                  Vector<T>(std::forward<Args>(args)...));
+  // Note: Using `if constexpr` instead of another overload, since overloading
+  // on universal reference arguments is problematic.
+  if constexpr (detail::is_vector<std::remove_cv_t<
+                    std::remove_reference_t<Args>>...>::value) {
+    // Copies to aligned memory.
+    return Variable(tag, defaultUnit(tag), std::move(dimensions),
+                    Vector<T>(args.begin(), args.end())...);
+  } else {
+    return Variable(tag, defaultUnit(tag), std::move(dimensions),
+                    Vector<T>(std::forward<Args>(args)...));
+  }
 }
 
 /// Non-mutable view into (a subset of) a Variable.
@@ -371,10 +386,10 @@ public:
   bool isData() const { return m_variable->isData(); }
 
   // Note: This return a proxy object (a VariableView) that does reference
-  // members owner by *this. Therefore we can support this even for temporaries
-  // and we do not need to delete the rvalue overload, unlike for many other
-  // methods. The data is owned by the underlying variable so it will not be
-  // deleted even if *this is a temporary and gets deleted.
+  // members owner by *this. Therefore we can support this even for
+  // temporaries and we do not need to delete the rvalue overload, unlike for
+  // many other methods. The data is owned by the underlying variable so it
+  // will not be deleted even if *this is a temporary and gets deleted.
   template <class TagT> auto get(const TagT t) const {
     if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
