@@ -211,11 +211,19 @@ std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
 }
 
 template <class T> struct SetData {
-  static void apply(const VariableSlice &slice, py::array &data) {
+  static void apply(const VariableSlice &slice, const py::array &data) {
     // Pybind11 converts py::array to py::array_t for us, with all sorts of
     // automatic conversions such as integer to double, if required.
     py::array_t<T> dataT(data);
+
+    const auto &dims = slice.dimensions();
     const py::buffer_info info = dataT.request();
+    const auto &shape = dims.shape();
+    if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
+                    shape.end()))
+      throw std::runtime_error(
+          "Shape mismatch when setting data from numpy array.");
+
     auto buf = slice.span<T>();
     auto *ptr = (T *)info.ptr;
     std::copy(ptr, ptr + slice.size(), buf.begin());
@@ -223,21 +231,12 @@ template <class T> struct SetData {
 };
 
 template <class T, class K>
-void setData(T &self, const K &key, py::array &data) {
+void setData(T &self, const K &key, const py::array &data) {
   const auto & [ tag, name ] = Key::get(key);
-  const gsl::index index = find(self, tag, name);
-  const auto &dims = self[index].dimensions();
-  py::buffer_info info = data.request();
-  const auto &shape = dims.shape();
-  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
-                  shape.end()))
-    throw std::runtime_error(
-        "Shape mismatch when setting data from numpy array.");
-
+  const auto slice = self(tag, name);
   CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
-      self[index].dtype(), self[index], data);
+      slice.dtype(), slice, data);
 }
-} // namespace detail
 
 VariableSlice pySlice(VariableSlice &view,
                       const std::tuple<Dim, const py::slice> &index) {
@@ -251,6 +250,23 @@ VariableSlice pySlice(VariableSlice &view,
     throw std::runtime_error("Step must be 1");
   return view(dim, start, stop);
 }
+
+void setVariableSlice(VariableSlice &self,
+                      const std::tuple<Dim, gsl::index> &index,
+                      const py::array &data) {
+  auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
+  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
+      slice.dtype(), slice, data);
+}
+
+void setVariableSliceRange(VariableSlice &self,
+                           const std::tuple<Dim, const py::slice> &index,
+                           const py::array &data) {
+  auto slice = pySlice(self, index);
+  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
+      slice.dtype(), slice, data);
+}
+} // namespace detail
 
 template <class T> struct MakePyBufferInfoT {
   static py::buffer_info apply(VariableSlice &view) {
@@ -272,38 +288,6 @@ template <class T> struct MakePyBufferInfoT {
 py::buffer_info make_py_buffer_info(VariableSlice &view) {
   return CallDType<double, float, int64_t, int32_t,
                    char>::apply<MakePyBufferInfoT>(view.dtype(), view);
-}
-
-template <class Tag>
-void doSetVariableSlice(VariableSlice &slice,
-                        py::array_t<typename Tag::type> &data) {
-  const auto &dims = slice.dimensions();
-  py::buffer_info info = data.request();
-  const auto &shape = dims.shape();
-  if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
-                  shape.end()))
-    throw std::runtime_error(
-        "Shape mismatch when setting data from numpy array.");
-
-  auto buf = slice.get(Tag{});
-  double *ptr = (double *)info.ptr;
-  std::copy(ptr, ptr + dims.volume(), buf.begin());
-}
-
-template <class Tag>
-void setVariableSlice(VariableSlice &self,
-                      const std::tuple<Dim, gsl::index> &index,
-                      py::array_t<typename Tag::type> &data) {
-  auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
-  doSetVariableSlice<Tag>(slice, data);
-}
-
-template <class Tag>
-void setVariableSliceRange(VariableSlice &self,
-                           const std::tuple<Dim, const py::slice> &index,
-                           py::array_t<typename Tag::type> &data) {
-  auto slice = pySlice(self, index);
-  doSetVariableSlice<Tag>(slice, data);
 }
 
 template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
@@ -464,7 +448,7 @@ PYBIND11_MODULE(dataset, m) {
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
            })
-      .def("__getitem__", &pySlice)
+      .def("__getitem__", &detail::pySlice)
       .def("__getitem__",
            [](VariableSlice &self, const std::map<Dim, const gsl::index> d) {
              auto slice(self);
@@ -474,8 +458,8 @@ PYBIND11_MODULE(dataset, m) {
            })
       // TODO Make these using py::array instead of py::array_t, then cast based
       // on tag?
-      .def("__setitem__", &setVariableSlice<Data::Value_t>)
-      .def("__setitem__", &setVariableSliceRange<Data::Value_t>)
+      .def("__setitem__", &detail::setVariableSlice)
+      .def("__setitem__", &detail::setVariableSliceRange)
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, bool>)
