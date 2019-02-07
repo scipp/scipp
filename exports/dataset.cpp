@@ -120,14 +120,43 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
                                                                  labels, shape);
 }
 
-void insertCoord(
-    Dataset &self, const Tag tag,
+namespace Key {
+using Tag = Tag;
+using TagAndName = std::pair<Tag, const std::string &>;
+auto get(const Key::Tag &key) {
+  static const std::string empty;
+  return std::tuple(key, empty);
+}
+auto get(const Key::TagAndName &key) { return key; }
+} // namespace Key
+
+template <class K>
+void insert_array(
+    Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, py::array &> &data) {
+  const auto & [ tag, name ] = Key::get(key);
   const auto & [ labels, array ] = data;
   const auto dtypeTag = convertDType(array.dtype());
   auto var = CallDType<double, float, int64_t, int32_t,
                        char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
                                                           array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
+
+// Note the concretely typed py::array_t. If we use py::array it will not match
+// plain Python arrays.
+template <class T>
+void insertNamed(
+    Dataset &self, const std::pair<Tag, const std::string &> &key,
+    const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
+  const auto & [ tag, name ] = key;
+  const auto & [ labels, array ] = data;
+  // TODO This is converting back and forth between py::array and py::array_t,
+  // can we do this in a better way?
+  auto var = detail::MakeVariable<T>::apply(tag, labels, array);
+  var.setName(name);
   self.insert(std::move(var));
 }
 
@@ -150,21 +179,6 @@ void insertCoord1D(Dataset &self, const Tag,
   const auto &values = std::get<1>(data);
   Dimensions dims{labels, {static_cast<gsl::index>(values.size())}};
   self.insert(Tag{}, dims, values);
-}
-
-// Note the concretely typed py::array_t. If we use py::array it will not match
-// plain Python arrays.
-template <class T>
-void insertNamed(
-    Dataset &self, const std::pair<Tag, const std::string &> &key,
-    const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
-  const auto & [ tag, name ] = key;
-  const auto & [ labels, array ] = data;
-  // TODO This is converting back and forth between py::array and py::array_t,
-  // can we do this in a better way?
-  auto var = detail::MakeVariable<T>::apply(tag, labels, array);
-  var.setName(name);
-  self.insert(std::move(var));
 }
 
 template <class Var>
@@ -581,7 +595,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<Data::Value_t, Dataset>)
       .def("__setitem__", detail::setData<Data::Variance_t, Dataset>)
       // Variants with dimensions, inserting new item.
-      .def("__setitem__", detail::insertCoord)
+      .def("__setitem__", detail::insert_array<detail::Key::Tag>)
+      .def("__setitem__", detail::insert_array<detail::Key::TagAndName>)
       // TODO: Overloaded to cover non-numpy data such as a scalar value. This
       // is handled by automatic conversion by PYbind11 when using py::array_t.
       // See also the py::array::forcecast argument, we need to minimize

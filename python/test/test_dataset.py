@@ -248,7 +248,7 @@ class TestDataset(unittest.TestCase):
 
     def test_rebin(self):
         dataset = Dataset()
-        dataset[Data.Value, "data"] = ([Dim.X], np.array(10*[1]))
+        dataset[Data.Value, "data"] = ([Dim.X], np.array(10*[1.0]))
         dataset[Coord.X] = ([Dim.X], np.arange(11.0))
         new_coord = Variable(Coord.X, [Dim.X], np.arange(0.0, 11, 2))
         dataset = rebin(dataset, new_coord)
@@ -281,8 +281,8 @@ class TestDatasetExamples(unittest.TestCase):
         table = Dataset()
         table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
         self.assertSequenceEqual(table[Coord.RowLabel].data, ['a', 'bb', 'ccc', 'dddd'])
-        table[Data.Value, "col1"] = ([Dim.Row], [3,2,1,0])
-        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4))
+        table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
+        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
         self.assertEqual(len(table), 3)
 
         table[Data.Value, "sum"] = ([Dim.Row], (len(table[Coord.RowLabel]),))
@@ -322,8 +322,8 @@ class TestDatasetExamples(unittest.TestCase):
 
         # Add columns
         table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
-        table[Data.Value, "col1"] = ([Dim.Row], [3,2,1,0])
-        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4))
+        table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
+        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
         table[Data.Value, "sum"] = ([Dim.Row], (4,))
 
         # Do something for each column (here: sum)
@@ -416,8 +416,8 @@ class TestDatasetExamples(unittest.TestCase):
         d[Coord.Tof] = ([Dim.Tof], np.arange(1000))
 
         # Add data with uncertainties
-        d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.poisson(size=100*1000).reshape([100, 1000]))
-        d[Data.Variance, "sample1"] = ([Dim.Spectrum, Dim.Tof], d[Data.Value, "sample1"].numpy)
+        d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.exponential(size=100*1000).reshape([100, 1000]))
+        d[Data.Variance, "sample1"] = d[Data.Value, "sample1"]
 
         # Create a mask and use it to extract some of the spectra
         select = Variable(Coord.Mask, [Dim.Spectrum], np.isin(d[Coord.SpectrumNumber], np.arange(10, 20)))
