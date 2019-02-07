@@ -9,25 +9,26 @@
 #include <cstdint>
 
 enum class Dim : uint16_t {
-  Invalid,
-  Event,
-  Tof,
-  Energy,
+  Component,
   DeltaE,
-  Spectrum,
-  Monitor,
-  Run,
   Detector,
-  Q,
-  X,
-  Y,
-  Z,
+  DetectorScan,
+  Energy,
+  Event,
+  Invalid,
+  Monitor,
   Polarization,
+  Position,
+  Q,
+  Row,
+  Run,
+  Spectrum,
   Temperature,
   Time,
-  DetectorScan,
-  Component,
-  Row
+  Tof,
+  X,
+  Y,
+  Z
 };
 
 constexpr bool isContinuous(const Dim dim) {

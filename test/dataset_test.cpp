@@ -664,7 +664,7 @@ TEST(Dataset, rebin_failures) {
   EXPECT_THROW_MSG(
       rebin(d, data), std::runtime_error,
       "The provided rebin coordinate is not a coordinate variable.");
-  Variable nonDimCoord(Coord::Position, {Dim::Detector, 2});
+  Variable nonDimCoord(Coord::Mask, {Dim::Detector, 2});
   EXPECT_THROW_MSG(
       rebin(d, nonDimCoord), std::runtime_error,
       "The provided rebin coordinate is not a dimension coordinate.");

@@ -352,6 +352,10 @@ static constexpr bool is_attr =
                std::tuple_size<detail::DataDef::tags>::value;
 template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 
+// TODO Some things *may* be dimension coordinates, but they are not necessarily
+// in all datasets. It depends on which dimensions are present. Does it even
+// make sense to hard-code this? Maybe we require handling everything at
+// runtime?
 namespace detail {
 template <class Tag> constexpr bool is_dimension_coordinate = false;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Tof> = true;
@@ -360,6 +364,7 @@ template <> constexpr bool is_dimension_coordinate<CoordDef::DeltaE> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::X> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Y> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Z> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Position> = true;
 template <>
 constexpr bool is_dimension_coordinate<CoordDef::SpectrumNumber> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::RowLabel> = true;
@@ -371,6 +376,8 @@ template <> constexpr Dim coordinate_dimension<CoordDef::DeltaE> = Dim::DeltaE;
 template <> constexpr Dim coordinate_dimension<CoordDef::X> = Dim::X;
 template <> constexpr Dim coordinate_dimension<CoordDef::Y> = Dim::Y;
 template <> constexpr Dim coordinate_dimension<CoordDef::Z> = Dim::Z;
+template <>
+constexpr Dim coordinate_dimension<CoordDef::Position> = Dim::Position;
 template <>
 constexpr Dim coordinate_dimension<CoordDef::SpectrumNumber> = Dim::Spectrum;
 template <> constexpr Dim coordinate_dimension<CoordDef::RowLabel> = Dim::Row;
