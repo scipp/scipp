@@ -123,8 +123,8 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
 void insertCoord(
     Dataset &self, const Tag tag,
     const std::tuple<const std::vector<Dim> &, py::array &> &data) {
-  const auto dtypeTag = defaultDType(tag);
   const auto & [ labels, array ] = data;
+  const auto dtypeTag = convertDType(array.dtype());
   auto var = CallDType<double, float, int64_t, int32_t,
                        char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
                                                           array);
@@ -371,11 +371,14 @@ PYBIND11_MODULE(dataset, m) {
   coord_tags.attr("SpectrumNumber") = Coord::SpectrumNumber;
 
   declare_span<double>(m, "double");
+  declare_span<float>(m, "float");
   declare_span<const double>(m, "double_const");
   declare_span<const std::string>(m, "string_const");
   declare_span<const Dim>(m, "Dim_const");
 
   declare_VariableView<double>(m, "double");
+  declare_VariableView<float>(m, "float");
+  declare_VariableView<int64_t>(m, "int64");
   declare_VariableView<int32_t>(m, "int32");
   declare_VariableView<std::string>(m, "string");
   declare_VariableView<char>(m, "char");
