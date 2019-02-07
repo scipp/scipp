@@ -3,6 +3,8 @@ compiler:
   - gcc
   - clang
 dist: xenial
+include:
+  - python: "3.7"
 pyenv: python3.7
 
 before_install:
@@ -20,5 +22,5 @@ script:
   - mkdir -p build
   - cd build
   - cmake ..
-  - make -j4 all
+  - make all
   - ./test/dataset_test
