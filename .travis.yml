@@ -16,12 +16,13 @@ install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
   - sudo apt install libboost-dev
   - sudo apt install libomp-dev
+  - sudo apt install python3-pip
 
 script: 
   - mkdir -p build
   - mkdir -p install
   - cd build
-  - cmake -DCMAKE_INSTALL_PREFIX=../install ..
+  - cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
   - make install
   - ./test/dataset_test
   - python3 -m pip install -r ../python/requirements.txt
