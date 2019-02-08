@@ -22,7 +22,8 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   // Scalar part of instrument, e.g., something like this:
   // d.insert(Coord::Instrument, {}, Beamline::ComponentInfo{});
   dets.insert(Coord::DetectorId, {Dim::Detector, 4}, {1001, 1002, 1003, 1004});
-  dets.insert(Coord::Position, {Dim::Detector, 4});
+  dets.insert(Coord::Position, {Dim::Detector, 4}, 4,
+              Eigen::Vector3d{1.0, 0.0, 0.0});
   d.insert(Coord::DetectorInfo, {}, {dets});
 
   // Spectrum to detector mapping and spectrum numbers.
