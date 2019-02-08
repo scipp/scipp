@@ -44,7 +44,7 @@ python3 -m unittest discover test
 ```
 or via nose
 ```
-nosetests --where test
+nosetests3 --where test
 ```
 
 Note that the tests bring in additional python dependencies. `python3 -m pip install -r python/requirements.txt` to obtain these.
