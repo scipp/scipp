@@ -11,6 +11,7 @@
 
 #include "test_macros.h"
 
+#include "event_list_proxy.h"
 #include "md_zip_view.h"
 
 TEST(MDZipView, construct) {
@@ -617,5 +618,37 @@ TEST(MDZipView, create_from_labels_nested) {
     EXPECT_EQ(it++->get(Data::Value), base + 3.0);
     EXPECT_EQ(it++->get(Data::Value), base + 5.0);
     base += 1.0;
+  }
+}
+
+TEST(MDZipView, event_lists) {
+  Dataset eventList;
+  eventList.insert(Data::Tof, "", {Dim::Event, 4}, {1, 2, 3, 4});
+  eventList.insert(Data::PulseTime, "", {Dim::Event, 4}, {5, 6, 7, 8});
+  ASSERT_EQ(eventList(Data::Tof).size(), 4);
+
+  Dataset d;
+  d.insert(Data::Events, "", {Dim::Spectrum, 3}, 3, eventList);
+
+  auto view = zipMD(d, MDWrite(Data::Events));
+  // Remove code below this comment, then
+  // Workspace2D.multi_dimensional_merging_and_slicing test fails with gcc (not
+  // with clang). Remove the line above and it works again. What is going on? Is
+  // this a gcc linker bug? It works neither for Release nor Debug build.
+  for (const auto &item : view) {
+    // TODO Would be nice to simplify this, such that the event-list column
+    // types are specified only once, at construction time of the main view, not
+    // for each item, i.e., item.get(Data::Events) should directly return a
+    // typed proxy.
+    auto events = item.get(Data::Events).get(Data::Tof, Data::PulseTime);
+    events.push_back({1, 2});
+  }
+  // This only works since we are using a direct event storage as datasets.
+  // Otherwise we need to use a proxy.
+  const auto eventLists = d.get(Data::Events);
+  ASSERT_EQ(eventLists.size(), 3);
+  for (const auto &eventList : eventLists) {
+    EXPECT_EQ(eventList(Data::Tof).size(), 5);
+    EXPECT_EQ(eventList(Data::PulseTime).size(), 5);
   }
 }
