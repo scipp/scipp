@@ -15,10 +15,16 @@ install:
   - sudo apt-get install -qq g++-7
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
   - sudo apt install libboost-dev
+  - sudo apt install libomp-dev
 
 script: 
   - mkdir -p build
+  - mkdir -p install
   - cd build
-  - cmake ..
-  - make all
+  - cmake -DCMAKE_INSTALL_PREFIX=../install ..
+  - make install
   - ./test/dataset_test
+  - python3 -m pip install -r ../python/requirements.txt
+  - export PYTHONPATH=$PYTHONPATH:../install
+  - cd ../python
+  - python3 -m unittest discover test
