@@ -430,8 +430,8 @@ template <class D> struct UnitHelper<D, Data::Events_t> {
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
     if (dataset.contains(Data::Events))
-      return dataset(Data::Events).unit();
-    return Unit::Id::Dimensionless;
+      return dataset.get(Data::Events)[0](Data::Tof).unit();
+    return dataset(Data::EventTofs).unit();
   }
 };
 
