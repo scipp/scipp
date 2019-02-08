@@ -41,8 +41,10 @@ public:
       const Dataset *d(m_dataset);
       return ranges::view::zip(d->get(Data::Tof), d->get(Data::PulseTime));
     }
-    return ranges::view::zip(gsl::make_span(*m_tofs),
-                             gsl::make_span(*m_pulseTimes));
+    return ranges::view::zip(
+        gsl::make_span(m_tofs->data(), m_tofs->data() + m_tofs->size()),
+        gsl::make_span(m_pulseTimes->data(),
+                       m_pulseTimes->data() + m_tofs->size()));
   }
 
 private:
