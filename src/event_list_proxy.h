@@ -6,13 +6,23 @@
 #ifndef EVENT_LIST_PROXY_H
 #define EVENT_LIST_PROXY_H
 
+#include "range/v3/view/zip.hpp"
+
 #include "dataset.h"
 #include "zip_view.h"
 
-// Need also ConstEventListProxy?
+// TODO Rename to ConstEventListProxy and add EventListProxy, inheriting from
+// ConstEventListProxy.
 class EventListProxy {
 public:
+  // TODO Fix ZipView to work with const Dataset, or use something else here.
   EventListProxy(Dataset &dataset) : m_dataset(&dataset) {}
+  EventListProxy(const typename Data::EventTofs_t::type &tofs,
+                 const typename Data::EventPulseTimes_t::type &pulseTimes)
+      : m_tofs(&tofs), m_pulseTimes(&pulseTimes) {
+    if (tofs.size() != pulseTimes.size())
+      throw std::runtime_error("Size mismatch for fields of event list.");
+  }
 
   // TODO Either ZipView must be generalized, or we need to use a different view
   // type here, once we support another event storage format. Furthermore, we
@@ -23,8 +33,17 @@ public:
     return ZipView<Tags...>(*m_dataset);
   }
 
+  auto get2() const {
+    if (m_dataset)
+      throw std::runtime_error(
+          "TODO implement get for Data::Events storage format");
+    return ranges::view::zip(*m_tofs, *m_pulseTimes);
+  }
+
 private:
-  Dataset *m_dataset;
+  Dataset *m_dataset{nullptr};
+  const typename Data::EventTofs_t::type *m_tofs{nullptr};
+  const typename Data::EventPulseTimes_t::type *m_pulseTimes{nullptr};
 };
 
 #endif // EVENT_LIST_PROXY_H

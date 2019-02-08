@@ -94,9 +94,12 @@ struct ref_type<D, const Coord::Position_t> {
 };
 template <class D>
 struct ref_type<D, Data::Events_t> {
-  // TODO To add support for another event storage format, add more elements to
-  // the tuple, see similar technique used for Coord::Position.
-  using type = std::tuple<gsl::span<typename Data::Events_t::type>>;
+  // Supporting either events stored as nested Dataset (Data::Events), or a
+  // separate variables for tof and pulse-time (Data::EventTofs and
+  // Data::EventPulseTimes).
+  using type = std::tuple<gsl::span<typename Data::Events_t::type>,
+                          gsl::span<typename Data::EventTofs_t::type>,
+                          gsl::span<typename Data::EventPulseTimes_t::type>>;
 };
 template <class D> struct ref_type<D, Data::StdDev_t> {
   using type = typename ref_type<D, Data::Variance_t>::type;
@@ -150,6 +153,8 @@ template <class D> struct ItemHelper<D, const Coord::Position_t> {
 template <class D> struct ItemHelper<D, Data::Events_t> {
   static element_return_type_t<D, Data::Events_t>
   get(const ref_type_t<D, Data::Events_t> &data, gsl::index index) {
+    if (!std::get<1>(data).empty())
+      return {std::get<1>(data)[index], std::get<2>(data)[index]};
     return {std::get<0>(data)[index]};
   }
 };
@@ -492,8 +497,7 @@ template <class D> struct DimensionHelper<D, Data::Events_t> {
     static_cast<void>(name);
     if (dataset.contains(Data::Events))
       return dataset(Data::Events).dimensions();
-    throw std::runtime_error(
-        "not implemented yet, need to look for Data::EventTofs or similar");
+    return dataset(Data::EventTofs).dimensions();
   }
 };
 
@@ -600,10 +604,20 @@ template <class D> struct DataHelper<D, Data::Events_t> {
   static auto get(Dataset &dataset, const Dimensions &,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
-    if (dataset.contains(Data::Events))
+    if (dataset.contains(Data::Events)) {
+      if (dataset.contains(Data::EventTofs))
+        throw std::runtime_error("Cannot obtain events from dataset, contains "
+                                 "conflicting information (Data::Events and "
+                                 "Data::EventTofs).");
       return ref_type_t<D, Data::Events_t>(
-          dataset.get(detail::value_type_t<Data::Events_t>{}));
-    throw std::runtime_error("TODO no events found, implement other options");
+          dataset.get(detail::value_type_t<Data::Events_t>{}),
+          gsl::span<typename Data::EventTofs_t::type>{},
+          gsl::span<typename Data::EventPulseTimes_t::type>{});
+    }
+    return ref_type_t<D, Data::Events_t>(
+        gsl::span<typename Data::Events_t::type>{},
+        dataset.get(detail::value_type_t<Data::EventTofs_t>{}),
+        dataset.get(detail::value_type_t<Data::EventPulseTimes_t>{}));
   }
 };
 

@@ -621,7 +621,7 @@ TEST(MDZipView, create_from_labels_nested) {
   }
 }
 
-TEST(MDZipView, event_lists) {
+TEST(MDZipView, event_lists_option1) {
   Dataset eventList;
   eventList.insert(Data::Tof, "", {Dim::Event, 4}, {1, 2, 3, 4});
   eventList.insert(Data::PulseTime, "", {Dim::Event, 4}, {5, 6, 7, 8});
@@ -651,4 +651,22 @@ TEST(MDZipView, event_lists) {
     EXPECT_EQ(eventList(Data::Tof).size(), 5);
     EXPECT_EQ(eventList(Data::PulseTime).size(), 5);
   }
+}
+
+TEST(MDZipView, event_lists_option2) {
+  Dataset d;
+  d.insert(Data::EventTofs, "", {Dim::Spectrum, 3});
+  d.insert(Data::EventPulseTimes, "", {Dim::Spectrum, 3});
+  auto tofs = d.get(Data::EventTofs);
+  auto pulseTimes = d.get(Data::EventPulseTimes);
+  tofs[0] = {1.0, 2.0};
+  tofs[2] = {1.0, 2.0, 3.0};
+  pulseTimes[0] = {3.0, 4.0};
+  pulseTimes[2] = {3.0, 4.0, 5.0};
+
+  auto view = zipMD(d, MDWrite(Data::Events));
+  auto it = view.begin();
+  EXPECT_EQ((it + 0)->get(Data::Events).get2().size(), 2);
+  EXPECT_EQ((it + 1)->get(Data::Events).get2().size(), 0);
+  EXPECT_EQ((it + 2)->get(Data::Events).get2().size(), 3);
 }
