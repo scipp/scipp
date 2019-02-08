@@ -631,10 +631,6 @@ TEST(MDZipView, event_lists_mutable) {
   d.insert(Data::Events, "", {Dim::Spectrum, 3}, 3, eventList);
 
   auto view = zipMD(d, MDWrite(Data::Events));
-  // Remove code below this comment, then
-  // Workspace2D.multi_dimensional_merging_and_slicing test fails with gcc (not
-  // with clang). Remove the line above and it works again. What is going on? Is
-  // this a gcc linker bug? It works neither for Release nor Debug build.
   for (const auto &item : view) {
     // TODO Would be nice to simplify this, such that the event-list column
     // types are specified only once, at construction time of the main view, not
