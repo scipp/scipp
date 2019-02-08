@@ -109,7 +109,7 @@ public:
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, Args &&... args) {
     static_assert(!is_coord<Tag>, "Coordinate variable cannot have a name.");
-    Variable a(tag, dimensions, std::forward<Args>(args)...);
+    Variable a(tag, std::move(dimensions), std::forward<Args>(args)...);
     a.setName(name);
     insert(std::move(a));
   }
