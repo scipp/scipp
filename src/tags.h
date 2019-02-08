@@ -210,13 +210,22 @@ struct DataDef {
     using type = Dataset;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
+  struct EventTofs {
+    using type = boost::container::small_vector<double, 8>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct EventPulseTimes {
+    using type = boost::container::small_vector<double, 8>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
   struct Table {
     using type = Dataset;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
 
-  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
-                          DimensionSize, String, Events, Table>;
+  using tags =
+      std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, DimensionSize,
+                 String, Events, EventTofs, EventPulseTimes, Table>;
 };
 
 struct AttrDef {
@@ -301,6 +310,8 @@ struct Data {
   using DimensionSize_t = detail::TagImpl<detail::DataDef::DimensionSize>;
   using String_t = detail::TagImpl<detail::DataDef::String>;
   using Events_t = detail::TagImpl<detail::DataDef::Events>;
+  using EventTofs_t = detail::TagImpl<detail::DataDef::EventTofs>;
+  using EventPulseTimes_t = detail::TagImpl<detail::DataDef::EventPulseTimes>;
   using Table_t = detail::TagImpl<detail::DataDef::Table>;
 
   static constexpr Tof_t Tof{};
@@ -312,6 +323,8 @@ struct Data {
   static constexpr DimensionSize_t DimensionSize{};
   static constexpr String_t String{};
   static constexpr Events_t Events{};
+  static constexpr EventTofs_t EventTofs{};
+  static constexpr EventPulseTimes_t EventPulseTimes{};
   static constexpr Table_t Table{};
 };
 
