@@ -300,8 +300,7 @@ template <class T>
 Variable makeVariable(Tag tag, const Dimensions &dimensions) {
   return Variable(
       tag, unit(tag), std::move(dimensions),
-      Vector<T>(dimensions.volume(),
-                detail::default_init<typename TagT::type>::value()));
+      Vector<T>(dimensions.volume(), detail::default_init<T>::value()));
 }
 
 template <class T, class T2>
