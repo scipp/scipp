@@ -29,15 +29,20 @@ public:
   // want to support read-only access if only a subset of all fields is
   // requested, e.g., for reading only TOF, without need to know whether also
   // pulse-times or weights are present.
-  template <class... Tags> ZipView<Tags...> get(const Tags... tags) const {
+  template <class... Tags>
+  ZipView<Tags...> getMutable(const Tags... tags) const {
     return ZipView<Tags...>(*m_dataset);
   }
 
-  auto get2() const {
-    if (m_dataset)
-      throw std::runtime_error(
-          "TODO implement get for Data::Events storage format");
-    return ranges::view::zip(*m_tofs, *m_pulseTimes);
+  // TODO This should be template/overloaded for different field combination,
+  // e.g., Tof-only, with weights, ...
+  auto get() const {
+    if (m_dataset) {
+      const Dataset *d(m_dataset);
+      return ranges::view::zip(d->get(Data::Tof), d->get(Data::PulseTime));
+    }
+    return ranges::view::zip(gsl::make_span(*m_tofs),
+                             gsl::make_span(*m_pulseTimes));
   }
 
 private:

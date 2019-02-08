@@ -621,7 +621,7 @@ TEST(MDZipView, create_from_labels_nested) {
   }
 }
 
-TEST(MDZipView, event_lists_option1) {
+TEST(MDZipView, event_lists_mutable) {
   Dataset eventList;
   eventList.insert(Data::Tof, "", {Dim::Event, 4}, {1, 2, 3, 4});
   eventList.insert(Data::PulseTime, "", {Dim::Event, 4}, {5, 6, 7, 8});
@@ -640,7 +640,7 @@ TEST(MDZipView, event_lists_option1) {
     // types are specified only once, at construction time of the main view, not
     // for each item, i.e., item.get(Data::Events) should directly return a
     // typed proxy.
-    auto events = item.get(Data::Events).get(Data::Tof, Data::PulseTime);
+    auto events = item.get(Data::Events).getMutable(Data::Tof, Data::PulseTime);
     events.push_back({1, 2});
   }
   // This only works since we are using a direct event storage as datasets.
@@ -653,7 +653,30 @@ TEST(MDZipView, event_lists_option1) {
   }
 }
 
-TEST(MDZipView, event_lists_option2) {
+Dataset makeEventsNested() {
+  Dataset d;
+  d.insert(Data::Events, "", {Dim::Spectrum, 3});
+  const auto eventLists = d.get(Data::Events);
+
+  Dataset eventList0;
+  eventList0.insert(Data::Tof, "", {Dim::Event, 2}, {1.0, 2.0});
+  eventList0.insert(Data::PulseTime, "", {Dim::Event, 2}, {3.0, 4.0});
+  eventLists[0] = eventList0;
+
+  Dataset eventList1;
+  eventList1.insert(Data::Tof, "", {Dim::Event, 0});
+  eventList1.insert(Data::PulseTime, "", {Dim::Event, 0});
+  eventLists[1] = eventList1;
+
+  Dataset eventList2;
+  eventList2.insert(Data::Tof, "", {Dim::Event, 3}, {1.0, 2.0, 3.0});
+  eventList2.insert(Data::PulseTime, "", {Dim::Event, 3}, {3.0, 4.0, 5.0});
+  eventLists[2] = eventList2;
+
+  return d;
+}
+
+Dataset makeEventsSOA() {
   Dataset d;
   d.insert(Data::EventTofs, "", {Dim::Spectrum, 3});
   d.insert(Data::EventPulseTimes, "", {Dim::Spectrum, 3});
@@ -663,10 +686,34 @@ TEST(MDZipView, event_lists_option2) {
   tofs[2] = {1.0, 2.0, 3.0};
   pulseTimes[0] = {3.0, 4.0};
   pulseTimes[2] = {3.0, 4.0, 5.0};
+  return d;
+}
 
+template <class Event>
+bool eventEq(const Event &e, double tof, double pulseTime) {
+  return (std::get<0>(e) == tof) && (std::get<1>(e) == pulseTime);
+}
+
+// TODO Cannot pass as const due to current shortcoming of ZipView.
+void testEvents(Dataset d) {
   auto view = zipMD(d, MDWrite(Data::Events));
   auto it = view.begin();
-  EXPECT_EQ((it + 0)->get(Data::Events).get2().size(), 2);
-  EXPECT_EQ((it + 1)->get(Data::Events).get2().size(), 0);
-  EXPECT_EQ((it + 2)->get(Data::Events).get2().size(), 3);
+  EXPECT_EQ((it + 0)->get(Data::Events).get().size(), 2ul);
+  EXPECT_EQ((it + 1)->get(Data::Events).get().size(), 0ul);
+  EXPECT_EQ((it + 2)->get(Data::Events).get().size(), 3ul);
+  auto el = it++->get(Data::Events).get();
+  EXPECT_TRUE(eventEq(el[0], 1.0, 3.0));
+  EXPECT_TRUE(eventEq(el[1], 2.0, 4.0));
+  el = it++->get(Data::Events).get();
+  el = it++->get(Data::Events).get();
+  EXPECT_TRUE(eventEq(el[0], 1.0, 3.0));
+  EXPECT_TRUE(eventEq(el[1], 2.0, 4.0));
+  EXPECT_TRUE(eventEq(el[2], 3.0, 5.0));
+}
+
+TEST(MDZipView, event_lists_different_storage_same_API) {
+  // Independent of the underlying storage format, we have the same API when
+  // using zipMD.
+  testEvents(makeEventsNested());
+  testEvents(makeEventsSOA());
 }
