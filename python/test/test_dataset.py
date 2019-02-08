@@ -1,8 +1,7 @@
 import unittest
-
-from dataset import *
 import numpy as np
-import matplotlib.pyplot as plt
+from dataset import *
+from copy import copy
 
 class TestDataset(unittest.TestCase):
     def setUp(self):
@@ -23,6 +22,11 @@ class TestDataset(unittest.TestCase):
         self.dataset[Coord.X] = ([Dim.X], self.reference_x)
         self.dataset[Coord.Y] = ([Dim.Y], self.reference_y)
         self.dataset[Coord.Z] = ([Dim.Z], self.reference_z)
+
+    def test_equals(self):
+        #ds_copy = copy(self.dataset) 
+        ds_copy = Dataset(self.dataset)
+        self.assertEqual(ds_copy, self.dataset)
 
     def test_size(self):
         # X, Y, Z, 3 x Data::Value
@@ -349,7 +353,7 @@ class TestDatasetExamples(unittest.TestCase):
         d[Data.Value, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
 
         dataset = as_xarray(d['temperature'])
-        dataset['Value:temperature'][10, ...].plot()
+        #dataset['Value:temperature'][10, ...].plot()
         #plt.savefig('test.png')
 
     def test_MDHistoWorkspace_example(self):

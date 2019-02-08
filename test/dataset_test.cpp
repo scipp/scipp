@@ -39,26 +39,22 @@ TEST(Dataset, insert_variables_with_dimensions) {
   d.insert(Data::Int, "name2", {}, {2});
 }
 
-TEST(Dataset, insert_variables_different_order) {
+TEST(Dataset, dataset_equality) {
+  /*
   Dimensions xy;
-  Dimensions xz;
-  Dimensions yz;
-  xy.add(Dim::X, 1);
-  xz.add(Dim::X, 1);
+  Dimensions yx;
+  xy.add(Dim::X, 2);
   xy.add(Dim::Y, 2);
-  yz.add(Dim::Y, 2);
-  xz.add(Dim::Z, 3);
-  yz.add(Dim::Z, 3);
+  yx.add(Dim::Y, 2);
+  yx.add(Dim::X, 2);
 
-  Dataset xyz;
-  xyz.insert(Data::Value, "name1", xy, 2);
-  EXPECT_NO_THROW(xyz.insert(Data::Value, "name2", yz, 6));
-  EXPECT_NO_THROW(xyz.insert(Data::Value, "name3", xz, 3));
+  Dataset ds1;
+  ds1.insert(Data::Value, "name1", xy, 3);
+  Dataset ds2;
+  ds2.insert(Data::Value, "name1", yx, 3);
 
-  Dataset xzy;
-  xzy.insert(Data::Value, "name1", xz, 3);
-  EXPECT_NO_THROW(xzy.insert(Data::Value, "name2", xy, 2));
-  EXPECT_NO_THROW(xzy.insert(Data::Value, "name3", yz, 6));
+  ASSERT_EQ(ds1, ds2);
+  */
 }
 
 TEST(Dataset, insert_edges) {
@@ -1433,4 +1429,12 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
   ASSERT_TRUE(energy.contains(Coord::Position));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
   ASSERT_TRUE(energy.contains(Coord::Ei));
+}
+
+TEST(Dataset, equality) {
+  Dimensions dimsX;
+  dimsX.add(Dim::X, 2);
+  Dataset d1;
+  d1.insert(Data::Value, "x", dimsX);
+  dimsX.add(Dim::Y, 2);
 }
