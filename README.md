@@ -16,7 +16,7 @@ make
 
 ### OSX
 * You will need to be running High Sierra 10.13. Lower version have incompatible libc++ implementations.
-* You will need to be using LLVM Clang version 7. Current latest XCode 10.1, does not support all language features used.  
+* You will need to be using [LLVM Clang](https://releases.llvm.org/download.html) version 6 or greater. Current latest XCode 10.1, does not support all language features used. Note that pybind11's use of `std::variant` presents the current issues for `Apple LLVM 10.0.0`. Pybind11 automatically picks up on the CMAKE_CXX_STANDARD 17 applied in the dataset configuration and presumes to use `std::variant`.  
 * You will need to `brew install libomp` 
 
 ## Usage of the Python exports
