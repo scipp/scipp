@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/mantidproject/dataset.svg?branch=master)](https://travis-ci.com/mantidproject/dataset/)
+
 # libDataset
 
 This a prototype for the `Dataset` library.
