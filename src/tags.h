@@ -19,6 +19,15 @@
 #include "unit.h"
 #include "value_with_delta.h"
 
+enum class DType { Unknown, Double, Float, Int32, Int64, String, Char };
+template <class T> constexpr DType dtype = DType::Unknown;
+template <> constexpr DType dtype<double> = DType::Double;
+template <> constexpr DType dtype<float> = DType::Float;
+template <> constexpr DType dtype<int32_t> = DType::Int32;
+template <> constexpr DType dtype<int64_t> = DType::Int64;
+template <> constexpr DType dtype<std::string> = DType::String;
+template <> constexpr DType dtype<char> = DType::Char;
+
 // Adding new tags
 // ===============
 //
@@ -378,9 +387,23 @@ constexpr std::array<Unit::Id, std::tuple_size<detail::Tags>::value>
 make_unit_table(const std::tuple<Ts...> &) {
   return {Ts::unit...};
 }
+template <class... Ts>
+constexpr std::array<DType, std::tuple_size<detail::Tags>::value>
+make_dtype_table(const std::tuple<Ts...> &) {
+  return {dtype<typename Ts::type>...};
+}
 constexpr auto unit_table = make_unit_table(detail::Tags{});
+constexpr auto dtype_table = make_dtype_table(detail::Tags{});
 } // namespace detail
-constexpr auto unit(const Tag tag) { return detail::unit_table[tag.value()]; }
+
+/// Return the default unit for a runtime tag.
+constexpr auto defaultUnit(const Tag tag) {
+  return detail::unit_table[tag.value()];
+}
+/// Return the default dtype for a runtime tag.
+constexpr auto defaultDType(const Tag tag) {
+  return detail::dtype_table[tag.value()];
+}
 
 class DataBin {
 public:
@@ -423,14 +446,5 @@ struct element_return_type<D, MDZipViewImpl<D, Tags...>> {
 
 template <class D, class Tag>
 using element_return_type_t = typename element_return_type<D, Tag>::type;
-
-enum class DType { Unknown, Double, Float, Int32, Int64, String, Char };
-template <class T> constexpr DType dtype = DType::Unknown;
-template <> constexpr DType dtype<double> = DType::Double;
-template <> constexpr DType dtype<float> = DType::Float;
-template <> constexpr DType dtype<int32_t> = DType::Int32;
-template <> constexpr DType dtype<int64_t> = DType::Int64;
-template <> constexpr DType dtype<std::string> = DType::String;
-template <> constexpr DType dtype<char> = DType::Char;
 
 #endif // TAGS_H
