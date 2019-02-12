@@ -418,7 +418,9 @@ PYBIND11_MODULE(dataset, m) {
                                            int32_t, char, std::string>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__repr__",
+           [](const Variable &self) { return dataset::to_string(self); });
 
   py::class_<VariableSlice> view(m, "VariableSlice", py::buffer_protocol());
   view.def_buffer(&make_py_buffer_info);
@@ -464,7 +466,9 @@ PYBIND11_MODULE(dataset, m) {
       .def("__isub__", [](VariableSlice &a, Variable &b) { return a -= b; },
            py::is_operator())
       .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
-           py::is_operator());
+           py::is_operator())
+      .def("__repr__",
+           [](const VariableSlice &self) { return dataset::to_string(self); });
 
   py::class_<DatasetSlice>(m, "DatasetView")
       .def(py::init<Dataset &>())
