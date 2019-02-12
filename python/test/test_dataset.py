@@ -28,6 +28,13 @@ class TestDataset(unittest.TestCase):
         # X, Y, Z, 3 x Data::Value
         self.assertEqual(len(self.dataset), 6)
 
+    def test_repr(self):
+        serialized_ds = repr(self.dataset)
+        self.assertTrue(len(serialized_ds) > 0)
+        expected = "Dataset with Dimensions : {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}}\nCoordVariable(Coord::X, )\nCoordVariable(Coord::Y, )\nCoordVariable(Coord::Z, )\nDataVariable(Data::Value, data1)\nDataVariable(Data::Value, data2)\nDataVariable(Data::Value, data3)"
+        self.assertEqual(serialized_ds, expected)
+
+
     def test_contains(self):
         self.assertTrue(Coord.X in self.dataset)
         self.assertTrue(Coord.Y in self.dataset)

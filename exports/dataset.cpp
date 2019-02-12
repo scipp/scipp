@@ -514,6 +514,11 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init<>())
       .def(py::init<const DatasetSlice &>())
       .def("__len__", &Dataset::size)
+      .def("__repr__",
+           [](const Dataset &self) {
+             auto out = dataset::to_string(self);
+             return out;
+           })
       .def("__iter__",
            [](Dataset &self) {
              return py::make_iterator(self.begin(), self.end());

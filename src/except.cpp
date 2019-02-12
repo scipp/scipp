@@ -7,6 +7,25 @@
 #include "dataset.h"
 #include "dimensions.h"
 #include "tags.h"
+#include <numeric>
+#include <set>
+
+namespace {
+std::set<size_t>
+filter_variables(const Dataset &dataset,
+                 bool (*predicate)(const ConstVariableSlice &)) {
+  std::vector<size_t> indexes(dataset.size());
+  std::iota(indexes.begin(), indexes.end(), 0);
+  std::set<size_t> targetIndexes;
+  auto index_it = indexes.begin();
+  auto var_it = dataset.begin();
+  for (; index_it != indexes.end(); ++index_it, ++var_it) {
+    if (predicate(*var_it))
+      targetIndexes.insert(*index_it);
+  }
+  return targetIndexes;
+}
+} // namespace
 
 namespace dataset {
 
@@ -108,16 +127,46 @@ std::string to_string(const Unit &unit) {
 }
 
 std::string to_string(const Variable &variable) {
-  std::string s("Variable(");
+  std::string prefix =
+      variable.isCoord() ? "Coord" : variable.isData() ? "Data" : "Attr";
+  std::string s = prefix + "Variable(";
   s += to_string(variable.tag()) + ", " + variable.name() + ")";
   return s;
+}
+
+std::string to_string_variable(const Dataset &dataset,
+                               const std::set<size_t> &indexes) {
+  std::string out;
+  for (auto idx : indexes) {
+    out += "\n" + to_string(dataset[idx]);
+  }
+  return out;
 }
 
 std::string to_string(const Dataset &dataset) {
   std::string s("Dataset with ");
   s += std::to_string(dataset.size()) + " variables";
+  s += "\nDimensions : " + to_string(dataset.dimensions());
+  // The following is peformed to allow variables to be sorted into catagories
+  // of coordinate, data and attribute as part of output
+  auto coordIndexes =
+      filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
+        return var.isCoord();
+      });
+  s += to_string_variable(dataset, coordIndexes);
+  auto dataVariablesIndexes =
+      filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
+        return var.isData();
+      });
+  s += to_string_variable(dataset, dataVariablesIndexes);
+  auto attributeIndexes =
+      filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
+        return var.isAttr();
+      });
+  s += to_string_variable(dataset, attributeIndexes);
   return s;
 }
+
 std::string to_string(const ConstDatasetSlice &dataset) {
   std::string s("Dataset slice with ");
   s += std::to_string(dataset.size()) + " variables";
