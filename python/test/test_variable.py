@@ -53,5 +53,11 @@ class TestVariable(unittest.TestCase):
         var.name = "data"
         self.assertEqual(var.name, "data")
 
+    def test_repr(self):
+        var = Variable(Coord.X, [Dim.X], np.arange(1))
+        self.assertEqual(repr(var), "CoordVariable(Coord::X, )")
+        var = Variable(Data.Value, [Dim.X], np.arange(1))
+        self.assertEqual(repr(var), "DataVariable(Data::Value, )")
+
 if __name__ == '__main__':
     unittest.main()
