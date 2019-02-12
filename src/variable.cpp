@@ -1069,7 +1069,7 @@ Variable operator-(Variable a, const double b) { return std::move(a -= b); }
 Variable operator*(Variable a, const double b) { return std::move(a *= b); }
 Variable operator/(Variable a, const double b) { return std::move(a /= b); }
 Variable operator+(const double a, Variable b) { return std::move(b += a); }
-Variable operator-(const double a, Variable b) { return std::move(-(b -= a)); }
+Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(Unit::Id::Dimensionless / b.unit());

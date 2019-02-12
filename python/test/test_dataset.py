@@ -85,6 +85,33 @@ class TestDataset(unittest.TestCase):
         self.assertRaisesRegex(RuntimeError, "Cannot insert variable into Dataset: Dimensions do not match.",
                 d.__setitem__, (Data.Value, "data2"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,2,3)))
 
+    def test_insert_variable(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+
+        var = Variable(Data.Value, [Dim.X], np.arange(2))
+        d[Data.Value, "data2"] = var
+        d[Data.Variance, "data2"] = var
+        self.assertEqual(len(d), 3)
+
+    def test_insert_variable_slice(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+
+        d[Data.Value, "data2"] = d[Data.Value, "data1"]
+        d[Data.Variance, "data2"] = d[Data.Value, "data1"]
+        self.assertEqual(len(d), 3)
+
+    def test_set_data(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+        self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
+        d[Data.Value, "data1"] = np.arange(24).reshape(4,3,2)
+        self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
+        # For existing items we do *not* change the dtype, but convert.
+        d[Data.Value, "data1"] = np.arange(24.0).reshape(4,3,2)
+        self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
+
     def test_dimensions(self):
         self.assertEqual(self.dataset.dimensions().size(Dim.X), 2)
         self.assertEqual(self.dataset.dimensions().size(Dim.Y), 3)
@@ -231,9 +258,9 @@ class TestDataset(unittest.TestCase):
 
     def test_rebin(self):
         dataset = Dataset()
-        dataset[Data.Value, "data"] = ([Dim.X], np.array(10*[1]))
-        dataset[Coord.X] = ([Dim.X], np.arange(11))
-        new_coord = Variable(Coord.X, [Dim.X], np.arange(0, 11, 2))
+        dataset[Data.Value, "data"] = ([Dim.X], np.array(10*[1.0]))
+        dataset[Coord.X] = ([Dim.X], np.arange(11.0))
+        new_coord = Variable(Coord.X, [Dim.X], np.arange(0.0, 11, 2))
         dataset = rebin(dataset, new_coord)
         np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array(5*[2]))
         np.testing.assert_array_equal(dataset[Coord.X].numpy, np.arange(0, 11, 2))
@@ -264,8 +291,8 @@ class TestDatasetExamples(unittest.TestCase):
         table = Dataset()
         table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
         self.assertSequenceEqual(table[Coord.RowLabel].data, ['a', 'bb', 'ccc', 'dddd'])
-        table[Data.Value, "col1"] = ([Dim.Row], [3,2,1,0])
-        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4))
+        table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
+        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
         self.assertEqual(len(table), 3)
 
         table[Data.Value, "sum"] = ([Dim.Row], (len(table[Coord.RowLabel]),))
@@ -305,8 +332,8 @@ class TestDatasetExamples(unittest.TestCase):
 
         # Add columns
         table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
-        table[Data.Value, "col1"] = ([Dim.Row], [3,2,1,0])
-        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4))
+        table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
+        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
         table[Data.Value, "sum"] = ([Dim.Row], (4,))
 
         # Do something for each column (here: sum)
@@ -357,7 +384,7 @@ class TestDatasetExamples(unittest.TestCase):
         d = Dataset()
 
         # Add bin-edge axis for X
-        d[Coord.X] = ([Dim.X], np.arange(L+1))
+        d[Coord.X] = ([Dim.X], np.arange(L+1).astype(np.float64))
         # ... and normal axes for Y and Z
         d[Coord.Y] = ([Dim.Y], np.arange(L))
         d[Coord.Z] = ([Dim.Z], np.arange(L))
@@ -372,9 +399,9 @@ class TestDatasetExamples(unittest.TestCase):
         square = d * d
 
         # Rebin the X axis
-        d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2)))
+        d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2).astype(np.float64)))
         # Rebin to different axis for every y
-        rebinned = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2])))
+        rebinned = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2]).astype(np.float64)))
 
         # Do something with numpy and insert result
         d[Data.Value, "dz(p)"] = ([Dim.Z, Dim.Y, Dim.X], np.gradient(d[Data.Value, "pressure"], d[Coord.Z], axis=0))
@@ -399,8 +426,8 @@ class TestDatasetExamples(unittest.TestCase):
         d[Coord.Tof] = ([Dim.Tof], np.arange(1000))
 
         # Add data with uncertainties
-        d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.poisson(size=100*1000).reshape([100, 1000]))
-        d[Data.Variance, "sample1"] = ([Dim.Spectrum, Dim.Tof], d[Data.Value, "sample1"].numpy)
+        d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.exponential(size=100*1000).reshape([100, 1000]))
+        d[Data.Variance, "sample1"] = d[Data.Value, "sample1"]
 
         # Create a mask and use it to extract some of the spectra
         select = Variable(Coord.Mask, [Dim.Spectrum], np.isin(d[Coord.SpectrumNumber], np.arange(10, 20)))
