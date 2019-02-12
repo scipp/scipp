@@ -31,7 +31,7 @@ class TestDataset(unittest.TestCase):
     def test_repr(self):
         serialized_ds = repr(self.dataset)
         self.assertTrue(len(serialized_ds) > 0)
-        expected = "Dataset with Dimensions : {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}}\nCoordVariable(Coord::X, )\nCoordVariable(Coord::Y, )\nCoordVariable(Coord::Z, )\nDataVariable(Data::Value, data1)\nDataVariable(Data::Value, data2)\nDataVariable(Data::Value, data3)"
+        expected = "Dataset with 6 variables\nDimensions : {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}}\nCoordVariable(Coord::X, )\nCoordVariable(Coord::Y, )\nCoordVariable(Coord::Z, )\nDataVariable(Data::Value, data1)\nDataVariable(Data::Value, data2)\nDataVariable(Data::Value, data3)"
         self.assertEqual(serialized_ds, expected)
 
 
