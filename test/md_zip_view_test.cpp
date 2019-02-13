@@ -11,6 +11,7 @@
 
 #include "test_macros.h"
 
+#include "event_list_proxy.h"
 #include "md_zip_view.h"
 
 TEST(MDZipView, construct) {
@@ -618,4 +619,97 @@ TEST(MDZipView, create_from_labels_nested) {
     EXPECT_EQ(it++->get(Data::Value), base + 5.0);
     base += 1.0;
   }
+}
+
+TEST(MDZipView, event_lists_mutable) {
+  Dataset eventList;
+  eventList.insert(Data::Tof, "", {Dim::Event, 4}, {1, 2, 3, 4});
+  eventList.insert(Data::PulseTime, "", {Dim::Event, 4}, {5, 6, 7, 8});
+  ASSERT_EQ(eventList(Data::Tof).size(), 4);
+
+  Dataset d;
+  d.insert(Data::Events, "", {Dim::Spectrum, 3}, 3, eventList);
+
+  auto view = zipMD(d, MDWrite(Data::Events));
+  for (const auto &item : view) {
+    // TODO Would be nice to simplify this, such that the event-list column
+    // types are specified only once, at construction time of the main view, not
+    // for each item, i.e., item.get(Data::Events) should directly return a
+    // typed proxy.
+    auto events = item.get(Data::Events).getMutable(Data::Tof, Data::PulseTime);
+    events.push_back({1, 2});
+  }
+  // This only works since we are using a direct event storage as datasets.
+  // Otherwise we need to use a proxy.
+  const auto eventLists = d.get(Data::Events);
+  ASSERT_EQ(eventLists.size(), 3);
+  for (const auto &eventList : eventLists) {
+    EXPECT_EQ(eventList(Data::Tof).size(), 5);
+    EXPECT_EQ(eventList(Data::PulseTime).size(), 5);
+  }
+}
+
+Dataset makeEventsNested() {
+  Dataset d;
+  d.insert(Data::Events, "", {Dim::Spectrum, 3});
+  const auto eventLists = d.get(Data::Events);
+
+  Dataset eventList0;
+  eventList0.insert(Data::Tof, "", {Dim::Event, 2}, {1.0, 2.0});
+  eventList0.insert(Data::PulseTime, "", {Dim::Event, 2}, {3.0, 4.0});
+  eventLists[0] = eventList0;
+
+  Dataset eventList1;
+  eventList1.insert(Data::Tof, "", {Dim::Event, 0});
+  eventList1.insert(Data::PulseTime, "", {Dim::Event, 0});
+  eventLists[1] = eventList1;
+
+  Dataset eventList2;
+  eventList2.insert(Data::Tof, "", {Dim::Event, 3}, {1.0, 2.0, 3.0});
+  eventList2.insert(Data::PulseTime, "", {Dim::Event, 3}, {3.0, 4.0, 5.0});
+  eventLists[2] = eventList2;
+
+  return d;
+}
+
+Dataset makeEventsSOA() {
+  Dataset d;
+  d.insert(Data::EventTofs, "", {Dim::Spectrum, 3});
+  d.insert(Data::EventPulseTimes, "", {Dim::Spectrum, 3});
+  auto tofs = d.get(Data::EventTofs);
+  auto pulseTimes = d.get(Data::EventPulseTimes);
+  tofs[0] = {1.0, 2.0};
+  tofs[2] = {1.0, 2.0, 3.0};
+  pulseTimes[0] = {3.0, 4.0};
+  pulseTimes[2] = {3.0, 4.0, 5.0};
+  return d;
+}
+
+template <class Event>
+bool eventEq(const Event &e, double tof, double pulseTime) {
+  return (std::get<0>(e) == tof) && (std::get<1>(e) == pulseTime);
+}
+
+// TODO Cannot pass as const due to current shortcoming of ZipView.
+void testEvents(Dataset d) {
+  auto view = zipMD(d, MDWrite(Data::Events));
+  auto it = view.begin();
+  EXPECT_EQ((it + 0)->get(Data::Events).get().size(), 2ul);
+  EXPECT_EQ((it + 1)->get(Data::Events).get().size(), 0ul);
+  EXPECT_EQ((it + 2)->get(Data::Events).get().size(), 3ul);
+  auto el = it++->get(Data::Events).get();
+  EXPECT_TRUE(eventEq(el[0], 1.0, 3.0));
+  EXPECT_TRUE(eventEq(el[1], 2.0, 4.0));
+  el = it++->get(Data::Events).get();
+  el = it++->get(Data::Events).get();
+  EXPECT_TRUE(eventEq(el[0], 1.0, 3.0));
+  EXPECT_TRUE(eventEq(el[1], 2.0, 4.0));
+  EXPECT_TRUE(eventEq(el[2], 3.0, 5.0));
+}
+
+TEST(MDZipView, event_lists_different_storage_same_API) {
+  // Independent of the underlying storage format, we have the same API when
+  // using zipMD.
+  testEvents(makeEventsNested());
+  testEvents(makeEventsSOA());
 }

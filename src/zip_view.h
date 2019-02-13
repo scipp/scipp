@@ -9,7 +9,6 @@
 #include "range/v3/view/zip.hpp"
 
 #include "dataset.h"
-#include "traits.h"
 
 template <class... Tags> struct AccessHelper {
   static void push_back(std::array<Dimensions *, sizeof...(Tags)> &dimensions,
@@ -39,11 +38,17 @@ template <class Tag1, class Tag2> struct AccessHelper<Tag1, Tag2> {
   }
 };
 
+// TODO Should also have a const version of this, and support names, similar to
+// zipMD. Note that this is simpler to do in this case since const-ness does not
+// matter --- creation with mismatching dimensions is anyway not possible. On
+// the other hand, this view exists mainly to support length changes, zipMD can
+// be used if that is not required, i.e., maybe we do *not* need `ConstZipView`
+// (if so, only for consistency?)?
 template <class... Tags> class ZipView {
 public:
   using value_type = std::tuple<typename Tags::type...>;
 
-  ZipView(detail::MaybeConstDataset<Tags...> &dataset) {
+  ZipView(Dataset &dataset) {
     // As long as we do not support passing names, duplicate tags are not
     // supported, so this check should be enough.
     if (sizeof...(Tags) != dataset.size())

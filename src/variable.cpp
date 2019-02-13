@@ -707,12 +707,12 @@ INSTANTIATE(gsl::index)
 INSTANTIATE(std::pair<gsl::index, gsl::index>)
 #endif
 INSTANTIATE(boost::container::small_vector<gsl::index, 1>)
+INSTANTIATE(boost::container::small_vector<double, 8>)
 INSTANTIATE(std::vector<std::string>)
 INSTANTIATE(std::vector<gsl::index>)
 INSTANTIATE(Dataset)
 INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
-INSTANTIATE(std::shared_ptr<std::array<double, 100>>)
 INSTANTIATE(Eigen::Vector3d)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {

@@ -87,16 +87,22 @@ template <class D, class Tag> struct ref_type<D, Bin<Tag>> {
 // we can probably refactor a lot of the helpers to be constexpr based on the
 // value, rather then using detail::value_type_t, etc.
 template <class D>
-struct ref_type<D, const std::remove_cv_t<decltype(Coord::Position)>> {
-  using type = std::pair<gsl::span<const typename std::remove_cv_t<decltype(
-                             Coord::Position)>::type>,
-                         gsl::span<const typename std::remove_cv_t<decltype(
-                             Coord::DetectorGrouping)>::type>>;
+struct ref_type<D, const Coord::Position_t> {
+  using type =
+      std::pair<gsl::span<const typename Coord::Position_t::type>,
+                gsl::span<const typename Coord::DetectorGrouping_t::type>>;
 };
 template <class D>
-struct ref_type<D, std::remove_cv_t<decltype(Data::StdDev)>> {
-  using type =
-      typename ref_type<D, std::remove_cv_t<decltype(Data::Variance)>>::type;
+struct ref_type<D, Data::Events_t> {
+  // Supporting either events stored as nested Dataset (Data::Events), or a
+  // separate variables for tof and pulse-time (Data::EventTofs and
+  // Data::EventPulseTimes).
+  using type = std::tuple<gsl::span<typename Data::Events_t::type>,
+                          gsl::span<typename Data::EventTofs_t::type>,
+                          gsl::span<typename Data::EventPulseTimes_t::type>>;
+};
+template <class D> struct ref_type<D, Data::StdDev_t> {
+  using type = typename ref_type<D, Data::Variance_t>::type;
 };
 template <class D, class... Tags>
 struct ref_type<D, MDZipViewImpl<D, Tags...>> {
@@ -129,13 +135,9 @@ template <class D, class Tag> struct ItemHelper {
 
 // Note: Special case! Coord::Position can be either derived based on detectors,
 // or stored directly.
-template <class D>
-struct ItemHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
-  static element_return_type_t<
-      D, const std::remove_cv_t<decltype(Coord::Position)>>
-  get(const ref_type_t<D, const std::remove_cv_t<decltype(Coord::Position)>>
-          &data,
-      gsl::index index) {
+template <class D> struct ItemHelper<D, const Coord::Position_t> {
+  static element_return_type_t<D, const Coord::Position_t>
+  get(const ref_type_t<D, const Coord::Position_t> &data, gsl::index index) {
     if (data.second.empty())
       return data.first[index];
     if (data.second[index].empty())
@@ -145,6 +147,15 @@ struct ItemHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
     for (const auto det : data.second[index])
       position += data.first[det];
     return position /= static_cast<double>(data.second[index].size());
+  }
+};
+
+template <class D> struct ItemHelper<D, Data::Events_t> {
+  static element_return_type_t<D, Data::Events_t>
+  get(const ref_type_t<D, Data::Events_t> &data, gsl::index index) {
+    if (!std::get<1>(data).empty())
+      return {std::get<1>(data)[index], std::get<2>(data)[index]};
+    return {std::get<0>(data)[index]};
   }
 };
 
@@ -404,14 +415,23 @@ template <class D, class Tag> struct UnitHelper<D, Bin<Tag>> {
   }
 };
 
-template <class D>
-struct UnitHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
+template <class D> struct UnitHelper<D, const Coord::Position_t> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
     if (dataset.contains(Coord::Position))
       return dataset(Coord::Position).unit();
     return dataset.get(Coord::DetectorInfo)[0](Coord::Position).unit();
+  }
+};
+
+template <class D> struct UnitHelper<D, Data::Events_t> {
+  static Unit get(const Dataset &dataset,
+                  const std::string &name = std::string{}) {
+    static_cast<void>(name);
+    if (dataset.contains(Data::Events))
+      return dataset.get(Data::Events)[0](Data::Tof).unit();
+    return dataset(Data::EventTofs).unit();
   }
 };
 
@@ -455,8 +475,7 @@ template <class D, class Tag> struct DimensionHelper<D, Bin<Tag>> {
   }
 };
 
-template <class D>
-struct DimensionHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
+template <class D> struct DimensionHelper<D, const Coord::Position_t> {
   static Dimensions get(const Dataset &dataset,
                         const std::set<Dim> &fixedDimensions,
                         const std::string &name = std::string{}) {
@@ -467,6 +486,18 @@ struct DimensionHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
     // Note: We do *not* return the dimensions of the nested positions in
     // Coord::DetectorInfo since those are not dimensions of the dataset.
     return dataset(Coord::DetectorGrouping).dimensions();
+  }
+};
+
+template <class D> struct DimensionHelper<D, Data::Events_t> {
+  static Dimensions get(const Dataset &dataset,
+                        const std::set<Dim> &fixedDimensions,
+                        const std::string &name = std::string{}) {
+    static_cast<void>(fixedDimensions);
+    static_cast<void>(name);
+    if (dataset.contains(Data::Events))
+      return dataset(Data::Events).dimensions();
+    return dataset(Data::EventTofs).dimensions();
   }
 };
 
@@ -551,8 +582,7 @@ template <class D, class Tag> struct DataHelper<D, Bin<Tag>> {
   }
 };
 
-template <class D>
-struct DataHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
+template <class D> struct DataHelper<D, const Coord::Position_t> {
   static auto get(const Dataset &dataset, const Dimensions &,
                   const std::string &name = std::string{}) {
     static_cast<void>(name);
@@ -560,17 +590,34 @@ struct DataHelper<D, const std::remove_cv_t<decltype(Coord::Position)>> {
     // Coord::DetectorGrouping/Coord::DetectorInfo. We should never have both, I
     // think.
     if (dataset.contains(Coord::Position))
-      return ref_type_t<D, const std::remove_cv_t<decltype(Coord::Position)>>(
-          dataset.get(detail::value_type_t<
-                      std::remove_cv_t<decltype(Coord::Position)>>{}),
-          gsl::span<const typename std::remove_cv_t<decltype(
-              Coord::DetectorGrouping)>::type>{});
+      return ref_type_t<D, const Coord::Position_t>(
+          dataset.get(detail::value_type_t<Coord::Position_t>{}),
+          gsl::span<const typename Coord::DetectorGrouping_t::type>{});
     const auto &detInfo = dataset.get(Coord::DetectorInfo)[0];
-    return ref_type_t<D, const std::remove_cv_t<decltype(Coord::Position)>>(
-        detInfo.get(detail::value_type_t<
-                    std::remove_cv_t<decltype(Coord::Position)>>{}),
-        dataset.get(detail::value_type_t<
-                    std::remove_cv_t<decltype(Coord::DetectorGrouping)>>{}));
+    return ref_type_t<D, const Coord::Position_t>(
+        detInfo.get(detail::value_type_t<Coord::Position_t>{}),
+        dataset.get(detail::value_type_t<Coord::DetectorGrouping_t>{}));
+  }
+};
+
+template <class D> struct DataHelper<D, Data::Events_t> {
+  static auto get(Dataset &dataset, const Dimensions &,
+                  const std::string &name = std::string{}) {
+    static_cast<void>(name);
+    if (dataset.contains(Data::Events)) {
+      if (dataset.contains(Data::EventTofs))
+        throw std::runtime_error("Cannot obtain events from dataset, contains "
+                                 "conflicting information (Data::Events and "
+                                 "Data::EventTofs).");
+      return ref_type_t<D, Data::Events_t>(
+          dataset.get(detail::value_type_t<Data::Events_t>{}),
+          gsl::span<typename Data::EventTofs_t::type>{},
+          gsl::span<typename Data::EventPulseTimes_t::type>{});
+    }
+    return ref_type_t<D, Data::Events_t>(
+        gsl::span<typename Data::Events_t::type>{},
+        dataset.get(detail::value_type_t<Data::EventTofs_t>{}),
+        dataset.get(detail::value_type_t<Data::EventPulseTimes_t>{}));
   }
 };
 

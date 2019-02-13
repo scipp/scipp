@@ -117,6 +117,20 @@ class ConstVariableSlice;
 class VariableSlice;
 template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
 
+namespace detail {
+template <class T> struct default_init {
+  static T value() { return T(); }
+};
+// Eigen does not zero-initialize matrices (vectors), which is a recurrent
+// source of bugs. Variable does zero-init instead.
+template <class T, int Rows, int Cols>
+struct default_init<Eigen::Matrix<T, Rows, Cols>> {
+  static Eigen::Matrix<T, Rows, Cols> value() {
+    return Eigen::Matrix<T, Rows, Cols>::Zero();
+  }
+};
+}
+
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
 /// dimensions.
@@ -130,7 +144,9 @@ public:
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
       : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<typename TagT::type>(dimensions.volume())) {}
+                 Vector<typename TagT::type>(
+                     dimensions.volume(),
+                     detail::default_init<typename TagT::type>::value())) {}
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions,
            Vector<typename TagT::type> object)
