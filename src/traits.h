@@ -33,11 +33,6 @@ template <class T> struct is_const<const T> : std::true_type {};
 
 template <class D, class... Ts>
 struct is_const<MDZipViewImpl<D, Ts...>> : and_<is_const<Ts>...> {};
-
-template <class... Tags>
-using MaybeConstDataset =
-    std::conditional_t<detail::and_<detail::is_const<Tags>...>::value,
-                       const Dataset, Dataset>;
 } // namespace detail
 
 #endif // TRAITS_H
