@@ -19,7 +19,16 @@
 #include "unit.h"
 #include "value_with_delta.h"
 
-enum class DType { Unknown, Double, Float, Int32, Int64, String, Char };
+enum class DType {
+  Unknown,
+  Double,
+  Float,
+  Int32,
+  Int64,
+  String,
+  Char,
+  Dataset
+};
 template <class T> constexpr DType dtype = DType::Unknown;
 template <> constexpr DType dtype<double> = DType::Double;
 template <> constexpr DType dtype<float> = DType::Float;
@@ -27,6 +36,7 @@ template <> constexpr DType dtype<int32_t> = DType::Int32;
 template <> constexpr DType dtype<int64_t> = DType::Int64;
 template <> constexpr DType dtype<std::string> = DType::String;
 template <> constexpr DType dtype<char> = DType::Char;
+template <> constexpr DType dtype<Dataset> = DType::Dataset;
 
 // Adding new tags
 // ===============

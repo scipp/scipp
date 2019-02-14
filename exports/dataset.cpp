@@ -28,7 +28,8 @@ template <class T> struct mutable_span_methods<const T> {
 
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
   py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
-  span.def("__getitem__", &gsl::span<T>::operator[])
+  span.def("__getitem__", &gsl::span<T>::operator[],
+           py::return_value_policy::reference)
       .def("size", &gsl::span<T>::size)
       .def("__len__", &gsl::span<T>::size)
       .def("__iter__", [](const gsl::span<T> &self) {
@@ -41,7 +42,10 @@ template <class T>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
-  view.def("__getitem__", &VariableView<T>::operator[])
+  view.def("__getitem__", &VariableView<T>::operator[],
+           py::return_value_policy::reference)
+      .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
+                             const T value) { self[i] = value; })
       .def("__len__", &VariableView<T>::size)
       .def("__iter__", [](const VariableView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
@@ -336,6 +340,8 @@ as_VariableView_variant(Var &view) {
     return {view.template span<char>()};
   case dtype<std::string>:
     return {view.template span<std::string>()};
+  case dtype<Dataset>:
+    return {view.template span<Dataset>()};
   default:
     throw std::runtime_error("not implemented for this type.");
   }
@@ -413,6 +419,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_span<const double>(m, "double_const");
   declare_span<const std::string>(m, "string_const");
   declare_span<const Dim>(m, "Dim_const");
+  declare_span<Dataset>(m, "Dataset");
 
   declare_VariableView<double>(m, "double");
   declare_VariableView<float>(m, "float");
@@ -420,6 +427,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<int32_t>(m, "int32");
   declare_VariableView<std::string>(m, "string");
   declare_VariableView<char>(m, "char");
+  declare_VariableView<Dataset>(m, "Dataset");
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
@@ -442,7 +450,8 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
-      // TODO Need to add overload for std::vector<std::string>, etc.
+      // TODO Need to add overload for std::vector<std::string>, etc., see
+      // Dataset.__setitem__
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
@@ -457,7 +466,7 @@ PYBIND11_MODULE(dataset, m) {
                                                     int64_t, int32_t, bool>)
       .def_property_readonly(
           "data", &as_VariableView_variant<Variable, double, float, int64_t,
-                                           int32_t, char, std::string>)
+                                           int32_t, char, std::string, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
@@ -496,8 +505,9 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, bool>)
       .def_property_readonly(
-          "data", &as_VariableView_variant<VariableSlice, double, float,
-                                           int64_t, int32_t, char, std::string>)
+          "data",
+          &as_VariableView_variant<VariableSlice, double, float, int64_t,
+                                   int32_t, char, std::string, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -639,6 +649,8 @@ PYBIND11_MODULE(dataset, m) {
       //    separately.
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
       // 4. Insertion from Variable or Variable slice.
       .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
       .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)

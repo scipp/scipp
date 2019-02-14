@@ -112,6 +112,17 @@ class TestDataset(unittest.TestCase):
         d[Data.Value, "data1"] = np.arange(24.0).reshape(4,3,2)
         self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
 
+    def test_set_data_nested(self):
+        d = Dataset()
+        table = Dataset()
+        table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
+        table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
+        d[Data.Value, "data1"] = ([Dim.X], [table, table])
+        d[Data.Value, "data1"].data[1][Data.Value, "col1"].data[0] = 0.0;
+        self.assertEqual(d[Data.Value, "data1"].data[0], table)
+        self.assertNotEqual(d[Data.Value, "data1"].data[1], table)
+        self.assertNotEqual(d[Data.Value, "data1"].data[0], d[Data.Value, "data1"].data[1])
+
     def test_dimensions(self):
         self.assertEqual(self.dataset.dimensions().size(Dim.X), 2)
         self.assertEqual(self.dataset.dimensions().size(Dim.Y), 3)
