@@ -283,6 +283,44 @@ TEST(Dataset, get_named) {
   EXPECT_EQ(var2[0], 2.2);
 }
 
+TEST(Dataset, comparison_different_insertion_order) {
+  Dataset d1;
+  d1.insert(Data::Value, "a", {});
+  d1.insert(Data::Value, "b", {});
+  Dataset d2;
+  d2.insert(Data::Value, "b", {});
+  d2.insert(Data::Value, "a", {});
+  EXPECT_TRUE(d1 == d1);
+  EXPECT_TRUE(d1 == d2);
+  EXPECT_TRUE(d2 == d1);
+  EXPECT_TRUE(d2 == d2);
+}
+
+TEST(Dataset, comparison_different_data) {
+  Dataset d1;
+  d1.insert(Data::Value, "a", {});
+  d1.insert(Data::Value, "b", {});
+  Dataset d2;
+  d2.insert(Data::Value, "b", {});
+  d2.insert(Data::Value, "a", {}, {1.0});
+  EXPECT_TRUE(d1 == d1);
+  EXPECT_FALSE(d1 == d2);
+  EXPECT_FALSE(d2 == d1);
+  EXPECT_TRUE(d2 == d2);
+}
+
+TEST(Dataset, comparison_missing_variable) {
+  Dataset d1;
+  d1.insert(Data::Value, "a", {});
+  d1.insert(Data::Value, "b", {});
+  Dataset d2;
+  d2.insert(Data::Value, "a", {});
+  EXPECT_TRUE(d1 == d1);
+  EXPECT_FALSE(d1 == d2);
+  EXPECT_FALSE(d2 == d1);
+  EXPECT_TRUE(d2 == d2);
+}
+
 TEST(Dataset, operator_plus_equal) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});

@@ -171,8 +171,13 @@ void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
 }
 
 bool Dataset::operator==(const Dataset &other) const {
-  return (m_dimensions == other.m_dimensions) &&
-         (m_variables == other.m_variables);
+  if (size() != other.size())
+    return false;
+  for (const auto &var : m_variables)
+    if (!other.contains(var.tag(), var.name()) ||
+        (var != other(var.tag(), var.name())))
+      return false;
+  return true;
 }
 
 VariableSlice DatasetSlice::operator()(const Tag tag, const std::string &name) {
