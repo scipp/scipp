@@ -333,6 +333,20 @@ TEST(Dataset, comparison_with_slice) {
   EXPECT_TRUE(d1 == d2["a"]);
 }
 
+TEST(Dataset, comparison_with_spatial_slice) {
+  Dataset d1;
+  d1.insert(Data::Value, "a", {Dim::X, 2}, {2, 3});
+  Dataset d2;
+  d2.insert(Data::Value, "b", {});
+  d2.insert(Data::Value, "a", {Dim::X, 3}, {1, 2, 3});
+  EXPECT_FALSE(d1 == d2);
+  EXPECT_FALSE(d1 == d2["a"]);
+  EXPECT_FALSE(d1 == d2["a"](Dim::X, 0, 2));
+  EXPECT_FALSE(d1 == d2["a"](Dim::X, 0));
+  EXPECT_FALSE(d1 == d2["a"](Dim::X, 1));
+  EXPECT_TRUE(d1 == d2["a"](Dim::X, 1, 3));
+}
+
 TEST(Dataset, operator_plus_equal) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
