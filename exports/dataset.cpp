@@ -343,8 +343,22 @@ as_VariableView_variant(Var &view) {
 
 PYBIND11_MODULE(dataset, m) {
   py::enum_<Dim>(m, "Dim")
+      .value("Component", Dim::Component)
+      .value("DeltaE", Dim::DeltaE)
+      .value("Detector", Dim::Detector)
+      .value("DetectorScan", Dim::DetectorScan)
+      .value("Energy", Dim::Energy)
+      .value("Event", Dim::Event)
+      .value("Invalid", Dim::Invalid)
+      .value("Monitor", Dim::Monitor)
+      .value("Polarization", Dim::Polarization)
+      .value("Position", Dim::Position)
+      .value("Q", Dim::Q)
       .value("Row", Dim::Row)
+      .value("Run", Dim::Run)
       .value("Spectrum", Dim::Spectrum)
+      .value("Temperature", Dim::Temperature)
+      .value("Time", Dim::Time)
       .value("Tof", Dim::Tof)
       .value("X", Dim::X)
       .value("Y", Dim::Y)
@@ -353,18 +367,46 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Tag>(m, "Tag").def(py::self == py::self);
 
   // Runtime tags are sufficient in Python, not exporting Tag child classes.
-  auto data_tags = m.def_submodule("Data");
-  data_tags.attr("Value") = Tag(Data::Value);
-  data_tags.attr("Variance") = Tag(Data::Variance);
-
   auto coord_tags = m.def_submodule("Coord");
-  coord_tags.attr("Mask") = Tag(Coord::Mask);
+  coord_tags.attr("Monitor") = Tag(Coord::Monitor);
+  coord_tags.attr("DetectorInfo") = Tag(Coord::DetectorInfo);
+  coord_tags.attr("ComponentInfo") = Tag(Coord::ComponentInfo);
   coord_tags.attr("X") = Tag(Coord::X);
   coord_tags.attr("Y") = Tag(Coord::Y);
   coord_tags.attr("Z") = Tag(Coord::Z);
   coord_tags.attr("Tof") = Tag(Coord::Tof);
-  coord_tags.attr("RowLabel") = Tag(Coord::RowLabel);
+  coord_tags.attr("Energy") = Tag(Coord::Energy);
+  coord_tags.attr("DeltaE") = Tag(Coord::DeltaE);
+  coord_tags.attr("Ei") = Tag(Coord::Ei);
+  coord_tags.attr("Ef") = Tag(Coord::Ef);
+  coord_tags.attr("DetectorId") = Tag(Coord::DetectorId);
   coord_tags.attr("SpectrumNumber") = Tag(Coord::SpectrumNumber);
+  coord_tags.attr("DetectorGrouping") = Tag(Coord::DetectorGrouping);
+  coord_tags.attr("RowLabel") = Tag(Coord::RowLabel);
+  coord_tags.attr("Polarization") = Tag(Coord::Polarization);
+  coord_tags.attr("Temperature") = Tag(Coord::Temperature);
+  coord_tags.attr("FuzzyTemperature") = Tag(Coord::FuzzyTemperature);
+  coord_tags.attr("Time") = Tag(Coord::Time);
+  coord_tags.attr("TimeInterval") = Tag(Coord::TimeInterval);
+  coord_tags.attr("Mask") = Tag(Coord::Mask);
+  coord_tags.attr("Position") = Tag(Coord::Position);
+
+  auto data_tags = m.def_submodule("Data");
+  data_tags.attr("Tof") = Tag(Data::Tof);
+  data_tags.attr("PulseTime") = Tag(Data::PulseTime);
+  data_tags.attr("Value") = Tag(Data::Value);
+  data_tags.attr("Variance") = Tag(Data::Variance);
+  data_tags.attr("StdDev") = Tag(Data::StdDev);
+  data_tags.attr("Int") = Tag(Data::Int);
+  data_tags.attr("DimensionSize") = Tag(Data::DimensionSize);
+  data_tags.attr("String") = Tag(Data::String);
+  data_tags.attr("Events") = Tag(Data::Events);
+  data_tags.attr("EventTofs") = Tag(Data::EventTofs);
+  data_tags.attr("EventPulseTimes") = Tag(Data::EventPulseTimes);
+  data_tags.attr("Table") = Tag(Data::Table);
+
+  auto attr_tags = m.def_submodule("Attr");
+  attr_tags.attr("ExperimentLog") = Tag(Attr::ExperimentLog);
 
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
