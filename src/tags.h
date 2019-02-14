@@ -217,10 +217,6 @@ struct DataDef {
     using type = int64_t;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct DimensionSize {
-    using type = gsl::index;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
   struct String {
     using type = std::string;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -238,9 +234,8 @@ struct DataDef {
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
 
-  using tags =
-      std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, DimensionSize,
-                 String, Events, EventTofs, EventPulseTimes>;
+  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, String,
+                          Events, EventTofs, EventPulseTimes>;
 };
 
 struct AttrDef {
@@ -322,7 +317,6 @@ struct Data {
   using Variance_t = detail::TagImpl<detail::DataDef::Variance>;
   using StdDev_t = detail::TagImpl<detail::DataDef::StdDev>;
   using Int_t = detail::TagImpl<detail::DataDef::Int>;
-  using DimensionSize_t = detail::TagImpl<detail::DataDef::DimensionSize>;
   using String_t = detail::TagImpl<detail::DataDef::String>;
   using Events_t = detail::TagImpl<detail::DataDef::Events>;
   using EventTofs_t = detail::TagImpl<detail::DataDef::EventTofs>;
@@ -334,7 +328,6 @@ struct Data {
   static constexpr Variance_t Variance{};
   static constexpr StdDev_t StdDev{};
   static constexpr Int_t Int{};
-  static constexpr DimensionSize_t DimensionSize{};
   static constexpr String_t String{};
   static constexpr Events_t Events{};
   static constexpr EventTofs_t EventTofs{};
