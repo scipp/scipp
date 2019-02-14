@@ -14,12 +14,13 @@
 #include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
 
+#include "bool.h"
 #include "dimension.h"
 #include "traits.h"
 #include "unit.h"
 #include "value_with_delta.h"
 
-enum class DType { Unknown, Double, Float, Int32, Int64, String, Char };
+enum class DType { Unknown, Double, Float, Int32, Int64, String, Char, Bool };
 template <class T> constexpr DType dtype = DType::Unknown;
 template <> constexpr DType dtype<double> = DType::Double;
 template <> constexpr DType dtype<float> = DType::Float;
@@ -27,6 +28,7 @@ template <> constexpr DType dtype<int32_t> = DType::Int32;
 template <> constexpr DType dtype<int64_t> = DType::Int64;
 template <> constexpr DType dtype<std::string> = DType::String;
 template <> constexpr DType dtype<char> = DType::Char;
+template <> constexpr DType dtype<bool> = DType::Bool;
 
 // Adding new tags
 // ===============
@@ -164,7 +166,7 @@ struct CoordDef {
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct Mask {
-    using type = char;
+    using type = bool;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct FuzzyTemperature {
@@ -435,16 +437,22 @@ private:
 
 template <class T> struct Bin { using type = DataBin; };
 
+// std::vector<bool> may have a packed non-thread-safe implementation which we
+// need to avoid. Therefore we use std::vector<Bool> instead.
+template <class T> struct underlying_type { using type = T; };
+template <> struct underlying_type<bool> { using type = Bool; };
+template <class T> using underlying_type_t = typename underlying_type<T>::type;
+
 template <class D, class Tag> struct element_return_type {
+  using T = underlying_type_t<typename Tag::type>;
   using type = std::conditional_t<
-      std::is_base_of<detail::ReturnByValuePolicy, Tag>::value,
-      typename Tag::type,
+      std::is_base_of<detail::ReturnByValuePolicy, Tag>::value, T,
       std::conditional_t<
           std::is_const<D>::value || std::is_const<Tag>::value,
           std::conditional_t<
               std::is_base_of<detail::ReturnByValueIfConstPolicy, Tag>::value,
-              typename Tag::type, const typename Tag::type &>,
-          typename Tag::type &>>;
+              T, const T &>,
+          T &>>;
 };
 
 template <class D, class Tags> struct element_return_type<D, Bin<Tags>> {

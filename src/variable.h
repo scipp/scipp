@@ -129,7 +129,7 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
     return Eigen::Matrix<T, Rows, Cols>::Zero();
   }
 };
-}
+} // namespace detail
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
@@ -144,27 +144,33 @@ public:
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
       : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<typename TagT::type>(
+                 Vector<underlying_type_t<typename TagT::type>>(
                      dimensions.volume(),
-                     detail::default_init<typename TagT::type>::value())) {}
+                     detail::default_init<
+                         underlying_type_t<typename TagT::type>>::value())) {}
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions,
-           Vector<typename TagT::type> object)
+           Vector<underlying_type_t<typename TagT::type>> object)
       : Variable(tag, TagT::unit, std::move(dimensions), std::move(object)) {}
   template <class TagT, class... Args>
   Variable(TagT tag, const Dimensions &dimensions, Args &&... args)
       : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<typename TagT::type>(std::forward<Args>(args)...)) {}
+                 Vector<underlying_type_t<typename TagT::type>>(
+                     std::forward<Args>(args)...)) {}
   template <class TagT, class T>
   Variable(TagT tag, const Dimensions &dimensions,
            std::initializer_list<T> values)
       : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<typename TagT::type>(values.begin(), values.end())) {}
+                 Vector<underlying_type_t<typename TagT::type>>(values.begin(),
+                                                                values.end())) {
+  }
   template <class TagT, class T>
   Variable(TagT tag, const Dimensions &dimensions, const std::vector<T> &values)
       : Variable(tag, TagT::unit, std::move(dimensions),
                  // Copy to aligned memory.
-                 Vector<typename TagT::type>(values.begin(), values.end())) {}
+                 Vector<underlying_type_t<typename TagT::type>>(values.begin(),
+                                                                values.end())) {
+  }
 
   template <class T>
   Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,
@@ -284,8 +290,8 @@ public:
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
 private:
-  template <class T> const Vector<T> &cast() const;
-  template <class T> Vector<T> &cast();
+  template <class T> const Vector<underlying_type_t<T>> &cast() const;
+  template <class T> Vector<underlying_type_t<T>> &cast();
 
   // Used by ZipView. Need to find a better way instead of having everyone as
   // friend.
@@ -300,14 +306,14 @@ private:
 template <class T>
 Variable makeVariable(Tag tag, const Dimensions &dimensions) {
   return Variable(tag, defaultUnit(tag), std::move(dimensions),
-                  Vector<T>(dimensions.volume()));
+                  Vector<underlying_type_t<T>>(dimensions.volume()));
 }
 
 template <class T, class T2>
 Variable makeVariable(Tag tag, const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
   return Variable(tag, defaultUnit(tag), std::move(dimensions),
-                  Vector<T>(values.begin(), values.end()));
+                  Vector<underlying_type_t<T>>(values.begin(), values.end()));
 }
 
 namespace detail {
@@ -324,10 +330,10 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions, Args &&... args) {
                     std::remove_reference_t<Args>>...>::value) {
     // Copies to aligned memory.
     return Variable(tag, defaultUnit(tag), std::move(dimensions),
-                    Vector<T>(args.begin(), args.end())...);
+                    Vector<underlying_type_t<T>>(args.begin(), args.end())...);
   } else {
     return Variable(tag, defaultUnit(tag), std::move(dimensions),
-                    Vector<T>(std::forward<Args>(args)...));
+                    Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
   }
 }
 
@@ -424,7 +430,8 @@ protected:
   friend class Variable;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
-  template <class T> const VariableView<const T> cast() const;
+  template <class T>
+  const VariableView<const underlying_type_t<T>> cast() const;
 
   const Variable *m_variable;
   deep_ptr<VariableConcept> m_view;
@@ -519,7 +526,7 @@ private:
   template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
-  template <class T> VariableView<T> cast() const;
+  template <class T> VariableView<underlying_type_t<T>> cast() const;
 
   Variable *m_mutableVariable;
 };
