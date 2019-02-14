@@ -370,6 +370,7 @@ PYBIND11_MODULE(dataset, m) {
 
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
+  declare_span<Bool>(m, "bool");
   declare_span<const double>(m, "double_const");
   declare_span<const std::string>(m, "string_const");
   declare_span<const Dim>(m, "Dim_const");
@@ -380,6 +381,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<int32_t>(m, "int32");
   declare_VariableView<std::string>(m, "string");
   declare_VariableView<char>(m, "char");
+  declare_VariableView<Bool>(m, "bool");
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
