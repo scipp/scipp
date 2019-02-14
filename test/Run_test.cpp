@@ -16,7 +16,7 @@ Dataset makeRun() {
   run.insert(Coord::Polarization, {}, {"Spin-Up"});
   run.insert(Coord::FuzzyTemperature, {}, {ValueWithDelta<double>(4.2, 0.1)});
   Dataset comment;
-  comment.insert(Data::String, "", {Dim::Row, 1}, {"first run"});
+  comment.insert(Data::DeprecatedString, "", {Dim::Row, 1}, {"first run"});
   run.insert<Dataset>(Data::Value, "comment", {}, {comment});
   Dataset timeSeriesLog;
   timeSeriesLog.insert(Coord::Time, {Dim::Time, 3}, {0, 1000, 1500});
@@ -42,11 +42,11 @@ TEST(Run, meta_data_propagation) {
   auto run2(run1);
   run2.get(Data::Value, "total_counts")[0] = 1111;
   run2.get(Coord::FuzzyTemperature)[0] = ValueWithDelta<double>(4.15, 0.1);
-  run2.span<Dataset>(Data::Value, "comment")[0].get(Data::String)[0] =
+  run2.span<Dataset>(Data::Value, "comment")[0].get(Data::DeprecatedString)[0] =
       "second run";
   run2.span<Dataset>(Data::Value, "generic_log")[0]
       .span<Dataset>(Data::Value, "root")[0]
-      .insert(Data::String, "user comment", {},
+      .insert(Data::DeprecatedString, "user comment", {},
               {"Spider walked through beam, verify data before publishing."});
 
   Dataset d2;
@@ -80,7 +80,7 @@ TEST(Run, meta_data_propagation) {
 
   // Example of a log entry that is concatenated:
   const auto comments =
-      run.span<Dataset>(Data::Value, "comment")[0].get(Data::String);
+      run.span<Dataset>(Data::Value, "comment")[0].get(Data::DeprecatedString);
   EXPECT_EQ(comments.size(), 2);
   EXPECT_EQ(comments[0], "first run");
   EXPECT_EQ(comments[1], "second run");
@@ -144,7 +144,7 @@ TEST(Run, meta_data_fail_missing) {
   Dataset d2(d1);
 
   auto &run2 = d2.get(Attr::ExperimentLog, "sample_log")[0];
-  run2.span<Dataset>(Data::Value, "comment")[0].erase(Data::String);
+  run2.span<Dataset>(Data::Value, "comment")[0].erase(Data::DeprecatedString);
   EXPECT_THROW_MSG(d1 += d2, std::runtime_error,
                    "Cannot add Variable: Nested Dataset dimension must be 1.");
 }

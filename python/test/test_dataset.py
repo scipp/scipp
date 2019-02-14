@@ -79,7 +79,7 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(d[Data.Value, "data1"].numpy, self.reference_data1)
 
         # Currently implicitly replacing keys in Dataset is not supported. Should it?
-        self.assertRaisesRegex(RuntimeError, "Attempt to insert data of same type with duplicate name.",
+        self.assertRaisesRegex(RuntimeError, "Attempt to insert data with duplicate tag and name.",
                 d.__setitem__, (Data.Value, "data1"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2)))
 
         self.assertRaisesRegex(RuntimeError, "Cannot insert variable into Dataset: Dimensions do not match.",

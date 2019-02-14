@@ -58,13 +58,13 @@ static void BM_MDZipView_multi_column_mixed_dimension(benchmark::State &state) {
   Dataset d;
   Dimensions dims;
   dims.add(Dim::Spectrum, state.range(0));
-  d.insert(Data::Int, "", dims, state.range(0));
+  d.insert(Data::DeprecatedInt, "", dims, state.range(0));
   dims.add(Dim::Tof, 1000);
   d.insert(Data::Value, "", dims, state.range(0) * 1000);
   gsl::index elements = 1000 * state.range(0);
 
   for (auto _ : state) {
-    auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::Int));
+    auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::DeprecatedInt));
     auto it = view.begin();
     for (int i = 0; i < elements; ++i) {
       benchmark::DoNotOptimize(it->get(Data::Value));
@@ -133,7 +133,7 @@ static void
 BM_MDZipView_multi_column_mixed_dimension_nested(benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert(Data::Int, "", {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Data::DeprecatedInt, "", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dim::Tof, 1000);
   dims.add(Dim::Spectrum, nSpec);
@@ -142,7 +142,7 @@ BM_MDZipView_multi_column_mixed_dimension_nested(benchmark::State &state) {
 
   for (auto _ : state) {
     auto nested = MDNested(MDWrite(Data::Value), MDWrite(Data::Variance));
-    auto view = zipMD(d, {Dim::Tof}, nested, MDWrite(Data::Int));
+    auto view = zipMD(d, {Dim::Tof}, nested, MDWrite(Data::DeprecatedInt));
     for (auto &item : view) {
       for (auto &point : item.get(decltype(nested)::type(d))) {
         point.value() -= point.get(Data::Variance);
@@ -162,7 +162,7 @@ static void BM_MDZipView_multi_column_mixed_dimension_nested_threaded(
     benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert(Data::Int, "specnums", {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Data::DeprecatedInt, "specnums", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dim::Tof, 1000);
   dims.add(Dim::Spectrum, nSpec);
@@ -171,7 +171,7 @@ static void BM_MDZipView_multi_column_mixed_dimension_nested_threaded(
 
   for (auto _ : state) {
     auto nested = MDNested(MDWrite(Data::Value), MDWrite(Data::Variance));
-    auto view = zipMD(d, {Dim::Tof}, nested, MDWrite(Data::Int));
+    auto view = zipMD(d, {Dim::Tof}, nested, MDWrite(Data::DeprecatedInt));
     const auto end = view.end();
 #pragma omp parallel for num_threads(state.range(1))
     for (auto it = view.begin(); it < end; ++it) {
@@ -194,7 +194,7 @@ static void BM_MDZipView_multi_column_mixed_dimension_nested_transpose(
     benchmark::State &state) {
   gsl::index nSpec = state.range(0);
   Dataset d;
-  d.insert(Data::Int, "", {Dim::Spectrum, nSpec}, nSpec);
+  d.insert(Data::DeprecatedInt, "", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
   dims.add(Dim::Spectrum, nSpec);
   dims.add(Dim::Tof, 1000);
@@ -203,7 +203,7 @@ static void BM_MDZipView_multi_column_mixed_dimension_nested_transpose(
 
   for (auto _ : state) {
     auto nested = MDNested(MDWrite(Data::Value), MDWrite(Data::Variance));
-    auto view = zipMD(d, {Dim::Tof}, nested, MDWrite(Data::Int));
+    auto view = zipMD(d, {Dim::Tof}, nested, MDWrite(Data::DeprecatedInt));
     for (auto &item : view) {
       for (auto &point : item.get(decltype(nested)::type(d))) {
         point.value() -= point.get(Data::Variance);

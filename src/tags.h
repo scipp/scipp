@@ -316,11 +316,11 @@ struct Data {
   using Value_t = detail::TagImpl<detail::DataDef::Value>;
   using Variance_t = detail::TagImpl<detail::DataDef::Variance>;
   using StdDev_t = detail::TagImpl<detail::DataDef::StdDev>;
-  // TODO Int and String is deprecated and should be removed, it is curently
+  // TODO Int and String is deprecated and should be removed, it is currently
   // only required to maintain tests using MDZipView before it is properly
   // refactored for multi-name support.
-  using Int_t = detail::TagImpl<detail::DataDef::Int>;
-  using String_t = detail::TagImpl<detail::DataDef::String>;
+  using DeprecatedInt_t = detail::TagImpl<detail::DataDef::Int>;
+  using DeprecatedString_t = detail::TagImpl<detail::DataDef::String>;
   using Events_t = detail::TagImpl<detail::DataDef::Events>;
   using EventTofs_t = detail::TagImpl<detail::DataDef::EventTofs>;
   using EventPulseTimes_t = detail::TagImpl<detail::DataDef::EventPulseTimes>;
@@ -330,8 +330,8 @@ struct Data {
   static constexpr Value_t Value{};
   static constexpr Variance_t Variance{};
   static constexpr StdDev_t StdDev{};
-  static constexpr Int_t Int{};
-  static constexpr String_t String{};
+  static constexpr DeprecatedInt_t DeprecatedInt{};
+  static constexpr DeprecatedString_t DeprecatedString{};
   static constexpr Events_t Events{};
   static constexpr EventTofs_t EventTofs{};
   static constexpr EventPulseTimes_t EventPulseTimes{};
