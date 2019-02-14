@@ -100,8 +100,8 @@ Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>())
                             ? convertDType(data.dtype())
                             : convertDType(dtype);
-  return CallDType<double, float, int64_t, int32_t,
-                   char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
+  return CallDType<double, float, int64_t, int32_t, char,
+                   bool>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
                                                       data);
 }
 
@@ -114,8 +114,8 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   // py::dtype?
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
-  return CallDType<double, float, int64_t, int32_t,
-                   char>::apply<detail::MakeVariableDefaultInit>(dtypeTag, tag,
+  return CallDType<double, float, int64_t, int32_t, char,
+                   bool>::apply<detail::MakeVariableDefaultInit>(dtypeTag, tag,
                                                                  labels, shape);
 }
 
@@ -148,8 +148,8 @@ void insert_ndarray(
   const auto & [ tag, name ] = Key::get(key);
   const auto & [ labels, array ] = data;
   const auto dtypeTag = convertDType(array.dtype());
-  auto var = CallDType<double, float, int64_t, int32_t,
-                       char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
+  auto var = CallDType<double, float, int64_t, int32_t, char,
+                       bool>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
                                                           array);
   if (!name.empty())
     var.setName(name);
@@ -233,8 +233,8 @@ template <class T, class K>
 void setData(T &self, const K &key, const py::array &data) {
   const auto & [ tag, name ] = Key::get(key);
   const auto slice = self(tag, name);
-  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
-      slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char,
+            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
 
 VariableSlice pySlice(VariableSlice &view,
@@ -254,16 +254,16 @@ void setVariableSlice(VariableSlice &self,
                       const std::tuple<Dim, gsl::index> &index,
                       const py::array &data) {
   auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
-  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
-      slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char,
+            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
 
 void setVariableSliceRange(VariableSlice &self,
                            const std::tuple<Dim, const py::slice> &index,
                            const py::array &data) {
   auto slice = pySlice(self, index);
-  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
-      slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char,
+            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
 } // namespace detail
 
