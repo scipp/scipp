@@ -316,6 +316,9 @@ struct Data {
   using Value_t = detail::TagImpl<detail::DataDef::Value>;
   using Variance_t = detail::TagImpl<detail::DataDef::Variance>;
   using StdDev_t = detail::TagImpl<detail::DataDef::StdDev>;
+  // TODO Int and String is deprecated and should be removed, it is curently
+  // only required to maintain tests using MDZipView before it is properly
+  // refactored for multi-name support.
   using Int_t = detail::TagImpl<detail::DataDef::Int>;
   using String_t = detail::TagImpl<detail::DataDef::String>;
   using Events_t = detail::TagImpl<detail::DataDef::Events>;

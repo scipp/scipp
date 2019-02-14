@@ -403,8 +403,6 @@ PYBIND11_MODULE(dataset, m) {
   data_tags.attr("Value") = Tag(Data::Value);
   data_tags.attr("Variance") = Tag(Data::Variance);
   data_tags.attr("StdDev") = Tag(Data::StdDev);
-  data_tags.attr("Int") = Tag(Data::Int);
-  data_tags.attr("String") = Tag(Data::String);
   data_tags.attr("Events") = Tag(Data::Events);
   data_tags.attr("EventTofs") = Tag(Data::EventTofs);
   data_tags.attr("EventPulseTimes") = Tag(Data::EventPulseTimes);

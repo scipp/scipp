@@ -51,7 +51,7 @@ void Dataset::insert(Variable variable) {
     for (const auto &item : m_variables)
       if (item.tag() == variable.tag() && item.name() == variable.name())
         throw std::runtime_error(
-            "Attempt to insert data of same type with duplicate name.");
+            "Attempt to insert data with duplicate tag and name.");
   }
   // TODO special handling for special variables types like
   // Data::Histogram (either prevent adding, or extract into underlying

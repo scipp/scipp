@@ -27,16 +27,16 @@ TEST(Dataset, insert_coords) {
 TEST(Dataset, insert_data) {
   Dataset d;
   d.insert(Data::Value, "name1", {}, {1.1});
-  d.insert(Data::Int, "name2", {}, {2});
-  EXPECT_THROW_MSG(d.insert(Data::Int, "name2", {}, {2}), std::runtime_error,
-                   "Attempt to insert data of same type with duplicate name.");
+  d.insert(Data::Value, "name2", {}, {2});
+  EXPECT_THROW_MSG(d.insert(Data::Value, "name2", {}, {2}), std::runtime_error,
+                   "Attempt to insert data with duplicate tag and name.");
   ASSERT_EQ(d.size(), 2);
 }
 
 TEST(Dataset, insert_variables_with_dimensions) {
   Dataset d;
   d.insert(Data::Value, "name1", Dimensions(Dim::Tof, 2), {1.1, 2.2});
-  d.insert(Data::Int, "name2", {}, {2});
+  d.insert(Data::Value, "name2", {}, {2});
 }
 
 TEST(Dataset, insert_variables_different_order) {
@@ -169,7 +169,7 @@ TEST(Dataset, extract) {
   Dataset d;
   d.insert(Data::Value, "name1", {}, {1.1});
   d.insert(Data::Variance, "name1", {}, {1.1});
-  d.insert(Data::Int, "name2", {}, {2});
+  d.insert(Data::Value, "name2", {}, {2});
   EXPECT_EQ(d.size(), 3);
   auto name1 = d.extract("name1");
   EXPECT_EQ(d.size(), 1);
@@ -183,13 +183,13 @@ TEST(Dataset, merge) {
   Dataset d;
   d.insert(Data::Value, "name1", {}, {1.1});
   d.insert(Data::Variance, "name1", {}, {1.1});
-  d.insert(Data::Int, "name2", {}, {2});
+  d.insert(Data::Value, "name2", {}, {2});
 
   Dataset merged;
   merged.merge(d);
   EXPECT_EQ(merged.size(), 3);
   EXPECT_THROW_MSG(merged.merge(d), std::runtime_error,
-                   "Attempt to insert data of same type with duplicate name.");
+                   "Attempt to insert data with duplicate tag and name.");
 
   Dataset d2;
   d2.insert(Data::Value, "name3", {}, {1.1});
@@ -226,7 +226,7 @@ TEST(Dataset, merge_coord_mismatch_fail) {
 TEST(Dataset, const_get) {
   Dataset d;
   d.insert(Data::Value, "", {}, {1.1});
-  d.insert(Data::Int, "", {}, {2});
+  d.insert(Data::Variance, "", {}, {2});
   const auto &const_d(d);
   auto view = const_d.get(Data::Value);
   // No non-const access to variable if Dataset is const, will not compile:
@@ -240,7 +240,7 @@ TEST(Dataset, const_get) {
 TEST(Dataset, get) {
   Dataset d;
   d.insert(Data::Value, "", {}, {1.1});
-  d.insert(Data::Int, "", {}, {2});
+  d.insert(Data::Variance, "", {}, {2});
   auto view = d.get(Data::Value);
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);
@@ -251,7 +251,7 @@ TEST(Dataset, get) {
 TEST(Dataset, get_const) {
   Dataset d;
   d.insert(Data::Value, "", {}, {1.1});
-  d.insert(Data::Int, "", {}, {2});
+  d.insert(Data::Variance, "", {}, {2});
   auto view = d.get(Data::Value);
   ASSERT_EQ(view.size(), 1);
   EXPECT_EQ(view[0], 1.1);
@@ -266,9 +266,10 @@ TEST(Dataset, get_fail) {
   EXPECT_THROW_MSG(d.get(Data::Value), std::runtime_error,
                    "Dataset with 2 variables, could not find variable with tag "
                    "Data::Value and name ``.");
-  EXPECT_THROW_MSG(d.get(Data::Int), dataset::except::VariableNotFoundError,
+  EXPECT_THROW_MSG(d.get(Data::Variance),
+                   dataset::except::VariableNotFoundError,
                    "Dataset with 2 variables, could not find variable with tag "
-                   "Data::Int and name ``.");
+                   "Data::Variance and name ``.");
 }
 
 TEST(Dataset, get_named) {
@@ -350,7 +351,7 @@ TEST(Dataset, operator_plus_equal_with_attributes) {
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   a.insert(Data::Value, "", {Dim::X, 1}, {2.2});
   Dataset logs;
-  logs.insert(Data::String, "comments", {}, {std::string("test")});
+  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
   a.insert(Attr::ExperimentLog, "", {}, {logs});
   a += a;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
@@ -374,7 +375,7 @@ TEST(Dataset, operator_times_equal_with_attributes) {
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
   Dataset logs;
-  logs.insert(Data::String, "comments", {}, {std::string("test")});
+  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
   a.insert(Attr::ExperimentLog, "", {}, {logs});
   a *= a;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
@@ -622,7 +623,7 @@ TEST(Dataset, concatenate_with_attributes) {
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   a.insert(Data::Value, "", {Dim::X, 1}, {2.2});
   Dataset logs;
-  logs.insert(Data::String, "comments", {}, {std::string("test")});
+  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
   a.insert(Attr::ExperimentLog, "", {}, {logs});
 
   auto x = concatenate(a, a, Dim::X);
@@ -634,7 +635,8 @@ TEST(Dataset, concatenate_with_attributes) {
 
   auto x2(x);
   x2.get(Data::Value)[0] = 100.0;
-  x2.get(Attr::ExperimentLog)[0].get(Data::String, "comments")[0] = "different";
+  x2.get(Attr::ExperimentLog)[0].span<std::string>(Data::Value, "comments")[0] =
+      "different";
   auto xy = concatenate(x, x2, Dim::Y);
   EXPECT_TRUE(xy.dimensions().contains(Dim::X));
   EXPECT_TRUE(xy.dimensions().contains(Dim::Y));
@@ -648,7 +650,8 @@ TEST(Dataset, concatenate_with_attributes) {
   EXPECT_NO_THROW(concatenate(xy, xy, Dim::X));
 
   auto xy2(xy);
-  xy2.get(Attr::ExperimentLog)[0].get(Data::String, "comments")[0] = "";
+  xy2.get(Attr::ExperimentLog)[0].span<std::string>(Data::Value,
+                                                    "comments")[0] = "";
   // Concatenating in existing dimension fail currently. Would need to implement
   // merging functionality for attributes?
   EXPECT_ANY_THROW(concatenate(xy, xy2, Dim::X));
