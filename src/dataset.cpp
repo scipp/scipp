@@ -170,17 +170,30 @@ void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
   }
 }
 
-bool Dataset::operator==(const Dataset &other) const {
-  if (size() != other.size())
+template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
+  if (a.size() != b.size())
     return false;
-  for (const auto &var : m_variables)
-    if (!other.contains(var.tag(), var.name()) ||
-        (var != other(var.tag(), var.name())))
+  for (const auto &var : a)
+    if (!b.contains(var.tag(), var.name()) || (var != b(var.tag(), var.name())))
       return false;
   return true;
 }
 
-VariableSlice DatasetSlice::operator()(const Tag tag, const std::string &name) {
+bool Dataset::operator==(const Dataset &other) const {
+  return equals(*this, other);
+}
+
+bool Dataset::operator==(const ConstDatasetSlice &other) const {
+  return equals(*this, other);
+}
+
+ConstVariableSlice ConstDatasetSlice::
+operator()(const Tag tag, const std::string &name) const {
+  return ConstVariableSlice(operator[](find(*this, tag, name)));
+}
+
+VariableSlice DatasetSlice::operator()(const Tag tag,
+                                       const std::string &name) const {
   return VariableSlice(operator[](find(*this, tag, name)));
 }
 

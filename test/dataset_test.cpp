@@ -321,6 +321,18 @@ TEST(Dataset, comparison_missing_variable) {
   EXPECT_TRUE(d2 == d2);
 }
 
+TEST(Dataset, comparison_with_slice) {
+  Dataset d1;
+  d1.insert(Data::Value, "a", {});
+  d1.insert(Data::Variance, "a", {});
+  Dataset d2;
+  d2.insert(Data::Value, "b", {});
+  d2.insert(Data::Value, "a", {});
+  d2.insert(Data::Variance, "a", {});
+  EXPECT_FALSE(d1 == d2);
+  EXPECT_TRUE(d1 == d2["a"]);
+}
+
 TEST(Dataset, operator_plus_equal) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});

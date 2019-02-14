@@ -213,6 +213,7 @@ public:
   const Dimensions &dimensions() const & { return m_dimensions; }
 
   bool operator==(const Dataset &other) const;
+  bool operator==(const ConstDatasetSlice &other) const;
   Dataset operator-() const;
   Dataset &operator+=(const Dataset &other);
   Dataset &operator+=(const ConstDatasetSlice &other);
@@ -356,6 +357,9 @@ public:
 
   Dataset operator-() const;
 
+  ConstVariableSlice operator()(const Tag tag,
+                                const std::string &name = "") const;
+
 protected:
   const Dataset &m_dataset;
   std::vector<gsl::index> m_indices;
@@ -407,7 +411,7 @@ public:
       : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
 
   using ConstDatasetSlice::operator[];
-  VariableSlice operator[](const gsl::index i) {
+  VariableSlice operator[](const gsl::index i) const {
     return detail::makeSlice(m_mutableDataset[m_indices[i]], m_slices);
   }
 
@@ -419,10 +423,10 @@ public:
   using ConstDatasetSlice::begin;
   using ConstDatasetSlice::end;
 
-  auto begin() {
+  auto begin() const {
     return boost::make_transform_iterator(m_indices.begin(), IterAccess{*this});
   }
-  auto end() {
+  auto end() const {
     return boost::make_transform_iterator(m_indices.end(), IterAccess{*this});
   }
 
@@ -439,7 +443,7 @@ public:
   DatasetSlice operator*=(const ConstDatasetSlice &other);
   DatasetSlice operator*=(const double value);
 
-  VariableSlice operator()(const Tag tag, const std::string &name = "");
+  VariableSlice operator()(const Tag tag, const std::string &name = "") const;
 
 private:
   Dataset &m_mutableDataset;
