@@ -431,17 +431,17 @@ public:
   }
 
   // Returning void to avoid potentially returning references to temporaries.
-  DatasetSlice assign(const Dataset &other);
-  DatasetSlice assign(const ConstDatasetSlice &other);
-  DatasetSlice operator+=(const Dataset &other);
-  DatasetSlice operator+=(const ConstDatasetSlice &other);
-  DatasetSlice operator+=(const double value);
-  DatasetSlice operator-=(const Dataset &other);
-  DatasetSlice operator-=(const ConstDatasetSlice &other);
-  DatasetSlice operator-=(const double value);
-  DatasetSlice operator*=(const Dataset &other);
-  DatasetSlice operator*=(const ConstDatasetSlice &other);
-  DatasetSlice operator*=(const double value);
+  DatasetSlice assign(const Dataset &other) const;
+  DatasetSlice assign(const ConstDatasetSlice &other) const;
+  DatasetSlice operator+=(const Dataset &other) const;
+  DatasetSlice operator+=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator+=(const double value) const;
+  DatasetSlice operator-=(const Dataset &other) const;
+  DatasetSlice operator-=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator-=(const double value) const;
+  DatasetSlice operator*=(const Dataset &other) const;
+  DatasetSlice operator*=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator*=(const double value) const;
 
   VariableSlice operator()(const Tag tag, const std::string &name = "") const;
 

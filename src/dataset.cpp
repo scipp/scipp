@@ -485,52 +485,52 @@ Dataset ConstDatasetSlice::operator-() const {
   return -copy;
 }
 
-DatasetSlice DatasetSlice::assign(const Dataset &other) {
+DatasetSlice DatasetSlice::assign(const Dataset &other) const {
   return ::assign(*this, other);
 }
-DatasetSlice DatasetSlice::assign(const ConstDatasetSlice &other) {
+DatasetSlice DatasetSlice::assign(const ConstDatasetSlice &other) const {
   return ::assign(*this, other);
 }
 
-DatasetSlice DatasetSlice::operator+=(const Dataset &other) {
+DatasetSlice DatasetSlice::operator+=(const Dataset &other) const {
   return binary_op_equals(
       [](VariableSlice &a, const Variable &b) { return a += b; }, *this, other);
 }
-DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) {
+DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) const {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
-DatasetSlice DatasetSlice::operator+=(const double value) {
+DatasetSlice DatasetSlice::operator+=(const double value) const {
   for (auto var : *this)
     if (var.tag() == Data::Value)
       var += value;
   return *this;
 }
 
-DatasetSlice DatasetSlice::operator-=(const Dataset &other) {
+DatasetSlice DatasetSlice::operator-=(const Dataset &other) const {
   return binary_op_equals(
       [](VariableSlice &a, const Variable &b) { return a -= b; }, *this, other);
 }
-DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) {
+DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) const {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
-DatasetSlice DatasetSlice::operator-=(const double value) {
+DatasetSlice DatasetSlice::operator-=(const double value) const {
   for (auto var : *this)
     if (var.tag() == Data::Value)
       var -= value;
   return *this;
 }
 
-DatasetSlice DatasetSlice::operator*=(const Dataset &other) {
+DatasetSlice DatasetSlice::operator*=(const Dataset &other) const {
   return times_equals(*this, other);
 }
-DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) {
+DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) const {
   return times_equals(*this, other);
 }
-DatasetSlice DatasetSlice::operator*=(const double value) {
+DatasetSlice DatasetSlice::operator*=(const double value) const {
   for (auto var : *this)
     if (var.tag() == Data::Value)
       var *= value;
