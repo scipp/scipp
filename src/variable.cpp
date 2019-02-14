@@ -771,7 +771,8 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
   dataset::expect::equals(variable.unit(), other.unit());
-  if (variable.tag() != Data::Events && variable.tag() != Data::Table) {
+  // TODO How should attributes be handled?
+  if (variable.dtype() != dtype<Dataset> || variable.isAttr()) {
     dataset::expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!

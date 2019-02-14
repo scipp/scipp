@@ -409,7 +409,6 @@ PYBIND11_MODULE(dataset, m) {
   data_tags.attr("Events") = Tag(Data::Events);
   data_tags.attr("EventTofs") = Tag(Data::EventTofs);
   data_tags.attr("EventPulseTimes") = Tag(Data::EventPulseTimes);
-  data_tags.attr("Table") = Tag(Data::Table);
 
   auto attr_tags = m.def_submodule("Attr");
   attr_tags.attr("ExperimentLog") = Tag(Attr::ExperimentLog);

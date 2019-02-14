@@ -237,14 +237,10 @@ struct DataDef {
     using type = boost::container::small_vector<double, 8>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct Table {
-    using type = Dataset;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
 
   using tags =
       std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, DimensionSize,
-                 String, Events, EventTofs, EventPulseTimes, Table>;
+                 String, Events, EventTofs, EventPulseTimes>;
 };
 
 struct AttrDef {
@@ -331,7 +327,6 @@ struct Data {
   using Events_t = detail::TagImpl<detail::DataDef::Events>;
   using EventTofs_t = detail::TagImpl<detail::DataDef::EventTofs>;
   using EventPulseTimes_t = detail::TagImpl<detail::DataDef::EventPulseTimes>;
-  using Table_t = detail::TagImpl<detail::DataDef::Table>;
 
   static constexpr Tof_t Tof{};
   static constexpr PulseTime_t PulseTime{};
@@ -344,7 +339,6 @@ struct Data {
   static constexpr Events_t Events{};
   static constexpr EventTofs_t EventTofs{};
   static constexpr EventPulseTimes_t EventPulseTimes{};
-  static constexpr Table_t Table{};
 };
 
 struct Attr {
