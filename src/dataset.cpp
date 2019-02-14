@@ -198,6 +198,22 @@ bool ConstDatasetSlice::operator==(const ConstDatasetSlice &other) const {
   return equals(*this, other);
 }
 
+bool Dataset::operator!=(const Dataset &other) const {
+  return !operator==(other);
+}
+
+bool Dataset::operator!=(const ConstDatasetSlice &other) const {
+  return !operator==(other);
+}
+
+bool ConstDatasetSlice::operator!=(const Dataset &other) const {
+  return !operator==(other);
+}
+
+bool ConstDatasetSlice::operator!=(const ConstDatasetSlice &other) const {
+  return !operator==(other);
+}
+
 ConstVariableSlice ConstDatasetSlice::
 operator()(const Tag tag, const std::string &name) const {
   return ConstVariableSlice(operator[](find(*this, tag, name)));

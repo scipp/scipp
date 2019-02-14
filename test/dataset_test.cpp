@@ -290,10 +290,10 @@ TEST(Dataset, comparison_different_insertion_order) {
   Dataset d2;
   d2.insert(Data::Value, "b", {});
   d2.insert(Data::Value, "a", {});
-  EXPECT_TRUE(d1 == d1);
-  EXPECT_TRUE(d1 == d2);
-  EXPECT_TRUE(d2 == d1);
-  EXPECT_TRUE(d2 == d2);
+  EXPECT_EQ(d1, d1);
+  EXPECT_EQ(d1, d2);
+  EXPECT_EQ(d2, d1);
+  EXPECT_EQ(d2, d2);
 }
 
 TEST(Dataset, comparison_different_data) {
@@ -303,10 +303,10 @@ TEST(Dataset, comparison_different_data) {
   Dataset d2;
   d2.insert(Data::Value, "b", {});
   d2.insert(Data::Value, "a", {}, {1.0});
-  EXPECT_TRUE(d1 == d1);
-  EXPECT_FALSE(d1 == d2);
-  EXPECT_FALSE(d2 == d1);
-  EXPECT_TRUE(d2 == d2);
+  EXPECT_EQ(d1, d1);
+  EXPECT_NE(d1, d2);
+  EXPECT_NE(d2, d1);
+  EXPECT_EQ(d2, d2);
 }
 
 TEST(Dataset, comparison_missing_variable) {
@@ -315,10 +315,10 @@ TEST(Dataset, comparison_missing_variable) {
   d1.insert(Data::Value, "b", {});
   Dataset d2;
   d2.insert(Data::Value, "a", {});
-  EXPECT_TRUE(d1 == d1);
-  EXPECT_FALSE(d1 == d2);
-  EXPECT_FALSE(d2 == d1);
-  EXPECT_TRUE(d2 == d2);
+  EXPECT_EQ(d1, d1);
+  EXPECT_NE(d1, d2);
+  EXPECT_NE(d2, d1);
+  EXPECT_EQ(d2, d2);
 }
 
 TEST(Dataset, comparison_with_slice) {
@@ -329,9 +329,9 @@ TEST(Dataset, comparison_with_slice) {
   d2.insert(Data::Value, "b", {});
   d2.insert(Data::Value, "a", {});
   d2.insert(Data::Variance, "a", {});
-  EXPECT_FALSE(d1 == d2);
-  EXPECT_TRUE(d1 == d2["a"]);
-  EXPECT_TRUE(d2["a"] == d1);
+  EXPECT_NE(d1, d2);
+  EXPECT_EQ(d1, d2["a"]);
+  EXPECT_EQ(d2["a"], d1);
 }
 
 TEST(Dataset, comparison_with_spatial_slice) {
@@ -341,19 +341,19 @@ TEST(Dataset, comparison_with_spatial_slice) {
   d2.insert(Data::Value, "b", {});
   d2.insert(Data::Value, "a", {Dim::X, 3}, {1, 2, 3});
 
-  EXPECT_FALSE(d1 == d2);
+  EXPECT_NE(d1, d2);
 
-  EXPECT_FALSE(d1 == d2["a"]);
-  EXPECT_FALSE(d1 == d2["a"](Dim::X, 0, 2));
-  EXPECT_FALSE(d1 == d2["a"](Dim::X, 0));
-  EXPECT_FALSE(d1 == d2["a"](Dim::X, 1));
-  EXPECT_TRUE(d1 == d2["a"](Dim::X, 1, 3));
+  EXPECT_NE(d1, d2["a"]);
+  EXPECT_NE(d1, d2["a"](Dim::X, 0, 2));
+  EXPECT_NE(d1, d2["a"](Dim::X, 0));
+  EXPECT_NE(d1, d2["a"](Dim::X, 1));
+  EXPECT_EQ(d1, d2["a"](Dim::X, 1, 3));
 
-  EXPECT_FALSE(d2["a"] == d1);
-  EXPECT_FALSE(d2["a"](Dim::X, 0, 2) == d1);
-  EXPECT_FALSE(d2["a"](Dim::X, 0) == d1);
-  EXPECT_FALSE(d2["a"](Dim::X, 1) == d1);
-  EXPECT_TRUE(d2["a"](Dim::X, 1, 3) == d1);
+  EXPECT_NE(d2["a"], d1);
+  EXPECT_NE(d2["a"](Dim::X, 0, 2), d1);
+  EXPECT_NE(d2["a"](Dim::X, 0), d1);
+  EXPECT_NE(d2["a"](Dim::X, 1), d1);
+  EXPECT_EQ(d2["a"](Dim::X, 1, 3), d1);
 }
 
 TEST(Dataset, comparison_two_slices) {
@@ -362,15 +362,15 @@ TEST(Dataset, comparison_two_slices) {
   d.insert(Data::Value, "b", {Dim::X, 4}, {1, 2, 1, 2});
 
   // Data is same but name differs.
-  EXPECT_FALSE(d["a"](Dim::X, 0, 2) == d["b"](Dim::X, 0, 2));
+  EXPECT_NE(d["a"](Dim::X, 0, 2), d["b"](Dim::X, 0, 2));
 
-  EXPECT_TRUE(d["a"](Dim::X, 0, 2) == d["a"](Dim::X, 0, 2));
-  EXPECT_FALSE(d["a"](Dim::X, 0, 2) == d["a"](Dim::X, 1, 3));
-  EXPECT_FALSE(d["a"](Dim::X, 0, 2) == d["a"](Dim::X, 2, 4));
+  EXPECT_EQ(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 0, 2));
+  EXPECT_NE(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 1, 3));
+  EXPECT_NE(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 2, 4));
 
-  EXPECT_TRUE(d["b"](Dim::X, 0, 2) == d["b"](Dim::X, 0, 2));
-  EXPECT_FALSE(d["b"](Dim::X, 0, 2) == d["b"](Dim::X, 1, 3));
-  EXPECT_TRUE(d["b"](Dim::X, 0, 2) == d["b"](Dim::X, 2, 4));
+  EXPECT_EQ(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 0, 2));
+  EXPECT_NE(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 1, 3));
+  EXPECT_EQ(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 2, 4));
 }
 
 TEST(Dataset, operator_plus_equal) {

@@ -214,6 +214,8 @@ public:
 
   bool operator==(const Dataset &other) const;
   bool operator==(const ConstDatasetSlice &other) const;
+  bool operator!=(const Dataset &other) const;
+  bool operator!=(const ConstDatasetSlice &other) const;
   Dataset operator-() const;
   Dataset &operator+=(const Dataset &other);
   Dataset &operator+=(const ConstDatasetSlice &other);
@@ -350,6 +352,8 @@ public:
 
   bool operator==(const Dataset &other) const;
   bool operator==(const ConstDatasetSlice &other) const;
+  bool operator!=(const Dataset &other) const;
+  bool operator!=(const ConstDatasetSlice &other) const;
 
   Dataset operator-() const;
 
