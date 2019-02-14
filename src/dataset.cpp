@@ -187,6 +187,17 @@ bool Dataset::operator==(const ConstDatasetSlice &other) const {
   return equals(*this, other);
 }
 
+bool ConstDatasetSlice::operator==(const Dataset &other) const {
+  return equals(*this, other);
+}
+
+bool ConstDatasetSlice::operator==(const ConstDatasetSlice &other) const {
+  if ((m_dataset == other.m_dataset) && (m_indices == other.m_indices) &&
+      (m_slices == other.m_slices))
+    return true;
+  return equals(*this, other);
+}
+
 ConstVariableSlice ConstDatasetSlice::
 operator()(const Tag tag, const std::string &name) const {
   return ConstVariableSlice(operator[](find(*this, tag, name)));

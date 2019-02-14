@@ -348,12 +348,8 @@ public:
     return boost::make_transform_iterator(m_indices.end(), IterAccess{*this});
   }
 
-  bool operator==(const ConstDatasetSlice &other) const {
-    if ((m_dataset == other.m_dataset) && (m_indices == other.m_indices) &&
-        (m_slices == other.m_slices))
-      return true;
-    return std::equal(begin(), end(), other.begin(), other.end());
-  }
+  bool operator==(const Dataset &other) const;
+  bool operator==(const ConstDatasetSlice &other) const;
 
   Dataset operator-() const;
 
