@@ -212,7 +212,7 @@ TEST(Workspace2D, masking) {
   // Spectra mask.
   // Can be in its own Dataset to support loading, saving, and manipulation.
   Dataset mask;
-  mask.insert(Coord::Mask, {Dim::Spectrum, 3}, Vector<char>{0, 0, 1});
+  mask.insert(Coord::Mask, {Dim::Spectrum, 3}, {false, false, true});
 
   // Add mask to Dataset, not touching data.
   auto d_masked(d);

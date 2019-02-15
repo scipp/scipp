@@ -680,26 +680,32 @@ void Variable::setDimensions(const Dimensions &dimensions) {
   m_object = m_object->clone(dimensions);
 }
 
-template <class T> const Vector<T> &Variable::cast() const {
-  return dynamic_cast<const DataModel<Vector<T>> &>(*m_object).m_model;
+template <class T> const Vector<underlying_type_t<T>> &Variable::cast() const {
+  return dynamic_cast<const DataModel<Vector<underlying_type_t<T>>> &>(
+             *m_object)
+      .m_model;
 }
 
-template <class T> Vector<T> &Variable::cast() {
-  return dynamic_cast<DataModel<Vector<T>> &>(*m_object).m_model;
+template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
+  return dynamic_cast<DataModel<Vector<underlying_type_t<T>>> &>(*m_object)
+      .m_model;
 }
 
 #define INSTANTIATE(...)                                                       \
   template Variable::Variable(const Tag, const Unit::Id, const Dimensions &,   \
-                              Vector<__VA_ARGS__>);                            \
-  template Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>();                 \
-  template const Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>() const;
+                              Vector<underlying_type_t<__VA_ARGS__>>);         \
+  template Vector<underlying_type_t<__VA_ARGS__>>                              \
+      &Variable::cast<__VA_ARGS__>();                                          \
+  template const Vector<underlying_type_t<__VA_ARGS__>>                        \
+      &Variable::cast<__VA_ARGS__>() const;
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)
 INSTANTIATE(float)
-INSTANTIATE(char)
-INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
+INSTANTIATE(int32_t)
+INSTANTIATE(char)
+INSTANTIATE(bool)
 INSTANTIATE(std::pair<int64_t, int64_t>)
 INSTANTIATE(ValueWithDelta<double>)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
@@ -973,34 +979,40 @@ void VariableSlice::setUnit(const Unit &unit) const {
 }
 
 template <class T>
-const VariableView<const T> ConstVariableSlice::cast() const {
+const VariableView<const underlying_type_t<T>>
+ConstVariableSlice::cast() const {
+  using TT = underlying_type_t<T>;
   if (!m_view)
-    return dynamic_cast<const DataModel<Vector<T>> &>(data()).getView(
+    return dynamic_cast<const DataModel<Vector<TT>> &>(data()).getView(
         dimensions());
   if (m_view->isConstView())
-    return dynamic_cast<const ViewModel<VariableView<const T>> &>(data())
+    return dynamic_cast<const ViewModel<VariableView<const TT>> &>(data())
         .m_model;
   // Make a const view from the mutable one.
-  return {dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model,
+  return {dynamic_cast<const ViewModel<VariableView<TT>> &>(data()).m_model,
           dimensions()};
 }
 
-template <class T> VariableView<T> VariableSlice::cast() const {
+template <class T>
+VariableView<underlying_type_t<T>> VariableSlice::cast() const {
+  using TT = underlying_type_t<T>;
   if (m_view)
-    return dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model;
-  return dynamic_cast<DataModel<Vector<T>> &>(data()).getView(dimensions());
+    return dynamic_cast<const ViewModel<VariableView<TT>> &>(data()).m_model;
+  return dynamic_cast<DataModel<Vector<TT>> &>(data()).getView(dimensions());
 }
 
 #define INSTANTIATE_SLICEVIEW(...)                                             \
-  template const VariableView<const __VA_ARGS__>                               \
+  template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
   ConstVariableSlice::cast<__VA_ARGS__>() const;                               \
-  template VariableView<__VA_ARGS__> VariableSlice::cast() const;
+  template VariableView<underlying_type_t<__VA_ARGS__>>                        \
+  VariableSlice::cast<__VA_ARGS__>() const;
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(float);
 INSTANTIATE_SLICEVIEW(int64_t);
 INSTANTIATE_SLICEVIEW(int32_t);
 INSTANTIATE_SLICEVIEW(char);
+INSTANTIATE_SLICEVIEW(bool);
 INSTANTIATE_SLICEVIEW(std::string);
 
 ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
