@@ -112,10 +112,27 @@ namespace Access {
 /// proxy if an EventListProxy, i.e., represents a single event list.
 template <class... Keys>
 class EventListsProxy {
+private:
+  using type = decltype(
+      ranges::view::zip(std::declval<gsl::span<typename Keys::type>>()...));
+  using item_type = decltype(std::declval<type>()[0]);
+
+  template <size_t... Is>
+  static constexpr auto doMakeEventListProxy(const item_type &item,
+                                             std::index_sequence<Is...>) {
+    return EventListProxy(std::get<Is>(item)...);
+  }
+  // Helper lambdas for creating iterators.
+  static constexpr auto makeEventListProxy = [](const item_type &item) {
+    return doMakeEventListProxy(item,
+                                std::make_index_sequence<sizeof...(Keys)>{});
+  };
+
 public:
   EventListsProxy(Dataset &dataset, const Keys &... keys)
       : m_dataset(&dataset), m_keys(keys...),
-        m_data(dataset.span<typename Keys::type>(keys.tag, keys.name)...) {
+        m_view(ranges::view::zip(
+            dataset.span<typename Keys::type>(keys.tag, keys.name)...)) {
     // All requested keys must have same dimensions. This restriction could be
     // dropped for const access.
     const auto &dims =
@@ -127,12 +144,19 @@ public:
     // from a group are included, otherwise push_back must be prevented.
   }
 
-  gsl::index size() const { return std::get<0>(m_data).size(); }
+  gsl::index size() const { return m_view.size(); }
+  auto begin() const {
+    return boost::make_transform_iterator(m_view.begin(), makeEventListProxy);
+  }
+  auto end() const {
+    return boost::make_transform_iterator(m_view.end(), makeEventListProxy);
+  }
 
 private:
   Dataset *m_dataset;
   std::tuple<Keys...> m_keys;
-  std::tuple<gsl::span<typename Keys::type>...> m_data;
+  decltype(ranges::view::zip(
+      std::declval<gsl::span<typename Keys::type>>()...)) m_view;
 };
 
 // TODO Rename to ConstEventListProxy and add EventListProxy, inheriting from

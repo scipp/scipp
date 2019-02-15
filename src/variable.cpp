@@ -714,6 +714,7 @@ INSTANTIATE(std::pair<gsl::index, gsl::index>)
 #endif
 INSTANTIATE(boost::container::small_vector<gsl::index, 1>)
 INSTANTIATE(boost::container::small_vector<double, 8>)
+INSTANTIATE(std::vector<double>)
 INSTANTIATE(std::vector<std::string>)
 INSTANTIATE(std::vector<gsl::index>)
 INSTANTIATE(Dataset)

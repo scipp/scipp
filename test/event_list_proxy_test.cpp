@@ -88,33 +88,51 @@ TEST(EventListProxy, push_back_duplicate_broken) {
 
 TEST(EventListsProxy, missing_field) {
   Dataset d;
-  d.insert<double>(Data::Value, "a", {Dim::X, 4}, {1, 2, 3, 4});
-  d.insert<float>(Data::Variance, "a", {Dim::X, 4}, {5, 6, 7, 8});
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
 
-  EXPECT_THROW_MSG(
-      EventListsProxy eventLists(d, Access::Key{Data::Value, "a"},
-                                 Access::Key<float>{Data::Variance, "b"}),
-      std::runtime_error,
-      "Dataset with 2 variables, could not find variable with tag "
-      "Data::Variance and name `b`.");
+  EXPECT_THROW_MSG(EventListsProxy eventLists(
+                       d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                       Access::Key<std::vector<double>>{Data::Variance, "b"}),
+                   std::runtime_error,
+                   "Dataset with 2 variables, could not find variable with tag "
+                   "Data::Variance and name `b`.");
 }
 
 TEST(EventListsProxy, dimension_mismatch) {
   Dataset d;
-  d.insert<double>(Data::Value, "a", {Dim::X, 4}, {1, 2, 3, 4});
-  d.insert<float>(Data::Variance, "a", {}, {5});
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {}, {5});
 
-  EXPECT_THROW_MSG(
-      EventListsProxy eventLists(d, Access::Key{Data::Value, "a"},
-                                 Access::Key<float>{Data::Variance, "a"}),
-      std::runtime_error, "Event-data fields have mismatching dimensions.");
+  EXPECT_THROW_MSG(EventListsProxy eventLists(
+                       d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                       Access::Key<std::vector<double>>{Data::Variance, "a"}),
+                   std::runtime_error,
+                   "Event-data fields have mismatching dimensions.");
 }
 
 TEST(EventListsProxy, create) {
   Dataset d;
-  d.insert<double>(Data::Value, "a", {Dim::X, 4}, {1, 2, 3, 4});
-  d.insert<float>(Data::Variance, "a", {Dim::X, 4}, {5, 6, 7, 8});
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
 
-  EventListsProxy eventLists(d, Access::Key{Data::Value, "a"},
-                             Access::Key<float>{Data::Variance, "a"});
+  EventListsProxy eventLists(
+      d, Access::Key<std::vector<double>>{Data::Value, "a"},
+      Access::Key<std::vector<double>>{Data::Variance, "a"});
+}
+
+TEST(EventListsProxy, item_access) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+
+  EventListsProxy eventLists(
+      d, Access::Key<std::vector<double>>{Data::Value, "a"},
+      Access::Key<std::vector<double>>{Data::Variance, "a"});
+
+  ASSERT_EQ(eventLists.size(), 4);
+  auto events = *eventLists.begin();
+  events.push_back(1.0, 2.0);
+  EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[0].size(), 1ul);
+  EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[1].size(), 0ul);
 }
