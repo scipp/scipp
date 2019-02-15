@@ -93,9 +93,21 @@ TEST(EventListsProxy, missing_field) {
 
   EXPECT_THROW_MSG(
       EventListsProxy eventLists(d, Access::Key{Data::Value, "a"},
-                                 Access::Key<float>{Data::Value, "b"}),
+                                 Access::Key<float>{Data::Variance, "b"}),
       std::runtime_error,
-      "Dataset does not contain the requested event-data fields.");
+      "Dataset with 2 variables, could not find variable with tag "
+      "Data::Variance and name `b`.");
+}
+
+TEST(EventListsProxy, dimension_mismatch) {
+  Dataset d;
+  d.insert<double>(Data::Value, "a", {Dim::X, 4}, {1, 2, 3, 4});
+  d.insert<float>(Data::Variance, "a", {}, {5});
+
+  EXPECT_THROW_MSG(
+      EventListsProxy eventLists(d, Access::Key{Data::Value, "a"},
+                                 Access::Key<float>{Data::Variance, "a"}),
+      std::runtime_error, "Event-data fields have mismatching dimensions.");
 }
 
 TEST(EventListsProxy, create) {
@@ -104,5 +116,5 @@ TEST(EventListsProxy, create) {
   d.insert<float>(Data::Variance, "a", {Dim::X, 4}, {5, 6, 7, 8});
 
   EventListsProxy eventLists(d, Access::Key{Data::Value, "a"},
-                             Access::Key<float>{Data::Value, "a"});
+                             Access::Key<float>{Data::Variance, "a"});
 }

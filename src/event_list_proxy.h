@@ -114,15 +114,25 @@ template <class... Keys>
 class EventListsProxy {
 public:
   EventListsProxy(Dataset &dataset, const Keys &... keys)
-      : m_dataset(&dataset) {
-    // All requested keys must be present in the dataset.
-    if (!(dataset.contains(keys.tag, keys.name) && ...))
+      : m_dataset(&dataset), m_keys(keys...),
+        m_data(dataset.span<typename Keys::type>(keys.tag, keys.name)...) {
+    // All requested keys must have same dimensions. This restriction could be
+    // dropped for const access.
+    const auto &dims =
+        dataset(std::get<0>(m_keys).tag, std::get<0>(m_keys).name).dimensions();
+    if (((dims != dataset(keys.tag, keys.name).dimensions()) || ...))
       throw std::runtime_error(
-          "Dataset does not contain the requested event-data fields.");
+          "Event-data fields have mismatching dimensions.");
+    // TODO This is a mutable proxy, therefore we must ensure that all fields
+    // from a group are included, otherwise push_back must be prevented.
   }
+
+  gsl::index size() const { return std::get<0>(m_data).size(); }
 
 private:
   Dataset *m_dataset;
+  std::tuple<Keys...> m_keys;
+  std::tuple<gsl::span<typename Keys::type>...> m_data;
 };
 
 // TODO Rename to ConstEventListProxy and add EventListProxy, inheriting from
