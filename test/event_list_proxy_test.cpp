@@ -85,3 +85,24 @@ TEST(EventListProxy, push_back_duplicate_broken) {
   // b is now longer than a, we view the wrong element.
   EXPECT_EQ(std::get<2>(*(proxy.begin() + 3)), 4);
 }
+
+TEST(EventListsProxy, missing_field) {
+  Dataset d;
+  d.insert<double>(Data::Value, "a", {Dim::X, 4}, {1, 2, 3, 4});
+  d.insert<float>(Data::Variance, "a", {Dim::X, 4}, {5, 6, 7, 8});
+
+  EXPECT_THROW_MSG(
+      EventListsProxy eventLists(d, Access::Write<double>(Data::Value, "a"),
+                                 Access::Write<float>(Data::Value, "b")),
+      std::runtime_error,
+      "Dataset does not contain the requested event-data fields.");
+}
+
+TEST(EventListsProxy, create) {
+  Dataset d;
+  d.insert<double>(Data::Value, "a", {Dim::X, 4}, {1, 2, 3, 4});
+  d.insert<float>(Data::Variance, "a", {Dim::X, 4}, {5, 6, 7, 8});
+
+  EventListsProxy eventLists(d, Access::Write<double>(Data::Value, "a"),
+                             Access::Write<float>(Data::Value, "a"));
+}

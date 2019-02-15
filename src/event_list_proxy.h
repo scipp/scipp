@@ -87,6 +87,41 @@ private:
   std::tuple<Fields *...> m_fields;
 };
 
+struct Access {
+  template <class T> struct Key {
+    using type = T;
+    const Tag tag;
+    const std::string name;
+  };
+
+  template <class T>
+  static auto Read(const Tag tag, const std::string &name = "") {
+    return Key<const T>{tag, name};
+  }
+  template <class T>
+  static auto Write(const Tag tag, const std::string &name = "") {
+    return Key<T>{tag, name};
+  }
+};
+
+/// Note the plural in the name. This is a proxy for *all* event lists in a
+/// dataset, i.e., this is a list of event lists. Each item returned by this
+/// proxy if an EventListProxy, i.e., represents a single event list.
+template <class... Keys>
+class EventListsProxy {
+public:
+  EventListsProxy(Dataset &dataset, const Keys &... keys)
+      : m_dataset(&dataset) {
+    // All requested keys must be present in the dataset.
+    if (!(dataset.contains(keys.tag, keys.name) && ...))
+      throw std::runtime_error(
+          "Dataset does not contain the requested event-data fields.");
+  }
+
+private:
+  Dataset *m_dataset;
+};
+
 // TODO Rename to ConstEventListProxy and add EventListProxy, inheriting from
 // ConstEventListProxy.
 class EventListProxy2 {
