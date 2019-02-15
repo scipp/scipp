@@ -11,8 +11,7 @@
 #include "dataset.h"
 #include "zip_view.h"
 
-template <class... Fields>
-class ConstEventListProxy {
+template <class... Fields> class ConstEventListProxy {
 public:
   ConstEventListProxy(const Fields &... fields) : m_fields(&fields...) {}
 
@@ -53,11 +52,33 @@ public:
                   "Wrong number of fields in push_back.");
     doPushBack<Ts...>(values..., std::make_index_sequence<sizeof...(Ts)>{});
   }
+  template <class... Ts>
+  void push_back(const ranges::v3::common_pair<Ts &...> &values) const {
+    static_assert(sizeof...(Fields) == sizeof...(Ts),
+                  "Wrong number of fields in push_back.");
+    doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
+  }
+  template <class... Ts>
+  void push_back(const ranges::v3::common_tuple<Ts &...> &values) const {
+    static_assert(sizeof...(Fields) == sizeof...(Ts),
+                  "Wrong number of fields in push_back.");
+    doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
+  }
 
 private:
   template <class... Ts, size_t... Is>
   void doPushBack(const Ts &... values, std::index_sequence<Is...>) const {
     (std::get<Is>(m_fields)->push_back(values), ...);
+  }
+  template <class... Ts, size_t... Is>
+  void doPushBack(const ranges::v3::common_pair<Ts &...> &values,
+                  std::index_sequence<Is...>) const {
+    (std::get<Is>(m_fields)->push_back(std::get<Is>(values)), ...);
+  }
+  template <class... Ts, size_t... Is>
+  void doPushBack(const ranges::v3::common_tuple<Ts &...> &values,
+                  std::index_sequence<Is...>) const {
+    (std::get<Is>(m_fields)->push_back(std::get<Is>(values)), ...);
   }
 
   std::tuple<Fields *...> m_fields;
@@ -70,7 +91,7 @@ public:
   // TODO Fix ZipView to work with const Dataset, or use something else here.
   EventListProxy2(Dataset &dataset) : m_dataset(&dataset) {}
   EventListProxy2(const typename Data::EventTofs_t::type &tofs,
-                 const typename Data::EventPulseTimes_t::type &pulseTimes)
+                  const typename Data::EventPulseTimes_t::type &pulseTimes)
       : m_tofs(&tofs), m_pulseTimes(&pulseTimes) {
     if (tofs.size() != pulseTimes.size())
       throw std::runtime_error("Size mismatch for fields of event list.");
