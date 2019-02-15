@@ -95,4 +95,173 @@ void swap(typename ZipView<Tags...>::Item &a,
   a.swap(b);
 }
 
+
+// TODO The item type (event type) is a tuple of references, which is not
+// convenient for clients. For common cases we should have a wrapper with named
+// getters. We can wrap this in `begin()` and `end()` using
+// boost::make_transform_iterator.
+template <class... Fields> class ConstEventListProxy {
+public:
+  ConstEventListProxy(const Fields &... fields) : m_fields(&fields...) {
+    if (((std::get<0>(m_fields)->size() != fields.size()) || ...))
+      throw std::runtime_error("Cannot zip data with mismatching length.");
+  }
+
+  template <size_t... Is> auto makeView(std::index_sequence<Is...>) const {
+    return ranges::view::zip(*std::get<Is>(m_fields)...);
+  }
+
+  auto begin() const {
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
+  }
+  auto end() const {
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
+  }
+
+private:
+  std::tuple<const Fields *...> m_fields;
+};
+
+template <class... Fields>
+class EventListProxy : public ConstEventListProxy<Fields...> {
+public:
+  EventListProxy(Fields &... fields)
+      : ConstEventListProxy<Fields...>(fields...), m_fields(&fields...) {}
+
+  template <size_t... Is> auto makeView(std::index_sequence<Is...>) const {
+    return ranges::view::zip(*std::get<Is>(m_fields)...);
+  }
+
+  auto begin() const {
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
+  }
+  auto end() const {
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
+  }
+
+  template <class... Ts> void push_back(const Ts &... values) const {
+    static_assert(sizeof...(Fields) == sizeof...(Ts),
+                  "Wrong number of fields in push_back.");
+    doPushBack<Ts...>(values..., std::make_index_sequence<sizeof...(Ts)>{});
+  }
+  template <class... Ts>
+  void push_back(const ranges::v3::common_pair<Ts &...> &values) const {
+    static_assert(sizeof...(Fields) == sizeof...(Ts),
+                  "Wrong number of fields in push_back.");
+    doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
+  }
+  template <class... Ts>
+  void push_back(const ranges::v3::common_tuple<Ts &...> &values) const {
+    static_assert(sizeof...(Fields) == sizeof...(Ts),
+                  "Wrong number of fields in push_back.");
+    doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
+  }
+
+private:
+  template <class... Ts, size_t... Is>
+  void doPushBack(const Ts &... values, std::index_sequence<Is...>) const {
+    (std::get<Is>(m_fields)->push_back(values), ...);
+  }
+  template <class... Ts, size_t... Is>
+  void doPushBack(const ranges::v3::common_pair<Ts &...> &values,
+                  std::index_sequence<Is...>) const {
+    (std::get<Is>(m_fields)->push_back(std::get<Is>(values)), ...);
+  }
+  template <class... Ts, size_t... Is>
+  void doPushBack(const ranges::v3::common_tuple<Ts &...> &values,
+                  std::index_sequence<Is...>) const {
+    (std::get<Is>(m_fields)->push_back(std::get<Is>(values)), ...);
+  }
+
+  std::tuple<Fields *...> m_fields;
+};
+
+namespace Access {
+  template <class T> struct Key {
+    Key(const Tag tag, const std::string &name = "") : tag(tag), name(name) {}
+    using type = T;
+    const Tag tag;
+    const std::string name;
+  };
+  template <class TagT>
+  Key(const TagT tag, const std::string &name = "")->Key<typename TagT::type>;
+
+  template <class T>
+  static auto Read(const Tag tag, const std::string &name = "") {
+    return Key<const T>{tag, name};
+  }
+  template <class T>
+  static auto Write(const Tag tag, const std::string &name = "") {
+    return Key<T>{tag, name};
+  }
+};
+
+template <class T, size_t... Is>
+constexpr auto doMakeEventListProxy(const T &item,
+                                    std::index_sequence<Is...>) noexcept {
+  return EventListProxy(std::get<Is>(item)...);
+}
+
+template <class... Keys> struct ItemProxy {
+  template <class T> static constexpr auto get(const T &item) noexcept {
+    return item;
+  }
+};
+
+template <class Key> struct ItemProxy<Key> {
+  template <class T> static constexpr auto &get(const T &item) noexcept {
+    return std::get<0>(item);
+  }
+};
+
+template <class... Ts> struct ItemProxy<Access::Key<std::vector<Ts>>...> {
+  template <class T> static constexpr auto &get(const T &item) noexcept {
+    return std::get<0>(item);
+  }
+};
+
+template <class... Keys>
+class VariableZipProxy {
+private:
+  using type = decltype(
+      ranges::view::zip(std::declval<gsl::span<typename Keys::type>>()...));
+  using item_type = decltype(std::declval<type>()[0]);
+
+  // Helper lambdas for creating iterators.
+  static constexpr auto makeEventListProxy = [](const item_type &item) {
+    return doMakeEventListProxy(item,
+                                std::make_index_sequence<sizeof...(Keys)>{});
+  };
+
+public:
+  VariableZipProxy(Dataset &dataset, const Keys &... keys)
+      : m_view(ranges::view::zip(
+            dataset.span<typename Keys::type>(keys.tag, keys.name)...)) {
+    // All requested keys must have same dimensions. This restriction could be
+    // dropped for const access.
+    const auto &key0 = std::get<0>(std::tuple<const Keys &...>(keys...));
+    const auto &dims = dataset(key0.tag, key0.name).dimensions();
+    if (((dims != dataset(keys.tag, keys.name).dimensions()) || ...))
+      throw std::runtime_error("Variables to be zipped have mismatching "
+                               "dimensions, use `zipMD()` instead.");
+    // TODO This is a mutable proxy, therefore we must ensure that all fields
+    // from a group are included, otherwise push_back must be prevented.
+  }
+
+  gsl::index size() const { return m_view.size(); }
+  auto begin() const {
+    return boost::make_transform_iterator(m_view.begin(), makeEventListProxy);
+  }
+  auto end() const {
+    return boost::make_transform_iterator(m_view.end(), makeEventListProxy);
+  }
+
+private:
+  type m_view;
+};
+
+template <class... Keys> auto zip(Dataset &dataset, const Keys &... keys) {
+  return VariableZipProxy<Keys...>(dataset, keys...);
+}
+
 #endif // ZIP_VIEW_H

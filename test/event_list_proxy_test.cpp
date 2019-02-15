@@ -91,8 +91,7 @@ TEST(EventListsProxy, missing_field) {
   d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
   d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
 
-  EXPECT_THROW_MSG(EventListsProxy eventLists(
-                       d, Access::Key<std::vector<double>>{Data::Value, "a"},
+  EXPECT_THROW_MSG(zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
                        Access::Key<std::vector<double>>{Data::Variance, "b"}),
                    std::runtime_error,
                    "Dataset with 2 variables, could not find variable with tag "
@@ -104,11 +103,11 @@ TEST(EventListsProxy, dimension_mismatch) {
   d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
   d.insert<std::vector<double>>(Data::Variance, "a", {}, {5});
 
-  EXPECT_THROW_MSG(EventListsProxy eventLists(
-                       d, Access::Key<std::vector<double>>{Data::Value, "a"},
+  EXPECT_THROW_MSG(zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
                        Access::Key<std::vector<double>>{Data::Variance, "a"}),
                    std::runtime_error,
-                   "Event-data fields have mismatching dimensions.");
+                   "Variables to be zipped have mismatching dimensions, use "
+                   "`zipMD()` instead.");
 }
 
 TEST(EventListsProxy, create) {
@@ -116,9 +115,8 @@ TEST(EventListsProxy, create) {
   d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
   d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
 
-  EventListsProxy eventLists(
-      d, Access::Key<std::vector<double>>{Data::Value, "a"},
-      Access::Key<std::vector<double>>{Data::Variance, "a"});
+  EXPECT_NO_THROW(zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                      Access::Key<std::vector<double>>{Data::Variance, "a"}));
 }
 
 TEST(EventListsProxy, item_access) {
@@ -126,9 +124,8 @@ TEST(EventListsProxy, item_access) {
   d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
   d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
 
-  EventListsProxy eventLists(
-      d, Access::Key<std::vector<double>>{Data::Value, "a"},
-      Access::Key<std::vector<double>>{Data::Variance, "a"});
+  auto eventLists = zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                        Access::Key<std::vector<double>>{Data::Variance, "a"});
 
   ASSERT_EQ(eventLists.size(), 4);
   auto events = *eventLists.begin();

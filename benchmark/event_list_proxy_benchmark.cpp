@@ -47,8 +47,8 @@ static void BM_EventListProxy_push_back(benchmark::State &state) {
     gsl::index nSpec = 100000;
     d.insert(Data::EventTofs, "a", {Dim::X, nSpec});
     d.insert(Data::EventPulseTimes, "a", {Dim::X, nSpec});
-    EventListsProxy eventLists(d, Access::Key{Data::EventTofs, "a"},
-                               Access::Key{Data::EventPulseTimes, "a"});
+    auto eventLists = zip(d, Access::Key{Data::EventTofs, "a"},
+                          Access::Key{Data::EventPulseTimes, "a"});
     for (const auto &eventList : eventLists) {
       const gsl::index count = dist(mt);
       totalCount += count;
@@ -71,8 +71,8 @@ static void BM_EventListProxy_read_baseline(benchmark::State &state) {
   gsl::index nSpec = 100000;
   d.insert(Data::EventTofs, "a", {Dim::X, nSpec});
   d.insert(Data::EventPulseTimes, "a", {Dim::X, nSpec});
-  EventListsProxy eventLists(d, Access::Key{Data::EventTofs, "a"},
-                             Access::Key{Data::EventPulseTimes, "a"});
+  auto eventLists = zip(d, Access::Key{Data::EventTofs, "a"},
+                        Access::Key{Data::EventPulseTimes, "a"});
   for (const auto &eventList : eventLists) {
     const gsl::index count = dist(mt);
     totalCount += count;
@@ -109,8 +109,8 @@ static void BM_EventListProxy_read(benchmark::State &state) {
   gsl::index nSpec = 100000;
   d.insert(Data::EventTofs, "a", {Dim::X, nSpec});
   d.insert(Data::EventPulseTimes, "a", {Dim::X, nSpec});
-  EventListsProxy eventLists(d, Access::Key{Data::EventTofs, "a"},
-                             Access::Key{Data::EventPulseTimes, "a"});
+  auto eventLists = zip(d, Access::Key{Data::EventTofs, "a"},
+                        Access::Key{Data::EventPulseTimes, "a"});
   for (const auto &eventList : eventLists) {
     const gsl::index count = dist(mt);
     totalCount += count;
@@ -121,8 +121,8 @@ static void BM_EventListProxy_read(benchmark::State &state) {
   double tof = 0.0;
   double pulseTime = 0.0;
   for (auto _ : state) {
-    EventListsProxy eventLists(d, Access::Key{Data::EventTofs, "a"},
-                               Access::Key{Data::EventPulseTimes, "a"});
+    auto eventLists = zip(d, Access::Key{Data::EventTofs, "a"},
+                          Access::Key{Data::EventPulseTimes, "a"});
     for (const auto &eventList : eventLists) {
       for (const auto &event : eventList) {
         tof += std::get<0>(event);
