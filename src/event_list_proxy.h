@@ -130,13 +130,12 @@ private:
 
 public:
   EventListsProxy(Dataset &dataset, const Keys &... keys)
-      : m_dataset(&dataset), m_keys(keys...),
-        m_view(ranges::view::zip(
+      : m_view(ranges::view::zip(
             dataset.span<typename Keys::type>(keys.tag, keys.name)...)) {
     // All requested keys must have same dimensions. This restriction could be
     // dropped for const access.
-    const auto &dims =
-        dataset(std::get<0>(m_keys).tag, std::get<0>(m_keys).name).dimensions();
+    const auto &key0 = std::get<0>(std::tuple<const Keys &...>(keys...));
+    const auto &dims = dataset(key0.tag, key0.name).dimensions();
     if (((dims != dataset(keys.tag, keys.name).dimensions()) || ...))
       throw std::runtime_error(
           "Event-data fields have mismatching dimensions.");
@@ -153,10 +152,7 @@ public:
   }
 
 private:
-  Dataset *m_dataset;
-  std::tuple<Keys...> m_keys;
-  decltype(ranges::view::zip(
-      std::declval<gsl::span<typename Keys::type>>()...)) m_view;
+  type m_view;
 };
 
 // TODO Rename to ConstEventListProxy and add EventListProxy, inheriting from
