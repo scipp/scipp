@@ -11,13 +11,52 @@
 #include "dataset.h"
 #include "zip_view.h"
 
+template <class... Fields>
+class ConstEventListProxy {
+public:
+  ConstEventListProxy(const Fields &... fields)
+      : m_view(ranges::view::zip(fields...)) {}
+
+  auto begin() const { return m_view.begin(); }
+  auto end() const { return m_view.end(); }
+
+private:
+  decltype(ranges::view::zip(std::declval<const Fields &>()...)) m_view;
+};
+
+template <class... Fields>
+class EventListProxy : public ConstEventListProxy<Fields...> {
+public:
+  EventListProxy(Fields &... fields)
+      : ConstEventListProxy<Fields...>(fields...),
+        m_mutableView(ranges::view::zip(fields...)), m_fields(&fields...) {}
+
+  auto begin() const { return m_mutableView.begin(); }
+  auto end() const { return m_mutableView.end(); }
+
+  template <class... Ts> void push_back(const Ts &... values) const {
+    static_assert(sizeof...(Fields) == sizeof...(Ts),
+                  "Wrong number of fields in push_back.");
+    doPushBack<Ts...>(values..., std::make_index_sequence<sizeof...(Ts)>{});
+  }
+
+private:
+  template <class... Ts, size_t... Is>
+  void doPushBack(const Ts &... values, std::index_sequence<Is...>) const {
+    (std::get<Is>(m_fields)->push_back(values), ...);
+  }
+
+  decltype(ranges::view::zip(std::declval<Fields &>()...)) m_mutableView;
+  std::tuple<Fields *...> m_fields;
+};
+
 // TODO Rename to ConstEventListProxy and add EventListProxy, inheriting from
 // ConstEventListProxy.
-class EventListProxy {
+class EventListProxy2 {
 public:
   // TODO Fix ZipView to work with const Dataset, or use something else here.
-  EventListProxy(Dataset &dataset) : m_dataset(&dataset) {}
-  EventListProxy(const typename Data::EventTofs_t::type &tofs,
+  EventListProxy2(Dataset &dataset) : m_dataset(&dataset) {}
+  EventListProxy2(const typename Data::EventTofs_t::type &tofs,
                  const typename Data::EventPulseTimes_t::type &pulseTimes)
       : m_tofs(&tofs), m_pulseTimes(&pulseTimes) {
     if (tofs.size() != pulseTimes.size())

@@ -2,7 +2,25 @@
 # @author Simon Heybrock
 # Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 # National Laboratory, and European Spallation Source ERIC.
-add_executable ( dataset_test tags_test.cpp dataset_test.cpp md_zip_view_test.cpp variable_test.cpp variable_view_test.cpp dimensions_test.cpp unit_test.cpp multi_index_test.cpp TableWorkspace_test.cpp Workspace2D_test.cpp EventWorkspace_test.cpp zip_view_test.cpp Run_test.cpp except_test.cpp example_instrument_test.cpp bool_test.cpp )
+add_executable ( dataset_test
+  bool_test.cpp
+  dataset_test.cpp
+  dimensions_test.cpp
+  event_list_proxy_test.cpp
+  EventWorkspace_test.cpp
+  example_instrument_test.cpp
+  except_test.cpp
+  md_zip_view_test.cpp
+  multi_index_test.cpp
+  Run_test.cpp
+  TableWorkspace_test.cpp
+  tags_test.cpp
+  unit_test.cpp
+  variable_test.cpp
+  variable_view_test.cpp
+  Workspace2D_test.cpp
+  zip_view_test.cpp
+  )
 target_link_libraries( dataset_test
   LINK_PRIVATE
   Dataset
