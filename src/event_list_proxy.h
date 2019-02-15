@@ -13,7 +13,10 @@
 
 template <class... Fields> class ConstEventListProxy {
 public:
-  ConstEventListProxy(const Fields &... fields) : m_fields(&fields...) {}
+  ConstEventListProxy(const Fields &... fields) : m_fields(&fields...) {
+    if (((std::get<0>(m_fields)->size() != fields.size()) || ...))
+      throw std::runtime_error("Cannot zip data with mismatching length.");
+  }
 
   template <size_t... Is> auto makeView(std::index_sequence<Is...>) const {
     return ranges::view::zip(*std::get<Is>(m_fields)...);

@@ -7,7 +7,23 @@
 
 #include <type_traits>
 
+#include "test_macros.h"
+
 #include "event_list_proxy.h"
+
+TEST(ConstEventListProxy, length_mismatch_fail) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2};
+  EXPECT_THROW_MSG(ConstEventListProxy x(a, b), std::runtime_error,
+                   "Cannot zip data with mismatching length.");
+}
+
+TEST(EventListProxy, length_mismatch_fail) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2};
+  EXPECT_THROW_MSG(EventListProxy x(a, b), std::runtime_error,
+                   "Cannot zip data with mismatching length.");
+}
 
 TEST(ConstEventListProxy, from_vectors) {
   std::vector<double> a{1.1, 2.2, 3.3};
