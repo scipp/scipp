@@ -731,18 +731,7 @@ template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
 }
 
 bool Variable::operator==(const Variable &other) const {
-  // Compare even before pointer comparison since data may be shared even if
-  // names differ.
-  if (name() != other.name())
-    return false;
-  if (unit() != other.unit())
-    return false;
-  // Deep comparison
-  if (tag() != other.tag())
-    return false;
-  if (!(dimensions() == other.dimensions()))
-    return false;
-  return data() == other.data();
+  return equals(*this, other);
 }
 
 bool Variable::operator==(const ConstVariableSlice &other) const {
