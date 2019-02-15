@@ -80,11 +80,11 @@ static void BM_EventListProxy_read_baseline(benchmark::State &state) {
       eventList.push_back(0.0, 0.0);
   }
 
+  double tof = 0.0;
+  double pulseTime = 0.0;
   for (auto _ : state) {
     const auto tofs = d.get(Data::EventTofs, "a");
     const auto pulseTimes = d.get(Data::EventPulseTimes, "a");
-    double tof = 0.0;
-    double pulseTime = 0.0;
     for (gsl::index i = 0; i < tofs.size(); ++i) {
       for (size_t j = 0; j < tofs[i].size(); ++j) {
         tof += tofs[i][j];
@@ -92,8 +92,10 @@ static void BM_EventListProxy_read_baseline(benchmark::State &state) {
       }
     }
   }
+  benchmark::DoNotOptimize(tof + pulseTime);
 
   state.SetItemsProcessed(state.iterations() * totalCount);
+  state.SetBytesProcessed(state.iterations() * totalCount * 2 * sizeof(double));
 }
 BENCHMARK(BM_EventListProxy_read_baseline);
 
@@ -116,11 +118,11 @@ static void BM_EventListProxy_read(benchmark::State &state) {
       eventList.push_back(0.0, 0.0);
   }
 
+  double tof = 0.0;
+  double pulseTime = 0.0;
   for (auto _ : state) {
     EventListsProxy eventLists(d, Access::Key{Data::EventTofs, "a"},
                                Access::Key{Data::EventPulseTimes, "a"});
-    double tof = 0.0;
-    double pulseTime = 0.0;
     for (const auto &eventList : eventLists) {
       for (const auto &event : eventList) {
         tof += std::get<0>(event);
@@ -128,8 +130,10 @@ static void BM_EventListProxy_read(benchmark::State &state) {
       }
     }
   }
+  benchmark::DoNotOptimize(tof + pulseTime);
 
   state.SetItemsProcessed(state.iterations() * totalCount);
+  state.SetBytesProcessed(state.iterations() * totalCount * 2 * sizeof(double));
 }
 BENCHMARK(BM_EventListProxy_read);
 
