@@ -224,3 +224,39 @@ TEST(ZipView, iterator_sort) {
 
   EXPECT_TRUE(equals(d.get(Coord::X), {0.0, 1.0, 2.0, 3.0}));
 }
+
+TEST(Zip, single_scalar_item) {
+  Dataset d;
+  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 3, 4});
+
+  auto zipped = zip(d, Access::Key(Coord::X));
+
+  EXPECT_EQ(zipped.size(), 4);
+  auto it = zipped.begin();
+  EXPECT_EQ(*it, 1.0);
+  *it += 1.0;
+  EXPECT_EQ(*it++, 2.0);
+  EXPECT_EQ(*it++, 2.0);
+  EXPECT_EQ(*it++, 3.0);
+  EXPECT_EQ(*it++, 4.0);
+}
+
+TEST(Zip, multiple_scalar_items) {
+  Dataset d;
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value, "b", {Dim::X, 2}, {3, 4});
+
+  auto zipped =
+      zip(d, Access::Key(Data::Value, "a"), Access::Key(Data::Value, "b"));
+
+  EXPECT_EQ(zipped.size(), 2);
+  auto it = zipped.begin();
+  EXPECT_EQ(std::get<0>(*it), 1.0);
+  EXPECT_EQ(std::get<1>(*it), 3.0);
+  std::get<0>(*it) += 1.0;
+  EXPECT_EQ(std::get<0>(*it), 2.0);
+  EXPECT_EQ(std::get<1>(*it), 3.0);
+  ++it;
+  EXPECT_EQ(std::get<0>(*it), 2.0);
+  EXPECT_EQ(std::get<1>(*it), 4.0);
+}

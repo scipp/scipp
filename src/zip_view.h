@@ -95,7 +95,6 @@ void swap(typename ZipView<Tags...>::Item &a,
   a.swap(b);
 }
 
-
 // TODO The item type (event type) is a tuple of references, which is not
 // convenient for clients. For common cases we should have a wrapper with named
 // getters. We can wrap this in `begin()` and `end()` using
@@ -177,24 +176,24 @@ private:
 };
 
 namespace Access {
-  template <class T> struct Key {
-    Key(const Tag tag, const std::string &name = "") : tag(tag), name(name) {}
-    using type = T;
-    const Tag tag;
-    const std::string name;
-  };
-  template <class TagT>
-  Key(const TagT tag, const std::string &name = "")->Key<typename TagT::type>;
-
-  template <class T>
-  static auto Read(const Tag tag, const std::string &name = "") {
-    return Key<const T>{tag, name};
-  }
-  template <class T>
-  static auto Write(const Tag tag, const std::string &name = "") {
-    return Key<T>{tag, name};
-  }
+template <class T> struct Key {
+  Key(const Tag tag, const std::string &name = "") : tag(tag), name(name) {}
+  using type = T;
+  const Tag tag;
+  const std::string name;
 };
+template <class TagT>
+Key(const TagT tag, const std::string &name = "")->Key<typename TagT::type>;
+
+template <class T>
+static auto Read(const Tag tag, const std::string &name = "") {
+  return Key<const T>{tag, name};
+}
+template <class T>
+static auto Write(const Tag tag, const std::string &name = "") {
+  return Key<T>{tag, name};
+}
+}; // namespace Access
 
 template <class T, size_t... Is>
 constexpr auto doMakeEventListProxy(const T &item,
@@ -203,35 +202,49 @@ constexpr auto doMakeEventListProxy(const T &item,
 }
 
 template <class... Keys> struct ItemProxy {
-  template <class T> static constexpr auto get(const T &item) noexcept {
-    return item;
-  }
+  using type = decltype(
+      ranges::view::zip(std::declval<gsl::span<typename Keys::type>>()...));
+  using item_type = decltype(std::declval<type>()[0]);
+  static constexpr auto get(const item_type &item) noexcept { return item; }
 };
 
 template <class Key> struct ItemProxy<Key> {
-  template <class T> static constexpr auto &get(const T &item) noexcept {
+  using type = decltype(
+      ranges::view::zip(std::declval<gsl::span<typename Key::type>>()));
+  using item_type = decltype(std::declval<type>()[0]);
+  static constexpr auto &get(const item_type &item) noexcept {
     return std::get<0>(item);
   }
 };
 
 template <class... Ts> struct ItemProxy<Access::Key<std::vector<Ts>>...> {
-  template <class T> static constexpr auto &get(const T &item) noexcept {
-    return std::get<0>(item);
+  using type = decltype(ranges::view::zip(
+      std::declval<
+          gsl::span<typename Access::Key<std::vector<Ts>>::type>>()...));
+  using item_type = decltype(std::declval<type>()[0]);
+  static constexpr auto get(const item_type &item) noexcept {
+    return doMakeEventListProxy(item,
+                                std::make_index_sequence<sizeof...(Ts)>{});
   }
 };
 
-template <class... Keys>
-class VariableZipProxy {
+template <class... Ts>
+struct ItemProxy<Access::Key<boost::container::small_vector<Ts, 8>>...> {
+  using type = decltype(ranges::view::zip(
+      std::declval<gsl::span<typename Access::Key<
+          boost::container::small_vector<Ts, 8>>::type>>()...));
+  using item_type = decltype(std::declval<type>()[0]);
+  static constexpr auto get(const item_type &item) noexcept {
+    return doMakeEventListProxy(item,
+                                std::make_index_sequence<sizeof...(Ts)>{});
+  }
+};
+
+template <class... Keys> class VariableZipProxy {
 private:
   using type = decltype(
       ranges::view::zip(std::declval<gsl::span<typename Keys::type>>()...));
   using item_type = decltype(std::declval<type>()[0]);
-
-  // Helper lambdas for creating iterators.
-  static constexpr auto makeEventListProxy = [](const item_type &item) {
-    return doMakeEventListProxy(item,
-                                std::make_index_sequence<sizeof...(Keys)>{});
-  };
 
 public:
   VariableZipProxy(Dataset &dataset, const Keys &... keys)
@@ -250,10 +263,12 @@ public:
 
   gsl::index size() const { return m_view.size(); }
   auto begin() const {
-    return boost::make_transform_iterator(m_view.begin(), makeEventListProxy);
+    return boost::make_transform_iterator(m_view.begin(),
+                                          ItemProxy<Keys...>::get);
   }
   auto end() const {
-    return boost::make_transform_iterator(m_view.end(), makeEventListProxy);
+    return boost::make_transform_iterator(m_view.end(),
+                                          ItemProxy<Keys...>::get);
   }
 
 private:
