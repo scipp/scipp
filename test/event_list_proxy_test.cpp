@@ -32,6 +32,5 @@ TEST(EventListProxy, push_back) {
   std::vector<int32_t> b{1, 2, 3};
   EventListProxy proxy(a, b);
   proxy.push_back(4.4, 4);
-  // TODO push_back has invalidated the buffered view!
   EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
 }

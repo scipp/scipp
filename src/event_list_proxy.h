@@ -14,25 +14,39 @@
 template <class... Fields>
 class ConstEventListProxy {
 public:
-  ConstEventListProxy(const Fields &... fields)
-      : m_view(ranges::view::zip(fields...)) {}
+  ConstEventListProxy(const Fields &... fields) : m_fields(&fields...) {}
 
-  auto begin() const { return m_view.begin(); }
-  auto end() const { return m_view.end(); }
+  template <size_t... Is> auto makeView(std::index_sequence<Is...>) const {
+    return ranges::view::zip(*std::get<Is>(m_fields)...);
+  }
+
+  auto begin() const {
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
+  }
+  auto end() const {
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
+  }
 
 private:
-  decltype(ranges::view::zip(std::declval<const Fields &>()...)) m_view;
+  std::tuple<const Fields *...> m_fields;
 };
 
 template <class... Fields>
 class EventListProxy : public ConstEventListProxy<Fields...> {
 public:
   EventListProxy(Fields &... fields)
-      : ConstEventListProxy<Fields...>(fields...),
-        m_mutableView(ranges::view::zip(fields...)), m_fields(&fields...) {}
+      : ConstEventListProxy<Fields...>(fields...), m_fields(&fields...) {}
 
-  auto begin() const { return m_mutableView.begin(); }
-  auto end() const { return m_mutableView.end(); }
+  template <size_t... Is> auto makeView(std::index_sequence<Is...>) const {
+    return ranges::view::zip(*std::get<Is>(m_fields)...);
+  }
+
+  auto begin() const {
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
+  }
+  auto end() const {
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
+  }
 
   template <class... Ts> void push_back(const Ts &... values) const {
     static_assert(sizeof...(Fields) == sizeof...(Ts),
@@ -46,7 +60,6 @@ private:
     (std::get<Is>(m_fields)->push_back(values), ...);
   }
 
-  decltype(ranges::view::zip(std::declval<Fields &>()...)) m_mutableView;
   std::tuple<Fields *...> m_fields;
 };
 
