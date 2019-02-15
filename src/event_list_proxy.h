@@ -11,6 +11,10 @@
 #include "dataset.h"
 #include "zip_view.h"
 
+// TODO The item type (event type) is a tuple of references, which is not
+// convenient for clients. For common cases we should have a wrapper with named
+// getters. We can wrap this in `begin()` and `end()` using
+// boost::make_transform_iterator.
 template <class... Fields> class ConstEventListProxy {
 public:
   ConstEventListProxy(const Fields &... fields) : m_fields(&fields...) {
