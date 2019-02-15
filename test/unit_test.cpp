@@ -49,7 +49,11 @@ TEST(Unit, multiply) {
 TEST(Unit, multiply_counts) {
   Unit counts{Unit::Id::Counts};
   Unit none{Unit::Id::Dimensionless};
+  std::cout << "got to here 1" << std::endl;
   EXPECT_EQ(counts * counts, Unit::Id::CountsVariance);
+  std::cout << "got to here 2" << std::endl;
   EXPECT_EQ(counts * none, counts);
+  std::cout << "got to here 3" << std::endl;
   EXPECT_EQ(none * counts, counts);
+  std::cout << "got to here 4" << std::endl;
 }
