@@ -92,8 +92,8 @@ TEST(EventListsProxy, missing_field) {
   d.insert<float>(Data::Variance, "a", {Dim::X, 4}, {5, 6, 7, 8});
 
   EXPECT_THROW_MSG(
-      EventListsProxy eventLists(d, Access::Write<double>(Data::Value, "a"),
-                                 Access::Write<float>(Data::Value, "b")),
+      EventListsProxy eventLists(d, Access::Key{Data::Value, "a"},
+                                 Access::Key<float>{Data::Value, "b"}),
       std::runtime_error,
       "Dataset does not contain the requested event-data fields.");
 }
@@ -103,6 +103,6 @@ TEST(EventListsProxy, create) {
   d.insert<double>(Data::Value, "a", {Dim::X, 4}, {1, 2, 3, 4});
   d.insert<float>(Data::Variance, "a", {Dim::X, 4}, {5, 6, 7, 8});
 
-  EventListsProxy eventLists(d, Access::Write<double>(Data::Value, "a"),
-                             Access::Write<float>(Data::Value, "a"));
+  EventListsProxy eventLists(d, Access::Key{Data::Value, "a"},
+                             Access::Key<float>{Data::Value, "a"});
 }

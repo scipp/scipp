@@ -87,12 +87,15 @@ private:
   std::tuple<Fields *...> m_fields;
 };
 
-struct Access {
+namespace Access {
   template <class T> struct Key {
+    Key(const Tag tag, const std::string &name = "") : tag(tag), name(name) {}
     using type = T;
     const Tag tag;
     const std::string name;
   };
+  template <class TagT>
+  Key(const TagT tag, const std::string &name = "")->Key<typename TagT::type>;
 
   template <class T>
   static auto Read(const Tag tag, const std::string &name = "") {
