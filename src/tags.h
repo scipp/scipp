@@ -468,9 +468,9 @@ template <class D, class Tags> struct element_return_type<D, Bin<Tags>> {
   using type = DataBin;
 };
 
-class EventListProxy2;
+class EventListProxy;
 template <class D> struct element_return_type<D, Data::Events_t> {
-  using type = EventListProxy2;
+  using type = EventListProxy;
 };
 
 template <class D, class... Ts> class MDZipViewImpl;

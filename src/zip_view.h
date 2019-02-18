@@ -45,7 +45,7 @@ template <class Tag1, class Tag2> struct AccessHelper<Tag1, Tag2> {
 // be used if that is not required, i.e., maybe we do *not* need `ConstZipView`
 // (if so, only for consistency?)?
 // TODO At this point this is mainly required for the (potentially deprecated)
-// EventListProxy2. Ideally it should be completely replaced by `zip` provided
+// EventListProxy. Ideally it should be completely replaced by `zip` provided
 // below.
 template <class... Tags> class ZipView {
 public:
