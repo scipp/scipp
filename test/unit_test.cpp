@@ -53,3 +53,29 @@ TEST(Unit, multiply_counts) {
   EXPECT_EQ(counts * none, counts);
   EXPECT_EQ(none * counts, counts);
 }
+
+TEST(Unit, conversion_factors) {
+  boost::units::quantity<datasetunits::wavelength> a(2.0 *
+                                                     datasetunits::lambdas);
+  boost::units::quantity<boost::units::si::length> b(3.0 *
+                                                     datasetunits::lambdas);
+  boost::units::quantity<datasetunits::wavelength> c(4.0 *
+                                                     boost::units::si::meters);
+  boost::units::quantity<boost::units::si::area> d(
+      5.0 * boost::units::si::meters * datasetunits::lambdas);
+  boost::units::quantity<datasetunits::energy> e = 6.0 * datasetunits::meV;
+  boost::units::quantity<boost::units::si::energy> f(7.0 * datasetunits::meV);
+  boost::units::quantity<boost::units::si::time> g(8.0 *
+                                                   datasetunits::microseconds);
+  boost::units::quantity<datasetunits::tof> h(9.0 * boost::units::si::seconds);
+  EXPECT_DOUBLE_EQ(a.value(), 2.0);
+  EXPECT_DOUBLE_EQ(b.value(), 3.0e-10);
+  EXPECT_DOUBLE_EQ(c.value(), 4.0e10);
+  EXPECT_DOUBLE_EQ(d.value(), 5.0e-10);
+  EXPECT_DOUBLE_EQ(e.value(), 6.0);
+  EXPECT_DOUBLE_EQ(f.value(),
+                   7.0e-3 *
+                       boost::units::si::constants::codata::e.value().value());
+  EXPECT_DOUBLE_EQ(g.value(), 8.0e-6);
+  EXPECT_DOUBLE_EQ(h.value(), 9.0e6);
+}

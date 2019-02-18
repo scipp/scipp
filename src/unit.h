@@ -51,6 +51,8 @@ BOOST_UNITS_STATIC_CONSTANT(lambda, wavelength);
 BOOST_UNITS_STATIC_CONSTANT(lambdas, wavelength);
 BOOST_UNITS_STATIC_CONSTANT(meV, energy);
 BOOST_UNITS_STATIC_CONSTANT(meVs, energy);
+BOOST_UNITS_STATIC_CONSTANT(microsecond, tof);
+BOOST_UNITS_STATIC_CONSTANT(microseconds, tof);
 
 } // namespace datasetunits
 
@@ -77,7 +79,6 @@ struct boost::units::base_unit_info<datasetunits::wavelength_base_unit> {
 template <>
 struct boost::units::base_unit_info<datasetunits::counts_base_unit> {
   static std::string name() { return "counts"; }
-  static std::string symbol() { return "CC"; }
 };
 
 template <>
@@ -150,7 +151,11 @@ public:
     AreaVariance,
     Counts,
     CountsVariance,
-    InverseLength
+    InverseLength,
+    Energy,
+    Wavelength,
+    Time,
+    Tof
   };
   // TODO should this be explicit?
   Unit() = default;

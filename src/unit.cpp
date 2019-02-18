@@ -39,6 +39,18 @@ Unit::Unit(const Unit::Id id) {
   case Unit::Id::InverseLength:
     m_unit = boost::units::si::dimensionless() / boost::units::si::length();
     break;
+  case Unit::Id::Energy:
+    m_unit = datasetunits::energy();
+    break;
+  case Unit::Id::Wavelength:
+    m_unit = datasetunits::wavelength();
+    break;
+  case Unit::Id::Time:
+    m_unit = boost::units::si::time();
+    break;
+  case Unit::Id::Tof:
+    m_unit = datasetunits::tof();
+    break;
   }
 }
 
@@ -64,6 +76,10 @@ Unit::Id Unit::id() const {
                              std::declval<boost::units::si::length>())) {
                    return Unit::Id::InverseLength;
                  },
+                 [](datasetunits::energy) { return Unit::Id::Energy; },
+                 [](datasetunits::wavelength) { return Unit::Id::Wavelength; },
+                 [](boost::units::si::time) { return Unit::Id::Time; },
+                 [](datasetunits::tof) { return Unit::Id::Tof; },
                  [](auto) -> Unit::Id {
                    throw std::runtime_error("Unit not yet implemented");
                  }},
