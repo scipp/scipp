@@ -22,7 +22,8 @@ class Variable;
 
 namespace dataset {
 std::string to_string(const Dim dim, const std::string separator = "::");
-std::string to_string(const Dimensions &dims);
+std::string to_string(const Dimensions &dims,
+                      const std::string separator = "::");
 std::string to_string(const Tag tag, const std::string separator = "::");
 std::string to_string(const Unit &unit, const std::string separator = "::");
 std::string to_string(const Variable &variable, std::string separator = "::");

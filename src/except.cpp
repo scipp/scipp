@@ -112,13 +112,13 @@ std::string do_to_string(const Unit &unit) {
 
 namespace dataset {
 
-std::string to_string(const Dimensions &dims) {
+std::string to_string(const Dimensions &dims, const std::string separator) {
   if (dims.empty())
     return "{}";
   std::string s = "{{";
   for (int32_t i = 0; i < dims.ndim(); ++i)
-    s += to_string(dims.labels()[i]) + ", " + std::to_string(dims.shape()[i]) +
-         "}, {";
+    s += to_string(dims.labels()[i], separator) + ", " +
+         std::to_string(dims.shape()[i]) + "}, {";
   s.resize(s.size() - 3);
   s += '}';
   return s;
@@ -156,7 +156,7 @@ std::string to_string_variable(const Dataset &dataset,
 std::string to_string(const Dataset &dataset, const std::string separator) {
   std::string s("Dataset with ");
   s += std::to_string(dataset.size()) + " variables";
-  s += "\nDimensions : " + to_string(dataset.dimensions());
+  s += "\nDimensions : " + to_string(dataset.dimensions(), separator);
   // The following is peformed to allow variables to be sorted into catagories
   // of coordinate, data and attribute as part of output
   auto coordIndexes =
