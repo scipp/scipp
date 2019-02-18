@@ -55,19 +55,19 @@ TEST(Unit, multiply_counts) {
 }
 
 TEST(Unit, conversion_factors) {
-  boost::units::quantity<datasetunits::wavelength> a(2.0 *
-                                                     datasetunits::lambdas);
+  boost::units::quantity<neutron::tof::wavelength> a(2.0 *
+                                                     neutron::tof::angstroms);
   boost::units::quantity<boost::units::si::length> b(3.0 *
-                                                     datasetunits::lambdas);
-  boost::units::quantity<datasetunits::wavelength> c(4.0 *
+                                                     neutron::tof::angstroms);
+  boost::units::quantity<neutron::tof::wavelength> c(4.0 *
                                                      boost::units::si::meters);
   boost::units::quantity<boost::units::si::area> d(
-      5.0 * boost::units::si::meters * datasetunits::lambdas);
-  boost::units::quantity<datasetunits::energy> e = 6.0 * datasetunits::meV;
-  boost::units::quantity<boost::units::si::energy> f(7.0 * datasetunits::meV);
+      5.0 * boost::units::si::meters * neutron::tof::angstroms);
+  boost::units::quantity<neutron::tof::energy> e = 6.0 * neutron::tof::meV;
+  boost::units::quantity<boost::units::si::energy> f(7.0 * neutron::tof::meV);
   boost::units::quantity<boost::units::si::time> g(8.0 *
-                                                   datasetunits::microseconds);
-  boost::units::quantity<datasetunits::tof> h(9.0 * boost::units::si::seconds);
+                                                   neutron::tof::microseconds);
+  boost::units::quantity<neutron::tof::tof> h(9.0 * boost::units::si::seconds);
   EXPECT_DOUBLE_EQ(a.value(), 2.0);
   EXPECT_DOUBLE_EQ(b.value(), 3.0e-10);
   EXPECT_DOUBLE_EQ(c.value(), 4.0e10);

@@ -13,7 +13,8 @@
 #include <boost/units/unit.hpp>
 #include <variant>
 
-namespace datasetunits {
+namespace neutron {
+namespace tof {
 
 // Base dimension of counts
 struct counts_base_dimension
@@ -47,50 +48,63 @@ typedef boost::units::unit<boost::units::energy_dimension, units_system> energy;
 typedef boost::units::unit<boost::units::time_dimension, units_system> tof;
 
 /// unit constants
-BOOST_UNITS_STATIC_CONSTANT(lambda, wavelength);
-BOOST_UNITS_STATIC_CONSTANT(lambdas, wavelength);
+BOOST_UNITS_STATIC_CONSTANT(angstrom, wavelength);
+BOOST_UNITS_STATIC_CONSTANT(angstroms, wavelength);
 BOOST_UNITS_STATIC_CONSTANT(meV, energy);
 BOOST_UNITS_STATIC_CONSTANT(meVs, energy);
 BOOST_UNITS_STATIC_CONSTANT(microsecond, tof);
 BOOST_UNITS_STATIC_CONSTANT(microseconds, tof);
 
-} // namespace datasetunits
+} // namespace tof
+} // namespace neutron
 
 // Define conversion factors: the conversion will work both ways with a single
 // macro
 
 // Convert angstroms to SI meters
-BOOST_UNITS_DEFINE_CONVERSION_FACTOR(datasetunits::wavelength_base_unit,
+BOOST_UNITS_DEFINE_CONVERSION_FACTOR(neutron::tof::wavelength_base_unit,
                                      boost::units::si::length, double, 1.0e-10);
 // Convert meV to SI Joule
 BOOST_UNITS_DEFINE_CONVERSION_FACTOR(
-    datasetunits::energy_base_unit, boost::units::si::energy, double,
+    neutron::tof::energy_base_unit, boost::units::si::energy, double,
     1.0e-3 * boost::units::si::constants::codata::e.value().value());
 // Convert tof microseconds to SI seconds
-BOOST_UNITS_DEFINE_CONVERSION_FACTOR(datasetunits::tof_base_unit,
+BOOST_UNITS_DEFINE_CONVERSION_FACTOR(neutron::tof::tof_base_unit,
                                      boost::units::si::time, double, 1.0e-6);
 
 template <>
-struct boost::units::base_unit_info<datasetunits::wavelength_base_unit> {
+struct boost::units::base_unit_info<neutron::tof::wavelength_base_unit> {
   static std::string name() { return "angstroms"; }
   static std::string symbol() { return "AA"; }
 };
 
 template <>
-struct boost::units::base_unit_info<datasetunits::counts_base_unit> {
+struct boost::units::base_unit_info<neutron::tof::counts_base_unit> {
   static std::string name() { return "counts"; }
 };
 
 template <>
-struct boost::units::base_unit_info<datasetunits::energy_base_unit> {
+struct boost::units::base_unit_info<neutron::tof::energy_base_unit> {
   static std::string name() { return "milli-electronvolt"; }
   static std::string symbol() { return "meV"; }
 };
 
-template <> struct boost::units::base_unit_info<datasetunits::tof_base_unit> {
+template <> struct boost::units::base_unit_info<neutron::tof::tof_base_unit> {
   static std::string name() { return "microseconds"; }
   static std::string symbol() { return "us"; }
 };
+
+namespace {
+boost::units::si::dimensionless none;
+boost::units::si::length m;
+boost::units::si::area m2;
+boost::units::si::time s;
+boost::units::si::mass kg;
+neutron::tof::counts counts;
+neutron::tof::wavelength lambda;
+neutron::tof::energy mev;
+neutron::tof::tof tof;
+} // namespace
 
 class Unit {
 public:
@@ -98,7 +112,7 @@ public:
   // Any unit that does not exist in the variant will either fail to compile or
   // throw a std::runtime_error during operations such as multiplication or
   // division.
-  // 
+  //
   // TODO: maybe it is possible to create a helper that will automatically
   // generate the squares for variance?
   // The following was attempted but did not succeed:
@@ -106,37 +120,20 @@ public:
   //  using type =
   //    std::variant<Ts..., decltype(std::declval<Ts>()*std::declval<Ts>())...>;
   //  };
-  typedef std::variant<
-      // Dimensionless [ ]
-      boost::units::si::dimensionless,
-      // Length [m]
-      boost::units::si::length,
-      // Area [m^2]
-      boost::units::si::area,
-      // Time [s]
-      boost::units::si::time,
-      // Mass [kg]
-      boost::units::si::mass,
-      // Counts [counts]
-      datasetunits::counts,
-      // InverseLength [m^-1]
-      decltype(std::declval<boost::units::si::dimensionless>() /
-               std::declval<boost::units::si::length>()),
-      // Wavelength [Angstroms]
-      datasetunits::wavelength,
-      // Energy [meV]
-      datasetunits::energy,
-      // Time of flight [microseconds]
-      datasetunits::tof,
-      // 1/time [s^-1]
-      decltype(std::declval<boost::units::si::dimensionless>() /
-               std::declval<boost::units::si::time>()),
-      // Area variance
-      decltype(std::declval<boost::units::si::area>() *
-               std::declval<boost::units::si::area>()),
-      // Counts variance
-      decltype(std::declval<datasetunits::counts>() *
-               std::declval<datasetunits::counts>())>
+  typedef std::variant<decltype(none),     // Dimensionless [ ]
+                       decltype(m),        // Length [m]
+                       decltype(m2),       // Area [m^2]
+                       decltype(s),        // Time [s]
+                       decltype(kg),       // Mass [kg]
+                       decltype(counts),   // Counts [counts]
+                       decltype(none / m), // InverseLength [m^-1]
+                       decltype(lambda),   // Wavelength [Angstroms]
+                       decltype(mev),      // Energy [meV]
+                       decltype(tof),      // Time of flight [microseconds]
+                       decltype(none / s), // 1/time [s^-1]
+                       decltype(m2 * m2),  // Area variance
+                       decltype(counts * counts) // Counts variance
+                       >
       unit_t;
 
   enum class Id : uint16_t {

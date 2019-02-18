@@ -31,25 +31,25 @@ Unit::Unit(const Unit::Id id) {
     m_unit = boost::units::si::area() * boost::units::si::area();
     break;
   case Unit::Id::Counts:
-    m_unit = datasetunits::counts();
+    m_unit = neutron::tof::counts();
     break;
   case Unit::Id::CountsVariance:
-    m_unit = datasetunits::counts() * datasetunits::counts();
+    m_unit = neutron::tof::counts() * neutron::tof::counts();
     break;
   case Unit::Id::InverseLength:
     m_unit = boost::units::si::dimensionless() / boost::units::si::length();
     break;
   case Unit::Id::Energy:
-    m_unit = datasetunits::energy();
+    m_unit = neutron::tof::energy();
     break;
   case Unit::Id::Wavelength:
-    m_unit = datasetunits::wavelength();
+    m_unit = neutron::tof::wavelength();
     break;
   case Unit::Id::Time:
     m_unit = boost::units::si::time();
     break;
   case Unit::Id::Tof:
-    m_unit = datasetunits::tof();
+    m_unit = neutron::tof::tof();
     break;
   case Unit::Id::Mass:
     m_unit = boost::units::si::mass();
@@ -70,19 +70,19 @@ Unit::Id Unit::id() const {
                              std::declval<boost::units::si::area>())) {
                    return Unit::Id::AreaVariance;
                  },
-                 [](datasetunits::counts) { return Unit::Id::Counts; },
-                 [](decltype(std::declval<datasetunits::counts>() *
-                             std::declval<datasetunits::counts>())) {
+                 [](neutron::tof::counts) { return Unit::Id::Counts; },
+                 [](decltype(std::declval<neutron::tof::counts>() *
+                             std::declval<neutron::tof::counts>())) {
                    return Unit::Id::CountsVariance;
                  },
                  [](decltype(std::declval<boost::units::si::dimensionless>() /
                              std::declval<boost::units::si::length>())) {
                    return Unit::Id::InverseLength;
                  },
-                 [](datasetunits::energy) { return Unit::Id::Energy; },
-                 [](datasetunits::wavelength) { return Unit::Id::Wavelength; },
+                 [](neutron::tof::energy) { return Unit::Id::Energy; },
+                 [](neutron::tof::wavelength) { return Unit::Id::Wavelength; },
                  [](boost::units::si::time) { return Unit::Id::Time; },
-                 [](datasetunits::tof) { return Unit::Id::Tof; },
+                 [](neutron::tof::tof) { return Unit::Id::Tof; },
                  [](boost::units::si::mass) { return Unit::Id::Mass; },
                  [](auto) -> Unit::Id {
                    throw std::runtime_error("Unit not yet implemented");
