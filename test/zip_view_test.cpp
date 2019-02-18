@@ -260,3 +260,23 @@ TEST(Zip, multiple_scalar_items) {
   EXPECT_EQ(std::get<0>(*it), 2.0);
   EXPECT_EQ(std::get<1>(*it), 4.0);
 }
+
+TEST(Zip, const_multiple_scalar_items) {
+  Dataset d;
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value, "b", {Dim::X, 2}, {3, 4});
+  const auto const_d(d);
+
+  auto zipped = zip(const_d, Access::Key(Data::Value, "a"),
+                    Access::Key(Data::Value, "b"));
+
+  EXPECT_EQ(zipped.size(), 2);
+  auto it = zipped.begin();
+  EXPECT_EQ(std::get<0>(*it), 1.0);
+  EXPECT_EQ(std::get<1>(*it), 3.0);
+  // Modification not possible in this case.
+  // std::get<0>(*it) += 1.0;
+  ++it;
+  EXPECT_EQ(std::get<0>(*it), 2.0);
+  EXPECT_EQ(std::get<1>(*it), 4.0);
+}

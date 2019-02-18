@@ -227,16 +227,16 @@ struct ItemProxy<T, Access::Key<boost::container::small_vector<Ts, 8>>...> {
   }
 };
 
-template <class... Keys> class VariableZipProxy {
+template <class D, class... Keys> class VariableZipProxy {
 private:
-  using type = decltype(
-      ranges::view::zip(std::declval<gsl::span<typename Keys::type>>()...));
+  using type = decltype(ranges::view::zip(
+      std::declval<D &>().template span<typename Keys::type>(Tag{})...));
   using item_type = decltype(std::declval<type>()[0]);
 
 public:
-  VariableZipProxy(Dataset &dataset, const Keys &... keys)
-      : m_view(ranges::view::zip(
-            dataset.span<typename Keys::type>(keys.tag, keys.name)...)) {
+  VariableZipProxy(D &dataset, const Keys &... keys)
+      : m_view(ranges::view::zip(dataset.template span<typename Keys::type>(
+            keys.tag, keys.name)...)) {
     // All requested keys must have same dimensions. This restriction could be
     // dropped for const access.
     const auto &key0 = std::get<0>(std::tuple<const Keys &...>(keys...));
@@ -263,7 +263,11 @@ private:
 };
 
 template <class... Keys> auto zip(Dataset &dataset, const Keys &... keys) {
-  return VariableZipProxy<Keys...>(dataset, keys...);
+  return VariableZipProxy<Dataset, Keys...>(dataset, keys...);
+}
+template <class... Keys>
+auto zip(const Dataset &dataset, const Keys &... keys) {
+  return VariableZipProxy<const Dataset, Keys...>(dataset, keys...);
 }
 
 #endif // ZIP_VIEW_H
