@@ -201,40 +201,27 @@ constexpr auto doMakeEventListProxy(const T &item,
   return EventListProxy(std::get<Is>(item)...);
 }
 
-template <class... Keys> struct ItemProxy {
-  using type = decltype(
-      ranges::view::zip(std::declval<gsl::span<typename Keys::type>>()...));
-  using item_type = decltype(std::declval<type>()[0]);
-  static constexpr auto get(const item_type &item) noexcept { return item; }
+template <class T, class... Keys> struct ItemProxy {
+  static constexpr auto get(const T &item) noexcept { return item; }
 };
 
-template <class Key> struct ItemProxy<Key> {
-  using type = decltype(
-      ranges::view::zip(std::declval<gsl::span<typename Key::type>>()));
-  using item_type = decltype(std::declval<type>()[0]);
-  static constexpr auto &get(const item_type &item) noexcept {
+template <class T, class Key> struct ItemProxy<T, Key> {
+  static constexpr auto &get(const T &item) noexcept {
     return std::get<0>(item);
   }
 };
 
-template <class... Ts> struct ItemProxy<Access::Key<std::vector<Ts>>...> {
-  using type = decltype(ranges::view::zip(
-      std::declval<
-          gsl::span<typename Access::Key<std::vector<Ts>>::type>>()...));
-  using item_type = decltype(std::declval<type>()[0]);
-  static constexpr auto get(const item_type &item) noexcept {
+template <class T, class... Ts>
+struct ItemProxy<T, Access::Key<std::vector<Ts>>...> {
+  static constexpr auto get(const T &item) noexcept {
     return doMakeEventListProxy(item,
                                 std::make_index_sequence<sizeof...(Ts)>{});
   }
 };
 
-template <class... Ts>
-struct ItemProxy<Access::Key<boost::container::small_vector<Ts, 8>>...> {
-  using type = decltype(ranges::view::zip(
-      std::declval<gsl::span<typename Access::Key<
-          boost::container::small_vector<Ts, 8>>::type>>()...));
-  using item_type = decltype(std::declval<type>()[0]);
-  static constexpr auto get(const item_type &item) noexcept {
+template <class T, class... Ts>
+struct ItemProxy<T, Access::Key<boost::container::small_vector<Ts, 8>>...> {
+  static constexpr auto get(const T &item) noexcept {
     return doMakeEventListProxy(item,
                                 std::make_index_sequence<sizeof...(Ts)>{});
   }
@@ -264,11 +251,11 @@ public:
   gsl::index size() const { return m_view.size(); }
   auto begin() const {
     return boost::make_transform_iterator(m_view.begin(),
-                                          ItemProxy<Keys...>::get);
+                                          ItemProxy<item_type, Keys...>::get);
   }
   auto end() const {
     return boost::make_transform_iterator(m_view.end(),
-                                          ItemProxy<Keys...>::get);
+                                          ItemProxy<item_type, Keys...>::get);
   }
 
 private:
