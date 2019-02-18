@@ -612,10 +612,10 @@ TEST(Dataset, slice) {
   }
   EXPECT_THROW_MSG(
       d(Dim::Z, 0), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}\n, got Dim::Z.");
   EXPECT_THROW_MSG(
       d(Dim::Z, 1), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}\n, got Dim::Z.");
 }
 
 TEST(Dataset, concatenate_constant_dimension_broken) {

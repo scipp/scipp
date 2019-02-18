@@ -104,8 +104,33 @@ std::string to_string(const Dimensions &dims, const std::string separator) {
     s += to_string(dims.labels()[i], separator) + ", " +
          std::to_string(dims.shape()[i]) + "}, {";
   s.resize(s.size() - 3);
-  s += '}';
+  s += "}\n";
   return s;
+}
+
+std::string to_string(const DType dtype) {
+  switch (dtype) {
+  case DType::String:
+    return "string";
+  case DType::Bool:
+    return "bool";
+  case DType::Char:
+    return "char";
+  case DType::Dataset:
+    return "dataset";
+  case DType::Float:
+    return "float";
+  case DType::Double:
+    return "double";
+  case DType::Int32:
+    return "int32";
+  case DType::Int64:
+    return "int64";
+  case DType::Unknown:
+    return "unknown";
+  default:
+    return "unregistered dtype";
+  };
 }
 
 std::string to_string(const Unit &unit, const std::string separator) {
@@ -119,13 +144,31 @@ std::string to_string(const Tag tag, const std::string separator) {
   return std::regex_replace(do_to_string(tag), std::regex("::"), separator);
 }
 
-std::string to_string(const Variable &variable, const std::string separator) {
-  std::string prefix =
-      variable.isCoord() ? "Coord" : variable.isData() ? "Data" : "Attr";
-  std::string s = prefix + "Variable(";
-  s += to_string(variable.tag(), separator) + ", " + variable.name() + ")";
-  return s;
+// For use with variables
+std::string make_dims_labels(const Variable &variable,
+                             const std::string separator) {
+  auto dims = variable.dimensions();
+  std::string diminfo = "( ";
+  for (int32_t i = 0; i < dims.ndim(); ++i) {
+    diminfo += to_string(dims.labels()[i], separator);
+    if (i != dims.ndim() - 1) {
+      diminfo += ", ";
+    }
+  }
+  diminfo += " )";
+  return diminfo;
 }
+
+std::string to_string(const Variable &variable, const std::string separator) {
+  std::string variableName = variable.name();
+  std::string diminfo = make_dims_labels(variable, separator);
+  if (variableName.empty())
+    variableName = "''";
+  std::string s = "Variable(";
+  s += to_string(variable.tag(), separator) + ", " + variableName + "," +
+       diminfo + ", " + to_string(variable.dtype()) + ")\n";
+  return s;
+} // namespace dataset
 
 std::string to_string(const Dataset &dataset, const std::string separator) {
   std::string s("Dataset with ");
