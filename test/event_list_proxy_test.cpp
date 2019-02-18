@@ -11,42 +11,42 @@
 
 #include "event_list_proxy.h"
 
-TEST(ConstEventListProxy, length_mismatch_fail) {
+TEST(ConstItemZipProxy, length_mismatch_fail) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2};
-  EXPECT_THROW_MSG(ConstEventListProxy x(a, b), std::runtime_error,
+  EXPECT_THROW_MSG(ConstItemZipProxy x(a, b), std::runtime_error,
                    "Cannot zip data with mismatching length.");
 }
 
-TEST(EventListProxy, length_mismatch_fail) {
+TEST(ItemZipProxy, length_mismatch_fail) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2};
-  EXPECT_THROW_MSG(EventListProxy x(true, a, b), std::runtime_error,
+  EXPECT_THROW_MSG(ItemZipProxy x(true, a, b), std::runtime_error,
                    "Cannot zip data with mismatching length.");
 }
 
-TEST(ConstEventListProxy, from_vectors) {
+TEST(ConstItemZipProxy, from_vectors) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2, 3};
-  ConstEventListProxy proxy(a, b);
+  ConstItemZipProxy proxy(a, b);
   EXPECT_EQ(std::get<0>(*proxy.begin()), 1.1);
   EXPECT_EQ(std::get<1>(*proxy.begin()), 1);
 }
 
-TEST(EventListProxy, from_vectors) {
+TEST(ItemZipProxy, from_vectors) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2, 3};
-  EventListProxy proxy(true, a, b);
+  ItemZipProxy proxy(true, a, b);
   EXPECT_EQ(std::get<0>(*proxy.begin()), 1.1);
   EXPECT_EQ(std::get<1>(*proxy.begin()), 1);
   std::get<0>(*proxy.begin()) = 0.0;
   EXPECT_EQ(std::get<0>(*proxy.begin()), 0.0);
 }
 
-TEST(EventListProxy, push_back) {
+TEST(ItemZipProxy, push_back) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2, 3};
-  EventListProxy proxy(true, a, b);
+  ItemZipProxy proxy(true, a, b);
   proxy.push_back(4.4, 4);
   EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
   EXPECT_EQ(std::get<1>(*(proxy.begin() + 3)), 4);
@@ -55,11 +55,11 @@ TEST(EventListProxy, push_back) {
   EXPECT_EQ(std::get<1>(*(proxy.begin() + 4)), 1);
 }
 
-TEST(EventListProxy, push_back_3) {
+TEST(ItemZipProxy, push_back_3) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2, 3};
   std::vector<int32_t> c{3, 2, 1};
-  EventListProxy proxy(true, a, b, c);
+  ItemZipProxy proxy(true, a, b, c);
   proxy.push_back(4.4, 4, 1);
   EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
   EXPECT_EQ(std::get<1>(*(proxy.begin() + 3)), 4);
@@ -70,14 +70,14 @@ TEST(EventListProxy, push_back_3) {
   EXPECT_EQ(std::get<2>(*(proxy.begin() + 4)), 3);
 }
 
-TEST(EventListProxy, push_back_duplicate_broken) {
+TEST(ItemZipProxy, push_back_duplicate_broken) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2, 3};
 
   // This is not allowed. We could add a check, but at this point it is not
   // clear if that is required, since creation should typically be under our
   // control, and we may want to avoid performance penalties.
-  EventListProxy proxy(true, a, b, b);
+  ItemZipProxy proxy(true, a, b, b);
 
   proxy.push_back(4.4, 4, 5);
   EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);

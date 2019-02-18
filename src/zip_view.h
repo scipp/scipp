@@ -102,9 +102,9 @@ void swap(typename ZipView<Tags...>::Item &a,
 // convenient for clients. For common cases we should have a wrapper with named
 // getters. We can wrap this in `begin()` and `end()` using
 // boost::make_transform_iterator.
-template <class... Fields> class ConstEventListProxy {
+template <class... Fields> class ConstItemZipProxy {
 public:
-  ConstEventListProxy(const Fields &... fields) : m_fields(&fields...) {
+  ConstItemZipProxy(const Fields &... fields) : m_fields(&fields...) {
     if (((std::get<0>(m_fields)->size() != fields.size()) || ...))
       throw std::runtime_error("Cannot zip data with mismatching length.");
   }
@@ -126,10 +126,10 @@ private:
 };
 
 template <class... Fields>
-class EventListProxy : public ConstEventListProxy<Fields...> {
+class ItemZipProxy : public ConstItemZipProxy<Fields...> {
 public:
-  EventListProxy(const bool mayResize, Fields &... fields)
-      : ConstEventListProxy<Fields...>(fields...), m_mayResize(mayResize),
+  ItemZipProxy(const bool mayResize, Fields &... fields)
+      : ConstItemZipProxy<Fields...>(fields...), m_mayResize(mayResize),
         m_fields(&fields...) {}
 
   template <size_t... Is>
@@ -233,22 +233,22 @@ template <typename T>
 using is_iterable = decltype(detail::is_iterable_impl<T>(0));
 
 template <class T, size_t... Is>
-constexpr auto doMakeEventListProxy(const bool mayResize, const T &item,
+constexpr auto doMakeItemZipProxy(const bool mayResize, const T &item,
                                     std::index_sequence<Is...>) noexcept {
   if constexpr ((std::is_const_v<
                      std::remove_reference_t<decltype(std::get<Is>(item))>> &&
                  ...))
-    return ConstEventListProxy(std::get<Is>(item)...);
+    return ConstItemZipProxy(std::get<Is>(item)...);
 
   else
-    return EventListProxy(mayResize, std::get<Is>(item)...);
+    return ItemZipProxy(mayResize, std::get<Is>(item)...);
 }
 
 template <class T, bool Resizable, class... Keys> struct ItemProxy {
   static constexpr auto get(const T &item) noexcept {
     if constexpr ((is_iterable<typename Keys::type>::value && ...))
-      return doMakeEventListProxy(Resizable, item,
-                                  std::make_index_sequence<sizeof...(Keys)>{});
+      return doMakeItemZipProxy(Resizable, item,
+                                std::make_index_sequence<sizeof...(Keys)>{});
     else
       return item;
   }
