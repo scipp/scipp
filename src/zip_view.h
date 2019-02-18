@@ -285,23 +285,20 @@ public:
 
   gsl::index size() const { return m_view.size(); }
   auto begin() const {
-    if (m_mayResizeItems)
-      return boost::make_transform_iterator(
-          m_view.begin(), ItemProxy<item_type, true, Keys...>::get);
-    else
-      return boost::make_transform_iterator(
-          m_view.begin(), ItemProxy<item_type, false, Keys...>::get);
+    return m_mayResizeItems ? makeIt<true>(m_view.begin())
+                            : makeIt<false>(m_view.begin());
   }
   auto end() const {
-    if (m_mayResizeItems)
-      return boost::make_transform_iterator(
-          m_view.end(), ItemProxy<item_type, true, Keys...>::get);
-    else
-      return boost::make_transform_iterator(
-          m_view.end(), ItemProxy<item_type, false, Keys...>::get);
+    return m_mayResizeItems ? makeIt<true>(m_view.end())
+                            : makeIt<false>(m_view.end());
   }
 
 private:
+  template <bool Resizable, class It> auto makeIt(It &&it) const {
+    return boost::make_transform_iterator(
+        it, ItemProxy<item_type, Resizable, Keys...>::get);
+  }
+
   bool m_mayResizeItems;
   type m_view;
 };
