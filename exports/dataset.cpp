@@ -28,7 +28,8 @@ template <class T> struct mutable_span_methods<const T> {
 
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
   py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
-  span.def("__getitem__", &gsl::span<T>::operator[])
+  span.def("__getitem__", &gsl::span<T>::operator[],
+           py::return_value_policy::reference)
       .def("size", &gsl::span<T>::size)
       .def("__len__", &gsl::span<T>::size)
       .def("__iter__", [](const gsl::span<T> &self) {
@@ -41,7 +42,10 @@ template <class T>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
-  view.def("__getitem__", &VariableView<T>::operator[])
+  view.def("__getitem__", &VariableView<T>::operator[],
+           py::return_value_policy::reference)
+      .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
+                             const T value) { self[i] = value; })
       .def("__len__", &VariableView<T>::size)
       .def("__iter__", [](const VariableView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
@@ -338,6 +342,8 @@ as_VariableView_variant(Var &view) {
     return {view.template span<bool>()};
   case dtype<std::string>:
     return {view.template span<std::string>()};
+  case dtype<Dataset>:
+    return {view.template span<Dataset>()};
   default:
     throw std::runtime_error("not implemented for this type.");
   }
@@ -345,8 +351,22 @@ as_VariableView_variant(Var &view) {
 
 PYBIND11_MODULE(dataset, m) {
   py::enum_<Dim>(m, "Dim")
+      .value("Component", Dim::Component)
+      .value("DeltaE", Dim::DeltaE)
+      .value("Detector", Dim::Detector)
+      .value("DetectorScan", Dim::DetectorScan)
+      .value("Energy", Dim::Energy)
+      .value("Event", Dim::Event)
+      .value("Invalid", Dim::Invalid)
+      .value("Monitor", Dim::Monitor)
+      .value("Polarization", Dim::Polarization)
+      .value("Position", Dim::Position)
+      .value("Q", Dim::Q)
       .value("Row", Dim::Row)
+      .value("Run", Dim::Run)
       .value("Spectrum", Dim::Spectrum)
+      .value("Temperature", Dim::Temperature)
+      .value("Time", Dim::Time)
       .value("Tof", Dim::Tof)
       .value("X", Dim::X)
       .value("Y", Dim::Y)
@@ -355,18 +375,42 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Tag>(m, "Tag").def(py::self == py::self);
 
   // Runtime tags are sufficient in Python, not exporting Tag child classes.
-  auto data_tags = m.def_submodule("Data");
-  data_tags.attr("Value") = Tag(Data::Value);
-  data_tags.attr("Variance") = Tag(Data::Variance);
-
   auto coord_tags = m.def_submodule("Coord");
-  coord_tags.attr("Mask") = Tag(Coord::Mask);
+  coord_tags.attr("Monitor") = Tag(Coord::Monitor);
+  coord_tags.attr("DetectorInfo") = Tag(Coord::DetectorInfo);
+  coord_tags.attr("ComponentInfo") = Tag(Coord::ComponentInfo);
   coord_tags.attr("X") = Tag(Coord::X);
   coord_tags.attr("Y") = Tag(Coord::Y);
   coord_tags.attr("Z") = Tag(Coord::Z);
   coord_tags.attr("Tof") = Tag(Coord::Tof);
-  coord_tags.attr("RowLabel") = Tag(Coord::RowLabel);
+  coord_tags.attr("Energy") = Tag(Coord::Energy);
+  coord_tags.attr("DeltaE") = Tag(Coord::DeltaE);
+  coord_tags.attr("Ei") = Tag(Coord::Ei);
+  coord_tags.attr("Ef") = Tag(Coord::Ef);
+  coord_tags.attr("DetectorId") = Tag(Coord::DetectorId);
   coord_tags.attr("SpectrumNumber") = Tag(Coord::SpectrumNumber);
+  coord_tags.attr("DetectorGrouping") = Tag(Coord::DetectorGrouping);
+  coord_tags.attr("RowLabel") = Tag(Coord::RowLabel);
+  coord_tags.attr("Polarization") = Tag(Coord::Polarization);
+  coord_tags.attr("Temperature") = Tag(Coord::Temperature);
+  coord_tags.attr("FuzzyTemperature") = Tag(Coord::FuzzyTemperature);
+  coord_tags.attr("Time") = Tag(Coord::Time);
+  coord_tags.attr("TimeInterval") = Tag(Coord::TimeInterval);
+  coord_tags.attr("Mask") = Tag(Coord::Mask);
+  coord_tags.attr("Position") = Tag(Coord::Position);
+
+  auto data_tags = m.def_submodule("Data");
+  data_tags.attr("Tof") = Tag(Data::Tof);
+  data_tags.attr("PulseTime") = Tag(Data::PulseTime);
+  data_tags.attr("Value") = Tag(Data::Value);
+  data_tags.attr("Variance") = Tag(Data::Variance);
+  data_tags.attr("StdDev") = Tag(Data::StdDev);
+  data_tags.attr("Events") = Tag(Data::Events);
+  data_tags.attr("EventTofs") = Tag(Data::EventTofs);
+  data_tags.attr("EventPulseTimes") = Tag(Data::EventPulseTimes);
+
+  auto attr_tags = m.def_submodule("Attr");
+  attr_tags.attr("ExperimentLog") = Tag(Attr::ExperimentLog);
 
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
@@ -374,6 +418,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_span<const double>(m, "double_const");
   declare_span<const std::string>(m, "string_const");
   declare_span<const Dim>(m, "Dim_const");
+  declare_span<Dataset>(m, "Dataset");
 
   declare_VariableView<double>(m, "double");
   declare_VariableView<float>(m, "float");
@@ -382,6 +427,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<std::string>(m, "string");
   declare_VariableView<char>(m, "char");
   declare_VariableView<Bool>(m, "bool");
+  declare_VariableView<Dataset>(m, "Dataset");
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
@@ -404,7 +450,8 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
-      // TODO Need to add overload for std::vector<std::string>, etc.
+      // TODO Need to add overload for std::vector<std::string>, etc., see
+      // Dataset.__setitem__
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
@@ -418,8 +465,9 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<Variable, double, float, int64_t,
                                           int32_t, char, bool>)
       .def_property_readonly(
-          "data", &as_VariableView_variant<Variable, double, float, int64_t,
-                                           int32_t, char, bool, std::string>)
+          "data",
+          &as_VariableView_variant<Variable, double, float, int64_t, int32_t,
+                                   char, bool, std::string, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
@@ -460,7 +508,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly(
           "data",
           &as_VariableView_variant<VariableSlice, double, float, int64_t,
-                                   int32_t, char, bool, std::string>)
+                                   int32_t, char, bool, std::string, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -602,6 +650,8 @@ PYBIND11_MODULE(dataset, m) {
       //    separately.
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
       // 4. Insertion from Variable or Variable slice.
       .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
       .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)

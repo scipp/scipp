@@ -20,7 +20,17 @@
 #include "unit.h"
 #include "value_with_delta.h"
 
-enum class DType { Unknown, Double, Float, Int32, Int64, String, Char, Bool };
+enum class DType {
+  Unknown,
+  Double,
+  Float,
+  Int32,
+  Int64,
+  String,
+  Char,
+  Bool,
+  Dataset
+};
 template <class T> constexpr DType dtype = DType::Unknown;
 template <> constexpr DType dtype<double> = DType::Double;
 template <> constexpr DType dtype<float> = DType::Float;
@@ -30,6 +40,7 @@ template <> constexpr DType dtype<std::string> = DType::String;
 template <> constexpr DType dtype<char> = DType::Char;
 template <> constexpr DType dtype<bool> = DType::Bool;
 template <> constexpr DType dtype<Bool> = DType::Bool;
+template <> constexpr DType dtype<Dataset> = DType::Dataset;
 
 // Adding new tags
 // ===============
@@ -210,10 +221,6 @@ struct DataDef {
     using type = int64_t;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct DimensionSize {
-    using type = gsl::index;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
   struct String {
     using type = std::string;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -230,14 +237,9 @@ struct DataDef {
     using type = boost::container::small_vector<double, 8>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct Table {
-    using type = Dataset;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
 
-  using tags =
-      std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, DimensionSize,
-                 String, Events, EventTofs, EventPulseTimes, Table>;
+  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, String,
+                          Events, EventTofs, EventPulseTimes>;
 };
 
 struct AttrDef {
@@ -318,26 +320,25 @@ struct Data {
   using Value_t = detail::TagImpl<detail::DataDef::Value>;
   using Variance_t = detail::TagImpl<detail::DataDef::Variance>;
   using StdDev_t = detail::TagImpl<detail::DataDef::StdDev>;
-  using Int_t = detail::TagImpl<detail::DataDef::Int>;
-  using DimensionSize_t = detail::TagImpl<detail::DataDef::DimensionSize>;
-  using String_t = detail::TagImpl<detail::DataDef::String>;
+  // TODO Int and String is deprecated and should be removed, it is currently
+  // only required to maintain tests using MDZipView before it is properly
+  // refactored for multi-name support.
+  using DeprecatedInt_t = detail::TagImpl<detail::DataDef::Int>;
+  using DeprecatedString_t = detail::TagImpl<detail::DataDef::String>;
   using Events_t = detail::TagImpl<detail::DataDef::Events>;
   using EventTofs_t = detail::TagImpl<detail::DataDef::EventTofs>;
   using EventPulseTimes_t = detail::TagImpl<detail::DataDef::EventPulseTimes>;
-  using Table_t = detail::TagImpl<detail::DataDef::Table>;
 
   static constexpr Tof_t Tof{};
   static constexpr PulseTime_t PulseTime{};
   static constexpr Value_t Value{};
   static constexpr Variance_t Variance{};
   static constexpr StdDev_t StdDev{};
-  static constexpr Int_t Int{};
-  static constexpr DimensionSize_t DimensionSize{};
-  static constexpr String_t String{};
+  static constexpr DeprecatedInt_t DeprecatedInt{};
+  static constexpr DeprecatedString_t DeprecatedString{};
   static constexpr Events_t Events{};
   static constexpr EventTofs_t EventTofs{};
   static constexpr EventPulseTimes_t EventPulseTimes{};
-  static constexpr Table_t Table{};
 };
 
 struct Attr {
@@ -355,6 +356,10 @@ static constexpr bool is_attr =
                std::tuple_size<detail::DataDef::tags>::value;
 template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 
+// TODO Some things *may* be dimension coordinates, but they are not necessarily
+// in all datasets. It depends on which dimensions are present. Does it even
+// make sense to hard-code this? Maybe we require handling everything at
+// runtime?
 namespace detail {
 template <class Tag> constexpr bool is_dimension_coordinate = false;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Tof> = true;
@@ -363,6 +368,7 @@ template <> constexpr bool is_dimension_coordinate<CoordDef::DeltaE> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::X> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Y> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Z> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Position> = true;
 template <>
 constexpr bool is_dimension_coordinate<CoordDef::SpectrumNumber> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::RowLabel> = true;
@@ -374,6 +380,8 @@ template <> constexpr Dim coordinate_dimension<CoordDef::DeltaE> = Dim::DeltaE;
 template <> constexpr Dim coordinate_dimension<CoordDef::X> = Dim::X;
 template <> constexpr Dim coordinate_dimension<CoordDef::Y> = Dim::Y;
 template <> constexpr Dim coordinate_dimension<CoordDef::Z> = Dim::Z;
+template <>
+constexpr Dim coordinate_dimension<CoordDef::Position> = Dim::Position;
 template <>
 constexpr Dim coordinate_dimension<CoordDef::SpectrumNumber> = Dim::Spectrum;
 template <> constexpr Dim coordinate_dimension<CoordDef::RowLabel> = Dim::Row;
