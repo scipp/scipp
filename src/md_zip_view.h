@@ -73,8 +73,9 @@ template <class Base, class T> struct GetterMixin<Base, Bin<T>> {
 
 template <class D, class Tag> struct ref_type {
   using type = gsl::span<std::conditional_t<
-      std::is_const<D>::value, const typename detail::value_type_t<Tag>::type,
-      typename detail::value_type_t<Tag>::type>>;
+      std::is_const<D>::value,
+      const underlying_type_t<typename detail::value_type_t<Tag>::type>,
+      underlying_type_t<typename detail::value_type_t<Tag>::type>>>;
 };
 template <class D, class Tag> struct ref_type<D, Bin<Tag>> {
   // First is the offset to the next edge.
@@ -86,14 +87,12 @@ template <class D, class Tag> struct ref_type<D, Bin<Tag>> {
 // TODO The need for the cumbersome std::remove_cv_t<decltype(...)> is legacy,
 // we can probably refactor a lot of the helpers to be constexpr based on the
 // value, rather then using detail::value_type_t, etc.
-template <class D>
-struct ref_type<D, const Coord::Position_t> {
+template <class D> struct ref_type<D, const Coord::Position_t> {
   using type =
       std::pair<gsl::span<const typename Coord::Position_t::type>,
                 gsl::span<const typename Coord::DetectorGrouping_t::type>>;
 };
-template <class D>
-struct ref_type<D, Data::Events_t> {
+template <class D> struct ref_type<D, Data::Events_t> {
   // Supporting either events stored as nested Dataset (Data::Events), or a
   // separate variables for tof and pulse-time (Data::EventTofs and
   // Data::EventPulseTimes).
@@ -198,7 +197,7 @@ struct ItemHelper<D, MDZipViewImpl<D, Tags...>> {
 
 // MDLabelImpl is a helper for constructing a MDZipView.
 template <class T, class TagT> struct MDLabelImpl {
-  using type = T;
+  using type = underlying_type_t<T>;
   using tag = TagT;
   const std::string name;
 };
@@ -255,8 +254,8 @@ public:
     element_return_type_t<D, maybe_const<TagT>> get(const TagT) const {
       // Should we allow passing const?
       static_assert(!std::is_const<TagT>::value, "Do not use `const` qualifier "
-                                                "for tags when accessing "
-                                                "MDZipView::iterator.");
+                                                 "for tags when accessing "
+                                                 "MDZipView::iterator.");
       constexpr auto variableIndex = tag_index<TagT>;
       return ItemHelper<D, maybe_const<TagT>>::get(
           std::get<variableIndex>(*m_variables), m_index.get<variableIndex>());
@@ -435,7 +434,8 @@ template <class D> struct UnitHelper<D, Data::Events_t> {
   }
 };
 
-template <class D> struct UnitHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
+template <class D>
+struct UnitHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
   static Unit get(const Dataset &dataset,
                   const std::string &name = std::string{}) {
     return dataset(Data::Variance, name).unit();
@@ -621,7 +621,8 @@ template <class D> struct DataHelper<D, Data::Events_t> {
   }
 };
 
-template <class D> struct DataHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
+template <class D>
+struct DataHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
   static auto get(D &dataset, const Dimensions &iterationDimensions,
                   const std::string &name = std::string{}) {
     return DataHelper<D, std::remove_cv_t<decltype(Data::Variance)>>::get(
