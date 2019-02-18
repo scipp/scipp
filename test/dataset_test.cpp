@@ -263,13 +263,13 @@ TEST(Dataset, get_fail) {
   Dataset d;
   d.insert(Data::Value, "name1", {}, {1.1});
   d.insert(Data::Value, "name2", {}, {1.1});
-  EXPECT_THROW_MSG(d.get(Data::Value), std::runtime_error,
-                   "Dataset with 2 variables, could not find variable with tag "
-                   "Data::Value and name ``.");
-  EXPECT_THROW_MSG(d.get(Data::Variance),
-                   dataset::except::VariableNotFoundError,
-                   "Dataset with 2 variables, could not find variable with tag "
-                   "Data::Variance and name ``.");
+  EXPECT_THROW_MSG_SUBSTR(d.get(Data::Value), std::runtime_error,
+                          "could not find variable with tag "
+                          "Data::Value and name ``.");
+  EXPECT_THROW_MSG_SUBSTR(d.get(Data::Variance),
+                          dataset::except::VariableNotFoundError,
+                          "could not find variable with tag "
+                          "Data::Variance and name ``.");
 }
 
 TEST(Dataset, get_named) {

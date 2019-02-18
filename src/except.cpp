@@ -8,6 +8,7 @@
 #include "dimensions.h"
 #include "tags.h"
 #include <numeric>
+#include <regex>
 #include <set>
 
 namespace {
@@ -25,11 +26,7 @@ filter_variables(const Dataset &dataset,
   }
   return targetIndexes;
 }
-} // namespace
-
-namespace dataset {
-
-std::string to_string(const Dim dim) {
+std::string do_to_string(const Dim dim) {
   switch (dim) {
   case Dim::Invalid:
     return "<invalid>";
@@ -74,7 +71,7 @@ std::string to_string(const Dim dim) {
   }
 }
 
-std::string to_string(const Tag tag) {
+std::string do_to_string(const Tag tag) {
   switch (tag.value()) {
   case Coord::Tof.value():
     return "Coord::Tof";
@@ -101,6 +98,20 @@ std::string to_string(const Tag tag) {
   }
 }
 
+std::string do_to_string(const Unit &unit) {
+  switch (unit.id()) {
+  case Unit::Id::Dimensionless:
+    return "Unit::Dimensionless";
+  case Unit::Id::Length:
+    return "Unit::Length";
+  default:
+    return "<unknown unit>";
+  }
+}
+} // namespace
+
+namespace dataset {
+
 std::string to_string(const Dimensions &dims) {
   if (dims.empty())
     return "{}";
@@ -113,35 +124,36 @@ std::string to_string(const Dimensions &dims) {
   return s;
 }
 
-std::string to_string(const Unit &unit) {
-  switch (unit.id()) {
-  case Unit::Id::Dimensionless:
-    return "Unit::Dimensionless";
-  case Unit::Id::Length:
-    return "Unit::Length";
-  default:
-    return "<unknown unit>";
-  }
+std::string to_string(const Unit &unit, const std::string separator) {
+  return std::regex_replace(do_to_string(unit), std::regex("::"), separator);
+}
+std::string to_string(const Dim dim, const std::string separator) {
+  return std::regex_replace(do_to_string(dim), std::regex("::"), separator);
 }
 
-std::string to_string(const Variable &variable) {
+std::string to_string(const Tag tag, const std::string separator) {
+  return std::regex_replace(do_to_string(tag), std::regex("::"), separator);
+}
+
+std::string to_string(const Variable &variable, const std::string separator) {
   std::string prefix =
       variable.isCoord() ? "Coord" : variable.isData() ? "Data" : "Attr";
   std::string s = prefix + "Variable(";
-  s += to_string(variable.tag()) + ", " + variable.name() + ")";
+  s += to_string(variable.tag(), separator) + ", " + variable.name() + ")";
   return s;
 }
 
 std::string to_string_variable(const Dataset &dataset,
-                               const std::set<size_t> &indexes) {
+                               const std::set<size_t> &indexes,
+                               const std::string separator) {
   std::string out;
   for (auto idx : indexes) {
-    out += "\n" + to_string(dataset[idx]);
+    out += "\n" + to_string(dataset[idx], separator);
   }
   return out;
 }
 
-std::string to_string(const Dataset &dataset) {
+std::string to_string(const Dataset &dataset, const std::string separator) {
   std::string s("Dataset with ");
   s += std::to_string(dataset.size()) + " variables";
   s += "\nDimensions : " + to_string(dataset.dimensions());
@@ -151,17 +163,17 @@ std::string to_string(const Dataset &dataset) {
       filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
         return var.isCoord();
       });
-  s += to_string_variable(dataset, coordIndexes);
+  s += to_string_variable(dataset, coordIndexes, separator);
   auto dataVariablesIndexes =
       filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
         return var.isData();
       });
-  s += to_string_variable(dataset, dataVariablesIndexes);
+  s += to_string_variable(dataset, dataVariablesIndexes, separator);
   auto attributeIndexes =
       filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
         return var.isAttr();
       });
-  s += to_string_variable(dataset, attributeIndexes);
+  s += to_string_variable(dataset, attributeIndexes, separator);
   return s;
 }
 
