@@ -213,6 +213,9 @@ public:
   const Dimensions &dimensions() const & { return m_dimensions; }
 
   bool operator==(const Dataset &other) const;
+  bool operator==(const ConstDatasetSlice &other) const;
+  bool operator!=(const Dataset &other) const;
+  bool operator!=(const ConstDatasetSlice &other) const;
   Dataset operator-() const;
   Dataset &operator+=(const Dataset &other);
   Dataset &operator+=(const ConstDatasetSlice &other);
@@ -347,14 +350,15 @@ public:
     return boost::make_transform_iterator(m_indices.end(), IterAccess{*this});
   }
 
-  bool operator==(const ConstDatasetSlice &other) const {
-    if ((m_dataset == other.m_dataset) && (m_indices == other.m_indices) &&
-        (m_slices == other.m_slices))
-      return true;
-    return std::equal(begin(), end(), other.begin(), other.end());
-  }
+  bool operator==(const Dataset &other) const;
+  bool operator==(const ConstDatasetSlice &other) const;
+  bool operator!=(const Dataset &other) const;
+  bool operator!=(const ConstDatasetSlice &other) const;
 
   Dataset operator-() const;
+
+  ConstVariableSlice operator()(const Tag tag,
+                                const std::string &name = "") const;
 
 protected:
   const Dataset &m_dataset;
@@ -407,7 +411,7 @@ public:
       : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
 
   using ConstDatasetSlice::operator[];
-  VariableSlice operator[](const gsl::index i) {
+  VariableSlice operator[](const gsl::index i) const {
     return detail::makeSlice(m_mutableDataset[m_indices[i]], m_slices);
   }
 
@@ -419,27 +423,27 @@ public:
   using ConstDatasetSlice::begin;
   using ConstDatasetSlice::end;
 
-  auto begin() {
+  auto begin() const {
     return boost::make_transform_iterator(m_indices.begin(), IterAccess{*this});
   }
-  auto end() {
+  auto end() const {
     return boost::make_transform_iterator(m_indices.end(), IterAccess{*this});
   }
 
   // Returning void to avoid potentially returning references to temporaries.
-  DatasetSlice assign(const Dataset &other);
-  DatasetSlice assign(const ConstDatasetSlice &other);
-  DatasetSlice operator+=(const Dataset &other);
-  DatasetSlice operator+=(const ConstDatasetSlice &other);
-  DatasetSlice operator+=(const double value);
-  DatasetSlice operator-=(const Dataset &other);
-  DatasetSlice operator-=(const ConstDatasetSlice &other);
-  DatasetSlice operator-=(const double value);
-  DatasetSlice operator*=(const Dataset &other);
-  DatasetSlice operator*=(const ConstDatasetSlice &other);
-  DatasetSlice operator*=(const double value);
+  DatasetSlice assign(const Dataset &other) const;
+  DatasetSlice assign(const ConstDatasetSlice &other) const;
+  DatasetSlice operator+=(const Dataset &other) const;
+  DatasetSlice operator+=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator+=(const double value) const;
+  DatasetSlice operator-=(const Dataset &other) const;
+  DatasetSlice operator-=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator-=(const double value) const;
+  DatasetSlice operator*=(const Dataset &other) const;
+  DatasetSlice operator*=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator*=(const double value) const;
 
-  VariableSlice operator()(const Tag tag, const std::string &name = "");
+  VariableSlice operator()(const Tag tag, const std::string &name = "") const;
 
 private:
   Dataset &m_mutableDataset;

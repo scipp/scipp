@@ -96,8 +96,6 @@ std::string to_string(const Tag tag) {
     return "Data::Value";
   case Data::Variance.value():
     return "Data::Variance";
-  case Data::Int.value():
-    return "Data::Int";
   default:
     return "<unknown tag>";
   }

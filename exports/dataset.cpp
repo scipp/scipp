@@ -28,7 +28,8 @@ template <class T> struct mutable_span_methods<const T> {
 
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
   py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
-  span.def("__getitem__", &gsl::span<T>::operator[])
+  span.def("__getitem__", &gsl::span<T>::operator[],
+           py::return_value_policy::reference)
       .def("size", &gsl::span<T>::size)
       .def("__len__", &gsl::span<T>::size)
       .def("__iter__", [](const gsl::span<T> &self) {
@@ -41,7 +42,10 @@ template <class T>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
-  view.def("__getitem__", &VariableView<T>::operator[])
+  view.def("__getitem__", &VariableView<T>::operator[],
+           py::return_value_policy::reference)
+      .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
+                             const T value) { self[i] = value; })
       .def("__len__", &VariableView<T>::size)
       .def("__iter__", [](const VariableView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
@@ -65,9 +69,8 @@ DType convertDType(const py::dtype type) {
     return dtype<int64_t>;
   if (type.is(py::dtype::of<int32_t>()))
     return dtype<int32_t>;
-  // TODO We should introduce our own Bool, instead of relying on char.
   if (type.is(py::dtype::of<bool>()))
-    return dtype<char>;
+    return dtype<bool>;
   throw std::runtime_error("unsupported dtype");
 }
 
@@ -101,8 +104,8 @@ Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>())
                             ? convertDType(data.dtype())
                             : convertDType(dtype);
-  return CallDType<double, float, int64_t, int32_t,
-                   char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
+  return CallDType<double, float, int64_t, int32_t, char,
+                   bool>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
                                                       data);
 }
 
@@ -115,8 +118,8 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   // py::dtype?
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
-  return CallDType<double, float, int64_t, int32_t,
-                   char>::apply<detail::MakeVariableDefaultInit>(dtypeTag, tag,
+  return CallDType<double, float, int64_t, int32_t, char,
+                   bool>::apply<detail::MakeVariableDefaultInit>(dtypeTag, tag,
                                                                  labels, shape);
 }
 
@@ -149,8 +152,8 @@ void insert_ndarray(
   const auto & [ tag, name ] = Key::get(key);
   const auto & [ labels, array ] = data;
   const auto dtypeTag = convertDType(array.dtype());
-  auto var = CallDType<double, float, int64_t, int32_t,
-                       char>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
+  auto var = CallDType<double, float, int64_t, int32_t, char,
+                       bool>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
                                                           array);
   if (!name.empty())
     var.setName(name);
@@ -234,8 +237,8 @@ template <class T, class K>
 void setData(T &self, const K &key, const py::array &data) {
   const auto & [ tag, name ] = Key::get(key);
   const auto slice = self(tag, name);
-  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
-      slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char,
+            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
 
 VariableSlice pySlice(VariableSlice &view,
@@ -255,27 +258,26 @@ void setVariableSlice(VariableSlice &self,
                       const std::tuple<Dim, gsl::index> &index,
                       const py::array &data) {
   auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
-  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
-      slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char,
+            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
 
 void setVariableSliceRange(VariableSlice &self,
                            const std::tuple<Dim, const py::slice> &index,
                            const py::array &data) {
   auto slice = pySlice(self, index);
-  CallDType<double, float, int64_t, int32_t, char>::apply<detail::SetData>(
-      slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char,
+            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
 } // namespace detail
 
 template <class T> struct MakePyBufferInfoT {
   static py::buffer_info apply(VariableSlice &view) {
-    // TODO We should introduce our own Bool, instead of relying on char.
     return py::buffer_info(
         view.template span<T>().data(), /* Pointer to buffer */
         sizeof(T),                      /* Size of one scalar */
         py::format_descriptor<
-            std::conditional_t<std::is_same_v<T, char>, bool, T>>::
+            std::conditional_t<std::is_same_v<T, bool>, bool, T>>::
             format(),              /* Python struct-style format descriptor */
         view.dimensions().count(), /* Number of dimensions */
         view.dimensions().shape(), /* Buffer dimensions */
@@ -286,15 +288,14 @@ template <class T> struct MakePyBufferInfoT {
 };
 
 py::buffer_info make_py_buffer_info(VariableSlice &view) {
-  return CallDType<double, float, int64_t, int32_t,
-                   char>::apply<MakePyBufferInfoT>(view.dtype(), view);
+  return CallDType<double, float, int64_t, int32_t, char,
+                   bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
 template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
   // TODO Should `Variable` also have a `strides` method?
   const auto strides = VariableSlice(view).strides();
-  // TODO We should introduce our own Bool, instead of relying on char.
-  using py_T = std::conditional_t<std::is_same_v<T, char>, bool, T>;
+  using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
   return py::array_t<py_T>{view.dimensions().shape(),
                            detail::numpy_strides<T>(strides),
                            (py_T *)view.template span<T>().data(), obj};
@@ -314,14 +315,17 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
     return {as_py_array_t<int32_t>(obj, view)};
   case dtype<char>:
     return {as_py_array_t<char>(obj, view)};
+  case dtype<bool>:
+    return {as_py_array_t<bool>(obj, view)};
   default:
     throw std::runtime_error("not implemented for this type.");
   }
 }
 
 template <class Var, class... Ts>
-std::variant<std::conditional_t<std::is_same_v<Var, Variable>, gsl::span<Ts>,
-                                VariableView<Ts>>...>
+std::variant<std::conditional_t<std::is_same_v<Var, Variable>,
+                                gsl::span<underlying_type_t<Ts>>,
+                                VariableView<underlying_type_t<Ts>>>...>
 as_VariableView_variant(Var &view) {
   switch (view.dtype()) {
   case dtype<double>:
@@ -334,8 +338,12 @@ as_VariableView_variant(Var &view) {
     return {view.template span<int32_t>()};
   case dtype<char>:
     return {view.template span<char>()};
+  case dtype<bool>:
+    return {view.template span<bool>()};
   case dtype<std::string>:
     return {view.template span<std::string>()};
+  case dtype<Dataset>:
+    return {view.template span<Dataset>()};
   default:
     throw std::runtime_error("not implemented for this type.");
   }
@@ -343,8 +351,22 @@ as_VariableView_variant(Var &view) {
 
 PYBIND11_MODULE(dataset, m) {
   py::enum_<Dim>(m, "Dim")
+      .value("Component", Dim::Component)
+      .value("DeltaE", Dim::DeltaE)
+      .value("Detector", Dim::Detector)
+      .value("DetectorScan", Dim::DetectorScan)
+      .value("Energy", Dim::Energy)
+      .value("Event", Dim::Event)
+      .value("Invalid", Dim::Invalid)
+      .value("Monitor", Dim::Monitor)
+      .value("Polarization", Dim::Polarization)
+      .value("Position", Dim::Position)
+      .value("Q", Dim::Q)
       .value("Row", Dim::Row)
+      .value("Run", Dim::Run)
       .value("Spectrum", Dim::Spectrum)
+      .value("Temperature", Dim::Temperature)
+      .value("Time", Dim::Time)
       .value("Tof", Dim::Tof)
       .value("X", Dim::X)
       .value("Y", Dim::Y)
@@ -353,24 +375,50 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Tag>(m, "Tag").def(py::self == py::self);
 
   // Runtime tags are sufficient in Python, not exporting Tag child classes.
-  auto data_tags = m.def_submodule("Data");
-  data_tags.attr("Value") = Tag(Data::Value);
-  data_tags.attr("Variance") = Tag(Data::Variance);
-
   auto coord_tags = m.def_submodule("Coord");
-  coord_tags.attr("Mask") = Tag(Coord::Mask);
+  coord_tags.attr("Monitor") = Tag(Coord::Monitor);
+  coord_tags.attr("DetectorInfo") = Tag(Coord::DetectorInfo);
+  coord_tags.attr("ComponentInfo") = Tag(Coord::ComponentInfo);
   coord_tags.attr("X") = Tag(Coord::X);
   coord_tags.attr("Y") = Tag(Coord::Y);
   coord_tags.attr("Z") = Tag(Coord::Z);
   coord_tags.attr("Tof") = Tag(Coord::Tof);
-  coord_tags.attr("RowLabel") = Tag(Coord::RowLabel);
+  coord_tags.attr("Energy") = Tag(Coord::Energy);
+  coord_tags.attr("DeltaE") = Tag(Coord::DeltaE);
+  coord_tags.attr("Ei") = Tag(Coord::Ei);
+  coord_tags.attr("Ef") = Tag(Coord::Ef);
+  coord_tags.attr("DetectorId") = Tag(Coord::DetectorId);
   coord_tags.attr("SpectrumNumber") = Tag(Coord::SpectrumNumber);
+  coord_tags.attr("DetectorGrouping") = Tag(Coord::DetectorGrouping);
+  coord_tags.attr("RowLabel") = Tag(Coord::RowLabel);
+  coord_tags.attr("Polarization") = Tag(Coord::Polarization);
+  coord_tags.attr("Temperature") = Tag(Coord::Temperature);
+  coord_tags.attr("FuzzyTemperature") = Tag(Coord::FuzzyTemperature);
+  coord_tags.attr("Time") = Tag(Coord::Time);
+  coord_tags.attr("TimeInterval") = Tag(Coord::TimeInterval);
+  coord_tags.attr("Mask") = Tag(Coord::Mask);
+  coord_tags.attr("Position") = Tag(Coord::Position);
+
+  auto data_tags = m.def_submodule("Data");
+  data_tags.attr("Tof") = Tag(Data::Tof);
+  data_tags.attr("PulseTime") = Tag(Data::PulseTime);
+  data_tags.attr("Value") = Tag(Data::Value);
+  data_tags.attr("Variance") = Tag(Data::Variance);
+  data_tags.attr("StdDev") = Tag(Data::StdDev);
+  data_tags.attr("Events") = Tag(Data::Events);
+  data_tags.attr("EventTofs") = Tag(Data::EventTofs);
+  data_tags.attr("EventPulseTimes") = Tag(Data::EventPulseTimes);
+
+  auto attr_tags = m.def_submodule("Attr");
+  attr_tags.attr("ExperimentLog") = Tag(Attr::ExperimentLog);
 
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
+  declare_span<Bool>(m, "bool");
   declare_span<const double>(m, "double_const");
   declare_span<const std::string>(m, "string_const");
   declare_span<const Dim>(m, "Dim_const");
+  declare_span<Dataset>(m, "Dataset");
 
   declare_VariableView<double>(m, "double");
   declare_VariableView<float>(m, "float");
@@ -378,6 +426,8 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<int32_t>(m, "int32");
   declare_VariableView<std::string>(m, "string");
   declare_VariableView<char>(m, "char");
+  declare_VariableView<Bool>(m, "bool");
+  declare_VariableView<Dataset>(m, "Dataset");
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
@@ -400,7 +450,8 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
-      // TODO Need to add overload for std::vector<std::string>, etc.
+      // TODO Need to add overload for std::vector<std::string>, etc., see
+      // Dataset.__setitem__
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
@@ -410,12 +461,13 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("is_coord", &Variable::isCoord)
       .def_property_readonly(
           "dimensions", [](const Variable &self) { return self.dimensions(); })
-      .def_property_readonly("numpy",
-                             &as_py_array_t_variant<Variable, double, float,
-                                                    int64_t, int32_t, bool>)
       .def_property_readonly(
-          "data", &as_VariableView_variant<Variable, double, float, int64_t,
-                                           int32_t, char, std::string>)
+          "numpy", &as_py_array_t_variant<Variable, double, float, int64_t,
+                                          int32_t, char, bool>)
+      .def_property_readonly(
+          "data",
+          &as_VariableView_variant<Variable, double, float, int64_t, int32_t,
+                                   char, bool, std::string, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -454,10 +506,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", &detail::setVariableSliceRange)
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
-                                          int32_t, bool>)
+                                          int32_t, char, bool>)
       .def_property_readonly(
-          "data", &as_VariableView_variant<VariableSlice, double, float,
-                                           int64_t, int32_t, char, std::string>)
+          "data",
+          &as_VariableView_variant<VariableSlice, double, float, int64_t,
+                                   int32_t, char, bool, std::string, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -606,6 +659,8 @@ PYBIND11_MODULE(dataset, m) {
       //    separately.
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
       // 4. Insertion from Variable or Variable slice.
       .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
       .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)

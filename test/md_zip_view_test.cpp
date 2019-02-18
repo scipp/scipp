@@ -18,33 +18,33 @@
 TEST(MDZipView, construct) {
   Dataset d;
   d.insert(Data::Value, "", {}, {1.1});
-  d.insert(Data::Int, "", {}, {2});
+  d.insert(Data::Variance, "", {}, {2});
   // Empty view forbidden by static_assert:
   // zipMD(d);
   ASSERT_NO_THROW(static_cast<void>(zipMD(d, MDRead(Data::Value))));
-  ASSERT_NO_THROW(static_cast<void>(zipMD(d, MDRead(Data::Int))));
+  ASSERT_NO_THROW(static_cast<void>(zipMD(d, MDRead(Data::Variance))));
   ASSERT_NO_THROW(
-      static_cast<void>(zipMD(d, MDRead(Data::Int), MDRead(Data::Value))));
+      static_cast<void>(zipMD(d, MDRead(Data::Variance), MDRead(Data::Value))));
   ASSERT_THROW(
-      static_cast<void>(zipMD(d, MDRead(Data::Int), MDRead(Data::Variance))),
+      static_cast<void>(zipMD(d, MDRead(Data::Events), MDRead(Data::Variance))),
       std::runtime_error);
 }
 
 TEST(MDZipView, construct_with_const_Dataset) {
   Dataset d;
   d.insert(Data::Value, "", {Dim::X, 1}, {1.1});
-  d.insert(Data::Int, "", {}, {2});
+  d.insert(Data::Variance, "", {}, {2});
   const auto const_d(d);
   EXPECT_NO_THROW(zipMD(const_d, MDRead(Data::Value)));
   EXPECT_NO_THROW(zipMD(const_d, {Dim::X}, ConstMDNested(MDRead(Data::Value))));
   EXPECT_NO_THROW(zipMD(const_d, {Dim::X}, ConstMDNested(MDRead(Data::Value)),
-                        MDRead(Data::Int)));
+                        MDRead(Data::Variance)));
 }
 
 TEST(MDZipView, iterator) {
   Dataset d;
   d.insert(Data::Value, "", Dimensions{Dim::X, 2}, {1.1, 1.2});
-  d.insert(Data::Int, "", Dimensions{Dim::X, 2}, {2, 3});
+  d.insert(Data::Variance, "", Dimensions{Dim::X, 2}, {2, 3});
   auto view = zipMD(d, MDWrite(Data::Value));
   ASSERT_NO_THROW(view.begin());
   ASSERT_NO_THROW(view.end());
@@ -68,7 +68,7 @@ TEST(MDZipView, iterator) {
 TEST(MDZipView, single_column) {
   Dataset d;
   d.insert(Data::Value, "", Dimensions(Dim::Tof, 10), 10);
-  d.insert(Data::Int, "", Dimensions(Dim::Tof, 10), 10);
+  d.insert(Data::Variance, "", Dimensions(Dim::Tof, 10), 10);
   auto var = d.get(Data::Value);
   var[0] = 0.2;
   var[3] = 3.2;
@@ -89,37 +89,37 @@ TEST(MDZipView, single_column) {
 TEST(MDZipView, multi_column) {
   Dataset d;
   d.insert(Data::Value, "", Dimensions(Dim::Tof, 2), 2);
-  d.insert(Data::Int, "", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Data::Variance, "", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get(Data::Value);
   var[0] = 0.2;
   var[1] = 3.2;
 
-  auto view = zipMD(d, MDRead(Data::Value), MDRead(Data::Int));
+  auto view = zipMD(d, MDRead(Data::Value), MDRead(Data::Variance));
   auto it = view.begin();
   ASSERT_EQ(it->get(Data::Value), 0.2);
-  ASSERT_EQ(it->get(Data::Int), 0);
+  ASSERT_EQ(it->get(Data::Variance), 0);
   it++;
   ASSERT_EQ(it->get(Data::Value), 3.2);
-  ASSERT_EQ(it->get(Data::Int), 0);
+  ASSERT_EQ(it->get(Data::Variance), 0);
 }
 
 TEST(MDZipView, multi_column_mixed_dimension) {
   Dataset d;
   d.insert(Data::Value, "", Dimensions(Dim::Tof, 2), 2);
-  d.insert(Data::Int, "", {}, 1);
+  d.insert(Data::Variance, "", {}, 1);
   auto var = d.get(Data::Value);
   var[0] = 0.2;
   var[1] = 3.2;
 
-  ASSERT_ANY_THROW(zipMD(d, MDWrite(Data::Value), MDWrite(Data::Int)));
-  ASSERT_NO_THROW(zipMD(d, MDWrite(Data::Value), MDRead(Data::Int)));
-  auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::Int));
+  ASSERT_ANY_THROW(zipMD(d, MDWrite(Data::Value), MDWrite(Data::Variance)));
+  ASSERT_NO_THROW(zipMD(d, MDWrite(Data::Value), MDRead(Data::Variance)));
+  auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::Variance));
   auto it = view.begin();
   ASSERT_EQ(it->get(Data::Value), 0.2);
-  ASSERT_EQ(it->get(Data::Int), 0);
+  ASSERT_EQ(it->get(Data::Variance), 0);
   it++;
   ASSERT_EQ(it->get(Data::Value), 3.2);
-  ASSERT_EQ(it->get(Data::Int), 0);
+  ASSERT_EQ(it->get(Data::Variance), 0);
 }
 
 TEST(MDZipView, multi_column_transposed) {
@@ -132,22 +132,22 @@ TEST(MDZipView, multi_column_transposed) {
   dimsYX.add(Dim::X, 2);
 
   d.insert(Data::Value, "", dimsXY, {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert(Data::Int, "", dimsYX, {1, 3, 5, 2, 4, 6});
+  d.insert(Data::Variance, "", dimsYX, {1, 3, 5, 2, 4, 6});
   // TODO Current dimension check is too strict and fails unless data with
   // transposed dimensions is accessed as const.
-  auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::Int));
+  auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::Variance));
   auto it = view.begin();
   ASSERT_NE(++it, view.end());
   ASSERT_EQ(it->get(Data::Value), 2.0);
-  ASSERT_EQ(it->get(Data::Int), 2);
+  ASSERT_EQ(it->get(Data::Variance), 2);
   for (const auto &item : view)
-    ASSERT_EQ(item.get(Data::Value), item.get(Data::Int));
+    ASSERT_EQ(item.get(Data::Value), item.get(Data::Variance));
 }
 
 TEST(MDZipView, multi_column_unrelated_dimension) {
   Dataset d;
   d.insert(Data::Value, "", Dimensions(Dim::X, 2), 2);
-  d.insert(Data::Int, "", Dimensions(Dim::Y, 3), 3);
+  d.insert(Data::Variance, "", Dimensions(Dim::Y, 3), 3);
   auto view = zipMD(d, MDWrite(Data::Value));
   auto it = view.begin();
   ASSERT_TRUE(it < view.end());
@@ -160,8 +160,8 @@ TEST(MDZipView, multi_column_unrelated_dimension) {
 TEST(MDZipView, multi_column_orthogonal_fail) {
   Dataset d;
   d.insert(Data::Value, "", Dimensions(Dim::X, 2), 2);
-  d.insert(Data::Int, "", Dimensions(Dim::Y, 3), 3);
-  EXPECT_THROW_MSG(zipMD(d, MDRead(Data::Value), MDRead(Data::Int)),
+  d.insert(Data::Variance, "", Dimensions(Dim::Y, 3), 3);
+  EXPECT_THROW_MSG(zipMD(d, MDRead(Data::Value), MDRead(Data::Variance)),
                    std::runtime_error,
                    "Variables requested for iteration do not span a joint "
                    "space. In case one of the variables represents bin edges "
@@ -173,12 +173,12 @@ TEST(MDZipView, nested_MDZipView) {
   Dataset d;
   d.insert(Data::Value, "", {{Dim::Y, 3}, {Dim::X, 2}},
            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  d.insert(Data::Int, "", {Dim::X, 2}, {10, 20});
+  d.insert(Data::Variance, "", {Dim::X, 2}, {10, 20});
   auto nested = MDNested(MDRead(Data::Value));
   // TODO This is a very bad way of indexing nested views.
   auto Nested = decltype(nested)::type(d);
   ;
-  auto view = zipMD(d, {Dim::Y}, nested, MDRead(Data::Int));
+  auto view = zipMD(d, {Dim::Y}, nested, MDRead(Data::Variance));
   ASSERT_EQ(view.size(), 2);
   double base = 0.0;
   for (const auto &item : view) {
@@ -385,7 +385,7 @@ TEST(MDZipView, histogram_using_nested_MDZipView) {
 TEST(MDZipView, single_column_edges) {
   Dataset d;
   d.insert(Coord::Tof, Dimensions(Dim::Tof, 3), 3);
-  d.insert(Data::Int, "name2", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Data::Value, "name2", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get(Coord::Tof);
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
@@ -409,7 +409,7 @@ TEST(MDZipView, single_column_edges) {
 TEST(MDZipView, single_column_bins) {
   Dataset d;
   d.insert(Coord::Tof, Dimensions(Dim::Tof, 3), 3);
-  d.insert(Data::Int, "name2", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Data::Value, "name2", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get(Coord::Tof);
   ASSERT_EQ(var.size(), 3);
   var[0] = 0.2;
@@ -428,21 +428,22 @@ TEST(MDZipView, single_column_bins) {
 TEST(MDZipView, multi_column_edges) {
   Dataset d;
   d.insert(Coord::Tof, Dimensions(Dim::Tof, 3), 3);
-  d.insert(Data::Int, "", Dimensions(Dim::Tof, 2), 2);
+  d.insert(Data::Value, "", Dimensions(Dim::Tof, 2), 2);
   auto var = d.get(Coord::Tof);
   var[0] = 0.2;
   var[1] = 1.2;
   var[2] = 2.2;
 
   // Cannot simultaneously iterate edges and non-edges, so this throws.
-  EXPECT_THROW_MSG(zipMD(d, MDRead(Coord::Tof), MDRead(Data::Int)),
+  EXPECT_THROW_MSG(zipMD(d, MDRead(Coord::Tof), MDRead(Data::Value)),
                    std::runtime_error,
                    "Variables requested for iteration do not span a joint "
                    "space. In case one of the variables represents bin edges "
                    "direct joint iteration is not possible. Use the Bin<> "
                    "wrapper to iterate over bins defined by edges instead.");
 
-  auto view = zipMD(d, MDRead(Bin<decltype(Coord::Tof)>{}), MDWrite(Data::Int));
+  auto view =
+      zipMD(d, MDRead(Bin<decltype(Coord::Tof)>{}), MDWrite(Data::Value));
   // TODO What are good names for named getters? tofCenter(), etc.?
   const auto &bin = view.begin()->get(Bin<decltype(Coord::Tof)>{});
   EXPECT_EQ(bin.center(), 0.7);
@@ -567,47 +568,48 @@ TEST(MDZipView, derived_standard_deviation) {
 TEST(MDZipView, create_from_labels) {
   Dataset d;
   d.insert(Data::Value, "", Dimensions(Dim::X, 2), 2);
-  d.insert(Data::Int, "", {}, 1);
+  d.insert(Data::Variance, "", {}, 1);
   auto var = d.get(Data::Value);
   var[0] = 0.2;
   var[1] = 3.2;
 
-  ASSERT_ANY_THROW(zipMD(d, MDWrite(Data::Value), MDWrite(Data::Int)));
-  ASSERT_NO_THROW(zipMD(d, MDWrite(Data::Value), MDRead(Data::Int)));
-  auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::Int));
+  ASSERT_ANY_THROW(zipMD(d, MDWrite(Data::Value), MDWrite(Data::Variance)));
+  ASSERT_NO_THROW(zipMD(d, MDWrite(Data::Value), MDRead(Data::Variance)));
+  auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::Variance));
   auto it = view.begin();
   ASSERT_EQ(it->get(Data::Value), 0.2);
-  ASSERT_EQ(it->get(Data::Int), 0);
+  ASSERT_EQ(it->get(Data::Variance), 0);
   it++;
   ASSERT_EQ(it->get(Data::Value), 3.2);
-  ASSERT_EQ(it->get(Data::Int), 0);
+  ASSERT_EQ(it->get(Data::Variance), 0);
 }
 
 TEST(MDZipView, create_from_labels_with_name) {
   Dataset d;
   d.insert(Data::Value, "name", Dimensions(Dim::X, 2), 2);
-  d.insert(Data::Int, "name", {}, 1);
+  d.insert(Data::Variance, "name", {}, 1);
   auto var = d.get(Data::Value, "name");
   var[0] = 0.2;
   var[1] = 3.2;
 
-  auto view = zipMD(d, MDWrite(Data::Value, "name"), MDRead(Data::Int, "name"));
+  auto view =
+      zipMD(d, MDWrite(Data::Value, "name"), MDRead(Data::Variance, "name"));
   auto it = view.begin();
   ASSERT_EQ(it->get(Data::Value), 0.2);
-  ASSERT_EQ(it->get(Data::Int), 0);
+  ASSERT_EQ(it->get(Data::Variance), 0);
   it++;
   ASSERT_EQ(it->get(Data::Value), 3.2);
-  ASSERT_EQ(it->get(Data::Int), 0);
+  ASSERT_EQ(it->get(Data::Variance), 0);
 }
 
 TEST(MDZipView, create_from_labels_nested) {
   Dataset d;
   d.insert(Data::Value, "", {{Dim::Y, 3}, {Dim::X, 2}}, {1, 2, 3, 4, 5, 6});
-  d.insert(Data::Int, "", {Dim::X, 2}, {10, 20});
+  d.insert(Data::Variance, "", {Dim::X, 2}, {10, 20});
 
   auto nested = MDNested(MDRead(Data::Value));
   auto Nested = decltype(nested)::type(d);
-  auto view = zipMD(d, {Dim::Y}, nested, MDRead(Data::Int));
+  auto view = zipMD(d, {Dim::Y}, nested, MDRead(Data::Variance));
 
   ASSERT_EQ(view.size(), 2);
   double base = 0.0;
