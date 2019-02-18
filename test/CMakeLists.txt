@@ -6,7 +6,6 @@ add_executable ( dataset_test
   bool_test.cpp
   dataset_test.cpp
   dimensions_test.cpp
-  event_list_proxy_test.cpp
   EventWorkspace_test.cpp
   example_instrument_test.cpp
   except_test.cpp
