@@ -280,3 +280,15 @@ TEST(Zip, const_multiple_scalar_items) {
   EXPECT_EQ(std::get<0>(*it), 2.0);
   EXPECT_EQ(std::get<1>(*it), 4.0);
 }
+
+TEST(Zip, duplicate_key_fail) {
+  Dataset d;
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value, "b", {Dim::X, 2}, {3, 4});
+
+  EXPECT_THROW_MSG(
+      zip(d, Access::Key(Data::Value, "a"), Access::Key(Data::Value, "a")),
+      std::runtime_error, "Duplicate key.");
+  EXPECT_NO_THROW(
+      zip(d, Access::Key(Data::Value, "a"), Access::Key(Data::Value, "b")));
+}

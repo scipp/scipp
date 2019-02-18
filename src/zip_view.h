@@ -124,8 +124,9 @@ private:
 template <class... Fields>
 class EventListProxy : public ConstEventListProxy<Fields...> {
 public:
-  EventListProxy(Fields &... fields)
-      : ConstEventListProxy<Fields...>(fields...), m_fields(&fields...) {}
+  EventListProxy(const bool mayResize, Fields &... fields)
+      : ConstEventListProxy<Fields...>(fields...), m_mayResize(mayResize),
+        m_fields(&fields...) {}
 
   template <size_t... Is> auto makeView(std::index_sequence<Is...>) const {
     return ranges::view::zip(*std::get<Is>(m_fields)...);
@@ -141,18 +142,21 @@ public:
   template <class... Ts> void push_back(const Ts &... values) const {
     static_assert(sizeof...(Fields) == sizeof...(Ts),
                   "Wrong number of fields in push_back.");
+    requireResizable();
     doPushBack<Ts...>(values..., std::make_index_sequence<sizeof...(Ts)>{});
   }
   template <class... Ts>
   void push_back(const ranges::v3::common_pair<Ts &...> &values) const {
     static_assert(sizeof...(Fields) == sizeof...(Ts),
                   "Wrong number of fields in push_back.");
+    requireResizable();
     doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
   }
   template <class... Ts>
   void push_back(const ranges::v3::common_tuple<Ts &...> &values) const {
     static_assert(sizeof...(Fields) == sizeof...(Ts),
                   "Wrong number of fields in push_back.");
+    requireResizable();
     doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
   }
 
@@ -172,6 +176,13 @@ private:
     (std::get<Is>(m_fields)->push_back(std::get<Is>(values)), ...);
   }
 
+  void requireResizable() const {
+    if (!m_mayResize)
+      throw std::runtime_error(
+          "Event list cannot be resized via an incomplete proxy.");
+  }
+
+  bool m_mayResize;
   std::tuple<Fields *...> m_fields;
 };
 
@@ -196,33 +207,70 @@ static auto Write(const Tag tag, const std::string &name = "") {
 }; // namespace Access
 
 template <class T, size_t... Is>
-constexpr auto doMakeEventListProxy(const T &item,
+constexpr auto doMakeEventListProxy(const bool mayResize, const T &item,
                                     std::index_sequence<Is...>) noexcept {
-  return EventListProxy(std::get<Is>(item)...);
+  return EventListProxy(mayResize, std::get<Is>(item)...);
 }
 
 template <class T, class... Keys> struct ItemProxy {
   static constexpr auto get(const T &item) noexcept { return item; }
+  static constexpr auto getResizable(const T &item) noexcept { return item; }
 };
 
 template <class T, class Key> struct ItemProxy<T, Key> {
   static constexpr auto &get(const T &item) noexcept {
     return std::get<0>(item);
   }
+  static constexpr auto &getResizable(const T &item) noexcept {
+    return std::get<0>(item);
+  }
+};
+
+// TODO Joint version for any iterable.
+template <class T, class Item>
+struct ItemProxy<T, Access::Key<std::vector<Item>>> {
+  static constexpr auto get(const T &item) noexcept {
+    return doMakeEventListProxy(false, item,
+                                std::make_index_sequence<1>{});
+  }
+  static constexpr auto getResizable(const T &item) noexcept {
+    return doMakeEventListProxy(true, item,
+                                std::make_index_sequence<1>{});
+  }
 };
 
 template <class T, class... Ts>
 struct ItemProxy<T, Access::Key<std::vector<Ts>>...> {
   static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(item,
+    return doMakeEventListProxy(false, item,
                                 std::make_index_sequence<sizeof...(Ts)>{});
+  }
+  static constexpr auto getResizable(const T &item) noexcept {
+    return doMakeEventListProxy(true, item,
+                                std::make_index_sequence<sizeof...(Ts)>{});
+  }
+};
+
+template <class T, class Item>
+struct ItemProxy<T, Access::Key<boost::container::small_vector<Item, 8>>> {
+  static constexpr auto get(const T &item) noexcept {
+    return doMakeEventListProxy(false, item,
+                                std::make_index_sequence<1>{});
+  }
+  static constexpr auto getResizable(const T &item) noexcept {
+    return doMakeEventListProxy(true, item,
+                                std::make_index_sequence<1>{});
   }
 };
 
 template <class T, class... Ts>
 struct ItemProxy<T, Access::Key<boost::container::small_vector<Ts, 8>>...> {
   static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(item,
+    return doMakeEventListProxy(false, item,
+                                std::make_index_sequence<sizeof...(Ts)>{});
+  }
+  static constexpr auto getResizable(const T &item) noexcept {
+    return doMakeEventListProxy(true, item,
                                 std::make_index_sequence<sizeof...(Ts)>{});
   }
 };
@@ -244,21 +292,49 @@ public:
     if (((dims != dataset(keys.tag, keys.name).dimensions()) || ...))
       throw std::runtime_error("Variables to be zipped have mismatching "
                                "dimensions, use `zipMD()` instead.");
-    // TODO This is a mutable proxy, therefore we must ensure that all fields
-    // from a group are included, otherwise push_back must be prevented.
+    // If for each key all fields from a group are included, the item proxy will
+    // support push_back, in case the item is a vector-like.
+    m_mayResizeItems = true;
+    const std::array<std::pair<Tag, std::string>, sizeof...(Keys)> keyList{
+        std::pair(keys.tag, keys.name)...};
+    for (const auto &key : keyList) {
+      if (std::count(keyList.begin(), keyList.end(), key) != 1)
+        throw std::runtime_error("Duplicate key.");
+      const auto &name = std::get<std::string>(key);
+      gsl::index count = 0;
+      for (const auto &key2 : keyList) {
+        if (name == std::get<std::string>(key2))
+          ++count;
+      }
+      gsl::index requiredCount = 0;
+      for (const auto &var : dataset) {
+        if (name == var.name())
+          ++requiredCount;
+      }
+      m_mayResizeItems &= (count == requiredCount);
+    }
   }
 
   gsl::index size() const { return m_view.size(); }
   auto begin() const {
-    return boost::make_transform_iterator(m_view.begin(),
-                                          ItemProxy<item_type, Keys...>::get);
+    if (m_mayResizeItems)
+      return boost::make_transform_iterator(
+          m_view.begin(), ItemProxy<item_type, Keys...>::getResizable);
+    else
+      return boost::make_transform_iterator(m_view.begin(),
+                                            ItemProxy<item_type, Keys...>::get);
   }
   auto end() const {
-    return boost::make_transform_iterator(m_view.end(),
-                                          ItemProxy<item_type, Keys...>::get);
+    if (m_mayResizeItems)
+      return boost::make_transform_iterator(
+          m_view.end(), ItemProxy<item_type, Keys...>::getResizable);
+    else
+      return boost::make_transform_iterator(m_view.end(),
+                                            ItemProxy<item_type, Keys...>::get);
   }
 
 private:
+  bool m_mayResizeItems;
   type m_view;
 };
 

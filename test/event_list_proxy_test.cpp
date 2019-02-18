@@ -21,7 +21,7 @@ TEST(ConstEventListProxy, length_mismatch_fail) {
 TEST(EventListProxy, length_mismatch_fail) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2};
-  EXPECT_THROW_MSG(EventListProxy x(a, b), std::runtime_error,
+  EXPECT_THROW_MSG(EventListProxy x(true, a, b), std::runtime_error,
                    "Cannot zip data with mismatching length.");
 }
 
@@ -36,7 +36,7 @@ TEST(ConstEventListProxy, from_vectors) {
 TEST(EventListProxy, from_vectors) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2, 3};
-  EventListProxy proxy(a, b);
+  EventListProxy proxy(true, a, b);
   EXPECT_EQ(std::get<0>(*proxy.begin()), 1.1);
   EXPECT_EQ(std::get<1>(*proxy.begin()), 1);
   std::get<0>(*proxy.begin()) = 0.0;
@@ -46,7 +46,7 @@ TEST(EventListProxy, from_vectors) {
 TEST(EventListProxy, push_back) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2, 3};
-  EventListProxy proxy(a, b);
+  EventListProxy proxy(true, a, b);
   proxy.push_back(4.4, 4);
   EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
   EXPECT_EQ(std::get<1>(*(proxy.begin() + 3)), 4);
@@ -59,7 +59,7 @@ TEST(EventListProxy, push_back_3) {
   std::vector<double> a{1.1, 2.2, 3.3};
   std::vector<int32_t> b{1, 2, 3};
   std::vector<int32_t> c{3, 2, 1};
-  EventListProxy proxy(a, b, c);
+  EventListProxy proxy(true, a, b, c);
   proxy.push_back(4.4, 4, 1);
   EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
   EXPECT_EQ(std::get<1>(*(proxy.begin() + 3)), 4);
@@ -77,7 +77,7 @@ TEST(EventListProxy, push_back_duplicate_broken) {
   // This is not allowed. We could add a check, but at this point it is not
   // clear if that is required, since creation should typically be under our
   // control, and we may want to avoid performance penalties.
-  EventListProxy proxy(a, b, b);
+  EventListProxy proxy(true, a, b, b);
 
   proxy.push_back(4.4, 4, 5);
   EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
@@ -119,6 +119,17 @@ TEST(EventListsProxy, create) {
                       Access::Key<std::vector<double>>{Data::Variance, "a"}));
 }
 
+TEST(EventListsProxy, const_create) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+  const auto const_d(d);
+
+  EXPECT_NO_THROW(zip(const_d,
+                      Access::Key<std::vector<double>>{Data::Value, "a"},
+                      Access::Key<std::vector<double>>{Data::Variance, "a"}));
+}
+
 TEST(EventListsProxy, item_access) {
   Dataset d;
   d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
@@ -132,4 +143,40 @@ TEST(EventListsProxy, item_access) {
   events.push_back(1.0, 2.0);
   EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[0].size(), 1ul);
   EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[1].size(), 0ul);
+}
+
+TEST(EventListsProxy, item_access_prevented_if_partial_proxy) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+
+  auto eventLists = zip(d, Access::Key<std::vector<double>>{Data::Value, "a"});
+
+  ASSERT_EQ(eventLists.size(), 4);
+  auto events = *eventLists.begin();
+  EXPECT_THROW_MSG(events.push_back(1.0), std::runtime_error,
+                   "Event list cannot be resized via an incomplete proxy.");
+}
+
+TEST(EventListsProxy, const_item_access) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+  {
+    auto eventLists =
+        zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+            Access::Key<std::vector<double>>{Data::Variance, "a"});
+
+    ASSERT_EQ(eventLists.size(), 4);
+    auto events = *eventLists.begin();
+    events.push_back(1.0, 2.0);
+  }
+
+  const auto const_d(d);
+
+  auto eventLists =
+      zip(const_d, Access::Key<std::vector<double>>{Data::Value, "a"},
+          Access::Key<std::vector<double>>{Data::Variance, "a"});
+  auto events = *eventLists.begin();
+  EXPECT_EQ(std::get<0>(*events.begin()), 1.0);
 }
