@@ -64,11 +64,11 @@ BENCHMARK(BM_EventListProxy_push_back);
 static void BM_EventListProxy_read_baseline(benchmark::State &state) {
   std::random_device rd;
   std::mt19937 mt(rd());
-  std::poisson_distribution dist(20);
+  std::poisson_distribution dist(state.range(0));
 
   gsl::index totalCount = 0;
   Dataset d;
-  gsl::index nSpec = 100000;
+  gsl::index nSpec = state.range(1);
   d.insert(Data::EventTofs, "a", {Dim::X, nSpec});
   d.insert(Data::EventPulseTimes, "a", {Dim::X, nSpec});
   auto eventLists = zip(d, Access::Key{Data::EventTofs, "a"},
@@ -97,16 +97,17 @@ static void BM_EventListProxy_read_baseline(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * totalCount);
   state.SetBytesProcessed(state.iterations() * totalCount * 2 * sizeof(double));
 }
-BENCHMARK(BM_EventListProxy_read_baseline);
+// Arguments are nEvent and nSpec.
+BENCHMARK(BM_EventListProxy_read_baseline)->Ranges({{2, 512}, {128, 8192}});
 
 static void BM_EventListProxy_read(benchmark::State &state) {
   std::random_device rd;
   std::mt19937 mt(rd());
-  std::poisson_distribution dist(20);
+  std::poisson_distribution dist(state.range(0));
 
   gsl::index totalCount = 0;
   Dataset d;
-  gsl::index nSpec = 100000;
+  gsl::index nSpec = state.range(1);
   d.insert(Data::EventTofs, "a", {Dim::X, nSpec});
   d.insert(Data::EventPulseTimes, "a", {Dim::X, nSpec});
   auto eventLists = zip(d, Access::Key{Data::EventTofs, "a"},
@@ -135,6 +136,7 @@ static void BM_EventListProxy_read(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * totalCount);
   state.SetBytesProcessed(state.iterations() * totalCount * 2 * sizeof(double));
 }
-BENCHMARK(BM_EventListProxy_read);
+// Arguments are nEvent and nSpec.
+BENCHMARK(BM_EventListProxy_read)->Ranges({{2, 512}, {128, 8192}});
 
 BENCHMARK_MAIN();
