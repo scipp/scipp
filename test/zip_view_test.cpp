@@ -233,12 +233,15 @@ TEST(Zip, single_scalar_item) {
 
   EXPECT_EQ(zipped.size(), 4);
   auto it = zipped.begin();
-  EXPECT_EQ(*it, 1.0);
-  *it += 1.0;
-  EXPECT_EQ(*it++, 2.0);
-  EXPECT_EQ(*it++, 2.0);
-  EXPECT_EQ(*it++, 3.0);
-  EXPECT_EQ(*it++, 4.0);
+  // Could consider returning the single item by reference, instead of having a
+  // size-1 proxy. In practice this is probably not used a lot, so we keep
+  // things simple for now.
+  EXPECT_EQ(std::get<0>(*it), 1.0);
+  std::get<0>(*it) += 1.0;
+  EXPECT_EQ(std::get<0>(*it++), 2.0);
+  EXPECT_EQ(std::get<0>(*it++), 2.0);
+  EXPECT_EQ(std::get<0>(*it++), 3.0);
+  EXPECT_EQ(std::get<0>(*it++), 4.0);
 }
 
 TEST(Zip, multiple_scalar_items) {

@@ -206,6 +206,27 @@ static auto Write(const Tag tag, const std::string &name = "") {
 }
 }; // namespace Access
 
+// See https://stackoverflow.com/a/29634934.
+namespace detail {
+// To allow ADL with custom begin/end
+using std::begin;
+using std::end;
+
+template <typename T>
+auto is_iterable_impl(int) -> decltype(
+    begin(std::declval<T &>()) !=
+        end(std::declval<T &>()), // begin/end and operator !=
+    void(),                       // Handle evil operator ,
+    ++std::declval<decltype(begin(std::declval<T &>())) &>(), // operator ++
+    void(*begin(std::declval<T &>())),                        // operator*
+    std::true_type{});
+
+template <typename T> std::false_type is_iterable_impl(...);
+} // namespace detail
+
+template <typename T>
+using is_iterable = decltype(detail::is_iterable_impl<T>(0));
+
 template <class T, size_t... Is>
 constexpr auto doMakeEventListProxy(const bool mayResize, const T &item,
                                     std::index_sequence<Is...>) noexcept {
@@ -213,45 +234,12 @@ constexpr auto doMakeEventListProxy(const bool mayResize, const T &item,
 }
 
 template <class T, bool Resizable, class... Keys> struct ItemProxy {
-  static constexpr auto get(const T &item) noexcept { return item; }
-};
-
-template <class T, bool Resizable, class Key> struct ItemProxy<T, Resizable, Key> {
-    static constexpr auto &get(const T &item) noexcept {
-    return std::get<0>(item);
-  }
-};
-
-// TODO Joint version for any iterable.
-template <class T, bool Resizable, class Item>
-struct ItemProxy<T, Resizable, Access::Key<std::vector<Item>>> {
-    static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(Resizable, item,
-                                std::make_index_sequence<1>{});
-  }
-};
-
-template <class T, bool Resizable, class... Ts>
-struct ItemProxy<T, Resizable, Access::Key<std::vector<Ts>>...> {
-    static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(Resizable, item,
-                                std::make_index_sequence<sizeof...(Ts)>{});
-  }
-};
-
-template <class T, bool Resizable, class Item>
-struct ItemProxy<T, Resizable, Access::Key<boost::container::small_vector<Item, 8>>> {
-    static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(Resizable, item,
-                                std::make_index_sequence<1>{});
-  }
-};
-
-template <class T, bool Resizable, class... Ts>
-struct ItemProxy<T, Resizable, Access::Key<boost::container::small_vector<Ts, 8>>...> {
-    static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(Resizable, item,
-                                std::make_index_sequence<sizeof...(Ts)>{});
+  static constexpr auto get(const T &item) noexcept {
+    if constexpr ((is_iterable<typename Keys::type>::value && ...))
+      return doMakeEventListProxy(Resizable, item,
+                                  std::make_index_sequence<sizeof...(Keys)>{});
+    else
+      return item;
   }
 };
 
