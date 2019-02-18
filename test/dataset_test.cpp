@@ -162,7 +162,7 @@ TEST(Dataset, get_variable_view) {
   EXPECT_EQ(d(Data::Value, "name").name(), "name");
   EXPECT_THROW_MSG_SUBSTR(d(Coord::Y), dataset::except::VariableNotFoundError,
                           "could not find variable with tag "
-                          "Coord::Y and name");
+                          "Coord::Y and name ``");
 }
 
 TEST(Dataset, extract) {
@@ -753,7 +753,7 @@ TEST(Dataset, rebin_failures) {
   EXPECT_THROW_MSG_SUBSTR(rebin(d, coord),
                           dataset::except::VariableNotFoundError,
                           "could not find variable with tag "
-                          "Coord::X and name");
+                          "Coord::X and name ``");
   Variable data(Data::Value, {Dim::X, 2}, {2.0, 4.0});
   EXPECT_THROW_MSG(
       rebin(d, data), std::runtime_error,
