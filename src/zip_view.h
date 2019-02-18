@@ -212,65 +212,45 @@ constexpr auto doMakeEventListProxy(const bool mayResize, const T &item,
   return EventListProxy(mayResize, std::get<Is>(item)...);
 }
 
-template <class T, class... Keys> struct ItemProxy {
+template <class T, bool Resizable, class... Keys> struct ItemProxy {
   static constexpr auto get(const T &item) noexcept { return item; }
-  static constexpr auto getResizable(const T &item) noexcept { return item; }
 };
 
-template <class T, class Key> struct ItemProxy<T, Key> {
-  static constexpr auto &get(const T &item) noexcept {
-    return std::get<0>(item);
-  }
-  static constexpr auto &getResizable(const T &item) noexcept {
+template <class T, bool Resizable, class Key> struct ItemProxy<T, Resizable, Key> {
+    static constexpr auto &get(const T &item) noexcept {
     return std::get<0>(item);
   }
 };
 
 // TODO Joint version for any iterable.
-template <class T, class Item>
-struct ItemProxy<T, Access::Key<std::vector<Item>>> {
-  static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(false, item,
-                                std::make_index_sequence<1>{});
-  }
-  static constexpr auto getResizable(const T &item) noexcept {
-    return doMakeEventListProxy(true, item,
+template <class T, bool Resizable, class Item>
+struct ItemProxy<T, Resizable, Access::Key<std::vector<Item>>> {
+    static constexpr auto get(const T &item) noexcept {
+    return doMakeEventListProxy(Resizable, item,
                                 std::make_index_sequence<1>{});
   }
 };
 
-template <class T, class... Ts>
-struct ItemProxy<T, Access::Key<std::vector<Ts>>...> {
-  static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(false, item,
-                                std::make_index_sequence<sizeof...(Ts)>{});
-  }
-  static constexpr auto getResizable(const T &item) noexcept {
-    return doMakeEventListProxy(true, item,
+template <class T, bool Resizable, class... Ts>
+struct ItemProxy<T, Resizable, Access::Key<std::vector<Ts>>...> {
+    static constexpr auto get(const T &item) noexcept {
+    return doMakeEventListProxy(Resizable, item,
                                 std::make_index_sequence<sizeof...(Ts)>{});
   }
 };
 
-template <class T, class Item>
-struct ItemProxy<T, Access::Key<boost::container::small_vector<Item, 8>>> {
-  static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(false, item,
-                                std::make_index_sequence<1>{});
-  }
-  static constexpr auto getResizable(const T &item) noexcept {
-    return doMakeEventListProxy(true, item,
+template <class T, bool Resizable, class Item>
+struct ItemProxy<T, Resizable, Access::Key<boost::container::small_vector<Item, 8>>> {
+    static constexpr auto get(const T &item) noexcept {
+    return doMakeEventListProxy(Resizable, item,
                                 std::make_index_sequence<1>{});
   }
 };
 
-template <class T, class... Ts>
-struct ItemProxy<T, Access::Key<boost::container::small_vector<Ts, 8>>...> {
-  static constexpr auto get(const T &item) noexcept {
-    return doMakeEventListProxy(false, item,
-                                std::make_index_sequence<sizeof...(Ts)>{});
-  }
-  static constexpr auto getResizable(const T &item) noexcept {
-    return doMakeEventListProxy(true, item,
+template <class T, bool Resizable, class... Ts>
+struct ItemProxy<T, Resizable, Access::Key<boost::container::small_vector<Ts, 8>>...> {
+    static constexpr auto get(const T &item) noexcept {
+    return doMakeEventListProxy(Resizable, item,
                                 std::make_index_sequence<sizeof...(Ts)>{});
   }
 };
@@ -319,18 +299,18 @@ public:
   auto begin() const {
     if (m_mayResizeItems)
       return boost::make_transform_iterator(
-          m_view.begin(), ItemProxy<item_type, Keys...>::getResizable);
+          m_view.begin(), ItemProxy<item_type, true, Keys...>::get);
     else
-      return boost::make_transform_iterator(m_view.begin(),
-                                            ItemProxy<item_type, Keys...>::get);
+      return boost::make_transform_iterator(
+          m_view.begin(), ItemProxy<item_type, false, Keys...>::get);
   }
   auto end() const {
     if (m_mayResizeItems)
       return boost::make_transform_iterator(
-          m_view.end(), ItemProxy<item_type, Keys...>::getResizable);
+          m_view.end(), ItemProxy<item_type, true, Keys...>::get);
     else
-      return boost::make_transform_iterator(m_view.end(),
-                                            ItemProxy<item_type, Keys...>::get);
+      return boost::make_transform_iterator(
+          m_view.end(), ItemProxy<item_type, false, Keys...>::get);
   }
 
 private:
