@@ -94,6 +94,11 @@ template <> struct boost::units::base_unit_info<datasetunits::tof_base_unit> {
 
 class Unit {
 public:
+  // Define a std::variant which will hold the set of allowed units.
+  // Any unit that does not exist in the variant will either fail to compile or
+  // throw a std::runtime_error during operations such as multiplication or
+  // division.
+  // 
   // TODO: maybe it is possible to create a helper that will automatically
   // generate the squares for variance?
   // The following was attempted but did not succeed:
@@ -101,7 +106,6 @@ public:
   //  using type =
   //    std::variant<Ts..., decltype(std::declval<Ts>()*std::declval<Ts>())...>;
   //  };
-
   typedef std::variant<
       // Dimensionless [ ]
       boost::units::si::dimensionless,
