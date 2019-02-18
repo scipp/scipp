@@ -464,7 +464,8 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   b.insert(Data::Variance, "name1", {Dim::X, 1}, {4.0});
 
   // Counts (aka "histogram data") times counts not possible.
-  EXPECT_THROW_MSG(a *= a, std::runtime_error, "Unsupported unit on LHS");
+  EXPECT_THROW_MSG(a *= a, std::runtime_error,
+                   "Unsupported unit combination in multiplication");
   // Counts times frequencies (aka "distribution") ok.
   // TODO Works for dimensionless right now, but do we need to handle other
   // cases as well?

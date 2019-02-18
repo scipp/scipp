@@ -64,7 +64,7 @@ BOOST_UNITS_DEFINE_CONVERSION_FACTOR(datasetunits::wavelength_base_unit,
 BOOST_UNITS_DEFINE_CONVERSION_FACTOR(
     datasetunits::energy_base_unit, boost::units::si::energy, double,
     1.0e-3 * boost::units::si::constants::codata::e.value().value());
-// Convert angstroms to SI meters
+// Convert tof microseconds to SI seconds
 BOOST_UNITS_DEFINE_CONVERSION_FACTOR(datasetunits::tof_base_unit,
                                      boost::units::si::time, double, 1.0e-6);
 
@@ -91,48 +91,15 @@ template <> struct boost::units::base_unit_info<datasetunits::tof_base_unit> {
   static std::string symbol() { return "us"; }
 };
 
-template <class... Ts> struct unit_and_variance {
-  using type =
-      std::variant<Ts..., decltype(std::declval<Ts>() * std::declval<Ts>())...>;
-};
-
 class Unit {
 public:
-  // typedef unit_and_variance<
-  //   // Dimensionless [ ]
-  //   boost::units::si::dimensionless,
-  //   // Length [m]
-  //   boost::units::si::length,
-  //   // Area [m^2]
-  //   boost::units::si::area,
-  //   // Time [s]
-  //   boost::units::si::time,
-  //   // Mass [kg]
-  //   boost::units::si::mass,
-  //   // Counts [counts]
-  //   datasetunits::counts,
-  //   // InverseLength [m^-1]
-  //   decltype(std::declval<boost::units::si::dimensionless>() /
-  //            std::declval<boost::units::si::length>()),
-  //   // Wavelength [Angstroms]
-  //   datasetunits::wavelength,
-  //   // Energy [meV]
-  //   datasetunits::energy,
-  //   // Time of flight [microseconds]
-  //   datasetunits::tof,
-  //   // 1/time [s^-1]
-  //   decltype(std::declval<boost::units::si::dimensionless>() /
-  //            std::declval<boost::units::si::time>()),
-  //   // Velocity [m/s]
-  //   decltype(std::declval<boost::units::si::length>() /
-  //            std::declval<boost::units::si::time>()),
-  //   // Area/s [m^2/s]
-  //   decltype(std::declval<boost::units::si::area>() /
-  //            std::declval<boost::units::si::time>()),
-  //   // Energy/s [meV/s]
-  //   decltype(std::declval<datasetunits::energy>() /
-  //            std::declval<boost::units::si::time>())
-  //   >::type unit_t;
+  // TODO: maybe it is possible to create a helper that will automatically
+  // generate the squares for variance?
+  // The following was attempted but did not succeed:
+  //  template <class... Ts> struct unit_and_variance {
+  //  using type =
+  //    std::variant<Ts..., decltype(std::declval<Ts>()*std::declval<Ts>())...>;
+  //  };
 
   typedef std::variant<
       // Dimensionless [ ]
@@ -173,9 +140,6 @@ public:
                std::declval<boost::units::si::area>()),
       // Counts variance
       decltype(std::declval<datasetunits::counts>() *
-               std::declval<datasetunits::counts>()),
-      // Counts * dimensionless
-      decltype(std::declval<boost::units::si::dimensionless>() *
                std::declval<datasetunits::counts>())>
       unit_t;
 
@@ -190,7 +154,8 @@ public:
   };
   // TODO should this be explicit?
   Unit() = default;
-  // template <class T> Unit(T &&unit) : m_unit(std::forward<T>(unit)) {}
+  // TODO: should we have a templated constructor here?
+  // e.g.: template <class T> Unit(T &&unit) : m_unit(std::forward<T>(unit)) {}
   Unit(const Unit::Id id);
   Unit(const unit_t unit) : m_unit(unit) {}
 
@@ -198,7 +163,6 @@ public:
   const Unit::unit_t &getUnit() const { return m_unit; }
 
 private:
-  // Id m_id = Id::Dimensionless;
   unit_t m_unit;
   // TODO need to support scale
 };

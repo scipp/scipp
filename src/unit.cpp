@@ -75,7 +75,14 @@ Unit::Id Unit::id() const {
 Unit operator*(const Unit &a, const Unit &b) {
   return std::visit(
       [](auto x, auto y) -> Unit::unit_t {
-        if constexpr (isVariantMember<decltype(x * y), Unit::unit_t>::value)
+        if constexpr (std::is_same<decltype(x),
+                                   boost::units::si::dimensionless>::value)
+          return {y};
+        else if constexpr (std::is_same<decltype(y),
+                                        boost::units::si::dimensionless>::value)
+          return {x};
+        else if constexpr (isVariantMember<decltype(x * y),
+                                           Unit::unit_t>::value)
           return {x * y};
         else
           throw std::runtime_error(
@@ -89,7 +96,11 @@ Unit operator*(const Unit &a, const Unit &b) {
 Unit operator/(const Unit &a, const Unit &b) {
   return std::visit(
       [](auto x, auto y) -> Unit::unit_t {
-        if constexpr (isVariantMember<decltype(x / y), Unit::unit_t>::value)
+        if constexpr (std::is_same<decltype(y),
+                                   boost::units::si::dimensionless>::value)
+          return {x};
+        else if constexpr (isVariantMember<decltype(x / y),
+                                           Unit::unit_t>::value)
           return {x / y};
         else
           throw std::runtime_error("Unsupported unit combination in division");
