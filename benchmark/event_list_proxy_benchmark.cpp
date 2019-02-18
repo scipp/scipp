@@ -98,7 +98,9 @@ static void BM_EventListProxy_read_baseline(benchmark::State &state) {
   state.SetBytesProcessed(state.iterations() * totalCount * 2 * sizeof(double));
 }
 // Arguments are nEvent and nSpec.
-BENCHMARK(BM_EventListProxy_read_baseline)->Ranges({{2, 512}, {128, 8192}});
+BENCHMARK(BM_EventListProxy_read_baseline)
+    ->RangeMultiplier(2)
+    ->Ranges({{2, 1024}, {128, 2 << 15}});
 
 static void BM_EventListProxy_read(benchmark::State &state) {
   std::random_device rd;
@@ -118,14 +120,15 @@ static void BM_EventListProxy_read(benchmark::State &state) {
     for (int32_t i = 0; i < count; ++i)
       eventList.push_back(0.0, 0.0);
   }
+  const Dataset &const_d(d);
 
   for (auto _ : state) {
-    auto eventLists = zip(d, Access::Key{Data::EventTofs, "a"},
+    auto eventLists = zip(const_d, Access::Key{Data::EventTofs, "a"},
                           Access::Key{Data::EventPulseTimes, "a"});
     double tof = 0.0;
     double pulseTime = 0.0;
     for (const auto &eventList : eventLists) {
-      for (const auto &event : eventList) {
+      for (const auto event : eventList) {
         tof += std::get<0>(event);
         pulseTime += std::get<1>(event);
       }
@@ -137,6 +140,8 @@ static void BM_EventListProxy_read(benchmark::State &state) {
   state.SetBytesProcessed(state.iterations() * totalCount * 2 * sizeof(double));
 }
 // Arguments are nEvent and nSpec.
-BENCHMARK(BM_EventListProxy_read)->Ranges({{2, 512}, {128, 8192}});
+BENCHMARK(BM_EventListProxy_read)
+    ->RangeMultiplier(2)
+    ->Ranges({{2, 1024}, {128, 2 << 15}});
 
 BENCHMARK_MAIN();

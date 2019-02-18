@@ -106,14 +106,15 @@ public:
       throw std::runtime_error("Cannot zip data with mismatching length.");
   }
 
-  template <size_t... Is> auto makeView(std::index_sequence<Is...>) const {
+  template <size_t... Is>
+  constexpr auto makeView(std::index_sequence<Is...>) const noexcept {
     return ranges::view::zip(*std::get<Is>(m_fields)...);
   }
 
-  auto begin() const {
+  auto begin() const noexcept {
     return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
   }
-  auto end() const {
+  auto end() const noexcept {
     return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
   }
 
@@ -128,14 +129,15 @@ public:
       : ConstEventListProxy<Fields...>(fields...), m_mayResize(mayResize),
         m_fields(&fields...) {}
 
-  template <size_t... Is> auto makeView(std::index_sequence<Is...>) const {
+  template <size_t... Is>
+  constexpr auto makeView(std::index_sequence<Is...>) const noexcept {
     return ranges::view::zip(*std::get<Is>(m_fields)...);
   }
 
-  auto begin() const {
+  auto begin() const noexcept {
     return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
   }
-  auto end() const {
+  auto end() const noexcept {
     return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
   }
 
@@ -230,7 +232,13 @@ using is_iterable = decltype(detail::is_iterable_impl<T>(0));
 template <class T, size_t... Is>
 constexpr auto doMakeEventListProxy(const bool mayResize, const T &item,
                                     std::index_sequence<Is...>) noexcept {
-  return EventListProxy(mayResize, std::get<Is>(item)...);
+  if constexpr ((std::is_const_v<
+                     std::remove_reference_t<decltype(std::get<Is>(item))>> &&
+                 ...))
+    return ConstEventListProxy(std::get<Is>(item)...);
+
+  else
+    return EventListProxy(mayResize, std::get<Is>(item)...);
 }
 
 template <class T, bool Resizable, class... Keys> struct ItemProxy {
