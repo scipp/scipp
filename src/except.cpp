@@ -7,25 +7,9 @@
 #include "dataset.h"
 #include "dimensions.h"
 #include "tags.h"
-#include <numeric>
 #include <regex>
-#include <set>
 
 namespace {
-std::set<size_t>
-filter_variables(const Dataset &dataset,
-                 bool (*predicate)(const ConstVariableSlice &)) {
-  std::vector<size_t> indexes(dataset.size());
-  std::iota(indexes.begin(), indexes.end(), 0);
-  std::set<size_t> targetIndexes;
-  auto index_it = indexes.begin();
-  auto var_it = dataset.begin();
-  for (; index_it != indexes.end(); ++index_it, ++var_it) {
-    if (predicate(*var_it))
-      targetIndexes.insert(*index_it);
-  }
-  return targetIndexes;
-}
 std::string do_to_string(const Dim dim) {
   switch (dim) {
   case Dim::Invalid:
@@ -143,37 +127,15 @@ std::string to_string(const Variable &variable, const std::string separator) {
   return s;
 }
 
-std::string to_string_variable(const Dataset &dataset,
-                               const std::set<size_t> &indexes,
-                               const std::string separator) {
-  std::string out;
-  for (auto idx : indexes) {
-    out += "\n" + to_string(dataset[idx], separator);
-  }
-  return out;
-}
-
 std::string to_string(const Dataset &dataset, const std::string separator) {
   std::string s("Dataset with ");
   s += std::to_string(dataset.size()) + " variables";
   s += "\nDimensions : " + to_string(dataset.dimensions(), separator);
   // The following is peformed to allow variables to be sorted into catagories
   // of coordinate, data and attribute as part of output
-  auto coordIndexes =
-      filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
-        return var.isCoord();
-      });
-  s += to_string_variable(dataset, coordIndexes, separator);
-  auto dataVariablesIndexes =
-      filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
-        return var.isData();
-      });
-  s += to_string_variable(dataset, dataVariablesIndexes, separator);
-  auto attributeIndexes =
-      filter_variables(dataset, [](const ConstVariableSlice &var) -> auto {
-        return var.isAttr();
-      });
-  s += to_string_variable(dataset, attributeIndexes, separator);
+  for (const auto &var : dataset) {
+    s += to_string(var, separator);
+  }
   return s;
 }
 
