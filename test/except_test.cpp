@@ -32,3 +32,17 @@ TEST(DimensionLengthError, what) {
             std::string("Expected dimension to be in {{Dim::X, 1}, {Dim::Y, "
                         "2}}\n, got Dim::Y with mismatching length 3."));
 }
+
+TEST(Dimensions, to_string) {
+  Dataset a;
+  a.insert(Attr::ExperimentLog, "log", Dimensions{{Dim::X, 2}});
+  a.insert(Data::Value, "values", Dimensions{{Dim::X, 2}}, {1, 2});
+  a.insert(Coord::X, Dimensions{{Dim::X, 3}}, {1, 2, 3});
+  // Create new dataset with same variables but different order
+  Dataset b;
+  b.insert(a[1]);
+  b.insert(a[2]);
+  b.insert(a[0]);
+  // string representations should be the same
+  EXPECT_EQ(dataset::to_string(a), dataset::to_string(b));
+}

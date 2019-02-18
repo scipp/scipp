@@ -96,7 +96,7 @@ std::string do_to_string(const Unit &unit) {
 
 namespace dataset {
 
-std::string to_string(const Dimensions &dims, const std::string separator) {
+std::string to_string(const Dimensions &dims, const std::string &separator) {
   if (dims.empty())
     return "{}";
   std::string s = "{{";
@@ -133,20 +133,20 @@ std::string to_string(const DType dtype) {
   };
 }
 
-std::string to_string(const Unit &unit, const std::string separator) {
+std::string to_string(const Unit &unit, const std::string &separator) {
   return std::regex_replace(do_to_string(unit), std::regex("::"), separator);
 }
-std::string to_string(const Dim dim, const std::string separator) {
+std::string to_string(const Dim dim, const std::string &separator) {
   return std::regex_replace(do_to_string(dim), std::regex("::"), separator);
 }
 
-std::string to_string(const Tag tag, const std::string separator) {
+std::string to_string(const Tag tag, const std::string &separator) {
   return std::regex_replace(do_to_string(tag), std::regex("::"), separator);
 }
 
 // For use with variables
 std::string make_dims_labels(const Variable &variable,
-                             const std::string separator) {
+                             const std::string &separator) {
   auto dims = variable.dimensions();
   std::string diminfo = "( ";
   for (int32_t i = 0; i < dims.ndim(); ++i) {
@@ -159,7 +159,7 @@ std::string make_dims_labels(const Variable &variable,
   return diminfo;
 }
 
-std::string to_string(const Variable &variable, const std::string separator) {
+std::string to_string(const Variable &variable, const std::string &separator) {
   std::string variableName = variable.name();
   std::string diminfo = make_dims_labels(variable, separator);
   if (variableName.empty())
@@ -170,17 +170,29 @@ std::string to_string(const Variable &variable, const std::string separator) {
   return s;
 } // namespace dataset
 
-std::string to_string(const Dataset &dataset, const std::string separator) {
+std::string to_string(const Dataset &dataset, const std::string &separator) {
   std::string s("Dataset with ");
-  s += std::to_string(dataset.size()) + " variables";
-  s += "\nDimensions : " + to_string(dataset.dimensions(), separator);
+  s += std::to_string(dataset.size()) + " variables\n";
+  s += "Dimensions :\n " + to_string(dataset.dimensions(), separator);
   // The following is peformed to allow variables to be sorted into catagories
-  // of coordinate, data and attribute as part of output
+  // of coordinate, data and attribute as part of output.
+  s += "Coordinate Variables :\n";
   for (const auto &var : dataset) {
-    s += to_string(var, separator);
+    if (var.isCoord())
+      s += to_string(var, separator);
+  }
+  s += "Data Variables :\n";
+  for (const auto &var : dataset) {
+    if (var.isData())
+      s += to_string(var, separator);
+  }
+  s += "Attribute Variables :\n";
+  for (const auto &var : dataset) {
+    if (var.isAttr())
+      s += to_string(var, separator);
   }
   return s;
-}
+} // namespace dataset
 
 std::string to_string(const ConstDatasetSlice &dataset) {
   std::string s("Dataset slice with ");
