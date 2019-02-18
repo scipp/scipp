@@ -131,15 +131,6 @@ public:
       // 1/time [s^-1]
       decltype(std::declval<boost::units::si::dimensionless>() /
                std::declval<boost::units::si::time>()),
-      // Velocity [m/s]
-      decltype(std::declval<boost::units::si::length>() /
-               std::declval<boost::units::si::time>()),
-      // Area/s [m^2/s]
-      decltype(std::declval<boost::units::si::area>() /
-               std::declval<boost::units::si::time>()),
-      // Energy/s [meV/s]
-      decltype(std::declval<datasetunits::energy>() /
-               std::declval<boost::units::si::time>()),
       // Area variance
       decltype(std::declval<boost::units::si::area>() *
                std::declval<boost::units::si::area>()),
@@ -159,7 +150,8 @@ public:
     Energy,
     Wavelength,
     Time,
-    Tof
+    Tof,
+    Mass
   };
   // TODO should this be explicit?
   Unit() = default;

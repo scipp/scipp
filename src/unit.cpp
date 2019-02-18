@@ -51,6 +51,9 @@ Unit::Unit(const Unit::Id id) {
   case Unit::Id::Tof:
     m_unit = datasetunits::tof();
     break;
+  case Unit::Id::Mass:
+    m_unit = boost::units::si::mass();
+    break;
   }
 }
 
@@ -80,6 +83,7 @@ Unit::Id Unit::id() const {
                  [](datasetunits::wavelength) { return Unit::Id::Wavelength; },
                  [](boost::units::si::time) { return Unit::Id::Time; },
                  [](datasetunits::tof) { return Unit::Id::Tof; },
+                 [](boost::units::si::mass) { return Unit::Id::Mass; },
                  [](auto) -> Unit::Id {
                    throw std::runtime_error("Unit not yet implemented");
                  }},
