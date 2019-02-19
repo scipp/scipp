@@ -23,7 +23,8 @@
         try {                                                                  \
           TRY_BLOCK;                                                           \
         } catch (const EXCEPTION_TYPE &e) {                                    \
-          EXPECT_THAT(e.what(), ::testing::HasSubstr(SUBSTR));                 \
+          EXPECT_TRUE(std::string(e.what()).find(SUBSTR) !=                    \
+                      std::string::npos);                                      \
           throw;                                                               \
         }                                                                      \
       },                                                                       \

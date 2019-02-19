@@ -389,11 +389,11 @@ TEST(EventListsProxy, missing_field) {
   d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
   d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
 
-  EXPECT_THROW_MSG(zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
-                       Access::Key<std::vector<double>>{Data::Variance, "b"}),
-                   std::runtime_error,
-                   "Dataset with 2 variables, could not find variable with tag "
-                   "Data::Variance and name `b`.");
+  EXPECT_THROW_MSG_SUBSTR(
+      zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+          Access::Key<std::vector<double>>{Data::Variance, "b"}),
+      std::runtime_error,
+      "could not find variable with tag Data::Variance and name `b`.");
 }
 
 TEST(EventListsProxy, dimension_mismatch) {
