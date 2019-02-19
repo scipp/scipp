@@ -3,6 +3,7 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <boost/mpl/at.hpp>
@@ -514,9 +515,9 @@ TEST(MDZipView, duplicate_data_tag) {
   d.insert(Data::Value, "name1", {}, 1);
   d.insert(Data::Value, "name2", {}, 1);
 
-  EXPECT_THROW_MSG(zipMD(d, MDRead(Data::Value)), std::runtime_error,
-                   "Dataset with 2 variables, could not find variable with tag "
-                   "Data::Value and name ``.");
+  EXPECT_THROW_MSG_SUBSTR(zipMD(d, MDRead(Data::Value)), std::runtime_error,
+                          "could not find variable with tag "
+                          "Data::Value and name");
   EXPECT_NO_THROW(zipMD(d, MDRead(Data::Value, "name2")));
 }
 

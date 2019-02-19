@@ -433,7 +433,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init<>())
       .def("__repr__",
            [](const Dimensions &self) {
-             std::string out = "Dimensions = " + dataset::to_string(self);
+             std::string out = "Dimensions = " + dataset::to_string(self, ".");
              return out;
            })
       .def("__len__", &Dimensions::count)
@@ -470,7 +470,9 @@ PYBIND11_MODULE(dataset, m) {
                                    char, bool, std::string, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__repr__",
+           [](const Variable &self) { return dataset::to_string(self, "."); });
 
   py::class_<VariableSlice> view(m, "VariableSlice", py::buffer_protocol());
   view.def_buffer(&make_py_buffer_info);
@@ -517,7 +519,10 @@ PYBIND11_MODULE(dataset, m) {
       .def("__isub__", [](VariableSlice &a, Variable &b) { return a -= b; },
            py::is_operator())
       .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
-           py::is_operator());
+           py::is_operator())
+      .def("__repr__", [](const VariableSlice &self) {
+        return dataset::to_string(self, ".");
+      });
 
   py::class_<DatasetSlice>(m, "DatasetView")
       .def(py::init<Dataset &>())
@@ -567,6 +572,11 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init<>())
       .def(py::init<const DatasetSlice &>())
       .def("__len__", &Dataset::size)
+      .def("__repr__",
+           [](const Dataset &self) {
+             auto out = dataset::to_string(self, ".");
+             return out;
+           })
       .def("__iter__",
            [](Dataset &self) {
              return py::make_iterator(self.begin(), self.end());
