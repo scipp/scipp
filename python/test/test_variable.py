@@ -60,5 +60,15 @@ class TestVariable(unittest.TestCase):
         var.name = "data"
         self.assertEqual(var.name, "data")
 
+    def test_repr(self):
+        var = Variable(Coord.X, [Dim.X], np.arange(1))
+        self.assertEqual(repr(var), "Variable(Coord.X, '',( Dim.X ), int64)\n")
+        var = Variable(Data.Value, [Dim.X], np.arange(1))
+        self.assertEqual(repr(var), "Variable(Data.Value, '',( Dim.X ), int64)\n")
+        var = Variable(Coord.SpectrumNumber, [Dim.X], np.arange(1))
+        self.assertEqual(repr(var), "Variable(Coord.SpectrumNumber, '',( Dim.X ), int64)\n")
+        var = Variable(Coord.Mask, [Dim.X], np.arange(1))
+        self.assertEqual(repr(var), "Variable(Coord.Mask, '',( Dim.X ), int64)\n")
+
 if __name__ == '__main__':
     unittest.main()
