@@ -242,6 +242,11 @@ TEST(Zip, single_scalar_item) {
   EXPECT_EQ(std::get<0>(*it++), 2.0);
   EXPECT_EQ(std::get<0>(*it++), 3.0);
   EXPECT_EQ(std::get<0>(*it++), 4.0);
+
+  EXPECT_EQ(std::get<0>(zipped[0]), 2.0);
+  EXPECT_EQ(std::get<0>(zipped[1]), 2.0);
+  EXPECT_EQ(std::get<0>(zipped[2]), 3.0);
+  EXPECT_EQ(std::get<0>(zipped[3]), 4.0);
 }
 
 TEST(Zip, multiple_scalar_items) {
@@ -262,6 +267,14 @@ TEST(Zip, multiple_scalar_items) {
   ++it;
   EXPECT_EQ(std::get<0>(*it), 2.0);
   EXPECT_EQ(std::get<1>(*it), 4.0);
+
+  EXPECT_EQ(std::get<0>(zipped[0]), 2.0);
+  EXPECT_EQ(std::get<1>(zipped[0]), 3.0);
+  EXPECT_EQ(std::get<0>(zipped[1]), 2.0);
+  EXPECT_EQ(std::get<1>(zipped[1]), 4.0);
+
+  std::get<0>(zipped[0]) = 0.0;
+  EXPECT_EQ(std::get<0>(zipped[0]), 0.0);
 }
 
 TEST(Zip, const_multiple_scalar_items) {

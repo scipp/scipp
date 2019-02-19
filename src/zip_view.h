@@ -114,6 +114,8 @@ public:
     return ranges::view::zip(*std::get<Is>(m_fields)...);
   }
 
+  gsl::index size() const { return std::get<0>(m_fields)->size(); }
+
   auto begin() const noexcept {
     return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
   }
@@ -234,7 +236,7 @@ using is_iterable = decltype(detail::is_iterable_impl<T>(0));
 
 template <class T, size_t... Is>
 constexpr auto doMakeItemZipProxy(const bool mayResize, const T &item,
-                                    std::index_sequence<Is...>) noexcept {
+                                  std::index_sequence<Is...>) noexcept {
   if constexpr ((std::is_const_v<
                      std::remove_reference_t<decltype(std::get<Is>(item))>> &&
                  ...))
@@ -295,6 +297,12 @@ public:
   }
 
   gsl::index size() const { return m_view.size(); }
+  auto operator[](const gsl::index i) const {
+    return m_mayResizeItems
+               ? ItemProxy<item_type, true, Keys...>::get(m_view[i])
+               : ItemProxy<item_type, false, Keys...>::get(m_view[i]);
+  }
+
   auto begin() const {
     return m_mayResizeItems ? makeIt<true>(m_view.begin())
                             : makeIt<false>(m_view.begin());
