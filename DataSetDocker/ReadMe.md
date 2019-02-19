@@ -31,7 +31,7 @@ docker run -p $(docker-machine ip $(docker-machine active)):8888:8888 dataset
 
 # To access the jupyter notebook:
 
-Now the console with jupyter-lab server is runniing.
+Now the console with jupyter-lab server is running.
 
 1. Copy the address with token from the console into your browser:
 
