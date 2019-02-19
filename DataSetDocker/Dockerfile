@@ -8,9 +8,9 @@ USER root
 # cmake and clang to compile source code
 RUN apt-get update && \
     apt-get install -y cmake && \
-    apt-get install -y clang-6.0 && \
+    apt-get install -y g++ && \
     apt-get install -y mercurial && \
-    apt-get install -y libboost-all-dev && \
+    apt-get install -y libboost-dev && \
 
     rm -rf /var/lib/apt/lists/*
 
@@ -24,9 +24,9 @@ RUN conda config --add channels pyviz && \
     'conda-forge::blas=*=openblas' \
     'ipywidgets=7.4*' \
     'matplotlib=2.2*' \
-    'bokeh=0.13*' \
     'hdf5=1.10*' \
     'h5py=2.7*' \
+    'bokeh' \
     'hvplot' \
     'holoplot' \
     'pyviz' \ 
@@ -65,7 +65,7 @@ USER root
 RUN cd /tmp/dataset/build && \
     make install 
 
-RUN sudo apt-get purge --auto-remove -y libboost-all-dev 
+RUN sudo apt-get purge --auto-remove -y libboost-dev 
    
 USER $NB_UID
 
