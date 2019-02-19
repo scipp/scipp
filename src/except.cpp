@@ -255,4 +255,8 @@ void equals(const Unit &a, const Unit &b) {
     throw except::UnitMismatchError(a, b);
 }
 } // namespace expect
+
+// namespace expect
+
+// namespace expect
 } // namespace dataset
