@@ -39,6 +39,9 @@ Unit::Unit(const Unit::Id id) {
   case Unit::Id::InverseLength:
     m_unit = boost::units::si::dimensionless() / boost::units::si::length();
     break;
+  case Unit::Id::InverseTime:
+    m_unit = boost::units::si::dimensionless() / boost::units::si::time();
+    break;
   case Unit::Id::Energy:
     m_unit = neutron::tof::energy();
     break;
@@ -78,6 +81,10 @@ Unit::Id Unit::id() const {
                  [](decltype(std::declval<boost::units::si::dimensionless>() /
                              std::declval<boost::units::si::length>())) {
                    return Unit::Id::InverseLength;
+                 },
+                 [](decltype(std::declval<boost::units::si::dimensionless>() /
+                             std::declval<boost::units::si::time>())) {
+                   return Unit::Id::InverseTime;
                  },
                  [](neutron::tof::energy) { return Unit::Id::Energy; },
                  [](neutron::tof::wavelength) { return Unit::Id::Wavelength; },

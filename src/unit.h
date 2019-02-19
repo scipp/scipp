@@ -81,6 +81,7 @@ struct boost::units::base_unit_info<neutron::tof::wavelength_base_unit> {
 template <>
 struct boost::units::base_unit_info<neutron::tof::counts_base_unit> {
   static std::string name() { return "counts"; }
+  static std::string symbol() { return "counts"; }
 };
 
 template <>
@@ -120,18 +121,18 @@ public:
   //  using type =
   //    std::variant<Ts..., decltype(std::declval<Ts>()*std::declval<Ts>())...>;
   //  };
-  typedef std::variant<decltype(none),     // Dimensionless [ ]
-                       decltype(m),        // Length [m]
-                       decltype(m2),       // Area [m^2]
-                       decltype(s),        // Time [s]
-                       decltype(kg),       // Mass [kg]
-                       decltype(counts),   // Counts [counts]
+  typedef std::variant<decltype(none),
+                       decltype(m),
+                       decltype(m2),
+                       decltype(s),
+                       decltype(kg),
+                       decltype(counts),
                        decltype(none / m), // InverseLength [m^-1]
-                       decltype(lambda),   // Wavelength [Angstroms]
-                       decltype(mev),      // Energy [meV]
-                       decltype(tof),      // Time of flight [microseconds]
-                       decltype(none / s), // 1/time [s^-1]
-                       decltype(m2 * m2),  // Area variance
+                       decltype(lambda),
+                       decltype(mev),
+                       decltype(tof),
+                       decltype(none / s), // InverseTime [s^-1]
+                       decltype(m2 * m2), // Area variance
                        decltype(counts * counts) // Counts variance
                        >
       unit_t;
@@ -144,6 +145,7 @@ public:
     Counts,
     CountsVariance,
     InverseLength,
+    InverseTime,
     Energy,
     Wavelength,
     Time,
