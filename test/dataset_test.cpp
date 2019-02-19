@@ -3,9 +3,9 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include <gtest/gtest.h>
-
 #include "test_macros.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "convert.h"
 #include "dataset.h"
@@ -160,9 +160,9 @@ TEST(Dataset, get_variable_view) {
   EXPECT_EQ(d(Data::Value, "").name(), "");
   EXPECT_EQ(d(Data::Value, "name").tag(), Data::Value);
   EXPECT_EQ(d(Data::Value, "name").name(), "name");
-  EXPECT_THROW_MSG(d(Coord::Y), dataset::except::VariableNotFoundError,
-                   "Dataset with 3 variables, could not find variable with tag "
-                   "Coord::Y and name ``.");
+  EXPECT_THROW_MSG_SUBSTR(d(Coord::Y), dataset::except::VariableNotFoundError,
+                          "could not find variable with tag "
+                          "Coord::Y and name ``");
 }
 
 TEST(Dataset, extract) {
@@ -263,13 +263,13 @@ TEST(Dataset, get_fail) {
   Dataset d;
   d.insert(Data::Value, "name1", {}, {1.1});
   d.insert(Data::Value, "name2", {}, {1.1});
-  EXPECT_THROW_MSG(d.get(Data::Value), std::runtime_error,
-                   "Dataset with 2 variables, could not find variable with tag "
-                   "Data::Value and name ``.");
-  EXPECT_THROW_MSG(d.get(Data::Variance),
-                   dataset::except::VariableNotFoundError,
-                   "Dataset with 2 variables, could not find variable with tag "
-                   "Data::Variance and name ``.");
+  EXPECT_THROW_MSG_SUBSTR(d.get(Data::Value), std::runtime_error,
+                          "could not find variable with tag "
+                          "Data::Value and name ``.");
+  EXPECT_THROW_MSG_SUBSTR(d.get(Data::Variance),
+                          dataset::except::VariableNotFoundError,
+                          "could not find variable with tag "
+                          "Data::Variance and name ``.");
 }
 
 TEST(Dataset, get_named) {
@@ -612,10 +612,10 @@ TEST(Dataset, slice) {
   }
   EXPECT_THROW_MSG(
       d(Dim::Z, 0), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}\n, got Dim::Z.");
   EXPECT_THROW_MSG(
       d(Dim::Z, 1), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}\n, got Dim::Z.");
 }
 
 TEST(Dataset, concatenate_constant_dimension_broken) {
@@ -750,9 +750,10 @@ TEST(Dataset, concatenate_with_attributes) {
 TEST(Dataset, rebin_failures) {
   Dataset d;
   Variable coord(Coord::X, {Dim::X, 3}, {1.0, 3.0, 5.0});
-  EXPECT_THROW_MSG(rebin(d, coord), dataset::except::VariableNotFoundError,
-                   "Dataset with 0 variables, could not find variable with tag "
-                   "Coord::X and name ``.");
+  EXPECT_THROW_MSG_SUBSTR(rebin(d, coord),
+                          dataset::except::VariableNotFoundError,
+                          "could not find variable with tag "
+                          "Coord::X and name ``");
   Variable data(Data::Value, {Dim::X, 2}, {2.0, 4.0});
   EXPECT_THROW_MSG(
       rebin(d, data), std::runtime_error,
