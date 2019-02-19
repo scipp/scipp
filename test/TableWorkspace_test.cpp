@@ -13,14 +13,11 @@
 // of basic routines.
 std::vector<std::string> asStrings(const Variable &variable) {
   std::vector<std::string> strings;
-  if (variable.tag() == Coord::RowLabel)
-    for (const auto &value : variable.get(Coord::RowLabel))
-      strings.emplace_back(value);
-  if (variable.tag() == Data::Value)
-    for (const auto &value : variable.get(Data::Value))
+  if (variable.dtype() == dtype<double>)
+    for (const auto &value : variable.span<double>())
       strings.emplace_back(std::to_string(value));
-  else if (variable.tag() == Data::String)
-    for (const auto &value : variable.get(Data::String))
+  else if (variable.dtype() == dtype<std::string>)
+    for (const auto &value : variable.span<std::string>())
       strings.emplace_back(value);
   return strings;
 }
@@ -30,13 +27,14 @@ TEST(TableWorkspace, basics) {
   table.insert(Coord::RowLabel, {Dim::Row, 3},
                Vector<std::string>{"a", "b", "c"});
   table.insert(Data::Value, "", {Dim::Row, 3}, {1.0, -2.0, 3.0});
-  table.insert(Data::String, "", {Dim::Row, 3}, 3);
+  table.insert(Data::DeprecatedString, "", {Dim::Row, 3}, 3);
 
   // Modify table with know columns.
-  auto view = zipMD(table, MDRead(Data::Value), MDWrite(Data::String));
+  auto view =
+      zipMD(table, MDRead(Data::Value), MDWrite(Data::DeprecatedString));
   for (auto &item : view)
     if (item.value() < 0.0)
-      item.get(Data::String) = "why is this negative?";
+      item.get(Data::DeprecatedString) = "why is this negative?";
 
   // Get string representation of arbitrary table, e.g., for visualization.
   EXPECT_EQ(asStrings(table[0]), std::vector<std::string>({"a", "b", "c"}));
