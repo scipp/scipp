@@ -7,5 +7,5 @@ target_link_libraries( dataset_test
   LINK_PRIVATE
   Dataset
   gtest_main
-  ${GTEST_LIBRARIES} )
+  ${GTEST_LIBRARIES} ${GMOCK_LIBRARIES} )
 target_include_directories ( dataset_test SYSTEM PRIVATE "../range-v3/include" )
