@@ -473,16 +473,16 @@ class TestDatasetExamples(unittest.TestCase):
         self.assertEqual(len(d[Data.EventTofs, ""].data), 5)
         d[Data.EventTofs, ""].data[0].append(10)
         d[Data.EventPulseTimes, ""].data[0].append(1000)
-        d[Data.EventTofs, ""].data[1].append(20)
-        d[Data.EventPulseTimes, ""].data[1].append(2000)
+        d[Data.EventTofs, ""].data[1].append(10)
+        d[Data.EventPulseTimes, ""].data[1].append(1000)
         # Don't do this, there are no compatiblity checks:
         #for el in zip(d[Data.EventTofs, ""].data, d[Data.EventPulseTimes, ""].data):
         print("zip start")
-        for el in d.zip():
-            print(len(el))
+        for el, size in zip(d.zip(), [1,1,0,0,0]):
+            self.assertEqual(len(el), size)
             for e in el:
-                print(e.first(), e.second())
-            print('')
+                self.assertEqual(e.first(), 10)
+                self.assertEqual(e.second(), 1000)
 
 if __name__ == '__main__':
     unittest.main()
