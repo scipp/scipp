@@ -14,6 +14,10 @@ template <typename T, typename VARIANT_T> struct isVariantMember;
 template <typename T, typename... ALL_T>
 struct isVariantMember<T, std::variant<ALL_T...>>
     : public std::disjunction<std::is_same<T, ALL_T>...> {};
+// Helper to make checking for allowed units more compact
+template <class T> constexpr bool isKnownUnit(const T &) {
+  return isVariantMember<T, Unit::unit_t>::value;
+}
 
 /// Construct unit from a given Id
 Unit::Unit(const Unit::Id id) {
@@ -57,6 +61,8 @@ Unit::Unit(const Unit::Id id) {
   case Unit::Id::Mass:
     m_unit = boost::units::si::mass();
     break;
+  default:
+    throw std::runtime_error("Unsupported Id in Unit constructor");
   }
 }
 
@@ -108,12 +114,17 @@ Unit operator*(const Unit &a, const Unit &b) {
         else if constexpr (std::is_same<decltype(y),
                                         boost::units::si::dimensionless>::value)
           return {x};
-        else if constexpr (isVariantMember<decltype(x * y),
-                                           Unit::unit_t>::value)
-          return {x * y};
-        else
-          throw std::runtime_error(
-              "Unsupported unit combination in multiplication");
+        else {
+          // Creation of z needed here because putting x*y inside the call to
+          // isKnownUnit(x*y) leads to error: temporary of non-literal type in
+          // a constant expression
+          auto z{x * y};
+          if constexpr (isKnownUnit(z))
+            return {z};
+          else
+            throw std::runtime_error(
+                "Unsupported unit combination in multiplication");
+        }
       },
       a.getUnit(), b.getUnit());
 }
@@ -126,11 +137,15 @@ Unit operator/(const Unit &a, const Unit &b) {
         if constexpr (std::is_same<decltype(y),
                                    boost::units::si::dimensionless>::value)
           return {x};
-        else if constexpr (isVariantMember<decltype(x / y),
-                                           Unit::unit_t>::value)
-          return {x / y};
-        else
-          throw std::runtime_error("Unsupported unit combination in division");
+        else {
+          // Creation of z needed (see multiplication)
+          auto z{x / y};
+          if constexpr (isKnownUnit(z))
+            return {z};
+          else
+            throw std::runtime_error(
+                "Unsupported unit combination in division");
+        }
       },
       a.getUnit(), b.getUnit());
 }

@@ -72,6 +72,7 @@ BOOST_UNITS_DEFINE_CONVERSION_FACTOR(
 BOOST_UNITS_DEFINE_CONVERSION_FACTOR(neutron::tof::tof_base_unit,
                                      boost::units::si::time, double, 1.0e-6);
 
+// Define full and short names for the new units
 template <>
 struct boost::units::base_unit_info<neutron::tof::wavelength_base_unit> {
   static std::string name() { return "angstroms"; }
@@ -95,6 +96,8 @@ template <> struct boost::units::base_unit_info<neutron::tof::tof_base_unit> {
   static std::string symbol() { return "us"; }
 };
 
+// Define some helper variables to make the declaration of the set of allowed
+// units more succinct
 namespace {
 boost::units::si::dimensionless none;
 boost::units::si::length m;
@@ -121,20 +124,11 @@ public:
   //  using type =
   //    std::variant<Ts..., decltype(std::declval<Ts>()*std::declval<Ts>())...>;
   //  };
-  typedef std::variant<decltype(none),
-                       decltype(m),
-                       decltype(m2),
-                       decltype(s),
-                       decltype(kg),
-                       decltype(counts),
-                       decltype(none / m), // InverseLength [m^-1]
-                       decltype(lambda),
-                       decltype(mev),
-                       decltype(tof),
-                       decltype(none / s), // InverseTime [s^-1]
-                       decltype(m2 * m2), // Area variance
-                       decltype(counts * counts) // Counts variance
-                       >
+  typedef std::variant<decltype(none), decltype(m), decltype(m2), decltype(s),
+                       decltype(kg), decltype(counts), decltype(none / m),
+                       decltype(lambda), decltype(mev), decltype(tof),
+                       decltype(none / s), decltype(m2 * m2),
+                       decltype(counts * counts)>
       unit_t;
 
   enum class Id : uint16_t {
