@@ -105,8 +105,11 @@ void swap(typename ZipView<Tags...>::Item &a,
 template <class... Fields> class ConstItemZipProxy {
 public:
   ConstItemZipProxy(const Fields &... fields) : m_fields(&fields...) {
-    if (((std::get<0>(m_fields)->size() != fields.size()) || ...))
+    if (((std::get<0>(m_fields)->size() != fields.size()) || ...)) {
+      fprintf(stderr, "%lu\n", std::get<0>(m_fields)->size());
       throw std::runtime_error("Cannot zip data with mismatching length.");
+    }
+      fprintf(stderr, "made ItemZipProxy %p of size %lu\n", this, std::get<0>(m_fields)->size());
   }
 
   template <size_t... Is>
@@ -132,18 +135,32 @@ class ItemZipProxy : public ConstItemZipProxy<Fields...> {
 public:
   ItemZipProxy(const bool mayResize, Fields &... fields)
       : ConstItemZipProxy<Fields...>(fields...), m_mayResize(mayResize),
-        m_fields(&fields...) {}
+        m_fields(&fields...),
+        m_view(makeView(std::make_index_sequence<sizeof...(Fields)>{})) {}
+
+  ItemZipProxy(const ItemZipProxy &other)
+      : ConstItemZipProxy<Fields...>(other), m_mayResize(other.m_mayResize),
+        m_fields(other.m_fields), m_view(other.m_view) {
+    fprintf(stderr, "copy ItemZipProxy %p -> %p\n", &other, this);
+  }
+  ~ItemZipProxy() { fprintf(stderr, "destroy ItemZipProxy %p\n", this); }
 
   template <size_t... Is>
-  constexpr auto makeView(std::index_sequence<Is...>) const noexcept {
-    return ranges::view::zip(*std::get<Is>(m_fields)...);
+  constexpr auto &makeView(std::index_sequence<Is...>) const noexcept {
+    m_view = ranges::view::zip(*std::get<Is>(m_fields)...);
+    fprintf(stderr, "makeView size %lu\n", m_view.size());
+    return m_view;
   }
 
   auto begin() const noexcept {
-    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
+    fprintf(stderr, "ItemZipProxy::begin %p\n", this);
+    return m_view.begin();
+    //return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
   }
   auto end() const noexcept {
-    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
+    fprintf(stderr, "ItemZipProxy::end %p\n", this);
+    return m_view.end();
+    //return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
   }
 
   template <class... Ts> void push_back(const Ts &... values) const {
@@ -191,6 +208,7 @@ private:
 
   bool m_mayResize;
   std::tuple<Fields *...> m_fields;
+  mutable decltype(ranges::view::zip(std::declval<Fields>()...)) m_view;
 };
 
 namespace Access {
@@ -304,16 +322,18 @@ public:
   }
 
   auto begin() const {
+    fprintf(stderr, "VariableZipProxy::begin\n");
     return m_mayResizeItems ? makeIt<true>(m_view.begin())
                             : makeIt<false>(m_view.begin());
   }
   auto end() const {
+    fprintf(stderr, "VariableZipProxy::end\n");
     return m_mayResizeItems ? makeIt<true>(m_view.end())
                             : makeIt<false>(m_view.end());
   }
 
 private:
-  template <bool Resizable, class It> auto makeIt(It &&it) const {
+  template <bool Resizable, class It> auto makeIt(It it) const {
     return boost::make_transform_iterator(
         it, ItemProxy<item_type, Resizable, Keys...>::get);
   }

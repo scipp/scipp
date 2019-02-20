@@ -9,10 +9,12 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
 
 #include "dataset.h"
 #include "except.h"
 #include "tag_util.h"
+#include "zip_view.h"
 
 namespace py = pybind11;
 
@@ -36,6 +38,38 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
         return py::make_iterator(self.begin(), self.end());
       });
   mutable_span_methods<T>::add(span);
+}
+
+template <class... Keys>
+void declare_VariableZipProxy(py::module &m, const std::string &suffix,
+                              const Keys &... keys) {
+  using Proxy = decltype(zip(std::declval<Dataset &>(), keys...));
+  py::class_<Proxy> proxy(m,
+                          (std::string("VariableZipProxy_") + suffix).c_str());
+  proxy.def("__len__", &Proxy::size)
+      .def("__getitem__", &Proxy::operator[])
+      .def("__iter__",
+           [](const Proxy &self) {
+             return py::make_iterator(self.begin(), self.end());
+           },
+           py::keep_alive<0, 1>());
+}
+
+template <class... Fields>
+void declare_ItemZipProxy(py::module &m, const std::string &suffix) {
+  using Proxy = ItemZipProxy<Fields...>;
+  py::class_<Proxy> proxy(m, (std::string("ItemZipProxy_") + suffix).c_str());
+  proxy.def("__len__", &Proxy::size).def("__iter__", [](const Proxy &self) {
+    return py::make_iterator(self.begin(), self.end());
+  });
+}
+
+template <class... Fields>
+void declare_ranges_pair(py::module &m, const std::string &suffix) {
+  using Proxy = ranges::v3::common_pair<Fields &...>;
+  py::class_<Proxy> proxy(m, (std::string("ranges_v3_common_pair_") + suffix).c_str());
+  proxy.def("first", [](const Proxy &self) { return std::get<0>(self); })
+      .def("second", [](const Proxy &self) { return std::get<1>(self); });
 }
 
 template <class T>
@@ -118,9 +152,9 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   // py::dtype?
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
-  return CallDType<double, float, int64_t, int32_t, char,
-                   bool>::apply<detail::MakeVariableDefaultInit>(dtypeTag, tag,
-                                                                 labels, shape);
+  return CallDType<double, float, int64_t, int32_t, char, bool,
+                   typename Data::EventTofs_t::type>::
+      apply<detail::MakeVariableDefaultInit>(dtypeTag, tag, labels, shape);
 }
 
 namespace Key {
@@ -342,6 +376,8 @@ as_VariableView_variant(Var &view) {
     return {view.template span<bool>()};
   case dtype<std::string>:
     return {view.template span<std::string>()};
+  case dtype<boost::container::small_vector<double, 8>>:
+    return {view.template span<boost::container::small_vector<double, 8>>()};
   case dtype<Dataset>:
     return {view.template span<Dataset>()};
   default:
@@ -349,7 +385,13 @@ as_VariableView_variant(Var &view) {
   }
 }
 
+using small_vector = boost::container::small_vector<double, 8>;
+PYBIND11_MAKE_OPAQUE(small_vector);
+
 PYBIND11_MODULE(dataset, m) {
+  py::bind_vector<boost::container::small_vector<double, 8>>(
+      m, "SmallVectorDouble8");
+
   py::enum_<Dim>(m, "Dim")
       .value("Component", Dim::Component)
       .value("DeltaE", Dim::DeltaE)
@@ -427,7 +469,13 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<std::string>(m, "string");
   declare_VariableView<char>(m, "char");
   declare_VariableView<Bool>(m, "bool");
+  declare_VariableView<boost::container::small_vector<double, 8>>(m, "SmallVectorDouble8");
   declare_VariableView<Dataset>(m, "Dataset");
+
+  declare_VariableZipProxy(m, "", Access::Key(Data::EventTofs),
+                           Access::Key(Data::EventPulseTimes));
+  declare_ItemZipProxy<small_vector, small_vector>(m, "");
+  declare_ranges_pair<double, double>(m, "double_double");
 
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
@@ -466,8 +514,9 @@ PYBIND11_MODULE(dataset, m) {
                                           int32_t, char, bool>)
       .def_property_readonly(
           "data",
-          &as_VariableView_variant<Variable, double, float, int64_t, int32_t,
-                                   char, bool, std::string, Dataset>)
+          &as_VariableView_variant<
+              Variable, double, float, int64_t, int32_t, char, bool,
+              std::string, boost::container::small_vector<double, 8>, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -509,8 +558,9 @@ PYBIND11_MODULE(dataset, m) {
                                           int32_t, char, bool>)
       .def_property_readonly(
           "data",
-          &as_VariableView_variant<VariableSlice, double, float, int64_t,
-                                   int32_t, char, bool, std::string, Dataset>)
+          &as_VariableView_variant<
+              VariableSlice, double, float, int64_t, int32_t, char, bool,
+              std::string, boost::container::small_vector<double, 8>, Dataset>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -707,7 +757,11 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
-      .def("dimensions", [](const Dataset &self) { return self.dimensions(); });
+      .def("dimensions", [](const Dataset &self) { return self.dimensions(); })
+      .def("zip", [](Dataset &self) {
+        return zip(self, Access::Key(Data::EventTofs),
+                   Access::Key(Data::EventPulseTimes));
+      });
 
   py::implicitly_convertible<DatasetSlice, Dataset>();
 

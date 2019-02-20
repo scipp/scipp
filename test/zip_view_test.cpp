@@ -441,6 +441,10 @@ TEST(EventListsProxy, item_access) {
   events.push_back(1.0, 2.0);
   EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[0].size(), 1ul);
   EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[1].size(), 0ul);
+
+  for (const auto &el : eventLists)
+    for (const auto &e : el) {
+    }
 }
 
 TEST(EventListsProxy, item_access_prevented_if_partial_proxy) {
