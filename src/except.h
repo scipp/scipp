@@ -30,6 +30,7 @@ std::string to_string(const Variable &variable,
                       const std::string &separator = "::");
 std::string to_string(const Dataset &dataset,
                       const std::string &separator = "::");
+std::string to_string(const ConstDatasetSlice &dataset);
 
 namespace except {
 
