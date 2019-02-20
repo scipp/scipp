@@ -176,7 +176,7 @@ TEST(Variable, operator_plus_equal_different_dimensions) {
 
   Variable different_dimensions(Data::Value, {Dim::Y, 2}, {1.1, 2.2});
   EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
-                   "Expected {{Dim::X, 2}} to contain {{Dim::Y, 2}}.");
+                   "Expected {{Dim::X, 2}}\n to contain {{Dim::Y, 2}}\n.");
 }
 
 TEST(Variable, operator_plus_equal_different_unit) {
@@ -189,14 +189,15 @@ TEST(Variable, operator_plus_equal_different_unit) {
 }
 
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
-  Variable a(Data::String, {Dim::X, 1}, {std::string("test")});
+  auto a = makeVariable<std::string>(Data::Value, {Dim::X, 1},
+                                     {std::string("test")});
   EXPECT_THROW_MSG(a += a, std::runtime_error,
                    "Cannot apply operation, requires addable type.");
 }
 
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   Variable a(Data::Value, {Dim::X, 1}, {1.0});
-  Variable b(Data::Int, {Dim::X, 1}, {2});
+  auto b = makeVariable<int64_t>(Data::Value, {Dim::X, 1}, {2});
   EXPECT_THROW_MSG(a += b, std::runtime_error,
                    "Cannot apply arithmetic operation to Variables: Underlying "
                    "data types do not match.");
@@ -594,8 +595,8 @@ TEST(VariableSlice, minus_equals_failures) {
   Variable var(Data::Value, {{Dim::X, 2}, {Dim::Y, 2}}, {1.0, 2.0, 3.0, 4.0});
 
   EXPECT_THROW_MSG(var -= var(Dim::X, 0, 1), std::runtime_error,
-                   "Expected {{Dim::X, 2}, {Dim::Y, 2}} to contain {{Dim::X, "
-                   "1}, {Dim::Y, 2}}.");
+                   "Expected {{Dim::X, 2}, {Dim::Y, 2}}\n to contain {{Dim::X, "
+                   "1}, {Dim::Y, 2}}\n.");
 }
 
 TEST(VariableSlice, self_overlapping_view_operation) {

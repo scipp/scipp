@@ -16,9 +16,9 @@ static void BM_Dataset_get_with_many_columns(benchmark::State &state) {
   Dataset d;
   for (int i = 0; i < state.range(0); ++i)
     d.insert(Data::Value, "name" + std::to_string(i), Dimensions{}, 1);
-  d.insert(Data::Int, "name", Dimensions{}, 1);
+  d.insert(Data::Variance, "name", Dimensions{}, 1);
   for (auto _ : state)
-    d.get(Data::Int);
+    d.get(Data::Variance);
   state.SetItemsProcessed(state.iterations());
 }
 BENCHMARK(BM_Dataset_get_with_many_columns)

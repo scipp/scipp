@@ -680,26 +680,32 @@ void Variable::setDimensions(const Dimensions &dimensions) {
   m_object = m_object->clone(dimensions);
 }
 
-template <class T> const Vector<T> &Variable::cast() const {
-  return dynamic_cast<const DataModel<Vector<T>> &>(*m_object).m_model;
+template <class T> const Vector<underlying_type_t<T>> &Variable::cast() const {
+  return dynamic_cast<const DataModel<Vector<underlying_type_t<T>>> &>(
+             *m_object)
+      .m_model;
 }
 
-template <class T> Vector<T> &Variable::cast() {
-  return dynamic_cast<DataModel<Vector<T>> &>(*m_object).m_model;
+template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
+  return dynamic_cast<DataModel<Vector<underlying_type_t<T>>> &>(*m_object)
+      .m_model;
 }
 
 #define INSTANTIATE(...)                                                       \
   template Variable::Variable(const Tag, const Unit::Id, const Dimensions &,   \
-                              Vector<__VA_ARGS__>);                            \
-  template Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>();                 \
-  template const Vector<__VA_ARGS__> &Variable::cast<__VA_ARGS__>() const;
+                              Vector<underlying_type_t<__VA_ARGS__>>);         \
+  template Vector<underlying_type_t<__VA_ARGS__>>                              \
+      &Variable::cast<__VA_ARGS__>();                                          \
+  template const Vector<underlying_type_t<__VA_ARGS__>>                        \
+      &Variable::cast<__VA_ARGS__>() const;
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)
 INSTANTIATE(float)
-INSTANTIATE(char)
-INSTANTIATE(int32_t)
 INSTANTIATE(int64_t)
+INSTANTIATE(int32_t)
+INSTANTIATE(char)
+INSTANTIATE(bool)
 INSTANTIATE(std::pair<int64_t, int64_t>)
 INSTANTIATE(ValueWithDelta<double>)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
@@ -707,12 +713,12 @@ INSTANTIATE(gsl::index)
 INSTANTIATE(std::pair<gsl::index, gsl::index>)
 #endif
 INSTANTIATE(boost::container::small_vector<gsl::index, 1>)
+INSTANTIATE(boost::container::small_vector<double, 8>)
 INSTANTIATE(std::vector<std::string>)
 INSTANTIATE(std::vector<gsl::index>)
 INSTANTIATE(Dataset)
 INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
-INSTANTIATE(std::shared_ptr<std::array<double, 100>>)
 INSTANTIATE(Eigen::Vector3d)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
@@ -731,18 +737,7 @@ template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
 }
 
 bool Variable::operator==(const Variable &other) const {
-  // Compare even before pointer comparison since data may be shared even if
-  // names differ.
-  if (name() != other.name())
-    return false;
-  if (unit() != other.unit())
-    return false;
-  // Deep comparison
-  if (tag() != other.tag())
-    return false;
-  if (!(dimensions() == other.dimensions()))
-    return false;
-  return data() == other.data();
+  return equals(*this, other);
 }
 
 bool Variable::operator==(const ConstVariableSlice &other) const {
@@ -771,7 +766,8 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
   dataset::expect::equals(variable.unit(), other.unit());
-  if (variable.tag() != Data::Events && variable.tag() != Data::Table) {
+  // TODO How should attributes be handled?
+  if (variable.dtype() != dtype<Dataset> || variable.isAttr()) {
     dataset::expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
@@ -984,35 +980,42 @@ void VariableSlice::setUnit(const Unit &unit) const {
 }
 
 template <class T>
-const VariableView<const T> ConstVariableSlice::cast() const {
+const VariableView<const underlying_type_t<T>>
+ConstVariableSlice::cast() const {
+  using TT = underlying_type_t<T>;
   if (!m_view)
-    return dynamic_cast<const DataModel<Vector<T>> &>(data()).getView(
+    return dynamic_cast<const DataModel<Vector<TT>> &>(data()).getView(
         dimensions());
   if (m_view->isConstView())
-    return dynamic_cast<const ViewModel<VariableView<const T>> &>(data())
+    return dynamic_cast<const ViewModel<VariableView<const TT>> &>(data())
         .m_model;
   // Make a const view from the mutable one.
-  return {dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model,
+  return {dynamic_cast<const ViewModel<VariableView<TT>> &>(data()).m_model,
           dimensions()};
 }
 
-template <class T> VariableView<T> VariableSlice::cast() const {
+template <class T>
+VariableView<underlying_type_t<T>> VariableSlice::cast() const {
+  using TT = underlying_type_t<T>;
   if (m_view)
-    return dynamic_cast<const ViewModel<VariableView<T>> &>(data()).m_model;
-  return dynamic_cast<DataModel<Vector<T>> &>(data()).getView(dimensions());
+    return dynamic_cast<const ViewModel<VariableView<TT>> &>(data()).m_model;
+  return dynamic_cast<DataModel<Vector<TT>> &>(data()).getView(dimensions());
 }
 
 #define INSTANTIATE_SLICEVIEW(...)                                             \
-  template const VariableView<const __VA_ARGS__>                               \
+  template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
   ConstVariableSlice::cast<__VA_ARGS__>() const;                               \
-  template VariableView<__VA_ARGS__> VariableSlice::cast() const;
+  template VariableView<underlying_type_t<__VA_ARGS__>>                        \
+  VariableSlice::cast<__VA_ARGS__>() const;
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(float);
 INSTANTIATE_SLICEVIEW(int64_t);
 INSTANTIATE_SLICEVIEW(int32_t);
 INSTANTIATE_SLICEVIEW(char);
+INSTANTIATE_SLICEVIEW(bool);
 INSTANTIATE_SLICEVIEW(std::string);
+INSTANTIATE_SLICEVIEW(Dataset);
 
 ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
                                         const gsl::index end) const & {
@@ -1069,7 +1072,7 @@ Variable operator-(Variable a, const double b) { return std::move(a -= b); }
 Variable operator*(Variable a, const double b) { return std::move(a *= b); }
 Variable operator/(Variable a, const double b) { return std::move(a /= b); }
 Variable operator+(const double a, Variable b) { return std::move(b += a); }
-Variable operator-(const double a, Variable b) { return std::move(-(b -= a)); }
+Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(Unit::Id::Dimensionless / b.unit());

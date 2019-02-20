@@ -1,0 +1,31 @@
+language: cpp
+compiler:
+  - gcc
+  - clang
+dist: xenial
+
+before_install:
+  # C++17
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq
+  - pyenv global system 3.7
+
+install: 
+  # C++17
+  - sudo apt-get install -qq g++-7
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
+  - sudo apt install libboost-dev
+  - sudo apt install libomp-dev
+  - sudo apt install python3-pip
+
+script: 
+  - mkdir -p build
+  - mkdir -p install
+  - cd build
+  - cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
+  - make install
+  - ./test/dataset_test
+  - python3 -m pip install -r ../python/requirements.txt
+  - export PYTHONPATH=$PYTHONPATH:../install
+  - cd ../python
+  - python3 -m unittest discover test

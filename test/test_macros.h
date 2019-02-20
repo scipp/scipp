@@ -6,14 +6,28 @@
 #include <gsl/span>
 
 #define EXPECT_THROW_MSG(TRY_BLOCK, EXCEPTION_TYPE, MESSAGE)                   \
-  EXPECT_THROW({                                                               \
-    try {                                                                      \
-      TRY_BLOCK;                                                               \
-    } catch (const EXCEPTION_TYPE &e) {                                        \
-      EXPECT_STREQ(MESSAGE, e.what());                                         \
-      throw;                                                                   \
-    }                                                                          \
-  }, EXCEPTION_TYPE);
+  EXPECT_THROW(                                                                \
+      {                                                                        \
+        try {                                                                  \
+          TRY_BLOCK;                                                           \
+        } catch (const EXCEPTION_TYPE &e) {                                    \
+          EXPECT_STREQ(MESSAGE, e.what());                                     \
+          throw;                                                               \
+        }                                                                      \
+      },                                                                       \
+      EXCEPTION_TYPE);
+
+#define EXPECT_THROW_MSG_SUBSTR(TRY_BLOCK, EXCEPTION_TYPE, SUBSTR)             \
+  EXPECT_THROW(                                                                \
+      {                                                                        \
+        try {                                                                  \
+          TRY_BLOCK;                                                           \
+        } catch (const EXCEPTION_TYPE &e) {                                    \
+          EXPECT_THAT(e.what(), ::testing::HasSubstr(SUBSTR));                 \
+          throw;                                                               \
+        }                                                                      \
+      },                                                                       \
+      EXCEPTION_TYPE);
 
 template <class T1, class T2>
 bool equals(const T1 &a, const std::initializer_list<T2> &b) {

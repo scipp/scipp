@@ -14,10 +14,33 @@
 #include <boost/container/small_vector.hpp>
 #include <gsl/gsl_util>
 
+#include "bool.h"
 #include "dimension.h"
 #include "traits.h"
 #include "unit.h"
 #include "value_with_delta.h"
+
+enum class DType {
+  Unknown,
+  Double,
+  Float,
+  Int32,
+  Int64,
+  String,
+  Char,
+  Bool,
+  Dataset
+};
+template <class T> constexpr DType dtype = DType::Unknown;
+template <> constexpr DType dtype<double> = DType::Double;
+template <> constexpr DType dtype<float> = DType::Float;
+template <> constexpr DType dtype<int32_t> = DType::Int32;
+template <> constexpr DType dtype<int64_t> = DType::Int64;
+template <> constexpr DType dtype<std::string> = DType::String;
+template <> constexpr DType dtype<char> = DType::Char;
+template <> constexpr DType dtype<bool> = DType::Bool;
+template <> constexpr DType dtype<Bool> = DType::Bool;
+template <> constexpr DType dtype<Dataset> = DType::Dataset;
 
 // Adding new tags
 // ===============
@@ -155,7 +178,7 @@ struct CoordDef {
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct Mask {
-    using type = char;
+    using type = bool;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
   struct FuzzyTemperature {
@@ -198,10 +221,6 @@ struct DataDef {
     using type = int64_t;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct DimensionSize {
-    using type = gsl::index;
-    static constexpr auto unit = Unit::Id::Dimensionless;
-  };
   struct String {
     using type = std::string;
     static constexpr auto unit = Unit::Id::Dimensionless;
@@ -210,13 +229,17 @@ struct DataDef {
     using type = Dataset;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
-  struct Table {
-    using type = Dataset;
+  struct EventTofs {
+    using type = boost::container::small_vector<double, 8>;
+    static constexpr auto unit = Unit::Id::Dimensionless;
+  };
+  struct EventPulseTimes {
+    using type = boost::container::small_vector<double, 8>;
     static constexpr auto unit = Unit::Id::Dimensionless;
   };
 
-  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int,
-                          DimensionSize, String, Events, Table>;
+  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, String,
+                          Events, EventTofs, EventPulseTimes>;
 };
 
 struct AttrDef {
@@ -297,22 +320,25 @@ struct Data {
   using Value_t = detail::TagImpl<detail::DataDef::Value>;
   using Variance_t = detail::TagImpl<detail::DataDef::Variance>;
   using StdDev_t = detail::TagImpl<detail::DataDef::StdDev>;
-  using Int_t = detail::TagImpl<detail::DataDef::Int>;
-  using DimensionSize_t = detail::TagImpl<detail::DataDef::DimensionSize>;
-  using String_t = detail::TagImpl<detail::DataDef::String>;
+  // TODO Int and String is deprecated and should be removed, it is currently
+  // only required to maintain tests using MDZipView before it is properly
+  // refactored for multi-name support.
+  using DeprecatedInt_t = detail::TagImpl<detail::DataDef::Int>;
+  using DeprecatedString_t = detail::TagImpl<detail::DataDef::String>;
   using Events_t = detail::TagImpl<detail::DataDef::Events>;
-  using Table_t = detail::TagImpl<detail::DataDef::Table>;
+  using EventTofs_t = detail::TagImpl<detail::DataDef::EventTofs>;
+  using EventPulseTimes_t = detail::TagImpl<detail::DataDef::EventPulseTimes>;
 
   static constexpr Tof_t Tof{};
   static constexpr PulseTime_t PulseTime{};
   static constexpr Value_t Value{};
   static constexpr Variance_t Variance{};
   static constexpr StdDev_t StdDev{};
-  static constexpr Int_t Int{};
-  static constexpr DimensionSize_t DimensionSize{};
-  static constexpr String_t String{};
+  static constexpr DeprecatedInt_t DeprecatedInt{};
+  static constexpr DeprecatedString_t DeprecatedString{};
   static constexpr Events_t Events{};
-  static constexpr Table_t Table{};
+  static constexpr EventTofs_t EventTofs{};
+  static constexpr EventPulseTimes_t EventPulseTimes{};
 };
 
 struct Attr {
@@ -330,6 +356,10 @@ static constexpr bool is_attr =
                std::tuple_size<detail::DataDef::tags>::value;
 template <class T> static constexpr bool is_data = !is_coord<T> && !is_attr<T>;
 
+// TODO Some things *may* be dimension coordinates, but they are not necessarily
+// in all datasets. It depends on which dimensions are present. Does it even
+// make sense to hard-code this? Maybe we require handling everything at
+// runtime?
 namespace detail {
 template <class Tag> constexpr bool is_dimension_coordinate = false;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Tof> = true;
@@ -338,6 +368,7 @@ template <> constexpr bool is_dimension_coordinate<CoordDef::DeltaE> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::X> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Y> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Z> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Position> = true;
 template <>
 constexpr bool is_dimension_coordinate<CoordDef::SpectrumNumber> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::RowLabel> = true;
@@ -349,6 +380,8 @@ template <> constexpr Dim coordinate_dimension<CoordDef::DeltaE> = Dim::DeltaE;
 template <> constexpr Dim coordinate_dimension<CoordDef::X> = Dim::X;
 template <> constexpr Dim coordinate_dimension<CoordDef::Y> = Dim::Y;
 template <> constexpr Dim coordinate_dimension<CoordDef::Z> = Dim::Z;
+template <>
+constexpr Dim coordinate_dimension<CoordDef::Position> = Dim::Position;
 template <>
 constexpr Dim coordinate_dimension<CoordDef::SpectrumNumber> = Dim::Spectrum;
 template <> constexpr Dim coordinate_dimension<CoordDef::RowLabel> = Dim::Row;
@@ -378,9 +411,23 @@ constexpr std::array<Unit::Id, std::tuple_size<detail::Tags>::value>
 make_unit_table(const std::tuple<Ts...> &) {
   return {Ts::unit...};
 }
+template <class... Ts>
+constexpr std::array<DType, std::tuple_size<detail::Tags>::value>
+make_dtype_table(const std::tuple<Ts...> &) {
+  return {dtype<typename Ts::type>...};
+}
 constexpr auto unit_table = make_unit_table(detail::Tags{});
+constexpr auto dtype_table = make_dtype_table(detail::Tags{});
 } // namespace detail
-constexpr auto unit(const Tag tag) { return detail::unit_table[tag.value()]; }
+
+/// Return the default unit for a runtime tag.
+constexpr auto defaultUnit(const Tag tag) {
+  return detail::unit_table[tag.value()];
+}
+/// Return the default dtype for a runtime tag.
+constexpr auto defaultDType(const Tag tag) {
+  return detail::dtype_table[tag.value()];
+}
 
 class DataBin {
 public:
@@ -399,20 +446,31 @@ private:
 
 template <class T> struct Bin { using type = DataBin; };
 
+// std::vector<bool> may have a packed non-thread-safe implementation which we
+// need to avoid. Therefore we use std::vector<Bool> instead.
+template <class T> struct underlying_type { using type = T; };
+template <> struct underlying_type<bool> { using type = Bool; };
+template <class T> using underlying_type_t = typename underlying_type<T>::type;
+
 template <class D, class Tag> struct element_return_type {
+  using T = underlying_type_t<typename Tag::type>;
   using type = std::conditional_t<
-      std::is_base_of<detail::ReturnByValuePolicy, Tag>::value,
-      typename Tag::type,
+      std::is_base_of<detail::ReturnByValuePolicy, Tag>::value, T,
       std::conditional_t<
           std::is_const<D>::value || std::is_const<Tag>::value,
           std::conditional_t<
               std::is_base_of<detail::ReturnByValueIfConstPolicy, Tag>::value,
-              typename Tag::type, const typename Tag::type &>,
-          typename Tag::type &>>;
+              T, const T &>,
+          T &>>;
 };
 
 template <class D, class Tags> struct element_return_type<D, Bin<Tags>> {
   using type = DataBin;
+};
+
+class EventListProxy;
+template <class D> struct element_return_type<D, Data::Events_t> {
+  using type = EventListProxy;
 };
 
 template <class D, class... Ts> class MDZipViewImpl;
@@ -423,14 +481,5 @@ struct element_return_type<D, MDZipViewImpl<D, Tags...>> {
 
 template <class D, class Tag>
 using element_return_type_t = typename element_return_type<D, Tag>::type;
-
-enum class DType { Unknown, Double, Float, Int32, Int64, String, Char };
-template <class T> constexpr DType dtype = DType::Unknown;
-template <> constexpr DType dtype<double> = DType::Double;
-template <> constexpr DType dtype<float> = DType::Float;
-template <> constexpr DType dtype<int32_t> = DType::Int32;
-template <> constexpr DType dtype<int64_t> = DType::Int64;
-template <> constexpr DType dtype<std::string> = DType::String;
-template <> constexpr DType dtype<char> = DType::Char;
 
 #endif // TAGS_H
