@@ -105,13 +105,14 @@ void swap(typename ZipView<Tags...>::Item &a,
 template <class... Fields> class ConstItemZipProxy {
 public:
   ConstItemZipProxy(const Fields &... fields) : m_fields(&fields...) {
-    if (((std::get<0>(m_fields)->size() != fields.size()) || ...)) {
-      fprintf(stderr, "%lu\n", std::get<0>(m_fields)->size());
+    if (((std::get<0>(m_fields)->size() != fields.size()) || ...))
       throw std::runtime_error("Cannot zip data with mismatching length.");
-    }
-      fprintf(stderr, "made ItemZipProxy %p of size %lu\n", this, std::get<0>(m_fields)->size());
   }
 
+  // NOTE `Fields` are not temporary proxy objects, so this does *not* suffer
+  // from the same issue as VariableZipProxy below. Here it is ok if the zip
+  // view goes out of scope, iterators will stay valid since they reference an
+  // object not owned by the proxy.
   template <size_t... Is>
   constexpr auto makeView(std::index_sequence<Is...>) const noexcept {
     return ranges::view::zip(*std::get<Is>(m_fields)...);
@@ -135,32 +136,18 @@ class ItemZipProxy : public ConstItemZipProxy<Fields...> {
 public:
   ItemZipProxy(const bool mayResize, Fields &... fields)
       : ConstItemZipProxy<Fields...>(fields...), m_mayResize(mayResize),
-        m_fields(&fields...),
-        m_view(makeView(std::make_index_sequence<sizeof...(Fields)>{})) {}
-
-  ItemZipProxy(const ItemZipProxy &other)
-      : ConstItemZipProxy<Fields...>(other), m_mayResize(other.m_mayResize),
-        m_fields(other.m_fields), m_view(other.m_view) {
-    fprintf(stderr, "copy ItemZipProxy %p -> %p\n", &other, this);
-  }
-  ~ItemZipProxy() { fprintf(stderr, "destroy ItemZipProxy %p\n", this); }
+        m_fields(&fields...) {}
 
   template <size_t... Is>
-  constexpr auto &makeView(std::index_sequence<Is...>) const noexcept {
-    m_view = ranges::view::zip(*std::get<Is>(m_fields)...);
-    fprintf(stderr, "makeView size %lu\n", m_view.size());
-    return m_view;
+  constexpr auto makeView(std::index_sequence<Is...>) const noexcept {
+    return ranges::view::zip(*std::get<Is>(m_fields)...);
   }
 
   auto begin() const noexcept {
-    fprintf(stderr, "ItemZipProxy::begin %p\n", this);
-    return m_view.begin();
-    //return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
   }
   auto end() const noexcept {
-    fprintf(stderr, "ItemZipProxy::end %p\n", this);
-    return m_view.end();
-    //return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
+    return makeView(std::make_index_sequence<sizeof...(Fields)>{}).end();
   }
 
   template <class... Ts> void push_back(const Ts &... values) const {
@@ -208,7 +195,6 @@ private:
 
   bool m_mayResize;
   std::tuple<Fields *...> m_fields;
-  mutable decltype(ranges::view::zip(std::declval<Fields>()...)) m_view;
 };
 
 namespace Access {
@@ -321,13 +307,25 @@ public:
                : ItemProxy<item_type, false, Keys...>::get(m_view[i]);
   }
 
-  auto begin() const {
-    fprintf(stderr, "VariableZipProxy::begin\n");
+  // TODO WARNING: We are creating the zip view from temporary gsl::span
+  // objects. ranges::view::zip_view takes ownership of this temporary objects.
+  // The iterators then reference this object (if zip_view was based on directly
+  // on std::vector, the iterator would reference the vector, so this problem
+  // would disappear). Therefore, we need to make sure the zip_view stays alive
+  // after iterators have been created. We are thus disabling the rvalue
+  // overloads of begin() and end(). Furthermore, the Python export of __iter__
+  // for this class requires the special pybind11 flag `py::keep_alive`.
+  // Ultimately it would be good if we could avoid this complications and make
+  // iterators valid on their own. However, we should also keep in mind that we
+  // may want to support zipping slice views and may want to pass ownership of
+  // the slice view to the zip view.
+  auto begin() const && = delete;
+  auto begin() const & {
     return m_mayResizeItems ? makeIt<true>(m_view.begin())
                             : makeIt<false>(m_view.begin());
   }
-  auto end() const {
-    fprintf(stderr, "VariableZipProxy::end\n");
+  auto end() const && = delete;
+  auto end() const & {
     return m_mayResizeItems ? makeIt<true>(m_view.end())
                             : makeIt<false>(m_view.end());
   }

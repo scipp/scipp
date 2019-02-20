@@ -52,6 +52,10 @@ void declare_VariableZipProxy(py::module &m, const std::string &suffix,
            [](const Proxy &self) {
              return py::make_iterator(self.begin(), self.end());
            },
+           // WARNING The py::keep_alive is really important. It prevents
+           // deletion of the VariableZipProxy when its iterators are still in
+           // use. This is necessary due to the underlying implementation, which
+           // used ranges::view::zip based on temporary gsl::range.
            py::keep_alive<0, 1>());
 }
 

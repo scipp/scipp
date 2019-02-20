@@ -475,19 +475,14 @@ class TestDatasetExamples(unittest.TestCase):
         d[Data.EventPulseTimes, ""].data[0].append(1000)
         d[Data.EventTofs, ""].data[1].append(20)
         d[Data.EventPulseTimes, ""].data[1].append(2000)
-        #print(d[Data.EventPulseTimes, ""].data[2])
-        #print(d[Data.EventPulseTimes, ""].data[2][0])
-        #print(len(d[Data.EventPulseTimes, ""].data[2]))
         # Don't do this, there are no compatiblity checks:
         #for el in zip(d[Data.EventTofs, ""].data, d[Data.EventPulseTimes, ""].data):
         print("zip start")
         for el in d.zip():
             print(len(el))
-            print(el.__iter__())
+            for e in el:
+                print(e.first(), e.second())
             print('')
-            #for e in el:
-            #    pass
-            #    print(e)
 
 if __name__ == '__main__':
     unittest.main()

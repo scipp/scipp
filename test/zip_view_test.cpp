@@ -441,10 +441,18 @@ TEST(EventListsProxy, item_access) {
   events.push_back(1.0, 2.0);
   EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[0].size(), 1ul);
   EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[1].size(), 0ul);
+}
 
-  for (const auto &el : eventLists)
-    for (const auto &e : el) {
-    }
+TEST(EventListsProxy, range_based_for) {
+  // rvalue overloads of begin and end are deleted, just checking if we can
+  // nevertheless use a range-based for loop.
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+  for (auto el : zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                     Access::Key<std::vector<double>>{Data::Variance, "a"})) {
+    EXPECT_EQ(el.size(), 0);
+  }
 }
 
 TEST(EventListsProxy, item_access_prevented_if_partial_proxy) {
