@@ -4,6 +4,12 @@ from dataset import *
 import numpy as np
 
 class TestVariable(unittest.TestCase):
+
+    def test_builtins(self):
+        # Test builtin support
+        var = Variable(Coord.X, [Dim.X], np.arange(4.0))
+        self.assertEqual(len(var), 4)
+
     def test_create_coord(self):
         var = Variable(Coord.X, [Dim.X], np.arange(4.0))
         self.assertEqual(var.name, "")
@@ -69,6 +75,32 @@ class TestVariable(unittest.TestCase):
         self.assertEqual(repr(var), "Variable(Coord.SpectrumNumber, '',( Dim.X ), int64)\n")
         var = Variable(Coord.Mask, [Dim.X], np.arange(1))
         self.assertEqual(repr(var), "Variable(Coord.Mask, '',( Dim.X ), int64)\n")
+    
+    def test_binary_operations(self):
+        # TODO units check
+        data = np.arange(1, 4, dtype=float)
+        a = Variable(Data.Value, [Dim.X], data)
+        b = Variable(Data.Value, [Dim.X], data)
+        # Plus
+        c = a + b
+        self.assertTrue(np.array_equal(c.numpy, data+data))
+        c += b
+        self.assertTrue(np.array_equal(c.numpy, data+data+data))
+        # Minus
+        c = a - b
+        self.assertTrue(np.array_equal(c.numpy, data-data))
+        c -= b
+        self.assertTrue(np.array_equal(c.numpy, data-data-data))
+        # Multiply
+        c = a * b
+        self.assertTrue(np.array_equal(c.numpy, data*data))
+        c *= b
+        self.assertTrue(np.array_equal(c.numpy, data*data*data))
+        # Divide
+        c = a / b
+        self.assertTrue(np.array_equal(c.numpy, data/data))
+        c /= b
+        self.assertTrue(np.array_equal(c.numpy, data/data/data))
 
 if __name__ == '__main__':
     unittest.main()

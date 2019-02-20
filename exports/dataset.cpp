@@ -452,6 +452,7 @@ PYBIND11_MODULE(dataset, m) {
            py::arg("dtype") = py::dtype::of<Empty>())
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
+      .def("__len__", &Variable::size)
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
@@ -470,9 +471,14 @@ PYBIND11_MODULE(dataset, m) {
           "data",
           &as_VariableView_variant<Variable, double, float, int64_t, int32_t,
                                    char, bool, std::string, Dataset>)
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def("__repr__",
            [](const Variable &self) { return dataset::to_string(self, "."); });
 
