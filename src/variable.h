@@ -117,6 +117,20 @@ class ConstVariableSlice;
 class VariableSlice;
 template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
 
+namespace detail {
+template <class T> struct default_init {
+  static T value() { return T(); }
+};
+// Eigen does not zero-initialize matrices (vectors), which is a recurrent
+// source of bugs. Variable does zero-init instead.
+template <class T, int Rows, int Cols>
+struct default_init<Eigen::Matrix<T, Rows, Cols>> {
+  static Eigen::Matrix<T, Rows, Cols> value() {
+    return Eigen::Matrix<T, Rows, Cols>::Zero();
+  }
+};
+} // namespace detail
+
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
 /// dimensions.
@@ -130,25 +144,33 @@ public:
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
       : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<typename TagT::type>(dimensions.volume())) {}
+                 Vector<underlying_type_t<typename TagT::type>>(
+                     dimensions.volume(),
+                     detail::default_init<
+                         underlying_type_t<typename TagT::type>>::value())) {}
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions,
-           Vector<typename TagT::type> object)
+           Vector<underlying_type_t<typename TagT::type>> object)
       : Variable(tag, TagT::unit, std::move(dimensions), std::move(object)) {}
   template <class TagT, class... Args>
   Variable(TagT tag, const Dimensions &dimensions, Args &&... args)
       : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<typename TagT::type>(std::forward<Args>(args)...)) {}
+                 Vector<underlying_type_t<typename TagT::type>>(
+                     std::forward<Args>(args)...)) {}
   template <class TagT, class T>
   Variable(TagT tag, const Dimensions &dimensions,
            std::initializer_list<T> values)
       : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<typename TagT::type>(values.begin(), values.end())) {}
+                 Vector<underlying_type_t<typename TagT::type>>(values.begin(),
+                                                                values.end())) {
+  }
   template <class TagT, class T>
   Variable(TagT tag, const Dimensions &dimensions, const std::vector<T> &values)
       : Variable(tag, TagT::unit, std::move(dimensions),
                  // Copy to aligned memory.
-                 Vector<typename TagT::type>(values.begin(), values.end())) {}
+                 Vector<underlying_type_t<typename TagT::type>>(values.begin(),
+                                                                values.end())) {
+  }
 
   template <class T>
   Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,
@@ -213,6 +235,7 @@ public:
 
   DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_tag; }
+  void setTag(const Tag tag) { m_tag = tag; }
   bool isCoord() const {
     return m_tag < std::tuple_size<detail::CoordDef::tags>::value;
   }
@@ -267,8 +290,8 @@ public:
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
 private:
-  template <class T> const Vector<T> &cast() const;
-  template <class T> Vector<T> &cast();
+  template <class T> const Vector<underlying_type_t<T>> &cast() const;
+  template <class T> Vector<underlying_type_t<T>> &cast();
 
   // Used by ZipView. Need to find a better way instead of having everyone as
   // friend.
@@ -282,15 +305,36 @@ private:
 
 template <class T>
 Variable makeVariable(Tag tag, const Dimensions &dimensions) {
-  return Variable(tag, unit(tag), std::move(dimensions),
-                  Vector<T>(dimensions.volume()));
+  return Variable(tag, defaultUnit(tag), std::move(dimensions),
+                  Vector<underlying_type_t<T>>(dimensions.volume()));
 }
 
 template <class T, class T2>
 Variable makeVariable(Tag tag, const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
-  return Variable(tag, unit(tag), std::move(dimensions),
-                  Vector<T>(values.begin(), values.end()));
+  return Variable(tag, defaultUnit(tag), std::move(dimensions),
+                  Vector<underlying_type_t<T>>(values.begin(), values.end()));
+}
+
+namespace detail {
+template <class... N> struct is_vector : std::false_type {};
+template <class N, class A>
+struct is_vector<std::vector<N, A>> : std::true_type {};
+} // namespace detail
+
+template <class T, class... Args>
+Variable makeVariable(Tag tag, const Dimensions &dimensions, Args &&... args) {
+  // Note: Using `if constexpr` instead of another overload, since overloading
+  // on universal reference arguments is problematic.
+  if constexpr (detail::is_vector<std::remove_cv_t<
+                    std::remove_reference_t<Args>>...>::value) {
+    // Copies to aligned memory.
+    return Variable(tag, defaultUnit(tag), std::move(dimensions),
+                    Vector<underlying_type_t<T>>(args.begin(), args.end())...);
+  } else {
+    return Variable(tag, defaultUnit(tag), std::move(dimensions),
+                    Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
+  }
 }
 
 /// Non-mutable view into (a subset of) a Variable.
@@ -364,10 +408,10 @@ public:
   bool isData() const { return m_variable->isData(); }
 
   // Note: This return a proxy object (a VariableView) that does reference
-  // members owner by *this. Therefore we can support this even for temporaries
-  // and we do not need to delete the rvalue overload, unlike for many other
-  // methods. The data is owned by the underlying variable so it will not be
-  // deleted even if *this is a temporary and gets deleted.
+  // members owner by *this. Therefore we can support this even for
+  // temporaries and we do not need to delete the rvalue overload, unlike for
+  // many other methods. The data is owned by the underlying variable so it
+  // will not be deleted even if *this is a temporary and gets deleted.
   template <class TagT> auto get(const TagT t) const {
     if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
@@ -386,7 +430,8 @@ protected:
   friend class Variable;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
-  template <class T> const VariableView<const T> cast() const;
+  template <class T>
+  const VariableView<const underlying_type_t<T>> cast() const;
 
   const Variable *m_variable;
   deep_ptr<VariableConcept> m_view;
@@ -444,7 +489,7 @@ public:
     return this->template cast<typename TagT::type>();
   }
 
-  template <class T> auto span() { return cast<T>(); }
+  template <class T> auto span() const { return cast<T>(); }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in
@@ -481,7 +526,7 @@ private:
   template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
-  template <class T> VariableView<T> cast() const;
+  template <class T> VariableView<underlying_type_t<T>> cast() const;
 
   Variable *m_mutableVariable;
 };
