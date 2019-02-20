@@ -483,6 +483,8 @@ class TestDatasetExamples(unittest.TestCase):
             for e in el:
                 self.assertEqual(e.first(), 10)
                 self.assertEqual(e.second(), 1000)
+            el.append((10,300))
+            self.assertEqual(len(el), size + 1)
 
 if __name__ == '__main__':
     unittest.main()

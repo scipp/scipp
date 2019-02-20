@@ -170,6 +170,13 @@ public:
     requireResizable();
     doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
   }
+  template <class... Ts>
+  void push_back(const std::tuple<Ts...> &values) const {
+    static_assert(sizeof...(Fields) == sizeof...(Ts),
+                  "Wrong number of fields in push_back.");
+    requireResizable();
+    doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
+  }
 
 private:
   template <class... Ts, size_t... Is>
@@ -183,6 +190,11 @@ private:
   }
   template <class... Ts, size_t... Is>
   void doPushBack(const ranges::v3::common_tuple<Ts &...> &values,
+                  std::index_sequence<Is...>) const {
+    (std::get<Is>(m_fields)->push_back(std::get<Is>(values)), ...);
+  }
+  template <class... Ts, size_t... Is>
+  void doPushBack(const std::tuple<Ts...> &values,
                   std::index_sequence<Is...>) const {
     (std::get<Is>(m_fields)->push_back(std::get<Is>(values)), ...);
   }
@@ -293,7 +305,7 @@ public:
       }
       gsl::index requiredCount = 0;
       for (const auto &var : dataset) {
-        if (name == var.name())
+        if (var.isData() && name == var.name())
           ++requiredCount;
       }
       m_mayResizeItems &= (count == requiredCount);

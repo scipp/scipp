@@ -63,9 +63,16 @@ template <class... Fields>
 void declare_ItemZipProxy(py::module &m, const std::string &suffix) {
   using Proxy = ItemZipProxy<Fields...>;
   py::class_<Proxy> proxy(m, (std::string("ItemZipProxy_") + suffix).c_str());
-  proxy.def("__len__", &Proxy::size).def("__iter__", [](const Proxy &self) {
-    return py::make_iterator(self.begin(), self.end());
-  });
+  proxy.def("__len__", &Proxy::size)
+      .def("__iter__",
+           [](const Proxy &self) {
+             return py::make_iterator(self.begin(), self.end());
+           })
+      .def("append",
+           [](const Proxy &self,
+              const std::tuple<typename Fields::value_type...> &item) {
+             self.push_back(item);
+           });
 }
 
 template <class... Fields>
