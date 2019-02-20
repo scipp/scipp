@@ -23,43 +23,43 @@ template <class T> constexpr bool isKnownUnit(const T &) {
 Unit::Unit(const Unit::Id id) {
   switch (id) {
   case Unit::Id::Dimensionless:
-    m_unit = boost::units::si::dimensionless();
+    m_unit = none;
     break;
   case Unit::Id::Length:
-    m_unit = boost::units::si::length();
+    m_unit = m;
     break;
   case Unit::Id::Area:
-    m_unit = boost::units::si::area();
+    m_unit = m2;
     break;
   case Unit::Id::AreaVariance:
-    m_unit = boost::units::si::area() * boost::units::si::area();
+    m_unit = m2 * m2;
     break;
   case Unit::Id::Counts:
-    m_unit = neutron::tof::counts();
+    m_unit = counts;
     break;
   case Unit::Id::CountsVariance:
-    m_unit = neutron::tof::counts() * neutron::tof::counts();
+    m_unit = counts * counts;
     break;
   case Unit::Id::InverseLength:
-    m_unit = boost::units::si::dimensionless() / boost::units::si::length();
+    m_unit = none / m;
     break;
   case Unit::Id::InverseTime:
-    m_unit = boost::units::si::dimensionless() / boost::units::si::time();
+    m_unit = none / s;
     break;
   case Unit::Id::Energy:
-    m_unit = neutron::tof::energy();
+    m_unit = mev;
     break;
   case Unit::Id::Wavelength:
-    m_unit = neutron::tof::wavelength();
+    m_unit = lambda;
     break;
   case Unit::Id::Time:
-    m_unit = boost::units::si::time();
+    m_unit = s;
     break;
   case Unit::Id::Tof:
-    m_unit = neutron::tof::tof();
+    m_unit = tof;
     break;
   case Unit::Id::Mass:
-    m_unit = boost::units::si::mass();
+    m_unit = kg;
     break;
   default:
     throw std::runtime_error("Unsupported Id in Unit constructor");
@@ -68,38 +68,24 @@ Unit::Unit(const Unit::Id id) {
 
 /// Get the Id corresponding to the underlying unit
 Unit::Id Unit::id() const {
-  // return Unit::Id::Dimensionless;
   return std::visit(
-      overloaded{[](boost::units::si::dimensionless) {
-                   return Unit::Id::Dimensionless;
-                 },
-                 [](boost::units::si::length) { return Unit::Id::Length; },
-                 [](boost::units::si::area) { return Unit::Id::Area; },
-                 [](decltype(std::declval<boost::units::si::area>() *
-                             std::declval<boost::units::si::area>())) {
-                   return Unit::Id::AreaVariance;
-                 },
-                 [](neutron::tof::counts) { return Unit::Id::Counts; },
-                 [](decltype(std::declval<neutron::tof::counts>() *
-                             std::declval<neutron::tof::counts>())) {
-                   return Unit::Id::CountsVariance;
-                 },
-                 [](decltype(std::declval<boost::units::si::dimensionless>() /
-                             std::declval<boost::units::si::length>())) {
-                   return Unit::Id::InverseLength;
-                 },
-                 [](decltype(std::declval<boost::units::si::dimensionless>() /
-                             std::declval<boost::units::si::time>())) {
-                   return Unit::Id::InverseTime;
-                 },
-                 [](neutron::tof::energy) { return Unit::Id::Energy; },
-                 [](neutron::tof::wavelength) { return Unit::Id::Wavelength; },
-                 [](boost::units::si::time) { return Unit::Id::Time; },
-                 [](neutron::tof::tof) { return Unit::Id::Tof; },
-                 [](boost::units::si::mass) { return Unit::Id::Mass; },
-                 [](auto) -> Unit::Id {
-                   throw std::runtime_error("Unit not yet implemented");
-                 }},
+      overloaded{
+          [](decltype(none)) { return Unit::Id::Dimensionless; },
+          [](decltype(m)) { return Unit::Id::Length; },
+          [](decltype(m2)) { return Unit::Id::Area; },
+          [](decltype(m2 * m2)) { return Unit::Id::AreaVariance; },
+          [](decltype(counts)) { return Unit::Id::Counts; },
+          [](decltype(counts * counts)) { return Unit::Id::CountsVariance; },
+          [](decltype(none / m)) { return Unit::Id::InverseLength; },
+          [](decltype(none / s)) { return Unit::Id::InverseTime; },
+          [](decltype(mev)) { return Unit::Id::Energy; },
+          [](decltype(lambda)) { return Unit::Id::Wavelength; },
+          [](decltype(s)) { return Unit::Id::Time; },
+          [](decltype(tof)) { return Unit::Id::Tof; },
+          [](decltype(kg)) { return Unit::Id::Mass; },
+          [](auto) -> Unit::Id {
+            throw std::runtime_error("Unit not yet implemented");
+          }},
       m_unit);
 }
 
