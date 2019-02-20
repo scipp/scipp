@@ -452,7 +452,6 @@ PYBIND11_MODULE(dataset, m) {
            py::arg("dtype") = py::dtype::of<Empty>())
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
-      .def("__len__", &Variable::size)
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
@@ -479,6 +478,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__len__", &Variable::size)
       .def("__repr__",
            [](const Variable &self) { return dataset::to_string(self, "."); });
 
@@ -524,12 +524,12 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
-      .def("__iadd__", [](VariableSlice &a, Variable &b) { return a += b; },
-           py::is_operator())
-      .def("__isub__", [](VariableSlice &a, Variable &b) { return a -= b; },
-           py::is_operator())
-      .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
-           py::is_operator())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__len__", &VariableSlice::size)
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
       });
