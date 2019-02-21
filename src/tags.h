@@ -129,7 +129,7 @@ struct CoordDef {
   };
   struct Energy {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = Unit::Id::Energy;
   };
   struct DeltaE {
     using type = double;
@@ -137,11 +137,11 @@ struct CoordDef {
   };
   struct Ei {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = Unit::Id::Energy;
   };
   struct Ef {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = Unit::Id::Energy;
   };
   struct DetectorId {
     using type = int32_t;

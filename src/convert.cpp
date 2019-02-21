@@ -63,19 +63,10 @@ Dataset tofToEnergy(const Dataset &d) {
     if (varDims.contains(Dim::Tof))
       varDims.relabel(varDims.index(Dim::Tof), Dim::Energy);
     if (var.tag() == Coord::Tof) {
-      // TODO Need to extend the broadcasting capabilities to broadcast to the
-      // union of dimensions of both operands in a binary operation.
-      auto dims = conversionFactor.dimensions();
-      for (const Dim dim : varDims.labels())
-        if (!dims.contains(dim))
-          dims.addInner(dim, varDims[dim]);
-      // TODO Should have a broadcasting assign method?
-      Variable energy(Data::Value, dims, dims.volume(), 1.0);
-      energy *= conversionFactor;
-      // The reshape is just to remap the dimension label, should probably do
-      // this differently.
-      energy /= (var * var).reshape(varDims);
-      converted.insert(Coord::Energy, std::move(energy));
+      // The reshape is to remap the dimension label, should probably be done
+      // differently. Binary op order is to get desired dimension broadcast.
+      Variable inv = 1.0 / (var * var).reshape(varDims);
+      converted.insert(Coord::Energy, std::move(inv) * conversionFactor);
     } else if (var.tag() == Data::Events) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
