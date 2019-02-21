@@ -558,6 +558,31 @@ TEST(Variable, norm_of_vector) {
   EXPECT_EQ(norm(var), reference);
 }
 
+TEST(Variable, broadcast) {
+  Variable reference(Data::Value, {{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}},
+                     {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4});
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+
+  // No change if dimensions exist.
+  EXPECT_EQ(broadcast(var, {Dim::X, 2}), var);
+  EXPECT_EQ(broadcast(var, {Dim::Y, 2}), var);
+  EXPECT_EQ(broadcast(var, {{Dim::Y, 2}, {Dim::X, 2}}), var);
+
+  // No transpose done, should this fail? Failing is not really necessary since
+  // we have labeled dimensions.
+  EXPECT_EQ(broadcast(var, {{Dim::X, 2}, {Dim::Y, 2}}), var);
+
+  EXPECT_EQ(broadcast(var, {Dim::Z, 3}), reference);
+}
+
+TEST(Variable, broadcast_fail) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}),
+                   dataset::except::DimensionLengthError,
+                   "Expected dimension to be in {{Dim::Y, 2}, {Dim::X, 2}} , "
+                   "got Dim::X with mismatching length 3.");
+}
+
 TEST(VariableSlice, full_const_view) {
   const Variable var(Coord::X, {{Dim::X, 3}});
   ConstVariableSlice view(var);

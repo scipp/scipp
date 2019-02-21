@@ -1281,6 +1281,22 @@ Variable norm(const Variable &var) {
   return {var, require<const ArithmeticVariableConcept>(var.data()).norm()};
 }
 
+Variable broadcast(Variable var, const Dimensions &dims) {
+  if (var.dimensions().contains(dims))
+    return std::move(var);
+  auto newDims = var.dimensions();
+  for (const auto label : dims.labels()) {
+    if (newDims.contains(label))
+      dataset::expect::dimensionMatches(newDims, label, dims[label]);
+    else
+      newDims.add(label, dims[label]);
+  }
+  Variable result(var);
+  result.setDimensions(newDims);
+  result.data().copy(var.data(), Dim::Invalid, 0, 0, 1);
+  return result;
+}
+
 template <>
 VariableView<const double> getView<double>(const Variable &var,
                                            const Dimensions &dims) {
