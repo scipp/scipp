@@ -471,13 +471,21 @@ PYBIND11_MODULE(dataset, m) {
           &as_VariableView_variant<Variable, double, float, int64_t, int32_t,
                                    char, bool, std::string, Dataset>)
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= float(), py::call_guard<py::gil_scoped_release>())
       .def("__len__", &Variable::size)
       .def("__repr__",
            [](const Variable &self) { return dataset::to_string(self, "."); });

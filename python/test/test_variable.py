@@ -101,6 +101,14 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data/data))
         c /= b
         self.assertTrue(np.array_equal(c.numpy, data/data/data))
+        c = a + 2.0 
+        self.assertTrue(np.array_equal(c.numpy, data+2.0))
+        c = a - 2.0 
+        self.assertTrue(np.array_equal(c.numpy, data-2.0))
+        c = a * 2.0 
+        self.assertTrue(np.array_equal(c.numpy, data*2.0))
+        c = a / 2.0 
+        self.assertTrue(np.array_equal(c.numpy, data/2.0))
 
 if __name__ == '__main__':
     unittest.main()
