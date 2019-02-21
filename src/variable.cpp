@@ -1113,21 +1113,37 @@ Variable ConstVariableSlice::reshape(const Dimensions &dims) const {
 
 // Note: The std::move here is necessary because RVO does not work for variables
 // that are function parameters.
-Variable operator+(Variable a, const Variable &b) { return std::move(a += b); }
-Variable operator-(Variable a, const Variable &b) { return std::move(a -= b); }
-Variable operator*(Variable a, const Variable &b) { return std::move(a *= b); }
-Variable operator/(Variable a, const Variable &b) { return std::move(a /= b); }
+Variable operator+(Variable a, const Variable &b) {
+  auto result = broadcast(std::move(a), b.dimensions());
+  return result += b;
+}
+Variable operator-(Variable a, const Variable &b) {
+  auto result = broadcast(std::move(a), b.dimensions());
+  return result -= b;
+}
+Variable operator*(Variable a, const Variable &b) {
+  auto result = broadcast(std::move(a), b.dimensions());
+  return result *= b;
+}
+Variable operator/(Variable a, const Variable &b) {
+  auto result = broadcast(std::move(a), b.dimensions());
+  return result /= b;
+}
 Variable operator+(Variable a, const ConstVariableSlice &b) {
-  return std::move(a += b);
+  auto result = broadcast(std::move(a), b.dimensions());
+  return result += b;
 }
 Variable operator-(Variable a, const ConstVariableSlice &b) {
-  return std::move(a -= b);
+  auto result = broadcast(std::move(a), b.dimensions());
+  return result -= b;
 }
 Variable operator*(Variable a, const ConstVariableSlice &b) {
-  return std::move(a *= b);
+  auto result = broadcast(std::move(a), b.dimensions());
+  return result *= b;
 }
 Variable operator/(Variable a, const ConstVariableSlice &b) {
-  return std::move(a /= b);
+  auto result = broadcast(std::move(a), b.dimensions());
+  return result /= b;
 }
 Variable operator+(Variable a, const double b) { return std::move(a += b); }
 Variable operator-(Variable a, const double b) { return std::move(a -= b); }

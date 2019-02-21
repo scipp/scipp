@@ -250,6 +250,16 @@ TEST(Variable, operator_times_equal_scalar) {
   EXPECT_EQ(a.unit(), Unit::Id::Length);
 }
 
+TEST(Variable, operator_times_can_broadcast) {
+  Variable a(Data::Value, {Dim::X, 2}, {0.5, 1.5});
+  Variable b(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
+
+  auto ab = a * b;
+  Variable reference(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}},
+                     {1.0, 3.0, 1.5, 4.5});
+  EXPECT_EQ(ab, reference);
+}
+
 TEST(Variable, operator_divide_equal) {
   Variable a(Data::Value, {Dim::X, 2}, {2.0, 3.0});
   Variable b(Data::Value, {}, {2.0});
@@ -579,7 +589,7 @@ TEST(Variable, broadcast_fail) {
   Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
   EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}),
                    dataset::except::DimensionLengthError,
-                   "Expected dimension to be in {{Dim::Y, 2}, {Dim::X, 2}} , "
+                   "Expected dimension to be in {{Dim::Y, 2}, {Dim::X, 2}}\n, "
                    "got Dim::X with mismatching length 3.");
 }
 
