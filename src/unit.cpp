@@ -6,6 +6,8 @@
 #include "unit.h"
 #include <stdexcept>
 
+using namespace units;
+
 // Helper type for the visitor id()
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
@@ -35,10 +37,13 @@ Unit::Unit(const Unit::Id id) {
     m_unit = m2 * m2;
     break;
   case Unit::Id::Counts:
-    m_unit = counts;
+    m_unit = counts * none;
     break;
   case Unit::Id::CountsVariance:
-    m_unit = counts * counts;
+    m_unit = counts * counts * none;
+    break;
+  case Unit::Id::CountsPerMeter:
+    m_unit = counts / m;
     break;
   case Unit::Id::InverseLength:
     m_unit = none / m;
@@ -47,16 +52,16 @@ Unit::Unit(const Unit::Id id) {
     m_unit = none / s;
     break;
   case Unit::Id::Energy:
-    m_unit = mev;
+    m_unit = mev * none;
     break;
   case Unit::Id::Wavelength:
-    m_unit = lambda;
+    m_unit = lambda * none;
     break;
   case Unit::Id::Time:
     m_unit = s;
     break;
   case Unit::Id::Tof:
-    m_unit = tof;
+    m_unit = tof * none;
     break;
   case Unit::Id::Mass:
     m_unit = kg;
@@ -69,23 +74,25 @@ Unit::Unit(const Unit::Id id) {
 /// Get the Id corresponding to the underlying unit
 Unit::Id Unit::id() const {
   return std::visit(
-      overloaded{
-          [](decltype(none)) { return Unit::Id::Dimensionless; },
-          [](decltype(m)) { return Unit::Id::Length; },
-          [](decltype(m2)) { return Unit::Id::Area; },
-          [](decltype(m2 * m2)) { return Unit::Id::AreaVariance; },
-          [](decltype(counts)) { return Unit::Id::Counts; },
-          [](decltype(counts * counts)) { return Unit::Id::CountsVariance; },
-          [](decltype(none / m)) { return Unit::Id::InverseLength; },
-          [](decltype(none / s)) { return Unit::Id::InverseTime; },
-          [](decltype(mev)) { return Unit::Id::Energy; },
-          [](decltype(lambda)) { return Unit::Id::Wavelength; },
-          [](decltype(s)) { return Unit::Id::Time; },
-          [](decltype(tof)) { return Unit::Id::Tof; },
-          [](decltype(kg)) { return Unit::Id::Mass; },
-          [](auto) -> Unit::Id {
-            throw std::runtime_error("Unit not yet implemented");
-          }},
+      overloaded{[](decltype(none)) { return Unit::Id::Dimensionless; },
+                 [](decltype(m)) { return Unit::Id::Length; },
+                 [](decltype(m2)) { return Unit::Id::Area; },
+                 [](decltype(m2 * m2)) { return Unit::Id::AreaVariance; },
+                 [](decltype(counts * none)) { return Unit::Id::Counts; },
+                 [](decltype(counts * counts * none)) {
+                   return Unit::Id::CountsVariance;
+                 },
+                 [](decltype(counts / m)) { return Unit::Id::CountsPerMeter; },
+                 [](decltype(none / m)) { return Unit::Id::InverseLength; },
+                 [](decltype(none / s)) { return Unit::Id::InverseTime; },
+                 [](decltype(mev * none)) { return Unit::Id::Energy; },
+                 [](decltype(lambda * none)) { return Unit::Id::Wavelength; },
+                 [](decltype(s)) { return Unit::Id::Time; },
+                 [](decltype(tof * none)) { return Unit::Id::Tof; },
+                 [](decltype(kg)) { return Unit::Id::Mass; },
+                 [](auto) -> Unit::Id {
+                   throw std::runtime_error("Unit not yet implemented");
+                 }},
       m_unit);
 }
 
@@ -94,23 +101,14 @@ Unit::Id Unit::id() const {
 Unit operator*(const Unit &a, const Unit &b) {
   return std::visit(
       [](auto x, auto y) -> Unit::unit_t {
-        if constexpr (std::is_same<decltype(x),
-                                   boost::units::si::dimensionless>::value)
-          return {y};
-        else if constexpr (std::is_same<decltype(y),
-                                        boost::units::si::dimensionless>::value)
-          return {x};
-        else {
-          // Creation of z needed here because putting x*y inside the call to
-          // isKnownUnit(x*y) leads to error: temporary of non-literal type in
-          // a constant expression
-          auto z{x * y};
-          if constexpr (isKnownUnit(z))
-            return {z};
-          else
-            throw std::runtime_error(
-                "Unsupported unit combination in multiplication");
-        }
+        // Creation of z needed here because putting x*y inside the call to
+        // isKnownUnit(x*y) leads to error: temporary of non-literal type in
+        // a constant expression
+        auto z{x * y};
+        if constexpr (isKnownUnit(z))
+          return {z};
+        throw std::runtime_error(
+            "Unsupported unit combination in multiplication");
       },
       a.getUnit(), b.getUnit());
 }
@@ -120,18 +118,10 @@ Unit operator*(const Unit &a, const Unit &b) {
 Unit operator/(const Unit &a, const Unit &b) {
   return std::visit(
       [](auto x, auto y) -> Unit::unit_t {
-        if constexpr (std::is_same<decltype(y),
-                                   boost::units::si::dimensionless>::value)
-          return {x};
-        else {
-          // Creation of z needed (see multiplication)
-          auto z{x / y};
-          if constexpr (isKnownUnit(z))
-            return {z};
-          else
-            throw std::runtime_error(
-                "Unsupported unit combination in division");
-        }
+        auto z{x / y};
+        if constexpr (isKnownUnit(z))
+          return {z};
+        throw std::runtime_error("Unsupported unit combination in division");
       },
       a.getUnit(), b.getUnit());
 }
