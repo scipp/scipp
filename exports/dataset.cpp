@@ -518,6 +518,8 @@ PYBIND11_MODULE(dataset, m) {
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
       .def_property_readonly("is_coord", &Variable::isCoord)
+      .def_property_readonly("is_data", &Variable::isData)
+      .def_property_readonly("is_attr", &Variable::isAttr)
       .def_property_readonly(
           "dimensions", [](const Variable &self) { return self.dimensions(); })
       .def_property_readonly(
@@ -548,6 +550,8 @@ PYBIND11_MODULE(dataset, m) {
              return dims.shape()[0];
            })
       .def_property_readonly("is_coord", &VariableSlice::isCoord)
+      .def_property_readonly("is_data", &VariableSlice::isData)
+      .def_property_readonly("is_attr", &VariableSlice::isAttr)
       .def_property_readonly("tag", &VariableSlice::tag)
       .def_property_readonly("name", &VariableSlice::name)
       .def("__getitem__",
@@ -627,7 +631,9 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__repr__",
+           [](const DatasetSlice &self) { return dataset::to_string(self); });
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
