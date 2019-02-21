@@ -568,6 +568,14 @@ TEST(Variable, norm_of_vector) {
   EXPECT_EQ(norm(var), reference);
 }
 
+TEST(Variable, sqrt) {
+  // TODO Currently comparisons of variables do not provide special handling of
+  // NaN, so sqrt of negative values will lead variables that are never equal.
+  Variable reference(Data::Value, {Dim::X, 2}, {1, 2});
+  Variable var(Data::Value, {Dim::X, 2}, {1, 4});
+  EXPECT_EQ(sqrt(var), reference);
+}
+
 TEST(Variable, broadcast) {
   Variable reference(Data::Value, {{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}},
                      {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4});

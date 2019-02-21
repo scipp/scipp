@@ -156,6 +156,7 @@ public:
   using ArithmeticVariableConcept::ArithmeticVariableConcept;
   /// Set x = value/x
   virtual VariableConcept &reciprocal_times(const double value) = 0;
+  virtual std::unique_ptr<VariableConcept> sqrt() const = 0;
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
                      const VariableConcept &newCoord) = 0;
@@ -412,6 +413,12 @@ template <class T1, class T2> struct norm_of_second_arg {
       return abs(rhs);
   }
 };
+template <class T1, class T2> struct sqrt_of_second_arg {
+  constexpr T1 operator()(const T1 &, const T2 &rhs) const {
+    // TODO Should we make a unary ArithmeticHelper::apply?
+    return sqrt(rhs);
+  }
+};
 
 template <class T> struct scalar_type { using type = T; };
 template <class T, int Rows> struct scalar_type<Eigen::Matrix<T, Rows, 1>> {
@@ -466,6 +473,13 @@ public:
   VariableConcept &reciprocal_times(const double value) override {
     Variable other(Data::Value, {}, {value});
     return this->template apply<ReciprocalTimes>(other.data());
+  }
+
+  std::unique_ptr<VariableConcept> sqrt() const override {
+    auto sqrt = std::make_unique<DataModel<Vector<T>>>(
+        this->dimensions(), Vector<T>(this->dimensions().volume()));
+    sqrt->template apply<sqrt_of_second_arg, T>(*this);
+    return sqrt;
   }
 
   void rebin(const VariableConcept &old, const Dim dim,
@@ -1295,6 +1309,10 @@ Variable mean(const Variable &var, const Dim dim) {
 
 Variable norm(const Variable &var) {
   return {var, require<const ArithmeticVariableConcept>(var.data()).norm()};
+}
+
+Variable sqrt(const Variable &var) {
+  return {var, require<const FloatingPointVariableConcept>(var.data()).sqrt()};
 }
 
 Variable broadcast(Variable var, const Dimensions &dims) {

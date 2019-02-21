@@ -10,6 +10,19 @@
 #include "dataset.h"
 #include "md_zip_view.h"
 
+Variable getSpecPos(const Dataset &d) {
+  // TODO There should be a better way to extract the actual spectrum positions
+  // as a variable.
+  if (d.contains(Coord::Position))
+    return d(Coord::Position);
+  auto specPosView = zipMD(d, MDRead(Coord::Position));
+  Variable specPos(Coord::Position, d(Coord::DetectorGrouping).dimensions());
+  std::transform(specPosView.begin(), specPosView.end(),
+                 specPos.get(Coord::Position).begin(),
+                 [](const auto &item) { return item.get(Coord::Position); });
+  return specPos;
+}
+
 namespace neutron {
 namespace tof {
 Dataset tofToEnergy(const Dataset &d) {
@@ -26,17 +39,7 @@ Dataset tofToEnergy(const Dataset &d) {
   const auto &sourcePos = compPos(Dim::Component, 0);
   const auto &samplePos = compPos(Dim::Component, 1);
   const auto l1 = norm(sourcePos - samplePos);
-
-  // TODO There should be a better way to extra the actual spectrum positions
-  // as a variable.
-  const auto &dims = d.contains(Coord::Position)
-                         ? d(Coord::Position).dimensions()
-                         : d(Coord::DetectorGrouping).dimensions();
-  auto specPosView = zipMD(d, MDRead(Coord::Position));
-  Variable specPos(Coord::Position, dims);
-  std::transform(specPosView.begin(), specPosView.end(),
-                 specPos.get(Coord::Position).begin(),
-                 [](const auto &item) { return item.get(Coord::Position); });
+  const auto specPos = getSpecPos(d);
 
   // l_total = l1 + l2
   auto conversionFactor(norm(specPos - samplePos) + l1);

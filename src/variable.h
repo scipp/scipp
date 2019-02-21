@@ -571,6 +571,7 @@ Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
 Variable norm(const Variable &var);
+Variable sqrt(const Variable &var);
 Variable broadcast(Variable var, const Dimensions &dims);
 
 template <class T>
