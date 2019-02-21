@@ -384,27 +384,27 @@ public:
 // a vector, so we cannot use std::multiplies, which is available only for
 // arguments of matching types.
 template <class T1, class T2 = T1> struct plus {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const noexcept {
+  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
     return lhs + rhs;
   }
 };
 template <class T1, class T2 = T1> struct minus {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const noexcept {
+  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
     return lhs - rhs;
   }
 };
 template <class T1, class T2 = T1> struct multiplies {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const noexcept {
+  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
     return lhs * rhs;
   }
 };
 template <class T1, class T2 = T1> struct divides {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const noexcept {
+  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
     return lhs / rhs;
   }
 };
 template <class T1, class T2> struct norm_of_second_arg {
-  constexpr T1 operator()(const T1 &, const T2 &rhs) const noexcept {
+  constexpr T1 operator()(const T1 &, const T2 &rhs) const {
     // TODO Should we make a unary ArithmeticHelper::apply?
     if constexpr (is_vector_space<T2>::value)
       return rhs.norm();
