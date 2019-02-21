@@ -6,13 +6,17 @@
 #ifndef COUNTS_H
 #define COUNTS_H
 
+#include <initializer_list>
+
 #include "dimension.h"
 
 class Dataset;
 
 namespace counts {
 Dataset toDensity(Dataset d, const Dim dim);
+Dataset toDensity(Dataset d, const std::initializer_list<Dim> &dims);
 Dataset fromDensity(Dataset d, const Dim dim);
+Dataset fromDensity(Dataset d, const std::initializer_list<Dim> &dims);
 } // namespace counts
 
 #endif // COUNTS_H
