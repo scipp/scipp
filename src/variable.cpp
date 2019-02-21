@@ -8,10 +8,11 @@
 #include "except.h"
 #include "variable_view.h"
 
-template <template <class> class Op, class T> struct ArithmeticHelper {
+template <template <class, class> class Op, class T1, class T2>
+struct ArithmeticHelper {
   template <class InputView, class OutputView>
   static void apply(const OutputView &a, const InputView &b) {
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T>());
+    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T1, T2>());
   }
 };
 
@@ -136,6 +137,8 @@ public:
   virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
 };
 
+// This is also used for implementing operations for vector spaces, notably
+// Eigen::Vector3d.
 class ArithmeticVariableConcept : public AddableVariableConcept {
 public:
   static constexpr const char *name = "arithmetic";
@@ -143,6 +146,8 @@ public:
   virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator/=(const VariableConcept &other) = 0;
+  /// Returns the absolute value (for scalars) or the norm (for vectors).
+  virtual std::unique_ptr<VariableConcept> norm() const = 0;
 };
 
 class FloatingPointVariableConcept : public ArithmeticVariableConcept {
@@ -170,8 +175,12 @@ struct concept<T, std::enable_if_t<std::is_same<T, Dataset>::value>> {
   using type = AddableVariableConcept;
   using typeT = AddableVariableConceptT<T>;
 };
+template <class T> struct is_vector_space : std::false_type {};
+template <class T, int Rows>
+struct is_vector_space<Eigen::Matrix<T, Rows, 1>> : std::true_type {};
 template <class T>
-struct concept<T, std::enable_if_t<std::is_integral<T>::value>> {
+struct concept<T, std::enable_if_t<std::is_integral<T>::value ||
+                                   is_vector_space<T>::value>> {
   using type = ArithmeticVariableConcept;
   using typeT = ArithmeticVariableConceptT<T>;
 };
@@ -318,47 +327,48 @@ public:
       }
     }
   }
-};
 
-template <class T> class AddableVariableConceptT : public VariableConceptT<T> {
-public:
-  using VariableConceptT<T>::VariableConceptT;
-
-  template <template <class> class Op>
+  template <template <class, class> class Op, class OtherT = T>
   VariableConcept &apply(const VariableConcept &other) {
     const auto &dims = this->dimensions();
     try {
-      const auto &otherT = dynamic_cast<const VariableConceptT<T> &>(other);
-      if (this->getView(dims).overlaps(otherT.getView(dims))) {
-        // If there is an overlap between lhs and rhs we copy the rhs before
-        // applying the operation.
-        const auto &data = otherT.getView(otherT.dimensions());
-        DataModel<Vector<T>> copy(other.dimensions(),
-                                  Vector<T>(data.begin(), data.end()));
-        return apply<Op>(copy);
-      }
+      const auto &otherT =
+          dynamic_cast<const VariableConceptT<OtherT> &>(other);
+      if constexpr (std::is_same_v<T, OtherT>)
+        if (this->getView(dims).overlaps(otherT.getView(dims))) {
+          // If there is an overlap between lhs and rhs we copy the rhs before
+          // applying the operation.
+          const auto &data = otherT.getView(otherT.dimensions());
+          DataModel<Vector<OtherT>> copy(
+              other.dimensions(), Vector<OtherT>(data.begin(), data.end()));
+          return apply<Op, OtherT>(copy);
+        }
 
       if (this->isContiguous() && dims.contains(other.dimensions())) {
         if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T>::apply(this->getSpan(), otherT.getSpan());
+          ArithmeticHelper<Op, T, OtherT>::apply(this->getSpan(),
+                                                 otherT.getSpan());
         } else {
-          ArithmeticHelper<Op, T>::apply(this->getSpan(), otherT.getView(dims));
+          ArithmeticHelper<Op, T, OtherT>::apply(this->getSpan(),
+                                                 otherT.getView(dims));
         }
       } else if (dims.contains(other.dimensions())) {
         if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T>::apply(this->getView(dims), otherT.getSpan());
+          ArithmeticHelper<Op, T, OtherT>::apply(this->getView(dims),
+                                                 otherT.getSpan());
         } else {
-          ArithmeticHelper<Op, T>::apply(this->getView(dims),
-                                         otherT.getView(dims));
+          ArithmeticHelper<Op, T, OtherT>::apply(this->getView(dims),
+                                                 otherT.getView(dims));
         }
       } else {
         // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
         if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T>::apply(this->getView(other.dimensions()),
-                                         otherT.getSpan());
+          ArithmeticHelper<Op, T, OtherT>::apply(
+              this->getView(other.dimensions()), otherT.getSpan());
         } else {
-          ArithmeticHelper<Op, T>::apply(this->getView(other.dimensions()),
-                                         otherT.getView(other.dimensions()));
+          ArithmeticHelper<Op, T, OtherT>::apply(
+              this->getView(other.dimensions()),
+              otherT.getView(other.dimensions()));
         }
       }
     } catch (const std::bad_cast &) {
@@ -368,9 +378,53 @@ public:
     }
     return *this;
   }
+};
+
+// For operations with vector spaces we may have operations between a scalar and
+// a vector, so we cannot use std::multiplies, which is available only for
+// arguments of matching types.
+template <class T1, class T2 = T1> struct plus {
+  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const noexcept {
+    return lhs + rhs;
+  }
+};
+template <class T1, class T2 = T1> struct minus {
+  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const noexcept {
+    return lhs - rhs;
+  }
+};
+template <class T1, class T2 = T1> struct multiplies {
+  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const noexcept {
+    return lhs * rhs;
+  }
+};
+template <class T1, class T2 = T1> struct divides {
+  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const noexcept {
+    return lhs / rhs;
+  }
+};
+template <class T1, class T2> struct norm_of_second_arg {
+  constexpr T1 operator()(const T1 &, const T2 &rhs) const noexcept {
+    // TODO Should we make a unary ArithmeticHelper::apply?
+    if constexpr (is_vector_space<T2>::value)
+      return rhs.norm();
+    else
+      return abs(rhs);
+  }
+};
+
+template <class T> struct scalar_type { using type = T; };
+template <class T, int Rows> struct scalar_type<Eigen::Matrix<T, Rows, 1>> {
+  using type = T;
+};
+template <class T> using scalar_type_t = typename scalar_type<T>::type;
+
+template <class T> class AddableVariableConceptT : public VariableConceptT<T> {
+public:
+  using VariableConceptT<T>::VariableConceptT;
 
   VariableConcept &operator+=(const VariableConcept &other) override {
-    return apply<std::plus>(other);
+    return this->template apply<plus>(other);
   }
 };
 
@@ -380,20 +434,28 @@ public:
   using AddableVariableConceptT<T>::AddableVariableConceptT;
 
   VariableConcept &operator-=(const VariableConcept &other) override {
-    return this->template apply<std::minus>(other);
+    return this->template apply<minus>(other);
   }
 
   VariableConcept &operator*=(const VariableConcept &other) override {
-    return this->template apply<std::multiplies>(other);
+    return this->template apply<multiplies, scalar_type_t<T>>(other);
   }
 
   VariableConcept &operator/=(const VariableConcept &other) override {
-    return this->template apply<std::divides>(other);
+    return this->template apply<divides, scalar_type_t<T>>(other);
+  }
+
+  std::unique_ptr<VariableConcept> norm() const override {
+    using ScalarT = scalar_type_t<T>;
+    auto norm = std::make_unique<DataModel<Vector<ScalarT>>>(
+        this->dimensions(), Vector<ScalarT>(this->dimensions().volume()));
+    norm->template apply<norm_of_second_arg, T>(*this);
+    return norm;
   }
 };
 
-template <class T> struct ReciprocalTimes {
-  T operator()(const T a, const T b) { return b / a; };
+template <class T1, class T2> struct ReciprocalTimes {
+  T2 operator()(const T1 a, const T2 b) { return b / a; };
 };
 
 template <class T>
@@ -1213,6 +1275,10 @@ Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dimensions()[dim]);
   return summed * Variable(Data::Value, {}, {scale});
+}
+
+Variable norm(const Variable &var) {
+  return {var, require<const ArithmeticVariableConcept>(var.data()).norm()};
 }
 
 template <>

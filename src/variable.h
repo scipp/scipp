@@ -140,6 +140,9 @@ public:
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);
+  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data)
+      : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
+        m_object(std::move(data)) {}
 
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
@@ -561,6 +564,7 @@ Variable permute(const Variable &var, const Dim dim,
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
+Variable norm(const Variable &var);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);

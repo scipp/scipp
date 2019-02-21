@@ -543,6 +543,21 @@ TEST(Variable, mean) {
   EXPECT_TRUE(equals(meanY.get(Data::Value), {2.0, 3.0}));
 }
 
+TEST(Variable, norm_of_scalar) {
+  Variable reference(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, -2.0, -3.0, 4.0});
+  EXPECT_EQ(norm(var), reference);
+}
+
+TEST(Variable, norm_of_vector) {
+  Variable reference(Data::Value, {Dim::X, 3}, {sqrt(2), sqrt(2), 2});
+  auto var = makeVariable<Eigen::Vector3d>(Data::Value, {Dim::X, 3},
+                                           {Eigen::Vector3d{1, 0, -1},
+                                            Eigen::Vector3d{1, 1, 0},
+                                            Eigen::Vector3d{0, 0, -2}});
+  EXPECT_EQ(norm(var), reference);
+}
+
 TEST(VariableSlice, full_const_view) {
   const Variable var(Coord::X, {{Dim::X, 3}});
   ConstVariableSlice view(var);
