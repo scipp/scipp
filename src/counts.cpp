@@ -8,20 +8,26 @@
 #include "except.h"
 
 namespace counts {
+
+auto getBinWidths(const Dataset &d, const std::initializer_list<Dim> &dims) {
+  std::vector<Variable> binWidths;
+  for (const auto dim : dims) {
+    const auto &coord = d(dimensionCoord(dim));
+    if (coord.unit() == Unit::Id::Dimensionless)
+      throw std::runtime_error("Dimensionless axis cannot be used for "
+                               "conversion from or to density");
+    binWidths.emplace_back(coord(dim, 1, coord.dimensions()[dim]) -
+                           coord(dim, 0, coord.dimensions()[dim] - 1));
+  }
+  return binWidths;
+}
+
 Dataset toDensity(Dataset d, const Dim dim) {
   return toDensity(std::move(d), {dim});
 }
 
 Dataset toDensity(Dataset d, const std::initializer_list<Dim> &dims) {
-  std::vector<Variable> binWidths;
-  for (const auto dim : dims) {
-    const auto &coord = d(dimensionCoord(dim));
-    if (coord.unit() == Unit::Id::Dimensionless)
-      throw std::runtime_error(
-          "Dimensionless axis cannot be used for conversion to density");
-    binWidths.emplace_back(coord(dim, 1, coord.dimensions()[dim]) -
-                           coord(dim, 0, coord.dimensions()[dim] - 1));
-  }
+  const auto binWidths = getBinWidths(d, dims);
   for (const auto &var : d) {
     if (var.isData()) {
       if (var.unit() == Unit::Id::Counts) {
@@ -53,15 +59,7 @@ Dataset fromDensity(Dataset d, const Dim dim) {
 }
 
 Dataset fromDensity(Dataset d, const std::initializer_list<Dim> &dims) {
-  std::vector<Variable> binWidths;
-  for (const auto dim : dims) {
-    const auto &coord = d(dimensionCoord(dim));
-    if (coord.unit() == Unit::Id::Dimensionless)
-      throw std::runtime_error(
-          "Dimensionless axis cannot be used for conversion from density");
-    binWidths.emplace_back(coord(dim, 1, coord.dimensions()[dim]) -
-                           coord(dim, 0, coord.dimensions()[dim] - 1));
-  }
+  const auto binWidths = getBinWidths(d, dims);
   for (const auto &var : d) {
     if (var.isData()) {
       if (var.unit() == Unit::Id::Counts) {
