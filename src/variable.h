@@ -6,6 +6,8 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <iostream>
+#include <boost/units/io.hpp>
 #include <string>
 #include <type_traits>
 
@@ -187,10 +189,10 @@ public:
     return *m_name;
   }
   void setName(const std::string &name) {
-    if (isCoord())
-      throw std::runtime_error("Coordinate variable cannot have a name.");
     if (name.empty())
       m_name = nullptr;
+    else if (isCoord())
+      throw std::runtime_error("Coordinate variable cannot have a name.");
     else if (m_name)
       *m_name = name;
     else
@@ -210,6 +212,10 @@ public:
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const ConstVariableSlice &other) &;
   Variable &operator*=(const double value) &;
+  template <class T> Variable &operator*=(const T &quantity) & {
+    setUnit(unit() * Unit(typename T::unit_type{}));
+    return *this *= quantity.value();
+  }
   Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const ConstVariableSlice &other) &;
   Variable &operator/=(const double value) &;

@@ -106,16 +106,17 @@ static boost::units::si::time s;
 static boost::units::si::mass kg;
 static neutron::tof::counts counts;
 static neutron::tof::wavelength lambda;
-static neutron::tof::energy mev;
+static neutron::tof::energy meV;
 static neutron::tof::tof tof;
 
 // TODO counts/m is mainly for testing and should maybe be removed.
-using type =
-    std::variant<decltype(none), decltype(m), decltype(m2), decltype(s),
-                 decltype(kg), decltype(counts * none), decltype(none / m),
-                 decltype(lambda * none), decltype(mev * none),
-                 decltype(tof * none), decltype(none / s), decltype(m2 * m2),
-                 decltype(counts * counts * none), decltype(counts / m)>;
+using type = std::variant<
+    decltype(none), decltype(m), decltype(m2), decltype(s), decltype(kg),
+    decltype(counts * none), decltype(none / m), decltype(lambda * none),
+    decltype(meV * none), decltype(tof * none), decltype(tof * tof * none),
+    decltype(none / s), decltype(m2 * m2), decltype(counts * counts * none),
+    decltype(counts / m), decltype(meV * tof * tof / m2),
+    decltype(meV * tof * tof * none)>;
 } // namespace units
 
 class Unit {

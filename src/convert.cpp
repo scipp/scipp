@@ -21,38 +21,40 @@ Dataset tofToEnergy(const Dataset &d) {
                              "only supported for elastic scattering.");
 
   // 1. Compute conversion factor
-  const auto &compPos = d.get(Coord::ComponentInfo)[0].get(Coord::Position);
+  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
   // TODO Need a better mechanism to identify source and sample.
-  const auto &sourcePos = compPos[0];
-  const auto &samplePos = compPos[1];
-  const double l1 = (sourcePos - samplePos).norm();
+  const auto &sourcePos = compPos(Dim::Component, 0);
+  const auto &samplePos = compPos(Dim::Component, 1);
+  const auto l1 = norm(sourcePos - samplePos);
 
+  // TODO There should be a better way to extra the actual spectrum positions
+  // as a variable.
   const auto &dims = d.contains(Coord::Position)
                          ? d(Coord::Position).dimensions()
                          : d(Coord::DetectorGrouping).dimensions();
-  Variable conversionFactor(Data::Value, dims);
+  auto specPosView = zipMD(d, MDRead(Coord::Position));
+  Variable specPos(Coord::Position, dims);
+  std::transform(specPosView.begin(), specPosView.end(),
+                 specPos.get(Coord::Position).begin(),
+                 [](const auto &item) { return item.get(Coord::Position); });
 
-  // This scale factor should be obtained from the unit stored in the Tof
-  // coordinate, something like mus2_to_s2 = pow(tof.unit().si_scale(), 2);
-  const double mus2_to_s2 = 1e-12;
-  // Can we obtain this scale from the runtime unit? It contains joule, so it is
-  // not so obvious how to do this.
-  const auto meV = 1e-3 * boost::units::si::constants::codata::e.value() *
-                   boost::units::si::joule;
-  auto physicalConstants =
-      boost::units::si::constants::codata::m_n / (2.0 * meV * mus2_to_s2);
+  // l_total = l1 + l2
+  auto conversionFactor(norm(specPos - samplePos) + l1);
+  // l_total^2
+  conversionFactor *= conversionFactor;
 
-  auto specPos = zipMD(d, MDRead(Coord::Position));
-  const auto factor = [&](const auto &item) {
-    const auto &pos = item.get(Coord::Position);
-    double l_total = l1 + (samplePos - pos).norm();
-    return l_total * l_total * physicalConstants.value();
-  };
+  const auto tof_to_s =
+      boost::units::quantity<boost::units::si::time>(1.0 * units::tof) /
+      units::tof;
+  const auto J_to_meV =
+      units::meV /
+      boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
+  // Later we *divide* by time-of-flight (squared), so the tof_to_s factor is
+  // in the denominator.
+  auto physicalConstants = 0.5 * boost::units::si::constants::codata::m_n *
+                           J_to_meV / (tof_to_s * tof_to_s);
 
-  // TODO Must also update unit of conversionFactor.
-  // convertFactor.unit() *= extractUnit(physicalConstants);
-  std::transform(specPos.begin(), specPos.end(),
-                 conversionFactor.span<double>().begin(), factor);
+  conversionFactor *= physicalConstants;
 
   // 2. Transform variables
   Dataset converted;
@@ -68,12 +70,12 @@ Dataset tofToEnergy(const Dataset &d) {
         if (!dims.contains(dim))
           dims.addInner(dim, varDims[dim]);
       // TODO Should have a broadcasting assign method?
-      Variable energy(Coord::Energy, dims, dims.volume(), 1.0);
+      Variable energy(Data::Value, dims, dims.volume(), 1.0);
       energy *= conversionFactor;
       // The reshape is just to remap the dimension label, should probably do
       // this differently.
       energy /= (var * var).reshape(varDims);
-      converted.insert(energy);
+      converted.insert(Coord::Energy, std::move(energy));
     } else if (var.tag() == Data::Events) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");

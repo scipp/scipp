@@ -125,7 +125,7 @@ struct CoordDef {
   };
   struct Tof {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = Unit::Id::Tof;
   };
   struct Energy {
     using type = double;
@@ -199,7 +199,7 @@ struct CoordDef {
 struct DataDef {
   struct Tof {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = Unit::Id::Tof;
   };
   struct PulseTime {
     using type = double;
@@ -231,7 +231,7 @@ struct DataDef {
   };
   struct EventTofs {
     using type = boost::container::small_vector<double, 8>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = Unit::Id::Tof;
   };
   struct EventPulseTimes {
     using type = boost::container::small_vector<double, 8>;
