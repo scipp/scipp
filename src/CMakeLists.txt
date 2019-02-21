@@ -26,6 +26,7 @@ set(INC_FILES
 
 set(SRC_FILES
   convert.cpp 
+  counts.cpp
   dataset.cpp 
   dimensions.cpp
   except.cpp
