@@ -24,8 +24,7 @@ Variable getSpecPos(const Dataset &d) {
 }
 
 const auto tof_to_s =
-    boost::units::quantity<boost::units::si::time>(1.0 * units::tof) /
-    units::tof;
+    boost::units::quantity<boost::units::si::time>(1.0 * units::us) / units::us;
 const auto J_to_meV =
     units::meV /
     boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);

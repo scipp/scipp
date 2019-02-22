@@ -35,10 +35,10 @@ Unit::Unit(const Unit::Id id) {
     m_unit = m;
     break;
   case Unit::Id::Area:
-    m_unit = m*m;
+    m_unit = m * m;
     break;
   case Unit::Id::AreaVariance:
-    m_unit = m*m * m*m;
+    m_unit = m * m * m * m;
     break;
   case Unit::Id::Counts:
     m_unit = counts * dimensionless;
@@ -59,13 +59,13 @@ Unit::Unit(const Unit::Id id) {
     m_unit = meV * dimensionless;
     break;
   case Unit::Id::Wavelength:
-    m_unit = lambda * dimensionless;
+    m_unit = angstrom * dimensionless;
     break;
   case Unit::Id::Time:
     m_unit = s;
     break;
   case Unit::Id::Tof:
-    m_unit = tof * dimensionless;
+    m_unit = us * dimensionless;
     break;
   case Unit::Id::Mass:
     m_unit = kg;
@@ -91,9 +91,11 @@ Unit::Id Unit::id() const {
           [](decltype(dimensionless / m)) { return Unit::Id::InverseLength; },
           [](decltype(dimensionless / s)) { return Unit::Id::InverseTime; },
           [](decltype(meV * dimensionless)) { return Unit::Id::Energy; },
-          [](decltype(lambda * dimensionless)) { return Unit::Id::Wavelength; },
+          [](decltype(angstrom * dimensionless)) {
+            return Unit::Id::Wavelength;
+          },
           [](decltype(s)) { return Unit::Id::Time; },
-          [](decltype(tof * dimensionless)) { return Unit::Id::Tof; },
+          [](decltype(us * dimensionless)) { return Unit::Id::Tof; },
           [](decltype(kg)) { return Unit::Id::Mass; },
           [](auto unit) -> Unit::Id {
             std::stringstream msg;
