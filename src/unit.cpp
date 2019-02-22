@@ -35,10 +35,10 @@ Unit::Unit(const Unit::Id id) {
     m_unit = m;
     break;
   case Unit::Id::Area:
-    m_unit = m2;
+    m_unit = m*m;
     break;
   case Unit::Id::AreaVariance:
-    m_unit = m2 * m2;
+    m_unit = m*m * m*m;
     break;
   case Unit::Id::Counts:
     m_unit = counts * dimensionless;
@@ -81,8 +81,8 @@ Unit::Id Unit::id() const {
       overloaded{
           [](decltype(dimensionless)) { return Unit::Id::Dimensionless; },
           [](decltype(m)) { return Unit::Id::Length; },
-          [](decltype(m2)) { return Unit::Id::Area; },
-          [](decltype(m2 * m2)) { return Unit::Id::AreaVariance; },
+          [](decltype(m * m)) { return Unit::Id::Area; },
+          [](decltype(m * m * m * m)) { return Unit::Id::AreaVariance; },
           [](decltype(counts * dimensionless)) { return Unit::Id::Counts; },
           [](decltype(counts * counts * dimensionless)) {
             return Unit::Id::CountsVariance;

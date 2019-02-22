@@ -101,7 +101,6 @@ template <> struct boost::units::base_unit_info<neutron::tof::tof_base_unit> {
 namespace units {
 static boost::units::si::dimensionless dimensionless;
 static boost::units::si::length m;
-static boost::units::si::area m2;
 static boost::units::si::time s;
 static boost::units::si::mass kg;
 static neutron::tof::counts counts;
@@ -119,12 +118,15 @@ static neutron::tof::tof tof;
 // (dimensionless) into all our non-SI units avoids special-case handling in all
 // operations (which would attempt to remove the dimensionless factor manually).
 using type = std::variant<
-    decltype(dimensionless), decltype(m), decltype(m2), decltype(s), decltype(kg),
-    decltype(counts * dimensionless), decltype(dimensionless / m), decltype(lambda * dimensionless),
-    decltype(meV * dimensionless), decltype(tof * dimensionless), decltype(tof * tof * dimensionless),
-    decltype(dimensionless / tof), decltype(dimensionless / (tof * tof)), decltype(dimensionless / s),
-    decltype(m2 * m2), decltype(counts * counts * dimensionless), decltype(counts / m),
-    decltype(meV * tof * tof / m2), decltype(meV * tof * tof * dimensionless)>;
+    decltype(dimensionless), decltype(m), decltype(m * m), decltype(s),
+    decltype(kg), decltype(counts * dimensionless), decltype(dimensionless / m),
+    decltype(lambda * dimensionless), decltype(meV * dimensionless),
+    decltype(tof * dimensionless), decltype(tof * tof * dimensionless),
+    decltype(dimensionless / tof), decltype(dimensionless / (tof * tof)),
+    decltype(dimensionless / s), decltype(m * m * m * m),
+    decltype(counts * counts * dimensionless), decltype(counts / m),
+    decltype(meV * tof * tof / (m * m)),
+    decltype(meV * tof * tof * dimensionless)>;
 } // namespace units
 
 class Unit {
