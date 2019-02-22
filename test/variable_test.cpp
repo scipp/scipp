@@ -106,7 +106,7 @@ TEST(Variable, operator_equals) {
   auto diff3(a);
   diff3.setName("test");
   auto diff4(a);
-  diff4.setUnit(Unit::Id::Length);
+  diff4.setUnit(units::m);
   EXPECT_EQ(a, a);
   EXPECT_EQ(a, a_copy);
   EXPECT_EQ(a, b);
@@ -183,9 +183,9 @@ TEST(Variable, operator_plus_equal_different_unit) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
 
   auto different_unit(a);
-  different_unit.setUnit(Unit::Id::Length);
+  different_unit.setUnit(units::m);
   EXPECT_THROW_MSG(a += different_unit, dataset::except::UnitMismatchError,
-                   "Expected Unit::Dimensionless to be equal to Unit::Length.");
+                   "Expected dimensionless to be equal to m.");
 }
 
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
@@ -233,21 +233,21 @@ TEST(Variable, operator_plus_equal_custom_type) {
 TEST(Variable, operator_times_equal) {
   Variable a(Coord::X, {Dim::X, 2}, {2.0, 3.0});
 
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= a);
   EXPECT_EQ(a.get(Coord::X)[0], 4.0);
   EXPECT_EQ(a.get(Coord::X)[1], 9.0);
-  EXPECT_EQ(a.unit(), Unit::Id::Area);
+  EXPECT_EQ(a.unit(), units::m * units::m);
 }
 
 TEST(Variable, operator_times_equal_scalar) {
   Variable a(Coord::X, {Dim::X, 2}, {2.0, 3.0});
 
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= 2.0);
   EXPECT_EQ(a.get(Coord::X)[0], 4.0);
   EXPECT_EQ(a.get(Coord::X)[1], 6.0);
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
 }
 
 TEST(Variable, operator_times_can_broadcast) {
@@ -263,32 +263,32 @@ TEST(Variable, operator_times_can_broadcast) {
 TEST(Variable, operator_divide_equal) {
   Variable a(Data::Value, {Dim::X, 2}, {2.0, 3.0});
   Variable b(Data::Value, {}, {2.0});
-  b.setUnit(Unit::Id::Length);
+  b.setUnit(units::m);
 
   EXPECT_NO_THROW(a /= b);
   EXPECT_EQ(a.get(Data::Value)[0], 1.0);
   EXPECT_EQ(a.get(Data::Value)[1], 1.5);
-  EXPECT_EQ(a.unit(), Unit::Id::InverseLength);
+  EXPECT_EQ(a.unit(), units::dimensionless / units::m);
 }
 
 TEST(Variable, operator_divide_equal_self) {
   Variable a(Coord::X, {Dim::X, 2}, {2.0, 3.0});
 
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= a);
   EXPECT_EQ(a.get(Coord::X)[0], 1.0);
   EXPECT_EQ(a.get(Coord::X)[1], 1.0);
-  EXPECT_EQ(a.unit(), Unit::Id::Dimensionless);
+  EXPECT_EQ(a.unit(), units::dimensionless);
 }
 
 TEST(Variable, operator_divide_equal_scalar) {
   Variable a(Coord::X, {Dim::X, 2}, {2.0, 4.0});
 
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= 2.0);
   EXPECT_EQ(a.get(Coord::X)[0], 1.0);
   EXPECT_EQ(a.get(Coord::X)[1], 2.0);
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
 }
 
 TEST(Variable, setSlice) {
@@ -440,11 +440,11 @@ TEST(Variable, concatenate) {
   Dimensions dims(Dim::Tof, 1);
   Variable a(Data::Value, dims, {1.0});
   Variable b(Data::Value, dims, {2.0});
-  a.setUnit(Unit::Id::Length);
-  b.setUnit(Unit::Id::Length);
+  a.setUnit(units::m);
+  b.setUnit(units::m);
   auto ab = concatenate(a, b, Dim::Tof);
   ASSERT_EQ(ab.size(), 2);
-  EXPECT_EQ(ab.unit(), Unit(Unit::Id::Length));
+  EXPECT_EQ(ab.unit(), Unit(units::m));
   const auto &data = ab.get(Data::Value);
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
@@ -515,10 +515,10 @@ TEST(Variable, concatenate_unit_fail) {
   Variable a(Data::Value, dims, {1.0});
   auto b(a);
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
-  a.setUnit(Unit::Id::Length);
+  a.setUnit(units::m);
   EXPECT_THROW_MSG(concatenate(a, b, Dim::X), std::runtime_error,
                    "Cannot concatenate Variables: Units do not match.");
-  b.setUnit(Unit::Id::Length);
+  b.setUnit(units::m);
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
 }
 
@@ -572,9 +572,9 @@ TEST(Variable, sqrt) {
   // TODO Currently comparisons of variables do not provide special handling of
   // NaN, so sqrt of negative values will lead variables that are never equal.
   Variable reference(Data::Value, {Dim::X, 2}, {1, 2});
-  reference.setUnit(Unit::Id::Length);
+  reference.setUnit(units::m);
   Variable var(Data::Value, {Dim::X, 2}, {1, 4});
-  var.setUnit(Unit::Id::Area);
+  var.setUnit(units::m * units::m);
   EXPECT_EQ(sqrt(var), reference);
 }
 

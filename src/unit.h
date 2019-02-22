@@ -96,19 +96,12 @@ template <> struct boost::units::base_unit_info<neutron::tof::tof_base_unit> {
   static std::string symbol() { return "us"; }
 };
 
-// Define some helper variables to make the declaration of the set of allowed
-// units more succinct
+// Helper variables to make the declaration units more succinct.
 namespace units {
-static boost::units::si::dimensionless dimensionless;
-static boost::units::si::length m;
-static boost::units::si::time s;
-static boost::units::si::mass kg;
-static neutron::tof::counts counts;
-static neutron::tof::wavelength angstrom;
-static neutron::tof::energy meV;
-static neutron::tof::tof us;
-
-// TODO counts/m is mainly for testing and should maybe be removed.
+static constexpr boost::units::si::dimensionless dimensionless;
+static constexpr boost::units::si::length m;
+static constexpr boost::units::si::time s;
+static constexpr boost::units::si::mass kg;
 // Note the factor `dimensionless` in units that otherwise contain only non-SI
 // factors. This is a trick to overcome some subtleties of working with
 // heterogeneous unit systems in boost::units: We are combing SI units with our
@@ -118,58 +111,46 @@ static neutron::tof::tof us;
 // --- you get counts * dimensionless. Explicitly putting a factor dimensionless
 // (dimensionless) into all our non-SI units avoids special-case handling in all
 // operations (which would attempt to remove the dimensionless factor manually).
-using type = std::variant<
-    decltype(dimensionless), decltype(m), decltype(m * m), decltype(s),
-    decltype(kg), decltype(counts * dimensionless), decltype(dimensionless / m),
-    decltype(angstrom * dimensionless), decltype(meV * dimensionless),
-    decltype(us * dimensionless), decltype(us * us * dimensionless),
-    decltype(dimensionless / us), decltype(dimensionless / (us * us)),
-    decltype(dimensionless / s), decltype(m * m * m * m),
-    decltype(counts * counts * dimensionless), decltype(counts / m),
-    decltype(meV * us * us / (m * m)), decltype(meV * us * us * dimensionless)>;
+static constexpr decltype(neutron::tof::counts{} * dimensionless) counts;
+static constexpr decltype(neutron::tof::wavelength{} * dimensionless) angstrom;
+static constexpr decltype(neutron::tof::energy{} * dimensionless) meV;
+static constexpr decltype(neutron::tof::tof{} * dimensionless) us;
+
+// Define a std::variant which will hold the set of allowed units. Any unit that
+// does not exist in the variant will either fail to compile or throw a
+// std::runtime_error during operations such as multiplication or division.
+namespace detail {
+template <class... Ts, class... Extra>
+std::variant<Ts...,
+             decltype(std::declval<std::remove_cv_t<Ts>>() *
+                      std::declval<std::remove_cv_t<Ts>>())...,
+             std::remove_cv_t<Extra>...>
+make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
+  return {};
+}
+} // namespace detail
+
+// TODO counts/m is mainly for testing and should maybe be removed.
+using type = decltype(detail::make_unit(
+    std::make_tuple(m, counts, s, kg, dimensionless / m, angstrom, meV, us,
+                    dimensionless / us, dimensionless / s),
+    std::make_tuple(dimensionless, counts / m, m *m *m *m,
+                    meV *us *us / (m * m), meV *us *us *dimensionless)));
 } // namespace units
 
 class Unit {
 public:
-  // Define a std::variant which will hold the set of allowed units.
-  // Any unit that does not exist in the variant will either fail to compile or
-  // throw a std::runtime_error during operations such as multiplication or
-  // division.
-  //
-  // TODO: maybe it is possible to create a helper that will automatically
-  // generate the squares for variance?
-  // The following was attempted but did not succeed:
-  //  template <class... Ts> struct unit_and_variance {
-  //  using type =
-  //    std::variant<Ts..., decltype(std::declval<Ts>()*std::declval<Ts>())...>;
-  //  };
   using unit_t = units::type;
 
-  enum class Id : uint16_t {
-    Dimensionless,
-    Length,
-    Area,
-    AreaVariance,
-    Counts,
-    CountsVariance,
-    CountsPerMeter,
-    InverseLength,
-    InverseTime,
-    Energy,
-    Wavelength,
-    Time,
-    Tof,
-    Mass
-  };
+  constexpr Unit() = default;
   // TODO should this be explicit?
-  Unit() = default;
-  // TODO: should we have a templated constructor here?
-  // e.g.: template <class T> Unit(T &&unit) : m_unit(std::forward<T>(unit)) {}
-  Unit(const Unit::Id id);
-  Unit(const unit_t unit) : m_unit(unit) {}
+  template <class Dim, class System, class Enable>
+  Unit(boost::units::unit<Dim, System, Enable> unit) : m_unit(unit) {}
+  explicit Unit(const unit_t &unit) : m_unit(unit) {}
 
-  Unit::Id id() const;
-  const Unit::unit_t &getUnit() const { return m_unit; }
+  constexpr const Unit::unit_t &getUnit() const noexcept { return m_unit; }
+
+  std::string name() const;
 
 private:
   unit_t m_unit;
@@ -188,12 +169,12 @@ Unit sqrt(const Unit &a);
 
 namespace units {
 inline bool containsCounts(const Unit &unit) {
-  if (unit == Unit::Id::Counts || unit == Unit::Id::CountsPerMeter)
+  if ((unit == units::counts) || unit == units::counts / units::m)
     return true;
   return false;
 }
 inline bool containsCountsVariance(const Unit &unit) {
-  if (unit == Unit::Id::CountsVariance)
+  if (unit == units::counts * units::counts)
     return true;
   return false;
 }

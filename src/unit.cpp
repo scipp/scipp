@@ -3,6 +3,7 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <sstream>
 #include <stdexcept>
 
 #include <boost/units/cmath.hpp>
@@ -12,9 +13,6 @@
 
 using namespace units;
 
-// Helper type for the visitor id()
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 // Helper to check whether type is a member of a given std::variant
 template <typename T, typename VARIANT_T> struct isVariantMember;
 template <typename T, typename... ALL_T>
@@ -25,90 +23,20 @@ template <class T> constexpr bool isKnownUnit(const T &) {
   return isVariantMember<T, Unit::unit_t>::value;
 }
 
-/// Construct unit from a given Id
-Unit::Unit(const Unit::Id id) {
-  switch (id) {
-  case Unit::Id::Dimensionless:
-    m_unit = dimensionless;
-    break;
-  case Unit::Id::Length:
-    m_unit = m;
-    break;
-  case Unit::Id::Area:
-    m_unit = m * m;
-    break;
-  case Unit::Id::AreaVariance:
-    m_unit = m * m * m * m;
-    break;
-  case Unit::Id::Counts:
-    m_unit = counts * dimensionless;
-    break;
-  case Unit::Id::CountsVariance:
-    m_unit = counts * counts * dimensionless;
-    break;
-  case Unit::Id::CountsPerMeter:
-    m_unit = counts / m;
-    break;
-  case Unit::Id::InverseLength:
-    m_unit = dimensionless / m;
-    break;
-  case Unit::Id::InverseTime:
-    m_unit = dimensionless / s;
-    break;
-  case Unit::Id::Energy:
-    m_unit = meV * dimensionless;
-    break;
-  case Unit::Id::Wavelength:
-    m_unit = angstrom * dimensionless;
-    break;
-  case Unit::Id::Time:
-    m_unit = s;
-    break;
-  case Unit::Id::Tof:
-    m_unit = us * dimensionless;
-    break;
-  case Unit::Id::Mass:
-    m_unit = kg;
-    break;
-  default:
-    throw std::runtime_error("Unsupported Id in Unit constructor");
-  }
-}
-
-/// Get the Id corresponding to the underlying unit
-Unit::Id Unit::id() const {
+std::string Unit::name() const {
   return std::visit(
-      overloaded{
-          [](decltype(dimensionless)) { return Unit::Id::Dimensionless; },
-          [](decltype(m)) { return Unit::Id::Length; },
-          [](decltype(m * m)) { return Unit::Id::Area; },
-          [](decltype(m * m * m * m)) { return Unit::Id::AreaVariance; },
-          [](decltype(counts * dimensionless)) { return Unit::Id::Counts; },
-          [](decltype(counts * counts * dimensionless)) {
-            return Unit::Id::CountsVariance;
-          },
-          [](decltype(counts / m)) { return Unit::Id::CountsPerMeter; },
-          [](decltype(dimensionless / m)) { return Unit::Id::InverseLength; },
-          [](decltype(dimensionless / s)) { return Unit::Id::InverseTime; },
-          [](decltype(meV * dimensionless)) { return Unit::Id::Energy; },
-          [](decltype(angstrom * dimensionless)) {
-            return Unit::Id::Wavelength;
-          },
-          [](decltype(s)) { return Unit::Id::Time; },
-          [](decltype(us * dimensionless)) { return Unit::Id::Tof; },
-          [](decltype(kg)) { return Unit::Id::Mass; },
-          [](auto unit) -> Unit::Id {
-            std::stringstream msg;
-            msg << "Unsupported unit " << unit;
-            throw std::runtime_error(msg.str());
-          }},
+      [](auto &&unit) {
+        std::stringstream name;
+        name << unit;
+        return name.str();
+      },
       m_unit);
 }
 
 // Mutliplying two units together using std::visit to run through the contents
 // of the std::variant
 Unit operator*(const Unit &a, const Unit &b) {
-  return std::visit(
+  return Unit(std::visit(
       [](auto x, auto y) -> Unit::unit_t {
         // Creation of z needed here because putting x*y inside the call to
         // isKnownUnit(x*y) leads to error: temporary of non-literal type in
@@ -120,13 +48,13 @@ Unit operator*(const Unit &a, const Unit &b) {
         msg << "Unsupported unit as result of multiplication " << x << "*" << y;
         throw std::runtime_error(msg.str());
       },
-      a.getUnit(), b.getUnit());
+      a.getUnit(), b.getUnit()));
 }
 
 // Dividing two units together using std::visit to run through the contents
 // of the std::variant
 Unit operator/(const Unit &a, const Unit &b) {
-  return std::visit(
+  return Unit(std::visit(
       [](auto x, auto y) -> Unit::unit_t {
         auto z{x / y};
         if constexpr (isKnownUnit(z))
@@ -135,7 +63,7 @@ Unit operator/(const Unit &a, const Unit &b) {
         msg << "Unsupported unit as result of division " << x << "/" << y;
         throw std::runtime_error(msg.str());
       },
-      a.getUnit(), b.getUnit());
+      a.getUnit(), b.getUnit()));
 }
 
 Unit operator+(const Unit &a, const Unit &b) {
@@ -145,7 +73,7 @@ Unit operator+(const Unit &a, const Unit &b) {
 }
 
 Unit sqrt(const Unit &a) {
-  return std::visit(
+  return Unit(std::visit(
       [](auto x) -> Unit::unit_t {
         typename decltype(sqrt(1.0 * x))::unit_type sqrt_x;
         if constexpr (isKnownUnit(sqrt_x))
@@ -154,5 +82,5 @@ Unit sqrt(const Unit &a) {
         msg << "Unsupported unit as result of sqrt, sqrt(" << x << ").";
         throw std::runtime_error(msg.str());
       },
-      a.getUnit());
+      a.getUnit()));
 }

@@ -3,11 +3,12 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2019 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <regex>
+
 #include "except.h"
 #include "dataset.h"
 #include "dimensions.h"
 #include "tags.h"
-#include <regex>
 
 namespace {
 std::string do_to_string(const Dim dim) {
@@ -87,14 +88,7 @@ std::string do_to_string(const Tag tag) {
 }
 
 std::string do_to_string(const Unit &unit) {
-  switch (unit.id()) {
-  case Unit::Id::Dimensionless:
-    return "Unit::Dimensionless";
-  case Unit::Id::Length:
-    return "Unit::Length";
-  default:
-    return "<unknown unit>";
-  }
+  return unit.name();
 }
 } // namespace
 

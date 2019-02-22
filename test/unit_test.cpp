@@ -9,19 +9,19 @@
 
 #include "unit.h"
 
-TEST(Unit, construct) { ASSERT_NO_THROW(Unit u{Unit::Id::Dimensionless}); }
+TEST(Unit, construct) { ASSERT_NO_THROW(Unit u{units::dimensionless}); }
 
 TEST(Unit, compare) {
-  Unit u1{Unit::Id::Dimensionless};
-  Unit u2{Unit::Id::Length};
+  Unit u1{units::dimensionless};
+  Unit u2{units::m};
   ASSERT_TRUE(u1 == u1);
   ASSERT_TRUE(u1 != u2);
 }
 
 TEST(Unit, add) {
-  Unit a{Unit::Id::Dimensionless};
-  Unit b{Unit::Id::Length};
-  Unit c{Unit::Id::Area};
+  Unit a{units::dimensionless};
+  Unit b{units::m};
+  Unit c{units::m * units::m};
   EXPECT_EQ(a + a, a);
   EXPECT_EQ(b + b, b);
   EXPECT_EQ(c + c, c);
@@ -34,9 +34,9 @@ TEST(Unit, add) {
 }
 
 TEST(Unit, multiply) {
-  Unit a{Unit::Id::Dimensionless};
-  Unit b{Unit::Id::Length};
-  Unit c{Unit::Id::Area};
+  Unit a{units::dimensionless};
+  Unit b{units::m};
+  Unit c{units::m * units::m};
   EXPECT_EQ(a * a, a);
   EXPECT_EQ(a * b, b);
   EXPECT_EQ(b * a, b);
@@ -45,13 +45,13 @@ TEST(Unit, multiply) {
   EXPECT_EQ(b * b, c);
   EXPECT_ANY_THROW(b * c);
   EXPECT_ANY_THROW(c * b);
-  EXPECT_EQ(c * c, Unit::Id::AreaVariance);
+  EXPECT_EQ(c * c, units::m * units::m * units::m * units::m);
 }
 
 TEST(Unit, multiply_counts) {
-  Unit counts{Unit::Id::Counts};
-  Unit none{Unit::Id::Dimensionless};
-  EXPECT_EQ(counts * counts, Unit::Id::CountsVariance);
+  Unit counts{units::counts};
+  Unit none{units::dimensionless};
+  EXPECT_EQ(counts * counts, units::counts * units::counts);
   EXPECT_EQ(counts * none, counts);
   EXPECT_EQ(none * counts, counts);
 }
@@ -83,14 +83,14 @@ TEST(Unit, conversion_factors) {
 }
 
 TEST(Unit, sqrt) {
-  Unit a{Unit::Id::Dimensionless};
-  Unit m{Unit::Id::Length};
-  Unit m2{Unit::Id::Area};
+  Unit a{units::dimensionless};
+  Unit m{units::m};
+  Unit m2{units::m * units::m};
   EXPECT_EQ(sqrt(m2), m);
 }
 
 TEST(Unit, sqrt_fail) {
-  Unit m{Unit::Id::Length};
+  Unit m{units::m};
   EXPECT_THROW_MSG(sqrt(m), std::runtime_error,
                    "Unsupported unit as result of sqrt, sqrt(m).");
 }

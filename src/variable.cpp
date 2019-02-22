@@ -741,8 +741,8 @@ Variable::Variable(const ConstVariableSlice &slice)
 }
 
 template <class T>
-Variable::Variable(const Tag tag, const Unit::Id unit,
-                   const Dimensions &dimensions, T object)
+Variable::Variable(const Tag tag, const Unit unit, const Dimensions &dimensions,
+                   T object)
     : m_tag(tag), m_unit{unit},
       m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
                                               std::move(object))) {}
@@ -768,7 +768,7 @@ template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
 }
 
 #define INSTANTIATE(...)                                                       \
-  template Variable::Variable(const Tag, const Unit::Id, const Dimensions &,   \
+  template Variable::Variable(const Tag, const Unit, const Dimensions &,       \
                               Vector<underlying_type_t<__VA_ARGS__>>);         \
   template Vector<underlying_type_t<__VA_ARGS__>>                              \
       &Variable::cast<__VA_ARGS__>();                                          \
@@ -932,7 +932,7 @@ Variable &Variable::operator*=(const ConstVariableSlice &other) & {
 }
 Variable &Variable::operator*=(const double value) & {
   Variable other(Data::Value, {}, {value});
-  other.setUnit(Unit::Id::Dimensionless);
+  other.setUnit(units::dimensionless);
   return times_equals(*this, other);
 }
 
@@ -954,7 +954,7 @@ Variable &Variable::operator/=(const ConstVariableSlice &other) & {
 }
 Variable &Variable::operator/=(const double value) & {
   Variable other(Data::Value, {}, {value});
-  other.setUnit(Unit::Id::Dimensionless);
+  other.setUnit(units::dimensionless);
   return divide_equals(*this, other);
 }
 
@@ -983,7 +983,7 @@ VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) const {
 }
 VariableSlice VariableSlice::operator+=(const double value) const {
   Variable other(Data::Value, {}, {value});
-  other.setUnit(Unit::Id::Dimensionless);
+  other.setUnit(units::dimensionless);
   return plus_equals(*this, other);
 }
 
@@ -995,7 +995,7 @@ VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) const {
 }
 VariableSlice VariableSlice::operator-=(const double value) const {
   Variable other(Data::Value, {}, {value});
-  other.setUnit(Unit::Id::Dimensionless);
+  other.setUnit(units::dimensionless);
   return minus_equals(*this, other);
 }
 
@@ -1007,7 +1007,7 @@ VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) const {
 }
 VariableSlice VariableSlice::operator*=(const double value) const {
   Variable other(Data::Value, {}, {value});
-  other.setUnit(Unit::Id::Dimensionless);
+  other.setUnit(units::dimensionless);
   return times_equals(*this, other);
 }
 
@@ -1019,7 +1019,7 @@ VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) const {
 }
 VariableSlice VariableSlice::operator/=(const double value) const {
   Variable other(Data::Value, {}, {value});
-  other.setUnit(Unit::Id::Dimensionless);
+  other.setUnit(units::dimensionless);
   return divide_equals(*this, other);
 }
 
@@ -1167,7 +1167,7 @@ Variable operator+(const double a, Variable b) { return std::move(b += a); }
 Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
-  b.setUnit(Unit::Id::Dimensionless / b.unit());
+  b.setUnit(Unit(units::dimensionless) / b.unit());
   require<FloatingPointVariableConcept>(b.data()).reciprocal_times(a);
   return std::move(b);
 }
