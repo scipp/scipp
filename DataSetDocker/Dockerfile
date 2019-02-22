@@ -10,8 +10,9 @@ RUN apt-get update && \
     apt-get install -y cmake && \
     apt-get install -y g++ && \
     apt-get install -y mercurial && \
-    apt-get install -y libboost-dev && \
-
+    add-apt-repository ppa:mhier/libboost-latest && \
+    apt update && \
+    apt-get install -y libboost1.67-dev && \
     rm -rf /var/lib/apt/lists/*
 
 USER $NB_UID
