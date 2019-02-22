@@ -120,8 +120,7 @@ Dataset tofToDeltaE(const Dataset &d) {
   } else if (d.contains(Coord::Ef)) {
     // Indirect-inelastic.
     // Ef can be different for every spectrum.
-    tofShift = std::move(l2_square);
-    tofShift = std::move(tofShift) / sqrt(d(Coord::Ef));
+    tofShift = sqrt(std::move(l2_square) / d(Coord::Ef));
     scale = std::move(l1_square);
   } else {
     throw std::runtime_error("Dataset contains neither Coord::Ei nor "
@@ -136,20 +135,12 @@ Dataset tofToDeltaE(const Dataset &d) {
     if (varDims.contains(Dim::Tof))
       varDims.relabel(varDims.index(Dim::Tof), Dim::DeltaE);
     if (var.tag() == Coord::Tof) {
-      auto dims = scale.dimensions();
-      for (const Dim dim : varDims.labels())
-        if (!dims.contains(dim))
-          dims.addInner(dim, varDims[dim]);
-      Variable E(Coord::DeltaE, dims, dims.volume(), 1.0);
-      E *= var.reshape(varDims);
-      E -= tofShift;
-      E *= E;
-      E = 1.0 / std::move(E);
-      E *= scale;
+      Variable inv_tof = 1.0 / (var.reshape(varDims) - tofShift);
+      Variable E = inv_tof * inv_tof * scale;
       if (d.contains(Coord::Ei)) {
-        converted.insert(-(std::move(E) - d(Coord::Ei)));
+        converted.insert(Coord::DeltaE, -(std::move(E) - d(Coord::Ei)));
       } else {
-        converted.insert(std::move(E) - d(Coord::Ef));
+        converted.insert(Coord::DeltaE, std::move(E) - d(Coord::Ef));
       }
     } else if (var.tag() == Data::Events) {
       throw std::runtime_error(

@@ -122,8 +122,8 @@ using type = std::variant<
     decltype(none), decltype(m), decltype(m2), decltype(s), decltype(kg),
     decltype(counts * none), decltype(none / m), decltype(lambda * none),
     decltype(meV * none), decltype(tof * none), decltype(tof * tof * none),
-    decltype(none / (tof * tof)), decltype(none / s), decltype(m2 * m2),
-    decltype(counts * counts * none), decltype(counts / m),
+    decltype(none / tof), decltype(none / (tof * tof)), decltype(none / s),
+    decltype(m2 * m2), decltype(counts * counts * none), decltype(counts / m),
     decltype(meV * tof * tof / m2), decltype(meV * tof * tof * none)>;
 } // namespace units
 
