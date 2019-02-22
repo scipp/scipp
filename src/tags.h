@@ -133,7 +133,7 @@ struct CoordDef {
   };
   struct DeltaE {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = Unit::Id::Energy;
   };
   struct Ei {
     using type = double;
