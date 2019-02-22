@@ -141,28 +141,14 @@ Unit operator+(const Unit &a, const Unit &b) {
   return a;
 }
 
-// See https://stackoverflow.com/a/9154394
-using boost::units::sqrt;
-template <class> struct sfinae_true : std::true_type {};
-template <class T>
-static auto test_sqrt(int)
-    -> sfinae_true<decltype(sqrt(1.0 * std::declval<T>()))>;
-template <class> static auto test_sqrt(long) -> std::false_type;
-template <class T> struct sqrt_exists : decltype(test_sqrt<T>(0)) {};
-
 Unit sqrt(const Unit &a) {
   return std::visit(
       [](auto x) -> Unit::unit_t {
-        if constexpr (sqrt_exists<decltype(x)>::value) {
-          typename decltype(sqrt(1.0 * x))::unit_type sqrt_x;
-          if constexpr (isKnownUnit(sqrt_x))
-            return {sqrt_x};
-          std::stringstream msg;
-          msg << "Unsupported unit as result of sqrt, sqrt(" << x << ").";
-          throw std::runtime_error(msg.str());
-        }
+        typename decltype(sqrt(1.0 * x))::unit_type sqrt_x;
+        if constexpr (isKnownUnit(sqrt_x))
+          return {sqrt_x};
         std::stringstream msg;
-        msg << "Square root of unit " << x << " does not exist.";
+        msg << "Unsupported unit as result of sqrt, sqrt(" << x << ").";
         throw std::runtime_error(msg.str());
       },
       a.getUnit());
