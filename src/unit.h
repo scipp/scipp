@@ -6,12 +6,13 @@
 #ifndef UNIT_H
 #define UNIT_H
 
+#include <variant>
+
 #include <boost/units/base_dimension.hpp>
 #include <boost/units/make_system.hpp>
 #include <boost/units/systems/si.hpp>
 #include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
 #include <boost/units/unit.hpp>
-#include <variant>
 
 namespace neutron {
 namespace tof {
@@ -128,7 +129,6 @@ std::variant<Ts...,
 make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
   return {};
 }
-} // namespace detail
 
 // TODO counts/m is mainly for testing and should maybe be removed.
 using type = decltype(detail::make_unit(
@@ -136,11 +136,12 @@ using type = decltype(detail::make_unit(
                     dimensionless / us, dimensionless / s),
     std::make_tuple(dimensionless, counts / m, m *m *m *m,
                     meV *us *us / (m * m), meV *us *us *dimensionless)));
+} // namespace detail
 } // namespace units
 
 class Unit {
 public:
-  using unit_t = units::type;
+  using unit_t = units::detail::type;
 
   constexpr Unit() = default;
   // TODO should this be explicit?
@@ -148,7 +149,7 @@ public:
   Unit(boost::units::unit<Dim, System, Enable> unit) : m_unit(unit) {}
   explicit Unit(const unit_t &unit) : m_unit(unit) {}
 
-  constexpr const Unit::unit_t &getUnit() const noexcept { return m_unit; }
+  constexpr const Unit::unit_t &operator()() const noexcept { return m_unit; }
 
   std::string name() const;
 
@@ -157,27 +158,17 @@ private:
   // TODO need to support scale
 };
 
-inline bool operator==(const Unit &a, const Unit &b) {
-  return a.getUnit() == b.getUnit();
-}
-inline bool operator!=(const Unit &a, const Unit &b) { return !(a == b); }
-
+bool operator==(const Unit &a, const Unit &b);
+bool operator!=(const Unit &a, const Unit &b);
 Unit operator+(const Unit &a, const Unit &b);
+Unit operator-(const Unit &a, const Unit &b);
 Unit operator*(const Unit &a, const Unit &b);
 Unit operator/(const Unit &a, const Unit &b);
 Unit sqrt(const Unit &a);
 
 namespace units {
-inline bool containsCounts(const Unit &unit) {
-  if ((unit == units::counts) || unit == units::counts / units::m)
-    return true;
-  return false;
-}
-inline bool containsCountsVariance(const Unit &unit) {
-  if (unit == units::counts * units::counts)
-    return true;
-  return false;
-}
+bool containsCounts(const Unit &unit);
+bool containsCountsVariance(const Unit &unit);
 } // namespace units
 
 #endif // UNIT_H

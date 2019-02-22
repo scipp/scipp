@@ -33,6 +33,22 @@ std::string Unit::name() const {
       m_unit);
 }
 
+bool operator==(const Unit &a, const Unit &b) { return a() == b(); }
+bool operator!=(const Unit &a, const Unit &b) { return !(a == b); }
+
+Unit operator+(const Unit &a, const Unit &b) {
+  if (a == b)
+    return a;
+  throw std::runtime_error("Cannot add " + a.name() + " and " + b.name() + ".");
+}
+
+Unit operator-(const Unit &a, const Unit &b) {
+  if (a == b)
+    return a;
+  throw std::runtime_error("Cannot subtract " + a.name() + " and " + b.name() +
+                           ".");
+}
+
 // Mutliplying two units together using std::visit to run through the contents
 // of the std::variant
 Unit operator*(const Unit &a, const Unit &b) {
@@ -48,11 +64,9 @@ Unit operator*(const Unit &a, const Unit &b) {
         msg << "Unsupported unit as result of multiplication " << x << "*" << y;
         throw std::runtime_error(msg.str());
       },
-      a.getUnit(), b.getUnit()));
+      a(), b()));
 }
 
-// Dividing two units together using std::visit to run through the contents
-// of the std::variant
 Unit operator/(const Unit &a, const Unit &b) {
   return Unit(std::visit(
       [](auto x, auto y) -> Unit::unit_t {
@@ -63,13 +77,7 @@ Unit operator/(const Unit &a, const Unit &b) {
         msg << "Unsupported unit as result of division " << x << "/" << y;
         throw std::runtime_error(msg.str());
       },
-      a.getUnit(), b.getUnit()));
-}
-
-Unit operator+(const Unit &a, const Unit &b) {
-  if (a != b)
-    throw std::runtime_error("Cannot add different units");
-  return a;
+      a(), b()));
 }
 
 Unit sqrt(const Unit &a) {
@@ -82,5 +90,18 @@ Unit sqrt(const Unit &a) {
         msg << "Unsupported unit as result of sqrt, sqrt(" << x << ").";
         throw std::runtime_error(msg.str());
       },
-      a.getUnit()));
+      a()));
 }
+
+namespace units {
+bool containsCounts(const Unit &unit) {
+  if ((unit == units::counts) || unit == units::counts / units::m)
+    return true;
+  return false;
+}
+bool containsCountsVariance(const Unit &unit) {
+  if (unit == units::counts * units::counts)
+    return true;
+  return false;
+}
+} // namespace units
