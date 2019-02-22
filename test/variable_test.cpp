@@ -572,7 +572,9 @@ TEST(Variable, sqrt) {
   // TODO Currently comparisons of variables do not provide special handling of
   // NaN, so sqrt of negative values will lead variables that are never equal.
   Variable reference(Data::Value, {Dim::X, 2}, {1, 2});
+  reference.setUnit(Unit::Id::Length);
   Variable var(Data::Value, {Dim::X, 2}, {1, 4});
+  var.setUnit(Unit::Id::Area);
   EXPECT_EQ(sqrt(var), reference);
 }
 

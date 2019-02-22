@@ -5,6 +5,8 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <gtest/gtest.h>
 
+#include "test_macros.h"
+
 #include "unit.h"
 
 TEST(Unit, construct) { ASSERT_NO_THROW(Unit u{Unit::Id::Dimensionless}); }
@@ -78,4 +80,17 @@ TEST(Unit, conversion_factors) {
                        boost::units::si::constants::codata::e.value().value());
   EXPECT_DOUBLE_EQ(g.value(), 8.0e-6);
   EXPECT_DOUBLE_EQ(h.value(), 9.0e6);
+}
+
+TEST(Unit, sqrt) {
+  Unit a{Unit::Id::Dimensionless};
+  Unit m{Unit::Id::Length};
+  Unit m2{Unit::Id::Area};
+  EXPECT_EQ(sqrt(m2), m);
+}
+
+TEST(Unit, sqrt_fail) {
+  Unit m{Unit::Id::Length};
+  EXPECT_THROW_MSG(sqrt(m), std::runtime_error,
+                   "Unsupported unit as result of sqrt, sqrt(m).");
 }

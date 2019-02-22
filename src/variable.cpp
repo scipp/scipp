@@ -1312,7 +1312,10 @@ Variable norm(const Variable &var) {
 }
 
 Variable sqrt(const Variable &var) {
-  return {var, require<const FloatingPointVariableConcept>(var.data()).sqrt()};
+  Variable result(
+      var, require<const FloatingPointVariableConcept>(var.data()).sqrt());
+  result.setUnit(sqrt(var.unit()));
+  return result;
 }
 
 Variable broadcast(Variable var, const Dimensions &dims) {

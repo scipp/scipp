@@ -3,8 +3,12 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include "unit.h"
 #include <stdexcept>
+
+#include <boost/units/cmath.hpp>
+#include <boost/units/io.hpp>
+
+#include "unit.h"
 
 using namespace units;
 
@@ -90,8 +94,10 @@ Unit::Id Unit::id() const {
                  [](decltype(s)) { return Unit::Id::Time; },
                  [](decltype(tof * none)) { return Unit::Id::Tof; },
                  [](decltype(kg)) { return Unit::Id::Mass; },
-                 [](auto) -> Unit::Id {
-                   throw std::runtime_error("Unit not yet implemented");
+                 [](auto unit) -> Unit::Id {
+                   std::stringstream msg;
+                   msg << "Unsupported unit " << unit;
+                   throw std::runtime_error(msg.str());
                  }},
       m_unit);
 }
@@ -107,8 +113,9 @@ Unit operator*(const Unit &a, const Unit &b) {
         auto z{x * y};
         if constexpr (isKnownUnit(z))
           return {z};
-        throw std::runtime_error(
-            "Unsupported unit combination in multiplication");
+        std::stringstream msg;
+        msg << "Unsupported unit as result of multiplication " << x << "*" << y;
+        throw std::runtime_error(msg.str());
       },
       a.getUnit(), b.getUnit());
 }
@@ -121,7 +128,9 @@ Unit operator/(const Unit &a, const Unit &b) {
         auto z{x / y};
         if constexpr (isKnownUnit(z))
           return {z};
-        throw std::runtime_error("Unsupported unit combination in division");
+        std::stringstream msg;
+        msg << "Unsupported unit as result of division " << x << "/" << y;
+        throw std::runtime_error(msg.str());
       },
       a.getUnit(), b.getUnit());
 }
@@ -130,4 +139,31 @@ Unit operator+(const Unit &a, const Unit &b) {
   if (a != b)
     throw std::runtime_error("Cannot add different units");
   return a;
+}
+
+// See https://stackoverflow.com/a/9154394
+using boost::units::sqrt;
+template <class> struct sfinae_true : std::true_type {};
+template <class T>
+static auto test_sqrt(int)
+    -> sfinae_true<decltype(sqrt(1.0 * std::declval<T>()))>;
+template <class> static auto test_sqrt(long) -> std::false_type;
+template <class T> struct sqrt_exists : decltype(test_sqrt<T>(0)) {};
+
+Unit sqrt(const Unit &a) {
+  return std::visit(
+      [](auto x) -> Unit::unit_t {
+        if constexpr (sqrt_exists<decltype(x)>::value) {
+          typename decltype(sqrt(1.0 * x))::unit_type sqrt_x;
+          if constexpr (isKnownUnit(sqrt_x))
+            return {sqrt_x};
+          std::stringstream msg;
+          msg << "Unsupported unit as result of sqrt, sqrt(" << x << ").";
+          throw std::runtime_error(msg.str());
+        }
+        std::stringstream msg;
+        msg << "Square root of unit " << x << " does not exist.";
+        throw std::runtime_error(msg.str());
+      },
+      a.getUnit());
 }

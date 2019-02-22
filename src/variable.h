@@ -559,6 +559,10 @@ Variable operator+(const double a, Variable b);
 Variable operator-(const double a, Variable b);
 Variable operator*(const double a, Variable b);
 Variable operator/(const double a, Variable b);
+template <class T>
+Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
+  return std::move(a *= quantity);
+}
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);

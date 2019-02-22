@@ -110,6 +110,14 @@ static neutron::tof::energy meV;
 static neutron::tof::tof tof;
 
 // TODO counts/m is mainly for testing and should maybe be removed.
+// Note the factor `none` in units that otherwise contain only non-SI factors.
+// This is a trick to overcome some subtleties of working with heterogeneous
+// unit systems in boost::units: We are combing SI units with our own, and the
+// two are considered independent unless you convert explicitly. Therefore, in
+// operations like (counts * m) / m, boosts is not cancelling the m as expected
+// --- you get counts * dimensionless. Explicitly putting a factor dimensionless
+// (none) into all our non-SI units avoids special-case handling in all
+// operations (which would attempt to remove the dimensionless factor manually).
 using type = std::variant<
     decltype(none), decltype(m), decltype(m2), decltype(s), decltype(kg),
     decltype(counts * none), decltype(none / m), decltype(lambda * none),
@@ -174,6 +182,7 @@ inline bool operator!=(const Unit &a, const Unit &b) { return !(a == b); }
 Unit operator+(const Unit &a, const Unit &b);
 Unit operator*(const Unit &a, const Unit &b);
 Unit operator/(const Unit &a, const Unit &b);
+Unit sqrt(const Unit &a);
 
 namespace units {
 inline bool containsCounts(const Unit &unit) {

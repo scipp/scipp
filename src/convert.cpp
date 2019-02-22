@@ -23,6 +23,13 @@ Variable getSpecPos(const Dataset &d) {
   return specPos;
 }
 
+const auto tof_to_s =
+    boost::units::quantity<boost::units::si::time>(1.0 * units::tof) /
+    units::tof;
+const auto J_to_meV =
+    units::meV /
+    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
+
 namespace neutron {
 namespace tof {
 Dataset tofToEnergy(const Dataset &d) {
@@ -46,12 +53,6 @@ Dataset tofToEnergy(const Dataset &d) {
   // l_total^2
   conversionFactor *= conversionFactor;
 
-  const auto tof_to_s =
-      boost::units::quantity<boost::units::si::time>(1.0 * units::tof) /
-      units::tof;
-  const auto J_to_meV =
-      units::meV /
-      boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
   // Later we *divide* by time-of-flight (squared), so the tof_to_s factor is
   // in the denominator.
   auto physicalConstants = 0.5 * boost::units::si::constants::codata::m_n *
@@ -94,50 +95,34 @@ Dataset tofToDeltaE(const Dataset &d) {
                              "cannot have both for inelastic scattering.");
 
   // 1. Compute conversion factors
-  const auto &compPos = d.get(Coord::ComponentInfo)[0].get(Coord::Position);
-  const auto &sourcePos = compPos[0];
-  const auto &samplePos = compPos[1];
-  const double l1 = (sourcePos - samplePos).norm();
+  const auto physicalConstants = 0.5 *
+                                 boost::units::si::constants::codata::m_n *
+                                 J_to_meV / (tof_to_s * tof_to_s);
+  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
+  const auto &sourcePos = compPos(Dim::Component, 0);
+  const auto &samplePos = compPos(Dim::Component, 1);
+  auto l1_square = norm(sourcePos - samplePos);
+  l1_square *= l1_square;
+  l1_square *= physicalConstants;
+  const auto specPos = getSpecPos(d);
+  auto l2_square = norm(specPos - samplePos);
+  l2_square *= l2_square;
+  l2_square *= physicalConstants;
 
-  const auto &dims = d.contains(Coord::Position)
-                         ? d(Coord::Position).dimensions()
-                         : d(Coord::DetectorGrouping).dimensions();
   Variable tofShift(Data::Value, {});
   Variable scale(Data::Value, {});
 
   if (d.contains(Coord::Ei)) {
     // Direct-inelastic.
-
     // This is how we support multi-Ei data!
-    tofShift.setDimensions(d(Coord::Ei).dimensions());
-    const auto &Ei = d.get(Coord::Ei);
-    std::transform(Ei.begin(), Ei.end(), tofShift.span<double>().begin(),
-                   [&l1](const double Ei) { return l1 / sqrt(Ei); });
-
-    scale.setDimensions(dims);
-    auto specPos = zipMD(d, MDRead(Coord::Position));
-    std::transform(specPos.begin(), specPos.end(), scale.span<double>().begin(),
-                   [&](const auto &item) {
-                     const auto &pos = item.get(Coord::Position);
-                     const double l2 = (samplePos - pos).norm();
-                     return l2 * l2;
-                   });
+    tofShift = sqrt(l1_square / d(Coord::Ei));
+    scale = std::move(l2_square);
   } else if (d.contains(Coord::Ef)) {
     // Indirect-inelastic.
-
-    tofShift.setDimensions(dims);
-    // Ef can be different for every spectrum so we access it also via a view.
-    auto geometry = zipMD(d, MDRead(Coord::Position), MDRead(Coord::Ef));
-    std::transform(geometry.begin(), geometry.end(),
-                   tofShift.span<double>().begin(), [&](const auto &item) {
-                     const auto &pos = item.get(Coord::Position);
-                     const auto &Ef = item.get(Coord::Ef);
-                     const double l2 = (samplePos - pos).norm();
-                     return l2 * l2 / sqrt(Ef);
-                   });
-
-    scale.setDimensions({});
-    scale.span<double>()[0] = l1 * l1;
+    // Ef can be different for every spectrum.
+    tofShift = std::move(l2_square);
+    tofShift = std::move(tofShift) / sqrt(d(Coord::Ef));
+    scale = std::move(l1_square);
   } else {
     throw std::runtime_error("Dataset contains neither Coord::Ei nor "
                              "Coord::Ef, this does not look like "
