@@ -99,7 +99,7 @@ template <> struct boost::units::base_unit_info<neutron::tof::tof_base_unit> {
 // Define some helper variables to make the declaration of the set of allowed
 // units more succinct
 namespace units {
-static boost::units::si::dimensionless none;
+static boost::units::si::dimensionless dimensionless;
 static boost::units::si::length m;
 static boost::units::si::area m2;
 static boost::units::si::time s;
@@ -110,21 +110,21 @@ static neutron::tof::energy meV;
 static neutron::tof::tof tof;
 
 // TODO counts/m is mainly for testing and should maybe be removed.
-// Note the factor `none` in units that otherwise contain only non-SI factors.
+// Note the factor `dimensionless` in units that otherwise contain only non-SI factors.
 // This is a trick to overcome some subtleties of working with heterogeneous
 // unit systems in boost::units: We are combing SI units with our own, and the
 // two are considered independent unless you convert explicitly. Therefore, in
 // operations like (counts * m) / m, boosts is not cancelling the m as expected
 // --- you get counts * dimensionless. Explicitly putting a factor dimensionless
-// (none) into all our non-SI units avoids special-case handling in all
+// (dimensionless) into all our non-SI units avoids special-case handling in all
 // operations (which would attempt to remove the dimensionless factor manually).
 using type = std::variant<
-    decltype(none), decltype(m), decltype(m2), decltype(s), decltype(kg),
-    decltype(counts * none), decltype(none / m), decltype(lambda * none),
-    decltype(meV * none), decltype(tof * none), decltype(tof * tof * none),
-    decltype(none / tof), decltype(none / (tof * tof)), decltype(none / s),
-    decltype(m2 * m2), decltype(counts * counts * none), decltype(counts / m),
-    decltype(meV * tof * tof / m2), decltype(meV * tof * tof * none)>;
+    decltype(dimensionless), decltype(m), decltype(m2), decltype(s), decltype(kg),
+    decltype(counts * dimensionless), decltype(dimensionless / m), decltype(lambda * dimensionless),
+    decltype(meV * dimensionless), decltype(tof * dimensionless), decltype(tof * tof * dimensionless),
+    decltype(dimensionless / tof), decltype(dimensionless / (tof * tof)), decltype(dimensionless / s),
+    decltype(m2 * m2), decltype(counts * counts * dimensionless), decltype(counts / m),
+    decltype(meV * tof * tof / m2), decltype(meV * tof * tof * dimensionless)>;
 } // namespace units
 
 class Unit {
@@ -175,7 +175,7 @@ private:
 };
 
 inline bool operator==(const Unit &a, const Unit &b) {
-  return a.id() == b.id();
+  return a.getUnit() == b.getUnit();
 }
 inline bool operator!=(const Unit &a, const Unit &b) { return !(a == b); }
 

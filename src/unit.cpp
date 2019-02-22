@@ -29,7 +29,7 @@ template <class T> constexpr bool isKnownUnit(const T &) {
 Unit::Unit(const Unit::Id id) {
   switch (id) {
   case Unit::Id::Dimensionless:
-    m_unit = none;
+    m_unit = dimensionless;
     break;
   case Unit::Id::Length:
     m_unit = m;
@@ -41,31 +41,31 @@ Unit::Unit(const Unit::Id id) {
     m_unit = m2 * m2;
     break;
   case Unit::Id::Counts:
-    m_unit = counts * none;
+    m_unit = counts * dimensionless;
     break;
   case Unit::Id::CountsVariance:
-    m_unit = counts * counts * none;
+    m_unit = counts * counts * dimensionless;
     break;
   case Unit::Id::CountsPerMeter:
     m_unit = counts / m;
     break;
   case Unit::Id::InverseLength:
-    m_unit = none / m;
+    m_unit = dimensionless / m;
     break;
   case Unit::Id::InverseTime:
-    m_unit = none / s;
+    m_unit = dimensionless / s;
     break;
   case Unit::Id::Energy:
-    m_unit = meV * none;
+    m_unit = meV * dimensionless;
     break;
   case Unit::Id::Wavelength:
-    m_unit = lambda * none;
+    m_unit = lambda * dimensionless;
     break;
   case Unit::Id::Time:
     m_unit = s;
     break;
   case Unit::Id::Tof:
-    m_unit = tof * none;
+    m_unit = tof * dimensionless;
     break;
   case Unit::Id::Mass:
     m_unit = kg;
@@ -78,27 +78,28 @@ Unit::Unit(const Unit::Id id) {
 /// Get the Id corresponding to the underlying unit
 Unit::Id Unit::id() const {
   return std::visit(
-      overloaded{[](decltype(none)) { return Unit::Id::Dimensionless; },
-                 [](decltype(m)) { return Unit::Id::Length; },
-                 [](decltype(m2)) { return Unit::Id::Area; },
-                 [](decltype(m2 * m2)) { return Unit::Id::AreaVariance; },
-                 [](decltype(counts * none)) { return Unit::Id::Counts; },
-                 [](decltype(counts * counts * none)) {
-                   return Unit::Id::CountsVariance;
-                 },
-                 [](decltype(counts / m)) { return Unit::Id::CountsPerMeter; },
-                 [](decltype(none / m)) { return Unit::Id::InverseLength; },
-                 [](decltype(none / s)) { return Unit::Id::InverseTime; },
-                 [](decltype(meV * none)) { return Unit::Id::Energy; },
-                 [](decltype(lambda * none)) { return Unit::Id::Wavelength; },
-                 [](decltype(s)) { return Unit::Id::Time; },
-                 [](decltype(tof * none)) { return Unit::Id::Tof; },
-                 [](decltype(kg)) { return Unit::Id::Mass; },
-                 [](auto unit) -> Unit::Id {
-                   std::stringstream msg;
-                   msg << "Unsupported unit " << unit;
-                   throw std::runtime_error(msg.str());
-                 }},
+      overloaded{
+          [](decltype(dimensionless)) { return Unit::Id::Dimensionless; },
+          [](decltype(m)) { return Unit::Id::Length; },
+          [](decltype(m2)) { return Unit::Id::Area; },
+          [](decltype(m2 * m2)) { return Unit::Id::AreaVariance; },
+          [](decltype(counts * dimensionless)) { return Unit::Id::Counts; },
+          [](decltype(counts * counts * dimensionless)) {
+            return Unit::Id::CountsVariance;
+          },
+          [](decltype(counts / m)) { return Unit::Id::CountsPerMeter; },
+          [](decltype(dimensionless / m)) { return Unit::Id::InverseLength; },
+          [](decltype(dimensionless / s)) { return Unit::Id::InverseTime; },
+          [](decltype(meV * dimensionless)) { return Unit::Id::Energy; },
+          [](decltype(lambda * dimensionless)) { return Unit::Id::Wavelength; },
+          [](decltype(s)) { return Unit::Id::Time; },
+          [](decltype(tof * dimensionless)) { return Unit::Id::Tof; },
+          [](decltype(kg)) { return Unit::Id::Mass; },
+          [](auto unit) -> Unit::Id {
+            std::stringstream msg;
+            msg << "Unsupported unit " << unit;
+            throw std::runtime_error(msg.str());
+          }},
       m_unit);
 }
 
