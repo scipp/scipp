@@ -16,3 +16,6 @@ target_link_libraries ( legacy_histogram_benchmark LINK_PRIVATE Dataset benchmar
 
 add_executable ( multi_index_benchmark multi_index_benchmark.cpp )
 target_link_libraries ( multi_index_benchmark LINK_PRIVATE Dataset benchmark )
+
+add_executable ( event_list_proxy_benchmark event_list_proxy_benchmark.cpp )
+target_link_libraries ( event_list_proxy_benchmark LINK_PRIVATE Dataset benchmark )
