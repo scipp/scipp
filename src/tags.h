@@ -103,95 +103,95 @@ namespace detail {
 struct CoordDef {
   struct Monitor {
     using type = Dataset;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   // TODO Should we name this `Detectors` and `Components` instead, or find some
   // more generic terms?
   struct DetectorInfo {
     using type = Dataset;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct ComponentInfo {
     using type = Dataset;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct X {
     using type = double;
-    static constexpr auto unit = Unit::Id::Length;
+    static constexpr auto unit = units::m;
   };
   struct Y {
     using type = double;
-    static constexpr auto unit = Unit::Id::Length;
+    static constexpr auto unit = units::m;
   };
   struct Z {
     using type = double;
-    static constexpr auto unit = Unit::Id::Length;
+    static constexpr auto unit = units::m;
   };
   struct Tof {
     using type = double;
-    static constexpr auto unit = Unit::Id::Tof;
+    static constexpr auto unit = units::us;
   };
   struct Energy {
     using type = double;
-    static constexpr auto unit = Unit::Id::Energy;
+    static constexpr auto unit = units::meV;
   };
   struct DeltaE {
     using type = double;
-    static constexpr auto unit = Unit::Id::Energy;
+    static constexpr auto unit = units::meV;
   };
   struct Ei {
     using type = double;
-    static constexpr auto unit = Unit::Id::Energy;
+    static constexpr auto unit = units::meV;
   };
   struct Ef {
     using type = double;
-    static constexpr auto unit = Unit::Id::Energy;
+    static constexpr auto unit = units::meV;
   };
   struct DetectorId {
     using type = int32_t;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct SpectrumNumber {
     using type = int32_t;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct DetectorGrouping {
     // Dummy for now, or sufficient like this?
     using type = boost::container::small_vector<gsl::index, 1>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct RowLabel {
     using type = std::string;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Polarization {
     // Dummy for now
     using type = std::string;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Temperature {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Time {
     using type = int64_t;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct TimeInterval {
     using type = std::pair<int64_t, int64_t>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Mask {
     using type = bool;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct FuzzyTemperature {
     using type = ValueWithDelta<double>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Position : public detail::ReturnByValueIfConstPolicy {
     using type = Eigen::Vector3d;
-    static constexpr auto unit = Unit::Id::Length;
+    static constexpr auto unit = units::m;
   };
 
   using tags = std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof,
@@ -203,43 +203,43 @@ struct CoordDef {
 struct DataDef {
   struct Tof {
     using type = double;
-    static constexpr auto unit = Unit::Id::Tof;
+    static constexpr auto unit = units::us;
   };
   struct PulseTime {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Value {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Variance {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct StdDev : public detail::ReturnByValuePolicy {
     using type = double;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Int {
     using type = int64_t;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct String {
     using type = std::string;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct Events {
     using type = Dataset;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
   struct EventTofs {
     using type = boost::container::small_vector<double, 8>;
-    static constexpr auto unit = Unit::Id::Tof;
+    static constexpr auto unit = units::us;
   };
   struct EventPulseTimes {
     using type = boost::container::small_vector<double, 8>;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
 
   using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, String,
@@ -249,7 +249,7 @@ struct DataDef {
 struct AttrDef {
   struct ExperimentLog {
     using type = Dataset;
-    static constexpr auto unit = Unit::Id::Dimensionless;
+    static constexpr auto unit = units::dimensionless;
   };
 
   using tags = std::tuple<ExperimentLog>;
@@ -431,21 +431,21 @@ inline Tag dimensionCoord(const Dim dim) {
 
 namespace detail {
 template <class... Ts>
-constexpr std::array<Unit::Id, std::tuple_size<detail::Tags>::value>
+std::array<Unit, std::tuple_size<detail::Tags>::value>
 make_unit_table(const std::tuple<Ts...> &) {
-  return {Ts::unit...};
+  return {Unit(Ts::unit)...};
 }
 template <class... Ts>
 constexpr std::array<DType, std::tuple_size<detail::Tags>::value>
 make_dtype_table(const std::tuple<Ts...> &) {
   return {dtype<typename Ts::type>...};
 }
-constexpr auto unit_table = make_unit_table(detail::Tags{});
+static const auto unit_table = make_unit_table(detail::Tags{});
 constexpr auto dtype_table = make_dtype_table(detail::Tags{});
 } // namespace detail
 
 /// Return the default unit for a runtime tag.
-constexpr auto defaultUnit(const Tag tag) {
+inline auto defaultUnit(const Tag tag) {
   return detail::unit_table[tag.value()];
 }
 /// Return the default dtype for a runtime tag.

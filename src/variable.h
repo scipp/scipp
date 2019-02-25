@@ -176,7 +176,7 @@ public:
   }
 
   template <class T>
-  Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,
+  Variable(const Tag tag, const Unit unit, const Dimensions &dimensions,
            T object);
 
   const std::string &name() const && = delete;

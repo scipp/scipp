@@ -10,8 +10,10 @@ RUN apt-get update && \
     apt-get install -y cmake && \
     apt-get install -y g++ && \
     apt-get install -y mercurial && \
-    apt-get install -y libboost-dev && \
-
+    apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:mhier/libboost-latest && \
+    apt update && \
+    apt-get install -y libboost1.67-dev && \
     rm -rf /var/lib/apt/lists/*
 
 USER $NB_UID
@@ -64,8 +66,6 @@ USER root
 
 RUN cd /tmp/dataset/build && \
     make install 
-
-RUN sudo apt-get purge --auto-remove -y libboost-dev 
    
 USER $NB_UID
 

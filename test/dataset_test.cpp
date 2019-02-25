@@ -526,14 +526,15 @@ TEST(Dataset, operator_times_equal_with_units) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
-  values.setUnit(Unit::Id::Length);
+  values.setUnit(units::m);
   Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
-  variances.setUnit(Unit::Id::Area);
+  variances.setUnit(units::m * units::m);
   a.insert(values);
   a.insert(variances);
   a *= a;
-  EXPECT_EQ(a(Data::Value).unit(), Unit::Id::Area);
-  EXPECT_EQ(a(Data::Variance).unit(), Unit::Id::AreaVariance);
+  EXPECT_EQ(a(Data::Value).unit(), units::m * units::m);
+  EXPECT_EQ(a(Data::Variance).unit(),
+            units::m * units::m * units::m * units::m);
   EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
 }
 
@@ -542,10 +543,10 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
   values.setName("name1");
-  values.setUnit(Unit::Id::Counts);
+  values.setUnit(units::counts);
   Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
   variances.setName("name1");
-  variances.setUnit(Unit::Id::CountsVariance);
+  variances.setUnit(units::counts * units::counts);
   a.insert(values);
   a.insert(variances);
 
@@ -1533,17 +1534,17 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
 
 TEST(Dataset, counts_toDensity_fromDensity) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 4, 8});
-  d.insert(Data::Value, "", {Dim::X, 3}, {12, 12, 12});
-  d(Data::Value, "").setUnit(Unit::Id::Counts);
+  d.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 4, 8});
+  d.insert(Data::Value, "", {Dim::Tof, 3}, {12, 12, 12});
+  d(Data::Value, "").setUnit(units::counts);
 
-  d = counts::toDensity(std::move(d), Dim::X);
+  d = counts::toDensity(std::move(d), Dim::Tof);
   auto result = d(Data::Value, "");
-  EXPECT_EQ(result.unit(), Unit::Id::CountsPerMeter);
+  EXPECT_EQ(result.unit(), units::counts / units::us);
   EXPECT_TRUE(equals(result.get(Data::Value), {12, 6, 3}));
 
-  d = counts::fromDensity(std::move(d), Dim::X);
+  d = counts::fromDensity(std::move(d), Dim::Tof);
   result = d(Data::Value, "");
-  EXPECT_EQ(result.unit(), Unit::Id::Counts);
+  EXPECT_EQ(result.unit(), units::counts);
   EXPECT_TRUE(equals(result.get(Data::Value), {12, 12, 12}));
 }
