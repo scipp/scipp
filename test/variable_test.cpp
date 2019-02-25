@@ -250,6 +250,16 @@ TEST(Variable, operator_times_equal_scalar) {
   EXPECT_EQ(a.unit(), Unit::Id::Length);
 }
 
+TEST(Variable, operator_times_can_broadcast) {
+  Variable a(Data::Value, {Dim::X, 2}, {0.5, 1.5});
+  Variable b(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
+
+  auto ab = a * b;
+  Variable reference(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}},
+                     {1.0, 3.0, 1.5, 4.5});
+  EXPECT_EQ(ab, reference);
+}
+
 TEST(Variable, operator_divide_equal) {
   Variable a(Data::Value, {Dim::X, 2}, {2.0, 3.0});
   Variable b(Data::Value, {}, {2.0});
@@ -541,6 +551,56 @@ TEST(Variable, mean) {
   auto meanY = mean(var, Dim::Y);
   ASSERT_EQ(meanY.dimensions(), (Dimensions{Dim::X, 2}));
   EXPECT_TRUE(equals(meanY.get(Data::Value), {2.0, 3.0}));
+}
+
+TEST(Variable, norm_of_scalar) {
+  Variable reference(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, -2.0, -3.0, 4.0});
+  EXPECT_EQ(norm(var), reference);
+}
+
+TEST(Variable, norm_of_vector) {
+  Variable reference(Data::Value, {Dim::X, 3}, {sqrt(2), sqrt(2), 2});
+  auto var = makeVariable<Eigen::Vector3d>(Data::Value, {Dim::X, 3},
+                                           {Eigen::Vector3d{1, 0, -1},
+                                            Eigen::Vector3d{1, 1, 0},
+                                            Eigen::Vector3d{0, 0, -2}});
+  EXPECT_EQ(norm(var), reference);
+}
+
+TEST(Variable, sqrt) {
+  // TODO Currently comparisons of variables do not provide special handling of
+  // NaN, so sqrt of negative values will lead variables that are never equal.
+  Variable reference(Data::Value, {Dim::X, 2}, {1, 2});
+  reference.setUnit(Unit::Id::Length);
+  Variable var(Data::Value, {Dim::X, 2}, {1, 4});
+  var.setUnit(Unit::Id::Area);
+  EXPECT_EQ(sqrt(var), reference);
+}
+
+TEST(Variable, broadcast) {
+  Variable reference(Data::Value, {{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}},
+                     {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4});
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+
+  // No change if dimensions exist.
+  EXPECT_EQ(broadcast(var, {Dim::X, 2}), var);
+  EXPECT_EQ(broadcast(var, {Dim::Y, 2}), var);
+  EXPECT_EQ(broadcast(var, {{Dim::Y, 2}, {Dim::X, 2}}), var);
+
+  // No transpose done, should this fail? Failing is not really necessary since
+  // we have labeled dimensions.
+  EXPECT_EQ(broadcast(var, {{Dim::X, 2}, {Dim::Y, 2}}), var);
+
+  EXPECT_EQ(broadcast(var, {Dim::Z, 3}), reference);
+}
+
+TEST(Variable, broadcast_fail) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}),
+                   dataset::except::DimensionLengthError,
+                   "Expected dimension to be in {{Dim::Y, 2}, {Dim::X, 2}}\n, "
+                   "got Dim::X with mismatching length 3.");
 }
 
 TEST(VariableSlice, full_const_view) {

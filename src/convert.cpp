@@ -10,6 +10,31 @@
 #include "dataset.h"
 #include "md_zip_view.h"
 
+Variable getSpecPos(const Dataset &d) {
+  // TODO There should be a better way to extract the actual spectrum positions
+  // as a variable.
+  if (d.contains(Coord::Position))
+    return d(Coord::Position);
+  auto specPosView = zipMD(d, MDRead(Coord::Position));
+  Variable specPos(Coord::Position, d(Coord::DetectorGrouping).dimensions());
+  std::transform(specPosView.begin(), specPosView.end(),
+                 specPos.get(Coord::Position).begin(),
+                 [](const auto &item) { return item.get(Coord::Position); });
+  return specPos;
+}
+
+const auto tof_to_s =
+    boost::units::quantity<boost::units::si::time>(1.0 * units::tof) /
+    units::tof;
+const auto J_to_meV =
+    units::meV /
+    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
+// In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
+// tof_to_s factor is in the denominator.
+const auto tofToEnergyPhysicalConstants =
+    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
+    (tof_to_s * tof_to_s);
+
 namespace neutron {
 namespace tof {
 Dataset tofToEnergy(const Dataset &d) {
@@ -21,38 +46,19 @@ Dataset tofToEnergy(const Dataset &d) {
                              "only supported for elastic scattering.");
 
   // 1. Compute conversion factor
-  const auto &compPos = d.get(Coord::ComponentInfo)[0].get(Coord::Position);
+  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
   // TODO Need a better mechanism to identify source and sample.
-  const auto &sourcePos = compPos[0];
-  const auto &samplePos = compPos[1];
-  const double l1 = (sourcePos - samplePos).norm();
+  const auto &sourcePos = compPos(Dim::Component, 0);
+  const auto &samplePos = compPos(Dim::Component, 1);
+  const auto l1 = norm(sourcePos - samplePos);
+  const auto specPos = getSpecPos(d);
 
-  const auto &dims = d.contains(Coord::Position)
-                         ? d(Coord::Position).dimensions()
-                         : d(Coord::DetectorGrouping).dimensions();
-  Variable conversionFactor(Data::Value, dims);
+  // l_total = l1 + l2
+  auto conversionFactor(norm(specPos - samplePos) + l1);
+  // l_total^2
+  conversionFactor *= conversionFactor;
 
-  // This scale factor should be obtained from the unit stored in the Tof
-  // coordinate, something like mus2_to_s2 = pow(tof.unit().si_scale(), 2);
-  const double mus2_to_s2 = 1e-12;
-  // Can we obtain this scale from the runtime unit? It contains joule, so it is
-  // not so obvious how to do this.
-  const auto meV = 1e-3 * boost::units::si::constants::codata::e.value() *
-                   boost::units::si::joule;
-  auto physicalConstants =
-      boost::units::si::constants::codata::m_n / (2.0 * meV * mus2_to_s2);
-
-  auto specPos = zipMD(d, MDRead(Coord::Position));
-  const auto factor = [&](const auto &item) {
-    const auto &pos = item.get(Coord::Position);
-    double l_total = l1 + (samplePos - pos).norm();
-    return l_total * l_total * physicalConstants.value();
-  };
-
-  // TODO Must also update unit of conversionFactor.
-  // convertFactor.unit() *= extractUnit(physicalConstants);
-  std::transform(specPos.begin(), specPos.end(),
-                 conversionFactor.span<double>().begin(), factor);
+  conversionFactor *= tofToEnergyPhysicalConstants;
 
   // 2. Transform variables
   Dataset converted;
@@ -61,19 +67,10 @@ Dataset tofToEnergy(const Dataset &d) {
     if (varDims.contains(Dim::Tof))
       varDims.relabel(varDims.index(Dim::Tof), Dim::Energy);
     if (var.tag() == Coord::Tof) {
-      // TODO Need to extend the broadcasting capabilities to broadcast to the
-      // union of dimensions of both operands in a binary operation.
-      auto dims = conversionFactor.dimensions();
-      for (const Dim dim : varDims.labels())
-        if (!dims.contains(dim))
-          dims.addInner(dim, varDims[dim]);
-      // TODO Should have a broadcasting assign method?
-      Variable energy(Coord::Energy, dims, dims.volume(), 1.0);
-      energy *= conversionFactor;
-      // The reshape is just to remap the dimension label, should probably do
-      // this differently.
-      energy /= (var * var).reshape(varDims);
-      converted.insert(energy);
+      // The reshape is to remap the dimension label, should probably be done
+      // differently. Binary op order is to get desired dimension broadcast.
+      Variable inv = 1.0 / (var * var).reshape(varDims);
+      converted.insert(Coord::Energy, std::move(inv) * conversionFactor);
     } else if (var.tag() == Data::Events) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
@@ -98,50 +95,30 @@ Dataset tofToDeltaE(const Dataset &d) {
                              "cannot have both for inelastic scattering.");
 
   // 1. Compute conversion factors
-  const auto &compPos = d.get(Coord::ComponentInfo)[0].get(Coord::Position);
-  const auto &sourcePos = compPos[0];
-  const auto &samplePos = compPos[1];
-  const double l1 = (sourcePos - samplePos).norm();
+  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
+  const auto &sourcePos = compPos(Dim::Component, 0);
+  const auto &samplePos = compPos(Dim::Component, 1);
+  auto l1_square = norm(sourcePos - samplePos);
+  l1_square *= l1_square;
+  l1_square *= tofToEnergyPhysicalConstants;
+  const auto specPos = getSpecPos(d);
+  auto l2_square = norm(specPos - samplePos);
+  l2_square *= l2_square;
+  l2_square *= tofToEnergyPhysicalConstants;
 
-  const auto &dims = d.contains(Coord::Position)
-                         ? d(Coord::Position).dimensions()
-                         : d(Coord::DetectorGrouping).dimensions();
   Variable tofShift(Data::Value, {});
   Variable scale(Data::Value, {});
 
   if (d.contains(Coord::Ei)) {
     // Direct-inelastic.
-
     // This is how we support multi-Ei data!
-    tofShift.setDimensions(d(Coord::Ei).dimensions());
-    const auto &Ei = d.get(Coord::Ei);
-    std::transform(Ei.begin(), Ei.end(), tofShift.span<double>().begin(),
-                   [&l1](const double Ei) { return l1 / sqrt(Ei); });
-
-    scale.setDimensions(dims);
-    auto specPos = zipMD(d, MDRead(Coord::Position));
-    std::transform(specPos.begin(), specPos.end(), scale.span<double>().begin(),
-                   [&](const auto &item) {
-                     const auto &pos = item.get(Coord::Position);
-                     const double l2 = (samplePos - pos).norm();
-                     return l2 * l2;
-                   });
+    tofShift = sqrt(l1_square / d(Coord::Ei));
+    scale = std::move(l2_square);
   } else if (d.contains(Coord::Ef)) {
     // Indirect-inelastic.
-
-    tofShift.setDimensions(dims);
-    // Ef can be different for every spectrum so we access it also via a view.
-    auto geometry = zipMD(d, MDRead(Coord::Position), MDRead(Coord::Ef));
-    std::transform(geometry.begin(), geometry.end(),
-                   tofShift.span<double>().begin(), [&](const auto &item) {
-                     const auto &pos = item.get(Coord::Position);
-                     const auto &Ef = item.get(Coord::Ef);
-                     const double l2 = (samplePos - pos).norm();
-                     return l2 * l2 / sqrt(Ef);
-                   });
-
-    scale.setDimensions({});
-    scale.span<double>()[0] = l1 * l1;
+    // Ef can be different for every spectrum.
+    tofShift = sqrt(std::move(l2_square) / d(Coord::Ef));
+    scale = std::move(l1_square);
   } else {
     throw std::runtime_error("Dataset contains neither Coord::Ei nor "
                              "Coord::Ef, this does not look like "
@@ -155,20 +132,12 @@ Dataset tofToDeltaE(const Dataset &d) {
     if (varDims.contains(Dim::Tof))
       varDims.relabel(varDims.index(Dim::Tof), Dim::DeltaE);
     if (var.tag() == Coord::Tof) {
-      auto dims = scale.dimensions();
-      for (const Dim dim : varDims.labels())
-        if (!dims.contains(dim))
-          dims.addInner(dim, varDims[dim]);
-      Variable E(Coord::DeltaE, dims, dims.volume(), 1.0);
-      E *= var.reshape(varDims);
-      E -= tofShift;
-      E *= E;
-      E = 1.0 / std::move(E);
-      E *= scale;
+      Variable inv_tof = 1.0 / (var.reshape(varDims) - tofShift);
+      Variable E = inv_tof * inv_tof * scale;
       if (d.contains(Coord::Ei)) {
-        converted.insert(-(std::move(E) - d(Coord::Ei)));
+        converted.insert(Coord::DeltaE, -(std::move(E) - d(Coord::Ei)));
       } else {
-        converted.insert(std::move(E) - d(Coord::Ef));
+        converted.insert(Coord::DeltaE, std::move(E) - d(Coord::Ef));
       }
     } else if (var.tag() == Data::Events) {
       throw std::runtime_error(

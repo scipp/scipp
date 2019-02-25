@@ -3,8 +3,12 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include "unit.h"
 #include <stdexcept>
+
+#include <boost/units/cmath.hpp>
+#include <boost/units/io.hpp>
+
+#include "unit.h"
 
 using namespace units;
 
@@ -52,7 +56,7 @@ Unit::Unit(const Unit::Id id) {
     m_unit = none / s;
     break;
   case Unit::Id::Energy:
-    m_unit = mev * none;
+    m_unit = meV * none;
     break;
   case Unit::Id::Wavelength:
     m_unit = lambda * none;
@@ -85,13 +89,15 @@ Unit::Id Unit::id() const {
                  [](decltype(counts / m)) { return Unit::Id::CountsPerMeter; },
                  [](decltype(none / m)) { return Unit::Id::InverseLength; },
                  [](decltype(none / s)) { return Unit::Id::InverseTime; },
-                 [](decltype(mev * none)) { return Unit::Id::Energy; },
+                 [](decltype(meV * none)) { return Unit::Id::Energy; },
                  [](decltype(lambda * none)) { return Unit::Id::Wavelength; },
                  [](decltype(s)) { return Unit::Id::Time; },
                  [](decltype(tof * none)) { return Unit::Id::Tof; },
                  [](decltype(kg)) { return Unit::Id::Mass; },
-                 [](auto) -> Unit::Id {
-                   throw std::runtime_error("Unit not yet implemented");
+                 [](auto unit) -> Unit::Id {
+                   std::stringstream msg;
+                   msg << "Unsupported unit " << unit;
+                   throw std::runtime_error(msg.str());
                  }},
       m_unit);
 }
@@ -107,8 +113,9 @@ Unit operator*(const Unit &a, const Unit &b) {
         auto z{x * y};
         if constexpr (isKnownUnit(z))
           return {z};
-        throw std::runtime_error(
-            "Unsupported unit combination in multiplication");
+        std::stringstream msg;
+        msg << "Unsupported unit as result of multiplication " << x << "*" << y;
+        throw std::runtime_error(msg.str());
       },
       a.getUnit(), b.getUnit());
 }
@@ -121,7 +128,9 @@ Unit operator/(const Unit &a, const Unit &b) {
         auto z{x / y};
         if constexpr (isKnownUnit(z))
           return {z};
-        throw std::runtime_error("Unsupported unit combination in division");
+        std::stringstream msg;
+        msg << "Unsupported unit as result of division " << x << "/" << y;
+        throw std::runtime_error(msg.str());
       },
       a.getUnit(), b.getUnit());
 }
@@ -130,4 +139,17 @@ Unit operator+(const Unit &a, const Unit &b) {
   if (a != b)
     throw std::runtime_error("Cannot add different units");
   return a;
+}
+
+Unit sqrt(const Unit &a) {
+  return std::visit(
+      [](auto x) -> Unit::unit_t {
+        typename decltype(sqrt(1.0 * x))::unit_type sqrt_x;
+        if constexpr (isKnownUnit(sqrt_x))
+          return {sqrt_x};
+        std::stringstream msg;
+        msg << "Unsupported unit as result of sqrt, sqrt(" << x << ").";
+        throw std::runtime_error(msg.str());
+      },
+      a.getUnit());
 }

@@ -140,6 +140,9 @@ public:
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);
+  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data)
+      : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
+        m_object(std::move(data)) {}
 
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
@@ -184,10 +187,10 @@ public:
     return *m_name;
   }
   void setName(const std::string &name) {
-    if (isCoord())
-      throw std::runtime_error("Coordinate variable cannot have a name.");
     if (name.empty())
       m_name = nullptr;
+    else if (isCoord())
+      throw std::runtime_error("Coordinate variable cannot have a name.");
     else if (m_name)
       *m_name = name;
     else
@@ -207,6 +210,10 @@ public:
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const ConstVariableSlice &other) &;
   Variable &operator*=(const double value) &;
+  template <class T> Variable &operator*=(const T &quantity) & {
+    setUnit(unit() * Unit(typename T::unit_type{}));
+    return *this *= quantity.value();
+  }
   Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const ConstVariableSlice &other) &;
   Variable &operator/=(const double value) &;
@@ -550,6 +557,10 @@ Variable operator+(const double a, Variable b);
 Variable operator-(const double a, Variable b);
 Variable operator*(const double a, Variable b);
 Variable operator/(const double a, Variable b);
+template <class T>
+Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
+  return std::move(a *= quantity);
+}
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);
@@ -561,6 +572,9 @@ Variable permute(const Variable &var, const Dim dim,
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
+Variable norm(const Variable &var);
+Variable sqrt(const Variable &var);
+Variable broadcast(Variable var, const Dimensions &dims);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);
