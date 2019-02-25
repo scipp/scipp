@@ -788,9 +788,34 @@ TEST(Dataset, rebin_failures) {
   d.erase(Coord::X);
   d.insert(coord);
   d.insert(Data::Value, "badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
+  d(Data::Value, "badAuxDim").setUnit(units::counts);
   Variable badAuxDim(Coord::X, Dimensions({{Dim::X, 3}, {Dim::Y, 3}}));
   EXPECT_THROW_MSG(rebin(d, badAuxDim), std::runtime_error,
                    "Size mismatch in auxiliary dimension of new coordinate.");
+}
+
+TEST(Dataset, rebin_accepts_only_counts_and_densities) {
+  Dataset d;
+  d.insert(Coord::Tof, {Dim::Tof, 3}, {1.0, 3.0, 5.0});
+  Variable coordNew(Coord::Tof, {Dim::Tof, 2}, {1.0, 5.0});
+
+  d.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
+  EXPECT_THROW_MSG(rebin(d, coordNew), dataset::except::UnitError,
+                   "Expected counts or counts-density.");
+
+  d(Data::Value, "").setUnit(units::m);
+  EXPECT_THROW_MSG(rebin(d, coordNew), dataset::except::UnitError,
+                   "Expected counts or counts-density.");
+
+  d(Data::Value, "").setUnit(units::counts);
+  EXPECT_NO_THROW(rebin(d, coordNew));
+
+  d(Data::Value, "").setUnit(units::counts * units::counts);
+  EXPECT_NO_THROW(rebin(d, coordNew));
+
+  d(Data::Value, "").setUnit(units::counts / units::us);
+  EXPECT_NO_THROW(rebin(d, coordNew));
+  rebin(d, coordNew);
 }
 
 TEST(Dataset, rebin) {
@@ -805,9 +830,27 @@ TEST(Dataset, rebin) {
                    "histogram data first.");
 
   d.insert(Data::Value, "", {Dim::X, 2}, {10.0, 20.0});
+  d(Data::Value).setUnit(units::counts);
   auto rebinned = rebin(d, coordNew);
   EXPECT_EQ(rebinned.get(Data::Value).size(), 1);
   EXPECT_EQ(rebinned.get(Data::Value)[0], 30.0);
+}
+
+TEST(Dataset, rebin_density) {
+  Dataset d;
+  d.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 4, 8});
+  Variable coordNew(Coord::Tof, {Dim::Tof, 3}, {1, 3, 8});
+
+  d.insert(Data::Value, "", {Dim::Tof, 3}, {10, 20, 30});
+  d(Data::Value).setUnit(units::counts);
+
+  Variable reference(Data::Value, {Dim::Tof, 2}, {10.0, 40.0 / 5});
+  reference.setUnit(units::counts / units::us);
+
+  auto rebinned1 = rebin(counts::toDensity(d, Dim::Tof), coordNew);
+  auto rebinned2 = counts::toDensity(rebin(d, coordNew), Dim::Tof);
+  EXPECT_EQ(rebinned1, rebinned2);
+  EXPECT_EQ(rebinned1(Data::Value), reference);
 }
 
 Dataset makeEvents() {
@@ -978,18 +1021,41 @@ TEST(Dataset, filter) {
   EXPECT_EQ(filtered.get(Data::Value)[3], 8.0);
 }
 
-TEST(Dataset, integrate) {
+TEST(Dataset, integrate_counts) {
   Dataset ds;
   ds.insert(Coord::X, {Dim::X, 3}, {0.1, 0.2, 0.4});
   ds.insert(Data::Value, "", {Dim::X, 2}, {10.0, 20.0});
+  ds(Data::Value, "").setUnit(units::counts);
+
+  // Note that in this special case the integral has the same unit. This is
+  // maybe an indicator that we should rather use `sum` for counts? On the other
+  // hand, supporting `integrate` is convenient and thanks to the unit this
+  // should be safe.
+  Variable reference(Data::Value, {}, {30.0});
+  reference.setUnit(units::counts);
 
   Dataset integral;
+  integral = integrate(ds, Dim::X);
   EXPECT_NO_THROW(integral = integrate(ds, Dim::X));
   EXPECT_EQ(integral.dimensions().count(), 0);
   EXPECT_FALSE(integral.contains(Coord::X));
-  // Note: The current implementation assumes that Data::Value is counts,
-  // handling of other data is not implemented yet.
-  EXPECT_TRUE(equals(integral.get(Data::Value), {30.0}));
+  EXPECT_EQ(integral(Data::Value), reference);
+}
+
+TEST(Dataset, integrate_counts_density) {
+  Dataset ds;
+  ds.insert(Coord::Tof, {Dim::Tof, 3}, {0.1, 0.2, 0.4});
+  ds.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
+  ds(Data::Value, "").setUnit(units::counts / units::us);
+
+  Variable reference(Data::Value, {}, {10.0 * 0.1 + 20.0 * 0.2});
+  reference.setUnit(units::counts);
+
+  Dataset integral;
+  EXPECT_NO_THROW(integral = integrate(ds, Dim::Tof));
+  EXPECT_EQ(integral.dimensions().count(), 0);
+  EXPECT_FALSE(integral.contains(Coord::Tof));
+  EXPECT_EQ(integral(Data::Value), reference);
 }
 
 TEST(DatasetSlice, basics) {
