@@ -34,13 +34,11 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(var_data.is_data)
 
     def test_create_dtype(self):
-        print("start")
         var = Variable(Coord.X, [Dim.X], np.arange(4))
         var = Variable(Coord.X, [Dim.X], np.arange(4).astype(np.int32))
         var = Variable(Coord.X, [Dim.X], np.arange(4).astype(np.float64))
         var = Variable(Coord.X, [Dim.X], np.arange(4).astype(np.float32))
         #var = Variable(Coord.X, [Dim.X], ['a', 'bb', 'ccc', 'dddd'])
-        print("end")
         var = Variable(Coord.X, [Dim.X], (4,), dtype=np.dtype(np.float64))
         self.assertEqual(var.numpy.dtype, np.dtype(np.float64))
         var = Variable(Coord.X, [Dim.X], (4,), dtype=np.dtype(np.float32))

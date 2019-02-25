@@ -3,9 +3,9 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include <sstream>
 #include <stdexcept>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/units/cmath.hpp>
 #include <boost/units/io.hpp>
 
@@ -23,14 +23,14 @@ template <class T> constexpr bool isKnownUnit(const T &) {
   return isVariantMember<T, Unit::unit_t>::value;
 }
 
+namespace units {
+template <class T> std::string to_string(const T &unit) {
+  return boost::lexical_cast<std::string>(unit);
+}
+} // namespace units
+
 std::string Unit::name() const {
-  return std::visit(
-      [](auto &&unit) {
-        std::stringstream name;
-        name << unit;
-        return name.str();
-      },
-      m_unit);
+  return std::visit([](auto &&unit) { return units::to_string(unit); }, m_unit);
 }
 
 bool operator==(const Unit &a, const Unit &b) { return a() == b(); }
@@ -60,9 +60,9 @@ Unit operator*(const Unit &a, const Unit &b) {
         auto z{x * y};
         if constexpr (isKnownUnit(z))
           return {z};
-        std::stringstream msg;
-        msg << "Unsupported unit as result of multiplication " << x << "*" << y;
-        throw std::runtime_error(msg.str());
+        throw std::runtime_error(
+            "Unsupported unit as result of multiplication " +
+            units::to_string(x) + "*" + units::to_string(y));
       },
       a(), b()));
 }
@@ -73,9 +73,9 @@ Unit operator/(const Unit &a, const Unit &b) {
         auto z{x / y};
         if constexpr (isKnownUnit(z))
           return {z};
-        std::stringstream msg;
-        msg << "Unsupported unit as result of division " << x << "/" << y;
-        throw std::runtime_error(msg.str());
+        throw std::runtime_error("Unsupported unit as result of division " +
+                                 units::to_string(x) + "/" +
+                                 units::to_string(y));
       },
       a(), b()));
 }
@@ -86,9 +86,8 @@ Unit sqrt(const Unit &a) {
         typename decltype(sqrt(1.0 * x))::unit_type sqrt_x;
         if constexpr (isKnownUnit(sqrt_x))
           return {sqrt_x};
-        std::stringstream msg;
-        msg << "Unsupported unit as result of sqrt, sqrt(" << x << ").";
-        throw std::runtime_error(msg.str());
+        throw std::runtime_error("Unsupported unit as result of sqrt, sqrt(" +
+                                 units::to_string(x) + ").");
       },
       a()));
 }
