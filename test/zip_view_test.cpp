@@ -224,3 +224,269 @@ TEST(ZipView, iterator_sort) {
 
   EXPECT_TRUE(equals(d.get(Coord::X), {0.0, 1.0, 2.0, 3.0}));
 }
+
+TEST(Zip, single_scalar_item) {
+  Dataset d;
+  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 3, 4});
+
+  auto zipped = zip(d, Access::Key(Coord::X));
+
+  EXPECT_EQ(zipped.size(), 4);
+  auto it = zipped.begin();
+  // Could consider returning the single item by reference, instead of having a
+  // size-1 proxy. In practice this is probably not used a lot, so we keep
+  // things simple for now.
+  EXPECT_EQ(std::get<0>(*it), 1.0);
+  std::get<0>(*it) += 1.0;
+  EXPECT_EQ(std::get<0>(*it++), 2.0);
+  EXPECT_EQ(std::get<0>(*it++), 2.0);
+  EXPECT_EQ(std::get<0>(*it++), 3.0);
+  EXPECT_EQ(std::get<0>(*it++), 4.0);
+
+  EXPECT_EQ(std::get<0>(zipped[0]), 2.0);
+  EXPECT_EQ(std::get<0>(zipped[1]), 2.0);
+  EXPECT_EQ(std::get<0>(zipped[2]), 3.0);
+  EXPECT_EQ(std::get<0>(zipped[3]), 4.0);
+}
+
+TEST(Zip, multiple_scalar_items) {
+  Dataset d;
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value, "b", {Dim::X, 2}, {3, 4});
+
+  auto zipped =
+      zip(d, Access::Key(Data::Value, "a"), Access::Key(Data::Value, "b"));
+
+  EXPECT_EQ(zipped.size(), 2);
+  auto it = zipped.begin();
+  EXPECT_EQ(std::get<0>(*it), 1.0);
+  EXPECT_EQ(std::get<1>(*it), 3.0);
+  std::get<0>(*it) += 1.0;
+  EXPECT_EQ(std::get<0>(*it), 2.0);
+  EXPECT_EQ(std::get<1>(*it), 3.0);
+  ++it;
+  EXPECT_EQ(std::get<0>(*it), 2.0);
+  EXPECT_EQ(std::get<1>(*it), 4.0);
+
+  EXPECT_EQ(std::get<0>(zipped[0]), 2.0);
+  EXPECT_EQ(std::get<1>(zipped[0]), 3.0);
+  EXPECT_EQ(std::get<0>(zipped[1]), 2.0);
+  EXPECT_EQ(std::get<1>(zipped[1]), 4.0);
+
+  std::get<0>(zipped[0]) = 0.0;
+  EXPECT_EQ(std::get<0>(zipped[0]), 0.0);
+}
+
+TEST(Zip, const_multiple_scalar_items) {
+  Dataset d;
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value, "b", {Dim::X, 2}, {3, 4});
+  const auto const_d(d);
+
+  auto zipped = zip(const_d, Access::Key(Data::Value, "a"),
+                    Access::Key(Data::Value, "b"));
+
+  EXPECT_EQ(zipped.size(), 2);
+  auto it = zipped.begin();
+  EXPECT_EQ(std::get<0>(*it), 1.0);
+  EXPECT_EQ(std::get<1>(*it), 3.0);
+  // Modification not possible in this case.
+  // std::get<0>(*it) += 1.0;
+  ++it;
+  EXPECT_EQ(std::get<0>(*it), 2.0);
+  EXPECT_EQ(std::get<1>(*it), 4.0);
+}
+
+TEST(Zip, duplicate_key_fail) {
+  Dataset d;
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
+  d.insert(Data::Value, "b", {Dim::X, 2}, {3, 4});
+
+  EXPECT_THROW_MSG(
+      zip(d, Access::Key(Data::Value, "a"), Access::Key(Data::Value, "a")),
+      std::runtime_error, "Duplicate key.");
+  EXPECT_NO_THROW(
+      zip(d, Access::Key(Data::Value, "a"), Access::Key(Data::Value, "b")));
+}
+
+TEST(ConstItemZipProxy, length_mismatch_fail) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2};
+  EXPECT_THROW_MSG(ConstItemZipProxy x(a, b), std::runtime_error,
+                   "Cannot zip data with mismatching length.");
+}
+
+TEST(ItemZipProxy, length_mismatch_fail) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2};
+  EXPECT_THROW_MSG(ItemZipProxy x(true, a, b), std::runtime_error,
+                   "Cannot zip data with mismatching length.");
+}
+
+TEST(ConstItemZipProxy, from_vectors) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2, 3};
+  ConstItemZipProxy proxy(a, b);
+  EXPECT_EQ(std::get<0>(*proxy.begin()), 1.1);
+  EXPECT_EQ(std::get<1>(*proxy.begin()), 1);
+}
+
+TEST(ItemZipProxy, from_vectors) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2, 3};
+  ItemZipProxy proxy(true, a, b);
+  EXPECT_EQ(std::get<0>(*proxy.begin()), 1.1);
+  EXPECT_EQ(std::get<1>(*proxy.begin()), 1);
+  std::get<0>(*proxy.begin()) = 0.0;
+  EXPECT_EQ(std::get<0>(*proxy.begin()), 0.0);
+}
+
+TEST(ItemZipProxy, push_back) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2, 3};
+  ItemZipProxy proxy(true, a, b);
+  proxy.push_back(4.4, 4);
+  EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
+  EXPECT_EQ(std::get<1>(*(proxy.begin() + 3)), 4);
+  proxy.push_back(*proxy.begin());
+  EXPECT_EQ(std::get<0>(*(proxy.begin() + 4)), 1.1);
+  EXPECT_EQ(std::get<1>(*(proxy.begin() + 4)), 1);
+}
+
+TEST(ItemZipProxy, push_back_3) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2, 3};
+  std::vector<int32_t> c{3, 2, 1};
+  ItemZipProxy proxy(true, a, b, c);
+  proxy.push_back(4.4, 4, 1);
+  EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
+  EXPECT_EQ(std::get<1>(*(proxy.begin() + 3)), 4);
+  EXPECT_EQ(std::get<2>(*(proxy.begin() + 3)), 1);
+  proxy.push_back(*proxy.begin());
+  EXPECT_EQ(std::get<0>(*(proxy.begin() + 4)), 1.1);
+  EXPECT_EQ(std::get<1>(*(proxy.begin() + 4)), 1);
+  EXPECT_EQ(std::get<2>(*(proxy.begin() + 4)), 3);
+}
+
+TEST(ItemZipProxy, push_back_duplicate_broken) {
+  std::vector<double> a{1.1, 2.2, 3.3};
+  std::vector<int32_t> b{1, 2, 3};
+
+  // This is not allowed. We could add a check, but at this point it is not
+  // clear if that is required, since creation should typically be under our
+  // control, and we may want to avoid performance penalties.
+  ItemZipProxy proxy(true, a, b, b);
+
+  proxy.push_back(4.4, 4, 5);
+  EXPECT_EQ(std::get<0>(*(proxy.begin() + 3)), 4.4);
+  EXPECT_EQ(std::get<1>(*(proxy.begin() + 3)), 4);
+  // b is now longer than a, we view the wrong element.
+  EXPECT_EQ(std::get<2>(*(proxy.begin() + 3)), 4);
+}
+
+TEST(EventListsProxy, missing_field) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+
+  EXPECT_THROW_MSG_SUBSTR(
+      zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+          Access::Key<std::vector<double>>{Data::Variance, "b"}),
+      std::runtime_error,
+      "could not find variable with tag Data::Variance and name `b`.");
+}
+
+TEST(EventListsProxy, dimension_mismatch) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {}, {5});
+
+  EXPECT_THROW_MSG(zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                       Access::Key<std::vector<double>>{Data::Variance, "a"}),
+                   std::runtime_error,
+                   "Variables to be zipped have mismatching dimensions, use "
+                   "`zipMD()` instead.");
+}
+
+TEST(EventListsProxy, create) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+
+  EXPECT_NO_THROW(zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                      Access::Key<std::vector<double>>{Data::Variance, "a"}));
+}
+
+TEST(EventListsProxy, const_create) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+  const auto const_d(d);
+
+  EXPECT_NO_THROW(zip(const_d,
+                      Access::Key<std::vector<double>>{Data::Value, "a"},
+                      Access::Key<std::vector<double>>{Data::Variance, "a"}));
+}
+
+TEST(EventListsProxy, item_access) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+
+  auto eventLists = zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                        Access::Key<std::vector<double>>{Data::Variance, "a"});
+
+  ASSERT_EQ(eventLists.size(), 4);
+  auto events = *eventLists.begin();
+  events.push_back(1.0, 2.0);
+  EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[0].size(), 1ul);
+  EXPECT_EQ(d.span<std::vector<double>>(Data::Value, "a")[1].size(), 0ul);
+}
+
+TEST(EventListsProxy, range_based_for) {
+  // rvalue overloads of begin and end are deleted, just checking if we can
+  // nevertheless use a range-based for loop.
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+  for (auto el : zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+                     Access::Key<std::vector<double>>{Data::Variance, "a"})) {
+    EXPECT_EQ(el.size(), 0);
+  }
+}
+
+TEST(EventListsProxy, item_access_prevented_if_partial_proxy) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+
+  auto eventLists = zip(d, Access::Key<std::vector<double>>{Data::Value, "a"});
+
+  ASSERT_EQ(eventLists.size(), 4);
+  auto events = *eventLists.begin();
+  EXPECT_THROW_MSG(events.push_back(1.0), std::runtime_error,
+                   "Event list cannot be resized via an incomplete proxy.");
+}
+
+TEST(EventListsProxy, const_item_access) {
+  Dataset d;
+  d.insert<std::vector<double>>(Data::Value, "a", {Dim::X, 4});
+  d.insert<std::vector<double>>(Data::Variance, "a", {Dim::X, 4});
+  {
+    auto eventLists =
+        zip(d, Access::Key<std::vector<double>>{Data::Value, "a"},
+            Access::Key<std::vector<double>>{Data::Variance, "a"});
+
+    ASSERT_EQ(eventLists.size(), 4);
+    auto events = *eventLists.begin();
+    events.push_back(1.0, 2.0);
+  }
+
+  const auto const_d(d);
+
+  auto eventLists =
+      zip(const_d, Access::Key<std::vector<double>>{Data::Value, "a"},
+          Access::Key<std::vector<double>>{Data::Variance, "a"});
+  auto events = *eventLists.begin();
+  EXPECT_EQ(std::get<0>(*events.begin()), 1.0);
+}

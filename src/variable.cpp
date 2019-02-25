@@ -714,6 +714,7 @@ INSTANTIATE(std::pair<gsl::index, gsl::index>)
 #endif
 INSTANTIATE(boost::container::small_vector<gsl::index, 1>)
 INSTANTIATE(boost::container::small_vector<double, 8>)
+INSTANTIATE(std::vector<double>)
 INSTANTIATE(std::vector<std::string>)
 INSTANTIATE(std::vector<gsl::index>)
 INSTANTIATE(Dataset)
@@ -1015,6 +1016,7 @@ INSTANTIATE_SLICEVIEW(int32_t);
 INSTANTIATE_SLICEVIEW(char);
 INSTANTIATE_SLICEVIEW(bool);
 INSTANTIATE_SLICEVIEW(std::string);
+INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
 INSTANTIATE_SLICEVIEW(Dataset);
 
 ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,

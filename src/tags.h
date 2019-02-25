@@ -29,6 +29,7 @@ enum class DType {
   String,
   Char,
   Bool,
+  SmallVectorDouble8,
   Dataset
 };
 template <class T> constexpr DType dtype = DType::Unknown;
@@ -40,6 +41,9 @@ template <> constexpr DType dtype<std::string> = DType::String;
 template <> constexpr DType dtype<char> = DType::Char;
 template <> constexpr DType dtype<bool> = DType::Bool;
 template <> constexpr DType dtype<Bool> = DType::Bool;
+template <>
+constexpr DType dtype<boost::container::small_vector<double, 8>> =
+    DType::SmallVectorDouble8;
 template <> constexpr DType dtype<Dataset> = DType::Dataset;
 
 // Adding new tags
