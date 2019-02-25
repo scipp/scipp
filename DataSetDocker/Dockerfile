@@ -10,6 +10,7 @@ RUN apt-get update && \
     apt-get install -y cmake && \
     apt-get install -y g++ && \
     apt-get install -y mercurial && \
+    apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:mhier/libboost-latest && \
     apt update && \
     apt-get install -y libboost1.67-dev && \
