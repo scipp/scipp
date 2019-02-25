@@ -409,6 +409,26 @@ make_coordinate_dimension(const std::tuple<Ts...> &) {
 constexpr auto isDimensionCoord = make_is_dimension_coordinate(detail::Tags{});
 constexpr auto coordDimension = make_coordinate_dimension(detail::Tags{});
 
+inline Tag dimensionCoord(const Dim dim) {
+  switch (dim) {
+  case Dim::X:
+    return Coord::X;
+  case Dim::Y:
+    return Coord::Y;
+  case Dim::Z:
+    return Coord::Z;
+  case Dim::Tof:
+    return Coord::Tof;
+  case Dim::Energy:
+    return Coord::Energy;
+  case Dim::DeltaE:
+    return Coord::DeltaE;
+  default:
+    throw std::runtime_error(
+        "Coordinate for this dimension is not implemented");
+  }
+}
+
 namespace detail {
 template <class... Ts>
 constexpr std::array<Unit::Id, std::tuple_size<detail::Tags>::value>

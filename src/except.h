@@ -83,6 +83,9 @@ template <class T> void contains(const T &a, const T &b) {
     throw std::runtime_error("Expected " + to_string(a) + " to contain " +
                              to_string(b) + ".");
 }
+template <class T> void unit(const T &object, const Unit &unit) {
+  expect::equals(object.unit(), unit);
+}
 } // namespace expect
 } // namespace dataset
 

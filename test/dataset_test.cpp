@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "convert.h"
+#include "counts.h"
 #include "dataset.h"
 #include "dimensions.h"
 
@@ -1527,4 +1528,21 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
   ASSERT_TRUE(energy.contains(Coord::Position));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
   ASSERT_TRUE(energy.contains(Coord::Ei));
+}
+
+TEST(Dataset, counts_toDensity_fromDensity) {
+  Dataset d;
+  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 4, 8});
+  d.insert(Data::Value, "", {Dim::X, 3}, {12, 12, 12});
+  d(Data::Value, "").setUnit(Unit::Id::Counts);
+
+  d = counts::toDensity(std::move(d), Dim::X);
+  auto result = d(Data::Value, "");
+  EXPECT_EQ(result.unit(), Unit::Id::CountsPerMeter);
+  EXPECT_TRUE(equals(result.get(Data::Value), {12, 6, 3}));
+
+  d = counts::fromDensity(std::move(d), Dim::X);
+  result = d(Data::Value, "");
+  EXPECT_EQ(result.unit(), Unit::Id::Counts);
+  EXPECT_TRUE(equals(result.get(Data::Value), {12, 12, 12}));
 }
