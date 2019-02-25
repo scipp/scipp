@@ -1012,18 +1012,41 @@ TEST(Dataset, filter) {
   EXPECT_EQ(filtered.get(Data::Value)[3], 8.0);
 }
 
-TEST(Dataset, integrate) {
+TEST(Dataset, integrate_counts) {
   Dataset ds;
   ds.insert(Coord::X, {Dim::X, 3}, {0.1, 0.2, 0.4});
   ds.insert(Data::Value, "", {Dim::X, 2}, {10.0, 20.0});
+  ds(Data::Value, "").setUnit(units::counts);
+
+  // Note that in this special case the integral has the same unit. This is
+  // maybe an indicator that we should rather use `sum` for counts? On the other
+  // hand, supporting `integrate` is convenient and thanks to the unit this
+  // should be safe.
+  Variable reference(Data::Value, {}, {30.0});
+  reference.setUnit(units::counts);
 
   Dataset integral;
+  integral = integrate(ds, Dim::X);
   EXPECT_NO_THROW(integral = integrate(ds, Dim::X));
   EXPECT_EQ(integral.dimensions().count(), 0);
   EXPECT_FALSE(integral.contains(Coord::X));
-  // Note: The current implementation assumes that Data::Value is counts,
-  // handling of other data is not implemented yet.
-  EXPECT_TRUE(equals(integral.get(Data::Value), {30.0}));
+  EXPECT_EQ(integral(Data::Value), reference);
+}
+
+TEST(Dataset, integrate_counts_density) {
+  Dataset ds;
+  ds.insert(Coord::Tof, {Dim::Tof, 3}, {0.1, 0.2, 0.4});
+  ds.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
+  ds(Data::Value, "").setUnit(units::counts / units::us);
+
+  Variable reference(Data::Value, {}, {10.0 * 0.1 + 20.0 * 0.2});
+  reference.setUnit(units::counts);
+
+  Dataset integral;
+  EXPECT_NO_THROW(integral = integrate(ds, Dim::Tof));
+  EXPECT_EQ(integral.dimensions().count(), 0);
+  EXPECT_FALSE(integral.contains(Coord::Tof));
+  EXPECT_EQ(integral(Data::Value), reference);
 }
 
 TEST(DatasetSlice, basics) {

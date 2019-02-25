@@ -9,6 +9,7 @@
 #include "range/v3/algorithm.hpp"
 #include "range/v3/view/zip.hpp"
 
+#include "counts.h"
 #include "dataset.h"
 #include "except.h"
 #include "tag_util.h"
@@ -29,6 +30,11 @@ DatasetSlice Dataset::operator[](const std::string &name) & {
 ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
                                       const gsl::index end) const & {
   return ConstDatasetSlice(*this)(dim, begin, end);
+}
+
+Dataset Dataset::operator()(const Dim dim, const gsl::index begin,
+                                 const gsl::index end) && {
+  return {DatasetSlice(*this)(dim, begin, end)};
 }
 
 DatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
@@ -896,12 +902,10 @@ Dataset integrate(const Dataset &d, const Dim dim) {
                                  "histogram data (requires bin-edge "
                                  "coordinate.");
       const auto range = concatenate(var(dim, 0), var(dim, size - 1), dim);
+      // TODO Currently this works only for counts and counts-density.
       const auto integral = rebin(d, range);
-      // TODO Unless unit is "counts" we need to multiply by the interval
-      // length. To fix this properly we need support for non-count data in
-      // `rebin`.
       // Return slice to automatically drop `dim` and corresponding coordinate.
-      return integral(dim, 0);
+      return counts::fromDensity(std::move(integral), dim)(dim, 0);
     }
   }
   throw std::runtime_error(

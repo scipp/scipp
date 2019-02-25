@@ -58,8 +58,8 @@ public:
                                const gsl::index end = -1) const && = delete;
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
                                const gsl::index end = -1) const &;
-  DatasetSlice operator()(const Dim dim, const gsl::index begin,
-                          const gsl::index end = -1) && = delete;
+  Dataset operator()(const Dim dim, const gsl::index begin,
+                     const gsl::index end = -1) &&;
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
                           const gsl::index end = -1) &;
   ConstVariableSlice
