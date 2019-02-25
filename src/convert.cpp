@@ -29,6 +29,11 @@ const auto tof_to_s =
 const auto J_to_meV =
     units::meV /
     boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
+// In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
+// tof_to_s factor is in the denominator.
+const auto tofToEnergyPhysicalConstants =
+    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
+    (tof_to_s * tof_to_s);
 
 namespace neutron {
 namespace tof {
@@ -53,12 +58,7 @@ Dataset tofToEnergy(const Dataset &d) {
   // l_total^2
   conversionFactor *= conversionFactor;
 
-  // Later we *divide* by time-of-flight (squared), so the tof_to_s factor is
-  // in the denominator.
-  auto physicalConstants = 0.5 * boost::units::si::constants::codata::m_n *
-                           J_to_meV / (tof_to_s * tof_to_s);
-
-  conversionFactor *= physicalConstants;
+  conversionFactor *= tofToEnergyPhysicalConstants;
 
   // 2. Transform variables
   Dataset converted;
@@ -95,19 +95,16 @@ Dataset tofToDeltaE(const Dataset &d) {
                              "cannot have both for inelastic scattering.");
 
   // 1. Compute conversion factors
-  const auto physicalConstants = 0.5 *
-                                 boost::units::si::constants::codata::m_n *
-                                 J_to_meV / (tof_to_s * tof_to_s);
   const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
   const auto &sourcePos = compPos(Dim::Component, 0);
   const auto &samplePos = compPos(Dim::Component, 1);
   auto l1_square = norm(sourcePos - samplePos);
   l1_square *= l1_square;
-  l1_square *= physicalConstants;
+  l1_square *= tofToEnergyPhysicalConstants;
   const auto specPos = getSpecPos(d);
   auto l2_square = norm(specPos - samplePos);
   l2_square *= l2_square;
-  l2_square *= physicalConstants;
+  l2_square *= tofToEnergyPhysicalConstants;
 
   Variable tofShift(Data::Value, {});
   Variable scale(Data::Value, {});
