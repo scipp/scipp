@@ -4,6 +4,7 @@
 # National Laboratory, and European Spallation Source ERIC.
 add_executable ( dataset_test
   bool_test.cpp
+  convert_test.cpp
   dataset_test.cpp
   dimensions_test.cpp
   EventWorkspace_test.cpp
