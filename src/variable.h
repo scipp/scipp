@@ -6,8 +6,6 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
-#include <iostream>
-#include <boost/units/io.hpp>
 #include <string>
 #include <type_traits>
 
