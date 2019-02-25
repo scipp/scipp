@@ -173,7 +173,7 @@ public:
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
-  void erase(const Tag tag, const std::string &name = "");
+  Variable erase(const Tag tag, const std::string &name = "");
 
   // TODO This should probably also include a copy of all or all relevant
   // coordinates.

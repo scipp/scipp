@@ -524,6 +524,7 @@ TEST(Variable, concatenate_unit_fail) {
 
 TEST(Variable, rebin) {
   Variable var(Data::Value, {Dim::X, 2}, {1.0, 2.0});
+  var.setUnit(units::counts);
   const Variable oldEdge(Coord::X, {Dim::X, 3}, {1.0, 2.0, 3.0});
   const Variable newEdge(Coord::X, {Dim::X, 2}, {1.0, 3.0});
   auto rebinned = rebin(var, oldEdge, newEdge);

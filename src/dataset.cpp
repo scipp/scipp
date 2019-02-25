@@ -10,6 +10,7 @@
 #include "range/v3/view/zip.hpp"
 
 #include "dataset.h"
+#include "except.h"
 #include "tag_util.h"
 
 Dataset::Dataset(const ConstDatasetSlice &view) {
@@ -74,9 +75,10 @@ bool Dataset::contains(const Tag tag, const std::string &name) const {
   return ::contains(*this, tag, name);
 }
 
-void Dataset::erase(const Tag tag, const std::string &name) {
+Variable Dataset::erase(const Tag tag, const std::string &name) {
   const auto it = m_variables.begin() + find(tag, name);
   const auto dims = it->dimensions();
+  Variable var(std::move(*it));
   m_variables.erase(it);
   for (const auto dim : dims.labels()) {
     bool found = false;
@@ -86,6 +88,7 @@ void Dataset::erase(const Tag tag, const std::string &name) {
     if (!found)
       m_dimensions.erase(dim);
   }
+  return var;
 }
 
 Dataset Dataset::extract(const std::string &name) {
@@ -628,7 +631,6 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
 }
 
 Dataset rebin(const Dataset &d, const Variable &newCoord) {
-  Dataset out;
   if (!newCoord.isCoord())
     throw std::runtime_error(
         "The provided rebin coordinate is not a coordinate variable.");
@@ -665,6 +667,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   }
   // TODO check that input as well as output coordinate are sorted in rebin
   // dimension.
+  Dataset out;
   for (const auto &var : d) {
     if (!var.dimensions().contains(dim)) {
       out.insert(var);
