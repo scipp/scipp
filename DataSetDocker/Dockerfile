@@ -66,8 +66,6 @@ USER root
 
 RUN cd /tmp/dataset/build && \
     make install 
-
-RUN sudo apt-get purge --auto-remove -y libboost-dev 
    
 USER $NB_UID
 
