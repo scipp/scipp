@@ -465,6 +465,26 @@ class TestDatasetExamples(unittest.TestCase):
                 spec[Data.Value, "sample1"] = np.zeros(1000)
                 spec[Data.Variance, "sample1"] = np.zeros(1000)
 
+    def test_zip(self):
+        d = Dataset()
+        d[Coord.SpectrumNumber] = ([Dim.Position], np.arange(1, 6))
+        d[Data.EventTofs, ""] = ([Dim.Position], (5,))
+        d[Data.EventPulseTimes, ""] = ([Dim.Position], (5,))
+        self.assertEqual(len(d[Data.EventTofs, ""].data), 5)
+        d[Data.EventTofs, ""].data[0].append(10)
+        d[Data.EventPulseTimes, ""].data[0].append(1000)
+        d[Data.EventTofs, ""].data[1].append(10)
+        d[Data.EventPulseTimes, ""].data[1].append(1000)
+        # Don't do this, there are no compatiblity checks:
+        #for el in zip(d[Data.EventTofs, ""].data, d[Data.EventPulseTimes, ""].data):
+        print("zip start")
+        for el, size in zip(d.zip(), [1,1,0,0,0]):
+            self.assertEqual(len(el), size)
+            for e in el:
+                self.assertEqual(e.first(), 10)
+                self.assertEqual(e.second(), 1000)
+            el.append((10,300))
+            self.assertEqual(len(el), size + 1)
 
 if __name__ == '__main__':
     unittest.main()

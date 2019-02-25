@@ -3,7 +3,6 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <boost/mpl/at.hpp>

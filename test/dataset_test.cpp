@@ -4,7 +4,6 @@
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
 #include "test_macros.h"
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "convert.h"
