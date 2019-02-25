@@ -855,6 +855,9 @@ TEST(Dataset, histogram) {
   ASSERT_TRUE(hist.contains(Data::Variance, "sample1"));
   EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 1, 4}));
   EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 1, 4}));
+  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
+  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
+            units::counts * units::counts);
 }
 
 TEST(Dataset, histogram_2D_coord) {
@@ -869,6 +872,9 @@ TEST(Dataset, histogram_2D_coord) {
   ASSERT_TRUE(hist.contains(Data::Variance, "sample1"));
   EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 4, 2}));
   EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 4, 2}));
+  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
+  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
+            units::counts * units::counts);
 }
 
 TEST(Dataset, histogram_2D_transpose_coord) {
@@ -887,6 +893,9 @@ TEST(Dataset, histogram_2D_transpose_coord) {
             Dimensions({{Dim::Spectrum, 2}, {Dim::Tof, 2}}));
   EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 4, 2}));
   EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 4, 2}));
+  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
+  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
+            units::counts * units::counts);
 }
 
 TEST(Dataset, sort) {
