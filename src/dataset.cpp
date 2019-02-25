@@ -721,11 +721,12 @@ Dataset histogram(const Variable &var, const Variable &coord) {
 
   Dataset hist;
   hist.insert(coord);
-  hist.insert(Data::Value, var.name(), dims);
+  Variable countsVar(Data::Value, dims);
+  countsVar.setUnit(units::counts);
 
   // Counts has outer dimensions as input, with a new inner dimension given by
   // the binning dimensions. We iterate over all dimensions as a flat array.
-  auto counts = hist.get(Data::Value, var.name());
+  auto counts = countsVar.get(Data::Value);
   gsl::index cur = 0;
   // The helper `getView` allows us to ignore the tag of coord, as long as the
   // underlying type is `double`. We view the edges with the same dimensions as
@@ -758,7 +759,9 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   }
 
   // TODO Would need to add handling for weighted events etc. here.
-  hist.insert(Data::Variance, var.name(), dims, counts.begin(), counts.end());
+  hist.insert(Data::Value, var.name(), countsVar);
+  hist.insert(Data::Variance, var.name(), std::move(countsVar));
+  hist(Data::Variance, var.name()).setUnit(units::counts * units::counts);
   return hist;
 }
 

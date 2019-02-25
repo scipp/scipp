@@ -102,6 +102,11 @@ public:
     variable.setName("");
     insert(std::move(variable));
   }
+  void insert(const Tag tag, const std::string &name, Variable variable) {
+    variable.setTag(tag);
+    variable.setName(name);
+    insert(std::move(variable));
+  }
 
   template <class Tag, class... Args>
   void insert(const Tag tag, const Dimensions &dimensions, Args &&... args) {
