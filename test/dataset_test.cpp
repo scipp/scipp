@@ -1534,16 +1534,16 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
 
 TEST(Dataset, counts_toDensity_fromDensity) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 4, 8});
-  d.insert(Data::Value, "", {Dim::X, 3}, {12, 12, 12});
+  d.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 4, 8});
+  d.insert(Data::Value, "", {Dim::Tof, 3}, {12, 12, 12});
   d(Data::Value, "").setUnit(units::counts);
 
-  d = counts::toDensity(std::move(d), Dim::X);
+  d = counts::toDensity(std::move(d), Dim::Tof);
   auto result = d(Data::Value, "");
-  EXPECT_EQ(result.unit(), units::counts / units::m);
+  EXPECT_EQ(result.unit(), units::counts / units::us);
   EXPECT_TRUE(equals(result.get(Data::Value), {12, 6, 3}));
 
-  d = counts::fromDensity(std::move(d), Dim::X);
+  d = counts::fromDensity(std::move(d), Dim::Tof);
   result = d(Data::Value, "");
   EXPECT_EQ(result.unit(), units::counts);
   EXPECT_TRUE(equals(result.get(Data::Value), {12, 12, 12}));

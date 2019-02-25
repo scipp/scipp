@@ -94,12 +94,13 @@ Unit sqrt(const Unit &a) {
 
 namespace units {
 bool containsCounts(const Unit &unit) {
-  if ((unit == units::counts) || unit == units::counts / units::m)
+  if ((unit == units::counts) || unit == units::counts / units::us)
     return true;
   return false;
 }
 bool containsCountsVariance(const Unit &unit) {
-  if (unit == units::counts * units::counts)
+  if (unit == units::counts * units::counts ||
+      unit == (units::counts / units::us) * (units::counts / units::us))
     return true;
   return false;
 }

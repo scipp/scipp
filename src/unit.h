@@ -130,12 +130,11 @@ make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
   return {};
 }
 
-// TODO counts/m is mainly for testing and should maybe be removed.
 using type = decltype(detail::make_unit(
     std::make_tuple(m, counts, s, kg, dimensionless / m, angstrom, meV, us,
-                    dimensionless / us, dimensionless / s),
-    std::make_tuple(dimensionless, counts / m, m *m *m *m,
-                    meV *us *us / (m * m), meV *us *us *dimensionless)));
+                    dimensionless / us, dimensionless / s, counts / us),
+    std::make_tuple(dimensionless, m *m *m *m, meV *us *us / (m * m),
+                    meV *us *us *dimensionless)));
 } // namespace detail
 } // namespace units
 
