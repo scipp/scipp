@@ -60,12 +60,28 @@ RUN cd /tmp && \
     mkdir build && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/conda/lib/python3.6/site-packages .. && \
-    make -j 12
+    make -j $(cat /proc/cpuinfo | grep processor | wc -l) 
 
 USER root
 
 RUN cd /tmp/dataset/build && \
     make install 
+
+RUN apt-get update && apt-get install -y freeglut3-dev libglu1-mesa
+
+USER $NB_UID
+
+RUN conda install -c mantid nexus
+RUN conda install -c mantid mantid-framework
+#RUN cd /tmp && \
+#    git clone https://github.com/mantidproject/mantid.git && \
+#    cd ./mantid && \
+#    mkdir build && \
+#    cd ./build && \
+#    cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Release -DDENABLE_MANTIDPLOT=FALSE .. && \
+#i    make -j $(cat /proc/cpuinfo | grep processor | wc -l) 
+
+user root
    
 USER $NB_UID
 
