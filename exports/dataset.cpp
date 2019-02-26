@@ -368,36 +368,44 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   }
 }
 
-template <class Var, class... Ts>
-std::variant<std::conditional_t<std::is_same_v<Var, Variable>,
-                                gsl::span<underlying_type_t<Ts>>,
-                                VariableView<underlying_type_t<Ts>>>...>
-as_VariableView_variant(Var &view) {
-  switch (view.dtype()) {
-  case dtype<double>:
-    return {view.template span<double>()};
-  case dtype<float>:
-    return {view.template span<float>()};
-  case dtype<int64_t>:
-    return {view.template span<int64_t>()};
-  case dtype<int32_t>:
-    return {view.template span<int32_t>()};
-  case dtype<char>:
-    return {view.template span<char>()};
-  case dtype<bool>:
-    return {view.template span<bool>()};
-  case dtype<std::string>:
-    return {view.template span<std::string>()};
-  case dtype<boost::container::small_vector<double, 8>>:
-    return {view.template span<boost::container::small_vector<double, 8>>()};
-  case dtype<Dataset>:
-    return {view.template span<Dataset>()};
-  case dtype<Eigen::Vector3d>:
-    return {view.template span<Eigen::Vector3d>()};
-  default:
-    throw std::runtime_error("not implemented for this type.");
-  }
+template <class... Ts>
+struct as_VariableViewImpl {
+  template <class Var>
+  static std::variant<std::conditional_t<
+      std::is_same_v<Var, Variable>, gsl::span<underlying_type_t<Ts>>,
+      VariableView<underlying_type_t<Ts>>>...>
+  get(Var &view) {
+    switch (view.dtype()) {
+    case dtype<double>:
+      return {view.template span<double>()};
+    case dtype<float>:
+      return {view.template span<float>()};
+    case dtype<int64_t>:
+      return {view.template span<int64_t>()};
+    case dtype<int32_t>:
+      return {view.template span<int32_t>()};
+    case dtype<char>:
+      return {view.template span<char>()};
+    case dtype<bool>:
+      return {view.template span<bool>()};
+    case dtype<std::string>:
+      return {view.template span<std::string>()};
+    case dtype<boost::container::small_vector<double, 8>>:
+      return {view.template span<boost::container::small_vector<double, 8>>()};
+    case dtype<Dataset>:
+      return {view.template span<Dataset>()};
+    case dtype<Eigen::Vector3d>:
+      return {view.template span<Eigen::Vector3d>()};
+    default:
+      throw std::runtime_error("not implemented for this type.");
+    }
 }
+};
+
+using as_VariableView =
+    as_VariableViewImpl<double, float, int64_t, int32_t, char, bool,
+                        std::string, boost::container::small_vector<double, 8>,
+                        Dataset, Eigen::Vector3d>;
 
 using small_vector = boost::container::small_vector<double, 8>;
 PYBIND11_MAKE_OPAQUE(small_vector);
@@ -530,12 +538,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<Variable, double, float, int64_t,
                                           int32_t, char, bool>)
-      .def_property_readonly(
-          "data",
-          &as_VariableView_variant<Variable, double, float, int64_t, int32_t,
-                                   char, bool, std::string,
-                                   boost::container::small_vector<double, 8>,
-                                   Dataset, Eigen::Vector3d>)
+      .def_property_readonly("data", &as_VariableView::get<Variable>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -577,12 +580,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char, bool>)
-      .def_property_readonly(
-          "data",
-          &as_VariableView_variant<VariableSlice, double, float, int64_t,
-                                   int32_t, char, bool, std::string,
-                                   boost::container::small_vector<double, 8>,
-                                   Dataset, Eigen::Vector3d>)
+      .def_property_readonly("data", &as_VariableView::get<VariableSlice>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
