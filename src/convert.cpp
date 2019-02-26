@@ -172,6 +172,103 @@ Dataset tofToDeltaE(const Dataset &d) {
 
   return converted;
 }
+
+gsl::index continuousToIndex(const double val,
+                             const gsl::span<const double> axis) {
+  const auto lower = std::lower_bound(axis.begin(), axis.end(), val);
+  const auto upper = std::upper_bound(axis.begin(), axis.end(), val);
+  if (upper == axis.end() || upper == axis.begin())
+    return -1;
+  return std::distance(axis.begin(), lower) - 1;
+}
+
+Dataset continuousToIndex(const Variable &values, const Dataset &coords) {
+  const auto &vals = values.span<Eigen::Vector3d>();
+  const auto &qx = coords.get(Coord::Qx);
+  const auto &qy = coords.get(Coord::Qy);
+  const auto &qz = coords.get(Coord::Qz);
+  std::vector<gsl::index> ix;
+  std::vector<gsl::index> iy;
+  std::vector<gsl::index> iz;
+  for (const auto &val : vals) {
+    ix.push_back(continuousToIndex(val[0], qx));
+    iy.push_back(continuousToIndex(val[1], qy));
+    iz.push_back(continuousToIndex(val[2], qz));
+  }
+  Dataset index;
+  index.insert<gsl::index>(Coord::Qx, values.dimensions(), ix);
+  index.insert<gsl::index>(Coord::Qy, values.dimensions(), iy);
+  index.insert<gsl::index>(Coord::Qz, values.dimensions(), iz);
+  return index;
+}
+
+Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
+  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
+  const auto &sourcePos = compPos(Dim::Component, 0);
+  const auto &samplePos = compPos(Dim::Component, 1);
+  const auto l1 = norm(sourcePos - samplePos);
+  const auto specPos = getSpecPos(d);
+
+  auto ki = samplePos - sourcePos;
+  ki /= norm(ki);
+  ki = ki * d(Coord::Ei) /* TODO c^-1 */;
+
+  auto kf = specPos - samplePos;
+  kf /= norm(kf);
+  kf = kf * (d(Coord::Ei) + d(Coord::DeltaE)); // TODO sign?
+
+  // Note that kf depends on Dim::Position as well as Dim::DeltaE.
+  const auto Q = ki - kf;
+  const auto qIndex = continuousToIndex(Q, qCoords);
+
+  Dataset converted(qCoords);
+  for (const auto &var : d) {
+    if (var.tag() == Data::Events || var.tag() == Data::EventTofs) {
+      throw std::runtime_error(
+          "TODO Converting units of event data not implemented yet.");
+    } else if (var.dimensions().contains(Dim::Position) &&
+               var.dimensions().contains(Dim::DeltaE)) {
+      // Position axis is converted into 3 Q axes.
+      auto dims = var.dimensions();
+      // TODO Make sure that Dim::Position is outer, otherwise insert
+      // Q-dimensions correctly elsewhere.
+      dims.erase(Dim::Position);
+      dims.add(Dim::Qx, qCoords.dimensions()[Dim::Qx] - 1);
+      dims.add(Dim::Qy, qCoords.dimensions()[Dim::Qy] - 1);
+      dims.add(Dim::Qz, qCoords.dimensions()[Dim::Qz] - 1);
+
+      Variable tmp(var, dims);
+
+      for (gsl::index deltaE = 0; deltaE < var.dimensions()[Dim::DeltaE];
+           ++deltaE) {
+        const auto in = var(Dim::DeltaE, deltaE);
+        const auto out = tmp(Dim::DeltaE, deltaE);
+        const Dataset indices = qIndex(Dim::DeltaE, deltaE);
+        const auto q = zip(indices, Access::Key<gsl::index>{Coord::Qx},
+                           Access::Key<gsl::index>{Coord::Qy},
+                           Access::Key<gsl::index>{Coord::Qz});
+        if (in.dimensions()[Dim::Position] != q.size())
+          throw std::runtime_error("Broken implementation of convert.");
+        for (gsl::index i = 0; i < q.size(); ++i) {
+          const auto[qx, qy, qz] = q[i];
+          // Drop out-of-range values
+          if (qx < 0 || qy < 0 || qz < 0)
+            continue;
+          // Probably really inefficient accumulation of volume histogram
+          out(Dim::Qx, qx)(Dim::Qy, qy)(Dim::Qz, qz) += in(Dim::Position, i);
+        }
+      }
+      converted.insert(std::move(tmp));
+    } else if (var.dimensions().contains(Dim::Position)) {
+      // TODO Drop?
+    } else {
+      converted.insert(var);
+    }
+  }
+
+  return converted;
+}
+
 } // namespace tof
 } // namespace neutron
 
@@ -203,4 +300,17 @@ Dataset convert(const Dataset &d, const Dim from, const Dim to) {
   // This is a *derived* coordinate, no need to store it explicitly? May even be
   // prevented?
   // MDZipView<const Coord::TwoTheta>(dataset);
+}
+
+Dataset convert(const Dataset &d, const Dim from, const Dataset &toCoords) {
+  if (from == Dim::Position) {
+    // Converting from position space
+    if (toCoords.size() == 3 && toCoords.contains(Coord::Qx) &&
+        toCoords.contains(Coord::Qy) && toCoords.contains(Coord::Qz)) {
+      // Converting to momentum transfer
+      return neutron::tof::positionToQ(d, toCoords);
+    }
+  }
+  throw std::runtime_error(
+      "Conversion between requested dimensions not implemented yet.");
 }

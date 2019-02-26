@@ -740,6 +740,21 @@ Variable::Variable(const ConstVariableSlice &slice)
     data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
   }
 }
+Variable::Variable(const Variable &parent, const Dimensions &dims)
+    : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
+      m_object(parent.m_object->clone(dims)) {
+      }
+
+Variable::Variable(const ConstVariableSlice &parent, const Dimensions &dims)
+    : m_tag(parent.tag()), m_unit(parent.unit()),
+      m_object(parent.data().clone(dims)) {
+  setName(parent.name());
+}
+
+Variable::Variable(const Variable &parent,
+                   std::unique_ptr<VariableConcept> data)
+    : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
+      m_object(std::move(data)) {}
 
 template <class T>
 Variable::Variable(const Tag tag, const Unit unit, const Dimensions &dimensions,

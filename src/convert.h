@@ -11,5 +11,6 @@
 class Dataset;
 
 Dataset convert(const Dataset &d, const Dim from, const Dim to);
+Dataset convert(const Dataset &d, const Dim from, const Dataset &toCoords);
 
 #endif // CONVERT_H

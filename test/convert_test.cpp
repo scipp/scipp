@@ -164,9 +164,8 @@ TEST(Dataset, convert_direct_inelastic) {
   ASSERT_TRUE(energy.contains(Coord::Ei));
 }
 
-TEST(Dataset, convert_direct_inelastic_multi_Ei) {
+Dataset makeMultiEiTofData() {
   Dataset tof;
-
   tof.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 3, 4});
 
   Dataset components;
@@ -175,17 +174,22 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
       Coord::Position, {Dim::Component, 2},
       {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
   tof.insert(Coord::ComponentInfo, {}, {components});
-  tof.insert(Coord::Position, {Dim::Spectrum, 3},
+  tof.insert(Coord::Position, {Dim::Position, 3},
              {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.0, 0.0, 1.0},
               Eigen::Vector3d{0.1, 0.0, 1.0}});
 
-  tof.insert(Data::Value, "", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
+  tof.insert(Data::Value, "", {{Dim::Position, 3}, {Dim::Tof, 3}},
              {1, 2, 3, 4, 5, 6, 7, 8, 9});
   tof(Data::Value, "").setUnit(units::counts);
 
   // In practice not every spectrum would have a different Ei, more likely we
-  // would have an extra dimension, Dim::Ei in addition to Dim::Spectrum.
-  tof.insert(Coord::Ei, {Dim::Spectrum, 3}, {1.0, 1.5, 2.0});
+  // would have an extra dimension, Dim::Ei in addition to Dim::Position.
+  tof.insert(Coord::Ei, {Dim::Position, 3}, {1.0, 1.5, 2.0});
+  return tof;
+}
+
+TEST(Dataset, convert_direct_inelastic_multi_Ei) {
+  const auto tof = makeMultiEiTofData();
 
   auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
 
@@ -196,26 +200,40 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
   ASSERT_FALSE(energy.contains(Coord::Tof));
   ASSERT_TRUE(energy.contains(Coord::DeltaE));
   const auto &coord = energy(Coord::DeltaE);
-  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
+  // Due to conversion, the coordinate now also depends on Dim::Position.
   ASSERT_EQ(coord.dimensions(),
-            Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 4}}));
+            Dimensions({{Dim::Position, 3}, {Dim::DeltaE, 4}}));
   // TODO Check actual values here after conversion is fixed.
   EXPECT_FALSE(
       equals(coord.get(Coord::DeltaE), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
   // 2 spectra at same position, but now their Ei differs, so deltaE is also
   // different (compare to test for single Ei above).
-  EXPECT_NE(coord(Dim::Spectrum, 0).get(Coord::DeltaE)[0],
-            coord(Dim::Spectrum, 1).get(Coord::DeltaE)[0]);
+  EXPECT_NE(coord(Dim::Position, 0).get(Coord::DeltaE)[0],
+            coord(Dim::Position, 1).get(Coord::DeltaE)[0]);
   EXPECT_EQ(coord.unit(), units::meV);
 
   ASSERT_TRUE(energy.contains(Data::Value));
   const auto &data = energy(Data::Value);
   ASSERT_EQ(data.dimensions(),
-            Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
+            Dimensions({{Dim::Position, 3}, {Dim::DeltaE, 3}}));
   EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
   EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(energy.contains(Coord::Position));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
   ASSERT_TRUE(energy.contains(Coord::Ei));
+}
+
+TEST(Dataset, convert_direct_inelastic_multi_Ei_to_QxQyQz) {
+  const auto tof = makeMultiEiTofData();
+  auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
+  // Rebin to common delta-E axis to avoid current shortcomings of convert.
+  energy = rebin(energy, energy(Coord::DeltaE)(Dim::Position, 0));
+
+  Dataset qCoords;
+  qCoords.insert(Coord::Qx, {Dim::Qx, 4}, {1, 2, 3, 4});
+  qCoords.insert(Coord::Qy, {Dim::Qy, 4}, {1, 2, 3, 4});
+  qCoords.insert(Coord::Qz, {Dim::Qz, 4}, {1, 2, 3, 4});
+
+  auto result = convert(energy, Dim::Position, qCoords);
 }

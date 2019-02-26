@@ -140,12 +140,9 @@ public:
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);
-  Variable(const Variable &parent, const Dimensions &dims)
-      : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
-        m_object(parent.m_object->clone(dims)) {}
-  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data)
-      : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
-        m_object(std::move(data)) {}
+  Variable(const Variable &parent, const Dimensions &dims);
+  Variable(const ConstVariableSlice &parent, const Dimensions &dims);
+  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data);
 
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
