@@ -63,9 +63,7 @@ Dataset fromDensity(Dataset d, const std::initializer_list<Dim> &dims) {
   for (const auto &var : d) {
     if (var.isData()) {
       if (var.unit() == units::counts) {
-        throw std::runtime_error("Cannot convert counts-variable from density, "
-                                 "it looks like it has already been "
-                                 "converted.");
+        // Do nothing, but do not fail either.
       } else if (units::containsCounts(var.unit())) {
         for (const auto &binWidth : binWidths)
           var *= binWidth;
