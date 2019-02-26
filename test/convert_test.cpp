@@ -25,8 +25,14 @@ Dataset makeTofDataForUnitConversion() {
   tof.insert(Coord::Position, {Dim::Spectrum, 2},
              {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.1, 0.0, 1.0}});
 
-  tof.insert(Data::Value, "", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
+  tof.insert(Data::Value, "counts", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
              {1, 2, 3, 4, 5, 6});
+  tof(Data::Value, "counts").setUnit(units::counts);
+
+  tof.insert(Data::Value, "counts/us", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
+             {1, 2, 3, 4, 5, 6});
+  tof(Data::Value, "counts/us").setUnit(units::counts / units::us);
+
   return tof;
 }
 
@@ -45,7 +51,7 @@ TEST(Dataset, convert) {
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
   ASSERT_EQ(coord.dimensions(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 4}}));
-  // TODO Check unit.
+  EXPECT_EQ(coord.unit(), units::meV);
 
   const auto values = coord.get(Coord::Energy);
   // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
@@ -64,11 +70,19 @@ TEST(Dataset, convert) {
   EXPECT_NEAR(values[6], pow((L / tofs[2]) / 437.0, 2), values[6] * 0.01);
   EXPECT_NEAR(values[7], pow((L / tofs[3]) / 437.0, 2), values[7] * 0.01);
 
-  ASSERT_TRUE(energy.contains(Data::Value));
-  const auto &data = energy(Data::Value);
+  ASSERT_TRUE(energy.contains(Data::Value, "counts"));
+  const auto &data = energy(Data::Value, "counts");
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
   EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6}));
+  EXPECT_EQ(data.unit(), units::counts);
+
+  ASSERT_TRUE(energy.contains(Data::Value, "counts/us"));
+  const auto &density = energy(Data::Value, "counts/us");
+  ASSERT_EQ(density.dimensions(),
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
+  EXPECT_FALSE(equals(density.get(Data::Value), {1, 2, 3, 4, 5, 6}));
+  EXPECT_EQ(density.unit(), units::counts / units::meV);
 
   ASSERT_TRUE(energy.contains(Coord::Position));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
@@ -114,6 +128,7 @@ TEST(Dataset, convert_direct_inelastic) {
 
   tof.insert(Data::Value, "", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
              {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  tof(Data::Value, "").setUnit(units::counts);
 
   tof.insert(Coord::Ei, {}, {1});
 
@@ -135,12 +150,14 @@ TEST(Dataset, convert_direct_inelastic) {
   // 2 spectra at same position see same deltaE.
   EXPECT_EQ(coord(Dim::Spectrum, 0).get(Coord::DeltaE)[0],
             coord(Dim::Spectrum, 1).get(Coord::DeltaE)[0]);
+  EXPECT_EQ(coord.unit(), units::meV);
 
   ASSERT_TRUE(energy.contains(Data::Value));
   const auto &data = energy(Data::Value);
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
   EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(energy.contains(Coord::Position));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
@@ -164,6 +181,7 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
 
   tof.insert(Data::Value, "", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
              {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  tof(Data::Value, "").setUnit(units::counts);
 
   // In practice not every spectrum would have a different Ei, more likely we
   // would have an extra dimension, Dim::Ei in addition to Dim::Spectrum.
@@ -188,12 +206,14 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
   // different (compare to test for single Ei above).
   EXPECT_NE(coord(Dim::Spectrum, 0).get(Coord::DeltaE)[0],
             coord(Dim::Spectrum, 1).get(Coord::DeltaE)[0]);
+  EXPECT_EQ(coord.unit(), units::meV);
 
   ASSERT_TRUE(energy.contains(Data::Value));
   const auto &data = energy(Data::Value);
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
   EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(energy.contains(Coord::Position));
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
