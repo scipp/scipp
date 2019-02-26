@@ -14,6 +14,7 @@
 #include "dataset.h"
 #include "except.h"
 #include "tag_util.h"
+#include "unit.h"
 #include "zip_view.h"
 
 namespace py = pybind11;
@@ -483,6 +484,53 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<boost::container::small_vector<double, 8>>(m, "SmallVectorDouble8");
   declare_VariableView<Dataset>(m, "Dataset");
 
+  py::class_<Unit>(m, "Unit")
+      .def(py::init())
+      .def("__repr__", [](const Unit &u) -> std::string {return u.name();})
+      .def(py::self + py::self)
+      .def(py::self - py::self)
+      .def(py::self * py::self)
+      .def(py::self / py::self)
+  ;
+
+  auto units = m.def_submodule("units");
+  // Unit::unit_t u;
+  // std::visit(
+  //     [&units](auto &&x) {
+  //       units.attr(units::to_string(x).c_str()) = Unit(x);
+  //     },
+  //     u);
+
+  units.attr("m") = Unit(units::m);
+  units.attr("counts") = Unit(units::counts);
+  units.attr("s") = Unit(units::s);
+  units.attr("kg") = Unit(units::kg);
+  units.attr("dimensionless_over_m") = Unit(units::dimensionless / units::m);
+  units.attr("angstrom") = Unit(units::angstrom);
+  units.attr("meV") = Unit(units::meV);
+  units.attr("us") = Unit(units::us);
+  units.attr("dimensionless_over_us") = Unit(units::dimensionless / units::us);
+  units.attr("dimensionless_over_s") = Unit(units::dimensionless / units::s);
+  units.attr("counts_over_us") = Unit(units::counts / units::us);
+  // Variances or basic units
+  units.attr("m2") = Unit(units::m*units::m);
+  units.attr("counts2") = Unit(units::counts*units::counts);
+  units.attr("s2") = Unit(units::s*units::s);
+  units.attr("kg2") = Unit(units::kg*units::kg);
+  units.attr("dimensionless_over_m2") = Unit(units::dimensionless / (units::m*units::m));
+  units.attr("angstrom2") = Unit(units::angstrom*units::angstrom);
+  units.attr("meV2") = Unit(units::meV*units::meV);
+  units.attr("us2") = Unit(units::us*units::us);
+  units.attr("dimensionless_over_us2") = Unit(units::dimensionless / (units::us*units::us));
+  units.attr("dimensionless_over_s2") = Unit(units::dimensionless / (units::s*units::s));
+  units.attr("counts_over_us2") = Unit(units::counts*units::counts / (units::us*units::us));
+  // Extra unit combinations
+  units.attr("dimensionless") = Unit(units::dimensionless);
+  units.attr("m4") = Unit(units::m *units::m *units::m *units::m);
+  units.attr("meV_us2_over_m2") = Unit(units::meV *units::us *units::us / (units::m * units::m));
+  units.attr("mev_us2") = Unit(units::meV *units::us *units::us *units::dimensionless);
+
+
   declare_VariableZipProxy(m, "", Access::Key(Data::EventTofs),
                            Access::Key(Data::EventPulseTimes));
   declare_ItemZipProxy<small_vector, small_vector>(m, "");
@@ -517,6 +565,8 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
+      .def_property("unit", [](const Variable &self) { return self.unit(); },
+                    &Variable::setUnit)
       .def_property_readonly("is_coord", &Variable::isCoord)
       .def_property_readonly("is_data", &Variable::isData)
       .def_property_readonly("is_attr", &Variable::isAttr)
