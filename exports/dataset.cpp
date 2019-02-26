@@ -784,6 +784,8 @@ PYBIND11_MODULE(dataset, m) {
 
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
+
+//-----------------------dataset free functions----------------------------------------
   m.def("split",
         py::overload_cast<const Dataset &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -794,6 +796,8 @@ PYBIND11_MODULE(dataset, m) {
         py::call_guard<py::gil_scoped_release>());
   m.def("rebin", py::overload_cast<const Dataset &, const Variable &>(&rebin),
         py::call_guard<py::gil_scoped_release>());
+  m.def("histogram", py::overload_cast<const Dataset &, const Variable &>(&histogram),
+      py::call_guard<py::gil_scoped_release>());
   m.def(
       "sort",
       py::overload_cast<const Dataset &, const Tag, const std::string &>(&sort),
@@ -804,5 +808,30 @@ PYBIND11_MODULE(dataset, m) {
   m.def("sum", py::overload_cast<const Dataset &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>());
   m.def("mean", py::overload_cast<const Dataset &, const Dim>(&mean),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("integrate", py::overload_cast<const Dataset &, const Dim>(&integrate),
+        py::call_guard<py::gil_scoped_release>());
+
+//-----------------------variable free functions----------------------------------------
+  m.def("split",
+        py::overload_cast<const Variable &, const Dim,
+                          const std::vector<gsl::index> &>(&split),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("concatenate",
+        py::overload_cast<const Variable &, const Variable &, const Dim>(
+            &concatenate),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("rebin", py::overload_cast<const Variable &, const Variable &, const Variable &>(&rebin),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("filter", py::overload_cast<const Variable &, const Variable &>(&filter),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("norm", py::overload_cast<const Variable &>(&norm),
+        py::call_guard<py::gil_scoped_release>());
+  // find out why py::overload_cast is not working correctly here
+  m.def("sqrt", [](const Variable &self){ return sqrt(self);},
         py::call_guard<py::gil_scoped_release>());
 }
