@@ -30,7 +30,8 @@ enum class DType {
   Char,
   Bool,
   SmallVectorDouble8,
-  Dataset
+  Dataset,
+  EigenVector3d
 };
 template <class T> constexpr DType dtype = DType::Unknown;
 template <> constexpr DType dtype<double> = DType::Double;
@@ -45,6 +46,7 @@ template <>
 constexpr DType dtype<boost::container::small_vector<double, 8>> =
     DType::SmallVectorDouble8;
 template <> constexpr DType dtype<Dataset> = DType::Dataset;
+template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
 
 // Adding new tags
 // ===============

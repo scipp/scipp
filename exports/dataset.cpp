@@ -5,6 +5,7 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <variant>
 
+#include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -164,7 +165,7 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
   return CallDType<double, float, int64_t, int32_t, char, bool,
-                   typename Data::EventTofs_t::type>::
+                   typename Data::EventTofs_t::type, Eigen::Vector3d>::
       apply<detail::MakeVariableDefaultInit>(dtypeTag, tag, labels, shape);
 }
 
@@ -391,6 +392,8 @@ as_VariableView_variant(Var &view) {
     return {view.template span<boost::container::small_vector<double, 8>>()};
   case dtype<Dataset>:
     return {view.template span<Dataset>()};
+  case dtype<Eigen::Vector3d>:
+    return {view.template span<Eigen::Vector3d>()};
   default:
     throw std::runtime_error("not implemented for this type.");
   }
@@ -472,6 +475,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_span<const std::string>(m, "string_const");
   declare_span<const Dim>(m, "Dim_const");
   declare_span<Dataset>(m, "Dataset");
+  declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
 
   declare_VariableView<double>(m, "double");
   declare_VariableView<float>(m, "float");
@@ -482,6 +486,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<Bool>(m, "bool");
   declare_VariableView<boost::container::small_vector<double, 8>>(m, "SmallVectorDouble8");
   declare_VariableView<Dataset>(m, "Dataset");
+  declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
 
   declare_VariableZipProxy(m, "", Access::Key(Data::EventTofs),
                            Access::Key(Data::EventPulseTimes));
@@ -527,9 +532,10 @@ PYBIND11_MODULE(dataset, m) {
                                           int32_t, char, bool>)
       .def_property_readonly(
           "data",
-          &as_VariableView_variant<
-              Variable, double, float, int64_t, int32_t, char, bool,
-              std::string, boost::container::small_vector<double, 8>, Dataset>)
+          &as_VariableView_variant<Variable, double, float, int64_t, int32_t,
+                                   char, bool, std::string,
+                                   boost::container::small_vector<double, 8>,
+                                   Dataset, Eigen::Vector3d>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -573,9 +579,10 @@ PYBIND11_MODULE(dataset, m) {
                                           int32_t, char, bool>)
       .def_property_readonly(
           "data",
-          &as_VariableView_variant<
-              VariableSlice, double, float, int64_t, int32_t, char, bool,
-              std::string, boost::container::small_vector<double, 8>, Dataset>)
+          &as_VariableView_variant<VariableSlice, double, float, int64_t,
+                                   int32_t, char, bool, std::string,
+                                   boost::container::small_vector<double, 8>,
+                                   Dataset, Eigen::Vector3d>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
