@@ -568,15 +568,16 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim);
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord);
 Variable permute(const Variable &var, const Dim dim,
-                 const std::vector<gsl::index> &indices); // no export
+                 const std::vector<gsl::index> &indices);
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
 Variable norm(const Variable &var);
-Variable sqrt(const Variable &var); // add to dataset and python
+// TODO add to dataset and python
+Variable sqrt(const Variable &var);
 Variable broadcast(Variable var, const Dimensions &dims);
 
 template <class T>
-VariableView<const T> getView(const Variable &var, const Dimensions &dims); // no export
+VariableView<const T> getView(const Variable &var, const Dimensions &dims);
 
 #endif // VARIABLE_H
