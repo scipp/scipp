@@ -7,6 +7,7 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 
 #include "convert.h"
+#include "counts.h"
 #include "dataset.h"
 #include "md_zip_view.h"
 
@@ -59,25 +60,47 @@ Dataset tofToEnergy(const Dataset &d) {
 
   conversionFactor *= tofToEnergyPhysicalConstants;
 
-  // 2. Transform variables
+  // 2. Transform coordinate
   Dataset converted;
+  const auto &coord = d(Coord::Tof);
+  auto coordDims = coord.dimensions();
+  coordDims.relabel(coordDims.index(Dim::Tof), Dim::Energy);
+  // The reshape is to remap the dimension label, should probably be done
+  // differently. Binary op order is to get desired dimension broadcast.
+  Variable inv = 1.0 / (coord * coord).reshape(coordDims);
+  converted.insert(Coord::Energy, std::move(inv) * conversionFactor);
+
+  // 3. Transform variables
   for (const auto &var : d) {
     auto varDims = var.dimensions();
     if (varDims.contains(Dim::Tof))
       varDims.relabel(varDims.index(Dim::Tof), Dim::Energy);
     if (var.tag() == Coord::Tof) {
-      // The reshape is to remap the dimension label, should probably be done
-      // differently. Binary op order is to get desired dimension broadcast.
-      Variable inv = 1.0 / (var * var).reshape(varDims);
-      converted.insert(Coord::Energy, std::move(inv) * conversionFactor);
+      // Done already.
     } else if (var.tag() == Data::Events) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else {
       // Changing Dim::Tof to Dim::Energy.
-      // TODO Also need to check here if variable contains count/bin_width,
-      // should fail then?
-      converted.insert(var.reshape(varDims));
+      if (::counts::isDensity(var)) {
+        // The way of handling density data here looks less than optimal. We
+        // either need to encapsulate this better or require manual conversion
+        // from density before applying unit converions.
+        const auto size = coord.dimensions()[Dim::Tof];
+        const auto oldBinWidth =
+            coord(Dim::Tof, 1, size) - coord(Dim::Tof, 0, size - 1);
+        const auto &newCoord = converted(Coord::Energy);
+        const auto newBinWidth =
+            newCoord(Dim::Energy, 1, size) - newCoord(Dim::Energy, 0, size - 1);
+
+        converted.insert(var);
+        ::counts::fromDensity(converted(var.tag(), var.name()), {oldBinWidth});
+        converted.insert(
+            converted.erase(var.tag(), var.name()).reshape(varDims));
+        ::counts::toDensity(converted(var.tag(), var.name()), {newBinWidth});
+      } else {
+        converted.insert(var.reshape(varDims));
+      }
     }
   }
 
@@ -85,8 +108,6 @@ Dataset tofToEnergy(const Dataset &d) {
 }
 
 Dataset tofToDeltaE(const Dataset &d) {
-  // TODO Units and physical constants!
-
   // There are two cases, direct inelastic and indirect inelastic. We can
   // distinguish them by the content of d.
   if (d.contains(Coord::Ei) && d.contains(Coord::Ef))
@@ -142,6 +163,9 @@ Dataset tofToDeltaE(const Dataset &d) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else {
+      if (::counts::isDensity(var))
+        throw std::runtime_error("TODO Converting units of count-density data "
+                                 "not implemented yet for this case.");
       converted.insert(var.reshape(varDims));
     }
   }

@@ -7,11 +7,12 @@
 #define EXCEPT_H
 
 #include <stdexcept>
+#include <string>
 
 #include <gsl/gsl_util>
 
 #include "dimension.h"
-#include <string>
+#include "unit.h"
 
 class ConstDatasetSlice;
 class Dataset;
@@ -85,6 +86,12 @@ template <class T> void contains(const T &a, const T &b) {
 }
 template <class T> void unit(const T &object, const Unit &unit) {
   expect::equals(object.unit(), unit);
+}
+
+template <class T> void countsOrCountsDensity(const T &object) {
+  if (!(units::containsCounts(object.unit()) ||
+        units::containsCountsVariance(object.unit())))
+    throw except::UnitError("Expected counts or counts-density.");
 }
 } // namespace expect
 } // namespace dataset

@@ -140,6 +140,9 @@ public:
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);
+  Variable(const Variable &parent, const Dimensions &dims)
+      : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
+        m_object(parent.m_object->clone(dims)) {}
   Variable(const Variable &parent, std::unique_ptr<VariableConcept> data)
       : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
         m_object(std::move(data)) {}
@@ -313,7 +316,9 @@ private:
 template <class T>
 Variable makeVariable(Tag tag, const Dimensions &dimensions) {
   return Variable(tag, defaultUnit(tag), std::move(dimensions),
-                  Vector<underlying_type_t<T>>(dimensions.volume()));
+                  Vector<underlying_type_t<T>>(
+                      dimensions.volume(),
+                      detail::default_init<underlying_type_t<T>>::value()));
 }
 
 template <class T, class T2>
@@ -573,6 +578,7 @@ Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
 Variable norm(const Variable &var);
+// TODO add to dataset and python
 Variable sqrt(const Variable &var);
 Variable broadcast(Variable var, const Dimensions &dims);
 

@@ -58,8 +58,8 @@ public:
                                const gsl::index end = -1) const && = delete;
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
                                const gsl::index end = -1) const &;
-  DatasetSlice operator()(const Dim dim, const gsl::index begin,
-                          const gsl::index end = -1) && = delete;
+  Dataset operator()(const Dim dim, const gsl::index begin,
+                     const gsl::index end = -1) &&;
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
                           const gsl::index end = -1) &;
   ConstVariableSlice
@@ -178,7 +178,7 @@ public:
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
-  void erase(const Tag tag, const std::string &name = "");
+  Variable erase(const Tag tag, const std::string &name = "");
 
   // TODO This should probably also include a copy of all or all relevant
   // coordinates.
