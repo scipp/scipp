@@ -10,6 +10,7 @@
 #include "counts.h"
 #include "dataset.h"
 #include "md_zip_view.h"
+#include "zip_view.h"
 
 Variable getSpecPos(const Dataset &d) {
   // TODO There should be a better way to extract the actual spectrum positions
@@ -217,11 +218,14 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
   kf /= norm(kf);
   kf = kf * (d(Coord::Ei) + d(Coord::DeltaE)); // TODO sign?
 
-  // Note that kf depends on Dim::Position as well as Dim::DeltaE.
+  // ki has {Dim::Ei}
+  // kf has {Dim::Ei, Dim::DeltaE, Dim::Position}
+  // thus qIndex also has {Dim::Ei, Dim::DeltaE, Dim::Position}
   const auto Q = ki - kf;
   const auto qIndex = continuousToIndex(Q, qCoords);
 
   Dataset converted(qCoords);
+  converted.erase(Coord::DeltaE);
   for (const auto &var : d) {
     if (var.tag() == Data::Events || var.tag() == Data::EventTofs) {
       throw std::runtime_error(
@@ -254,7 +258,7 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
           // Drop out-of-range values
           if (qx < 0 || qy < 0 || qz < 0)
             continue;
-          // Probably really inefficient accumulation of volume histogram
+          // Really inefficient accumulation of volume histogram
           out(Dim::Qx, qx)(Dim::Qy, qy)(Dim::Qz, qz) += in(Dim::Position, i);
         }
       }
@@ -302,13 +306,27 @@ Dataset convert(const Dataset &d, const Dim from, const Dim to) {
   // MDZipView<const Coord::TwoTheta>(dataset);
 }
 
-Dataset convert(const Dataset &d, const Dim from, const Dataset &toCoords) {
-  if (from == Dim::Position) {
+bool contains(const std::vector<Dim> &dims, const Dim dim) {
+  return std::find(dims.begin(), dims.end(), dim) != dims.end();
+}
+
+Dataset convert(const Dataset &d, const std::vector<Dim> &from,
+                const Dataset &toCoords) {
+  if (from.size() == 2 && contains(from, Dim::Position) &&
+      contains(from, Dim::DeltaE)) {
     // Converting from position space
-    if (toCoords.size() == 3 && toCoords.contains(Coord::Qx) &&
-        toCoords.contains(Coord::Qy) && toCoords.contains(Coord::Qz)) {
+    if (toCoords.size() == 4 && toCoords.contains(Coord::DeltaE) &&
+        toCoords.contains(Coord::Qx) && toCoords.contains(Coord::Qy) &&
+        toCoords.contains(Coord::Qz)) {
       // Converting to momentum transfer
-      return neutron::tof::positionToQ(d, toCoords);
+      if (d(Coord::DeltaE) != toCoords(Coord::DeltaE)) {
+        // TODO Do we lose precision by rebinning before having computed Q?
+        // Should we map to the output DeltaE only in the main conversion step?
+        auto converted = rebin(d, toCoords(Coord::DeltaE));
+        return neutron::tof::positionToQ(converted, toCoords);
+      } else {
+        return neutron::tof::positionToQ(d, toCoords);
+      }
     }
   }
   throw std::runtime_error(

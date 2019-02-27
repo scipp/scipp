@@ -6,11 +6,14 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
+#include <vector>
+
 #include "dimension.h"
 
 class Dataset;
 
 Dataset convert(const Dataset &d, const Dim from, const Dim to);
-Dataset convert(const Dataset &d, const Dim from, const Dataset &toCoords);
+Dataset convert(const Dataset &d, const std::vector<Dim> &from,
+                const Dataset &toCoords);
 
 #endif // CONVERT_H

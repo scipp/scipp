@@ -227,13 +227,12 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
 TEST(Dataset, convert_direct_inelastic_multi_Ei_to_QxQyQz) {
   const auto tof = makeMultiEiTofData();
   auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
-  // Rebin to common delta-E axis to avoid current shortcomings of convert.
-  energy = rebin(energy, energy(Coord::DeltaE)(Dim::Position, 0));
 
   Dataset qCoords;
   qCoords.insert(Coord::Qx, {Dim::Qx, 4}, {1, 2, 3, 4});
   qCoords.insert(Coord::Qy, {Dim::Qy, 4}, {1, 2, 3, 4});
   qCoords.insert(Coord::Qz, {Dim::Qz, 4}, {1, 2, 3, 4});
+  qCoords.insert(Coord::DeltaE, {Dim::DeltaE, 5}, {1, 2, 3, 4, 5});
 
-  auto result = convert(energy, Dim::Position, qCoords);
+  auto result = convert(energy, {Dim::DeltaE, Dim::Position}, qCoords);
 }
