@@ -12,6 +12,7 @@
 #include <boost/units/make_system.hpp>
 #include <boost/units/systems/si.hpp>
 #include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
+#include <boost/units/systems/si/codata/universal_constants.hpp>
 #include <boost/units/unit.hpp>
 
 namespace neutron {
@@ -20,7 +21,7 @@ namespace tof {
 // Base dimension of counts
 struct counts_base_dimension
     : boost::units::base_dimension<counts_base_dimension, 1> {};
-typedef counts_base_dimension::dimension_type counts_dimension;
+using counts_dimension = counts_base_dimension::dimension_type;
 
 // TODO: do we need to add some derived units here?
 
@@ -36,25 +37,37 @@ struct energy_base_unit
 struct tof_base_unit
     : boost::units::base_unit<tof_base_unit, boost::units::time_dimension, 4> {
 };
+struct velocity_base_unit
+    : boost::units::base_unit<velocity_base_unit,
+                              boost::units::velocity_dimension, 5> {};
 
 // Create the units system using the make_system utility
 typedef boost::units::make_system<wavelength_base_unit, counts_base_unit,
                                   energy_base_unit, tof_base_unit>::type
     units_system;
+// Velocity unit [c] has to be in its own system, otherwise we get unwanted
+// cancellations with [Angstrom] and [us]. Should [meV] also be part of this
+// system?
+typedef boost::units::make_system<velocity_base_unit>::type units_system2;
 
 typedef boost::units::unit<counts_dimension, units_system> counts;
 typedef boost::units::unit<boost::units::length_dimension, units_system>
     wavelength;
 typedef boost::units::unit<boost::units::energy_dimension, units_system> energy;
 typedef boost::units::unit<boost::units::time_dimension, units_system> tof;
+typedef boost::units::unit<boost::units::velocity_dimension, units_system2>
+    velocity;
 
 /// unit constants
+// TODO Are these actually needed? Should either have these or the constexpr
+// constants in namespace units below.
 BOOST_UNITS_STATIC_CONSTANT(angstrom, wavelength);
 BOOST_UNITS_STATIC_CONSTANT(angstroms, wavelength);
 BOOST_UNITS_STATIC_CONSTANT(meV, energy);
 BOOST_UNITS_STATIC_CONSTANT(meVs, energy);
 BOOST_UNITS_STATIC_CONSTANT(microsecond, tof);
 BOOST_UNITS_STATIC_CONSTANT(microseconds, tof);
+BOOST_UNITS_STATIC_CONSTANT(c, velocity);
 
 } // namespace tof
 } // namespace neutron
@@ -72,6 +85,10 @@ BOOST_UNITS_DEFINE_CONVERSION_FACTOR(
 // Convert tof microseconds to SI seconds
 BOOST_UNITS_DEFINE_CONVERSION_FACTOR(neutron::tof::tof_base_unit,
                                      boost::units::si::time, double, 1.0e-6);
+
+BOOST_UNITS_DEFINE_CONVERSION_FACTOR(
+    neutron::tof::velocity_base_unit, boost::units::si::velocity, double,
+    boost::units::si::constants::codata::c.value().value());
 
 // Define full and short names for the new units
 template <>
@@ -97,6 +114,12 @@ template <> struct boost::units::base_unit_info<neutron::tof::tof_base_unit> {
   static std::string symbol() { return "us"; }
 };
 
+template <>
+struct boost::units::base_unit_info<neutron::tof::velocity_base_unit> {
+  static std::string name() { return "c"; }
+  static std::string symbol() { return "c"; }
+};
+
 // Helper variables to make the declaration units more succinct.
 namespace units {
 static constexpr boost::units::si::dimensionless dimensionless;
@@ -116,6 +139,7 @@ static constexpr decltype(neutron::tof::counts{} * dimensionless) counts;
 static constexpr decltype(neutron::tof::wavelength{} * dimensionless) angstrom;
 static constexpr decltype(neutron::tof::energy{} * dimensionless) meV;
 static constexpr decltype(neutron::tof::tof{} * dimensionless) us;
+static constexpr decltype(neutron::tof::velocity{} * dimensionless) c;
 
 // Define a std::variant which will hold the set of allowed units. Any unit that
 // does not exist in the variant will either fail to compile or throw a
@@ -135,7 +159,8 @@ using type = decltype(detail::make_unit(
                     dimensionless / us, dimensionless / s, counts / us,
                     counts / meV),
     std::make_tuple(dimensionless, m *m *m *m, meV *us *us / (m * m),
-                    meV *us *us *dimensionless, kg *m / s)));
+                    meV *us *us *dimensionless, kg *m / s, m / s, c, c *m,
+                    meV / c, dimensionless / c)));
 } // namespace detail
 } // namespace units
 

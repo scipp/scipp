@@ -186,6 +186,9 @@ gsl::index continuousToIndex(const double val,
 }
 
 Dataset continuousToIndex(const Variable &values, const Dataset &coords) {
+  dataset::expect::equals(values.unit(), coords(Coord::Qx).unit());
+  dataset::expect::equals(values.unit(), coords(Coord::Qy).unit());
+  dataset::expect::equals(values.unit(), coords(Coord::Qz).unit());
   const auto &vals = values.span<Eigen::Vector3d>();
   const auto &qx = coords.get(Coord::Qx);
   const auto &qy = coords.get(Coord::Qy);
@@ -214,10 +217,12 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
 
   auto ki = samplePos - sourcePos;
   ki /= norm(ki);
-  ki = ki * d(Coord::Ei) /* TODO c^-1 */;
+  ki /= 1.0 * units::c;
+  ki = ki * d(Coord::Ei);
 
   auto kf = specPos - samplePos;
   kf /= norm(kf);
+  kf /= 1.0 * units::c;
   kf = kf * (d(Coord::Ei) + d(Coord::DeltaE)); // TODO sign?
 
   // Coord::Ei could have Dim::Ei, or Dim::Position, in the former case,

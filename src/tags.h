@@ -131,15 +131,15 @@ struct CoordDef {
   };
   struct Qx {
     using type = double;
-    static constexpr auto unit = units::kg * units::m / units::s;
+    static constexpr auto unit = units::meV / units::c;
   };
   struct Qy {
     using type = double;
-    static constexpr auto unit = units::kg * units::m / units::s;
+    static constexpr auto unit = units::meV / units::c;
   };
   struct Qz {
     using type = double;
-    static constexpr auto unit = units::kg * units::m / units::s;
+    static constexpr auto unit = units::meV / units::c;
   };
   struct Tof {
     using type = double;

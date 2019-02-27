@@ -210,13 +210,19 @@ public:
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const ConstVariableSlice &other) &;
   Variable &operator*=(const double value) &;
-  template <class T> Variable &operator*=(const T &quantity) & {
-    setUnit(unit() * Unit(typename T::unit_type{}));
+  template <class T>
+  Variable &operator*=(const boost::units::quantity<T> &quantity) & {
+    setUnit(unit() * Unit(T{}));
     return *this *= quantity.value();
   }
   Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const ConstVariableSlice &other) &;
   Variable &operator/=(const double value) &;
+  template <class T>
+  Variable &operator/=(const boost::units::quantity<T> &quantity) & {
+    setUnit(unit() / Unit(T{}));
+    return *this /= quantity.value();
+  }
 
   Unit unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
@@ -562,6 +568,10 @@ Variable operator/(const double a, Variable b);
 template <class T>
 Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a *= quantity);
+}
+template <class T>
+Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
+  return std::move(a /= quantity);
 }
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
