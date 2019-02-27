@@ -11,11 +11,16 @@ class TestUnits(unittest.TestCase):
     def test_variable_unit(self):
         var1 = Variable(Data.Value, [Dim.X], np.arange(4))
         var2 = Variable(Coord.X, [Dim.X], np.arange(4))
-        self.assertEqual(repr(var1.unit), "dimensionless")
-        self.assertEqual(repr(var2.unit), "m")
+        self.assertEqual(var1.unit, units.dimensionless)
         self.assertEqual(var2.unit, units.m)
         self.assertNotEqual(var2.unit, units.counts)
         self.assertTrue(var2.unit != units.counts)
+
+    def test_variable_unit_repr(self):
+        var1 = Variable(Data.Value, [Dim.X], np.arange(4))
+        var2 = Variable(Coord.X, [Dim.X], np.arange(4))
+        self.assertEqual(repr(var1.unit), "dimensionless")
+        self.assertEqual(repr(var2.unit), "m")
         u = units.angstrom
         var1.unit = u
         self.assertEqual(repr(var1.unit), "\u212B")
