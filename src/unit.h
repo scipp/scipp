@@ -77,7 +77,7 @@ BOOST_UNITS_DEFINE_CONVERSION_FACTOR(neutron::tof::tof_base_unit,
 template <>
 struct boost::units::base_unit_info<neutron::tof::wavelength_base_unit> {
   static std::string name() { return "angstroms"; }
-  static std::string symbol() { return "AA"; }
+  static std::string symbol() { return "\u212B"; }
 };
 
 template <>

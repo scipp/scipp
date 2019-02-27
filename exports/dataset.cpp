@@ -492,7 +492,9 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self + py::self)
       .def(py::self - py::self)
       .def(py::self * py::self)
-      .def(py::self / py::self);
+      .def(py::self / py::self)
+      .def(py::self == py::self)
+      .def(py::self != py::self);
 
   auto units = m.def_submodule("units");
   units.attr("dimensionless") = Unit(units::dimensionless);
@@ -538,8 +540,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
-      .def_property("unit", [](const Variable &self) { return self.unit(); },
-                    &Variable::setUnit)
+      .def_property("unit", &Variable::unit, &Variable::setUnit)
       .def_property_readonly("is_coord", &Variable::isCoord)
       .def_property_readonly("is_data", &Variable::isData)
       .def_property_readonly("is_attr", &Variable::isAttr)
