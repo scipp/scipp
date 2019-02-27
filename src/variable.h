@@ -316,7 +316,9 @@ private:
 template <class T>
 Variable makeVariable(Tag tag, const Dimensions &dimensions) {
   return Variable(tag, defaultUnit(tag), std::move(dimensions),
-                  Vector<underlying_type_t<T>>(dimensions.volume()));
+                  Vector<underlying_type_t<T>>(
+                      dimensions.volume(),
+                      detail::default_init<underlying_type_t<T>>::value()));
 }
 
 template <class T, class T2>

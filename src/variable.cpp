@@ -1095,6 +1095,7 @@ INSTANTIATE_SLICEVIEW(bool);
 INSTANTIATE_SLICEVIEW(std::string);
 INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
 INSTANTIATE_SLICEVIEW(Dataset);
+INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
 
 ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
                                         const gsl::index end) const & {
