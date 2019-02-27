@@ -112,6 +112,11 @@ class TestDataset(unittest.TestCase):
         d[Data.Value, "data1"] = np.arange(24.0).reshape(4,3,2)
         self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
 
+    def test_nested_default_init(self):
+        d = Dataset()
+        d[Data.Events] = ([Dim.X], (1,))
+        self.assertEqual(d[Data.Events].data[0], Dataset())
+
     def test_set_data_nested(self):
         d = Dataset()
         table = Dataset()
