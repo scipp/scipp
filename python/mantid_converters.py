@@ -1,3 +1,6 @@
+import dataset as ds
+from mantid.simpleapi import *
+
 def ConvertWorkspase2DToDataset(ws):
     d = ds.Dataset()
     if ws.getNumberHistograms() == 0:
@@ -14,8 +17,7 @@ def ConvertWorkspase2DToDataset(ws):
     d[ds.Data.Variance] = ([ds.Dim.Spectrum, ds.Dim.Tof], (ws.getNumberHistograms(), len(ws.readE(0))))
     for i in range(ws.getNumberHistograms()):
         d[ds.Data.Value][ds.Dim.Spectrum, i] = ws.readY(i)
-        d[ds.Data.Variance][ds.Dim.Spectrum, i] = ws.readE(i)
-        
+        d[ds.Data.Variance][ds.Dim.Spectrum, i] = ws.readE()
     return d
 
 def ConvertEventWorkspaseToDataset(ws):
