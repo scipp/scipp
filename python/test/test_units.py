@@ -22,10 +22,10 @@ class TestUnits(unittest.TestCase):
         self.assertEqual(repr(var1.unit), "counts us^-1")
         with self.assertRaisesRegex(RuntimeError, "Unsupported unit as result of division counts/m"):
             var1.unit = units.counts / units.m
-        var1.unit = ds.units.m / ds.units.m * ds.units.counts
+        var1.unit = units.m / units.m * units.counts
         self.assertEqual(repr(var1.unit), "counts")
-        with self.assertRaisesRegex(RuntimeError, "Unsupported unit as result of multiplication counts*m"):
-            var1.unit = ds.units.counts * ds.units.m / ds.units.m
+        with self.assertRaisesRegex(RuntimeError, "Unsupported unit as result of multiplication counts\*m"):
+            var1.unit = units.counts * units.m / units.m
 
 if __name__ == '__main__':
     unittest.main()
