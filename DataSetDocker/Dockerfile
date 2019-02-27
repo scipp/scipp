@@ -1,56 +1,36 @@
-ARG BASE_CONTAINER=jupyter/minimal-notebook
+ARG BASE_CONTAINER=jupyter/base-notebook
 FROM $BASE_CONTAINER
 
 LABEL maintainer="Igor Gudich <igor.gudich@esss.se>"
 
 USER root
 
-# cmake and clang to compile source code
-RUN apt-get update && \
-    apt-get install -y cmake && \
-    apt-get install -y g++ && \
-    apt-get install -y mercurial && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:mhier/libboost-latest && \
-    apt update && \
-    apt-get install -y libboost1.67-dev && \
-    rm -rf /var/lib/apt/lists/*
+#installing mantid-framework
+RUN apt-get update
+RUN apt-get install -y libglu1-mesa
+RUN conda install -c conda-forge libglu
+RUN conda install -c mantid poco 
+RUN conda install -c mantid nexus 
+RUN conda install -c mantid/label/nightly mantid-framework
 
-USER $NB_UID
-
-# Install Python 3 packages
-# Remove pyqt and qt pulled in for matplotlib since we're only ever going to
-# use notebook-friendly backends in these images
-RUN conda config --add channels pyviz && \
-    conda install --quiet --yes \
-    'conda-forge::blas=*=openblas' \
-    'ipywidgets=7.4*' \
-    'matplotlib=2.2*' \
-    'hdf5=1.10*' \
-    'h5py=2.7*' \
-    'bokeh' \
-    'hvplot' \
-    'holoplot' \
-    'pyviz' \ 
-    'holoviews' \
-    'xarray' \
-    'xlrd'  && \
-    conda remove --quiet --yes --force qt pyqt && \
-    conda clean -tipsy && \
-    # Activate ipywidgets extension in the environment that runs the notebook server
-    jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
-    # Also activate ipywidgets extension for JupyterLab
-    # Check this URL for most recent compatibilities
-    # https://github.com/jupyter-widgets/ipywidgets/tree/master/packages/jupyterlab-manager
-    jupyter labextension install @jupyter-widgets/jupyterlab-manager@^0.38.1 && \
-    jupyter labextension install jupyterlab_bokeh@0.6.3 && \
-    jupyter labextension install @pyviz/jupyterlab_pyviz && \
-    npm cache clean --force && \
-    rm -rf $CONDA_DIR/share/jupyter/lab/staging && \
-    rm -rf /home/$NB_USER/.cache/yarn && \
-    rm -rf /home/$NB_USER/.node-gyp && \
+#installing dataset dependencies
+RUN conda install --quiet --yes \
+    'xarray' && \ 
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
+
+#installing dataset 
+# cmake and clang to compile source code
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository ppa:mhier/libboost-latest && \
+    apt-get update && \
+    apt-get install -y cmake && \
+    apt-get install -y g++  && \
+    apt-get install -y mercurial && \
+    apt-get install -y libboost1.67-dev && \
+    apt-get install -y git && \
+
+    rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp && \
     git clone https://github.com/mantidproject/dataset.git && \
@@ -66,6 +46,13 @@ USER root
 
 RUN cd /tmp/dataset/build && \
     make install 
-   
-USER $NB_UID
 
+RUN sudo apt-get purge --auto-remove -y libboost1.67-dev 
+
+#installing plotly and jupyter extension to visualize dataset
+RUN conda install -c plotly plotly=3.6.1
+
+RUN conda install --quiet --yes jupyterlab=0.35 "ipywidgets>=7.2"
+RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
+
+USER $NB_UID
