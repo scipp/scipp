@@ -79,7 +79,8 @@ void declare_ItemZipProxy(py::module &m, const std::string &suffix) {
 template <class... Fields>
 void declare_ranges_pair(py::module &m, const std::string &suffix) {
   using Proxy = ranges::v3::common_pair<Fields &...>;
-  py::class_<Proxy> proxy(m, (std::string("ranges_v3_common_pair_") + suffix).c_str());
+  py::class_<Proxy> proxy(
+      m, (std::string("ranges_v3_common_pair_") + suffix).c_str());
   proxy.def("first", [](const Proxy &self) { return std::get<0>(self); })
       .def("second", [](const Proxy &self) { return std::get<1>(self); });
 }
@@ -164,7 +165,7 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   // py::dtype?
   const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
                                                          : convertDType(dtype);
-  return CallDType<double, float, int64_t, int32_t, char, bool,
+  return CallDType<double, float, int64_t, int32_t, char, bool, Dataset,
                    typename Data::EventTofs_t::type, Eigen::Vector3d>::
       apply<detail::MakeVariableDefaultInit>(dtypeTag, tag, labels, shape);
 }
@@ -492,7 +493,8 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<std::string>(m, "string");
   declare_VariableView<char>(m, "char");
   declare_VariableView<Bool>(m, "bool");
-  declare_VariableView<boost::container::small_vector<double, 8>>(m, "SmallVectorDouble8");
+  declare_VariableView<boost::container::small_vector<double, 8>>(
+      m, "SmallVectorDouble8");
   declare_VariableView<Dataset>(m, "Dataset");
   declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
 
