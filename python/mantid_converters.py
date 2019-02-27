@@ -1,9 +1,6 @@
 import dataset as ds
 
-def ConvertWorkspase2DToDataset(ws):
-    d = ds.Dataset()
-    cb = ws.isCommonBins()
-    nHist = ws.getNumberHistograms()
+def initPosSpectrunNo(d, nHist, ws): 
     d[ds.Coord.Position] = ([ds.Dim.Position], (nHist,))
     d[ds.Coord.SpectrumNumber] = ([ds.Dim.Position], (nHist,))
     
@@ -14,6 +11,12 @@ def ConvertWorkspase2DToDataset(ws):
     
     for j, pos in enumerate(d[ds.Coord.SpectrumNumber].data):
         pos = ws.getSpectrum(j).getSpectrumNo()
+        
+def ConvertWorkspase2DToDataset(ws):
+    d = ds.Dataset()
+    cb = ws.isCommonBins()
+    nHist = ws.getNumberHistograms()
+    initPosSpectrunNo(d, nHist, ws)
         
     if cb:
         d[ds.Coord.Tof] = ([ds.Dim.Tof], ws.readX(0))        
@@ -34,14 +37,9 @@ def ConvertWorkspase2DToDataset(ws):
 def ConvertEventWorkspaseToDataset(ws):
     d = ds.Dataset()
     nHist = ws.getNumberHistograms()
-    d[ds.Coord.Position] = ([ds.Dim.Position], (nHist,))        
+    initPosSpectrunNo(d, nHist, ws)        
+    
     d[ds.Data.Events] = ([ds.Dim.Position], (nHist,))    
-   
-    for j, pos in enumerate(d[ds.Coord.Position].data):
-        pos[0] = ews.spectrumInfo().position(j).X()
-        pos[1] = ews.spectrumInfo().position(j).Y()
-        pos[2] = ews.spectrumInfo().position(j).Z()
-
     for i, e in enumerate(d[ds.Data.Events].data):
         e[ds.Data.Tof] = ([ds.Dim.Event], ws.getSpectrum(i).getTofs())
         pt = ws.getSpectrum(i).getPulseTimes()
