@@ -180,6 +180,8 @@ gsl::index continuousToIndex(const double val,
   const auto upper = std::upper_bound(axis.begin(), axis.end(), val);
   if (upper == axis.end() || upper == axis.begin())
     return -1;
+  if (upper != lower)
+    return std::distance(axis.begin(), lower);
   return std::distance(axis.begin(), lower) - 1;
 }
 
@@ -218,10 +220,13 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
   kf /= norm(kf);
   kf = kf * (d(Coord::Ei) + d(Coord::DeltaE)); // TODO sign?
 
-  // ki has {Dim::Ei}
-  // kf has {Dim::Ei, Dim::DeltaE, Dim::Position}
-  // thus qIndex also has {Dim::Ei, Dim::DeltaE, Dim::Position}
-  const auto Q = ki - kf;
+  // Coord::Ei could have Dim::Ei, or Dim::Position, in the former case,
+  // ki has {Dim::Ei},
+  // kf has {Dim::Ei, Dim::DeltaE, Dim::Position},
+  // thus qIndex also has {Dim::Ei, Dim::DeltaE, Dim::Position}.
+  // In the latter case we do not have Dim::Ei, the other dimensions are the
+  // same.
+  const auto Q = kf - ki;
   const auto qIndex = continuousToIndex(Q, qCoords);
 
   Dataset converted(qCoords);

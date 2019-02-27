@@ -229,10 +229,11 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei_to_QxQyQz) {
   auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
 
   Dataset qCoords;
-  qCoords.insert(Coord::Qx, {Dim::Qx, 4}, {1, 2, 3, 4});
-  qCoords.insert(Coord::Qy, {Dim::Qy, 4}, {1, 2, 3, 4});
-  qCoords.insert(Coord::Qz, {Dim::Qz, 4}, {1, 2, 3, 4});
-  qCoords.insert(Coord::DeltaE, {Dim::DeltaE, 5}, {1, 2, 3, 4, 5});
+  qCoords.insert(Coord::Qx, {Dim::Qx, 4}, {0.0, 0.2, 0.4, 0.6});
+  qCoords.insert(Coord::Qy, {Dim::Qy, 2}, {0, 3});
+  qCoords.insert(Coord::Qz, {Dim::Qz, 4}, {0, 1, 2, 3});
+  qCoords.insert(Coord::DeltaE, {Dim::DeltaE, 6},
+                 {0.9, 1.0, 1.4, 1.5, 1.9, 2.0});
 
   auto result = convert(energy, {Dim::DeltaE, Dim::Position}, qCoords);
 }
