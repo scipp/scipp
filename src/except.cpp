@@ -140,10 +140,9 @@ std::string to_string(const Tag tag, const std::string &separator) {
   return std::regex_replace(do_to_string(tag), std::regex("::"), separator);
 }
 
-// For use with variables
 std::string make_dims_labels(const Variable &variable,
                              const std::string &separator,
-                             const Dimensions &datasetDims = Dimensions()) {
+                             const Dimensions &datasetDims) {
   const auto &dims = variable.dimensions();
   if (dims.empty())
     return "()";
@@ -159,9 +158,9 @@ std::string make_dims_labels(const Variable &variable,
   return diminfo;
 }
 
-auto to_string_components(const Variable &variable,
-                          const std::string &separator,
-                          const Dimensions &datasetDims) {
+template <class Var>
+auto to_string_components(const Var &variable, const std::string &separator,
+                          const Dimensions &datasetDims = Dimensions()) {
   std::array<std::string, 5> out;
   out[0] = variable.name();
   out[1] = to_string(variable.tag(), separator);
@@ -169,17 +168,6 @@ auto to_string_components(const Variable &variable,
   out[3] = '[' + variable.unit().name() + ']';
   out[4] = make_dims_labels(variable, separator, datasetDims);
   return out;
-}
-
-std::string to_string(const Variable &variable, const std::string &separator) {
-  std::string variableName = variable.name();
-  std::string diminfo = make_dims_labels(variable, separator);
-  if (variableName.empty())
-    variableName = "''";
-  std::string s = "Variable(";
-  s += to_string(variable.tag(), separator) + ", " + variableName + "," +
-       diminfo + ", " + to_string(variable.dtype()) + ")\n";
-  return s;
 }
 
 std::string format_name_and_tag(const std::string &name,
@@ -201,11 +189,27 @@ void format_line(std::stringstream &s,
   s << '\n';
 }
 
-std::string to_string(const Dataset &dataset, const std::string &separator) {
+std::string to_string(const Variable &variable, const std::string &separator) {
   std::stringstream s;
-  const auto &dims = dataset.dimensions();
-  s << "<Dataset>\n";
-  s << "Dimensions: " << to_string(dataset.dimensions(), separator);
+  s << "<Variable>";
+  format_line(s, to_string_components(variable, separator));
+  return s.str();
+}
+
+std::string to_string(const ConstVariableSlice &variable,
+                      const std::string &separator) {
+  std::stringstream s;
+  s << "<VariableSlice>";
+  format_line(s, to_string_components(variable, separator));
+  return s.str();
+}
+
+template <class D>
+std::string do_to_string(const D &dataset, const std::string &id,
+                         const Dimensions &dims, const std::string &separator) {
+  std::stringstream s;
+  s << id + '\n';
+  s << "Dimensions: " << to_string(dims, separator);
   s << "Coordinates:\n";
   for (const auto &var : dataset) {
     if (var.isCoord())
@@ -221,13 +225,21 @@ std::string to_string(const Dataset &dataset, const std::string &separator) {
     if (var.isAttr())
       format_line(s, to_string_components(var, separator, dims));
   }
+  s << '\n';
   return s.str();
-} // namespace dataset
+}
 
-std::string to_string(const ConstDatasetSlice &dataset) {
-  std::string s("Dataset slice with ");
-  s += std::to_string(dataset.size()) + " variables";
-  return s;
+std::string to_string(const Dataset &dataset, const std::string &separator) {
+  return do_to_string(dataset, "<Dataset>", dataset.dimensions(), separator);
+}
+
+std::string to_string(const ConstDatasetSlice &dataset,
+                      const std::string &separator) {
+  // TODO Unify dimensions API for Dataset and ConstDatasetSlice.
+  Dimensions dims;
+  for (const auto[dim, size] : dataset.dimensions())
+    dims.add(dim, size);
+  return do_to_string(dataset, "<DatasetSlice>", dims, separator);
 }
 
 namespace except {

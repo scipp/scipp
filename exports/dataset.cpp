@@ -639,18 +639,16 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
-      .def("__repr__",
-           [](const DatasetSlice &self) { return dataset::to_string(self); });
+      .def("__repr__", [](const DatasetSlice &self) {
+        return dataset::to_string(self, ".");
+      });
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
       .def(py::init<const DatasetSlice &>())
       .def("__len__", &Dataset::size)
       .def("__repr__",
-           [](const Dataset &self) {
-             auto out = dataset::to_string(self, ".");
-             return out;
-           })
+           [](const Dataset &self) { return dataset::to_string(self, "."); })
       .def("__iter__",
            [](Dataset &self) {
              return py::make_iterator(self.begin(), self.end());
