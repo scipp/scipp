@@ -235,5 +235,5 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei_to_QxQyQz) {
   qCoords.insert(Coord::Qz, {Dim::Qz, 4}, {8, 9, 10, 11});
   qCoords.insert(Coord::DeltaE, {Dim::DeltaE, 3}, {9, 10, 11});
 
-  auto result = convert(energy, {Dim::DeltaE, Dim::Position}, qCoords);
+  EXPECT_NO_THROW(convert(energy, {Dim::DeltaE, Dim::Position}, qCoords));
 }
