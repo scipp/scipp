@@ -94,7 +94,7 @@ struct boost::units::base_unit_info<neutron::tof::energy_base_unit> {
 
 template <> struct boost::units::base_unit_info<neutron::tof::tof_base_unit> {
   static std::string name() { return "microseconds"; }
-  static std::string symbol() { return "us"; }
+  static std::string symbol() { return "\u03BCs"; }
 };
 
 // Helper variables to make the declaration units more succinct.
