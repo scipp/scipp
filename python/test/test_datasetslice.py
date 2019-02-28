@@ -21,10 +21,6 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(1, len([var for var in ds_slice if var.is_coord]))
         self.assertEqual(2, len(ds_slice))
 
-    def test_repr(self):
-        ds_slice = self._d["a"]
-        self.assertEqual(repr(ds_slice), "Dataset slice with 2 variables")
-
 
 if __name__ == '__main__':
     unittest.main()
