@@ -40,7 +40,7 @@ RUN cd /tmp && \
     mkdir build && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/conda/lib/python3.6/site-packages .. && \
-    make -j 12
+    make -j $(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)
 
 USER root
 
