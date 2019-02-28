@@ -437,7 +437,10 @@ PYBIND11_MODULE(dataset, m) {
       .value("Y", Dim::Y)
       .value("Z", Dim::Z);
 
-  py::class_<Tag>(m, "Tag").def(py::self == py::self);
+  py::class_<Tag>(m, "Tag")
+      .def(py::self == py::self)
+      .def("__repr__",
+           [](const Tag &self) { return dataset::to_string(self, "."); });
 
   // Runtime tags are sufficient in Python, not exporting Tag child classes.
   auto coord_tags = m.def_submodule("Coord");

@@ -9,8 +9,8 @@ def initPosSpectrunNo(d, nHist, ws):
         pos[1] = ws.spectrumInfo().position(j).Y()
         pos[2] = ws.spectrumInfo().position(j).Z()
     
-    for j, pos in enumerate(d[ds.Coord.SpectrumNumber].data):
-        pos = ws.getSpectrum(j).getSpectrumNo()
+    for j, specNum in enumerate(d[ds.Coord.SpectrumNumber].data):
+        specNum = ws.getSpectrum(j).getSpectrumNo()
         
 def ConvertWorkspase2DToDataset(ws):
     d = ds.Dataset()
@@ -45,3 +45,10 @@ def ConvertEventWorkspaseToDataset(ws):
         pt = ws.getSpectrum(i).getPulseTimes()
         e[ds.Data.PulseTime] = ([ds.Dim.Event], [p.total_nanoseconds() for p in pt])        
     return d
+
+def to_dataset(ws):
+    if ws.id() == 'Workspace2D':
+        return ConvertWorkspase2DToDataset(ws)
+    if ws.id() == 'EventWorkspace':
+        return ConvertEventWorkspaceToDataset(ws)
+    raise 'Unsupported workspace type'
