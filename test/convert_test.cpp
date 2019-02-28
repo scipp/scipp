@@ -166,7 +166,7 @@ TEST(Dataset, convert_direct_inelastic) {
 
 Dataset makeMultiEiTofData() {
   Dataset tof;
-  tof.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 3, 4});
+  tof.insert(Coord::Tof, {Dim::Tof, 4}, {1000, 2000, 3000, 4000});
 
   Dataset components;
   // Source and sample
@@ -184,7 +184,7 @@ Dataset makeMultiEiTofData() {
 
   // In practice not every spectrum would have a different Ei, more likely we
   // would have an extra dimension, Dim::Ei in addition to Dim::Position.
-  tof.insert(Coord::Ei, {Dim::Position, 3}, {1.0, 1.5, 2.0});
+  tof.insert(Coord::Ei, {Dim::Position, 3}, {10.0, 10.5, 11.0});
   return tof;
 }
 
@@ -205,7 +205,8 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
             Dimensions({{Dim::Position, 3}, {Dim::DeltaE, 4}}));
   // TODO Check actual values here after conversion is fixed.
   EXPECT_FALSE(
-      equals(coord.get(Coord::DeltaE), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
+      equals(coord.get(Coord::DeltaE), {1000, 2000, 3000, 4000, 1000, 2000,
+                                        3000, 4000, 1000, 2000, 3000, 4000}));
   // 2 spectra at same position, but now their Ei differs, so deltaE is also
   // different (compare to test for single Ei above).
   EXPECT_NE(coord(Dim::Position, 0).get(Coord::DeltaE)[0],
@@ -229,11 +230,10 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei_to_QxQyQz) {
   auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
 
   Dataset qCoords;
-  qCoords.insert(Coord::Qx, {Dim::Qx, 4}, {0.0, 0.2, 0.4, 0.6});
-  qCoords.insert(Coord::Qy, {Dim::Qy, 2}, {0, 3});
-  qCoords.insert(Coord::Qz, {Dim::Qz, 4}, {0, 1, 2, 3});
-  qCoords.insert(Coord::DeltaE, {Dim::DeltaE, 6},
-                 {0.9, 1.0, 1.4, 1.5, 1.9, 2.0});
+  qCoords.insert(Coord::Qx, {Dim::Qx, 4}, {0.0, 1.0, 2.0, 3.0});
+  qCoords.insert(Coord::Qy, {Dim::Qy, 2}, {0, 1});
+  qCoords.insert(Coord::Qz, {Dim::Qz, 4}, {8, 9, 10, 11});
+  qCoords.insert(Coord::DeltaE, {Dim::DeltaE, 3}, {9, 10, 11});
 
   auto result = convert(energy, {Dim::DeltaE, Dim::Position}, qCoords);
 }

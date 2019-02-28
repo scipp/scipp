@@ -102,17 +102,23 @@ template <class T> struct RebinHelper {
     const auto count = oldT.dimensions().volume() / oldSize;
     const auto *xold = &*oldCoordT.getSpan().begin();
     const auto *xnew = &*newCoordT.getSpan().begin();
+    // This function assumes that dimensions between coord and data either
+    // match, or coord is 1D.
+    const bool jointOld = oldCoordT.dimensions().ndim() == 1;
+    const bool jointNew = newCoordT.dimensions().ndim() == 1;
 #pragma omp parallel for
     for (gsl::index c = 0; c < count; ++c) {
       gsl::index iold = 0;
       gsl::index inew = 0;
+      const gsl::index oldEdgeOffset = jointOld ? 0 : c * (oldSize + 1);
+      const gsl::index newEdgeOffset = jointNew ? 0 : c * (newSize + 1);
       const auto oldOffset = c * oldSize;
       const auto newOffset = c * newSize;
       while ((iold < oldSize) && (inew < newSize)) {
-        auto xo_low = xold[iold];
-        auto xo_high = xold[iold + 1];
-        auto xn_low = xnew[inew];
-        auto xn_high = xnew[inew + 1];
+        auto xo_low = xold[oldEdgeOffset + iold];
+        auto xo_high = xold[oldEdgeOffset + iold + 1];
+        auto xn_low = xnew[newEdgeOffset + inew];
+        auto xn_high = xnew[newEdgeOffset + inew + 1];
 
         if (xn_high <= xo_low)
           inew++; /* old and new bins do not overlap */
@@ -478,6 +484,14 @@ template <class T1, class T2> struct ReciprocalTimes {
   T2 operator()(const T1 a, const T2 b) { return b / a; };
 };
 
+bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
+                           const Dimensions &toMatch) {
+  if (edges.ndim() == 1)
+    return true;
+  edges.resize(dim, edges[dim] - 1);
+  return edges == toMatch;
+}
+
 template <class T>
 class FloatingPointVariableConceptT : public ArithmeticVariableConceptT<T> {
 public:
@@ -504,9 +518,10 @@ public:
         dynamic_cast<const FloatingPointVariableConceptT &>(oldCoord);
     const auto &newCoordT =
         dynamic_cast<const FloatingPointVariableConceptT &>(newCoord);
-    if (this->dimensions().label(0) == dim &&
-        oldCoord.dimensions().count() == 1 &&
-        newCoord.dimensions().count() == 1) {
+    const auto &dims = this->dimensions();
+    if (dims.inner() == dim &&
+        isMatchingOr1DBinEdge(dim, oldCoord.dimensions(), old.dimensions()) &&
+        isMatchingOr1DBinEdge(dim, newCoord.dimensions(), dims)) {
       RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
     } else {
       auto oldCoordDims = oldCoord.dimensions();
@@ -1379,6 +1394,20 @@ Variable broadcast(Variable var, const Dimensions &dims) {
   result.setDimensions(newDims);
   result.data().copy(var.data(), Dim::Invalid, 0, 0, 1);
   return result;
+}
+
+void swap(Variable &var, const Dim dim, const gsl::index a,
+          const gsl::index b) {
+  const Variable tmp = var(dim, a);
+  var(dim, a).assign(var(dim, b));
+  var(dim, b).assign(tmp);
+}
+
+Variable reverse(Variable var, const Dim dim) {
+  const auto size = var.dimensions()[dim];
+  for (gsl::index i = 0; i < size / 2; ++i)
+    swap(var, dim, i, size - i - 1);
+  return std::move(var);
 }
 
 template <>

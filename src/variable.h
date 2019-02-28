@@ -588,6 +588,7 @@ Variable norm(const Variable &var);
 // TODO add to dataset and python
 Variable sqrt(const Variable &var);
 Variable broadcast(Variable var, const Dimensions &dims);
+Variable reverse(Variable var, const Dim dim);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);

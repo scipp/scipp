@@ -171,7 +171,8 @@ Dataset tofToDeltaE(const Dataset &d) {
     }
   }
 
-  return converted;
+  // TODO Do we always require reversing for inelastic?
+  return reverse(converted, Dim::DeltaE);
 }
 
 gsl::index continuousToIndex(const double val,
