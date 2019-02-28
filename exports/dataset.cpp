@@ -370,8 +370,7 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   }
 }
 
-template <class... Ts>
-struct as_VariableViewImpl {
+template <class... Ts> struct as_VariableViewImpl {
   template <class Var>
   static std::variant<std::conditional_t<
       std::is_same_v<Var, Variable>, gsl::span<underlying_type_t<Ts>>,
@@ -401,7 +400,7 @@ struct as_VariableViewImpl {
     default:
       throw std::runtime_error("not implemented for this type.");
     }
-}
+  }
 };
 
 using as_VariableView =
@@ -587,6 +586,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("is_attr", &VariableSlice::isAttr)
       .def_property_readonly("tag", &VariableSlice::tag)
       .def_property_readonly("name", &VariableSlice::name)
+      .def_property("unit", &VariableSlice::unit, &VariableSlice::setUnit)
       .def("__getitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
@@ -813,8 +813,7 @@ PYBIND11_MODULE(dataset, m) {
 
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
-
-//-----------------------dataset free functions----------------------------------------
+  //-----------------------dataset free functions-------------------------------
   m.def("split",
         py::overload_cast<const Dataset &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -825,8 +824,9 @@ PYBIND11_MODULE(dataset, m) {
         py::call_guard<py::gil_scoped_release>());
   m.def("rebin", py::overload_cast<const Dataset &, const Variable &>(&rebin),
         py::call_guard<py::gil_scoped_release>());
-  m.def("histogram", py::overload_cast<const Dataset &, const Variable &>(&histogram),
-      py::call_guard<py::gil_scoped_release>());
+  m.def("histogram",
+        py::overload_cast<const Dataset &, const Variable &>(&histogram),
+        py::call_guard<py::gil_scoped_release>());
   m.def(
       "sort",
       py::overload_cast<const Dataset &, const Tag, const std::string &>(&sort),
@@ -841,7 +841,7 @@ PYBIND11_MODULE(dataset, m) {
   m.def("integrate", py::overload_cast<const Dataset &, const Dim>(&integrate),
         py::call_guard<py::gil_scoped_release>());
 
-//-----------------------variable free functions----------------------------------------
+  //-----------------------variable free functions------------------------------
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -850,9 +850,12 @@ PYBIND11_MODULE(dataset, m) {
         py::overload_cast<const Variable &, const Variable &, const Dim>(
             &concatenate),
         py::call_guard<py::gil_scoped_release>());
-  m.def("rebin", py::overload_cast<const Variable &, const Variable &, const Variable &>(&rebin),
+  m.def("rebin",
+        py::overload_cast<const Variable &, const Variable &, const Variable &>(
+            &rebin),
         py::call_guard<py::gil_scoped_release>());
-  m.def("filter", py::overload_cast<const Variable &, const Variable &>(&filter),
+  m.def("filter",
+        py::overload_cast<const Variable &, const Variable &>(&filter),
         py::call_guard<py::gil_scoped_release>());
   m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>());
@@ -861,6 +864,6 @@ PYBIND11_MODULE(dataset, m) {
   m.def("norm", py::overload_cast<const Variable &>(&norm),
         py::call_guard<py::gil_scoped_release>());
   // find out why py::overload_cast is not working correctly here
-  m.def("sqrt", [](const Variable &self){ return sqrt(self);},
+  m.def("sqrt", [](const Variable &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>());
 }

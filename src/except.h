@@ -91,7 +91,8 @@ template <class T> void unit(const T &object, const Unit &unit) {
 template <class T> void countsOrCountsDensity(const T &object) {
   if (!(units::containsCounts(object.unit()) ||
         units::containsCountsVariance(object.unit())))
-    throw except::UnitError("Expected counts or counts-density.");
+    throw except::UnitError("Expected counts or counts-density, got " +
+                            object.unit().name() + '.');
 }
 } // namespace expect
 } // namespace dataset
