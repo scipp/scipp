@@ -15,6 +15,7 @@
 #include "dataset.h"
 #include "except.h"
 #include "tag_util.h"
+#include "unit.h"
 #include "zip_view.h"
 
 namespace py = pybind11;
@@ -369,8 +370,7 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
   }
 }
 
-template <class... Ts>
-struct as_VariableViewImpl {
+template <class... Ts> struct as_VariableViewImpl {
   template <class Var>
   static std::variant<std::conditional_t<
       std::is_same_v<Var, Variable>, gsl::span<underlying_type_t<Ts>>,
@@ -400,7 +400,7 @@ struct as_VariableViewImpl {
     default:
       throw std::runtime_error("not implemented for this type.");
     }
-}
+  }
 };
 
 using as_VariableView =
@@ -498,6 +498,26 @@ PYBIND11_MODULE(dataset, m) {
   declare_VariableView<Dataset>(m, "Dataset");
   declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
 
+  py::class_<Unit>(m, "Unit")
+      .def(py::init())
+      .def("__repr__", [](const Unit &u) -> std::string { return u.name(); })
+      .def(py::self + py::self)
+      .def(py::self - py::self)
+      .def(py::self * py::self)
+      .def(py::self / py::self)
+      .def(py::self == py::self)
+      .def(py::self != py::self);
+
+  auto units = m.def_submodule("units");
+  units.attr("dimensionless") = Unit(units::dimensionless);
+  units.attr("m") = Unit(units::m);
+  units.attr("counts") = Unit(units::counts);
+  units.attr("s") = Unit(units::s);
+  units.attr("kg") = Unit(units::kg);
+  units.attr("angstrom") = Unit(units::angstrom);
+  units.attr("meV") = Unit(units::meV);
+  units.attr("us") = Unit(units::us);
+
   declare_VariableZipProxy(m, "", Access::Key(Data::EventTofs),
                            Access::Key(Data::EventPulseTimes));
   declare_ItemZipProxy<small_vector, small_vector>(m, "");
@@ -532,6 +552,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
+      .def_property("unit", &Variable::unit, &Variable::setUnit)
       .def_property_readonly("is_coord", &Variable::isCoord)
       .def_property_readonly("is_data", &Variable::isData)
       .def_property_readonly("is_attr", &Variable::isAttr)
@@ -565,6 +586,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("is_attr", &VariableSlice::isAttr)
       .def_property_readonly("tag", &VariableSlice::tag)
       .def_property_readonly("name", &VariableSlice::name)
+      .def_property("unit", &VariableSlice::unit, &VariableSlice::setUnit)
       .def("__getitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
@@ -789,8 +811,7 @@ PYBIND11_MODULE(dataset, m) {
 
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
-
-//-----------------------dataset free functions----------------------------------------
+  //-----------------------dataset free functions-------------------------------
   m.def("split",
         py::overload_cast<const Dataset &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -801,8 +822,9 @@ PYBIND11_MODULE(dataset, m) {
         py::call_guard<py::gil_scoped_release>());
   m.def("rebin", py::overload_cast<const Dataset &, const Variable &>(&rebin),
         py::call_guard<py::gil_scoped_release>());
-  m.def("histogram", py::overload_cast<const Dataset &, const Variable &>(&histogram),
-      py::call_guard<py::gil_scoped_release>());
+  m.def("histogram",
+        py::overload_cast<const Dataset &, const Variable &>(&histogram),
+        py::call_guard<py::gil_scoped_release>());
   m.def(
       "sort",
       py::overload_cast<const Dataset &, const Tag, const std::string &>(&sort),
@@ -817,7 +839,7 @@ PYBIND11_MODULE(dataset, m) {
   m.def("integrate", py::overload_cast<const Dataset &, const Dim>(&integrate),
         py::call_guard<py::gil_scoped_release>());
 
-//-----------------------variable free functions----------------------------------------
+  //-----------------------variable free functions------------------------------
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -826,9 +848,12 @@ PYBIND11_MODULE(dataset, m) {
         py::overload_cast<const Variable &, const Variable &, const Dim>(
             &concatenate),
         py::call_guard<py::gil_scoped_release>());
-  m.def("rebin", py::overload_cast<const Variable &, const Variable &, const Variable &>(&rebin),
+  m.def("rebin",
+        py::overload_cast<const Variable &, const Variable &, const Variable &>(
+            &rebin),
         py::call_guard<py::gil_scoped_release>());
-  m.def("filter", py::overload_cast<const Variable &, const Variable &>(&filter),
+  m.def("filter",
+        py::overload_cast<const Variable &, const Variable &>(&filter),
         py::call_guard<py::gil_scoped_release>());
   m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>());
@@ -837,6 +862,6 @@ PYBIND11_MODULE(dataset, m) {
   m.def("norm", py::overload_cast<const Variable &>(&norm),
         py::call_guard<py::gil_scoped_release>());
   // find out why py::overload_cast is not working correctly here
-  m.def("sqrt", [](const Variable &self){ return sqrt(self);},
+  m.def("sqrt", [](const Variable &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>());
 }
