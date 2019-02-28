@@ -12,7 +12,7 @@ def initPosSpectrunNo(d, nHist, ws):
     for j, specNum in enumerate(d[ds.Coord.SpectrumNumber].data):
         specNum = ws.getSpectrum(j).getSpectrumNo()
         
-def ConvertWorkspase2DToDataset(ws):
+def ConvertWorkspace2DToDataset(ws):
     d = ds.Dataset()
     cb = ws.isCommonBins()
     nHist = ws.getNumberHistograms()
@@ -34,7 +34,7 @@ def ConvertWorkspase2DToDataset(ws):
         
     return d
 
-def ConvertEventWorkspaseToDataset(ws):
+def ConvertEventWorkspaceToDataset(ws):
     d = ds.Dataset()
     nHist = ws.getNumberHistograms()
     initPosSpectrunNo(d, nHist, ws)        
@@ -48,7 +48,7 @@ def ConvertEventWorkspaseToDataset(ws):
 
 def to_dataset(ws):
     if ws.id() == 'Workspace2D':
-        return ConvertWorkspase2DToDataset(ws)
+        return ConvertWorkspace2DToDataset(ws)
     if ws.id() == 'EventWorkspace':
         return ConvertEventWorkspaceToDataset(ws)
     raise 'Unsupported workspace type'
