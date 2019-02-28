@@ -172,6 +172,9 @@ Dataset tofToDeltaE(const Dataset &d) {
   }
 
   // TODO Do we always require reversing for inelastic?
+  // TODO Is is debatable whether this should revert automatically... probably
+  // not, but we need to put a check in place for `rebin` to fail if the axis is
+  // reversed.
   return reverse(converted, Dim::DeltaE);
 }
 
