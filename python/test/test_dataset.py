@@ -159,7 +159,7 @@ class TestDataset(unittest.TestCase):
     def test_slice_dataset(self):
         for x in range(2):
             view = self.dataset[Dim.X, x]
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::X and name ``.', view.__getitem__, Coord.X)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::X and name ``.', view.__getitem__, Coord.X)
             np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,:,x])
@@ -168,7 +168,7 @@ class TestDataset(unittest.TestCase):
         for y in range(3):
             view = self.dataset[Dim.Y, y]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::Y and name ``.', view.__getitem__, Coord.Y)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::Y and name ``.', view.__getitem__, Coord.Y)
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,y,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,y,:])
@@ -177,7 +177,7 @@ class TestDataset(unittest.TestCase):
             view = self.dataset[Dim.Z, z]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
             np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::Z and name ``.', view.__getitem__, Coord.Z)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::Z and name ``.', view.__getitem__, Coord.Z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z,:])
