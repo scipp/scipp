@@ -28,6 +28,12 @@ def ConvertWorkspace2DToDataset(ws):
     
     d[ds.Data.Value] = ([ds.Dim.Position, ds.Dim.Tof], (ws.getNumberHistograms(), len(ws.readY(0))))     
     d[ds.Data.Variance] = ([ds.Dim.Position, ds.Dim.Tof], (ws.getNumberHistograms(), len(ws.readE(0))))
+
+    # TODO Use unit information in workspace, if available.
+    d[ds.Coord.Tof].unit = ds.units.us
+    d[ds.Data.Value].unit = ds.units.counts
+    d[ds.Data.Variance].unit = ds.units.counts * ds.units.counts
+
     for i in range(ws.getNumberHistograms()):
         d[ds.Data.Value][ds.Dim.Position, i] = ws.readY(i)
         d[ds.Data.Variance][ds.Dim.Position, i] = ws.readE(i)*ws.readE(i)
