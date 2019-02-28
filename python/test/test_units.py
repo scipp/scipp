@@ -27,7 +27,7 @@ class TestUnits(unittest.TestCase):
         var1.unit = units.m * units.m
         self.assertEqual(repr(var1.unit), "m^2")
         var1.unit = units.counts / units.us
-        self.assertEqual(repr(var1.unit), "counts us^-1")
+        self.assertEqual(repr(var1.unit), "counts \u03BCs^-1")
         with self.assertRaisesRegex(RuntimeError, "Unsupported unit as result of division counts/m"):
             var1.unit = units.counts / units.m
         var1.unit = units.m / units.m * units.counts
