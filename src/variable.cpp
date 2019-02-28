@@ -6,6 +6,7 @@
 #include "variable.h"
 #include "dataset.h"
 #include "except.h"
+#include "counts.h"
 #include "variable_view.h"
 
 template <template <class, class> class Op, class T1, class T2>
@@ -1094,6 +1095,7 @@ INSTANTIATE_SLICEVIEW(bool);
 INSTANTIATE_SLICEVIEW(std::string);
 INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
 INSTANTIATE_SLICEVIEW(Dataset);
+INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
 
 ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
                                         const gsl::index end) const & {
@@ -1248,15 +1250,31 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
 
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord) {
-  auto rebinned(var);
-  auto dims = rebinned.dimensions();
+  dataset::expect::countsOrCountsDensity(var);
   const Dim dim = coordDimension[newCoord.tag().value()];
-  dims.resize(dim, newCoord.dimensions()[dim] - 1);
-  rebinned.setDimensions(dims);
-  // TODO take into account unit if values have been divided by bin width.
-  require<FloatingPointVariableConcept>(rebinned.data())
-      .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
-  return rebinned;
+  if (var.unit() == units::counts ||
+      var.unit() == units::counts * units::counts) {
+    auto dims = var.dimensions();
+    dims.resize(dim, newCoord.dimensions()[dim] - 1);
+    Variable rebinned(var, dims);
+    require<FloatingPointVariableConcept>(rebinned.data())
+        .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
+    return rebinned;
+  } else {
+    // TODO This will currently fail if the data is a multi-dimensional density.
+    // Would need a conversion that converts only the rebinned dimension.
+    // TODO This could be done more efficiently without a temporary Dataset.
+    Dataset density;
+    density.insert(oldCoord);
+    density.insert(var);
+    auto cnts = counts::fromDensity(std::move(density), dim)
+                    .erase(var.tag(), var.name());
+    Dataset rebinnedCounts;
+    rebinnedCounts.insert(newCoord);
+    rebinnedCounts.insert(rebin(cnts, oldCoord, newCoord));
+    return counts::toDensity(std::move(rebinnedCounts), dim)
+        .erase(var.tag(), var.name());
+  }
 }
 
 Variable permute(const Variable &var, const Dim dim,
