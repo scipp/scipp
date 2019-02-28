@@ -55,4 +55,16 @@ RUN conda install -c plotly plotly=3.6.1
 RUN conda install --quiet --yes jupyterlab=0.35 "ipywidgets>=7.2"
 RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
 
+#installing tools to convert python scripts to notebooks
+RUN conda install --quiet --yes pip
+RUN pip install py2nb
+
+RUN find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; && \
+    bash -c "if [ ! -d /home/$NB_UID/work/examples]; then mkdir /home/$NB_UID/work/examples; fi;" && \ 
+    find /tmp/dataset/python/examples -name '*.ipynb' -exec mv /home/$NB_UID/work/examples {} \; && \
+    chmod -r a+rwx /home/$NB_UID/work/examples
+
 USER $NB_UID
+
+
+
