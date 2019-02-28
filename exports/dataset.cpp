@@ -823,6 +823,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def("merge", &Dataset::merge)
       .def("dimensions", [](const Dataset &self) { return self.dimensions(); })
       // TODO For now this is just for testing. We need to decide on an API for
       // specifying the keys.

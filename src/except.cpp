@@ -115,7 +115,7 @@ std::string to_string(const DType dtype) {
   case DType::Char:
     return "char";
   case DType::Dataset:
-    return "dataset";
+    return "Dataset";
   case DType::Float:
     return "float";
   case DType::Double:
@@ -124,6 +124,8 @@ std::string to_string(const DType dtype) {
     return "int32";
   case DType::Int64:
     return "int64";
+  case DType::EigenVector3d:
+    return "Eigen::Vector3d";
   case DType::Unknown:
     return "unknown";
   default:
