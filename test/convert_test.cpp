@@ -156,7 +156,7 @@ TEST(Dataset, convert_direct_inelastic) {
   const auto &data = energy(Data::Value);
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
-  EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  EXPECT_TRUE(equals(data.get(Data::Value), {9, 8, 7, 6, 5, 4, 3, 2, 1}));
   EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(energy.contains(Coord::Position));
@@ -217,7 +217,7 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
   const auto &data = energy(Data::Value);
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Position, 3}, {Dim::DeltaE, 3}}));
-  EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  EXPECT_TRUE(equals(data.get(Data::Value), {9, 8, 7, 6, 5, 4, 3, 2, 1}));
   EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(energy.contains(Coord::Position));

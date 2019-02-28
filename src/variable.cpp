@@ -24,72 +24,6 @@ template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
 template <class T> class DataModel;
 template <class T> class VariableConceptT;
 template <class T> struct RebinHelper {
-  static void rebin(const Dim dim, const VariableConceptT<T> &oldT,
-                         VariableConceptT<T> &newT,
-                    //const gsl::span<const T> &oldModel,
-                    //const gsl::span<T> &newModel,
-                    const VariableView<const T> &oldCoordView,
-                    const gsl::index oldOffset,
-                    const VariableView<const T> &newCoordView,
-                    const gsl::index newOffset) {
-    const auto oldModel = oldT.getSpan();
-    const auto newModel = newT.getSpan();
-    const gsl::index oldSize = oldT.dimensions()[dim];
-    const gsl::index newSize = newT.dimensions()[dim];
-
-    auto oldCoordIt = oldCoordView.begin();
-    auto newCoordIt = newCoordView.begin();
-    auto oldIt = oldModel.begin();
-    auto newIt = newModel.begin();
-    gsl::index oldBin = 0;
-    gsl::index newBin = 0;
-    while (newIt != newModel.end() && oldIt != oldModel.end()) {
-      if (oldBin == oldSize) {
-        // Last bin in this 1D subhistogram, go to next.
-        ++oldCoordIt;
-        ++oldIt;
-        oldBin = 0;
-        continue;
-      }
-      const auto xo_low = *oldCoordIt;
-      const auto xo_high = *(&(*oldCoordIt) + oldOffset);
-      if (newBin == newSize) {
-        // Last bin in this 1D subhistogram, go to next.
-        ++newCoordIt;
-        ++newIt;
-        newBin = 0;
-        continue;
-      }
-      const auto xn_low = *newCoordIt;
-      const auto xn_high = *(&(*newCoordIt) + newOffset);
-      if (xn_high <= xo_low) {
-        // No overlap, go to next new bin
-        ++newCoordIt;
-        ++newIt;
-        ++newBin;
-      } else if (xo_high <= xn_low) {
-        // No overlap, go to next old bin
-        ++oldCoordIt;
-        ++oldIt;
-        ++oldBin;
-      } else {
-        auto delta = xo_high < xn_high ? xo_high : xn_high;
-        delta -= xo_low > xn_low ? xo_low : xn_low;
-        *newIt += *oldIt * delta / (xo_high - xo_low);
-
-        if (xn_high > xo_high) {
-          ++oldCoordIt;
-          ++oldIt;
-          ++oldBin;
-        } else {
-          ++newCoordIt;
-          ++newIt;
-          ++newBin;
-        }
-      }
-    }
-  }
-
   // Special rebin version for rebinning inner dimension to a joint new coord.
   static void rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
                          VariableConceptT<T> &newT,
@@ -524,17 +458,8 @@ public:
         isMatchingOr1DBinEdge(dim, newCoord.dimensions(), dims)) {
       RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
     } else {
-      auto oldCoordDims = oldCoord.dimensions();
-      oldCoordDims.resize(dim, oldCoordDims[dim] - 1);
-      auto newCoordDims = newCoord.dimensions();
-      newCoordDims.resize(dim, newCoordDims[dim] - 1);
-      auto oldCoordView = oldCoordT.getView(this->dimensions());
-      auto newCoordView = newCoordT.getView(this->dimensions());
-      const auto oldOffset = oldCoordDims.offset(dim);
-      const auto newOffset = newCoordDims.offset(dim);
-
-      RebinHelper<T>::rebin(dim, oldT, *this, oldCoordView, oldOffset,
-                            newCoordView, newOffset);
+      throw std::runtime_error(
+          "TODO rebin is only implemented for rebin of inner dimension.");
     }
   }
 };
