@@ -68,6 +68,17 @@ struct VariableNotFoundError : public DatasetError {
                         const std::string &name);
 };
 
+struct VariableError : public std::runtime_error {
+  VariableError(const Variable &variable, const std::string &message);
+  VariableError(const ConstVariableSlice &variable, const std::string &message);
+};
+
+struct VariableMismatchError : public VariableError {
+  template <class A, class B>
+  VariableMismatchError(const A &a, const B &b)
+      : VariableError(a, "expected to match\n" + dataset::to_string(b)) {}
+};
+
 struct UnitError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
@@ -79,6 +90,10 @@ struct UnitMismatchError : public UnitError {
 } // namespace except
 
 namespace expect {
+template <class A, class B> void variablesMatch(const A &a, const B &b) {
+  if (a != b)
+    throw except::VariableMismatchError(a, b);
+}
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const gsl::index length);
 void equals(const Unit &a, const Unit &b);

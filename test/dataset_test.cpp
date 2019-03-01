@@ -322,7 +322,7 @@ TEST(Dataset, comparison_missing_variable) {
   EXPECT_EQ(d2, d2);
 }
 
-TEST(Dataset, comparison_with_slice) {
+TEST(Dataset, comparison_with_subset) {
   Dataset d1;
   d1.insert(Data::Value, "a", {});
   d1.insert(Data::Variance, "a", {});
@@ -331,8 +331,77 @@ TEST(Dataset, comparison_with_slice) {
   d2.insert(Data::Value, "a", {});
   d2.insert(Data::Variance, "a", {});
   EXPECT_NE(d1, d2);
-  EXPECT_EQ(d1, d2["a"]);
-  EXPECT_EQ(d2["a"], d1);
+  EXPECT_EQ(d1, d2.subset("a"));
+  EXPECT_EQ(d2.subset("a"), d1);
+}
+
+TEST(Dataset, subset) {
+  Dataset d;
+  d.insert(Coord::X, {});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Variance, "a", {});
+  d.insert(Data::Value, "b", {});
+  d.insert(Data::Variance, "b", {});
+
+  const auto no_data = d.subset("");
+  EXPECT_EQ(no_data.size(), 1);
+  EXPECT_TRUE(no_data.contains(Coord::X));
+
+  const auto value = d.subset(Data::Value, "a");
+  EXPECT_EQ(value.size(), 2);
+  EXPECT_TRUE(value.contains(Coord::X));
+  EXPECT_TRUE(value.contains(Data::Value, "a"));
+
+  const auto variance = d.subset(Data::Variance, "a");
+  EXPECT_EQ(variance.size(), 2);
+  EXPECT_TRUE(variance.contains(Coord::X));
+  EXPECT_TRUE(variance.contains(Data::Variance, "a"));
+
+  const auto both = d.subset("a");
+  EXPECT_EQ(both.size(), 3);
+  EXPECT_TRUE(both.contains(Coord::X));
+  EXPECT_TRUE(both.contains(Data::Value, "a"));
+  EXPECT_TRUE(both.contains(Data::Variance, "a"));
+}
+
+TEST(Dataset, subset_of_subset) {
+  Dataset d;
+  d.insert(Coord::X, {});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Variance, "a", {});
+  d.insert(Data::Value, "b", {});
+  d.insert(Data::Variance, "b", {});
+
+  const auto value = d.subset(Data::Value, "a");
+  const auto both = d.subset("a");
+
+  const auto value_from_subset = both.subset(Data::Value, "a");
+
+  EXPECT_EQ(value, value_from_subset);
+  EXPECT_EQ(value_from_subset.size(), 2);
+  EXPECT_TRUE(value_from_subset.contains(Coord::X));
+  EXPECT_TRUE(value_from_subset.contains(Data::Value, "a"));
+}
+
+TEST(Dataset, subset_of_full_subset) {
+  Dataset d;
+  d.insert(Coord::X, {});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Variance, "a", {});
+  d.insert(Data::Value, "b", {});
+  d.insert(Data::Variance, "b", {});
+
+  const auto both = d.subset("a");
+  const DatasetSlice full(d);
+  EXPECT_EQ(full.size(), 5);
+
+  const auto both_from_subset = full.subset("a");
+
+  EXPECT_EQ(both, both_from_subset);
+  EXPECT_EQ(both_from_subset.size(), 3);
+  EXPECT_TRUE(both_from_subset.contains(Coord::X));
+  EXPECT_TRUE(both_from_subset.contains(Data::Value, "a"));
+  EXPECT_TRUE(both_from_subset.contains(Data::Variance, "a"));
 }
 
 TEST(Dataset, comparison_with_spatial_slice) {
@@ -344,17 +413,17 @@ TEST(Dataset, comparison_with_spatial_slice) {
 
   EXPECT_NE(d1, d2);
 
-  EXPECT_NE(d1, d2["a"]);
-  EXPECT_NE(d1, d2["a"](Dim::X, 0, 2));
-  EXPECT_NE(d1, d2["a"](Dim::X, 0));
-  EXPECT_NE(d1, d2["a"](Dim::X, 1));
-  EXPECT_EQ(d1, d2["a"](Dim::X, 1, 3));
+  EXPECT_NE(d1, d2.subset("a"));
+  EXPECT_NE(d1, d2.subset("a")(Dim::X, 0, 2));
+  EXPECT_NE(d1, d2.subset("a")(Dim::X, 0));
+  EXPECT_NE(d1, d2.subset("a")(Dim::X, 1));
+  EXPECT_EQ(d1, d2.subset("a")(Dim::X, 1, 3));
 
-  EXPECT_NE(d2["a"], d1);
-  EXPECT_NE(d2["a"](Dim::X, 0, 2), d1);
-  EXPECT_NE(d2["a"](Dim::X, 0), d1);
-  EXPECT_NE(d2["a"](Dim::X, 1), d1);
-  EXPECT_EQ(d2["a"](Dim::X, 1, 3), d1);
+  EXPECT_NE(d2.subset("a"), d1);
+  EXPECT_NE(d2.subset("a")(Dim::X, 0, 2), d1);
+  EXPECT_NE(d2.subset("a")(Dim::X, 0), d1);
+  EXPECT_NE(d2.subset("a")(Dim::X, 1), d1);
+  EXPECT_EQ(d2.subset("a")(Dim::X, 1, 3), d1);
 }
 
 TEST(Dataset, comparison_two_slices) {
@@ -363,15 +432,15 @@ TEST(Dataset, comparison_two_slices) {
   d.insert(Data::Value, "b", {Dim::X, 4}, {1, 2, 1, 2});
 
   // Data is same but name differs.
-  EXPECT_NE(d["a"](Dim::X, 0, 2), d["b"](Dim::X, 0, 2));
+  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("b")(Dim::X, 0, 2));
 
-  EXPECT_EQ(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 0, 2));
-  EXPECT_NE(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 1, 3));
-  EXPECT_NE(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 2, 4));
+  EXPECT_EQ(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 0, 2));
+  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 1, 3));
+  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 2, 4));
 
-  EXPECT_EQ(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 0, 2));
-  EXPECT_NE(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 1, 3));
-  EXPECT_EQ(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 2, 4));
+  EXPECT_EQ(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 0, 2));
+  EXPECT_NE(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 1, 3));
+  EXPECT_EQ(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 2, 4));
 }
 
 TEST(Dataset, operator_plus_equal) {
@@ -558,7 +627,7 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   // Counts (aka "histogram data") times counts not possible.
   EXPECT_THROW_MSG(
       a *= a, std::runtime_error,
-      "Unsupported unit as result of multiplication counts^2*counts^2");
+      "Unsupported unit as result of multiplication: (counts^2) * (counts^2)");
   // Counts times frequencies (aka "distribution") ok.
   // TODO Works for dimensionless right now, but do we need to handle other
   // cases as well?
@@ -615,10 +684,10 @@ TEST(Dataset, slice) {
   }
   EXPECT_THROW_MSG(
       d(Dim::Z, 0), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}\n, got Dim::Z.");
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
   EXPECT_THROW_MSG(
       d(Dim::Z, 1), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}\n, got Dim::Z.");
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
 }
 
 TEST(Dataset, concatenate_constant_dimension_broken) {
@@ -1084,8 +1153,8 @@ TEST(DatasetSlice, basics) {
 
   check(viewA, "a");
   check(viewB, "b");
-  check(d["a"], "a");
-  check(d["b"], "b");
+  check(d.subset("a"), "a");
+  check(d.subset("b"), "b");
 }
 
 TEST(DatasetSlice, minus_equals) {
@@ -1097,14 +1166,14 @@ TEST(DatasetSlice, minus_equals) {
   d.insert(Data::Variance, "a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
   d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
 
-  EXPECT_NO_THROW(d -= d["a"]);
+  EXPECT_NO_THROW(d -= d.subset("a"));
 
   EXPECT_EQ(d.get(Data::Value, "a")[0], 0.0);
   EXPECT_EQ(d.get(Data::Value, "b")[0], 1.0);
   EXPECT_EQ(d.get(Data::Variance, "a")[0], 2.0);
   EXPECT_EQ(d.get(Data::Variance, "b")[0], 1.0);
 
-  ASSERT_NO_THROW(d["a"] -= d["b"]);
+  ASSERT_NO_THROW(d.subset("a") -= d.subset("b"));
 
   ASSERT_EQ(d.size(), 6);
   // Note: Variable not renamed when operating with slices.
@@ -1144,7 +1213,7 @@ TEST(DatasetSlice, subset_slice_spatial) {
   d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}},
            {1, 2, 3, 4, 5, 6, 7, 8});
 
-  auto view_a_x0 = d["a"](Dim::X, 0);
+  auto view_a_x0 = d.subset("a")(Dim::X, 0);
 
   // Slice with single index (not range) => corresponding dimension coordinate
   // is removed.
@@ -1153,7 +1222,7 @@ TEST(DatasetSlice, subset_slice_spatial) {
   EXPECT_EQ(view_a_x0[1].dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x0[2].dimensions(), (Dimensions{Dim::Y, 2}));
 
-  auto view_a_x1 = d["a"](Dim::X, 1);
+  auto view_a_x1 = d.subset("a")(Dim::X, 1);
 
   ASSERT_EQ(view_a_x1.size(), 3);
   EXPECT_EQ(view_a_x1[0].dimensions(), (Dimensions{Dim::Y, 2}));
@@ -1172,11 +1241,11 @@ TEST(DatasetSlice, subset_slice_spatial) {
   // If we slice with a range index the corresponding coordinate (and dimension)
   // is preserved, even if the range has size 1. Thus the operation fails due to
   // coordinate mismatch, as it should.
-  auto view_a_x01 = d["a"](Dim::X, 0, 1);
-  auto view_a_x12 = d["a"](Dim::X, 1, 2);
-  EXPECT_THROW_MSG(
-      view_a_x12 -= view_a_x01, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  auto view_a_x01 = d.subset("a")(Dim::X, 0, 1);
+  auto view_a_x12 = d.subset("a")(Dim::X, 1, 2);
+  EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
 }
 
 TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
@@ -1192,7 +1261,7 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}},
            {1, 2, 3, 4, 5, 6, 7, 8});
 
-  auto view_a_x0 = d["a"](Dim::X, 0);
+  auto view_a_x0 = d.subset("a")(Dim::X, 0);
 
   // Slice with single index (not range) => corresponding dimension coordinate
   // is removed.
@@ -1201,7 +1270,7 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   EXPECT_EQ(view_a_x0[1].dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x0[2].dimensions(), (Dimensions{Dim::Y, 2}));
 
-  auto view_a_x1 = d["a"](Dim::X, 1);
+  auto view_a_x1 = d.subset("a")(Dim::X, 1);
 
   ASSERT_EQ(view_a_x1.size(), 3);
   EXPECT_EQ(view_a_x1[0].dimensions(), (Dimensions{Dim::Y, 2}));
@@ -1217,8 +1286,8 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   EXPECT_TRUE(equals(d.get(Data::Value, "b"), {1, 2, 3, 4, 5, 6, 7, 8}));
   EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {1, 2, 3, 4, 5, 6, 7, 8}));
 
-  auto view_a_x01 = d["a"](Dim::X, 0, 1);
-  auto view_a_x12 = d["a"](Dim::X, 1, 2);
+  auto view_a_x01 = d.subset("a")(Dim::X, 0, 1);
+  auto view_a_x12 = d.subset("a")(Dim::X, 1, 2);
   ASSERT_EQ(view_a_x01[0].tag(), Coord::X);
   // View extent is 1 so we get 2 edges.
   ASSERT_EQ(view_a_x01.dimensions()[Dim::X], 1);
@@ -1226,8 +1295,8 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   EXPECT_TRUE(equals(view_a_x01[0].get(Coord::X), {1, 2}));
   EXPECT_TRUE(equals(view_a_x12[0].get(Coord::X), {2, 3}));
 
-  auto view_a_x02 = d["a"](Dim::X, 0, 2);
-  auto view_a_x13 = d["a"](Dim::X, 1, 3);
+  auto view_a_x02 = d.subset("a")(Dim::X, 0, 2);
+  auto view_a_x13 = d.subset("a")(Dim::X, 1, 3);
   ASSERT_EQ(view_a_x02[0].tag(), Coord::X);
   // View extent is 2 so we get 3 edges.
   ASSERT_EQ(view_a_x02.dimensions()[Dim::X], 2);
@@ -1238,12 +1307,12 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   // If we slice with a range index the corresponding coordinate (and dimension)
   // is preserved, even if the range has size 1. Thus the operation fails due to
   // coordinate mismatch, as it should.
-  EXPECT_THROW_MSG(
-      view_a_x12 -= view_a_x01, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
-  EXPECT_THROW_MSG(
-      view_a_x13 -= view_a_x02, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
+  EXPECT_THROW_MSG_SUBSTR(view_a_x13 -= view_a_x02,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
 }
 
 TEST(Dataset, unary_minus) {

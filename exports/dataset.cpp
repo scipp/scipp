@@ -12,6 +12,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include "convert.h"
 #include "dataset.h"
 #include "except.h"
 #include "tag_util.h"
@@ -219,6 +220,20 @@ void insert_conv(
   // TODO This is converting back and forth between py::array and py::array_t,
   // can we do this in a better way?
   auto var = detail::MakeVariable<T>::apply(tag, labels, array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
+
+template <class T, class K>
+void insert_0D(Dataset &self, const K &key,
+               const std::tuple<const std::vector<Dim> &, T &> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, value ] = data;
+  if (!labels.empty())
+    throw std::runtime_error(
+        "Got 0-D data, but nonzero number of dimension labels.");
+  auto var = ::makeVariable<T>(tag, {}, {value});
   if (!name.empty())
     var.setName(name);
   self.insert(std::move(var));
@@ -659,6 +674,12 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
+      .def("subset", [](DatasetSlice &self,
+                        const std::string &name) { return self.subset(name); })
+      .def("subset",
+           [](DatasetSlice &self, const Tag tag, const std::string &name) {
+             return self.subset(tag, name);
+           })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
@@ -715,8 +736,12 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
            })
-      .def("__getitem__",
-           [](Dataset &self, const std::string &name) { return self[name]; })
+      .def("subset", [](Dataset &self,
+                        const std::string &name) { return self.subset(name); })
+      .def("subset",
+           [](Dataset &self, const Tag tag, const std::string &name) {
+             return self.subset(tag, name);
+           })
       // Careful: The order of overloads is really important here, otherwise
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also
@@ -755,6 +780,10 @@ PYBIND11_MODULE(dataset, m) {
       // 3. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
+      .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
@@ -804,6 +833,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def("merge", &Dataset::merge)
       .def("dimensions", [](const Dataset &self) { return self.dimensions(); })
       // TODO For now this is just for testing. We need to decide on an API for
       // specifying the keys.
@@ -840,6 +870,9 @@ PYBIND11_MODULE(dataset, m) {
   m.def("mean", py::overload_cast<const Dataset &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>());
   m.def("integrate", py::overload_cast<const Dataset &, const Dim>(&integrate),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("convert",
+        py::overload_cast<const Dataset &, const Dim, const Dim>(&convert),
         py::call_guard<py::gil_scoped_release>());
 
   //-----------------------variable free functions------------------------------

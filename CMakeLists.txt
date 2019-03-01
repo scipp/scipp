@@ -21,7 +21,7 @@ include( pybind11 )
 include( GoogleTest )
 include( GoogleBenchmark )
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --save-temps -march=native -fno-omit-frame-pointer")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fno-omit-frame-pointer")
 
 # See https://github.com/pybind/pybind11/issues/1604
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")

@@ -20,6 +20,9 @@ enum class Dim : uint16_t {
   Polarization,
   Position,
   Q,
+  Qx,
+  Qy,
+  Qz,
   Row,
   Run,
   Spectrum,
@@ -32,7 +35,8 @@ enum class Dim : uint16_t {
 };
 
 constexpr bool isContinuous(const Dim dim) {
-  if (dim == Dim::Tof || dim == Dim::X || dim == Dim::Y || dim == Dim::Z)
+  if (dim == Dim::DeltaE || dim == Dim::Tof || dim == Dim::X || dim == Dim::Y ||
+      dim == Dim::Z)
     return true;
   return false;
 }
