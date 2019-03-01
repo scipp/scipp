@@ -801,11 +801,11 @@ TEST(Dataset, rebin_accepts_only_counts_and_densities) {
 
   d.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
   EXPECT_THROW_MSG(rebin(d, coordNew), dataset::except::UnitError,
-                   "Expected counts or counts-density.");
+                   "Expected counts or counts-density, got dimensionless.");
 
   d(Data::Value, "").setUnit(units::m);
   EXPECT_THROW_MSG(rebin(d, coordNew), dataset::except::UnitError,
-                   "Expected counts or counts-density.");
+                   "Expected counts or counts-density, got m.");
 
   d(Data::Value, "").setUnit(units::counts);
   EXPECT_NO_THROW(rebin(d, coordNew));

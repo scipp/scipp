@@ -159,7 +159,7 @@ class TestDataset(unittest.TestCase):
     def test_slice_dataset(self):
         for x in range(2):
             view = self.dataset[Dim.X, x]
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::X and name ``.', view.__getitem__, Coord.X)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::X and name ``.', view.__getitem__, Coord.X)
             np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,:,x])
@@ -168,7 +168,7 @@ class TestDataset(unittest.TestCase):
         for y in range(3):
             view = self.dataset[Dim.Y, y]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::Y and name ``.', view.__getitem__, Coord.Y)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::Y and name ``.', view.__getitem__, Coord.Y)
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,y,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,y,:])
@@ -177,7 +177,7 @@ class TestDataset(unittest.TestCase):
             view = self.dataset[Dim.Z, z]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
             np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::Z and name ``.', view.__getitem__, Coord.Z)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::Z and name ``.', view.__getitem__, Coord.Z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z,:])
@@ -272,10 +272,10 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(dataset[Coord.X].numpy, np.array([3,2,4,1, 3,2]))
         np.testing.assert_array_equal(dataset[Data.Value, "data"].numpy, np.array([0,1,2,3, 0,1]))
 
-    @unittest.skip("Need support for setting unit to `counts` from Python.")
     def test_rebin(self):
         dataset = Dataset()
         dataset[Data.Value, "data"] = ([Dim.X], np.array(10*[1.0]))
+        dataset[Data.Value, "data"].unit = units.counts
         dataset[Coord.X] = ([Dim.X], np.arange(11.0))
         new_coord = Variable(Coord.X, [Dim.X], np.arange(0.0, 11, 2))
         dataset = rebin(dataset, new_coord)
@@ -396,7 +396,6 @@ class TestDatasetExamples(unittest.TestCase):
         dataset['Value:temperature'][10, ...].plot()
         #plt.savefig('test.png')
 
-    @unittest.skip("Need support for setting unit to `counts` from Python.")
     def test_MDHistoWorkspace_example(self):
         L = 30
         d = Dataset()
@@ -415,6 +414,16 @@ class TestDatasetExamples(unittest.TestCase):
 
         # Uncertainties are propagated using grouping mechanism based on name
         square = d * d
+
+        # Add the counts units
+        d[Data.Value, "temperature"].unit = units.counts
+        d[Data.Value, "pressure"].unit = units.counts
+        d[Data.Variance, "temperature"].unit = units.counts * units.counts
+        # The square operation is now prevented because the resulting counts
+        # variance unit (counts^4) is not part of the supported units, i.e. the
+        # result of that operation makes little physical sense.
+        with self.assertRaisesRegex(RuntimeError, "Unsupported unit as result of multiplication counts\^2\*counts\^2"):
+            square = d * d
 
         # Rebin the X axis
         d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2).astype(np.float64)))
@@ -484,7 +493,6 @@ class TestDatasetExamples(unittest.TestCase):
         d[Data.EventPulseTimes, ""].data[1].append(1000)
         # Don't do this, there are no compatiblity checks:
         #for el in zip(d[Data.EventTofs, ""].data, d[Data.EventPulseTimes, ""].data):
-        print("zip start")
         for el, size in zip(d.zip(), [1,1,0,0,0]):
             self.assertEqual(len(el), size)
             for e in el:
