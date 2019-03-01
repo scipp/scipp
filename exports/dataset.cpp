@@ -659,6 +659,12 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
+      .def("subset", [](DatasetSlice &self,
+                        const std::string &name) { return self.subset(name); })
+      .def("subset",
+           [](DatasetSlice &self, const Tag tag, const std::string &name) {
+             return self.subset(tag, name);
+           })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
@@ -715,8 +721,12 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
            })
-      .def("__getitem__",
-           [](Dataset &self, const std::string &name) { return self[name]; })
+      .def("subset", [](Dataset &self,
+                        const std::string &name) { return self.subset(name); })
+      .def("subset",
+           [](Dataset &self, const Tag tag, const std::string &name) {
+             return self.subset(tag, name);
+           })
       // Careful: The order of overloads is really important here, otherwise
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also

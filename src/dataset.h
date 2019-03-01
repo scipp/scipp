@@ -50,10 +50,16 @@ public:
   VariableSlice operator[](const gsl::index i) & {
     return VariableSlice{m_variables[i]};
   }
-  ConstDatasetSlice operator[](const std::string &name) const && = delete;
-  ConstDatasetSlice operator[](const std::string &name) const &;
-  DatasetSlice operator[](const std::string &name) && = delete;
-  DatasetSlice operator[](const std::string &name) &;
+
+  ConstDatasetSlice subset(const std::string &) const && = delete;
+  ConstDatasetSlice subset(const Tag, const std::string &) const && = delete;
+  ConstDatasetSlice subset(const std::string &name) const &;
+  ConstDatasetSlice subset(const Tag tag, const std::string &name) const &;
+  DatasetSlice subset(const std::string &) && = delete;
+  DatasetSlice subset(const Tag, const std::string &) && = delete;
+  DatasetSlice subset(const std::string &name) &;
+  DatasetSlice subset(const Tag tag, const std::string &name) &;
+
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
                                const gsl::index end = -1) const && = delete;
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
@@ -306,6 +312,30 @@ private:
 
   friend struct IterAccess;
 
+protected:
+  std::vector<gsl::index> makeIndices(const ConstDatasetSlice &base,
+                                      const std::string &select) const {
+    std::vector<gsl::index> indices;
+    for (const auto i : base.m_indices) {
+      const auto &var = base.m_dataset[i];
+      // TODO Should we also keep attributes? Probably yes?
+      if (var.isCoord() || var.name() == select)
+        indices.push_back(i);
+    }
+    return indices;
+  }
+  std::vector<gsl::index> makeIndices(const ConstDatasetSlice &base,
+                                      const Tag selectTag,
+                                      const std::string &selectName) const {
+    std::vector<gsl::index> indices;
+    for (const auto i : base.m_indices) {
+      const auto &var = base.m_dataset[i];
+      if (var.isCoord() || (var.tag() == selectTag && var.name() == selectName))
+        indices.push_back(i);
+    }
+    return indices;
+  }
+
 public:
   ConstDatasetSlice(const Dataset &dataset) : m_dataset(dataset) {
     // Select everything.
@@ -313,18 +343,27 @@ public:
       m_indices.push_back(i);
   }
 
+  ConstDatasetSlice(const Dataset &dataset, std::vector<gsl::index> indices)
+      : m_dataset(dataset), m_indices(std::move(indices)) {}
+
   ConstDatasetSlice(const Dataset &dataset, const std::string &select)
-      : m_dataset(dataset) {
-    for (gsl::index i = 0; i < dataset.size(); ++i) {
-      const auto &var = dataset[i];
-      if (var.isCoord() || var.name() == select)
-        m_indices.push_back(i);
-    }
-  }
+      : ConstDatasetSlice(dataset, makeIndices(dataset, select)) {}
+
+  ConstDatasetSlice(const Dataset &dataset, const Tag selectTag,
+                    const std::string &selectName)
+      : ConstDatasetSlice(dataset,
+                          makeIndices(dataset, selectTag, selectName)) {}
 
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
                                const gsl::index end = -1) const {
     return makeSubslice(*this, dim, begin, end);
+  }
+
+  ConstDatasetSlice subset(const std::string &name) const & {
+    return ConstDatasetSlice(m_dataset, makeIndices(*this, name));
+  }
+  ConstDatasetSlice subset(const Tag tag, const std::string &name) const & {
+    return ConstDatasetSlice(m_dataset, makeIndices(*this, tag, name));
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
@@ -417,8 +456,15 @@ private:
 public:
   DatasetSlice(Dataset &dataset)
       : ConstDatasetSlice(dataset), m_mutableDataset(dataset) {}
+  DatasetSlice(Dataset &dataset, std::vector<gsl::index> indices)
+      : ConstDatasetSlice(dataset, std::move(indices)),
+        m_mutableDataset(dataset) {}
   DatasetSlice(Dataset &dataset, const std::string &select)
       : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
+  DatasetSlice(Dataset &dataset, const Tag selectTag,
+               const std::string &selectName)
+      : ConstDatasetSlice(dataset, selectTag, selectName),
+        m_mutableDataset(dataset) {}
 
   using ConstDatasetSlice::operator[];
   VariableSlice operator[](const gsl::index i) const {
@@ -428,6 +474,13 @@ public:
   DatasetSlice operator()(const Dim dim, const gsl::index begin,
                           const gsl::index end = -1) const {
     return makeSubslice(*this, dim, begin, end);
+  }
+
+  DatasetSlice subset(const std::string &name) const & {
+    return DatasetSlice(m_mutableDataset, makeIndices(*this, name));
+  }
+  DatasetSlice subset(const Tag tag, const std::string &name) const & {
+    return DatasetSlice(m_mutableDataset, makeIndices(*this, tag, name));
   }
 
   using ConstDatasetSlice::begin;
