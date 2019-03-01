@@ -60,30 +60,58 @@ std::string do_to_string(const Dim dim) {
 
 std::string do_to_string(const Tag tag) {
   switch (tag.value()) {
-  case Coord::Tof.value():
-    return "Coord::Tof";
-  case Coord::Energy.value():
-    return "Coord::Energy";
-  case Coord::DeltaE.value():
-    return "Coord::DeltaE";
+  case Coord::Monitor.value():
+    return "Coord::Monitor";
+  case Coord::DetectorInfo.value():
+    return "Coord::DetectorInfo";
+  case Coord::ComponentInfo.value():
+    return "Coord::ComponentInfo";
   case Coord::X.value():
     return "Coord::X";
   case Coord::Y.value():
     return "Coord::Y";
   case Coord::Z.value():
     return "Coord::Z";
+  case Coord::Tof.value():
+    return "Coord::Tof";
+  case Coord::Energy.value():
+    return "Coord::Energy";
+  case Coord::DeltaE.value():
+    return "Coord::DeltaE";
+  case Coord::Ei.value():
+    return "Coord::Ei";
+  case Coord::Ef.value():
+    return "Coord::Ef";
+  case Coord::DetectorId.value():
+    return "Coord::DetectorId";
   case Coord::SpectrumNumber.value():
     return "Coord::SpectrumNumber";
+  case Coord::DetectorGrouping.value():
+    return "Coord::DetectorGrouping";
+  case Coord::RowLabel.value():
+    return "Coord::RowLabel";
+  case Coord::Polarization.value():
+    return "Coord::Polarization";
+  case Coord::Temperature.value():
+    return "Coord::Temperature";
+  case Coord::Time.value():
+    return "Coord::Time";
   case Coord::Mask.value():
     return "Coord::Mask";
   case Coord::Position.value():
     return "Coord::Position";
-  case Coord::DetectorGrouping.value():
-    return "Coord::DetectorGrouping";
+  case Data::Events.value():
+    return "Data::Events";
   case Data::Value.value():
     return "Data::Value";
   case Data::Variance.value():
     return "Data::Variance";
+  case Data::Tof.value():
+    return "Data::Tof";
+  case Data::PulseTime.value():
+    return "Data::PulseTime";
+  case Attr::ExperimentLog.value():
+    return "Attr::ExperimentLog";
   default:
     return "<unknown tag>";
   }
@@ -102,7 +130,7 @@ std::string to_string(const Dimensions &dims, const std::string &separator) {
     s += to_string(dims.labels()[i], separator) + ", " +
          std::to_string(dims.shape()[i]) + "}, {";
   s.resize(s.size() - 3);
-  s += "}\n";
+  s += "}";
   return s;
 }
 
@@ -115,7 +143,7 @@ std::string to_string(const DType dtype) {
   case DType::Char:
     return "char";
   case DType::Dataset:
-    return "dataset";
+    return "Dataset";
   case DType::Float:
     return "float";
   case DType::Double:
@@ -124,6 +152,8 @@ std::string to_string(const DType dtype) {
     return "int32";
   case DType::Int64:
     return "int64";
+  case DType::EigenVector3d:
+    return "Eigen::Vector3d";
   case DType::Unknown:
     return "unknown";
   default:
@@ -211,7 +241,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
                          const Dimensions &dims, const std::string &separator) {
   std::stringstream s;
   s << id + '\n';
-  s << "Dimensions: " << to_string(dims, separator);
+  s << "Dimensions: " << to_string(dims, separator) << '\n';
   s << "Coordinates:\n";
   for (const auto &var : dataset) {
     if (var.isCoord())
@@ -265,10 +295,10 @@ DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                      ".") {}
 
 DatasetError::DatasetError(const Dataset &dataset, const std::string &message)
-    : std::runtime_error(to_string(dataset) + ", " + message) {}
+    : std::runtime_error(to_string(dataset) + message) {}
 DatasetError::DatasetError(const ConstDatasetSlice &dataset,
                            const std::string &message)
-    : std::runtime_error(to_string(dataset) + ", " + message) {}
+    : std::runtime_error(to_string(dataset) + message) {}
 
 VariableNotFoundError::VariableNotFoundError(const Dataset &dataset,
                                              const Tag tag,
@@ -280,6 +310,13 @@ VariableNotFoundError::VariableNotFoundError(const ConstDatasetSlice &dataset,
                                              const std::string &name)
     : DatasetError(dataset, "could not find variable with tag " +
                                 to_string(tag) + " and name `" + name + "`.") {}
+
+VariableError::VariableError(const Variable &variable,
+                             const std::string &message)
+    : std::runtime_error(to_string(variable) + message) {}
+VariableError::VariableError(const ConstVariableSlice &variable,
+                             const std::string &message)
+    : std::runtime_error(to_string(variable) + message) {}
 
 UnitMismatchError::UnitMismatchError(const Unit &a, const Unit &b)
     : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +
