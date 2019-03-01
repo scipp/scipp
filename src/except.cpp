@@ -124,7 +124,7 @@ namespace dataset {
 
 std::string to_string(const Dimensions &dims, const std::string &separator) {
   if (dims.empty())
-    return "{}";
+    return "{}\n";
   std::string s = "{{";
   for (int32_t i = 0; i < dims.ndim(); ++i)
     s += to_string(dims.labels()[i], separator) + ", " +
