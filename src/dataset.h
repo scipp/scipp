@@ -50,10 +50,10 @@ public:
   VariableSlice operator[](const gsl::index i) & {
     return VariableSlice{m_variables[i]};
   }
-  ConstDatasetSlice operator[](const std::string &name) const && = delete;
-  ConstDatasetSlice operator[](const std::string &name) const &;
-  DatasetSlice operator[](const std::string &name) && = delete;
-  DatasetSlice operator[](const std::string &name) &;
+  ConstDatasetSlice subset(const std::string &name) const && = delete;
+  ConstDatasetSlice subset(const std::string &name) const &;
+  DatasetSlice subset(const std::string &name) && = delete;
+  DatasetSlice subset(const std::string &name) &;
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
                                const gsl::index end = -1) const && = delete;
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,

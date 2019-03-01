@@ -715,8 +715,8 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
            })
-      .def("__getitem__",
-           [](Dataset &self, const std::string &name) { return self[name]; })
+      .def("subset", [](Dataset &self,
+                        const std::string &name) { return self.subset(name); })
       // Careful: The order of overloads is really important here, otherwise
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also

@@ -19,11 +19,11 @@ Dataset::Dataset(const ConstDatasetSlice &view) {
     insert(var);
 }
 
-ConstDatasetSlice Dataset::operator[](const std::string &name) const & {
+ConstDatasetSlice Dataset::subset(const std::string &name) const & {
   return ConstDatasetSlice(*this, name);
 }
 
-DatasetSlice Dataset::operator[](const std::string &name) & {
+DatasetSlice Dataset::subset(const std::string &name) & {
   return DatasetSlice(*this, name);
 }
 
