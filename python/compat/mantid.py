@@ -30,19 +30,21 @@ def ConvertWorkspace2DToDataset(ws):
     convert_instrument(d, ws)
     initPosSpectrumNo(d, nHist, ws)
 
+    # TODO More cases?
+    tag = ds.Coord.DeltaE if ws.getAxis(0).getUnit().unitID() == 'DeltaE' else ds.Coord.Tof
+    dim = ds.Dim.DeltaE if ws.getAxis(0).getUnit().unitID() == 'DeltaE' else ds.Dim.Tof
     if cb:
-        d[ds.Coord.Tof] = ([ds.Dim.Tof], ws.readX(0))
+        d[tag] = ([dim], ws.readX(0))
     else:
-        d[ds.Coord.Tof] = ([ds.Dim.Position, ds.Dim.Tof], (ws.getNumberHistograms(), len(ws.readX(0))))
+        d[tag] = ([ds.Dim.Position, dim], (ws.getNumberHistograms(), len(ws.readX(0))))
         for i in range(ws.getNumberHistograms()):
-            d[ds.Coord.Tof][ds.Dim.Position, i] = ws.readX(i);
+            d[tag][ds.Dim.Position, i] = ws.readX(i);
 
 
-    d[ds.Data.Value] = ([ds.Dim.Position, ds.Dim.Tof], (ws.getNumberHistograms(), len(ws.readY(0))))
-    d[ds.Data.Variance] = ([ds.Dim.Position, ds.Dim.Tof], (ws.getNumberHistograms(), len(ws.readE(0))))
+    d[ds.Data.Value] = ([ds.Dim.Position, dim], (ws.getNumberHistograms(), len(ws.readY(0))))
+    d[ds.Data.Variance] = ([ds.Dim.Position, dim], (ws.getNumberHistograms(), len(ws.readE(0))))
 
     # TODO Use unit information in workspace, if available.
-    d[ds.Coord.Tof].unit = ds.units.us
     d[ds.Data.Value].unit = ds.units.counts
     d[ds.Data.Variance].unit = ds.units.counts * ds.units.counts
 
