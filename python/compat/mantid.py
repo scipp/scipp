@@ -9,10 +9,10 @@ def initPosSpectrunNo(d, nHist, ws):
         pos[1] = ws.spectrumInfo().position(j).Y()
         pos[2] = ws.spectrumInfo().position(j).Z()
     
-    for j, pos in enumerate(d[ds.Coord.SpectrumNumber].data):
-        pos = ws.getSpectrum(j).getSpectrumNo()
+    for j, specNum in enumerate(d[ds.Coord.SpectrumNumber].data):
+        specNum = ws.getSpectrum(j).getSpectrumNo()
         
-def ConvertWorkspase2DToDataset(ws):
+def ConvertWorkspace2DToDataset(ws):
     d = ds.Dataset()
     cb = ws.isCommonBins()
     nHist = ws.getNumberHistograms()
@@ -28,13 +28,19 @@ def ConvertWorkspase2DToDataset(ws):
     
     d[ds.Data.Value] = ([ds.Dim.Position, ds.Dim.Tof], (ws.getNumberHistograms(), len(ws.readY(0))))     
     d[ds.Data.Variance] = ([ds.Dim.Position, ds.Dim.Tof], (ws.getNumberHistograms(), len(ws.readE(0))))
+
+    # TODO Use unit information in workspace, if available.
+    d[ds.Coord.Tof].unit = ds.units.us
+    d[ds.Data.Value].unit = ds.units.counts
+    d[ds.Data.Variance].unit = ds.units.counts * ds.units.counts
+
     for i in range(ws.getNumberHistograms()):
         d[ds.Data.Value][ds.Dim.Position, i] = ws.readY(i)
         d[ds.Data.Variance][ds.Dim.Position, i] = ws.readE(i)*ws.readE(i)
         
     return d
 
-def ConvertEventWorkspaseToDataset(ws):
+def ConvertEventWorkspaceToDataset(ws):
     d = ds.Dataset()
     nHist = ws.getNumberHistograms()
     initPosSpectrunNo(d, nHist, ws)        
@@ -45,3 +51,10 @@ def ConvertEventWorkspaseToDataset(ws):
         pt = ws.getSpectrum(i).getPulseTimes()
         e[ds.Data.PulseTime] = ([ds.Dim.Event], [p.total_nanoseconds() for p in pt])        
     return d
+
+def to_dataset(ws):
+    if ws.id() == 'Workspace2D':
+        return ConvertWorkspace2DToDataset(ws)
+    if ws.id() == 'EventWorkspace':
+        return ConvertEventWorkspaceToDataset(ws)
+    raise 'Unsupported workspace type'
