@@ -60,30 +60,58 @@ std::string do_to_string(const Dim dim) {
 
 std::string do_to_string(const Tag tag) {
   switch (tag.value()) {
-  case Coord::Tof.value():
-    return "Coord::Tof";
-  case Coord::Energy.value():
-    return "Coord::Energy";
-  case Coord::DeltaE.value():
-    return "Coord::DeltaE";
+  case Coord::Monitor.value():
+    return "Coord::Monitor";
+  case Coord::DetectorInfo.value():
+    return "Coord::DetectorInfo";
+  case Coord::ComponentInfo.value():
+    return "Coord::ComponentInfo";
   case Coord::X.value():
     return "Coord::X";
   case Coord::Y.value():
     return "Coord::Y";
   case Coord::Z.value():
     return "Coord::Z";
+  case Coord::Tof.value():
+    return "Coord::Tof";
+  case Coord::Energy.value():
+    return "Coord::Energy";
+  case Coord::DeltaE.value():
+    return "Coord::DeltaE";
+  case Coord::Ei.value():
+    return "Coord::Ei";
+  case Coord::Ef.value():
+    return "Coord::Ef";
+  case Coord::DetectorId.value():
+    return "Coord::DetectorId";
   case Coord::SpectrumNumber.value():
     return "Coord::SpectrumNumber";
+  case Coord::DetectorGrouping.value():
+    return "Coord::DetectorGrouping";
+  case Coord::RowLabel.value():
+    return "Coord::RowLabel";
+  case Coord::Polarization.value():
+    return "Coord::Polarization";
+  case Coord::Temperature.value():
+    return "Coord::Temperature";
+  case Coord::Time.value():
+    return "Coord::Time";
   case Coord::Mask.value():
     return "Coord::Mask";
   case Coord::Position.value():
     return "Coord::Position";
-  case Coord::DetectorGrouping.value():
-    return "Coord::DetectorGrouping";
+  case Data::Events.value():
+    return "Data::Events";
   case Data::Value.value():
     return "Data::Value";
   case Data::Variance.value():
     return "Data::Variance";
+  case Data::Tof.value():
+    return "Data::Tof";
+  case Data::PulseTime.value():
+    return "Data::PulseTime";
+  case Attr::ExperimentLog.value():
+    return "Attr::ExperimentLog";
   default:
     return "<unknown tag>";
   }
