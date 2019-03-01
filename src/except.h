@@ -12,17 +12,18 @@
 #include <gsl/gsl_util>
 
 #include "dimension.h"
+#include "tags.h"
 #include "unit.h"
 
 class ConstDatasetSlice;
 class Dataset;
 class Dimensions;
-class Tag;
 class Unit;
 class Variable;
 class ConstVariableSlice;
 
 namespace dataset {
+std::string to_string(const DType dtype);
 std::string to_string(const Dim dim, const std::string &separator = "::");
 std::string to_string(const Dimensions &dims,
                       const std::string &separator = "::");
@@ -38,6 +39,10 @@ std::string to_string(const ConstDatasetSlice &dataset,
                       const std::string &separator = "::");
 
 namespace except {
+
+struct TypeError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
 
 struct DimensionError : public std::runtime_error {
   using std::runtime_error::runtime_error;
