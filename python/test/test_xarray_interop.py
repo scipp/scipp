@@ -37,7 +37,7 @@ class TestXarrayInterop(unittest.TestCase):
         table += table
         self.assertSequenceEqual(table[ds.Coord.RowLabel].data, ['a', 'bb', 'bb', 'ccc'])
 
-        dataset = ds.as_xarray(table['col1'])
+        dataset = ds.as_xarray(table.subset('col1'))
         #print(dataset)
         dataset['Value:col1'].plot()
         #plt.savefig('test.png')
