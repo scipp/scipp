@@ -295,10 +295,10 @@ DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                      ".") {}
 
 DatasetError::DatasetError(const Dataset &dataset, const std::string &message)
-    : std::runtime_error(to_string(dataset) + ", " + message) {}
+    : std::runtime_error(to_string(dataset) + message) {}
 DatasetError::DatasetError(const ConstDatasetSlice &dataset,
                            const std::string &message)
-    : std::runtime_error(to_string(dataset) + ", " + message) {}
+    : std::runtime_error(to_string(dataset) + message) {}
 
 VariableNotFoundError::VariableNotFoundError(const Dataset &dataset,
                                              const Tag tag,
@@ -310,6 +310,13 @@ VariableNotFoundError::VariableNotFoundError(const ConstDatasetSlice &dataset,
                                              const std::string &name)
     : DatasetError(dataset, "could not find variable with tag " +
                                 to_string(tag) + " and name `" + name + "`.") {}
+
+VariableError::VariableError(const Variable &variable,
+                             const std::string &message)
+    : std::runtime_error(to_string(variable) + message) {}
+VariableError::VariableError(const ConstVariableSlice &variable,
+                             const std::string &message)
+    : std::runtime_error(to_string(variable) + message) {}
 
 UnitMismatchError::UnitMismatchError(const Unit &a, const Unit &b)
     : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +

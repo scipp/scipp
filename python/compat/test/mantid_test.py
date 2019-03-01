@@ -50,11 +50,13 @@ class TestMantidConversion(unittest.TestCase):
         filename = 'CNCS_51936_event.nxs'
         eventWS = mantid.LoadEventNexus(filename)
         ws = mantid.Rebin(eventWS, -0.001, PreserveEvents=False)
+        tmp = mantidcompat.to_dataset(ws)
+        tof = Variable(tmp[Coord.Tof])
         ws = mantid.ConvertUnits(InputWorkspace=ws, Target='DeltaE', EMode='Direct', EFixed=3.3056)
 
         converted_mantid = mantidcompat.to_dataset(ws)
+        converted_mantid[Coord.Ei] = ([], 3.3059)
 
-        tof = Variable(converted_mantid[Coord.Tof])
         d = mantidcompat.to_dataset(eventWS)
         d[Coord.Ei] = ([], 3.3059)
         d.merge(histogram(d, tof))
@@ -72,3 +74,6 @@ class TestMantidConversion(unittest.TestCase):
         ds = as_xarray(sum(converted_mantid, Dim.Position))
         ds['Value'].plot()
         plt.savefig('converted.png')
+
+if __name__ == '__main__':
+    unittest.main()

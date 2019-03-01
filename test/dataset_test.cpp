@@ -1174,9 +1174,9 @@ TEST(DatasetSlice, subset_slice_spatial) {
   // coordinate mismatch, as it should.
   auto view_a_x01 = d["a"](Dim::X, 0, 1);
   auto view_a_x12 = d["a"](Dim::X, 1, 2);
-  EXPECT_THROW_MSG(
-      view_a_x12 -= view_a_x01, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
 }
 
 TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
@@ -1238,12 +1238,12 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   // If we slice with a range index the corresponding coordinate (and dimension)
   // is preserved, even if the range has size 1. Thus the operation fails due to
   // coordinate mismatch, as it should.
-  EXPECT_THROW_MSG(
-      view_a_x12 -= view_a_x01, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
-  EXPECT_THROW_MSG(
-      view_a_x13 -= view_a_x02, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
+  EXPECT_THROW_MSG_SUBSTR(view_a_x13 -= view_a_x02,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
 }
 
 TEST(Dataset, unary_minus) {
