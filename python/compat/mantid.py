@@ -54,7 +54,7 @@ def ConvertWorkspace2DToDataset(ws):
 
     return d
 
-def ConvertEventWorkspaceToDataset(ws):
+def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
     d = ds.Dataset()
     nHist = ws.getNumberHistograms()
     convert_instrument(d, ws)
@@ -63,13 +63,16 @@ def ConvertEventWorkspaceToDataset(ws):
     d[ds.Data.Events] = ([ds.Dim.Position], (nHist,))
     for i, e in enumerate(d[ds.Data.Events].data):
         e[ds.Data.Tof] = ([ds.Dim.Event], ws.getSpectrum(i).getTofs())
-        pt = ws.getSpectrum(i).getPulseTimes()
-        e[ds.Data.PulseTime] = ([ds.Dim.Event], [p.total_nanoseconds() for p in pt])
+        if not drop_pulse_times:
+            pt = ws.getSpectrum(i).getPulseTimes()
+            e[ds.Data.PulseTime] = ([ds.Dim.Event], [p.total_nanoseconds() for p in pt])
     return d
 
-def to_dataset(ws):
+# Pulse times have a Mantid-specific format so the conversion is very slow.
+# Dataset is flexible and can work without pulse times, so we can drop them.
+def to_dataset(ws, drop_pulse_times=False):
     if ws.id() == 'Workspace2D':
         return ConvertWorkspace2DToDataset(ws)
     if ws.id() == 'EventWorkspace':
-        return ConvertEventWorkspaceToDataset(ws)
+        return ConvertEventWorkspaceToDataset(ws, drop_pulse_times)
     raise 'Unsupported workspace type'

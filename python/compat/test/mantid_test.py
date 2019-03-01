@@ -57,7 +57,7 @@ class TestMantidConversion(unittest.TestCase):
         converted_mantid = mantidcompat.to_dataset(ws)
         converted_mantid[Coord.Ei] = ([], 3.3059)
 
-        d = mantidcompat.to_dataset(eventWS)
+        d = mantidcompat.to_dataset(eventWS, drop_pulse_times=True)
         d[Coord.Ei] = ([], 3.3059)
         d.merge(histogram(d, tof))
         del(d[Data.Events])
