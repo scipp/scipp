@@ -42,7 +42,7 @@ ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
 }
 
 Dataset Dataset::operator()(const Dim dim, const gsl::index begin,
-                                 const gsl::index end) && {
+                            const gsl::index end) && {
   return {DatasetSlice(*this)(dim, begin, end)};
 }
 
@@ -917,4 +917,14 @@ Dataset integrate(const Dataset &d, const Dim dim) {
   }
   throw std::runtime_error(
       "Integration required bin-edge dimension coordinate.");
+}
+
+Dataset reverse(const Dataset &d, const Dim dim) {
+  Dataset out;
+  for (const auto var : d)
+    if (var.dimensions().contains(dim))
+      out.insert(reverse(var, dim));
+    else
+      out.insert(var);
+  return out;
 }

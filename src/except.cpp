@@ -41,6 +41,12 @@ std::string do_to_string(const Dim dim) {
     return "Dim::Y";
   case Dim::Z:
     return "Dim::Z";
+  case Dim::Qx:
+    return "Dim::Qx";
+  case Dim::Qy:
+    return "Dim::Qy";
+  case Dim::Qz:
+    return "Dim::Qz";
   case Dim::Polarization:
     return "Dim::Polarization";
   case Dim::Temperature:

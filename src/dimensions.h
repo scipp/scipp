@@ -122,6 +122,8 @@ public:
   void add(const Dim label, const gsl::index size);
   void addInner(const Dim label, const gsl::index size);
 
+  Dim inner() const;
+
   int32_t index(const Dim label) const;
 
 private:

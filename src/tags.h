@@ -129,6 +129,18 @@ struct CoordDef {
     using type = double;
     static constexpr auto unit = units::m;
   };
+  struct Qx {
+    using type = double;
+    static constexpr auto unit = units::meV / units::c;
+  };
+  struct Qy {
+    using type = double;
+    static constexpr auto unit = units::meV / units::c;
+  };
+  struct Qz {
+    using type = double;
+    static constexpr auto unit = units::meV / units::c;
+  };
   struct Tof {
     using type = double;
     static constexpr auto unit = units::us;
@@ -196,10 +208,11 @@ struct CoordDef {
     static constexpr auto unit = units::m;
   };
 
-  using tags = std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Tof,
-                          Energy, DeltaE, Ei, Ef, DetectorId, SpectrumNumber,
-                          DetectorGrouping, RowLabel, Polarization, Temperature,
-                          FuzzyTemperature, Time, TimeInterval, Mask, Position>;
+  using tags =
+      std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Qx, Qy, Qz, Tof,
+                 Energy, DeltaE, Ei, Ef, DetectorId, SpectrumNumber,
+                 DetectorGrouping, RowLabel, Polarization, Temperature,
+                 FuzzyTemperature, Time, TimeInterval, Mask, Position>;
 };
 
 struct DataDef {
@@ -277,6 +290,9 @@ struct Coord {
   using X_t = detail::TagImpl<detail::CoordDef::X>;
   using Y_t = detail::TagImpl<detail::CoordDef::Y>;
   using Z_t = detail::TagImpl<detail::CoordDef::Z>;
+  using Qx_t = detail::TagImpl<detail::CoordDef::Qx>;
+  using Qy_t = detail::TagImpl<detail::CoordDef::Qy>;
+  using Qz_t = detail::TagImpl<detail::CoordDef::Qz>;
   using Tof_t = detail::TagImpl<detail::CoordDef::Tof>;
   using Energy_t = detail::TagImpl<detail::CoordDef::Energy>;
   using DeltaE_t = detail::TagImpl<detail::CoordDef::DeltaE>;
@@ -302,6 +318,9 @@ struct Coord {
   static constexpr X_t X{};
   static constexpr Y_t Y{};
   static constexpr Z_t Z{};
+  static constexpr Qx_t Qx{};
+  static constexpr Qy_t Qy{};
+  static constexpr Qz_t Qz{};
   static constexpr Tof_t Tof{};
   static constexpr Energy_t Energy{};
   static constexpr DeltaE_t DeltaE{};
@@ -374,6 +393,9 @@ template <> constexpr bool is_dimension_coordinate<CoordDef::DeltaE> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::X> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Y> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Z> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Qx> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Qy> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Qz> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Position> = true;
 template <>
 constexpr bool is_dimension_coordinate<CoordDef::SpectrumNumber> = true;
@@ -386,6 +408,9 @@ template <> constexpr Dim coordinate_dimension<CoordDef::DeltaE> = Dim::DeltaE;
 template <> constexpr Dim coordinate_dimension<CoordDef::X> = Dim::X;
 template <> constexpr Dim coordinate_dimension<CoordDef::Y> = Dim::Y;
 template <> constexpr Dim coordinate_dimension<CoordDef::Z> = Dim::Z;
+template <> constexpr Dim coordinate_dimension<CoordDef::Qx> = Dim::Qx;
+template <> constexpr Dim coordinate_dimension<CoordDef::Qy> = Dim::Qy;
+template <> constexpr Dim coordinate_dimension<CoordDef::Qz> = Dim::Qz;
 template <>
 constexpr Dim coordinate_dimension<CoordDef::Position> = Dim::Position;
 template <>

@@ -9,6 +9,14 @@
 
 #include "unit.h"
 
+TEST(units, c) {
+  auto c = 1.0 * units::c;
+  EXPECT_EQ(c.value(), 1.0);
+
+  boost::units::quantity<boost::units::si::velocity> si_c(c);
+  EXPECT_EQ(si_c.value(), 299792458.0);
+}
+
 TEST(Unit, construct) { ASSERT_NO_THROW(Unit u{units::dimensionless}); }
 
 TEST(Unit, compare) {
@@ -82,6 +90,15 @@ TEST(Unit, conversion_factors) {
   EXPECT_DOUBLE_EQ(h.value(), 9.0e6);
 }
 
+TEST(Unit, c) {
+  Unit c(units::c);
+  EXPECT_EQ(c * Unit(units::m), Unit(units::c * units::m));
+  EXPECT_EQ(c * Unit(units::m) / Unit(units::m), Unit(units::c));
+  EXPECT_EQ(Unit(units::meV) / c, Unit(units::meV / units::c));
+  EXPECT_EQ(Unit(units::meV) / c / Unit(units::meV),
+            Unit(units::dimensionless / units::c));
+}
+
 TEST(Unit, sqrt) {
   Unit a{units::dimensionless};
   Unit m{units::m};
@@ -92,5 +109,5 @@ TEST(Unit, sqrt) {
 TEST(Unit, sqrt_fail) {
   Unit m{units::m};
   EXPECT_THROW_MSG(sqrt(m), std::runtime_error,
-                   "Unsupported unit as result of sqrt, sqrt(m).");
+                   "Unsupported unit as result of sqrt: sqrt(m).");
 }
