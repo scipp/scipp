@@ -322,7 +322,7 @@ TEST(Dataset, comparison_missing_variable) {
   EXPECT_EQ(d2, d2);
 }
 
-TEST(Dataset, comparison_with_slice) {
+TEST(Dataset, comparison_with_subset) {
   Dataset d1;
   d1.insert(Data::Value, "a", {});
   d1.insert(Data::Variance, "a", {});
@@ -333,6 +333,35 @@ TEST(Dataset, comparison_with_slice) {
   EXPECT_NE(d1, d2);
   EXPECT_EQ(d1, d2.subset("a"));
   EXPECT_EQ(d2.subset("a"), d1);
+}
+
+TEST(Dataset, subset) {
+  Dataset d;
+  d.insert(Coord::X, {});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Variance, "a", {});
+  d.insert(Data::Value, "b", {});
+  d.insert(Data::Variance, "b", {});
+
+  const auto no_data = d.subset("");
+  EXPECT_EQ(no_data.size(), 1);
+  EXPECT_TRUE(no_data.contains(Coord::X));
+
+  const auto value = d.subset(Data::Value, "a");
+  EXPECT_EQ(value.size(), 2);
+  EXPECT_TRUE(value.contains(Coord::X));
+  EXPECT_TRUE(value.contains(Data::Value, "a"));
+
+  const auto variance = d.subset(Data::Variance, "a");
+  EXPECT_EQ(variance.size(), 2);
+  EXPECT_TRUE(variance.contains(Coord::X));
+  EXPECT_TRUE(variance.contains(Data::Variance, "a"));
+
+  const auto both = d.subset("a");
+  EXPECT_EQ(both.size(), 3);
+  EXPECT_TRUE(both.contains(Coord::X));
+  EXPECT_TRUE(both.contains(Data::Value, "a"));
+  EXPECT_TRUE(both.contains(Data::Variance, "a"));
 }
 
 TEST(Dataset, comparison_with_spatial_slice) {

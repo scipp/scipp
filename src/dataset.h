@@ -50,10 +50,16 @@ public:
   VariableSlice operator[](const gsl::index i) & {
     return VariableSlice{m_variables[i]};
   }
-  ConstDatasetSlice subset(const std::string &name) const && = delete;
+
+  ConstDatasetSlice subset(const std::string &) const && = delete;
+  ConstDatasetSlice subset(const Tag, const std::string &) const && = delete;
   ConstDatasetSlice subset(const std::string &name) const &;
-  DatasetSlice subset(const std::string &name) && = delete;
+  ConstDatasetSlice subset(const Tag tag, const std::string &name) const &;
+  DatasetSlice subset(const std::string &) && = delete;
+  DatasetSlice subset(const Tag, const std::string &) && = delete;
   DatasetSlice subset(const std::string &name) &;
+  DatasetSlice subset(const Tag tag,const std::string &name) &;
+
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
                                const gsl::index end = -1) const && = delete;
   ConstDatasetSlice operator()(const Dim dim, const gsl::index begin,
@@ -317,7 +323,18 @@ public:
       : m_dataset(dataset) {
     for (gsl::index i = 0; i < dataset.size(); ++i) {
       const auto &var = dataset[i];
+      // TODO Should we also keep attributes? Probably yes?
       if (var.isCoord() || var.name() == select)
+        m_indices.push_back(i);
+    }
+  }
+
+  ConstDatasetSlice(const Dataset &dataset, const Tag selectTag,
+                    const std::string &selectName)
+      : m_dataset(dataset) {
+    for (gsl::index i = 0; i < dataset.size(); ++i) {
+      const auto &var = dataset[i];
+      if (var.isCoord() || (var.tag() == selectTag && var.name() == selectName))
         m_indices.push_back(i);
     }
   }
@@ -419,6 +436,10 @@ public:
       : ConstDatasetSlice(dataset), m_mutableDataset(dataset) {}
   DatasetSlice(Dataset &dataset, const std::string &select)
       : ConstDatasetSlice(dataset, select), m_mutableDataset(dataset) {}
+  DatasetSlice(Dataset &dataset, const Tag selectTag,
+               const std::string &selectName)
+      : ConstDatasetSlice(dataset, selectTag, selectName),
+        m_mutableDataset(dataset) {}
 
   using ConstDatasetSlice::operator[];
   VariableSlice operator[](const gsl::index i) const {

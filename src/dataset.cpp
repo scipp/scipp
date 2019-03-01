@@ -23,8 +23,17 @@ ConstDatasetSlice Dataset::subset(const std::string &name) const & {
   return ConstDatasetSlice(*this, name);
 }
 
+ConstDatasetSlice Dataset::subset(const Tag tag,
+                                  const std::string &name) const & {
+  return ConstDatasetSlice(*this, tag, name);
+}
+
 DatasetSlice Dataset::subset(const std::string &name) & {
   return DatasetSlice(*this, name);
+}
+
+DatasetSlice Dataset::subset(const Tag tag, const std::string &name) & {
+  return DatasetSlice(*this, tag, name);
 }
 
 ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
