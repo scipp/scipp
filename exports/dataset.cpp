@@ -87,11 +87,42 @@ void declare_ranges_pair(py::module &m, const std::string &suffix) {
       .def("second", [](const Proxy &self) { return std::get<1>(self); });
 }
 
+template <class T> std::string print(const T &item) {
+  using dataset::to_string;
+  using std::to_string;
+  if constexpr (std::is_same_v<T, std::string>)
+    return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+    return {"(Eigen::Vector3d), "};
+  else if constexpr (std::is_same_v<T,
+                                    boost::container::small_vector<double, 8>>)
+    return {"(vector), "};
+  else
+    return to_string(item) + ", ";
+}
+
 template <class T>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
-  view.def("__getitem__", &VariableView<T>::operator[],
+  view.def("__repr__",
+           [](const VariableView<T> &self) {
+             const gsl::index size = self.size();
+             if (size == 0)
+               return std::string("[]");
+             std::string s = "[";
+             for (gsl::index i = 0; i < self.size(); ++i) {
+               if (i == 4 && size > 8) {
+                 s += "..., ";
+                 i = size - 4;
+               }
+               s += print(self[i]);
+             }
+             s.resize(s.size() - 2);
+             s += "]";
+             return s;
+           })
+      .def("__getitem__", &VariableView<T>::operator[],
            py::return_value_policy::reference)
       .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
                              const T value) { self[i] = value; })
