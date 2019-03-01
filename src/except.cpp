@@ -124,13 +124,13 @@ namespace dataset {
 
 std::string to_string(const Dimensions &dims, const std::string &separator) {
   if (dims.empty())
-    return "{}\n";
+    return "{}";
   std::string s = "{{";
   for (int32_t i = 0; i < dims.ndim(); ++i)
     s += to_string(dims.labels()[i], separator) + ", " +
          std::to_string(dims.shape()[i]) + "}, {";
   s.resize(s.size() - 3);
-  s += "}\n";
+  s += "}";
   return s;
 }
 
@@ -241,7 +241,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
                          const Dimensions &dims, const std::string &separator) {
   std::stringstream s;
   s << id + '\n';
-  s << "Dimensions: " << to_string(dims, separator);
+  s << "Dimensions: " << to_string(dims, separator) << '\n';
   s << "Coordinates:\n";
   for (const auto &var : dataset) {
     if (var.isCoord())
