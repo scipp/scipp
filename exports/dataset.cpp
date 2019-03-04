@@ -504,6 +504,7 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Unit>(m, "Unit")
       .def(py::init())
       .def("__repr__", [](const Unit &u) -> std::string { return u.name(); })
+      .def_property_readonly("name", &Unit::name)
       .def(py::self + py::self)
       .def(py::self - py::self)
       .def(py::self * py::self)
@@ -537,9 +538,12 @@ PYBIND11_MODULE(dataset, m) {
       .def("__contains__", [](const Dimensions &self,
                               const Dim dim) { return self.contains(dim); })
       .def_property_readonly("labels", &Dimensions::labels)
+      .def_property_readonly("shape", &Dimensions::shape)
       .def("add", &Dimensions::add)
       .def("size",
-           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_));
+           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
+      .def(py::self == py::self)
+      .def(py::self != py::self);
 
   PYBIND11_NUMPY_DTYPE(Empty, dummy);
 
