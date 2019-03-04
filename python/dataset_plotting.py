@@ -127,8 +127,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False):
 
         if len(values) > 1:
             raise RuntimeError("More than one Data.Value found! Please use e.g."
-                               " plot(dataset.subset(Data.Value, 'sample')) to "
-                               "select only a single Value.")
+                               " plot_1d(dataset.subset(Data.Value, 'sample')) "
+                               "to select only a single Value.")
 
         # Check that data is 1D
         if len(values[0].dimensions.labels) > 1:
@@ -179,7 +179,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False):
 #===============================================================================
 
 # Plot a 2D image of pixels
-def plot_image(input_data, field=None):
+def plot_image(input_data):
+
     dims = input_data.dimensions()
     if (len(dims) > 1) and (len(dims) < 3):
 
@@ -188,30 +189,29 @@ def plot_image(input_data, field=None):
         axmin = []
         axmax = []
         axlab = []
-        fields = []
+        values = []
         nx = []
-        ifield = 0
         for var in input_data:
             if var.is_coord:
-                values = var.numpy
-                axmin.append(values[0] - 0.5*(values[1]-values[0]))
-                axmax.append(values[-1] + 0.5*(values[-1]-values[-2]))
+                x = var.numpy
+                axmin.append(x[0] - 0.5*(x[1]-x[0]))
+                axmax.append(x[-1] + 0.5*(x[-1]-x[-2]))
                 axlab.append([var.name, var.unit])
             elif var.is_data:
-                fields.append([var.name, var.unit])
-                if var.name == field:
-                    ifield = len(fields) - 1
+                values.append(var)
+
+        if len(values) > 1:
+            raise RuntimeError("More than one Data.Value found! Please use e.g."
+                               " plot_image(dataset.subset(Data.Value, 'sample'))"
+                               " to select only a single Value.")
 
         ratio = (axmax[1] - axmin[1]) / (axmax[0] - axmin[0])
 
-        if (field is None) and (len(fields) > 1):
-            raise RuntimeError("More than one data field found! Please specify which one to display")
-
         data = [go.Heatmap(
-            z = input_data[Data.Value, fields[ifield][0]].numpy,
+            z = values[0].numpy,
             colorscale = 'Viridis',
             colorbar=dict(
-                title="{} [{}]".format(fields[ifield][0],fields[ifield][1]),
+                title="{} [{}]".format(values[0].name,values[0].unit),
                 titleside = 'right',
                 )
             )]
