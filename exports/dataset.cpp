@@ -563,6 +563,12 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__", [](VariableSlice &a, Variable &b) { return a += b; },
+           py::is_operator())
+      .def("__isub__", [](VariableSlice &a, Variable &b) { return a -= b; },
+           py::is_operator())
+      .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
+           py::is_operator())
       .def("__len__", &VariableSlice::size)
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
@@ -685,13 +691,18 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<Dataset, detail::Key::TagName>)
 
       // B) Variants with dimensions, inserting new item.
-      // 0. Insertion with default init. TODO Should this be removed?
+      // 0. Insertion from Variable or Variable slice.
+      .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
+      .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
+      .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)
+      .def("__setitem__", detail::insert<VariableSlice, detail::Key::TagName>)
+      // 1. Insertion with default init. TODO Should this be removed?
       .def("__setitem__", detail::insertDefaultInit<detail::Key::Tag>)
       .def("__setitem__", detail::insertDefaultInit<detail::Key::TagName>)
-      // 1. Insertion from numpy.ndarray
+      // 2. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Insertion attempting forced conversion to array of double. This
+      // 3. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
       //    py::array::forcecast argument, we need to minimize implicit (and
@@ -700,18 +711,13 @@ PYBIND11_MODULE(dataset, m) {
       //    same as or similar to insert_1D in case 3. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
-      // 3. Insertion of numpy-incompatible data. py::array_t does not support
+      // 4. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
-      // 4. Insertion from Variable or Variable slice.
-      .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
-      .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
-      .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)
-      .def("__setitem__", detail::insert<VariableSlice, detail::Key::TagName>)
 
       // TODO Make sure we have all overloads covered to avoid implicit
       // conversion of DatasetSlice to Dataset.
