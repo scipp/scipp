@@ -2,10 +2,8 @@
 from dataset import Data, dataset
 import numpy as np
 # Plotly imports
-from plotly import __version__
-from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+from plotly.offline import init_notebook_mode, iplot
 init_notebook_mode(connected=True)
-from ipywidgets import interactive, HBox, VBox
 import plotly.graph_objs as go
 
 #===============================================================================
@@ -13,6 +11,13 @@ import plotly.graph_objs as go
 # Plot a 2D slice through a 3D dataset with a slider to adjust the position of
 # the slice in the third dimension
 def plot_sliceviewer(input_data, field=None):
+
+    # Delay import to here, as ipywidgets is not part of the base plotly package
+    try:
+        from ipywidgets import interactive, HBox, VBox
+    except ImportError:
+        print("Sorry, the sliceviewer requires ipywidgets which was not found on this system")
+        return
 
     dims = input_data.dimensions()
     if (len(dims) > 2) and (len(dims) < 5):
@@ -91,7 +96,10 @@ def plot_sliceviewer(input_data, field=None):
 # 3. [d1, d2]
 # 4. [[d1, var1], [d2, var2]]
 # 5. [[d1, var1], [d2]]
-def plot_1d(input_data, var=None):
+#
+# TODO: find a more general way of handling arguments to be sent to plotly,
+# probably via a dictionay of arguments
+def plot_1d(input_data, var=None, logx=False, logy=False, logxy=False):
 
     arr = []
     # Case of a single dataset
@@ -162,6 +170,10 @@ def plot_1d(input_data, var=None):
             title = ylab
             )
         )
+    if logx or logxy:
+        layout["xaxis"]["type"] = "log"
+    if logy or logxy:
+        layout["yaxis"]["type"] = "log"
 
     iplot(dict(data=data, layout=layout))
 
