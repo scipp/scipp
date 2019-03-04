@@ -87,11 +87,42 @@ void declare_ranges_pair(py::module &m, const std::string &suffix) {
       .def("second", [](const Proxy &self) { return std::get<1>(self); });
 }
 
+template <class T> std::string print(const T &item) {
+  using dataset::to_string;
+  using std::to_string;
+  if constexpr (std::is_same_v<T, std::string>)
+    return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+    return {"(Eigen::Vector3d), "};
+  else if constexpr (std::is_same_v<T,
+                                    boost::container::small_vector<double, 8>>)
+    return {"(vector), "};
+  else
+    return to_string(item) + ", ";
+}
+
 template <class T>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
-  view.def("__getitem__", &VariableView<T>::operator[],
+  view.def("__repr__",
+           [](const VariableView<T> &self) {
+             const gsl::index size = self.size();
+             if (size == 0)
+               return std::string("[]");
+             std::string s = "[";
+             for (gsl::index i = 0; i < self.size(); ++i) {
+               if (i == 4 && size > 8) {
+                 s += "..., ";
+                 i = size - 4;
+               }
+               s += print(self[i]);
+             }
+             s.resize(s.size() - 2);
+             s += "]";
+             return s;
+           })
+      .def("__getitem__", &VariableView<T>::operator[],
            py::return_value_policy::reference)
       .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
                              const T value) { self[i] = value; })
@@ -768,16 +799,21 @@ PYBIND11_MODULE(dataset, m) {
       // 1. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Insertion attempting forced conversion to array of double. This
+      // 2. Handle integers before case 3. below, which would convert to double.
+      .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
+      // 3. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
       //    py::array::forcecast argument, we need to minimize implicit (and
       //    potentially expensive conversion). If we wanted to avoid some
       //    conversion we need to provide explicit variants for specific types,
-      //    same as or similar to insert_1D in case 3. below.
+      //    same as or similar to insert_1D in case 4. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
-      // 3. Insertion of numpy-incompatible data. py::array_t does not support
+      // 4. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
@@ -788,7 +824,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
-      // 4. Insertion from Variable or Variable slice.
+      // 5. Insertion from Variable or Variable slice.
       .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
       .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
       .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)

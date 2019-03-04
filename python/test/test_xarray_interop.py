@@ -9,7 +9,7 @@ class TestXarrayInterop(unittest.TestCase):
         table = ds.Dataset()
         table[ds.Coord.RowLabel] = ([ds.Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
         self.assertSequenceEqual(table[ds.Coord.RowLabel].data, ['a', 'bb', 'ccc', 'dddd'])
-        table[ds.Data.Value, "col1"] = ([ds.Dim.Row], [3,2,1,0])
+        table[ds.Data.Value, "col1"] = ([ds.Dim.Row], [3.0,2.0,1.0,0.0])
         table[ds.Data.Value, "col2"] = ([ds.Dim.Row], np.arange(4))
         self.assertEqual(len(table), 3)
 

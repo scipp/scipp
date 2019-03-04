@@ -117,6 +117,12 @@ TEST(Variable, operator_equals) {
   EXPECT_FALSE(a == diff4);
 }
 
+TEST(Variable, operator_equals_mismatching_dtype) {
+  auto a = makeVariable<double>(Data::Value, {});
+  auto b = makeVariable<float>(Data::Value, {});
+  EXPECT_NE(a, b);
+}
+
 TEST(Variable, operator_unary_minus) {
   const Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   auto b = -a;
@@ -198,9 +204,8 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   Variable a(Data::Value, {Dim::X, 1}, {1.0});
   auto b = makeVariable<int64_t>(Data::Value, {Dim::X, 1}, {2});
-  EXPECT_THROW_MSG(a += b, std::runtime_error,
-                   "Cannot apply arithmetic operation to Variables: Underlying "
-                   "data types do not match.");
+  EXPECT_THROW_MSG(a += b, dataset::except::TypeError,
+                   "Expected item dtype double, got int64.");
 }
 
 TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
