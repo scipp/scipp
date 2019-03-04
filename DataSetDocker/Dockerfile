@@ -60,8 +60,8 @@ RUN conda install --quiet --yes pip
 RUN pip install py2nb
 
 RUN find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; ;  \
-    bash -c "if [ ! -d /home/$NB_USER/work/examples]; then mkdir /home/$NB_USER/work/examples; fi;" ; \ 
-    bash -c "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv /home/$NB_USER/work/examples {} \;" ; \
+    bash -c "if [ ! -d /home/$NB_USER/work/examples ]; then mkdir /home/$NB_USER/work/examples; fi;" ; \ 
+    bash -c "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} /home/$NB_USER/work/examples \; ; fi;" ; \
     chmod -R a+rwx /home/$NB_USER/work
 
 USER $NB_UID
