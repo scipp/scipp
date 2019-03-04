@@ -14,6 +14,7 @@
 
 #include "convert.h"
 #include "dataset.h"
+#include "events.h"
 #include "except.h"
 #include "tag_util.h"
 #include "tags.h"
@@ -1022,4 +1023,7 @@ PYBIND11_MODULE(dataset, m) {
 
   //-----------------------dimensions free functions----------------------------
   m.def("dimensionCoord", &dimensionCoord);
+
+  auto events = m.def_submodule("events");
+  events.def("sort_by_tof", &events::sortByTof);
 }
