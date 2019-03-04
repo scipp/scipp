@@ -1,3 +1,6 @@
+# To convert to jupyter notebook type: tpy2nb path/filename.py 
+# result file path is: path/filename.ipynb 
+# py2nb link: https://github.com/williamjameshandley/py2nb
 #|
 # Imports
 from dataset import *
