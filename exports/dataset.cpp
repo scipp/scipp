@@ -525,6 +525,7 @@ PYBIND11_MODULE(dataset, m) {
 
   auto attr_tags = m.def_submodule("Attr");
   attr_tags.attr("ExperimentLog") = Tag(Attr::ExperimentLog);
+  attr_tags.attr("Monitor") = Tag(Attr::Monitor);
 
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");

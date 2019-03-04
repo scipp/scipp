@@ -492,6 +492,37 @@ class TestDatasetExamples(unittest.TestCase):
                 spec[Data.Value, "sample1"] = np.zeros(1000)
                 spec[Data.Variance, "sample1"] = np.zeros(1000)
 
+    def test_monitors_example(self):
+        d = Dataset()
+
+        d[Coord.SpectrumNumber] = ([Dim.Spectrum], np.arange(1, 101))
+
+        # Add a (common) time-of-flight axis
+        d[Coord.Tof] = ([Dim.Tof], np.arange(9))
+
+        # Add data with uncertainties
+        d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.exponential(size=100*8).reshape([100, 8]))
+        d[Data.Variance, "sample1"] = d[Data.Value, "sample1"]
+
+        # Add event-mode beam-status monitor
+        status = Dataset()
+        status[Data.Tof] = ([Dim.Event], np.random.exponential(size=1000))
+        status[Data.PulseTime] = ([Dim.Event], np.random.exponential(size=1000))
+        d[Coord.Monitor, "beam-status"] = ([], status)
+
+        # Add position-resolved beam-profile monitor
+        profile = Dataset()
+        profile[Coord.X] = ([Dim.X], [-0.02, -0.01, 0.0, 0.01, 0.02])
+        profile[Coord.Y] = ([Dim.Y], [-0.02, -0.01, 0.0, 0.01, 0.02])
+        profile[Data.Value] = ([Dim.Y, Dim.X], (4,4))
+        d[Coord.Monitor, "beam-profile"] = ([], profile)
+
+        # Add histogram-mode transmission monitor
+        transmission = Dataset()
+        transmission[Coord.Energy] = ([Dim.Energy], np.arange(9))
+        transmission[Data.Value] = ([Dim.Energy], np.random.exponential(size=8))
+        d[Coord.Monitor, "transmission"] = ([], ())
+
     def test_zip(self):
         d = Dataset()
         d[Coord.SpectrumNumber] = ([Dim.Position], np.arange(1, 6))
