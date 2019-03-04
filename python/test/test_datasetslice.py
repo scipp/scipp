@@ -25,6 +25,33 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(1, len([var for var in ds_slice if var.is_coord]))
         self.assertEqual(2, len(ds_slice))
 
+    def test_slice_back_ommit_range(self):
+        sl = self._d[Dim.X, 1:-1][Data.Value, "a"].numpy
+        ref = np. array([1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
+        self.assertEqual(ref.shape, sl.shape)
+        self.assertEqual(np.allclose(sl, ref), True)
+        # omitting range end
+        sl = self._d[Dim.X, 1:][Data.Value, "b"].numpy
+        ref = np. array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
+        self.assertEqual(ref.shape, sl.shape)
+        self.assertEqual(np.allclose(sl, ref), True)
+        # omitting range begin
+        sl = self._d[Dim.X, :-1][Data.Value, "a"].numpy
+        ref = np. array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=np.int64)
+        self.assertEqual(ref.shape, sl.shape)
+        self.assertEqual(np.allclose(sl, ref), True)
+        # omitting range both begin and end
+        sl = self._d[Dim.X, :][Data.Value, "b"].numpy
+        ref = np. array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int64)
+        self.assertEqual(ref.shape, sl.shape)
+        self.assertEqual(np.allclose(sl, ref), True)
+
+    def test_slice_single_index(self):
+        self.assertEqual(self._d[Dim.X, -4][Data.Value, "a"].numpy,
+                         self._d[Dim.X, 6][Data.Value, "a"].numpy)
+        self.assertEqual(self._d[Data.Value, "a"][Dim.X, -3].numpy,
+                         self._d[Data.Value, "a"][Dim.X, 7].numpy)
+
 
     def test_range_based_slice(self):
         subset = slice(1,4,1)
