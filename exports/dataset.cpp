@@ -16,6 +16,7 @@
 #include "dataset.h"
 #include "except.h"
 #include "tag_util.h"
+#include "tags.h"
 #include "unit.h"
 #include "zip_view.h"
 
@@ -530,6 +531,7 @@ PYBIND11_MODULE(dataset, m) {
   declare_span<float>(m, "float");
   declare_span<Bool>(m, "bool");
   declare_span<const double>(m, "double_const");
+  declare_span<const long>(m, "long_const");
   declare_span<const std::string>(m, "string_const");
   declare_span<const Dim>(m, "Dim_const");
   declare_span<Dataset>(m, "Dataset");
@@ -584,6 +586,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__contains__", [](const Dimensions &self,
                               const Dim dim) { return self.contains(dim); })
       .def_property_readonly("labels", &Dimensions::labels)
+      .def_property_readonly("shape", &Dimensions::shape)
       .def("add", &Dimensions::add)
       .def("size",
            py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
@@ -670,7 +673,7 @@ PYBIND11_MODULE(dataset, m) {
         return dataset::to_string(self, ".");
       });
 
-  py::class_<DatasetSlice>(m, "DatasetView")
+  py::class_<DatasetSlice>(m, "DatasetSlice")
       .def(py::init<Dataset &>())
       .def("__len__", &DatasetSlice::size)
       .def("__iter__",
@@ -939,4 +942,7 @@ PYBIND11_MODULE(dataset, m) {
   // find out why py::overload_cast is not working correctly here
   m.def("sqrt", [](const Variable &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>());
+
+  //-----------------------dimensions free functions----------------------------
+  m.def("dimensionCoord", &dimensionCoord);
 }

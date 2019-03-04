@@ -1,5 +1,5 @@
 # Dataset imports
-from dataset import Data, dataset
+from dataset import Data, dataset, dimensionCoord
 import numpy as np
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
@@ -99,62 +99,63 @@ def plot_sliceviewer(input_data, field=None):
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
-def plot_1d(input_data, var=None, logx=False, logy=False, logxy=False):
+def plot_1d(input_data, logx=False, logy=False, logxy=False):
 
-    arr = []
+    entries = []
     # Case of a single dataset
-    if type(input_data) is dataset.Dataset:
-        arr.append([input_data, var])
-    # The more general case: there can be many different types of lists
+    if (type(input_data) is dataset.Dataset) or (type(input_data) is dataset.DatasetSlice):
+        entries.append(input_data)
+    # Case of a list of datasets
     elif type(input_data) is list:
-        # Go through the list items recursively:
+        # Go through the list items:
         for item in input_data:
-            if type(item) is dataset.Dataset:
-                arr.append([item, None])
-            elif type(item) is list:
-                ktem = [None, None]
-                for jtem in item:
-                    if type(jtem) is dataset.Dataset:
-                        ktem[0] = jtem
-                    elif type(jtem) is str:
-                        ktem[1] = jtem
-                    else:
-                        raise RuntimeError("Bad data type in input of plot_1d")
-                arr.append(ktem)
+            if (type(item) is dataset.Dataset) or (type(item) is dataset.DatasetSlice):
+                entries.append(item)
+            else:
+                raise RuntimeError("Bad data type in list input of plot_1d. "
+                                   "Expected either Dataset or DatasetSlice, "
+                                   "got " + type(item))
+    else:
+        raise RuntimeError("Bad data type in input of plot_1d. Expected either "
+                           "Dataset or DatasetSlice, got " + type(item))
 
-    # arr now contains a list of [dataset,var] pairs
+    # entries now contains a list of Dataset or DatasetSlice
     # We now construct a list of [x,y] pairs
     # TODO: check that all x coordinates are the same
     data = []
-    for item in arr:
+    for item in entries:
         # Scan the datasets
-        coords = []
-        fields = []
-        ifield = 0
-        for var in item[0]:
-            if var.is_coord:
-                coords.append(var)
+        values = []
+        for var in item:
             if var.is_data:
-                fields.append(var)
-                if var.name == item[1]:
-                    ifield = len(fields) - 1
+                values.append(var)
 
-        if (item[1] is None) and (len(fields) > 1):
-            raise RuntimeError("More than one data field found! Please specify which one to display")
+        if len(values) > 1:
+            raise RuntimeError("More than one Data.Value found! Please use e.g."
+                               " plot(dataset.subset(Data.Value, 'sample')) to "
+                               "select only a single Value.")
 
-        y = fields[ifield].numpy
-        ylab = fields[ifield].unit.name
-        name = fields[ifield].name
+        # Check that data is 1D
+        if len(values[0].dimensions.labels) > 1:
+            raise RuntimeError("Can only plot 1D data with plot_1d.")
 
-        # Now find the appropriate coordinate
-        coord_not_found = True
-        for c in coords:
-            if c.dimensions == fields[ifield].dimensions:
-                x = c.numpy
-                xlab = "{} [{}]".format(c.name,c.unit)
-                coord_not_found = False
-        if coord_not_found:
-            raise RuntimeError("The required coordinate was not found in the dataset")
+        # Define y
+        y = values[0].numpy
+        ylab = values[0].unit.name
+        name = values[0].name
+        ydims = values[0].dimensions
+        ny = ydims.shape[0]
+
+        # Define x
+        coord = item[dimensionCoord(values[0].dimensions.labels[0])]
+        xdims = coord.dimensions
+        nx = xdims.shape[0]
+
+        x = coord.numpy
+        # Check for bin edges
+        if nx == ny + 1:
+            x = 0.5 * (x[1:] + x[:-1])
+        xlab = "{} [{}]".format(coord.name,coord.unit)
 
         trace = go.Scatter(
             x=x,
