@@ -515,7 +515,8 @@ class TestDatasetExamples(unittest.TestCase):
         profile[Coord.X] = ([Dim.X], [-0.02, -0.01, 0.0, 0.01, 0.02])
         profile[Coord.Y] = ([Dim.Y], [-0.02, -0.01, 0.0, 0.01, 0.02])
         profile[Data.Value] = ([Dim.Y, Dim.X], (4,4))
-        d[Coord.Monitor, "beam-profile"] = ([], profile)
+        # Monitors can also be attributes, so they are not required to match in operations
+        d[Attr.Monitor, "beam-profile"] = ([], profile)
 
         # Add histogram-mode transmission monitor
         transmission = Dataset()
