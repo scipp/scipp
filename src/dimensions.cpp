@@ -113,6 +113,13 @@ void Dimensions::addInner(const Dim label, const gsl::index size) {
   ++m_ndim;
 }
 
+Dim Dimensions::inner() const {
+  if (ndim() == 0)
+    throw dataset::except::DimensionError(
+        "Expected Dimensions with at least 1 dimension.");
+  return m_dims[m_ndim - 1];
+}
+
 int32_t Dimensions::index(const Dim dim) const {
   for (int32_t i = 0; i < 6; ++i)
     if (m_dims[i] == dim)

@@ -19,12 +19,21 @@ Dataset::Dataset(const ConstDatasetSlice &view) {
     insert(var);
 }
 
-ConstDatasetSlice Dataset::operator[](const std::string &name) const & {
+ConstDatasetSlice Dataset::subset(const std::string &name) const & {
   return ConstDatasetSlice(*this, name);
 }
 
-DatasetSlice Dataset::operator[](const std::string &name) & {
+ConstDatasetSlice Dataset::subset(const Tag tag,
+                                  const std::string &name) const & {
+  return ConstDatasetSlice(*this, tag, name);
+}
+
+DatasetSlice Dataset::subset(const std::string &name) & {
   return DatasetSlice(*this, name);
+}
+
+DatasetSlice Dataset::subset(const Tag tag, const std::string &name) & {
+  return DatasetSlice(*this, tag, name);
 }
 
 ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
@@ -33,7 +42,7 @@ ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
 }
 
 Dataset Dataset::operator()(const Dim dim, const gsl::index begin,
-                                 const gsl::index end) && {
+                            const gsl::index end) && {
   return {DatasetSlice(*this)(dim, begin, end)};
 }
 
@@ -253,10 +262,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
         // Coordinate variables must match
         // Strictly speaking we should allow "equivalent" coordinates, i.e.,
         // match only after projecting out any constant dimensions.
-        if (!(var1 == var2))
-          throw std::runtime_error(
-              "Coordinates of datasets do not match. Cannot "
-              "perform binary operation.");
+        dataset::expect::variablesMatch(var1, var2);
         // TODO We could improve sharing here magically, but whether this is
         // beneficial would depend on the shared reference count in var1 and
         // var2: var1 = var2;
@@ -344,9 +350,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
     auto var1 = dataset[index];
     if (var1.isCoord()) {
       // Coordinate variables must match
-      if (!(var1 == var2))
-        throw std::runtime_error(
-            "Coordinates of datasets do not match. Cannot perform addition");
+      dataset::expect::variablesMatch(var1, var2);
     } else if (var1.isData()) {
       // Data variables are added
       if (var2.tag() == Data::Value) {
@@ -913,4 +917,14 @@ Dataset integrate(const Dataset &d, const Dim dim) {
   }
   throw std::runtime_error(
       "Integration required bin-edge dimension coordinate.");
+}
+
+Dataset reverse(const Dataset &d, const Dim dim) {
+  Dataset out;
+  for (const auto var : d)
+    if (var.dimensions().contains(dim))
+      out.insert(reverse(var, dim));
+    else
+      out.insert(var);
+  return out;
 }

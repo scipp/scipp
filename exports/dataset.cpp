@@ -12,6 +12,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include "convert.h"
 #include "dataset.h"
 #include "except.h"
 #include "tag_util.h"
@@ -86,11 +87,42 @@ void declare_ranges_pair(py::module &m, const std::string &suffix) {
       .def("second", [](const Proxy &self) { return std::get<1>(self); });
 }
 
+template <class T> std::string print(const T &item) {
+  using dataset::to_string;
+  using std::to_string;
+  if constexpr (std::is_same_v<T, std::string>)
+    return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+    return {"(Eigen::Vector3d), "};
+  else if constexpr (std::is_same_v<T,
+                                    boost::container::small_vector<double, 8>>)
+    return {"(vector), "};
+  else
+    return to_string(item) + ", ";
+}
+
 template <class T>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
-  view.def("__getitem__", &VariableView<T>::operator[],
+  view.def("__repr__",
+           [](const VariableView<T> &self) {
+             const gsl::index size = self.size();
+             if (size == 0)
+               return std::string("[]");
+             std::string s = "[";
+             for (gsl::index i = 0; i < self.size(); ++i) {
+               if (i == 4 && size > 8) {
+                 s += "..., ";
+                 i = size - 4;
+               }
+               s += print(self[i]);
+             }
+             s.resize(s.size() - 2);
+             s += "]";
+             return s;
+           })
+      .def("__getitem__", &VariableView<T>::operator[],
            py::return_value_policy::reference)
       .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
                              const T value) { self[i] = value; })
@@ -219,6 +251,20 @@ void insert_conv(
   // TODO This is converting back and forth between py::array and py::array_t,
   // can we do this in a better way?
   auto var = detail::MakeVariable<T>::apply(tag, labels, array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
+
+template <class T, class K>
+void insert_0D(Dataset &self, const K &key,
+               const std::tuple<const std::vector<Dim> &, T &> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, value ] = data;
+  if (!labels.empty())
+    throw std::runtime_error(
+        "Got 0-D data, but nonzero number of dimension labels.");
+  auto var = ::makeVariable<T>(tag, {}, {value});
   if (!name.empty())
     var.setName(name);
   self.insert(std::move(var));
@@ -662,6 +708,12 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
+      .def("subset", [](DatasetSlice &self,
+                        const std::string &name) { return self.subset(name); })
+      .def("subset",
+           [](DatasetSlice &self, const Tag tag, const std::string &name) {
+             return self.subset(tag, name);
+           })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
@@ -718,8 +770,12 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
            })
-      .def("__getitem__",
-           [](Dataset &self, const std::string &name) { return self[name]; })
+      .def("subset", [](Dataset &self,
+                        const std::string &name) { return self.subset(name); })
+      .def("subset",
+           [](Dataset &self, const Tag tag, const std::string &name) {
+             return self.subset(tag, name);
+           })
       // Careful: The order of overloads is really important here, otherwise
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also
@@ -746,23 +802,32 @@ PYBIND11_MODULE(dataset, m) {
       // 1. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Insertion attempting forced conversion to array of double. This
+      // 2. Handle integers before case 3. below, which would convert to double.
+      .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
+      // 3. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
       //    py::array::forcecast argument, we need to minimize implicit (and
       //    potentially expensive conversion). If we wanted to avoid some
       //    conversion we need to provide explicit variants for specific types,
-      //    same as or similar to insert_1D in case 3. below.
+      //    same as or similar to insert_1D in case 4. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
-      // 3. Insertion of numpy-incompatible data. py::array_t does not support
+      // 4. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
+      .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
-      // 4. Insertion from Variable or Variable slice.
+      // 5. Insertion from Variable or Variable slice.
       .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
       .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
       .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)
@@ -807,6 +872,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def("merge", &Dataset::merge)
       .def("dimensions", [](const Dataset &self) { return self.dimensions(); })
       // TODO For now this is just for testing. We need to decide on an API for
       // specifying the keys.
@@ -843,6 +909,9 @@ PYBIND11_MODULE(dataset, m) {
   m.def("mean", py::overload_cast<const Dataset &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>());
   m.def("integrate", py::overload_cast<const Dataset &, const Dim>(&integrate),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("convert",
+        py::overload_cast<const Dataset &, const Dim, const Dim>(&convert),
         py::call_guard<py::gil_scoped_release>());
 
   //-----------------------variable free functions------------------------------

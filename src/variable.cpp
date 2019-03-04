@@ -4,10 +4,29 @@
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
 #include "variable.h"
+#include "counts.h"
 #include "dataset.h"
 #include "except.h"
-#include "counts.h"
 #include "variable_view.h"
+
+template <class T, class C> auto &requireT(C &concept) {
+  try {
+    return dynamic_cast<T &>(concept);
+  } catch (const std::bad_cast &) {
+    throw dataset::except::TypeError(
+        "Expected item dtype " + dataset::to_string(T::static_dtype()) +
+        ", got " + dataset::to_string(concept.dtype()) + '.');
+  }
+}
+
+template <class T, class C> auto &require(C &concept) {
+  try {
+    return dynamic_cast<T &>(concept);
+  } catch (const std::bad_cast &) {
+    throw std::runtime_error(std::string("Cannot apply operation, requires ") +
+                             T::name + " type.");
+  }
+}
 
 template <template <class, class> class Op, class T1, class T2>
 struct ArithmeticHelper {
@@ -24,60 +43,6 @@ template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
 template <class T> class DataModel;
 template <class T> class VariableConceptT;
 template <class T> struct RebinHelper {
-  static void rebin(const Dim dim, const gsl::span<const T> &oldModel,
-                    const gsl::span<T> &newModel,
-                    const VariableView<const T> &oldCoordView,
-                    const gsl::index oldOffset,
-                    const VariableView<const T> &newCoordView,
-                    const gsl::index newOffset) {
-    // Why is this not used. Bug?
-    static_cast<void>(dim);
-
-    auto oldCoordIt = oldCoordView.begin();
-    auto newCoordIt = newCoordView.begin();
-    auto oldIt = oldModel.begin();
-    auto newIt = newModel.begin();
-    while (newIt != newModel.end() && oldIt != oldModel.end()) {
-      if (&*(oldCoordIt + 1) == &(*oldCoordIt) + oldOffset) {
-        // Last bin in this 1D subhistogram, go to next.
-        ++oldCoordIt;
-        ++oldIt;
-        continue;
-      }
-      const auto xo_low = *oldCoordIt;
-      const auto xo_high = *(&(*oldCoordIt) + oldOffset);
-      if (&*(newCoordIt + 1) == &(*newCoordIt) + newOffset) {
-        // Last bin in this 1D subhistogram, go to next.
-        ++newCoordIt;
-        ++newIt;
-        continue;
-      }
-      const auto xn_low = *newCoordIt;
-      const auto xn_high = *(&(*newCoordIt) + newOffset);
-      if (xn_high <= xo_low) {
-        // No overlap, go to next new bin
-        ++newCoordIt;
-        ++newIt;
-      } else if (xo_high <= xn_low) {
-        // No overlap, go to next old bin
-        ++oldCoordIt;
-        ++oldIt;
-      } else {
-        auto delta = xo_high < xn_high ? xo_high : xn_high;
-        delta -= xo_low > xn_low ? xo_low : xn_low;
-        *newIt += *oldIt * delta / (xo_high - xo_low);
-
-        if (xn_high > xo_high) {
-          ++oldCoordIt;
-          ++oldIt;
-        } else {
-          ++newCoordIt;
-          ++newIt;
-        }
-      }
-    }
-  }
-
   // Special rebin version for rebinning inner dimension to a joint new coord.
   static void rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
                          VariableConceptT<T> &newT,
@@ -90,17 +55,23 @@ template <class T> struct RebinHelper {
     const auto count = oldT.dimensions().volume() / oldSize;
     const auto *xold = &*oldCoordT.getSpan().begin();
     const auto *xnew = &*newCoordT.getSpan().begin();
+    // This function assumes that dimensions between coord and data either
+    // match, or coord is 1D.
+    const bool jointOld = oldCoordT.dimensions().ndim() == 1;
+    const bool jointNew = newCoordT.dimensions().ndim() == 1;
 #pragma omp parallel for
     for (gsl::index c = 0; c < count; ++c) {
       gsl::index iold = 0;
       gsl::index inew = 0;
+      const gsl::index oldEdgeOffset = jointOld ? 0 : c * (oldSize + 1);
+      const gsl::index newEdgeOffset = jointNew ? 0 : c * (newSize + 1);
       const auto oldOffset = c * oldSize;
       const auto newOffset = c * newSize;
       while ((iold < oldSize) && (inew < newSize)) {
-        auto xo_low = xold[iold];
-        auto xo_high = xold[iold + 1];
-        auto xn_low = xnew[inew];
-        auto xn_high = xnew[inew + 1];
+        auto xo_low = xold[oldEdgeOffset + iold];
+        auto xo_high = xold[oldEdgeOffset + iold + 1];
+        auto xn_low = xnew[newEdgeOffset + inew];
+        auto xn_high = xnew[newEdgeOffset + inew + 1];
 
         if (xn_high <= xo_low)
           inew++; /* old and new bins do not overlap */
@@ -205,6 +176,7 @@ public:
   VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
   DType dtype() const noexcept override { return ::dtype<T>; }
+  static DType static_dtype() noexcept { return ::dtype<T>; }
 
   virtual gsl::span<T> getSpan() = 0;
   virtual gsl::span<T> getSpan(const Dim dim, const gsl::index begin,
@@ -283,7 +255,9 @@ public:
     const auto &dims = this->dimensions();
     if (dims != other.dimensions())
       return false;
-    const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
+    if (this->dtype() != other.dtype())
+      return false;
+    const auto &otherT = requireT<const VariableConceptT>(other);
     if (this->isContiguous()) {
       if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
         return equal(getSpan(), otherT.getSpan());
@@ -307,7 +281,7 @@ public:
     if (iterDims.contains(dim))
       iterDims.resize(dim, delta);
 
-    const auto &otherT = dynamic_cast<const VariableConceptT &>(other);
+    const auto &otherT = requireT<const VariableConceptT>(other);
     auto otherView = otherT.getView(iterDims, dim, otherBegin);
     // Four cases for minimizing use of VariableView --- just copy contiguous
     // range where possible.
@@ -334,8 +308,7 @@ public:
   VariableConcept &apply(const VariableConcept &other) {
     const auto &dims = this->dimensions();
     try {
-      const auto &otherT =
-          dynamic_cast<const VariableConceptT<OtherT> &>(other);
+      const auto &otherT = requireT<const VariableConceptT<OtherT>>(other);
       if constexpr (std::is_same_v<T, OtherT>)
         if (this->getView(dims).overlaps(otherT.getView(dims))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
@@ -466,6 +439,14 @@ template <class T1, class T2> struct ReciprocalTimes {
   T2 operator()(const T1 a, const T2 b) { return b / a; };
 };
 
+bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
+                           const Dimensions &toMatch) {
+  if (edges.ndim() == 1)
+    return true;
+  edges.resize(dim, edges[dim] - 1);
+  return edges == toMatch;
+}
+
 template <class T>
 class FloatingPointVariableConceptT : public ArithmeticVariableConceptT<T> {
 public:
@@ -487,27 +468,17 @@ public:
              const VariableConcept &oldCoord,
              const VariableConcept &newCoord) override {
     // Dimensions of *this and old are guaranteed to be the same.
-    const auto &oldT = dynamic_cast<const FloatingPointVariableConceptT &>(old);
-    const auto &oldCoordT =
-        dynamic_cast<const FloatingPointVariableConceptT &>(oldCoord);
-    const auto &newCoordT =
-        dynamic_cast<const FloatingPointVariableConceptT &>(newCoord);
-    if (this->dimensions().label(0) == dim &&
-        oldCoord.dimensions().count() == 1 &&
-        newCoord.dimensions().count() == 1) {
+    auto &oldT = requireT<const FloatingPointVariableConceptT>(old);
+    auto &oldCoordT = requireT<const FloatingPointVariableConceptT>(oldCoord);
+    auto &newCoordT = requireT<const FloatingPointVariableConceptT>(newCoord);
+    const auto &dims = this->dimensions();
+    if (dims.inner() == dim &&
+        isMatchingOr1DBinEdge(dim, oldCoord.dimensions(), old.dimensions()) &&
+        isMatchingOr1DBinEdge(dim, newCoord.dimensions(), dims)) {
       RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
     } else {
-      auto oldCoordDims = oldCoord.dimensions();
-      oldCoordDims.resize(dim, oldCoordDims[dim] - 1);
-      auto newCoordDims = newCoord.dimensions();
-      newCoordDims.resize(dim, newCoordDims[dim] - 1);
-      auto oldCoordView = oldCoordT.getView(this->dimensions());
-      auto newCoordView = newCoordT.getView(this->dimensions());
-      const auto oldOffset = oldCoordDims.offset(dim);
-      const auto newOffset = newCoordDims.offset(dim);
-
-      RebinHelper<T>::rebin(dim, oldT.getSpan(), this->getSpan(), oldCoordView,
-                            oldOffset, newCoordView, newOffset);
+      throw std::runtime_error(
+          "TODO rebin is only implemented for rebin of inner dimension.");
     }
   }
 };
@@ -740,6 +711,21 @@ Variable::Variable(const ConstVariableSlice &slice)
     data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
   }
 }
+Variable::Variable(const Variable &parent, const Dimensions &dims)
+    : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
+      m_object(parent.m_object->clone(dims)) {
+      }
+
+Variable::Variable(const ConstVariableSlice &parent, const Dimensions &dims)
+    : m_tag(parent.tag()), m_unit(parent.unit()),
+      m_object(parent.data().clone(dims)) {
+  setName(parent.name());
+}
+
+Variable::Variable(const Variable &parent,
+                   std::unique_ptr<VariableConcept> data)
+    : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
+      m_object(std::move(data)) {}
 
 template <class T>
 Variable::Variable(const Tag tag, const Unit unit, const Dimensions &dimensions,
@@ -758,14 +744,12 @@ void Variable::setDimensions(const Dimensions &dimensions) {
 }
 
 template <class T> const Vector<underlying_type_t<T>> &Variable::cast() const {
-  return dynamic_cast<const DataModel<Vector<underlying_type_t<T>>> &>(
-             *m_object)
+  return requireT<const DataModel<Vector<underlying_type_t<T>>>>(*m_object)
       .m_model;
 }
 
 template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
-  return dynamic_cast<DataModel<Vector<underlying_type_t<T>>> &>(*m_object)
-      .m_model;
+  return requireT<DataModel<Vector<underlying_type_t<T>>>>(*m_object).m_model;
 }
 
 #define INSTANTIATE(...)                                                       \
@@ -828,15 +812,6 @@ bool Variable::operator!=(const Variable &other) const {
 
 bool Variable::operator!=(const ConstVariableSlice &other) const {
   return !(*this == other);
-}
-
-template <class T, class C> auto &require(C &concept) {
-  try {
-    return dynamic_cast<T &>(concept);
-  } catch (const std::bad_cast &) {
-    throw std::runtime_error(std::string("Cannot apply operation, requires ") +
-                             T::name + " type.");
-  }
 }
 
 template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
@@ -1062,13 +1037,11 @@ const VariableView<const underlying_type_t<T>>
 ConstVariableSlice::cast() const {
   using TT = underlying_type_t<T>;
   if (!m_view)
-    return dynamic_cast<const DataModel<Vector<TT>> &>(data()).getView(
-        dimensions());
+    return requireT<const DataModel<Vector<TT>>>(data()).getView(dimensions());
   if (m_view->isConstView())
-    return dynamic_cast<const ViewModel<VariableView<const TT>> &>(data())
-        .m_model;
+    return requireT<const ViewModel<VariableView<const TT>>>(data()).m_model;
   // Make a const view from the mutable one.
-  return {dynamic_cast<const ViewModel<VariableView<TT>> &>(data()).m_model,
+  return {requireT<const ViewModel<VariableView<TT>>>(data()).m_model,
           dimensions()};
 }
 
@@ -1076,8 +1049,8 @@ template <class T>
 VariableView<underlying_type_t<T>> VariableSlice::cast() const {
   using TT = underlying_type_t<T>;
   if (m_view)
-    return dynamic_cast<const ViewModel<VariableView<TT>> &>(data()).m_model;
-  return dynamic_cast<DataModel<Vector<TT>> &>(data()).getView(dimensions());
+    return requireT<const ViewModel<VariableView<TT>>>(data()).m_model;
+  return requireT<DataModel<Vector<TT>>>(data()).getView(dimensions());
 }
 
 #define INSTANTIATE_SLICEVIEW(...)                                             \
@@ -1354,9 +1327,22 @@ Variable broadcast(Variable var, const Dimensions &dims) {
   return result;
 }
 
+void swap(Variable &var, const Dim dim, const gsl::index a,
+          const gsl::index b) {
+  const Variable tmp = var(dim, a);
+  var(dim, a).assign(var(dim, b));
+  var(dim, b).assign(tmp);
+}
+
+Variable reverse(Variable var, const Dim dim) {
+  const auto size = var.dimensions()[dim];
+  for (gsl::index i = 0; i < size / 2; ++i)
+    swap(var, dim, i, size - i - 1);
+  return std::move(var);
+}
+
 template <>
 VariableView<const double> getView<double>(const Variable &var,
                                            const Dimensions &dims) {
-  return dynamic_cast<const VariableConceptT<double> &>(var.data())
-      .getView(dims);
+  return requireT<const VariableConceptT<double>>(var.data()).getView(dims);
 }

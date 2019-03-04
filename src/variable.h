@@ -140,12 +140,9 @@ public:
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);
-  Variable(const Variable &parent, const Dimensions &dims)
-      : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
-        m_object(parent.m_object->clone(dims)) {}
-  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data)
-      : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
-        m_object(std::move(data)) {}
+  Variable(const Variable &parent, const Dimensions &dims);
+  Variable(const ConstVariableSlice &parent, const Dimensions &dims);
+  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data);
 
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
@@ -213,13 +210,19 @@ public:
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const ConstVariableSlice &other) &;
   Variable &operator*=(const double value) &;
-  template <class T> Variable &operator*=(const T &quantity) & {
-    setUnit(unit() * Unit(typename T::unit_type{}));
+  template <class T>
+  Variable &operator*=(const boost::units::quantity<T> &quantity) & {
+    setUnit(unit() * Unit(T{}));
     return *this *= quantity.value();
   }
   Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const ConstVariableSlice &other) &;
   Variable &operator/=(const double value) &;
+  template <class T>
+  Variable &operator/=(const boost::units::quantity<T> &quantity) & {
+    setUnit(unit() / Unit(T{}));
+    return *this /= quantity.value();
+  }
 
   Unit unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
@@ -566,6 +569,10 @@ template <class T>
 Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a *= quantity);
 }
+template <class T>
+Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
+  return std::move(a /= quantity);
+}
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);
@@ -581,6 +588,7 @@ Variable norm(const Variable &var);
 // TODO add to dataset and python
 Variable sqrt(const Variable &var);
 Variable broadcast(Variable var, const Dimensions &dims);
+Variable reverse(Variable var, const Dim dim);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);

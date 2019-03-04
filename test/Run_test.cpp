@@ -121,9 +121,8 @@ TEST(Run, meta_data_fail_coord_mismatch) {
 
   auto &run2 = d2.get(Attr::ExperimentLog, "sample_log")[0];
   run2.get(Coord::Polarization)[0] = "Spin-Down";
-  EXPECT_THROW_MSG(
-      d1 += d2, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  EXPECT_THROW_MSG_SUBSTR(d1 += d2, dataset::except::VariableMismatchError,
+                          "expected to match");
 }
 
 TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
@@ -133,9 +132,8 @@ TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
 
   auto &run2 = d2.get(Attr::ExperimentLog, "sample_log")[0];
   run2.get(Coord::FuzzyTemperature)[0] = ValueWithDelta<double>(4.0, 0.1);
-  EXPECT_THROW_MSG(
-      d1 += d2, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  EXPECT_THROW_MSG_SUBSTR(d1 += d2, dataset::except::VariableMismatchError,
+                          "expected to match");
 }
 
 TEST(Run, meta_data_fail_missing) {

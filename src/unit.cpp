@@ -61,8 +61,8 @@ Unit operator*(const Unit &a, const Unit &b) {
         if constexpr (isKnownUnit(z))
           return z;
         throw std::runtime_error(
-            "Unsupported unit as result of multiplication " +
-            units::to_string(x) + "*" + units::to_string(y));
+            "Unsupported unit as result of multiplication: (" +
+            units::to_string(x) + ") * (" + units::to_string(y) + ')');
       },
       a(), b()));
 }
@@ -73,9 +73,9 @@ Unit operator/(const Unit &a, const Unit &b) {
         auto z{x / y};
         if constexpr (isKnownUnit(z))
           return z;
-        throw std::runtime_error("Unsupported unit as result of division " +
-                                 units::to_string(x) + "/" +
-                                 units::to_string(y));
+        throw std::runtime_error("Unsupported unit as result of division: (" +
+                                 units::to_string(x) + ") / (" +
+                                 units::to_string(y) + ')');
       },
       a(), b()));
 }
@@ -86,7 +86,7 @@ Unit sqrt(const Unit &a) {
         typename decltype(sqrt(1.0 * x))::unit_type sqrt_x;
         if constexpr (isKnownUnit(sqrt_x))
           return sqrt_x;
-        throw std::runtime_error("Unsupported unit as result of sqrt, sqrt(" +
+        throw std::runtime_error("Unsupported unit as result of sqrt: sqrt(" +
                                  units::to_string(x) + ").");
       },
       a()));
