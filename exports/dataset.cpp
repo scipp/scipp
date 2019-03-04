@@ -22,7 +22,7 @@
 namespace py = pybind11;
 
 template <typename Collection>
-auto getItem(Collection &self, const std::tuple<Dim, gsl::index> &index) {
+auto getItemBySingleIndex(Collection &self, const std::tuple<Dim, gsl::index> &index) {
   gsl::index idx{std::get<gsl::index>(index)};
   auto& dim = std::get<Dim>(index);
   auto sz = self.dimensions()[dim];
@@ -651,7 +651,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property("unit", &VariableSlice::unit, &VariableSlice::setUnit)
       .def("__getitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
-             return getItem(self, index);
+             return getItemBySingleIndex(self, index);
            })
       .def("__getitem__", &detail::pySlice)
       .def("__getitem__",
@@ -696,7 +696,7 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__getitem__",
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
-             return getItem(self, index);
+             return getItemBySingleIndex(self, index);
            })
       .def("__getitem__",
            [](DatasetSlice &self,
@@ -760,7 +760,7 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
-             return getItem(self, index);
+             return getItemBySingleIndex(self, index);
            })
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, const py::slice> &index) {
