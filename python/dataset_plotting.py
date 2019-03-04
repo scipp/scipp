@@ -94,7 +94,7 @@ def plot_sliceviewer(input_data, field=None):
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
-def plot_1d(input_data, logx=False, logy=False, logxy=False):
+def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
 
     entries = []
     # Case of a single dataset
@@ -113,6 +113,11 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False):
     else:
         raise RuntimeError("Bad data type in input of plot_1d. Expected either "
                            "Dataset or DatasetSlice, got " + type(item))
+
+    if bars:
+        func = go.Bar
+    else:
+        func = go.Scatter
 
     # entries now contains a list of Dataset or DatasetSlice
     # We now construct a list of [x,y] pairs
@@ -152,7 +157,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False):
             x = 0.5 * (x[1:] + x[:-1])
         xlab = "{} [{}]".format(coord.name,coord.unit)
 
-        trace = go.Scatter(
+        trace = func(
             x=x,
             y=y,
             name=name
@@ -160,13 +165,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False):
         data.append(trace)
 
     layout = dict(
-        xaxis = dict(
-            title = xlab
-            ),
-        yaxis = dict(
-            title = ylab
-            )
-        )
+        xaxis = dict(title = xlab),
+        yaxis = dict(title = ylab))
     if logx or logxy:
         layout["xaxis"]["type"] = "log"
     if logy or logxy:
@@ -179,7 +179,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False):
 #===============================================================================
 
 # Plot a 2D image of pixels
-def plot_image(input_data):
+def plot_image(input_data, contours=False):
 
     dims = input_data.dimensions()
     if (len(dims) > 1) and (len(dims) < 3):
@@ -192,12 +192,12 @@ def plot_image(input_data):
         values = []
         nx = []
         for var in input_data:
-            if var.is_coord:
-                x = var.numpy
-                axmin.append(x[0] - 0.5*(x[1]-x[0]))
-                axmax.append(x[-1] + 0.5*(x[-1]-x[-2]))
-                axlab.append([var.name, var.unit])
-            elif var.is_data:
+            # if var.is_coord:
+            #     x = var.numpy
+            #     axmin.append(x[0] - 0.5*(x[1]-x[0]))
+            #     axmax.append(x[-1] + 0.5*(x[-1]-x[-2]))
+            #     axlab.append([var.name, var.unit])
+            if var.is_data:
                 values.append(var)
 
         if len(values) > 1:
@@ -205,32 +205,56 @@ def plot_image(input_data):
                                " plot_image(dataset.subset(Data.Value, 'sample'))"
                                " to select only a single Value.")
 
-        ratio = (axmax[1] - axmin[1]) / (axmax[0] - axmin[0])
+        # ratio = (axmax[1] - axmin[1]) / (axmax[0] - axmin[0])
 
-        data = [go.Heatmap(
-            z = values[0].numpy,
-            colorscale = 'Viridis',
-            colorbar=dict(
-                title="{} [{}]".format(values[0].name,values[0].unit),
-                titleside = 'right',
-                )
-            )]
+        xcoord = input_data[dimensionCoord(values[0].dimensions.labels[0])]
+        ycoord = input_data[dimensionCoord(values[0].dimensions.labels[1])]
+        x = xcoord.numpy
+        y = ycoord.numpy
+        xmin = np.amin(x)
+        xmax = np.amax(x)
+        ymin = np.amin(y)
+        ymax = np.amax(y)
 
-        layout = dict(
-            autosize=False,
-            width=800,
-            height=800*ratio,
-            xaxis = dict(
-                range = [axmin[0],axmax[0]],
-                title = "{} [{}]".format(axlab[0][0],axlab[0][1])),
-            yaxis = dict(
-                scaleanchor = "x",
-                scaleratio = ratio,
-                range = [axmin[1],axmax[1]],
-                title = "{} [{}]".format(axlab[1][0],axlab[1][1]))
-        )
+        ratio = (ymax - ymin) / (xmax - xmin)
 
-        iplot(dict(data=data, layout=layout))
+        if contours:
+            data = [go.Contour(
+                x = x,
+                y = y,
+	            z = values[0].numpy,
+	            colorscale = 'Viridis',
+	            colorbar=dict(
+	                title="{} [{}]".format(values[0].name,values[0].unit),
+	                titleside = 'right',
+	                )
+	            )]
+            iplot(data)
+        else:
+	        data = [go.Heatmap(
+	            z = values[0].numpy,
+	            colorscale = 'Viridis',
+	            colorbar=dict(
+	                title="{} [{}]".format(values[0].name,values[0].unit),
+	                titleside = 'right',
+	                )
+	            )]
+
+	        layout = dict(
+	            autosize=False,
+	            width=800,
+	            height=800*ratio,
+	            xaxis = dict(
+	                range = [xmin,xmax]),
+	                # title = "{} [{}]".format(axlab[0][0],axlab[0][1])),
+	            yaxis = dict(
+	                scaleanchor = "x",
+	                scaleratio = ratio,
+	                range = [ymin,ymax],)
+	                # title = "{} [{}]".format(axlab[1][0],axlab[1][1]))
+	        )
+
+	        iplot(dict(data=data, layout=layout))
 
     else:
         raise RuntimeError("Unsupported number of dimensions in plot_image.")
