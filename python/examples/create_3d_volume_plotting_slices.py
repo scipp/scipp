@@ -1,4 +1,4 @@
-# To convert to jupyter notebook type: tpy2nb path/filename.py 
+# To convert to jupyter notebook type: py2nb path/filename.py
 # result file path is: path/filename.ipynb 
 # py2nb link: https://github.com/williamjameshandley/py2nb
 #| 
