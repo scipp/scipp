@@ -130,6 +130,7 @@ def plot_1d(input_data, var=None, logx=False, logy=False, logxy=False):
         # Scan the datasets
         coords = []
         fields = []
+        ifield = 0
         for var in item[0]:
             if var.is_coord:
                 coords.append(var)

@@ -538,7 +538,6 @@ PYBIND11_MODULE(dataset, m) {
       .def("__contains__", [](const Dimensions &self,
                               const Dim dim) { return self.contains(dim); })
       .def_property_readonly("labels", &Dimensions::labels)
-      .def_property_readonly("shape", &Dimensions::shape)
       .def("add", &Dimensions::add)
       .def("size",
            py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
