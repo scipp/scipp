@@ -11,8 +11,10 @@
 #include "dataset.h"
 #include "zip_view.h"
 
-// TODO Rename to ConstEventListProxy and add EventListProxy, inheriting from
-// ConstEventListProxy.
+// TODO This proxy provides a unified view for different underlying data
+// formats. It is currently only used by zipMD and at this point it is unclear
+// whether we want to and can provide such a unified access. `zip` is the "new"
+// (but different) way to support event-list-style access.
 class EventListProxy {
 public:
   // TODO Fix ZipView to work with const Dataset, or use something else here.

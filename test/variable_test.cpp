@@ -106,7 +106,7 @@ TEST(Variable, operator_equals) {
   auto diff3(a);
   diff3.setName("test");
   auto diff4(a);
-  diff4.setUnit(Unit::Id::Length);
+  diff4.setUnit(units::m);
   EXPECT_EQ(a, a);
   EXPECT_EQ(a, a_copy);
   EXPECT_EQ(a, b);
@@ -115,6 +115,12 @@ TEST(Variable, operator_equals) {
   EXPECT_FALSE(a == diff2);
   EXPECT_FALSE(a == diff3);
   EXPECT_FALSE(a == diff4);
+}
+
+TEST(Variable, operator_equals_mismatching_dtype) {
+  auto a = makeVariable<double>(Data::Value, {});
+  auto b = makeVariable<float>(Data::Value, {});
+  EXPECT_NE(a, b);
 }
 
 TEST(Variable, operator_unary_minus) {
@@ -176,16 +182,16 @@ TEST(Variable, operator_plus_equal_different_dimensions) {
 
   Variable different_dimensions(Data::Value, {Dim::Y, 2}, {1.1, 2.2});
   EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
-                   "Expected {{Dim::X, 2}}\n to contain {{Dim::Y, 2}}\n.");
+                   "Expected {{Dim::X, 2}} to contain {{Dim::Y, 2}}.");
 }
 
 TEST(Variable, operator_plus_equal_different_unit) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
 
   auto different_unit(a);
-  different_unit.setUnit(Unit::Id::Length);
+  different_unit.setUnit(units::m);
   EXPECT_THROW_MSG(a += different_unit, dataset::except::UnitMismatchError,
-                   "Expected Unit::Dimensionless to be equal to Unit::Length.");
+                   "Expected dimensionless to be equal to m.");
 }
 
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
@@ -198,9 +204,8 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   Variable a(Data::Value, {Dim::X, 1}, {1.0});
   auto b = makeVariable<int64_t>(Data::Value, {Dim::X, 1}, {2});
-  EXPECT_THROW_MSG(a += b, std::runtime_error,
-                   "Cannot apply arithmetic operation to Variables: Underlying "
-                   "data types do not match.");
+  EXPECT_THROW_MSG(a += b, dataset::except::TypeError,
+                   "Expected item dtype double, got int64.");
 }
 
 TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
@@ -233,52 +238,62 @@ TEST(Variable, operator_plus_equal_custom_type) {
 TEST(Variable, operator_times_equal) {
   Variable a(Coord::X, {Dim::X, 2}, {2.0, 3.0});
 
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= a);
   EXPECT_EQ(a.get(Coord::X)[0], 4.0);
   EXPECT_EQ(a.get(Coord::X)[1], 9.0);
-  EXPECT_EQ(a.unit(), Unit::Id::Area);
+  EXPECT_EQ(a.unit(), units::m * units::m);
 }
 
 TEST(Variable, operator_times_equal_scalar) {
   Variable a(Coord::X, {Dim::X, 2}, {2.0, 3.0});
 
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= 2.0);
   EXPECT_EQ(a.get(Coord::X)[0], 4.0);
   EXPECT_EQ(a.get(Coord::X)[1], 6.0);
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
+}
+
+TEST(Variable, operator_times_can_broadcast) {
+  Variable a(Data::Value, {Dim::X, 2}, {0.5, 1.5});
+  Variable b(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
+
+  auto ab = a * b;
+  Variable reference(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}},
+                     {1.0, 3.0, 1.5, 4.5});
+  EXPECT_EQ(ab, reference);
 }
 
 TEST(Variable, operator_divide_equal) {
   Variable a(Data::Value, {Dim::X, 2}, {2.0, 3.0});
   Variable b(Data::Value, {}, {2.0});
-  b.setUnit(Unit::Id::Length);
+  b.setUnit(units::m);
 
   EXPECT_NO_THROW(a /= b);
   EXPECT_EQ(a.get(Data::Value)[0], 1.0);
   EXPECT_EQ(a.get(Data::Value)[1], 1.5);
-  EXPECT_EQ(a.unit(), Unit::Id::InverseLength);
+  EXPECT_EQ(a.unit(), units::dimensionless / units::m);
 }
 
 TEST(Variable, operator_divide_equal_self) {
   Variable a(Coord::X, {Dim::X, 2}, {2.0, 3.0});
 
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= a);
   EXPECT_EQ(a.get(Coord::X)[0], 1.0);
   EXPECT_EQ(a.get(Coord::X)[1], 1.0);
-  EXPECT_EQ(a.unit(), Unit::Id::Dimensionless);
+  EXPECT_EQ(a.unit(), units::dimensionless);
 }
 
 TEST(Variable, operator_divide_equal_scalar) {
   Variable a(Coord::X, {Dim::X, 2}, {2.0, 4.0});
 
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= 2.0);
   EXPECT_EQ(a.get(Coord::X)[0], 1.0);
   EXPECT_EQ(a.get(Coord::X)[1], 2.0);
-  EXPECT_EQ(a.unit(), Unit::Id::Length);
+  EXPECT_EQ(a.unit(), units::m);
 }
 
 TEST(Variable, setSlice) {
@@ -430,11 +445,11 @@ TEST(Variable, concatenate) {
   Dimensions dims(Dim::Tof, 1);
   Variable a(Data::Value, dims, {1.0});
   Variable b(Data::Value, dims, {2.0});
-  a.setUnit(Unit::Id::Length);
-  b.setUnit(Unit::Id::Length);
+  a.setUnit(units::m);
+  b.setUnit(units::m);
   auto ab = concatenate(a, b, Dim::Tof);
   ASSERT_EQ(ab.size(), 2);
-  EXPECT_EQ(ab.unit(), Unit(Unit::Id::Length));
+  EXPECT_EQ(ab.unit(), Unit(units::m));
   const auto &data = ab.get(Data::Value);
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
@@ -505,15 +520,16 @@ TEST(Variable, concatenate_unit_fail) {
   Variable a(Data::Value, dims, {1.0});
   auto b(a);
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
-  a.setUnit(Unit::Id::Length);
+  a.setUnit(units::m);
   EXPECT_THROW_MSG(concatenate(a, b, Dim::X), std::runtime_error,
                    "Cannot concatenate Variables: Units do not match.");
-  b.setUnit(Unit::Id::Length);
+  b.setUnit(units::m);
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
 }
 
 TEST(Variable, rebin) {
   Variable var(Data::Value, {Dim::X, 2}, {1.0, 2.0});
+  var.setUnit(units::counts);
   const Variable oldEdge(Coord::X, {Dim::X, 3}, {1.0, 2.0, 3.0});
   const Variable newEdge(Coord::X, {Dim::X, 2}, {1.0, 3.0});
   auto rebinned = rebin(var, oldEdge, newEdge);
@@ -541,6 +557,56 @@ TEST(Variable, mean) {
   auto meanY = mean(var, Dim::Y);
   ASSERT_EQ(meanY.dimensions(), (Dimensions{Dim::X, 2}));
   EXPECT_TRUE(equals(meanY.get(Data::Value), {2.0, 3.0}));
+}
+
+TEST(Variable, norm_of_scalar) {
+  Variable reference(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, -2.0, -3.0, 4.0});
+  EXPECT_EQ(norm(var), reference);
+}
+
+TEST(Variable, norm_of_vector) {
+  Variable reference(Data::Value, {Dim::X, 3}, {sqrt(2), sqrt(2), 2});
+  auto var = makeVariable<Eigen::Vector3d>(Data::Value, {Dim::X, 3},
+                                           {Eigen::Vector3d{1, 0, -1},
+                                            Eigen::Vector3d{1, 1, 0},
+                                            Eigen::Vector3d{0, 0, -2}});
+  EXPECT_EQ(norm(var), reference);
+}
+
+TEST(Variable, sqrt) {
+  // TODO Currently comparisons of variables do not provide special handling of
+  // NaN, so sqrt of negative values will lead variables that are never equal.
+  Variable reference(Data::Value, {Dim::X, 2}, {1, 2});
+  reference.setUnit(units::m);
+  Variable var(Data::Value, {Dim::X, 2}, {1, 4});
+  var.setUnit(units::m * units::m);
+  EXPECT_EQ(sqrt(var), reference);
+}
+
+TEST(Variable, broadcast) {
+  Variable reference(Data::Value, {{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}},
+                     {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4});
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+
+  // No change if dimensions exist.
+  EXPECT_EQ(broadcast(var, {Dim::X, 2}), var);
+  EXPECT_EQ(broadcast(var, {Dim::Y, 2}), var);
+  EXPECT_EQ(broadcast(var, {{Dim::Y, 2}, {Dim::X, 2}}), var);
+
+  // No transpose done, should this fail? Failing is not really necessary since
+  // we have labeled dimensions.
+  EXPECT_EQ(broadcast(var, {{Dim::X, 2}, {Dim::Y, 2}}), var);
+
+  EXPECT_EQ(broadcast(var, {Dim::Z, 3}), reference);
+}
+
+TEST(Variable, broadcast_fail) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}),
+                   dataset::except::DimensionLengthError,
+                   "Expected dimension to be in {{Dim::Y, 2}, {Dim::X, 2}}, "
+                   "got Dim::X with mismatching length 3.");
 }
 
 TEST(VariableSlice, full_const_view) {
@@ -595,8 +661,8 @@ TEST(VariableSlice, minus_equals_failures) {
   Variable var(Data::Value, {{Dim::X, 2}, {Dim::Y, 2}}, {1.0, 2.0, 3.0, 4.0});
 
   EXPECT_THROW_MSG(var -= var(Dim::X, 0, 1), std::runtime_error,
-                   "Expected {{Dim::X, 2}, {Dim::Y, 2}}\n to contain {{Dim::X, "
-                   "1}, {Dim::Y, 2}}\n.");
+                   "Expected {{Dim::X, 2}, {Dim::Y, 2}} to contain {{Dim::X, "
+                   "1}, {Dim::Y, 2}}.");
 }
 
 TEST(VariableSlice, self_overlapping_view_operation) {

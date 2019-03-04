@@ -4,3 +4,4 @@ set ( PY_FILES
   )
 
 install ( FILES ${PY_FILES} DESTINATION "dataset" )
+install ( FILES "compat/mantid.py" DESTINATION "dataset/compat" )

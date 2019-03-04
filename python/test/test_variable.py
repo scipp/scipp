@@ -68,13 +68,13 @@ class TestVariable(unittest.TestCase):
 
     def test_repr(self):
         var = Variable(Coord.X, [Dim.X], np.arange(1))
-        self.assertEqual(repr(var), "Variable(Coord.X, '',( Dim.X ), int64)\n")
+        self.assertEqual(repr(var), "<Variable>    (Coord.X)                 int64     [m]              (Dim.X)\n")
         var = Variable(Data.Value, [Dim.X], np.arange(1))
-        self.assertEqual(repr(var), "Variable(Data.Value, '',( Dim.X ), int64)\n")
+        self.assertEqual(repr(var), "<Variable>    (Data.Value)              int64     [dimensionless]  (Dim.X)\n")
         var = Variable(Coord.SpectrumNumber, [Dim.X], np.arange(1))
-        self.assertEqual(repr(var), "Variable(Coord.SpectrumNumber, '',( Dim.X ), int64)\n")
+        self.assertEqual(repr(var), "<Variable>    (Coord.SpectrumNumber)    int64     [dimensionless]  (Dim.X)\n")
         var = Variable(Coord.Mask, [Dim.X], np.arange(1))
-        self.assertEqual(repr(var), "Variable(Coord.Mask, '',( Dim.X ), int64)\n")
+        self.assertEqual(repr(var), "<Variable>    (Coord.Mask)              int64     [dimensionless]  (Dim.X)\n")
 
     def test_slicing(self):
         var = Variable(Data.Value, [Dim.X], np.arange(0,3))

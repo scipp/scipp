@@ -9,7 +9,9 @@
 #include "range/v3/algorithm.hpp"
 #include "range/v3/view/zip.hpp"
 
+#include "counts.h"
 #include "dataset.h"
+#include "except.h"
 #include "tag_util.h"
 
 Dataset::Dataset(const ConstDatasetSlice &view) {
@@ -17,17 +19,31 @@ Dataset::Dataset(const ConstDatasetSlice &view) {
     insert(var);
 }
 
-ConstDatasetSlice Dataset::operator[](const std::string &name) const & {
+ConstDatasetSlice Dataset::subset(const std::string &name) const & {
   return ConstDatasetSlice(*this, name);
 }
 
-DatasetSlice Dataset::operator[](const std::string &name) & {
+ConstDatasetSlice Dataset::subset(const Tag tag,
+                                  const std::string &name) const & {
+  return ConstDatasetSlice(*this, tag, name);
+}
+
+DatasetSlice Dataset::subset(const std::string &name) & {
   return DatasetSlice(*this, name);
+}
+
+DatasetSlice Dataset::subset(const Tag tag, const std::string &name) & {
+  return DatasetSlice(*this, tag, name);
 }
 
 ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
                                       const gsl::index end) const & {
   return ConstDatasetSlice(*this)(dim, begin, end);
+}
+
+Dataset Dataset::operator()(const Dim dim, const gsl::index begin,
+                            const gsl::index end) && {
+  return {DatasetSlice(*this)(dim, begin, end)};
 }
 
 DatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
@@ -74,9 +90,10 @@ bool Dataset::contains(const Tag tag, const std::string &name) const {
   return ::contains(*this, tag, name);
 }
 
-void Dataset::erase(const Tag tag, const std::string &name) {
+Variable Dataset::erase(const Tag tag, const std::string &name) {
   const auto it = m_variables.begin() + find(tag, name);
   const auto dims = it->dimensions();
+  Variable var(std::move(*it));
   m_variables.erase(it);
   for (const auto dim : dims.labels()) {
     bool found = false;
@@ -86,6 +103,7 @@ void Dataset::erase(const Tag tag, const std::string &name) {
     if (!found)
       m_dimensions.erase(dim);
   }
+  return var;
 }
 
 Dataset Dataset::extract(const std::string &name) {
@@ -244,10 +262,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
         // Coordinate variables must match
         // Strictly speaking we should allow "equivalent" coordinates, i.e.,
         // match only after projecting out any constant dimensions.
-        if (!(var1 == var2))
-          throw std::runtime_error(
-              "Coordinates of datasets do not match. Cannot "
-              "perform binary operation.");
+        dataset::expect::variablesMatch(var1, var2);
         // TODO We could improve sharing here magically, but whether this is
         // beneficial would depend on the shared reference count in var1 and
         // var2: var1 = var2;
@@ -335,9 +350,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
     auto var1 = dataset[index];
     if (var1.isCoord()) {
       // Coordinate variables must match
-      if (!(var1 == var2))
-        throw std::runtime_error(
-            "Coordinates of datasets do not match. Cannot perform addition");
+      dataset::expect::variablesMatch(var1, var2);
     } else if (var1.isData()) {
       // Data variables are added
       if (var2.tag() == Data::Value) {
@@ -628,7 +641,6 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
 }
 
 Dataset rebin(const Dataset &d, const Variable &newCoord) {
-  Dataset out;
   if (!newCoord.isCoord())
     throw std::runtime_error(
         "The provided rebin coordinate is not a coordinate variable.");
@@ -665,6 +677,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   }
   // TODO check that input as well as output coordinate are sorted in rebin
   // dimension.
+  Dataset out;
   for (const auto &var : d) {
     if (!var.dimensions().contains(dim)) {
       out.insert(var);
@@ -712,11 +725,12 @@ Dataset histogram(const Variable &var, const Variable &coord) {
 
   Dataset hist;
   hist.insert(coord);
-  hist.insert(Data::Value, var.name(), dims);
+  Variable countsVar(Data::Value, dims);
+  countsVar.setUnit(units::counts);
 
   // Counts has outer dimensions as input, with a new inner dimension given by
   // the binning dimensions. We iterate over all dimensions as a flat array.
-  auto counts = hist.get(Data::Value, var.name());
+  auto counts = countsVar.get(Data::Value);
   gsl::index cur = 0;
   // The helper `getView` allows us to ignore the tag of coord, as long as the
   // underlying type is `double`. We view the edges with the same dimensions as
@@ -749,7 +763,9 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   }
 
   // TODO Would need to add handling for weighted events etc. here.
-  hist.insert(Data::Variance, var.name(), dims, counts.begin(), counts.end());
+  hist.insert(Data::Value, var.name(), countsVar);
+  hist.insert(Data::Variance, var.name(), std::move(countsVar));
+  hist(Data::Variance, var.name()).setUnit(units::counts * units::counts);
   return hist;
 }
 
@@ -893,14 +909,22 @@ Dataset integrate(const Dataset &d, const Dim dim) {
                                  "histogram data (requires bin-edge "
                                  "coordinate.");
       const auto range = concatenate(var(dim, 0), var(dim, size - 1), dim);
+      // TODO Currently this works only for counts and counts-density.
       const auto integral = rebin(d, range);
-      // TODO Unless unit is "counts" we need to multiply by the interval
-      // length. To fix this properly we need support for non-count data in
-      // `rebin`.
       // Return slice to automatically drop `dim` and corresponding coordinate.
-      return integral(dim, 0);
+      return counts::fromDensity(std::move(integral), dim)(dim, 0);
     }
   }
   throw std::runtime_error(
       "Integration required bin-edge dimension coordinate.");
+}
+
+Dataset reverse(const Dataset &d, const Dim dim) {
+  Dataset out;
+  for (const auto var : d)
+    if (var.dimensions().contains(dim))
+      out.insert(reverse(var, dim));
+    else
+      out.insert(var);
+  return out;
 }

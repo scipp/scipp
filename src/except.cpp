@@ -3,11 +3,12 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2019 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include "except.h"
+#include <regex>
+
 #include "dataset.h"
 #include "dimensions.h"
+#include "except.h"
 #include "tags.h"
-#include <regex>
 
 namespace {
 std::string do_to_string(const Dim dim) {
@@ -22,6 +23,8 @@ std::string do_to_string(const Dim dim) {
     return "Dim::Energy";
   case Dim::DeltaE:
     return "Dim::DeltaE";
+  case Dim::Position:
+    return "Dim::Position";
   case Dim::Spectrum:
     return "Dim::Spectrum";
   case Dim::Monitor:
@@ -38,6 +41,12 @@ std::string do_to_string(const Dim dim) {
     return "Dim::Y";
   case Dim::Z:
     return "Dim::Z";
+  case Dim::Qx:
+    return "Dim::Qx";
+  case Dim::Qy:
+    return "Dim::Qy";
+  case Dim::Qz:
+    return "Dim::Qz";
   case Dim::Polarization:
     return "Dim::Polarization";
   case Dim::Temperature:
@@ -57,45 +66,64 @@ std::string do_to_string(const Dim dim) {
 
 std::string do_to_string(const Tag tag) {
   switch (tag.value()) {
-  case Coord::Tof.value():
-    return "Coord::Tof";
-  case Coord::Energy.value():
-    return "Coord::Energy";
-  case Coord::DeltaE.value():
-    return "Coord::DeltaE";
+  case Coord::Monitor.value():
+    return "Coord::Monitor";
+  case Coord::DetectorInfo.value():
+    return "Coord::DetectorInfo";
+  case Coord::ComponentInfo.value():
+    return "Coord::ComponentInfo";
   case Coord::X.value():
     return "Coord::X";
   case Coord::Y.value():
     return "Coord::Y";
   case Coord::Z.value():
     return "Coord::Z";
+  case Coord::Tof.value():
+    return "Coord::Tof";
+  case Coord::Energy.value():
+    return "Coord::Energy";
+  case Coord::DeltaE.value():
+    return "Coord::DeltaE";
+  case Coord::Ei.value():
+    return "Coord::Ei";
+  case Coord::Ef.value():
+    return "Coord::Ef";
+  case Coord::DetectorId.value():
+    return "Coord::DetectorId";
   case Coord::SpectrumNumber.value():
     return "Coord::SpectrumNumber";
+  case Coord::DetectorGrouping.value():
+    return "Coord::DetectorGrouping";
+  case Coord::RowLabel.value():
+    return "Coord::RowLabel";
+  case Coord::Polarization.value():
+    return "Coord::Polarization";
+  case Coord::Temperature.value():
+    return "Coord::Temperature";
+  case Coord::Time.value():
+    return "Coord::Time";
   case Coord::Mask.value():
     return "Coord::Mask";
   case Coord::Position.value():
     return "Coord::Position";
-  case Coord::DetectorGrouping.value():
-    return "Coord::DetectorGrouping";
+  case Data::Events.value():
+    return "Data::Events";
   case Data::Value.value():
     return "Data::Value";
   case Data::Variance.value():
     return "Data::Variance";
+  case Data::Tof.value():
+    return "Data::Tof";
+  case Data::PulseTime.value():
+    return "Data::PulseTime";
+  case Attr::ExperimentLog.value():
+    return "Attr::ExperimentLog";
   default:
     return "<unknown tag>";
   }
 }
 
-std::string do_to_string(const Unit &unit) {
-  switch (unit.id()) {
-  case Unit::Id::Dimensionless:
-    return "Unit::Dimensionless";
-  case Unit::Id::Length:
-    return "Unit::Length";
-  default:
-    return "<unknown unit>";
-  }
-}
+std::string do_to_string(const Unit &unit) { return unit.name(); }
 } // namespace
 
 namespace dataset {
@@ -108,7 +136,7 @@ std::string to_string(const Dimensions &dims, const std::string &separator) {
     s += to_string(dims.labels()[i], separator) + ", " +
          std::to_string(dims.shape()[i]) + "}, {";
   s.resize(s.size() - 3);
-  s += "}\n";
+  s += "}";
   return s;
 }
 
@@ -121,7 +149,7 @@ std::string to_string(const DType dtype) {
   case DType::Char:
     return "char";
   case DType::Dataset:
-    return "dataset";
+    return "Dataset";
   case DType::Float:
     return "float";
   case DType::Double:
@@ -130,6 +158,8 @@ std::string to_string(const DType dtype) {
     return "int32";
   case DType::Int64:
     return "int64";
+  case DType::EigenVector3d:
+    return "Eigen::Vector3d";
   case DType::Unknown:
     return "unknown";
   default:
@@ -148,60 +178,106 @@ std::string to_string(const Tag tag, const std::string &separator) {
   return std::regex_replace(do_to_string(tag), std::regex("::"), separator);
 }
 
-// For use with variables
 std::string make_dims_labels(const Variable &variable,
-                             const std::string &separator) {
-  auto dims = variable.dimensions();
-  std::string diminfo = "( ";
-  for (int32_t i = 0; i < dims.ndim(); ++i) {
-    diminfo += to_string(dims.labels()[i], separator);
-    if (i != dims.ndim() - 1) {
-      diminfo += ", ";
-    }
+                             const std::string &separator,
+                             const Dimensions &datasetDims) {
+  const auto &dims = variable.dimensions();
+  if (dims.empty())
+    return "()";
+  std::string diminfo = "(";
+  for (const auto dim : dims.labels()) {
+    if (datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim]))
+      diminfo += "Bin-edges: ";
+    diminfo += to_string(dim, separator);
+    diminfo += ", ";
   }
-  diminfo += " )";
+  diminfo.resize(diminfo.size() - 2);
+  diminfo += ")";
   return diminfo;
 }
 
-std::string to_string(const Variable &variable, const std::string &separator) {
-  std::string variableName = variable.name();
-  std::string diminfo = make_dims_labels(variable, separator);
-  if (variableName.empty())
-    variableName = "''";
-  std::string s = "Variable(";
-  s += to_string(variable.tag(), separator) + ", " + variableName + "," +
-       diminfo + ", " + to_string(variable.dtype()) + ")\n";
-  return s;
-} // namespace dataset
+template <class Var>
+auto to_string_components(const Var &variable, const std::string &separator,
+                          const Dimensions &datasetDims = Dimensions()) {
+  std::array<std::string, 5> out;
+  out[0] = variable.name();
+  out[1] = to_string(variable.tag(), separator);
+  out[2] = to_string(variable.dtype());
+  out[3] = '[' + variable.unit().name() + ']';
+  out[4] = make_dims_labels(variable, separator, datasetDims);
+  return out;
+}
 
-std::string to_string(const Dataset &dataset, const std::string &separator) {
-  std::string s("Dataset with ");
-  s += std::to_string(dataset.size()) + " variables\n";
-  s += "Dimensions :\n " + to_string(dataset.dimensions(), separator);
-  // The following is peformed to allow variables to be sorted into catagories
-  // of coordinate, data and attribute as part of output.
-  s += "Coordinate Variables :\n";
+std::string format_name_and_tag(const std::string &name,
+                                const std::string &tag) {
+  if (name.empty())
+    return '(' + tag + ')';
+  return '(' + tag + ", " + name + ')';
+}
+
+void format_line(std::stringstream &s,
+                 const std::array<std::string, 5> &columns) {
+  const auto & [ name, tag, dtype, unit, dims ] = columns;
+  const std::string tab("    ");
+  const std::string colSep("  ");
+  s << tab << std::left << std::setw(24) << format_name_and_tag(name, tag);
+  s << colSep << std::setw(8) << dtype;
+  s << colSep << std::setw(15) << unit;
+  s << colSep << dims;
+  s << '\n';
+}
+
+std::string to_string(const Variable &variable, const std::string &separator) {
+  std::stringstream s;
+  s << "<Variable>";
+  format_line(s, to_string_components(variable, separator));
+  return s.str();
+}
+
+std::string to_string(const ConstVariableSlice &variable,
+                      const std::string &separator) {
+  std::stringstream s;
+  s << "<VariableSlice>";
+  format_line(s, to_string_components(variable, separator));
+  return s.str();
+}
+
+template <class D>
+std::string do_to_string(const D &dataset, const std::string &id,
+                         const Dimensions &dims, const std::string &separator) {
+  std::stringstream s;
+  s << id + '\n';
+  s << "Dimensions: " << to_string(dims, separator) << '\n';
+  s << "Coordinates:\n";
   for (const auto &var : dataset) {
     if (var.isCoord())
-      s += to_string(var, separator);
+      format_line(s, to_string_components(var, separator, dims));
   }
-  s += "Data Variables :\n";
+  s << "Data:\n";
   for (const auto &var : dataset) {
     if (var.isData())
-      s += to_string(var, separator);
+      format_line(s, to_string_components(var, separator, dims));
   }
-  s += "Attribute Variables :\n";
+  s << "Attributes:\n";
   for (const auto &var : dataset) {
     if (var.isAttr())
-      s += to_string(var, separator);
+      format_line(s, to_string_components(var, separator, dims));
   }
-  return s;
-} // namespace dataset
+  s << '\n';
+  return s.str();
+}
 
-std::string to_string(const ConstDatasetSlice &dataset) {
-  std::string s("Dataset slice with ");
-  s += std::to_string(dataset.size()) + " variables";
-  return s;
+std::string to_string(const Dataset &dataset, const std::string &separator) {
+  return do_to_string(dataset, "<Dataset>", dataset.dimensions(), separator);
+}
+
+std::string to_string(const ConstDatasetSlice &dataset,
+                      const std::string &separator) {
+  // TODO Unify dimensions API for Dataset and ConstDatasetSlice.
+  Dimensions dims;
+  for (const auto[dim, size] : dataset.dimensions())
+    dims.add(dim, size);
+  return do_to_string(dataset, "<DatasetSlice>", dims, separator);
 }
 
 namespace except {
@@ -225,10 +301,10 @@ DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                      ".") {}
 
 DatasetError::DatasetError(const Dataset &dataset, const std::string &message)
-    : std::runtime_error(to_string(dataset) + ", " + message) {}
+    : std::runtime_error(to_string(dataset) + message) {}
 DatasetError::DatasetError(const ConstDatasetSlice &dataset,
                            const std::string &message)
-    : std::runtime_error(to_string(dataset) + ", " + message) {}
+    : std::runtime_error(to_string(dataset) + message) {}
 
 VariableNotFoundError::VariableNotFoundError(const Dataset &dataset,
                                              const Tag tag,
@@ -240,6 +316,13 @@ VariableNotFoundError::VariableNotFoundError(const ConstDatasetSlice &dataset,
                                              const std::string &name)
     : DatasetError(dataset, "could not find variable with tag " +
                                 to_string(tag) + " and name `" + name + "`.") {}
+
+VariableError::VariableError(const Variable &variable,
+                             const std::string &message)
+    : std::runtime_error(to_string(variable) + message) {}
+VariableError::VariableError(const ConstVariableSlice &variable,
+                             const std::string &message)
+    : std::runtime_error(to_string(variable) + message) {}
 
 UnitMismatchError::UnitMismatchError(const Unit &a, const Unit &b)
     : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +

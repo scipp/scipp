@@ -13,7 +13,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 set ( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" )
 
 find_package (OpenMP 3.1 REQUIRED)
-find_package (Boost 1.58 REQUIRED)
+find_package (Boost 1.67 REQUIRED)
 
 include( Eigen )
 include( gsl )
@@ -21,7 +21,7 @@ include( pybind11 )
 include( GoogleTest )
 include( GoogleBenchmark )
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --save-temps -march=native -fno-omit-frame-pointer")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fno-omit-frame-pointer")
 
 # See https://github.com/pybind/pybind11/issues/1604
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
@@ -35,9 +35,9 @@ option(WITH_ASAN "Enable address sanitizer" OFF)
 if(WITH_ASAN)
   message(STATUS "Enabling address sanitizer")
   add_compile_options(-fno-omit-frame-pointer -fno-common -fsanitize=address)
-  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address -lasan" )
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -lasan" )
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address -lasan" )
+  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan" )
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan" )
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan" )
 endif()
 
 add_compile_options ( -Wall -Wextra -Winit-self -Wpointer-arith

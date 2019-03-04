@@ -7,20 +7,23 @@
 #define EXCEPT_H
 
 #include <stdexcept>
+#include <string>
 
 #include <gsl/gsl_util>
 
 #include "dimension.h"
-#include <string>
+#include "tags.h"
+#include "unit.h"
 
 class ConstDatasetSlice;
 class Dataset;
 class Dimensions;
-class Tag;
 class Unit;
 class Variable;
+class ConstVariableSlice;
 
 namespace dataset {
+std::string to_string(const DType dtype);
 std::string to_string(const Dim dim, const std::string &separator = "::");
 std::string to_string(const Dimensions &dims,
                       const std::string &separator = "::");
@@ -28,11 +31,18 @@ std::string to_string(const Tag tag, const std::string &separator = "::");
 std::string to_string(const Unit &unit, const std::string &separator = "::");
 std::string to_string(const Variable &variable,
                       const std::string &separator = "::");
+std::string to_string(const ConstVariableSlice &variable,
+                      const std::string &separator = "::");
 std::string to_string(const Dataset &dataset,
                       const std::string &separator = "::");
-std::string to_string(const ConstDatasetSlice &dataset);
+std::string to_string(const ConstDatasetSlice &dataset,
+                      const std::string &separator = "::");
 
 namespace except {
+
+struct TypeError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
 
 struct DimensionError : public std::runtime_error {
   using std::runtime_error::runtime_error;
@@ -63,6 +73,17 @@ struct VariableNotFoundError : public DatasetError {
                         const std::string &name);
 };
 
+struct VariableError : public std::runtime_error {
+  VariableError(const Variable &variable, const std::string &message);
+  VariableError(const ConstVariableSlice &variable, const std::string &message);
+};
+
+struct VariableMismatchError : public VariableError {
+  template <class A, class B>
+  VariableMismatchError(const A &a, const B &b)
+      : VariableError(a, "expected to match\n" + dataset::to_string(b)) {}
+};
+
 struct UnitError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
@@ -74,6 +95,10 @@ struct UnitMismatchError : public UnitError {
 } // namespace except
 
 namespace expect {
+template <class A, class B> void variablesMatch(const A &a, const B &b) {
+  if (a != b)
+    throw except::VariableMismatchError(a, b);
+}
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const gsl::index length);
 void equals(const Unit &a, const Unit &b);
@@ -85,6 +110,13 @@ template <class T> void contains(const T &a, const T &b) {
 }
 template <class T> void unit(const T &object, const Unit &unit) {
   expect::equals(object.unit(), unit);
+}
+
+template <class T> void countsOrCountsDensity(const T &object) {
+  if (!(units::containsCounts(object.unit()) ||
+        units::containsCountsVariance(object.unit())))
+    throw except::UnitError("Expected counts or counts-density, got " +
+                            object.unit().name() + '.');
 }
 } // namespace expect
 } // namespace dataset

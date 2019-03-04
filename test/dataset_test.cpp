@@ -4,7 +4,6 @@
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
 #include "test_macros.h"
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "convert.h"
@@ -323,7 +322,7 @@ TEST(Dataset, comparison_missing_variable) {
   EXPECT_EQ(d2, d2);
 }
 
-TEST(Dataset, comparison_with_slice) {
+TEST(Dataset, comparison_with_subset) {
   Dataset d1;
   d1.insert(Data::Value, "a", {});
   d1.insert(Data::Variance, "a", {});
@@ -332,8 +331,77 @@ TEST(Dataset, comparison_with_slice) {
   d2.insert(Data::Value, "a", {});
   d2.insert(Data::Variance, "a", {});
   EXPECT_NE(d1, d2);
-  EXPECT_EQ(d1, d2["a"]);
-  EXPECT_EQ(d2["a"], d1);
+  EXPECT_EQ(d1, d2.subset("a"));
+  EXPECT_EQ(d2.subset("a"), d1);
+}
+
+TEST(Dataset, subset) {
+  Dataset d;
+  d.insert(Coord::X, {});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Variance, "a", {});
+  d.insert(Data::Value, "b", {});
+  d.insert(Data::Variance, "b", {});
+
+  const auto no_data = d.subset("");
+  EXPECT_EQ(no_data.size(), 1);
+  EXPECT_TRUE(no_data.contains(Coord::X));
+
+  const auto value = d.subset(Data::Value, "a");
+  EXPECT_EQ(value.size(), 2);
+  EXPECT_TRUE(value.contains(Coord::X));
+  EXPECT_TRUE(value.contains(Data::Value, "a"));
+
+  const auto variance = d.subset(Data::Variance, "a");
+  EXPECT_EQ(variance.size(), 2);
+  EXPECT_TRUE(variance.contains(Coord::X));
+  EXPECT_TRUE(variance.contains(Data::Variance, "a"));
+
+  const auto both = d.subset("a");
+  EXPECT_EQ(both.size(), 3);
+  EXPECT_TRUE(both.contains(Coord::X));
+  EXPECT_TRUE(both.contains(Data::Value, "a"));
+  EXPECT_TRUE(both.contains(Data::Variance, "a"));
+}
+
+TEST(Dataset, subset_of_subset) {
+  Dataset d;
+  d.insert(Coord::X, {});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Variance, "a", {});
+  d.insert(Data::Value, "b", {});
+  d.insert(Data::Variance, "b", {});
+
+  const auto value = d.subset(Data::Value, "a");
+  const auto both = d.subset("a");
+
+  const auto value_from_subset = both.subset(Data::Value, "a");
+
+  EXPECT_EQ(value, value_from_subset);
+  EXPECT_EQ(value_from_subset.size(), 2);
+  EXPECT_TRUE(value_from_subset.contains(Coord::X));
+  EXPECT_TRUE(value_from_subset.contains(Data::Value, "a"));
+}
+
+TEST(Dataset, subset_of_full_subset) {
+  Dataset d;
+  d.insert(Coord::X, {});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Variance, "a", {});
+  d.insert(Data::Value, "b", {});
+  d.insert(Data::Variance, "b", {});
+
+  const auto both = d.subset("a");
+  const DatasetSlice full(d);
+  EXPECT_EQ(full.size(), 5);
+
+  const auto both_from_subset = full.subset("a");
+
+  EXPECT_EQ(both, both_from_subset);
+  EXPECT_EQ(both_from_subset.size(), 3);
+  EXPECT_TRUE(both_from_subset.contains(Coord::X));
+  EXPECT_TRUE(both_from_subset.contains(Data::Value, "a"));
+  EXPECT_TRUE(both_from_subset.contains(Data::Variance, "a"));
 }
 
 TEST(Dataset, comparison_with_spatial_slice) {
@@ -345,17 +413,17 @@ TEST(Dataset, comparison_with_spatial_slice) {
 
   EXPECT_NE(d1, d2);
 
-  EXPECT_NE(d1, d2["a"]);
-  EXPECT_NE(d1, d2["a"](Dim::X, 0, 2));
-  EXPECT_NE(d1, d2["a"](Dim::X, 0));
-  EXPECT_NE(d1, d2["a"](Dim::X, 1));
-  EXPECT_EQ(d1, d2["a"](Dim::X, 1, 3));
+  EXPECT_NE(d1, d2.subset("a"));
+  EXPECT_NE(d1, d2.subset("a")(Dim::X, 0, 2));
+  EXPECT_NE(d1, d2.subset("a")(Dim::X, 0));
+  EXPECT_NE(d1, d2.subset("a")(Dim::X, 1));
+  EXPECT_EQ(d1, d2.subset("a")(Dim::X, 1, 3));
 
-  EXPECT_NE(d2["a"], d1);
-  EXPECT_NE(d2["a"](Dim::X, 0, 2), d1);
-  EXPECT_NE(d2["a"](Dim::X, 0), d1);
-  EXPECT_NE(d2["a"](Dim::X, 1), d1);
-  EXPECT_EQ(d2["a"](Dim::X, 1, 3), d1);
+  EXPECT_NE(d2.subset("a"), d1);
+  EXPECT_NE(d2.subset("a")(Dim::X, 0, 2), d1);
+  EXPECT_NE(d2.subset("a")(Dim::X, 0), d1);
+  EXPECT_NE(d2.subset("a")(Dim::X, 1), d1);
+  EXPECT_EQ(d2.subset("a")(Dim::X, 1, 3), d1);
 }
 
 TEST(Dataset, comparison_two_slices) {
@@ -364,15 +432,15 @@ TEST(Dataset, comparison_two_slices) {
   d.insert(Data::Value, "b", {Dim::X, 4}, {1, 2, 1, 2});
 
   // Data is same but name differs.
-  EXPECT_NE(d["a"](Dim::X, 0, 2), d["b"](Dim::X, 0, 2));
+  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("b")(Dim::X, 0, 2));
 
-  EXPECT_EQ(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 0, 2));
-  EXPECT_NE(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 1, 3));
-  EXPECT_NE(d["a"](Dim::X, 0, 2), d["a"](Dim::X, 2, 4));
+  EXPECT_EQ(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 0, 2));
+  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 1, 3));
+  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 2, 4));
 
-  EXPECT_EQ(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 0, 2));
-  EXPECT_NE(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 1, 3));
-  EXPECT_EQ(d["b"](Dim::X, 0, 2), d["b"](Dim::X, 2, 4));
+  EXPECT_EQ(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 0, 2));
+  EXPECT_NE(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 1, 3));
+  EXPECT_EQ(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 2, 4));
 }
 
 TEST(Dataset, operator_plus_equal) {
@@ -527,14 +595,15 @@ TEST(Dataset, operator_times_equal_with_units) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
-  values.setUnit(Unit::Id::Length);
+  values.setUnit(units::m);
   Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
-  variances.setUnit(Unit::Id::Area);
+  variances.setUnit(units::m * units::m);
   a.insert(values);
   a.insert(variances);
   a *= a;
-  EXPECT_EQ(a(Data::Value).unit(), Unit::Id::Area);
-  EXPECT_EQ(a(Data::Variance).unit(), Unit::Id::AreaVariance);
+  EXPECT_EQ(a(Data::Value).unit(), units::m * units::m);
+  EXPECT_EQ(a(Data::Variance).unit(),
+            units::m * units::m * units::m * units::m);
   EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
 }
 
@@ -543,10 +612,10 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
   values.setName("name1");
-  values.setUnit(Unit::Id::Counts);
+  values.setUnit(units::counts);
   Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
   variances.setName("name1");
-  variances.setUnit(Unit::Id::CountsVariance);
+  variances.setUnit(units::counts * units::counts);
   a.insert(values);
   a.insert(variances);
 
@@ -556,8 +625,9 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   b.insert(Data::Variance, "name1", {Dim::X, 1}, {4.0});
 
   // Counts (aka "histogram data") times counts not possible.
-  EXPECT_THROW_MSG(a *= a, std::runtime_error,
-                   "Unsupported unit combination in multiplication");
+  EXPECT_THROW_MSG(
+      a *= a, std::runtime_error,
+      "Unsupported unit as result of multiplication: (counts^2) * (counts^2)");
   // Counts times frequencies (aka "distribution") ok.
   // TODO Works for dimensionless right now, but do we need to handle other
   // cases as well?
@@ -614,10 +684,10 @@ TEST(Dataset, slice) {
   }
   EXPECT_THROW_MSG(
       d(Dim::Z, 0), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}\n, got Dim::Z.");
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
   EXPECT_THROW_MSG(
       d(Dim::Z, 1), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}\n, got Dim::Z.");
+      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
 }
 
 TEST(Dataset, concatenate_constant_dimension_broken) {
@@ -787,9 +857,34 @@ TEST(Dataset, rebin_failures) {
   d.erase(Coord::X);
   d.insert(coord);
   d.insert(Data::Value, "badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
+  d(Data::Value, "badAuxDim").setUnit(units::counts);
   Variable badAuxDim(Coord::X, Dimensions({{Dim::X, 3}, {Dim::Y, 3}}));
   EXPECT_THROW_MSG(rebin(d, badAuxDim), std::runtime_error,
                    "Size mismatch in auxiliary dimension of new coordinate.");
+}
+
+TEST(Dataset, rebin_accepts_only_counts_and_densities) {
+  Dataset d;
+  d.insert(Coord::Tof, {Dim::Tof, 3}, {1.0, 3.0, 5.0});
+  Variable coordNew(Coord::Tof, {Dim::Tof, 2}, {1.0, 5.0});
+
+  d.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
+  EXPECT_THROW_MSG(rebin(d, coordNew), dataset::except::UnitError,
+                   "Expected counts or counts-density, got dimensionless.");
+
+  d(Data::Value, "").setUnit(units::m);
+  EXPECT_THROW_MSG(rebin(d, coordNew), dataset::except::UnitError,
+                   "Expected counts or counts-density, got m.");
+
+  d(Data::Value, "").setUnit(units::counts);
+  EXPECT_NO_THROW(rebin(d, coordNew));
+
+  d(Data::Value, "").setUnit(units::counts * units::counts);
+  EXPECT_NO_THROW(rebin(d, coordNew));
+
+  d(Data::Value, "").setUnit(units::counts / units::us);
+  EXPECT_NO_THROW(rebin(d, coordNew));
+  rebin(d, coordNew);
 }
 
 TEST(Dataset, rebin) {
@@ -804,9 +899,27 @@ TEST(Dataset, rebin) {
                    "histogram data first.");
 
   d.insert(Data::Value, "", {Dim::X, 2}, {10.0, 20.0});
+  d(Data::Value).setUnit(units::counts);
   auto rebinned = rebin(d, coordNew);
   EXPECT_EQ(rebinned.get(Data::Value).size(), 1);
   EXPECT_EQ(rebinned.get(Data::Value)[0], 30.0);
+}
+
+TEST(Dataset, rebin_density) {
+  Dataset d;
+  d.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 4, 8});
+  Variable coordNew(Coord::Tof, {Dim::Tof, 3}, {1, 3, 8});
+
+  d.insert(Data::Value, "", {Dim::Tof, 3}, {10, 20, 30});
+  d(Data::Value).setUnit(units::counts);
+
+  Variable reference(Data::Value, {Dim::Tof, 2}, {10.0, 40.0 / 5});
+  reference.setUnit(units::counts / units::us);
+
+  auto rebinned1 = rebin(counts::toDensity(d, Dim::Tof), coordNew);
+  auto rebinned2 = counts::toDensity(rebin(d, coordNew), Dim::Tof);
+  EXPECT_EQ(rebinned1, rebinned2);
+  EXPECT_EQ(rebinned1(Data::Value), reference);
 }
 
 Dataset makeEvents() {
@@ -854,6 +967,9 @@ TEST(Dataset, histogram) {
   ASSERT_TRUE(hist.contains(Data::Variance, "sample1"));
   EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 1, 4}));
   EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 1, 4}));
+  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
+  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
+            units::counts * units::counts);
 }
 
 TEST(Dataset, histogram_2D_coord) {
@@ -868,6 +984,9 @@ TEST(Dataset, histogram_2D_coord) {
   ASSERT_TRUE(hist.contains(Data::Variance, "sample1"));
   EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 4, 2}));
   EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 4, 2}));
+  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
+  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
+            units::counts * units::counts);
 }
 
 TEST(Dataset, histogram_2D_transpose_coord) {
@@ -886,6 +1005,9 @@ TEST(Dataset, histogram_2D_transpose_coord) {
             Dimensions({{Dim::Spectrum, 2}, {Dim::Tof, 2}}));
   EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 4, 2}));
   EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 4, 2}));
+  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
+  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
+            units::counts * units::counts);
 }
 
 TEST(Dataset, sort) {
@@ -968,18 +1090,41 @@ TEST(Dataset, filter) {
   EXPECT_EQ(filtered.get(Data::Value)[3], 8.0);
 }
 
-TEST(Dataset, integrate) {
+TEST(Dataset, integrate_counts) {
   Dataset ds;
   ds.insert(Coord::X, {Dim::X, 3}, {0.1, 0.2, 0.4});
   ds.insert(Data::Value, "", {Dim::X, 2}, {10.0, 20.0});
+  ds(Data::Value, "").setUnit(units::counts);
+
+  // Note that in this special case the integral has the same unit. This is
+  // maybe an indicator that we should rather use `sum` for counts? On the other
+  // hand, supporting `integrate` is convenient and thanks to the unit this
+  // should be safe.
+  Variable reference(Data::Value, {}, {30.0});
+  reference.setUnit(units::counts);
 
   Dataset integral;
+  integral = integrate(ds, Dim::X);
   EXPECT_NO_THROW(integral = integrate(ds, Dim::X));
   EXPECT_EQ(integral.dimensions().count(), 0);
   EXPECT_FALSE(integral.contains(Coord::X));
-  // Note: The current implementation assumes that Data::Value is counts,
-  // handling of other data is not implemented yet.
-  EXPECT_TRUE(equals(integral.get(Data::Value), {30.0}));
+  EXPECT_EQ(integral(Data::Value), reference);
+}
+
+TEST(Dataset, integrate_counts_density) {
+  Dataset ds;
+  ds.insert(Coord::Tof, {Dim::Tof, 3}, {0.1, 0.2, 0.4});
+  ds.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
+  ds(Data::Value, "").setUnit(units::counts / units::us);
+
+  Variable reference(Data::Value, {}, {10.0 * 0.1 + 20.0 * 0.2});
+  reference.setUnit(units::counts);
+
+  Dataset integral;
+  EXPECT_NO_THROW(integral = integrate(ds, Dim::Tof));
+  EXPECT_EQ(integral.dimensions().count(), 0);
+  EXPECT_FALSE(integral.contains(Coord::Tof));
+  EXPECT_EQ(integral(Data::Value), reference);
 }
 
 TEST(DatasetSlice, basics) {
@@ -1008,8 +1153,8 @@ TEST(DatasetSlice, basics) {
 
   check(viewA, "a");
   check(viewB, "b");
-  check(d["a"], "a");
-  check(d["b"], "b");
+  check(d.subset("a"), "a");
+  check(d.subset("b"), "b");
 }
 
 TEST(DatasetSlice, minus_equals) {
@@ -1021,14 +1166,14 @@ TEST(DatasetSlice, minus_equals) {
   d.insert(Data::Variance, "a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
   d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
 
-  EXPECT_NO_THROW(d -= d["a"]);
+  EXPECT_NO_THROW(d -= d.subset("a"));
 
   EXPECT_EQ(d.get(Data::Value, "a")[0], 0.0);
   EXPECT_EQ(d.get(Data::Value, "b")[0], 1.0);
   EXPECT_EQ(d.get(Data::Variance, "a")[0], 2.0);
   EXPECT_EQ(d.get(Data::Variance, "b")[0], 1.0);
 
-  ASSERT_NO_THROW(d["a"] -= d["b"]);
+  ASSERT_NO_THROW(d.subset("a") -= d.subset("b"));
 
   ASSERT_EQ(d.size(), 6);
   // Note: Variable not renamed when operating with slices.
@@ -1068,7 +1213,7 @@ TEST(DatasetSlice, subset_slice_spatial) {
   d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}},
            {1, 2, 3, 4, 5, 6, 7, 8});
 
-  auto view_a_x0 = d["a"](Dim::X, 0);
+  auto view_a_x0 = d.subset("a")(Dim::X, 0);
 
   // Slice with single index (not range) => corresponding dimension coordinate
   // is removed.
@@ -1077,7 +1222,7 @@ TEST(DatasetSlice, subset_slice_spatial) {
   EXPECT_EQ(view_a_x0[1].dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x0[2].dimensions(), (Dimensions{Dim::Y, 2}));
 
-  auto view_a_x1 = d["a"](Dim::X, 1);
+  auto view_a_x1 = d.subset("a")(Dim::X, 1);
 
   ASSERT_EQ(view_a_x1.size(), 3);
   EXPECT_EQ(view_a_x1[0].dimensions(), (Dimensions{Dim::Y, 2}));
@@ -1096,11 +1241,11 @@ TEST(DatasetSlice, subset_slice_spatial) {
   // If we slice with a range index the corresponding coordinate (and dimension)
   // is preserved, even if the range has size 1. Thus the operation fails due to
   // coordinate mismatch, as it should.
-  auto view_a_x01 = d["a"](Dim::X, 0, 1);
-  auto view_a_x12 = d["a"](Dim::X, 1, 2);
-  EXPECT_THROW_MSG(
-      view_a_x12 -= view_a_x01, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  auto view_a_x01 = d.subset("a")(Dim::X, 0, 1);
+  auto view_a_x12 = d.subset("a")(Dim::X, 1, 2);
+  EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
 }
 
 TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
@@ -1116,7 +1261,7 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}},
            {1, 2, 3, 4, 5, 6, 7, 8});
 
-  auto view_a_x0 = d["a"](Dim::X, 0);
+  auto view_a_x0 = d.subset("a")(Dim::X, 0);
 
   // Slice with single index (not range) => corresponding dimension coordinate
   // is removed.
@@ -1125,7 +1270,7 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   EXPECT_EQ(view_a_x0[1].dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x0[2].dimensions(), (Dimensions{Dim::Y, 2}));
 
-  auto view_a_x1 = d["a"](Dim::X, 1);
+  auto view_a_x1 = d.subset("a")(Dim::X, 1);
 
   ASSERT_EQ(view_a_x1.size(), 3);
   EXPECT_EQ(view_a_x1[0].dimensions(), (Dimensions{Dim::Y, 2}));
@@ -1141,8 +1286,8 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   EXPECT_TRUE(equals(d.get(Data::Value, "b"), {1, 2, 3, 4, 5, 6, 7, 8}));
   EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {1, 2, 3, 4, 5, 6, 7, 8}));
 
-  auto view_a_x01 = d["a"](Dim::X, 0, 1);
-  auto view_a_x12 = d["a"](Dim::X, 1, 2);
+  auto view_a_x01 = d.subset("a")(Dim::X, 0, 1);
+  auto view_a_x12 = d.subset("a")(Dim::X, 1, 2);
   ASSERT_EQ(view_a_x01[0].tag(), Coord::X);
   // View extent is 1 so we get 2 edges.
   ASSERT_EQ(view_a_x01.dimensions()[Dim::X], 1);
@@ -1150,8 +1295,8 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   EXPECT_TRUE(equals(view_a_x01[0].get(Coord::X), {1, 2}));
   EXPECT_TRUE(equals(view_a_x12[0].get(Coord::X), {2, 3}));
 
-  auto view_a_x02 = d["a"](Dim::X, 0, 2);
-  auto view_a_x13 = d["a"](Dim::X, 1, 3);
+  auto view_a_x02 = d.subset("a")(Dim::X, 0, 2);
+  auto view_a_x13 = d.subset("a")(Dim::X, 1, 3);
   ASSERT_EQ(view_a_x02[0].tag(), Coord::X);
   // View extent is 2 so we get 3 edges.
   ASSERT_EQ(view_a_x02.dimensions()[Dim::X], 2);
@@ -1162,12 +1307,12 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   // If we slice with a range index the corresponding coordinate (and dimension)
   // is preserved, even if the range has size 1. Thus the operation fails due to
   // coordinate mismatch, as it should.
-  EXPECT_THROW_MSG(
-      view_a_x12 -= view_a_x01, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
-  EXPECT_THROW_MSG(
-      view_a_x13 -= view_a_x02, std::runtime_error,
-      "Coordinates of datasets do not match. Cannot perform binary operation.");
+  EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
+  EXPECT_THROW_MSG_SUBSTR(view_a_x13 -= view_a_x02,
+                          dataset::except::VariableMismatchError,
+                          "expected to match");
 }
 
 TEST(Dataset, unary_minus) {
@@ -1342,208 +1487,19 @@ TEST(DatasetSlice, binary_with_scalar) {
   EXPECT_TRUE(equals(prod.get(Data::Variance, "b"), {54}));
 }
 
-Dataset makeTofDataForUnitConversion() {
-  Dataset tof;
-
-  tof.insert(Coord::Tof, {Dim::Tof, 4}, {1000, 2000, 3000, 4000});
-
-  Dataset components;
-  // Source and sample
-  components.insert(
-      Coord::Position, {Dim::Component, 2},
-      {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
-  tof.insert(Coord::ComponentInfo, {}, {components});
-  tof.insert(Coord::Position, {Dim::Spectrum, 2},
-             {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.1, 0.0, 1.0}});
-
-  tof.insert(Data::Value, "", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
-             {1, 2, 3, 4, 5, 6});
-  return tof;
-}
-
-TEST(Dataset, convert) {
-  Dataset tof = makeTofDataForUnitConversion();
-
-  auto energy = convert(tof, Dim::Tof, Dim::Energy);
-
-  ASSERT_FALSE(energy.dimensions().contains(Dim::Tof));
-  ASSERT_TRUE(energy.dimensions().contains(Dim::Energy));
-  EXPECT_EQ(energy.dimensions()[Dim::Energy], 3);
-
-  ASSERT_FALSE(energy.contains(Coord::Tof));
-  ASSERT_TRUE(energy.contains(Coord::Energy));
-  const auto &coord = energy(Coord::Energy);
-  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
-  ASSERT_EQ(coord.dimensions(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 4}}));
-  // TODO Check unit.
-
-  const auto values = coord.get(Coord::Energy);
-  // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
-  // v [m/s] = 437 * sqrt ( E[meV] )
-  Variable tof_in_seconds = tof(Coord::Tof) * 1e-6;
-  const auto tofs = tof_in_seconds.get(Coord::Tof);
-  // Spectrum 0 is 11 m from source
-  EXPECT_NEAR(values[0], pow((11.0 / tofs[0]) / 437.0, 2), values[0] * 0.01);
-  EXPECT_NEAR(values[1], pow((11.0 / tofs[1]) / 437.0, 2), values[1] * 0.01);
-  EXPECT_NEAR(values[2], pow((11.0 / tofs[2]) / 437.0, 2), values[2] * 0.01);
-  EXPECT_NEAR(values[3], pow((11.0 / tofs[3]) / 437.0, 2), values[3] * 0.01);
-  // Spectrum 1
-  const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
-  EXPECT_NEAR(values[4], pow((L / tofs[0]) / 437.0, 2), values[4] * 0.01);
-  EXPECT_NEAR(values[5], pow((L / tofs[1]) / 437.0, 2), values[5] * 0.01);
-  EXPECT_NEAR(values[6], pow((L / tofs[2]) / 437.0, 2), values[6] * 0.01);
-  EXPECT_NEAR(values[7], pow((L / tofs[3]) / 437.0, 2), values[7] * 0.01);
-
-  ASSERT_TRUE(energy.contains(Data::Value));
-  const auto &data = energy(Data::Value);
-  ASSERT_EQ(data.dimensions(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
-  EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6}));
-
-  ASSERT_TRUE(energy.contains(Coord::Position));
-  ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
-}
-
-TEST(Dataset, convert_to_energy_fails_for_inelastic) {
-  Dataset tof = makeTofDataForUnitConversion();
-
-  // Note these conversion fail only because they are not implemented. It should
-  // definitely be possible to support this.
-
-  tof.insert(Coord::Ei, {}, {1});
-  EXPECT_THROW_MSG(convert(tof, Dim::Tof, Dim::Energy), std::runtime_error,
-                   "Dataset contains Coord::Ei or Coord::Ef. However, "
-                   "conversion to Dim::Energy is currently only supported for "
-                   "elastic scattering.");
-  tof.erase(Coord::Ei);
-
-  tof.insert(Coord::Ef, {Dim::Spectrum, 2}, {1.0, 1.5});
-  EXPECT_THROW_MSG(convert(tof, Dim::Tof, Dim::Energy), std::runtime_error,
-                   "Dataset contains Coord::Ei or Coord::Ef. However, "
-                   "conversion to Dim::Energy is currently only supported for "
-                   "elastic scattering.");
-  tof.erase(Coord::Ef);
-
-  EXPECT_NO_THROW(convert(tof, Dim::Tof, Dim::Energy));
-}
-
-TEST(Dataset, convert_direct_inelastic) {
-  Dataset tof;
-
-  tof.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 3, 4});
-
-  Dataset components;
-  // Source and sample
-  components.insert(
-      Coord::Position, {Dim::Component, 2},
-      {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
-  tof.insert(Coord::ComponentInfo, {}, {components});
-  tof.insert(Coord::Position, {Dim::Spectrum, 3},
-             {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.0, 0.0, 1.0},
-              Eigen::Vector3d{0.1, 0.0, 1.0}});
-
-  tof.insert(Data::Value, "", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
-             {1, 2, 3, 4, 5, 6, 7, 8, 9});
-
-  tof.insert(Coord::Ei, {}, {1});
-
-  auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
-
-  ASSERT_FALSE(energy.dimensions().contains(Dim::Tof));
-  ASSERT_TRUE(energy.dimensions().contains(Dim::DeltaE));
-  EXPECT_EQ(energy.dimensions()[Dim::DeltaE], 3);
-
-  ASSERT_FALSE(energy.contains(Coord::Tof));
-  ASSERT_TRUE(energy.contains(Coord::DeltaE));
-  const auto &coord = energy(Coord::DeltaE);
-  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
-  ASSERT_EQ(coord.dimensions(),
-            Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 4}}));
-  // TODO Check actual values here after conversion is fixed.
-  EXPECT_FALSE(
-      equals(coord.get(Coord::DeltaE), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
-  // 2 spectra at same position see same deltaE.
-  EXPECT_EQ(coord(Dim::Spectrum, 0).get(Coord::DeltaE)[0],
-            coord(Dim::Spectrum, 1).get(Coord::DeltaE)[0]);
-
-  ASSERT_TRUE(energy.contains(Data::Value));
-  const auto &data = energy(Data::Value);
-  ASSERT_EQ(data.dimensions(),
-            Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
-  EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
-
-  ASSERT_TRUE(energy.contains(Coord::Position));
-  ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
-  ASSERT_TRUE(energy.contains(Coord::Ei));
-}
-
-TEST(Dataset, convert_direct_inelastic_multi_Ei) {
-  Dataset tof;
-
-  tof.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 3, 4});
-
-  Dataset components;
-  // Source and sample
-  components.insert(
-      Coord::Position, {Dim::Component, 2},
-      {Eigen::Vector3d{0.0, 0.0, -10.0}, Eigen::Vector3d{0.0, 0.0, 0.0}});
-  tof.insert(Coord::ComponentInfo, {}, {components});
-  tof.insert(Coord::Position, {Dim::Spectrum, 3},
-             {Eigen::Vector3d{0.0, 0.0, 1.0}, Eigen::Vector3d{0.0, 0.0, 1.0},
-              Eigen::Vector3d{0.1, 0.0, 1.0}});
-
-  tof.insert(Data::Value, "", {{Dim::Spectrum, 3}, {Dim::Tof, 3}},
-             {1, 2, 3, 4, 5, 6, 7, 8, 9});
-
-  // In practice not every spectrum would have a different Ei, more likely we
-  // would have an extra dimension, Dim::Ei in addition to Dim::Spectrum.
-  tof.insert(Coord::Ei, {Dim::Spectrum, 3}, {1.0, 1.5, 2.0});
-
-  auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
-
-  ASSERT_FALSE(energy.dimensions().contains(Dim::Tof));
-  ASSERT_TRUE(energy.dimensions().contains(Dim::DeltaE));
-  EXPECT_EQ(energy.dimensions()[Dim::DeltaE], 3);
-
-  ASSERT_FALSE(energy.contains(Coord::Tof));
-  ASSERT_TRUE(energy.contains(Coord::DeltaE));
-  const auto &coord = energy(Coord::DeltaE);
-  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
-  ASSERT_EQ(coord.dimensions(),
-            Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 4}}));
-  // TODO Check actual values here after conversion is fixed.
-  EXPECT_FALSE(
-      equals(coord.get(Coord::DeltaE), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
-  // 2 spectra at same position, but now their Ei differs, so deltaE is also
-  // different (compare to test for single Ei above).
-  EXPECT_NE(coord(Dim::Spectrum, 0).get(Coord::DeltaE)[0],
-            coord(Dim::Spectrum, 1).get(Coord::DeltaE)[0]);
-
-  ASSERT_TRUE(energy.contains(Data::Value));
-  const auto &data = energy(Data::Value);
-  ASSERT_EQ(data.dimensions(),
-            Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
-  EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
-
-  ASSERT_TRUE(energy.contains(Coord::Position));
-  ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
-  ASSERT_TRUE(energy.contains(Coord::Ei));
-}
-
 TEST(Dataset, counts_toDensity_fromDensity) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 4, 8});
-  d.insert(Data::Value, "", {Dim::X, 3}, {12, 12, 12});
-  d(Data::Value, "").setUnit(Unit::Id::Counts);
+  d.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 4, 8});
+  d.insert(Data::Value, "", {Dim::Tof, 3}, {12, 12, 12});
+  d(Data::Value, "").setUnit(units::counts);
 
-  d = counts::toDensity(std::move(d), Dim::X);
+  d = counts::toDensity(std::move(d), Dim::Tof);
   auto result = d(Data::Value, "");
-  EXPECT_EQ(result.unit(), Unit::Id::CountsPerMeter);
+  EXPECT_EQ(result.unit(), units::counts / units::us);
   EXPECT_TRUE(equals(result.get(Data::Value), {12, 6, 3}));
 
-  d = counts::fromDensity(std::move(d), Dim::X);
+  d = counts::fromDensity(std::move(d), Dim::Tof);
   result = d(Data::Value, "");
-  EXPECT_EQ(result.unit(), Unit::Id::Counts);
+  EXPECT_EQ(result.unit(), units::counts);
   EXPECT_TRUE(equals(result.get(Data::Value), {12, 12, 12}));
 }

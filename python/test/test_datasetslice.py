@@ -13,11 +13,12 @@ class TestDatasetSlice(unittest.TestCase):
         self._d = d
     
     def test_type(self):
-        ds_slice = self._d["a"]
+        ds_slice = self._d.subset("a")
         self.assertEqual(type(ds_slice), dataset.DatasetView)
 
     def test_extract_slice(self):
-        ds_slice = self._d["a"]
+        ds_slice = self._d.subset("a")
+        self.assertEqual(type(ds_slice), dataset.DatasetView)
         # We should have just one data variable
         self.assertEqual(1, len([var for var in ds_slice if var.is_data]))
         # We should have just one coord variable
@@ -33,8 +34,8 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEquals(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
 
     def test_repr(self):
-        ds_slice = self._d["a"]
-        self.assertEqual(repr(ds_slice), "Dataset slice with 2 variables")
+        ds_slice = self._d.subset("a")
+        self.assertEqual(repr(ds_slice), "<DatasetSlice>\nDimensions: {{Dim.X, 10}}\nCoordinates:\n    (Coord.X)                 int64     [m]              (Dim.X)\nData:\n    (Data.Value, a)           int64     [dimensionless]  (Dim.X)\nAttributes:\n\n")
 
 if __name__ == '__main__':
     unittest.main()

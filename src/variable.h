@@ -140,6 +140,9 @@ public:
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
   Variable(const ConstVariableSlice &slice);
+  Variable(const Variable &parent, const Dimensions &dims);
+  Variable(const ConstVariableSlice &parent, const Dimensions &dims);
+  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data);
 
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
@@ -173,7 +176,7 @@ public:
   }
 
   template <class T>
-  Variable(const Tag tag, const Unit::Id unit, const Dimensions &dimensions,
+  Variable(const Tag tag, const Unit unit, const Dimensions &dimensions,
            T object);
 
   const std::string &name() const && = delete;
@@ -184,10 +187,10 @@ public:
     return *m_name;
   }
   void setName(const std::string &name) {
-    if (isCoord())
-      throw std::runtime_error("Coordinate variable cannot have a name.");
     if (name.empty())
       m_name = nullptr;
+    else if (isCoord())
+      throw std::runtime_error("Coordinate variable cannot have a name.");
     else if (m_name)
       *m_name = name;
     else
@@ -207,9 +210,19 @@ public:
   Variable &operator*=(const Variable &other) &;
   Variable &operator*=(const ConstVariableSlice &other) &;
   Variable &operator*=(const double value) &;
+  template <class T>
+  Variable &operator*=(const boost::units::quantity<T> &quantity) & {
+    setUnit(unit() * Unit(T{}));
+    return *this *= quantity.value();
+  }
   Variable &operator/=(const Variable &other) &;
   Variable &operator/=(const ConstVariableSlice &other) &;
   Variable &operator/=(const double value) &;
+  template <class T>
+  Variable &operator/=(const boost::units::quantity<T> &quantity) & {
+    setUnit(unit() / Unit(T{}));
+    return *this /= quantity.value();
+  }
 
   Unit unit() const { return m_unit; }
   void setUnit(const Unit &unit) {
@@ -306,7 +319,9 @@ private:
 template <class T>
 Variable makeVariable(Tag tag, const Dimensions &dimensions) {
   return Variable(tag, defaultUnit(tag), std::move(dimensions),
-                  Vector<underlying_type_t<T>>(dimensions.volume()));
+                  Vector<underlying_type_t<T>>(
+                      dimensions.volume(),
+                      detail::default_init<underlying_type_t<T>>::value()));
 }
 
 template <class T, class T2>
@@ -550,6 +565,14 @@ Variable operator+(const double a, Variable b);
 Variable operator-(const double a, Variable b);
 Variable operator*(const double a, Variable b);
 Variable operator/(const double a, Variable b);
+template <class T>
+Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
+  return std::move(a *= quantity);
+}
+template <class T>
+Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
+  return std::move(a /= quantity);
+}
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
                             const std::vector<gsl::index> &indices);
@@ -561,6 +584,11 @@ Variable permute(const Variable &var, const Dim dim,
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
+Variable norm(const Variable &var);
+// TODO add to dataset and python
+Variable sqrt(const Variable &var);
+Variable broadcast(Variable var, const Dimensions &dims);
+Variable reverse(Variable var, const Dim dim);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);

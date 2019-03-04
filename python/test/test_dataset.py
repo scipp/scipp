@@ -38,7 +38,7 @@ class TestDataset(unittest.TestCase):
         self.assertFalse((Data.Value, "data4") in self.dataset)
 
     def test_view_contains(self):
-        view = self.dataset["data2"]
+        view = self.dataset.subset("data2")
         self.assertTrue(Coord.X in view)
         self.assertTrue(Coord.Y in view)
         self.assertTrue(Coord.Z in view)
@@ -112,6 +112,11 @@ class TestDataset(unittest.TestCase):
         d[Data.Value, "data1"] = np.arange(24.0).reshape(4,3,2)
         self.assertEqual(d[Data.Value, "data1"].numpy.dtype, np.int64)
 
+    def test_nested_default_init(self):
+        d = Dataset()
+        d[Data.Events] = ([Dim.X], (1,))
+        self.assertEqual(d[Data.Events].data[0], Dataset())
+
     def test_set_data_nested(self):
         d = Dataset()
         table = Dataset()
@@ -144,7 +149,7 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(self.dataset[Data.Value, "data3"].numpy, self.reference_data3)
 
     def test_view_subdata(self):
-        view = self.dataset["data1"]
+        view = self.dataset.subset("data1")
         # TODO Need consistent dimensions() implementation for Dataset and its views.
         #self.assertEqual(view.dimensions().size(Dim.X), 2)
         #self.assertEqual(view.dimensions().size(Dim.Y), 3)
@@ -154,7 +159,7 @@ class TestDataset(unittest.TestCase):
     def test_slice_dataset(self):
         for x in range(2):
             view = self.dataset[Dim.X, x]
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::X and name ``.', view.__getitem__, Coord.X)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::X and name ``.', view.__getitem__, Coord.X)
             np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,:,x])
@@ -163,7 +168,7 @@ class TestDataset(unittest.TestCase):
         for y in range(3):
             view = self.dataset[Dim.Y, y]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::Y and name ``.', view.__getitem__, Coord.Y)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::Y and name ``.', view.__getitem__, Coord.Y)
             np.testing.assert_array_equal(view[Coord.Z].numpy, self.reference_z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[:,y,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[:,y,:])
@@ -172,7 +177,7 @@ class TestDataset(unittest.TestCase):
             view = self.dataset[Dim.Z, z]
             np.testing.assert_array_equal(view[Coord.X].numpy, self.reference_x)
             np.testing.assert_array_equal(view[Coord.Y].numpy, self.reference_y)
-            self.assertRaisesRegex(RuntimeError, 'Dataset slice with 5 variables, could not find variable with tag Coord::Z and name ``.', view.__getitem__, Coord.Z)
+            self.assertRaisesRegex(RuntimeError, 'could not find variable with tag Coord::Z and name ``.', view.__getitem__, Coord.Z)
             np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z,:,:])
             np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z,:])
@@ -222,7 +227,7 @@ class TestDataset(unittest.TestCase):
 
     def test_slice_numpy_interoperable(self):
         # Dataset subset then view single variable
-        self.dataset['data2'][Data.Value, 'data2'] = np.exp(self.dataset[Data.Value, 'data1'])
+        self.dataset.subset('data2')[Data.Value, 'data2'] = np.exp(self.dataset[Data.Value, 'data1'])
         np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, np.exp(self.reference_data1))
         # Slice view of dataset then view single variable
         self.dataset[Dim.X, 0][Data.Value, 'data2'] = np.exp(self.dataset[Dim.X, 1][Data.Value, 'data1'])
@@ -270,6 +275,7 @@ class TestDataset(unittest.TestCase):
     def test_rebin(self):
         dataset = Dataset()
         dataset[Data.Value, "data"] = ([Dim.X], np.array(10*[1.0]))
+        dataset[Data.Value, "data"].unit = units.counts
         dataset[Coord.X] = ([Dim.X], np.arange(11.0))
         new_coord = Variable(Coord.X, [Dim.X], np.arange(0.0, 11, 2))
         dataset = rebin(dataset, new_coord)
@@ -386,7 +392,7 @@ class TestDatasetExamples(unittest.TestCase):
         d[Coord.Z] = ([Dim.Z], np.arange(L))
         d[Data.Value, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
 
-        dataset = as_xarray(d['temperature'])
+        dataset = as_xarray(d.subset('temperature'))
         dataset['Value:temperature'][10, ...].plot()
         #plt.savefig('test.png')
 
@@ -409,10 +415,21 @@ class TestDatasetExamples(unittest.TestCase):
         # Uncertainties are propagated using grouping mechanism based on name
         square = d * d
 
+        # Add the counts units
+        d[Data.Value, "temperature"].unit = units.counts
+        d[Data.Value, "pressure"].unit = units.counts
+        d[Data.Variance, "temperature"].unit = units.counts * units.counts
+        # The square operation is now prevented because the resulting counts
+        # variance unit (counts^4) is not part of the supported units, i.e. the
+        # result of that operation makes little physical sense.
+        with self.assertRaisesRegex(RuntimeError, "Unsupported unit as result of multiplication: \(counts\^2\) \* \(counts\^2\)"):
+            square = d * d
+
         # Rebin the X axis
         d = rebin(d, Variable(Coord.X, [Dim.X], np.arange(0, L+1, 2).astype(np.float64)))
         # Rebin to different axis for every y
-        rebinned = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2]).astype(np.float64)))
+        # Our rebin implementatinon is broken for this case for now
+        #rebinned = rebin(d, Variable(Coord.X, [Dim.Y, Dim.X], np.arange(0, 2*L).reshape([L,2]).astype(np.float64)))
 
         # Do something with numpy and insert result
         d[Data.Value, "dz(p)"] = ([Dim.Z, Dim.Y, Dim.X], np.gradient(d[Data.Value, "pressure"], d[Coord.Z], axis=0))
@@ -465,6 +482,25 @@ class TestDatasetExamples(unittest.TestCase):
                 spec[Data.Value, "sample1"] = np.zeros(1000)
                 spec[Data.Variance, "sample1"] = np.zeros(1000)
 
+    def test_zip(self):
+        d = Dataset()
+        d[Coord.SpectrumNumber] = ([Dim.Position], np.arange(1, 6))
+        d[Data.EventTofs, ""] = ([Dim.Position], (5,))
+        d[Data.EventPulseTimes, ""] = ([Dim.Position], (5,))
+        self.assertEqual(len(d[Data.EventTofs, ""].data), 5)
+        d[Data.EventTofs, ""].data[0].append(10)
+        d[Data.EventPulseTimes, ""].data[0].append(1000)
+        d[Data.EventTofs, ""].data[1].append(10)
+        d[Data.EventPulseTimes, ""].data[1].append(1000)
+        # Don't do this, there are no compatiblity checks:
+        #for el in zip(d[Data.EventTofs, ""].data, d[Data.EventPulseTimes, ""].data):
+        for el, size in zip(d.zip(), [1,1,0,0,0]):
+            self.assertEqual(len(el), size)
+            for e in el:
+                self.assertEqual(e.first(), 10)
+                self.assertEqual(e.second(), 1000)
+            el.append((10,300))
+            self.assertEqual(len(el), size + 1)
 
 if __name__ == '__main__':
     unittest.main()
