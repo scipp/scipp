@@ -90,12 +90,7 @@ def plot_sliceviewer(input_data, field=None):
 #===============================================================================
 
 # Plot a 1D spectrum
-# Inputs can be:
-# 1. d (=dataset)
-# 2. d, var (=string)
-# 3. [d1, d2]
-# 4. [[d1, var1], [d2, var2]]
-# 5. [[d1, var1], [d2]]
+# Inputs can be either a Dataset(Slice) or a list of Dataset(Slice)s
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
