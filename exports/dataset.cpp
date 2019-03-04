@@ -746,6 +746,8 @@ PYBIND11_MODULE(dataset, m) {
              self.erase(std::get<0>(key), std::get<1>(key));
            })
       .def("__getitem__",
+           [](Dataset &self, const gsl::index index) { return self[index]; })
+      .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
            })
@@ -799,32 +801,37 @@ PYBIND11_MODULE(dataset, m) {
       // 1. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Handle integers before case 3. below, which would convert to double.
+      // 2. Handle 0D before anything else. In particular `Dataset` is causing
+      // trouble: If the provided Dataset is empty, pybind11 thinks a overload
+      // for std::vector matches, and ignores the item type. In particular, if
+      // this is below insert_1D<int64_t> the latter will match an empty
+      // dataset. Is this a pybind11 bug, or just a limitation?
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
+      // 3. Handle integers before case 4. below, which would convert to double.
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
-      // 3. Insertion attempting forced conversion to array of double. This
+      // 4. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
       //    py::array::forcecast argument, we need to minimize implicit (and
       //    potentially expensive conversion). If we wanted to avoid some
       //    conversion we need to provide explicit variants for specific types,
-      //    same as or similar to insert_1D in case 4. below.
+      //    same as or similar to insert_1D in case 5. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
-      // 4. Insertion of numpy-incompatible data. py::array_t does not support
+      // 5. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
-      .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
-      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
-      // 5. Insertion from Variable or Variable slice.
+      // 6. Insertion from Variable or Variable slice.
       .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
       .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
       .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)

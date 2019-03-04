@@ -117,6 +117,16 @@ class TestDataset(unittest.TestCase):
         d[Data.Events] = ([Dim.X], (1,))
         self.assertEqual(d[Data.Events].data[0], Dataset())
 
+    def test_nested_0D_empty_item(self):
+        d = Dataset()
+        d[Data.Events] = ([], Dataset())
+        self.assertEqual(d[Data.Events].data[0], Dataset())
+
+    def test_nested_0D_empty_size_tuple(self):
+        d = Dataset()
+        d[Data.Events] = ([], ())
+        self.assertEqual(d[Data.Events].data[0], Dataset())
+
     def test_set_data_nested(self):
         d = Dataset()
         table = Dataset()
