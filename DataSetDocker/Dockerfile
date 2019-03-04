@@ -50,10 +50,13 @@ RUN cd /tmp/dataset/build && \
 RUN sudo apt-get purge --auto-remove -y libboost1.67-dev 
 
 #installing plotly and jupyter extension to visualize dataset
-RUN conda install -c plotly plotly=3.6.1
+RUN conda install --quiet --yes -c plotly plotly=3.6.1
 
 RUN conda install --quiet --yes jupyterlab=0.35 "ipywidgets>=7.2"
 RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
+
+#downgrade tornado for correct work
+RUN conda install --quiet --yes "tornado<5.0.0"
 
 #installing tools to convert python scripts to notebooks
 RUN conda install --quiet --yes pip
