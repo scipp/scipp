@@ -341,5 +341,10 @@ void equals(const Unit &a, const Unit &b) {
   if (!(a == b))
     throw except::UnitMismatchError(a, b);
 }
+
+void equals(const Dimensions &a, const Dimensions &b) {
+  if (!(a == b))
+    throw except::DimensionMismatchError(a, b);
+}
 } // namespace expect
 } // namespace dataset
