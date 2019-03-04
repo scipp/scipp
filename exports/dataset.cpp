@@ -638,7 +638,15 @@ PYBIND11_MODULE(dataset, m) {
       .def_property("unit", &VariableSlice::unit, &VariableSlice::setUnit)
       .def("__getitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
-             return self(std::get<Dim>(index), std::get<gsl::index>(index));
+             gsl::index idx{std::get<gsl::index>(index)};
+             auto& dim = std::get<Dim>(index);
+             auto sz = self.dimensions()[dim];
+             if (idx <= -sz || idx >= sz) // index is out of range
+               throw std::runtime_error("Dimension size is " +
+                   std::to_string(self.dimensions()[dim]) + ", can't treat " +
+                   std::to_string(idx));
+             if (idx < 0) idx = sz + idx;
+             return self(std::get<Dim>(index), idx);
            })
       .def("__getitem__", &detail::pySlice)
       .def("__getitem__",
@@ -683,7 +691,15 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__getitem__",
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
-             return self(std::get<Dim>(index), std::get<gsl::index>(index));
+             gsl::index idx{std::get<gsl::index>(index)};
+             auto& dim = std::get<Dim>(index);
+             auto sz = self.dimensions()[dim];
+             if (idx <= -sz || idx >= sz) // index is out of range
+               throw std::runtime_error("Dimension size is " +
+                   std::to_string(self.dimensions()[dim]) + ", can't treat " +
+                   std::to_string(idx));
+             if (idx < 0) idx = sz + idx;
+             return self(std::get<Dim>(index), idx);
            })
       .def("__getitem__",
            [](DatasetSlice &self,
@@ -747,7 +763,15 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
-             return self(std::get<Dim>(index), std::get<gsl::index>(index));
+             gsl::index idx{std::get<gsl::index>(index)};
+             auto& dim = std::get<Dim>(index);
+             auto sz = self.dimensions()[dim];
+             if (idx <= -sz || idx >= sz) // index is out of range
+               throw std::runtime_error("Dimension size is " +
+                   std::to_string(self.dimensions()[dim]) + ", can't treat " +
+                   std::to_string(idx));
+             if (idx < 0) idx = sz + idx;
+             return self(std::get<Dim>(index), idx);
            })
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, const py::slice> &index) {
