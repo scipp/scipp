@@ -241,17 +241,18 @@ void setData(T &self, const K &key, const py::array &data) {
             bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
 
-VariableSlice pySlice(VariableSlice &view,
+template <class T>
+VariableSlice pySlice(T &source,
                       const std::tuple<Dim, const py::slice> &index) {
   const Dim dim = std::get<Dim>(index);
   const auto indices = std::get<const py::slice>(index);
   size_t start, stop, step, slicelength;
-  const auto size = view.dimensions()[dim];
+  const auto size = source.dimensions()[dim];
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
     throw py::error_already_set();
   if (step != 1)
     throw std::runtime_error("Step must be 1");
-  return view(dim, start, stop);
+  return source(dim, start, stop);
 }
 
 void setVariableSlice(VariableSlice &self,
@@ -455,6 +456,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
+      .def("__getitem__", &detail::pySlice<Variable>)
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
@@ -472,20 +474,44 @@ PYBIND11_MODULE(dataset, m) {
                                    char, bool, std::string, Dataset>)
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const Variable &a, const VariableSlice &b) { return a + b; },
+           py::is_operator())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const Variable &a, const VariableSlice &b) { return a - b; },
+           py::is_operator())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const Variable &a, const VariableSlice &b) { return a * b; },
+           py::is_operator())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const Variable &a, const VariableSlice &b) { return a / b; },
+           py::is_operator())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += float(), py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](Variable &a, const VariableSlice &b) { return a += b; },
+           py::is_operator())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= float(), py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](Variable &a, const VariableSlice &b) { return a -= b; },
+           py::is_operator())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= float(), py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](Variable &a, const VariableSlice &b) { return a *= b; },
+           py::is_operator())
       .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self /= float(), py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](Variable &a, const VariableSlice &b) { return a /= b; },
+           py::is_operator())
       .def("__len__", &Variable::size)
       .def("__repr__",
            [](const Variable &self) { return dataset::to_string(self, "."); });
@@ -512,7 +538,7 @@ PYBIND11_MODULE(dataset, m) {
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return self(std::get<Dim>(index), std::get<gsl::index>(index));
            })
-      .def("__getitem__", &detail::pySlice)
+      .def("__getitem__", &detail::pySlice<VariableSlice>)
       .def("__getitem__",
            [](VariableSlice &self, const std::map<Dim, const gsl::index> d) {
              auto slice(self);
@@ -541,7 +567,6 @@ PYBIND11_MODULE(dataset, m) {
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
       });
-
   py::class_<DatasetSlice>(m, "DatasetView")
       .def(py::init<Dataset &>())
       .def("__len__", &DatasetSlice::size)

@@ -75,40 +75,65 @@ class TestVariable(unittest.TestCase):
         self.assertEqual(repr(var), "Variable(Coord.SpectrumNumber, '',( Dim.X ), int64)\n")
         var = Variable(Coord.Mask, [Dim.X], np.arange(1))
         self.assertEqual(repr(var), "Variable(Coord.Mask, '',( Dim.X ), int64)\n")
+
+    def test_slicing(self):
+        var = Variable(Data.Value, [Dim.X], np.arange(0,3))
+        var_slice = var[(Dim.X, slice(0, 2))]
+        self.assertTrue(isinstance(var_slice, VariableSlice))
+        self.assertEqual(len(var_slice), 2)
+        self.assertTrue(np.array_equal(var_slice.numpy, np.array([0,1])))
     
     def test_binary_operations(self):
         # TODO units check
         data = np.arange(1, 4, dtype=float)
         a = Variable(Data.Value, [Dim.X], data)
         b = Variable(Data.Value, [Dim.X], data)
+        a_slice = a[(Dim.X, slice(0, len(a)))]
+        b_slice = b[(Dim.X, slice(0, len(b)))]
         # Plus
         c = a + b
         self.assertTrue(np.array_equal(c.numpy, data+data))
+        c = a + 2.0 
+        self.assertTrue(np.array_equal(c.numpy, data+2.0))
+        c = a + b_slice
+        self.assertTrue(np.array_equal(c.numpy, data+data))
         c += b
         self.assertTrue(np.array_equal(c.numpy, data+data+data))
+        c += b_slice
+        self.assertTrue(np.array_equal(c.numpy, data+data+data+data))
         # Minus
         c = a - b
         self.assertTrue(np.array_equal(c.numpy, data-data))
+        c = a - 2.0 
+        self.assertTrue(np.array_equal(c.numpy, data-2.0))
+        c = a - b_slice
+        self.assertTrue(np.array_equal(c.numpy, data-data))
         c -= b
         self.assertTrue(np.array_equal(c.numpy, data-data-data))
+        c -= b_slice
+        self.assertTrue(np.array_equal(c.numpy, data-data-data-data))
         # Multiply
         c = a * b
         self.assertTrue(np.array_equal(c.numpy, data*data))
+        c = a * 2.0 
+        self.assertTrue(np.array_equal(c.numpy, data*2.0))
+        c = a * b_slice
+        self.assertTrue(np.array_equal(c.numpy, data*data))
         c *= b
         self.assertTrue(np.array_equal(c.numpy, data*data*data))
+        c *= b_slice
+        self.assertTrue(np.array_equal(c.numpy, data*data*data*data))
         # Divide
         c = a / b
         self.assertTrue(np.array_equal(c.numpy, data/data))
-        c /= b
-        self.assertTrue(np.array_equal(c.numpy, data/data/data))
-        c = a + 2.0 
-        self.assertTrue(np.array_equal(c.numpy, data+2.0))
-        c = a - 2.0 
-        self.assertTrue(np.array_equal(c.numpy, data-2.0))
-        c = a * 2.0 
-        self.assertTrue(np.array_equal(c.numpy, data*2.0))
         c = a / 2.0 
         self.assertTrue(np.array_equal(c.numpy, data/2.0))
+        c = a / b_slice
+        self.assertTrue(np.array_equal(c.numpy, data/data))
+        c /= b
+        self.assertTrue(np.array_equal(c.numpy, data/data/data))
+        c /= b_slice
+        self.assertTrue(np.array_equal(c.numpy, data/data/data/data))
 
 if __name__ == '__main__':
     unittest.main()

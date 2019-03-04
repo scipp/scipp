@@ -30,7 +30,7 @@ class TestVariableSlice(unittest.TestCase):
     
     def test_binary_operations(self):
         a = self._dslice[Data.Value, "a"] 
-        b = self._d["b"][Data.Value, "b"] 
+        b = self._d[Data.Value, "b"] 
 
         data = a.numpy
         c = a + b
