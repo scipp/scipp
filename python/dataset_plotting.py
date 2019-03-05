@@ -4,9 +4,12 @@ import numpy as np
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
 import plotly.graph_objs as go
-
+# Re-direct the output of init_notebook_mode to hide it from the unit tests
+import io
+from contextlib import redirect_stdout
 try:
-    init_notebook_mode(connected=True)
+    with redirect_stdout(io.StringIO()):
+        init_notebook_mode(connected=True)
 except ImportError:
     print("Warning: the current version of this plotting module was designed to"
           " work inside a Jupyter notebook. Other usage has not been tested.")
@@ -19,7 +22,7 @@ def plot(input_data):
         return plot_1d(input_data)
     elif ndim == 2:
         return plot_image(input_data)
-    elif ndim == 3:
+    elif ndim < 5:
         return plot_sliceviewer(input_data)
     else:
         raise RuntimeError("Plot: unsupported number of dimensions: {}".format(ndim))
