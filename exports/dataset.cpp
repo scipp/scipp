@@ -460,6 +460,27 @@ template <class... Ts> struct as_VariableViewImpl {
       throw std::runtime_error("not implemented for this type.");
     }
   }
+
+  // Return a scalar value from a variable, implicitly requiring that the
+  // variable is 0-dimensional and thus has only a single item.
+  template <class Var> static py::object scalar(Var &view) {
+    dataset::expect::equals(Dimensions(), view.dimensions());
+    return std::visit(
+        [](const auto &data) {
+          return py::cast(data[0], py::return_value_policy::reference_internal);
+        },
+        get(view));
+  }
+  // Set a scalar value in a variable, implicitly requiring that the
+  // variable is 0-dimensional and thus has only a single item.
+  template <class Var> static void set_scalar(Var &view, const py::object &o) {
+    dataset::expect::equals(Dimensions(), view.dimensions());
+    std::visit(
+        [&o](const auto &data) {
+          data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
+        },
+        get(view));
+  }
 };
 
 using as_VariableView =
@@ -625,6 +646,11 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<Variable, double, float, int64_t,
                                           int32_t, char, bool>)
       .def_property_readonly("data", &as_VariableView::get<Variable>)
+      .def_property("scalar", &as_VariableView::scalar<Variable>,
+                    &as_VariableView::set_scalar<Variable>,
+                    "The only data point for a 0-dimensional "
+                    "variable. Raises an exception of the variable is "
+                    "not 0-dimensional.")
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -668,6 +694,11 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char, bool>)
       .def_property_readonly("data", &as_VariableView::get<VariableSlice>)
+      .def_property("scalar", &as_VariableView::scalar<VariableSlice>,
+                    &as_VariableView::set_scalar<VariableSlice>,
+                    "The only data point for a 0-dimensional "
+                    "variable. Raises an exception of the variable is "
+                    "not 0-dimensional.")
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
