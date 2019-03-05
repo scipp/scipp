@@ -266,8 +266,12 @@ struct AttrDef {
     using type = Dataset;
     static constexpr auto unit = units::dimensionless;
   };
+  struct Monitor {
+    using type = Dataset;
+    static constexpr auto unit = units::dimensionless;
+  };
 
-  using tags = std::tuple<ExperimentLog>;
+  using tags = std::tuple<ExperimentLog, Monitor>;
 };
 
 using Tags = decltype(std::tuple_cat(std::declval<detail::CoordDef::tags>(),
@@ -368,8 +372,10 @@ struct Data {
 
 struct Attr {
   using ExperimentLog_t = detail::TagImpl<detail::AttrDef::ExperimentLog>;
+  using Monitor_t = detail::TagImpl<detail::AttrDef::Monitor>;
 
   static constexpr ExperimentLog_t ExperimentLog{};
+  static constexpr Monitor_t Monitor{};
 };
 
 template <class T>

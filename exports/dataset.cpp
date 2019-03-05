@@ -463,6 +463,27 @@ template <class... Ts> struct as_VariableViewImpl {
       throw std::runtime_error("not implemented for this type.");
     }
   }
+
+  // Return a scalar value from a variable, implicitly requiring that the
+  // variable is 0-dimensional and thus has only a single item.
+  template <class Var> static py::object scalar(Var &view) {
+    dataset::expect::equals(Dimensions(), view.dimensions());
+    return std::visit(
+        [](const auto &data) {
+          return py::cast(data[0], py::return_value_policy::reference_internal);
+        },
+        get(view));
+  }
+  // Set a scalar value in a variable, implicitly requiring that the
+  // variable is 0-dimensional and thus has only a single item.
+  template <class Var> static void set_scalar(Var &view, const py::object &o) {
+    dataset::expect::equals(Dimensions(), view.dimensions());
+    std::visit(
+        [&o](const auto &data) {
+          data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
+        },
+        get(view));
+  }
 };
 
 using as_VariableView =
@@ -541,6 +562,7 @@ PYBIND11_MODULE(dataset, m) {
 
   auto attr_tags = m.def_submodule("Attr");
   attr_tags.attr("ExperimentLog") = Tag(Attr::ExperimentLog);
+  attr_tags.attr("Monitor") = Tag(Attr::Monitor);
 
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
@@ -628,6 +650,11 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<Variable, double, float, int64_t,
                                           int32_t, char, bool>)
       .def_property_readonly("data", &as_VariableView::get<Variable>)
+      .def_property("scalar", &as_VariableView::scalar<Variable>,
+                    &as_VariableView::set_scalar<Variable>,
+                    "The only data point for a 0-dimensional "
+                    "variable. Raises an exception of the variable is "
+                    "not 0-dimensional.")
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
@@ -685,6 +712,11 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char, bool>)
       .def_property_readonly("data", &as_VariableView::get<VariableSlice>)
+      .def_property("scalar", &as_VariableView::scalar<VariableSlice>,
+                    &as_VariableView::set_scalar<VariableSlice>,
+                    "The only data point for a 0-dimensional "
+                    "variable. Raises an exception of the variable is "
+                    "not 0-dimensional.")
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
@@ -786,6 +818,8 @@ PYBIND11_MODULE(dataset, m) {
              self.erase(std::get<0>(key), std::get<1>(key));
            })
       .def("__getitem__",
+           [](Dataset &self, const gsl::index index) { return self[index]; })
+      .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
            })
@@ -844,9 +878,14 @@ PYBIND11_MODULE(dataset, m) {
       // 2. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 3. Handle integers before case 3. below, which would convert to double.
+      // 2. Handle integers before case 3. below, which would convert to double.
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
+      // 3. Handle integers before case 4. below, which would convert to double.
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
       // 4. Insertion attempting forced conversion to array of double. This
@@ -855,16 +894,12 @@ PYBIND11_MODULE(dataset, m) {
       //    py::array::forcecast argument, we need to minimize implicit (and
       //    potentially expensive conversion). If we wanted to avoid some
       //    conversion we need to provide explicit variants for specific types,
-      //    same as or similar to insert_1D in case 4. below.
+      //    same as or similar to insert_1D in case 5. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
       // 5. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
-      .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
-      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
