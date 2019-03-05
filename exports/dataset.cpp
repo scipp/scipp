@@ -463,8 +463,7 @@ template <class... Ts> struct as_VariableViewImpl {
 
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var>
-  static py::object point(Var &view) {
+  template <class Var> static py::object scalar(Var &view) {
     dataset::expect::equals(Dimensions(), view.dimensions());
     return std::visit(
         [](const auto &data) {
@@ -474,8 +473,7 @@ template <class... Ts> struct as_VariableViewImpl {
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var>
-  static void set_point(Var &view, const py::object &o) {
+  template <class Var> static void set_scalar(Var &view, const py::object &o) {
     dataset::expect::equals(Dimensions(), view.dimensions());
     std::visit(
         [&o](const auto &data) {
@@ -647,8 +645,8 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<Variable, double, float, int64_t,
                                           int32_t, char, bool>)
       .def_property_readonly("data", &as_VariableView::get<Variable>)
-      .def_property("point", &as_VariableView::point<Variable>,
-                    &as_VariableView::set_point<Variable>,
+      .def_property("scalar", &as_VariableView::scalar<Variable>,
+                    &as_VariableView::set_scalar<Variable>,
                     "The only data point for a 0-dimensional "
                     "variable. Raises an exception of the variable is "
                     "not 0-dimensional.")
@@ -695,8 +693,8 @@ PYBIND11_MODULE(dataset, m) {
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char, bool>)
       .def_property_readonly("data", &as_VariableView::get<VariableSlice>)
-      .def_property("point", &as_VariableView::point<VariableSlice>,
-                    &as_VariableView::set_point<VariableSlice>,
+      .def_property("scalar", &as_VariableView::scalar<VariableSlice>,
+                    &as_VariableView::set_scalar<VariableSlice>,
                     "The only data point for a 0-dimensional "
                     "variable. Raises an exception of the variable is "
                     "not 0-dimensional.")
