@@ -61,14 +61,10 @@ VariableSlice Dataset::operator()(const Tag tag, const std::string &name) & {
 }
 
 void Dataset::insert(Variable variable) {
-  if (variable.isCoord() && count(*this, variable.tag()))
-    throw std::runtime_error("Attempt to insert duplicate coordinate.");
-  if (!variable.isCoord()) {
-    for (const auto &item : m_variables)
-      if (item.tag() == variable.tag() && item.name() == variable.name())
-        throw std::runtime_error(
-            "Attempt to insert data with duplicate tag and name.");
-  }
+  for (const auto &item : m_variables)
+    if (item.tag() == variable.tag() && item.name() == variable.name())
+      throw std::runtime_error(
+          "Attempt to insert variable with duplicate tag and name.");
   // TODO special handling for special variables types like
   // Data::Histogram (either prevent adding, or extract into underlying
   // variables).
