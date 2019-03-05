@@ -22,15 +22,17 @@
 namespace py = pybind11;
 
 template <typename Collection>
-auto getItemBySingleIndex(Collection &self, const std::tuple<Dim, gsl::index> &index) {
+auto getItemBySingleIndex(Collection &self,
+                          const std::tuple<Dim, gsl::index> &index) {
   gsl::index idx{std::get<gsl::index>(index)};
-  auto& dim = std::get<Dim>(index);
+  auto &dim = std::get<Dim>(index);
   auto sz = self.dimensions()[dim];
   if (idx <= -sz || idx >= sz) // index is out of range
     throw std::runtime_error("Dimension size is " +
-        std::to_string(self.dimensions()[dim]) + ", can't treat " +
-        std::to_string(idx));
-  if (idx < 0) idx = sz + idx;
+                             std::to_string(self.dimensions()[dim]) +
+                             ", can't treat " + std::to_string(idx));
+  if (idx < 0)
+    idx = sz + idx;
   return self(std::get<Dim>(index), idx);
 }
 
@@ -628,44 +630,20 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("data", &as_VariableView::get<Variable>)
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
-      .def("__add__",
-           [](const Variable &a, const VariableSlice &b) { return a + b; },
-           py::is_operator())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
-      .def("__sub__",
-           [](const Variable &a, const VariableSlice &b) { return a - b; },
-           py::is_operator())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
-      .def("__mul__",
-           [](const Variable &a, const VariableSlice &b) { return a * b; },
-           py::is_operator())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
-      .def("__truediv__",
-           [](const Variable &a, const VariableSlice &b) { return a / b; },
-           py::is_operator())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += float(), py::call_guard<py::gil_scoped_release>())
-      .def("__iadd__",
-           [](Variable &a, const VariableSlice &b) { return a += b; },
-           py::is_operator())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= float(), py::call_guard<py::gil_scoped_release>())
-      .def("__isub__",
-           [](Variable &a, const VariableSlice &b) { return a -= b; },
-           py::is_operator())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= float(), py::call_guard<py::gil_scoped_release>())
-      .def("__imul__",
-           [](Variable &a, const VariableSlice &b) { return a *= b; },
-           py::is_operator())
       .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self /= float(), py::call_guard<py::gil_scoped_release>())
-      .def("__itruediv__",
-           [](Variable &a, const VariableSlice &b) { return a /= b; },
-           py::is_operator())
       .def("__len__", &Variable::size)
       .def("__repr__",
            [](const Variable &self) { return dataset::to_string(self, "."); });
@@ -725,6 +703,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
       });
+
+  // Implicit conversion VariableSlice -> Variable. Reduces need for excessive
+  // operator overload definitions
+  py::implicitly_convertible<VariableSlice, Variable>();
+
   py::class_<DatasetSlice>(m, "DatasetView")
       .def(py::init<Dataset &>())
       .def("__len__", &DatasetSlice::size)
@@ -931,6 +914,8 @@ PYBIND11_MODULE(dataset, m) {
                    Access::Key(Data::EventPulseTimes));
       });
 
+  // Implicit conversion DatasetSlice -> Dataset. Reduces need for excessive
+  // operator overload definitions
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
   //-----------------------dataset free functions-------------------------------
