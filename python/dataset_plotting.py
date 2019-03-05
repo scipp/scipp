@@ -3,8 +3,13 @@ from dataset import Data, dataset, dimensionCoord
 import numpy as np
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
-init_notebook_mode(connected=True)
 import plotly.graph_objs as go
+
+try:
+    init_notebook_mode(connected=True)
+except ImportError:
+    print("Warning: the current version of this plotting module was designed to"
+          " work inside a Jupyter notebook. Other usage has not been tested.")
 
 # Wrapper function to dispatch the input dataset to the appropriate plotting
 # function depending on its dimensions
@@ -126,7 +131,7 @@ def plot_image(input_data, contours=False, plot=True):
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
-    if (ndim > 1) and ((ndim < 3) or ((ndim < 4) and not plot)):
+    if (ndim > 1) and ((ndim < 3) or ((ndim < 5) and not plot)):
 
         values = []
         for var in input_data:
@@ -217,26 +222,62 @@ def plot_sliceviewer(input_data):
         a = values.numpy
         nx = np.shape(a)
 
-        fig = go.FigureWidget(
-            data = [go.Heatmap(
-                z = a[:,:,0],
-                colorscale = 'Viridis',
-                colorbar=dict(
-                    title="{} [{}]".format(values.name,values.unit),
-                    titleside = 'right',
-                    )
-                )],
-            layout = layout
-        )
+        if ndim == 3:
 
-        def update_z(zpos):
-            fig.data[0].z = a[:,:,zpos]
+            fig = go.FigureWidget(
+                data = [go.Heatmap(
+                    z = a[:,:,0],
+                    colorscale = 'Viridis',
+                    colorbar=dict(
+                        title="{} [{}]".format(values.name,values.unit),
+                        titleside = 'right',
+                        )
+                    )],
+                layout = layout
+            )
 
-        # Add a slider that updates the slice plane
-        # TODO: find a way to better name the 'zpos' text next to the slider
-        slider = interactive(update_z, zpos=(0, nx[2]-1, 1))
-        vb = VBox((fig, slider))
-        vb.layout.align_items = 'center'
-        return vb
+            def update_z(zpos):
+                fig.data[0].z = a[:,:,zpos]
+
+            # Add a slider that updates the slice plane
+            # TODO: find a way to better name the 'zpos' text next to the slider
+            slider = interactive(update_z, zpos=(0, nx[2]-1, 1))
+            vb = VBox((fig, slider))
+            vb.layout.align_items = 'center'
+            return vb
+
+        elif ndim == 4:
+
+            fig = go.FigureWidget(
+                data = [go.Heatmap(
+                    z = a[:,:,0,0],
+                    colorscale = 'Viridis',
+                    colorbar=dict(
+                        title="{} [{}]".format(values.name,values.unit),
+                        titleside = 'right',
+                        )
+                    )],
+                layout = layout
+            )
+
+            positions = {"i" : 0, "j" : 0}
+            def update_slice():
+                fig.data[0].z = a[:,:,positions["i"],positions["j"]]
+            def update_i(ipos):
+                positions["i"] = ipos
+                update_slice()
+            def update_j(jpos):
+                positions["j"] = jpos
+                update_slice()
+
+            # Add a slider that updates the slice plane
+            # TODO: find a way to better name the 'zpos' text next to the slider
+            slider_i = interactive(update_i, ipos=(0, nx[2]-1, 1))
+            slider_j = interactive(update_j, jpos=(0, nx[3]-1, 1))
+            
+            vb = VBox((fig, slider_i, slider_j))
+            vb.layout.align_items = 'center'
+            return vb
+
     else:
         raise RuntimeError("Unsupported number of dimensions in sliceviewer.")
