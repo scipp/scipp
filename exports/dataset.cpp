@@ -650,6 +650,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("is_coord", &Variable::isCoord)
       .def_property_readonly("is_data", &Variable::isData)
       .def_property_readonly("is_attr", &Variable::isAttr)
+      .def_property_readonly("is_variance", &Variable::isVariance)
       .def_property_readonly(
           "dimensions", [](const Variable &self) { return self.dimensions(); })
       .def_property_readonly(
@@ -697,6 +698,7 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("is_coord", &VariableSlice::isCoord)
       .def_property_readonly("is_data", &VariableSlice::isData)
       .def_property_readonly("is_attr", &VariableSlice::isAttr)
+      .def_property_readonly("is_variance", &VariableSlice::isVariance)
       .def_property_readonly("tag", &VariableSlice::tag)
       .def_property_readonly("name", &VariableSlice::name)
       .def_property("unit", &VariableSlice::unit, &VariableSlice::setUnit)

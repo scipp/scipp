@@ -254,6 +254,9 @@ public:
     return m_tag >= std::tuple_size<detail::CoordDef::tags>::value +
                         std::tuple_size<detail::DataDef::tags>::value;
   }
+  bool isVariance() const {
+    return m_tag == Data::Variance;
+  }
   bool isData() const { return !isCoord() && !isAttr(); }
 
   template <class TagT> auto get(const TagT t) const {
@@ -419,6 +422,7 @@ public:
   bool isCoord() const { return m_variable->isCoord(); }
   bool isAttr() const { return m_variable->isAttr(); }
   bool isData() const { return m_variable->isData(); }
+  bool isVariance() const { return m_variable->isVariance(); }
 
   // Note: This return a proxy object (a VariableView) that does reference
   // members owner by *this. Therefore we can support this even for

@@ -67,48 +67,76 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
     data = []
     for item in entries:
         # Scan the datasets
-        values = []
+        values = dict()
+        variances = dict()
         for var in item:
-            if var.is_data:
-                values.append(var)
+            key = var.name
+            if var.is_variance:
+                variances[key] = var
+            elif var.is_data:
+                values[key] = var
+        # Now go through the values and see if they have an associated variance.
+        # If they do, then use that as error bars.
+        # Then go through the variances and check if there are some variances
+        # that do not have an associate value; they are to be plotted as normal
+        # data.
+        tobeplotted = []
+        for key, val in values.items():
+            if key in variances.keys():
+                vari = variances[key]
+            else:
+                vari = None
+            tobeplotted.append([val, vari])
+        for key, val in variances.items():
+            if key not in values.keys():
+                tobeplotted.append([val, None])
 
-        if len(values) > 1:
-            raise RuntimeError("More than one Data.Value found! Please use e.g."
-                               " plot_1d(dataset.subset(Data.Value, 'sample')) "
-                               "to select only a single Value.")
+        # tobeplotted now contains pairs of [value, variance]
+        for v in tobeplotted:
 
-        # Check that data is 1D
-        if len(values[0].dimensions.labels) > 1:
-            raise RuntimeError("Can only plot 1D data with plot_1d.")
+            # Check that data is 1D
+            if len(v[0].dimensions.labels) > 1:
+                raise RuntimeError("Can only plot 1D data with plot_1d.")
 
-        # Define y
-        y = values[0].numpy
-        ylab = values[0].unit.name
-        name = values[0].name
-        # TODO: getting the shape of the dimension array is done in two steps
-        # here because values[0].dimensions.shape[0] returns garbage. One of the
-        # objects is going out of scope, we need to figure out which one to fix
-        # this.
-        ydims = values[0].dimensions
-        ny = ydims.shape[0]
+            # Define y
+            y = v[0].numpy
+            ylab = v[0].unit.name
+            name = v[0].name
+            # TODO: getting the shape of the dimension array is done in two steps
+            # here because v.dimensions.shape[0] returns garbage. One of the
+            # objects is going out of scope, we need to figure out which one to fix
+            # this.
+            ydims = v[0].dimensions
+            ny = ydims.shape[0]
 
-        # Define x
-        coord = item[dimensionCoord(values[0].dimensions.labels[0])]
-        xdims = coord.dimensions
-        nx = xdims.shape[0]
+            # Define x
+            coord = item[dimensionCoord(v[0].dimensions.labels[0])]
+            xdims = coord.dimensions
+            nx = xdims.shape[0]
+            x = coord.numpy
+            # Check for bin edges
+            if nx == ny + 1:
+                x = 0.5 * (x[1:] + x[:-1])
+            xlab = "{} [{}]".format(coord.name,coord.unit)
 
-        x = coord.numpy
-        # Check for bin edges
-        if nx == ny + 1:
-            x = 0.5 * (x[1:] + x[:-1])
-        xlab = "{} [{}]".format(coord.name,coord.unit)
+              # Define variance if present
+            if v[1] is not None:
+                trace = func(
+                    x=x,
+                    y=y,
+                    name=name,
+                    error_y=dict(
+                        type='data',
+                        array=v[1].numpy,
+                        visible=True)
+                    )
+            else:
+                trace = func(
+                    x=x,
+                    y=y,
+                    name=name)
 
-        trace = func(
-            x=x,
-            y=y,
-            name=name
-        )
-        data.append(trace)
+            data.append(trace)
 
     layout = dict(
         xaxis = dict(title = xlab),

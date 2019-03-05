@@ -58,7 +58,7 @@ class TestDatasetSlice(unittest.TestCase):
         # Create slice
         ds_slice = self._d[Dim.X,subset]
         # Test via variable_slice
-        self.assertEquals(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
+        self.assertEqual(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
 
 if __name__ == '__main__':
     unittest.main()
