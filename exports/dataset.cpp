@@ -353,10 +353,9 @@ void setData(T &self, const K &key, const py::array &data) {
 }
 
 template <class T>
-VariableSlice pySlice(T &source,
-                      const std::tuple<Dim, const py::slice> &index) {
-  const Dim dim = std::get<Dim>(index);
-  const auto indices = std::get<const py::slice>(index);
+auto pySlice(T &source, const std::tuple<Dim, const py::slice> &index)
+    -> decltype(source(Dim::Invalid, 0)) {
+  const auto & [ dim, indices ] = index;
   size_t start, stop, step, slicelength;
   const auto size = source.dimensions()[dim];
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
@@ -799,19 +798,7 @@ PYBIND11_MODULE(dataset, m) {
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
            })
-      .def("__getitem__",
-           [](DatasetSlice &self,
-              const std::tuple<Dim, const py::slice> &index) {
-             const Dim dim = std::get<Dim>(index);
-             const auto indices = std::get<const py::slice>(index);
-             size_t start, stop, step, slicelength;
-             gsl::index size = self.dimensions()[dim];
-             if (!indices.compute(size, &start, &stop, &step, &slicelength))
-               throw py::error_already_set();
-             if (step != 1)
-               throw std::runtime_error("Step must be 1");
-             return self(dim, start, stop);
-           })
+      .def("__getitem__", &detail::pySlice<DatasetSlice>)
       .def("__getitem__",
            [](DatasetSlice &self, const Tag &tag) { return self(tag); })
       .def(
@@ -821,6 +808,17 @@ PYBIND11_MODULE(dataset, m) {
           })
       .def_property_readonly(
           "subset", [](DatasetSlice &self) { return SubsetHelper(self); })
+      .def("__setitem__",
+           [](DatasetSlice &self, const std::tuple<Dim, py::slice> &index,
+              const DatasetSlice &other) {
+             detail::pySlice(self, index).assign(other);
+           })
+      .def("__setitem__",
+           [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index,
+              const DatasetSlice &other) {
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
+           })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
@@ -861,18 +859,7 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
            })
-      .def("__getitem__",
-           [](Dataset &self, const std::tuple<Dim, const py::slice> &index) {
-             const Dim dim = std::get<Dim>(index);
-             const auto indices = std::get<const py::slice>(index);
-             size_t start, stop, step, slicelength;
-             const auto size = self.dimensions()[dim];
-             if (!indices.compute(size, &start, &stop, &step, &slicelength))
-               throw py::error_already_set();
-             if (step != 1)
-               throw std::runtime_error("Step must be 1");
-             return self(dim, start, stop);
-           })
+      .def("__getitem__", &detail::pySlice<Dataset>)
       .def("__getitem__",
            [](Dataset &self, const Tag &tag) { return self(tag); })
       .def("__getitem__",
@@ -886,14 +873,15 @@ PYBIND11_MODULE(dataset, m) {
       // understood all details of this yet though. See also
       // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
       .def("__setitem__",
+           [](Dataset &self, const std::tuple<Dim, py::slice> &index,
+              const DatasetSlice &other) {
+             detail::pySlice(self, index).assign(other);
+           })
+      .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index,
               const DatasetSlice &other) {
-             auto slice =
-                 self(std::get<Dim>(index), std::get<gsl::index>(index));
-             if (slice == other)
-               return;
-             throw std::runtime_error("Non-self-assignment of Dataset slices "
-                                      "is not implemented yet.\n");
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
            })
 
       // A) No dimensions argument, this will set data of existing item.
