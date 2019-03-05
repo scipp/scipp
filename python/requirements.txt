@@ -3,4 +3,4 @@ pandas
 xarray
 matplotlib
 nose
-
+plotly

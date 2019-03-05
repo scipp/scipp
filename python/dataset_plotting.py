@@ -6,91 +6,25 @@ from plotly.offline import init_notebook_mode, iplot
 init_notebook_mode(connected=True)
 import plotly.graph_objs as go
 
-#===============================================================================
-
-# Plot a 2D slice through a 3D dataset with a slider to adjust the position of
-# the slice in the third dimension
-def plot_sliceviewer(input_data, field=None):
-
-    # Delay import to here, as ipywidgets is not part of the base plotly package
-    try:
-        from ipywidgets import interactive, HBox, VBox
-    except ImportError:
-        print("Sorry, the sliceviewer requires ipywidgets which was not found on this system")
-        return
-
-    dims = input_data.dimensions()
-    if (len(dims) > 2) and (len(dims) < 5):
-
-        # Get spatial extents by iterating over the coordinates, and also search
-        # for data fields
-        axmin = []
-        axmax = []
-        axlab = []
-        fields = []
-        nx = []
-        ifield = 0
-        for var in input_data:
-            if var.is_coord:
-                values = var.numpy
-                axmin.append(values[0] - 0.5*(values[1]-values[0]))
-                axmax.append(values[-1] + 0.5*(values[-1]-values[-2]))
-                axlab.append([var.name, var.unit])
-            elif var.is_data:
-                fields.append([var.name, var.unit])
-                if var.name == field:
-                    ifield = len(fields) - 1
-
-        ratio = (axmax[1] - axmin[1]) / (axmax[0] - axmin[0])
-
-        if (field is None) and (len(fields) > 1):
-            raise RuntimeError("More than one data field found! Please specify which one to display")
-
-        a = input_data[Data.Value, fields[ifield][0]].numpy
-        nx = np.shape(a)
-
-        fig = go.FigureWidget(
-
-            data = [go.Heatmap(
-                z = a[:,:,0],
-                colorscale = 'Viridis',
-                colorbar=dict(
-                    title="{} [{}]".format(fields[ifield][0],fields[ifield][1]),
-                    titleside = 'right',
-                    )
-                )],
-
-            layout = dict(
-                autosize=False,
-                width=800,
-                height=800*ratio,
-                xaxis = dict(
-                    range = [axmin[0],axmax[0]],
-                    title = "{} [{}]".format(axlab[0][0],axlab[0][1])),
-                yaxis = dict(
-                    scaleanchor = "x",
-                    scaleratio = ratio,
-                    range = [axmin[1],axmax[1]],
-                    title = "{} [{}]".format(axlab[1][0],axlab[1][1]))
-            )
-
-        )
-
-        def update_z(zpos):
-            fig.data[0].z = a[:,:,zpos]
-
-        # Add a slider that updates the slice plane
-        slider = interactive(update_z, zpos=(0, nx[2]-1, 1))
-        vb = VBox((fig, slider))
-        vb.layout.align_items = 'center'
-        return vb
+# Wrapper function to dispatch the input dataset to the appropriate plotting
+# function depending on its dimensions
+def plot(input_data):
+    ndim = len(input_data.dimensions())
+    if ndim == 1:
+        return plot_1d(input_data)
+    elif ndim == 2:
+        return plot_image(input_data)
+    elif ndim == 3:
+        return plot_sliceviewer(input_data)
     else:
-        raise RuntimeError("Unsupported number of dimensions in sliceviewer.")
+        raise RuntimeError("Plot: unsupported number of dimensions: {}".format(ndim))
 
 #===============================================================================
 
-# Plot a 1D spectrum
-# Inputs can be either a Dataset(Slice) or a list of Dataset(Slice)s
+# Plot a 1D spectrum.
+#
+# Inputs can be either a Dataset(Slice) or a list of Dataset(Slice)s.
+# If bars=True, then a bar plot is produced instead of a standard line.
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
@@ -143,6 +77,10 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
         y = values[0].numpy
         ylab = values[0].unit.name
         name = values[0].name
+        # TODO: getting the shape of the dimension array is done in two steps
+        # here because values[0].dimensions.shape[0] returns garbage. One of the
+        # objects is going out of scope, we need to figure out which one to fix
+        # this.
         ydims = values[0].dimensions
         ny = ydims.shape[0]
 
@@ -172,31 +110,26 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
     if logy or logxy:
         layout["yaxis"]["type"] = "log"
 
-    iplot(dict(data=data, layout=layout))
-
-    return
+    return iplot(dict(data=data, layout=layout))
 
 #===============================================================================
 
-# Plot a 2D image of pixels
-def plot_image(input_data, contours=False):
+# Plot a 2D image.
+#
+# If countours=True, a filled contour plot is produced, if False, then a
+# standard image made of pixels is created.
+# If plot=False, then not plot is produced, instead the layout and Data.Value
+# variable are returned.
+def plot_image(input_data, contours=False, plot=True):
 
-    dims = input_data.dimensions()
-    if (len(dims) > 1) and (len(dims) < 3):
+    ndim = len(input_data.dimensions())
+    # TODO: this currently allows for plot_image to be called with a 3D dataset
+    # and plot=False, which would lead to an error. We should think of a better
+    # way to protect against this.
+    if (ndim > 1) and ((ndim < 3) or ((ndim < 4) and not plot)):
 
-        # Get spatial extents by iterating over the coordinates, and also search
-        # for data fields
-        axmin = []
-        axmax = []
-        axlab = []
         values = []
-        nx = []
         for var in input_data:
-            # if var.is_coord:
-            #     x = var.numpy
-            #     axmin.append(x[0] - 0.5*(x[1]-x[0]))
-            #     axmax.append(x[-1] + 0.5*(x[-1]-x[-2]))
-            #     axlab.append([var.name, var.unit])
             if var.is_data:
                 values.append(var)
 
@@ -204,8 +137,6 @@ def plot_image(input_data, contours=False):
             raise RuntimeError("More than one Data.Value found! Please use e.g."
                                " plot_image(dataset.subset(Data.Value, 'sample'))"
                                " to select only a single Value.")
-
-        # ratio = (axmax[1] - axmin[1]) / (axmax[0] - axmin[0])
 
         xcoord = input_data[dimensionCoord(values[0].dimensions.labels[0])]
         ycoord = input_data[dimensionCoord(values[0].dimensions.labels[1])]
@@ -218,43 +149,94 @@ def plot_image(input_data, contours=False):
 
         ratio = (ymax - ymin) / (xmax - xmin)
 
-        if contours:
-            data = [go.Contour(
-                x = x,
-                y = y,
-	            z = values[0].numpy,
-	            colorscale = 'Viridis',
-	            colorbar=dict(
-	                title="{} [{}]".format(values[0].name,values[0].unit),
-	                titleside = 'right',
-	                )
-	            )]
-            iplot(data)
+        layout = dict(
+            autosize=False,
+            width=800,
+            height=800*ratio,
+            xaxis = dict(
+                    range = [xmin,xmax],
+                    title = "{} [{}]".format(xcoord.name, xcoord.unit)),
+            yaxis = dict(
+                    range = [ymin,ymax],
+                    title = "{} [{}]".format(ycoord.name, ycoord.unit))
+            )
+
+        if plot:
+            if contours:
+                data = [go.Contour(
+                    x = x,
+                    y = y,
+                    z = values[0].numpy,
+                    colorscale = 'Viridis',
+                    colorbar=dict(
+                        title="{} [{}]".format(values[0].name,values[0].unit),
+                        titleside = 'right',
+                        )
+                    )]
+            else:
+                xmin -= 0.5*(x[1]-x[0])
+                xmax += 0.5*(x[-1]-x[-2])
+                ymin -= 0.5*(y[1]-y[0])
+                ymax += 0.5*(y[-1]-y[-2])
+                
+                data = [go.Heatmap(
+                    z = values[0].numpy,
+                    colorscale = 'Viridis',
+                    colorbar=dict(
+                        title="{} [{}]".format(values[0].name,values[0].unit),
+                        titleside = 'right',
+                        )
+                    )]
+            return iplot(dict(data=data, layout=layout))
         else:
-	        data = [go.Heatmap(
-	            z = values[0].numpy,
-	            colorscale = 'Viridis',
-	            colorbar=dict(
-	                title="{} [{}]".format(values[0].name,values[0].unit),
-	                titleside = 'right',
-	                )
-	            )]
-
-	        layout = dict(
-	            autosize=False,
-	            width=800,
-	            height=800*ratio,
-	            xaxis = dict(
-	                range = [xmin,xmax]),
-	                # title = "{} [{}]".format(axlab[0][0],axlab[0][1])),
-	            yaxis = dict(
-	                scaleanchor = "x",
-	                scaleratio = ratio,
-	                range = [ymin,ymax],)
-	                # title = "{} [{}]".format(axlab[1][0],axlab[1][1]))
-	        )
-
-	        iplot(dict(data=data, layout=layout))
+            return [values[0], layout]
 
     else:
         raise RuntimeError("Unsupported number of dimensions in plot_image.")
+
+#===============================================================================
+
+# Plot a 2D slice through a 3D dataset with a slider to adjust the position of
+# the slice in the third dimension.
+def plot_sliceviewer(input_data):
+
+    # Delay import to here, as ipywidgets is not part of the base plotly package
+    try:
+        from ipywidgets import interactive, VBox
+    except ImportError:
+        print("Sorry, the sliceviewer requires ipywidgets which was not found "
+              "on this system")
+        return
+
+    ndim = len(input_data.dimensions())
+    if (ndim > 2) and (ndim < 5):
+
+        # Use the machinery in plot_image to make the slices
+        values, layout = plot_image(input_data, plot=False)
+
+        a = values.numpy
+        nx = np.shape(a)
+
+        fig = go.FigureWidget(
+            data = [go.Heatmap(
+                z = a[:,:,0],
+                colorscale = 'Viridis',
+                colorbar=dict(
+                    title="{} [{}]".format(values.name,values.unit),
+                    titleside = 'right',
+                    )
+                )],
+            layout = layout
+        )
+
+        def update_z(zpos):
+            fig.data[0].z = a[:,:,zpos]
+
+        # Add a slider that updates the slice plane
+        # TODO: find a way to better name the 'zpos' text next to the slider
+        slider = interactive(update_z, zpos=(0, nx[2]-1, 1))
+        vb = VBox((fig, slider))
+        vb.layout.align_items = 'center'
+        return vb
+    else:
+        raise RuntimeError("Unsupported number of dimensions in sliceviewer.")
