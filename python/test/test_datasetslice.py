@@ -13,7 +13,7 @@ class TestDatasetSlice(unittest.TestCase):
         self._d = d
     
     def test_type(self):
-        ds_slice = self._d.subset("a")
+        ds_slice = self._d.subset["a"]
         self.assertEqual(type(ds_slice), dataset.DatasetSlice)
 
     def test_extract_slice(self):
@@ -58,7 +58,7 @@ class TestDatasetSlice(unittest.TestCase):
         # Create slice
         ds_slice = self._d[Dim.X,subset]
         # Test via variable_slice
-        self.assertEquals(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
+        self.assertEqual(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
 
 if __name__ == '__main__':
     unittest.main()
