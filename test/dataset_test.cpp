@@ -20,7 +20,7 @@ TEST(Dataset, insert_coords) {
   d.insert(Coord::Tof, {}, {1.1});
   d.insert(Coord::SpectrumNumber, {}, {2});
   EXPECT_THROW_MSG(d.insert(Coord::SpectrumNumber, {}, {2}), std::runtime_error,
-                   "Attempt to insert duplicate coordinate.");
+                   "Attempt to insert variable with duplicate tag and name.");
   ASSERT_EQ(d.size(), 2);
 }
 
@@ -29,7 +29,7 @@ TEST(Dataset, insert_data) {
   d.insert(Data::Value, "name1", {}, {1.1});
   d.insert(Data::Value, "name2", {}, {2});
   EXPECT_THROW_MSG(d.insert(Data::Value, "name2", {}, {2}), std::runtime_error,
-                   "Attempt to insert data with duplicate tag and name.");
+                   "Attempt to insert variable with duplicate tag and name.");
   ASSERT_EQ(d.size(), 2);
 }
 
@@ -88,7 +88,7 @@ TEST(Dataset, insert_edges_first_fail) {
       d.insert(Data::Value, "name2", {Dim::Tof, 1}), std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match.");
   EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 4}), std::runtime_error,
-                   "Attempt to insert duplicate coordinate.");
+                   "Attempt to insert variable with duplicate tag and name.");
 }
 
 TEST(Dataset, insert_edges_fail) {
@@ -189,7 +189,7 @@ TEST(Dataset, merge) {
   merged.merge(d);
   EXPECT_EQ(merged.size(), 3);
   EXPECT_THROW_MSG(merged.merge(d), std::runtime_error,
-                   "Attempt to insert data with duplicate tag and name.");
+                   "Attempt to insert variable with duplicate tag and name.");
 
   Dataset d2;
   d2.insert(Data::Value, "name3", {}, {1.1});
