@@ -40,13 +40,10 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(var_data.is_data)
 
     def test_create_dtype(self):
-        print("start")
         var = Variable(Coord.X, [Dim.X], np.arange(4))
         var = Variable(Coord.X, [Dim.X], np.arange(4).astype(np.int32))
         var = Variable(Coord.X, [Dim.X], np.arange(4).astype(np.float64))
         var = Variable(Coord.X, [Dim.X], np.arange(4).astype(np.float32))
-        #var = Variable(Coord.X, [Dim.X], ['a', 'bb', 'ccc', 'dddd'])
-        print("end")
         var = Variable(Coord.X, [Dim.X], (4,), dtype=np.dtype(np.float64))
         self.assertEqual(var.numpy.dtype, np.dtype(np.float64))
         var = Variable(Coord.X, [Dim.X], (4,), dtype=np.dtype(np.float32))
@@ -66,16 +63,6 @@ class TestVariable(unittest.TestCase):
         var.name = "data"
         self.assertEqual(var.name, "data")
 
-    def test_repr(self):
-        var = Variable(Coord.X, [Dim.X], np.arange(1))
-        self.assertEqual(repr(var), "<Variable>    (Coord.X)                 int64     [m]              (Dim.X)\n")
-        var = Variable(Data.Value, [Dim.X], np.arange(1))
-        self.assertEqual(repr(var), "<Variable>    (Data.Value)              int64     [dimensionless]  (Dim.X)\n")
-        var = Variable(Coord.SpectrumNumber, [Dim.X], np.arange(1))
-        self.assertEqual(repr(var), "<Variable>    (Coord.SpectrumNumber)    int64     [dimensionless]  (Dim.X)\n")
-        var = Variable(Coord.Mask, [Dim.X], np.arange(1))
-        self.assertEqual(repr(var), "<Variable>    (Coord.Mask)              int64     [dimensionless]  (Dim.X)\n")
-
     def test_slicing(self):
         var = Variable(Data.Value, [Dim.X], np.arange(0,3))
         var_slice = var[(Dim.X, slice(0, 2))]
@@ -88,8 +75,8 @@ class TestVariable(unittest.TestCase):
         data = np.arange(1, 4, dtype=float)
         a = Variable(Data.Value, [Dim.X], data)
         b = Variable(Data.Value, [Dim.X], data)
-        a_slice = a[(Dim.X, slice(0, len(a)))]
-        b_slice = b[(Dim.X, slice(0, len(b)))]
+        a_slice = a[Dim.X, :]
+        b_slice = b[Dim.X, :]
         # Plus
         c = a + b
         self.assertTrue(np.array_equal(c.numpy, data+data))

@@ -60,9 +60,5 @@ class TestDatasetSlice(unittest.TestCase):
         # Test via variable_slice
         self.assertEquals(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
 
-    def test_repr(self):
-        ds_slice = self._d.subset("a")
-        self.assertEqual(repr(ds_slice), "<DatasetSlice>\nDimensions: {{Dim.X, 10}}\nCoordinates:\n    (Coord.X)                 int64     [m]              (Dim.X)\nData:\n    (Data.Value, a)           int64     [dimensionless]  (Dim.X)\nAttributes:\n\n")
-
 if __name__ == '__main__':
     unittest.main()
