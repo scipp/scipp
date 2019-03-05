@@ -11,6 +11,10 @@ class TestDatasetSlice(unittest.TestCase):
         d[Data.Value, "a"] = ([Dim.X], np.arange(10)) 
         d[Data.Value, "b"] = ([Dim.X], np.arange(10)) 
         self._d = d
+    
+    def test_type(self):
+        ds_slice = self._d.subset("a")
+        self.assertEqual(type(ds_slice), dataset.DatasetView)
 
     def test_extract_slice(self):
         ds_slice = self._d.subset("a")
@@ -48,6 +52,13 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(self._d[Data.Value, "a"][Dim.X, -3].numpy,
                          self._d[Data.Value, "a"][Dim.X, 7].numpy)
 
+
+    def test_range_based_slice(self):
+        subset = slice(1,4,1)
+        # Create slice
+        ds_slice = self._d[Dim.X,subset]
+        # Test via variable_slice
+        self.assertEquals(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
 
 if __name__ == '__main__':
     unittest.main()

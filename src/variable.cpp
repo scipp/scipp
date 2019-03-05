@@ -713,8 +713,7 @@ Variable::Variable(const ConstVariableSlice &slice)
 }
 Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
-      m_object(parent.m_object->clone(dims)) {
-      }
+      m_object(parent.m_object->clone(dims)) {}
 
 Variable::Variable(const ConstVariableSlice &parent, const Dimensions &dims)
     : m_tag(parent.tag()), m_unit(parent.unit()),

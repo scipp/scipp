@@ -22,15 +22,17 @@
 namespace py = pybind11;
 
 template <typename Collection>
-auto getItemBySingleIndex(Collection &self, const std::tuple<Dim, gsl::index> &index) {
+auto getItemBySingleIndex(Collection &self,
+                          const std::tuple<Dim, gsl::index> &index) {
   gsl::index idx{std::get<gsl::index>(index)};
-  auto& dim = std::get<Dim>(index);
+  auto &dim = std::get<Dim>(index);
   auto sz = self.dimensions()[dim];
   if (idx <= -sz || idx >= sz) // index is out of range
     throw std::runtime_error("Dimension size is " +
-        std::to_string(self.dimensions()[dim]) + ", can't treat " +
-        std::to_string(idx));
-  if (idx < 0) idx = sz + idx;
+                             std::to_string(self.dimensions()[dim]) +
+                             ", can't treat " + std::to_string(idx));
+  if (idx < 0)
+    idx = sz + idx;
   return self(std::get<Dim>(index), idx);
 }
 
@@ -348,17 +350,18 @@ void setData(T &self, const K &key, const py::array &data) {
             bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
 
-VariableSlice pySlice(VariableSlice &view,
+template <class T>
+VariableSlice pySlice(T &source,
                       const std::tuple<Dim, const py::slice> &index) {
   const Dim dim = std::get<Dim>(index);
   const auto indices = std::get<const py::slice>(index);
   size_t start, stop, step, slicelength;
-  const auto size = view.dimensions()[dim];
+  const auto size = source.dimensions()[dim];
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
     throw py::error_already_set();
   if (step != 1)
     throw std::runtime_error("Step must be 1");
-  return view(dim, start, stop);
+  return source(dim, start, stop);
 }
 
 void setVariableSlice(VariableSlice &self,
@@ -633,6 +636,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
+      .def("__getitem__", detail::pySlice<Variable>)
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
@@ -651,9 +655,23 @@ PYBIND11_MODULE(dataset, m) {
                     "The only data point for a 0-dimensional "
                     "variable. Raises an exception of the variable is "
                     "not 0-dimensional.")
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= float(), py::call_guard<py::gil_scoped_release>())
+      .def("__len__", &Variable::size)
       .def("__repr__",
            [](const Variable &self) { return dataset::to_string(self, "."); });
 
@@ -680,7 +698,7 @@ PYBIND11_MODULE(dataset, m) {
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
            })
-      .def("__getitem__", &detail::pySlice)
+      .def("__getitem__", &detail::pySlice<VariableSlice>)
       .def("__getitem__",
            [](VariableSlice &self, const std::map<Dim, const gsl::index> d) {
              auto slice(self);
@@ -702,6 +720,11 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def("__iadd__", [](VariableSlice &a, Variable &b) { return a += b; },
            py::is_operator())
       .def("__isub__", [](VariableSlice &a, Variable &b) { return a -= b; },
@@ -711,6 +734,10 @@ PYBIND11_MODULE(dataset, m) {
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
       });
+
+  // Implicit conversion VariableSlice -> Variable. Reduces need for excessive
+  // operator overload definitions
+  py::implicitly_convertible<VariableSlice, Variable>();
 
   py::class_<DatasetSlice>(m, "DatasetView")
       .def(py::init<Dataset &>())
@@ -840,17 +867,18 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<Dataset, detail::Key::TagName>)
 
       // B) Variants with dimensions, inserting new item.
-      // 0. Insertion with default init. TODO Should this be removed?
+      // 0. Insertion from Variable or Variable slice.
+      .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
+      .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
+      .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)
+      .def("__setitem__", detail::insert<VariableSlice, detail::Key::TagName>)
+      // 1. Insertion with default init. TODO Should this be removed?
       .def("__setitem__", detail::insertDefaultInit<detail::Key::Tag>)
       .def("__setitem__", detail::insertDefaultInit<detail::Key::TagName>)
-      // 1. Insertion from numpy.ndarray
+      // 2. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Handle 0D before anything else. In particular `Dataset` is causing
-      // trouble: If the provided Dataset is empty, pybind11 thinks a overload
-      // for std::vector matches, and ignores the item type. In particular, if
-      // this is below insert_1D<int64_t> the latter will match an empty
-      // dataset. Is this a pybind11 bug, or just a limitation?
+      // 2. Handle integers before case 3. below, which would convert to double.
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
@@ -876,11 +904,6 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
-      // 6. Insertion from Variable or Variable slice.
-      .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
-      .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
-      .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)
-      .def("__setitem__", detail::insert<VariableSlice, detail::Key::TagName>)
 
       // TODO Make sure we have all overloads covered to avoid implicit
       // conversion of DatasetSlice to Dataset.
@@ -930,6 +953,8 @@ PYBIND11_MODULE(dataset, m) {
                    Access::Key(Data::EventPulseTimes));
       });
 
+  // Implicit conversion DatasetSlice -> Dataset. Reduces need for excessive
+  // operator overload definitions
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
   //-----------------------dataset free functions-------------------------------

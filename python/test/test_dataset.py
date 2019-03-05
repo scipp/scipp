@@ -102,6 +102,18 @@ class TestDataset(unittest.TestCase):
         d[Data.Variance, "data2"] = d[Data.Value, "data1"]
         self.assertEqual(len(d), 3)
 
+    # This characterises existing broken behaviour. Will need to be fixed.
+    def test_demo_int_to_float_issue(self):                                                                       
+        # Demo bug
+        d = Dataset() 
+        d[Data.Value, "v1"] = ([Dim.X, Dim.Y], np.ndarray.tolist(np.arange(0,10).reshape(2,5))) # Variable containing int array data     
+        self.assertEqual(d[Data.Value, "v1"].numpy.dtype, 'float64') # Correct behaviour should be int64 
+        
+        # Demo working 1D 
+        d = Dataset() 
+        d[Data.Value, "v2"] = ([Dim.X], np.ndarray.tolist(np.arange(0,10))) # Variable containing int array data     
+        self.assertEqual(d[Data.Value, "v2"].numpy.dtype, 'int64')  
+
     def test_set_data(self):
         d = Dataset()
         d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
