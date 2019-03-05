@@ -14,7 +14,7 @@ class TestDatasetSlice(unittest.TestCase):
     
     def test_type(self):
         ds_slice = self._d.subset("a")
-        self.assertEqual(type(ds_slice), dataset.DatasetView)
+        self.assertEqual(type(ds_slice), dataset.DatasetSlice)
 
     def test_extract_slice(self):
         ds_slice = self._d.subset("a")
