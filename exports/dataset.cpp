@@ -699,7 +699,6 @@ PYBIND11_MODULE(dataset, m) {
            py::is_operator())
       .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
            py::is_operator())
-      .def("__len__", &VariableSlice::size)
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
       });
@@ -845,7 +844,12 @@ PYBIND11_MODULE(dataset, m) {
       // 2. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Insertion attempting forced conversion to array of double. This
+      // 3. Handle integers before case 3. below, which would convert to double.
+      .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
+      // 4. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
       //    py::array::forcecast argument, we need to minimize implicit (and
@@ -854,7 +858,7 @@ PYBIND11_MODULE(dataset, m) {
       //    same as or similar to insert_1D in case 4. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
-      // 4. Insertion of numpy-incompatible data. py::array_t does not support
+      // 5. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
