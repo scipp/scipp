@@ -502,5 +502,27 @@ class TestDatasetExamples(unittest.TestCase):
             el.append((10,300))
             self.assertEqual(len(el), size + 1)
 
+    def test_rebin(self):
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64)
+        arr2 = np.array([[ 0.,  4.,  8., 12., 16., 20.],
+               [ 1.,  5.,  9., 13., 17., 21.],
+               [ 2.,  6., 10., 14., 18., 22.],
+               [ 3.,  7., 11., 15., 19., 23.]]).astype(np.float64)
+
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d1[Data.Value, "B"] = ([Dim.Y, Dim.X], arr2)
+        d1[Data.Value, "A"].unit = units.counts
+        d1[Data.Value, "B"].unit = units.counts
+        rd1 = rebin(d1, Variable(Coord.X, [Dim.X], np.arange(0, N+1, 2).astype(np.float64)))
+        np.testing.assert_array_equal(rd1[Data.Value, "A"].numpy,
+                                      np.transpose(rd1[Data.Value, "B"].numpy))
+
+
 if __name__ == '__main__':
     unittest.main()
