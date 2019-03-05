@@ -493,6 +493,18 @@ using as_VariableView =
                         std::string, boost::container::small_vector<double, 8>,
                         Dataset, Eigen::Vector3d>;
 
+class SubsetHelper {
+public:
+  template <class D> SubsetHelper(D &d) : m_data(d) {}
+  auto subset(const std::string &name) const { return m_data.subset(name); }
+  auto subset(const Tag tag, const std::string &name) const {
+    return m_data.subset(tag, name);
+  }
+
+private:
+  DatasetSlice m_data;
+};
+
 using small_vector = boost::container::small_vector<double, 8>;
 PYBIND11_MAKE_OPAQUE(small_vector);
 
@@ -746,13 +758,36 @@ PYBIND11_MODULE(dataset, m) {
   // operator overload definitions
   py::implicitly_convertible<VariableSlice, Variable>();
 
+  py::class_<SubsetHelper>(m, "SubsetHelper")
+      .def("__getitem__",
+           [](SubsetHelper &self, const std::string &name) {
+             return self.subset(name);
+           })
+      .def("__getitem__",
+           [](SubsetHelper &self,
+              const std::tuple<const Tag, const std::string &> &index) {
+             const auto & [ tag, name ] = index;
+             return self.subset(tag, name);
+           })
+      .def("__setitem__",
+           [](SubsetHelper &self, const std::string &name,
+              const DatasetSlice &data) { self.subset(name).assign(data); })
+      .def("__setitem__",
+           [](SubsetHelper &self,
+              const std::tuple<const Tag, const std::string &> &index,
+              const DatasetSlice &data) {
+             const auto & [ tag, name ] = index;
+             self.subset(tag, name).assign(data);
+           });
+
   py::class_<DatasetSlice>(m, "DatasetSlice")
       .def(py::init<Dataset &>())
       .def("__len__", &DatasetSlice::size)
       .def("__iter__",
            [](DatasetSlice &self) {
              return py::make_iterator(self.begin(), self.end());
-           })
+           },
+           py::keep_alive<0, 1>())
       .def("__contains__", &DatasetSlice::contains, py::arg("tag"),
            py::arg("name") = "")
       .def("__contains__",
@@ -784,12 +819,8 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
-      .def("subset", [](DatasetSlice &self,
-                        const std::string &name) { return self.subset(name); })
-      .def("subset",
-           [](DatasetSlice &self, const Tag tag, const std::string &name) {
-             return self.subset(tag, name);
-           })
+      .def_property_readonly(
+          "subset", [](DatasetSlice &self) { return SubsetHelper(self); })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
@@ -848,12 +879,8 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
            })
-      .def("subset", [](Dataset &self,
-                        const std::string &name) { return self.subset(name); })
-      .def("subset",
-           [](Dataset &self, const Tag tag, const std::string &name) {
-             return self.subset(tag, name);
-           })
+      .def_property_readonly("subset",
+                             [](Dataset &self) { return SubsetHelper(self); })
       // Careful: The order of overloads is really important here, otherwise
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also
