@@ -107,8 +107,8 @@ template <typename T> struct RebinGeneralHelper {
 
     const auto *xold = oldCoordT.span<T>().data();
     const auto *xnew = newCoordT.span<T>().data();
-    // This function assumes that dimensions between coord and data either
-    // match, or coord is 1D.
+    // This function assumes that dimensions between coord and data
+    // coord is 1D.
     int iold = 0;
     int inew = 0;
     while ((iold < oldSize) && (inew < newSize)) {
