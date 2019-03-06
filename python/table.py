@@ -1,5 +1,5 @@
 def table(dataset):
-    if len(dataset.dimensions()) != 1:
+    if len(dataset.dimensions) != 1:
         raise RuntimeError("Only 1-D datasets can be rendered as a table")
     s = str()
     s += '<table>'

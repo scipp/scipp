@@ -52,19 +52,19 @@ class TestDataset(unittest.TestCase):
         dataset[Data.Value, "data"] = ([Dim.Z, Dim.Y, Dim.X], (1,2,3))
         dataset[Data.Value, "aux"] = ([], ())
         self.assertTrue((Data.Value, "data") in dataset)
-        self.assertEqual(len(dataset.dimensions()), 3)
+        self.assertEqual(len(dataset.dimensions), 3)
         del dataset[Data.Value, "data"]
         self.assertFalse((Data.Value, "data") in dataset)
-        self.assertEqual(len(dataset.dimensions()), 0)
+        self.assertEqual(len(dataset.dimensions), 0)
 
         dataset[Data.Value, "data"] = ([Dim.Z, Dim.Y, Dim.X], (1,2,3))
         dataset[Coord.X] = ([Dim.X], np.arange(3))
         del dataset[Data.Value, "data"]
         self.assertFalse((Data.Value, "data") in dataset)
-        self.assertEqual(len(dataset.dimensions()), 1)
+        self.assertEqual(len(dataset.dimensions), 1)
         del dataset[Coord.X]
         self.assertFalse(Coord.X in dataset)
-        self.assertEqual(len(dataset.dimensions()), 0)
+        self.assertEqual(len(dataset.dimensions), 0)
 
     def test_insert_default_init(self):
         d = Dataset()
@@ -151,9 +151,9 @@ class TestDataset(unittest.TestCase):
         self.assertNotEqual(d[Data.Value, "data1"].data[0], d[Data.Value, "data1"].data[1])
 
     def test_dimensions(self):
-        self.assertEqual(self.dataset.dimensions().size(Dim.X), 2)
-        self.assertEqual(self.dataset.dimensions().size(Dim.Y), 3)
-        self.assertEqual(self.dataset.dimensions().size(Dim.Z), 4)
+        self.assertEqual(self.dataset.dimensions[Dim.X], 2)
+        self.assertEqual(self.dataset.dimensions[Dim.Y], 3)
+        self.assertEqual(self.dataset.dimensions[Dim.Z], 4)
 
     def test_data(self):
         self.assertEqual(len(self.dataset[Coord.X].data), 2)
@@ -173,9 +173,9 @@ class TestDataset(unittest.TestCase):
     def test_view_subdata(self):
         view = self.dataset.subset["data1"]
         # TODO Need consistent dimensions() implementation for Dataset and its views.
-        #self.assertEqual(view.dimensions().size(Dim.X), 2)
-        #self.assertEqual(view.dimensions().size(Dim.Y), 3)
-        #self.assertEqual(view.dimensions().size(Dim.Z), 4)
+        self.assertEqual(view.dimensions[Dim.X], 2)
+        self.assertEqual(view.dimensions[Dim.Y], 3)
+        self.assertEqual(view.dimensions[Dim.Z], 4)
         self.assertEqual(len(view), 4)
 
     def test_slice_dataset(self):

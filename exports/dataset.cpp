@@ -635,6 +635,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__len__", &Dimensions::count)
       .def("__contains__", [](const Dimensions &self,
                               const Dim dim) { return self.contains(dim); })
+      .def("__getitem__",
+           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
       .def_property_readonly("labels", &Dimensions::labels)
       .def_property_readonly("shape", &Dimensions::shape)
       .def("add", &Dimensions::add)
@@ -781,6 +783,9 @@ PYBIND11_MODULE(dataset, m) {
 
   py::class_<DatasetSlice>(m, "DatasetSlice")
       .def(py::init<Dataset &>())
+      .def_property_readonly(
+          "dimensions",
+          [](const DatasetSlice &self) { return self.dimensions(); })
       .def("__len__", &DatasetSlice::size)
       .def("__iter__",
            [](DatasetSlice &self) {
@@ -831,6 +836,8 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
       .def(py::init<const DatasetSlice &>())
+      .def_property_readonly(
+          "dimensions", [](const Dataset &self) { return self.dimensions(); })
       .def("__len__", &Dataset::size)
       .def("__repr__",
            [](const Dataset &self) { return dataset::to_string(self, "."); })
@@ -967,7 +974,6 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
       .def("merge", &Dataset::merge)
-      .def("dimensions", [](const Dataset &self) { return self.dimensions(); })
       // TODO For now this is just for testing. We need to decide on an API for
       // specifying the keys.
       .def("zip", [](Dataset &self) {
