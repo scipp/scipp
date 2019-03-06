@@ -791,9 +791,15 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
       .def("__repr__", [](const DatasetSlice &self) {
         return dataset::to_string(self, ".");
       });
@@ -950,6 +956,10 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
       .def("merge", &Dataset::merge)
       .def("dimensions", [](const Dataset &self) { return self.dimensions(); })
       // TODO For now this is just for testing. We need to decide on an API for
