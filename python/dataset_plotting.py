@@ -13,18 +13,42 @@ except ImportError:
     print("Warning: the current version of this plotting module was designed to"
           " work inside a Jupyter notebook. Other usage has not been tested.")
 
+#===============================================================================
+
+def check_input(input_data):
+
+    values = []
+    for var in input_data:
+        if var.is_data:
+            values.append(var)
+
+    if len(values) > 1:
+        raise RuntimeError("More than one Data.Value found! Please use e.g."
+                           " plot(dataset.subset('sample'))"
+                           " to select only a single Value.")
+    return values
+
+#===============================================================================
+
 # Wrapper function to dispatch the input dataset to the appropriate plotting
 # function depending on its dimensions
 def plot(input_data):
-    ndim = len(input_data.dimensions())
-    if ndim == 1:
+
+    # A list of datasets is only supported for 1d
+    if type(input_data) is list:
         return plot_1d(input_data)
-    elif ndim == 2:
-        return plot_image(input_data)
-    elif ndim < 5:
-        return plot_sliceviewer(input_data)
+    # Case of a single dataset
     else:
-        raise RuntimeError("Plot: unsupported number of dimensions: {}".format(ndim))
+        values = check_input(input_data)
+        ndim = len(values[0].dimensions)
+        if ndim == 1:
+            return plot_1d(input_data)
+        elif ndim == 2:
+            return plot_image(input_data)
+        elif ndim < 5:
+            return plot_sliceviewer(input_data)
+        else:
+            raise RuntimeError("Plot: unsupported number of dimensions: {}".format(ndim))
 
 #===============================================================================
 
@@ -153,18 +177,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
 # variable are returned.
 def plot_image(input_data, axes=None, contours=False, plot=True):
 
-    values = []
-    coords = []
-    for var in input_data:
-        if var.is_coord:
-            coords.append(var)
-        elif var.is_data:
-            values.append(var)
-
-    if len(values) > 1:
-        raise RuntimeError("More than one Data.Value found! Please use e.g."
-                           " plot_image(dataset.subset('sample'))"
-                           " to select only a single Value.")
+    values = check_input(input_data)
 
     ndim = len(values[0].dimensions)
     if axes is not None:
@@ -260,14 +273,7 @@ def plot_sliceviewer(input_data):
         return
 
     # Check input dataset
-    value_list = []
-    for var in input_data:
-        if var.is_data:
-            value_list.append(var)
-    if len(value_list) > 1:
-        raise RuntimeError("More than one Data.Value found! Please use e.g."
-                           " plot_sliceviewer(dataset.subset('sample'))"
-                           " to select only a single Value.")
+    value_list = check_input(input_data)
 
     ndim = len(value_list[0].dimensions)
     if (ndim > 2) and (ndim < 5):
