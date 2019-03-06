@@ -38,7 +38,7 @@ class TestDataset(unittest.TestCase):
         self.assertFalse((Data.Value, "data4") in self.dataset)
 
     def test_view_contains(self):
-        view = self.dataset.subset("data2")
+        view = self.dataset.subset["data2"]
         self.assertTrue(Coord.X in view)
         self.assertTrue(Coord.Y in view)
         self.assertTrue(Coord.Z in view)
@@ -52,19 +52,19 @@ class TestDataset(unittest.TestCase):
         dataset[Data.Value, "data"] = ([Dim.Z, Dim.Y, Dim.X], (1,2,3))
         dataset[Data.Value, "aux"] = ([], ())
         self.assertTrue((Data.Value, "data") in dataset)
-        self.assertEqual(len(dataset.dimensions()), 3)
+        self.assertEqual(len(dataset.dimensions), 3)
         del dataset[Data.Value, "data"]
         self.assertFalse((Data.Value, "data") in dataset)
-        self.assertEqual(len(dataset.dimensions()), 0)
+        self.assertEqual(len(dataset.dimensions), 0)
 
         dataset[Data.Value, "data"] = ([Dim.Z, Dim.Y, Dim.X], (1,2,3))
         dataset[Coord.X] = ([Dim.X], np.arange(3))
         del dataset[Data.Value, "data"]
         self.assertFalse((Data.Value, "data") in dataset)
-        self.assertEqual(len(dataset.dimensions()), 1)
+        self.assertEqual(len(dataset.dimensions), 1)
         del dataset[Coord.X]
         self.assertFalse(Coord.X in dataset)
-        self.assertEqual(len(dataset.dimensions()), 0)
+        self.assertEqual(len(dataset.dimensions), 0)
 
     def test_insert_default_init(self):
         d = Dataset()
@@ -151,9 +151,9 @@ class TestDataset(unittest.TestCase):
         self.assertNotEqual(d[Data.Value, "data1"].data[0], d[Data.Value, "data1"].data[1])
 
     def test_dimensions(self):
-        self.assertEqual(self.dataset.dimensions().size(Dim.X), 2)
-        self.assertEqual(self.dataset.dimensions().size(Dim.Y), 3)
-        self.assertEqual(self.dataset.dimensions().size(Dim.Z), 4)
+        self.assertEqual(self.dataset.dimensions[Dim.X], 2)
+        self.assertEqual(self.dataset.dimensions[Dim.Y], 3)
+        self.assertEqual(self.dataset.dimensions[Dim.Z], 4)
 
     def test_data(self):
         self.assertEqual(len(self.dataset[Coord.X].data), 2)
@@ -171,11 +171,11 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(self.dataset[Data.Value, "data3"].numpy, self.reference_data3)
 
     def test_view_subdata(self):
-        view = self.dataset.subset("data1")
+        view = self.dataset.subset["data1"]
         # TODO Need consistent dimensions() implementation for Dataset and its views.
-        #self.assertEqual(view.dimensions().size(Dim.X), 2)
-        #self.assertEqual(view.dimensions().size(Dim.Y), 3)
-        #self.assertEqual(view.dimensions().size(Dim.Z), 4)
+        self.assertEqual(view.dimensions[Dim.X], 2)
+        self.assertEqual(view.dimensions[Dim.Y], 3)
+        self.assertEqual(view.dimensions[Dim.Z], 4)
         self.assertEqual(len(view), 4)
 
     def test_slice_dataset(self):
@@ -249,7 +249,7 @@ class TestDataset(unittest.TestCase):
 
     def test_slice_numpy_interoperable(self):
         # Dataset subset then view single variable
-        self.dataset.subset('data2')[Data.Value, 'data2'] = np.exp(self.dataset[Data.Value, 'data1'])
+        self.dataset.subset['data2'][Data.Value, 'data2'] = np.exp(self.dataset[Data.Value, 'data1'])
         np.testing.assert_array_equal(self.dataset[Data.Value, "data2"].numpy, np.exp(self.reference_data1))
         # Slice view of dataset then view single variable
         self.dataset[Dim.X, 0][Data.Value, 'data2'] = np.exp(self.dataset[Dim.X, 1][Data.Value, 'data1'])
@@ -328,13 +328,13 @@ class TestDataset(unittest.TestCase):
 class TestDatasetExamples(unittest.TestCase):
     def test_table_example(self):
         table = Dataset()
-        table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
-        self.assertSequenceEqual(table[Coord.RowLabel].data, ['a', 'bb', 'ccc', 'dddd'])
+        table[Coord.Row] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
+        self.assertSequenceEqual(table[Coord.Row].data, ['a', 'bb', 'ccc', 'dddd'])
         table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
         table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
         self.assertEqual(len(table), 3)
 
-        table[Data.Value, "sum"] = ([Dim.Row], (len(table[Coord.RowLabel]),))
+        table[Data.Value, "sum"] = ([Dim.Row], (len(table[Coord.Row]),))
 
         for col in table:
             if not col.is_coord and col.name is not "sum":
@@ -351,10 +351,10 @@ class TestDatasetExamples(unittest.TestCase):
         table = sort(table, Data.Value, "col1")
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([1,2,2,3]))
 
-        table = sort(table, Coord.RowLabel)
+        table = sort(table, Coord.Row)
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,2,2,1]))
 
-        for i in range(1, len(table[Coord.RowLabel])):
+        for i in range(1, len(table[Coord.Row])):
             table[Dim.Row, i] += table[Dim.Row, i-1]
 
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,5,7,8]))
@@ -364,13 +364,13 @@ class TestDatasetExamples(unittest.TestCase):
         np.testing.assert_array_equal(table[Data.Value, "exp1"].numpy, np.exp(np.array([3,5,7,8]))-np.array([3,5,7,8]))
 
         table += table
-        self.assertSequenceEqual(table[Coord.RowLabel].data, ['a', 'bb', 'bb', 'ccc'])
+        self.assertSequenceEqual(table[Coord.Row].data, ['a', 'bb', 'bb', 'ccc'])
 
     def test_table_example_no_assert(self):
         table = Dataset()
 
         # Add columns
-        table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
+        table[Coord.Row] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
         table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
         table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
         table[Data.Value, "sum"] = ([Dim.Row], (4,))
@@ -389,10 +389,10 @@ class TestDatasetExamples(unittest.TestCase):
         # Sort by column
         table = sort(table, Data.Value, "col1")
         # ... or another one
-        table = sort(table, Coord.RowLabel)
+        table = sort(table, Coord.Row)
 
         # Do something for each row (here: cumulative sum)
-        for i in range(1, len(table[Coord.RowLabel])):
+        for i in range(1, len(table[Coord.Row])):
             table[Dim.Row, i] += table[Dim.Row, i-1]
 
         # Apply numpy function to column, store result as a new column
@@ -414,7 +414,7 @@ class TestDatasetExamples(unittest.TestCase):
         d[Coord.Z] = ([Dim.Z], np.arange(L))
         d[Data.Value, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
 
-        dataset = as_xarray(d.subset('temperature'))
+        dataset = as_xarray(d.subset['temperature'])
         dataset['Value:temperature'][10, ...].plot()
         #plt.savefig('test.png')
 
