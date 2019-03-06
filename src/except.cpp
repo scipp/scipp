@@ -273,11 +273,8 @@ std::string to_string(const Dataset &dataset, const std::string &separator) {
 
 std::string to_string(const ConstDatasetSlice &dataset,
                       const std::string &separator) {
-  // TODO Unify dimensions API for Dataset and ConstDatasetSlice.
-  Dimensions dims;
-  for (const auto[dim, size] : dataset.dimensions())
-    dims.add(dim, size);
-  return do_to_string(dataset, "<DatasetSlice>", dims, separator);
+  return do_to_string(dataset, "<DatasetSlice>", dataset.dimensions(),
+                      separator);
 }
 
 namespace except {

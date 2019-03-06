@@ -360,8 +360,8 @@ public:
 
   bool contains(const Tag tag, const std::string &name = "") const;
 
-  std::map<Dim, gsl::index> dimensions() const {
-    std::map<Dim, gsl::index> dims;
+  Dimensions dimensions() const {
+    Dimensions dims;
     for (gsl::index i = 0; i < m_dataset.dimensions().count(); ++i) {
       const Dim dim = m_dataset.dimensions().label(i);
       gsl::index size = m_dataset.dimensions().size(i);
@@ -373,7 +373,7 @@ public:
             size = std::get<3>(slice) - std::get<2>(slice);
         }
       if (size != -1)
-        dims[dim] = size;
+        dims.add(dim, size);
     }
     return dims;
   }
