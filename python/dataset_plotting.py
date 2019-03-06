@@ -1,5 +1,5 @@
 # Dataset imports
-from dataset import Data, dataset, dimensionCoord
+from dataset import Data, dataset, dimensionCoord, sqrt
 import numpy as np
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
@@ -71,7 +71,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
         variances = dict()
         for var in item:
             key = var.name
-            if var.is_variance:
+            if var.tag == Data.Variance:
                 variances[key] = var
             elif var.is_data:
                 values[key] = var
@@ -127,7 +127,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
                     name=name,
                     error_y=dict(
                         type='data',
-                        array=v[1].numpy,
+                        array=sqrt(v[1]).numpy,
                         visible=True)
                     )
             else:
