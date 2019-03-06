@@ -3,7 +3,7 @@ from dataset import Data, dataset, dimensionCoord, sqrt
 import numpy as np
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
-import plotly.graph_objs as go
+from plotly.graph_objs import FigureWidget
 # Re-direct the output of init_notebook_mode to hide it from the unit tests
 import io
 from contextlib import redirect_stdout
@@ -255,44 +255,33 @@ def plot_sliceviewer(input_data):
         a = values.numpy
         nx = np.shape(a)
 
+        fig = FigureWidget(
+            data = [dict(
+                type = 'heatmap',
+                colorscale = 'Viridis',
+                colorbar=dict(
+                    title="{} [{}]".format(values.name,values.unit),
+                    titleside = 'right',
+                    )
+                )],
+            layout = layout
+        )
+
+        vb = None
+
         if ndim == 3:
 
-            fig = go.FigureWidget(
-                data = [go.Heatmap(
-                    z = a[:,:,0],
-                    colorscale = 'Viridis',
-                    colorbar=dict(
-                        title="{} [{}]".format(values.name,values.unit),
-                        titleside = 'right',
-                        )
-                    )],
-                layout = layout
-            )
-
+            fig.data[0].z = a[:,:,0]
             def update_z(zpos):
                 fig.data[0].z = a[:,:,zpos]
-
             # Add a slider that updates the slice plane
             # TODO: find a way to better name the 'zpos' text next to the slider
             slider = interactive(update_z, zpos=(0, nx[2]-1, 1))
             vb = VBox((fig, slider))
-            vb.layout.align_items = 'center'
-            return vb
 
         elif ndim == 4:
 
-            fig = go.FigureWidget(
-                data = [go.Heatmap(
-                    z = a[:,:,0,0],
-                    colorscale = 'Viridis',
-                    colorbar=dict(
-                        title="{} [{}]".format(values.name,values.unit),
-                        titleside = 'right',
-                        )
-                    )],
-                layout = layout
-            )
-
+            fig.data[0].z = a[:,:,0,0]
             positions = {"i" : 0, "j" : 0}
             def update_slice():
                 fig.data[0].z = a[:,:,positions["i"],positions["j"]]
@@ -302,15 +291,15 @@ def plot_sliceviewer(input_data):
             def update_j(jpos):
                 positions["j"] = jpos
                 update_slice()
-
             # Add a slider that updates the slice plane
             # TODO: find a way to better name the 'zpos' text next to the slider
             slider_i = interactive(update_i, ipos=(0, nx[2]-1, 1))
             slider_j = interactive(update_j, jpos=(0, nx[3]-1, 1))
-            
             vb = VBox((fig, slider_i, slider_j))
+
+        if vb is not None:
             vb.layout.align_items = 'center'
-            return vb
+        return vb
 
     else:
         raise RuntimeError("Unsupported number of dimensions in sliceviewer.")
