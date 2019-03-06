@@ -116,7 +116,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
             x = coord.numpy
             # Check for bin edges
             if nx == ny + 1:
-                x = 0.5 * (x[1:] + x[:-1])
+                x = centers_to_edges(x)
             xlab = "{} [{}]".format(coord.name,coord.unit)
 
               # Define variance if present
@@ -156,73 +156,79 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
 # standard image made of pixels is created.
 # If plot=False, then not plot is produced, instead the layout and Data.Value
 # variable are returned.
-def plot_image(input_data, contours=False, plot=True):
+def plot_image(input_data, axes=None, contours=False, plot=True):
 
     ndim = len(input_data.dimensions())
+    if axes is not None:
+        naxes = len(axes)
+    else:
+        naxes = 0
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
-    if (ndim > 1) and ((ndim < 3) or ((ndim < 5) and not plot)):
+    if (ndim > 1) and (((ndim < 3) or ((ndim < 5) and not plot)) or (naxes == 2)):
 
         values = []
+        coords = []
         for var in input_data:
-            if var.is_data:
+            if var.is_coord:
+                coords.append(var)
+            elif var.is_data:
                 values.append(var)
 
         if len(values) > 1:
             raise RuntimeError("More than one Data.Value found! Please use e.g."
-                               " plot_image(dataset.subset(Data.Value, 'sample'))"
+                               " plot_image(dataset.subset('sample'))"
                                " to select only a single Value.")
 
-        xcoord = input_data[dimensionCoord(values[0].dimensions.labels[0])]
-        ycoord = input_data[dimensionCoord(values[0].dimensions.labels[1])]
+        if axes is None:
+            xcoord = input_data[dimensionCoord(values[0].dimensions.labels[0])]
+            ycoord = input_data[dimensionCoord(values[0].dimensions.labels[1])]
+        else:
+            x_not_found = True
+            y_not_found = True
+            for c in coords:
+                dimcoord = dimensionCoord(c.dimensions.labels[0])
+                if dimcoord == axes[0]:
+                    xcoord = input_data[dimcoord]
+                    x_not_found = False
+                if dimcoord == axes[1]:
+                    ycoord = input_data[dimcoord]
+                    y_not_found = False
+            if x_not_found:
+                raise RuntimeError("Requested x coordinate {} was not found".format(axes[0]))
+            if y_not_found:
+                raise RuntimeError("Requested y coordinate {} was not found".format(axes[1]))
+
         x = xcoord.numpy
         y = ycoord.numpy
-        xmin = np.amin(x)
-        xmax = np.amax(x)
-        ymin = np.amin(y)
-        ymax = np.amax(y)
 
-        ratio = (ymax - ymin) / (xmax - xmin)
+        ratio = (np.amax(y) - np.amin(y)) / (np.amax(x) - np.amin(x))
 
         layout = dict(
             autosize=False,
             width=800,
             height=800*ratio,
-            xaxis = dict(
-                    range = [xmin,xmax],
-                    title = "{} [{}]".format(xcoord.name, xcoord.unit)),
-            yaxis = dict(
-                    range = [ymin,ymax],
-                    title = "{} [{}]".format(ycoord.name, ycoord.unit))
+            xaxis = dict(title = "{} [{}]".format(xcoord.name, xcoord.unit)),
+            yaxis = dict(title = "{} [{}]".format(ycoord.name, ycoord.unit))
             )
 
         if plot:
             if contours:
-                data = [go.Contour(
-                    x = x,
-                    y = y,
-                    z = values[0].numpy,
-                    colorscale = 'Viridis',
-                    colorbar=dict(
-                        title="{} [{}]".format(values[0].name,values[0].unit),
-                        titleside = 'right',
-                        )
-                    )]
+                plot_type = 'contour'
             else:
-                xmin -= 0.5*(x[1]-x[0])
-                xmax += 0.5*(x[-1]-x[-2])
-                ymin -= 0.5*(y[1]-y[0])
-                ymax += 0.5*(y[-1]-y[-2])
-                
-                data = [go.Heatmap(
-                    z = values[0].numpy,
-                    colorscale = 'Viridis',
-                    colorbar=dict(
-                        title="{} [{}]".format(values[0].name,values[0].unit),
-                        titleside = 'right',
-                        )
-                    )]
+                plot_type = 'heatmap'
+            data = [dict(
+                x = centers_to_edges(x),
+                y = centers_to_edges(y),
+                z = values[0].numpy,
+                type = plot_type,
+                colorscale = 'Viridis',
+                colorbar=dict(
+                    title="{} [{}]".format(values[0].name,values[0].unit),
+                    titleside = 'right',
+                    )
+                )]
             return iplot(dict(data=data, layout=layout))
         else:
             return [values[0], layout]
@@ -312,3 +318,9 @@ def plot_sliceviewer(input_data):
 
     else:
         raise RuntimeError("Unsupported number of dimensions in sliceviewer.")
+
+#===============================================================================
+
+def centers_to_edges(x):
+
+    return 0.5 * (x[1:] + x[:-1])
