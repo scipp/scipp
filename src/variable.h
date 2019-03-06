@@ -189,8 +189,6 @@ public:
   void setName(const std::string &name) {
     if (name.empty())
       m_name = nullptr;
-    else if (isCoord())
-      throw std::runtime_error("Coordinate variable cannot have a name.");
     else if (m_name)
       *m_name = name;
     else

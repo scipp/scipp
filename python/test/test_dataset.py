@@ -79,7 +79,7 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(d[Data.Value, "data1"].numpy, self.reference_data1)
 
         # Currently implicitly replacing keys in Dataset is not supported. Should it?
-        self.assertRaisesRegex(RuntimeError, "Attempt to insert data with duplicate tag and name.",
+        self.assertRaisesRegex(RuntimeError, "Attempt to insert variable with duplicate tag and name.",
                 d.__setitem__, (Data.Value, "data1"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2)))
 
         self.assertRaisesRegex(RuntimeError, "Cannot insert variable into Dataset: Dimensions do not match.",
@@ -102,6 +102,18 @@ class TestDataset(unittest.TestCase):
         d[Data.Variance, "data2"] = d[Data.Value, "data1"]
         self.assertEqual(len(d), 3)
 
+    # This characterises existing broken behaviour. Will need to be fixed.
+    def test_demo_int_to_float_issue(self):                                                                       
+        # Demo bug
+        d = Dataset() 
+        d[Data.Value, "v1"] = ([Dim.X, Dim.Y], np.ndarray.tolist(np.arange(0,10).reshape(2,5))) # Variable containing int array data     
+        self.assertEqual(d[Data.Value, "v1"].numpy.dtype, 'float64') # Correct behaviour should be int64 
+        
+        # Demo working 1D 
+        d = Dataset() 
+        d[Data.Value, "v2"] = ([Dim.X], np.ndarray.tolist(np.arange(0,10))) # Variable containing int array data     
+        self.assertEqual(d[Data.Value, "v2"].numpy.dtype, 'int64')  
+
     def test_set_data(self):
         d = Dataset()
         d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
@@ -115,6 +127,16 @@ class TestDataset(unittest.TestCase):
     def test_nested_default_init(self):
         d = Dataset()
         d[Data.Events] = ([Dim.X], (1,))
+        self.assertEqual(d[Data.Events].data[0], Dataset())
+
+    def test_nested_0D_empty_item(self):
+        d = Dataset()
+        d[Data.Events] = ([], Dataset())
+        self.assertEqual(d[Data.Events].data[0], Dataset())
+
+    def test_nested_0D_empty_size_tuple(self):
+        d = Dataset()
+        d[Data.Events] = ([], ())
         self.assertEqual(d[Data.Events].data[0], Dataset())
 
     def test_set_data_nested(self):
@@ -481,6 +503,38 @@ class TestDatasetExamples(unittest.TestCase):
             if masked:
                 spec[Data.Value, "sample1"] = np.zeros(1000)
                 spec[Data.Variance, "sample1"] = np.zeros(1000)
+
+    def test_monitors_example(self):
+        d = Dataset()
+
+        d[Coord.SpectrumNumber] = ([Dim.Spectrum], np.arange(1, 101))
+
+        # Add a (common) time-of-flight axis
+        d[Coord.Tof] = ([Dim.Tof], np.arange(9))
+
+        # Add data with uncertainties
+        d[Data.Value, "sample1"] = ([Dim.Spectrum, Dim.Tof], np.random.exponential(size=100*8).reshape([100, 8]))
+        d[Data.Variance, "sample1"] = d[Data.Value, "sample1"]
+
+        # Add event-mode beam-status monitor
+        status = Dataset()
+        status[Data.Tof] = ([Dim.Event], np.random.exponential(size=1000))
+        status[Data.PulseTime] = ([Dim.Event], np.random.exponential(size=1000))
+        d[Coord.Monitor, "beam-status"] = ([], status)
+
+        # Add position-resolved beam-profile monitor
+        profile = Dataset()
+        profile[Coord.X] = ([Dim.X], [-0.02, -0.01, 0.0, 0.01, 0.02])
+        profile[Coord.Y] = ([Dim.Y], [-0.02, -0.01, 0.0, 0.01, 0.02])
+        profile[Data.Value] = ([Dim.Y, Dim.X], (4,4))
+        # Monitors can also be attributes, so they are not required to match in operations
+        d[Attr.Monitor, "beam-profile"] = ([], profile)
+
+        # Add histogram-mode transmission monitor
+        transmission = Dataset()
+        transmission[Coord.Energy] = ([Dim.Energy], np.arange(9))
+        transmission[Data.Value] = ([Dim.Energy], np.random.exponential(size=8))
+        d[Coord.Monitor, "transmission"] = ([], ())
 
     def test_zip(self):
         d = Dataset()

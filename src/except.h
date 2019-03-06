@@ -102,6 +102,7 @@ template <class A, class B> void variablesMatch(const A &a, const B &b) {
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const gsl::index length);
 void equals(const Unit &a, const Unit &b);
+void equals(const Dimensions &a, const Dimensions &b);
 
 template <class T> void contains(const T &a, const T &b) {
   if (!a.contains(b))

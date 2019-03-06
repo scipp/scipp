@@ -170,8 +170,7 @@ public:
     requireResizable();
     doPushBack<Ts...>(values, std::make_index_sequence<sizeof...(Ts)>{});
   }
-  template <class... Ts>
-  void push_back(const std::tuple<Ts...> &values) const {
+  template <class... Ts> void push_back(const std::tuple<Ts...> &values) const {
     static_assert(sizeof...(Fields) == sizeof...(Ts),
                   "Wrong number of fields in push_back.");
     requireResizable();
