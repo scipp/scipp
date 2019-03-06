@@ -160,7 +160,7 @@ using type = decltype(detail::make_unit(
                     counts / meV),
     std::make_tuple(dimensionless, m *m *m *m, meV *us *us / (m * m),
                     meV *us *us *dimensionless, kg *m / s, m / s, c, c *m,
-                    meV / c, dimensionless / c)));
+                    meV / c, dimensionless / c, dimensionless / angstrom)));
 } // namespace detail
 } // namespace units
 
