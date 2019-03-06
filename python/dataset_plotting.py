@@ -17,7 +17,7 @@ except ImportError:
 # Wrapper function to dispatch the input dataset to the appropriate plotting
 # function depending on its dimensions
 def plot(input_data):
-    ndim = len(input_data.dimensions())
+    ndim = len(input_data.dimensions)
     if ndim == 1:
         return plot_1d(input_data)
     elif ndim == 2:
@@ -130,7 +130,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
 # variable are returned.
 def plot_image(input_data, contours=False, plot=True):
 
-    ndim = len(input_data.dimensions())
+    ndim = len(input_data.dimensions)
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
@@ -216,7 +216,7 @@ def plot_sliceviewer(input_data):
               "on this system")
         return
 
-    ndim = len(input_data.dimensions())
+    ndim = len(input_data.dimensions)
     if (ndim > 2) and (ndim < 5):
 
         # Use the machinery in plot_image to make the slices

@@ -16,7 +16,7 @@ table = Dataset()
 
 #| 
 # Add columns
-table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
+table[Coord.Row] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
 table[Data.Value, "col1"] = ([Dim.Row], [3,2,1,0])
 table[Data.Value, "col2"] = ([Dim.Row], np.arange(4, dtype=np.float64))
 table[Data.Value, "sum"] = ([Dim.Row], (4,))
@@ -43,12 +43,12 @@ table = concatenate(table[Dim.Row, 0:2], table[Dim.Row, 5:7], Dim.Row)
 # Sort by column
 table = sort(table, Data.Value, "col1")
 # ... or another one
-table = sort(table, Coord.RowLabel)
+table = sort(table, Coord.Row)
 #-------------------------------------
 
 #|
 # Do something for each row (here: cumulative sum)
-for i in range(1, len(table[Coord.RowLabel])):
+for i in range(1, len(table[Coord.Row])):
     table[Dim.Row, i] += table[Dim.Row, i-1]
 
 # Apply numpy function to column, store result as a new column
