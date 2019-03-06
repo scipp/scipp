@@ -174,7 +174,7 @@ struct CoordDef {
     using type = boost::container::small_vector<gsl::index, 1>;
     static constexpr auto unit = units::dimensionless;
   };
-  struct RowLabel {
+  struct Row {
     using type = std::string;
     static constexpr auto unit = units::dimensionless;
   };
@@ -211,7 +211,7 @@ struct CoordDef {
   using tags =
       std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Qx, Qy, Qz, Tof,
                  Energy, DeltaE, Ei, Ef, DetectorId, SpectrumNumber,
-                 DetectorGrouping, RowLabel, Polarization, Temperature,
+                 DetectorGrouping, Row, Polarization, Temperature,
                  FuzzyTemperature, Time, TimeInterval, Mask, Position>;
 };
 
@@ -306,7 +306,7 @@ struct Coord {
   using SpectrumNumber_t = detail::TagImpl<detail::CoordDef::SpectrumNumber>;
   using DetectorGrouping_t =
       detail::TagImpl<detail::CoordDef::DetectorGrouping>;
-  using RowLabel_t = detail::TagImpl<detail::CoordDef::RowLabel>;
+  using Row_t = detail::TagImpl<detail::CoordDef::Row>;
   using Polarization_t = detail::TagImpl<detail::CoordDef::Polarization>;
   using Temperature_t = detail::TagImpl<detail::CoordDef::Temperature>;
   using FuzzyTemperature_t =
@@ -333,7 +333,7 @@ struct Coord {
   static constexpr DetectorId_t DetectorId{};
   static constexpr SpectrumNumber_t SpectrumNumber{};
   static constexpr DetectorGrouping_t DetectorGrouping{};
-  static constexpr RowLabel_t RowLabel{};
+  static constexpr Row_t Row{};
   static constexpr Polarization_t Polarization{};
   static constexpr Temperature_t Temperature{};
   static constexpr FuzzyTemperature_t FuzzyTemperature{};
@@ -405,7 +405,7 @@ template <> constexpr bool is_dimension_coordinate<CoordDef::Qz> = true;
 template <> constexpr bool is_dimension_coordinate<CoordDef::Position> = true;
 template <>
 constexpr bool is_dimension_coordinate<CoordDef::SpectrumNumber> = true;
-template <> constexpr bool is_dimension_coordinate<CoordDef::RowLabel> = true;
+template <> constexpr bool is_dimension_coordinate<CoordDef::Row> = true;
 
 template <class Tag> constexpr Dim coordinate_dimension = Dim::Invalid;
 template <> constexpr Dim coordinate_dimension<CoordDef::Tof> = Dim::Tof;
@@ -421,7 +421,7 @@ template <>
 constexpr Dim coordinate_dimension<CoordDef::Position> = Dim::Position;
 template <>
 constexpr Dim coordinate_dimension<CoordDef::SpectrumNumber> = Dim::Spectrum;
-template <> constexpr Dim coordinate_dimension<CoordDef::RowLabel> = Dim::Row;
+template <> constexpr Dim coordinate_dimension<CoordDef::Row> = Dim::Row;
 } // namespace detail
 
 template <class... Ts>
@@ -456,6 +456,10 @@ inline Tag dimensionCoord(const Dim dim) {
     return Coord::Energy;
   case Dim::DeltaE:
     return Coord::DeltaE;
+  case Dim::Row:
+    return Coord::Row;
+  case Dim::Position:
+    return Coord::Position;
   default:
     throw std::runtime_error(
         "Coordinate for this dimension is not implemented");

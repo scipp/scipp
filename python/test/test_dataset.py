@@ -328,13 +328,13 @@ class TestDataset(unittest.TestCase):
 class TestDatasetExamples(unittest.TestCase):
     def test_table_example(self):
         table = Dataset()
-        table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
-        self.assertSequenceEqual(table[Coord.RowLabel].data, ['a', 'bb', 'ccc', 'dddd'])
+        table[Coord.Row] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
+        self.assertSequenceEqual(table[Coord.Row].data, ['a', 'bb', 'ccc', 'dddd'])
         table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
         table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
         self.assertEqual(len(table), 3)
 
-        table[Data.Value, "sum"] = ([Dim.Row], (len(table[Coord.RowLabel]),))
+        table[Data.Value, "sum"] = ([Dim.Row], (len(table[Coord.Row]),))
 
         for col in table:
             if not col.is_coord and col.name is not "sum":
@@ -351,10 +351,10 @@ class TestDatasetExamples(unittest.TestCase):
         table = sort(table, Data.Value, "col1")
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([1,2,2,3]))
 
-        table = sort(table, Coord.RowLabel)
+        table = sort(table, Coord.Row)
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,2,2,1]))
 
-        for i in range(1, len(table[Coord.RowLabel])):
+        for i in range(1, len(table[Coord.Row])):
             table[Dim.Row, i] += table[Dim.Row, i-1]
 
         np.testing.assert_array_equal(table[Data.Value, "col1"].numpy, np.array([3,5,7,8]))
@@ -364,13 +364,13 @@ class TestDatasetExamples(unittest.TestCase):
         np.testing.assert_array_equal(table[Data.Value, "exp1"].numpy, np.exp(np.array([3,5,7,8]))-np.array([3,5,7,8]))
 
         table += table
-        self.assertSequenceEqual(table[Coord.RowLabel].data, ['a', 'bb', 'bb', 'ccc'])
+        self.assertSequenceEqual(table[Coord.Row].data, ['a', 'bb', 'bb', 'ccc'])
 
     def test_table_example_no_assert(self):
         table = Dataset()
 
         # Add columns
-        table[Coord.RowLabel] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
+        table[Coord.Row] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
         table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
         table[Data.Value, "col2"] = ([Dim.Row], np.arange(4.0))
         table[Data.Value, "sum"] = ([Dim.Row], (4,))
@@ -389,10 +389,10 @@ class TestDatasetExamples(unittest.TestCase):
         # Sort by column
         table = sort(table, Data.Value, "col1")
         # ... or another one
-        table = sort(table, Coord.RowLabel)
+        table = sort(table, Coord.Row)
 
         # Do something for each row (here: cumulative sum)
-        for i in range(1, len(table[Coord.RowLabel])):
+        for i in range(1, len(table[Coord.Row])):
             table[Dim.Row, i] += table[Dim.Row, i-1]
 
         # Apply numpy function to column, store result as a new column
