@@ -26,7 +26,7 @@ def check_input(input_data):
         raise RuntimeError("More than one Data.Value found! Please use e.g."
                            " plot(dataset.subset('sample'))"
                            " to select only a single Value.")
-    return values
+    return values, len(values[0].dimensions)
 
 #===============================================================================
 
@@ -39,8 +39,7 @@ def plot(input_data):
         return plot_1d(input_data)
     # Case of a single dataset
     else:
-        values = check_input(input_data)
-        ndim = len(values[0].dimensions)
+        values, ndim = check_input(input_data)
         if ndim == 1:
             return plot_1d(input_data)
         elif ndim == 2:
@@ -177,13 +176,13 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
 # variable are returned.
 def plot_image(input_data, axes=None, contours=False, plot=True):
 
-    values = check_input(input_data)
+    values, ndim = check_input(input_data)
 
-    ndim = len(values[0].dimensions)
     if axes is not None:
         naxes = len(axes)
     else:
         naxes = 0
+
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
@@ -273,9 +272,8 @@ def plot_sliceviewer(input_data):
         return
 
     # Check input dataset
-    value_list = check_input(input_data)
+    value_list, ndim = check_input(input_data)
 
-    ndim = len(value_list[0].dimensions)
     if (ndim > 2) and (ndim < 5):
 
         # Use the machinery in plot_image to make the slices

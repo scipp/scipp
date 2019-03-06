@@ -13,11 +13,11 @@ class TestDatasetSlice(unittest.TestCase):
         self._d = d
     
     def test_type(self):
-        ds_slice = self._d.subset("a")
+        ds_slice = self._d.subset["a"]
         self.assertEqual(type(ds_slice), dataset.DatasetSlice)
 
     def test_extract_slice(self):
-        ds_slice = self._d.subset("a")
+        ds_slice = self._d.subset["a"]
         self.assertEqual(type(ds_slice), dataset.DatasetSlice)
         # We should have just one data variable
         self.assertEqual(1, len([var for var in ds_slice if var.is_data]))
