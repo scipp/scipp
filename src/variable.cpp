@@ -97,6 +97,47 @@ template <class T> struct RebinHelper {
   }
 };
 
+template <typename T> struct RebinGeneralHelper {
+  static void rebin(const Dim dim, const Variable &oldT,
+                         Variable &newT,
+                         const Variable &oldCoordT,
+                         const Variable &newCoordT) {
+    const auto oldSize = oldT.dimensions()[dim];
+    const auto newSize = newT.dimensions()[dim];
+
+    const auto *xold = oldCoordT.span<T>().data();
+    const auto *xnew = newCoordT.span<T>().data();
+    // This function assumes that dimensions between coord and data
+    // coord is 1D.
+    int iold = 0;
+    int inew = 0;
+    while ((iold < oldSize) && (inew < newSize)) {
+      auto xo_low = xold[iold];
+      auto xo_high = xold[iold + 1];
+      auto xn_low = xnew[inew];
+      auto xn_high = xnew[inew + 1];
+
+      if (xn_high <= xo_low)
+        inew++; /* old and new bins do not overlap */
+      else if (xo_high <= xn_low)
+        iold++; /* old and new bins do not overlap */
+      else {
+        // delta is the overlap of the bins on the x axis
+        auto delta = xo_high < xn_high ? xo_high : xn_high;
+        delta -= xo_low > xn_low ? xo_low : xn_low;
+
+        auto owidth = xo_high - xo_low;
+        newT(dim, inew) += oldT(dim, iold) * delta / owidth;
+        if (xn_high > xo_high) {
+          iold++;
+        } else {
+          inew++;
+        }
+      }
+    }
+  }
+};
+
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
@@ -478,7 +519,7 @@ public:
       RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
     } else {
       throw std::runtime_error(
-          "TODO rebin is only implemented for rebin of inner dimension.");
+          "TODO the new coord should be 1D or the same din as newCoord.");
     }
   }
 };
@@ -1229,8 +1270,24 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     auto dims = var.dimensions();
     dims.resize(dim, newCoord.dimensions()[dim] - 1);
     Variable rebinned(var, dims);
-    require<FloatingPointVariableConcept>(rebinned.data())
-        .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
+    if (rebinned.dimensions().inner() == dim) {
+      require<FloatingPointVariableConcept>(rebinned.data())
+          .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
+    }
+    else {
+      if(newCoord.dimensions().ndim() > 1)
+        throw std::runtime_error("Not inner rebin works only for 1d coordinates for now.");
+      switch(rebinned.dtype()) {
+      case dtype<double>:
+        RebinGeneralHelper<double>::rebin(dim, var, rebinned, oldCoord, newCoord);
+        break;
+      case dtype<float>:
+        RebinGeneralHelper<float>::rebin(dim, var, rebinned, oldCoord, newCoord);
+        break;
+      default:
+        throw std::runtime_error("Rebinning is possible only for double and float types.");
+      }
+    }
     return rebinned;
   } else {
     // TODO This will currently fail if the data is a multi-dimensional density.
