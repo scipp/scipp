@@ -57,9 +57,9 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
                            "Dataset or DatasetSlice, got " + type(item))
 
     if bars:
-        func = go.Bar
+        plot_type = 'bar'
     else:
-        func = go.Scatter
+        plot_type = 'scatter'
 
     # entries now contains a list of Dataset or DatasetSlice
     # We now construct a list of [x,y] pairs
@@ -119,22 +119,18 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
                 x = centers_to_edges(x)
             xlab = "{} [{}]".format(coord.name,coord.unit)
 
-              # Define variance if present
+            # Define trace
+            trace = dict(
+                    x = x,
+                    y = y,
+                    name = name,
+                    type = plot_type)
+            # Include variance if present
             if v[1] is not None:
-                trace = func(
-                    x=x,
-                    y=y,
-                    name=name,
-                    error_y=dict(
-                        type='data',
-                        array=sqrt(v[1]).numpy,
-                        visible=True)
-                    )
-            else:
-                trace = func(
-                    x=x,
-                    y=y,
-                    name=name)
+                trace["error_y"] = dict(
+                    type='data',
+                    array=sqrt(v[1]).numpy,
+                    visible=True)
 
             data.append(trace)
 
