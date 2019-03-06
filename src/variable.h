@@ -372,7 +372,7 @@ inline void incCoord(const std::vector<size_t> limits, std::vector<size_t>& coor
 
 
 template  <typename T, typename SZ_TP>
-Variable makeVariable1(Tag tag,
+Variable makeVariable(Tag tag,
                       const Dimensions &dimensions,
                       const std::vector<SZ_TP> &stridesInBytes,
                       T* ptr) {
@@ -392,23 +392,32 @@ Variable makeVariable1(Tag tag,
       sameStrides = false;
   }
 
-  if (sameStrides) //memory is alligned c-style and dense
+  if (sameStrides) { //memory is alligned c-style and dense
     return Variable(tag, defaultUnit(tag), std::move(dimensions),
                     Vector<underlying_type_t<T>>(ptr, ptr + dimensions.volume()));
 
-  //Naiive version of algorithm
-  auto res = makeVariable<T>(tag, dimensions);
-  std::vector<size_t> dsz(ndims);
-  for(size_t i = 0; i < ndims; ++i)
-    dsz[i] = dimensions.size(i);
-  std::vector<size_t> coords(ndims, 0);
-  res.template span<T>()[0] = ptr[0];
-  for(size_t i = 1; i < dimensions.volume(); ++i) {
-    incCoord(dsz, coords);
-    auto lin_coord = std::inner_product(coords.begin(), coords.end(), strides.begin(), size_t{0});
-    res.template span<T>()[i] = ptr[lin_coord];
+  } else {
+    // Try to find blocks to copy
+    auto index = strides.size() - 1;
+    while (strides[index] == varStrides[index]) --index;
+    ++index;
+    auto blockSz = index < strides.size() ? strides[index] * dimensions.size(index) : 1;
+
+    auto res = makeVariable<T>(tag, dimensions);
+    std::vector<size_t> dsz(ndims);
+    for (size_t i = 0; i < index; ++i)
+      dsz[i] = dimensions.size(i);
+    std::vector<size_t> coords(ndims, 0);
+    res.template span<T>()[0] = ptr[0];
+    auto nBlocks = dimensions.volume() / blockSz;
+    std::memcpy(&res.template span<T>()[0], &ptr[0], blockSz * sizeof(T));
+    for (size_t i = 1; i < nBlocks; ++i) {
+      incCoord(dsz, coords);
+      auto lin_coord = std::inner_product(coords.begin(), coords.end(), strides.begin(), size_t{0});
+      std::memcpy(&res.template span<T>()[i * blockSz], &ptr[lin_coord], blockSz * sizeof(T));
+    }
+    return res;
   }
-  return res;
 }
 
 /// Non-mutable view into (a subset of) a Variable.
