@@ -3,7 +3,6 @@ from dataset import Data, dataset, dimensionCoord, sqrt
 import numpy as np
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
-from plotly.graph_objs import FigureWidget
 # Re-direct the output of init_notebook_mode to hide it from the unit tests
 import io
 from contextlib import redirect_stdout
@@ -177,18 +176,21 @@ def plot_image(input_data, axes=None, contours=False, plot=True):
                                " plot_image(dataset.subset('sample'))"
                                " to select only a single Value.")
 
+        # Note the order of the axes here: the outermost [1] dimension is the
+        # fast dimension and is plotted along x, while the inner (slow)
+        # dimension [0] is plotted along y.
         if axes is None:
-            xcoord = input_data[dimensionCoord(values[0].dimensions.labels[0])]
-            ycoord = input_data[dimensionCoord(values[0].dimensions.labels[1])]
+            xcoord = input_data[dimensionCoord(values[0].dimensions.labels[1])]
+            ycoord = input_data[dimensionCoord(values[0].dimensions.labels[0])]
         else:
             x_not_found = True
             y_not_found = True
             for c in coords:
                 dimcoord = dimensionCoord(c.dimensions.labels[0])
-                if dimcoord == axes[0]:
+                if dimcoord == axes[1]:
                     xcoord = input_data[dimcoord]
                     x_not_found = False
-                if dimcoord == axes[1]:
+                if dimcoord == axes[0]:
                     ycoord = input_data[dimcoord]
                     y_not_found = False
             if x_not_found:
@@ -199,12 +201,7 @@ def plot_image(input_data, axes=None, contours=False, plot=True):
         x = xcoord.numpy
         y = ycoord.numpy
 
-        ratio = (np.amax(y) - np.amin(y)) / (np.amax(x) - np.amin(x))
-
         layout = dict(
-            autosize=False,
-            width=800,
-            height=800*ratio,
             xaxis = dict(title = "{} [{}]".format(xcoord.name, xcoord.unit)),
             yaxis = dict(title = "{} [{}]".format(ycoord.name, ycoord.unit))
             )
@@ -240,6 +237,7 @@ def plot_sliceviewer(input_data):
 
     # Delay import to here, as ipywidgets is not part of the base plotly package
     try:
+        from plotly.graph_objs import FigureWidget
         from ipywidgets import interactive, VBox
     except ImportError:
         print("Sorry, the sliceviewer requires ipywidgets which was not found "

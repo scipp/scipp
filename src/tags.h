@@ -456,6 +456,8 @@ inline Tag dimensionCoord(const Dim dim) {
     return Coord::Energy;
   case Dim::DeltaE:
     return Coord::DeltaE;
+  case Dim::Spectrum:
+    return Coord::SpectrumNumber;
   default:
     throw std::runtime_error(
         "Coordinate for this dimension is not implemented");
