@@ -11,6 +11,8 @@
 
 #include <gsl/gsl_util>
 #include <gsl/span>
+#include <iostream>
+#include <numeric>
 
 #include "dimensions.h"
 #include "tags.h"
@@ -348,6 +350,65 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions, Args &&... args) {
     return Variable(tag, defaultUnit(tag), std::move(dimensions),
                     Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
   }
+}
+
+
+inline void incCoord(const std::vector<size_t> limits, std::vector<size_t>& coords) {
+  auto i = coords.size();
+  bool overflow = true;
+  while (i --> 0) {
+    auto buf = coords[i] + 1;
+    if (buf >= limits[i])
+      coords[i] = 0;
+    else {
+      coords[i] = buf;
+      overflow = false;
+      break;
+    }
+  }
+  if(overflow)
+    throw std::logic_error("Can't increment coordinates: overflow");
+}
+
+
+template  <typename T, typename SZ_TP>
+Variable makeVariable1(Tag tag,
+                      const Dimensions &dimensions,
+                      const std::vector<SZ_TP> &stridesInBytes,
+                      T* ptr) {
+  auto ndims = dimensions.ndim();
+  if (ndims == 0) // empty dataset
+    return makeVariable<T>(tag, dimensions);
+
+  std::vector<SZ_TP> varStrides(ndims, 1), strides;
+  for(auto&& strd: stridesInBytes)
+    strides.emplace_back(strd / sizeof(T));
+
+  bool sameStrides{*strides.rbegin() == 1};
+  auto i = varStrides.size() - 1;
+  while(i --> 0) {
+    varStrides[i] = varStrides[i + 1] * dimensions.size(i + 1);
+    if (varStrides[i] != strides[i] && sameStrides)
+      sameStrides = false;
+  }
+
+  if (sameStrides) //memory is alligned c-style and dense
+    return Variable(tag, defaultUnit(tag), std::move(dimensions),
+                    Vector<underlying_type_t<T>>(ptr, ptr + dimensions.volume()));
+
+  //Naiive version of algorithm
+  auto res = makeVariable<T>(tag, dimensions);
+  std::vector<size_t> dsz(ndims);
+  for(size_t i = 0; i < ndims; ++i)
+    dsz[i] = dimensions.size(i);
+  std::vector<size_t> coords(ndims, 0);
+  res.template span<T>()[0] = ptr[0];
+  for(size_t i = 1; i < dimensions.volume(); ++i) {
+    incCoord(dsz, coords);
+    auto lin_coord = std::inner_product(coords.begin(), coords.end(), strides.begin(), size_t{0});
+    res.template span<T>()[i] = ptr[lin_coord];
+  }
+  return res;
 }
 
 /// Non-mutable view into (a subset of) a Variable.
