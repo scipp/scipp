@@ -37,6 +37,8 @@ class TestXarrayInterop(unittest.TestCase):
         table += table
         self.assertSequenceEqual(table[ds.Coord.Row].data, ['a', 'bb', 'bb', 'ccc'])
 
+        # xarray cannot deal with non-numeric dimension coordinates
+        del(table[ds.Coord.Row])
         dataset = ds.as_xarray(table.subset['col1'])
         #print(dataset)
         dataset['Value:col1'].plot()
