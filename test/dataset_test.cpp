@@ -761,6 +761,28 @@ TEST(Dataset, concatenate) {
   EXPECT_EQ(xy.get(Data::Value).size(), 12);
 }
 
+TEST(Dataset, concatenate_extends_dimension) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 2}, {1, 2});
+  a.insert(Data::Value, "", {}, {1.1});
+  Dataset b;
+  b.insert(Coord::X, {Dim::X, 2}, {1, 2});
+  b.insert(Data::Value, "", {}, {2.2});
+  Dataset c;
+  c.insert(Coord::X, {}, {3});
+  c.insert(Data::Value, "", {}, {3.3});
+
+  auto x = concatenate(a, b, Dim::X);
+  EXPECT_EQ(x.dimensions(), Dimensions({Dim::X, 4}));
+  Variable reference1(Data::Value, {Dim::X, 4}, {1.1, 1.1, 2.2, 2.2});
+  EXPECT_EQ(x(Data::Value), reference1);
+
+  x = concatenate(x, c, Dim::X);
+  EXPECT_EQ(x.dimensions(), Dimensions({Dim::X, 5}));
+  Variable reference2(Data::Value, {Dim::X, 5}, {1.1, 1.1, 2.2, 2.2, 3.3});
+  EXPECT_EQ(x(Data::Value), reference2);
+}
+
 TEST(Dataset, concatenate_with_bin_edges) {
   Dataset ds;
   ds.insert(Coord::X, {Dim::X, 2}, {0.1, 0.2});
@@ -850,9 +872,6 @@ TEST(Dataset, concatenate_with_attributes) {
   auto xy2(xy);
   xy2.get(Attr::ExperimentLog)[0].span<std::string>(Data::Value,
                                                     "comments")[0] = "";
-  // Concatenating in existing dimension fail currently. Would need to implement
-  // merging functionality for attributes?
-  EXPECT_ANY_THROW(concatenate(xy, xy2, Dim::X));
 }
 
 TEST(Dataset, rebin_failures) {
