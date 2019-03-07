@@ -71,6 +71,9 @@ struct VariableNotFoundError : public DatasetError {
                         const std::string &name);
   VariableNotFoundError(const ConstDatasetSlice &dataset, const Tag tag,
                         const std::string &name);
+  VariableNotFoundError(const Dataset &dataset, const std::string &name);
+  VariableNotFoundError(const ConstDatasetSlice &dataset,
+                        const std::string &name);
 };
 
 struct VariableError : public std::runtime_error {
