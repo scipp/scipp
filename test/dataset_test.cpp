@@ -1315,6 +1315,64 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
                           "expected to match");
 }
 
+template <typename T>
+void binary_test(T (*func)(T, T), const std::vector<T> &input,
+                 Dataset &actual_result) {
+
+  // Transform the underlying data into the same result to compare note that
+  // input must be both l and r operands of the binary expression
+  std::vector<T> result;
+  result.reserve(input.size());
+  std::transform(input.begin(), input.end(), input.begin(),
+                 std::back_inserter(result), func);
+
+  EXPECT_EQ(actual_result.get(Data::Value), gsl::make_span(result));
+}
+
+template <typename T>
+void inplace_op_test(T (*func)(T, T), const std::vector<T> &input,
+                     const std::vector<T> &current, Dataset &actual_result) {
+
+  auto result = input; // take copy of input
+  std::transform(current.begin(), current.end(), result.begin(), result.begin(),
+                 func);
+  EXPECT_EQ(actual_result.get(Data::Value), gsl::make_span(result));
+}
+
+std::vector<double> data_from_dataset(Dataset &dataset) {
+  auto var = dataset.get(Data::Value);
+  return std::vector<double>(var.begin(), var.end());
+}
+
+TEST(Dataset, binary_operations) {
+
+  auto plus = [](auto i, auto j) { return i + j; };
+  auto minus = [](auto i, auto j) { return i - j; };
+  auto mult = [](auto i, auto j) { return i * j; };
+
+  Dataset a;
+  std::vector<double> input = {2, 3};
+  a.insert(Data::Value, {Dim::X, 2}, input.begin(), input.end());
+  Dataset b(a); // Idential copy.
+
+  auto c = a + b;
+  binary_test<double>(plus, input, c);
+  c = a - b;
+  binary_test<double>(minus, input, c);
+  c = a * b;
+  binary_test<double>(mult, input, c);
+
+  auto c_var_data = data_from_dataset(c);
+  c += b;
+  inplace_op_test<double>(plus, input, c_var_data, c);
+  c_var_data = data_from_dataset(c);
+  c -= b;
+  inplace_op_test<double>(minus, input, c_var_data, c);
+  c_var_data = data_from_dataset(c);
+  c *= b;
+  inplace_op_test<double>(mult, input, c_var_data, c);
+}
+
 TEST(Dataset, unary_minus) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 2}, {1, 2});
