@@ -245,7 +245,7 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
 
         title = values[0].name
         if logcb:
-            title = "log(" + title + ")"
+            title = "log\u2081\u2080(" + title + ")"
             z = np.log10(z)
         if values[0].unit != units.dimensionless:
             title += " [{}]".format(values[0].unit)
