@@ -529,6 +529,9 @@ PYBIND11_MODULE(dataset, m) {
       .value("Temperature", Dim::Temperature)
       .value("Time", Dim::Time)
       .value("Tof", Dim::Tof)
+      .value("Qx", Dim::Qx)
+      .value("Qy", Dim::Qy)
+      .value("Qz", Dim::Qz)
       .value("X", Dim::X)
       .value("Y", Dim::Y)
       .value("Z", Dim::Z);
@@ -543,6 +546,9 @@ PYBIND11_MODULE(dataset, m) {
   coord_tags.attr("Monitor") = Tag(Coord::Monitor);
   coord_tags.attr("DetectorInfo") = Tag(Coord::DetectorInfo);
   coord_tags.attr("ComponentInfo") = Tag(Coord::ComponentInfo);
+  coord_tags.attr("Qx") = Tag(Coord::Qx);
+  coord_tags.attr("Qy") = Tag(Coord::Qy);
+  coord_tags.attr("Qz") = Tag(Coord::Qz);
   coord_tags.attr("X") = Tag(Coord::X);
   coord_tags.attr("Y") = Tag(Coord::Y);
   coord_tags.attr("Z") = Tag(Coord::Z);

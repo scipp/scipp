@@ -78,6 +78,12 @@ std::string do_to_string(const Tag tag) {
     return "Coord::Y";
   case Coord::Z.value():
     return "Coord::Z";
+  case Coord::Qx.value():
+    return "Coord::Qx";
+  case Coord::Qy.value():
+    return "Coord::Qy";
+  case Coord::Qz.value():
+    return "Coord::Qz";
   case Coord::Tof.value():
     return "Coord::Tof";
   case Coord::Energy.value():

@@ -456,6 +456,12 @@ inline Tag dimensionCoord(const Dim dim) {
     return Coord::Y;
   case Dim::Z:
     return Coord::Z;
+  case Dim::Qx:
+    return Coord::Qx;
+  case Dim::Qy:
+    return Coord::Qy;
+  case Dim::Qz:
+    return Coord::Qz;
   case Dim::Tof:
     return Coord::Tof;
   case Dim::Energy:
