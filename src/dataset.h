@@ -352,10 +352,14 @@ public:
   }
 
   ConstDatasetSlice subset(const std::string &name) const & {
-    return ConstDatasetSlice(m_dataset, makeIndices(*this, name));
+    ConstDatasetSlice ret(m_dataset, makeIndices(*this, name));
+    ret.m_slices = m_slices;
+    return ret;
   }
   ConstDatasetSlice subset(const Tag tag, const std::string &name) const & {
-    return ConstDatasetSlice(m_dataset, makeIndices(*this, tag, name));
+    ConstDatasetSlice ret(m_dataset, makeIndices(*this, tag, name));
+    ret.m_slices = m_slices;
+    return ret;
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
@@ -469,10 +473,14 @@ public:
   }
 
   DatasetSlice subset(const std::string &name) const & {
-    return DatasetSlice(m_mutableDataset, makeIndices(*this, name));
+    DatasetSlice ret(m_mutableDataset, makeIndices(*this, name));
+    ret.m_slices = m_slices;
+    return ret;
   }
   DatasetSlice subset(const Tag tag, const std::string &name) const & {
-    return DatasetSlice(m_mutableDataset, makeIndices(*this, tag, name));
+    DatasetSlice ret(m_mutableDataset, makeIndices(*this, tag, name));
+    ret.m_slices = m_slices;
+    return ret;
   }
 
   using ConstDatasetSlice::begin;

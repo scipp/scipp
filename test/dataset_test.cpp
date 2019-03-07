@@ -404,6 +404,28 @@ TEST(Dataset, subset_of_full_subset) {
   EXPECT_TRUE(both_from_subset.contains(Data::Variance, "a"));
 }
 
+template <class T> void do_subset_of_slice(T &d, bool useTag) {
+  const auto slice = d(Dim::X, 1, 2);
+  const auto subset =
+      useTag ? slice.subset(Data::Value, "a") : slice.subset("a");
+
+  EXPECT_EQ(subset(Coord::X).size(), 1);
+  EXPECT_EQ(subset(Coord::X).template span<double>()[0], 2);
+  EXPECT_EQ(subset.dimensions(), Dimensions({Dim::X, 1}));
+}
+
+TEST(Dataset, subset_of_slice) {
+  Dataset d;
+  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 3, 4});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Value, "b", {});
+
+  do_subset_of_slice<Dataset>(d, true);
+  do_subset_of_slice<Dataset>(d, false);
+  do_subset_of_slice<const Dataset>(d, true);
+  do_subset_of_slice<const Dataset>(d, false);
+}
+
 TEST(Dataset, comparison_with_spatial_slice) {
   Dataset d1;
   d1.insert(Data::Value, "a", {Dim::X, 2}, {2, 3});
