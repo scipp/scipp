@@ -98,10 +98,8 @@ template <class T> struct RebinHelper {
 };
 
 template <typename T> struct RebinGeneralHelper {
-  static void rebin(const Dim dim, const Variable &oldT,
-                         Variable &newT,
-                         const Variable &oldCoordT,
-                         const Variable &newCoordT) {
+  static void rebin(const Dim dim, const Variable &oldT, Variable &newT,
+                    const Variable &oldCoordT, const Variable &newCoordT) {
     const auto oldSize = oldT.dimensions()[dim];
     const auto newSize = newT.dimensions()[dim];
 
@@ -1273,19 +1271,22 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     if (rebinned.dimensions().inner() == dim) {
       require<FloatingPointVariableConcept>(rebinned.data())
           .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
-    }
-    else {
-      if(newCoord.dimensions().ndim() > 1)
-        throw std::runtime_error("Not inner rebin works only for 1d coordinates for now.");
-      switch(rebinned.dtype()) {
+    } else {
+      if (newCoord.dimensions().ndim() > 1)
+        throw std::runtime_error(
+            "Not inner rebin works only for 1d coordinates for now.");
+      switch (rebinned.dtype()) {
       case dtype<double>:
-        RebinGeneralHelper<double>::rebin(dim, var, rebinned, oldCoord, newCoord);
+        RebinGeneralHelper<double>::rebin(dim, var, rebinned, oldCoord,
+                                          newCoord);
         break;
       case dtype<float>:
-        RebinGeneralHelper<float>::rebin(dim, var, rebinned, oldCoord, newCoord);
+        RebinGeneralHelper<float>::rebin(dim, var, rebinned, oldCoord,
+                                         newCoord);
         break;
       default:
-        throw std::runtime_error("Rebinning is possible only for double and float types.");
+        throw std::runtime_error(
+            "Rebinning is possible only for double and float types.");
       }
     }
     return rebinned;
