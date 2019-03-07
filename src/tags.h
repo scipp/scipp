@@ -178,6 +178,10 @@ struct CoordDef {
     using type = std::string;
     static constexpr auto unit = units::dimensionless;
   };
+  struct Run {
+    using type = int32_t;
+    static constexpr auto unit = units::dimensionless;
+  };
   struct Polarization {
     // Dummy for now
     using type = std::string;
@@ -211,7 +215,7 @@ struct CoordDef {
   using tags =
       std::tuple<Monitor, DetectorInfo, ComponentInfo, X, Y, Z, Qx, Qy, Qz, Tof,
                  Energy, DeltaE, Ei, Ef, DetectorId, SpectrumNumber,
-                 DetectorGrouping, Row, Polarization, Temperature,
+                 DetectorGrouping, Row, Run, Polarization, Temperature,
                  FuzzyTemperature, Time, TimeInterval, Mask, Position>;
 };
 
@@ -307,6 +311,7 @@ struct Coord {
   using DetectorGrouping_t =
       detail::TagImpl<detail::CoordDef::DetectorGrouping>;
   using Row_t = detail::TagImpl<detail::CoordDef::Row>;
+  using Run_t = detail::TagImpl<detail::CoordDef::Run>;
   using Polarization_t = detail::TagImpl<detail::CoordDef::Polarization>;
   using Temperature_t = detail::TagImpl<detail::CoordDef::Temperature>;
   using FuzzyTemperature_t =
@@ -334,6 +339,7 @@ struct Coord {
   static constexpr SpectrumNumber_t SpectrumNumber{};
   static constexpr DetectorGrouping_t DetectorGrouping{};
   static constexpr Row_t Row{};
+  static constexpr Run_t Run{};
   static constexpr Polarization_t Polarization{};
   static constexpr Temperature_t Temperature{};
   static constexpr FuzzyTemperature_t FuzzyTemperature{};

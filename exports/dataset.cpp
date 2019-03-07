@@ -555,6 +555,7 @@ PYBIND11_MODULE(dataset, m) {
   coord_tags.attr("SpectrumNumber") = Tag(Coord::SpectrumNumber);
   coord_tags.attr("DetectorGrouping") = Tag(Coord::DetectorGrouping);
   coord_tags.attr("Row") = Tag(Coord::Row);
+  coord_tags.attr("Run") = Tag(Coord::Run);
   coord_tags.attr("Polarization") = Tag(Coord::Polarization);
   coord_tags.attr("Temperature") = Tag(Coord::Temperature);
   coord_tags.attr("FuzzyTemperature") = Tag(Coord::FuzzyTemperature);
