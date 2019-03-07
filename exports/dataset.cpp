@@ -181,7 +181,7 @@ template <class T> struct MakeVariable {
     const py::buffer_info info = dataT.request();
     Dimensions dims(labels, info.shape);
     auto *ptr = (T *)info.ptr;
-    return ::makeVariable<T>(tag, dims, ptr, ptr + dims.volume());
+    return ::makeVariable<T, ssize_t>(tag, dims, info.strides, ptr);
   }
 };
 
