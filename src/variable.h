@@ -11,7 +11,6 @@
 
 #include <gsl/gsl_util>
 #include <gsl/span>
-#include <iostream>
 #include <numeric>
 
 #include "dimensions.h"
@@ -353,22 +352,6 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions, Args &&... args) {
 }
 
 
-inline void incCoord(const std::vector<size_t> limits, std::vector<size_t>& coords) {
-  auto i = coords.size();
-  bool overflow = true;
-  while (i --> 0) {
-    auto buf = coords[i] + 1;
-    if (buf >= limits[i])
-      coords[i] = 0;
-    else {
-      coords[i] = buf;
-      overflow = false;
-      break;
-    }
-  }
-  if(overflow)
-    throw std::logic_error("Can't increment coordinates: overflow");
-}
 
 
 template  <typename T, typename SZ_TP>
@@ -378,7 +361,7 @@ Variable makeVariable(Tag tag,
                       T* ptr) {
   auto ndims = dimensions.ndim();
   if (ndims == 0) // empty dataset
-    return makeVariable<T>(tag, dimensions);
+    return makeVariable<underlying_type_t<T>>(tag, dimensions);
 
   std::vector<SZ_TP> varStrides(ndims, 1), strides;
   for(auto&& strd: stridesInBytes)
@@ -404,17 +387,20 @@ Variable makeVariable(Tag tag,
     auto blockSz = index < strides.size() ? strides[index] * dimensions.size(index) : 1;
 
     auto res = makeVariable<T>(tag, dimensions);
-    std::vector<size_t> dsz(ndims);
-    for (size_t i = 0; i < index; ++i)
+    std::vector<gsl::index> dsz(ndims);
+    for (gsl::index i = 0; i < index; ++i)
       dsz[i] = dimensions.size(i);
-    std::vector<size_t> coords(ndims, 0);
-    res.template span<T>()[0] = ptr[0];
+    std::vector<gsl::index> coords(ndims, 0);
     auto nBlocks = dimensions.volume() / blockSz;
-    std::memcpy(&res.template span<T>()[0], &ptr[0], blockSz * sizeof(T));
-    for (size_t i = 1; i < nBlocks; ++i) {
-      incCoord(dsz, coords);
-      auto lin_coord = std::inner_product(coords.begin(), coords.end(), strides.begin(), size_t{0});
-      std::memcpy(&res.template span<T>()[i * blockSz], &ptr[lin_coord], blockSz * sizeof(T));
+
+    for (gsl::index i = 0; i < nBlocks; ++i) {
+      //calculate the array linear coordinate
+      auto lin_coord = std::inner_product(coords.begin(), coords.end(), strides.begin(), gsl::index{0});
+      std::memcpy(&res.template span<underlying_type_t<T>>()[i * blockSz], &ptr[lin_coord], blockSz * sizeof(T));
+      //get the next ND coordinate
+      auto k = coords.size();
+      while (k --> 0)
+        ++coords[k] >= dsz[k] ? coords[k] = 0 : k = 0;
     }
     return res;
   }
