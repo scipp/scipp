@@ -308,23 +308,34 @@ protected:
   std::vector<gsl::index> makeIndices(const ConstDatasetSlice &base,
                                       const std::string &select) const {
     std::vector<gsl::index> indices;
+    bool foundData = false;
     for (const auto i : base.m_indices) {
       const auto &var = base.m_dataset[i];
       // TODO Should we also keep attributes? Probably yes?
-      if (var.isCoord() || var.name() == select)
+      if (var.isCoord() || var.name() == select) {
+        foundData |= var.isData();
         indices.push_back(i);
+      }
     }
+    if (!foundData)
+      throw dataset::except::VariableNotFoundError(base, select);
     return indices;
   }
   std::vector<gsl::index> makeIndices(const ConstDatasetSlice &base,
                                       const Tag selectTag,
                                       const std::string &selectName) const {
     std::vector<gsl::index> indices;
+    bool foundData = false;
     for (const auto i : base.m_indices) {
       const auto &var = base.m_dataset[i];
-      if (var.isCoord() || (var.tag() == selectTag && var.name() == selectName))
+      if (var.isCoord() ||
+          (var.tag() == selectTag && var.name() == selectName)) {
+        foundData |= var.isData();
         indices.push_back(i);
+      }
     }
+    if (!foundData)
+      throw dataset::except::VariableNotFoundError(base, selectTag, selectName);
     return indices;
   }
 
