@@ -94,8 +94,8 @@ std::string do_to_string(const Tag tag) {
     return "Coord::SpectrumNumber";
   case Coord::DetectorGrouping.value():
     return "Coord::DetectorGrouping";
-  case Coord::RowLabel.value():
-    return "Coord::RowLabel";
+  case Coord::Row.value():
+    return "Coord::Row";
   case Coord::Polarization.value():
     return "Coord::Polarization";
   case Coord::Temperature.value():

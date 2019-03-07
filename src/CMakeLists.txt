@@ -9,6 +9,7 @@ set(INC_FILES
   dataset.h 
   dataset_index.h
   dimensions.h 
+  events.h
   except.h
   function_traits.h
   md_zip_view.h 
@@ -29,6 +30,7 @@ set(SRC_FILES
   counts.cpp
   dataset.cpp 
   dimensions.cpp
+  events.cpp
   except.cpp
   md_zip_view.cpp
   unit.cpp
