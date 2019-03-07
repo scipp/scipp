@@ -1026,6 +1026,10 @@ PYBIND11_MODULE(dataset, m) {
   m.def("convert",
         py::overload_cast<const Dataset &, const Dim, const Dim>(&convert),
         py::call_guard<py::gil_scoped_release>());
+  m.def("convert",
+        py::overload_cast<const Dataset &, const std::vector<Dim> &,
+                          const Dataset &>(&convert),
+        py::call_guard<py::gil_scoped_release>());
 
   //-----------------------variable free functions------------------------------
   m.def("split",
