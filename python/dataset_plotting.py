@@ -222,19 +222,19 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
         ny = ydims.shape
         xdims = xcoord.dimensions
         nx = xdims.shape
-        if nx[0] == nz[1] + 1:
+        if nx[0] == nz[ndim-1] + 1:
             x = edges_to_centers(x)
-        if ny[0] == nz[0] + 1:
+        if ny[0] == nz[ndim-2] + 1:
             y = edges_to_centers(y)
 
         # Check if dimensions of arrays agree, if not, try to plot the transpose
         xshape = np.shape(x)
         yshape = np.shape(y)
         zshape = np.shape(z)
-        if (xshape[0] != zshape[1]) or (yshape[0] != zshape[0]):
+        if (xshape[0] != zshape[-1]) or (yshape[0] != zshape[-2]):
             z = z.T
             zshape = np.shape(z)
-            if (xshape[0] != zshape[1]) or (yshape[0] != zshape[0]):
+            if (xshape[0] != zshape[-1]) or (yshape[0] != zshape[-2]):
                 raise RuntimeError("Dimensions of x and y arrays to not match "
                                    "that of the Value array.")
 
