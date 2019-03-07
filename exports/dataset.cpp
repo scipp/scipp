@@ -617,6 +617,7 @@ PYBIND11_MODULE(dataset, m) {
   units.attr("counts") = Unit(units::counts);
   units.attr("s") = Unit(units::s);
   units.attr("kg") = Unit(units::kg);
+  units.attr("K") = Unit(units::K);
   units.attr("angstrom") = Unit(units::angstrom);
   units.attr("meV") = Unit(units::meV);
   units.attr("us") = Unit(units::us);

@@ -189,7 +189,7 @@ struct CoordDef {
   };
   struct Temperature {
     using type = double;
-    static constexpr auto unit = units::dimensionless;
+    static constexpr auto unit = units::K;
   };
   struct Time {
     using type = int64_t;
@@ -464,6 +464,8 @@ inline Tag dimensionCoord(const Dim dim) {
     return Coord::DeltaE;
   case Dim::Row:
     return Coord::Row;
+  case Dim::Run:
+    return Coord::Run;
   case Dim::Position:
     return Coord::Position;
   case Dim::Spectrum:
