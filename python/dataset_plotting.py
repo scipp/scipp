@@ -18,15 +18,18 @@ except ImportError:
 def check_input(input_data):
 
     values = []
+    ndim = 0
     for var in input_data:
         if var.is_data:
             values.append(var)
+            ndim = max(ndim, len(var.dimensions))
 
-    if len(values) > 1:
+    if (len(values) > 1) and (ndim > 1):
         raise RuntimeError("More than one Data.Value found! Please use e.g."
                            " plot(dataset.subset('sample'))"
                            " to select only a single Value.")
-    return values, len(values[0].dimensions)
+
+    return values, ndim
 
 #===============================================================================
 
