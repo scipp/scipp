@@ -1,5 +1,5 @@
 # Dataset imports
-from dataset import Data, dataset, dimensionCoord, sqrt
+from dataset import Data, dataset, dimensionCoord, sqrt, units
 import numpy as np
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
@@ -35,20 +35,20 @@ def check_input(input_data):
 
 # Wrapper function to dispatch the input dataset to the appropriate plotting
 # function depending on its dimensions
-def plot(input_data):
+def plot(input_data, **kwargs):
 
     # A list of datasets is only supported for 1d
     if type(input_data) is list:
-        return plot_1d(input_data)
+        return plot_1d(input_data, **kwargs)
     # Case of a single dataset
     else:
         values, ndim = check_input(input_data)
         if ndim == 1:
-            return plot_1d(input_data)
+            return plot_1d(input_data, **kwargs)
         elif ndim == 2:
-            return plot_image(input_data)
+            return plot_image(input_data, **kwargs)
         elif ndim < 5:
-            return plot_sliceviewer(input_data)
+            return plot_sliceviewer(input_data, **kwargs)
         else:
             raise RuntimeError("Plot: unsupported number of dimensions: {}".format(ndim))
 
@@ -88,8 +88,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
 
     # entries now contains a list of Dataset or DatasetSlice
     # We now construct a list of [x,y] pairs
-    # TODO: check that all x coordinates are the same
     data = []
+    coord_check = None
     for item in entries:
         # Scan the datasets
         values = dict()
@@ -125,8 +125,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
 
             # Define y
             y = v[0].numpy
-            ylab = v[0].unit.name
-            name = v[0].name
+            name = axis_label(v[0])
             # TODO: getting the shape of the dimension array is done in two steps
             # here because v.dimensions.shape[0] returns garbage. One of the
             # objects is going out of scope, we need to figure out which one to fix
@@ -142,7 +141,12 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
             # Check for bin edges
             if nx == ny + 1:
                 x = edges_to_centers(x)
-            xlab = "{} [{}]".format(coord.name,coord.unit)
+            xlab = axis_label(coord)
+            if (coord_check is not None) and (coord.tag != coord_check):
+                raise RuntimeError("All Value fields must have the same "
+                                   "x-coordinate axis in plot_1d.")
+            else:
+                coord_check = coord.tag
 
             # Define trace
             trace = dict(
@@ -161,7 +165,10 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
 
     layout = dict(
         xaxis = dict(title = xlab),
-        yaxis = dict(title = ylab))
+        yaxis = dict(),
+        showlegend=True,
+        legend=dict(x=0.0, y=1.15, orientation="h")
+        )
     if logx or logxy:
         layout["xaxis"]["type"] = "log"
     if logy or logxy:
@@ -232,8 +239,8 @@ def plot_image(input_data, axes=None, contours=False, plot=True):
                                    "that of the Value array.")
 
         layout = dict(
-            xaxis = dict(title = "{} [{}]".format(xcoord.name, xcoord.unit)),
-            yaxis = dict(title = "{} [{}]".format(ycoord.name, ycoord.unit))
+            xaxis = dict(title = axis_label(xcoord)),
+            yaxis = dict(title = axis_label(ycoord))
             )
 
         if plot:
@@ -336,9 +343,22 @@ def plot_sliceviewer(input_data):
 
 #===============================================================================
 
+# Convert coordinate edges to centers
 def edges_to_centers(x):
     return 0.5 * (x[1:] + x[:-1])
 
+# Convert coordinate centers to edges
 def centers_to_edges(x):
     e = edges_to_centers(x)
     return np.concatenate([[2.0*x[0]-e[0]],e,[2.0*x[-1]-e[-1]]])
+
+# Make an axis label with "Name [unit]"
+def axis_label(var):
+    if var.is_coord:
+        label = "{}".format(var.tag)
+        label = label.replace("Coord.","")
+    else:
+        label = "{}".format(var.name)
+    if var.unit != units.dimensionless:
+        label += " [{}]".format(var.unit)
+    return label
