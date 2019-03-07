@@ -14,14 +14,8 @@ def convert_instrument(dataset, ws):
     dataset[ds.Coord.ComponentInfo] = ([], compInfo)
 
 def initPosSpectrumNo(d, nHist, ws):
-    d[ds.Coord.Position] = ([ds.Dim.Position], (nHist,))
-    d[ds.Coord.SpectrumNumber] = ([ds.Dim.Position], (nHist,))
-
-    for j, pos in enumerate(d[ds.Coord.Position].data):
-        pos = get_pos(ws.spectrumInfo().position(j))
-
-    for j, specNum in enumerate(d[ds.Coord.SpectrumNumber].data):
-        specNum = ws.getSpectrum(j).getSpectrumNo()
+    d[ds.Coord.Position] = ([ds.Dim.Position], [ get_pos(ws.spectrumInfo().position(j)) for j in range(nHist) ])
+    d[ds.Coord.SpectrumNumber] = ([ds.Dim.Position], [ ws.getSpectrum(j).getSpectrumNo() for j in range(nHist) ])
 
 def ConvertWorkspace2DToDataset(ws):
     d = ds.Dataset()
