@@ -919,6 +919,9 @@ PYBIND11_MODULE(dataset, m) {
       // 3. Handle integers before case 4. below, which would convert to double.
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<Eigen::Vector3d, detail::Key::Tag>)
+      .def("__setitem__",
+           detail::insert_1D<Eigen::Vector3d, detail::Key::TagName>)
       // 4. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
