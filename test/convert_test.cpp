@@ -114,7 +114,7 @@ TEST(Dataset, convert_to_energy_fails_for_inelastic) {
 TEST(Dataset, convert_direct_inelastic) {
   Dataset tof;
 
-  tof.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 3, 4});
+  tof.insert(Coord::Tof, {Dim::Tof, 4}, {30000, 31000, 32000, 33000});
 
   Dataset components;
   // Source and sample
@@ -145,6 +145,11 @@ TEST(Dataset, convert_direct_inelastic) {
   ASSERT_EQ(coord.dimensions(),
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 4}}));
   // TODO Check actual values here after conversion is fixed.
+  for (gsl::index spec = 0; spec < coord.dimensions()[Dim::Spectrum]; ++spec) {
+    const auto edges = coord(Dim::Spectrum, spec).span<double>();
+    EXPECT_TRUE(std::is_sorted(edges.begin(), edges.end()));
+  }
+
   EXPECT_FALSE(
       equals(coord.get(Coord::DeltaE), {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}));
   // 2 spectra at same position see same deltaE.
@@ -156,7 +161,7 @@ TEST(Dataset, convert_direct_inelastic) {
   const auto &data = energy(Data::Value);
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Spectrum, 3}, {Dim::DeltaE, 3}}));
-  EXPECT_TRUE(equals(data.get(Data::Value), {3, 2, 1, 6, 5, 4, 9, 8, 7}));
+  EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
   EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(energy.contains(Coord::Position));
@@ -166,7 +171,7 @@ TEST(Dataset, convert_direct_inelastic) {
 
 Dataset makeMultiEiTofData() {
   Dataset tof;
-  tof.insert(Coord::Tof, {Dim::Tof, 4}, {1000, 2000, 3000, 4000});
+  tof.insert(Coord::Tof, {Dim::Tof, 4}, {30000, 31000, 32000, 33000});
 
   Dataset components;
   // Source and sample
@@ -217,7 +222,7 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
   const auto &data = energy(Data::Value);
   ASSERT_EQ(data.dimensions(),
             Dimensions({{Dim::Position, 3}, {Dim::DeltaE, 3}}));
-  EXPECT_TRUE(equals(data.get(Data::Value), {3, 2, 1, 6, 5, 4, 9, 8, 7}));
+  EXPECT_TRUE(equals(data.get(Data::Value), {1, 2, 3, 4, 5, 6, 7, 8, 9}));
   EXPECT_EQ(data.unit(), units::counts);
 
   ASSERT_TRUE(energy.contains(Coord::Position));

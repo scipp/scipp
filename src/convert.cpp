@@ -3,6 +3,8 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2019 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <limits>
+
 #include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 
@@ -154,6 +156,9 @@ Dataset tofToDeltaE(const Dataset &d) {
       varDims.relabel(varDims.index(Dim::Tof), Dim::DeltaE);
     if (var.tag() == Coord::Tof) {
       Variable inv_tof = 1.0 / (var.reshape(varDims) - tofShift);
+      for (auto &tof : inv_tof.span<double>())
+        if (tof <= 0.0)
+          tof = std::numeric_limits<double>::quiet_NaN();
       Variable E = inv_tof * inv_tof * scale;
       if (d.contains(Coord::Ei)) {
         converted.insert(Coord::DeltaE, -(std::move(E) - d(Coord::Ei)));
@@ -171,11 +176,14 @@ Dataset tofToDeltaE(const Dataset &d) {
     }
   }
 
-  // TODO Do we always require reversing for inelastic?
+  // TODO Do we always just require reversing for indirect inelastic?
   // TODO Is is debatable whether this should revert automatically... probably
   // not, but we need to put a check in place for `rebin` to fail if the axis is
   // reversed.
-  return reverse(converted, Dim::DeltaE);
+  if (d.contains(Coord::Ei))
+    return converted;
+  else
+    return reverse(converted, Dim::DeltaE);
 }
 
 gsl::index continuousToIndex(const double val,
