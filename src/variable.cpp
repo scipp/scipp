@@ -1273,7 +1273,8 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
       require<FloatingPointVariableConcept>(rebinned.data())
           .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
     } else {
-      if (newCoord.dimensions().ndim() > 1)
+      if (newCoord.dimensions().ndim() != 1 ||
+          oldCoord.dimensions().ndim() != 1)
         throw std::runtime_error(
             "Not inner rebin works only for 1d coordinates for now.");
       switch (rebinned.dtype()) {
