@@ -436,9 +436,19 @@ protected:
     slice.m_slices.emplace_back(dim, size, begin, end);
     if (end == -1) {
       for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
-        // TODO Should all coordinates with matching dimension be removed, or
-        // only dimension-coordinates?
-        if (coordDimension[slice.m_dataset[*it].tag().value()] == dim)
+        const auto &var = slice.m_dataset[*it];
+        // Remove coordinates that depend on the sliced dimension...
+        // ... unless it is a dimension coordinate for another dimension
+        // Rationale:
+        // Slicing with a single index drop the corresponding dimension.
+        // => Coordinates that are bin edges cannot be preserved (they would
+        //    have length 2 in the now non-existant dimension).
+        // => Other coordinates should also not be preserved, for consistency.
+        // => Since non-dimension-coordinates can also be bin edges, those
+        //    should also be dropped.
+        if ((var.isCoord() && var.dimensions().contains(dim)) &&
+            !(isDimensionCoord[var.tag().value()] &&
+              (coordDimension[var.tag().value()] != dim)))
           it = slice.m_indices.erase(it);
         else
           ++it;
