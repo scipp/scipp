@@ -265,23 +265,48 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
 
       Variable tmp(var, dims);
 
-      for (gsl::index deltaE = 0; deltaE < var.dimensions()[Dim::DeltaE];
-           ++deltaE) {
-        const auto in = var(Dim::DeltaE, deltaE);
-        const auto out = tmp(Dim::DeltaE, deltaE);
-        const Dataset indices = qIndex(Dim::DeltaE, deltaE);
-        const auto q = zip(indices, Access::Key<gsl::index>{Coord::Qx},
-                           Access::Key<gsl::index>{Coord::Qy},
-                           Access::Key<gsl::index>{Coord::Qz});
-        if (in.dimensions()[Dim::Position] != q.size())
-          throw std::runtime_error("Broken implementation of convert.");
-        for (gsl::index i = 0; i < q.size(); ++i) {
-          const auto[qx, qy, qz] = q[i];
-          // Drop out-of-range values
-          if (qx < 0 || qy < 0 || qz < 0)
-            continue;
-          // Really inefficient accumulation of volume histogram
-          out(Dim::Qx, qx)(Dim::Qy, qy)(Dim::Qz, qz) += in(Dim::Position, i);
+      if (var.dimensions().contains(Dim::Ei)) {
+        for (gsl::index ei = 0; ei < var.dimensions()[Dim::Ei]; ++ei) {
+          for (gsl::index deltaE = 0; deltaE < var.dimensions()[Dim::DeltaE];
+               ++deltaE) {
+            const auto in = var(Dim::DeltaE, deltaE)(Dim::Ei, ei);
+            const auto out = tmp(Dim::DeltaE, deltaE)(Dim::Ei, ei);
+            const Dataset indices = qIndex(Dim::DeltaE, deltaE)(Dim::Ei, ei);
+            const auto q = zip(indices, Access::Key<gsl::index>{Coord::Qx},
+                               Access::Key<gsl::index>{Coord::Qy},
+                               Access::Key<gsl::index>{Coord::Qz});
+            if (in.dimensions()[Dim::Position] != q.size())
+              throw std::runtime_error("Broken implementation of convert.");
+            for (gsl::index i = 0; i < q.size(); ++i) {
+              const auto[qx, qy, qz] = q[i];
+              // Drop out-of-range values
+              if (qx < 0 || qy < 0 || qz < 0)
+                continue;
+              // Really inefficient accumulation of volume histogram
+              out(Dim::Qx, qx)(Dim::Qy, qy)(Dim::Qz, qz) +=
+                  in(Dim::Position, i);
+            }
+          }
+        }
+      } else {
+        for (gsl::index deltaE = 0; deltaE < var.dimensions()[Dim::DeltaE];
+             ++deltaE) {
+          const auto in = var(Dim::DeltaE, deltaE);
+          const auto out = tmp(Dim::DeltaE, deltaE);
+          const Dataset indices = qIndex(Dim::DeltaE, deltaE);
+          const auto q = zip(indices, Access::Key<gsl::index>{Coord::Qx},
+                             Access::Key<gsl::index>{Coord::Qy},
+                             Access::Key<gsl::index>{Coord::Qz});
+          if (in.dimensions()[Dim::Position] != q.size())
+            throw std::runtime_error("Broken implementation of convert.");
+          for (gsl::index i = 0; i < q.size(); ++i) {
+            const auto[qx, qy, qz] = q[i];
+            // Drop out-of-range values
+            if (qx < 0 || qy < 0 || qz < 0)
+              continue;
+            // Really inefficient accumulation of volume histogram
+            out(Dim::Qx, qx)(Dim::Qy, qy)(Dim::Qz, qz) += in(Dim::Position, i);
+          }
         }
       }
       converted.insert(std::move(tmp));
