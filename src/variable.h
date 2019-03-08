@@ -643,6 +643,7 @@ Variable norm(const Variable &var);
 Variable sqrt(const Variable &var);
 Variable broadcast(Variable var, const Dimensions &dims);
 Variable reverse(Variable var, const Dim dim);
+Variable transpose(const Variable &var, const Dim a, const Dim b);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);

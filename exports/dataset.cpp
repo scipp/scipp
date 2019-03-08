@@ -1056,6 +1056,9 @@ PYBIND11_MODULE(dataset, m) {
   // find out why py::overload_cast is not working correctly here
   m.def("sqrt", [](const Variable &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>());
+  m.def("transpose",
+        py::overload_cast<const Variable &, const Dim, const Dim>(&transpose),
+        py::call_guard<py::gil_scoped_release>());
 
   //-----------------------dimensions free functions----------------------------
   m.def("dimensionCoord", &dimensionCoord);

@@ -1400,6 +1400,19 @@ Variable reverse(Variable var, const Dim dim) {
   return std::move(var);
 }
 
+Variable transpose(const Variable &var, const Dim a, const Dim b) {
+  Dimensions dims = var.dimensions();
+  const auto ia = dims.index(a);
+  const auto ib = dims.index(b);
+  dims.relabel(ia, b);
+  dims.relabel(ib, a);
+  dims.resize(a, var.dimensions()[a]);
+  dims.resize(b, var.dimensions()[b]);
+  Variable transposed(var, dims);
+  transposed.data().copy(var.data(), Dim::Invalid, 0, 0, 1);
+  return transposed;
+}
+
 template <>
 VariableView<const double> getView<double>(const Variable &var,
                                            const Dimensions &dims) {

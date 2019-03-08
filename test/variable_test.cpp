@@ -650,6 +650,60 @@ TEST(Variable, broadcast_fail) {
                    "got Dim::X with mismatching length 3.");
 }
 
+TEST(Variable, transpose) {
+  const Variable zyx(Data::Value, {{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 2}},
+                     {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+
+  EXPECT_EQ(transpose(zyx, Dim::X, Dim::X), zyx);
+  EXPECT_EQ(transpose(zyx, Dim::Y, Dim::Y), zyx);
+  EXPECT_EQ(transpose(zyx, Dim::Z, Dim::Z), zyx);
+
+  // 1 step permutations
+  auto zxy = transpose(zyx, Dim::Y, Dim::X);
+  auto xyz = transpose(zyx, Dim::Z, Dim::X);
+  auto yzx = transpose(zyx, Dim::Z, Dim::Y);
+  // 2 step permutations
+  auto xzy = transpose(xyz, Dim::Z, Dim::Y);
+  auto yxz = transpose(yzx, Dim::Z, Dim::X);
+
+  // All possible permutations are different
+  EXPECT_NE(xyz, xzy);
+  EXPECT_NE(xyz, yxz);
+  EXPECT_NE(xyz, yzx);
+  EXPECT_NE(xyz, zxy);
+  EXPECT_NE(xyz, zyx);
+
+  EXPECT_NE(xzy, yxz);
+  EXPECT_NE(xzy, yzx);
+  EXPECT_NE(xzy, zxy);
+  EXPECT_NE(xzy, zyx);
+
+  EXPECT_NE(yxz, yzx);
+  EXPECT_NE(yxz, zxy);
+  EXPECT_NE(yxz, zyx);
+
+  EXPECT_NE(yzx, zxy);
+  EXPECT_NE(yzx, zyx);
+
+  EXPECT_NE(zxy, zyx);
+
+  // 1 step -> back to original
+  EXPECT_EQ(transpose(zxy, Dim::Y, Dim::X), zyx);
+  EXPECT_EQ(transpose(xyz, Dim::Z, Dim::X), zyx);
+  EXPECT_EQ(transpose(yzx, Dim::Z, Dim::Y), zyx);
+  EXPECT_EQ(transpose(zxy, Dim::Y, Dim::X), zyx);
+  EXPECT_EQ(transpose(xyz, Dim::Z, Dim::X), zyx);
+  EXPECT_EQ(transpose(yzx, Dim::Z, Dim::Y), zyx);
+
+  // 2 step -> back to different 1 step
+  EXPECT_EQ(transpose(xzy, Dim::Z, Dim::X), zxy);
+  EXPECT_EQ(transpose(yxz, Dim::Y, Dim::X), xyz);
+
+  const Variable reference(Data::Value, {{Dim::Y, 3}, {Dim::X, 2}, {Dim::Z, 2}},
+                           {1, 7, 2, 8, 3, 9, 4, 10, 5, 11, 6, 12});
+  EXPECT_EQ(yxz, reference);
+}
+
 TEST(VariableSlice, full_const_view) {
   const Variable var(Coord::X, {{Dim::X, 3}});
   ConstVariableSlice view(var);
@@ -1165,8 +1219,10 @@ TEST(Variable, reshape_mutable) {
 
 TEST(Variable, reverse) {
   Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6});
-  Variable reverseX(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {3, 2, 1, 6, 5, 4});
-  Variable reverseY(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {4, 5, 6, 1, 2, 3});
+  Variable reverseX(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}},
+                    {3, 2, 1, 6, 5, 4});
+  Variable reverseY(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}},
+                    {4, 5, 6, 1, 2, 3});
 
   EXPECT_EQ(reverse(var, Dim::X), reverseX);
   EXPECT_EQ(reverse(var, Dim::Y), reverseY);
