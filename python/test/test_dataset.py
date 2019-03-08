@@ -556,6 +556,25 @@ class TestDatasetExamples(unittest.TestCase):
             el.append((10,300))
             self.assertEqual(len(el), size + 1)
 
+    def test_np_array_strides(self):
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64)
+        arr2 = np.transpose(arr1)
+        K = 3
+        arr_buf = np.arange(N*K*M).reshape(N, K, M)
+        arr3 = arr_buf[:, 1, :]
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d1[Data.Value, "B"] = ([Dim.Y, Dim.X], arr2)
+        d1[Data.Value, "C"] = ([Dim.X, Dim.Y], arr3)
+        np.testing.assert_array_equal(arr1, d1[Data.Value, "A"].numpy)
+        np.testing.assert_array_equal(arr2, d1[Data.Value, "B"].numpy)
+        np.testing.assert_array_equal(arr3, d1[Data.Value, "C"].numpy)
+
     def test_rebin(self):
         N = 6
         M = 4
@@ -574,7 +593,6 @@ class TestDatasetExamples(unittest.TestCase):
         rd1 = rebin(d1, Variable(Coord.X, [Dim.X], np.arange(0, N+1, 1.5).astype(np.float64)))
         np.testing.assert_array_equal(rd1[Data.Value, "A"].numpy,
                                       np.transpose(rd1[Data.Value, "B"].numpy))
-
 
 if __name__ == '__main__':
     unittest.main()
