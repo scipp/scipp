@@ -18,12 +18,9 @@ except ImportError:
 def check_input(input_data):
 
     values = []
-    coords = []
     ndim = 0
     for var in input_data:
-        if var.is_coord:
-                coords.append(var)
-        elif var.is_data:
+        if var.is_data:
             values.append(var)
             ndim = max(ndim, len(var.dimensions))
 
@@ -32,7 +29,7 @@ def check_input(input_data):
                            " plot(dataset.subset[Data.Value, 'sample'])"
                            " to select only a single Value.")
 
-    return values, coords, ndim
+    return values, ndim
 
 #===============================================================================
 
@@ -45,7 +42,7 @@ def plot(input_data, **kwargs):
         return plot_1d(input_data, **kwargs)
     # Case of a single dataset
     else:
-        values, coords, ndim = check_input(input_data)
+        ndim = check_input(input_data)[1]
         if ndim == 1:
             return plot_1d(input_data, **kwargs)
         elif ndim == 2:
@@ -97,12 +94,9 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False, axes=No
         # Scan the datasets
         values = dict()
         variances = dict()
-        coords = []
         for var in item:
             key = var.name
-            if var.is_coord:
-                coords.append(var)
-            elif var.tag == Data.Variance:
+            if var.tag == Data.Variance:
                 variances[key] = var
             elif var.is_data:
                 values[key] = var
@@ -140,7 +134,9 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False, axes=No
             ny = ydims.shape[0]
 
             # Define x
-            [coord] = find_coords(input_data, coords, axes, ydims.labels)
+            if axes is None:
+                axes = [dimensionCoord(v[0].dimensions.labels[0])]
+            coord = item[axes]
             xdims = coord.dimensions
             nx = xdims.shape[0]
             x = coord.numpy
@@ -192,7 +188,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False, axes=No
 # variable are returned.
 def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb='Viridis'):
 
-    values, coords, ndim = check_input(input_data)
+    values, ndim = check_input(input_data)
 
     if axes is not None:
         naxes = len(axes)
@@ -207,10 +203,12 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
         # Note the order of the axes here: the outermost [1] dimension is the
         # fast dimension and is plotted along x, while the inner (slow)
         # dimension [0] is plotted along y.
-        # Note again that values[0].dimensions.labels has problems with objects
-        # running out of scope, so we get them in 2 steps
-        dims = values[0].dimensions
-        [ycoord, xcoord] = find_coords(input_data, coords, axes, dims.labels)
+        if axes is None:
+            axes = [dimensionCoord(values[0].dimensions.labels[0]),
+                    dimensionCoord(values[0].dimensions.labels[1])]
+
+        xcoord = input_data[axes[1]]
+        ycoord = input_data[axes[0]]
 
         x = xcoord.numpy
         y = ycoord.numpy
@@ -295,7 +293,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False, cb='Vir
         return
 
     # Check input dataset
-    value_list, coords, ndim = check_input(input_data)
+    value_list, ndim = check_input(input_data)
 
     if (ndim > 2) and (ndim < 5):
 
@@ -417,16 +415,3 @@ def axis_label(var):
     if var.unit != units.dimensionless:
         label += " [{}]".format(var.unit)
     return label
-
-# Find coordinates based on axis dimension tags
-def find_coords(container, coords, axes, labels):
-    result = []
-    if axes is None:
-        for c in coords:
-            for l in labels:
-                if c.tag == dimensionCoord(l):
-                    result.append(c)
-    else:
-        for ax in axes:
-            result.append(container[ax])
-    return result
