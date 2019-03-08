@@ -1346,10 +1346,41 @@ Variable filter(const Variable &var, const Variable &filter) {
 Variable sum(const Variable &var, const Dim dim) {
   auto summed(var);
   auto dims = summed.dimensions();
+
+  // Hack to work around limitation of MultiIndex, which is currently used in
+  // VariableView (see also note there, it should be refactored to use something
+  // else).
+  std::vector<Dim> before;
+  std::vector<Dim> after;
+  bool found = false;
+  for (const auto d : dims.labels()) {
+    if (d == dim)
+      found = true;
+    else if (!found)
+      before.push_back(d);
+    else
+      after.push_back(d);
+  }
+  auto merge = before.size() < after.size() ? after : before;
+  auto reshapeDims(dims);
+  gsl::index mergeSize = 1;
+  for (const auto d : merge) {
+    mergeSize *= dims[d];
+    reshapeDims.erase(d);
+  }
+  if(before.size() < after.size())
+    reshapeDims.addInner(merge[0], mergeSize);
+  else
+    reshapeDims.add(merge[0], mergeSize);
+
+  const auto reshaped = var.reshape(reshapeDims);
+
   dims.erase(dim);
+  reshapeDims.erase(dim);
   // setDimensions zeros the data
   summed.setDimensions(dims);
-  require<ArithmeticVariableConcept>(summed.data()) += var.data();
+  const auto reshapedSum = summed.reshape(reshapeDims);
+  require<ArithmeticVariableConcept>(reshapedSum.data()) += reshaped.data();
   return summed;
 }
 
