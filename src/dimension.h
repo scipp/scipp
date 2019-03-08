@@ -14,6 +14,8 @@ enum class Dim : uint16_t {
   Detector,
   DetectorScan,
   Energy,
+  Ei,
+  Ef,
   Event,
   Invalid,
   Monitor,

@@ -517,6 +517,8 @@ PYBIND11_MODULE(dataset, m) {
       .value("Detector", Dim::Detector)
       .value("DetectorScan", Dim::DetectorScan)
       .value("Energy", Dim::Energy)
+      .value("Ei", Dim::Ei)
+      .value("Ef", Dim::Ef)
       .value("Event", Dim::Event)
       .value("Invalid", Dim::Invalid)
       .value("Monitor", Dim::Monitor)

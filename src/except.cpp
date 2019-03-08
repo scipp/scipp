@@ -21,6 +21,10 @@ std::string do_to_string(const Dim dim) {
     return "Dim::Tof";
   case Dim::Energy:
     return "Dim::Energy";
+  case Dim::Ei:
+    return "Dim::Ei";
+  case Dim::Ef:
+    return "Dim::Ef";
   case Dim::DeltaE:
     return "Dim::DeltaE";
   case Dim::Position:
