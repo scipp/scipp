@@ -395,7 +395,7 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions,
       // calculate the array linear coordinate
       auto lin_coord = std::inner_product(coords.begin(), coords.end(),
                                           strides.begin(), gsl::index{0});
-      std::memcpy(&res.template span<underlying_type_t<T>>()[i * blockSz],
+      std::memcpy(&res.template span<T>()[i * blockSz],
                   &ptr[lin_coord], blockSz * sizeof(T));
       // get the next ND coordinate
       auto k = coords.size();
