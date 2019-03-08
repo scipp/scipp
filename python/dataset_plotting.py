@@ -201,7 +201,7 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
-    if ((ndim > 1) and (ndim < 3)) or (naxes == 2):
+    if ((ndim > 1) and (ndim < 3)) or ((z is not None) and (naxes == 2)):
 
         # Note the order of the axes here: the outermost [1] dimension is the
         # fast dimension and is plotted along x, while the inner (slow)
@@ -316,7 +316,6 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
             axes = [dimensionCoord(value_list[0].dimensions.labels[ndim-2]),
                     dimensionCoord(value_list[0].dimensions.labels[ndim-1])]
 
-
         # Convert coords to dimensions
         axes_dims = []
         for i in range(len(axes)):
@@ -326,7 +325,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
         indx = 0
 
         # We want to slice out everything that is not in axes
-        a = input_data
+        zarray = input_data
         dims = input_data.dimensions
         labels = dims.labels
         shapes = dims.shape
@@ -335,44 +334,51 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
         slice_labels = []
         for idim in range(len(labels)):
             if labels[idim] not in axes_dims:
-                a = a[labels[idim], indx]
+                zarray = zarray[labels[idim], indx]
                 slider_nx.append(shapes[idim])
                 slider_dims.append(input_data[dimensionCoord(labels[idim])])
                 slice_labels.append(labels[idim])
-
+        # Store coordinates of dimensions that will be in sliders
         slider_x = []
         for dim in slider_dims:
            slider_x.append(dim.numpy)
-
         nslices = len(slice_labels)
 
-        a = a[Data.Value, value_list[0].name].numpy
+        # The numpy array for the 2D slice
+        zarray = zarray[Data.Value, value_list[0].name].numpy
 
-        # Use the machinery in plot_image to make the slices
+        # Use the machinery in plot_image to make the layout
         data, layout, values, transpose = plot_image(input_data, axes=axes,
-                                          contours=contours,
-                                          logcb=logcb, cb=cb, z=a)
+                                          contours=contours, logcb=logcb,
+                                          cb=cb, z=zarray)
 
+        # Create a figure widget
         fig = FigureWidget(data=data, layout=layout)
+        # Initialise a tuple for the VBox
         vb = fig,
-        
+        # Define containers for sliders
         lab = []
         slider = []
         updates = []
-
+        # Define function to update slices
         def update_slice(change):
-            a = input_data
+            zarray = input_data
             dims = input_data.dimensions
             labels = dims.labels
+            # Once again, slice out everything not in axes.
+            # The dimensions to be sliced have been saved in slice_labels
             for idim in range(nslices):
-                # if labels[idim] not in axes:
                 lab[idim].value = str(slider_x[idim][slider[idim].value])
-                a = a[slice_labels[idim], slider[idim].value]
-            fig.data[0].z = a[Data.Value, value_list[0].name].numpy
+                zarray = zarray[slice_labels[idim], slider[idim].value]
+            fig.data[0].z = zarray[Data.Value, value_list[0].name].numpy
+            # If dimensions don't match, transpose the data
             if transpose:
                 fig.data[0].z = fig.data[0].z.T
+            if logcb:
+                with np.errstate(invalid="ignore"):
+                    fig.data[0].z = np.log10(fig.data[0].z)
 
-        
+        # Now begin loop to construct sliders
         for i in range(len(slider_nx)):
             # Add a label widget to display the value of the z coordinate
             lab.append(Label(value=str(slider_x[i][indx])))
@@ -382,14 +388,17 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
                 min=0,
                 max=slider_nx[i]-1,
                 step=1,
-                description=axis_label(slider_dims[i]),
+                description="",
                 continuous_update = True,
                 readout=False
             ))
             # Add an observer to the slider
             slider[i].observe(update_slice, names="value")
-            vb += (HBox([slider[i], lab[i]]),)
+            # Add coordinate name and unit
+            title = Label(value=axis_label(slider_dims[i]))
+            vb += (HBox([title, slider[i], lab[i]]),)
 
+        # Update the slice for initial load of figure
         update_slice(0)
         vb = VBox(vb)
         vb.layout.align_items = 'center'
