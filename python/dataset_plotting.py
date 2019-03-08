@@ -42,7 +42,7 @@ def plot(input_data, **kwargs):
         return plot_1d(input_data, **kwargs)
     # Case of a single dataset
     else:
-        values, ndim = check_input(input_data)
+        ndim = check_input(input_data)[1]
         if ndim == 1:
             return plot_1d(input_data, **kwargs)
         elif ndim == 2:
@@ -61,7 +61,7 @@ def plot(input_data, **kwargs):
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
-def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
+def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False, axes=None):
 
     entries = []
     # Case of a single dataset
@@ -126,15 +126,17 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False):
             # Define y
             y = v[0].numpy
             name = axis_label(v[0])
-            # TODO: getting the shape of the dimension array is done in two steps
-            # here because v.dimensions.shape[0] returns garbage. One of the
-            # objects is going out of scope, we need to figure out which one to fix
-            # this.
+            # TODO: getting the shape of the dimension array is done in two
+            # steps here because v.dimensions.shape[0] returns garbage. One of
+            # the objects is going out of scope, we need to figure out which one
+            # to fix this.
             ydims = v[0].dimensions
             ny = ydims.shape[0]
 
             # Define x
-            coord = item[dimensionCoord(v[0].dimensions.labels[0])]
+            if axes is None:
+                axes = [dimensionCoord(v[0].dimensions.labels[0])]
+            coord = item[axes]
             xdims = coord.dimensions
             nx = xdims.shape[0]
             x = coord.numpy
