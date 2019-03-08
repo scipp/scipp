@@ -529,6 +529,9 @@ PYBIND11_MODULE(dataset, m) {
       .value("Temperature", Dim::Temperature)
       .value("Time", Dim::Time)
       .value("Tof", Dim::Tof)
+      .value("Qx", Dim::Qx)
+      .value("Qy", Dim::Qy)
+      .value("Qz", Dim::Qz)
       .value("X", Dim::X)
       .value("Y", Dim::Y)
       .value("Z", Dim::Z);
@@ -543,6 +546,9 @@ PYBIND11_MODULE(dataset, m) {
   coord_tags.attr("Monitor") = Tag(Coord::Monitor);
   coord_tags.attr("DetectorInfo") = Tag(Coord::DetectorInfo);
   coord_tags.attr("ComponentInfo") = Tag(Coord::ComponentInfo);
+  coord_tags.attr("Qx") = Tag(Coord::Qx);
+  coord_tags.attr("Qy") = Tag(Coord::Qy);
+  coord_tags.attr("Qz") = Tag(Coord::Qz);
   coord_tags.attr("X") = Tag(Coord::X);
   coord_tags.attr("Y") = Tag(Coord::Y);
   coord_tags.attr("Z") = Tag(Coord::Z);
@@ -555,6 +561,7 @@ PYBIND11_MODULE(dataset, m) {
   coord_tags.attr("SpectrumNumber") = Tag(Coord::SpectrumNumber);
   coord_tags.attr("DetectorGrouping") = Tag(Coord::DetectorGrouping);
   coord_tags.attr("Row") = Tag(Coord::Row);
+  coord_tags.attr("Run") = Tag(Coord::Run);
   coord_tags.attr("Polarization") = Tag(Coord::Polarization);
   coord_tags.attr("Temperature") = Tag(Coord::Temperature);
   coord_tags.attr("FuzzyTemperature") = Tag(Coord::FuzzyTemperature);
@@ -616,6 +623,7 @@ PYBIND11_MODULE(dataset, m) {
   units.attr("counts") = Unit(units::counts);
   units.attr("s") = Unit(units::s);
   units.attr("kg") = Unit(units::kg);
+  units.attr("K") = Unit(units::K);
   units.attr("angstrom") = Unit(units::angstrom);
   units.attr("meV") = Unit(units::meV);
   units.attr("us") = Unit(units::us);
@@ -917,6 +925,9 @@ PYBIND11_MODULE(dataset, m) {
       // 3. Handle integers before case 4. below, which would convert to double.
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<Eigen::Vector3d, detail::Key::Tag>)
+      .def("__setitem__",
+           detail::insert_1D<Eigen::Vector3d, detail::Key::TagName>)
       // 4. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
@@ -1014,6 +1025,10 @@ PYBIND11_MODULE(dataset, m) {
         py::call_guard<py::gil_scoped_release>());
   m.def("convert",
         py::overload_cast<const Dataset &, const Dim, const Dim>(&convert),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("convert",
+        py::overload_cast<const Dataset &, const std::vector<Dim> &,
+                          const Dataset &>(&convert),
         py::call_guard<py::gil_scoped_release>());
 
   //-----------------------variable free functions------------------------------
