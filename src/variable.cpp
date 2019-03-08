@@ -73,9 +73,10 @@ template <class T> struct RebinHelper {
         auto xn_low = xnew[newEdgeOffset + inew];
         auto xn_high = xnew[newEdgeOffset + inew + 1];
 
-        if (xn_high <= xo_low)
+        if ((std::isnan(xn_low) || std::isnan(xn_high)) || xn_high <= xo_low)
           inew++; /* old and new bins do not overlap */
-        else if (xo_high <= xn_low)
+        else if ((std::isnan(xo_low) || std::isnan(xo_high)) ||
+                 xo_high <= xn_low)
           iold++; /* old and new bins do not overlap */
         else {
           // delta is the overlap of the bins on the x axis
@@ -98,10 +99,8 @@ template <class T> struct RebinHelper {
 };
 
 template <typename T> struct RebinGeneralHelper {
-  static void rebin(const Dim dim, const Variable &oldT,
-                         Variable &newT,
-                         const Variable &oldCoordT,
-                         const Variable &newCoordT) {
+  static void rebin(const Dim dim, const Variable &oldT, Variable &newT,
+                    const Variable &oldCoordT, const Variable &newCoordT) {
     const auto oldSize = oldT.dimensions()[dim];
     const auto newSize = newT.dimensions()[dim];
 
@@ -117,9 +116,9 @@ template <typename T> struct RebinGeneralHelper {
       auto xn_low = xnew[inew];
       auto xn_high = xnew[inew + 1];
 
-      if (xn_high <= xo_low)
+      if ((std::isnan(xn_low) || std::isnan(xn_high)) || xn_high <= xo_low)
         inew++; /* old and new bins do not overlap */
-      else if (xo_high <= xn_low)
+      else if ((std::isnan(xo_low) || std::isnan(xo_high)) || xo_high <= xn_low)
         iold++; /* old and new bins do not overlap */
       else {
         // delta is the overlap of the bins on the x axis
@@ -1273,19 +1272,22 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     if (rebinned.dimensions().inner() == dim) {
       require<FloatingPointVariableConcept>(rebinned.data())
           .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
-    }
-    else {
-      if(newCoord.dimensions().ndim() > 1)
-        throw std::runtime_error("Not inner rebin works only for 1d coordinates for now.");
-      switch(rebinned.dtype()) {
+    } else {
+      if (newCoord.dimensions().ndim() > 1)
+        throw std::runtime_error(
+            "Not inner rebin works only for 1d coordinates for now.");
+      switch (rebinned.dtype()) {
       case dtype<double>:
-        RebinGeneralHelper<double>::rebin(dim, var, rebinned, oldCoord, newCoord);
+        RebinGeneralHelper<double>::rebin(dim, var, rebinned, oldCoord,
+                                          newCoord);
         break;
       case dtype<float>:
-        RebinGeneralHelper<float>::rebin(dim, var, rebinned, oldCoord, newCoord);
+        RebinGeneralHelper<float>::rebin(dim, var, rebinned, oldCoord,
+                                         newCoord);
         break;
       default:
-        throw std::runtime_error("Rebinning is possible only for double and float types.");
+        throw std::runtime_error(
+            "Rebinning is possible only for double and float types.");
       }
     }
     return rebinned;

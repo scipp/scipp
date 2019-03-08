@@ -4,6 +4,7 @@
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
 #include <gtest/gtest.h>
+#include <limits>
 #include <vector>
 
 #include "test_macros.h"
@@ -537,6 +538,46 @@ TEST(Variable, rebin) {
   ASSERT_EQ(rebinned.dimensions().volume(), 1);
   ASSERT_EQ(rebinned.get(Data::Value).size(), 1);
   EXPECT_EQ(rebinned.get(Data::Value)[0], 3.0);
+}
+
+TEST(Variable, rebin_NAN_edges_left) {
+  Variable var(Data::Value, {Dim::X, 2}, {1.0, 2.0});
+  var.setUnit(units::counts);
+  const Variable oldEdge(Coord::X, {Dim::X, 3},
+                         {std::numeric_limits<double>::quiet_NaN(), 2.0, 3.0});
+  const Variable newEdge(Coord::X, {Dim::X, 2}, {1.0, 3.0});
+
+  Variable reference(Data::Value, {Dim::X, 1}, {2.0});
+  reference.setUnit(units::counts);
+
+  EXPECT_EQ(rebin(var, oldEdge, newEdge), reference);
+}
+
+TEST(Variable, rebin_NAN_edges_center) {
+  Variable var(Data::Value, {Dim::X, 3}, {1.0, 2.0, 4.0});
+  var.setUnit(units::counts);
+  const Variable oldEdge(
+      Coord::X, {Dim::X, 4},
+      {1.0, std::numeric_limits<double>::quiet_NaN(), 3.0, 4.0});
+  const Variable newEdge(Coord::X, {Dim::X, 3}, {1.0, 3.0, 4.0});
+
+  Variable reference(Data::Value, {Dim::X, 2}, {0.0, 4.0});
+  reference.setUnit(units::counts);
+
+  EXPECT_EQ(rebin(var, oldEdge, newEdge), reference);
+}
+
+TEST(Variable, rebin_NAN_edges_right) {
+  Variable var(Data::Value, {Dim::X, 2}, {1.0, 2.0});
+  var.setUnit(units::counts);
+  const Variable oldEdge(Coord::X, {Dim::X, 3},
+                         {1.0, 2.0, std::numeric_limits<double>::quiet_NaN()});
+  const Variable newEdge(Coord::X, {Dim::X, 2}, {1.0, 3.0});
+
+  Variable reference(Data::Value, {Dim::X, 1}, {1.0});
+  reference.setUnit(units::counts);
+
+  EXPECT_EQ(rebin(var, oldEdge, newEdge), reference);
 }
 
 TEST(Variable, sum) {
