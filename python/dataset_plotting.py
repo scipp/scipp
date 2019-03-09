@@ -47,10 +47,8 @@ def plot(input_data, **kwargs):
             return plot_1d(input_data, **kwargs)
         elif ndim == 2:
             return plot_image(input_data, **kwargs)
-        elif ndim < 5:
-            return plot_sliceviewer(input_data, **kwargs)
         else:
-            raise RuntimeError("Plot: unsupported number of dimensions: {}".format(ndim))
+            return plot_sliceviewer(input_data, **kwargs)
 
 #===============================================================================
 
