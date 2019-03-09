@@ -189,7 +189,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
 # and not plot is produced, instead the layout, Data.Value, and a transpose flag
 # are returned.
 def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
-               z=None):
+               plot=True):
 
     values, ndim = check_input(input_data)
 
@@ -201,7 +201,7 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
-    if ((ndim > 1) and (ndim < 3)) or ((z is not None) and (naxes == 2)):
+    if ((ndim > 1) and (ndim < 3)) or ((not plot) and (naxes == 2)):
 
         # Note the order of the axes here: the outermost [1] dimension is the
         # fast dimension and is plotted along x, while the inner (slow)
@@ -259,30 +259,17 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
             yaxis = dict(title = axis_label(ycoord))
             )
 
-        plot = False
-        if z is None:
-            z = values[0].numpy
-            plot = True
-
-        # Check if dimensions of arrays agree, if not, try to plot the
-        # transpose
-        xshape = np.shape(x)
-        yshape = np.shape(y)
-        zshape = np.shape(z)
-        transpose = False
-        # TODO: what about when both dimensions are the same?
-        # How can we determine which dimensions should be along which axis?
-        if (xshape[0] != zshape[1]) or (yshape[0] != zshape[0]):
-            if (xshape[0] == zshape[0]) and (yshape[0] != zshape[1]):
-                z = z.T
-                transpose = True
-            else:
-                raise RuntimeError("Dimensions of x and y arrays to not "
-                                   "match that of the Value array: nx={}, "
-                                   "ny={}, Value=[{},{}]".format(xshape[0],
-                                   	yshape[0], zshape[0], zshape[1]))
+        # Check if dimensions of arrays agree, if not, plot the transpose
+        zlabs = zdims.labels
+        if (zlabs[0] == xdims.labels[0]) and (zlabs[1] == ydims.labels[0]):
+            transpose = True
+        else:
+            transpose = False
 
         if plot:
+            z = values[0].numpy
+            if transpose:
+                z = z.T
             if logcb:
                 with np.errstate(invalid="ignore"):
                     z = np.log10(z)
@@ -328,7 +315,6 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
         indx = 0
 
         # We want to slice out everything that is not in axes
-        zarray = input_data
         dims = input_data.dimensions
         labels = dims.labels
         shapes = dims.shape
@@ -337,7 +323,6 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
         slice_labels = [] # save dimensions tags for the sliders, e.g. Dim.X
         for idim in range(len(labels)):
             if labels[idim] not in axes_dims:
-                zarray = zarray[labels[idim], indx]
                 slider_nx.append(shapes[idim])
                 slider_dims.append(input_data[dimensionCoord(labels[idim])])
                 slice_labels.append(labels[idim])
@@ -347,13 +332,10 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
            slider_x.append(dim.numpy)
         nslices = len(slice_labels)
 
-        # The numpy array for the 2D slice
-        zarray = zarray[Data.Value, value_list[0].name].numpy
-
         # Use the machinery in plot_image to make the layout
         data, layout, values, transpose = plot_image(input_data, axes=axes,
                                           contours=contours, logcb=logcb,
-                                          cb=cb, z=zarray)
+                                          cb=cb, plot=False)
 
         # Create a figure widget
         fig = FigureWidget(data=data, layout=layout)
