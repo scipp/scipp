@@ -270,14 +270,17 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
         yshape = np.shape(y)
         zshape = np.shape(z)
         transpose = False
-        if (xshape[0] != zshape[-1]) or (yshape[0] != zshape[-2]):
-            z = z.T
-            zshape = np.shape(z)
-            if (xshape[0] != zshape[-1]) or (yshape[0] != zshape[-2]):
-                raise RuntimeError("Dimensions of x and y arrays to not "
-                                   "match that of the Value array.")
-            else:
+        # TODO: what about when both dimensions are the same?
+        # How can we determine which dimensions should be along which axis?
+        if (xshape[0] != zshape[1]) or (yshape[0] != zshape[0]):
+            if (xshape[0] == zshape[0]) and (yshape[0] != zshape[1]):
+                z = z.T
                 transpose = True
+            else:
+                raise RuntimeError("Dimensions of x and y arrays to not "
+                                   "match that of the Value array: nx={}, "
+                                   "ny={}, Value=[{},{}]".format(xshape[0],
+                                   	yshape[0], zshape[0], zshape[1]))
 
         if plot:
             if logcb:
@@ -329,9 +332,9 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
         dims = input_data.dimensions
         labels = dims.labels
         shapes = dims.shape
-        slider_nx = []
-        slider_dims = []
-        slice_labels = []
+        slider_nx = [] # size of the coordinate array
+        slider_dims = [] # coordinate variables for the sliders, e.g. d[Coord.X]
+        slice_labels = [] # save dimensions tags for the sliders, e.g. Dim.X
         for idim in range(len(labels)):
             if labels[idim] not in axes_dims:
                 zarray = zarray[labels[idim], indx]
