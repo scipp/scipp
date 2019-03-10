@@ -183,9 +183,9 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
 #
 # If countours=True, a filled contour plot is produced, if False, then a
 # standard image made of pixels is created.
-# If a z is supplied, then we are calling plot_image from the sliceviewer
-# and not plot is produced, instead the layout, Data.Value, and a transpose flag
-# are returned.
+# If plot=False, then not plot is produced, instead the layout, Data.Value and
+# a transpose flag are returned (this is used when calling plot_image from the
+# sliceviewer).
 def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
                plot=True):
 
