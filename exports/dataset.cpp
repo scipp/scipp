@@ -662,7 +662,7 @@ PYBIND11_MODULE(dataset, m) {
              return Variable(self);
            })
       .def("__deepcopy__",
-           [](Variable &self) {
+           [](Variable &self, py::dict) {
              return Variable(self);
            })
       .def_property_readonly("tag", &Variable::tag)
@@ -741,7 +741,7 @@ PYBIND11_MODULE(dataset, m) {
              return Variable(self);
            })
       .def("__deepcopy__",
-           [](VariableSlice &self) {
+           [](VariableSlice &self, py::dict) {
              return Variable(self);
            })
       .def_property_readonly(
@@ -832,7 +832,7 @@ PYBIND11_MODULE(dataset, m) {
              return Dataset(self);
            })
       .def("__deepcopy__",
-           [](DatasetSlice &self) {
+           [](DatasetSlice &self, py::dict) {
              return Dataset(self);
            })
       .def_property_readonly(
@@ -902,7 +902,7 @@ PYBIND11_MODULE(dataset, m) {
              return Dataset(self);
            })
       .def("__deepcopy__",
-           [](Dataset &self) {
+           [](Dataset &self, py::dict) {
              return Dataset(self);
            })
       .def_property_readonly("subset",

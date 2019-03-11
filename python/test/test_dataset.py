@@ -585,14 +585,12 @@ class TestDatasetExamples(unittest.TestCase):
         arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
         d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
         d2 = copy.copy(d1)
-        d3 = coppy.deepcopy(d2)
-        np.testing.assert_array_equal(d1[Data.Value, "A"].numpy, d2[Data.Value, "A"].numpy)
-        np.testing.assert_array_equal(d3[Data.Value, "A"].numpy, d2[Data.Value, "A"].numpy)
-        d2 *= 2
-        d3 *= 3
-        import operator
-        np.testing.assert_array_compare(operator.__ne__, d1[Data.Value, "A"].numpy, d2[Data.Value, "A"].numpy)
-        np.testing.assert_array_compare(operator.__ne__, d3[Data.Value, "A"].numpy, d2[Data.Value, "A"].numpy)
+        d3 = copy.deepcopy(d2)
+        self.assertEqual(d1, d2)
+        self.assertEqual(d3, d2)
+        d2[Data.Value, "A"] *= d2[Data.Value, "A"]
+        self.assertNotEqual(d1, d2)
+        self.assertNotEqual(d3, d2)
 
 
 if __name__ == '__main__':
