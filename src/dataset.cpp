@@ -14,6 +14,11 @@
 #include "except.h"
 #include "tag_util.h"
 
+Dataset::Dataset(std::vector<Variable> vars) {
+  for (auto &var : vars)
+    insert(std::move(var));
+}
+
 Dataset::Dataset(const ConstDatasetSlice &view) {
   for (const auto &var : view)
     insert(var);

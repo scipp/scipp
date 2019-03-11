@@ -920,6 +920,21 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
+      .def("__iadd__",
+           [](DatasetSlice &self, const Variable &other) {
+             return self += Dataset({other});
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](DatasetSlice &self, const Variable &other) {
+             return self -= Dataset({other});
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](DatasetSlice &self, const Variable &other) {
+             return self *= Dataset({other});
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
@@ -1119,6 +1134,21 @@ PYBIND11_MODULE(dataset, m) {
       .def("__ne__",
            [](const Dataset &self, const DatasetSlice &other) {
              return self != other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](Dataset &self, const Variable &other) {
+             return self += Dataset({other});
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](Dataset &self, const Variable &other) {
+             return self -= Dataset({other});
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](Dataset &self, const Variable &other) {
+             return self *= Dataset({other});
            },
            py::call_guard<py::gil_scoped_release>())
       .def("__iadd__",

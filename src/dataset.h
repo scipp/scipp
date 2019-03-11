@@ -32,6 +32,7 @@ private:
 
 public:
   Dataset() = default;
+  Dataset(std::vector<Variable> vars);
   // Allowing implicit construction from views facilitates calling functions
   // that do not explicitly support views. It is open for discussion whether
   // this is a good idea or not.
