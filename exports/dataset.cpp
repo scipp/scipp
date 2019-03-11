@@ -721,6 +721,12 @@ PYBIND11_MODULE(dataset, m) {
            py::is_operator())
       .def("__itruediv__", [](Variable &a, VariableSlice &b) { return a /= b; },
            py::is_operator())
+      .def("__radd__", [](Variable &a, double &b) { return a + b; },
+           py::is_operator())
+      .def("__rsub__", [](Variable &a, double &b) { return a - b; },
+           py::is_operator())
+      .def("__rmul__", [](Variable &a, double &b) { return a * b; },
+           py::is_operator())
       .def("__len__", &Variable::size)
       .def("__repr__",
            [](const Variable &self) { return dataset::to_string(self, "."); });
@@ -777,6 +783,14 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
       .def("__eq__", [](VariableSlice &a, Variable &b) { return a == b; },
            py::is_operator())
       .def("__ne__", [](VariableSlice &a, Variable &b) { return a != b; },
@@ -796,6 +810,12 @@ PYBIND11_MODULE(dataset, m) {
       .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
            py::is_operator())
       .def("__itruediv__", [](VariableSlice &a, Variable &b) { return a / b; },
+           py::is_operator())
+      .def("__radd__", [](VariableSlice &a, double &b) { return a + b; },
+           py::is_operator())
+      .def("__rsub__", [](VariableSlice &a, double &b) { return a - b; },
+           py::is_operator())
+      .def("__rmul__", [](VariableSlice &a, double &b) { return a * b; },
            py::is_operator())
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
@@ -883,6 +903,9 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
       .def("__eq__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self == other;
@@ -923,6 +946,15 @@ PYBIND11_MODULE(dataset, m) {
              return self *= other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__radd__",
+           [](const DatasetSlice &self, double &other) { return self + other; },
+           py::is_operator())
+      .def("__rsub__",
+           [](const DatasetSlice &self, double &other) { return self - other; },
+           py::is_operator())
+      .def("__rmul__",
+           [](const DatasetSlice &self, double &other) { return self * other; },
+           py::is_operator())
       .def("__repr__", [](const DatasetSlice &self) {
         return dataset::to_string(self, ".");
       });
@@ -1045,6 +1077,9 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
       .def("__eq__",
            [](const Dataset &self, const DatasetSlice &other) {
              return self == other;
@@ -1085,6 +1120,15 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__radd__",
+           [](const Dataset &self, double &other) { return self + other; },
+           py::is_operator())
+      .def("__rsub__",
+           [](const Dataset &self, double &other) { return self - other; },
+           py::is_operator())
+      .def("__rmul__",
+           [](const Dataset &self, double &other) { return self * other; },
+           py::is_operator())
       .def("merge", &Dataset::merge)
       // TODO For now this is just for testing. We need to decide on an API for
       // specifying the keys.
