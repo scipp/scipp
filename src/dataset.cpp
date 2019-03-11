@@ -324,10 +324,18 @@ void multiply(const gsl::index size, ptr<double> RESTRICT v1,
 }
 } // namespace aligned
 
+namespace {
+
 template <typename T1>
+  /**
+ * @param slice1 : Slice of target data variable (lh operand), but should have variances captured too if relvant
+ * @param slice2 : Slice of target data variable (rh operand), but should have variances captured too if relevant
+ * @param var1 : lh variable (mutable)
+ * @param var2 : rh variable (const)
+ */
 void multiply_slices(DatasetSlice &slice1, const ConstDatasetSlice &slice2,
-                     VariableSlice &var1, const ConstVariableSlice &var2,
-                     const T1 &dataset) {
+                     VariableSlice &var1, const ConstVariableSlice &var2
+                     ) {
   if (slice1.contains(Data::Variance, var1.name()) !=
       slice2.contains(Data::Variance, var2.name())) {
     throw std::runtime_error("Either both or none of the operands must "
@@ -342,7 +350,7 @@ void multiply_slices(DatasetSlice &slice1, const ConstDatasetSlice &slice2,
   }
   // Data variables are added
   if (var2.tag() == Data::Value) {
-    if (dataset.contains(Data::Variance, var2.name())) {
+    if (slice1.contains(Data::Variance, var2.name())) {
       auto error1 = slice1(Data::Variance, var1.name());
       const auto &error2 = slice2(Data::Variance, var2.name());
       if ((var1.dimensions() == var2.dimensions()) &&
@@ -386,6 +394,7 @@ void multiply_slices(DatasetSlice &slice1, const ConstDatasetSlice &slice2,
   }
 }
 
+} // namespace
 template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
   std::set<std::string> names;
   for (const auto &var2 : other)
@@ -402,7 +411,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
       } else if (var1.isData()) {
         auto slice1 = dataset.subset(var1.name());
         auto slice2 = other.subset(var2.name());
-        multiply_slices(slice1, slice2, var1, var2, dataset);
+        multiply_slices(slice1, slice2, var1, var2);
       }
     } else {
       // Note that this is handled via name, i.e., there may be values and
@@ -418,7 +427,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
           if (var1.tag() == var2.tag()) {
             ++count;
             auto slice1 = dataset.subset(var1.name());
-            multiply_slices(slice1, slice2, var1, var2, dataset);
+            multiply_slices(slice1, slice2, var1, var2);
           }
         }
         if (count == 0)
