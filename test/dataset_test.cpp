@@ -580,15 +580,6 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
   EXPECT_THROW_MSG(a *= c, std::runtime_error,
                    "Cannot multiply datasets that contain a variance but no "
                    "corresponding value.");
-  EXPECT_THROW_MSG(c *= a, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
-  EXPECT_THROW_MSG(b *= c, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
-  EXPECT_THROW_MSG(c *= b, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
 }
 
 TEST(Dataset, operator_times_equal_with_units) {

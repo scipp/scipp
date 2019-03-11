@@ -80,10 +80,7 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
         c = a - b
         # Variables "a" and "b" added despite different names
-        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
-
-
-        #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
 
         c = a + 2.0
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + 2.0))
@@ -99,8 +96,7 @@ class TestDatasetSlice(unittest.TestCase):
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
         # problem described above need inplace operators
-        #self._apply_test_op(operator.imul, a, b, data)
-        #self._apply_test_op(operator.itruediv, a, b, data)
+        self._apply_test_op(operator.imul, a, b, data)
         
 
 if __name__ == '__main__':

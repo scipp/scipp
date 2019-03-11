@@ -325,78 +325,155 @@ void multiply(const gsl::index size, ptr<double> RESTRICT v1,
 } // namespace aligned
 
 template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
+  std::set<std::string> names;
+  for (const auto &var2 : other)
+    if (var2.isData())
+      names.insert(var2.name());
+
   // See operator+= for additional comments.
   for (const auto &var2 : other) {
-    gsl::index index;
-    try {
-      index = find(dataset, var2.tag(), var2.name());
-    } catch (const std::runtime_error &) {
-      throw std::runtime_error("Right-hand-side in addition contains variable "
-                               "that is not present in left-hand-side.");
-    }
-    if (var2.tag() == Data::Variance) {
-      try {
-        find(dataset, Data::Value, var2.name());
-        find(other, Data::Value, var2.name());
-      } catch (const std::runtime_error &) {
-        throw std::runtime_error("Cannot multiply datasets that contain a "
-                                 "variance but no corresponding value.");
-      }
-    }
-    auto var1 = dataset[index];
-    if (var1.isCoord()) {
-      // Coordinate variables must match
-      dataset::expect::variablesMatch(var1, var2);
-    } else if (var1.isData()) {
-      // Data variables are added
-      if (var2.tag() == Data::Value) {
-        if (count(dataset, Data::Variance, var2.name()) !=
-            count(other, Data::Variance, var2.name()))
+    if (dataset.contains(var2.tag(), var2.name())) {
+      auto var1 = dataset(var2.tag(), var2.name());
+      if (var1.isCoord()) {
+        // Coordinate variables must match
+        dataset::expect::variablesMatch(var1, var2);
+      } else if (var1.isData()) {
+        auto slice1 = dataset.subset(var1.name());
+        auto slice2 = other.subset(var2.name());
+        if (slice1.contains(Data::Variance, var1.name()) !=
+            slice2.contains(Data::Variance, var2.name())) {
           throw std::runtime_error("Either both or none of the operands must "
                                    "have a variance for their values.");
-        if (count(dataset, Data::Variance, var2.name()) != 0) {
-          auto error_index1 = find(dataset, Data::Variance, var2.name());
-          auto error_index2 = find(other, Data::Variance, var2.name());
-          auto error1 = dataset[error_index1];
-          const auto &error2 = other[error_index2];
-          if ((var1.dimensions() == var2.dimensions()) &&
-              (var1.dimensions() == error1.dimensions()) &&
-              (var1.dimensions() == error2.dimensions())) {
-            // Optimization if all dimensions match, avoiding allocation of
-            // temporaries and redundant streaming from memory of large array.
-            error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
-                           var1.unit() * var1.unit() * error2.unit());
-            var1.setUnit(var1.unit() * var2.unit());
+        }
+        if (var2.tag() == Data::Variance) {
+          if (!slice1.contains(Data::Value, var1.name()) ||
+              !slice2.contains(Data::Value, var2.name())) {
+            throw std::runtime_error("Cannot multiply datasets that contain a "
+                                     "variance but no corresponding value.");
+          }
+        }
+        // Data variables are added
+        if (var2.tag() == Data::Value) {
+          if (dataset.contains(Data::Variance, var2.name())) {
+            auto error1 = slice1(Data::Variance, var1.name());
+            const auto &error2 = slice2(Data::Variance, var2.name());
+            if ((var1.dimensions() == var2.dimensions()) &&
+                (var1.dimensions() == error1.dimensions()) &&
+                (var1.dimensions() == error2.dimensions())) {
+              // Optimization if all dimensions match, avoiding allocation of
+              // temporaries and redundant streaming from memory of large array.
+              error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
+                             var1.unit() * var1.unit() * error2.unit());
+              var1.setUnit(var1.unit() * var2.unit());
 
-            // TODO We are working with VariableSlice here, so get<> returns a
-            // view, not a span, i.e., it is less efficient. May need to do this
-            // differently for optimal performance.
-            auto v1 = var1.template span<double>();
-            const auto v2 = var2.template span<double>();
-            auto e1 = error1.template span<double>();
-            const auto e2 = error2.template span<double>();
-            // TODO Need to ensure that data is contiguous!
-            aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
-                              e2.data());
+              // TODO We are working with VariableSlice here, so get<> returns a
+              // view, not a span, i.e., it is less efficient. May need to do
+              // this differently for optimal performance.
+              auto v1 = var1.template span<double>();
+              const auto v2 = var2.template span<double>();
+              auto e1 = error1.template span<double>();
+              const auto e2 = error2.template span<double>();
+              // TODO Need to ensure that data is contiguous!
+              aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
+                                e2.data());
+            } else {
+              // TODO Do we need to write this differently if the two operands
+              // are the same? For example, error1 = error1 * (var2 * var2) +
+              // var1 * var1 * error2;
+              error1 *= (var2 * var2);
+              error1 += var1 * var1 * error2;
+              // TODO: Catch errors from unit propagation here and give a better
+              // error message.
+              var1 *= var2;
+            }
           } else {
-            // TODO Do we need to write this differently if the two operands are
-            // the same? For example,
-            // error1 = error1 * (var2 * var2) + var1 * var1 * error2;
-            error1 *= (var2 * var2);
-            error1 += var1 * var1 * error2;
-            // TODO: Catch errors from unit propagation here and give a better
-            // error message.
+            // No variance found, continue without.
             var1 *= var2;
           }
+        } else if (var2.tag() == Data::Variance) {
+          // Do nothing, math for variance is done when processing corresponding
+          // value.
         } else {
-          // No variance found, continue without.
           var1 *= var2;
         }
-      } else if (var2.tag() == Data::Variance) {
-        // Do nothing, math for variance is done when processing corresponding
-        // value.
+      }
+    } else {
+      // Note that this is handled via name, i.e., there may be values and
+      // variances, i.e., two variables.
+      if (var2.isData() && names.size() == 1) {
+        // Only a single (named) variable in RHS, subtract from all.
+        // Not a coordinate, subtract from all.
+
+        auto slice2 = other.subset(var2.name());
+
+        gsl::index count = 0;
+        for (auto var1 : dataset) {
+          if (var1.tag() == var2.tag()) {
+            ++count;
+            auto slice1 = dataset.subset(var1.name());
+            if (slice1.contains(Data::Variance, var1.name()) !=
+                slice2.contains(Data::Variance, var2.name())) {
+              throw std::runtime_error(
+                  "Either both or none of the operands must "
+                  "have a variance for their values.");
+            }
+            if (var2.tag() == Data::Variance) {
+              if (!slice1.contains(Data::Value, var1.name()) ||
+                  !slice2.contains(Data::Value, var2.name())) {
+                throw std::runtime_error(
+                    "Cannot multiply datasets that contain a "
+                    "variance but no corresponding value.");
+              }
+            }
+            if (var2.tag() == Data::Value) {
+              if (dataset.contains(Data::Variance, var2.name())) {
+                auto error1 = slice1(Data::Variance, var1.name());
+                const auto &error2 = slice2(Data::Variance, var2.name());
+                if ((var1.dimensions() == var2.dimensions()) &&
+                    (var1.dimensions() == error1.dimensions()) &&
+                    (var1.dimensions() == error2.dimensions())) {
+                  // Optimization if all dimensions match, avoiding allocation
+                  // of temporaries and redundant streaming from memory of large
+                  // array.
+                  error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
+                                 var1.unit() * var1.unit() * error2.unit());
+                  var1.setUnit(var1.unit() * var2.unit());
+
+                  // TODO We are working with VariableSlice here, so get<>
+                  // returns a view, not a span, i.e., it is less efficient. May
+                  // need to do this differently for optimal performance.
+                  auto v1 = var1.template span<double>();
+                  const auto v2 = var2.template span<double>();
+                  auto e1 = error1.template span<double>();
+                  const auto e2 = error2.template span<double>();
+                  // TODO Need to ensure that data is contiguous!
+                  aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
+                                    e2.data());
+                } else {
+                  // TODO Do we need to write this differently if the two
+                  // operands are the same? For example, error1 = error1 * (var2
+                  // * var2) + var1 * var1 * error2;
+                  error1 *= (var2 * var2);
+                  error1 += var1 * var1 * error2;
+                  // TODO: Catch errors from unit propagation here and give a
+                  // better error message.
+                  var1 *= var2;
+                }
+              } else {
+                // No variance found, continue without.
+                var1 *= var2;
+              }
+            }
+          }
+        }
+        if (count == 0)
+          throw std::runtime_error("Right-hand-side in binary operation "
+                                   "contains variable type that is not present "
+                                   "in left-hand-side.");
       } else {
-        var1 *= var2;
+        throw std::runtime_error("Right-hand-side in binary operation contains "
+                                 "variable that is not present in "
+                                 "left-hand-side.");
       }
     }
   }
