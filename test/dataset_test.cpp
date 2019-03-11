@@ -99,11 +99,11 @@ TEST(Dataset, insert_edges_fail) {
   EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
   EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 4}), std::runtime_error,
                    "Cannot insert variable into Dataset: Variable is a "
-                   "dimension coordiante, but the dimension length matches "
+                   "dimension coordinate, but the dimension length matches "
                    "neither as default coordinate nor as edge coordinate.");
   EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 1}), std::runtime_error,
                    "Cannot insert variable into Dataset: Variable is a "
-                   "dimension coordiante, but the dimension length matches "
+                   "dimension coordinate, but the dimension length matches "
                    "neither as default coordinate nor as edge coordinate.");
 }
 

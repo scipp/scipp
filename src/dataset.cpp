@@ -166,7 +166,7 @@ void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
           }
           throw std::runtime_error(
               "Cannot insert variable into Dataset: Variable is a dimension "
-              "coordiante, but the dimension length matches neither as default "
+              "coordinate, but the dimension length matches neither as default "
               "coordinate nor as edge coordinate.");
         } else {
           if (m_dimensions.size(j) == size + 1) {
