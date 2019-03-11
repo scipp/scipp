@@ -14,6 +14,7 @@
 
 #include "convert.h"
 #include "dataset.h"
+#include "events.h"
 #include "except.h"
 #include "tag_util.h"
 #include "tags.h"
@@ -180,7 +181,7 @@ template <class T> struct MakeVariable {
     const py::buffer_info info = dataT.request();
     Dimensions dims(labels, info.shape);
     auto *ptr = (T *)info.ptr;
-    return ::makeVariable<T>(tag, dims, ptr, ptr + dims.volume());
+    return ::makeVariable<T, ssize_t>(tag, dims, info.strides, ptr);
   }
 };
 
@@ -352,10 +353,9 @@ void setData(T &self, const K &key, const py::array &data) {
 }
 
 template <class T>
-VariableSlice pySlice(T &source,
-                      const std::tuple<Dim, const py::slice> &index) {
-  const Dim dim = std::get<Dim>(index);
-  const auto indices = std::get<const py::slice>(index);
+auto pySlice(T &source, const std::tuple<Dim, const py::slice> &index)
+    -> decltype(source(Dim::Invalid, 0)) {
+  const auto & [ dim, indices ] = index;
   size_t start, stop, step, slicelength;
   const auto size = source.dimensions()[dim];
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
@@ -492,6 +492,18 @@ using as_VariableView =
                         std::string, boost::container::small_vector<double, 8>,
                         Dataset, Eigen::Vector3d>;
 
+class SubsetHelper {
+public:
+  template <class D> SubsetHelper(D &d) : m_data(d) {}
+  auto subset(const std::string &name) const { return m_data.subset(name); }
+  auto subset(const Tag tag, const std::string &name) const {
+    return m_data.subset(tag, name);
+  }
+
+private:
+  DatasetSlice m_data;
+};
+
 using small_vector = boost::container::small_vector<double, 8>;
 PYBIND11_MAKE_OPAQUE(small_vector);
 
@@ -517,6 +529,9 @@ PYBIND11_MODULE(dataset, m) {
       .value("Temperature", Dim::Temperature)
       .value("Time", Dim::Time)
       .value("Tof", Dim::Tof)
+      .value("Qx", Dim::Qx)
+      .value("Qy", Dim::Qy)
+      .value("Qz", Dim::Qz)
       .value("X", Dim::X)
       .value("Y", Dim::Y)
       .value("Z", Dim::Z);
@@ -531,6 +546,9 @@ PYBIND11_MODULE(dataset, m) {
   coord_tags.attr("Monitor") = Tag(Coord::Monitor);
   coord_tags.attr("DetectorInfo") = Tag(Coord::DetectorInfo);
   coord_tags.attr("ComponentInfo") = Tag(Coord::ComponentInfo);
+  coord_tags.attr("Qx") = Tag(Coord::Qx);
+  coord_tags.attr("Qy") = Tag(Coord::Qy);
+  coord_tags.attr("Qz") = Tag(Coord::Qz);
   coord_tags.attr("X") = Tag(Coord::X);
   coord_tags.attr("Y") = Tag(Coord::Y);
   coord_tags.attr("Z") = Tag(Coord::Z);
@@ -542,7 +560,8 @@ PYBIND11_MODULE(dataset, m) {
   coord_tags.attr("DetectorId") = Tag(Coord::DetectorId);
   coord_tags.attr("SpectrumNumber") = Tag(Coord::SpectrumNumber);
   coord_tags.attr("DetectorGrouping") = Tag(Coord::DetectorGrouping);
-  coord_tags.attr("RowLabel") = Tag(Coord::RowLabel);
+  coord_tags.attr("Row") = Tag(Coord::Row);
+  coord_tags.attr("Run") = Tag(Coord::Run);
   coord_tags.attr("Polarization") = Tag(Coord::Polarization);
   coord_tags.attr("Temperature") = Tag(Coord::Temperature);
   coord_tags.attr("FuzzyTemperature") = Tag(Coord::FuzzyTemperature);
@@ -604,6 +623,7 @@ PYBIND11_MODULE(dataset, m) {
   units.attr("counts") = Unit(units::counts);
   units.attr("s") = Unit(units::s);
   units.attr("kg") = Unit(units::kg);
+  units.attr("K") = Unit(units::K);
   units.attr("angstrom") = Unit(units::angstrom);
   units.attr("meV") = Unit(units::meV);
   units.attr("us") = Unit(units::us);
@@ -623,6 +643,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__len__", &Dimensions::count)
       .def("__contains__", [](const Dimensions &self,
                               const Dim dim) { return self.contains(dim); })
+      .def("__getitem__",
+           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
       .def_property_readonly("labels", &Dimensions::labels)
       .def_property_readonly("shape", &Dimensions::shape)
       .def("add", &Dimensions::add)
@@ -643,6 +665,14 @@ PYBIND11_MODULE(dataset, m) {
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def("__getitem__", detail::pySlice<Variable>)
+      .def("__copy__",
+           [](Variable &self) {
+             return Variable(self);
+           })
+      .def("__deepcopy__",
+           [](Variable &self, py::dict) {
+             return Variable(self);
+           })
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
@@ -714,6 +744,14 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
+      .def("__copy__",
+           [](VariableSlice &self) {
+             return Variable(self);
+           })
+      .def("__deepcopy__",
+           [](VariableSlice &self, py::dict) {
+             return Variable(self);
+           })
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char, bool>)
@@ -745,13 +783,39 @@ PYBIND11_MODULE(dataset, m) {
   // operator overload definitions
   py::implicitly_convertible<VariableSlice, Variable>();
 
+  py::class_<SubsetHelper>(m, "SubsetHelper")
+      .def("__getitem__",
+           [](SubsetHelper &self, const std::string &name) {
+             return self.subset(name);
+           })
+      .def("__getitem__",
+           [](SubsetHelper &self,
+              const std::tuple<const Tag, const std::string &> &index) {
+             const auto & [ tag, name ] = index;
+             return self.subset(tag, name);
+           })
+      .def("__setitem__",
+           [](SubsetHelper &self, const std::string &name,
+              const DatasetSlice &data) { self.subset(name).assign(data); })
+      .def("__setitem__",
+           [](SubsetHelper &self,
+              const std::tuple<const Tag, const std::string &> &index,
+              const DatasetSlice &data) {
+             const auto & [ tag, name ] = index;
+             self.subset(tag, name).assign(data);
+           });
+
   py::class_<DatasetSlice>(m, "DatasetSlice")
       .def(py::init<Dataset &>())
+      .def_property_readonly(
+          "dimensions",
+          [](const DatasetSlice &self) { return self.dimensions(); })
       .def("__len__", &DatasetSlice::size)
       .def("__iter__",
            [](DatasetSlice &self) {
              return py::make_iterator(self.begin(), self.end());
-           })
+           },
+           py::keep_alive<0, 1>())
       .def("__contains__", &DatasetSlice::contains, py::arg("tag"),
            py::arg("name") = "")
       .def("__contains__",
@@ -763,19 +827,7 @@ PYBIND11_MODULE(dataset, m) {
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
            })
-      .def("__getitem__",
-           [](DatasetSlice &self,
-              const std::tuple<Dim, const py::slice> &index) {
-             const Dim dim = std::get<Dim>(index);
-             const auto indices = std::get<const py::slice>(index);
-             size_t start, stop, step, slicelength;
-             gsl::index size = self.dimensions()[dim];
-             if (!indices.compute(size, &start, &stop, &step, &slicelength))
-               throw py::error_already_set();
-             if (step != 1)
-               throw std::runtime_error("Step must be 1");
-             return self(dim, start, stop);
-           })
+      .def("__getitem__", &detail::pySlice<DatasetSlice>)
       .def("__getitem__",
            [](DatasetSlice &self, const Tag &tag) { return self(tag); })
       .def(
@@ -783,11 +835,26 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
-      .def("subset", [](DatasetSlice &self,
-                        const std::string &name) { return self.subset(name); })
-      .def("subset",
-           [](DatasetSlice &self, const Tag tag, const std::string &name) {
-             return self.subset(tag, name);
+      .def("__copy__",
+           [](DatasetSlice &self) {
+             return Dataset(self);
+           })
+      .def("__deepcopy__",
+           [](DatasetSlice &self, py::dict) {
+             return Dataset(self);
+           })
+      .def_property_readonly(
+          "subset", [](DatasetSlice &self) { return SubsetHelper(self); })
+      .def("__setitem__",
+           [](DatasetSlice &self, const std::tuple<Dim, py::slice> &index,
+              const DatasetSlice &other) {
+             detail::pySlice(self, index).assign(other);
+           })
+      .def("__setitem__",
+           [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index,
+              const DatasetSlice &other) {
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
            })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
@@ -807,6 +874,8 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
       .def(py::init<const DatasetSlice &>())
+      .def_property_readonly(
+          "dimensions", [](const Dataset &self) { return self.dimensions(); })
       .def("__len__", &Dataset::size)
       .def("__repr__",
            [](const Dataset &self) { return dataset::to_string(self, "."); })
@@ -835,43 +904,37 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
            })
-      .def("__getitem__",
-           [](Dataset &self, const std::tuple<Dim, const py::slice> &index) {
-             const Dim dim = std::get<Dim>(index);
-             const auto indices = std::get<const py::slice>(index);
-             size_t start, stop, step, slicelength;
-             const auto size = self.dimensions()[dim];
-             if (!indices.compute(size, &start, &stop, &step, &slicelength))
-               throw py::error_already_set();
-             if (step != 1)
-               throw std::runtime_error("Step must be 1");
-             return self(dim, start, stop);
-           })
+      .def("__getitem__", &detail::pySlice<Dataset>)
       .def("__getitem__",
            [](Dataset &self, const Tag &tag) { return self(tag); })
       .def("__getitem__",
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
            })
-      .def("subset", [](Dataset &self,
-                        const std::string &name) { return self.subset(name); })
-      .def("subset",
-           [](Dataset &self, const Tag tag, const std::string &name) {
-             return self.subset(tag, name);
+      .def("__copy__",
+           [](Dataset &self) {
+             return Dataset(self);
            })
+      .def("__deepcopy__",
+           [](Dataset &self, py::dict) {
+             return Dataset(self);
+           })
+      .def_property_readonly("subset",
+                             [](Dataset &self) { return SubsetHelper(self); })
       // Careful: The order of overloads is really important here, otherwise
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also
       // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
       .def("__setitem__",
+           [](Dataset &self, const std::tuple<Dim, py::slice> &index,
+              const DatasetSlice &other) {
+             detail::pySlice(self, index).assign(other);
+           })
+      .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index,
               const DatasetSlice &other) {
-             auto slice =
-                 self(std::get<Dim>(index), std::get<gsl::index>(index));
-             if (slice == other)
-               return;
-             throw std::runtime_error("Non-self-assignment of Dataset slices "
-                                      "is not implemented yet.\n");
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
            })
 
       // A) No dimensions argument, this will set data of existing item.
@@ -900,6 +963,9 @@ PYBIND11_MODULE(dataset, m) {
       // 3. Handle integers before case 4. below, which would convert to double.
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_1D<Eigen::Vector3d, detail::Key::Tag>)
+      .def("__setitem__",
+           detail::insert_1D<Eigen::Vector3d, detail::Key::TagName>)
       // 4. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
@@ -961,7 +1027,6 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
       .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
       .def("merge", &Dataset::merge)
-      .def("dimensions", [](const Dataset &self) { return self.dimensions(); })
       // TODO For now this is just for testing. We need to decide on an API for
       // specifying the keys.
       .def("zip", [](Dataset &self) {
@@ -1003,6 +1068,10 @@ PYBIND11_MODULE(dataset, m) {
   m.def("convert",
         py::overload_cast<const Dataset &, const Dim, const Dim>(&convert),
         py::call_guard<py::gil_scoped_release>());
+  m.def("convert",
+        py::overload_cast<const Dataset &, const std::vector<Dim> &,
+                          const Dataset &>(&convert),
+        py::call_guard<py::gil_scoped_release>());
 
   //-----------------------variable free functions------------------------------
   m.def("split",
@@ -1032,4 +1101,9 @@ PYBIND11_MODULE(dataset, m) {
 
   //-----------------------dimensions free functions----------------------------
   m.def("dimensionCoord", &dimensionCoord);
+  m.def("coordDimension",
+        [](const Tag t) { return coordDimension[t.value()]; });
+
+  auto events = m.def_submodule("events");
+  events.def("sort_by_tof", &events::sortByTof);
 }

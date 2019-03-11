@@ -182,4 +182,3 @@ inline bool operator!=(const AlignedAllocator<T, TAlign> &,
                        const AlignedAllocator<U, UAlign> &) noexcept {
   return TAlign != UAlign;
 }
-

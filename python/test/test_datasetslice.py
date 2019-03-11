@@ -14,11 +14,11 @@ class TestDatasetSlice(unittest.TestCase):
         self._d = d
     
     def test_type(self):
-        ds_slice = self._d.subset("a")
+        ds_slice = self._d.subset["a"]
         self.assertEqual(type(ds_slice), dataset.DatasetSlice)
 
     def test_extract_slice(self):
-        ds_slice = self._d.subset("a")
+        ds_slice = self._d.subset["a"]
         self.assertEqual(type(ds_slice), dataset.DatasetSlice)
         # We should have just one data variable
         self.assertEqual(1, len([var for var in ds_slice if var.is_data]))
@@ -53,27 +53,44 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(self._d[Data.Value, "a"][Dim.X, -3].numpy,
                          self._d[Data.Value, "a"][Dim.X, 7].numpy)
 
-
     def test_range_based_slice(self):
         subset = slice(1,4,1)
         # Create slice
         ds_slice = self._d[Dim.X,subset]
         # Test via variable_slice
-        self.assertEquals(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
+        self.assertEqual(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
 
-    def _apply_test_op(self, op, a, b, data):
-        op(a,b)
+    def test_copy(self):
+        import copy
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        s1 = d1[Dim.X, 2:]
+        s2 = copy.copy(s1)
+        s3 = copy.deepcopy(s2)
+        self.assertEqual(s1, s2)
+        self.assertEqual(s3, s2)
+        s2 *= s2
+        self.assertNotEqual(s1[Data.Value, "A"], s2[Data.Value, "A"])
+        self.assertNotEqual(s3[Data.Value, "A"], s2[Data.Value, "A"])
+
+    def _apply_test_op(self, op, a, b, data, lh_var_name="a", rh_var_name="b"):
         # Assume numpy operations are correct as comparitor
-        op(data,b[Data.Value, "b"].numpy)
-        self.assertTrue(np.array_equal(a[Data.Value, "a"].numpy, data))
+        op(data,b[Data.Value, rh_var_name].numpy)
+        op(a,b)
+        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
 
     def test_binary_operations(self):
         d = Dataset()
         d[Coord.X] = ([Dim.X], np.arange(10))
         d[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
         d[Data.Value, "b"] = ([Dim.X], np.arange(10, dtype='float64'))
-        a = d.subset("a")
-        b = d.subset("b")
+        a = d.subset["a"]
+        b = d.subset["b"]
         data = np.copy(a[Data.Value, "a"].numpy)
         c = a + b
         # Variables "a" and "b" added despite different names

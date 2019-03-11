@@ -19,8 +19,8 @@ TEST(Dataset, insert_coords) {
   Dataset d;
   d.insert(Coord::Tof, {}, {1.1});
   d.insert(Coord::SpectrumNumber, {}, {2});
-  EXPECT_THROW_MSG(d.insert(Coord::SpectrumNumber, {}, {2}), std::runtime_error,
-                   "Attempt to insert variable with duplicate tag and name.");
+  ASSERT_EQ(d.size(), 2);
+  EXPECT_NO_THROW(d.insert(Coord::SpectrumNumber, {}, {3}));
   ASSERT_EQ(d.size(), 2);
 }
 
@@ -28,8 +28,8 @@ TEST(Dataset, insert_data) {
   Dataset d;
   d.insert(Data::Value, "name1", {}, {1.1});
   d.insert(Data::Value, "name2", {}, {2});
-  EXPECT_THROW_MSG(d.insert(Data::Value, "name2", {}, {2}), std::runtime_error,
-                   "Attempt to insert variable with duplicate tag and name.");
+  ASSERT_EQ(d.size(), 2);
+  EXPECT_NO_THROW(d.insert(Data::Value, "name2", {}, {3}));
   ASSERT_EQ(d.size(), 2);
 }
 
@@ -37,6 +37,14 @@ TEST(Dataset, insert_variables_with_dimensions) {
   Dataset d;
   d.insert(Data::Value, "name1", Dimensions(Dim::Tof, 2), {1.1, 2.2});
   d.insert(Data::Value, "name2", {}, {2});
+}
+
+TEST(Dataset, insert_updated_dimensions_correctly) {
+  Dataset d;
+  d.insert(Data::Value, "name1", {Dim::X, 1});
+  d.insert(Data::Value, "name1", {Dim::Y, 1});
+  ASSERT_EQ(d.size(), 1);
+  ASSERT_EQ(d.dimensions(), Dimensions({Dim::Y, 1}));
 }
 
 TEST(Dataset, insert_variables_different_order) {
@@ -88,7 +96,9 @@ TEST(Dataset, insert_edges_first_fail) {
       d.insert(Data::Value, "name2", {Dim::Tof, 1}), std::runtime_error,
       "Cannot insert variable into Dataset: Dimensions do not match.");
   EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 4}), std::runtime_error,
-                   "Attempt to insert variable with duplicate tag and name.");
+                   "Cannot insert variable into Dataset: Variable is a "
+                   "dimension coordinate, but the dimension length matches "
+                   "neither as default coordinate nor as edge coordinate.");
 }
 
 TEST(Dataset, insert_edges_fail) {
@@ -97,11 +107,11 @@ TEST(Dataset, insert_edges_fail) {
   EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
   EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 4}), std::runtime_error,
                    "Cannot insert variable into Dataset: Variable is a "
-                   "dimension coordiante, but the dimension length matches "
+                   "dimension coordinate, but the dimension length matches "
                    "neither as default coordinate nor as edge coordinate.");
   EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 1}), std::runtime_error,
                    "Cannot insert variable into Dataset: Variable is a "
-                   "dimension coordiante, but the dimension length matches "
+                   "dimension coordinate, but the dimension length matches "
                    "neither as default coordinate nor as edge coordinate.");
 }
 
@@ -188,8 +198,12 @@ TEST(Dataset, merge) {
   Dataset merged;
   merged.merge(d);
   EXPECT_EQ(merged.size(), 3);
-  EXPECT_THROW_MSG(merged.merge(d), std::runtime_error,
-                   "Attempt to insert variable with duplicate tag and name.");
+
+  Dataset copy(merged);
+
+ // We can merge twice, it is idempotent.
+  EXPECT_NO_THROW(merged.merge(d));
+  EXPECT_EQ(copy, merged);
 
   Dataset d2;
   d2.insert(Data::Value, "name3", {}, {1.1});
@@ -219,8 +233,9 @@ TEST(Dataset, merge_coord_mismatch_fail) {
   d2.insert(Coord::X, {Dim::X, 2}, {1.1, 2.3});
   d2.insert(Data::Value, "data2", {Dim::X, 2});
 
-  EXPECT_THROW_MSG(d1.merge(d2), std::runtime_error,
-                   "Cannot merge: Coordinates do not match.");
+  EXPECT_THROW_MSG(
+      d1.merge(d2), std::runtime_error,
+      "Cannot merge: Variable found in both operands, but does not match.");
 }
 
 TEST(Dataset, const_get) {
@@ -343,10 +358,6 @@ TEST(Dataset, subset) {
   d.insert(Data::Value, "b", {});
   d.insert(Data::Variance, "b", {});
 
-  const auto no_data = d.subset("");
-  EXPECT_EQ(no_data.size(), 1);
-  EXPECT_TRUE(no_data.contains(Coord::X));
-
   const auto value = d.subset(Data::Value, "a");
   EXPECT_EQ(value.size(), 2);
   EXPECT_TRUE(value.contains(Coord::X));
@@ -362,6 +373,24 @@ TEST(Dataset, subset) {
   EXPECT_TRUE(both.contains(Coord::X));
   EXPECT_TRUE(both.contains(Data::Value, "a"));
   EXPECT_TRUE(both.contains(Data::Variance, "a"));
+}
+
+TEST(Dataset, subset_no_data_fail) {
+  Dataset d;
+  d.insert(Coord::X, {});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Variance, "a", {});
+  d.insert(Data::Value, "b", {});
+  d.insert(Data::Variance, "b", {});
+
+  // Note: This is required to fail, otherwise we silently do nothing if a
+  // subset is used in operations, e.g.,
+  // d.subset("a") += d.subset("c")
+  // TODO DatasetSlice itself *does* support subsets with empty data, we just
+  // need a clearly different way of creating them, i.e., not by accident. One
+  // example could be `dataset.coords()`, a subset that contains all
+  // coordinates.
+  EXPECT_THROW(d.subset(""), dataset::except::VariableNotFoundError);
 }
 
 TEST(Dataset, subset_of_subset) {
@@ -402,6 +431,28 @@ TEST(Dataset, subset_of_full_subset) {
   EXPECT_TRUE(both_from_subset.contains(Coord::X));
   EXPECT_TRUE(both_from_subset.contains(Data::Value, "a"));
   EXPECT_TRUE(both_from_subset.contains(Data::Variance, "a"));
+}
+
+template <class T> void do_subset_of_slice(T &d, bool useTag) {
+  const auto slice = d(Dim::X, 1, 2);
+  const auto subset =
+      useTag ? slice.subset(Data::Value, "a") : slice.subset("a");
+
+  EXPECT_EQ(subset(Coord::X).size(), 1);
+  EXPECT_EQ(subset(Coord::X).template span<double>()[0], 2);
+  EXPECT_EQ(subset.dimensions(), Dimensions({Dim::X, 1}));
+}
+
+TEST(Dataset, subset_of_slice) {
+  Dataset d;
+  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 3, 4});
+  d.insert(Data::Value, "a", {});
+  d.insert(Data::Value, "b", {});
+
+  do_subset_of_slice<Dataset>(d, true);
+  do_subset_of_slice<Dataset>(d, false);
+  do_subset_of_slice<const Dataset>(d, true);
+  do_subset_of_slice<const Dataset>(d, false);
 }
 
 TEST(Dataset, comparison_with_spatial_slice) {
@@ -716,6 +767,28 @@ TEST(Dataset, concatenate) {
   EXPECT_EQ(xy.get(Data::Value).size(), 12);
 }
 
+TEST(Dataset, concatenate_extends_dimension) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 2}, {1, 2});
+  a.insert(Data::Value, "", {}, {1.1});
+  Dataset b;
+  b.insert(Coord::X, {Dim::X, 2}, {1, 2});
+  b.insert(Data::Value, "", {}, {2.2});
+  Dataset c;
+  c.insert(Coord::X, {}, {3});
+  c.insert(Data::Value, "", {}, {3.3});
+
+  auto x = concatenate(a, b, Dim::X);
+  EXPECT_EQ(x.dimensions(), Dimensions({Dim::X, 4}));
+  Variable reference1(Data::Value, {Dim::X, 4}, {1.1, 1.1, 2.2, 2.2});
+  EXPECT_EQ(x(Data::Value), reference1);
+
+  x = concatenate(x, c, Dim::X);
+  EXPECT_EQ(x.dimensions(), Dimensions({Dim::X, 5}));
+  Variable reference2(Data::Value, {Dim::X, 5}, {1.1, 1.1, 2.2, 2.2, 3.3});
+  EXPECT_EQ(x(Data::Value), reference2);
+}
+
 TEST(Dataset, concatenate_with_bin_edges) {
   Dataset ds;
   ds.insert(Coord::X, {Dim::X, 2}, {0.1, 0.2});
@@ -805,9 +878,6 @@ TEST(Dataset, concatenate_with_attributes) {
   auto xy2(xy);
   xy2.get(Attr::ExperimentLog)[0].span<std::string>(Data::Value,
                                                     "comments")[0] = "";
-  // Concatenating in existing dimension fail currently. Would need to implement
-  // merging functionality for attributes?
-  EXPECT_ANY_THROW(concatenate(xy, xy2, Dim::X));
 }
 
 TEST(Dataset, rebin_failures) {
