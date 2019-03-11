@@ -3,6 +3,14 @@ import unittest
 from dataset import *
 import numpy as np
 
+def make_variables():
+    data = np.arange(1, 4, dtype=float)
+    a = Variable(Data.Value, [Dim.X], data)
+    b = Variable(Data.Value, [Dim.X], data)
+    a_slice = a[Dim.X, :]
+    b_slice = b[Dim.X, :]
+    return a, b, a_slice, b_slice, data
+
 class TestVariable(unittest.TestCase):
 
     def test_builtins(self):
@@ -85,14 +93,9 @@ class TestVariable(unittest.TestCase):
         self.assertEqual(len(var_slice), 2)
         self.assertTrue(np.array_equal(var_slice.numpy, np.array([0,1])))
 
-    def test_binary_operations(self):
-        # TODO units check
-        data = np.arange(1, 4, dtype=float)
-        a = Variable(Data.Value, [Dim.X], data)
-        b = Variable(Data.Value, [Dim.X], data)
-        a_slice = a[Dim.X, :]
-        b_slice = b[Dim.X, :]
-        # Plus
+    # Plus
+    def test_binary_plus(self):
+        a, b, a_slice, b_slice, data = make_variables()
         c = a + b
         self.assertTrue(np.array_equal(c.numpy, data+data))
         c = a + 2.0
@@ -105,7 +108,10 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data+data+data+data))
         c = 3.5 + c
         self.assertTrue(np.array_equal(c.numpy, data+data+data+data+3.5))
-        # Minus
+
+    # Minus
+    def test_binary_minus(self):
+        a, b, a_slice, b_slice, data = make_variables()
         c = a - b
         self.assertTrue(np.array_equal(c.numpy, data-data))
         c = a - 2.0
@@ -118,7 +124,10 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data-data-data-data))
         c = 3.5 - c
         self.assertTrue(np.array_equal(c.numpy, 3.5-data+data+data+data))
-        # Multiply
+
+    # Multiply
+    def test_binary_multiply(self):
+        a, b, a_slice, b_slice, data = make_variables()
         c = a * b
         self.assertTrue(np.array_equal(c.numpy, data*data))
         c = a * 2.0
@@ -131,7 +140,10 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data*data*data*data))
         c = 3.5 * c
         self.assertTrue(np.array_equal(c.numpy, data*data*data*data*3.5))
-        # Divide
+
+    # Divide
+    def test_binary_divide(self):
+        a, b, a_slice, b_slice, data = make_variables()
         c = a / b
         self.assertTrue(np.array_equal(c.numpy, data/data))
         c = a / 2.0
@@ -142,14 +154,21 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data/data/data))
         c /= b_slice
         self.assertTrue(np.array_equal(c.numpy, data/data/data/data))
-        # Equal
+
+    # Equal
+    def test_binary_equal(self):
+        a, b, a_slice, b_slice, data = make_variables()
         self.assertEqual(a, b)
         self.assertEqual(a, a_slice)
         self.assertEqual(a_slice, b_slice)
         self.assertEqual(b, a)
         self.assertEqual(b_slice, a)
         self.assertEqual(b_slice, a_slice)
-        # Not equal
+
+    # Not equal
+    def test_binary_not_equal(self):
+        a, b, a_slice, b_slice, data = make_variables()
+        c = a + b
         self.assertNotEqual(a, c)
         self.assertNotEqual(a_slice, c)
         self.assertNotEqual(c, a)

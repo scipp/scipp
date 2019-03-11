@@ -40,6 +40,16 @@ class TestVariableSlice(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data*data))
         c = a / b
         self.assertTrue(np.array_equal(c.numpy, data/data))
+
+        self._apply_test_op(operator.iadd, a, b, data)
+        self._apply_test_op(operator.isub, a, b, data)
+        self._apply_test_op(operator.imul, a, b, data)
+        self._apply_test_op(operator.itruediv, a, b, data)
+
+    def test_binary_float_operations(self):
+        a = self._a[Dim.X, :]
+        b = self._b[Dim.X, :]
+        data = np.copy(a.numpy)
         c = a + 2.0
         self.assertTrue(np.array_equal(c.numpy, data+2.0))
         c = a - 2.0
@@ -55,11 +65,10 @@ class TestVariableSlice(unittest.TestCase):
         c = 2.0 * a
         self.assertTrue(np.array_equal(c.numpy, data*2.0))
 
-        self._apply_test_op(operator.iadd, a, b, data)
-        self._apply_test_op(operator.isub, a, b, data)
-        self._apply_test_op(operator.imul, a, b, data)
-        self._apply_test_op(operator.itruediv, a, b, data)
-
+    def test_equal_not_equal(self):
+        a = self._a[Dim.X, :]
+        b = self._b[Dim.X, :]
+        c = a + 2.0
         # Equal
         self.assertEqual(a, b)
         self.assertEqual(b, a)

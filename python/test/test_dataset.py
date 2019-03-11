@@ -242,7 +242,6 @@ class TestDataset(unittest.TestCase):
         a = Dataset()
         a[Coord.X] = ([Dim.X], np.arange(10))
         a[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
-
         b = Dataset()
         b[Data.Value, "j"] = ([Dim.X], np.arange(10, dtype='float64'))
         data = np.copy(a[Data.Value, "i"].numpy)
@@ -256,6 +255,22 @@ class TestDataset(unittest.TestCase):
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data - data))
 
         #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
+
+        self._apply_test_op(operator.iadd, a, b, data)
+        self._apply_test_op(operator.isub, a, b, data)
+        # TODO problem described above need inplace operators
+        # Only demonstrate behaviour where variable names are sames across operands
+        b = Dataset()
+        b[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
+        self._apply_test_op(operator.imul, a, b, data, lh_var_name="i", rh_var_name="i")
+
+    def test_binary_float_operations(self):
+        a = Dataset()
+        a[Coord.X] = ([Dim.X], np.arange(10))
+        a[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
+        b = Dataset()
+        b[Data.Value, "j"] = ([Dim.X], np.arange(10, dtype='float64'))
+        data = np.copy(a[Data.Value, "i"].numpy)
 
         c = a + 2.0
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + 2.0))
@@ -274,12 +289,18 @@ class TestDataset(unittest.TestCase):
         c = 2.0 * a
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data * 2.0))
 
+    def test_equal_not_equal(self):
+        a = Dataset()
+        a[Coord.X] = ([Dim.X], np.arange(10))
+        a[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
+        b = Dataset()
+        b[Data.Value, "j"] = ([Dim.X], np.arange(10, dtype='float64'))
+        c = a + b
         d = Dataset()
         d[Coord.X] = ([Dim.X], np.arange(10))
         d[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
         a_slice = a[Dim.X, :]
         d_slice = d[Dim.X, :]
-
         # Equal
         self.assertEqual(a, d)
         self.assertEqual(a, a_slice)
@@ -293,16 +314,6 @@ class TestDataset(unittest.TestCase):
         self.assertNotEqual(a_slice, c)
         self.assertNotEqual(c, a)
         self.assertNotEqual(c, a_slice)
-
-        self._apply_test_op(operator.iadd, a, b, data)
-        self._apply_test_op(operator.isub, a, b, data)
-        # TODO problem described above need inplace operators
-        # Only demonstrate behaviour where variable names are sames across operands
-        b = Dataset()
-        b[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
-
-        self._apply_test_op(operator.imul, a, b, data, lh_var_name="i", rh_var_name="i")
-
 
     def test_plus_equals_slice(self):
         dataset = Dataset()
