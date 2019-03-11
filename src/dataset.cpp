@@ -61,16 +61,27 @@ VariableSlice Dataset::operator()(const Tag tag, const std::string &name) & {
 }
 
 void Dataset::insert(Variable variable) {
-  for (const auto &item : m_variables)
-    if (item.tag() == variable.tag() && item.name() == variable.name())
-      throw std::runtime_error(
-          "Attempt to insert variable with duplicate tag and name.");
   // TODO special handling for special variables types like
   // Data::Histogram (either prevent adding, or extract into underlying
   // variables).
-  mergeDimensions(variable.dimensions(),
-                  coordDimension[variable.tag().value()]);
-  m_variables.push_back(std::move(variable));
+  if (contains(variable.tag(), variable.name())) {
+    auto &old = m_variables[find(variable.tag(), variable.name())];
+    for (const auto dim : old.dimensions().labels()) {
+      bool found = false;
+      for (const auto &var : m_variables)
+        if (var.dimensions().contains(dim))
+          found = true;
+      if (!found)
+        m_dimensions.erase(dim);
+    }
+    mergeDimensions(variable.dimensions(),
+                    coordDimension[variable.tag().value()]);
+    old = std::move(variable);
+  } else {
+    mergeDimensions(variable.dimensions(),
+                    coordDimension[variable.tag().value()]);
+    m_variables.push_back(std::move(variable));
+  }
 }
 
 // T can be Dataset or Slice.
@@ -120,9 +131,10 @@ Dataset Dataset::extract(const std::string &name) {
 
 void Dataset::merge(const Dataset &other) {
   for (const auto &var : other) {
-    if (var.isCoord() && contains(var.tag(), var.name())) {
+    if (contains(var.tag(), var.name())) {
       if (var != operator()(var.tag(), var.name()))
-        throw std::runtime_error("Cannot merge: Coordinates do not match.");
+        throw std::runtime_error("Cannot merge: Variable found in both "
+                                 "operands, but does not match.");
     } else {
       insert(var);
     }
