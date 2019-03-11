@@ -1069,6 +1069,8 @@ PYBIND11_MODULE(dataset, m) {
 
   //-----------------------dimensions free functions----------------------------
   m.def("dimensionCoord", &dimensionCoord);
+  m.def("coordDimension",
+        [](const Tag t) { return coordDimension[t.value()]; });
 
   auto events = m.def_submodule("events");
   events.def("sort_by_tof", &events::sortByTof);
