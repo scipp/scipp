@@ -64,13 +64,15 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
 
     entries = []
     # Case of a single dataset
-    if (type(input_data) is dataset.Dataset) or (type(input_data) is dataset.DatasetSlice):
+    if (type(input_data) is dataset.Dataset) or \
+       (type(input_data) is dataset.DatasetSlice):
         entries.append(input_data)
     # Case of a list of datasets
     elif type(input_data) is list:
         # Go through the list items:
         for item in input_data:
-            if (type(item) is dataset.Dataset) or (type(item) is dataset.DatasetSlice):
+            if (type(item) is dataset.Dataset) or \
+               (type(item) is dataset.DatasetSlice):
                 entries.append(item)
             else:
                 raise RuntimeError("Bad data type in list input of plot_1d. "
@@ -120,7 +122,11 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
 
             # Check that data is 1D
             if len(v[0].dimensions) > 1:
-                raise RuntimeError("Can only plot 1D data with plot_1d.")
+                raise RuntimeError("Can only plot 1D data with plot_1d. The "
+                                   "input Dataset has {} dimensions. For 2D "
+                                   "data, use plot_image. For higher "
+                                   "dimensions, use plot_sliceviewer."
+                                   .format(len(v[0].dimensions)))
 
             # Define y
             y = v[0].numpy
@@ -183,9 +189,9 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
 #
 # If countours=True, a filled contour plot is produced, if False, then a
 # standard image made of pixels is created.
-# If plot=False, then not plot is produced, instead the layout, Data.Value and
-# a transpose flag are returned (this is used when calling plot_image from the
-# sliceviewer).
+# If plot=False, then not plot is produced, instead the data and layout dicts
+# for plotly, as well as a transpose flag, are returned (this is used when
+# calling plot_image from the sliceviewer).
 def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
                plot=True):
 
@@ -274,10 +280,17 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
             data[0]["z"] = z
             return iplot(dict(data=data, layout=layout))
         else:
-            return data, layout, values[0], transpose
+            return data, layout, transpose
 
     else:
-        raise RuntimeError("Unsupported number of dimensions in plot_image.")
+        raise RuntimeError("Unsupported number of dimensions in plot_image. "
+                           "Expected at least 2 dimensions, got {}. To plot 1D "
+                           "data, use plot_1d, and for 3 dimensions and higher,"
+                           " use plot_sliceviewer. One can also call plot_image"
+                           "for a Dataset with more than 2 dimensions, but one "
+                           "must then use plot=False to collect the data and "
+                           "layout dicts for plotly, as well as a transpose "
+                           "flag, instead of plotting an image.".format(ndim))
 
 #===============================================================================
 
@@ -292,7 +305,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
         from ipywidgets import VBox, HBox, IntSlider, Label
     except ImportError:
         print("Sorry, the sliceviewer requires ipywidgets which was not found "
-              "on this system")
+              "on this system.")
         return
 
     # Check input dataset
@@ -331,9 +344,9 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
         nslices = len(slice_labels)
 
         # Use the machinery in plot_image to make the layout
-        data, layout, values, transpose = plot_image(input_data, axes=axes,
-                                          contours=contours, logcb=logcb,
-                                          cb=cb, plot=False)
+        data, layout, transpose = plot_image(input_data, axes=axes, logcb=logcb,
+                                             contours=contours, cb=cb,
+                                             plot=False)
 
         # Create a figure widget
         fig = FigureWidget(data=data, layout=layout)
@@ -388,7 +401,10 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
         return vb
 
     else:
-        raise RuntimeError("Unsupported number of dimensions in sliceviewer.")
+        raise RuntimeError("Unsupported number of dimensions in "
+                           "plot_sliceviewer. Expected at least 3 dimensions, "
+                           "got {}. For 2D data, use plot_image, for 1D data, "
+                           "use plot_1d.".format(ndim))
 
 #===============================================================================
 
