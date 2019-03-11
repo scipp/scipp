@@ -9,10 +9,10 @@ class TestDatasetSlice(unittest.TestCase):
     def setUp(self):
         d = Dataset()
         d[Coord.X] = ([Dim.X], np.arange(10))
-        d[Data.Value, "a"] = ([Dim.X], np.arange(10)) 
-        d[Data.Value, "b"] = ([Dim.X], np.arange(10)) 
+        d[Data.Value, "a"] = ([Dim.X], np.arange(10))
+        d[Data.Value, "b"] = ([Dim.X], np.arange(10))
         self._d = d
-    
+
     def test_type(self):
         ds_slice = self._d.subset["a"]
         self.assertEqual(type(ds_slice), dataset.DatasetSlice)
@@ -95,6 +95,23 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * 2.0))
         c = a / 2.0
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data / 2.0))
+
+        d2 = d[Dim.X, :]
+        a2 = d.subset["a"]
+        d3 = Dataset()
+        d3[Coord.X] = ([Dim.X], np.arange(10))
+        d3[Data.Value, "a"] = ([Dim.X], np.arange(1, 11, dtype='float64'))
+        a3 = d3.subset["a"]
+
+        # Equal
+        self.assertEqual(d, d2)
+        self.assertEqual(d2, d)
+        self.assertEqual(a, a2)
+        # Not equal
+        self.assertNotEqual(a, b)
+        self.assertNotEqual(b, a)
+        self.assertNotEqual(a, c)
+        self.assertNotEqual(a, a3)
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)

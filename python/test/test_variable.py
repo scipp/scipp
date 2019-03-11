@@ -84,7 +84,7 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(isinstance(var_slice, VariableSlice))
         self.assertEqual(len(var_slice), 2)
         self.assertTrue(np.array_equal(var_slice.numpy, np.array([0,1])))
-    
+
     def test_binary_operations(self):
         # TODO units check
         data = np.arange(1, 4, dtype=float)
@@ -95,7 +95,7 @@ class TestVariable(unittest.TestCase):
         # Plus
         c = a + b
         self.assertTrue(np.array_equal(c.numpy, data+data))
-        c = a + 2.0 
+        c = a + 2.0
         self.assertTrue(np.array_equal(c.numpy, data+2.0))
         c = a + b_slice
         self.assertTrue(np.array_equal(c.numpy, data+data))
@@ -106,7 +106,7 @@ class TestVariable(unittest.TestCase):
         # Minus
         c = a - b
         self.assertTrue(np.array_equal(c.numpy, data-data))
-        c = a - 2.0 
+        c = a - 2.0
         self.assertTrue(np.array_equal(c.numpy, data-2.0))
         c = a - b_slice
         self.assertTrue(np.array_equal(c.numpy, data-data))
@@ -117,7 +117,7 @@ class TestVariable(unittest.TestCase):
         # Multiply
         c = a * b
         self.assertTrue(np.array_equal(c.numpy, data*data))
-        c = a * 2.0 
+        c = a * 2.0
         self.assertTrue(np.array_equal(c.numpy, data*2.0))
         c = a * b_slice
         self.assertTrue(np.array_equal(c.numpy, data*data))
@@ -128,7 +128,7 @@ class TestVariable(unittest.TestCase):
         # Divide
         c = a / b
         self.assertTrue(np.array_equal(c.numpy, data/data))
-        c = a / 2.0 
+        c = a / 2.0
         self.assertTrue(np.array_equal(c.numpy, data/2.0))
         c = a / b_slice
         self.assertTrue(np.array_equal(c.numpy, data/data))
@@ -136,6 +136,18 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data/data/data))
         c /= b_slice
         self.assertTrue(np.array_equal(c.numpy, data/data/data/data))
+        # Equal
+        self.assertEqual(a, b)
+        self.assertEqual(a, a_slice)
+        self.assertEqual(a_slice, b_slice)
+        self.assertEqual(b, a)
+        self.assertEqual(b_slice, a)
+        self.assertEqual(b_slice, a_slice)
+        # Not equal
+        self.assertNotEqual(a, c)
+        self.assertNotEqual(a_slice, c)
+        self.assertNotEqual(c, a)
+        self.assertNotEqual(c, a_slice)
 
 if __name__ == '__main__':
     unittest.main()

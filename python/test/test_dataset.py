@@ -104,16 +104,16 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(len(d), 3)
 
     # This characterises existing broken behaviour. Will need to be fixed.
-    def test_demo_int_to_float_issue(self):                                                                       
+    def test_demo_int_to_float_issue(self):
         # Demo bug
-        d = Dataset() 
-        d[Data.Value, "v1"] = ([Dim.X, Dim.Y], np.ndarray.tolist(np.arange(0,10).reshape(2,5))) # Variable containing int array data     
-        self.assertEqual(d[Data.Value, "v1"].numpy.dtype, 'float64') # Correct behaviour should be int64 
-        
-        # Demo working 1D 
-        d = Dataset() 
-        d[Data.Value, "v2"] = ([Dim.X], np.ndarray.tolist(np.arange(0,10))) # Variable containing int array data     
-        self.assertEqual(d[Data.Value, "v2"].numpy.dtype, 'int64')  
+        d = Dataset()
+        d[Data.Value, "v1"] = ([Dim.X, Dim.Y], np.ndarray.tolist(np.arange(0,10).reshape(2,5))) # Variable containing int array data
+        self.assertEqual(d[Data.Value, "v1"].numpy.dtype, 'float64') # Correct behaviour should be int64
+
+        # Demo working 1D
+        d = Dataset()
+        d[Data.Value, "v2"] = ([Dim.X], np.ndarray.tolist(np.arange(0,10))) # Variable containing int array data
+        self.assertEqual(d[Data.Value, "v2"].numpy.dtype, 'int64')
 
     def test_set_data(self):
         d = Dataset()
@@ -246,7 +246,7 @@ class TestDataset(unittest.TestCase):
         b = Dataset()
         b[Data.Value, "j"] = ([Dim.X], np.arange(10, dtype='float64'))
         data = np.copy(a[Data.Value, "i"].numpy)
-        
+
         c = a + b
         # Variables "i" and "j" added despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + data))
@@ -268,13 +268,33 @@ class TestDataset(unittest.TestCase):
         c = a / 2.0
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data / 2.0))
 
+        d = Dataset()
+        d[Coord.X] = ([Dim.X], np.arange(10))
+        d[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
+        a_slice = a[Dim.X, :]
+        d_slice = d[Dim.X, :]
+
+        # Equal
+        self.assertEqual(a, d)
+        self.assertEqual(a, a_slice)
+        self.assertEqual(a_slice, d_slice)
+        self.assertEqual(d, a)
+        self.assertEqual(d_slice, a)
+        self.assertEqual(d_slice, a_slice)
+        # Not equal
+        self.assertNotEqual(a, b)
+        self.assertNotEqual(a, c)
+        self.assertNotEqual(a_slice, c)
+        self.assertNotEqual(c, a)
+        self.assertNotEqual(c, a_slice)
+
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
         # TODO problem described above need inplace operators
         # Only demonstrate behaviour where variable names are sames across operands
         b = Dataset()
         b[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
-        
+
         self._apply_test_op(operator.imul, a, b, data, lh_var_name="i", rh_var_name="i")
 
 
@@ -609,7 +629,7 @@ class TestDatasetExamples(unittest.TestCase):
         d1 = Dataset()
         d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
         d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
-        
+
         arr1 = np.arange(N*M).reshape(N,M).astype(np.float64)
         arr2 = np.transpose(arr1)
         K = 3
