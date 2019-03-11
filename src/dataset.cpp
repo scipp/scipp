@@ -340,6 +340,7 @@ void multiply_slices(DatasetSlice &slice1, const ConstDatasetSlice &slice2,
                                "variance but no corresponding value.");
     }
   }
+  // Data variables are added
   if (var2.tag() == Data::Value) {
     if (dataset.contains(Data::Variance, var2.name())) {
       auto error1 = slice1(Data::Variance, var1.name());
@@ -347,16 +348,15 @@ void multiply_slices(DatasetSlice &slice1, const ConstDatasetSlice &slice2,
       if ((var1.dimensions() == var2.dimensions()) &&
           (var1.dimensions() == error1.dimensions()) &&
           (var1.dimensions() == error2.dimensions())) {
-        // Optimization if all dimensions match, avoiding allocation
-        // of temporaries and redundant streaming from memory of large
-        // array.
+        // Optimization if all dimensions match, avoiding allocation of
+        // temporaries and redundant streaming from memory of large array.
         error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
                        var1.unit() * var1.unit() * error2.unit());
         var1.setUnit(var1.unit() * var2.unit());
 
-        // TODO We are working with VariableSlice here, so get<>
-        // returns a view, not a span, i.e., it is less efficient. May
-        // need to do this differently for optimal performance.
+        // TODO We are working with VariableSlice here, so get<> returns a
+        // view, not a span, i.e., it is less efficient. May need to do
+        // this differently for optimal performance.
         auto v1 = var1.template span<double>();
         const auto v2 = var2.template span<double>();
         auto e1 = error1.template span<double>();
@@ -365,19 +365,24 @@ void multiply_slices(DatasetSlice &slice1, const ConstDatasetSlice &slice2,
         aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
                           e2.data());
       } else {
-        // TODO Do we need to write this differently if the two
-        // operands are the same? For example, error1 = error1 * (var2
-        // * var2) + var1 * var1 * error2;
+        // TODO Do we need to write this differently if the two operands
+        // are the same? For example, error1 = error1 * (var2 * var2) +
+        // var1 * var1 * error2;
         error1 *= (var2 * var2);
         error1 += var1 * var1 * error2;
-        // TODO: Catch errors from unit propagation here and give a
-        // better error message.
+        // TODO: Catch errors from unit propagation here and give a better
+        // error message.
         var1 *= var2;
       }
     } else {
       // No variance found, continue without.
       var1 *= var2;
     }
+  } else if (var2.tag() == Data::Variance) {
+    // Do nothing, math for variance is done when processing corresponding
+    // value.
+  } else {
+    var1 *= var2;
   }
 }
 
@@ -397,62 +402,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
       } else if (var1.isData()) {
         auto slice1 = dataset.subset(var1.name());
         auto slice2 = other.subset(var2.name());
-        if (slice1.contains(Data::Variance, var1.name()) !=
-            slice2.contains(Data::Variance, var2.name())) {
-          throw std::runtime_error("Either both or none of the operands must "
-                                   "have a variance for their values.");
-        }
-        if (var2.tag() == Data::Variance) {
-          if (!slice1.contains(Data::Value, var1.name()) ||
-              !slice2.contains(Data::Value, var2.name())) {
-            throw std::runtime_error("Cannot multiply datasets that contain a "
-                                     "variance but no corresponding value.");
-          }
-        }
-        // Data variables are added
-        if (var2.tag() == Data::Value) {
-          if (dataset.contains(Data::Variance, var2.name())) {
-            auto error1 = slice1(Data::Variance, var1.name());
-            const auto &error2 = slice2(Data::Variance, var2.name());
-            if ((var1.dimensions() == var2.dimensions()) &&
-                (var1.dimensions() == error1.dimensions()) &&
-                (var1.dimensions() == error2.dimensions())) {
-              // Optimization if all dimensions match, avoiding allocation of
-              // temporaries and redundant streaming from memory of large array.
-              error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
-                             var1.unit() * var1.unit() * error2.unit());
-              var1.setUnit(var1.unit() * var2.unit());
-
-              // TODO We are working with VariableSlice here, so get<> returns a
-              // view, not a span, i.e., it is less efficient. May need to do
-              // this differently for optimal performance.
-              auto v1 = var1.template span<double>();
-              const auto v2 = var2.template span<double>();
-              auto e1 = error1.template span<double>();
-              const auto e2 = error2.template span<double>();
-              // TODO Need to ensure that data is contiguous!
-              aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
-                                e2.data());
-            } else {
-              // TODO Do we need to write this differently if the two operands
-              // are the same? For example, error1 = error1 * (var2 * var2) +
-              // var1 * var1 * error2;
-              error1 *= (var2 * var2);
-              error1 += var1 * var1 * error2;
-              // TODO: Catch errors from unit propagation here and give a better
-              // error message.
-              var1 *= var2;
-            }
-          } else {
-            // No variance found, continue without.
-            var1 *= var2;
-          }
-        } else if (var2.tag() == Data::Variance) {
-          // Do nothing, math for variance is done when processing corresponding
-          // value.
-        } else {
-          var1 *= var2;
-        }
+        multiply_slices(slice1, slice2, var1, var2, dataset);
       }
     } else {
       // Note that this is handled via name, i.e., there may be values and
