@@ -308,23 +308,34 @@ protected:
   std::vector<gsl::index> makeIndices(const ConstDatasetSlice &base,
                                       const std::string &select) const {
     std::vector<gsl::index> indices;
+    bool foundData = false;
     for (const auto i : base.m_indices) {
       const auto &var = base.m_dataset[i];
       // TODO Should we also keep attributes? Probably yes?
-      if (var.isCoord() || var.name() == select)
+      if (var.isCoord() || var.name() == select) {
+        foundData |= var.isData();
         indices.push_back(i);
+      }
     }
+    if (!foundData)
+      throw dataset::except::VariableNotFoundError(base, select);
     return indices;
   }
   std::vector<gsl::index> makeIndices(const ConstDatasetSlice &base,
                                       const Tag selectTag,
                                       const std::string &selectName) const {
     std::vector<gsl::index> indices;
+    bool foundData = false;
     for (const auto i : base.m_indices) {
       const auto &var = base.m_dataset[i];
-      if (var.isCoord() || (var.tag() == selectTag && var.name() == selectName))
+      if (var.isCoord() ||
+          (var.tag() == selectTag && var.name() == selectName)) {
+        foundData |= var.isData();
         indices.push_back(i);
+      }
     }
+    if (!foundData)
+      throw dataset::except::VariableNotFoundError(base, selectTag, selectName);
     return indices;
   }
 
@@ -352,16 +363,20 @@ public:
   }
 
   ConstDatasetSlice subset(const std::string &name) const & {
-    return ConstDatasetSlice(m_dataset, makeIndices(*this, name));
+    ConstDatasetSlice ret(m_dataset, makeIndices(*this, name));
+    ret.m_slices = m_slices;
+    return ret;
   }
   ConstDatasetSlice subset(const Tag tag, const std::string &name) const & {
-    return ConstDatasetSlice(m_dataset, makeIndices(*this, tag, name));
+    ConstDatasetSlice ret(m_dataset, makeIndices(*this, tag, name));
+    ret.m_slices = m_slices;
+    return ret;
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
 
-  std::map<Dim, gsl::index> dimensions() const {
-    std::map<Dim, gsl::index> dims;
+  Dimensions dimensions() const {
+    Dimensions dims;
     for (gsl::index i = 0; i < m_dataset.dimensions().count(); ++i) {
       const Dim dim = m_dataset.dimensions().label(i);
       gsl::index size = m_dataset.dimensions().size(i);
@@ -373,7 +388,7 @@ public:
             size = std::get<3>(slice) - std::get<2>(slice);
         }
       if (size != -1)
-        dims[dim] = size;
+        dims.add(dim, size);
     }
     return dims;
   }
@@ -469,10 +484,14 @@ public:
   }
 
   DatasetSlice subset(const std::string &name) const & {
-    return DatasetSlice(m_mutableDataset, makeIndices(*this, name));
+    DatasetSlice ret(m_mutableDataset, makeIndices(*this, name));
+    ret.m_slices = m_slices;
+    return ret;
   }
   DatasetSlice subset(const Tag tag, const std::string &name) const & {
-    return DatasetSlice(m_mutableDataset, makeIndices(*this, tag, name));
+    DatasetSlice ret(m_mutableDataset, makeIndices(*this, tag, name));
+    ret.m_slices = m_slices;
+    return ret;
   }
 
   using ConstDatasetSlice::begin;

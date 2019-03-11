@@ -126,6 +126,7 @@ static constexpr boost::units::si::dimensionless dimensionless;
 static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
 static constexpr boost::units::si::mass kg;
+static constexpr boost::units::si::temperature K;
 // Note the factor `dimensionless` in units that otherwise contain only non-SI
 // factors. This is a trick to overcome some subtleties of working with
 // heterogeneous unit systems in boost::units: We are combing SI units with our
@@ -160,7 +161,7 @@ using type = decltype(detail::make_unit(
                     counts / meV),
     std::make_tuple(dimensionless, m *m *m *m, meV *us *us / (m * m),
                     meV *us *us *dimensionless, kg *m / s, m / s, c, c *m,
-                    meV / c, dimensionless / c)));
+                    meV / c, dimensionless / c, K)));
 } // namespace detail
 } // namespace units
 

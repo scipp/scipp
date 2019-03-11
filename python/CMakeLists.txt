@@ -1,5 +1,6 @@
 set ( PY_FILES
   __init__.py
+  table.py
   xarray_compat.py
   dataset_plotting.py
   )

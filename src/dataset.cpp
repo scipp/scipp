@@ -625,7 +625,13 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
         if (d1.dimensions().contains(dim)) {
           // Variable does not contain dimension but Dataset does, i.e.,
           // Variable is constant. We need to extend it before concatenating.
-          throw std::runtime_error("TODO");
+          auto dims1 = var1.dimensions();
+          dims1.add(dim, d1.dimensions()[dim]);
+          auto dims2 = var2.dimensions();
+          if (d2.dimensions().contains(dim) && !var2.dimensions().contains(dim))
+            dims2.add(dim, d2.dimensions()[dim]);
+          out.insert(
+              concatenate(broadcast(var1, dims1), broadcast(var2, dims2), dim));
         } else {
           // Creating a new dimension
           out.insert(concatenate(var1, var2, dim));

@@ -78,6 +78,12 @@ std::string do_to_string(const Tag tag) {
     return "Coord::Y";
   case Coord::Z.value():
     return "Coord::Z";
+  case Coord::Qx.value():
+    return "Coord::Qx";
+  case Coord::Qy.value():
+    return "Coord::Qy";
+  case Coord::Qz.value():
+    return "Coord::Qz";
   case Coord::Tof.value():
     return "Coord::Tof";
   case Coord::Energy.value():
@@ -94,8 +100,10 @@ std::string do_to_string(const Tag tag) {
     return "Coord::SpectrumNumber";
   case Coord::DetectorGrouping.value():
     return "Coord::DetectorGrouping";
-  case Coord::RowLabel.value():
-    return "Coord::RowLabel";
+  case Coord::Row.value():
+    return "Coord::Row";
+  case Coord::Run.value():
+    return "Coord::Run";
   case Coord::Polarization.value():
     return "Coord::Polarization";
   case Coord::Temperature.value():
@@ -273,11 +281,8 @@ std::string to_string(const Dataset &dataset, const std::string &separator) {
 
 std::string to_string(const ConstDatasetSlice &dataset,
                       const std::string &separator) {
-  // TODO Unify dimensions API for Dataset and ConstDatasetSlice.
-  Dimensions dims;
-  for (const auto[dim, size] : dataset.dimensions())
-    dims.add(dim, size);
-  return do_to_string(dataset, "<DatasetSlice>", dims, separator);
+  return do_to_string(dataset, "<DatasetSlice>", dataset.dimensions(),
+                      separator);
 }
 
 namespace except {
@@ -316,6 +321,14 @@ VariableNotFoundError::VariableNotFoundError(const ConstDatasetSlice &dataset,
                                              const std::string &name)
     : DatasetError(dataset, "could not find variable with tag " +
                                 to_string(tag) + " and name `" + name + "`.") {}
+VariableNotFoundError::VariableNotFoundError(const Dataset &dataset,
+                                             const std::string &name)
+    : DatasetError(dataset,
+                   "could not find any variable with name " + name + "`.") {}
+VariableNotFoundError::VariableNotFoundError(const ConstDatasetSlice &dataset,
+                                             const std::string &name)
+    : DatasetError(dataset,
+                   "could not find any variable with name " + name + "`.") {}
 
 VariableError::VariableError(const Variable &variable,
                              const std::string &message)
