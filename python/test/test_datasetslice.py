@@ -79,8 +79,8 @@ class TestDatasetSlice(unittest.TestCase):
         # Variables "a" and "b" added despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
         c = a - b
-        # Variables "a" and "b" added despite different names
-        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
+        # Variables "a" and "b" subtracted despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
 
 
         #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
