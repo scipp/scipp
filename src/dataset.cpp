@@ -516,7 +516,6 @@ DatasetSlice DatasetSlice::operator+=(const double value) const {
       var += value;
   return *this;
 }
-
 DatasetSlice DatasetSlice::operator-=(const Dataset &other) const {
   return binary_op_equals(
       [](VariableSlice &a, const Variable &b) { return a -= b; }, *this, other);
@@ -569,6 +568,7 @@ Dataset operator+(const double a, Dataset b) { return std::move(b += a); }
 Dataset operator-(const double a, Dataset b) { return -(b -= a); }
 Dataset operator*(const double a, Dataset b) { return std::move(b *= a); }
 
+Dataset operator/(Dataset a, const double b) { return std::move(a *= 1 / b); }
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {
   std::vector<Dataset> out(indices.size() + 1);

@@ -2,6 +2,7 @@ import unittest
 
 from dataset import *
 import numpy as np
+import operator
 
 class TestDatasetSlice(unittest.TestCase):
 
@@ -59,6 +60,49 @@ class TestDatasetSlice(unittest.TestCase):
         ds_slice = self._d[Dim.X,subset]
         # Test via variable_slice
         self.assertEqual(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
+
+    def _apply_test_op(self, op, a, b, data, lh_var_name="a", rh_var_name="b"):
+        # Assume numpy operations are correct as comparitor
+        op(data,b[Data.Value, rh_var_name].numpy)
+        op(a,b)
+        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
+
+    def test_binary_operations(self):
+        d = Dataset()
+        d[Coord.X] = ([Dim.X], np.arange(10))
+        d[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
+        d[Data.Value, "b"] = ([Dim.X], np.arange(10, dtype='float64'))
+        a = d.subset["a"]
+        b = d.subset["b"]
+        data = np.copy(a[Data.Value, "a"].numpy)
+        c = a + b
+        # Variables "a" and "b" added despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
+        c = a - b
+        # Variables "a" and "b" subtracted despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
+
+
+        #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
+
+        c = a + 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + 2.0))
+        c = a - b
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
+        c = a - 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - 2.0))
+        c = a * 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * 2.0))
+        c = a / 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data / 2.0))
+
+        self._apply_test_op(operator.iadd, a, b, data)
+        self._apply_test_op(operator.isub, a, b, data)
+        # TODO problem described above need inplace operators
+        # Only demonstrate behaviour where variable names are sames across operands
+        b = d.subset["a"]
+        data = np.copy(a[Data.Value, "a"].numpy)
+        self._apply_test_op(operator.imul, a, b, data, lh_var_name="a", rh_var_name="a")
 
 if __name__ == '__main__':
     unittest.main()
