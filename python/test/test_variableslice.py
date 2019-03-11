@@ -40,6 +40,20 @@ class TestVariableSlice(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data*data))
         c = a / b
         self.assertTrue(np.array_equal(c.numpy, data/data))
+        c = a + 2.0
+        self.assertTrue(np.array_equal(c.numpy, data+2.0))
+        c = a - 2.0
+        self.assertTrue(np.array_equal(c.numpy, data-2.0))
+        c = a * 2.0
+        self.assertTrue(np.array_equal(c.numpy, data*2.0))
+        c = a / 2.0
+        self.assertTrue(np.array_equal(c.numpy, data/2.0))
+        c = 2.0 + a
+        self.assertTrue(np.array_equal(c.numpy, data+2.0))
+        c = 2.0 - a
+        self.assertTrue(np.array_equal(c.numpy, 2.0-data))
+        c = 2.0 * a
+        self.assertTrue(np.array_equal(c.numpy, data*2.0))
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)

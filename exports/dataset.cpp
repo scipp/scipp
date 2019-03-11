@@ -723,7 +723,7 @@ PYBIND11_MODULE(dataset, m) {
            py::is_operator())
       .def("__radd__", [](Variable &a, double &b) { return a + b; },
            py::is_operator())
-      .def("__rsub__", [](Variable &a, double &b) { return a - b; },
+      .def("__rsub__", [](Variable &a, double &b) { return b - a; },
            py::is_operator())
       .def("__rmul__", [](Variable &a, double &b) { return a * b; },
            py::is_operator())
@@ -813,7 +813,7 @@ PYBIND11_MODULE(dataset, m) {
            py::is_operator())
       .def("__radd__", [](VariableSlice &a, double &b) { return a + b; },
            py::is_operator())
-      .def("__rsub__", [](VariableSlice &a, double &b) { return a - b; },
+      .def("__rsub__", [](VariableSlice &a, double &b) { return b - a; },
            py::is_operator())
       .def("__rmul__", [](VariableSlice &a, double &b) { return a * b; },
            py::is_operator())
@@ -950,7 +950,7 @@ PYBIND11_MODULE(dataset, m) {
            [](const DatasetSlice &self, double &other) { return self + other; },
            py::is_operator())
       .def("__rsub__",
-           [](const DatasetSlice &self, double &other) { return self - other; },
+           [](const DatasetSlice &self, double &other) { return other - self; },
            py::is_operator())
       .def("__rmul__",
            [](const DatasetSlice &self, double &other) { return self * other; },
@@ -1124,7 +1124,7 @@ PYBIND11_MODULE(dataset, m) {
            [](const Dataset &self, double &other) { return self + other; },
            py::is_operator())
       .def("__rsub__",
-           [](const Dataset &self, double &other) { return self - other; },
+           [](const Dataset &self, double &other) { return other - self; },
            py::is_operator())
       .def("__rmul__",
            [](const Dataset &self, double &other) { return self * other; },

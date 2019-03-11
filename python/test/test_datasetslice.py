@@ -95,6 +95,12 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * 2.0))
         c = a / 2.0
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data / 2.0))
+        c = 2.0 + a
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + 2.0))
+        c = 2.0 - a
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, 2.0 - data))
+        c = 2.0 * a
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * 2.0))
 
         d2 = d[Dim.X, :]
         a2 = d.subset["a"]

@@ -103,6 +103,8 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data+data+data))
         c += b_slice
         self.assertTrue(np.array_equal(c.numpy, data+data+data+data))
+        c = 3.5 + c
+        self.assertTrue(np.array_equal(c.numpy, data+data+data+data+3.5))
         # Minus
         c = a - b
         self.assertTrue(np.array_equal(c.numpy, data-data))
@@ -114,6 +116,8 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data-data-data))
         c -= b_slice
         self.assertTrue(np.array_equal(c.numpy, data-data-data-data))
+        c = 3.5 - c
+        self.assertTrue(np.array_equal(c.numpy, 3.5-data+data+data+data))
         # Multiply
         c = a * b
         self.assertTrue(np.array_equal(c.numpy, data*data))
@@ -125,6 +129,8 @@ class TestVariable(unittest.TestCase):
         self.assertTrue(np.array_equal(c.numpy, data*data*data))
         c *= b_slice
         self.assertTrue(np.array_equal(c.numpy, data*data*data*data))
+        c = 3.5 * c
+        self.assertTrue(np.array_equal(c.numpy, data*data*data*data*3.5))
         # Divide
         c = a / b
         self.assertTrue(np.array_equal(c.numpy, data/data))
