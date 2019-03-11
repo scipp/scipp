@@ -1,5 +1,5 @@
 # Dataset imports
-from dataset import Data, dataset, dimensionCoord, sqrt, units
+from dataset import Data, dataset, dimensionCoord, coordDimension, sqrt, units
 import numpy as np
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
@@ -47,10 +47,8 @@ def plot(input_data, **kwargs):
             return plot_1d(input_data, **kwargs)
         elif ndim == 2:
             return plot_image(input_data, **kwargs)
-        elif ndim < 5:
-            return plot_sliceviewer(input_data, **kwargs)
         else:
-            raise RuntimeError("Plot: unsupported number of dimensions: {}".format(ndim))
+            return plot_sliceviewer(input_data, **kwargs)
 
 #===============================================================================
 
@@ -61,7 +59,8 @@ def plot(input_data, **kwargs):
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
-def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False, axes=None):
+def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
+            axes=None):
 
     entries = []
     # Case of a single dataset
@@ -136,7 +135,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False, axes=No
             # Define x
             if axes is None:
                 axes = [dimensionCoord(v[0].dimensions.labels[0])]
-            coord = item[axes]
+            coord = item[axes[0]]
             xdims = coord.dimensions
             nx = xdims.shape[0]
             x = coord.numpy
@@ -184,9 +183,11 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False, axes=No
 #
 # If countours=True, a filled contour plot is produced, if False, then a
 # standard image made of pixels is created.
-# If plot=False, then not plot is produced, instead the layout and Data.Value
-# variable are returned.
-def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb='Viridis'):
+# If plot=False, then not plot is produced, instead the layout, Data.Value and
+# a transpose flag are returned (this is used when calling plot_image from the
+# sliceviewer).
+def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
+               plot=True):
 
     values, ndim = check_input(input_data)
 
@@ -198,7 +199,7 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
-    if (ndim > 1) and (((ndim < 3) or ((ndim < 5) and not plot)) or (naxes == 2)):
+    if ((ndim > 1) and (ndim < 3)) or ((not plot) and (naxes == 2)):
 
         # Note the order of the axes here: the outermost [1] dimension is the
         # fast dimension and is plotted along x, while the inner (slow)
@@ -212,7 +213,6 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
 
         x = xcoord.numpy
         y = ycoord.numpy
-        z = values[0].numpy
 
         # Check for bin edges
         # TODO: find a better way to handle edges. Currently, we convert from
@@ -229,17 +229,6 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
         if ny[0] == nz[ndim-2] + 1:
             y = edges_to_centers(y)
 
-        # Check if dimensions of arrays agree, if not, try to plot the transpose
-        xshape = np.shape(x)
-        yshape = np.shape(y)
-        zshape = np.shape(z)
-        if (xshape[0] != zshape[-1]) or (yshape[0] != zshape[-2]):
-            z = z.T
-            zshape = np.shape(z)
-            if (xshape[0] != zshape[-1]) or (yshape[0] != zshape[-2]):
-                raise RuntimeError("Dimensions of x and y arrays to not match "
-                                   "that of the Value array.")
-
         if contours:
             plot_type = 'contour'
         else:
@@ -248,14 +237,13 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
         title = values[0].name
         if logcb:
             title = "log\u2081\u2080(" + title + ")"
-            z = np.log10(z)
         if values[0].unit != units.dimensionless:
             title += " [{}]".format(values[0].unit)
 
         data = [dict(
             x = centers_to_edges(x),
             y = centers_to_edges(y),
-            z = z,
+            z = [0.0],
             type = plot_type,
             colorscale = cb,
             colorbar=dict(
@@ -269,10 +257,24 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
             yaxis = dict(title = axis_label(ycoord))
             )
 
+        # Check if dimensions of arrays agree, if not, plot the transpose
+        zlabs = zdims.labels
+        if (zlabs[0] == xdims.labels[0]) and (zlabs[1] == ydims.labels[0]):
+            transpose = True
+        else:
+            transpose = False
+
         if plot:
+            z = values[0].numpy
+            if transpose:
+                z = z.T
+            if logcb:
+                with np.errstate(invalid="ignore"):
+                    z = np.log10(z)
+            data[0]["z"] = z
             return iplot(dict(data=data, layout=layout))
         else:
-            return data, layout, values[0]
+            return data, layout, values[0], transpose
 
     else:
         raise RuntimeError("Unsupported number of dimensions in plot_image.")
@@ -281,7 +283,8 @@ def plot_image(input_data, axes=None, contours=False, plot=True, logcb=False, cb
 
 # Plot a 2D slice through a 3D dataset with a slider to adjust the position of
 # the slice in the third dimension.
-def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False, cb='Viridis'):
+def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
+                     cb='Viridis'):
 
     # Delay import to here, as ipywidgets is not part of the base plotly package
     try:
@@ -295,100 +298,93 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False, cb='Vir
     # Check input dataset
     value_list, ndim = check_input(input_data)
 
-    if (ndim > 2) and (ndim < 5):
+    if ndim > 2:
 
         if axes is None:
             axes = [dimensionCoord(value_list[0].dimensions.labels[ndim-2]),
                     dimensionCoord(value_list[0].dimensions.labels[ndim-1])]
 
-        # Use the machinery in plot_image to make the slices
-        data, layout, values = plot_image(input_data, axes=axes,
-                                          contours=contours, plot=False,
-                                          logcb=logcb, cb=cb)
+        # Convert coords to dimensions
+        axes_dims = []
+        for i in range(len(axes)):
+            axes_dims.append(coordDimension(axes[i]))
 
-        a = values.numpy
-        if logcb:
-            a = np.log10(a)
-        nx = np.shape(a)
-
-        fig = FigureWidget(data=data, layout=layout)
-        vb = None
         # Define starting index for slider
         indx = 0
 
-        # Get z dimensions coordinate
-        zdim = input_data[dimensionCoord(value_list[0].dimensions.labels[0])]
-        zcoord = zdim.numpy
-        zmin = np.amin(zcoord)
-        zmax = np.amax(zcoord)
+        # We want to slice out everything that is not in axes
+        dims = input_data.dimensions
+        labels = dims.labels
+        shapes = dims.shape
+        slider_nx = [] # size of the coordinate array
+        slider_dims = [] # coordinate variables for the sliders, e.g. d[Coord.X]
+        slice_labels = [] # save dimensions tags for the sliders, e.g. Dim.X
+        for idim in range(len(labels)):
+            if labels[idim] not in axes_dims:
+                slider_nx.append(shapes[idim])
+                slider_dims.append(input_data[dimensionCoord(labels[idim])])
+                slice_labels.append(labels[idim])
+        # Store coordinates of dimensions that will be in sliders
+        slider_x = []
+        for dim in slider_dims:
+           slider_x.append(dim.numpy)
+        nslices = len(slice_labels)
 
-        # Add a label widget to display the value of the z coordinate
-        lab = Label(value=str(zcoord[indx]))
-        # Add an IntSlider to slide along the z dimension of the array
-        slider = IntSlider(
-            value=indx,
-            min=0,
-            max=nx[0]-1,
-            step=1,
-            description=axis_label(zdim),
-            continuous_update = True,
-            readout=False
-        )
+        # Use the machinery in plot_image to make the layout
+        data, layout, values, transpose = plot_image(input_data, axes=axes,
+                                          contours=contours, logcb=logcb,
+                                          cb=cb, plot=False)
 
-        if ndim == 3:
+        # Create a figure widget
+        fig = FigureWidget(data=data, layout=layout)
+        # Initialise a tuple for the VBox
+        vb = fig,
+        # Define containers for sliders
+        lab = []
+        slider = []
+        updates = []
+        # Define function to update slices
+        def update_slice(change):
+            zarray = input_data
+            dims = input_data.dimensions
+            labels = dims.labels
+            # Once again, slice out everything not in axes.
+            # The dimensions to be sliced have been saved in slice_labels
+            for idim in range(nslices):
+                lab[idim].value = str(slider_x[idim][slider[idim].value])
+                zarray = zarray[slice_labels[idim], slider[idim].value]
+            fig.data[0].z = zarray[Data.Value, value_list[0].name].numpy
+            # If dimensions don't match, transpose the data
+            if transpose:
+                fig.data[0].z = fig.data[0].z.T
+            if logcb:
+                with np.errstate(invalid="ignore"):
+                    fig.data[0].z = np.log10(fig.data[0].z)
 
-            # Set the z values in the figure
-            fig.data[0].z = a[indx,:,:]
-
-            # Define the function which will be run on update
-            def update_z(change):
-                fig.data[0].z = a[slider.value,:,:]
-                lab.value = str(zcoord[slider.value])
-            # Add an observer to the slider
-            slider.observe(update_z, names="value")
-            # Construct a VBox from the figure and the [slider + label]
-            vb = VBox((fig, HBox([slider, lab])))
-
-        elif ndim == 4:
-
-            # Set the z values in the figure
-            jndx = 0
-            fig.data[0].z = a[indx,jndx,:,:]
-
-            # Get second z dimensions coordinate
-            zdim2 = input_data[dimensionCoord(value_list[0].dimensions.labels[1])]
-            zcoord2 = zdim2.numpy
-            zmin2 = np.amin(zcoord2)
-            zmax2 = np.amax(zcoord2)
+        # Now begin loop to construct sliders
+        for i in range(len(slider_nx)):
             # Add a label widget to display the value of the z coordinate
-            lab2 = Label(value=str(zcoord2[jndx]))
+            lab.append(Label(value=str(slider_x[i][indx])))
             # Add an IntSlider to slide along the z dimension of the array
-            slider2 = IntSlider(
-                value=jndx,
+            slider.append(IntSlider(
+                value=indx,
                 min=0,
-                max=nx[1]-1,
+                max=slider_nx[i]-1,
                 step=1,
-                description=axis_label(zdim2),
+                description="",
                 continuous_update = True,
                 readout=False
-            )
-            # Define the functions which will be run on update
-            def update_slice():
-                fig.data[0].z = a[slider.value,slider2.value,:,:]
-            def update_z(change):
-                lab.value = str(zcoord[slider.value])
-                update_slice()
-            def update_z2(change):
-                lab2.value = str(zcoord2[slider2.value])
-                update_slice()
+            ))
             # Add an observer to the slider
-            slider.observe(update_z, names="value")
-            slider2.observe(update_z2, names="value")
-            # Construct a VBox from the figure + [slider2+label2] + [slider+label]
-            vb = VBox((fig, HBox([slider2, lab2]), HBox([slider, lab])))
+            slider[i].observe(update_slice, names="value")
+            # Add coordinate name and unit
+            title = Label(value=axis_label(slider_dims[i]))
+            vb += (HBox([title, slider[i], lab[i]]),)
 
-        if vb is not None:
-            vb.layout.align_items = 'center'
+        # Update the slice for initial load of figure
+        update_slice(0)
+        vb = VBox(vb)
+        vb.layout.align_items = 'center'
         return vb
 
     else:
