@@ -273,12 +273,7 @@ class TestDataset(unittest.TestCase):
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
-        # TODO problem described above need inplace operators
-        # Only demonstrate behaviour where variable names are sames across operands
-        b = Dataset()
-        b[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
-        
-        self._apply_test_op(operator.imul, a, b, data, lh_var_name="i", rh_var_name="i")
+        self._apply_test_op(operator.imul, a, b, data)
 
 
     def test_plus_equals_slice(self):
