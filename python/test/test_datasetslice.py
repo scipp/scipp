@@ -61,11 +61,11 @@ class TestDatasetSlice(unittest.TestCase):
         # Test via variable_slice
         self.assertEquals(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
 
-    def _apply_test_op(self, op, a, b, data):
-        op(a,b)
+    def _apply_test_op(self, op, a, b, data, lh_var_name="a", rh_var_name="b"):
         # Assume numpy operations are correct as comparitor
-        op(data,b[Data.Value, "b"].numpy)
-        self.assertTrue(np.array_equal(a[Data.Value, "a"].numpy, data))
+        op(data,b[Data.Value, rh_var_name].numpy)
+        op(a,b)
+        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
 
     def test_binary_operations(self):
         d = Dataset()
@@ -98,10 +98,11 @@ class TestDatasetSlice(unittest.TestCase):
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
-        # problem described above need inplace operators
-        #self._apply_test_op(operator.imul, a, b, data)
-        #self._apply_test_op(operator.itruediv, a, b, data)
-        
+        # TODO problem described above need inplace operators
+        # Only demonstrate behaviour where variable names are sames across operands
+        b = d.subset("a")
+        data = np.copy(a[Data.Value, "a"].numpy)
+        self._apply_test_op(operator.imul, a, b, data, lh_var_name="a", rh_var_name="a")
 
 if __name__ == '__main__':
     unittest.main()

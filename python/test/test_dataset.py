@@ -232,11 +232,11 @@ class TestDataset(unittest.TestCase):
                 np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z:z+delta,:,:])
                 np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z:z+delta,:])
 
-    def _apply_test_op(self, op, a, b, data):
-        op(a,b)
+    def _apply_test_op(self, op, a, b, data, lh_var_name="i", rh_var_name="j"):
         # Assume numpy operations are correct as comparitor
-        op(data,b[Data.Value, "j"].numpy)
-        self.assertTrue(np.array_equal(a[Data.Value, "i"].numpy, data))
+        op(data,b[Data.Value, rh_var_name].numpy)
+        op(a,b)
+        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
 
     def test_binary_operations(self):
         a = Dataset()
@@ -250,6 +250,7 @@ class TestDataset(unittest.TestCase):
         c = a + b
         # Variables "i" and "j" added despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + data))
+
         c = a - b
         # Variables "a" and "b" subtracted despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data - data))
@@ -269,9 +270,13 @@ class TestDataset(unittest.TestCase):
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
-        # problem described above need inplace operators
-        #self._apply_test_op(operator.imul, a, b, data)
-        #self._apply_test_op(operator.itruediv, a, b, data)
+        # TODO problem described above need inplace operators
+        # Only demonstrate behaviour where variable names are sames across operands
+        b = Dataset()
+        b[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
+        
+        self._apply_test_op(operator.imul, a, b, data, lh_var_name="i", rh_var_name="i")
+
 
     def test_plus_equals_slice(self):
         dataset = Dataset()
