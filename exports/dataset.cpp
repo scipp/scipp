@@ -853,7 +853,17 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__",
            [](SubsetHelper &self, const std::string &name,
+              const Dataset &data) { self.subset(name).assign(data); })
+      .def("__setitem__",
+           [](SubsetHelper &self, const std::string &name,
               const DatasetSlice &data) { self.subset(name).assign(data); })
+      .def("__setitem__",
+           [](SubsetHelper &self,
+              const std::tuple<const Tag, const std::string &> &index,
+              const Dataset &data) {
+             const auto & [ tag, name ] = index;
+             self.subset(tag, name).assign(data);
+           })
       .def("__setitem__",
            [](SubsetHelper &self,
               const std::tuple<const Tag, const std::string &> &index,
