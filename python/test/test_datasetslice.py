@@ -72,8 +72,8 @@ class TestDatasetSlice(unittest.TestCase):
         d[Coord.X] = ([Dim.X], np.arange(10))
         d[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
         d[Data.Value, "b"] = ([Dim.X], np.arange(10, dtype='float64'))
-        a = d.subset("a")
-        b = d.subset("b")
+        a = d.subset["a"]
+        b = d.subset["b"]
         data = np.copy(a[Data.Value, "a"].numpy)
         c = a + b
         # Variables "a" and "b" added despite different names
@@ -100,7 +100,7 @@ class TestDatasetSlice(unittest.TestCase):
         self._apply_test_op(operator.isub, a, b, data)
         # TODO problem described above need inplace operators
         # Only demonstrate behaviour where variable names are sames across operands
-        b = d.subset("a")
+        b = d.subset["a"]
         data = np.copy(a[Data.Value, "a"].numpy)
         self._apply_test_op(operator.imul, a, b, data, lh_var_name="a", rh_var_name="a")
 
