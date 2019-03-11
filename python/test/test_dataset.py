@@ -641,5 +641,23 @@ class TestDatasetExamples(unittest.TestCase):
         np.testing.assert_array_equal(rd1[Data.Value, "A"].numpy,
                                       np.transpose(rd1[Data.Value, "B"].numpy))
 
+    def test_copy(self):
+        import copy
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d2 = copy.copy(d1)
+        d3 = copy.deepcopy(d2)
+        self.assertEqual(d1, d2)
+        self.assertEqual(d3, d2)
+        d2[Data.Value, "A"] *= d2[Data.Value, "A"]
+        self.assertNotEqual(d1, d2)
+        self.assertNotEqual(d3, d2)
+
+
 if __name__ == '__main__':
     unittest.main()
