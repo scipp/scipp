@@ -1122,6 +1122,15 @@ TEST(Variable, reshape_mutable) {
   EXPECT_TRUE(equals(copy.get(Data::Value), {1, 2, 3, 4, 5, 6}));
 }
 
+TEST(Variable, reverse) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6});
+  Variable reverseX(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {3, 2, 1, 6, 5, 4});
+  Variable reverseY(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {4, 5, 6, 1, 2, 3});
+
+  EXPECT_EQ(reverse(var, Dim::X), reverseX);
+  EXPECT_EQ(reverse(var, Dim::Y), reverseY);
+}
+
 TEST(Variable, access_typed_view) {
   Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6});
   const auto values =

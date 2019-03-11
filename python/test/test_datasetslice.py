@@ -2,6 +2,7 @@ import unittest
 
 from dataset import *
 import numpy as np
+import operator
 
 class TestDatasetSlice(unittest.TestCase):
 
@@ -52,7 +53,6 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(self._d[Data.Value, "a"][Dim.X, -3].numpy,
                          self._d[Data.Value, "a"][Dim.X, 7].numpy)
 
-
     def test_range_based_slice(self):
         subset = slice(1,4,1)
         # Create slice
@@ -60,5 +60,67 @@ class TestDatasetSlice(unittest.TestCase):
         # Test via variable_slice
         self.assertEqual(len(ds_slice[Coord.X]), len(range(subset.start, subset.stop, subset.step)))
 
+    def test_copy(self):
+        import copy
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        s1 = d1[Dim.X, 2:]
+        s2 = copy.copy(s1)
+        s3 = copy.deepcopy(s2)
+        self.assertEqual(s1, s2)
+        self.assertEqual(s3, s2)
+        s2 *= s2
+        self.assertNotEqual(s1[Data.Value, "A"], s2[Data.Value, "A"])
+        self.assertNotEqual(s3[Data.Value, "A"], s2[Data.Value, "A"])
+
+    def _apply_test_op(self, op, a, b, data, lh_var_name="a", rh_var_name="b"):
+        # Assume numpy operations are correct as comparitor
+        op(data,b[Data.Value, rh_var_name].numpy)
+        op(a,b)
+        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
+
+    def test_binary_operations(self):
+        d = Dataset()
+        d[Coord.X] = ([Dim.X], np.arange(10))
+        d[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
+        d[Data.Value, "b"] = ([Dim.X], np.arange(10, dtype='float64'))
+        a = d.subset["a"]
+        b = d.subset["b"]
+        data = np.copy(a[Data.Value, "a"].numpy)
+        c = a + b
+        # Variables "a" and "b" added despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
+        c = a - b
+        # Variables "a" and "b" subtracted despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
+
+
+        #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
+
+        c = a + 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + 2.0))
+        c = a - b
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
+        c = a - 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - 2.0))
+        c = a * 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * 2.0))
+        c = a / 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data / 2.0))
+
+        self._apply_test_op(operator.iadd, a, b, data)
+        self._apply_test_op(operator.isub, a, b, data)
+        # TODO problem described above need inplace operators
+        # Only demonstrate behaviour where variable names are sames across operands
+        b = d.subset["a"]
+        data = np.copy(a[Data.Value, "a"].numpy)
+        self._apply_test_op(operator.imul, a, b, data, lh_var_name="a", rh_var_name="a")
+
+        
 if __name__ == '__main__':
     unittest.main()

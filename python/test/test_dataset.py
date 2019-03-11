@@ -3,6 +3,7 @@ import unittest
 from dataset import *
 import numpy as np
 import matplotlib.pyplot as plt
+import operator
 
 class TestDataset(unittest.TestCase):
     def setUp(self):
@@ -78,12 +79,15 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(len(d), 1)
         np.testing.assert_array_equal(d[Data.Value, "data1"].numpy, self.reference_data1)
 
-        # Currently implicitly replacing keys in Dataset is not supported. Should it?
-        self.assertRaisesRegex(RuntimeError, "Attempt to insert variable with duplicate tag and name.",
-                d.__setitem__, (Data.Value, "data1"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2)))
-
         self.assertRaisesRegex(RuntimeError, "Cannot insert variable into Dataset: Dimensions do not match.",
                 d.__setitem__, (Data.Value, "data2"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,2,3)))
+
+    def test_replace(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.zeros(24).reshape(4,3,2))
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+        self.assertEqual(len(d), 1)
+        np.testing.assert_array_equal(d[Data.Value, "data1"].numpy, self.reference_data1)
 
     def test_insert_variable(self):
         d = Dataset()
@@ -230,6 +234,52 @@ class TestDataset(unittest.TestCase):
                 np.testing.assert_array_equal(view[Data.Value, "data1"].numpy, self.reference_data1[z:z+delta,:,:])
                 np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z:z+delta,:,:])
                 np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z:z+delta,:])
+
+    def _apply_test_op(self, op, a, b, data, lh_var_name="i", rh_var_name="j"):
+        # Assume numpy operations are correct as comparitor
+        op(data,b[Data.Value, rh_var_name].numpy)
+        op(a,b)
+        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
+
+    def test_binary_operations(self):
+        a = Dataset()
+        a[Coord.X] = ([Dim.X], np.arange(10))
+        a[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
+
+        b = Dataset()
+        b[Data.Value, "j"] = ([Dim.X], np.arange(10, dtype='float64'))
+        data = np.copy(a[Data.Value, "i"].numpy)
+        
+        c = a + b
+        # Variables "i" and "j" added despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + data))
+
+        c = a - b
+        # Variables "a" and "b" subtracted despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data - data))
+
+        #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
+
+        c = a + 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + 2.0))
+        c = a - b
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data - data))
+        c = a - 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data - 2.0))
+        c = a * 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data * 2.0))
+        c = a / 2.0
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data / 2.0))
+
+        self._apply_test_op(operator.iadd, a, b, data)
+        self._apply_test_op(operator.isub, a, b, data)
+        # TODO problem described above need inplace operators
+        # Only demonstrate behaviour where variable names are sames across operands
+        b = Dataset()
+        b[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
+        
+        self._apply_test_op(operator.imul, a, b, data, lh_var_name="i", rh_var_name="i")
+
 
     def test_plus_equals_slice(self):
         dataset = Dataset()
@@ -556,6 +606,25 @@ class TestDatasetExamples(unittest.TestCase):
             el.append((10,300))
             self.assertEqual(len(el), size + 1)
 
+    def test_np_array_strides(self):
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64)
+        arr2 = np.transpose(arr1)
+        K = 3
+        arr_buf = np.arange(N*K*M).reshape(N, K, M)
+        arr3 = arr_buf[:, 1, :]
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d1[Data.Value, "B"] = ([Dim.Y, Dim.X], arr2)
+        d1[Data.Value, "C"] = ([Dim.X, Dim.Y], arr3)
+        np.testing.assert_array_equal(arr1, d1[Data.Value, "A"].numpy)
+        np.testing.assert_array_equal(arr2, d1[Data.Value, "B"].numpy)
+        np.testing.assert_array_equal(arr3, d1[Data.Value, "C"].numpy)
+
     def test_rebin(self):
         N = 6
         M = 4
@@ -574,6 +643,23 @@ class TestDatasetExamples(unittest.TestCase):
         rd1 = rebin(d1, Variable(Coord.X, [Dim.X], np.arange(0, N+1, 1.5).astype(np.float64)))
         np.testing.assert_array_equal(rd1[Data.Value, "A"].numpy,
                                       np.transpose(rd1[Data.Value, "B"].numpy))
+
+    def test_copy(self):
+        import copy
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d2 = copy.copy(d1)
+        d3 = copy.deepcopy(d2)
+        self.assertEqual(d1, d2)
+        self.assertEqual(d3, d2)
+        d2[Data.Value, "A"] *= d2[Data.Value, "A"]
+        self.assertNotEqual(d1, d2)
+        self.assertNotEqual(d3, d2)
 
 
 if __name__ == '__main__':

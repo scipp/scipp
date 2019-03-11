@@ -95,7 +95,7 @@ public:
   } ///< Pointer dereference access
   const DataType *operator->() const {
     return Data.get();
-  } ///<indirectrion dereference access
+  } ///< indirectrion dereference access
   bool operator==(const cow_ptr<DataType> &A) const noexcept {
     return Data == A.Data;
   } ///< Based on ptr equality
@@ -110,8 +110,7 @@ public:
  resource is a sink.
  */
 template <typename DataType>
-cow_ptr<DataType>::cow_ptr(DataType *resourcePtr)
-    : Data(resourcePtr) {}
+cow_ptr<DataType>::cow_ptr(DataType *resourcePtr) : Data(resourcePtr) {}
 
 /// Constructs a cow_ptr with no managed object, i.e. empty cow_ptr.
 template <typename DataType> cow_ptr<DataType>::cow_ptr() : cow_ptr(nullptr) {}
