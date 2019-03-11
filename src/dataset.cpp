@@ -326,47 +326,48 @@ void multiply(const gsl::index size, ptr<double> RESTRICT v1,
 
 namespace {
 
-template <typename T1>
-  /**
- * @param slice1 : Slice of target data variable (lh operand), but should have variances captured too if relvant
- * @param slice2 : Slice of target data variable (rh operand), but should have variances captured too if relevant
- * @param var1 : lh variable (mutable)
- * @param var2 : rh variable (const)
+/**
+ * @param lhs_slice : Slice of target data variable (lh operand), but should
+ * have variances captured too if relvant
+ * @param rhs_slice : Slice of target data variable (rh operand), but should
+ * have variances captured too if relevant
+ * @param lhs_var : lh variable (mutable)
+ * @param rhs_var : rh variable (const)
  */
-void multiply_slices(DatasetSlice &slice1, const ConstDatasetSlice &slice2,
-                     VariableSlice &var1, const ConstVariableSlice &var2
-                     ) {
-  if (slice1.contains(Data::Variance, var1.name()) !=
-      slice2.contains(Data::Variance, var2.name())) {
+void multiply_slices(DatasetSlice &lhs_slice,
+                     const ConstDatasetSlice &rhs_slice, VariableSlice &lhs_var,
+                     const ConstVariableSlice &rhs_var) {
+  if (lhs_slice.contains(Data::Variance, lhs_var.name()) !=
+      rhs_slice.contains(Data::Variance, rhs_var.name())) {
     throw std::runtime_error("Either both or none of the operands must "
                              "have a variance for their values.");
   }
-  if (var2.tag() == Data::Variance) {
-    if (!slice1.contains(Data::Value, var1.name()) ||
-        !slice2.contains(Data::Value, var2.name())) {
+  if (rhs_var.tag() == Data::Variance) {
+    if (!lhs_slice.contains(Data::Value, lhs_var.name()) ||
+        !rhs_slice.contains(Data::Value, rhs_var.name())) {
       throw std::runtime_error("Cannot multiply datasets that contain a "
                                "variance but no corresponding value.");
     }
   }
   // Data variables are added
-  if (var2.tag() == Data::Value) {
-    if (slice1.contains(Data::Variance, var2.name())) {
-      auto error1 = slice1(Data::Variance, var1.name());
-      const auto &error2 = slice2(Data::Variance, var2.name());
-      if ((var1.dimensions() == var2.dimensions()) &&
-          (var1.dimensions() == error1.dimensions()) &&
-          (var1.dimensions() == error2.dimensions())) {
+  if (rhs_var.tag() == Data::Value) {
+    if (lhs_slice.contains(Data::Variance, rhs_var.name())) {
+      auto error1 = lhs_slice(Data::Variance, lhs_var.name());
+      const auto &error2 = rhs_slice(Data::Variance, rhs_var.name());
+      if ((lhs_var.dimensions() == rhs_var.dimensions()) &&
+          (lhs_var.dimensions() == error1.dimensions()) &&
+          (lhs_var.dimensions() == error2.dimensions())) {
         // Optimization if all dimensions match, avoiding allocation of
         // temporaries and redundant streaming from memory of large array.
-        error1.setUnit(var2.unit() * var2.unit() * error1.unit() +
-                       var1.unit() * var1.unit() * error2.unit());
-        var1.setUnit(var1.unit() * var2.unit());
+        error1.setUnit(rhs_var.unit() * rhs_var.unit() * error1.unit() +
+                       lhs_var.unit() * lhs_var.unit() * error2.unit());
+        lhs_var.setUnit(lhs_var.unit() * rhs_var.unit());
 
         // TODO We are working with VariableSlice here, so get<> returns a
         // view, not a span, i.e., it is less efficient. May need to do
         // this differently for optimal performance.
-        auto v1 = var1.template span<double>();
-        const auto v2 = var2.template span<double>();
+        auto v1 = lhs_var.template span<double>();
+        const auto v2 = rhs_var.template span<double>();
         auto e1 = error1.template span<double>();
         const auto e2 = error2.template span<double>();
         // TODO Need to ensure that data is contiguous!
@@ -374,60 +375,63 @@ void multiply_slices(DatasetSlice &slice1, const ConstDatasetSlice &slice2,
                           e2.data());
       } else {
         // TODO Do we need to write this differently if the two operands
-        // are the same? For example, error1 = error1 * (var2 * var2) +
-        // var1 * var1 * error2;
-        error1 *= (var2 * var2);
-        error1 += var1 * var1 * error2;
+        // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +
+        // lhs_var * lhs_var * error2;
+        error1 *= (rhs_var * rhs_var);
+        error1 += lhs_var * lhs_var * error2;
         // TODO: Catch errors from unit propagation here and give a better
         // error message.
-        var1 *= var2;
+        lhs_var *= rhs_var;
       }
     } else {
       // No variance found, continue without.
-      var1 *= var2;
+      lhs_var *= rhs_var;
     }
-  } else if (var2.tag() == Data::Variance) {
+  } else if (rhs_var.tag() == Data::Variance) {
     // Do nothing, math for variance is done when processing corresponding
     // value.
   } else {
-    var1 *= var2;
+    lhs_var *= rhs_var;
   }
 }
 
 } // namespace
 template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
-  std::set<std::string> names;
-  for (const auto &var2 : other)
-    if (var2.isData())
-      names.insert(var2.name());
+  std::set<std::string> lhs_names;
+  for (const auto &lhs_var : other)
+    if (lhs_var.isData())
+      lhs_names.insert(lhs_var.name());
 
   // See operator+= for additional comments.
-  for (const auto &var2 : other) {
-    if (dataset.contains(var2.tag(), var2.name())) {
-      auto var1 = dataset(var2.tag(), var2.name());
-      if (var1.isCoord()) {
+  for (const auto &rhs_var : other) {
+    // Look for exact match in lhs for var in rhs
+    if (dataset.contains(rhs_var.tag(), rhs_var.name())) {
+      auto lhs_var = dataset(rhs_var.tag(), rhs_var.name());
+      if (lhs_var.isCoord()) {
         // Coordinate variables must match
-        dataset::expect::variablesMatch(var1, var2);
-      } else if (var1.isData()) {
-        auto slice1 = dataset.subset(var1.name());
-        auto slice2 = other.subset(var2.name());
-        multiply_slices(slice1, slice2, var1, var2);
+        dataset::expect::variablesMatch(lhs_var, rhs_var);
+      } else if (lhs_var.isData()) {
+        // Use slices to capture related variables for example variance data
+        // variables
+        auto lhs_slice = dataset.subset(lhs_var.name());
+        auto rhs_slice = other.subset(rhs_var.name());
+        multiply_slices(lhs_slice, rhs_slice, lhs_var, rhs_var);
       }
     } else {
       // Note that this is handled via name, i.e., there may be values and
       // variances, i.e., two variables.
-      if (var2.isData() && names.size() == 1) {
-        // Only a single (named) variable in RHS, subtract from all.
-        // Not a coordinate, subtract from all.
-
-        auto slice2 = other.subset(var2.name());
+      if (rhs_var.isData() && lhs_names.size() == 1) {
+        // Only a single (named) variable in RHS, operate on all.
+        // Not a coordinate, apply from all.
+        // op([a, b], [a]) = [op(a, a), op(b, a)] is legal
+        auto rhs_slice = other.subset(rhs_var.name());
 
         gsl::index count = 0;
-        for (auto var1 : dataset) {
-          if (var1.tag() == var2.tag()) {
+        for (auto lhs_var : dataset) {
+          if (lhs_var.tag() == rhs_var.tag()) {
             ++count;
-            auto slice1 = dataset.subset(var1.name());
-            multiply_slices(slice1, slice2, var1, var2);
+            auto lhs_slice = dataset.subset(lhs_var.name());
+            multiply_slices(lhs_slice, rhs_slice, lhs_var, rhs_var);
           }
         }
         if (count == 0)
