@@ -32,6 +32,30 @@ class TestVariable(unittest.TestCase):
         var = Variable(Coord.X, [Dim.X], (4,))
         self.assertEqual(var.name, "")
 
+    def test_create_scalar(self):
+        var = Variable(1.2)
+        self.assertEqual(var.scalar, 1.2)
+        self.assertEqual(var.name, '')
+        self.assertEqual(var.dimensions, Dimensions())
+        self.assertEqual(var.numpy.dtype, np.dtype(np.float64))
+        self.assertEqual(var.unit, units.dimensionless)
+
+    def test_create_scalar_quantity(self):
+        var = Variable(1.2, unit=units.m)
+        self.assertEqual(var.scalar, 1.2)
+        self.assertEqual(var.name, '')
+        self.assertEqual(var.dimensions, Dimensions())
+        self.assertEqual(var.numpy.dtype, np.dtype(np.float64))
+        self.assertEqual(var.unit, units.m)
+
+    def test_operation_with_scalar_quantity(self):
+        reference = Variable(Data.Value, [Dim.X], np.arange(4.0) * 1.5)
+        reference.unit = units.kg
+
+        var = Variable(Data.Value, [Dim.X], np.arange(4.0))
+        var *= Variable(1.5, unit=units.kg)
+        self.assertEqual(var, reference)
+
     def test_0D_scalar_access(self):
         var = Variable(Coord.X, [], ())
         self.assertEqual(var.scalar, 0.0)
