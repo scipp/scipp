@@ -68,9 +68,12 @@ void Dataset::insert(Variable variable) {
     auto &old = m_variables[find(variable.tag(), variable.name())];
     for (const auto dim : old.dimensions().labels()) {
       bool found = false;
-      for (const auto &var : m_variables)
+      for (const auto &var : m_variables) {
+        if (var == old)
+          continue;
         if (var.dimensions().contains(dim))
           found = true;
+      }
       if (!found)
         m_dimensions.erase(dim);
     }

@@ -39,6 +39,14 @@ TEST(Dataset, insert_variables_with_dimensions) {
   d.insert(Data::Value, "name2", {}, {2});
 }
 
+TEST(Dataset, insert_updated_dimensions_correctly) {
+  Dataset d;
+  d.insert(Data::Value, "name1", {Dim::X, 1});
+  d.insert(Data::Value, "name1", {Dim::Y, 1});
+  ASSERT_EQ(d.size(), 1);
+  ASSERT_EQ(d.dimensions(), Dimensions({Dim::Y, 1}));
+}
+
 TEST(Dataset, insert_variables_different_order) {
   Dimensions xy;
   Dimensions xz;
