@@ -661,20 +661,21 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
+      .def(py::init([](const double data, const Unit &unit) {
+             Variable var(Data::Value, {}, {data});
+             var.setUnit(unit);
+             return var;
+           }),
+           py::arg("data"), py::arg("unit") = Unit(units::dimensionless))
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def("__getitem__", detail::pySlice<Variable>)
-      .def("__copy__",
-           [](Variable &self) {
-             return Variable(self);
-           })
+      .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
-           [](Variable &self, py::dict) {
-             return Variable(self);
-           })
+           [](Variable &self, py::dict) { return Variable(self); })
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
@@ -691,8 +692,9 @@ PYBIND11_MODULE(dataset, m) {
       .def_property("scalar", &as_VariableView::scalar<Variable>,
                     &as_VariableView::set_scalar<Variable>,
                     "The only data point for a 0-dimensional "
-                    "variable. Raises an exception of the variable is "
+                    "variable. Raises an exception if the variable is "
                     "not 0-dimensional.")
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
@@ -774,14 +776,9 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
-      .def("__copy__",
-           [](VariableSlice &self) {
-             return Variable(self);
-           })
+      .def("__copy__", [](VariableSlice &self) { return Variable(self); })
       .def("__deepcopy__",
-           [](VariableSlice &self, py::dict) {
-             return Variable(self);
-           })
+           [](VariableSlice &self, py::dict) { return Variable(self); })
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char, bool>)
@@ -895,14 +892,9 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
-      .def("__copy__",
-           [](DatasetSlice &self) {
-             return Dataset(self);
-           })
+      .def("__copy__", [](DatasetSlice &self) { return Dataset(self); })
       .def("__deepcopy__",
-           [](DatasetSlice &self, py::dict) {
-             return Dataset(self);
-           })
+           [](DatasetSlice &self, py::dict) { return Dataset(self); })
       .def_property_readonly(
           "subset", [](DatasetSlice &self) { return SubsetHelper(self); })
       .def("__setitem__",
@@ -1025,14 +1017,9 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
            })
-      .def("__copy__",
-           [](Dataset &self) {
-             return Dataset(self);
-           })
+      .def("__copy__", [](Dataset &self) { return Dataset(self); })
       .def("__deepcopy__",
-           [](Dataset &self, py::dict) {
-             return Dataset(self);
-           })
+           [](Dataset &self, py::dict) { return Dataset(self); })
       .def_property_readonly("subset",
                              [](Dataset &self) { return SubsetHelper(self); })
       // Careful: The order of overloads is really important here, otherwise
