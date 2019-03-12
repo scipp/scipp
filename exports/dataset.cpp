@@ -589,7 +589,9 @@ PYBIND11_MODULE(dataset, m) {
   declare_span<Bool>(m, "bool");
   declare_span<const double>(m, "double_const");
   declare_span<const long>(m, "long_const");
+  declare_span<long>(m, "long");
   declare_span<const std::string>(m, "string_const");
+  declare_span<std::string>(m, "string");
   declare_span<const Dim>(m, "Dim_const");
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
