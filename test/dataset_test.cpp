@@ -503,6 +503,39 @@ TEST(Dataset, operator_plus_equal) {
   EXPECT_EQ(a.get(Data::Value)[0], 4.4);
 }
 
+TEST(Dataset, insert_subset) {
+  Dataset a;
+  a.insert(Data::Value, "a", {Dim::X, 1}, 1);
+  a.insert(Data::Variance, "a", {Dim::X, 1}, 1);
+  auto subset = a.subset("a");
+
+  Dataset b;
+  b.insert(subset);
+  EXPECT_EQ(b, a);
+  EXPECT_EQ(b.size(), 2);
+
+  Dataset c;
+  c.insert(Data::Value, "c", {Dim::X, 1}, 1);
+  c.insert(subset);
+  EXPECT_NE(a, c);
+  EXPECT_EQ(c.size(), 3);
+}
+
+TEST(Dataset, insert_named_subset) {
+  Dataset a;
+  a.insert(Data::Value, "a", {Dim::X, 1}, 1);
+  a.insert(Data::Variance, "a", {Dim::X, 1}, 1);
+  auto subset = a.subset("a");
+
+  Dataset b;
+  b.insert("b", subset);
+  EXPECT_NE(b, a);
+  EXPECT_EQ(b.size(), 2);
+
+  EXPECT_TRUE(b.contains(Data::Value, "b"));
+  EXPECT_TRUE(b.contains(Data::Variance, "b"));
+}
+
 TEST(Dataset, operator_plus_equal_broadcast) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
