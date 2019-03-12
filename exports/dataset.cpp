@@ -1004,6 +1004,20 @@ PYBIND11_MODULE(dataset, m) {
               const std::tuple<const Tag, const std::string &> &key) {
              self.erase(std::get<0>(key), std::get<1>(key));
            })
+      // TODO: This __getitem__ is here only to prevent unhandled errors when
+      // trying to get a dataset slice by supplying only a Dimension, e.g.
+      // dataset[Dim.X]. By default, an implicit conversion between Dim and
+      // gsl::index is attempted and the __getitem__ then crashes when
+      // self[index] is performed below. This fix covers only one case and we
+      // need to find a better way of protecting all unsopprted cases. This
+      // should ideally fail with a TypeError, in the same way as if only a
+      // string is supplied, e.g. dataset["a"].
+      .def("__getitem__",
+           [](Dataset &, const Dim &) {
+             throw std::runtime_error("Syntax error: cannot get slice with "
+                                      "just a Dim, please use dataset[Dim.X, "
+                                      ":]");
+           })
       .def("__getitem__",
            [](Dataset &self, const gsl::index index) { return self[index]; })
       .def("__getitem__",
