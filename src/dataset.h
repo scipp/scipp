@@ -110,7 +110,6 @@ public:
       this->insert(newVar);
     }
   }
-  void insert(const std::string &name, const ConstDatasetSlice &slice);
   void insert(const Tag tag, Variable variable) {
     variable.setTag(tag);
     variable.setName("");
