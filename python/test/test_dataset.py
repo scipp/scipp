@@ -320,6 +320,10 @@ class TestDataset(unittest.TestCase):
         c = 2.0 * a
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data * 2.0))
 
+        self._apply_test_op(operator.iadd, a, b, data)
+        self._apply_test_op(operator.isub, a, b, data)
+        self._apply_test_op(operator.imul, a, b, data)
+
     def test_equal_not_equal(self):
         a = Dataset()
         a[Coord.X] = ([Dim.X], np.arange(10))

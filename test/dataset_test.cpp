@@ -641,20 +641,11 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
                    "Either both or none of the operands must have a variance "
                    "for their values.");
   EXPECT_THROW_MSG(c *= c, std::runtime_error,
-                   "Cannot multiply datasets that contain a variance but no "
+                   "Cannot operate on datasets that contain a variance but no "
                    "corresponding value.");
   EXPECT_THROW_MSG(a *= c, std::runtime_error,
-                   "Cannot multiply datasets that contain a variance but no "
+                   "Cannot operate on datasets that contain a variance but no "
                    "corresponding value.");
-  EXPECT_THROW_MSG(c *= a, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
-  EXPECT_THROW_MSG(b *= c, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
-  EXPECT_THROW_MSG(c *= b, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
 }
 
 TEST(Dataset, operator_times_equal_with_units) {
@@ -1398,6 +1389,87 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   EXPECT_THROW_MSG_SUBSTR(view_a_x13 -= view_a_x02,
                           dataset::except::VariableMismatchError,
                           "expected to match");
+}
+
+template <typename T>
+void binary_test(T (*func)(T, T), const std::vector<T> &input,
+                 Dataset &actual_result, const std::string &name = "") {
+
+  // Transform the underlying data into the same result to compare note that
+  // input must be both l and r operands of the binary expression
+  std::vector<T> result;
+  result.reserve(input.size());
+  std::transform(input.begin(), input.end(), input.begin(),
+                 std::back_inserter(result), func);
+
+  EXPECT_EQ(actual_result.get(Data::Value, name), gsl::make_span(result));
+}
+
+template <typename T>
+void inplace_op_test(T (*func)(T, T), const std::vector<T> &input,
+                     const std::vector<T> &current, Dataset &actual_result,
+                     const std::string &name = "") {
+
+  auto result = input; // take copy of input
+  std::transform(current.begin(), current.end(), result.begin(), result.begin(),
+                 func);
+  EXPECT_EQ(actual_result.get(Data::Value, name), gsl::make_span(result));
+}
+
+std::vector<double> data_from_dataset(Dataset &dataset,
+                                      const std::string &name = "") {
+  auto var = dataset.get(Data::Value, name);
+  return std::vector<double>(var.begin(), var.end());
+}
+
+TEST(Dataset, binary_operations_with_identical_lhs_rhs_operand_structures) {
+
+  auto plus = [](auto i, auto j) { return i + j; };
+  auto minus = [](auto i, auto j) { return i - j; };
+  auto mult = [](auto i, auto j) { return i * j; };
+
+  Dataset a;
+  std::vector<double> input = {2, 3};
+  a.insert(Data::Value, {Dim::X, 2}, input.begin(), input.end());
+  Dataset b(a); // Idential copy.
+
+  auto c = a + b;
+  binary_test<double>(plus, input, c);
+  c = a - b;
+  binary_test<double>(minus, input, c);
+  c = a * b;
+  binary_test<double>(mult, input, c);
+
+  auto c_var_data = data_from_dataset(c);
+  c += b;
+  inplace_op_test<double>(plus, input, c_var_data, c);
+  c_var_data = data_from_dataset(c);
+  c -= b;
+  inplace_op_test<double>(minus, input, c_var_data, c);
+  c_var_data = data_from_dataset(c);
+  c *= b;
+  inplace_op_test<double>(mult, input, c_var_data, c);
+}
+
+TEST(Dataset, binary_operations_with_non_identical_lhs_rhs_operand_structures) {
+  auto plus = [](auto i, auto j) { return i + j; };
+  auto minus = [](auto i, auto j) { return i - j; };
+  auto mult = [](auto i, auto j) { return i * j; };
+
+  Dataset a;
+  std::vector<double> input = {2, 3};
+  a.insert(Data::Value, "u", {Dim::X, 2}, input.begin(), input.end());
+  Dataset b;
+  b.insert(Data::Value, "v", {Dim::X, 2}, input.begin(), input.end());
+
+  auto c = a + b;
+  binary_test<double>(plus, input, c, "u");
+  c = b + a;
+  binary_test<double>(plus, input, c, "v"); // output contains 'v' no 'u'
+  c = a - b;
+  binary_test<double>(minus, input, c, "u");
+  c = a * b;
+  binary_test<double>(mult, input, c, "u");
 }
 
 TEST(Dataset, unary_minus) {
