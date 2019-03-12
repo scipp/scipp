@@ -357,11 +357,12 @@ def plot_waterfall(input_data, axes=None):
                 )
             )
 
-        # TODO: right now the axes names and units are not recognised by plotly
         layout = dict(
-            xaxis = dict(title = axis_label(xcoord)),
-            yaxis = dict(title = axis_label(ycoord)),
-            title = "{} [{}]".format(values[0].name, values[0].unit),
+            scene = dict(
+                xaxis = dict(title = axis_label(xcoord)),
+                yaxis = dict(title = axis_label(ycoord)),
+                zaxis = dict(title = "{} [{}]".format(values[0].name, values[0].unit))
+                ),
             showlegend = False
             )
 
