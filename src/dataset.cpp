@@ -360,7 +360,7 @@ void multiply_slices(DatasetSlice &lhs_slice,
   if (rhs_var.tag() == Data::Variance) {
     if (!lhs_slice.contains(Data::Value, lhs_var.name()) ||
         !rhs_slice.contains(Data::Value, rhs_var.name())) {
-      throw std::runtime_error("Cannot multiply datasets that contain a "
+      throw std::runtime_error("Cannot operate on datasets that contain a "
                                "variance but no corresponding value.");
     }
   }
@@ -413,9 +413,9 @@ void multiply_slices(DatasetSlice &lhs_slice,
 } // namespace
 template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
   std::set<std::string> lhs_names;
-  for (const auto &lhs_var : other)
-    if (lhs_var.isData())
-      lhs_names.insert(lhs_var.name());
+  for (const auto &rhs_var : other)
+    if (rhs_var.isData())
+      lhs_names.insert(rhs_var.name());
 
   // See operator+= for additional comments.
   for (const auto &rhs_var : other) {
@@ -438,7 +438,7 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
       if (rhs_var.isData() && lhs_names.size() == 1) {
         // Only a single (named) variable in RHS, operate on all.
         // Not a coordinate, apply from all.
-        // op([a, b], [a]) = [op(a, a), op(b, a)] is legal
+        // op([a, b], [c]) = [op(a, c), op(b, c)] is legal
         auto rhs_slice = other.subset(rhs_var.name());
 
         gsl::index count = 0;

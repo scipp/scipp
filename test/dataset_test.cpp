@@ -201,7 +201,7 @@ TEST(Dataset, merge) {
 
   Dataset copy(merged);
 
- // We can merge twice, it is idempotent.
+  // We can merge twice, it is idempotent.
   EXPECT_NO_THROW(merged.merge(d));
   EXPECT_EQ(copy, merged);
 
@@ -626,10 +626,10 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
                    "Either both or none of the operands must have a variance "
                    "for their values.");
   EXPECT_THROW_MSG(c *= c, std::runtime_error,
-                   "Cannot multiply datasets that contain a variance but no "
+                   "Cannot operate on datasets that contain a variance but no "
                    "corresponding value.");
   EXPECT_THROW_MSG(a *= c, std::runtime_error,
-                   "Cannot multiply datasets that contain a variance but no "
+                   "Cannot operate on datasets that contain a variance but no "
                    "corresponding value.");
 }
 
@@ -1437,10 +1437,6 @@ TEST(Dataset, binary_operations_with_identical_lhs_rhs_operand_structures) {
 }
 
 TEST(Dataset, binary_operations_with_non_identical_lhs_rhs_operand_structures) {
-
-  // Test Rule op([a, b], [a]) -> [op(a,a), b]
-  // Test Rule op([a], [b]) -> [op(a,a)]
-
   auto plus = [](auto i, auto j) { return i + j; };
   auto minus = [](auto i, auto j) { return i - j; };
   auto mult = [](auto i, auto j) { return i * j; };
@@ -1453,14 +1449,10 @@ TEST(Dataset, binary_operations_with_non_identical_lhs_rhs_operand_structures) {
 
   auto c = a + b;
   binary_test<double>(plus, input, c, "u");
-  // swap operands - demonstrates non-commutitive behaviour. Though binary
-  // operation is itself commutative. TODO. Fix
   c = b + a;
   binary_test<double>(plus, input, c, "v"); // output contains 'v' no 'u'
-
   c = a - b;
   binary_test<double>(minus, input, c, "u");
-
   c = a * b;
   binary_test<double>(mult, input, c, "u");
 }
