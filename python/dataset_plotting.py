@@ -16,6 +16,13 @@ except ImportError:
 
 #===============================================================================
 
+# Some global configuration
+default = {
+    "cb" : { "name" : "Viridis", "log" : False, "vmin" : None, "vmax" : None }
+}
+
+#===============================================================================
+
 def check_input(input_data):
 
     values = []
@@ -193,8 +200,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
 # If plot=False, then not plot is produced, instead the data and layout dicts
 # for plotly, as well as a transpose flag, are returned (this is used when
 # calling plot_image from the sliceviewer).
-def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
-               plot=True):
+def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
 
     values, ndim = check_input(input_data)
 
@@ -241,8 +247,11 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
         else:
             plot_type = 'heatmap'
 
+        # Parse colorbar
+        cbar = parse_colorbar(cb)
+
         title = values[0].name
-        if logcb:
+        if cbar["log"]:
             title = "log\u2081\u2080(" + title + ")"
         if values[0].unit != units.dimensionless:
             title += " [{}]".format(values[0].unit)
@@ -252,12 +261,16 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
             y = centers_to_edges(y),
             z = [0.0],
             type = plot_type,
-            colorscale = cb,
+            colorscale = cbar["name"],
             colorbar=dict(
                 title=title,
                 titleside = 'right',
                 )
             )]
+        if cbar["vmin"] is not None:
+            data[0]["zmin"] = cbar["vmin"]
+        if cbar["vmax"] is not None:
+            data[0]["zmax"] = cbar["vmax"]
 
         layout = dict(
             xaxis = dict(title = axis_label(xcoord)),
@@ -275,13 +288,13 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
             z = values[0].numpy
             if transpose:
                 z = z.T
-            if logcb:
+            if cbar["log"]:
                 with np.errstate(invalid="ignore"):
                     z = np.log10(z)
             data[0]["z"] = z
             return iplot(dict(data=data, layout=layout))
         else:
-            return data, layout, transpose
+            return data, layout, transpose, cbar
 
     else:
         raise RuntimeError("Unsupported number of dimensions in plot_image. "
@@ -297,8 +310,7 @@ def plot_image(input_data, axes=None, contours=False, logcb=False, cb='Viridis',
 
 # Plot a 2D slice through a 3D dataset with a slider to adjust the position of
 # the slice in the third dimension.
-def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
-                     cb='Viridis'):
+def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
 
     # Delay import to here, as ipywidgets is not part of the base plotly package
     try:
@@ -319,14 +331,14 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
                     dimensionCoord(value_list[0].dimensions.labels[ndim-1])]
 
         # Use the machinery in plot_image to make the layout
-        data, layout, transpose = plot_image(input_data, axes=axes, logcb=logcb,
-                                             contours=contours, cb=cb,
-                                             plot=False)
+        data, layout, transpose, cbar = plot_image(input_data, axes=axes,
+                                                   contours=contours, cb=cb,
+                                                   plot=False)
 
         # Create a SliceViewer object
         sv = SliceViewer(data=data, layout=layout, input_data=input_data,
                          axes=axes, value_name=value_list[0].name,
-                         transpose=transpose, logcb=logcb)
+                         transpose=transpose, logcb=cbar["log"])
 
         if hasattr(sv, "vbox"):
             return sv.vbox
@@ -343,15 +355,16 @@ def plot_sliceviewer(input_data, axes=None, contours=False, logcb=False,
 
 class SliceViewer:
 
-    def __init__(self, data, layout, input_data, axes, value_name, transpose, logcb):
+    def __init__(self, data, layout, input_data, axes, value_name, transpose,
+                 logcb):
 
-        # Delay import to here, as ipywidgets is not part of the base plotly package
+        # Delay import to here, as ipywidgets is not part of plotly
         try:
             from plotly.graph_objs import FigureWidget
             from ipywidgets import VBox, HBox, IntSlider, Label
         except ImportError:
-            print("Sorry, the sliceviewer requires ipywidgets which was not found "
-                  "on this system.")
+            print("Sorry, the sliceviewer requires ipywidgets which was not "
+                  "found on this system.")
             return
 
         # Make a deep copy of the input data
@@ -367,8 +380,8 @@ class SliceViewer:
         self.labels = self.dims.labels
         self.shapes = self.dims.shape
         self.slider_nx = [] # size of the coordinate array
-        self.slider_dims = [] # coordinate variables for the sliders, e.g. d[Coord.X]
-        self.slice_labels = [] # save dimensions tags for the sliders, e.g. Dim.X
+        self.slider_dims = [] # coordinate variables for sliders, e.g. d[Coord.X]
+        self.slice_labels = [] # save dimensions tags for sliders, e.g. Dim.X
         for idim in range(len(self.labels)):
             if self.labels[idim] not in axes_dims:
                 self.slider_nx.append(self.shapes[idim])
@@ -463,3 +476,11 @@ def axis_label(var):
     if var.unit != units.dimensionless:
         label += " [{}]".format(var.unit)
     return label
+
+# Construct the colorbar using default and input values
+def parse_colorbar(cb):
+    cbar = default["cb"].copy()
+    if cb is not None:
+        for key, val in cb.items():
+            cbar[key] = val
+    return cbar
