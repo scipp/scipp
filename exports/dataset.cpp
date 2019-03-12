@@ -471,7 +471,7 @@ template <class... Ts> struct as_VariableViewImpl {
     dataset::expect::equals(Dimensions(), view.dimensions());
     return std::visit(
         [](const auto &data) {
-          return py::cast(data[0], py::return_value_policy::reference_internal);
+          return py::cast(data[0], py::return_value_policy::reference);
         },
         get(view));
   }
