@@ -103,7 +103,13 @@ public:
   }
 
   void insert(Variable variable);
-  void insert(const ConstDatasetSlice &slice);
+  template <class T> void insert(const std::string &name, const T &slice) {
+    for (const auto &var : slice) {
+      Variable newVar(var);
+      newVar.setName(name);
+      this->insert(newVar);
+    }
+  }
   void insert(const std::string &name, const ConstDatasetSlice &slice);
   void insert(const Tag tag, Variable variable) {
     variable.setTag(tag);

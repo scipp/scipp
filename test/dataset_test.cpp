@@ -201,7 +201,7 @@ TEST(Dataset, merge) {
 
   Dataset copy(merged);
 
- // We can merge twice, it is idempotent.
+  // We can merge twice, it is idempotent.
   EXPECT_NO_THROW(merged.merge(d));
   EXPECT_EQ(copy, merged);
 
@@ -501,24 +501,6 @@ TEST(Dataset, operator_plus_equal) {
   a += a;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
   EXPECT_EQ(a.get(Data::Value)[0], 4.4);
-}
-
-TEST(Dataset, insert_subset) {
-  Dataset a;
-  a.insert(Data::Value, "a", {Dim::X, 1}, 1);
-  a.insert(Data::Variance, "a", {Dim::X, 1}, 1);
-  auto subset = a.subset("a");
-
-  Dataset b;
-  b.insert(subset);
-  EXPECT_EQ(b, a);
-  EXPECT_EQ(b.size(), 2);
-
-  Dataset c;
-  c.insert(Data::Value, "c", {Dim::X, 1}, 1);
-  c.insert(subset);
-  EXPECT_NE(a, c);
-  EXPECT_EQ(c.size(), 3);
 }
 
 TEST(Dataset, insert_named_subset) {

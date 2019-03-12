@@ -1040,6 +1040,10 @@ PYBIND11_MODULE(dataset, m) {
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also
       // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
+      .def("__setitem__", [](Dataset &self, const std::string &name,
+                             DatasetSlice &slice) { self.insert(name, slice); })
+      .def("__setitem__", [](Dataset &self, const std::string &name,
+                             Dataset &slice) { self.insert(name, slice); })
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, py::slice> &index,
               const DatasetSlice &other) {

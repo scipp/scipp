@@ -182,6 +182,34 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(view.dimensions[Dim.Z], 4)
         self.assertEqual(len(view), 4)
 
+    def test_insert_subdata(self):
+        d1 = Dataset()
+        d1[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype="double"))
+        d1[Data.Variance, "a"] = ([Dim.X], np.arange(10, dtype="double"))
+        ds_slice = d1.subset["a"]
+
+        d2 = Dataset()
+        # Insert from subset
+        d2["a"] = ds_slice 
+        self.assertEqual(len(d1), len(d2))
+        self.assertEqual(d1, d2)
+
+        d3 = Dataset()
+        # Insert from subset
+        d3["b"] = ds_slice
+        self.assertEqual(len(d3), 2)
+        self.assertNotEqual(d1, d3) # imported names should differ
+
+        d4 = Dataset()
+        d4["2a"] = ds_slice + ds_slice
+        self.assertEqual(len(d4), 2)
+        self.assertNotEqual(d1, d4) 
+        self.assertTrue(np.array_equal(d4[Data.Value, "2a"].numpy, ds_slice[Data.Value,"a"].numpy*2))
+
+
+
+
+
     def test_slice_dataset(self):
         for x in range(2):
             view = self.dataset[Dim.X, x]

@@ -87,22 +87,6 @@ void Dataset::insert(Variable variable) {
   }
 }
 
-void Dataset::insert(const ConstDatasetSlice &slice) {
-  // TODO. better transactional behaviour. Either want to insert the whole slice
-  // or not at all. i.e. mergeDimensions can throw.
-  for (const auto &var : slice) {
-    this->insert(var);
-  }
-}
-
-void Dataset::insert(const std::string &name, const ConstDatasetSlice &slice) {
-  for (const auto &var : slice) {
-    Variable newVar(var);
-    newVar.setName(name);
-    this->insert(newVar);
-  }
-}
-
 // T can be Dataset or Slice.
 template <class T>
 bool contains(const T &dataset, const Tag tag, const std::string &name) {
