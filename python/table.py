@@ -27,7 +27,7 @@ def table_ds(dataset):
     # 0 - dimensional data
     if datum0d:
         tab = et.SubElement(body, 'table')
-        cap = et.SubElement(tab, 'capltion')
+        cap = et.SubElement(tab, 'caption')
         cap.text = '0D Variables:'
         trName = et.SubElement(tab, 'tr')
         trTag = et.SubElement(tab, 'tr')
@@ -44,7 +44,7 @@ def table_ds(dataset):
     if datum1d:
         coords = [var for var in dataset if var.is_coord]
         tab = et.SubElement(body, 'table')
-        cap = et.SubElement(tab, 'capltion')
+        cap = et.SubElement(tab, 'caption')
         cap.text = '1D Variables:'
         tr = et.SubElement(tab, 'tr')
         tr.append(et.Element('th', attrib={'colspan': '1'}))
