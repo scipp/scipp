@@ -96,7 +96,7 @@ def table_var(variable):
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
-    if type(dataset) is Variable:
+    if type(variable) is Variable:
         headline.text = 'Variable:'
     else:
         headline.text = 'VariableSlice:'
