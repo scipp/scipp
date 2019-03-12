@@ -589,7 +589,9 @@ PYBIND11_MODULE(dataset, m) {
   declare_span<Bool>(m, "bool");
   declare_span<const double>(m, "double_const");
   declare_span<const long>(m, "long_const");
+  declare_span<long>(m, "long");
   declare_span<const std::string>(m, "string_const");
+  declare_span<std::string>(m, "string");
   declare_span<const Dim>(m, "Dim_const");
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
@@ -659,20 +661,21 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
+      .def(py::init([](const double data, const Unit &unit) {
+             Variable var(Data::Value, {}, {data});
+             var.setUnit(unit);
+             return var;
+           }),
+           py::arg("data"), py::arg("unit") = Unit(units::dimensionless))
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def("__getitem__", detail::pySlice<Variable>)
-      .def("__copy__",
-           [](Variable &self) {
-             return Variable(self);
-           })
+      .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
-           [](Variable &self, py::dict) {
-             return Variable(self);
-           })
+           [](Variable &self, py::dict) { return Variable(self); })
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
@@ -689,24 +692,53 @@ PYBIND11_MODULE(dataset, m) {
       .def_property("scalar", &as_VariableView::scalar<Variable>,
                     &as_VariableView::set_scalar<Variable>,
                     "The only data point for a 0-dimensional "
-                    "variable. Raises an exception of the variable is "
+                    "variable. Raises an exception if the variable is "
                     "not 0-dimensional.")
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self += float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__eq__", [](Variable &a, VariableSlice &b) { return a == b; },
+           py::is_operator())
+      .def("__ne__", [](Variable &a, VariableSlice &b) { return a != b; },
+           py::is_operator())
+      .def("__add__", [](Variable &a, VariableSlice &b) { return a + b; },
+           py::is_operator())
+      .def("__sub__", [](Variable &a, VariableSlice &b) { return a - b; },
+           py::is_operator())
+      .def("__mul__", [](Variable &a, VariableSlice &b) { return a * b; },
+           py::is_operator())
+      .def("__truediv__", [](Variable &a, VariableSlice &b) { return a / b; },
+           py::is_operator())
+      .def("__iadd__", [](Variable &a, VariableSlice &b) { return a += b; },
+           py::is_operator())
+      .def("__isub__", [](Variable &a, VariableSlice &b) { return a -= b; },
+           py::is_operator())
+      .def("__imul__", [](Variable &a, VariableSlice &b) { return a *= b; },
+           py::is_operator())
+      .def("__itruediv__", [](Variable &a, VariableSlice &b) { return a /= b; },
+           py::is_operator())
+      .def("__radd__", [](Variable &a, double &b) { return a + b; },
+           py::is_operator())
+      .def("__rsub__", [](Variable &a, double &b) { return b - a; },
+           py::is_operator())
+      .def("__rmul__", [](Variable &a, double &b) { return a * b; },
+           py::is_operator())
       .def("__len__", &Variable::size)
       .def("__repr__",
            [](const Variable &self) { return dataset::to_string(self, "."); });
@@ -744,14 +776,9 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
-      .def("__copy__",
-           [](VariableSlice &self) {
-             return Variable(self);
-           })
+      .def("__copy__", [](VariableSlice &self) { return Variable(self); })
       .def("__deepcopy__",
-           [](VariableSlice &self, py::dict) {
-             return Variable(self);
-           })
+           [](VariableSlice &self, py::dict) { return Variable(self); })
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char, bool>)
@@ -769,11 +796,41 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def("__eq__", [](VariableSlice &a, Variable &b) { return a == b; },
+           py::is_operator())
+      .def("__ne__", [](VariableSlice &a, Variable &b) { return a != b; },
+           py::is_operator())
+      .def("__add__", [](VariableSlice &a, Variable &b) { return a + b; },
+           py::is_operator())
+      .def("__sub__", [](VariableSlice &a, Variable &b) { return a - b; },
+           py::is_operator())
+      .def("__mul__", [](VariableSlice &a, Variable &b) { return a * b; },
+           py::is_operator())
+      .def("__truediv__", [](VariableSlice &a, Variable &b) { return a / b; },
+           py::is_operator())
       .def("__iadd__", [](VariableSlice &a, Variable &b) { return a += b; },
            py::is_operator())
       .def("__isub__", [](VariableSlice &a, Variable &b) { return a -= b; },
            py::is_operator())
       .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
+           py::is_operator())
+      .def("__itruediv__", [](VariableSlice &a, Variable &b) { return a / b; },
+           py::is_operator())
+      .def("__radd__", [](VariableSlice &a, double &b) { return a + b; },
+           py::is_operator())
+      .def("__rsub__", [](VariableSlice &a, double &b) { return b - a; },
+           py::is_operator())
+      .def("__rmul__", [](VariableSlice &a, double &b) { return a * b; },
            py::is_operator())
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
@@ -835,14 +892,9 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
-      .def("__copy__",
-           [](DatasetSlice &self) {
-             return Dataset(self);
-           })
+      .def("__copy__", [](DatasetSlice &self) { return Dataset(self); })
       .def("__deepcopy__",
-           [](DatasetSlice &self, py::dict) {
-             return Dataset(self);
-           })
+           [](DatasetSlice &self, py::dict) { return Dataset(self); })
       .def_property_readonly(
           "subset", [](DatasetSlice &self) { return SubsetHelper(self); })
       .def("__setitem__",
@@ -863,10 +915,64 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def("__eq__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self == other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__ne__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self != other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self + other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self - other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self * other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self += other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self -= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self *= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__radd__",
+           [](const DatasetSlice &self, double &other) { return self + other; },
+           py::is_operator())
+      .def("__rsub__",
+           [](const DatasetSlice &self, double &other) { return other - self; },
+           py::is_operator())
+      .def("__rmul__",
+           [](const DatasetSlice &self, double &other) { return self * other; },
+           py::is_operator())
       .def("__repr__", [](const DatasetSlice &self) {
         return dataset::to_string(self, ".");
       });
@@ -898,6 +1004,20 @@ PYBIND11_MODULE(dataset, m) {
               const std::tuple<const Tag, const std::string &> &key) {
              self.erase(std::get<0>(key), std::get<1>(key));
            })
+      // TODO: This __getitem__ is here only to prevent unhandled errors when
+      // trying to get a dataset slice by supplying only a Dimension, e.g.
+      // dataset[Dim.X]. By default, an implicit conversion between Dim and
+      // gsl::index is attempted and the __getitem__ then crashes when
+      // self[index] is performed below. This fix covers only one case and we
+      // need to find a better way of protecting all unsopprted cases. This
+      // should ideally fail with a TypeError, in the same way as if only a
+      // string is supplied, e.g. dataset["a"].
+      .def("__getitem__",
+           [](Dataset &, const Dim &) {
+             throw std::runtime_error("Syntax error: cannot get slice with "
+                                      "just a Dim, please use dataset[Dim.X, "
+                                      ":]");
+           })
       .def("__getitem__",
            [](Dataset &self, const gsl::index index) { return self[index]; })
       .def("__getitem__",
@@ -911,14 +1031,9 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
            })
-      .def("__copy__",
-           [](Dataset &self) {
-             return Dataset(self);
-           })
+      .def("__copy__", [](Dataset &self) { return Dataset(self); })
       .def("__deepcopy__",
-           [](Dataset &self, py::dict) {
-             return Dataset(self);
-           })
+           [](Dataset &self, py::dict) { return Dataset(self); })
       .def_property_readonly("subset",
                              [](Dataset &self) { return SubsetHelper(self); })
       // Careful: The order of overloads is really important here, otherwise
@@ -986,6 +1101,30 @@ PYBIND11_MODULE(dataset, m) {
       // TODO Make sure we have all overloads covered to avoid implicit
       // conversion of DatasetSlice to Dataset.
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def("__eq__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self == other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__ne__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self != other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__iadd__",
            [](Dataset &self, const DatasetSlice &other) {
              return self += other;
@@ -1016,16 +1155,15 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
-      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self + float(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self - float(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self * float(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self / float(), py::call_guard<py::gil_scoped_release>())
+      .def("__radd__",
+           [](const Dataset &self, double &other) { return self + other; },
+           py::is_operator())
+      .def("__rsub__",
+           [](const Dataset &self, double &other) { return other - self; },
+           py::is_operator())
+      .def("__rmul__",
+           [](const Dataset &self, double &other) { return self * other; },
+           py::is_operator())
       .def("merge", &Dataset::merge)
       // TODO For now this is just for testing. We need to decide on an API for
       // specifying the keys.
