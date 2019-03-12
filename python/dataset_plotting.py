@@ -43,7 +43,7 @@ def check_input(input_data):
 
 # Wrapper function to dispatch the input dataset to the appropriate plotting
 # function depending on its dimensions
-def plot(input_data, **kwargs):
+def plot(input_data, waterfall=False, **kwargs):
 
     # A list of datasets is only supported for 1d
     if type(input_data) is list:
@@ -54,7 +54,10 @@ def plot(input_data, **kwargs):
         if ndim == 1:
             return plot_1d(input_data, **kwargs)
         elif ndim == 2:
-            return plot_image(input_data, **kwargs)
+            if waterfall:
+                return plot_waterfall(input_data, **kwargs)
+            else:
+                return plot_image(input_data, **kwargs)
         else:
             return plot_sliceviewer(input_data, **kwargs)
 
@@ -305,6 +308,69 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
                            "must then use plot=False to collect the data and "
                            "layout dicts for plotly, as well as a transpose "
                            "flag, instead of plotting an image.".format(ndim))
+
+#===============================================================================
+
+# Make a 3D waterfall plot
+#
+def plot_waterfall(input_data, axes=None):
+
+    values, ndim = check_input(input_data)
+
+    if (ndim > 1) and (ndim < 3):
+
+        if axes is None:
+            axes = [dimensionCoord(values[0].dimensions.labels[0]),
+                    dimensionCoord(values[0].dimensions.labels[1])]
+
+        xcoord = input_data[axes[1]]
+        ycoord = input_data[axes[0]]
+        x = xcoord.numpy
+        y = ycoord.numpy
+
+        # Check for bin edges
+        zdims = values[0].dimensions
+        nz = zdims.shape
+        ydims = ycoord.dimensions
+        ny = ydims.shape
+        xdims = xcoord.dimensions
+        nx = xdims.shape
+        if nx[0] == nz[ndim-1] + 1:
+            x = edges_to_centers(x)
+        if ny[0] == nz[ndim-2] + 1:
+            y = edges_to_centers(y)
+
+        data = []
+        z = values[0].numpy
+        zlabs = zdims.labels
+        if (zlabs[0] == xdims.labels[0]) and (zlabs[1] == ydims.labels[0]):
+            z = z.T
+
+        for i in range(len(y)):
+            data.append(dict(
+                x = x,
+                y = [y[i]] * len(x),
+                z = z[i,:],
+                type = 'scatter3d',
+                mode = 'lines',
+                line = dict(width=4),
+                )
+            )
+
+        # TODO: right now the axes names and units are not recognised by plotly
+        layout = dict(
+            xaxis = dict(title = axis_label(xcoord)),
+            yaxis = dict(title = axis_label(ycoord)),
+            title = "{} [{}]".format(values[0].name, values[0].unit),
+            showlegend = False
+            )
+
+        return iplot(dict(data=data, layout=layout))
+
+    else:
+        raise RuntimeError("Unsupported number of dimensions in plot_waterfall."
+                           " Expected at least 2 dimensions, got {}."
+                           .format(ndim))
 
 #===============================================================================
 
