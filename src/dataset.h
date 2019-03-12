@@ -228,6 +228,7 @@ public:
   Dataset operator-() const;
   Dataset &operator+=(const Dataset &other);
   Dataset &operator+=(const ConstDatasetSlice &other);
+  Dataset &operator+=(const Variable &other);
   Dataset &operator+=(const double value);
   Dataset &operator-=(const Dataset &other);
   Dataset &operator-=(const ConstDatasetSlice &other);
@@ -510,6 +511,7 @@ public:
   DatasetSlice assign(const ConstDatasetSlice &other) const;
   DatasetSlice operator+=(const Dataset &other) const;
   DatasetSlice operator+=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator+=(const Variable &other) const;
   DatasetSlice operator+=(const double value) const;
   DatasetSlice operator-=(const Dataset &other) const;
   DatasetSlice operator-=(const ConstDatasetSlice &other) const;

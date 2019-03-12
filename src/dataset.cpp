@@ -66,6 +66,9 @@ VariableSlice Dataset::operator()(const Tag tag, const std::string &name) & {
 }
 
 void Dataset::insert(Variable variable) {
+  if (variable.tag() == Data::NoTag)
+    throw std::runtime_error(
+        "Data with meta-tag Data::NoTag cannot be inserted into a dataset.");
   // TODO special handling for special variables types like
   // Data::Histogram (either prevent adding, or extract into underlying
   // variables).
@@ -439,6 +442,16 @@ Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
+Dataset &Dataset::operator+=(const Variable &other) {
+  if (other.tag() != Data::NoTag)
+    return *this += Dataset({other});
+  else
+    for (auto &var : m_variables)
+      // TODO Should this operate also on events etc.?
+      if (var.tag() == Data::Value)
+        var += other;
+  return *this;
+}
 Dataset &Dataset::operator+=(const double value) {
   for (auto &var : m_variables)
     if (var.tag() == Data::Value)
@@ -529,6 +542,15 @@ DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) const {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
+}
+DatasetSlice DatasetSlice::operator+=(const Variable &other) const {
+  if (other.tag() != Data::NoTag)
+    return *this += Dataset({other});
+  else
+    for (const auto var : *this)
+      if (var.tag() == Data::Value)
+        var += other;
+  return *this;
 }
 DatasetSlice DatasetSlice::operator+=(const double value) const {
   for (auto var : *this)

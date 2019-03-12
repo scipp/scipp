@@ -161,6 +161,14 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertNotEqual(a, c)
         self.assertNotEqual(a, a3)
 
+    def test_binary_ops_with_variable(self):
+        d = Dataset()
+        d[Coord.X] = ([Dim.X], np.arange(10))
+        d[Data.Value, "a"] = ([Dim.X], np.arange(10))
+        d[Data.Variance, "a"] = ([Dim.X], np.arange(10))
+
+        d += Variable(2)
+
         
 if __name__ == '__main__':
     unittest.main()

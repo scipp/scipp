@@ -220,6 +220,10 @@ struct CoordDef {
 };
 
 struct DataDef {
+  struct NoTag {
+    using type = double;
+    static constexpr auto unit = units::dimensionless;
+  };
   struct Tof {
     using type = double;
     static constexpr auto unit = units::us;
@@ -261,8 +265,8 @@ struct DataDef {
     static constexpr auto unit = units::dimensionless;
   };
 
-  using tags = std::tuple<Tof, PulseTime, Value, Variance, StdDev, Int, String,
-                          Events, EventTofs, EventPulseTimes>;
+  using tags = std::tuple<NoTag, Tof, PulseTime, Value, Variance, StdDev, Int,
+                          String, Events, EventTofs, EventPulseTimes>;
 };
 
 struct AttrDef {
@@ -350,6 +354,7 @@ struct Coord {
 };
 
 struct Data {
+  using NoTag_t = detail::TagImpl<detail::DataDef::NoTag>;
   using Tof_t = detail::TagImpl<detail::DataDef::Tof>;
   using PulseTime_t = detail::TagImpl<detail::DataDef::PulseTime>;
   using Value_t = detail::TagImpl<detail::DataDef::Value>;
@@ -364,6 +369,7 @@ struct Data {
   using EventTofs_t = detail::TagImpl<detail::DataDef::EventTofs>;
   using EventPulseTimes_t = detail::TagImpl<detail::DataDef::EventPulseTimes>;
 
+  static constexpr NoTag_t NoTag{};
   static constexpr Tof_t Tof{};
   static constexpr PulseTime_t PulseTime{};
   static constexpr Value_t Value{};
