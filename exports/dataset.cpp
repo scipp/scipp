@@ -665,6 +665,14 @@ PYBIND11_MODULE(dataset, m) {
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def("__getitem__", detail::pySlice<Variable>)
+      .def("__copy__",
+           [](Variable &self) {
+             return Variable(self);
+           })
+      .def("__deepcopy__",
+           [](Variable &self, py::dict) {
+             return Variable(self);
+           })
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
@@ -764,6 +772,14 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
+      .def("__copy__",
+           [](VariableSlice &self) {
+             return Variable(self);
+           })
+      .def("__deepcopy__",
+           [](VariableSlice &self, py::dict) {
+             return Variable(self);
+           })
       .def_property_readonly(
           "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
                                           int32_t, char, bool>)
@@ -877,6 +893,14 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
+      .def("__copy__",
+           [](DatasetSlice &self) {
+             return Dataset(self);
+           })
+      .def("__deepcopy__",
+           [](DatasetSlice &self, py::dict) {
+             return Dataset(self);
+           })
       .def_property_readonly(
           "subset", [](DatasetSlice &self) { return SubsetHelper(self); })
       .def("__setitem__",
@@ -998,6 +1022,14 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
+           })
+      .def("__copy__",
+           [](Dataset &self) {
+             return Dataset(self);
+           })
+      .def("__deepcopy__",
+           [](Dataset &self, py::dict) {
+             return Dataset(self);
            })
       .def_property_readonly("subset",
                              [](Dataset &self) { return SubsetHelper(self); })

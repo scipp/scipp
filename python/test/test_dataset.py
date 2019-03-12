@@ -79,12 +79,15 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(len(d), 1)
         np.testing.assert_array_equal(d[Data.Value, "data1"].numpy, self.reference_data1)
 
-        # Currently implicitly replacing keys in Dataset is not supported. Should it?
-        self.assertRaisesRegex(RuntimeError, "Attempt to insert variable with duplicate tag and name.",
-                d.__setitem__, (Data.Value, "data1"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2)))
-
         self.assertRaisesRegex(RuntimeError, "Cannot insert variable into Dataset: Dimensions do not match.",
                 d.__setitem__, (Data.Value, "data2"), ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,2,3)))
+
+    def test_replace(self):
+        d = Dataset()
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.zeros(24).reshape(4,3,2))
+        d[Data.Value, "data1"] = ([Dim.Z, Dim.Y, Dim.X], np.arange(24).reshape(4,3,2))
+        self.assertEqual(len(d), 1)
+        np.testing.assert_array_equal(d[Data.Value, "data1"].numpy, self.reference_data1)
 
     def test_insert_variable(self):
         d = Dataset()
@@ -677,6 +680,24 @@ class TestDatasetExamples(unittest.TestCase):
         rd1 = rebin(d1, Variable(Coord.X, [Dim.X], np.arange(0, N+1, 1.5).astype(np.float64)))
         np.testing.assert_array_equal(rd1[Data.Value, "A"].numpy,
                                       np.transpose(rd1[Data.Value, "B"].numpy))
+
+    def test_copy(self):
+        import copy
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d2 = copy.copy(d1)
+        d3 = copy.deepcopy(d2)
+        self.assertEqual(d1, d2)
+        self.assertEqual(d3, d2)
+        d2[Data.Value, "A"] *= d2[Data.Value, "A"]
+        self.assertNotEqual(d1, d2)
+        self.assertNotEqual(d3, d2)
+
 
 if __name__ == '__main__':
     unittest.main()
