@@ -136,6 +136,11 @@ class TestDatasetSlice(unittest.TestCase):
         c = 2.0 * a
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * 2.0))
 
+        self._apply_test_op(operator.iadd, a, b, data)
+        self._apply_test_op(operator.isub, a, b, data)
+        self._apply_test_op(operator.imul, a, b, data)
+        
+
     def test_equal_not_equal(self):
         d = Dataset()
         d[Coord.X] = ([Dim.X], np.arange(10))
