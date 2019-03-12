@@ -166,6 +166,17 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertNotEqual(a, c)
         self.assertNotEqual(a, a3)
 
+    def test_correct_temporaries(self):
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d1 = d1[Dim.X, 1:2]
+        self.assertEqual(list(d1[Data.Value, "A"].data), [5.0, 6.0, 7.0, 8.0])
+
         
 if __name__ == '__main__':
     unittest.main()
