@@ -361,7 +361,9 @@ def plot_waterfall(input_data, axes=None):
             scene = dict(
                 xaxis = dict(title = axis_label(xcoord)),
                 yaxis = dict(title = axis_label(ycoord)),
-                zaxis = dict(title = "{} [{}]".format(values[0].name, values[0].unit))
+                zaxis = dict(title = "{} [{}]".format(values[0].name, values[0].unit)),
+                aspectmode='manual',
+                aspectratio=dict(x=3, y=1, z=1)
                 ),
             showlegend = False
             )
