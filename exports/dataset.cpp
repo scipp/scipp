@@ -673,10 +673,10 @@ PYBIND11_MODULE(dataset, m) {
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1> ())
+      .def("copy", [](const Variable &self) { return self; })
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
-      .def("copy", [](const Variable &self) { return self; })
       .def_property_readonly("tag", &Variable::tag)
       .def_property("name", [](const Variable &self) { return self.name(); },
                     &Variable::setName)
@@ -777,7 +777,7 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
-      .def("copy", [](const VariableSlice &self) { return self; })
+      .def("copy", [](const VariableSlice &self) { return Variable(self); })
       .def("__copy__", [](VariableSlice &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableSlice &self, py::dict) { return Variable(self); })
@@ -894,7 +894,7 @@ PYBIND11_MODULE(dataset, m) {
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
           })
-      .def("copy", [](const DatasetSlice &self) { return self; })
+      .def("copy", [](const DatasetSlice &self) { return Dataset(self); })
       .def("__copy__", [](DatasetSlice &self) { return Dataset(self); })
       .def("__deepcopy__",
            [](DatasetSlice &self, py::dict) { return Dataset(self); })
