@@ -672,7 +672,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
-      .def("__getitem__", detail::pySlice<Variable>)
+      .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1> ())
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
@@ -1024,7 +1024,7 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
            })
-      .def("__getitem__", &detail::pySlice<Dataset>)
+      .def("__getitem__", &detail::pySlice<Dataset>, py::keep_alive<0, 1> ())
       .def("__getitem__",
            [](Dataset &self, const Tag &tag) { return self(tag); })
       .def("__getitem__",
