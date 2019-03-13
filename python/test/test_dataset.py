@@ -206,6 +206,21 @@ class TestDataset(unittest.TestCase):
         self.assertNotEqual(d1, d4) 
         self.assertTrue(np.array_equal(d4[Data.Value, "2a"].numpy, ds_slice[Data.Value,"a"].numpy*2))
 
+    def test_insert_subdata_different_variable_types(self):
+        a = Dataset()
+        xcoord = Variable(Coord.X, [Dim.X], np.arange(4))
+        a[Data.Value] = ([Dim.X], np.arange(3))
+        a[Coord.X] = xcoord 
+        a[Attr.ExperimentLog] = ([], Dataset())
+
+        b = Dataset()
+        with self.assertRaises(RuntimeError ):
+            b.subset["b"] = a[Dim.X, :] # Coordinates dont match
+        b[Coord.X] = xcoord
+        b.subset["b"] = a[Dim.X, :] # Should now work 
+        self.assertEqual(len(a), len(b))
+        self.assertTrue((Attr.ExperimentLog, "b") in b)
+
     def test_slice_dataset(self):
         for x in range(2):
             view = self.dataset[Dim.X, x]
