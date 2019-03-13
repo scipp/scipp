@@ -29,7 +29,6 @@ RUN add-apt-repository ppa:mhier/libboost-latest && \
     apt-get install -y mercurial && \
     apt-get install -y libboost1.67-dev && \
     apt-get install -y git && \
-
     rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp && \
@@ -62,10 +61,21 @@ RUN conda install --quiet --yes "tornado<5.0.0"
 RUN conda install --quiet --yes pip
 RUN pip install py2nb
 
-RUN find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; ;  \
-    bash -c "if [ ! -d /home/$NB_USER/work/examples ]; then mkdir /home/$NB_USER/work/examples; fi;" ; \ 
-    bash -c "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} /home/$NB_USER/work/examples \; ; fi;" ; \
-    chmod -R a+rwx /home/$NB_USER/work
+ARG UPD_EX=/usr/local/bin/update_examples.sh
+
+RUN chmod -R a+rwx /home/$NB_USER/work && \
+    chmod -R a+rwx /tmp/dataset
+
+RUN touch $UPD_EX && \
+    chmod a+x $UPD_EX &&\
+    echo "#!/bin/bash" >> $UPD_EX && \
+    echo "cd /tmp/dataset && git pull" >> $UPD_EX && \
+    echo "find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; ;" >> $UPD_EX && \
+    echo "if [ ! -d /home/$NB_USER/work/examples ]; then mkdir /home/$NB_USER/work/examples; fi;" >> $UPD_EX && \
+    echo  "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} /home/$NB_USER/work/examples \; ; fi;" >> $UPD_EX && \
+    touch /home/$NB_USER/thefile.txt && echo $(date) >> /home/$NB_USER/thefile.txt
+
+RUN sed -i "5s/^/exec update_examples.sh\n\n/" /usr/local/bin/start-notebook.sh
 
 USER $NB_UID
 
