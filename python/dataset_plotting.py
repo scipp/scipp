@@ -70,8 +70,7 @@ def plot(input_data, waterfall=None, **kwargs):
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
-def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
-            axes=None):
+def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
 
     entries = []
     # Case of a single dataset
@@ -92,11 +91,6 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
     else:
         raise RuntimeError("Bad data type in input of plot_1d. Expected either "
                            "Dataset or DatasetSlice, got " + type(item))
-
-    if bars:
-        plot_type = 'bar'
-    else:
-        plot_type = 'scatter'
 
     # entries now contains a list of Dataset or DatasetSlice
     # We now construct a list of [x,y] pairs
@@ -157,8 +151,10 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
             nx = xdims.shape[0]
             x = coord.numpy
             # Check for bin edges
+            histogram = False
             if nx == ny + 1:
-                x = edges_to_centers(x)
+                x, w = edges_to_centers(x)
+                histogram = True
             xlab = axis_label(coord)
             if (coord_check is not None) and (coord.tag != coord_check):
                 raise RuntimeError("All Value fields must have the same "
@@ -170,8 +166,13 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
             trace = dict(
                     x = x,
                     y = y,
-                    name = name,
-                    type = plot_type)
+                    name = name)
+            if histogram:
+                trace["type"] = 'bar'
+                trace["marker"] = dict(opacity=0.6, line=dict(width=0))
+                trace["width"] = w
+            else:
+                trace["type"] = 'scatter'
             # Include variance if present
             if v[1] is not None:
                 trace["error_y"] = dict(
@@ -187,6 +188,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
         showlegend=True,
         legend=dict(x=0.0, y=1.15, orientation="h")
         )
+    if histogram:
+        layout["barmode"] = 'overlay'
     if logx or logxy:
         layout["xaxis"]["type"] = "log"
     if logy or logxy:
@@ -514,13 +517,13 @@ class SliceViewer:
 
 #===============================================================================
 
-# Convert coordinate edges to centers
+# Convert coordinate edges to centers, and return also the widths
 def edges_to_centers(x):
-    return 0.5 * (x[1:] + x[:-1])
+    return 0.5 * (x[1:] + x[:-1]), np.ediff1d(x)
 
 # Convert coordinate centers to edges
 def centers_to_edges(x):
-    e = edges_to_centers(x)
+    e = edges_to_centers(x)[0]
     return np.concatenate([[2.0*x[0]-e[0]],e,[2.0*x[-1]-e[-1]]])
 
 # Make an axis label with "Name [unit]"
@@ -559,7 +562,7 @@ def process_dimensions(input_data, axes, values, ndim):
     xdims = xcoord.dimensions
     nx = xdims.shape
     if nx[0] == nz[ndim-1] + 1:
-        x = edges_to_centers(x)
+        x = edges_to_centers(x)[0]
     if ny[0] == nz[ndim-2] + 1:
-        y = edges_to_centers(y)
+        y = edges_to_centers(y)[0]
     return xcoord, ycoord, x, y, xdims, ydims, zdims
