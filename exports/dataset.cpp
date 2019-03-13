@@ -858,15 +858,7 @@ PYBIND11_MODULE(dataset, m) {
            [](SubsetHelper &self, const std::string &name,
               const DatasetSlice &data) { self.insert(name, data); })
       .def("__setitem__", [](SubsetHelper &self, const std::string &name,
-                             const Dataset &data) { self.insert(name, data); })
-      .def("__setitem__",
-           [](SubsetHelper &self,
-              const std::tuple<const Tag, const std::string &> &index,
-              const DatasetSlice &data) {
-             const auto & [ tag, name ] = index;
-             self.subset(tag, name).assign(data);
-           });
-
+                             const Dataset &data) { self.insert(name, data); });
   py::class_<DatasetSlice>(m, "DatasetSlice")
       .def(py::init<Dataset &>())
       .def_property_readonly(
