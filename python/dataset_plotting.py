@@ -393,8 +393,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
         # Create a SliceViewer object
         sv = SliceViewer(plotly_data=data, plotly_layout=layout,
                          input_data=input_data, axes=axes,
-                         value_name=value_list[0].name, xlabs=xlabs,
-                         ylabs=ylabs, logcb=cbar["log"])
+                         value_name=value_list[0].name, logcb=cbar["log"])
 
         if hasattr(sv, "vbox"):
             return sv.vbox
@@ -412,7 +411,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
 class SliceViewer:
 
     def __init__(self, plotly_data, plotly_layout, input_data, axes, value_name,
-                 xlabs, ylabs, logcb):
+                 logcb):
 
         # Delay import to here, as ipywidgets is not part of plotly
         try:
@@ -427,8 +426,18 @@ class SliceViewer:
         self.input_data = copy.deepcopy(input_data)
 
         # Get the dimensions of the image to be displayed
-        self.xlabs = xlabs
-        self.ylabs = ylabs
+        naxes = len(axes)
+        self.xcoord = self.input_data[axes[naxes-1]]
+        self.ycoord = self.input_data[axes[naxes-2]]
+        self.ydims = self.ycoord.dimensions
+        self.ylabs = self.ydims.labels
+        self.xdims = self.xcoord.dimensions
+        self.xlabs = self.xdims.labels
+
+        # Need these to avoid things running out of scope
+        self.dims = self.input_data.dimensions
+        self.labels = self.dims.labels
+        self.shapes = self.dims.shape
 
         # Size of the slider coordinate arrays
         self.slider_nx = []
@@ -440,11 +449,19 @@ class SliceViewer:
         self.slider_x = []
         for ax in axes[:-2]:
             coord = self.input_data[ax]
-            self.slider_coords.append(coord)
+            self.slider_coords.append(self.input_data[ax])
             dims = coord.dimensions
-            self.slider_nx.append(dims.shape[0])
-            self.slider_dims.append(dims.labels[0])
-            self.slider_x.append(coord.numpy)
+            labs = dims.labels
+            # TODO: This loop is necessary; Ideally we would like to do
+            #   self.slider_nx.append(self.input_data[ax].dimensions.shape[0])
+            #   self.slider_dims.append(self.input_data[ax].dimensions.labels[0])
+            #   self.slider_x.append(self.input_data[ax].numpy)
+            # but we are running into scope problems.
+            for j in range(len(self.labels)):
+                if self.labels[j] == labs[0]:
+                    self.slider_nx.append(self.shapes[j])
+                    self.slider_dims.append(self.labels[j])
+                    self.slider_x.append(self.input_data[ax].numpy)
         self.nslices = len(self.slider_dims)
 
         # Initialise Figure and VBox objects
