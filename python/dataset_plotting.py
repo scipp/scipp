@@ -215,14 +215,17 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
-    if ((ndim > 1) and (ndim < 3)) or ((not plot) and (naxes == 2)):
+    if ((ndim > 1) and (ndim < 3)) or ((not plot) and (naxes > 1)):
 
-        # Note the order of the axes here: the outermost [1] dimension is the
+        # Note the order of the axes here: the outermost dimension is the
         # fast dimension and is plotted along x, while the inner (slow)
-        # dimension [0] is plotted along y.
+        # dimension is plotted along y.
         if axes is None:
-            axes = [dimensionCoord(values[0].dimensions.labels[0]),
-                    dimensionCoord(values[0].dimensions.labels[1])]
+            dims = values[0].dimensions
+            labs = dims.labels
+            axes = [ dimensionCoord(label) for label in labs ]
+        else:
+            axes = axes[-2:]
 
         # Get coordinates axes and dimensions
         xcoord, ycoord, x, y, xdims, ydims, zdims = \
@@ -303,8 +306,9 @@ def plot_waterfall(input_data, dim=None, axes=None):
     if (ndim > 1) and (ndim < 3):
 
         if axes is None:
-            axes = [dimensionCoord(values[0].dimensions.labels[0]),
-                    dimensionCoord(values[0].dimensions.labels[1])]
+            dims = values[0].dimensions
+            labs = dims.labels
+            axes = [ dimensionCoord(label) for label in labs ]
 
         # Get coordinates axes and dimensions
         xcoord, ycoord, x, y, xdims, ydims, zdims = \
@@ -384,8 +388,9 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
     if ndim > 2:
 
         if axes is None:
-            axes = [dimensionCoord(value_list[0].dimensions.labels[ndim-2]),
-                    dimensionCoord(value_list[0].dimensions.labels[ndim-1])]
+            dims = value_list[0].dimensions
+            labs = dims.labels
+            axes = [ dimensionCoord(label) for label in labs ]
 
         # Use the machinery in plot_image to make the layout
         data, layout, transpose, cbar = plot_image(input_data, axes=axes,
@@ -393,7 +398,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
                                                    plot=False)
 
         # Create a SliceViewer object
-        sv = SliceViewer(data=data, layout=layout, input_data=input_data,
+        sv = SliceViewer(plotly_data=data, plotly_layout=layout, input_data=input_data,
                          axes=axes, value_name=value_list[0].name,
                          transpose=transpose, logcb=cbar["log"])
 
@@ -412,7 +417,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
 
 class SliceViewer:
 
-    def __init__(self, data, layout, input_data, axes, value_name, transpose,
+    def __init__(self, plotly_data, plotly_layout, input_data, axes, value_name, transpose,
                  logcb):
 
         # Delay import to here, as ipywidgets is not part of plotly
@@ -427,31 +432,25 @@ class SliceViewer:
         # Make a deep copy of the input data
         self.input_data = copy.deepcopy(input_data)
 
-        # Convert coords to dimensions
-        axes_dims = []
-        for i in range(len(axes)):
-            axes_dims.append(coordDimension(axes[i]))
-
-        # We want to slice out everything that is not in axes
-        self.dims = self.input_data.dimensions
-        self.labels = self.dims.labels
-        self.shapes = self.dims.shape
-        self.slider_nx = [] # size of the coordinate array
-        self.slider_dims = [] # coordinate variables for sliders, e.g. d[Coord.X]
-        self.slice_labels = [] # save dimensions tags for sliders, e.g. Dim.X
-        for idim in range(len(self.labels)):
-            if self.labels[idim] not in axes_dims:
-                self.slider_nx.append(self.shapes[idim])
-                self.slider_dims.append(self.input_data[dimensionCoord(self.labels[idim])])
-                self.slice_labels.append(self.labels[idim])
+        # Size of the slider coordinate arrays
+        self.slider_nx = []
+        # Save dimensions tags for sliders, e.g. Dim.X
+        self.slider_dims = []
+        # Coordinate variables for sliders, e.g. d[Coord.X]
+        self.slider_coords = []
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = []
-        for dim in self.slider_dims:
-           self.slider_x.append(dim.numpy)
-        self.nslices = len(self.slice_labels)
+        for ax in axes[:-2]:
+            coord = self.input_data[ax]
+            self.slider_coords.append(coord)
+            dims = coord.dimensions
+            self.slider_nx.append(dims.shape[0])
+            self.slider_dims.append(dims.labels[0])
+            self.slider_x.append(coord.numpy)
+        self.nslices = len(self.slider_dims)
 
         # Initialise Figure and VBox objects
-        self.fig = FigureWidget(data=data, layout=layout)
+        self.fig = FigureWidget(data=plotly_data, layout=plotly_layout)
         self.vbox = self.fig,
 
         # Initialise slider and label containers
@@ -481,7 +480,7 @@ class SliceViewer:
             # Add an observer to the slider
             self.slider[i].observe(self.update_slice, names="value")
             # Add coordinate name and unit
-            title = Label(value=axis_label(self.slider_dims[i]))
+            title = Label(value=axis_label(self.slider_coords[i]))
             self.vbox += (HBox([title, self.slider[i], self.lab[i]]),)
 
         # Call update_slice once to make the initial image
@@ -494,14 +493,14 @@ class SliceViewer:
     # Define function to update slices
     def update_slice(self, change):
         # Slice out everything not in axes.
-        # The dimensions to be sliced have been saved in slice_labels
+        # The dimensions to be sliced have been saved in slider_dims
         # Slice with first element to avoid modifying underlying dataset
         self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-        zarray = self.input_data[self.slice_labels[0], self.slider[0].value]
+        zarray = self.input_data[self.slider_dims[0], self.slider[0].value]
         # Then slice additional dimensions if needed
         for idim in range(1, self.nslices):
             self.lab[idim].value = str(self.slider_x[idim][self.slider[idim].value])
-            zarray = zarray[self.slice_labels[idim], self.slider[idim].value]
+            zarray = zarray[self.slider_dims[idim], self.slider[idim].value]
         z = zarray[Data.Value, self.value_name].numpy
         # Check if we need to transpose the data
         if self.transpose:
