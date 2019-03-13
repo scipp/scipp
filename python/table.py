@@ -12,18 +12,28 @@ def append_with_text(parent, name, text, attrib=style_border_right):
     el.text = text
 
 
+def subset_has_1d_data(dataset, name):
+    for var in dataset.subset[name]:
+        if var.is_data:
+            return len(var.dimensions) == 1
+    raise RuntimeError("No data with this name")
+
+
 def table_ds(dataset):
     if len(dataset.dimensions) > 1:
         raise RuntimeError("Only 1-D datasets can be rendered as a table")
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
-    headline.text = 'Dataset:'
+    if type(dataset) is Dataset:
+        headline.text = 'Dataset:'
+    else:
+        headline.text = 'DatasetSlice:'
     names = list(dict.fromkeys([var.name for var in dataset if var.is_data]))
     datum1d = defaultdict(list)
     datum0d = defaultdict(list)
     for name in names:
-        if len(dataset[Data.Value, name].dimensions) == 1:
+        if subset_has_1d_data(dataset, name):
             datum1d[name].extend([var for var in dataset.subset[name] if var.is_data])
         else:
             datum0d[name].extend([var for var in dataset.subset[name] if var.is_data])
@@ -31,7 +41,7 @@ def table_ds(dataset):
     # 0 - dimensional data
     if datum0d:
         tab = et.SubElement(body, 'table')
-        cap = et.SubElement(tab, 'capltion')
+        cap = et.SubElement(tab, 'caption')
         cap.text = '0D Variables:'
         tr_name = et.SubElement(tab, 'tr')
         tr_tag = et.SubElement(tab, 'tr')
@@ -102,7 +112,10 @@ def table_var(variable):
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
-    headline.text = 'Variable:'
+    if type(variable) is Variable:
+        headline.text = 'Variable:'
+    else:
+        headline.text = 'VariableSlice:'
     tab = et.SubElement(body, 'table')
 
     tr_tag = et.SubElement(tab, 'tr')

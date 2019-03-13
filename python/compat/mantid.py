@@ -20,7 +20,7 @@ def initPosSpectrumNo(d, nHist, ws):
         pass
     d[ds.Coord.SpectrumNumber] = ([ds.Dim.Position], [ ws.getSpectrum(j).getSpectrumNo() for j in range(nHist) ])
 
-def ConvertWorkspace2DToDataset(ws):
+def ConvertWorkspace2DToDataset(ws, name):
     d = ds.Dataset()
     cb = ws.isCommonBins()
     nHist = ws.getNumberHistograms()
@@ -38,27 +38,27 @@ def ConvertWorkspace2DToDataset(ws):
             d[tag][ds.Dim.Position, i] = ws.readX(i);
 
 
-    d[ds.Data.Value] = ([ds.Dim.Position, dim], (ws.getNumberHistograms(), len(ws.readY(0))))
-    d[ds.Data.Variance] = ([ds.Dim.Position, dim], (ws.getNumberHistograms(), len(ws.readE(0))))
+    d[ds.Data.Value, name] = ([ds.Dim.Position, dim], (ws.getNumberHistograms(), len(ws.readY(0))))
+    d[ds.Data.Variance, name] = ([ds.Dim.Position, dim], (ws.getNumberHistograms(), len(ws.readE(0))))
 
     # TODO Use unit information in workspace, if available.
-    d[ds.Data.Value].unit = ds.units.counts
-    d[ds.Data.Variance].unit = ds.units.counts * ds.units.counts
+    d[ds.Data.Value, name].unit = ds.units.counts
+    d[ds.Data.Variance, name].unit = ds.units.counts * ds.units.counts
 
     for i in range(ws.getNumberHistograms()):
-        d[ds.Data.Value][ds.Dim.Position, i] = ws.readY(i)
-        d[ds.Data.Variance][ds.Dim.Position, i] = ws.readE(i)*ws.readE(i)
+        d[ds.Data.Value, name][ds.Dim.Position, i] = ws.readY(i)
+        d[ds.Data.Variance, name][ds.Dim.Position, i] = ws.readE(i)*ws.readE(i)
 
     return d
 
-def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
+def ConvertEventWorkspaceToDataset(ws, name, drop_pulse_times):
     d = ds.Dataset()
     nHist = ws.getNumberHistograms()
     convert_instrument(d, ws)
     initPosSpectrumNo(d, nHist, ws)
 
-    d[ds.Data.Events] = ([ds.Dim.Position], (nHist,))
-    for i, e in enumerate(d[ds.Data.Events].data):
+    d[ds.Data.Events, name] = ([ds.Dim.Position], (nHist,))
+    for i, e in enumerate(d[ds.Data.Events, name].data):
         e[ds.Data.Tof] = ([ds.Dim.Event], ws.getSpectrum(i).getTofs())
         if not drop_pulse_times:
             pt = ws.getSpectrum(i).getPulseTimes()
@@ -67,9 +67,9 @@ def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
 
 # Pulse times have a Mantid-specific format so the conversion is very slow.
 # Dataset is flexible and can work without pulse times, so we can drop them.
-def to_dataset(ws, drop_pulse_times=False):
+def to_dataset(ws, name='', drop_pulse_times=False):
     if ws.id() == 'Workspace2D':
-        return ConvertWorkspace2DToDataset(ws)
+        return ConvertWorkspace2DToDataset(ws, name)
     if ws.id() == 'EventWorkspace':
-        return ConvertEventWorkspaceToDataset(ws, drop_pulse_times)
+        return ConvertEventWorkspaceToDataset(ws, name, drop_pulse_times)
     raise 'Unsupported workspace type'
