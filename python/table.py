@@ -33,17 +33,17 @@ def table_ds(dataset):
         tab = et.SubElement(body, 'table')
         cap = et.SubElement(tab, 'capltion')
         cap.text = '0D Variables:'
-        trName = et.SubElement(tab, 'tr')
-        trTag = et.SubElement(tab, 'tr')
-        trUnit = et.SubElement(tab, 'tr')
-        trVal = et.SubElement(tab, 'tr')
+        tr_name = et.SubElement(tab, 'tr')
+        tr_tag = et.SubElement(tab, 'tr')
+        tr_unit = et.SubElement(tab, 'tr')
+        tr_val = et.SubElement(tab, 'tr')
         for key, val in datum0d.items():
-            append_with_text(trName, 'th', key,
+            append_with_text(tr_name, 'th', key,
                              attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
             for var in val:
-                append_with_text(trTag, 'th', str(var.tag))
-                append_with_text(trVal, 'th', str(var.data[0]))
-                append_with_text(trUnit, 'th', '[{}]'.format(var.unit))
+                append_with_text(tr_tag, 'th', str(var.tag))
+                append_with_text(tr_val, 'th', str(var.data[0]))
+                append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
 
     # 1 - dimensional data
     if datum1d:
@@ -105,18 +105,18 @@ def table_var(variable):
     headline.text = 'Variable:'
     tab = et.SubElement(body, 'table')
 
-    trTag = et.SubElement(tab, 'tr')
-    trUnit = et.SubElement(tab, 'tr')
-    append_with_text(trTag, 'th', str(variable.tag))
-    append_with_text(trUnit, 'th', '[{}]'.format(variable.unit))
+    tr_tag = et.SubElement(tab, 'tr')
+    tr_unit = et.SubElement(tab, 'tr')
+    append_with_text(tr_tag, 'th', str(variable.tag))
+    append_with_text(tr_unit, 'th', '[{}]'.format(variable.unit))
 
     if variable.name:
-        trName = et.SubElement(tab, 'tr')
-        append_with_text(trName, 'th', variable.name)
+        tr_name = et.SubElement(tab, 'tr')
+        append_with_text(tr_name, 'th', variable.name)
     # Aligned data
     for val in variable.data:
-        trVal = et.SubElement(tab, 'tr')
-        append_with_text(trVal, 'th', str(val))
+        tr_val = et.SubElement(tab, 'tr')
+        append_with_text(tr_val, 'th', str(val))
 
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
