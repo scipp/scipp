@@ -104,9 +104,11 @@ public:
 
   void insert(Variable variable);
   template <class T> void insert(const std::string &name, const T &slice) {
+    // Note the lack of atomicity
     for (const auto &var : slice) {
       Variable newVar(var);
-      newVar.setName(name);
+      if (!var.isCoord())
+        newVar.setName(name);
       this->insert(newVar);
     }
   }
