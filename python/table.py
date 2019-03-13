@@ -13,6 +13,10 @@ def table_ds(dataset):
         raise RuntimeError("Only 1-D datasets can be rendered as a table")
 
     body = et.Element('body')
+    style = et.SubElement(body, 'style')
+    style.text = 'table, td, th { \n \
+                    border: 1px solid black;\n \
+                    } '
     headline = et.SubElement(body, 'h3')
     headline.text = 'Dataset:'
     names = list(dict.fromkeys([var.name for var in dataset if var.is_data]))
@@ -43,26 +47,29 @@ def table_ds(dataset):
     # 1 - dimensional data
     if datum1d:
         coords = [var for var in dataset if var.is_coord]
-        tab = et.SubElement(body, 'table')
-        cap = et.SubElement(tab, 'capltion')
-        cap.text = '1D Variables:'
-        tr = et.SubElement(tab, 'tr')
-        tr.append(et.Element('th', attrib={'colspan': '1'}))
-
-        # Alligned names
-        for key, val in datum1d.items():
-            append_with_text(tr, 'th', key, attrib={'colspan': str(len(val)), 'style': 'text-align:center'})
-
-        tr = et.SubElement(tab, 'tr')
-        for x in coords:
-            append_with_text(tr, 'th', str(x.tag))
-
         datas = []
         for key, val in datum1d.items():
             datas.extend(val)
 
+        tab = et.SubElement(body, 'table')
+        cap = et.SubElement(tab, 'capltion')
+        cap.text = '1D Variables:'
+        tr = et.SubElement(tab, 'tr')
+
+        for coord in coords:
+            append_with_text(tr, 'th', coord.name, attrib={'colspan': '1', 'style': 'text-align:center'})
+        # Alligned names
+        for key, val in datum1d.items():
+            append_with_text(tr, 'th', key, attrib={'colspan': str(len(val)), 'style': 'text-align:center'})
+
+        is_hist = len(coords[0]) > len(datas[0])
+
+        tr = et.SubElement(tab, 'tr')
+        for x in coords:
+            append_with_text(tr, 'th', '{}'.format(x.tag, x.name))
+
         for x in datas:
-            append_with_text(tr, 'th', str(x.tag))
+            append_with_text(tr, 'th', '{}'.format(x.tag, x.name))
 
         tr = et.SubElement(tab, 'tr')
         for x in coords:
@@ -71,10 +78,13 @@ def table_ds(dataset):
             append_with_text(tr, 'th', '[{}]'.format(x.unit))
 
         # Data lines
-        for i in range(len(coords[0])):
+        for i in range(len(coords[0]) - is_hist):
             tr = et.SubElement(tab, 'tr')
             for x in coords:
-                append_with_text(tr, 'th', str(x.data[i]))
+                text = str(x.data[i])
+                if is_hist:
+                    text = '[{}; {}]'.format(text, str(x.data[i+1]))
+                append_with_text(tr, 'th', text)
             for x in datas:
                 append_with_text(tr, 'th', str(x.data[i]))
 
