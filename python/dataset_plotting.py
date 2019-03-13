@@ -125,6 +125,9 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
         # tobeplotted now contains pairs of [value, variance]
         for v in tobeplotted:
 
+            # Reset axes
+            axes_copy = axes
+
             # Check that data is 1D
             if len(v[0].dimensions) > 1:
                 raise RuntimeError("Can only plot 1D data with plot_1d. The "
@@ -144,9 +147,9 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
             ny = ydims.shape[0]
 
             # Define x
-            if axes is None:
-                axes = [dimensionCoord(v[0].dimensions.labels[0])]
-            coord = item[axes[0]]
+            if axes_copy is None:
+                axes_copy = [dimensionCoord(v[0].dimensions.labels[0])]
+            coord = item[axes_copy[0]]
             xdims = coord.dimensions
             nx = xdims.shape[0]
             x = coord.numpy
@@ -163,10 +166,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
                 coord_check = coord.tag
 
             # Define trace
-            trace = dict(
-                    x = x,
-                    y = y,
-                    name = name)
+            trace = dict(x=x, y=y, name=name)
             if histogram:
                 trace["type"] = 'bar'
                 trace["marker"] = dict(opacity=0.6, line=dict(width=0))
