@@ -228,7 +228,7 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
             axes = axes[-2:]
 
         # Get coordinates axes and dimensions
-        xcoord, ycoord, x, y, xdims, ydims, zdims = \
+        xcoord, ycoord, x, y, xlabs, ylabs, zlabs = \
             process_dimensions(input_data, axes, values[0], ndim)
 
         if contours:
@@ -266,16 +266,10 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
             yaxis = dict(title = axis_label(ycoord))
             )
 
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        zlabs = zdims.labels
-        if (zlabs[0] == xdims.labels[0]) and (zlabs[1] == ydims.labels[0]):
-            transpose = True
-        else:
-            transpose = False
-
         if plot:
             z = values[0].numpy
-            if transpose:
+            # Check if dimensions of arrays agree, if not, plot the transpose
+            if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
                 z = z.T
             if cbar["log"]:
                 with np.errstate(invalid="ignore"):
@@ -283,7 +277,7 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
             data[0]["z"] = z
             return iplot(dict(data=data, layout=layout))
         else:
-            return data, layout, transpose, cbar
+            return data, layout, xlabs, ylabs, cbar
 
     else:
         raise RuntimeError("Unsupported number of dimensions in plot_image. "
@@ -311,15 +305,14 @@ def plot_waterfall(input_data, dim=None, axes=None):
             axes = [ dimensionCoord(label) for label in labs ]
 
         # Get coordinates axes and dimensions
-        xcoord, ycoord, x, y, xdims, ydims, zdims = \
+        xcoord, ycoord, x, y, xlabs, ylabs, zlabs = \
             process_dimensions(input_data, axes, values[0], ndim)
 
         data = []
         z = values[0].numpy
-        zlabs = zdims.labels
-        if (zlabs[0] == xdims.labels[0]) and (zlabs[1] == ydims.labels[0]):
+        if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
             z = z.T
-            zlabs = [ydims.labels[0], xdims.labels[0]]
+            zlabs = [ylabs[0], xlabs[0]]
 
         pdict = dict(type = 'scatter3d', mode = 'lines', line = dict(width=5))
         adict = dict(z = 1)
@@ -393,14 +386,15 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
             axes = [ dimensionCoord(label) for label in labs ]
 
         # Use the machinery in plot_image to make the layout
-        data, layout, transpose, cbar = plot_image(input_data, axes=axes,
-                                                   contours=contours, cb=cb,
-                                                   plot=False)
+        data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
+                                                      contours=contours, cb=cb,
+                                                      plot=False)
 
         # Create a SliceViewer object
-        sv = SliceViewer(plotly_data=data, plotly_layout=layout, input_data=input_data,
-                         axes=axes, value_name=value_list[0].name,
-                         transpose=transpose, logcb=cbar["log"])
+        sv = SliceViewer(plotly_data=data, plotly_layout=layout,
+                         input_data=input_data, axes=axes,
+                         value_name=value_list[0].name, xlabs=xlabs,
+                         ylabs=ylabs, logcb=cbar["log"])
 
         if hasattr(sv, "vbox"):
             return sv.vbox
@@ -417,8 +411,8 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
 
 class SliceViewer:
 
-    def __init__(self, plotly_data, plotly_layout, input_data, axes, value_name, transpose,
-                 logcb):
+    def __init__(self, plotly_data, plotly_layout, input_data, axes, value_name,
+                 xlabs, ylabs, logcb):
 
         # Delay import to here, as ipywidgets is not part of plotly
         try:
@@ -431,6 +425,10 @@ class SliceViewer:
 
         # Make a deep copy of the input data
         self.input_data = copy.deepcopy(input_data)
+
+        # Get the dimensions of the image to be displayed
+        self.xlabs = xlabs
+        self.ylabs = ylabs
 
         # Size of the slider coordinate arrays
         self.slider_nx = []
@@ -458,7 +456,6 @@ class SliceViewer:
         self.slider = []
         # Collect the remaining arguments
         self.value_name = value_name
-        self.transpose = transpose
         self.logcb = logcb
         # Default starting index for slider
         indx = 0
@@ -492,7 +489,6 @@ class SliceViewer:
 
     # Define function to update slices
     def update_slice(self, change):
-        # Slice out everything not in axes.
         # The dimensions to be sliced have been saved in slider_dims
         # Slice with first element to avoid modifying underlying dataset
         self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
@@ -501,9 +497,14 @@ class SliceViewer:
         for idim in range(1, self.nslices):
             self.lab[idim].value = str(self.slider_x[idim][self.slider[idim].value])
             zarray = zarray[self.slider_dims[idim], self.slider[idim].value]
-        z = zarray[Data.Value, self.value_name].numpy
-        # Check if we need to transpose the data
-        if self.transpose:
+
+        vslice = zarray[Data.Value, self.value_name]
+        z = vslice.numpy
+
+        # Check if dimensions of arrays agree, if not, plot the transpose
+        zdims = vslice.dimensions
+        zlabs = zdims.labels
+        if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
             z = z.T
         if self.logcb:
             with np.errstate(invalid="ignore"):
@@ -552,13 +553,16 @@ def process_dimensions(input_data, axes, values, ndim):
     # edges to centers and then back to edges afterwards inside the plotly
     # object. This is not optimal and could lead to precision loss issues.
     zdims = values.dimensions
+    zlabs = zdims.labels
     nz = zdims.shape
     ydims = ycoord.dimensions
+    ylabs = ydims.labels
     ny = ydims.shape
     xdims = xcoord.dimensions
+    xlabs = xdims.labels
     nx = xdims.shape
     if nx[0] == nz[ndim-1] + 1:
         x = edges_to_centers(x)
     if ny[0] == nz[ndim-2] + 1:
         y = edges_to_centers(y)
-    return xcoord, ycoord, x, y, xdims, ydims, zdims
+    return xcoord, ycoord, x, y, xlabs, ylabs, zlabs
