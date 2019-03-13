@@ -508,6 +508,9 @@ public:
     ret.m_slices = m_slices;
     return ret;
   }
+  template <class T> void insert(const std::string &name, const T &slice) {
+    m_mutableDataset.insert(name, slice);
+  }
 
   using ConstDatasetSlice::begin;
   using ConstDatasetSlice::end;

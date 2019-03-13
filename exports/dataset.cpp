@@ -499,6 +499,9 @@ public:
   auto subset(const Tag tag, const std::string &name) const {
     return m_data.subset(tag, name);
   }
+  template <class D> void insert(const std::string &name, D &subset) {
+    m_data.insert(name, subset);
+  }
 
 private:
   DatasetSlice m_data;
@@ -853,7 +856,9 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__",
            [](SubsetHelper &self, const std::string &name,
-              const DatasetSlice &data) { self.subset(name).assign(data); })
+              const DatasetSlice &data) { self.insert(name, data); })
+      .def("__setitem__", [](SubsetHelper &self, const std::string &name,
+                             const Dataset &data) { self.insert(name, data); })
       .def("__setitem__",
            [](SubsetHelper &self,
               const std::tuple<const Tag, const std::string &> &index,
@@ -1040,10 +1045,6 @@ PYBIND11_MODULE(dataset, m) {
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also
       // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
-      .def("__setitem__", [](Dataset &self, const std::string &name,
-                             DatasetSlice &slice) { self.insert(name, slice); })
-      .def("__setitem__", [](Dataset &self, const std::string &name,
-                             Dataset &slice) { self.insert(name, slice); })
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, py::slice> &index,
               const DatasetSlice &other) {

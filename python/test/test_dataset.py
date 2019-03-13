@@ -190,25 +190,21 @@ class TestDataset(unittest.TestCase):
 
         d2 = Dataset()
         # Insert from subset
-        d2["a"] = ds_slice 
+        d2.subset["a"] = ds_slice 
         self.assertEqual(len(d1), len(d2))
         self.assertEqual(d1, d2)
 
         d3 = Dataset()
         # Insert from subset
-        d3["b"] = ds_slice
+        d3.subset["b"] = ds_slice
         self.assertEqual(len(d3), 2)
         self.assertNotEqual(d1, d3) # imported names should differ
 
         d4 = Dataset()
-        d4["2a"] = ds_slice + ds_slice
+        d4.subset["2a"] = ds_slice + ds_slice
         self.assertEqual(len(d4), 2)
         self.assertNotEqual(d1, d4) 
         self.assertTrue(np.array_equal(d4[Data.Value, "2a"].numpy, ds_slice[Data.Value,"a"].numpy*2))
-
-
-
-
 
     def test_slice_dataset(self):
         for x in range(2):
