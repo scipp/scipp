@@ -107,8 +107,14 @@ public:
     // Note the lack of atomicity
     for (const auto &var : slice) {
       Variable newVar(var);
-      if (!var.isCoord())
-        newVar.setName(name);
+      if (var.isCoord()) {
+        if (!contains(newVar.tag(), newVar.name())) {
+          throw std::runtime_error(
+              "Cannot provide new coordinate variables via subset");
+        }
+      } else {
+        newVar.setName(name); // As long as !cood var, name gets rewritten.
+      }
       this->insert(newVar);
     }
   }

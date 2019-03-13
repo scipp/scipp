@@ -511,6 +511,7 @@ TEST(Dataset, insert_named_subset) {
   auto subset = a.subset("a");
 
   Dataset b;
+  b.insert(Coord::X, "a", {Dim::X, 1}, 1);
   b.insert("b", subset);
   EXPECT_NE(b, a);
   EXPECT_EQ(b.size(), 3);
@@ -524,18 +525,23 @@ TEST(Dataset, insert_named_subset_matches_coordinates) {
   Dataset a;
   a.insert(Data::Value, "a", {Dim::X, 1}, 1);
   a.insert(Data::Variance, "a", {Dim::X, 1}, 1);
-  a.insert(Coord::X, "a", {Dim::X, 1}, 1);
+  a.insert(Coord::X, {Dim::X, 1}, 1);
   auto subset = a.subset("a");
 
   Dataset b;
   b.insert(Coord::Y, {Dim::Y, 3}, 3); // Coord different from subset
+  EXPECT_THROW(b.insert("b", subset),
+               std::runtime_error);   // Insert cannot be used to
+                                      // add coordinate variables
+                                      // not already present
+  b.insert(Coord::X, {Dim::X, 1}, 1); // lhs now has X coord.
   b.insert("b", subset);
 
   EXPECT_EQ(b.size(), 4);
   EXPECT_TRUE(b.contains(Data::Value, "b"));
   EXPECT_TRUE(b.contains(Data::Variance, "b"));
-  EXPECT_TRUE(b.contains(Coord::Y));      // Original coord
-  EXPECT_TRUE(b.contains(Coord::X, "a")); // Coordinates not renamed
+  EXPECT_TRUE(b.contains(Coord::Y)); // Original coord
+  EXPECT_TRUE(b.contains(Coord::X));
 
   Dataset c;
   c.insert(Coord::X, {Dim::X, 3}, 3);
