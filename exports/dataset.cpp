@@ -765,15 +765,15 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           })
-      .def("__getitem__", &detail::pySlice<VariableSlice>)
+           }, py::keep_alive<0,1>())
+      .def("__getitem__", &detail::pySlice<VariableSlice>, py::keep_alive<0,1>())
       .def("__getitem__",
            [](VariableSlice &self, const std::map<Dim, const gsl::index> d) {
              auto slice(self);
              for (auto item : d)
                slice = slice(item.first, item.second);
              return slice;
-           })
+           }, py::keep_alive<0,1>())
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
       .def("__copy__", [](VariableSlice &self) { return Variable(self); })
@@ -844,13 +844,13 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](SubsetHelper &self, const std::string &name) {
              return self.subset(name);
-           })
+           }, py::keep_alive<0,1>())
       .def("__getitem__",
            [](SubsetHelper &self,
               const std::tuple<const Tag, const std::string &> &index) {
              const auto & [ tag, name ] = index;
              return self.subset(tag, name);
-           })
+           }, py::keep_alive<0,1>())
       .def("__setitem__",
            [](SubsetHelper &self, const std::string &name,
               const DatasetSlice &data) { self.subset(name).assign(data); })
@@ -883,15 +883,15 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           })
-      .def("__getitem__", &detail::pySlice<DatasetSlice>)
+           }, py::keep_alive<0,1>())
+      .def("__getitem__", &detail::pySlice<DatasetSlice>, py::keep_alive<0,1>())
       .def("__getitem__",
-           [](DatasetSlice &self, const Tag &tag) { return self(tag); })
+           [](DatasetSlice &self, const Tag &tag) { return self(tag); }, py::keep_alive<0,1>())
       .def(
           "__getitem__",
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
-          })
+          }, py::keep_alive<0,1>())
       .def("__copy__", [](DatasetSlice &self) { return Dataset(self); })
       .def("__deepcopy__",
            [](DatasetSlice &self, py::dict) { return Dataset(self); })
@@ -1019,18 +1019,18 @@ PYBIND11_MODULE(dataset, m) {
                                       ":]");
            })
       .def("__getitem__",
-           [](Dataset &self, const gsl::index index) { return self[index]; })
+           [](Dataset &self, const gsl::index index) { return self[index]; }, py::keep_alive<0,1>())
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           })
+           }, py::keep_alive<0,1>())
       .def("__getitem__", &detail::pySlice<Dataset>, py::keep_alive<0, 1> ())
       .def("__getitem__",
            [](Dataset &self, const Tag &tag) { return self(tag); })
       .def("__getitem__",
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
-           })
+           }, py::keep_alive<0,1>())
       .def("__copy__", [](Dataset &self) { return Dataset(self); })
       .def("__deepcopy__",
            [](Dataset &self, py::dict) { return Dataset(self); })
