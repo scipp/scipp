@@ -3,6 +3,7 @@ import unittest
 from dataset import *
 import numpy as np
 import operator
+np.seterr(divide='ignore', invalid='ignore')
 
 class TestDatasetSlice(unittest.TestCase):
 
@@ -150,6 +151,7 @@ class TestDatasetSlice(unittest.TestCase):
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
         self._apply_test_op(operator.imul, a, b, data)
+        self._apply_test_op(operator.itruediv, a, b, data)
         
 
     def test_equal_not_equal(self):
