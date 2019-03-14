@@ -41,7 +41,7 @@ if(WITH_ASAN)
 endif()
 
 add_compile_options ( -Wall -Wextra -Winit-self -Wpointer-arith
-                      -Wcast-qual -Wcast-align )
+                      -Wcast-qual -Wcast-align -Wno-self-assign-overloaded)
 add_compile_options ( $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
   $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
 )
