@@ -63,9 +63,6 @@ RUN pip install py2nb
 
 ARG UPD_EX=/usr/local/bin/update_examples.sh
 
-RUN chmod -R a+rwx /home/$NB_USER/work && \
-    chmod -R a+rwx /tmp/dataset
-
 RUN touch $UPD_EX && \
     chmod a+x $UPD_EX &&\
     echo "#!/bin/bash" >> $UPD_EX && \
@@ -74,12 +71,16 @@ RUN touch $UPD_EX && \
     echo "if [ ! -d /home/$NB_USER/work/examples ]; then mkdir /home/$NB_USER/work/examples; fi;" >> $UPD_EX && \
     echo "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} /home/$NB_USER/work/examples \; ; fi;" >> $UPD_EX && \
     echo "chmod -R a+rwx /home/$NB_USER/work" >> $UPD_EX && \
-    echo "chmod -R a+rwx /tmp/dataset" >> $UPD_EX && \
+    echo "chmod -R a+rwx /tmp/dataset/python/examples" >> $UPD_EX && \
+    echo "chmod -R a+rwx /tmp/dataset/.git" >> $UPD_EX && \
     echo "chown -R $NB_USER /home/$NB_USER/work" >> $UPD_EX && \
-    echo "chown -R $NB_USER /tmp/dataset" >> $UPD_EX && \
+    echo "chown -R $NB_USER /tmp/dataset/python/examples" >> $UPD_EX && \
+    echo "chown -R $NB_USER /tmp/dataset/.git" >> $UPD_EX && \
     echo "exit 0" >> $UPD_EX
 
-RUN bash $UPD_EX
+RUN bash -x $UPD_EX
+
+RUN sed -i "s/jupyter lab/jupyter lab --NotebookApp.token='' --NotebookApp.password=''/" /usr/local/bin/start-notebook.sh
 
 USER $NB_UID
 
@@ -93,5 +94,5 @@ RUN touch $UPD_NB.py && \
     py2nb $UPD_NB.py && \
     rm $UPD_NB.py
 
-
+ENV JUPYTER_ENABLE_LAB=TRUE
 
