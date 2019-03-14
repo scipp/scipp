@@ -43,7 +43,7 @@ def check_input(input_data):
 
 # Wrapper function to dispatch the input dataset to the appropriate plotting
 # function depending on its dimensions
-def plot(input_data, **kwargs):
+def plot(input_data, waterfall=None, **kwargs):
 
     # A list of datasets is only supported for 1d
     if type(input_data) is list:
@@ -54,7 +54,10 @@ def plot(input_data, **kwargs):
         if ndim == 1:
             return plot_1d(input_data, **kwargs)
         elif ndim == 2:
-            return plot_image(input_data, **kwargs)
+            if waterfall is not None:
+                return plot_waterfall(input_data, dim=waterfall, **kwargs)
+            else:
+                return plot_image(input_data, **kwargs)
         else:
             return plot_sliceviewer(input_data, **kwargs)
 
@@ -67,8 +70,7 @@ def plot(input_data, **kwargs):
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
-def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
-            axes=None):
+def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
 
     entries = []
     # Case of a single dataset
@@ -89,11 +91,6 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
     else:
         raise RuntimeError("Bad data type in input of plot_1d. Expected either "
                            "Dataset or DatasetSlice, got " + type(item))
-
-    if bars:
-        plot_type = 'bar'
-    else:
-        plot_type = 'scatter'
 
     # entries now contains a list of Dataset or DatasetSlice
     # We now construct a list of [x,y] pairs
@@ -128,6 +125,9 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
         # tobeplotted now contains pairs of [value, variance]
         for v in tobeplotted:
 
+            # Reset axes
+            axes_copy = axes
+
             # Check that data is 1D
             if len(v[0].dimensions) > 1:
                 raise RuntimeError("Can only plot 1D data with plot_1d. The "
@@ -147,15 +147,17 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
             ny = ydims.shape[0]
 
             # Define x
-            if axes is None:
-                axes = [dimensionCoord(v[0].dimensions.labels[0])]
-            coord = item[axes[0]]
+            if axes_copy is None:
+                axes_copy = [dimensionCoord(v[0].dimensions.labels[0])]
+            coord = item[axes_copy[0]]
             xdims = coord.dimensions
             nx = xdims.shape[0]
             x = coord.numpy
             # Check for bin edges
+            histogram = False
             if nx == ny + 1:
-                x = edges_to_centers(x)
+                x, w = edges_to_centers(x)
+                histogram = True
             xlab = axis_label(coord)
             if (coord_check is not None) and (coord.tag != coord_check):
                 raise RuntimeError("All Value fields must have the same "
@@ -164,11 +166,13 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
                 coord_check = coord.tag
 
             # Define trace
-            trace = dict(
-                    x = x,
-                    y = y,
-                    name = name,
-                    type = plot_type)
+            trace = dict(x=x, y=y, name=name)
+            if histogram:
+                trace["type"] = 'bar'
+                trace["marker"] = dict(opacity=0.6, line=dict(width=0))
+                trace["width"] = w
+            else:
+                trace["type"] = 'scatter'
             # Include variance if present
             if v[1] is not None:
                 trace["error_y"] = dict(
@@ -184,6 +188,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, bars=False,
         showlegend=True,
         legend=dict(x=0.0, y=1.15, orientation="h")
         )
+    if histogram:
+        layout["barmode"] = 'overlay'
     if logx or logxy:
         layout["xaxis"]["type"] = "log"
     if logy or logxy:
@@ -221,26 +227,9 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
             axes = [dimensionCoord(values[0].dimensions.labels[0]),
                     dimensionCoord(values[0].dimensions.labels[1])]
 
-        xcoord = input_data[axes[1]]
-        ycoord = input_data[axes[0]]
-
-        x = xcoord.numpy
-        y = ycoord.numpy
-
-        # Check for bin edges
-        # TODO: find a better way to handle edges. Currently, we convert from
-        # edges to centers and then back to edges afterwards inside the plotly
-        # object. This is not optimal and could lead to precision loss issues.
-        zdims = values[0].dimensions
-        nz = zdims.shape
-        ydims = ycoord.dimensions
-        ny = ydims.shape
-        xdims = xcoord.dimensions
-        nx = xdims.shape
-        if nx[0] == nz[ndim-1] + 1:
-            x = edges_to_centers(x)
-        if ny[0] == nz[ndim-2] + 1:
-            y = edges_to_centers(y)
+        # Get coordinates axes and dimensions
+        xcoord, ycoord, x, y, xdims, ydims, zdims = \
+            process_dimensions(input_data, axes, values[0], ndim)
 
         if contours:
             plot_type = 'contour'
@@ -305,6 +294,77 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
                            "must then use plot=False to collect the data and "
                            "layout dicts for plotly, as well as a transpose "
                            "flag, instead of plotting an image.".format(ndim))
+
+#===============================================================================
+
+# Make a 3D waterfall plot
+#
+def plot_waterfall(input_data, dim=None, axes=None):
+
+    values, ndim = check_input(input_data)
+
+    if (ndim > 1) and (ndim < 3):
+
+        if axes is None:
+            axes = [dimensionCoord(values[0].dimensions.labels[0]),
+                    dimensionCoord(values[0].dimensions.labels[1])]
+
+        # Get coordinates axes and dimensions
+        xcoord, ycoord, x, y, xdims, ydims, zdims = \
+            process_dimensions(input_data, axes, values[0], ndim)
+
+        data = []
+        z = values[0].numpy
+        zlabs = zdims.labels
+        if (zlabs[0] == xdims.labels[0]) and (zlabs[1] == ydims.labels[0]):
+            z = z.T
+            zlabs = [ydims.labels[0], xdims.labels[0]]
+
+        pdict = dict(type = 'scatter3d', mode = 'lines', line = dict(width=5))
+        adict = dict(z = 1)
+
+        if dim is None:
+            dim = zlabs[0]
+
+        if dim == zlabs[0]:
+            for i in range(len(y)):
+                idict = pdict.copy()
+                idict["x"] = x
+                idict["y"] = [y[i]] * len(x)
+                idict["z"] = z[i,:]
+                data.append(idict)
+                adict["x"] = 3
+                adict["y"] = 1
+        elif dim == zlabs[1]:
+            for i in range(len(x)):
+                idict = pdict.copy()
+                idict["x"] = [x[i]] * len(y)
+                idict["y"] = y
+                idict["z"] = z[:,i]
+                data.append(idict)
+                adict["x"] = 1
+                adict["y"] = 3
+        else:
+            raise RuntimeError("Something went wrong in plot_waterfall. The "
+                               "waterfall dimension is not recognised.")
+
+        layout = dict(
+            scene = dict(
+                xaxis = dict(title = axis_label(xcoord)),
+                yaxis = dict(title = axis_label(ycoord)),
+                zaxis = dict(title = "{} [{}]".format(values[0].name, values[0].unit)),
+                aspectmode='manual',
+                aspectratio=adict
+                ),
+            showlegend = False
+            )
+
+        return iplot(dict(data=data, layout=layout))
+
+    else:
+        raise RuntimeError("Unsupported number of dimensions in plot_waterfall."
+                           " Expected at least 2 dimensions, got {}."
+                           .format(ndim))
 
 #===============================================================================
 
@@ -457,13 +517,13 @@ class SliceViewer:
 
 #===============================================================================
 
-# Convert coordinate edges to centers
+# Convert coordinate edges to centers, and return also the widths
 def edges_to_centers(x):
-    return 0.5 * (x[1:] + x[:-1])
+    return 0.5 * (x[1:] + x[:-1]), np.ediff1d(x)
 
 # Convert coordinate centers to edges
 def centers_to_edges(x):
-    e = edges_to_centers(x)
+    e = edges_to_centers(x)[0]
     return np.concatenate([[2.0*x[0]-e[0]],e,[2.0*x[-1]-e[-1]]])
 
 # Make an axis label with "Name [unit]"
@@ -484,3 +544,25 @@ def parse_colorbar(cb):
         for key, val in cb.items():
             cbar[key] = val
     return cbar
+
+# Make x and y arrays from dimensions and check for bins edges
+def process_dimensions(input_data, axes, values, ndim):
+    xcoord = input_data[axes[1]]
+    ycoord = input_data[axes[0]]
+    x = xcoord.numpy
+    y = ycoord.numpy
+    # Check for bin edges
+    # TODO: find a better way to handle edges. Currently, we convert from
+    # edges to centers and then back to edges afterwards inside the plotly
+    # object. This is not optimal and could lead to precision loss issues.
+    zdims = values.dimensions
+    nz = zdims.shape
+    ydims = ycoord.dimensions
+    ny = ydims.shape
+    xdims = xcoord.dimensions
+    nx = xdims.shape
+    if nx[0] == nz[ndim-1] + 1:
+        x = edges_to_centers(x)[0]
+    if ny[0] == nz[ndim-2] + 1:
+        y = edges_to_centers(y)[0]
+    return xcoord, ycoord, x, y, xdims, ydims, zdims

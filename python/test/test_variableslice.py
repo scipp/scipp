@@ -76,5 +76,13 @@ class TestVariableSlice(unittest.TestCase):
         self.assertNotEqual(a, c)
         self.assertNotEqual(c, a)
 
+    def test_correct_temporaries(self):
+        v = Variable(Data.Value, [Dim.X], np.arange(100).astype(np.float32))
+        b = sqrt(v)[Dim.X, 0:10]
+        self.assertEqual(len(b.data), 10)
+        b = b[Dim.X, 2:5]
+        self.assertEqual(len(b.data), 3)
+
+
 if __name__ == '__main__':
     unittest.main()
