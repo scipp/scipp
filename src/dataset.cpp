@@ -3,6 +3,7 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <functional>
 #include <numeric>
 #include <set>
 
@@ -332,11 +333,35 @@ template <class T> using ptr = type<T> *;
 void multiply(const gsl::index size, ptr<double> RESTRICT v1,
               ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
               ptr<const double> RESTRICT e2) {
-  for (gsl::index i = 0; i < size; ++i) {
-    e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
-    v1[i] *= v2[i];
+  if (e1 && e2) {
+    for (gsl::index i = 0; i < size; ++i) {
+      e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
+      v1[i] *= v2[i];
+    }
+  } else {
+    for (gsl::index i = 0; i < size; ++i) {
+      v1[i] *= v2[i];
+    }
   }
 }
+
+void multiply(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs *= rhs; }
+
+void divide(const gsl::index size, ptr<double> RESTRICT v1,
+            ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
+            ptr<const double> RESTRICT e2) {
+  for (gsl::index i = 0; i < size; ++i) {
+    e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
+    v1[i] /= v2[i];
+  }
+}
+
+void divide(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs /= rhs; }
+
+typedef void (*op_def)(VariableSlice &lhs, const ConstVariableSlice &rhs);
+typedef void (*op_with_error_def)(const gsl::index size, ptr<double> v1,
+                                  ptr<double> e1, ptr<const double> v2,
+                                  ptr<const double> e2);
 } // namespace aligned
 
 namespace {
@@ -348,10 +373,17 @@ namespace {
  * have variances captured too if relevant
  * @param lhs_var : lh variable (mutable)
  * @param rhs_var : rh variable (const)
+ * @param op_with_error : inplace operator to use on operands. Handles value and
+ * error at the data level.
+ * @param op : inplace operator to use on operands of type constvariableslice.
+ * No error considered.
  */
-void multiply_slices(DatasetSlice &lhs_slice,
-                     const ConstDatasetSlice &rhs_slice, VariableSlice &lhs_var,
-                     const ConstVariableSlice &rhs_var) {
+void operate_on_slices(DatasetSlice &lhs_slice,
+                       const ConstDatasetSlice &rhs_slice,
+                       VariableSlice &lhs_var,
+                       const ConstVariableSlice &rhs_var,
+                       aligned::op_with_error_def op_with_error,
+                       aligned::op_def op) {
   if (lhs_slice.contains(Data::Variance, lhs_var.name()) !=
       rhs_slice.contains(Data::Variance, rhs_var.name())) {
     throw std::runtime_error("Either both or none of the operands must "
@@ -386,8 +418,7 @@ void multiply_slices(DatasetSlice &lhs_slice,
         auto e1 = error1.template span<double>();
         const auto e2 = error2.template span<double>();
         // TODO Need to ensure that data is contiguous!
-        aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
-                          e2.data());
+        op_with_error(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
       } else {
         // TODO Do we need to write this differently if the two operands
         // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +
@@ -396,7 +427,7 @@ void multiply_slices(DatasetSlice &lhs_slice,
         error1 += lhs_var * lhs_var * error2;
         // TODO: Catch errors from unit propagation here and give a better
         // error message.
-        lhs_var *= rhs_var;
+        op(lhs_var, rhs_var);
       }
     } else {
       // No variance found, continue without.
@@ -411,7 +442,9 @@ void multiply_slices(DatasetSlice &lhs_slice,
 }
 
 } // namespace
-template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
+template <class T1, class T2>
+T1 &op_equals(T1 &dataset, const T2 &other,
+              aligned::op_with_error_def op_with_error, aligned::op_def op) {
   std::set<std::string> lhs_names;
   for (const auto &rhs_var : other)
     if (rhs_var.isData())
@@ -430,7 +463,8 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
         // variables
         auto lhs_slice = dataset.subset(lhs_var.name());
         auto rhs_slice = other.subset(rhs_var.name());
-        multiply_slices(lhs_slice, rhs_slice, lhs_var, rhs_var);
+        operate_on_slices(lhs_slice, rhs_slice, lhs_var, rhs_var, op_with_error,
+                          op);
       }
     } else {
       // Note that this is handled via name, i.e., there may be values and
@@ -446,7 +480,8 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
           if (lhs_var.tag() == rhs_var.tag()) {
             ++count;
             auto lhs_slice = dataset.subset(lhs_var.name());
-            multiply_slices(lhs_slice, rhs_slice, lhs_var, rhs_var);
+            operate_on_slices(lhs_slice, rhs_slice, lhs_var, rhs_var,
+                              op_with_error, op);
           }
         }
         if (count == 0)
@@ -504,10 +539,10 @@ Dataset &Dataset::operator-=(const double value) {
 }
 
 Dataset &Dataset::operator*=(const Dataset &other) {
-  return times_equals(*this, other);
+  return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 Dataset &Dataset::operator*=(const ConstDatasetSlice &other) {
-  return times_equals(*this, other);
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
 }
 Dataset &Dataset::operator*=(const double value) {
   for (auto &var : m_variables)
@@ -593,10 +628,10 @@ DatasetSlice DatasetSlice::operator-=(const double value) const {
 }
 
 DatasetSlice DatasetSlice::operator*=(const Dataset &other) const {
-  return times_equals(*this, other);
+  return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) const {
-  return times_equals(*this, other);
+  return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 DatasetSlice DatasetSlice::operator*=(const double value) const {
   for (auto var : *this)

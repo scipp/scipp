@@ -826,7 +826,7 @@ PYBIND11_MODULE(dataset, m) {
            py::is_operator())
       .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
            py::is_operator())
-      .def("__itruediv__", [](VariableSlice &a, Variable &b) { return a / b; },
+      .def("__itruediv__", [](VariableSlice &a, Variable &b) { return a /= b; },
            py::is_operator())
       .def("__radd__", [](VariableSlice &a, double &b) { return a + b; },
            py::is_operator())
