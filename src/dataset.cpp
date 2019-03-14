@@ -391,7 +391,7 @@ void operate_on_slices(DatasetSlice &lhs_slice,
     }
   }
   if (rhs_var.tag() == Data::Value) {
-    if (lhs_slice.contains(Data::Variance, rhs_var.name())) {
+    if (lhs_slice.contains(Data::Variance, lhs_var.name())) {
       auto error1 = lhs_slice(Data::Variance, lhs_var.name());
       const auto &error2 = rhs_slice(Data::Variance, rhs_var.name());
       if ((lhs_var.dimensions() == rhs_var.dimensions()) &&

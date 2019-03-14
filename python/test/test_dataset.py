@@ -4,6 +4,7 @@ from dataset import *
 import numpy as np
 import matplotlib.pyplot as plt
 import operator
+np.seterr(divide='ignore', invalid='ignore')
 
 class TestDataset(unittest.TestCase):
     def setUp(self):
@@ -265,17 +266,12 @@ class TestDataset(unittest.TestCase):
         c = a * b
         # Variables "a" and "b" subtracted despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data * data))
-        #print(c[Data.Variance, "i"].numpy)
-        #print(a[Data.Variance, "i"].numpy)
-        #print(variance*(data*data)*2) 
-        #self.assertTrue(np.array_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2))
+        self.assertTrue(np.array_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2))
 
         c = a / b
         # Variables "a" and "b" subtracted despite different names
         np.testing.assert_equal(c[Data.Value, "i"].numpy, data / data) 
-        #print(c[Data.Variance, "i"].numpy)
-        #print(variance*(data*data)*2) 
-        #np.testing.assert_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2) 
+        np.testing.assert_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2) 
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
