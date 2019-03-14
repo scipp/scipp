@@ -82,7 +82,7 @@ class TestDatasetSlice(unittest.TestCase):
         # Assume numpy operations are correct as comparitor
         op(data,b[Data.Value, rh_var_name].numpy)
         op(a,b)
-        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
+        np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data)
 
     def test_binary_operations(self):
         d = Dataset()

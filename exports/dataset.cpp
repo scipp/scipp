@@ -672,7 +672,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
-      .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1> ())
+      .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1>())
       .def("copy", [](const Variable &self) { return self; })
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
@@ -766,15 +766,18 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           }, py::keep_alive<0,1>())
-      .def("__getitem__", &detail::pySlice<VariableSlice>, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &detail::pySlice<VariableSlice>,
+           py::keep_alive<0, 1>())
       .def("__getitem__",
            [](VariableSlice &self, const std::map<Dim, const gsl::index> d) {
              auto slice(self);
              for (auto item : d)
                slice = slice(item.first, item.second);
              return slice;
-           }, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
       .def("copy", [](const VariableSlice &self) { return Variable(self); })
@@ -846,13 +849,15 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](SubsetHelper &self, const std::string &name) {
              return self.subset(name);
-           }, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
       .def("__getitem__",
            [](SubsetHelper &self,
               const std::tuple<const Tag, const std::string &> &index) {
              const auto & [ tag, name ] = index;
              return self.subset(tag, name);
-           }, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
       .def("__setitem__",
            [](SubsetHelper &self, const std::string &name,
               const DatasetSlice &data) { self.subset(name).assign(data); })
@@ -885,15 +890,19 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           }, py::keep_alive<0,1>())
-      .def("__getitem__", &detail::pySlice<DatasetSlice>, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &detail::pySlice<DatasetSlice>,
+           py::keep_alive<0, 1>())
       .def("__getitem__",
-           [](DatasetSlice &self, const Tag &tag) { return self(tag); }, py::keep_alive<0,1>())
+           [](DatasetSlice &self, const Tag &tag) { return self(tag); },
+           py::keep_alive<0, 1>())
       .def(
           "__getitem__",
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
-          }, py::keep_alive<0,1>())
+          },
+          py::keep_alive<0, 1>())
       .def("copy", [](const DatasetSlice &self) { return Dataset(self); })
       .def("__copy__", [](DatasetSlice &self) { return Dataset(self); })
       .def("__deepcopy__",
@@ -918,6 +927,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
@@ -927,6 +937,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
       .def("__eq__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self == other;
@@ -952,6 +963,11 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__div__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__iadd__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self += other;
@@ -965,6 +981,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("__imul__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self *= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self /= other;
            },
            py::call_guard<py::gil_scoped_release>())
       .def("__radd__",
@@ -1007,14 +1028,15 @@ PYBIND11_MODULE(dataset, m) {
               const std::tuple<const Tag, const std::string &> &key) {
              self.erase(std::get<0>(key), std::get<1>(key));
            })
-      // TODO: This __getitem__ is here only to prevent unhandled errors when
-      // trying to get a dataset slice by supplying only a Dimension, e.g.
-      // dataset[Dim.X]. By default, an implicit conversion between Dim and
-      // gsl::index is attempted and the __getitem__ then crashes when
-      // self[index] is performed below. This fix covers only one case and we
-      // need to find a better way of protecting all unsopprted cases. This
-      // should ideally fail with a TypeError, in the same way as if only a
-      // string is supplied, e.g. dataset["a"].
+      // TODO: This __getitem__ is here only to prevent unhandled
+      // errors when trying to get a dataset slice by supplying only a
+      // Dimension, e.g. dataset[Dim.X]. By default, an implicit
+      // conversion between Dim and gsl::index is attempted and the
+      // __getitem__ then crashes when self[index] is performed below.
+      // This fix covers only one case and we need to find a better way
+      // of protecting all unsopprted cases. This should ideally fail
+      // with a TypeError, in the same way as if only a string is
+      // supplied, e.g. dataset["a"].
       .def("__getitem__",
            [](Dataset &, const Dim &) {
              throw std::runtime_error("Syntax error: cannot get slice with "
@@ -1022,27 +1044,31 @@ PYBIND11_MODULE(dataset, m) {
                                       ":]");
            })
       .def("__getitem__",
-           [](Dataset &self, const gsl::index index) { return self[index]; }, py::keep_alive<0,1>())
+           [](Dataset &self, const gsl::index index) { return self[index]; },
+           py::keep_alive<0, 1>())
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           }, py::keep_alive<0,1>())
-      .def("__getitem__", &detail::pySlice<Dataset>, py::keep_alive<0, 1> ())
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &detail::pySlice<Dataset>, py::keep_alive<0, 1>())
       .def("__getitem__",
            [](Dataset &self, const Tag &tag) { return self(tag); })
       .def("__getitem__",
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
-           }, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
       .def("copy", [](const Dataset &self) { return self; })
       .def("__copy__", [](Dataset &self) { return Dataset(self); })
       .def("__deepcopy__",
            [](Dataset &self, py::dict) { return Dataset(self); })
       .def_property_readonly("subset",
                              [](Dataset &self) { return SubsetHelper(self); })
-      // Careful: The order of overloads is really important here, otherwise
-      // DatasetSlice matches the overload below for py::array_t. I have not
-      // understood all details of this yet though. See also
+      // Careful: The order of overloads is really important here,
+      // otherwise DatasetSlice matches the overload below for
+      // py::array_t. I have not understood all details of this yet
+      // though. See also
       // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, py::slice> &index,
@@ -1056,7 +1082,8 @@ PYBIND11_MODULE(dataset, m) {
              self(dim, i).assign(other);
            })
 
-      // A) No dimensions argument, this will set data of existing item.
+      // A) No dimensions argument, this will set data of existing
+      // item.
       .def("__setitem__", detail::setData<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::setData<Dataset, detail::Key::TagName>)
 
@@ -1072,29 +1099,34 @@ PYBIND11_MODULE(dataset, m) {
       // 2. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Handle integers before case 3. below, which would convert to double.
+      // 2. Handle integers before case 3. below, which would convert
+      // to double.
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
-      // 3. Handle integers before case 4. below, which would convert to double.
+      // 3. Handle integers before case 4. below, which would convert
+      // to double.
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Eigen::Vector3d, detail::Key::Tag>)
       .def("__setitem__",
            detail::insert_1D<Eigen::Vector3d, detail::Key::TagName>)
-      // 4. Insertion attempting forced conversion to array of double. This
+      // 4. Insertion attempting forced conversion to array of double.
+      // This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
-      //    py::array::forcecast argument, we need to minimize implicit (and
-      //    potentially expensive conversion). If we wanted to avoid some
-      //    conversion we need to provide explicit variants for specific types,
-      //    same as or similar to insert_1D in case 5. below.
+      //    py::array::forcecast argument, we need to minimize implicit
+      //    (and potentially expensive conversion). If we wanted to
+      //    avoid some conversion we need to provide explicit variants
+      //    for specific types, same as or similar to insert_1D in
+      //    case 5. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
-      // 5. Insertion of numpy-incompatible data. py::array_t does not support
+      // 5. Insertion of numpy-incompatible data. py::array_t does not
+      // support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
@@ -1109,9 +1141,11 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
@@ -1119,6 +1153,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
       .def("__eq__",
            [](const Dataset &self, const DatasetSlice &other) {
              return self == other;
@@ -1144,6 +1179,11 @@ PYBIND11_MODULE(dataset, m) {
              return self *= other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self /= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__add__",
            [](const Dataset &self, const DatasetSlice &other) {
              return self + other;
@@ -1159,6 +1199,11 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__div__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__radd__",
            [](const Dataset &self, double &other) { return self + other; },
            py::is_operator())
@@ -1169,18 +1214,19 @@ PYBIND11_MODULE(dataset, m) {
            [](const Dataset &self, double &other) { return self * other; },
            py::is_operator())
       .def("merge", &Dataset::merge)
-      // TODO For now this is just for testing. We need to decide on an API for
-      // specifying the keys.
+      // TODO For now this is just for testing. We need to decide on an
+      // API for specifying the keys.
       .def("zip", [](Dataset &self) {
         return zip(self, Access::Key(Data::EventTofs),
                    Access::Key(Data::EventPulseTimes));
       });
 
-  // Implicit conversion DatasetSlice -> Dataset. Reduces need for excessive
-  // operator overload definitions
+  // Implicit conversion DatasetSlice -> Dataset. Reduces need for
+  // excessive operator overload definitions
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
-  //-----------------------dataset free functions-------------------------------
+  //-----------------------dataset free
+  // functions-------------------------------
   m.def("split",
         py::overload_cast<const Dataset &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -1215,7 +1261,8 @@ PYBIND11_MODULE(dataset, m) {
                           const Dataset &>(&convert),
         py::call_guard<py::gil_scoped_release>());
 
-  //-----------------------variable free functions------------------------------
+  //-----------------------variable free
+  // functions------------------------------
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -1241,7 +1288,8 @@ PYBIND11_MODULE(dataset, m) {
   m.def("sqrt", [](const Variable &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>());
 
-  //-----------------------dimensions free functions----------------------------
+  //-----------------------dimensions free
+  // functions----------------------------
   m.def("dimensionCoord", &dimensionCoord);
   m.def("coordDimension",
         [](const Tag t) { return coordDimension[t.value()]; });
