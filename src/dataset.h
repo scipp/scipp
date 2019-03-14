@@ -234,6 +234,9 @@ public:
   Dataset &operator*=(const Dataset &other);
   Dataset &operator*=(const ConstDatasetSlice &other);
   Dataset &operator*=(const double value);
+  Dataset &operator/=(const Dataset &other);
+  Dataset &operator/=(const ConstDatasetSlice &other);
+  Dataset &operator/=(const double value);
 
 private:
   gsl::index find(const Tag tag, const std::string &name) const;

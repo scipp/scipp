@@ -396,7 +396,6 @@ void operate_on_slices(DatasetSlice &lhs_slice,
                                "variance but no corresponding value.");
     }
   }
-  // Data variables are added
   if (rhs_var.tag() == Data::Value) {
     if (lhs_slice.contains(Data::Variance, rhs_var.name())) {
       auto error1 = lhs_slice(Data::Variance, lhs_var.name());
@@ -431,13 +430,13 @@ void operate_on_slices(DatasetSlice &lhs_slice,
       }
     } else {
       // No variance found, continue without.
-      lhs_var *= rhs_var;
+      op(lhs_var, rhs_var);
     }
   } else if (rhs_var.tag() == Data::Variance) {
     // Do nothing, math for variance is done when processing corresponding
     // value.
   } else {
-    lhs_var *= rhs_var;
+    op(lhs_var, rhs_var);
   }
 }
 
@@ -542,7 +541,7 @@ Dataset &Dataset::operator*=(const Dataset &other) {
   return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 Dataset &Dataset::operator*=(const ConstDatasetSlice &other) {
-  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+  return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 Dataset &Dataset::operator*=(const double value) {
   for (auto &var : m_variables)
@@ -551,6 +550,15 @@ Dataset &Dataset::operator*=(const double value) {
     else if (var.tag() == Data::Variance)
       var *= value * value;
   return *this;
+}
+Dataset &Dataset::operator/=(const Dataset &other) {
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+Dataset &Dataset::operator/=(const ConstDatasetSlice &other) {
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+Dataset &Dataset::operator/=(const double value) {
+  return *this *= (1 / value);
 }
 
 bool ConstDatasetSlice::contains(const Tag tag, const std::string &name) const {

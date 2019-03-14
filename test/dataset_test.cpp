@@ -578,6 +578,10 @@ TEST(Dataset, operator_times_equal) {
   a *= a;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
   EXPECT_EQ(a.get(Data::Value)[0], 9.0);
+
+  a /= a;
+  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
+  EXPECT_EQ(a.get(Data::Value)[0], 1.0);
 }
 
 TEST(Dataset, operator_times_equal_with_attributes) {
@@ -591,24 +595,58 @@ TEST(Dataset, operator_times_equal_with_attributes) {
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
   EXPECT_EQ(a.get(Data::Value)[0], 9.0);
   EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
+
+  a /= a;
+  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
+  EXPECT_EQ(a.get(Data::Value)[0], 1.0);
+  EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
 }
 
 TEST(Dataset, operator_times_equal_with_uncertainty) {
   Dataset a;
+  const auto value1 = 3.0;
+  const auto variance1 = 2.0;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
-  a.insert(Data::Variance, "", {Dim::X, 1}, {2.0});
+  a.insert(Data::Value, "", {Dim::X, 1}, {value1});
+  a.insert(Data::Variance, "", {Dim::X, 1}, {variance1});
   Dataset b;
+  const auto value2 = 4.0;
+  const auto variance2 = 3.0;
   b.insert(Coord::X, {Dim::X, 1}, {0.1});
-  b.insert(Data::Value, "", {Dim::X, 1}, {4.0});
-  b.insert(Data::Variance, "", {Dim::X, 1}, {3.0});
+  b.insert(Data::Value, "", {Dim::X, 1}, {value2});
+  b.insert(Data::Variance, "", {Dim::X, 1}, {variance2});
   a *= b;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 12.0);
-  EXPECT_EQ(a.get(Data::Variance)[0], 2.0 * 16.0 + 3.0 * 9.0);
+  auto value3 = value1 * value2;
+  EXPECT_EQ(a.get(Data::Value)[0], value3);
+  auto variance3 = variance1 * value2 * value2 + variance2 * value1 * value1;
+  EXPECT_EQ(a.get(Data::Variance)[0], variance3);
+
+  a /= a;
+  auto value4 = 1; // clearly should be unity
+  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
+  EXPECT_EQ(a.get(Data::Value)[0], value4);
+  EXPECT_EQ(a.get(Data::Variance)[0], variance3 * (value3 * value3) * 2);
 }
 
-TEST(Dataset, operator_times_equal_uncertainty_failures) {
+void operator_uncertaintly_failures(void (*op)(Dataset &lhs,
+                                               const Dataset &rhs),
+                                    Dataset &a, Dataset &b, Dataset &c) {
+  EXPECT_THROW_MSG(op(a, b), std::runtime_error,
+                   "Either both or none of the operands must have a variance "
+                   "for their values.");
+  EXPECT_THROW_MSG(op(b, a), std::runtime_error,
+                   "Either both or none of the operands must have a variance "
+                   "for their values.");
+  EXPECT_THROW_MSG(op(c, c), std::runtime_error,
+                   "Cannot operate on datasets that contain a variance but no "
+                   "corresponding value.");
+  EXPECT_THROW_MSG(op(a, c), std::runtime_error,
+                   "Cannot operate on datasets that contain a variance but no "
+                   "corresponding value.");
+}
+
+TEST(Dataset, operator_binary_op_equal_uncertainty_failures) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   a.insert(Data::Value, "name1", {Dim::X, 1}, {3.0});
@@ -619,18 +657,8 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
   Dataset c;
   c.insert(Coord::X, {Dim::X, 1}, {0.1});
   c.insert(Data::Variance, "name1", {Dim::X, 1}, {2.0});
-  EXPECT_THROW_MSG(a *= b, std::runtime_error,
-                   "Either both or none of the operands must have a variance "
-                   "for their values.");
-  EXPECT_THROW_MSG(b *= a, std::runtime_error,
-                   "Either both or none of the operands must have a variance "
-                   "for their values.");
-  EXPECT_THROW_MSG(c *= c, std::runtime_error,
-                   "Cannot operate on datasets that contain a variance but no "
-                   "corresponding value.");
-  EXPECT_THROW_MSG(a *= c, std::runtime_error,
-                   "Cannot operate on datasets that contain a variance but no "
-                   "corresponding value.");
+  operator_uncertaintly_failures([](auto i, auto j) { i *= j; }, a, b, c);
+  operator_uncertaintly_failures([](auto i, auto j) { i /= j; }, a, b, c);
 }
 
 TEST(Dataset, operator_times_equal_with_units) {
