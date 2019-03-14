@@ -924,6 +924,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
