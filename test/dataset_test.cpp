@@ -578,6 +578,12 @@ TEST(Dataset, operator_times_equal) {
   a *= a;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
   EXPECT_EQ(a.get(Data::Value)[0], 9.0);
+}
+
+TEST(Dataset, operator_divide_equal) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
 
   a /= a;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
@@ -595,14 +601,22 @@ TEST(Dataset, operator_times_equal_with_attributes) {
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
   EXPECT_EQ(a.get(Data::Value)[0], 9.0);
   EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
+}
 
+TEST(Dataset, operator_divide_equal_with_attributes) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
+  Dataset logs;
+  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
+  a.insert(Attr::ExperimentLog, "", {}, {logs});
   a /= a;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
   EXPECT_EQ(a.get(Data::Value)[0], 1.0);
   EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
 }
 
-TEST(Dataset, operator_times_equal_with_uncertainty) {
+TEST(Dataset, operator_times_and_divide_equal_with_uncertainty) {
   Dataset a;
   const auto value1 = 3.0;
   const auto variance1 = 2.0;
