@@ -1537,6 +1537,13 @@ TEST(Dataset, binary_assign_with_scalar) {
   // Scalar treated as having 0 variance, `*` affects variance.
   EXPECT_TRUE(equals(d.get(Data::Variance, "d1"), {16, 20}));
   EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {24}));
+
+  d /= 2;
+  EXPECT_TRUE(equals(d.get(Data::Value, "d1"), {0, 1}));
+  EXPECT_TRUE(equals(d.get(Data::Value, "d2"), {2}));
+  // Scalar treated as having 0 variance, `/` affects variance.
+  EXPECT_TRUE(equals(d.get(Data::Variance, "d1"), {16 * 2 * 2, 20 * 2 * 2}));
+  EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {24 * 2 * 2}));
 }
 
 TEST(DatasetSlice, binary_assign_with_scalar) {
@@ -1669,6 +1676,12 @@ TEST(DatasetSlice, binary_with_scalar) {
   EXPECT_TRUE(equals(prod.get(Data::Value, "b"), {9}));
   EXPECT_TRUE(equals(prod.get(Data::Variance, "a"), {45}));
   EXPECT_TRUE(equals(prod.get(Data::Variance, "b"), {54}));
+
+  auto fraction = slice / 2;
+  EXPECT_TRUE(equals(fraction.get(Data::Value, "a"), {1}));
+  EXPECT_TRUE(equals(fraction.get(Data::Value, "b"), {1.5}));
+  EXPECT_TRUE(equals(fraction.get(Data::Variance, "a"), {20}));
+  EXPECT_TRUE(equals(fraction.get(Data::Variance, "b"), {24}));
 }
 
 TEST(Dataset, counts_toDensity_fromDensity) {

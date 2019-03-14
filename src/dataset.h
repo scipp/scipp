@@ -544,7 +544,6 @@ Dataset operator*(const double a, Dataset b);
 Dataset operator/(Dataset a, const double b);
 Dataset operator/(Dataset a, const ConstDatasetSlice &b);
 Dataset operator/(Dataset a, const double b);
-Dataset operator/(const double a, Dataset b);
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices);
 Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim);

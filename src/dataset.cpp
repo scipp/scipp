@@ -684,11 +684,10 @@ Dataset operator/(Dataset a, const ConstDatasetSlice &b) {
 Dataset operator+(Dataset a, const double b) { return std::move(a += b); }
 Dataset operator-(Dataset a, const double b) { return std::move(a -= b); }
 Dataset operator*(Dataset a, const double b) { return std::move(a *= b); }
-Dataset operator/(Dataset a, const double b) { return std::move(a *= 1 / b); }
+Dataset operator/(Dataset a, const double b) { return std::move(a /= b); }
 Dataset operator+(const double a, Dataset b) { return std::move(b += a); }
 Dataset operator-(const double a, Dataset b) { return -(b -= a); }
 Dataset operator*(const double a, Dataset b) { return std::move(b *= a); }
-Dataset operator/(const double a, Dataset b) { return std::move(b *= 1 / a); }
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {
   std::vector<Dataset> out(indices.size() + 1);
