@@ -552,7 +552,12 @@ Dataset &Dataset::operator/=(const ConstDatasetSlice &other) {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
 }
 Dataset &Dataset::operator/=(const double value) {
-  return *this *= (1 / value);
+  for (auto &var : m_variables)
+    if (var.tag() == Data::Value)
+      var /= value;
+    else if (var.tag() == Data::Variance)
+      var *= value * value;
+  return *this;
 }
 
 bool ConstDatasetSlice::contains(const Tag tag, const std::string &name) const {
@@ -643,12 +648,27 @@ DatasetSlice DatasetSlice::operator*=(const double value) const {
       var *= value * value;
   return *this;
 }
+DatasetSlice DatasetSlice::operator/=(const Dataset &other) const {
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+DatasetSlice DatasetSlice::operator/=(const ConstDatasetSlice &other) const {
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+DatasetSlice DatasetSlice::operator/=(const double value) const {
+  for (auto var : *this)
+    if (var.tag() == Data::Value)
+      var /= value;
+    else if (var.tag() == Data::Variance)
+      var *= value * value;
+  return *this;
+}
 
 // Note: The std::move here is necessary because RVO does not work for variables
 // that are function parameters.
 Dataset operator+(Dataset a, const Dataset &b) { return std::move(a += b); }
 Dataset operator-(Dataset a, const Dataset &b) { return std::move(a -= b); }
 Dataset operator*(Dataset a, const Dataset &b) { return std::move(a *= b); }
+Dataset operator/(Dataset a, const Dataset &b) { return std::move(a /= b); }
 Dataset operator+(Dataset a, const ConstDatasetSlice &b) {
   return std::move(a += b);
 }
@@ -658,14 +678,17 @@ Dataset operator-(Dataset a, const ConstDatasetSlice &b) {
 Dataset operator*(Dataset a, const ConstDatasetSlice &b) {
   return std::move(a *= b);
 }
+Dataset operator/(Dataset a, const ConstDatasetSlice &b) {
+  return std::move(a /= b);
+}
 Dataset operator+(Dataset a, const double b) { return std::move(a += b); }
 Dataset operator-(Dataset a, const double b) { return std::move(a -= b); }
 Dataset operator*(Dataset a, const double b) { return std::move(a *= b); }
+Dataset operator/(Dataset a, const double b) { return std::move(a *= 1 / b); }
 Dataset operator+(const double a, Dataset b) { return std::move(b += a); }
 Dataset operator-(const double a, Dataset b) { return -(b -= a); }
 Dataset operator*(const double a, Dataset b) { return std::move(b *= a); }
-
-Dataset operator/(Dataset a, const double b) { return std::move(a *= 1 / b); }
+Dataset operator/(const double a, Dataset b) { return std::move(b *= 1 / a); }
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {
   std::vector<Dataset> out(indices.size() + 1);

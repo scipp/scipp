@@ -1440,6 +1440,7 @@ TEST(Dataset, binary_operations_with_identical_lhs_rhs_operand_structures) {
   auto plus = [](auto i, auto j) { return i + j; };
   auto minus = [](auto i, auto j) { return i - j; };
   auto mult = [](auto i, auto j) { return i * j; };
+  auto divide = [](auto i, auto j) { return i / j; };
 
   Dataset a;
   std::vector<double> input = {2, 3};
@@ -1462,12 +1463,16 @@ TEST(Dataset, binary_operations_with_identical_lhs_rhs_operand_structures) {
   c_var_data = data_from_dataset(c);
   c *= b;
   inplace_op_test<double>(mult, input, c_var_data, c);
+  c_var_data = data_from_dataset(c);
+  c /= b;
+  inplace_op_test<double>(divide, input, c_var_data, c);
 }
 
 TEST(Dataset, binary_operations_with_non_identical_lhs_rhs_operand_structures) {
   auto plus = [](auto i, auto j) { return i + j; };
   auto minus = [](auto i, auto j) { return i - j; };
   auto mult = [](auto i, auto j) { return i * j; };
+  auto divide = [](auto i, auto j) { return i / j; };
 
   Dataset a;
   std::vector<double> input = {2, 3};
@@ -1483,6 +1488,8 @@ TEST(Dataset, binary_operations_with_non_identical_lhs_rhs_operand_structures) {
   binary_test<double>(minus, input, c, "u");
   c = a * b;
   binary_test<double>(mult, input, c, "u");
+  c = a / b;
+  binary_test<double>(divide, input, c, "u");
 }
 
 TEST(Dataset, unary_minus) {
@@ -1566,6 +1573,13 @@ TEST(DatasetSlice, binary_assign_with_scalar) {
   // Scalar treated as having 0 variance, `*` affects variance.
   EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4, 20}));
   EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {24}));
+
+  slice /= 2;
+  EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 1}));
+  EXPECT_TRUE(equals(d.get(Data::Value, "b"), {2}));
+  // Scalar treated as having 0 variance, `/` affects variance.
+  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4, 20 * 2 * 2}));
+  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {6 * 4 * 4}));
 }
 
 TEST(Dataset, binary_with_scalar) {
