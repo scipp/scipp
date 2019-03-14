@@ -69,15 +69,29 @@ RUN chmod -R a+rwx /home/$NB_USER/work && \
 RUN touch $UPD_EX && \
     chmod a+x $UPD_EX &&\
     echo "#!/bin/bash" >> $UPD_EX && \
-    echo "cd /tmp/dataset && git pull" >> $UPD_EX && \
+    echo "cd /tmp/dataset && git checkout master && git pull" >> $UPD_EX && \
     echo "find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; ;" >> $UPD_EX && \
     echo "if [ ! -d /home/$NB_USER/work/examples ]; then mkdir /home/$NB_USER/work/examples; fi;" >> $UPD_EX && \
-    echo  "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} /home/$NB_USER/work/examples \; ; fi;" >> $UPD_EX && \
-    touch /home/$NB_USER/thefile.txt && echo $(date) >> /home/$NB_USER/thefile.txt
+    echo "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} /home/$NB_USER/work/examples \; ; fi;" >> $UPD_EX && \
+    echo "chmod -R a+rwx /home/$NB_USER/work" >> $UPD_EX && \
+    echo "chmod -R a+rwx /tmp/dataset" >> $UPD_EX && \
+    echo "chown -R $NB_USER /home/$NB_USER/work" >> $UPD_EX && \
+    echo "chown -R $NB_USER /tmp/dataset" >> $UPD_EX && \
+    echo "exit 0" >> $UPD_EX
 
-RUN sed -i "5s/^/exec update_examples.sh\n\n/" /usr/local/bin/start-notebook.sh
+RUN bash $UPD_EX
 
 USER $NB_UID
+
+ARG UPD_NB=/home/$NB_USER/update_examples
+
+RUN touch $UPD_NB.py && \
+    echo "#|" >> $UPD_NB.py && \
+    echo "%%bash" >> $UPD_NB.py && \
+    echo "$UPD_EX" >> $UPD_NB.py && \
+    echo "#-" >> $UPD_NB.py && \
+    py2nb $UPD_NB.py && \
+    rm $UPD_NB.py
 
 
 
