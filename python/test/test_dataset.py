@@ -182,6 +182,45 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(view.dimensions[Dim.Z], 4)
         self.assertEqual(len(view), 4)
 
+    def test_insert_subdata(self):
+        d1 = Dataset()
+        d1[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype="double"))
+        d1[Data.Variance, "a"] = ([Dim.X], np.arange(10, dtype="double"))
+        ds_slice = d1.subset["a"]
+
+        d2 = Dataset()
+        # Insert from subset
+        d2.subset["a"] = ds_slice 
+        self.assertEqual(len(d1), len(d2))
+        self.assertEqual(d1, d2)
+
+        d3 = Dataset()
+        # Insert from subset
+        d3.subset["b"] = ds_slice
+        self.assertEqual(len(d3), 2)
+        self.assertNotEqual(d1, d3) # imported names should differ
+
+        d4 = Dataset()
+        d4.subset["2a"] = ds_slice + ds_slice
+        self.assertEqual(len(d4), 2)
+        self.assertNotEqual(d1, d4) 
+        self.assertTrue(np.array_equal(d4[Data.Value, "2a"].numpy, ds_slice[Data.Value,"a"].numpy*2))
+
+    def test_insert_subdata_different_variable_types(self):
+        a = Dataset()
+        xcoord = Variable(Coord.X, [Dim.X], np.arange(4))
+        a[Data.Value] = ([Dim.X], np.arange(3))
+        a[Coord.X] = xcoord 
+        a[Attr.ExperimentLog] = ([], Dataset())
+
+        b = Dataset()
+        with self.assertRaises(RuntimeError ):
+            b.subset["b"] = a[Dim.X, :] # Coordinates dont match
+        b[Coord.X] = xcoord
+        b.subset["b"] = a[Dim.X, :] # Should now work 
+        self.assertEqual(len(a), len(b))
+        self.assertTrue((Attr.ExperimentLog, "b") in b)
+
     def test_slice_dataset(self):
         for x in range(2):
             view = self.dataset[Dim.X, x]
