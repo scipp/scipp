@@ -61,7 +61,7 @@ RUN conda install --quiet --yes "tornado<5.0.0"
 RUN conda install --quiet --yes pip
 RUN pip install py2nb
 
-ARG UPD_EX=/usr/local/bin/update_examples.sh
+ARG UPD_EX=/usr/local/bin/update_repo_and_make_examples.sh
 
 RUN touch $UPD_EX && \
     chmod a+x $UPD_EX &&\
