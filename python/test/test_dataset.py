@@ -4,7 +4,6 @@ from dataset import *
 import numpy as np
 import matplotlib.pyplot as plt
 import operator
-np.seterr(divide='ignore', invalid='ignore')
 
 class TestDataset(unittest.TestCase):
     def setUp(self):
@@ -270,13 +269,15 @@ class TestDataset(unittest.TestCase):
 
         c = a / b
         # Variables "a" and "b" subtracted despite different names
-        np.testing.assert_equal(c[Data.Value, "i"].numpy, data / data) 
+        with np.errstate(invalid="ignore"):
+            np.testing.assert_equal(c[Data.Value, "i"].numpy, data / data) 
         np.testing.assert_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2) 
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
         self._apply_test_op(operator.imul, a, b, data)
-        self._apply_test_op(operator.itruediv, a, b, data)
+        with np.errstate(invalid="ignore"):
+            self._apply_test_op(operator.itruediv, a, b, data)
 
     def test_binary_float_operations(self):
         a = Dataset()

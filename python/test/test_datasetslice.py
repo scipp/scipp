@@ -3,7 +3,6 @@ import unittest
 from dataset import *
 import numpy as np
 import operator
-np.seterr(divide='ignore', invalid='ignore')
 
 class TestDatasetSlice(unittest.TestCase):
 
@@ -114,7 +113,8 @@ class TestDatasetSlice(unittest.TestCase):
 
         c = a / b
         # Variables "a" and "b" subtracted despite different names
-        np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data) 
+        with np.errstate(invalid='ignore'):
+            np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data) 
         np.testing.assert_equal(c[Data.Variance, "a"].numpy, variance*(data*data)*2) 
 
         self._apply_test_op(operator.iadd, a, b, data)
