@@ -703,7 +703,7 @@ TEST(Dataset, operator_divide_equal_with_units) {
   a /= a;
   EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
   EXPECT_EQ(a(Data::Variance).unit(),
-            units::m * units::m * units::m * units::m); // TODO bug yet to fix!
+            units::dimensionless * units::dimensionless);
   EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
 }
 
@@ -724,15 +724,19 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   b.insert(Data::Value, "name1", {Dim::X, 1}, {4.0});
   b.insert(Data::Variance, "name1", {Dim::X, 1}, {4.0});
 
+  auto c =
+      a; // Copy a because the failing operation below c *= a lacks atomicity,
+         // leaves assigned units of the variable even though the variance unit
+         // setting failed.
   // Counts (aka "histogram data") times counts not possible.
   EXPECT_THROW_MSG(
-      a *= a, std::runtime_error,
+      c *= c, std::runtime_error,
       "Unsupported unit as result of multiplication: (counts^2) * (counts^2)");
   // Counts times frequencies (aka "distribution") ok.
   // TODO Works for dimensionless right now, but do we need to handle other
   // cases as well?
   auto a_copy(a);
-  EXPECT_NO_THROW(a *= b);
+  a *= b;
   EXPECT_NO_THROW(b *= a_copy);
 }
 

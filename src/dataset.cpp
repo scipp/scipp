@@ -355,9 +355,10 @@ void multiply(VariableSlice &lhs_var, const ConstVariableSlice &rhs_var,
   auto e1 = lhs_err.template span<double>();
   const auto e2 = rhs_err.template span<double>();
   multiply_data(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
-  lhs_err.setUnit(rhs_var.unit() * rhs_var.unit() * lhs_err.unit() +
-                  lhs_var.unit() * lhs_var.unit() * rhs_err.unit());
+  auto varname = (lhs_var.unit() * rhs_var.unit()).name();
   lhs_var.setUnit(lhs_var.unit() * rhs_var.unit());
+  auto variancename = (lhs_var.unit() * lhs_var.unit()).name();
+  lhs_err.setUnit(lhs_var.unit() * lhs_var.unit());
 }
 
 void multiply(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs *= rhs; }
@@ -369,9 +370,8 @@ void divide(VariableSlice &lhs_var, const ConstVariableSlice &rhs_var,
   auto e1 = lhs_err.template span<double>();
   const auto e2 = rhs_err.template span<double>();
   divide_data(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
-  lhs_err.setUnit(rhs_var.unit() * rhs_var.unit() * lhs_err.unit() +
-                  lhs_var.unit() * lhs_var.unit() * rhs_err.unit());
   lhs_var.setUnit(lhs_var.unit() / rhs_var.unit());
+  lhs_err.setUnit(lhs_var.unit() * lhs_var.unit());
 }
 
 void divide(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs /= rhs; }
