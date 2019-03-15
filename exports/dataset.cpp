@@ -675,7 +675,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
-      .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1> ())
+      .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1>())
       .def("copy", [](const Variable &self) { return self; })
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
@@ -769,15 +769,18 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           }, py::keep_alive<0,1>())
-      .def("__getitem__", &detail::pySlice<VariableSlice>, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &detail::pySlice<VariableSlice>,
+           py::keep_alive<0, 1>())
       .def("__getitem__",
            [](VariableSlice &self, const std::map<Dim, const gsl::index> d) {
              auto slice(self);
              for (auto item : d)
                slice = slice(item.first, item.second);
              return slice;
-           }, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
       .def("copy", [](const VariableSlice &self) { return Variable(self); })
@@ -849,13 +852,15 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](SubsetHelper &self, const std::string &name) {
              return self.subset(name);
-           }, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
       .def("__getitem__",
            [](SubsetHelper &self,
               const std::tuple<const Tag, const std::string &> &index) {
              const auto & [ tag, name ] = index;
              return self.subset(tag, name);
-           }, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
       .def("__setitem__",
            [](SubsetHelper &self, const std::string &name,
               const DatasetSlice &data) { self.insert(name, data); })
@@ -882,15 +887,19 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           }, py::keep_alive<0,1>())
-      .def("__getitem__", &detail::pySlice<DatasetSlice>, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &detail::pySlice<DatasetSlice>,
+           py::keep_alive<0, 1>())
       .def("__getitem__",
-           [](DatasetSlice &self, const Tag &tag) { return self(tag); }, py::keep_alive<0,1>())
+           [](DatasetSlice &self, const Tag &tag) { return self(tag); },
+           py::keep_alive<0, 1>())
       .def(
           "__getitem__",
           [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
             return self(key.first, key.second);
-          }, py::keep_alive<0,1>())
+          },
+          py::keep_alive<0, 1>())
       .def("copy", [](const DatasetSlice &self) { return Dataset(self); })
       .def("__copy__", [](DatasetSlice &self) { return Dataset(self); })
       .def("__deepcopy__",
@@ -1019,18 +1028,21 @@ PYBIND11_MODULE(dataset, m) {
                                       ":]");
            })
       .def("__getitem__",
-           [](Dataset &self, const gsl::index index) { return self[index]; }, py::keep_alive<0,1>())
+           [](Dataset &self, const gsl::index index) { return self[index]; },
+           py::keep_alive<0, 1>())
       .def("__getitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
-           }, py::keep_alive<0,1>())
-      .def("__getitem__", &detail::pySlice<Dataset>, py::keep_alive<0, 1> ())
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &detail::pySlice<Dataset>, py::keep_alive<0, 1>())
       .def("__getitem__",
            [](Dataset &self, const Tag &tag) { return self(tag); })
       .def("__getitem__",
            [](Dataset &self, const std::pair<Tag, const std::string> &key) {
              return self(key.first, key.second);
-           }, py::keep_alive<0,1>())
+           },
+           py::keep_alive<0, 1>())
       .def("copy", [](const Dataset &self) { return self; })
       .def("__copy__", [](Dataset &self) { return Dataset(self); })
       .def("__deepcopy__",
@@ -1201,7 +1213,11 @@ PYBIND11_MODULE(dataset, m) {
   m.def("sum", py::overload_cast<const Dataset &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>());
   m.def("mean", py::overload_cast<const Dataset &, const Dim>(&mean),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(), py::arg("dataset"),
+        py::arg("dim"),
+        "Returns a new dataset containing the mean of the data along the "
+        "specified dimension. Any variances in the input dataset are "
+        "transformed into the variance of the mean.");
   m.def("integrate", py::overload_cast<const Dataset &, const Dim>(&integrate),
         py::call_guard<py::gil_scoped_release>());
   m.def("convert",
