@@ -45,9 +45,13 @@ ip = 127.0.0.1
 ip = docker-machine ip $(docker-machine active)
 ```
 
-# To access the jupyter notebook in your browser type:
+# To access the jupyter notebook:
 
+In your browser type:
 ``` 
 <ip>:8888
 ```
-
+In the home folder there is a notebook `update_examples` which can be 
+used for loading the "fresh" examples from github by executing it: 
+open the notebook; press `shift+enter`. 
+Examples are located in `work/examples`.
