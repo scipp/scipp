@@ -48,7 +48,7 @@ template <class T> struct mutable_span_methods<const T> {
   static void add(py::class_<gsl::span<const T>> &) {}
 };
 
-template <class T> std::string print(const T &item) {
+template <class T> std::string element_to_string(const T &item) {
   using dataset::to_string;
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>)
@@ -72,7 +72,7 @@ template <class T> std::string array_to_string(const T &arr) {
      s += "..., ";
      i = size - 4;
    }
-   s += print(arr[i]);
+   s += element_to_string(arr[i]);
   }
   s.resize(s.size() - 2);
   s += "]";
