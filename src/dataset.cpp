@@ -355,9 +355,7 @@ void multiply(VariableSlice &lhs_var, const ConstVariableSlice &rhs_var,
   auto e1 = lhs_err.template span<double>();
   const auto e2 = rhs_err.template span<double>();
   multiply_data(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
-  auto varname = (lhs_var.unit() * rhs_var.unit()).name();
   lhs_var.setUnit(lhs_var.unit() * rhs_var.unit());
-  auto variancename = (lhs_var.unit() * lhs_var.unit()).name();
   lhs_err.setUnit(lhs_var.unit() * lhs_var.unit());
 }
 
@@ -421,18 +419,6 @@ void operate_on_slices(DatasetSlice &lhs_slice,
                        const ConstVariableSlice &rhs_var,
                        aligned::op_with_error_def op_with_error,
                        aligned::op_def op) {
-  if (lhs_slice.contains(Data::Variance, lhs_var.name()) !=
-      rhs_slice.contains(Data::Variance, rhs_var.name())) {
-    throw std::runtime_error("Either both or none of the operands must "
-                             "have a variance for their values.");
-  }
-  if (rhs_var.tag() == Data::Variance) {
-    if (!lhs_slice.contains(Data::Value, lhs_var.name()) ||
-        !rhs_slice.contains(Data::Value, rhs_var.name())) {
-      throw std::runtime_error("Cannot operate on datasets that contain a "
-                               "variance but no corresponding value.");
-    }
-  }
   if (rhs_var.tag() == Data::Value) {
     if (lhs_slice.contains(Data::Variance, lhs_var.name())) {
       auto error1 = lhs_slice(Data::Variance, lhs_var.name());
