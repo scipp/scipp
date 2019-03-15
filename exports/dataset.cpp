@@ -48,6 +48,20 @@ template <class T> struct mutable_span_methods<const T> {
   static void add(py::class_<gsl::span<const T>> &) {}
 };
 
+template <class T> std::string print(const T &item) {
+  using dataset::to_string;
+  using std::to_string;
+  if constexpr (std::is_same_v<T, std::string>)
+    return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+    return {"(Eigen::Vector3d), "};
+  else if constexpr (std::is_same_v<T,
+                                    boost::container::small_vector<double, 8>>)
+    return {"(vector), "};
+  else
+    return to_string(item) + ", ";
+}
+
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
   py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
   span.def("__getitem__", &gsl::span<T>::operator[],
@@ -56,7 +70,24 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
       .def("__len__", &gsl::span<T>::size)
       .def("__iter__", [](const gsl::span<T> &self) {
         return py::make_iterator(self.begin(), self.end());
-      });
+      })
+      .def("__repr__",
+       [](const gsl::span<T> &self) {
+         const gsl::index size = self.size();
+         if (size == 0)
+           return std::string("[]");
+         std::string s = "[";
+         for (gsl::index i = 0; i < self.size(); ++i) {
+           if (i == 4 && size > 8) {
+             s += "..., ";
+             i = size - 4;
+           }
+           s += print(self[i]);
+         }
+         s.resize(s.size() - 2);
+         s += "]";
+         return s;
+       });
   mutable_span_methods<T>::add(span);
 }
 
@@ -102,20 +133,6 @@ void declare_ranges_pair(py::module &m, const std::string &suffix) {
       m, (std::string("ranges_v3_common_pair_") + suffix).c_str());
   proxy.def("first", [](const Proxy &self) { return std::get<0>(self); })
       .def("second", [](const Proxy &self) { return std::get<1>(self); });
-}
-
-template <class T> std::string print(const T &item) {
-  using dataset::to_string;
-  using std::to_string;
-  if constexpr (std::is_same_v<T, std::string>)
-    return {'"' + item + "\", "};
-  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
-    return {"(Eigen::Vector3d), "};
-  else if constexpr (std::is_same_v<T,
-                                    boost::container::small_vector<double, 8>>)
-    return {"(vector), "};
-  else
-    return to_string(item) + ", ";
 }
 
 template <class T>
@@ -676,6 +693,11 @@ PYBIND11_MODULE(dataset, m) {
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](Variable &self, const std::tuple<Dim, py::slice> &index,
+              const VariableSlice &other) {
+             detail::pySlice(self, index).assign(other);
+           })
       .def("copy", [](const Variable &self) { return self; })
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
@@ -781,6 +803,11 @@ PYBIND11_MODULE(dataset, m) {
              return slice;
            },
            py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](VariableSlice &self, const std::tuple<Dim, py::slice> &index,
+              const VariableSlice &other) {
+             detail::pySlice(self, index).assign(other);
+           })
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
       .def("copy", [](const VariableSlice &self) { return Variable(self); })
