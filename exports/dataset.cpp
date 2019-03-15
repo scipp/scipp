@@ -499,6 +499,9 @@ public:
   auto subset(const Tag tag, const std::string &name) const {
     return m_data.subset(tag, name);
   }
+  template <class D> void insert(const std::string &name, D &subset) {
+    m_data.insert(name, subset);
+  }
 
 private:
   DatasetSlice m_data;
@@ -855,15 +858,9 @@ PYBIND11_MODULE(dataset, m) {
            }, py::keep_alive<0,1>())
       .def("__setitem__",
            [](SubsetHelper &self, const std::string &name,
-              const DatasetSlice &data) { self.subset(name).assign(data); })
-      .def("__setitem__",
-           [](SubsetHelper &self,
-              const std::tuple<const Tag, const std::string &> &index,
-              const DatasetSlice &data) {
-             const auto & [ tag, name ] = index;
-             self.subset(tag, name).assign(data);
-           });
-
+              const DatasetSlice &data) { self.insert(name, data); })
+      .def("__setitem__", [](SubsetHelper &self, const std::string &name,
+                             const Dataset &data) { self.insert(name, data); });
   py::class_<DatasetSlice>(m, "DatasetSlice")
       .def(py::init<Dataset &>())
       .def_property_readonly(
