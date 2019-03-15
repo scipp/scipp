@@ -1,5 +1,5 @@
 # Dataset imports
-from dataset import Data, dataset, dimensionCoord, coordDimension, sqrt, units
+from dataset import Dataset, Data, dataset, dimensionCoord, coordDimension, sqrt, units
 import numpy as np
 import copy
 # Plotly imports
@@ -28,7 +28,7 @@ def check_input(input_data):
     values = []
     ndim = 0
     for var in input_data:
-        if var.is_data:
+        if var.is_data and (var.tag != Data.Variance):
             values.append(var)
             ndim = max(ndim, len(var.dimensions))
 
@@ -43,23 +43,25 @@ def check_input(input_data):
 
 # Wrapper function to dispatch the input dataset to the appropriate plotting
 # function depending on its dimensions
-def plot(input_data, waterfall=None, **kwargs):
+def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
 
     # A list of datasets is only supported for 1d
     if type(input_data) is list:
-        return plot_1d(input_data, **kwargs)
+        return plot_1d(input_data, axes=axes, **kwargs)
     # Case of a single dataset
     else:
         ndim = check_input(input_data)[1]
         if ndim == 1:
-            return plot_1d(input_data, **kwargs)
+            return plot_1d(input_data, axes=axes, **kwargs)
         elif ndim == 2:
-            if waterfall is not None:
-                return plot_waterfall(input_data, dim=waterfall, **kwargs)
+            if collapse is not None:
+                return plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes, plot=False), **kwargs)
+            elif waterfall is not None:
+                return plot_waterfall(input_data, dim=waterfall, axes=axes, **kwargs)
             else:
-                return plot_image(input_data, **kwargs)
+                return plot_image(input_data, axes=axes, **kwargs)
         else:
-            return plot_sliceviewer(input_data, **kwargs)
+            return plot_sliceviewer(input_data, axes=axes, **kwargs)
 
 #===============================================================================
 
@@ -299,7 +301,7 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
 
 # Make a 3D waterfall plot
 #
-def plot_waterfall(input_data, dim=None, axes=None):
+def plot_waterfall(input_data, dim=None, axes=None, plot=True):
 
     values, ndim = check_input(input_data)
 
@@ -315,10 +317,20 @@ def plot_waterfall(input_data, dim=None, axes=None):
 
         data = []
         z = values[0].numpy
+
+        e = None
+        # Check if we need to add variances to dataset list for collapse plot
+        if not plot:
+            for var in input_data:
+                if (var.tag == Data.Variance) and (var.name == values[0].name):
+                    e = var.numpy
+
         zlabs = zdims.labels
         if (zlabs[0] == xdims.labels[0]) and (zlabs[1] == ydims.labels[0]):
             z = z.T
             zlabs = [ydims.labels[0], xdims.labels[0]]
+            if e is not None:
+                e = e.T
 
         pdict = dict(type = 'scatter3d', mode = 'lines', line = dict(width=5))
         adict = dict(z = 1)
@@ -328,38 +340,62 @@ def plot_waterfall(input_data, dim=None, axes=None):
 
         if dim == zlabs[0]:
             for i in range(len(y)):
-                idict = pdict.copy()
-                idict["x"] = x
-                idict["y"] = [y[i]] * len(x)
-                idict["z"] = z[i,:]
-                data.append(idict)
-                adict["x"] = 3
-                adict["y"] = 1
+                if plot:
+                    idict = pdict.copy()
+                    idict["x"] = x
+                    idict["y"] = [y[i]] * len(x)
+                    idict["z"] = z[i,:]
+                    data.append(idict)
+                    adict["x"] = 3
+                    adict["y"] = 1
+                else:
+                    dset = Dataset()
+                    dset[axes[1]] = input_data[axes[1]]
+                    dims = dset[axes[1]].dimensions
+                    labs = dims.labels
+                    key = values[0].name + "_{}".format(i)
+                    dset[Data.Value, key] = ([labs[0]], z[i,:])
+                    if e is not None:
+                        dset[Data.Variance, key] = ([labs[0]], e[i,:])
+                    data.append(dset)
         elif dim == zlabs[1]:
             for i in range(len(x)):
-                idict = pdict.copy()
-                idict["x"] = [x[i]] * len(y)
-                idict["y"] = y
-                idict["z"] = z[:,i]
-                data.append(idict)
-                adict["x"] = 1
-                adict["y"] = 3
+                if plot:
+                    idict = pdict.copy()
+                    idict["x"] = [x[i]] * len(y)
+                    idict["y"] = y
+                    idict["z"] = z[:,i]
+                    data.append(idict)
+                    adict["x"] = 1
+                    adict["y"] = 3
+                else:
+                    dset = Dataset()
+                    dset[axes[0]] = input_data[axes[0]]
+                    dims = dset[axes[0]].dimensions
+                    labs = dims.labels
+                    key = values[0].name + "_{}".format(i)
+                    dset[Data.Value, key] = ([labs[0]], z[:,i])
+                    if e is not None:
+                        dset[Data.Variance, key] = ([labs[0]], e[:,i])
+                    data.append(dset)
         else:
             raise RuntimeError("Something went wrong in plot_waterfall. The "
                                "waterfall dimension is not recognised.")
 
-        layout = dict(
-            scene = dict(
-                xaxis = dict(title = axis_label(xcoord)),
-                yaxis = dict(title = axis_label(ycoord)),
-                zaxis = dict(title = "{} [{}]".format(values[0].name, values[0].unit)),
-                aspectmode='manual',
-                aspectratio=adict
-                ),
-            showlegend = False
-            )
-
-        return iplot(dict(data=data, layout=layout))
+        if plot:
+            layout = dict(
+                scene = dict(
+                    xaxis = dict(title = axis_label(xcoord)),
+                    yaxis = dict(title = axis_label(ycoord)),
+                    zaxis = dict(title = "{} [{}]".format(values[0].name, values[0].unit)),
+                    aspectmode='manual',
+                    aspectratio=adict
+                    ),
+                showlegend = False
+                )
+            return iplot(dict(data=data, layout=layout))
+        else:
+            return data
 
     else:
         raise RuntimeError("Unsupported number of dimensions in plot_waterfall."
