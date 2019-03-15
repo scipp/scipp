@@ -176,8 +176,8 @@ class TestDatasetSlice(unittest.TestCase):
 
     def test_set_dataset_slice_items(self):
         d = self._d.copy()
-        self._d[Data.Value, "a"][Dim.X, 0:2] += self._d[Data.Value, "b"][Dim.X, 1:3]
-        self.assertEqual(list(self._d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
+        d[Data.Value, "a"][Dim.X, 0:2] += d[Data.Value, "b"][Dim.X, 1:3]
+        self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
         
 if __name__ == '__main__':
     unittest.main()
