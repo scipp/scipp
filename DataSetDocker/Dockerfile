@@ -29,7 +29,6 @@ RUN add-apt-repository ppa:mhier/libboost-latest && \
     apt-get install -y mercurial && \
     apt-get install -y libboost1.67-dev && \
     apt-get install -y git && \
-
     rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp && \
@@ -62,12 +61,38 @@ RUN conda install --quiet --yes "tornado<5.0.0"
 RUN conda install --quiet --yes pip
 RUN pip install py2nb
 
-RUN find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; ;  \
-    bash -c "if [ ! -d /home/$NB_USER/work/examples ]; then mkdir /home/$NB_USER/work/examples; fi;" ; \ 
-    bash -c "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} /home/$NB_USER/work/examples \; ; fi;" ; \
-    chmod -R a+rwx /home/$NB_USER/work
+ARG UPD_EX=/usr/local/bin/update_repo_and_make_examples.sh
+
+RUN touch $UPD_EX && \
+    chmod a+x $UPD_EX &&\
+    echo "#!/bin/bash" >> $UPD_EX && \
+    echo "cd /tmp/dataset && git checkout master && git pull" >> $UPD_EX && \
+    echo "find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; ;" >> $UPD_EX && \
+    echo "if [ ! -d /home/$NB_USER/work/examples ]; then mkdir /home/$NB_USER/work/examples; fi;" >> $UPD_EX && \
+    echo "if [ -d /tmp/dataset/python/examples ] && [ -d /home/$NB_USER/work/examples ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} /home/$NB_USER/work/examples \; ; fi;" >> $UPD_EX && \
+    echo "chmod -R a+rwx /home/$NB_USER/work" >> $UPD_EX && \
+    echo "chmod -R a+rwx /tmp/dataset/python/examples" >> $UPD_EX && \
+    echo "chmod -R a+rwx /tmp/dataset/.git" >> $UPD_EX && \
+    echo "chown -R $NB_USER /home/$NB_USER/work" >> $UPD_EX && \
+    echo "chown -R $NB_USER /tmp/dataset/python/examples" >> $UPD_EX && \
+    echo "chown -R $NB_USER /tmp/dataset/.git" >> $UPD_EX && \
+    echo "exit 0" >> $UPD_EX
+
+RUN bash -x $UPD_EX
+
+RUN sed -i "s/jupyter lab/jupyter lab --NotebookApp.token='' --NotebookApp.password=''/" /usr/local/bin/start-notebook.sh
 
 USER $NB_UID
 
+ARG UPD_NB=/home/$NB_USER/update_examples
 
+RUN touch $UPD_NB.py && \
+    echo "#|" >> $UPD_NB.py && \
+    echo "%%bash" >> $UPD_NB.py && \
+    echo "$UPD_EX" >> $UPD_NB.py && \
+    echo "#-" >> $UPD_NB.py && \
+    py2nb $UPD_NB.py && \
+    rm $UPD_NB.py
+
+ENV JUPYTER_ENABLE_LAB=TRUE
 
