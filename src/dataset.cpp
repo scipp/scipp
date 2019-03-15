@@ -330,32 +330,57 @@ template <class T> using ptr = type<T> *;
 
 // Using restrict does not seem to help much?
 #define RESTRICT __restrict
-void multiply(const gsl::index size, ptr<double> RESTRICT v1,
-              ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
-              ptr<const double> RESTRICT e2) {
+void multiply_data(const gsl::index size, ptr<double> RESTRICT v1,
+                   ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
+                   ptr<const double> RESTRICT e2) {
   for (gsl::index i = 0; i < size; ++i) {
     e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
     v1[i] *= v2[i];
   }
 }
-
-void multiply(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs *= rhs; }
-
-void divide(const gsl::index size, ptr<double> RESTRICT v1,
-            ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
-            ptr<const double> RESTRICT e2) {
+#define RESTRICT __restrict
+void divide_data(const gsl::index size, ptr<double> RESTRICT v1,
+                 ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
+                 ptr<const double> RESTRICT e2) {
   for (gsl::index i = 0; i < size; ++i) {
     e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
     v1[i] /= v2[i];
   }
 }
 
+void multiply(VariableSlice &lhs_var, const ConstVariableSlice &rhs_var,
+              VariableSlice &lhs_err, const ConstVariableSlice &rhs_err) {
+  auto v1 = lhs_var.template span<double>();
+  const auto v2 = rhs_var.template span<double>();
+  auto e1 = lhs_err.template span<double>();
+  const auto e2 = rhs_err.template span<double>();
+  multiply_data(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
+  lhs_err.setUnit(rhs_var.unit() * rhs_var.unit() * lhs_err.unit() +
+                  lhs_var.unit() * lhs_var.unit() * rhs_err.unit());
+  lhs_var.setUnit(lhs_var.unit() * rhs_var.unit());
+}
+
+void multiply(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs *= rhs; }
+
+void divide(VariableSlice &lhs_var, const ConstVariableSlice &rhs_var,
+            VariableSlice &lhs_err, const ConstVariableSlice &rhs_err) {
+  auto v1 = lhs_var.template span<double>();
+  const auto v2 = rhs_var.template span<double>();
+  auto e1 = lhs_err.template span<double>();
+  const auto e2 = rhs_err.template span<double>();
+  divide_data(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
+  lhs_err.setUnit(rhs_var.unit() * rhs_var.unit() * lhs_err.unit() +
+                  lhs_var.unit() * lhs_var.unit() * rhs_err.unit());
+  lhs_var.setUnit(lhs_var.unit() / rhs_var.unit());
+}
+
 void divide(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs /= rhs; }
 
 typedef void (*op_def)(VariableSlice &lhs, const ConstVariableSlice &rhs);
-typedef void (*op_with_error_def)(const gsl::index size, ptr<double> v1,
-                                  ptr<double> e1, ptr<const double> v2,
-                                  ptr<const double> e2);
+typedef void (*op_with_error_def)(VariableSlice &lhs_var,
+                                  const ConstVariableSlice &rhs_var,
+                                  VariableSlice &lhs_err,
+                                  const ConstVariableSlice &rhs_err);
 } // namespace aligned
 
 namespace {
@@ -417,19 +442,7 @@ void operate_on_slices(DatasetSlice &lhs_slice,
           (lhs_var.dimensions() == error2.dimensions())) {
         // Optimization if all dimensions match, avoiding allocation of
         // temporaries and redundant streaming from memory of large array.
-        error1.setUnit(rhs_var.unit() * rhs_var.unit() * error1.unit() +
-                       lhs_var.unit() * lhs_var.unit() * error2.unit());
-        lhs_var.setUnit(lhs_var.unit() * rhs_var.unit());
-
-        // TODO We are working with VariableSlice here, so get<> returns a
-        // view, not a span, i.e., it is less efficient. May need to do
-        // this differently for optimal performance.
-        auto v1 = lhs_var.template span<double>();
-        const auto v2 = rhs_var.template span<double>();
-        auto e1 = error1.template span<double>();
-        const auto e2 = error2.template span<double>();
-        // TODO Need to ensure that data is contiguous!
-        op_with_error(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
+        op_with_error(lhs_var, rhs_var, error1, error2);
       } else {
         // TODO Do we need to write this differently if the two operands
         // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +

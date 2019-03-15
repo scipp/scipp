@@ -691,6 +691,22 @@ TEST(Dataset, operator_times_equal_with_units) {
   EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
 }
 
+TEST(Dataset, operator_divide_equal_with_units) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
+  values.setUnit(units::m);
+  Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
+  variances.setUnit(units::m * units::m);
+  a.insert(values);
+  a.insert(variances);
+  a /= a;
+  EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
+  EXPECT_EQ(a(Data::Variance).unit(),
+            units::m * units::m * units::m * units::m); // TODO bug yet to fix!
+  EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
+}
+
 TEST(Dataset, operator_times_equal_histogram_data) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
