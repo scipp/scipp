@@ -360,6 +360,24 @@ typedef void (*op_with_error_def)(const gsl::index size, ptr<double> v1,
 
 namespace {
 
+void validate_operands(DatasetSlice &lhs_slice,
+                       const ConstDatasetSlice &rhs_slice,
+                       VariableSlice &lhs_var,
+                       const ConstVariableSlice &rhs_var) {
+  if (lhs_slice.contains(Data::Variance, lhs_var.name()) !=
+      rhs_slice.contains(Data::Variance, rhs_var.name())) {
+    throw std::runtime_error("Either both or none of the operands must "
+                             "have a variance for their values.");
+  }
+  if (rhs_var.tag() == Data::Variance) {
+    if (!lhs_slice.contains(Data::Value, lhs_var.name()) ||
+        !rhs_slice.contains(Data::Value, rhs_var.name())) {
+      throw std::runtime_error("Cannot operate on datasets that contain a "
+                               "variance but no corresponding value.");
+    }
+  }
+}
+
 /**
  * @param lhs_slice : Slice of target data variable (lh operand), but should
  * have variances captured too if relvant
@@ -367,10 +385,10 @@ namespace {
  * have variances captured too if relevant
  * @param lhs_var : lh variable (mutable)
  * @param rhs_var : rh variable (const)
- * @param op_with_error : inplace operator to use on operands. Handles value and
- * error at the data level.
- * @param op : inplace operator to use on operands of type constvariableslice.
- * No error considered.
+ * @param op_with_error : inplace operator to use on operands. Handles value
+ * and error at the data level.
+ * @param op : inplace operator to use on operands of type
+ * constvariableslice. No error considered.
  */
 void operate_on_slices(DatasetSlice &lhs_slice,
                        const ConstDatasetSlice &rhs_slice,
@@ -456,8 +474,10 @@ T1 &op_equals(T1 &dataset, const T2 &other,
         // variables
         auto lhs_slice = dataset.subset(lhs_var.name());
         auto rhs_slice = other.subset(rhs_var.name());
-        operate_on_slices(lhs_slice, rhs_slice, lhs_var, rhs_var, op_with_error,
-                          op);
+        validate_operands(lhs_slice, rhs_slice, lhs_var, rhs_var);
+        if (rhs_var.tag() != Data::Variance)
+          operate_on_slices(lhs_slice, rhs_slice, lhs_var, rhs_var,
+                            op_with_error, op);
       }
     } else {
       // Note that this is handled via name, i.e., there may be values and
@@ -473,8 +493,10 @@ T1 &op_equals(T1 &dataset, const T2 &other,
           if (lhs_var.tag() == rhs_var.tag()) {
             ++count;
             auto lhs_slice = dataset.subset(lhs_var.name());
-            operate_on_slices(lhs_slice, rhs_slice, lhs_var, rhs_var,
-                              op_with_error, op);
+            validate_operands(lhs_slice, rhs_slice, lhs_var, rhs_var);
+            if (rhs_var.tag() != Data::Variance)
+              operate_on_slices(lhs_slice, rhs_slice, lhs_var, rhs_var,
+                                op_with_error, op);
           }
         }
         if (count == 0)
