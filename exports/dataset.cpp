@@ -62,6 +62,23 @@ template <class T> std::string print(const T &item) {
     return to_string(item) + ", ";
 }
 
+template <class T> std::string array_to_string(const T &arr) {
+  const gsl::index size = arr.size();
+  if (size == 0)
+   return std::string("[]");
+  std::string s = "[";
+  for (gsl::index i = 0; i < arr.size(); ++i) {
+   if (i == 4 && size > 8) {
+     s += "..., ";
+     i = size - 4;
+   }
+   s += print(arr[i]);
+  }
+  s.resize(s.size() - 2);
+  s += "]";
+  return s;
+}
+
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
   py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
   span.def("__getitem__", &gsl::span<T>::operator[],
@@ -72,22 +89,7 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
         return py::make_iterator(self.begin(), self.end());
       })
       .def("__repr__",
-       [](const gsl::span<T> &self) {
-         const gsl::index size = self.size();
-         if (size == 0)
-           return std::string("[]");
-         std::string s = "[";
-         for (gsl::index i = 0; i < self.size(); ++i) {
-           if (i == 4 && size > 8) {
-             s += "..., ";
-             i = size - 4;
-           }
-           s += print(self[i]);
-         }
-         s.resize(s.size() - 2);
-         s += "]";
-         return s;
-       });
+       [](const gsl::span<T> &self) { return array_to_string(self); });
   mutable_span_methods<T>::add(span);
 }
 
@@ -140,22 +142,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
   view.def("__repr__",
-           [](const VariableView<T> &self) {
-             const gsl::index size = self.size();
-             if (size == 0)
-               return std::string("[]");
-             std::string s = "[";
-             for (gsl::index i = 0; i < self.size(); ++i) {
-               if (i == 4 && size > 8) {
-                 s += "..., ";
-                 i = size - 4;
-               }
-               s += print(self[i]);
-             }
-             s.resize(s.size() - 2);
-             s += "]";
-             return s;
-           })
+           [](const VariableView<T> &self) { return array_to_string(self); })
       .def("__getitem__", &VariableView<T>::operator[],
            py::return_value_policy::reference)
       .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
