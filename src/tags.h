@@ -428,6 +428,7 @@ constexpr Dim coordinate_dimension<CoordDef::Position> = Dim::Position;
 template <>
 constexpr Dim coordinate_dimension<CoordDef::SpectrumNumber> = Dim::Spectrum;
 template <> constexpr Dim coordinate_dimension<CoordDef::Row> = Dim::Row;
+template <> constexpr Dim coordinate_dimension<CoordDef::Temperature> = Dim::Temperature;
 } // namespace detail
 
 template <class... Ts>
