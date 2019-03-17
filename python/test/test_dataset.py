@@ -536,18 +536,6 @@ class TestDatasetExamples(unittest.TestCase):
         # Arithmetics with tables (here: add two tables)
         table += table
 
-    def test_MDHistoWorkspace_plotting_example(self):
-        d = Dataset()
-        L = 30
-        d[Coord.X] = ([Dim.X], np.arange(L))
-        d[Coord.Y] = ([Dim.Y], np.arange(L))
-        d[Coord.Z] = ([Dim.Z], np.arange(L))
-        d[Data.Value, "temperature"] = ([Dim.Z, Dim.Y, Dim.X], np.random.normal(size=L*L*L).reshape([L,L,L]))
-
-        dataset = as_xarray(d.subset['temperature'])
-        dataset['Value:temperature'][10, ...].plot()
-        #plt.savefig('test.png')
-
     def test_MDHistoWorkspace_example(self):
         L = 30
         d = Dataset()
