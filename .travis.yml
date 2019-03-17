@@ -28,9 +28,9 @@ script:
   - mkdir -p install
   - cd build
   - cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
-  - make install
+  - make -j2 install
   - ./test/dataset_test
-  - pip install --upgrade pip
+  - pip install --user --upgrade pip
   - python3 -m pip install -r ../python/requirements.txt
   - export PYTHONPATH=$PYTHONPATH:../install
   - cd ../python
