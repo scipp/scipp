@@ -7,10 +7,13 @@ import io
 from contextlib import redirect_stdout
 import re
 
+
 def plot_to_md5sum(d, axes=None, waterfall=None):
     with io.StringIO() as buf, redirect_stdout(buf):
         print(plot(d, axes=axes, waterfall=waterfall))
         output = buf.getvalue()
+    # Plotly generates seom unique ids for plot html elements every time it
+    # runs, so we need to strip them out for result reproducibility
     stripped = re.sub(r"[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", "", output)
     return hashlib.md5(stripped.encode('utf-8')).hexdigest()
 
