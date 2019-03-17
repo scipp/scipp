@@ -2,7 +2,6 @@ import unittest
 
 from dataset import *
 import numpy as np
-import matplotlib.pyplot as plt
 import operator
 
 class TestDataset(unittest.TestCase):
