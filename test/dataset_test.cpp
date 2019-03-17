@@ -522,6 +522,38 @@ TEST(Dataset, operator_plus_equal_broadcast) {
   EXPECT_EQ(a.get(Data::Value)[5], 6.3);
 }
 
+TEST(Dataset, operator_times_equals_broadcast) {
+
+  Dataset a;
+  a.insert(Data::Value, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
+           {1.0, 1.0, 1.0, 1.0});
+  a.insert(Data::Variance, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
+           {1.0, 1.0, 1.0, 1.0});
+
+  Dataset b;
+  b.insert(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
+  b.insert(Data::Variance, {Dim::Y, 2}, {1.0, 1.0});
+
+  auto c = a * b;
+
+  // Basic output structure test
+  EXPECT_EQ(c.dimensions().volume(), 4);
+  EXPECT_TRUE(c.dimensions().contains(Dim::X));
+  EXPECT_TRUE(c.dimensions().contains(Dim::Y));
+  EXPECT_TRUE(c.contains(Data::Value));
+  EXPECT_TRUE(c.contains(Data::Variance));
+
+  EXPECT_EQ(c.get(Data::Value)[0], 2);
+  EXPECT_EQ(c.get(Data::Value)[1], 3);
+  EXPECT_EQ(c.get(Data::Value)[2], 2);
+  EXPECT_EQ(c.get(Data::Value)[3], 3);
+
+  EXPECT_EQ(c.get(Data::Variance)[0], 2 * 2 * 1 + 1 * 1 * 1);
+  EXPECT_EQ(c.get(Data::Variance)[1], 3 * 3 * 1 + 1 * 1 * 1);
+  EXPECT_EQ(c.get(Data::Variance)[2], 2 * 2 * 1 + 1 * 1 * 1);
+  EXPECT_EQ(c.get(Data::Variance)[3], 3 * 3 * 1 + 1 * 1 * 1);
+}
+
 TEST(Dataset, operator_plus_equal_transpose) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
