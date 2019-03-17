@@ -676,6 +676,17 @@ PYBIND11_MODULE(dataset, m) {
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](Variable &self, const std::tuple<Dim, py::slice> &index,
+              const VariableSlice &other) {
+             detail::pySlice(self, index).assign(other);
+           })
+      .def("__setitem__",
+           [](Variable &self, const std::tuple<Dim, gsl::index> &index,
+              const VariableSlice &other) {
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
+           })
       .def("copy", [](const Variable &self) { return self; })
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
@@ -781,6 +792,17 @@ PYBIND11_MODULE(dataset, m) {
              return slice;
            },
            py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](VariableSlice &self, const std::tuple<Dim, py::slice> &index,
+              const VariableSlice &other) {
+             detail::pySlice(self, index).assign(other);
+           })
+      .def("__setitem__",
+           [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index,
+              const VariableSlice &other) {
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
+           })
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
       .def("copy", [](const VariableSlice &self) { return Variable(self); })
