@@ -30,6 +30,7 @@ script:
   - cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
   - make install
   - ./test/dataset_test
+  - pip install --upgrade pip
   - python3 -m pip install -r ../python/requirements.txt
   - export PYTHONPATH=$PYTHONPATH:../install
   - cd ../python
