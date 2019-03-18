@@ -48,6 +48,37 @@ template <class T> struct mutable_span_methods<const T> {
   static void add(py::class_<gsl::span<const T>> &) {}
 };
 
+template <class T> std::string element_to_string(const T &item) {
+  using dataset::to_string;
+  using std::to_string;
+  if constexpr (std::is_same_v<T, std::string>)
+    return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+    return {"(Eigen::Vector3d), "};
+  else if constexpr (std::is_same_v<T,
+                                    boost::container::small_vector<double, 8>>)
+    return {"(vector), "};
+  else
+    return to_string(item) + ", ";
+}
+
+template <class T> std::string array_to_string(const T &arr) {
+  const gsl::index size = arr.size();
+  if (size == 0)
+   return std::string("[]");
+  std::string s = "[";
+  for (gsl::index i = 0; i < arr.size(); ++i) {
+   if (i == 4 && size > 8) {
+     s += "..., ";
+     i = size - 4;
+   }
+   s += element_to_string(arr[i]);
+  }
+  s.resize(s.size() - 2);
+  s += "]";
+  return s;
+}
+
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
   py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
   span.def("__getitem__", &gsl::span<T>::operator[],
@@ -56,7 +87,9 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
       .def("__len__", &gsl::span<T>::size)
       .def("__iter__", [](const gsl::span<T> &self) {
         return py::make_iterator(self.begin(), self.end());
-      });
+      })
+      .def("__repr__",
+       [](const gsl::span<T> &self) { return array_to_string(self); });
   mutable_span_methods<T>::add(span);
 }
 
@@ -104,41 +137,12 @@ void declare_ranges_pair(py::module &m, const std::string &suffix) {
       .def("second", [](const Proxy &self) { return std::get<1>(self); });
 }
 
-template <class T> std::string print(const T &item) {
-  using dataset::to_string;
-  using std::to_string;
-  if constexpr (std::is_same_v<T, std::string>)
-    return {'"' + item + "\", "};
-  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
-    return {"(Eigen::Vector3d), "};
-  else if constexpr (std::is_same_v<T,
-                                    boost::container::small_vector<double, 8>>)
-    return {"(vector), "};
-  else
-    return to_string(item) + ", ";
-}
-
 template <class T>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
   view.def("__repr__",
-           [](const VariableView<T> &self) {
-             const gsl::index size = self.size();
-             if (size == 0)
-               return std::string("[]");
-             std::string s = "[";
-             for (gsl::index i = 0; i < self.size(); ++i) {
-               if (i == 4 && size > 8) {
-                 s += "..., ";
-                 i = size - 4;
-               }
-               s += print(self[i]);
-             }
-             s.resize(s.size() - 2);
-             s += "]";
-             return s;
-           })
+           [](const VariableView<T> &self) { return array_to_string(self); })
       .def("__getitem__", &VariableView<T>::operator[],
            py::return_value_policy::reference)
       .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
