@@ -781,7 +781,7 @@ TEST(Dataset, operator_divide_equal_with_units) {
   a /= a;
   EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
   EXPECT_EQ(a(Data::Variance).unit(),
-            units::dimensionless * units::dimensionless);
+            units::dimensionless);
   EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
 }
 
