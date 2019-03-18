@@ -82,33 +82,45 @@ class TestDatasetSlice(unittest.TestCase):
         # Assume numpy operations are correct as comparitor
         op(data,b[Data.Value, rh_var_name].numpy)
         op(a,b)
-        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
+        np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
 
     def test_binary_operations(self):
         d = Dataset()
         d[Coord.X] = ([Dim.X], np.arange(10))
         d[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
+        d[Data.Variance, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
         d[Data.Value, "b"] = ([Dim.X], np.arange(10, dtype='float64'))
+        d[Data.Variance, "b"] = ([Dim.X], np.arange(10, dtype='float64'))
         a = d.subset["a"]
         b = d.subset["b"]
         data = np.copy(a[Data.Value, "a"].numpy)
+        variance = np.copy(a[Data.Variance, "a"].numpy)
+
         c = a + b
         # Variables "a" and "b" added despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance + variance))
+
         c = a - b
         # Variables "a" and "b" subtracted despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance + variance))
 
+        c = a * b
+        # Variables "a" and "b" subtracted despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance*(data*data)*2))
 
-        #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
+        c = a / b
+        # Variables "a" and "b" subtracted despite different names
+        with np.errstate(invalid='ignore'):
+            np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data) 
+        np.testing.assert_equal(c[Data.Variance, "a"].numpy, variance*(data*data)*2) 
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
-        # TODO problem described above need inplace operators
-        # Only demonstrate behaviour where variable names are sames across operands
-        b = d.subset["a"]
-        data = np.copy(a[Data.Value, "a"].numpy)
-        self._apply_test_op(operator.imul, a, b, data, lh_var_name="a", rh_var_name="a")
+        self._apply_test_op(operator.imul, a, b, data)
+        self._apply_test_op(operator.itruediv, a, b, data)
 
     def test_binary_float_operations(self):
         d = Dataset()
@@ -136,6 +148,12 @@ class TestDatasetSlice(unittest.TestCase):
         c = 2.0 * a
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * 2.0))
 
+        self._apply_test_op(operator.iadd, a, b, data)
+        self._apply_test_op(operator.isub, a, b, data)
+        self._apply_test_op(operator.imul, a, b, data)
+        self._apply_test_op(operator.itruediv, a, b, data)
+        
+
     def test_equal_not_equal(self):
         d = Dataset()
         d[Coord.X] = ([Dim.X], np.arange(10))
@@ -151,11 +169,9 @@ class TestDatasetSlice(unittest.TestCase):
         d3[Coord.X] = ([Dim.X], np.arange(10))
         d3[Data.Value, "a"] = ([Dim.X], np.arange(1, 11, dtype='float64'))
         a3 = d3.subset["a"]
-        # Equal
         self.assertEqual(d, d2)
         self.assertEqual(d2, d)
         self.assertEqual(a, a2)
-        # Not equal
         self.assertNotEqual(a, b)
         self.assertNotEqual(b, a)
         self.assertNotEqual(a, c)
@@ -169,6 +185,23 @@ class TestDatasetSlice(unittest.TestCase):
 
         d += Variable(2)
 
+    def test_correct_temporaries(self):
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d1 = d1[Dim.X, 1:2]
+        self.assertEqual(list(d1[Data.Value, "A"].data), [5.0, 6.0, 7.0, 8.0])
         
+    def test_set_dataset_slice_items(self):
+        d = self._d.copy()
+        d[Data.Value, "a"][Dim.X, 0:2] += d[Data.Value, "b"][Dim.X, 1:3]
+        self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
+        d[Data.Value, "a"][Dim.X, 6] += d[Data.Value, "b"][Dim.X, 8]
+        self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
+                
 if __name__ == '__main__':
     unittest.main()

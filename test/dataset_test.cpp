@@ -504,6 +504,52 @@ TEST(Dataset, operator_plus_equal) {
   EXPECT_EQ(a.get(Data::Value)[0], 4.4);
 }
 
+TEST(Dataset, insert_named_subset) {
+  Dataset a;
+  a.insert(Data::Value, "a", {Dim::X, 1}, 1);
+  a.insert(Data::Variance, "a", {Dim::X, 1}, 1);
+  a.insert(Coord::X, "a", {Dim::X, 1}, 1);
+  auto subset = a.subset("a");
+
+  Dataset b;
+  b.insert(Coord::X, "a", {Dim::X, 1}, 1);
+  b.insert("b", subset);
+  EXPECT_NE(b, a);
+  EXPECT_EQ(b.size(), 3);
+
+  EXPECT_TRUE(b.contains(Data::Value, "b"));
+  EXPECT_TRUE(b.contains(Data::Variance, "b"));
+  EXPECT_TRUE(b.contains(Coord::X, "a")); // Coordinates not renamed
+}
+
+TEST(Dataset, insert_named_subset_matches_coordinates) {
+  Dataset a;
+  a.insert(Data::Value, "a", {Dim::X, 1}, 1);
+  a.insert(Data::Variance, "a", {Dim::X, 1}, 1);
+  a.insert(Coord::X, {Dim::X, 1}, 1);
+  auto subset = a.subset("a");
+
+  Dataset b;
+  b.insert(Coord::Y, {Dim::Y, 3}, 3); // Coord different from subset
+  EXPECT_THROW(b.insert("b", subset),
+               std::runtime_error);   // Insert cannot be used to
+                                      // add coordinate variables
+                                      // not already present
+  b.insert(Coord::X, {Dim::X, 1}, 1); // lhs now has X coord.
+  b.insert("b", subset);
+
+  EXPECT_EQ(b.size(), 4);
+  EXPECT_TRUE(b.contains(Data::Value, "b"));
+  EXPECT_TRUE(b.contains(Data::Variance, "b"));
+  EXPECT_TRUE(b.contains(Coord::Y)); // Original coord
+  EXPECT_TRUE(b.contains(Coord::X));
+
+  Dataset c;
+  c.insert(Coord::X, {Dim::X, 3}, 3);
+  // Coord X dimension different
+  EXPECT_THROW(c.insert("c", subset), std::runtime_error);
+}
+
 TEST(Dataset, operator_plus_equal_broadcast) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
@@ -521,6 +567,38 @@ TEST(Dataset, operator_plus_equal_broadcast) {
   EXPECT_EQ(a.get(Data::Value)[3], 4.2);
   EXPECT_EQ(a.get(Data::Value)[4], 5.3);
   EXPECT_EQ(a.get(Data::Value)[5], 6.3);
+}
+
+TEST(Dataset, operator_multiplication_broadcast) {
+
+  Dataset a;
+  a.insert(Data::Value, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
+           {1.0, 1.0, 1.0, 1.0});
+  a.insert(Data::Variance, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
+           {1.0, 1.0, 1.0, 1.0});
+
+  Dataset b;
+  b.insert(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
+  b.insert(Data::Variance, {Dim::Y, 2}, {1.0, 1.0});
+
+  auto c = a * b;
+
+  // Basic output structure test
+  EXPECT_EQ(c.dimensions().volume(), 4);
+  EXPECT_TRUE(c.dimensions().contains(Dim::X));
+  EXPECT_TRUE(c.dimensions().contains(Dim::Y));
+  EXPECT_TRUE(c.contains(Data::Value));
+  EXPECT_TRUE(c.contains(Data::Variance));
+
+  EXPECT_EQ(c.get(Data::Value)[0], 2);
+  EXPECT_EQ(c.get(Data::Value)[1], 3);
+  EXPECT_EQ(c.get(Data::Value)[2], 2);
+  EXPECT_EQ(c.get(Data::Value)[3], 3);
+
+  EXPECT_EQ(c.get(Data::Variance)[0], 2 * 2 * 1 + 1 * 1 * 1);
+  EXPECT_EQ(c.get(Data::Variance)[1], 3 * 3 * 1 + 1 * 1 * 1);
+  EXPECT_EQ(c.get(Data::Variance)[2], 2 * 2 * 1 + 1 * 1 * 1);
+  EXPECT_EQ(c.get(Data::Variance)[3], 3 * 3 * 1 + 1 * 1 * 1);
 }
 
 TEST(Dataset, operator_plus_equal_transpose) {
@@ -602,6 +680,16 @@ TEST(Dataset, operator_times_equal) {
   EXPECT_EQ(a.get(Data::Value)[0], 9.0);
 }
 
+TEST(Dataset, operator_divide_equal) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
+
+  a /= a;
+  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
+  EXPECT_EQ(a.get(Data::Value)[0], 1.0);
+}
+
 TEST(Dataset, operator_times_equal_with_attributes) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
@@ -615,22 +703,64 @@ TEST(Dataset, operator_times_equal_with_attributes) {
   EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
 }
 
-TEST(Dataset, operator_times_equal_with_uncertainty) {
+TEST(Dataset, operator_divide_equal_with_attributes) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
-  a.insert(Data::Variance, "", {Dim::X, 1}, {2.0});
-  Dataset b;
-  b.insert(Coord::X, {Dim::X, 1}, {0.1});
-  b.insert(Data::Value, "", {Dim::X, 1}, {4.0});
-  b.insert(Data::Variance, "", {Dim::X, 1}, {3.0});
-  a *= b;
+  Dataset logs;
+  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
+  a.insert(Attr::ExperimentLog, "", {}, {logs});
+  a /= a;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 12.0);
-  EXPECT_EQ(a.get(Data::Variance)[0], 2.0 * 16.0 + 3.0 * 9.0);
+  EXPECT_EQ(a.get(Data::Value)[0], 1.0);
+  EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
 }
 
-TEST(Dataset, operator_times_equal_uncertainty_failures) {
+TEST(Dataset, operator_times_and_divide_equal_with_uncertainty) {
+  Dataset a;
+  const auto value1 = 3.0;
+  const auto variance1 = 2.0;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value, "", {Dim::X, 1}, {value1});
+  a.insert(Data::Variance, "", {Dim::X, 1}, {variance1});
+  Dataset b;
+  const auto value2 = 4.0;
+  const auto variance2 = 3.0;
+  b.insert(Coord::X, {Dim::X, 1}, {0.1});
+  b.insert(Data::Value, "", {Dim::X, 1}, {value2});
+  b.insert(Data::Variance, "", {Dim::X, 1}, {variance2});
+  a *= b;
+  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
+  auto value3 = value1 * value2;
+  EXPECT_EQ(a.get(Data::Value)[0], value3);
+  auto variance3 = variance1 * value2 * value2 + variance2 * value1 * value1;
+  EXPECT_EQ(a.get(Data::Variance)[0], variance3);
+
+  a /= a;
+  auto value4 = 1; // clearly should be unity
+  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
+  EXPECT_EQ(a.get(Data::Value)[0], value4);
+  EXPECT_EQ(a.get(Data::Variance)[0], variance3 * (value3 * value3) * 2);
+}
+
+void operator_uncertaintly_failures(void (*op)(Dataset &lhs,
+                                               const Dataset &rhs),
+                                    Dataset &a, Dataset &b, Dataset &c) {
+  EXPECT_THROW_MSG(op(a, b), std::runtime_error,
+                   "Either both or none of the operands must have a variance "
+                   "for their values.");
+  EXPECT_THROW_MSG(op(b, a), std::runtime_error,
+                   "Either both or none of the operands must have a variance "
+                   "for their values.");
+  EXPECT_THROW_MSG(op(c, c), std::runtime_error,
+                   "Cannot operate on datasets that contain a variance but no "
+                   "corresponding value.");
+  EXPECT_THROW_MSG(op(a, c), std::runtime_error,
+                   "Cannot operate on datasets that contain a variance but no "
+                   "corresponding value.");
+}
+
+TEST(Dataset, operator_binary_op_equal_uncertainty_failures) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   a.insert(Data::Value, "name1", {Dim::X, 1}, {3.0});
@@ -641,27 +771,8 @@ TEST(Dataset, operator_times_equal_uncertainty_failures) {
   Dataset c;
   c.insert(Coord::X, {Dim::X, 1}, {0.1});
   c.insert(Data::Variance, "name1", {Dim::X, 1}, {2.0});
-  EXPECT_THROW_MSG(a *= b, std::runtime_error,
-                   "Either both or none of the operands must have a variance "
-                   "for their values.");
-  EXPECT_THROW_MSG(b *= a, std::runtime_error,
-                   "Either both or none of the operands must have a variance "
-                   "for their values.");
-  EXPECT_THROW_MSG(c *= c, std::runtime_error,
-                   "Cannot multiply datasets that contain a variance but no "
-                   "corresponding value.");
-  EXPECT_THROW_MSG(a *= c, std::runtime_error,
-                   "Cannot multiply datasets that contain a variance but no "
-                   "corresponding value.");
-  EXPECT_THROW_MSG(c *= a, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
-  EXPECT_THROW_MSG(b *= c, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
-  EXPECT_THROW_MSG(c *= b, std::runtime_error,
-                   "Right-hand-side in addition contains variable that is not "
-                   "present in left-hand-side.");
+  operator_uncertaintly_failures([](auto i, auto j) { i *= j; }, a, b, c);
+  operator_uncertaintly_failures([](auto i, auto j) { i /= j; }, a, b, c);
 }
 
 TEST(Dataset, operator_times_equal_with_units) {
@@ -677,6 +788,22 @@ TEST(Dataset, operator_times_equal_with_units) {
   EXPECT_EQ(a(Data::Value).unit(), units::m * units::m);
   EXPECT_EQ(a(Data::Variance).unit(),
             units::m * units::m * units::m * units::m);
+  EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
+}
+
+TEST(Dataset, operator_divide_equal_with_units) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
+  values.setUnit(units::m);
+  Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
+  variances.setUnit(units::m * units::m);
+  a.insert(values);
+  a.insert(variances);
+  a /= a;
+  EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
+  EXPECT_EQ(a(Data::Variance).unit(),
+            units::dimensionless);
   EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
 }
 
@@ -697,15 +824,19 @@ TEST(Dataset, operator_times_equal_histogram_data) {
   b.insert(Data::Value, "name1", {Dim::X, 1}, {4.0});
   b.insert(Data::Variance, "name1", {Dim::X, 1}, {4.0});
 
+  auto c =
+      a; // Copy a because the failing operation below c *= a lacks atomicity,
+         // leaves assigned units of the variable even though the variance unit
+         // setting failed.
   // Counts (aka "histogram data") times counts not possible.
   EXPECT_THROW_MSG(
-      a *= a, std::runtime_error,
+      c *= c, std::runtime_error,
       "Unsupported unit as result of multiplication: (counts^2) * (counts^2)");
   // Counts times frequencies (aka "distribution") ok.
   // TODO Works for dimensionless right now, but do we need to handle other
   // cases as well?
   auto a_copy(a);
-  EXPECT_NO_THROW(a *= b);
+  a *= b;
   EXPECT_NO_THROW(b *= a_copy);
 }
 
@@ -1407,6 +1538,94 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
                           "expected to match");
 }
 
+template <typename T>
+void binary_test(T (*func)(T, T), const std::vector<T> &input,
+                 Dataset &actual_result, const std::string &name = "") {
+
+  // Transform the underlying data into the same result to compare note that
+  // input must be both l and r operands of the binary expression
+  std::vector<T> result;
+  result.reserve(input.size());
+  std::transform(input.begin(), input.end(), input.begin(),
+                 std::back_inserter(result), func);
+
+  EXPECT_EQ(actual_result.get(Data::Value, name), gsl::make_span(result));
+}
+
+template <typename T>
+void inplace_op_test(T (*func)(T, T), const std::vector<T> &input,
+                     const std::vector<T> &current, Dataset &actual_result,
+                     const std::string &name = "") {
+
+  auto result = input; // take copy of input
+  std::transform(current.begin(), current.end(), result.begin(), result.begin(),
+                 func);
+  EXPECT_EQ(actual_result.get(Data::Value, name), gsl::make_span(result));
+}
+
+std::vector<double> data_from_dataset(Dataset &dataset,
+                                      const std::string &name = "") {
+  auto var = dataset.get(Data::Value, name);
+  return std::vector<double>(var.begin(), var.end());
+}
+
+TEST(Dataset, binary_operations_with_identical_lhs_rhs_operand_structures) {
+
+  auto plus = [](auto i, auto j) { return i + j; };
+  auto minus = [](auto i, auto j) { return i - j; };
+  auto mult = [](auto i, auto j) { return i * j; };
+  auto divide = [](auto i, auto j) { return i / j; };
+
+  Dataset a;
+  std::vector<double> input = {2, 3};
+  a.insert(Data::Value, {Dim::X, 2}, input.begin(), input.end());
+  Dataset b(a); // Idential copy.
+
+  auto c = a + b;
+  binary_test<double>(plus, input, c);
+  c = a - b;
+  binary_test<double>(minus, input, c);
+  c = a * b;
+  binary_test<double>(mult, input, c);
+
+  auto c_var_data = data_from_dataset(c);
+  c += b;
+  inplace_op_test<double>(plus, input, c_var_data, c);
+  c_var_data = data_from_dataset(c);
+  c -= b;
+  inplace_op_test<double>(minus, input, c_var_data, c);
+  c_var_data = data_from_dataset(c);
+  c *= b;
+  inplace_op_test<double>(mult, input, c_var_data, c);
+  c_var_data = data_from_dataset(c);
+  c /= b;
+  inplace_op_test<double>(divide, input, c_var_data, c);
+}
+
+TEST(Dataset, binary_operations_with_non_identical_lhs_rhs_operand_structures) {
+  auto plus = [](auto i, auto j) { return i + j; };
+  auto minus = [](auto i, auto j) { return i - j; };
+  auto mult = [](auto i, auto j) { return i * j; };
+  auto divide = [](auto i, auto j) { return i / j; };
+
+  Dataset a;
+  std::vector<double> input = {2, 3};
+  a.insert(Data::Value, "u", {Dim::X, 2}, input.begin(), input.end());
+  Dataset b;
+  b.insert(Data::Value, "v", {Dim::X, 2}, input.begin(), input.end());
+
+  auto c = a + b;
+  binary_test<double>(plus, input, c, "u");
+  c = b + a;
+  binary_test<double>(plus, input, c, "v"); // output contains 'v' no 'u'
+  c = a - b;
+  binary_test<double>(minus, input, c, "u");
+  c = a * b;
+  binary_test<double>(mult, input, c, "u");
+  c = a / b;
+  binary_test<double>(divide, input, c, "u");
+}
+
 TEST(Dataset, unary_minus) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 2}, {1, 2});
@@ -1452,6 +1671,13 @@ TEST(Dataset, binary_assign_with_scalar) {
   // Scalar treated as having 0 variance, `*` affects variance.
   EXPECT_TRUE(equals(d.get(Data::Variance, "d1"), {16, 20}));
   EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {24}));
+
+  d /= 2;
+  EXPECT_TRUE(equals(d.get(Data::Value, "d1"), {0, 1}));
+  EXPECT_TRUE(equals(d.get(Data::Value, "d2"), {2}));
+  // Scalar treated as having 0 variance, `/` affects variance.
+  EXPECT_TRUE(equals(d.get(Data::Variance, "d1"), {16 * 2 * 2, 20 * 2 * 2}));
+  EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {24 * 2 * 2}));
 }
 
 TEST(DatasetSlice, binary_assign_with_scalar) {
@@ -1488,6 +1714,13 @@ TEST(DatasetSlice, binary_assign_with_scalar) {
   // Scalar treated as having 0 variance, `*` affects variance.
   EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4, 20}));
   EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {24}));
+
+  slice /= 2;
+  EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 1}));
+  EXPECT_TRUE(equals(d.get(Data::Value, "b"), {2}));
+  // Scalar treated as having 0 variance, `/` affects variance.
+  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4, 20 * 2 * 2}));
+  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {6 * 4 * 4}));
 }
 
 TEST(Dataset, binary_with_scalar) {
@@ -1577,6 +1810,12 @@ TEST(DatasetSlice, binary_with_scalar) {
   EXPECT_TRUE(equals(prod.get(Data::Value, "b"), {9}));
   EXPECT_TRUE(equals(prod.get(Data::Variance, "a"), {45}));
   EXPECT_TRUE(equals(prod.get(Data::Variance, "b"), {54}));
+
+  auto fraction = slice / 2;
+  EXPECT_TRUE(equals(fraction.get(Data::Value, "a"), {1}));
+  EXPECT_TRUE(equals(fraction.get(Data::Value, "b"), {1.5}));
+  EXPECT_TRUE(equals(fraction.get(Data::Variance, "a"), {20}));
+  EXPECT_TRUE(equals(fraction.get(Data::Variance, "b"), {24}));
 }
 
 TEST(DatasetSlice, operator_plus_with_variable) {

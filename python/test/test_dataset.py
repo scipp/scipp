@@ -182,6 +182,45 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(view.dimensions[Dim.Z], 4)
         self.assertEqual(len(view), 4)
 
+    def test_insert_subdata(self):
+        d1 = Dataset()
+        d1[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype="double"))
+        d1[Data.Variance, "a"] = ([Dim.X], np.arange(10, dtype="double"))
+        ds_slice = d1.subset["a"]
+
+        d2 = Dataset()
+        # Insert from subset
+        d2.subset["a"] = ds_slice 
+        self.assertEqual(len(d1), len(d2))
+        self.assertEqual(d1, d2)
+
+        d3 = Dataset()
+        # Insert from subset
+        d3.subset["b"] = ds_slice
+        self.assertEqual(len(d3), 2)
+        self.assertNotEqual(d1, d3) # imported names should differ
+
+        d4 = Dataset()
+        d4.subset["2a"] = ds_slice + ds_slice
+        self.assertEqual(len(d4), 2)
+        self.assertNotEqual(d1, d4) 
+        self.assertTrue(np.array_equal(d4[Data.Value, "2a"].numpy, ds_slice[Data.Value,"a"].numpy*2))
+
+    def test_insert_subdata_different_variable_types(self):
+        a = Dataset()
+        xcoord = Variable(Coord.X, [Dim.X], np.arange(4))
+        a[Data.Value] = ([Dim.X], np.arange(3))
+        a[Coord.X] = xcoord 
+        a[Attr.ExperimentLog] = ([], Dataset())
+
+        b = Dataset()
+        with self.assertRaises(RuntimeError ):
+            b.subset["b"] = a[Dim.X, :] # Coordinates dont match
+        b[Coord.X] = xcoord
+        b.subset["b"] = a[Dim.X, :] # Should now work 
+        self.assertEqual(len(a), len(b))
+        self.assertTrue((Attr.ExperimentLog, "b") in b)
+
     def test_slice_dataset(self):
         for x in range(2):
             view = self.dataset[Dim.X, x]
@@ -239,33 +278,45 @@ class TestDataset(unittest.TestCase):
         # Assume numpy operations are correct as comparitor
         op(data,b[Data.Value, rh_var_name].numpy)
         op(a,b)
-        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
+        np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
 
     def test_binary_operations(self):
         a = Dataset()
         a[Coord.X] = ([Dim.X], np.arange(10))
         a[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
+        a[Data.Variance, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
         b = Dataset()
         b[Data.Value, "j"] = ([Dim.X], np.arange(10, dtype='float64'))
+        b[Data.Variance, "j"] = ([Dim.X], np.arange(10, dtype='float64'))
         data = np.copy(a[Data.Value, "i"].numpy)
+        variance = np.copy(a[Data.Variance, "i"].numpy)
 
         c = a + b
         # Variables "i" and "j" added despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "i"].numpy, variance + variance))
 
         c = a - b
         # Variables "a" and "b" subtracted despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data - data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "i"].numpy, variance + variance))
 
-        #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
+        c = a * b
+        # Variables "a" and "b" subtracted despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data * data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2))
+
+        c = a / b
+        # Variables "a" and "b" subtracted despite different names
+        with np.errstate(invalid="ignore"):
+            np.testing.assert_equal(c[Data.Value, "i"].numpy, data / data) 
+        np.testing.assert_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2) 
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
-        # TODO problem described above need inplace operators
-        # Only demonstrate behaviour where variable names are sames across operands
-        b = Dataset()
-        b[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
-        self._apply_test_op(operator.imul, a, b, data, lh_var_name="i", rh_var_name="i")
+        self._apply_test_op(operator.imul, a, b, data)
+        with np.errstate(invalid="ignore"):
+            self._apply_test_op(operator.itruediv, a, b, data)
 
     def test_binary_float_operations(self):
         a = Dataset()
@@ -697,6 +748,19 @@ class TestDatasetExamples(unittest.TestCase):
         d2[Data.Value, "A"] *= d2[Data.Value, "A"]
         self.assertNotEqual(d1, d2)
         self.assertNotEqual(d3, d2)
+
+    def test_correct_temporaries(self):
+        N = 6
+        M = 4
+        d1 = Dataset()
+        d1[Coord.X] = ([Dim.X], np.arange(N+1).astype(np.float64))
+        d1[Coord.Y] = ([Dim.Y], np.arange(M+1).astype(np.float64))
+        arr1 = np.arange(N*M).reshape(N,M).astype(np.float64) + 1
+        d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
+        d1 = d1[Dim.X, 1:2]
+        self.assertEqual(list(d1[Data.Value, "A"].data), [5.0, 6.0, 7.0, 8.0])
+        d1 = d1[Dim.Y, 2:3]
+        self.assertEqual(list(d1[Data.Value, "A"].data), [7])
 
 
 if __name__ == '__main__':

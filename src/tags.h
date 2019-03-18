@@ -434,6 +434,7 @@ constexpr Dim coordinate_dimension<CoordDef::Position> = Dim::Position;
 template <>
 constexpr Dim coordinate_dimension<CoordDef::SpectrumNumber> = Dim::Spectrum;
 template <> constexpr Dim coordinate_dimension<CoordDef::Row> = Dim::Row;
+template <> constexpr Dim coordinate_dimension<CoordDef::Temperature> = Dim::Temperature;
 } // namespace detail
 
 template <class... Ts>
@@ -482,6 +483,8 @@ inline Tag dimensionCoord(const Dim dim) {
     return Coord::Position;
   case Dim::Spectrum:
     return Coord::SpectrumNumber;
+  case Dim::Temperature:
+    return Coord::Temperature;
   default:
     throw std::runtime_error(
         "Coordinate for this dimension is not implemented");
