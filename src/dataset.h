@@ -249,6 +249,9 @@ public:
   Dataset &operator*=(const Dataset &other);
   Dataset &operator*=(const ConstDatasetSlice &other);
   Dataset &operator*=(const double value);
+  Dataset &operator/=(const Dataset &other);
+  Dataset &operator/=(const ConstDatasetSlice &other);
+  Dataset &operator/=(const double value);
 
 private:
   gsl::index find(const Tag tag, const std::string &name) const;
@@ -534,6 +537,9 @@ public:
   DatasetSlice operator*=(const Dataset &other) const;
   DatasetSlice operator*=(const ConstDatasetSlice &other) const;
   DatasetSlice operator*=(const double value) const;
+  DatasetSlice operator/=(const Dataset &other) const;
+  DatasetSlice operator/=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator/=(const double value) const;
 
   VariableSlice operator()(const Tag tag, const std::string &name = "") const;
 
@@ -553,6 +559,8 @@ Dataset operator*(Dataset a, const Dataset &b);
 Dataset operator*(Dataset a, const ConstDatasetSlice &b);
 Dataset operator*(Dataset a, const double b);
 Dataset operator*(const double a, Dataset b);
+Dataset operator/(Dataset a, const double b);
+Dataset operator/(Dataset a, const ConstDatasetSlice &b);
 Dataset operator/(Dataset a, const double b);
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices);
