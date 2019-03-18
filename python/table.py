@@ -76,7 +76,7 @@ def table_ds(dataset):
             append_with_text(tr, 'th', key,
                              attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
 
-        is_hist = len(coords[0]) > len(datas[0])
+        is_hist = len(coords) and len(coords[0]) > len(datas[0])
 
         tr = et.SubElement(tab, 'tr')
         for x in coords:
@@ -92,7 +92,12 @@ def table_ds(dataset):
             append_with_text(tr, 'th', '[{}]'.format(x.unit), style_border_center)
 
         # Data lines
-        for i in range(len(coords[0]) - is_hist):
+        length = 0
+        if coords:
+            length = len(coords[0]) - is_hist
+        elif datas:
+            length = len(datas[0])
+        for i in range(length):
             tr = et.SubElement(tab, 'tr')
             for x in coords:
                 text = str(x.data[i])
