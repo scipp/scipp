@@ -65,14 +65,14 @@ template <class T> std::string element_to_string(const T &item) {
 template <class T> std::string array_to_string(const T &arr) {
   const gsl::index size = arr.size();
   if (size == 0)
-   return std::string("[]");
+    return std::string("[]");
   std::string s = "[";
   for (gsl::index i = 0; i < arr.size(); ++i) {
-   if (i == 4 && size > 8) {
-     s += "..., ";
-     i = size - 4;
-   }
-   s += element_to_string(arr[i]);
+    if (i == 4 && size > 8) {
+      s += "..., ";
+      i = size - 4;
+    }
+    s += element_to_string(arr[i]);
   }
   s.resize(s.size() - 2);
   s += "]";
@@ -85,11 +85,12 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
            py::return_value_policy::reference)
       .def("size", &gsl::span<T>::size)
       .def("__len__", &gsl::span<T>::size)
-      .def("__iter__", [](const gsl::span<T> &self) {
-        return py::make_iterator(self.begin(), self.end());
-      })
+      .def("__iter__",
+           [](const gsl::span<T> &self) {
+             return py::make_iterator(self.begin(), self.end());
+           })
       .def("__repr__",
-       [](const gsl::span<T> &self) { return array_to_string(self); });
+           [](const gsl::span<T> &self) { return array_to_string(self); });
   mutable_span_methods<T>::add(span);
 }
 
@@ -238,8 +239,8 @@ template <class K>
 void insertDefaultInit(
     Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, py::tuple> &data) {
-  const auto & [ tag, name ] = Key::get(key);
-  const auto & [ labels, array ] = data;
+  const auto &[tag, name] = Key::get(key);
+  const auto &[labels, array] = data;
   auto var = makeVariableDefaultInit(tag, labels, array);
   if (!name.empty())
     var.setName(name);
@@ -250,8 +251,8 @@ template <class K>
 void insert_ndarray(
     Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, py::array &> &data) {
-  const auto & [ tag, name ] = Key::get(key);
-  const auto & [ labels, array ] = data;
+  const auto &[tag, name] = Key::get(key);
+  const auto &[labels, array] = data;
   const auto dtypeTag = convertDType(array.dtype());
   auto var = CallDType<double, float, int64_t, int32_t, char,
                        bool>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
@@ -267,8 +268,8 @@ template <class T, class K>
 void insert_conv(
     Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
-  const auto & [ tag, name ] = Key::get(key);
-  const auto & [ labels, array ] = data;
+  const auto &[tag, name] = Key::get(key);
+  const auto &[labels, array] = data;
   // TODO This is converting back and forth between py::array and py::array_t,
   // can we do this in a better way?
   auto var = detail::MakeVariable<T>::apply(tag, labels, array);
@@ -280,8 +281,8 @@ void insert_conv(
 template <class T, class K>
 void insert_0D(Dataset &self, const K &key,
                const std::tuple<const std::vector<Dim> &, T &> &data) {
-  const auto & [ tag, name ] = Key::get(key);
-  const auto & [ labels, value ] = data;
+  const auto &[tag, name] = Key::get(key);
+  const auto &[labels, value] = data;
   if (!labels.empty())
     throw std::runtime_error(
         "Got 0-D data, but nonzero number of dimension labels.");
@@ -295,8 +296,8 @@ template <class T, class K>
 void insert_1D(
     Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, std::vector<T> &> &data) {
-  const auto & [ tag, name ] = Key::get(key);
-  const auto & [ labels, array ] = data;
+  const auto &[tag, name] = Key::get(key);
+  const auto &[labels, array] = data;
   Dimensions dims{labels, {static_cast<gsl::index>(array.size())}};
   auto var = ::makeVariable<T>(tag, dims, array);
   if (!name.empty())
@@ -306,7 +307,7 @@ void insert_1D(
 
 template <class Var, class K>
 void insert(Dataset &self, const K &key, const Var &var) {
-  const auto & [ tag, name ] = Key::get(key);
+  const auto &[tag, name] = Key::get(key);
   if (self.contains(tag, name))
     if (self(tag, name) == var)
       return;
@@ -350,7 +351,7 @@ template <class T> struct SetData {
 
 template <class T, class K>
 void setData(T &self, const K &key, const py::array &data) {
-  const auto & [ tag, name ] = Key::get(key);
+  const auto &[tag, name] = Key::get(key);
   const auto slice = self(tag, name);
   CallDType<double, float, int64_t, int32_t, char,
             bool>::apply<detail::SetData>(slice.dtype(), slice, data);
@@ -359,7 +360,7 @@ void setData(T &self, const K &key, const py::array &data) {
 template <class T>
 auto pySlice(T &source, const std::tuple<Dim, const py::slice> &index)
     -> decltype(source(Dim::Invalid, 0)) {
-  const auto & [ dim, indices ] = index;
+  const auto &[dim, indices] = index;
   size_t start, stop, step, slicelength;
   const auto size = source.dimensions()[dim];
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
@@ -618,7 +619,9 @@ PYBIND11_MODULE(dataset, m) {
   py::class_<Unit>(m, "Unit")
       .def(py::init())
       .def("__repr__", [](const Unit &u) -> std::string { return u.name(); })
-      .def_property_readonly("name", &Unit::name)
+      .def_property_readonly("name", &Unit::name,
+                             "A read-only string describing the "
+                             "type of unit.")
       .def(py::self + py::self)
       .def(py::self - py::self)
       .def(py::self * py::self)
@@ -654,8 +657,13 @@ PYBIND11_MODULE(dataset, m) {
                               const Dim dim) { return self.contains(dim); })
       .def("__getitem__",
            py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
-      .def_property_readonly("labels", &Dimensions::labels)
-      .def_property_readonly("shape", &Dimensions::shape)
+      .def_property_readonly("labels", &Dimensions::labels,
+                             "The read-only tags labelling"
+                             "the different dimensions of the underlying "
+                             "Variable or VariableSlice, e.g. [Dim.Y, Dim.X].")
+      .def_property_readonly("shape", &Dimensions::shape,
+                             "The read-only sizes of each dimension of the "
+                             "underlying Variable or VariableSlice.")
       .def("add", &Dimensions::add)
       .def("size",
            py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
@@ -688,26 +696,44 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__",
            [](Variable &self, const std::tuple<Dim, gsl::index> &index,
               const VariableSlice &other) {
-             const auto & [ dim, i ] = index;
+             const auto &[dim, i] = index;
              self(dim, i).assign(other);
            })
       .def("copy", [](const Variable &self) { return self; })
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
-      .def_property_readonly("tag", &Variable::tag)
+      .def_property_readonly("tag", &Variable::tag,
+                             "A read-only tag describing the type of Variable, "
+                             "e.g. Data.Value or Data.Variance.")
       .def_property("name", [](const Variable &self) { return self.name(); },
-                    &Variable::setName)
-      .def_property("unit", &Variable::unit, &Variable::setUnit)
-      .def_property_readonly("is_coord", &Variable::isCoord)
-      .def_property_readonly("is_data", &Variable::isData)
-      .def_property_readonly("is_attr", &Variable::isAttr)
+                    &Variable::setName,
+                    "A string holding the Variable's name which is used to "
+                    "uniquely identify it.")
+      .def_property("unit", &Variable::unit, &Variable::setUnit,
+                    "Object of type Unit holding the unit of the Variable.")
       .def_property_readonly(
-          "dimensions", [](const Variable &self) { return self.dimensions(); })
+          "is_coord", &Variable::isCoord,
+          "Is True if the Variable is a Coordinate, e.g. Coord.X (read-only).")
       .def_property_readonly(
-          "numpy", &as_py_array_t_variant<Variable, double, float, int64_t,
-                                          int32_t, char, bool>)
-      .def_property_readonly("data", &as_VariableView::get<Variable>)
+          "is_data", &Variable::isData,
+          "Is True if the Variable is not a coordinate, i.e. it can be a "
+          "Data.Value or Data.Variance (read-only).")
+      .def_property_readonly(
+          "is_attr", &Variable::isAttr,
+          "Is True if the Variable is an attribute (read-only).")
+      .def_property_readonly(
+          "dimensions", [](const Variable &self) { return self.dimensions(); },
+          "A read-only Dimensions object containing the dimensions of the "
+          "Variable.")
+      .def_property_readonly(
+          "numpy",
+          &as_py_array_t_variant<Variable, double, float, int64_t, int32_t,
+                                 char, bool>,
+          "Returns a read-only numpy array containing the Variable's values.")
+      .def_property_readonly(
+          "data", &as_VariableView::get<Variable>,
+          "Returns a read-only VariableView onto the Variable's contents.")
       .def_property("scalar", &as_VariableView::scalar<Variable>,
                     &as_VariableView::set_scalar<Variable>,
                     "The only data point for a 0-dimensional "
@@ -767,7 +793,9 @@ PYBIND11_MODULE(dataset, m) {
   view.def_property_readonly(
           "dimensions",
           [](const VariableSlice &self) { return self.dimensions(); },
-          py::return_value_policy::copy)
+          py::return_value_policy::copy,
+          "A read-only Dimensions object containing the dimensions of the "
+          "Variable.")
       .def("__len__",
            [](const VariableSlice &self) {
              const auto &dims = self.dimensions();
@@ -775,12 +803,26 @@ PYBIND11_MODULE(dataset, m) {
                throw std::runtime_error("len() of unsized object.");
              return dims.shape()[0];
            })
-      .def_property_readonly("is_coord", &VariableSlice::isCoord)
-      .def_property_readonly("is_data", &VariableSlice::isData)
-      .def_property_readonly("is_attr", &VariableSlice::isAttr)
-      .def_property_readonly("tag", &VariableSlice::tag)
-      .def_property_readonly("name", &VariableSlice::name)
-      .def_property("unit", &VariableSlice::unit, &VariableSlice::setUnit)
+      .def_property_readonly("is_coord", &VariableSlice::isCoord,
+                             "Is True if the VariableSlice is a Coordinate, "
+                             "e.g. Coord.X (read-only).")
+      .def_property_readonly(
+          "is_data", &VariableSlice::isData,
+          "Is True if the VariableSlice is not a coordinate, i.e. it can be a "
+          "Data.Value or Data.Variance (read-only).")
+      .def_property_readonly(
+          "is_attr", &VariableSlice::isAttr,
+          "Is True if the VariableSlice is an attribute (read-only).")
+      .def_property_readonly(
+          "tag", &VariableSlice::tag,
+          "A read-only tag describing the type of VariableSlice, e.g. "
+          "Data.Value or Data.Variance. ")
+      .def_property_readonly("name", &VariableSlice::name,
+                             "A read-only string holding the VariableSlice's "
+                             "name which is used to uniquely identify it.")
+      .def_property(
+          "unit", &VariableSlice::unit, &VariableSlice::setUnit,
+          "Object of type Unit holding the unit of the VariableSlice.")
       .def("__getitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
              return getItemBySingleIndex(self, index);
@@ -804,7 +846,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index,
               const VariableSlice &other) {
-             const auto & [ dim, i ] = index;
+             const auto &[dim, i] = index;
              self(dim, i).assign(other);
            })
       .def("__setitem__", &detail::setVariableSlice)
@@ -814,9 +856,14 @@ PYBIND11_MODULE(dataset, m) {
       .def("__deepcopy__",
            [](VariableSlice &self, py::dict) { return Variable(self); })
       .def_property_readonly(
-          "numpy", &as_py_array_t_variant<VariableSlice, double, float, int64_t,
-                                          int32_t, char, bool>)
-      .def_property_readonly("data", &as_VariableView::get<VariableSlice>)
+          "numpy",
+          &as_py_array_t_variant<VariableSlice, double, float, int64_t, int32_t,
+                                 char, bool>,
+          "Returns a read-only numpy array containing the VariableSlice's "
+          "values.")
+      .def_property_readonly(
+          "data", &as_VariableView::get<VariableSlice>,
+          "Returns a read-only VariableView onto the VariableSlice's contents.")
       .def_property("scalar", &as_VariableView::scalar<VariableSlice>,
                     &as_VariableView::set_scalar<VariableSlice>,
                     "The only data point for a 0-dimensional "
@@ -883,7 +930,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](SubsetHelper &self,
               const std::tuple<const Tag, const std::string &> &index) {
-             const auto & [ tag, name ] = index;
+             const auto &[tag, name] = index;
              return self.subset(tag, name);
            },
            py::keep_alive<0, 1>())
@@ -940,7 +987,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__",
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index,
               const DatasetSlice &other) {
-             const auto & [ dim, i ] = index;
+             const auto &[dim, i] = index;
              self(dim, i).assign(other);
            })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
@@ -1087,7 +1134,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index,
               const DatasetSlice &other) {
-             const auto & [ dim, i ] = index;
+             const auto &[dim, i] = index;
              self(dim, i).assign(other);
            })
 
