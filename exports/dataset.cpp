@@ -239,8 +239,8 @@ template <class K>
 void insertDefaultInit(
     Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, py::tuple> &data) {
-  const auto &[tag, name] = Key::get(key);
-  const auto &[labels, array] = data;
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
   auto var = makeVariableDefaultInit(tag, labels, array);
   if (!name.empty())
     var.setName(name);
@@ -251,8 +251,8 @@ template <class K>
 void insert_ndarray(
     Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, py::array &> &data) {
-  const auto &[tag, name] = Key::get(key);
-  const auto &[labels, array] = data;
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
   const auto dtypeTag = convertDType(array.dtype());
   auto var = CallDType<double, float, int64_t, int32_t, char,
                        bool>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
@@ -268,8 +268,8 @@ template <class T, class K>
 void insert_conv(
     Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
-  const auto &[tag, name] = Key::get(key);
-  const auto &[labels, array] = data;
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
   // TODO This is converting back and forth between py::array and py::array_t,
   // can we do this in a better way?
   auto var = detail::MakeVariable<T>::apply(tag, labels, array);
@@ -281,8 +281,8 @@ void insert_conv(
 template <class T, class K>
 void insert_0D(Dataset &self, const K &key,
                const std::tuple<const std::vector<Dim> &, T &> &data) {
-  const auto &[tag, name] = Key::get(key);
-  const auto &[labels, value] = data;
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, value ] = data;
   if (!labels.empty())
     throw std::runtime_error(
         "Got 0-D data, but nonzero number of dimension labels.");
@@ -296,8 +296,8 @@ template <class T, class K>
 void insert_1D(
     Dataset &self, const K &key,
     const std::tuple<const std::vector<Dim> &, std::vector<T> &> &data) {
-  const auto &[tag, name] = Key::get(key);
-  const auto &[labels, array] = data;
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
   Dimensions dims{labels, {static_cast<gsl::index>(array.size())}};
   auto var = ::makeVariable<T>(tag, dims, array);
   if (!name.empty())
@@ -307,7 +307,7 @@ void insert_1D(
 
 template <class Var, class K>
 void insert(Dataset &self, const K &key, const Var &var) {
-  const auto &[tag, name] = Key::get(key);
+  const auto & [ tag, name ] = Key::get(key);
   if (self.contains(tag, name))
     if (self(tag, name) == var)
       return;
@@ -351,7 +351,7 @@ template <class T> struct SetData {
 
 template <class T, class K>
 void setData(T &self, const K &key, const py::array &data) {
-  const auto &[tag, name] = Key::get(key);
+  const auto & [ tag, name ] = Key::get(key);
   const auto slice = self(tag, name);
   CallDType<double, float, int64_t, int32_t, char,
             bool>::apply<detail::SetData>(slice.dtype(), slice, data);
@@ -360,7 +360,7 @@ void setData(T &self, const K &key, const py::array &data) {
 template <class T>
 auto pySlice(T &source, const std::tuple<Dim, const py::slice> &index)
     -> decltype(source(Dim::Invalid, 0)) {
-  const auto &[dim, indices] = index;
+  const auto & [ dim, indices ] = index;
   size_t start, stop, step, slicelength;
   const auto size = source.dimensions()[dim];
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
@@ -698,7 +698,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__",
            [](Variable &self, const std::tuple<Dim, gsl::index> &index,
               const VariableSlice &other) {
-             const auto &[dim, i] = index;
+             const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
            })
       .def("copy", [](const Variable &self) { return self; },
@@ -849,7 +849,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__",
            [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index,
               const VariableSlice &other) {
-             const auto &[dim, i] = index;
+             const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
            })
       .def("__setitem__", &detail::setVariableSlice)
@@ -934,7 +934,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__getitem__",
            [](SubsetHelper &self,
               const std::tuple<const Tag, const std::string &> &index) {
-             const auto &[tag, name] = index;
+             const auto & [ tag, name ] = index;
              return self.subset(tag, name);
            },
            py::keep_alive<0, 1>())
@@ -1001,7 +1001,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__",
            [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index,
               const DatasetSlice &other) {
-             const auto &[dim, i] = index;
+             const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
            })
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
@@ -1157,7 +1157,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, gsl::index> &index,
               const DatasetSlice &other) {
-             const auto &[dim, i] = index;
+             const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
            })
 
