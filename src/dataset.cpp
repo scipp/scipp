@@ -444,10 +444,14 @@ Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
 }
 Dataset &Dataset::operator+=(const Variable &other) {
   if (other.tag() != Data::NoTag)
+    // For variable of known tag, simply wrap rhs with Dataset
     return *this += Dataset({other});
   else
     for (auto &var : m_variables)
       // TODO Should this operate also on events etc.?
+
+      // What about lhs variance?, under existing rules even via dataset,
+      // nothing would be done (as rhs-variance unknown).
       if (var.tag() == Data::Value)
         var += other;
   return *this;

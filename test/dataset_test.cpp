@@ -31,6 +31,7 @@ TEST(Dataset, insert_data) {
   ASSERT_EQ(d.size(), 2);
   EXPECT_NO_THROW(d.insert(Data::Value, "name2", {}, {3}));
   ASSERT_EQ(d.size(), 2);
+  EXPECT_THROW(d.insert(Data::NoTag, "", {}, {1}), std::runtime_error);
 }
 
 TEST(Dataset, insert_variables_with_dimensions) {
@@ -201,7 +202,7 @@ TEST(Dataset, merge) {
 
   Dataset copy(merged);
 
- // We can merge twice, it is idempotent.
+  // We can merge twice, it is idempotent.
   EXPECT_NO_THROW(merged.merge(d));
   EXPECT_EQ(copy, merged);
 
@@ -569,6 +570,27 @@ TEST(Dataset, operator_plus_equal_with_attributes) {
   // For now there is no special merging behavior, just keep attributes of first
   // operand.
   EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
+}
+
+TEST(Dataset, operator_plus_equal_with_variable) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value, "a", {Dim::X, 1}, {25});
+  a.insert(Data::Variance, "a", {Dim::X, 1}, {5});
+
+  Variable bvar(Data::Value, {Dim::X, 1}, {5});
+
+  a += bvar;
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 30);
+  EXPECT_EQ(a.get(Data::Variance, "a")[0],
+            5); // Variance unchanged. Probably not something we can solve.
+
+  // Test notag treated as data value
+  Variable cvar(Data::NoTag, {Dim::X, 1}, {10});
+  a += cvar;
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 40);
+  EXPECT_EQ(a.get(Data::Variance, "a")[0],
+            5); // Variance unchanged. Probably not something we can solve.
 }
 
 TEST(Dataset, operator_times_equal) {
@@ -1555,6 +1577,28 @@ TEST(DatasetSlice, binary_with_scalar) {
   EXPECT_TRUE(equals(prod.get(Data::Value, "b"), {9}));
   EXPECT_TRUE(equals(prod.get(Data::Variance, "a"), {45}));
   EXPECT_TRUE(equals(prod.get(Data::Variance, "b"), {54}));
+}
+
+TEST(DatasetSlice, operator_plus_with_variable) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value, "a", {Dim::X, 1}, {25});
+  a.insert(Data::Variance, "a", {Dim::X, 1}, {5});
+
+  DatasetSlice a_slice = a.subset("a");
+  Variable bvar(Data::Value, {Dim::X, 1}, {5});
+
+  a_slice += bvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 30);
+  EXPECT_EQ(a_slice(Data::Variance, "a").get(Data::Variance).data()[0],
+            5); // Variance unchanged. Probably not something we can solve.
+
+  // Test notag treated as data value
+  Variable cvar(Data::NoTag, {Dim::X, 1}, {10});
+  a_slice += cvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 40);
+  EXPECT_EQ(a_slice(Data::Variance, "a").get(Data::Variance).data()[0],
+            5); // Variance unchanged. Probably not something we can solve.
 }
 
 TEST(Dataset, counts_toDensity_fromDensity) {
