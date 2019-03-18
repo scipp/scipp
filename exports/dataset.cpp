@@ -664,9 +664,11 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly("shape", &Dimensions::shape,
                              "The read-only sizes of each dimension of the "
                              "underlying Variable or VariableSlice.")
-      .def("add", &Dimensions::add)
+      .def("add", &Dimensions::add,
+           "Add a new dimension, which will be the outermost dimension.")
       .def("size",
-           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
+           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_),
+           "Get the sizes of contained dimensions.")
       .def(py::self == py::self)
       .def(py::self != py::self);
 
@@ -699,7 +701,8 @@ PYBIND11_MODULE(dataset, m) {
              const auto &[dim, i] = index;
              self(dim, i).assign(other);
            })
-      .def("copy", [](const Variable &self) { return self; })
+      .def("copy", [](const Variable &self) { return self; },
+           "Make a copy of a Variable.")
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
@@ -851,7 +854,8 @@ PYBIND11_MODULE(dataset, m) {
            })
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
-      .def("copy", [](const VariableSlice &self) { return Variable(self); })
+      .def("copy", [](const VariableSlice &self) { return Variable(self); },
+           "Make a copy of a VariableSlice.")
       .def("__copy__", [](VariableSlice &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableSlice &self, py::dict) { return Variable(self); })
@@ -943,7 +947,9 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init<Dataset &>())
       .def_property_readonly(
           "dimensions",
-          [](const DatasetSlice &self) { return self.dimensions(); })
+          [](const DatasetSlice &self) { return self.dimensions(); },
+          "A read-only Dimensions object containing the dimensions of the "
+          "DatasetSlice.")
       .def("__len__", &DatasetSlice::size)
       .def("__iter__",
            [](DatasetSlice &self) {
@@ -973,12 +979,20 @@ PYBIND11_MODULE(dataset, m) {
             return self(key.first, key.second);
           },
           py::keep_alive<0, 1>())
-      .def("copy", [](const DatasetSlice &self) { return Dataset(self); })
+      .def("copy", [](const DatasetSlice &self) { return Dataset(self); },
+           "Make a copy of a DatasetSlice.")
       .def("__copy__", [](DatasetSlice &self) { return Dataset(self); })
       .def("__deepcopy__",
            [](DatasetSlice &self, py::dict) { return Dataset(self); })
       .def_property_readonly(
-          "subset", [](DatasetSlice &self) { return SubsetHelper(self); })
+          "subset", [](DatasetSlice &self) { return SubsetHelper(self); },
+          "Used to extract a read-only subset of the DatasetSlice in two "
+          "different ways: \n - one can use just a string, e.g. "
+          "d.subset['sample'] to extract the sample and its variance, and all "
+          "the relevant coordinates.\n - one can also use a tag/string "
+          "combination for a more restrictive extraction, e.g. "
+          "d.subset[Data.Value, 'sample'] to only get the Value and associated "
+          "coordinates.")
       .def("__setitem__",
            [](DatasetSlice &self, const std::tuple<Dim, py::slice> &index,
               const DatasetSlice &other) {
@@ -1063,7 +1077,9 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::init<>())
       .def(py::init<const DatasetSlice &>())
       .def_property_readonly(
-          "dimensions", [](const Dataset &self) { return self.dimensions(); })
+          "dimensions", [](const Dataset &self) { return self.dimensions(); },
+          "A read-only Dimensions object containing the dimensions of the "
+          "Dataset.")
       .def("__len__", &Dataset::size)
       .def("__repr__",
            [](const Dataset &self) { return dataset::to_string(self, "."); })
@@ -1116,12 +1132,19 @@ PYBIND11_MODULE(dataset, m) {
              return self(key.first, key.second);
            },
            py::keep_alive<0, 1>())
-      .def("copy", [](const Dataset &self) { return self; })
+      .def("copy", [](const Dataset &self) { return self; },
+           "Make a copy of a Dataset.")
       .def("__copy__", [](Dataset &self) { return Dataset(self); })
       .def("__deepcopy__",
            [](Dataset &self, py::dict) { return Dataset(self); })
-      .def_property_readonly("subset",
-                             [](Dataset &self) { return SubsetHelper(self); })
+      .def_property_readonly(
+          "subset", [](Dataset &self) { return SubsetHelper(self); },
+          "Used to extract a read-only subset of the Dataset in two different "
+          "ways: \n - one can use just a string, e.g. d.subset['sample'] to "
+          "extract the sample and its variance, and all the relevant "
+          "coordinates.\n - one can also use a tag/string combination for a "
+          "more restrictive extraction, e.g. d.subset[Data.Value, 'sample'] to "
+          "only get the Value and associated coordinates.")
       // Careful: The order of overloads is really important here, otherwise
       // DatasetSlice matches the overload below for py::array_t. I have not
       // understood all details of this yet though. See also
@@ -1250,7 +1273,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__rmul__",
            [](const Dataset &self, double &other) { return self * other; },
            py::is_operator())
-      .def("merge", &Dataset::merge)
+      .def("merge", &Dataset::merge, "Merge two Datasets together.")
       // TODO For now this is just for testing. We need to decide on an API for
       // specifying the keys.
       .def("zip", [](Dataset &self) {
@@ -1266,16 +1289,21 @@ PYBIND11_MODULE(dataset, m) {
   m.def("split",
         py::overload_cast<const Dataset &, const Dim,
                           const std::vector<gsl::index> &>(&split),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Split a Dataset along a given Dimension.");
   m.def("concatenate",
         py::overload_cast<const Dataset &, const Dataset &, const Dim>(
             &concatenate),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new dataset containing a concatenation of two Datasets "
+        "and their underlying Variables along a given Dimension.");
   m.def("rebin", py::overload_cast<const Dataset &, const Variable &>(&rebin),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Dataset whose data is rebinned with new bin edges.");
   m.def("histogram",
         py::overload_cast<const Dataset &, const Variable &>(&histogram),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Perform histogramming of events.");
   m.def(
       "sort",
       py::overload_cast<const Dataset &, const Tag, const std::string &>(&sort),
@@ -1284,11 +1312,13 @@ PYBIND11_MODULE(dataset, m) {
   m.def("filter", py::overload_cast<const Dataset &, const Variable &>(&filter),
         py::call_guard<py::gil_scoped_release>());
   m.def("sum", py::overload_cast<const Dataset &, const Dim>(&sum),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Dataset containing the sum of the data along the "
+        "specified dimension.");
   m.def("mean", py::overload_cast<const Dataset &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>(), py::arg("dataset"),
         py::arg("dim"),
-        "Returns a new dataset containing the mean of the data along the "
+        "Returns a new Dataset containing the mean of the data along the "
         "specified dimension. Any variances in the input dataset are "
         "transformed into the variance of the mean.");
   m.def("integrate", py::overload_cast<const Dataset &, const Dim>(&integrate),
@@ -1305,27 +1335,37 @@ PYBIND11_MODULE(dataset, m) {
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<gsl::index> &>(&split),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Split a Variable along a given Dimension.");
   m.def("concatenate",
         py::overload_cast<const Variable &, const Variable &, const Dim>(
             &concatenate),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing a concatenation "
+        "of two Variables along a given Dimension.");
   m.def("rebin",
         py::overload_cast<const Variable &, const Variable &, const Variable &>(
             &rebin),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable whose data is rebinned with new bin edges.");
   m.def("filter",
         py::overload_cast<const Variable &, const Variable &>(&filter),
         py::call_guard<py::gil_scoped_release>());
   m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the sum of the data along the "
+        "specified dimension.");
   m.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the mean of the data along the "
+        "specified dimension.");
   m.def("norm", py::overload_cast<const Variable &>(&norm),
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the norm of the data.");
   // find out why py::overload_cast is not working correctly here
   m.def("sqrt", [](const Variable &self) { return sqrt(self); },
-        py::call_guard<py::gil_scoped_release>());
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the square root of the data.");
 
   //-----------------------dimensions free functions----------------------------
   m.def("dimensionCoord", &dimensionCoord);
