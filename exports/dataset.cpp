@@ -984,7 +984,7 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
-      .def("__div__",
+      .def("__truediv__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self / other;
            },
@@ -1220,7 +1220,7 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
-      .def("__div__",
+      .def("__truediv__",
            [](const Dataset &self, const DatasetSlice &other) {
              return self / other;
            },
