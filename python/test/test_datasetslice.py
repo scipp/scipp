@@ -139,7 +139,6 @@ class TestDatasetSlice(unittest.TestCase):
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
         self._apply_test_op(operator.imul, a, b, data)
-        
 
     def test_equal_not_equal(self):
         d = Dataset()
@@ -156,11 +155,9 @@ class TestDatasetSlice(unittest.TestCase):
         d3[Coord.X] = ([Dim.X], np.arange(10))
         d3[Data.Value, "a"] = ([Dim.X], np.arange(1, 11, dtype='float64'))
         a3 = d3.subset["a"]
-        # Equal
         self.assertEqual(d, d2)
         self.assertEqual(d2, d)
         self.assertEqual(a, a2)
-        # Not equal
         self.assertNotEqual(a, b)
         self.assertNotEqual(b, a)
         self.assertNotEqual(a, c)
@@ -177,6 +174,12 @@ class TestDatasetSlice(unittest.TestCase):
         d1 = d1[Dim.X, 1:2]
         self.assertEqual(list(d1[Data.Value, "A"].data), [5.0, 6.0, 7.0, 8.0])
 
+    def test_set_dataset_slice_items(self):
+        d = self._d.copy()
+        d[Data.Value, "a"][Dim.X, 0:2] += d[Data.Value, "b"][Dim.X, 1:3]
+        self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
+        d[Data.Value, "a"][Dim.X, 6] += d[Data.Value, "b"][Dim.X, 8]
+        self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
         
 if __name__ == '__main__':
     unittest.main()
