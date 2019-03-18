@@ -1,6 +1,6 @@
-numpy
-pandas
-xarray
-matplotlib
+numpy==1.14.6
+pandas==0.24.2
+xarray==0.11.3
+matplotlib==3.0.3
 nose
-plotly
+plotly==3.6.1
