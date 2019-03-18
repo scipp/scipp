@@ -103,6 +103,21 @@ public:
   }
 
   void insert(Variable variable);
+  template <class T> void insert(const std::string &name, const T &slice) {
+    // Note the lack of atomicity
+    for (const auto &var : slice) {
+      Variable newVar(var);
+      if (var.isCoord()) {
+        if (!contains(newVar.tag(), newVar.name())) {
+          throw std::runtime_error(
+              "Cannot provide new coordinate variables via subset");
+        }
+      } else {
+        newVar.setName(name); // As long as !cood var, name gets rewritten.
+      }
+      this->insert(newVar);
+    }
+  }
   void insert(const Tag tag, Variable variable) {
     variable.setTag(tag);
     variable.setName("");
@@ -495,6 +510,9 @@ public:
     DatasetSlice ret(m_mutableDataset, makeIndices(*this, tag, name));
     ret.m_slices = m_slices;
     return ret;
+  }
+  template <class T> void insert(const std::string &name, const T &slice) {
+    m_mutableDataset.insert(name, slice);
   }
 
   using ConstDatasetSlice::begin;

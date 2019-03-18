@@ -69,10 +69,8 @@ class TestVariableSlice(unittest.TestCase):
         a = self._a[Dim.X, :]
         b = self._b[Dim.X, :]
         c = a + 2.0
-        # Equal
         self.assertEqual(a, b)
         self.assertEqual(b, a)
-        # Not equal
         self.assertNotEqual(a, c)
         self.assertNotEqual(c, a)
 

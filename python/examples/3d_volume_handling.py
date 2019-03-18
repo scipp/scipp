@@ -16,7 +16,7 @@ d = Dataset()
 
 #|
 # Add bin-edge axis for X
-d[Coord.X] = ([Dim.X], np.arange(L+1))
+d[Coord.X] = ([Dim.X], np.arange(L+1).astype(np.float64))
 # ... and normal axes for Y and Z
 d[Coord.Y] = ([Dim.Y], np.arange(L))
 d[Coord.Z] = ([Dim.Z], np.arange(L))
@@ -33,6 +33,13 @@ d[Data.Variance, "temperature"] = d[Data.Value, "temperature"]
 #|
 # Uncertainties are propagated using grouping mechanism based on name
 square = d * d
+#--------------------------------------------------------------------
+
+#|
+# Add the counts units
+d[Data.Value, "temperature"].unit = units.counts
+d[Data.Value, "pressure"].unit = units.counts
+d[Data.Variance, "temperature"].unit = units.counts * units.counts
 #--------------------------------------------------------------------
 
 #|

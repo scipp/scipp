@@ -5,8 +5,6 @@
 # Imports
 from dataset import *
 import numpy as np
-# Uncomment for jupyter
-#%matplotlib inline
 #--------------------
 
 #| 
@@ -17,7 +15,7 @@ table = Dataset()
 #| 
 # Add columns
 table[Coord.Row] = ([Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
-table[Data.Value, "col1"] = ([Dim.Row], [3,2,1,0])
+table[Data.Value, "col1"] = ([Dim.Row], [3.0,2.0,1.0,0.0])
 table[Data.Value, "col2"] = ([Dim.Row], np.arange(4, dtype=np.float64))
 table[Data.Value, "sum"] = ([Dim.Row], (4,))
 #---------------------------------------------
@@ -65,6 +63,4 @@ del table[Data.Value, "exp1"]
 #|
 # Arithmetics with tables (here: add two tables)
 table += table
-xr_ds = as_xarray(table)
-xr_ds['Value:col1'].plot()
 #----------------------------------------------------------
