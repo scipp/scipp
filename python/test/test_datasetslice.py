@@ -97,7 +97,7 @@ class TestDatasetSlice(unittest.TestCase):
         variance = np.copy(a[Data.Variance, "a"].numpy)
 
         c = a + b
-        # Variables "i" and "j" added despite different names
+        # Variables "a" and "b" added despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
         self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance + variance))
 

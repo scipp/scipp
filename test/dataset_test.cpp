@@ -568,7 +568,7 @@ TEST(Dataset, operator_plus_equal_broadcast) {
   EXPECT_EQ(a.get(Data::Value)[5], 6.3);
 }
 
-TEST(Dataset, operator_times_equals_broadcast) {
+TEST(Dataset, operator_multiplication_broadcast) {
 
   Dataset a;
   a.insert(Data::Value, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
