@@ -539,12 +539,15 @@ public:
   DatasetSlice operator+=(const double value) const;
   DatasetSlice operator-=(const Dataset &other) const;
   DatasetSlice operator-=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator-=(const Variable &other) const;
   DatasetSlice operator-=(const double value) const;
   DatasetSlice operator*=(const Dataset &other) const;
   DatasetSlice operator*=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator*=(const Variable &other) const;
   DatasetSlice operator*=(const double value) const;
   DatasetSlice operator/=(const Dataset &other) const;
   DatasetSlice operator/=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator/=(const Variable &other) const;
   DatasetSlice operator/=(const double value) const;
 
   VariableSlice operator()(const Tag tag, const std::string &name = "") const;

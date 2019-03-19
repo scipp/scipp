@@ -1822,26 +1822,27 @@ TEST(DatasetSlice, binary_with_scalar) {
   EXPECT_TRUE(equals(fraction.get(Data::Variance, "b"), {24}));
 }
 
-TEST(DatasetSlice, operator_plus_with_variable) {
+TEST(DatasetSlice, binary_operator_equals_with_variable) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   a.insert(Data::Value, "a", {Dim::X, 1}, {25});
-  a.insert(Data::Variance, "a", {Dim::X, 1}, {5});
 
   DatasetSlice a_slice = a.subset("a");
   Variable bvar(Data::Value, {Dim::X, 1}, {5});
 
   a_slice += bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 30);
-  EXPECT_EQ(a_slice(Data::Variance, "a").get(Data::Variance).data()[0],
-            5); // Variance unchanged. Probably not something we can solve.
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 + 5);
+  a_slice -= bvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25);
+  a_slice *= bvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 * 5);
+  a_slice /= bvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25);
 
   // Test notag treated as data value
-  Variable cvar(Data::NoTag, {Dim::X, 1}, {10});
+  Variable cvar(Data::NoTag, {Dim::X, 1}, {5});
   a_slice += cvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 40);
-  EXPECT_EQ(a_slice(Data::Variance, "a").get(Data::Variance).data()[0],
-            5); // Variance unchanged. Probably not something we can solve.
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 + 5);
 }
 
 TEST(Dataset, counts_toDensity_fromDensity) {

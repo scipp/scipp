@@ -712,6 +712,16 @@ DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) const {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
+
+DatasetSlice DatasetSlice::operator-=(const Variable &other) const {
+  if (other.tag() != Data::NoTag)
+    return *this -= Dataset({other});
+  else
+    for (const auto var : *this)
+      if (var.tag() == Data::Value)
+        var -= other;
+  return *this;
+}
 DatasetSlice DatasetSlice::operator-=(const double value) const {
   for (auto var : *this)
     if (var.tag() == Data::Value)
@@ -724,6 +734,15 @@ DatasetSlice DatasetSlice::operator*=(const Dataset &other) const {
 }
 DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) const {
   return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
+}
+DatasetSlice DatasetSlice::operator*=(const Variable &other) const {
+  if (other.tag() != Data::NoTag)
+    return *this *= Dataset({other});
+  else
+    for (const auto var : *this)
+      if (var.tag() == Data::Value)
+        var *= other;
+  return *this;
 }
 DatasetSlice DatasetSlice::operator*=(const double value) const {
   for (auto var : *this)
@@ -738,6 +757,15 @@ DatasetSlice DatasetSlice::operator/=(const Dataset &other) const {
 }
 DatasetSlice DatasetSlice::operator/=(const ConstDatasetSlice &other) const {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+DatasetSlice DatasetSlice::operator/=(const Variable &other) const {
+  if (other.tag() != Data::NoTag)
+    return *this /= Dataset({other});
+  else
+    for (const auto var : *this)
+      if (var.tag() == Data::Value)
+        var /= other;
+  return *this;
 }
 DatasetSlice DatasetSlice::operator/=(const double value) const {
   for (auto var : *this)
