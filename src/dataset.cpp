@@ -369,7 +369,7 @@ void divide(VariableSlice &lhs_var, const ConstVariableSlice &rhs_var,
   const auto e2 = rhs_err.template span<double>();
   divide_data(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
   lhs_var.setUnit(lhs_var.unit() / rhs_var.unit());
-  lhs_err.setUnit(lhs_var.unit() * lhs_var.unit());
+  lhs_err.setUnit(lhs_var.unit() / lhs_var.unit());
 }
 
 void divide(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs /= rhs; }
