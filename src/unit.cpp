@@ -57,6 +57,11 @@ Unit operator*(const Unit &a, const Unit &b) {
         // Creation of z needed here because putting x*y inside the call to
         // isKnownUnit(x*y) leads to error: temporary of non-literal type in
         // a constant expression
+
+        // It is done here to have the si::dimensionless then the units are
+        // the same, but is the si::dimensionless valid for non si types? TODO
+        if constexpr (std::is_same_v<decltype(x), decltype(y)>)
+          return dimensionless;
         auto z{x * y};
         if constexpr (isKnownUnit(z))
           return z;
