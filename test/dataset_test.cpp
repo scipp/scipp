@@ -654,24 +654,26 @@ TEST(Dataset, binary_operator_equal_with_variable) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
   a.insert(Data::Value, "a", {Dim::X, 1}, {25});
-  a.insert(Data::Variance, "a", {Dim::X, 1}, {5});
+
   auto a_copy(a);
   Variable bvar(Data::Value, {Dim::X, 1}, {5});
 
   a += bvar;
-  EXPECT_EQ(a.get(Data::Value, "a")[0], 30);
-  EXPECT_EQ(a.get(Data::Variance, "a")[0],
-            5); // Variance unchanged. Probably not something we can solve.
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 25 + 5);
 
-  a -= bvar;
+  a -= bvar; // TODO this test setup should throw since only one
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 25);
+
+  a *= bvar;
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 25 * 5);
+
+  a /= bvar;
   EXPECT_EQ(a.get(Data::Value, "a")[0], 25);
 
   // Test notag treated as data value
   Variable cvar(Data::NoTag, {Dim::X, 1}, {10});
   a_copy += cvar;
   EXPECT_EQ(a_copy.get(Data::Value, "a")[0], 35);
-  EXPECT_EQ(a_copy.get(Data::Variance, "a")[0],
-            5); // Variance unchanged. Probably not something we can solve.
 }
 
 TEST(Dataset, operator_times_equal) {

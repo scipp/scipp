@@ -252,8 +252,10 @@ public:
   Dataset &operator*=(const Dataset &other);
   Dataset &operator*=(const ConstDatasetSlice &other);
   Dataset &operator*=(const double value);
+  Dataset &operator*=(const Variable &other);
   Dataset &operator/=(const Dataset &other);
   Dataset &operator/=(const ConstDatasetSlice &other);
+  Dataset &operator/=(const Variable &other);
   Dataset &operator/=(const double value);
 
 private:

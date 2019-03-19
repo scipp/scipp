@@ -597,11 +597,35 @@ Dataset &Dataset::operator*=(const double value) {
       var *= value * value;
   return *this;
 }
+
+Dataset &Dataset::operator*=(const Variable &other) {
+  if (other.tag() != Data::NoTag)
+    // For variable of known tag, simply wrap rhs with Dataset
+    return *this *= Dataset({other});
+  else
+    for (auto &var : m_variables)
+      // TODO Should this operate also on events etc.?
+      if (var.tag() == Data::Value)
+        var *= other;
+  return *this;
+}
 Dataset &Dataset::operator/=(const Dataset &other) {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
 }
 Dataset &Dataset::operator/=(const ConstDatasetSlice &other) {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+
+Dataset &Dataset::operator/=(const Variable &other) {
+  if (other.tag() != Data::NoTag)
+    // For variable of known tag, simply wrap rhs with Dataset
+    return *this /= Dataset({other});
+  else
+    for (auto &var : m_variables)
+      // TODO Should this operate also on events etc.?
+      if (var.tag() == Data::Value)
+        var /= other;
+  return *this;
 }
 Dataset &Dataset::operator/=(const double value) {
   for (auto &var : m_variables)
