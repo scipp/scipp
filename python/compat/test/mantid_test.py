@@ -65,15 +65,15 @@ class TestMantidConversion(unittest.TestCase):
 
         delta = sum(converted_mantid - converted, Dim.Position)
 
-        ds = as_xarray(delta)
-        ds['Value'].plot()
+        # ds = as_xarray(delta)
+        # ds['Value'].plot()
 
-        ds = as_xarray(sum(converted, Dim.Position))
-        ds['Value'].plot()
+        # ds = as_xarray(sum(converted, Dim.Position))
+        # ds['Value'].plot()
 
-        ds = as_xarray(sum(converted_mantid, Dim.Position))
-        ds['Value'].plot()
-        plt.savefig('converted.png')
+        # ds = as_xarray(sum(converted_mantid, Dim.Position))
+        # ds['Value'].plot()
+        # plt.savefig('converted.png')
 
 if __name__ == '__main__':
     unittest.main()
