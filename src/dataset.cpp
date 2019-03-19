@@ -543,9 +543,6 @@ Dataset &Dataset::operator+=(const Variable &other) {
   else
     for (auto &var : m_variables)
       // TODO Should this operate also on events etc.?
-
-      // What about lhs variance?, under existing rules even via dataset,
-      // nothing would be done (as rhs-variance unknown).
       if (var.tag() == Data::Value)
         var += other;
   return *this;
@@ -566,6 +563,18 @@ Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
+}
+
+Dataset &Dataset::operator-=(const Variable &other) {
+  if (other.tag() != Data::NoTag)
+    // For variable of known tag, simply wrap rhs with Dataset
+    return *this -= Dataset({other});
+  else
+    for (auto &var : m_variables)
+      // TODO Should this operate also on events etc.?
+      if (var.tag() == Data::Value)
+        var -= other;
+  return *this;
 }
 Dataset &Dataset::operator-=(const double value) {
   for (auto &var : m_variables)
