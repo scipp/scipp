@@ -434,7 +434,15 @@ void operate_on_slices(DatasetSlice &lhs_slice,
         // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +
         // lhs_var * lhs_var * error2;
         // error message.
-        op_with_error(lhs_var, rhs_var, error1, error2);
+
+        // some dances to keep the units correct here
+        error1.setUnit(units::dimensionless);
+        error1 *= (rhs_var * rhs_var);
+        auto tmp = lhs_var * lhs_var;
+        tmp.setUnit(units::dimensionless);
+        error1 += tmp * error2;
+        op(lhs_var, rhs_var);
+        error1.setUnit(lhs_var.unit() * lhs_var.unit());
       }
     } else {
       // No variance found, continue without.
