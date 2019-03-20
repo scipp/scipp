@@ -442,8 +442,8 @@ void operate_on_slices(DatasetSlice &lhs_slice,
         // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +
         // lhs_var * lhs_var * error2;
         // error message.
-        Variable error2_shaped = broadcast(error2, lhs_var.dimensions());
-        Variable rhs_var_shaped = broadcast(rhs_var, lhs_var.dimensions());
+        const auto error2_shaped = broadcast(error2, lhs_var.dimensions());
+        const auto rhs_var_shaped = broadcast(rhs_var, lhs_var.dimensions());
         ConstVariableSlice rhs_var_shaped_slice(rhs_var_shaped);
         ConstVariableSlice error2_shaped_slice(error2_shaped);
         op_with_error(lhs_var, rhs_var_shaped_slice, error1,
