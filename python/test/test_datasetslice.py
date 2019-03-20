@@ -228,13 +228,13 @@ class TestDatasetSlice(unittest.TestCase):
         d1[Data.Value, "A"] = ([Dim.X, Dim.Y], arr1)
         d1 = d1[Dim.X, 1:2]
         self.assertEqual(list(d1[Data.Value, "A"].data), [5.0, 6.0, 7.0, 8.0])
-        
+
     def test_set_dataset_slice_items(self):
         d = self._d.copy()
         d[Data.Value, "a"][Dim.X, 0:2] += d[Data.Value, "b"][Dim.X, 1:3]
         self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
         d[Data.Value, "a"][Dim.X, 6] += d[Data.Value, "b"][Dim.X, 8]
         self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
-                
+
 if __name__ == '__main__':
     unittest.main()
