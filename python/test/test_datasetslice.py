@@ -80,7 +80,8 @@ class TestDatasetSlice(unittest.TestCase):
 
     def _apply_test_op(self, op, a, b, data, lh_var_name="a", rh_var_name="b"):
         # Assume numpy operations are correct as comparitor
-        op(data,b[Data.Value, rh_var_name].numpy)
+        with np.errstate(invalid='ignore'):
+            op(data,b[Data.Value, rh_var_name].numpy)
         op(a,b)
         np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
 
