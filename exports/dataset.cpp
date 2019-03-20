@@ -985,8 +985,18 @@ PYBIND11_MODULE(dataset, m) {
              return self + other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self + other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__sub__",
            [](const DatasetSlice &self, const Dataset &other) {
+             return self - other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const DatasetSlice &self, const Variable &other) {
              return self - other;
            },
            py::call_guard<py::gil_scoped_release>())
@@ -995,8 +1005,18 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self * other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__truediv__",
            [](const DatasetSlice &self, const Dataset &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const DatasetSlice &self, const Variable &other) {
              return self / other;
            },
            py::call_guard<py::gil_scoped_release>())
