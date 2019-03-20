@@ -15,6 +15,11 @@
 #include "except.h"
 #include "tag_util.h"
 
+Dataset::Dataset(std::vector<Variable> vars) {
+  for (auto &var : vars)
+    insert(std::move(var));
+}
+
 Dataset::Dataset(const ConstDatasetSlice &view) {
   for (const auto &var : view)
     insert(var);
@@ -62,6 +67,9 @@ VariableSlice Dataset::operator()(const Tag tag, const std::string &name) & {
 }
 
 void Dataset::insert(Variable variable) {
+  if (variable.tag() == Data::NoTag)
+    throw std::runtime_error(
+        "Data with meta-tag Data::NoTag cannot be inserted into a dataset.");
   // TODO special handling for special variables types like
   // Data::Histogram (either prevent adding, or extract into underlying
   // variables).
@@ -433,11 +441,17 @@ void operate_on_slices(DatasetSlice &lhs_slice,
         // TODO Do we need to write this differently if the two operands
         // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +
         // lhs_var * lhs_var * error2;
-        error1 *= (rhs_var * rhs_var);
-        error1 += lhs_var * lhs_var * error2;
-        // TODO: Catch errors from unit propagation here and give a better
         // error message.
+
+        // TODO: Some dances to keep the units correct here.
+        // We should find a better way to do this.
+        error1.setUnit(units::dimensionless);
+        error1 *= (rhs_var * rhs_var);
+        auto tmp = lhs_var * lhs_var;
+        tmp.setUnit(units::dimensionless);
+        error1 += tmp * error2;
         op(lhs_var, rhs_var);
+        error1.setUnit(lhs_var.unit() * lhs_var.unit());
       }
     } else {
       // No variance found, continue without.
@@ -528,6 +542,17 @@ Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
+Dataset &Dataset::operator+=(const Variable &other) {
+  if (other.tag() != Data::NoTag)
+    // For variable of known tag, simply wrap rhs with Dataset
+    return *this += Dataset({other});
+  else
+    for (auto &var : m_variables)
+      // TODO Should this operate also on events etc.?
+      if (var.tag() == Data::Value)
+        var += other;
+  return *this;
+}
 Dataset &Dataset::operator+=(const double value) {
   for (auto &var : m_variables)
     if (var.tag() == Data::Value)
@@ -544,6 +569,18 @@ Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
   return binary_op_equals(
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
+}
+
+Dataset &Dataset::operator-=(const Variable &other) {
+  if (other.tag() != Data::NoTag)
+    // For variable of known tag, simply wrap rhs with Dataset
+    return *this -= Dataset({other});
+  else
+    for (auto &var : m_variables)
+      // TODO Should this operate also on events etc.?
+      if (var.tag() == Data::Value)
+        var -= other;
+  return *this;
 }
 Dataset &Dataset::operator-=(const double value) {
   for (auto &var : m_variables)
@@ -566,11 +603,33 @@ Dataset &Dataset::operator*=(const double value) {
       var *= value * value;
   return *this;
 }
+
+Dataset &Dataset::operator*=(const Variable &other) {
+  if (other.tag() != Data::NoTag)
+    // For variable of known tag, simply wrap rhs with Dataset
+    return *this *= Dataset({other});
+  else
+    for (auto &var : m_variables)
+      if (var.tag() == Data::Value)
+        var *= other;
+  return *this;
+}
 Dataset &Dataset::operator/=(const Dataset &other) {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
 }
 Dataset &Dataset::operator/=(const ConstDatasetSlice &other) {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+
+Dataset &Dataset::operator/=(const Variable &other) {
+  if (other.tag() != Data::NoTag)
+    // For variable of known tag, simply wrap rhs with Dataset
+    return *this /= Dataset({other});
+  else
+    for (auto &var : m_variables)
+      if (var.tag() == Data::Value)
+        var /= other;
+  return *this;
 }
 Dataset &Dataset::operator/=(const double value) {
   for (auto &var : m_variables)
@@ -633,6 +692,15 @@ DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) const {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a += b; },
       *this, other);
 }
+DatasetSlice DatasetSlice::operator+=(const Variable &other) const {
+  if (other.tag() != Data::NoTag)
+    return *this += Dataset({other});
+  else
+    for (const auto var : *this)
+      if (var.tag() == Data::Value)
+        var += other;
+  return *this;
+}
 DatasetSlice DatasetSlice::operator+=(const double value) const {
   for (auto var : *this)
     if (var.tag() == Data::Value)
@@ -648,6 +716,16 @@ DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) const {
       [](VariableSlice &a, const ConstVariableSlice &b) { return a -= b; },
       *this, other);
 }
+
+DatasetSlice DatasetSlice::operator-=(const Variable &other) const {
+  if (other.tag() != Data::NoTag)
+    return *this -= Dataset({other});
+  else
+    for (const auto var : *this)
+      if (var.tag() == Data::Value)
+        var -= other;
+  return *this;
+}
 DatasetSlice DatasetSlice::operator-=(const double value) const {
   for (auto var : *this)
     if (var.tag() == Data::Value)
@@ -660,6 +738,15 @@ DatasetSlice DatasetSlice::operator*=(const Dataset &other) const {
 }
 DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) const {
   return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
+}
+DatasetSlice DatasetSlice::operator*=(const Variable &other) const {
+  if (other.tag() != Data::NoTag)
+    return *this *= Dataset({other});
+  else
+    for (const auto var : *this)
+      if (var.tag() == Data::Value)
+        var *= other;
+  return *this;
 }
 DatasetSlice DatasetSlice::operator*=(const double value) const {
   for (auto var : *this)
@@ -674,6 +761,15 @@ DatasetSlice DatasetSlice::operator/=(const Dataset &other) const {
 }
 DatasetSlice DatasetSlice::operator/=(const ConstDatasetSlice &other) const {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+DatasetSlice DatasetSlice::operator/=(const Variable &other) const {
+  if (other.tag() != Data::NoTag)
+    return *this /= Dataset({other});
+  else
+    for (const auto var : *this)
+      if (var.tag() == Data::Value)
+        var /= other;
+  return *this;
 }
 DatasetSlice DatasetSlice::operator/=(const double value) const {
   for (auto var : *this)
@@ -702,6 +798,10 @@ Dataset operator*(Dataset a, const ConstDatasetSlice &b) {
 Dataset operator/(Dataset a, const ConstDatasetSlice &b) {
   return std::move(a /= b);
 }
+Dataset operator+(Dataset a, const Variable &b) { return std::move(a += b); }
+Dataset operator-(Dataset a, const Variable &b) { return std::move(a -= b); }
+Dataset operator*(Dataset a, const Variable &b) { return std::move(a *= b); }
+Dataset operator/(Dataset a, const Variable &b) { return std::move(a /= b); }
 Dataset operator+(Dataset a, const double b) { return std::move(a += b); }
 Dataset operator-(Dataset a, const double b) { return std::move(a -= b); }
 Dataset operator*(Dataset a, const double b) { return std::move(a *= b); }

@@ -78,13 +78,20 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertNotEqual(s1[Data.Value, "A"], s2[Data.Value, "A"])
         self.assertNotEqual(s3[Data.Value, "A"], s2[Data.Value, "A"])
 
-    def _apply_test_op(self, op, a, b, data, lh_var_name="a", rh_var_name="b"):
+    def _apply_test_op_rhs_ds_slice(self, op, a, b, data, lh_var_name="a", rh_var_name="b"):
         # Assume numpy operations are correct as comparitor
-        op(data,b[Data.Value, rh_var_name].numpy)
+        with np.errstate(invalid='ignore'):
+            op(data,b[Data.Value, rh_var_name].numpy)
         op(a,b)
         np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
 
-    def test_binary_operations(self):
+    def _apply_test_op_rhs_variable(self, op, a, b, data, lh_var_name="a", rh_var_name="b"):
+        # Assume numpy operations are correct as comparitor
+        op(data,b.numpy)
+        op(a,b)
+        np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
+
+    def test_binary_slice_rhs_operations(self):
         d = Dataset()
         d[Coord.X] = ([Dim.X], np.arange(10))
         d[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
@@ -107,20 +114,46 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance + variance))
 
         c = a * b
-        # Variables "a" and "b" subtracted despite different names
+        # Variables "a" and "b" multiplied despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * data))
         self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance*(data*data)*2))
 
         c = a / b
-        # Variables "a" and "b" subtracted despite different names
+        # Variables "a" and "b" divided despite different names
         with np.errstate(invalid='ignore'):
             np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data) 
         np.testing.assert_equal(c[Data.Variance, "a"].numpy, variance*(data*data)*2) 
 
-        self._apply_test_op(operator.iadd, a, b, data)
-        self._apply_test_op(operator.isub, a, b, data)
-        self._apply_test_op(operator.imul, a, b, data)
-        self._apply_test_op(operator.itruediv, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.iadd, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.isub, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.imul, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.itruediv, a, b, data)
+
+    def test_binary_variable_rhs_operations(self):
+        data = np.ones(10, dtype='float64')
+        d = Dataset()
+        d[Data.Value, "a"] = ([Dim.X], data)
+        d[Data.Variance, "a"] = ([Dim.X], data)
+        a = d.subset[Data.Value, "a"]
+        b_var = Variable(Data.Value, [Dim.X], data)
+
+        c = a + b_var
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
+
+        c = a - b_var
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
+
+        c = a * b_var
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * data))
+
+        c = a / b_var
+        with np.errstate(invalid='ignore'):
+            np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data) 
+
+        self._apply_test_op_rhs_variable(operator.iadd, a, b_var, data)
+        self._apply_test_op_rhs_variable(operator.isub, a, b_var, data)
+        self._apply_test_op_rhs_variable(operator.imul, a, b_var, data)
+        self._apply_test_op_rhs_variable(operator.itruediv, a, b_var, data)
 
     def test_binary_float_operations(self):
         d = Dataset()
@@ -148,10 +181,10 @@ class TestDatasetSlice(unittest.TestCase):
         c = 2.0 * a
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * 2.0))
 
-        self._apply_test_op(operator.iadd, a, b, data)
-        self._apply_test_op(operator.isub, a, b, data)
-        self._apply_test_op(operator.imul, a, b, data)
-        self._apply_test_op(operator.itruediv, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.iadd, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.isub, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.imul, a, b, data)
+        self._apply_test_op_rhs_ds_slice(operator.itruediv, a, b, data)
         
 
     def test_equal_not_equal(self):
@@ -177,6 +210,14 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertNotEqual(a, c)
         self.assertNotEqual(a, a3)
 
+    def test_binary_ops_with_variable(self):
+        d = Dataset()
+        d[Coord.X] = ([Dim.X], np.arange(10))
+        d[Data.Value, "a"] = ([Dim.X], np.arange(10))
+        d[Data.Variance, "a"] = ([Dim.X], np.arange(10))
+
+        d += Variable(2)
+
     def test_correct_temporaries(self):
         N = 6
         M = 4
@@ -194,6 +235,6 @@ class TestDatasetSlice(unittest.TestCase):
         self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 6, 7, 8, 9])
         d[Data.Value, "a"][Dim.X, 6] += d[Data.Value, "b"][Dim.X, 8]
         self.assertEqual(list(d[Data.Value, "a"].data), [1, 3, 2, 3, 4, 5, 14, 7, 8, 9])
-        
+
 if __name__ == '__main__':
     unittest.main()

@@ -32,6 +32,7 @@ private:
 
 public:
   Dataset() = default;
+  Dataset(std::vector<Variable> vars);
   // Allowing implicit construction from views facilitates calling functions
   // that do not explicitly support views. It is open for discussion whether
   // this is a good idea or not.
@@ -242,15 +243,19 @@ public:
   Dataset operator-() const;
   Dataset &operator+=(const Dataset &other);
   Dataset &operator+=(const ConstDatasetSlice &other);
+  Dataset &operator+=(const Variable &other);
   Dataset &operator+=(const double value);
   Dataset &operator-=(const Dataset &other);
   Dataset &operator-=(const ConstDatasetSlice &other);
+  Dataset &operator-=(const Variable &other);
   Dataset &operator-=(const double value);
   Dataset &operator*=(const Dataset &other);
   Dataset &operator*=(const ConstDatasetSlice &other);
   Dataset &operator*=(const double value);
+  Dataset &operator*=(const Variable &other);
   Dataset &operator/=(const Dataset &other);
   Dataset &operator/=(const ConstDatasetSlice &other);
+  Dataset &operator/=(const Variable &other);
   Dataset &operator/=(const double value);
 
 private:
@@ -530,15 +535,19 @@ public:
   DatasetSlice assign(const ConstDatasetSlice &other) const;
   DatasetSlice operator+=(const Dataset &other) const;
   DatasetSlice operator+=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator+=(const Variable &other) const;
   DatasetSlice operator+=(const double value) const;
   DatasetSlice operator-=(const Dataset &other) const;
   DatasetSlice operator-=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator-=(const Variable &other) const;
   DatasetSlice operator-=(const double value) const;
   DatasetSlice operator*=(const Dataset &other) const;
   DatasetSlice operator*=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator*=(const Variable &other) const;
   DatasetSlice operator*=(const double value) const;
   DatasetSlice operator/=(const Dataset &other) const;
   DatasetSlice operator/=(const ConstDatasetSlice &other) const;
+  DatasetSlice operator/=(const Variable &other) const;
   DatasetSlice operator/=(const double value) const;
 
   VariableSlice operator()(const Tag tag, const std::string &name = "") const;
@@ -549,18 +558,22 @@ private:
 
 Dataset operator+(Dataset a, const Dataset &b);
 Dataset operator+(Dataset a, const ConstDatasetSlice &b);
+Dataset operator+(Dataset a, const Variable &b);
 Dataset operator+(Dataset a, const double b);
 Dataset operator+(const double a, Dataset b);
 Dataset operator-(Dataset a, const Dataset &b);
 Dataset operator-(Dataset a, const ConstDatasetSlice &b);
+Dataset operator-(Dataset a, const Variable &b);
 Dataset operator-(Dataset a, const double b);
 Dataset operator-(const double a, Dataset b);
 Dataset operator*(Dataset a, const Dataset &b);
 Dataset operator*(Dataset a, const ConstDatasetSlice &b);
+Dataset operator*(Dataset a, const Variable &b);
 Dataset operator*(Dataset a, const double b);
 Dataset operator*(const double a, Dataset b);
 Dataset operator/(Dataset a, const double b);
 Dataset operator/(Dataset a, const ConstDatasetSlice &b);
+Dataset operator/(Dataset a, const Variable &b);
 Dataset operator/(Dataset a, const double b);
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices);
