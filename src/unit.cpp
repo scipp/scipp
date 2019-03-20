@@ -70,6 +70,10 @@ Unit operator*(const Unit &a, const Unit &b) {
 Unit operator/(const Unit &a, const Unit &b) {
   return Unit(std::visit(
       [](auto x, auto y) -> Unit::unit_t {
+        // It is done here to have the si::dimensionless then the units are
+        // the same, but is the si::dimensionless valid for non si types? TODO
+        if constexpr (std::is_same_v<decltype(x), decltype(y)>)
+          return dimensionless;
         auto z{x / y};
         if constexpr (isKnownUnit(z))
           return z;
