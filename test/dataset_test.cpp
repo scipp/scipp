@@ -31,6 +31,7 @@ TEST(Dataset, insert_data) {
   ASSERT_EQ(d.size(), 2);
   EXPECT_NO_THROW(d.insert(Data::Value, "name2", {}, {3}));
   ASSERT_EQ(d.size(), 2);
+  EXPECT_THROW(d.insert(Data::NoTag, "", {}, {1}), std::runtime_error);
 }
 
 TEST(Dataset, insert_variables_with_dimensions) {
@@ -649,6 +650,32 @@ TEST(Dataset, operator_plus_equal_with_attributes) {
   EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
 }
 
+TEST(Dataset, binary_operator_equal_with_variable) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value, "a", {Dim::X, 1}, {25});
+
+  auto a_copy(a);
+  Variable bvar(Data::Value, {Dim::X, 1}, {5});
+
+  a += bvar;
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 25 + 5);
+
+  a -= bvar; // TODO this test setup should throw since only one
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 25);
+
+  a *= bvar;
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 25 * 5);
+
+  a /= bvar;
+  EXPECT_EQ(a.get(Data::Value, "a")[0], 25);
+
+  // Test notag treated as data value
+  Variable cvar(Data::NoTag, {Dim::X, 1}, {10});
+  a_copy += cvar;
+  EXPECT_EQ(a_copy.get(Data::Value, "a")[0], 35);
+}
+
 TEST(Dataset, operator_times_equal) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
@@ -780,8 +807,7 @@ TEST(Dataset, operator_divide_equal_with_units) {
   a.insert(variances);
   a /= a;
   EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
-  EXPECT_EQ(a(Data::Variance).unit(),
-            units::dimensionless);
+  EXPECT_EQ(a(Data::Variance).unit(), units::dimensionless);
   EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
 }
 
@@ -1794,6 +1820,29 @@ TEST(DatasetSlice, binary_with_scalar) {
   EXPECT_TRUE(equals(fraction.get(Data::Value, "b"), {1.5}));
   EXPECT_TRUE(equals(fraction.get(Data::Variance, "a"), {20}));
   EXPECT_TRUE(equals(fraction.get(Data::Variance, "b"), {24}));
+}
+
+TEST(DatasetSlice, binary_operator_equals_with_variable) {
+  Dataset a;
+  a.insert(Coord::X, {Dim::X, 1}, {0.1});
+  a.insert(Data::Value, "a", {Dim::X, 1}, {25});
+
+  DatasetSlice a_slice = a.subset("a");
+  Variable bvar(Data::Value, {Dim::X, 1}, {5});
+
+  a_slice += bvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 + 5);
+  a_slice -= bvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25);
+  a_slice *= bvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 * 5);
+  a_slice /= bvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25);
+
+  // Test notag treated as data value
+  Variable cvar(Data::NoTag, {Dim::X, 1}, {5});
+  a_slice += cvar;
+  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 + 5);
 }
 
 TEST(Dataset, counts_toDensity_fromDensity) {
