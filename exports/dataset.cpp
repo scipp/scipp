@@ -987,12 +987,13 @@ PYBIND11_MODULE(dataset, m) {
       .def_property_readonly(
           "subset", [](DatasetSlice &self) { return SubsetHelper(self); },
           "Used to extract a read-only subset of the DatasetSlice in two "
-          "different ways: \n - one can use just a string, e.g. "
+          "different ways:\n - one can use just a string, e.g. "
           "d.subset['sample'] to extract the sample and its variance, and all "
           "the relevant coordinates.\n - one can also use a tag/string "
           "combination for a more restrictive extraction, e.g. "
           "d.subset[Data.Value, 'sample'] to only get the Value and associated "
-          "coordinates.")
+          "coordinates.\nAll other Variables (including attributes) are "
+          "dropped.")
       .def("__setitem__",
            [](DatasetSlice &self, const std::tuple<Dim, py::slice> &index,
               const DatasetSlice &other) {
@@ -1159,7 +1160,9 @@ PYBIND11_MODULE(dataset, m) {
           "extract the sample and its variance, and all the relevant "
           "coordinates.\n - one can also use a tag/string combination for a "
           "more restrictive extraction, e.g. d.subset[Data.Value, 'sample'] to "
-          "only get the Value and associated coordinates.")
+          "only get the Value and associated coordinates.\nAll other Variables "
+          "(including attributes) are dropped. Note that a DatasetSlice is "
+          "returned, not a new Dataset.")
       // Careful: The order of overloads is really important here,
       // otherwise DatasetSlice matches the overload below for
       // py::array_t. I have not understood all details of this yet
@@ -1308,7 +1311,13 @@ PYBIND11_MODULE(dataset, m) {
       .def("__rmul__",
            [](const Dataset &self, double &other) { return self * other; },
            py::is_operator())
-      .def("merge", &Dataset::merge, "Merge two Datasets together.")
+      .def("merge", &Dataset::merge, "Merge two Datasets together: all the "
+           "Variables from the Dataset passed as an argument that do not exist "
+           "in the present Dataset are copied. Variables from the argument "
+           "Dataset that already exist (i.e. have the same Tag and name) in "
+           "the present Dataset, are compared; if the two are identical, it is "
+           "simply left alone in the parent Dataset. If they are not, the "
+           "merge operation fails.")
       // TODO For now this is just for testing. We need to decide on an
       // API for specifying the keys.
       .def("zip", [](Dataset &self) {
@@ -1332,10 +1341,14 @@ PYBIND11_MODULE(dataset, m) {
             &concatenate),
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new dataset containing a concatenation of two Datasets "
-        "and their underlying Variables along a given Dimension.");
+        "and their underlying Variables along a given Dimension. All the "
+        "Variable arrays are concatenated one by one. If there is any "
+        "disagreement between the Datasets on Variable names, units, tags or "
+        "dimensions, then the concatenation operation fails.");
   m.def("rebin", py::overload_cast<const Dataset &, const Variable &>(&rebin),
         py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Dataset whose data is rebinned with new bin edges.");
+        "Returns a new Dataset whose data is re-gridded/rebinned/resampled to "
+        "a new coordinate axis.");
   m.def("histogram",
         py::overload_cast<const Dataset &, const Variable &>(&histogram),
         py::call_guard<py::gil_scoped_release>(),
