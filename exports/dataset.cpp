@@ -48,6 +48,37 @@ template <class T> struct mutable_span_methods<const T> {
   static void add(py::class_<gsl::span<const T>> &) {}
 };
 
+template <class T> std::string element_to_string(const T &item) {
+  using dataset::to_string;
+  using std::to_string;
+  if constexpr (std::is_same_v<T, std::string>)
+    return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+    return {"(Eigen::Vector3d), "};
+  else if constexpr (std::is_same_v<T,
+                                    boost::container::small_vector<double, 8>>)
+    return {"(vector), "};
+  else
+    return to_string(item) + ", ";
+}
+
+template <class T> std::string array_to_string(const T &arr) {
+  const gsl::index size = arr.size();
+  if (size == 0)
+   return std::string("[]");
+  std::string s = "[";
+  for (gsl::index i = 0; i < arr.size(); ++i) {
+   if (i == 4 && size > 8) {
+     s += "..., ";
+     i = size - 4;
+   }
+   s += element_to_string(arr[i]);
+  }
+  s.resize(s.size() - 2);
+  s += "]";
+  return s;
+}
+
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
   py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
   span.def("__getitem__", &gsl::span<T>::operator[],
@@ -56,7 +87,9 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
       .def("__len__", &gsl::span<T>::size)
       .def("__iter__", [](const gsl::span<T> &self) {
         return py::make_iterator(self.begin(), self.end());
-      });
+      })
+      .def("__repr__",
+       [](const gsl::span<T> &self) { return array_to_string(self); });
   mutable_span_methods<T>::add(span);
 }
 
@@ -104,41 +137,12 @@ void declare_ranges_pair(py::module &m, const std::string &suffix) {
       .def("second", [](const Proxy &self) { return std::get<1>(self); });
 }
 
-template <class T> std::string print(const T &item) {
-  using dataset::to_string;
-  using std::to_string;
-  if constexpr (std::is_same_v<T, std::string>)
-    return {'"' + item + "\", "};
-  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
-    return {"(Eigen::Vector3d), "};
-  else if constexpr (std::is_same_v<T,
-                                    boost::container::small_vector<double, 8>>)
-    return {"(vector), "};
-  else
-    return to_string(item) + ", ";
-}
-
 template <class T>
 void declare_VariableView(py::module &m, const std::string &suffix) {
   py::class_<VariableView<T>> view(
       m, (std::string("VariableView_") + suffix).c_str());
   view.def("__repr__",
-           [](const VariableView<T> &self) {
-             const gsl::index size = self.size();
-             if (size == 0)
-               return std::string("[]");
-             std::string s = "[";
-             for (gsl::index i = 0; i < self.size(); ++i) {
-               if (i == 4 && size > 8) {
-                 s += "..., ";
-                 i = size - 4;
-               }
-               s += print(self[i]);
-             }
-             s.resize(s.size() - 2);
-             s += "]";
-             return s;
-           })
+           [](const VariableView<T> &self) { return array_to_string(self); })
       .def("__getitem__", &VariableView<T>::operator[],
            py::return_value_policy::reference)
       .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
@@ -854,7 +858,7 @@ PYBIND11_MODULE(dataset, m) {
            py::is_operator())
       .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
            py::is_operator())
-      .def("__itruediv__", [](VariableSlice &a, Variable &b) { return a / b; },
+      .def("__itruediv__", [](VariableSlice &a, Variable &b) { return a /= b; },
            py::is_operator())
       .def("__radd__", [](VariableSlice &a, double &b) { return a + b; },
            py::is_operator())
@@ -943,9 +947,12 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
@@ -955,6 +962,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
       .def("__eq__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self == other;
@@ -980,6 +988,11 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__iadd__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self += other;
@@ -993,6 +1006,11 @@ PYBIND11_MODULE(dataset, m) {
       .def("__imul__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self *= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self /= other;
            },
            py::call_guard<py::gil_scoped_release>())
       .def("__radd__",
@@ -1035,14 +1053,15 @@ PYBIND11_MODULE(dataset, m) {
               const std::tuple<const Tag, const std::string &> &key) {
              self.erase(std::get<0>(key), std::get<1>(key));
            })
-      // TODO: This __getitem__ is here only to prevent unhandled errors when
-      // trying to get a dataset slice by supplying only a Dimension, e.g.
-      // dataset[Dim.X]. By default, an implicit conversion between Dim and
-      // gsl::index is attempted and the __getitem__ then crashes when
-      // self[index] is performed below. This fix covers only one case and we
-      // need to find a better way of protecting all unsopprted cases. This
-      // should ideally fail with a TypeError, in the same way as if only a
-      // string is supplied, e.g. dataset["a"].
+      // TODO: This __getitem__ is here only to prevent unhandled
+      // errors when trying to get a dataset slice by supplying only a
+      // Dimension, e.g. dataset[Dim.X]. By default, an implicit
+      // conversion between Dim and gsl::index is attempted and the
+      // __getitem__ then crashes when self[index] is performed below.
+      // This fix covers only one case and we need to find a better way
+      // of protecting all unsopprted cases. This should ideally fail
+      // with a TypeError, in the same way as if only a string is
+      // supplied, e.g. dataset["a"].
       .def("__getitem__",
            [](Dataset &, const Dim &) {
              throw std::runtime_error("Syntax error: cannot get slice with "
@@ -1071,9 +1090,10 @@ PYBIND11_MODULE(dataset, m) {
            [](Dataset &self, py::dict) { return Dataset(self); })
       .def_property_readonly("subset",
                              [](Dataset &self) { return SubsetHelper(self); })
-      // Careful: The order of overloads is really important here, otherwise
-      // DatasetSlice matches the overload below for py::array_t. I have not
-      // understood all details of this yet though. See also
+      // Careful: The order of overloads is really important here,
+      // otherwise DatasetSlice matches the overload below for
+      // py::array_t. I have not understood all details of this yet
+      // though. See also
       // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, py::slice> &index,
@@ -1087,7 +1107,8 @@ PYBIND11_MODULE(dataset, m) {
              self(dim, i).assign(other);
            })
 
-      // A) No dimensions argument, this will set data of existing item.
+      // A) No dimensions argument, this will set data of existing
+      // item.
       .def("__setitem__", detail::setData<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::setData<Dataset, detail::Key::TagName>)
 
@@ -1103,29 +1124,34 @@ PYBIND11_MODULE(dataset, m) {
       // 2. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Handle integers before case 3. below, which would convert to double.
+      // 2. Handle integers before case 3. below, which would convert
+      // to double.
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
-      // 3. Handle integers before case 4. below, which would convert to double.
+      // 3. Handle integers before case 4. below, which would convert
+      // to double.
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Eigen::Vector3d, detail::Key::Tag>)
       .def("__setitem__",
            detail::insert_1D<Eigen::Vector3d, detail::Key::TagName>)
-      // 4. Insertion attempting forced conversion to array of double. This
+      // 4. Insertion attempting forced conversion to array of double.
+      // This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
-      //    py::array::forcecast argument, we need to minimize implicit (and
-      //    potentially expensive conversion). If we wanted to avoid some
-      //    conversion we need to provide explicit variants for specific types,
-      //    same as or similar to insert_1D in case 5. below.
+      //    py::array::forcecast argument, we need to minimize implicit
+      //    (and potentially expensive conversion). If we wanted to
+      //    avoid some conversion we need to provide explicit variants
+      //    for specific types, same as or similar to insert_1D in
+      //    case 5. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
-      // 5. Insertion of numpy-incompatible data. py::array_t does not support
+      // 5. Insertion of numpy-incompatible data. py::array_t does not
+      // support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
@@ -1140,9 +1166,11 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
@@ -1150,6 +1178,7 @@ PYBIND11_MODULE(dataset, m) {
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
       .def("__eq__",
            [](const Dataset &self, const DatasetSlice &other) {
              return self == other;
@@ -1175,6 +1204,11 @@ PYBIND11_MODULE(dataset, m) {
              return self *= other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self /= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__add__",
            [](const Dataset &self, const DatasetSlice &other) {
              return self + other;
@@ -1190,6 +1224,11 @@ PYBIND11_MODULE(dataset, m) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__radd__",
            [](const Dataset &self, double &other) { return self + other; },
            py::is_operator())
@@ -1200,18 +1239,19 @@ PYBIND11_MODULE(dataset, m) {
            [](const Dataset &self, double &other) { return self * other; },
            py::is_operator())
       .def("merge", &Dataset::merge)
-      // TODO For now this is just for testing. We need to decide on an API for
-      // specifying the keys.
+      // TODO For now this is just for testing. We need to decide on an
+      // API for specifying the keys.
       .def("zip", [](Dataset &self) {
         return zip(self, Access::Key(Data::EventTofs),
                    Access::Key(Data::EventPulseTimes));
       });
 
-  // Implicit conversion DatasetSlice -> Dataset. Reduces need for excessive
-  // operator overload definitions
+  // Implicit conversion DatasetSlice -> Dataset. Reduces need for
+  // excessive operator overload definitions
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
-  //-----------------------dataset free functions-------------------------------
+  //-----------------------dataset free
+  // functions-------------------------------
   m.def("split",
         py::overload_cast<const Dataset &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -1250,7 +1290,8 @@ PYBIND11_MODULE(dataset, m) {
                           const Dataset &>(&convert),
         py::call_guard<py::gil_scoped_release>());
 
-  //-----------------------variable free functions------------------------------
+  //-----------------------variable free
+  // functions------------------------------
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -1276,7 +1317,8 @@ PYBIND11_MODULE(dataset, m) {
   m.def("sqrt", [](const Variable &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>());
 
-  //-----------------------dimensions free functions----------------------------
+  //-----------------------dimensions free
+  // functions----------------------------
   m.def("dimensionCoord", &dimensionCoord);
   m.def("coordDimension",
         [](const Tag t) { return coordDimension[t.value()]; });

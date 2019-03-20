@@ -82,33 +82,45 @@ class TestDatasetSlice(unittest.TestCase):
         # Assume numpy operations are correct as comparitor
         op(data,b[Data.Value, rh_var_name].numpy)
         op(a,b)
-        self.assertTrue(np.array_equal(a[Data.Value, lh_var_name].numpy, data))
+        np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
 
     def test_binary_operations(self):
         d = Dataset()
         d[Coord.X] = ([Dim.X], np.arange(10))
         d[Data.Value, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
+        d[Data.Variance, "a"] = ([Dim.X], np.arange(10, dtype='float64'))
         d[Data.Value, "b"] = ([Dim.X], np.arange(10, dtype='float64'))
+        d[Data.Variance, "b"] = ([Dim.X], np.arange(10, dtype='float64'))
         a = d.subset["a"]
         b = d.subset["b"]
         data = np.copy(a[Data.Value, "a"].numpy)
+        variance = np.copy(a[Data.Variance, "a"].numpy)
+
         c = a + b
         # Variables "a" and "b" added despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data + data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance + variance))
+
         c = a - b
         # Variables "a" and "b" subtracted despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data - data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance + variance))
 
+        c = a * b
+        # Variables "a" and "b" subtracted despite different names
+        self.assertTrue(np.array_equal(c[Data.Value, "a"].numpy, data * data))
+        self.assertTrue(np.array_equal(c[Data.Variance, "a"].numpy, variance*(data*data)*2))
 
-        #TODO. resolve issues with times_equals and binary_op_equals preventing implementation of * and / variants
+        c = a / b
+        # Variables "a" and "b" subtracted despite different names
+        with np.errstate(invalid='ignore'):
+            np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data) 
+        np.testing.assert_equal(c[Data.Variance, "a"].numpy, variance*(data*data)*2) 
 
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
-        # TODO problem described above need inplace operators
-        # Only demonstrate behaviour where variable names are sames across operands
-        b = d.subset["a"]
-        data = np.copy(a[Data.Value, "a"].numpy)
-        self._apply_test_op(operator.imul, a, b, data, lh_var_name="a", rh_var_name="a")
+        self._apply_test_op(operator.imul, a, b, data)
+        self._apply_test_op(operator.itruediv, a, b, data)
 
     def test_binary_float_operations(self):
         d = Dataset()
@@ -139,6 +151,8 @@ class TestDatasetSlice(unittest.TestCase):
         self._apply_test_op(operator.iadd, a, b, data)
         self._apply_test_op(operator.isub, a, b, data)
         self._apply_test_op(operator.imul, a, b, data)
+        self._apply_test_op(operator.itruediv, a, b, data)
+        
 
     def test_equal_not_equal(self):
         d = Dataset()
