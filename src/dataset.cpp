@@ -441,11 +441,17 @@ void operate_on_slices(DatasetSlice &lhs_slice,
         // TODO Do we need to write this differently if the two operands
         // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +
         // lhs_var * lhs_var * error2;
-        error1 *= (rhs_var * rhs_var);
-        error1 += lhs_var * lhs_var * error2;
-        // TODO: Catch errors from unit propagation here and give a better
         // error message.
+
+        // TODO: Some dances to keep the units correct here.
+        // We should find a better way to do this.
+        error1.setUnit(units::dimensionless);
+        error1 *= (rhs_var * rhs_var);
+        auto tmp = lhs_var * lhs_var;
+        tmp.setUnit(units::dimensionless);
+        error1 += tmp * error2;
         op(lhs_var, rhs_var);
+        error1.setUnit(lhs_var.unit() * lhs_var.unit());
       }
     } else {
       // No variance found, continue without.
