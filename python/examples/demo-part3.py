@@ -143,10 +143,6 @@ d
 
 #-------------------------------
 
-#ds.plot(d.subset[Data.Value, 'sample'][Dim.Position, 5000:8000], axes=[Coord.SpectrumNumber, Coord.Energy], logcb=False)
-
-#-------------------------------
-
 normalized = d.subset['sample'] / d.subset['vanadium']
 summed = ds.sum(normalized, Dim.Position)
 
