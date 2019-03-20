@@ -433,11 +433,8 @@ void operate_on_slices(DatasetSlice &lhs_slice,
         // TODO Do we need to write this differently if the two operands
         // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +
         // lhs_var * lhs_var * error2;
-        error1 *= (rhs_var * rhs_var);
-        error1 += lhs_var * lhs_var * error2;
-        // TODO: Catch errors from unit propagation here and give a better
         // error message.
-        op(lhs_var, rhs_var);
+        op_with_error(lhs_var, rhs_var, error1, error2);
       }
     } else {
       // No variance found, continue without.
