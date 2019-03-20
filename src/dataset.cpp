@@ -604,7 +604,6 @@ Dataset &Dataset::operator*=(const Variable &other) {
     return *this *= Dataset({other});
   else
     for (auto &var : m_variables)
-      // TODO Should this operate also on events etc.?
       if (var.tag() == Data::Value)
         var *= other;
   return *this;
@@ -622,7 +621,6 @@ Dataset &Dataset::operator/=(const Variable &other) {
     return *this /= Dataset({other});
   else
     for (auto &var : m_variables)
-      // TODO Should this operate also on events etc.?
       if (var.tag() == Data::Value)
         var /= other;
   return *this;
