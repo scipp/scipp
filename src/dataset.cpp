@@ -435,7 +435,8 @@ void operate_on_slices(DatasetSlice &lhs_slice,
         // lhs_var * lhs_var * error2;
         // error message.
 
-        // some dances to keep the units correct here
+        // TODO: Some dances to keep the units correct here.
+        // We should find a better way to do this.
         error1.setUnit(units::dimensionless);
         error1 *= (rhs_var * rhs_var);
         auto tmp = lhs_var * lhs_var;
