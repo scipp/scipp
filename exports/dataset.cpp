@@ -855,7 +855,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("__setitem__", &detail::setVariableSlice)
       .def("__setitem__", &detail::setVariableSliceRange)
       .def("copy", [](const VariableSlice &self) { return Variable(self); },
-           "Make a copy of a VariableSlice.")
+           "Make a copy of a VariableSlice and return it as a Variable.")
       .def("__copy__", [](VariableSlice &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableSlice &self, py::dict) { return Variable(self); })
