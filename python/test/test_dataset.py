@@ -280,7 +280,7 @@ class TestDataset(unittest.TestCase):
         op(a,b)
         np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
 
-    def test_binary_operations(self):
+    def test_binary_dataset_rhs_operations(self):
         a = Dataset()
         a[Coord.X] = ([Dim.X], np.arange(10))
         a[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
@@ -317,6 +317,19 @@ class TestDataset(unittest.TestCase):
         self._apply_test_op(operator.imul, a, b, data)
         with np.errstate(invalid="ignore"):
             self._apply_test_op(operator.itruediv, a, b, data)
+
+    def test_binary_variable_rhs_operations(self):
+        data = np.ones(10, dtype='float64')
+
+        a = Dataset()
+        a[Coord.X] = ([Dim.X], np.arange(10))
+        a[Data.Value, "i"] = ([Dim.X], data)
+
+        b_var = Variable(Data.Value, [Dim.X], data)
+        
+        c = a + b_var
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + data))
+
 
     def test_binary_float_operations(self):
         a = Dataset()

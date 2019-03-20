@@ -65,14 +65,14 @@ template <class T> std::string element_to_string(const T &item) {
 template <class T> std::string array_to_string(const T &arr) {
   const gsl::index size = arr.size();
   if (size == 0)
-   return std::string("[]");
+    return std::string("[]");
   std::string s = "[";
   for (gsl::index i = 0; i < arr.size(); ++i) {
-   if (i == 4 && size > 8) {
-     s += "..., ";
-     i = size - 4;
-   }
-   s += element_to_string(arr[i]);
+    if (i == 4 && size > 8) {
+      s += "..., ";
+      i = size - 4;
+    }
+    s += element_to_string(arr[i]);
   }
   s.resize(s.size() - 2);
   s += "]";
@@ -85,11 +85,12 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
            py::return_value_policy::reference)
       .def("size", &gsl::span<T>::size)
       .def("__len__", &gsl::span<T>::size)
-      .def("__iter__", [](const gsl::span<T> &self) {
-        return py::make_iterator(self.begin(), self.end());
-      })
+      .def("__iter__",
+           [](const gsl::span<T> &self) {
+             return py::make_iterator(self.begin(), self.end());
+           })
       .def("__repr__",
-       [](const gsl::span<T> &self) { return array_to_string(self); });
+           [](const gsl::span<T> &self) { return array_to_string(self); });
   mutable_span_methods<T>::add(span);
 }
 
@@ -1014,13 +1015,28 @@ PYBIND11_MODULE(dataset, m) {
              return self -= other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self -= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__imul__",
            [](const DatasetSlice &self, const Dataset &other) {
              return self *= other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self *= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__itruediv__",
            [](const DatasetSlice &self, const Dataset &other) {
+             return self /= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](const DatasetSlice &self, const Variable &other) {
              return self /= other;
            },
            py::call_guard<py::gil_scoped_release>())
@@ -1205,23 +1221,40 @@ PYBIND11_MODULE(dataset, m) {
              return self += other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](Dataset &self, const Variable &other) { return self += other; },
+           py::call_guard<py::gil_scoped_release>())
       .def("__isub__",
            [](Dataset &self, const DatasetSlice &other) {
              return self -= other;
            },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](Dataset &self, const Variable &other) { return self -= other; },
            py::call_guard<py::gil_scoped_release>())
       .def("__imul__",
            [](Dataset &self, const DatasetSlice &other) {
              return self *= other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](Dataset &self, const Variable &other) { return self *= other; },
+           py::call_guard<py::gil_scoped_release>())
       .def("__itruediv__",
            [](Dataset &self, const DatasetSlice &other) {
              return self /= other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](Dataset &self, const Variable &other) { return self /= other; },
+           py::call_guard<py::gil_scoped_release>())
       .def("__add__",
            [](const Dataset &self, const DatasetSlice &other) {
+             return self + other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const Dataset &self, const Variable &other) {
              return self + other;
            },
            py::call_guard<py::gil_scoped_release>())
@@ -1230,13 +1263,28 @@ PYBIND11_MODULE(dataset, m) {
              return self - other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const Dataset &self, const Variable &other) {
+             return self - other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__mul__",
            [](const Dataset &self, const DatasetSlice &other) {
              return self * other;
            },
            py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const Dataset &self, const Variable &other) {
+             return self * other;
+           },
+           py::call_guard<py::gil_scoped_release>())
       .def("__truediv__",
            [](const Dataset &self, const DatasetSlice &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const Dataset &self, const Variable &other) {
              return self / other;
            },
            py::call_guard<py::gil_scoped_release>())

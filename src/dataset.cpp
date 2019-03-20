@@ -794,6 +794,10 @@ Dataset operator*(Dataset a, const ConstDatasetSlice &b) {
 Dataset operator/(Dataset a, const ConstDatasetSlice &b) {
   return std::move(a /= b);
 }
+Dataset operator+(Dataset a, const Variable &b) { return std::move(a += b); }
+Dataset operator-(Dataset a, const Variable &b) { return std::move(a -= b); }
+Dataset operator*(Dataset a, const Variable &b) { return std::move(a *= b); }
+Dataset operator/(Dataset a, const Variable &b) { return std::move(a /= b); }
 Dataset operator+(Dataset a, const double b) { return std::move(a += b); }
 Dataset operator-(Dataset a, const double b) { return std::move(a -= b); }
 Dataset operator*(Dataset a, const double b) { return std::move(a *= b); }
