@@ -574,14 +574,20 @@ TEST(Dataset, operator_multiplication_broadcast) {
   Dataset a;
   a.insert(Data::Value, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
            {1.0, 1.0, 1.0, 1.0});
+  a(Data::Value).setUnit(units::m);
   a.insert(Data::Variance, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
            {1.0, 1.0, 1.0, 1.0});
 
   Dataset b;
   b.insert(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
+  b(Data::Value).setUnit(units::m);
   b.insert(Data::Variance, {Dim::Y, 2}, {1.0, 1.0});
 
   auto c = a * b;
+  // Check units
+  EXPECT_EQ(c(Data::Value).unit(), units::m * units::m);
+  EXPECT_EQ(c(Data::Variance).unit(),
+            units::m * units::m * units::m * units::m);
 
   // Basic output structure test
   EXPECT_EQ(c.dimensions().volume(), 4);
