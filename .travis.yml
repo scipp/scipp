@@ -29,7 +29,7 @@ script:
   - mkdir -p install
   - cd build
   - cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
-  - make install
+  - make -j2 install
   - ./test/dataset_test
   - python3 -m pip install -r ../python/requirements.txt
   - export PYTHONPATH=$PYTHONPATH:../install

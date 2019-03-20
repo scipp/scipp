@@ -3,6 +3,7 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <functional>
 #include <numeric>
 #include <set>
 
@@ -329,29 +330,63 @@ template <class T> using ptr = type<T> *;
 
 // Using restrict does not seem to help much?
 #define RESTRICT __restrict
-void multiply(const gsl::index size, ptr<double> RESTRICT v1,
-              ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
-              ptr<const double> RESTRICT e2) {
+void multiply_data(const gsl::index size, ptr<double> RESTRICT v1,
+                   ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
+                   ptr<const double> RESTRICT e2) {
   for (gsl::index i = 0; i < size; ++i) {
     e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
     v1[i] *= v2[i];
   }
 }
+#define RESTRICT __restrict
+void divide_data(const gsl::index size, ptr<double> RESTRICT v1,
+                 ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
+                 ptr<const double> RESTRICT e2) {
+  for (gsl::index i = 0; i < size; ++i) {
+    e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
+    v1[i] /= v2[i];
+  }
+}
+
+void multiply(VariableSlice &lhs_var, const ConstVariableSlice &rhs_var,
+              VariableSlice &lhs_err, const ConstVariableSlice &rhs_err) {
+  auto v1 = lhs_var.template span<double>();
+  const auto v2 = rhs_var.template span<double>();
+  auto e1 = lhs_err.template span<double>();
+  const auto e2 = rhs_err.template span<double>();
+  multiply_data(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
+  lhs_var.setUnit(lhs_var.unit() * rhs_var.unit());
+  lhs_err.setUnit(lhs_var.unit() * lhs_var.unit());
+}
+
+void multiply(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs *= rhs; }
+
+void divide(VariableSlice &lhs_var, const ConstVariableSlice &rhs_var,
+            VariableSlice &lhs_err, const ConstVariableSlice &rhs_err) {
+  auto v1 = lhs_var.template span<double>();
+  const auto v2 = rhs_var.template span<double>();
+  auto e1 = lhs_err.template span<double>();
+  const auto e2 = rhs_err.template span<double>();
+  divide_data(v1.size(), v1.data(), e1.data(), v2.data(), e2.data());
+  lhs_var.setUnit(lhs_var.unit() / rhs_var.unit());
+  lhs_err.setUnit(lhs_var.unit() * lhs_var.unit());
+}
+
+void divide(VariableSlice &lhs, const ConstVariableSlice &rhs) { lhs /= rhs; }
+
+typedef void (*op_def)(VariableSlice &lhs, const ConstVariableSlice &rhs);
+typedef void (*op_with_error_def)(VariableSlice &lhs_var,
+                                  const ConstVariableSlice &rhs_var,
+                                  VariableSlice &lhs_err,
+                                  const ConstVariableSlice &rhs_err);
 } // namespace aligned
 
 namespace {
 
-/**
- * @param lhs_slice : Slice of target data variable (lh operand), but should
- * have variances captured too if relvant
- * @param rhs_slice : Slice of target data variable (rh operand), but should
- * have variances captured too if relevant
- * @param lhs_var : lh variable (mutable)
- * @param rhs_var : rh variable (const)
- */
-void multiply_slices(DatasetSlice &lhs_slice,
-                     const ConstDatasetSlice &rhs_slice, VariableSlice &lhs_var,
-                     const ConstVariableSlice &rhs_var) {
+void validate_operands(DatasetSlice &lhs_slice,
+                       const ConstDatasetSlice &rhs_slice,
+                       VariableSlice &lhs_var,
+                       const ConstVariableSlice &rhs_var) {
   if (lhs_slice.contains(Data::Variance, lhs_var.name()) !=
       rhs_slice.contains(Data::Variance, rhs_var.name())) {
     throw std::runtime_error("Either both or none of the operands must "
@@ -364,9 +399,28 @@ void multiply_slices(DatasetSlice &lhs_slice,
                                "variance but no corresponding value.");
     }
   }
-  // Data variables are added
+}
+
+/**
+ * @param lhs_slice : Slice of target data variable (lh operand), but should
+ * have variances captured too if relvant
+ * @param rhs_slice : Slice of target data variable (rh operand), but should
+ * have variances captured too if relevant
+ * @param lhs_var : lh variable (mutable)
+ * @param rhs_var : rh variable (const)
+ * @param op_with_error : inplace operator to use on operands. Handles value
+ * and error at the data level.
+ * @param op : inplace operator to use on operands of type
+ * constvariableslice. No error considered.
+ */
+void operate_on_slices(DatasetSlice &lhs_slice,
+                       const ConstDatasetSlice &rhs_slice,
+                       VariableSlice &lhs_var,
+                       const ConstVariableSlice &rhs_var,
+                       aligned::op_with_error_def op_with_error,
+                       aligned::op_def op) {
   if (rhs_var.tag() == Data::Value) {
-    if (lhs_slice.contains(Data::Variance, rhs_var.name())) {
+    if (lhs_slice.contains(Data::Variance, lhs_var.name())) {
       auto error1 = lhs_slice(Data::Variance, lhs_var.name());
       const auto &error2 = rhs_slice(Data::Variance, rhs_var.name());
       if ((lhs_var.dimensions() == rhs_var.dimensions()) &&
@@ -374,20 +428,7 @@ void multiply_slices(DatasetSlice &lhs_slice,
           (lhs_var.dimensions() == error2.dimensions())) {
         // Optimization if all dimensions match, avoiding allocation of
         // temporaries and redundant streaming from memory of large array.
-        error1.setUnit(rhs_var.unit() * rhs_var.unit() * error1.unit() +
-                       lhs_var.unit() * lhs_var.unit() * error2.unit());
-        lhs_var.setUnit(lhs_var.unit() * rhs_var.unit());
-
-        // TODO We are working with VariableSlice here, so get<> returns a
-        // view, not a span, i.e., it is less efficient. May need to do
-        // this differently for optimal performance.
-        auto v1 = lhs_var.template span<double>();
-        const auto v2 = rhs_var.template span<double>();
-        auto e1 = error1.template span<double>();
-        const auto e2 = error2.template span<double>();
-        // TODO Need to ensure that data is contiguous!
-        aligned::multiply(v1.size(), v1.data(), e1.data(), v2.data(),
-                          e2.data());
+        op_with_error(lhs_var, rhs_var, error1, error2);
       } else {
         // TODO Do we need to write this differently if the two operands
         // are the same? For example, error1 = error1 * (rhs_var * rhs_var) +
@@ -396,22 +437,24 @@ void multiply_slices(DatasetSlice &lhs_slice,
         error1 += lhs_var * lhs_var * error2;
         // TODO: Catch errors from unit propagation here and give a better
         // error message.
-        lhs_var *= rhs_var;
+        op(lhs_var, rhs_var);
       }
     } else {
       // No variance found, continue without.
-      lhs_var *= rhs_var;
+      op(lhs_var, rhs_var);
     }
   } else if (rhs_var.tag() == Data::Variance) {
     // Do nothing, math for variance is done when processing corresponding
     // value.
   } else {
-    lhs_var *= rhs_var;
+    op(lhs_var, rhs_var);
   }
 }
 
 } // namespace
-template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
+template <class T1, class T2>
+T1 &op_equals(T1 &dataset, const T2 &other,
+              aligned::op_with_error_def op_with_error, aligned::op_def op) {
   std::set<std::string> lhs_names;
   for (const auto &rhs_var : other)
     if (rhs_var.isData())
@@ -430,7 +473,10 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
         // variables
         auto lhs_slice = dataset.subset(lhs_var.name());
         auto rhs_slice = other.subset(rhs_var.name());
-        multiply_slices(lhs_slice, rhs_slice, lhs_var, rhs_var);
+        validate_operands(lhs_slice, rhs_slice, lhs_var, rhs_var);
+        if (rhs_var.tag() != Data::Variance)
+          operate_on_slices(lhs_slice, rhs_slice, lhs_var, rhs_var,
+                            op_with_error, op);
       }
     } else {
       // Note that this is handled via name, i.e., there may be values and
@@ -446,7 +492,10 @@ template <class T1, class T2> T1 &times_equals(T1 &dataset, const T2 &other) {
           if (lhs_var.tag() == rhs_var.tag()) {
             ++count;
             auto lhs_slice = dataset.subset(lhs_var.name());
-            multiply_slices(lhs_slice, rhs_slice, lhs_var, rhs_var);
+            validate_operands(lhs_slice, rhs_slice, lhs_var, rhs_var);
+            if (rhs_var.tag() != Data::Variance)
+              operate_on_slices(lhs_slice, rhs_slice, lhs_var, rhs_var,
+                                op_with_error, op);
           }
         }
         if (count == 0)
@@ -504,15 +553,29 @@ Dataset &Dataset::operator-=(const double value) {
 }
 
 Dataset &Dataset::operator*=(const Dataset &other) {
-  return times_equals(*this, other);
+  return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 Dataset &Dataset::operator*=(const ConstDatasetSlice &other) {
-  return times_equals(*this, other);
+  return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 Dataset &Dataset::operator*=(const double value) {
   for (auto &var : m_variables)
     if (var.tag() == Data::Value)
       var *= value;
+    else if (var.tag() == Data::Variance)
+      var *= value * value;
+  return *this;
+}
+Dataset &Dataset::operator/=(const Dataset &other) {
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+Dataset &Dataset::operator/=(const ConstDatasetSlice &other) {
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+Dataset &Dataset::operator/=(const double value) {
+  for (auto &var : m_variables)
+    if (var.tag() == Data::Value)
+      var /= value;
     else if (var.tag() == Data::Variance)
       var *= value * value;
   return *this;
@@ -593,15 +656,29 @@ DatasetSlice DatasetSlice::operator-=(const double value) const {
 }
 
 DatasetSlice DatasetSlice::operator*=(const Dataset &other) const {
-  return times_equals(*this, other);
+  return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) const {
-  return times_equals(*this, other);
+  return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 DatasetSlice DatasetSlice::operator*=(const double value) const {
   for (auto var : *this)
     if (var.tag() == Data::Value)
       var *= value;
+    else if (var.tag() == Data::Variance)
+      var *= value * value;
+  return *this;
+}
+DatasetSlice DatasetSlice::operator/=(const Dataset &other) const {
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+DatasetSlice DatasetSlice::operator/=(const ConstDatasetSlice &other) const {
+  return op_equals(*this, other, &aligned::divide, &aligned::divide);
+}
+DatasetSlice DatasetSlice::operator/=(const double value) const {
+  for (auto var : *this)
+    if (var.tag() == Data::Value)
+      var /= value;
     else if (var.tag() == Data::Variance)
       var *= value * value;
   return *this;
@@ -612,6 +689,7 @@ DatasetSlice DatasetSlice::operator*=(const double value) const {
 Dataset operator+(Dataset a, const Dataset &b) { return std::move(a += b); }
 Dataset operator-(Dataset a, const Dataset &b) { return std::move(a -= b); }
 Dataset operator*(Dataset a, const Dataset &b) { return std::move(a *= b); }
+Dataset operator/(Dataset a, const Dataset &b) { return std::move(a /= b); }
 Dataset operator+(Dataset a, const ConstDatasetSlice &b) {
   return std::move(a += b);
 }
@@ -621,14 +699,16 @@ Dataset operator-(Dataset a, const ConstDatasetSlice &b) {
 Dataset operator*(Dataset a, const ConstDatasetSlice &b) {
   return std::move(a *= b);
 }
+Dataset operator/(Dataset a, const ConstDatasetSlice &b) {
+  return std::move(a /= b);
+}
 Dataset operator+(Dataset a, const double b) { return std::move(a += b); }
 Dataset operator-(Dataset a, const double b) { return std::move(a -= b); }
 Dataset operator*(Dataset a, const double b) { return std::move(a *= b); }
+Dataset operator/(Dataset a, const double b) { return std::move(a /= b); }
 Dataset operator+(const double a, Dataset b) { return std::move(b += a); }
 Dataset operator-(const double a, Dataset b) { return -(b -= a); }
 Dataset operator*(const double a, Dataset b) { return std::move(b *= a); }
-
-Dataset operator/(Dataset a, const double b) { return std::move(a *= 1 / b); }
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
                            const std::vector<gsl::index> &indices) {
   std::vector<Dataset> out(indices.size() + 1);
