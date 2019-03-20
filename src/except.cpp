@@ -114,6 +114,8 @@ std::string do_to_string(const Tag tag) {
     return "Coord::Mask";
   case Coord::Position.value():
     return "Coord::Position";
+  case Data::NoTag.value():
+    return "Data::NoTag";
   case Data::Events.value():
     return "Data::Events";
   case Data::Value.value():
