@@ -113,7 +113,8 @@ d
 #| ### Solution 1
 #| The binning of the monitor does not match that of the data, so we need to rebin it before the division:
 
-d.subset['sample'] /= ds.rebin(d[Coord.Monitor, 'beam'].scalar, d[Coord.Tof])
+sample_over_beam = d.subset['sample'] /= ds.rebin(d[Coord.Monitor, 'beam'].scalar, d[Coord.Tof])
+sample_over_beam
 
 #-------------------------------
 

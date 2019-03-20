@@ -274,13 +274,19 @@ class TestDataset(unittest.TestCase):
                 np.testing.assert_array_equal(view[Data.Value, "data2"].numpy, self.reference_data2[z:z+delta,:,:])
                 np.testing.assert_array_equal(view[Data.Value, "data3"].numpy, self.reference_data3[z:z+delta,:])
 
-    def _apply_test_op(self, op, a, b, data, lh_var_name="i", rh_var_name="j"):
+    def _apply_test_op_rhs_dataset(self, op, a, b, data, lh_var_name="i", rh_var_name="j"):
         # Assume numpy operations are correct as comparitor
         op(data,b[Data.Value, rh_var_name].numpy)
         op(a,b)
         np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
+        
+    def _apply_test_op_rhs_variable(self, op, a, b, data, lh_var_name="i", rh_var_name="j"):
+        # Assume numpy operations are correct as comparitor
+        op(data,b.numpy)
+        op(a,b)
+        np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
 
-    def test_binary_operations(self):
+    def test_binary_dataset_rhs_operations(self):
         a = Dataset()
         a[Coord.X] = ([Dim.X], np.arange(10))
         a[Data.Value, "i"] = ([Dim.X], np.arange(10, dtype='float64'))
@@ -302,21 +308,45 @@ class TestDataset(unittest.TestCase):
         self.assertTrue(np.array_equal(c[Data.Variance, "i"].numpy, variance + variance))
 
         c = a * b
-        # Variables "a" and "b" subtracted despite different names
+        # Variables "a" and "b" multiplied despite different names
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data * data))
         self.assertTrue(np.array_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2))
 
         c = a / b
-        # Variables "a" and "b" subtracted despite different names
+        # Variables "a" and "b" divided despite different names
         with np.errstate(invalid="ignore"):
             np.testing.assert_equal(c[Data.Value, "i"].numpy, data / data) 
         np.testing.assert_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2) 
 
-        self._apply_test_op(operator.iadd, a, b, data)
-        self._apply_test_op(operator.isub, a, b, data)
-        self._apply_test_op(operator.imul, a, b, data)
+        self._apply_test_op_rhs_dataset(operator.iadd, a, b, data)
+        self._apply_test_op_rhs_dataset(operator.isub, a, b, data)
+        self._apply_test_op_rhs_dataset(operator.imul, a, b, data)
         with np.errstate(invalid="ignore"):
-            self._apply_test_op(operator.itruediv, a, b, data)
+            self._apply_test_op_rhs_dataset(operator.itruediv, a, b, data)
+
+    def test_binary_variable_rhs_operations(self):
+        data = np.ones(10, dtype='float64')
+
+        a = Dataset()
+        a[Coord.X] = ([Dim.X], np.arange(10))
+        a[Data.Value, "i"] = ([Dim.X], data)
+
+        b_var = Variable(Data.Value, [Dim.X], data)
+        
+        c = a + b_var
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + data))
+        c = a - b_var
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data - data))
+        c = a * b_var
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data * data))
+        c = a / b_var
+        self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data / data))
+        
+        self._apply_test_op_rhs_variable(operator.iadd, a, b_var, data)
+        self._apply_test_op_rhs_variable(operator.isub, a, b_var, data)
+        self._apply_test_op_rhs_variable(operator.imul, a, b_var, data)
+        with np.errstate(invalid="ignore"):
+            self._apply_test_op_rhs_variable(operator.itruediv, a, b_var, data)
 
     def test_binary_float_operations(self):
         a = Dataset()
