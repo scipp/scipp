@@ -79,7 +79,7 @@ RUN touch $UPD_EX && \
     echo "exit 0" >> $UPD_EX
 
 #avoid using passwords for jupyter lab
-RUN sed -i "s/jupyter lab/jupyter lab --NotebookApp.token='' --NotebookApp.password=''/" /usr/local/bin/start-notebook.sh
+RUN sed -i "s/jupyter notebook/jupyter notebook --NotebookApp.token='' --NotebookApp.password=''/" /usr/local/bin/start-notebook.sh
 
 ARG PG3_4844_HASH=d5ae38871d0a09a28ae01f85d969de1e
 ARG PG3_4866_HASH=3d543bc6a646e622b3f4542bc3435e7e
@@ -106,6 +106,4 @@ RUN touch $UPD_NB.py && \
     py2nb $UPD_NB.py && \
     rm $UPD_NB.py
 
-# Start jupyter lab on docker sturt up
-ENV JUPYTER_ENABLE_LAB=TRUE
 
