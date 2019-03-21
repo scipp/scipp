@@ -113,7 +113,7 @@ d
 #| ### Solution 1
 #| The binning of the monitor does not match that of the data, so we need to rebin it before the division:
 
-sample_over_beam = d.subset['sample'] /= ds.rebin(d[Coord.Monitor, 'beam'].scalar, d[Coord.Tof])
+sample_over_beam = d.subset['sample'] / ds.rebin(d[Coord.Monitor, 'beam'].scalar, d[Coord.Tof])
 sample_over_beam
 
 #-------------------------------
@@ -140,10 +140,6 @@ d = ds.convert(d, Dim.Tof, Dim.Energy)
 #-------------------------------
 
 d
-
-#-------------------------------
-
-#ds.plot(d.subset[Data.Value, 'sample'][Dim.Position, 5000:8000], axes=[Coord.SpectrumNumber, Coord.Energy], logcb=False)
 
 #-------------------------------
 
