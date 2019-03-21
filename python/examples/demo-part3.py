@@ -14,8 +14,9 @@ import dataset.compat.mantid as mantidcompat
 filename = 'PG3_4844_event.nxs'
 filename_vanadium = 'PG3_4866_event.nxs'
 
-sampleWS = mantid.LoadEventNexus(filename)
-vanadiumWS = mantid.LoadEventNexus(filename_vanadium)
+# Load only a single bank to reduce memory consumption, so we can run this on a laptop
+sampleWS = mantid.LoadEventNexus(filename, BankName='bank22')
+vanadiumWS = mantid.LoadEventNexus(filename_vanadium, BankName='bank22')
 
 #-------------------------------
 
@@ -41,14 +42,14 @@ d[Coord.ComponentInfo].scalar
 #| `Data.Events` is the equivalent to a vector of `EventList`s in Mantid.
 #| Here, we chose to represent an event list as a `Dataset`:
 
-d[Data.Events, 'sample'].data[10000]
+d[Data.Events, 'sample'].data[500]
 
 #| We could in principle also choose other, more efficient, event storage formats.
 #| At this point, using a dataset as an event list is convenient because it lests us reuse the same functionality:
 
-events = d[Data.Events, 'sample'].data[10000]
-d[Data.Events, 'sample'].data[10000] = ds.sort(events, Data.Tof)[Dim.Event, 100:-100]
-ds.table(d[Data.Events, 'sample'].data[10000])
+events = d[Data.Events, 'sample'].data[500]
+d[Data.Events, 'sample'].data[500] = ds.sort(events, Data.Tof)[Dim.Event, 100:-100]
+ds.table(d[Data.Events, 'sample'].data[500])
 
 #| ### Exercise 1
 #| How many events are there in total? TODO This is boring/useless, find a better task!
@@ -68,7 +69,7 @@ d
 
 #-------------------------------
 
-ds.plot(d.subset[Data.Value, 'sample'][Dim.Position, 5000:6000], axes=[Coord.SpectrumNumber, Coord.Tof])
+ds.plot(d.subset[Data.Value, 'sample'], axes=[Coord.SpectrumNumber, Coord.Tof])
 
 #-------------------------------
 
@@ -126,11 +127,15 @@ d
 
 #-------------------------------
 
-d.subset[Data.Value, 'sample'][Dim.Position, 10000:11000]
+d.subset[Data.Value, 'sample']
 
 #-------------------------------
 
-ds.plot(d.subset[Data.Value, 'sample'][Dim.Position, 10000:11000], axes=[Coord.SpectrumNumber, Coord.Temperature, Coord.Tof])
+ds.plot(d.subset[Data.Value, 'sample'], axes=[Coord.SpectrumNumber, Coord.Temperature, Coord.Tof])
+
+#-------------------------------
+
+ds.plot(d.subset[Data.Value, 'sample'][Dim.Position, 500], collapse=Dim.Temperature)
 
 #-------------------------------
 
