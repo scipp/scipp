@@ -138,8 +138,12 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
                                    "dimensions, use plot_sliceviewer."
                                    .format(len(v[0].dimensions)))
 
-            # Define y
-            y = v[0].numpy
+            # Define y: try to see if coordinate contains numbers
+            try:
+                y = v[0].numpy
+            # If .numpy fails, try to extract as an array of strings
+            except RuntimeError:
+                y = np.array(v[0].data, dtype=np.str)
             name = axis_label(v[0])
             # TODO: getting the shape of the dimension array is done in two
             # steps here because v.dimensions.shape[0] returns garbage. One of
@@ -154,7 +158,10 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
             coord = item[axes_copy[0]]
             xdims = coord.dimensions
             nx = xdims.shape[0]
-            x = coord.numpy
+            try:
+                x = coord.numpy
+            except RuntimeError:
+                x = np.array(coord.data, dtype=np.str)
             # Check for bin edges
             histogram = False
             if nx == ny + 1:
