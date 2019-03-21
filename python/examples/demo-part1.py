@@ -89,15 +89,122 @@ ds.table(d.subset[Data.Value, 'alice'])
 #|
 #| Using the slicing notation, create a new table (or replace the existing dataset `d`) by one that does not contain the first and last row of `d`.
 
-from copy import copy
-table = copy(d[Dim.Row, 1:-1])
+
+#| ### Solution 1
+#|
+#| Scroll down for solution.
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+
+table = d[Dim.Row, 1:-1].copy()
+
+# Or:
+# from copy import copy
+# table = copy(d[Dim.Row, 1:-1])
 table
 
 #| ### Exercise 2
 #| 1. Combining row slicing and "column" slicing, add the last row of the data for Alice to the first row of data for Bob.
 #| 2. Using the slice-range notation `a:b`, try adding the last two rows to the first two rows. Why does this fail?
 
+
 #| ### Solution 2
+#|
+#| Scroll down for solution.
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
 
 d.subset["bob"][Dim.Row, 0] += d.subset["alice"][Dim.Row, -1]
 ds.table(d)
@@ -128,7 +235,58 @@ ds.table(d)
 #| ### Exercise 3
 #| Add the sum of Alice's and Bob's height as a new variable (column) to the dataset.
 
+
 #| ### Solution 3
+#|
+#| Scroll down for solution.
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
 
 d.subset['sum'] = d.subset['alice'] + d.subset['bob']
 ds.table(d)
@@ -147,7 +305,58 @@ d[Data.Value, 'eve'].numpy
 #| 1. As above for `np.exp` applied to the data for Eve, apply a `numpy` function to the data for Alice.
 #| 2. What happens to the unit and uncertanties when modifying data with external code such as `numpy`?
 
+
 #| ### Solution 4
+#|
+#| Scroll down for solution.
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
 
 d[Data.Value, 'alice'] = np.sin(d[Data.Value, 'alice'])
 ds.table(d)
@@ -160,7 +369,58 @@ ds.table(d)
 #| 1. Try adding a scalar value such as `1.5` to the data for Eve.
 #| 2. Try the same for Alice or Bob. Why is it not working?
 
+
 #| ### Solution 5
+#|
+#| Scroll down for solution.
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
 
 d.subset['eve'] += 1.5
 ds.table(d)
