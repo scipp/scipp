@@ -52,7 +52,59 @@ ds.plot(d.subset[Data.Value, 'alice'])
 #|
 #| Remove the surface layer of the volume, i.e., remove the first and last slice in each of the dimensions.
 
+
 #| ### Solution 1
+#|
+#| Scroll down for solution.
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
 #| Note the important call to `copy()`. If we omit it, `d` will just be a multi-dimensional slice of the larger volume (which is kept alive), wasting memory and preventing further modification, such as insertion of other variables.
 
 d = d[Dim.X, 1:-1][Dim.Y, 1:-1][Dim.Z, 1:-1].copy()
@@ -64,8 +116,60 @@ d
 #| ### Exercise 2
 #| - Try to concatenate the dataset with itself along the X dimensions. Why does this fail?
 #| - Make a copy of the dataset, add an offset to the X coordinate to fix the issue, and try to concatenate again.
-#|
+
+
 #| ### Solution 2
+#|
+#| Scroll down for solution.
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
 #| With a data extent of, e.g. `8` in this case, bin edges have extent `9`.
 #| Naive concatenation would thus lead a new data extent of `16` and a coordinate extent of `18`, which is meaningless and thus prevented.
 #| In this `concatenate` merges the last edge of the first input with the first edge of the second input, if compatible.
@@ -102,8 +206,59 @@ d[Data.Value, 'alice'].numpy
 #| ### Exercise 3
 #| 1. Use `ds.mean` to compute the mean of the data for Alice along the Z dimension.
 #| 2. Do the same with `numpy`, what are the complications you encounter, that are not present when using the dataset?
-#|
+
+
 #| ### Solution 3
+#|
+#| Scroll down for solution.
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
+#|
+#| V
 
 help(ds.mean)
 
