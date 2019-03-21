@@ -138,7 +138,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
                                    "dimensions, use plot_sliceviewer."
                                    .format(len(v[0].dimensions)))
 
-            # Define y: try to see if coordinate contains numbers
+            # Define y: try to see if array contains numbers
             try:
                 y = v[0].numpy
             # If .numpy fails, try to extract as an array of strings
