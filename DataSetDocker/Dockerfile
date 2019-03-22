@@ -51,7 +51,8 @@ RUN pip install \
     jupyter_nbextensions_configurator
 
 RUN jupyter contrib nbextension install && \
-    jupyter nbextensions_configurator enable
+    jupyter nbextensions_configurator enable && \
+    jupyter nbextension enable exercise2/main
 
 
 #installing dataset
