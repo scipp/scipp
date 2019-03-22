@@ -7,6 +7,18 @@ style_border_center = {'style': 'border: 1px solid black; text-align:center'}
 style_border_right = {'style': 'border: 1px solid black; text-align:right'}
 
 
+def value_to_string(val):
+    if (type(val) is not float) or (val == 0):
+        text = str(val)
+    elif abs(val) >= 1.0e4 or abs(val) <= 1.0e-4:
+        text = "{:.3e}".format(val)
+    else:
+        text = "{}".format(val)
+        if len(text) > 5 + (text[0] == '-'):
+            text = "{:.3f}".format(val)
+    return text
+
+
 def append_with_text(parent, name, text, attrib=style_border_right):
     el = et.SubElement(parent, name, attrib=attrib)
     el.text = text
@@ -115,12 +127,12 @@ def table_ds(dataset):
         for i in range(length):
             tr = et.SubElement(tab, 'tr')
             for x, h in zip(coords, is_hist):
-                text = str(x.data[i])
+                text = value_to_string(x.data[i])
                 if h:
-                    text = '[{}; {}]'.format(text, str(x.data[i+1]))
+                    text = '[{}; {}]'.format(text, value_to_string(x.data[i+1]))
                 append_with_text(tr, 'th', text)
             for x in datas:
-                append_with_text(tr, 'th', str(x.data[i]))
+                append_with_text(tr, 'th', value_to_string(x.data[i]))
 
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
@@ -149,7 +161,7 @@ def table_var(variable):
     # Aligned data
     for val in variable.data:
         tr_val = et.SubElement(tab, 'tr')
-        append_with_text(tr_val, 'th', str(val))
+        append_with_text(tr_val, 'th', value_to_string(val))
 
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
