@@ -67,3 +67,17 @@ nosetests3 --where test
 ```
 
 Note that the tests bring in additional python dependencies. `python3 -m pip install -r python/requirements.txt` to obtain these.
+
+## Running the demo notebooks
+
+The demo/tutorial notebooks are using a plugin from `nbextension`, which needs to be installed separately:
+
+```sh
+pip install jupyter_contrib_nbextensions
+jupyter contrib nbextension install --user
+
+pip install jupyter_nbextensions_configurator
+jupyter nbextensions_configurator enable --user
+```
+
+Use `pip3`, depending on your environment.
