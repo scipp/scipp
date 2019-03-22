@@ -151,7 +151,7 @@ def table(some):
 
 
 def value_to_string(val):
-    if (type(val) is int) or (val == 0):
+    if (type(val) is not float) or (val == 0):
         text = str(val)
     elif abs(val) >= 1.0e4 or abs(val) <= 1.0e-4:
         text = "{:.3e}".format(val)
