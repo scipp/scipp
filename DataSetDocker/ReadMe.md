@@ -1,16 +1,27 @@
-# Installing and configuring docker
+# Using Dataset under Docker
 
-## Ubuntu 18.04
+## Install Docker
 
-```
-sudo apt install docker.io
+Follow the instructions [here](https://docs.docker.com/install/) to
+install Docker CE on your system.
+
+### Linux extra
+
+Add your user to the `docker` group (to avoid having to use `sudo`
+with Docker commands, note you'll have to logout and back in for
+these changes to take effect):
+```sh
 sudo usermod -aG docker $(whoami)
-# Now logout and login again for the permission changes to take effect
-sudo systemctl start docker
-sudo systemctl enable docker
 ```
 
-# To build the image:
+If the Docker daemon is not running by default you may need to
+enable (and manually start) it:
+```
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+## To build the image
 
 From the directory containing Dockerfile launch:
 
@@ -18,34 +29,34 @@ From the directory containing Dockerfile launch:
 docker build --tag dataset .
 ```
 
-# To start docker: 
+## To start a container
 
-## For Linux:
+### For Linux:
 
 ```sh
 docker run -p 8888:8888 dataset
 ```
 
-## For Windows/MacOS:
+### For Windows/MacOS
 
 ```sh
 docker run -p $(docker-machine ip $(docker-machine active)):8888:8888 dataset
 ```
-# Get the ip of running docker:
+## Get the IP of running container
 
-## For Linux:
+### For Linux
 
 ```
 ip = 127.0.0.1
 ```
 
-## For windows:
+### For windows
 
 ```
 ip = docker-machine ip $(docker-machine active)
 ```
 
-# To access the jupyter notebook:
+## To access the Jupyter notebook
 
 In your browser type:
 ``` 

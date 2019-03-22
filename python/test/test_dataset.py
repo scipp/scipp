@@ -1,6 +1,7 @@
 import unittest
 
 from dataset import *
+from dataset.xarray_compat import as_xarray
 import numpy as np
 import matplotlib.pyplot as plt
 import operator

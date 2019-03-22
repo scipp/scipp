@@ -1,6 +1,7 @@
 import unittest
 
 import dataset as ds
+from dataset.xarray_compat import as_xarray
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -39,7 +40,7 @@ class TestXarrayInterop(unittest.TestCase):
 
         # xarray cannot deal with non-numeric dimension coordinates
         del(table[ds.Coord.Row])
-        dataset = ds.as_xarray(table.subset['col1'])
+        dataset = as_xarray(table.subset['col1'])
         #print(dataset)
         dataset['Value:col1'].plot()
         #plt.savefig('test.png')
