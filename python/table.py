@@ -30,7 +30,7 @@ def table_ds(dataset):
         for var in sub:
             if var.is_data and len(var.dimensions) == 1:
                 datum1d[name].append(var)
-            else:
+            elif var.is_data:
                 datum0d[name].append(var)
 
     coord_names = list(dict.fromkeys([var.name for var in dataset if var.is_coord]))
