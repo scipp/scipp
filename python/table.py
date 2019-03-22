@@ -12,13 +12,6 @@ def append_with_text(parent, name, text, attrib=style_border_right):
     el.text = text
 
 
-def subset_has_1d_data(dataset, name):
-    for var in dataset.subset[name]:
-        if var.is_data:
-            return len(var.dimensions) == 1
-    raise RuntimeError("No data with this name")
-
-
 def table_ds(dataset):
     if len(dataset.dimensions) > 1:
         raise RuntimeError("Only 1-D datasets can be rendered as a table")
@@ -33,13 +26,25 @@ def table_ds(dataset):
     datum1d = defaultdict(list)
     datum0d = defaultdict(list)
     for name in names:
-        if subset_has_1d_data(dataset, name):
-            datum1d[name].extend([var for var in dataset.subset[name] if var.is_data])
-        else:
-            datum0d[name].extend([var for var in dataset.subset[name] if var.is_data])
+        sub = dataset.subset[name]
+        for var in sub:
+            if var.is_data and len(var.dimensions) == 1:
+                datum1d[name].append(var)
+            else:
+                datum0d[name].append(var)
+
+    coord_names = list(dict.fromkeys([var.name for var in dataset if var.is_coord]))
+    coords0d = defaultdict(list)
+    coords1d = defaultdict(list)
+    for name in coord_names:
+        for var in [var for var in dataset if var.is_coord and var.name == name]:
+            if len(var.dimensions) == 1:
+                coords1d[name].append(var)
+            else:
+                coords0d[name].append(var)
 
     # 0 - dimensional data
-    if datum0d:
+    if datum0d or coords0d:
         tab = et.SubElement(body, 'table')
         cap = et.SubElement(tab, 'caption')
         cap.text = '0D Variables:'
@@ -47,6 +52,15 @@ def table_ds(dataset):
         tr_tag = et.SubElement(tab, 'tr')
         tr_unit = et.SubElement(tab, 'tr')
         tr_val = et.SubElement(tab, 'tr')
+
+        for key, val in coords0d.items():
+            append_with_text(tr_name, 'th', key,
+                             attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
+            for var in val:
+                append_with_text(tr_tag, 'th', str(var.tag))
+                append_with_text(tr_val, 'th', str(var.data[0]))
+                append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
+
         for key, val in datum0d.items():
             append_with_text(tr_name, 'th', key,
                              attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
@@ -56,11 +70,14 @@ def table_ds(dataset):
                 append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
 
     # 1 - dimensional data
-    if datum1d:
-        coords = [var for var in dataset if var.is_coord]
+    if datum1d or coords1d:
         datas = []
         for key, val in datum1d.items():
             datas.extend(val)
+
+        coords = []
+        for key, val in coords1d.items():
+            coords.extend(val)
 
         itab = et.SubElement(body, 'table')
         tab = et.SubElement(itab, 'tbody', attrib=style_border_center)
@@ -68,17 +85,21 @@ def table_ds(dataset):
         cap.text = '1D Variables:'
         tr = et.SubElement(tab, 'tr')
 
-        for coord in coords:
-            append_with_text(tr, 'th', coord.name,
-                             attrib=dict({'colspan': '1'}.items() | style_border_center.items()))
+
         # Aligned names
+        for key, val in coords1d.items():
+            append_with_text(tr, 'th', key,
+                             attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
         for key, val in datum1d.items():
             append_with_text(tr, 'th', key,
                              attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
 
-        is_hist = len(coords) and len(coords[0]) > len(datas[0])
+        length = min([len(x) for x in datas] + [len(x) for x in coords])
+
+        is_hist = [length != len(x) for x in coords]
 
         tr = et.SubElement(tab, 'tr')
+
         for x in coords:
             append_with_text(tr, 'th', '{}'.format(x.tag, x.name), style_border_center)
 
@@ -91,17 +112,11 @@ def table_ds(dataset):
         for x in datas:
             append_with_text(tr, 'th', '[{}]'.format(x.unit), style_border_center)
 
-        # Data lines
-        length = 0
-        if coords:
-            length = len(coords[0]) - is_hist
-        elif datas:
-            length = len(datas[0])
         for i in range(length):
             tr = et.SubElement(tab, 'tr')
-            for x in coords:
+            for x, h in zip(coords, is_hist):
                 text = str(x.data[i])
-                if is_hist:
+                if h:
                     text = '[{}; {}]'.format(text, str(x.data[i+1]))
                 append_with_text(tr, 'th', text)
             for x in datas:
