@@ -18,7 +18,7 @@ except ImportError:
 
 # Some global configuration
 default = {
-    "cb" : { "name" : "Viridis", "log" : False, "vmin" : None, "vmax" : None }
+    "cb" : { "name" : "Viridis", "log" : False, "min" : None, "max" : None }
 }
 
 #===============================================================================
@@ -156,7 +156,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
             if axes_copy is None:
                 axes_copy = [dimensionCoord(v[0].dimensions.labels[0])]
             coord = item[axes_copy[0]]
-            xdims = coord.dimensions
+            xdims = coordinate_dimensions(coord)
             nx = xdims.shape[0]
             try:
                 x = coord.numpy
@@ -268,10 +268,13 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
                 titleside = 'right',
                 )
             )]
-        if cbar["vmin"] is not None:
-            data[0]["zmin"] = cbar["vmin"]
-        if cbar["vmax"] is not None:
-            data[0]["zmax"] = cbar["vmax"]
+
+        # Apply colorbar parameters
+        cbcount = (cbar["min"] is not None) + (cbar["max"] is not None)
+        print("cbcount is",cbcount)
+        if cbcount == 2:
+            data[0]["zmin"] = cbar["min"]
+            data[0]["zmax"] = cbar["max"]
 
         layout = dict(
             xaxis = dict(title = axis_label(xcoord)),
@@ -284,8 +287,17 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
             if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
                 z = z.T
             if cbar["log"]:
-                with np.errstate(invalid="ignore"):
+                with np.errstate(invalid="ignore", divide="ignore"):
                     z = np.log10(z)
+            if cbcount == 1:
+                if cbar["min"] is not None:
+                    data[0]["zmin"] = cbar["min"]
+                else:
+                    data[0]["zmin"] = np.amin(z[np.where(np.isfinite(z))])
+                if cbar["max"] is not None:
+                    data[0]["zmax"] = cbar["max"]
+                else:
+                    data[0]["zmax"] = np.amax(z[np.where(np.isfinite(z))])
             data[0]["z"] = z
             return iplot(dict(data=data, layout=layout))
         else:
@@ -439,7 +451,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
         # Create a SliceViewer object
         sv = SliceViewer(plotly_data=data, plotly_layout=layout,
                          input_data=input_data, axes=axes,
-                         value_name=value_list[0].name, logcb=cbar["log"])
+                         value_name=value_list[0].name, cb=cbar)
 
         if hasattr(sv, "vbox"):
             return sv.vbox
@@ -457,7 +469,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
 class SliceViewer:
 
     def __init__(self, plotly_data, plotly_layout, input_data, axes, value_name,
-                 logcb):
+                 cb):
 
         # Delay import to here, as ipywidgets is not part of plotly
         try:
@@ -519,7 +531,7 @@ class SliceViewer:
         self.slider = []
         # Collect the remaining arguments
         self.value_name = value_name
-        self.logcb = logcb
+        self.cb = cb
         # Default starting index for slider
         indx = 0
 
@@ -569,9 +581,19 @@ class SliceViewer:
         zlabs = zdims.labels
         if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
             z = z.T
-        if self.logcb:
-            with np.errstate(invalid="ignore"):
+        # Apply colorbar parameters
+        if self.cb["log"]:
+            with np.errstate(invalid="ignore", divide="ignore"):
                 z = np.log10(z)
+        if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
+            if self.cb["min"] is not None:
+                self.fig.data[0].zmin = self.cb["min"]
+            else:
+                self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
+            if self.cb["max"] is not None:
+                self.fig.data[0].zmax = self.cb["max"]
+            else:
+                self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
         self.fig.data[0].z = z
         return
 
@@ -605,12 +627,21 @@ def parse_colorbar(cb):
             cbar[key] = val
     return cbar
 
+def coordinate_dimensions(coord):
+    dims = coord.dimensions
+    ndim = len(dims)
+    if ndim != 1:
+        raise RuntimeError("Found {} dimensions, expected 1. Only coordinates "
+                           "with a single dimension are currently supported. "
+                           "If you wish to plot data with a 2D coordinate, "
+                           "please use rebin to re-sample the data onto a "
+                           "common axis.")
+    return dims
+
 # Make x and y arrays from dimensions and check for bins edges
 def process_dimensions(input_data, axes, values, ndim):
     xcoord = input_data[axes[1]]
     ycoord = input_data[axes[0]]
-    x = xcoord.numpy
-    y = ycoord.numpy
     # Check for bin edges
     # TODO: find a better way to handle edges. Currently, we convert from
     # edges to centers and then back to edges afterwards inside the plotly
@@ -618,12 +649,15 @@ def process_dimensions(input_data, axes, values, ndim):
     zdims = values.dimensions
     zlabs = zdims.labels
     nz = zdims.shape
-    ydims = ycoord.dimensions
+    ydims = coordinate_dimensions(ycoord)
     ylabs = ydims.labels
     ny = ydims.shape
-    xdims = xcoord.dimensions
+    xdims = coordinate_dimensions(xcoord)
     xlabs = xdims.labels
     nx = xdims.shape
+    # Get coordinate arrays
+    x = xcoord.numpy
+    y = ycoord.numpy
     if nx[0] == nz[ndim-1] + 1:
         x = edges_to_centers(x)[0]
     if ny[0] == nz[ndim-2] + 1:
