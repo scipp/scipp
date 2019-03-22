@@ -271,7 +271,6 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
 
         # Apply colorbar parameters
         cbcount = (cbar["min"] is not None) + (cbar["max"] is not None)
-        print("cbcount is",cbcount)
         if cbcount == 2:
             data[0]["zmin"] = cbar["min"]
             data[0]["zmax"] = cbar["max"]
