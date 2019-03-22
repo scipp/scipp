@@ -118,5 +118,5 @@ RUN touch $UPD_NB.py && \
     py2nb $UPD_NB.py && \
     rm $UPD_NB.py
 
-
+RUN rm -r /home/$NB_USER/work
 
