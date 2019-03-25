@@ -57,23 +57,24 @@ Dataset tofToDSpacing(const Dataset &d) {
   // TODO Need a better mechanism to identify source and sample.
   const auto &sourcePos = compPos(Dim::Component, 0);
   const auto &samplePos = compPos(Dim::Component, 1);
-  const auto l1 = norm(sourcePos - samplePos);
+
+  auto beam = samplePos - sourcePos;
+  const auto l1 = norm(beam);
+  beam /= l1;
   const auto specPos = getSpecPos(d);
+  auto scattered = specPos - samplePos;
+  const auto l2 = norm(scattered);
+  scattered /= l2;
 
   // l_total = l1 + l2
-  auto conversionFactor(norm(specPos - samplePos) + l1);
+  auto conversionFactor(l1 + l2);
 
   conversionFactor *= tofToDSpacingPhysicalConstants;
 
-  // sin(scattering_angle)
-  auto beam = samplePos - sourcePos;
-  beam /= norm(beam);
-  auto scattered = specPos - samplePos;
-  scattered /= norm(scattered);
 
+  // sin(scattering_angle)
   // TODO Need `dot` for `Variable`. The following block should just be
   // conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)))
-
   std::vector<double> sinThetaData(scattered.size());
   const auto &beamVec = beam.span<Eigen::Vector3d>()[0];
   const auto scatteredVec = scattered.span<Eigen::Vector3d>();
