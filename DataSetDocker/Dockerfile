@@ -84,7 +84,7 @@ RUN touch $UPD_EX && \
     echo "cd /tmp/dataset && git reset --hard && git clean -fd && git checkout . && git pull" >> $UPD_EX && \
     echo "if [ ! -d $EX_DIR ]; then mkdir $EX_DIR; fi;" >> $UPD_EX && \
     echo "if [ ! -d $DEMO_DIR ]; then mkdir $DEMO_DIR; fi;" >> $UPD_EX && \
-    echo "if [ -d /tmp/dataset/python/demo ] && [ -d $DEMO_DIR ]; cp -r /tmp/dataset/python/demo/* $DEMO_DIR ; fi;" >> $UPD_EX && \
+    echo "if [ -d /tmp/dataset/python/demo ] && [ -d $DEMO_DIR ]; then cp -r /tmp/dataset/python/demo/* $DEMO_DIR ; fi;" >> $UPD_EX && \
     echo "find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; ;" >> $UPD_EX && \
     echo "if [ -d /tmp/dataset/python/examples ] && [ -d $EX_DIR ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} $EX_DIR \; ; fi;" >> $UPD_EX && \
     echo "exit 0" >> $UPD_EX
