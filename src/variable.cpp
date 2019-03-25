@@ -1372,7 +1372,10 @@ Variable broadcast(Variable var, const Dimensions &dims) {
   if (var.dimensions().contains(dims))
     return std::move(var);
   auto newDims = var.dimensions();
-  for (const auto label : dims.labels()) {
+  const auto labels = dims.labels();
+  for (auto it = labels.end(); it != labels.begin();) {
+    --it;
+    const auto label = *it;
     if (newDims.contains(label))
       dataset::expect::dimensionMatches(newDims, label, dims[label]);
     else

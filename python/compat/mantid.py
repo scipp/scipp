@@ -7,10 +7,10 @@ def convert_instrument(dataset, ws):
     compInfo = ds.Dataset()
     compInfo[ds.Coord.Position] = ([ds.Dim.Component], (2,))
     # Current assumption: 0 is source, 1 is sample
-    samplePos = ws.componentInfo().samplePosition()
     sourcePos = ws.componentInfo().sourcePosition()
-    compInfo[ds.Coord.Position].data[0] = get_pos(samplePos)
-    compInfo[ds.Coord.Position].data[1] = get_pos(sourcePos)
+    samplePos = ws.componentInfo().samplePosition()
+    compInfo[ds.Coord.Position].data[0] = get_pos(sourcePos)
+    compInfo[ds.Coord.Position].data[1] = get_pos(samplePos)
     dataset[ds.Coord.ComponentInfo] = ([], compInfo)
 
 def initPosSpectrumNo(d, nHist, ws):

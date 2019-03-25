@@ -191,7 +191,7 @@ class TestDataset(unittest.TestCase):
 
         d2 = Dataset()
         # Insert from subset
-        d2.subset["a"] = ds_slice 
+        d2.subset["a"] = ds_slice
         self.assertEqual(len(d1), len(d2))
         self.assertEqual(d1, d2)
 
@@ -204,21 +204,21 @@ class TestDataset(unittest.TestCase):
         d4 = Dataset()
         d4.subset["2a"] = ds_slice + ds_slice
         self.assertEqual(len(d4), 2)
-        self.assertNotEqual(d1, d4) 
+        self.assertNotEqual(d1, d4)
         self.assertTrue(np.array_equal(d4[Data.Value, "2a"].numpy, ds_slice[Data.Value,"a"].numpy*2))
 
     def test_insert_subdata_different_variable_types(self):
         a = Dataset()
         xcoord = Variable(Coord.X, [Dim.X], np.arange(4))
         a[Data.Value] = ([Dim.X], np.arange(3))
-        a[Coord.X] = xcoord 
+        a[Coord.X] = xcoord
         a[Attr.ExperimentLog] = ([], Dataset())
 
         b = Dataset()
         with self.assertRaises(RuntimeError ):
             b.subset["b"] = a[Dim.X, :] # Coordinates dont match
         b[Coord.X] = xcoord
-        b.subset["b"] = a[Dim.X, :] # Should now work 
+        b.subset["b"] = a[Dim.X, :] # Should now work
         self.assertEqual(len(a), len(b))
         self.assertTrue((Attr.ExperimentLog, "b") in b)
 
@@ -280,7 +280,7 @@ class TestDataset(unittest.TestCase):
         op(data,b[Data.Value, rh_var_name].numpy)
         op(a,b)
         np.testing.assert_equal(a[Data.Value, lh_var_name].numpy, data) # Desired nan comparisons
-        
+
     def _apply_test_op_rhs_variable(self, op, a, b, data, lh_var_name="i", rh_var_name="j"):
         # Assume numpy operations are correct as comparitor
         op(data,b.numpy)
@@ -316,8 +316,8 @@ class TestDataset(unittest.TestCase):
         c = a / b
         # Variables "a" and "b" divided despite different names
         with np.errstate(invalid="ignore"):
-            np.testing.assert_equal(c[Data.Value, "i"].numpy, data / data) 
-        np.testing.assert_equal(c[Data.Variance, "i"].numpy, variance*(data*data)*2) 
+            np.testing.assert_equal(c[Data.Value, "i"].numpy, data / data)
+        np.testing.assert_equal(c[Data.Variance, "i"].numpy, 2*variance/(data*data))
 
         self._apply_test_op_rhs_dataset(operator.iadd, a, b, data)
         self._apply_test_op_rhs_dataset(operator.isub, a, b, data)
@@ -333,7 +333,7 @@ class TestDataset(unittest.TestCase):
         a[Data.Value, "i"] = ([Dim.X], data)
 
         b_var = Variable(Data.Value, [Dim.X], data)
-        
+
         c = a + b_var
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data + data))
         c = a - b_var
@@ -342,7 +342,7 @@ class TestDataset(unittest.TestCase):
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data * data))
         c = a / b_var
         self.assertTrue(np.array_equal(c[Data.Value, "i"].numpy, data / data))
-        
+
         self._apply_test_op_rhs_variable(operator.iadd, a, b_var, data)
         self._apply_test_op_rhs_variable(operator.isub, a, b_var, data)
         self._apply_test_op_rhs_variable(operator.imul, a, b_var, data)

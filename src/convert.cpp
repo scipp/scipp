@@ -5,6 +5,7 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
+#include <boost/units/systems/si/codata/universal_constants.hpp>
 
 #include "convert.h"
 #include "counts.h"
@@ -30,14 +31,98 @@ const auto tof_to_s =
 const auto J_to_meV =
     units::meV /
     boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
+const auto m_to_angstrom =
+    boost::units::quantity<boost::units::si::length>(1.0 * units::angstrom) /
+    units::angstrom;
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
 const auto tofToEnergyPhysicalConstants =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
+const auto tofToDSpacingPhysicalConstants =
+    2.0 * boost::units::si::constants::codata::m_n * m_to_angstrom /
+    (boost::units::si::constants::codata::h * tof_to_s);
 
 namespace neutron {
 namespace tof {
+Dataset tofToDSpacing(const Dataset &d) {
+  if (d.contains(Coord::Ei) || d.contains(Coord::Ef))
+    throw std::runtime_error(
+        "Dataset contains Coord::Ei or Coord::Ef. "
+        "However, conversion to Dim::DSpacing is currently "
+        "only supported for elastic scattering.");
+
+  // 1. Compute conversion factor
+  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
+  // TODO Need a better mechanism to identify source and sample.
+  const auto &sourcePos = compPos(Dim::Component, 0);
+  const auto &samplePos = compPos(Dim::Component, 1);
+
+  auto beam = samplePos - sourcePos;
+  const auto l1 = norm(beam);
+  beam /= l1;
+  const auto specPos = getSpecPos(d);
+  auto scattered = specPos - samplePos;
+  const auto l2 = norm(scattered);
+  scattered /= l2;
+
+  // l_total = l1 + l2
+  auto conversionFactor(l1 + l2);
+
+  conversionFactor *= tofToDSpacingPhysicalConstants;
+
+
+  // sin(scattering_angle)
+  // TODO Need `dot` for `Variable`. The following block should just be
+  // conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)))
+  std::vector<double> sinThetaData(scattered.size());
+  const auto &beamVec = beam.span<Eigen::Vector3d>()[0];
+  const auto scatteredVec = scattered.span<Eigen::Vector3d>();
+  // Using
+  //   cos(2 theta) = 1 - 2 sin^2(theta)
+  // and
+  //   v1 dot v2 = norm(v1) norm(v2) cos(alpha).
+  std::transform(scatteredVec.begin(), scatteredVec.end(), sinThetaData.begin(),
+                 [&](const Eigen::Vector3d &scattered) {
+                   return sqrt(0.5 * (1.0 - beamVec.dot(scattered)));
+                 });
+  const auto sinTheta =
+      makeVariable<double>(Data::Value, scattered.dimensions(), sinThetaData);
+  conversionFactor *= sinTheta;
+
+  // 2. Transform coordinate
+  Dataset converted;
+  const auto &coord = d(Coord::Tof);
+  auto coordDims = coord.dimensions();
+  coordDims.relabel(coordDims.index(Dim::Tof), Dim::DSpacing);
+  // The reshape is to remap the dimension label.
+  converted.insert(Coord::DSpacing,
+                   coord.reshape(coordDims) / conversionFactor);
+
+  // 3. Transform variables
+  for (const auto &var : d) {
+    auto varDims = var.dimensions();
+    if (varDims.contains(Dim::Tof))
+      varDims.relabel(varDims.index(Dim::Tof), Dim::DSpacing);
+    if (var.tag() == Coord::Tof) {
+      // Done already.
+    } else if (var.tag() == Data::Events) {
+      throw std::runtime_error(
+          "TODO Converting units of event data not implemented yet.");
+    } else {
+      // Changing Dim::Tof to Dim::DSpacing.
+      if (::counts::isDensity(var)) {
+        throw std::runtime_error(
+            "TODO Converting density data to DSpacing not implemented yet.");
+      } else {
+        converted.insert(var.reshape(varDims));
+      }
+    }
+  }
+
+  return converted;
+}
+
 Dataset tofToEnergy(const Dataset &d) {
   // TODO Could in principle also support inelastic. Note that the conversion in
   // Mantid is wrong since it handles inelastic data as if it were elastic.
@@ -291,6 +376,8 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
 } // namespace neutron
 
 Dataset convert(const Dataset &d, const Dim from, const Dim to) {
+  if ((from == Dim::Tof) && (to == Dim::DSpacing))
+    return neutron::tof::tofToDSpacing(d);
   if ((from == Dim::Tof) && (to == Dim::Energy))
     return neutron::tof::tofToEnergy(d);
   if ((from == Dim::Tof) && (to == Dim::DeltaE))

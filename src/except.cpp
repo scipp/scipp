@@ -19,6 +19,8 @@ std::string do_to_string(const Dim dim) {
     return "Dim::Event";
   case Dim::Tof:
     return "Dim::Tof";
+  case Dim::DSpacing:
+    return "Dim::DSpacing";
   case Dim::Energy:
     return "Dim::Energy";
   case Dim::DeltaE:
@@ -86,6 +88,8 @@ std::string do_to_string(const Tag tag) {
     return "Coord::Qz";
   case Coord::Tof.value():
     return "Coord::Tof";
+  case Coord::DSpacing.value():
+    return "Coord::DSpacing";
   case Coord::Energy.value():
     return "Coord::Energy";
   case Coord::DeltaE.value():
