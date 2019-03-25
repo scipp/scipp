@@ -121,8 +121,8 @@ class TestDatasetSlice(unittest.TestCase):
         c = a / b
         # Variables "a" and "b" divided despite different names
         with np.errstate(invalid='ignore'):
-            np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data) 
-        np.testing.assert_equal(c[Data.Variance, "a"].numpy, variance*(data*data)*2) 
+            np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data)
+        np.testing.assert_equal(c[Data.Variance, "a"].numpy, 2*variance/(data*data))
 
         self._apply_test_op_rhs_ds_slice(operator.iadd, a, b, data)
         self._apply_test_op_rhs_ds_slice(operator.isub, a, b, data)
@@ -148,7 +148,7 @@ class TestDatasetSlice(unittest.TestCase):
 
         c = a / b_var
         with np.errstate(invalid='ignore'):
-            np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data) 
+            np.testing.assert_equal(c[Data.Value, "a"].numpy, data / data)
 
         self._apply_test_op_rhs_variable(operator.iadd, a, b_var, data)
         self._apply_test_op_rhs_variable(operator.isub, a, b_var, data)
@@ -185,7 +185,7 @@ class TestDatasetSlice(unittest.TestCase):
         self._apply_test_op_rhs_ds_slice(operator.isub, a, b, data)
         self._apply_test_op_rhs_ds_slice(operator.imul, a, b, data)
         self._apply_test_op_rhs_ds_slice(operator.itruediv, a, b, data)
-        
+
 
     def test_equal_not_equal(self):
         d = Dataset()
