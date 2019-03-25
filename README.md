@@ -16,10 +16,9 @@ On Ubuntu 18.04 the maximum available is `boost1.65`.
 A newer version can be installed as follows:
 
 ```
-sudo add-apt-repository ppa:mhier/libboost-latest
-sudo apt update
-sudo apt remove libboost1.65-dev
-sudo apt install libboost1.67-dev
+cd path/to/new/boost
+wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
+tar -xzvf boost_1_69_0.tar.gz
 ```
 
 #### OSX
@@ -34,7 +33,7 @@ git submodule init
 git submodule update
 mkdir build
 cd build
-cmake ..
+cmake -DBOOST_ROOT:PATHNAME=path/to/new/boost/boost_1_69_0 ..
 make
 ```
 
