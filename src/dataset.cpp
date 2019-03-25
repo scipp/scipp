@@ -351,7 +351,8 @@ void divide_data(const gsl::index size, ptr<double> RESTRICT v1,
                  ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
                  ptr<const double> RESTRICT e2) {
   for (gsl::index i = 0; i < size; ++i) {
-    e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
+    e1[i] =
+        (e1[i] + e2[i] * (v1[i] * v1[i]) / (v2[i] * v2[i])) / (v2[i] * v2[i]);
     v1[i] /= v2[i];
   }
 }

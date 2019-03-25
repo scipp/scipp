@@ -619,7 +619,7 @@ TEST(Dataset, operator_divide_broadcast) {
   Dataset b;
   b.insert(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
   b(Data::Value).setUnit(units::m);
-  b.insert(Data::Variance, {Dim::Y, 2}, {1.0, 1.0});
+  b.insert(Data::Variance, {Dim::Y, 2}, {1.1, 1.1});
 
   a /= b;
   // Check units
@@ -638,10 +638,10 @@ TEST(Dataset, operator_divide_broadcast) {
   EXPECT_EQ(a.get(Data::Value)[2], 1.0 / 2);
   EXPECT_EQ(a.get(Data::Value)[3], 1.0 / 3);
 
-  EXPECT_EQ(a.get(Data::Variance)[0], 2 * 2 * 1 + 1 * 1 * 1);
-  EXPECT_EQ(a.get(Data::Variance)[1], 3 * 3 * 1 + 1 * 1 * 1);
-  EXPECT_EQ(a.get(Data::Variance)[2], 2 * 2 * 1 + 1 * 1 * 1);
-  EXPECT_EQ(a.get(Data::Variance)[3], 3 * 3 * 1 + 1 * 1 * 1);
+  EXPECT_DOUBLE_EQ(a.get(Data::Variance)[0], (1.0 / 4) * (1.0 / 1 + 1.1 / 4));
+  EXPECT_DOUBLE_EQ(a.get(Data::Variance)[1], (1.0 / 9) * (1.0 / 1 + 1.1 / 9));
+  EXPECT_DOUBLE_EQ(a.get(Data::Variance)[2], (1.0 / 4) * (1.0 / 1 + 1.1 / 4));
+  EXPECT_DOUBLE_EQ(a.get(Data::Variance)[3], (1.0 / 9) * (1.0 / 1 + 1.1 / 9));
 }
 
 TEST(Dataset, operator_plus_equal_transpose) {
@@ -785,10 +785,11 @@ TEST(Dataset, operator_times_and_divide_equal_with_uncertainty) {
   EXPECT_EQ(a.get(Data::Variance)[0], variance3);
 
   a /= a;
-  auto value4 = 1; // clearly should be unity
+  auto value4 = 1.0;
   EXPECT_EQ(a.get(Coord::X)[0], 0.1);
   EXPECT_EQ(a.get(Data::Value)[0], value4);
-  EXPECT_EQ(a.get(Data::Variance)[0], variance3 * (value3 * value3) * 2);
+  EXPECT_EQ(a.get(Data::Variance)[0],
+            value4 * value4 * 2 * (variance3 / (value3 * value3)));
 }
 
 void operator_uncertaintly_failures(void (*op)(Dataset &lhs,
@@ -851,7 +852,7 @@ TEST(Dataset, operator_divide_equal_with_units) {
   a /= a;
   EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
   EXPECT_EQ(a(Data::Variance).unit(), units::dimensionless);
-  EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
+  EXPECT_EQ(a.get(Data::Variance)[0], 2.0 * (2.0 / 9.0));
 }
 
 TEST(Dataset, operator_times_equal_histogram_data) {
