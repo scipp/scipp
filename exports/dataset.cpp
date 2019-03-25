@@ -925,6 +925,12 @@ PYBIND11_MODULE(dataset, m) {
            py::is_operator())
       .def("__rmul__", [](VariableSlice &a, double &b) { return a * b; },
            py::is_operator())
+      .def("reshape",
+           [](const VariableSlice &self, const std::vector<Dim> &labels,
+              const py::tuple &shape) {
+             Dimensions dims(labels, shape.cast<std::vector<gsl::index>>());
+             return self.reshape(dims);
+           })
       .def("__repr__", [](const VariableSlice &self) {
         return dataset::to_string(self, ".");
       });
