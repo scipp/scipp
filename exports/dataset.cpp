@@ -524,6 +524,7 @@ PYBIND11_MODULE(dataset, m) {
       .value("DeltaE", Dim::DeltaE)
       .value("Detector", Dim::Detector)
       .value("DetectorScan", Dim::DetectorScan)
+      .value("DSpacing", Dim::DSpacing)
       .value("Energy", Dim::Energy)
       .value("Event", Dim::Event)
       .value("Invalid", Dim::Invalid)
@@ -561,6 +562,7 @@ PYBIND11_MODULE(dataset, m) {
   coord_tags.attr("Y") = Tag(Coord::Y);
   coord_tags.attr("Z") = Tag(Coord::Z);
   coord_tags.attr("Tof") = Tag(Coord::Tof);
+  coord_tags.attr("DSpacing") = Tag(Coord::DSpacing);
   coord_tags.attr("Energy") = Tag(Coord::Energy);
   coord_tags.attr("DeltaE") = Tag(Coord::DeltaE);
   coord_tags.attr("Ei") = Tag(Coord::Ei);
