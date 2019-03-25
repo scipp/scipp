@@ -1228,8 +1228,7 @@ PYBIND11_MODULE(dataset, m) {
              self(dim, i).assign(other);
            })
 
-      // A) No dimensions argument, this will set data of existing
-      // item.
+      // A) No dimensions argument, this will set data of existing item.
       .def("__setitem__", detail::setData<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::setData<Dataset, detail::Key::TagName>)
 
@@ -1245,23 +1244,20 @@ PYBIND11_MODULE(dataset, m) {
       // 2. Insertion from numpy.ndarray
       .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
       .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
-      // 2. Handle integers before case 3. below, which would convert
-      // to double.
+      // 2. Handle integers before case 3. below, which would convert to double.
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
-      // 3. Handle integers before case 4. below, which would convert
-      // to double.
+      // 3. Handle integers before case 4. below, which would convert to double.
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
       .def("__setitem__", detail::insert_1D<Eigen::Vector3d, detail::Key::Tag>)
       .def("__setitem__",
            detail::insert_1D<Eigen::Vector3d, detail::Key::TagName>)
-      // 4. Insertion attempting forced conversion to array of double.
-      // This
+      // 4. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
       //    py::array::forcecast argument, we need to minimize implicit
@@ -1271,8 +1267,7 @@ PYBIND11_MODULE(dataset, m) {
       //    case 5. below.
       .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
       .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
-      // 5. Insertion of numpy-incompatible data. py::array_t does not
-      // support
+      // 5. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
       .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
@@ -1391,7 +1386,8 @@ PYBIND11_MODULE(dataset, m) {
       .def("__rmul__",
            [](const Dataset &self, double &other) { return self * other; },
            py::is_operator())
-      .def("merge", &Dataset::merge, "Merge two Datasets together: all the "
+      .def("merge", &Dataset::merge,
+           "Merge two Datasets together: all the "
            "Variables from the Dataset passed as an argument that do not exist "
            "in the present Dataset are copied. Variables from the argument "
            "Dataset that already exist (i.e. have the same Tag and name) in "
@@ -1409,8 +1405,7 @@ PYBIND11_MODULE(dataset, m) {
   // excessive operator overload definitions
   py::implicitly_convertible<DatasetSlice, Dataset>();
 
-  //-----------------------dataset free
-  // functions-------------------------------
+  //-----------------------dataset free functions-------------------------------
   m.def("split",
         py::overload_cast<const Dataset &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -1460,8 +1455,7 @@ PYBIND11_MODULE(dataset, m) {
                           const Dataset &>(&convert),
         py::call_guard<py::gil_scoped_release>());
 
-  //-----------------------variable free
-  // functions------------------------------
+  //-----------------------variable free functions------------------------------
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<gsl::index> &>(&split),
@@ -1497,8 +1491,7 @@ PYBIND11_MODULE(dataset, m) {
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Variable containing the square root of the data.");
 
-  //-----------------------dimensions free
-  // functions----------------------------
+  //-----------------------dimensions free functions----------------------------
   m.def("dimensionCoord", &dimensionCoord);
   m.def("coordDimension",
         [](const Tag t) { return coordDimension[t.value()]; });
