@@ -87,63 +87,44 @@ template <class F, class Variant, class Indices> decltype(auto) myvisit(F &&f, V
 }
 
 // all indices of alternatives that have a valid product
-template <size_t N1, size_t... Out1, size_t... Out2>
-constexpr auto product_valid_impl(std::index_sequence<Out1...> out1,
-                                  std::index_sequence<Out2...> out2) {
-  return std::pair{out1, out2};
+template <class T1, class... Out>
+constexpr auto product_valid_impl(std::tuple<Out...> out) {
+  return out;
 }
-template <size_t N1, size_t N2, size_t... N2s, size_t... Out1, size_t... Out2>
-constexpr auto product_valid_impl(std::index_sequence<Out1...>,
-                                  std::index_sequence<Out2...>) {
-  constexpr std::variant_alternative_t<N1, Unit::unit_t> x;
-  constexpr std::variant_alternative_t<N2, Unit::unit_t> y;
+template <class T1, class T2, class... T2s, class... Out>
+constexpr auto product_valid_impl(std::tuple<Out...>) {
+  constexpr T1 x;
+  constexpr T2 y;
   if constexpr (isKnownUnit(x * y))
-    return product_valid_impl<N1, N2s..., Out1..., N1, Out2..., N2>(
-        std::index_sequence<Out1..., N1>{}, std::index_sequence<Out2..., N2>{});
+    return product_valid_impl<T1, T2s...>(
+        std::tuple<Out..., std::pair<T1, T2>>{});
   else
-    return product_valid_impl<N1, N2s..., Out1..., Out2...>(
-        std::index_sequence<Out1...>{}, std::index_sequence<Out2...>{});
+    return product_valid_impl<T1, T2s...>(std::tuple<Out...>{});
 }
-template <size_t N1, size_t... N2>
-constexpr auto product_valid(std::index_sequence<N2...>) {
-  std::index_sequence<> out1{};
-  std::index_sequence<> out2{};
-  return product_valid_impl<N1, N2...>(out1, out2);
+template <class T1, class... T2>
+constexpr auto product_valid(std::tuple<T2...>) {
+  std::tuple<> out{};
+  return product_valid_impl<T1, T2...>(out);
 }
 
-template <auto... Vals> struct value_sequence {};
-template <auto... As, auto... Bs>
-constexpr value_sequence<As..., Bs...> operator+(value_sequence<As...>,
-                                                 value_sequence<Bs...>) {
-  return {};
+template <class... T1, class... T2>
+constexpr auto expand(std::variant<T1...>, std::variant<T2...>) {
+  return std::tuple_cat(product_valid<T1>(std::tuple<T2...>{})...);
 }
 
-template <size_t N1, size_t... N2>
-constexpr auto expand(std::index_sequence<N2...>) {
-  return std::tuple{std::pair{N1, N2}...};
-}
-
-template <size_t... N1, size_t... N2>
-constexpr auto expand(std::index_sequence<N1...> n1, std::index_sequence<N2...> n2) {
-  //return std::tuple_cat(expand<N1>(product_valid<N1>(n2))...);
-  return std::pair{(product_valid<N1>(n2).first + ...),
-                   (product_valid<N1>(n2).second + ...)};
-}
-
-template <class F, class Variant, size_t... N1, size_t... N2>
+template <class F, class Variant, class... T1, class... T2>
 decltype(auto) invoke_active(F &&f, Variant &&v1, Variant &&v2,
-                             std::index_sequence<N1...>,
-                             std::index_sequence<N2...>) {
+                             std::tuple<std::pair<T1, T2>...>) {
   using Ret = decltype(std::invoke(std::forward<F>(f),
                                    std::get<0>(std::forward<Variant>(v1)),
                                    std::get<0>(std::forward<Variant>(v2))));
 
   if constexpr (!std::is_same_v<void, Ret>) {
     Ret ret;
-    if (!(((v1.index() == N1) && (v2.index() == N2)
+    if (!((std::holds_alternative<T1>(v1) && std::holds_alternative<T2>(v2)
                ? (ret = std::invoke(std::forward<F>(f),
-                                    std::get<N1>(std::forward<Variant>(v1)),
-                                    std::get<N2>(std::forward<Variant>(v2))),
+                                    std::get<T1>(std::forward<Variant>(v1)),
+                                    std::get<T2>(std::forward<Variant>(v2))),
                   true)
                : false) ||
           ...))
@@ -157,37 +138,29 @@ decltype(auto) invoke_active(F &&f, Variant &&v1, Variant &&v2,
 
 template <class F, class Variant>
 decltype(auto) myvisit(F &&f, Variant &&var1, Variant &&var2) {
-  constexpr auto indices = expand(std::make_index_sequence<
-                 std::variant_size_v<std::remove_reference_t<Variant>>>{},
-             std::make_index_sequence<
-                 std::variant_size_v<std::remove_reference_t<Variant>>>{});
-  return invoke_active(
-      std::forward<F>(f), std::forward<Variant>(var1),
-      std::forward<Variant>(var2), indices.first, indices.second);
+  auto indices = expand(var1, var2);
+  return invoke_active(std::forward<F>(f), std::forward<Variant>(var1),
+                       std::forward<Variant>(var2), indices);
 }
 
 // Mutliplying two units together using std::visit to run through the contents
 // of the std::variant
 Unit operator*(const Unit &a, const Unit &b) {
-  const auto result = myvisit(
-      [](auto x, auto y) -> Unit::unit_t {
-        // Creation of z needed here because putting x*y inside the call to
-        // isKnownUnit(x*y) leads to error: temporary of non-literal type in
-        // a constant expression
-        if constexpr (isKnownUnit(x*y))
-          return x*y;
-        //return {};
-        //return x;
-        throw std::runtime_error(
-            "Unsupported unit as result of multiplication: (" +
-            units::to_string(x) + ") * (" + units::to_string(y) + ')');
-      },
-      a(), b());
-  return Unit(result);
-  //if (result)
-  //  return Unit(*result);
-  //throw std::runtime_error("Unsupported unit as result of multiplication: (" +
-  //                         a.name() + ") * (" + b.name() + ')');
+  try {
+    return Unit(myvisit(
+        [](auto x, auto y) -> Unit::unit_t {
+          // Creation of z needed here because putting x*y inside the call to
+          // isKnownUnit(x*y) leads to error: temporary of non-literal type in
+          // a constant expression
+          if constexpr (isKnownUnit(x * y))
+            return x * y;
+          return {};
+        },
+        a(), b()));
+  } catch (std::bad_variant_access &) {
+    throw std::runtime_error("Unsupported unit as result of multiplication: (" +
+                             a.name() + ") * (" + b.name() + ')');
+  }
 }
 
 Unit operator/(const Unit &a, const Unit &b) {

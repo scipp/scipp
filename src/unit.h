@@ -158,7 +158,8 @@ make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
 using type = decltype(detail::make_unit(
     std::make_tuple(m, counts, s, kg, dimensionless / m, angstrom, meV, us,
                     dimensionless / us, dimensionless / s, counts / us,
-                    counts / meV),
+                    counts / meV, counts / m, counts / (m * m),
+                    counts / (m * m * m)),
     std::make_tuple(dimensionless, m *m *m *m, meV *us *us / (m * m),
                     meV *us *us *dimensionless, kg *m / s, m / s, c, c *m,
                     meV / c, dimensionless / c, K, us / angstrom,
