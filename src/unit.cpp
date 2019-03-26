@@ -98,30 +98,24 @@ template <class T1, class T2> struct divides {
   }
 };
 
-// all indices of alternatives that have a valid product
-template <template <class, class> class Op, class T1, class... Out>
-constexpr auto product_valid_impl(std::tuple<Out...> out) {
-  return out;
-}
-template <template <class, class> class Op, class T1, class T2, class... T2s,
-          class... Out>
-constexpr auto product_valid_impl(std::tuple<Out...>) {
+// All alternative pairs (T1, T2) where Op(T1, T2) gives a valid alternative.
+template <template <class, class> class Op, class T1, class T2>
+constexpr auto product_valid_impl() {
   constexpr T1 x;
   constexpr T2 y;
   if constexpr (isKnownUnit(Op<T1, T2>()(x, y)))
-    return product_valid_impl<Op, T1, T2s...>(
-        std::tuple<Out..., std::pair<T1, T2>>{});
+    return std::tuple<std::pair<T1, T2>>{};
   else
-    return product_valid_impl<Op, T1, T2s...>(std::tuple<Out...>{});
+    return std::tuple<>{};
 }
 template <template <class, class> class Op, class T1, class... T2>
 constexpr auto product_valid(std::tuple<T2...>) {
-  std::tuple<> out{};
-  return product_valid_impl<Op, T1, T2...>(out);
+  return std::tuple_cat(product_valid_impl<Op, T1, T2>()...);
 }
 
 template <template <class, class> class Op, class... T1, class... T2>
-constexpr auto expand(std::variant<T1...>, std::variant<T2...>) {
+constexpr auto expand(const std::variant<T1...> &,
+                      const std::variant<T2...> &) {
   return std::tuple_cat(product_valid<Op, T1>(std::tuple<T2...>{})...);
 }
 
@@ -151,7 +145,7 @@ decltype(auto) invoke_active(F &&f, Variant &&v1, Variant &&v2,
 
 template <template <class, class> class Op, class F, class Variant>
 decltype(auto) myvisit(F &&f, Variant &&var1, Variant &&var2) {
-  auto indices = expand<Op>(var1, var2);
+  constexpr auto indices = expand<Op>(var1, var2);
   return invoke_active(std::forward<F>(f), std::forward<Variant>(var1),
                        std::forward<Variant>(var2), indices);
 }
