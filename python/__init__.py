@@ -1,9 +1,8 @@
 from .dataset import *
-from .dataset_plotting import plot, plot_1d, plot_image, plot_sliceviewer, plot_waterfall
 from .table import table
-# Following fix for problem described here https://stackoverflow.com/questions/21784641/installation-issue-with-matplotlib-python
-import platform
-if platform.system() == 'Darwin':
-    import matplotlib
-    # Switch backends
-    matplotlib.use('TkAgg')
+try:
+    from .dataset_plotting import plot, plot_1d, plot_image, plot_sliceviewer, plot_waterfall
+except ImportError:
+    print("Warning: the plotting module for Dataset was not imported. Check "
+          "that plotly is installed on your system. You can still use Dataset "
+          "without its plotting functionality enabled.")

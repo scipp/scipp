@@ -9,7 +9,6 @@ from dataset import Dataset, Data, dataset, dimensionCoord, coordDimension, sqrt
 
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
-from plotly.tools import make_subplots
 try:
     # Re-direct the output of init_notebook_mode to hide it from the unit tests
     with redirect_stdout(io.StringIO()):
@@ -66,9 +65,13 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
     else:
         values, ndims = check_input(input_data, check_multiple_values=False)
         if len(values) > 1:
-            # Search through the variables and group the 1D datasets that have the
-            # same coordinate axis
+            # Search through the variables and group the 1D datasets that have
+            # the same coordinate axis
             if np.amin(ndims) == 1:
+                # tobeplotted is a dict that holds pairs of
+                # [number_of_dimensions, DatasetSlice], or
+                # [number_of_dimensions, [List of DatasetSlices]] in the case of
+                # 1d data.
                 tobeplotted = dict()
                 for i in range(len(values)):
                     if ndims[i] == 1:
@@ -102,15 +105,18 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
 
 # Function to automaticall dispatch the input dataset to the appropriate
 # plotting function depending on its dimensions
-def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None, **kwargs):
+def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
+              **kwargs):
 
     if ndim == 1:
         return plot_1d(input_data, axes=axes, **kwargs)
     elif ndim == 2:
         if collapse is not None:
-            return plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes, plot=False), **kwargs)
+            return plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes,
+                                          plot=False), **kwargs)
         elif waterfall is not None:
-            return plot_waterfall(input_data, dim=waterfall, axes=axes, **kwargs)
+            return plot_waterfall(input_data, dim=waterfall, axes=axes,
+                                  **kwargs)
         else:
             return plot_image(input_data, axes=axes, **kwargs)
     else:
@@ -126,7 +132,7 @@ def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None, **kw
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
 def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
-            plot=True, color=None):
+            color=None):
 
     entries = []
     # Case of a single dataset
@@ -264,10 +270,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     if logy or logxy:
         layout["yaxis"]["type"] = "log"
 
-    if plot:
-        return iplot(dict(data=data, layout=layout))
-    else:
-        return data, layout
+    return iplot(dict(data=data, layout=layout))
 
 #===============================================================================
 
