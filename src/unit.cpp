@@ -86,30 +86,43 @@ template <class F, class Variant, class Indices> decltype(auto) myvisit(F &&f, V
   return invoke_active(std::forward<F>(f), std::forward<Variant>(var), indices);
 }
 
+template <class T1, class T2> struct multiplies {
+  constexpr auto operator()(const T1 &lhs, const T2 &rhs) const {
+    return lhs * rhs;
+  }
+};
+
+template <class T1, class T2> struct divides {
+  constexpr auto operator()(const T1 &lhs, const T2 &rhs) const {
+    return lhs / rhs;
+  }
+};
+
 // all indices of alternatives that have a valid product
-template <class T1, class... Out>
+template <template <class, class> class Op, class T1, class... Out>
 constexpr auto product_valid_impl(std::tuple<Out...> out) {
   return out;
 }
-template <class T1, class T2, class... T2s, class... Out>
+template <template <class, class> class Op, class T1, class T2, class... T2s,
+          class... Out>
 constexpr auto product_valid_impl(std::tuple<Out...>) {
   constexpr T1 x;
   constexpr T2 y;
-  if constexpr (isKnownUnit(x * y))
-    return product_valid_impl<T1, T2s...>(
+  if constexpr (isKnownUnit(Op<T1, T2>()(x, y)))
+    return product_valid_impl<Op, T1, T2s...>(
         std::tuple<Out..., std::pair<T1, T2>>{});
   else
-    return product_valid_impl<T1, T2s...>(std::tuple<Out...>{});
+    return product_valid_impl<Op, T1, T2s...>(std::tuple<Out...>{});
 }
-template <class T1, class... T2>
+template <template <class, class> class Op, class T1, class... T2>
 constexpr auto product_valid(std::tuple<T2...>) {
   std::tuple<> out{};
-  return product_valid_impl<T1, T2...>(out);
+  return product_valid_impl<Op, T1, T2...>(out);
 }
 
-template <class... T1, class... T2>
+template <template <class, class> class Op, class... T1, class... T2>
 constexpr auto expand(std::variant<T1...>, std::variant<T2...>) {
-  return std::tuple_cat(product_valid<T1>(std::tuple<T2...>{})...);
+  return std::tuple_cat(product_valid<Op, T1>(std::tuple<T2...>{})...);
 }
 
 template <class F, class Variant, class... T1, class... T2>
@@ -136,25 +149,29 @@ decltype(auto) invoke_active(F &&f, Variant &&v1, Variant &&v2,
   }
 }
 
-template <class F, class Variant>
+template <template <class, class> class Op, class F, class Variant>
 decltype(auto) myvisit(F &&f, Variant &&var1, Variant &&var2) {
-  auto indices = expand(var1, var2);
+  auto indices = expand<Op>(var1, var2);
   return invoke_active(std::forward<F>(f), std::forward<Variant>(var1),
                        std::forward<Variant>(var2), indices);
 }
+
+template<class T> struct always_false : std::false_type {};
 
 // Mutliplying two units together using std::visit to run through the contents
 // of the std::variant
 Unit operator*(const Unit &a, const Unit &b) {
   try {
-    return Unit(myvisit(
+    return Unit(myvisit<multiplies>(
         [](auto x, auto y) -> Unit::unit_t {
           // Creation of z needed here because putting x*y inside the call to
           // isKnownUnit(x*y) leads to error: temporary of non-literal type in
           // a constant expression
           if constexpr (isKnownUnit(x * y))
             return x * y;
-          return {};
+          else
+            static_assert(always_false<decltype(x)>::value,
+                          "Broken myvisit implementation!");
         },
         a(), b()));
   } catch (std::bad_variant_access &) {
@@ -164,20 +181,25 @@ Unit operator*(const Unit &a, const Unit &b) {
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
-  return Unit(std::visit(
-      [](auto x, auto y) -> Unit::unit_t {
-        // It is done here to have the si::dimensionless then the units are
-        // the same, but is the si::dimensionless valid for non si types? TODO
-        if constexpr (std::is_same_v<decltype(x), decltype(y)>)
-          return dimensionless;
-        auto z{x / y};
-        if constexpr (isKnownUnit(z))
-          return z;
-        throw std::runtime_error("Unsupported unit as result of division: (" +
-                                 units::to_string(x) + ") / (" +
-                                 units::to_string(y) + ')');
-      },
-      a(), b()));
+  try {
+    return Unit(myvisit<divides>(
+        [](auto x, auto y) -> Unit::unit_t {
+          // It is done here to have the si::dimensionless then the units are
+          // the same, but is the si::dimensionless valid for non si types? TODO
+          if constexpr (std::is_same_v<decltype(x), decltype(y)>)
+            return dimensionless;
+          auto z{x / y};
+          if constexpr (isKnownUnit(z))
+            return z;
+          else
+            static_assert(always_false<decltype(x)>::value,
+                          "Broken myvisit implementation!");
+        },
+        a(), b()));
+  } catch (std::bad_variant_access &) {
+    throw std::runtime_error("Unsupported unit as result of division: (" +
+                             a.name() + ") * (" + b.name() + ')');
+  }
 }
 
 // all indices of alternatives that have a valid sqrt
