@@ -72,6 +72,8 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
                 # [number_of_dimensions, DatasetSlice], or
                 # [number_of_dimensions, [List of DatasetSlices]] in the case of
                 # 1d data.
+                # TODO: 0D data is currently ignored. Find a nice way of
+                # displaying it?
                 tobeplotted = dict()
                 for i in range(len(values)):
                     if ndims[i] == 1:
@@ -82,7 +84,7 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
                             tobeplotted[key][1].append(input_data.subset[values[i].name])
                         else:
                             tobeplotted[key] = [ndims[i], [input_data.subset[values[i].name]]]
-                    else:
+                    elif ndims[i] > 1:
                         tobeplotted[values[i].name] = [ndims[i], input_data.subset[values[i].name]]
 
             # Plot all the subsets
@@ -127,7 +129,7 @@ def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
 # Plot a 1D spectrum.
 #
 # Inputs can be either a Dataset(Slice) or a list of Dataset(Slice)s.
-# If bars=True, then a bar plot is produced instead of a standard line.
+# If the coordinate of the x-axis contains bin edges, then a bar plot is made.
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
