@@ -9,7 +9,7 @@
 
 namespace counts {
 
-auto getBinWidths(const Dataset &d, const std::initializer_list<Dim> &dims) {
+auto getBinWidths(const Dataset &d, const std::vector<Dim> &dims) {
   std::vector<Variable> binWidths;
   for (const auto dim : dims) {
     const auto &coord = d(dimensionCoord(dim));
@@ -48,10 +48,10 @@ void toDensity(const VariableSlice var,
 }
 
 Dataset toDensity(Dataset d, const Dim dim) {
-  return toDensity(std::move(d), {dim});
+  return toDensity(std::move(d), std::vector<Dim>{dim});
 }
 
-Dataset toDensity(Dataset d, const std::initializer_list<Dim> &dims) {
+Dataset toDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d, dims);
   for (const auto &var : d)
     toDensity(var, binWidths);
@@ -76,10 +76,10 @@ void fromDensity(const VariableSlice var,
 }
 
 Dataset fromDensity(Dataset d, const Dim dim) {
-  return fromDensity(std::move(d), {dim});
+  return fromDensity(std::move(d), std::vector<Dim>{dim});
 }
 
-Dataset fromDensity(Dataset d, const std::initializer_list<Dim> &dims) {
+Dataset fromDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d, dims);
   for (const auto &var : d)
     fromDensity(var, binWidths);
