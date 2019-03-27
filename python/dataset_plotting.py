@@ -448,15 +448,21 @@ class ImageViewer:
             ye_loc = np.linspace(yview[0], yview[-1], self.resolution)
         else:
             ye_loc = yview
-        xg, yg = np.meshgrid(self.xc[xmin:xmax], self.yc[ymin:ymax])
-        xv = np.ravel(xg)
-        yv = np.ravel(yg)
-        zv = np.ravel(self.z[ymin:ymax,xmin:xmax])
-        # Histogram the data to make a low-resolution image
-        # Using weights in the second histogram allows us to then do z1/z0 to
-        # obtain the averaged data inside the coarse pixels
-        z0, yedges1, xedges1 = np.histogram2d(yv, xv, bins=(ye_loc, xe_loc))
-        z1, yedges1, xedges1 = np.histogram2d(yv, xv, bins=(ye_loc, xe_loc), weights=zv)
+
+        # Optimize if no re-sampling is required
+        if (nx_view < self.resolution) and (ny_view < self.resolution):
+            z1 = self.z[ymin:ymax,xmin:xmax]
+        else:
+            xg, yg = np.meshgrid(self.xc[xmin:xmax], self.yc[ymin:ymax])
+            xv = np.ravel(xg)
+            yv = np.ravel(yg)
+            zv = np.ravel(self.z[ymin:ymax,xmin:xmax])
+            # Histogram the data to make a low-resolution image
+            # Using weights in the second histogram allows us to then do z1/z0 to
+            # obtain the averaged data inside the coarse pixels
+            z0, yedges1, xedges1 = np.histogram2d(yv, xv, bins=(ye_loc, xe_loc))
+            z1, yedges1, xedges1 = np.histogram2d(yv, xv, bins=(ye_loc, xe_loc), weights=zv)
+            z1 /= z0
 
         # Here we perform another trick. If we plot simply the local arrays in
         # plotly, the reset axes or home functionality will be lost because
@@ -482,7 +488,7 @@ class ImageViewer:
 
         # The local z array
         z_loc = np.zeros([len(ye_loc)-1, len(xe_loc)-1])
-        z_loc[jmin:len(ye_loc)-jmax-1,imin:len(xe_loc)-imax-1] = z1/z0
+        z_loc[jmin:len(ye_loc)-jmax-1,imin:len(xe_loc)-imax-1] = z1
 
         self.fig.update({'data': [{'type':self.plot_type, 'x':xe_loc,
                                    'y':ye_loc, 'z':z_loc, 'zmin':self.cb["min"],
