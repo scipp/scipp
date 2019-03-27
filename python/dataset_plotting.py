@@ -66,26 +66,25 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
         values, ndims = check_input(input_data, check_multiple_values=False)
         if len(values) > 1:
             # Search through the variables and group the 1D datasets that have
-            # the same coordinate axis
-            if np.amin(ndims) == 1:
-                # tobeplotted is a dict that holds pairs of
-                # [number_of_dimensions, DatasetSlice], or
-                # [number_of_dimensions, [List of DatasetSlices]] in the case of
-                # 1d data.
-                # TODO: 0D data is currently ignored. Find a nice way of
-                # displaying it?
-                tobeplotted = dict()
-                for i in range(len(values)):
-                    if ndims[i] == 1:
-                        dims = values[i].dimensions
-                        labs = dims.labels
-                        key = str(labs[0])
-                        if key in tobeplotted.keys():
-                            tobeplotted[key][1].append(input_data.subset[values[i].name])
-                        else:
-                            tobeplotted[key] = [ndims[i], [input_data.subset[values[i].name]]]
-                    elif ndims[i] > 1:
-                        tobeplotted[values[i].name] = [ndims[i], input_data.subset[values[i].name]]
+            # the same coordinate axis.
+            # tobeplotted is a dict that holds pairs of
+            # [number_of_dimensions, DatasetSlice], or
+            # [number_of_dimensions, [List of DatasetSlices]] in the case of
+            # 1d data.
+            # TODO: 0D data is currently ignored -> find a nice way of
+            # displaying it?
+            tobeplotted = dict()
+            for i in range(len(values)):
+                if ndims[i] == 1:
+                    dims = values[i].dimensions
+                    labs = dims.labels
+                    key = str(labs[0])
+                    if key in tobeplotted.keys():
+                        tobeplotted[key][1].append(input_data.subset[values[i].name])
+                    else:
+                        tobeplotted[key] = [ndims[i], [input_data.subset[values[i].name]]]
+                elif ndims[i] > 1:
+                    tobeplotted[values[i].name] = [ndims[i], input_data.subset[values[i].name]]
 
             # Plot all the subsets
             color_count = 0
