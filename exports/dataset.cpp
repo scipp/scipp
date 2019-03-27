@@ -13,6 +13,7 @@
 #include <pybind11/stl_bind.h>
 
 #include "convert.h"
+#include "counts.h"
 #include "dataset.h"
 #include "events.h"
 #include "except.h"
@@ -1506,4 +1507,20 @@ PYBIND11_MODULE(dataset, m) {
 
   auto events = m.def_submodule("events");
   events.def("sort_by_tof", &events::sortByTof);
+
+  auto counts = m.def_submodule("counts");
+  counts.def("to_density",
+             py::overload_cast<Dataset, const Dim>(&counts::toDensity),
+             py::call_guard<py::gil_scoped_release>());
+  counts.def(
+      "to_density",
+      py::overload_cast<Dataset, const std::vector<Dim> &>(&counts::toDensity),
+      py::call_guard<py::gil_scoped_release>());
+  counts.def("from_density",
+             py::overload_cast<Dataset, const Dim>(&counts::fromDensity),
+             py::call_guard<py::gil_scoped_release>());
+  counts.def("from_density",
+             py::overload_cast<Dataset, const std::vector<Dim> &>(
+                 &counts::fromDensity),
+             py::call_guard<py::gil_scoped_release>());
 }
