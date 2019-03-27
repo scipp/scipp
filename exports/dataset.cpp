@@ -1253,6 +1253,8 @@ PYBIND11_MODULE(dataset, m) {
       // 2. Handle integers before case 3. below, which would convert to double.
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
+      .def("__setitem__", detail::insert_0D<double, detail::Key::Tag>)
+      .def("__setitem__", detail::insert_0D<double, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
       .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
       .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)

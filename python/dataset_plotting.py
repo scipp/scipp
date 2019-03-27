@@ -1,18 +1,32 @@
-# Dataset imports
-from dataset import Dataset, Data, dataset, dimensionCoord, coordDimension, sqrt, units
+# Other imports
 import numpy as np
 import copy
-# Plotly imports
-from plotly.offline import init_notebook_mode, iplot
-# Re-direct the output of init_notebook_mode to hide it from the unit tests
 import io
 from contextlib import redirect_stdout
+
+# Dataset imports
+from dataset import Dataset, Data, dataset, dimensionCoord, coordDimension, sqrt, units
+
+# Plotly imports
+from plotly.offline import init_notebook_mode, iplot
 try:
+    # Re-direct the output of init_notebook_mode to hide it from the unit tests
     with redirect_stdout(io.StringIO()):
         init_notebook_mode(connected=True)
 except ImportError:
     print("Warning: the current version of this plotting module was designed to"
           " work inside a Jupyter notebook. Other usage has not been tested.")
+try:
+    from plotly.graph_objs import FigureWidget
+    from ipywidgets import VBox, HBox, IntSlider, Label
+    from IPython.display import display
+    ipywidgets_missing = False
+except ImportError:
+    print("Warning: possibly missing features. It was not possible to import "
+          "ipywidgets, which is required for some of the plotting "
+          "functionality.")
+    ipywidgets_missing = True
+from plotly.colors import DEFAULT_PLOTLY_COLORS
 
 #===============================================================================
 
@@ -23,26 +37,25 @@ default = {
 
 #===============================================================================
 
-def check_input(input_data):
+def check_input(input_data, check_multiple_values=True):
 
     values = []
-    ndim = 0
+    ndims = []
     for var in input_data:
         if var.is_data and (var.tag != Data.Variance):
             values.append(var)
-            ndim = max(ndim, len(var.dimensions))
+            ndims.append(len(var.dimensions))
 
-    if (len(values) > 1) and (ndim > 1):
+    if check_multiple_values and (len(values) > 1) and (np.amax(ndims) > 1):
         raise RuntimeError("More than one Data.Value found! Please use e.g."
                            " plot(dataset.subset[Data.Value, 'sample'])"
                            " to select only a single Value.")
 
-    return values, ndim
+    return values, ndims
 
 #===============================================================================
 
-# Wrapper function to dispatch the input dataset to the appropriate plotting
-# function depending on its dimensions
+# Wrapper function to plot any kind of dataset
 def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
 
     # A list of datasets is only supported for 1d
@@ -50,29 +63,77 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
         return plot_1d(input_data, axes=axes, **kwargs)
     # Case of a single dataset
     else:
-        ndim = check_input(input_data)[1]
-        if ndim == 1:
-            return plot_1d(input_data, axes=axes, **kwargs)
-        elif ndim == 2:
-            if collapse is not None:
-                return plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes, plot=False), **kwargs)
-            elif waterfall is not None:
-                return plot_waterfall(input_data, dim=waterfall, axes=axes, **kwargs)
-            else:
-                return plot_image(input_data, axes=axes, **kwargs)
+        values, ndims = check_input(input_data, check_multiple_values=False)
+        if len(values) > 1:
+            # Search through the variables and group the 1D datasets that have
+            # the same coordinate axis.
+            # tobeplotted is a dict that holds pairs of
+            # [number_of_dimensions, DatasetSlice], or
+            # [number_of_dimensions, [List of DatasetSlices]] in the case of
+            # 1d data.
+            # TODO: 0D data is currently ignored -> find a nice way of
+            # displaying it?
+            tobeplotted = dict()
+            for i in range(len(values)):
+                if ndims[i] == 1:
+                    dims = values[i].dimensions
+                    labs = dims.labels
+                    key = str(labs[0])
+                    if key in tobeplotted.keys():
+                        tobeplotted[key][1].append(input_data.subset[values[i].name])
+                    else:
+                        tobeplotted[key] = [ndims[i], [input_data.subset[values[i].name]]]
+                elif ndims[i] > 1:
+                    tobeplotted[values[i].name] = [ndims[i], input_data.subset[values[i].name]]
+
+            # Plot all the subsets
+            color_count = 0
+            for key, val in tobeplotted.items():
+                if val[0] == 1:
+                    color = []
+                    for l in val[1]:
+                        color.append(DEFAULT_PLOTLY_COLORS[color_count%10])
+                        color_count += 1
+                    plot_1d(val[1], color=color)
+                else:
+                    plot_auto(val[1], ndim=val[0])
+            return
         else:
-            return plot_sliceviewer(input_data, axes=axes, **kwargs)
+            return plot_auto(input_data, ndim=np.amax(ndims), axes=axes,
+                             waterfall=waterfall, collapse=collapse, **kwargs)
+
+#===============================================================================
+
+# Function to automaticall dispatch the input dataset to the appropriate
+# plotting function depending on its dimensions
+def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
+              **kwargs):
+
+    if ndim == 1:
+        return plot_1d(input_data, axes=axes, **kwargs)
+    elif ndim == 2:
+        if collapse is not None:
+            return plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes,
+                                          plot=False), **kwargs)
+        elif waterfall is not None:
+            return plot_waterfall(input_data, dim=waterfall, axes=axes,
+                                  **kwargs)
+        else:
+            return plot_image(input_data, axes=axes, **kwargs)
+    else:
+        return plot_sliceviewer(input_data, axes=axes, **kwargs)
 
 #===============================================================================
 
 # Plot a 1D spectrum.
 #
 # Inputs can be either a Dataset(Slice) or a list of Dataset(Slice)s.
-# If bars=True, then a bar plot is produced instead of a standard line.
+# If the coordinate of the x-axis contains bin edges, then a bar plot is made.
 #
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
-def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
+def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
+            color=None):
 
     entries = []
     # Case of a single dataset
@@ -98,6 +159,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
     # We now construct a list of [x,y] pairs
     data = []
     coord_check = None
+    color_count = 0
     for item in entries:
         # Scan the datasets
         values = dict()
@@ -182,6 +244,11 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
                 trace["width"] = w
             else:
                 trace["type"] = 'scatter'
+            if color is not None:
+                if "marker" not in trace.keys():
+                    trace["marker"] = dict()
+                trace["marker"]["color"] = color[color_count]
+                color_count += 1
             # Include variance if present
             if v[1] is not None:
                 trace["error_y"] = dict(
@@ -194,11 +261,11 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
     layout = dict(
         xaxis = dict(title = xlab),
         yaxis = dict(),
-        showlegend=True,
-        legend=dict(x=0.0, y=1.15, orientation="h")
+        showlegend = True,
+        legend = dict(x=0.0, y=1.15, orientation="h"),
         )
     if histogram:
-        layout["barmode"] = 'overlay'
+        layout["barmode"] = "overlay"
     if logx or logxy:
         layout["xaxis"]["type"] = "log"
     if logy or logxy:
@@ -217,7 +284,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None):
 # calling plot_image from the sliceviewer).
 def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
 
-    values, ndim = check_input(input_data)
+    values, ndims = check_input(input_data)
+    ndim = np.amax(ndims)
 
     if axes is not None:
         naxes = len(axes)
@@ -318,7 +386,8 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
 #
 def plot_waterfall(input_data, dim=None, axes=None, plot=True):
 
-    values, ndim = check_input(input_data)
+    values, ndims = check_input(input_data)
+    ndim = np.amax(ndims)
 
     if (ndim > 1) and (ndim < 3):
 
@@ -423,17 +492,14 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
 # the slice in the third dimension.
 def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
 
-    # Delay import to here, as ipywidgets is not part of the base plotly package
-    try:
-        from plotly.graph_objs import FigureWidget
-        from ipywidgets import VBox, HBox, IntSlider, Label
-    except ImportError:
+    if ipywidgets_missing:
         print("Sorry, the sliceviewer requires ipywidgets which was not found "
               "on this system.")
         return
 
     # Check input dataset
-    value_list, ndim = check_input(input_data)
+    value_list, ndims = check_input(input_data)
+    ndim = np.amax(ndims)
 
     if ndim > 2:
 
@@ -452,10 +518,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
                          input_data=input_data, axes=axes,
                          value_name=value_list[0].name, cb=cbar)
 
-        if hasattr(sv, "vbox"):
-            return sv.vbox
-        else:
-            return
+        return display(sv.vbox)
 
     else:
         raise RuntimeError("Unsupported number of dimensions in "
@@ -469,15 +532,6 @@ class SliceViewer:
 
     def __init__(self, plotly_data, plotly_layout, input_data, axes, value_name,
                  cb):
-
-        # Delay import to here, as ipywidgets is not part of plotly
-        try:
-            from plotly.graph_objs import FigureWidget
-            from ipywidgets import VBox, HBox, IntSlider, Label
-        except ImportError:
-            print("Sorry, the sliceviewer requires ipywidgets which was not "
-                  "found on this system.")
-            return
 
         # Make a deep copy of the input data
         self.input_data = copy.deepcopy(input_data)
