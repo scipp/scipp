@@ -72,16 +72,16 @@ template <class Base, class T> struct GetterMixin<Base, Bin<T>> {
 };
 
 template <class D, class Tag> struct ref_type {
-  using type = gsl::span<std::conditional_t<
+  using type = scipp::span<std::conditional_t<
       std::is_const<D>::value,
       const underlying_type_t<typename detail::value_type_t<Tag>::type>,
       underlying_type_t<typename detail::value_type_t<Tag>::type>>>;
 };
 template <class D, class Tag> struct ref_type<D, Bin<Tag>> {
   // First is the offset to the next edge.
-  using type =
-      std::pair<gsl::index,
-                gsl::span<const typename detail::value_type_t<Bin<Tag>>::type>>;
+  using type = std::pair<
+      gsl::index,
+      scipp::span<const typename detail::value_type_t<Bin<Tag>>::type>>;
 };
 
 // TODO The need for the cumbersome std::remove_cv_t<decltype(...)> is legacy,
@@ -89,16 +89,16 @@ template <class D, class Tag> struct ref_type<D, Bin<Tag>> {
 // value, rather then using detail::value_type_t, etc.
 template <class D> struct ref_type<D, const Coord::Position_t> {
   using type =
-      std::pair<gsl::span<const typename Coord::Position_t::type>,
-                gsl::span<const typename Coord::DetectorGrouping_t::type>>;
+      std::pair<scipp::span<const typename Coord::Position_t::type>,
+                scipp::span<const typename Coord::DetectorGrouping_t::type>>;
 };
 template <class D> struct ref_type<D, Data::Events_t> {
   // Supporting either events stored as nested Dataset (Data::Events), or a
   // separate variables for tof and pulse-time (Data::EventTofs and
   // Data::EventPulseTimes).
-  using type = std::tuple<gsl::span<typename Data::Events_t::type>,
-                          gsl::span<typename Data::EventTofs_t::type>,
-                          gsl::span<typename Data::EventPulseTimes_t::type>>;
+  using type = std::tuple<scipp::span<typename Data::Events_t::type>,
+                          scipp::span<typename Data::EventTofs_t::type>,
+                          scipp::span<typename Data::EventPulseTimes_t::type>>;
 };
 template <class D> struct ref_type<D, Data::StdDev_t> {
   using type = typename ref_type<D, Data::Variance_t>::type;
@@ -592,7 +592,7 @@ template <class D> struct DataHelper<D, const Coord::Position_t> {
     if (dataset.contains(Coord::Position))
       return ref_type_t<D, const Coord::Position_t>(
           dataset.get(detail::value_type_t<Coord::Position_t>{}),
-          gsl::span<const typename Coord::DetectorGrouping_t::type>{});
+          scipp::span<const typename Coord::DetectorGrouping_t::type>{});
     const auto &detInfo = dataset.get(Coord::DetectorInfo)[0];
     return ref_type_t<D, const Coord::Position_t>(
         detInfo.get(detail::value_type_t<Coord::Position_t>{}),
@@ -611,11 +611,11 @@ template <class D> struct DataHelper<D, Data::Events_t> {
                                  "Data::EventTofs).");
       return ref_type_t<D, Data::Events_t>(
           dataset.get(detail::value_type_t<Data::Events_t>{}),
-          gsl::span<typename Data::EventTofs_t::type>{},
-          gsl::span<typename Data::EventPulseTimes_t::type>{});
+          scipp::span<typename Data::EventTofs_t::type>{},
+          scipp::span<typename Data::EventPulseTimes_t::type>{});
     }
     return ref_type_t<D, Data::Events_t>(
-        gsl::span<typename Data::Events_t::type>{},
+        scipp::span<typename Data::Events_t::type>{},
         dataset.get(detail::value_type_t<Data::EventTofs_t>{}),
         dataset.get(detail::value_type_t<Data::EventPulseTimes_t>{}));
   }

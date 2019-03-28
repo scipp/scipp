@@ -13,8 +13,8 @@
 #include <gsl/gsl_util>
 
 #include "dimension.h"
-#include "span.h"
 #include "except.h"
+#include "span.h"
 
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
@@ -77,11 +77,11 @@ public:
     return volume;
   }
 
-  gsl::span<const gsl::index> shape() const noexcept {
+  scipp::span<const gsl::index> shape() const noexcept {
     return {m_shape, m_shape + m_ndim};
   }
 
-  gsl::span<const Dim> labels() const noexcept {
+  scipp::span<const Dim> labels() const noexcept {
     return {m_dims, m_dims + m_ndim};
   }
 

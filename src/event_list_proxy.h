@@ -44,8 +44,9 @@ public:
       return ranges::view::zip(d->get(Data::Tof), d->get(Data::PulseTime));
     }
     return ranges::view::zip(
-        gsl::span(m_tofs->data(), m_tofs->data() + m_tofs->size()),
-        gsl::span(m_pulseTimes->data(), m_pulseTimes->data() + m_tofs->size()));
+        scipp::span(m_tofs->data(), m_tofs->data() + m_tofs->size()),
+        scipp::span(m_pulseTimes->data(),
+                    m_pulseTimes->data() + m_tofs->size()));
   }
 
 private:

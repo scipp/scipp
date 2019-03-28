@@ -92,9 +92,8 @@ TEST(Run, meta_data_propagation) {
   EXPECT_EQ(pressure_log.dimensions().size(0), 6);
   // No hidden magic here, it is simply concatenated, can do smarter processing
   // by hand afterwards.
-  EXPECT_EQ(
-      pressure_log.get(Data::Value, "pressure1"),
-      gsl::make_span(std::vector<double>({1013, 900, 800, 1013, 900, 800})));
+  EXPECT_EQ(pressure_log.get(Data::Value, "pressure1"),
+            scipp::span(std::vector<double>({1013, 900, 800, 1013, 900, 800})));
 
   // Example of an optional log entry, i.e., one that is not present in all
   // operands:

@@ -1597,7 +1597,7 @@ void binary_test(T (*func)(T, T), const std::vector<T> &input,
   std::transform(input.begin(), input.end(), input.begin(),
                  std::back_inserter(result), func);
 
-  EXPECT_EQ(actual_result.get(Data::Value, name), gsl::make_span(result));
+  EXPECT_EQ(actual_result.get(Data::Value, name), scipp::span(result));
 }
 
 template <typename T>
@@ -1608,7 +1608,7 @@ void inplace_op_test(T (*func)(T, T), const std::vector<T> &input,
   auto result = input; // take copy of input
   std::transform(current.begin(), current.end(), result.begin(), result.begin(),
                  func);
-  EXPECT_EQ(actual_result.get(Data::Value, name), gsl::make_span(result));
+  EXPECT_EQ(actual_result.get(Data::Value, name), scipp::span(result));
 }
 
 std::vector<double> data_from_dataset(Dataset &dataset,

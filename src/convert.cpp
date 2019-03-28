@@ -71,7 +71,6 @@ Dataset tofToDSpacing(const Dataset &d) {
 
   conversionFactor *= tofToDSpacingPhysicalConstants;
 
-
   // sin(scattering_angle)
   // TODO Need `dot` for `Variable`. The following block should just be
   // conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)))
@@ -264,7 +263,7 @@ Dataset tofToDeltaE(const Dataset &d) {
 }
 
 gsl::index continuousToIndex(const double val,
-                             const gsl::span<const double> axis) {
+                             const scipp::span<const double> axis) {
   const auto lower = std::lower_bound(axis.begin(), axis.end(), val);
   const auto upper = std::upper_bound(axis.begin(), axis.end(), val);
   if (upper == axis.end() || upper == axis.begin())

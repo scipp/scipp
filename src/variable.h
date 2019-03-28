@@ -259,21 +259,21 @@ public:
 
   template <class TagT> auto get(const TagT t) const {
     // For now we support only variables that are a std::vector. In principle we
-    // could support anything that is convertible to gsl::span (or an adequate
+    // could support anything that is convertible to scipp::span (or an adequate
     // replacement).
     if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return gsl::make_span(cast<typename TagT::type>());
+    return scipp::span(cast<typename TagT::type>());
   }
 
   template <class TagT> auto get(const TagT t) {
     if (t != tag())
       throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return gsl::make_span(cast<typename TagT::type>());
+    return scipp::span(cast<typename TagT::type>());
   }
 
-  template <class T> auto span() const { return gsl::make_span(cast<T>()); }
-  template <class T> auto span() { return gsl::make_span(cast<T>()); }
+  template <class T> auto span() const { return scipp::span(cast<T>()); }
+  template <class T> auto span() { return scipp::span(cast<T>()); }
 
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
@@ -395,8 +395,8 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions,
       // calculate the array linear coordinate
       auto lin_coord = std::inner_product(coords.begin(), coords.end(),
                                           strides.begin(), gsl::index{0});
-      std::memcpy(&res.template span<T>()[i * blockSz],
-                  &ptr[lin_coord], blockSz * sizeof(T));
+      std::memcpy(&res.template span<T>()[i * blockSz], &ptr[lin_coord],
+                  blockSz * sizeof(T));
       // get the next ND coordinate
       auto k = coords.size();
       while (k-- > 0)

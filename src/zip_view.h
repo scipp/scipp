@@ -318,7 +318,7 @@ public:
                : ItemProxy<item_type, false, Keys...>::get(m_view[i]);
   }
 
-  // TODO WARNING: We are creating the zip view from temporary gsl::span
+  // TODO WARNING: We are creating the zip view from temporary scipp::span
   // objects. ranges::view::zip_view takes ownership of this temporary objects.
   // The iterators then reference this object (if zip_view was based on directly
   // on std::vector, the iterator would reference the vector, so this problem

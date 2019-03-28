@@ -40,13 +40,13 @@ auto getItemBySingleIndex(Collection &self,
 }
 
 template <class T> struct mutable_span_methods {
-  static void add(py::class_<gsl::span<T>> &span) {
-    span.def("__setitem__", [](gsl::span<T> &self, const gsl::index i,
+  static void add(py::class_<scipp::span<T>> &span) {
+    span.def("__setitem__", [](scipp::span<T> &self, const gsl::index i,
                                const T value) { self[i] = value; });
   }
 };
 template <class T> struct mutable_span_methods<const T> {
-  static void add(py::class_<gsl::span<const T>> &) {}
+  static void add(py::class_<scipp::span<const T>> &) {}
 };
 
 template <class T> std::string element_to_string(const T &item) {
@@ -81,17 +81,17 @@ template <class T> std::string array_to_string(const T &arr) {
 }
 
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
-  py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
-  span.def("__getitem__", &gsl::span<T>::operator[],
+  py::class_<scipp::span<T>> span(m, (std::string("span_") + suffix).c_str());
+  span.def("__getitem__", &scipp::span<T>::operator[],
            py::return_value_policy::reference)
-      .def("size", &gsl::span<T>::size)
-      .def("__len__", &gsl::span<T>::size)
+      .def("size", &scipp::span<T>::size)
+      .def("__len__", &scipp::span<T>::size)
       .def("__iter__",
-           [](const gsl::span<T> &self) {
+           [](const scipp::span<T> &self) {
              return py::make_iterator(self.begin(), self.end());
            })
       .def("__repr__",
-           [](const gsl::span<T> &self) { return array_to_string(self); });
+           [](const scipp::span<T> &self) { return array_to_string(self); });
   mutable_span_methods<T>::add(span);
 }
 
@@ -442,7 +442,7 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
 template <class... Ts> struct as_VariableViewImpl {
   template <class Var>
   static std::variant<std::conditional_t<
-      std::is_same_v<Var, Variable>, gsl::span<underlying_type_t<Ts>>,
+      std::is_same_v<Var, Variable>, scipp::span<underlying_type_t<Ts>>,
       VariableView<underlying_type_t<Ts>>>...>
   get(Var &view) {
     switch (view.dtype()) {

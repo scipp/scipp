@@ -217,12 +217,12 @@ public:
   DType dtype() const noexcept override { return ::dtype<T>; }
   static DType static_dtype() noexcept { return ::dtype<T>; }
 
-  virtual gsl::span<T> getSpan() = 0;
-  virtual gsl::span<T> getSpan(const Dim dim, const gsl::index begin,
-                               const gsl::index end) = 0;
-  virtual gsl::span<const T> getSpan() const = 0;
-  virtual gsl::span<const T> getSpan(const Dim dim, const gsl::index begin,
-                                     const gsl::index end) const = 0;
+  virtual scipp::span<T> getSpan() = 0;
+  virtual scipp::span<T> getSpan(const Dim dim, const gsl::index begin,
+                                 const gsl::index end) = 0;
+  virtual scipp::span<const T> getSpan() const = 0;
+  virtual scipp::span<const T> getSpan(const Dim dim, const gsl::index begin,
+                                       const gsl::index end) const = 0;
   virtual VariableView<T> getView(const Dimensions &dims) = 0;
   virtual VariableView<T> getView(const Dimensions &dims, const Dim dim,
                                   const gsl::index begin) = 0;
@@ -528,11 +528,11 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
   if (!dims.contains(dim) && (begin != 0 || end != 1))
     throw std::runtime_error("VariableConcept: Slice index out of range.");
   if (!dims.contains(dim) || dims[dim] == end - begin) {
-    return gsl::span(model.data(), model.data() + model.size());
+    return scipp::span(model.data(), model.data() + model.size());
   }
   const gsl::index beginOffset = begin * dims.offset(dim);
   const gsl::index endOffset = end * dims.offset(dim);
-  return gsl::span(model.data() + beginOffset, model.data() + endOffset);
+  return scipp::span(model.data() + beginOffset, model.data() + endOffset);
 }
 
 /// Implementation of VariableConcept that holds data.
@@ -548,19 +548,19 @@ public:
                                "volume given by dimension extents");
   }
 
-  gsl::span<value_type> getSpan() override {
-    return gsl::span(m_model.data(), m_model.data() + size());
+  scipp::span<value_type> getSpan() override {
+    return scipp::span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
-                                const gsl::index end) override {
+  scipp::span<value_type> getSpan(const Dim dim, const gsl::index begin,
+                                  const gsl::index end) override {
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
-  gsl::span<const value_type> getSpan() const override {
-    return gsl::span(m_model.data(), m_model.data() + size());
+  scipp::span<const value_type> getSpan() const override {
+    return scipp::span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
-                                      const gsl::index end) const override {
+  scipp::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
+                                        const gsl::index end) const override {
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
@@ -642,34 +642,34 @@ public:
                                "volume given by dimension extents");
   }
 
-  gsl::span<value_type> getSpan() override {
+  scipp::span<value_type> getSpan() override {
     requireMutable();
     requireContiguous();
     if constexpr (std::is_const<typename T::element_type>::value)
-      return gsl::span<value_type>();
+      return scipp::span<value_type>();
     else
-      return gsl::span(m_model.data(), m_model.data() + size());
+      return scipp::span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
-                                const gsl::index end) override {
+  scipp::span<value_type> getSpan(const Dim dim, const gsl::index begin,
+                                  const gsl::index end) override {
     requireMutable();
     requireContiguous();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dim);
       static_cast<void>(begin);
       static_cast<void>(end);
-      return gsl::span<value_type>();
+      return scipp::span<value_type>();
     } else {
       return makeSpan(m_model, this->dimensions(), dim, begin, end);
     }
   }
 
-  gsl::span<const value_type> getSpan() const override {
+  scipp::span<const value_type> getSpan() const override {
     requireContiguous();
-    return gsl::span(m_model.data(), m_model.data() + size());
+    return scipp::span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
-                                      const gsl::index end) const override {
+  scipp::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
+                                        const gsl::index end) const override {
     requireContiguous();
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }

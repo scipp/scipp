@@ -7,8 +7,7 @@
 #define SPAN_H
 
 #define TCB_SPAN_STD_COMPLIANT_MODE
-#define TCB_SPAN_NAMESPACE_NAME gsl
-//scipp::core
+#define TCB_SPAN_NAMESPACE_NAME scipp
 #include "span/include/tcb/span.hpp"
 
 #endif // SPAN_H
