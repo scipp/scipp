@@ -16,7 +16,6 @@ find_package (OpenMP 3.1 REQUIRED)
 find_package (Boost 1.67 REQUIRED)
 
 include( Eigen )
-include( gsl )
 include( pybind11 )
 include( GoogleTest )
 include( GoogleBenchmark )
