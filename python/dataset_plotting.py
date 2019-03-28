@@ -9,6 +9,9 @@ from dataset import Dataset, Data, dataset, dimensionCoord, coordDimension, sqrt
 
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
+from plotly.graph_objs import FigureWidget
+from plotly.colors import DEFAULT_PLOTLY_COLORS
+from IPython.display import display
 try:
     # Re-direct the output of init_notebook_mode to hide it from the unit tests
     with redirect_stdout(io.StringIO()):
@@ -17,16 +20,13 @@ except ImportError:
     print("Warning: the current version of this plotting module was designed to"
           " work inside a Jupyter notebook. Other usage has not been tested.")
 try:
-    from plotly.graph_objs import FigureWidget
     from ipywidgets import VBox, HBox, IntSlider, Label
-    from IPython.display import display
     ipywidgets_missing = False
 except ImportError:
     print("Warning: possibly missing features. It was not possible to import "
           "ipywidgets, which is required for some of the plotting "
           "functionality.")
     ipywidgets_missing = True
-from plotly.colors import DEFAULT_PLOTLY_COLORS
 
 #===============================================================================
 
@@ -349,7 +349,7 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
             if cbar["max"] is None:
                 cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
             imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar, plot_type,
-                                 title)
+                                 title, contours)
             for key, val in layout.items():
                 imview.fig.layout[key] = val
             return display(imview.fig)
@@ -382,7 +382,7 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
 
 class ImageViewer:
 
-    def __init__(self, xe, xc, ye, yc, z, resolution, cb, plot_type, title):
+    def __init__(self, xe, xc, ye, yc, z, resolution, cb, plot_type, title, contours):
 
         self.xe = xe
         self.xc = xc
@@ -393,6 +393,7 @@ class ImageViewer:
         self.cb = cb
         self.plot_type = plot_type
         self.title = title
+        self.contours = contours
         self.nx = len(self.xe)
         self.ny = len(self.ye)
 
@@ -473,28 +474,46 @@ class ImageViewer:
         # view area. These large (and probably elongated) pixels add very little
         # data and will not show in the view area but allow plotly to recover
         # the full axes limits if we double-click on the plot
+        xc_loc = edges_to_centers(xe_loc)[0]
+        yc_loc = edges_to_centers(ye_loc)[0]
         if xmin > 0:
             xe_loc = np.concatenate([self.xe[0:1], xe_loc])
+            xc_loc = np.concatenate([self.xc[0:1], xc_loc])
         if xmax < self.nx-1:
             xe_loc = np.concatenate([xe_loc, self.xe[-1:]])
+            xc_loc = np.concatenate([xc_loc, self.xc[-1:]])
         if ymin > 0:
             ye_loc = np.concatenate([self.ye[0:1], ye_loc])
+            yc_loc = np.concatenate([self.yc[0:1], yc_loc])
         if ymax < self.ny-1:
             ye_loc = np.concatenate([ye_loc, self.ye[-1:]])
+            yc_loc = np.concatenate([yc_loc, self.yc[-1:]])
         imin = int(xmin > 0)
         imax = int(xmax < self.nx-1)
         jmin = int(ymin > 0)
         jmax = int(ymax < self.ny-1)
+        nxe = len(xe_loc)
+        nye = len(ye_loc)
 
         # The local z array
-        z_loc = np.zeros([len(ye_loc)-1, len(xe_loc)-1])
-        z_loc[jmin:len(ye_loc)-jmax-1,imin:len(xe_loc)-imax-1] = z1
+        z_loc = np.zeros([nye-1, nxe-1])
+        z_loc[jmin:nye-jmax-1, imin:nxe-imax-1] = z1
 
-        self.fig.update({'data': [{'type':self.plot_type, 'x':xe_loc,
-                                   'y':ye_loc, 'z':z_loc, 'zmin':self.cb["min"],
-                                   'zmax':self.cb["max"],
-                                   'colorscale':self.cb["name"],
-                                   'colorbar':{'title':self.title}}]})
+        # The 'data' dictionary
+        datadict = dict(type=self.plot_type, zmin=self.cb["min"],
+                        zmax=self.cb["max"], colorscale=self.cb["name"],
+                        colorbar={"title":self.title}, z=z_loc)
+
+        if self.contours:
+            datadict["x"] = xc_loc
+            datadict["y"] = yc_loc
+        else:
+            datadict["x"] = xe_loc
+            datadict["y"] = ye_loc
+
+        # Update the figure
+        self.fig.update({'data': [datadict]})
+
         return
 
 #===============================================================================
