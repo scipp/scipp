@@ -33,7 +33,7 @@ public:
     std::lock_guard<std::mutex> g(m_mutex);
     for (auto &pools : m_pools) {
       auto &used = pools.second[0];
-      for (gsl::index i = used.size() - 1; i >= 0; --i) {
+      for (scipp::index i = used.size() - 1; i >= 0; --i) {
         if (used[i] == ptr) {
           auto &unused = pools.second[1];
           used.erase(used.begin() + i);

@@ -8,8 +8,7 @@
 
 #include <vector>
 
-#include <gsl/gsl_util>
-
+#include "index.h"
 #include "legacy_cow_ptr.h"
 
 class Histogram {
@@ -17,7 +16,7 @@ private:
   cow_ptr<std::vector<double>> m_y;
 
 public:
-  Histogram(const gsl::index size)
+  Histogram(const scipp::index size)
       : m_y(std::make_unique<std::vector<double>>(size)) {}
 
   Histogram &operator+=(const Histogram &other) {
@@ -180,7 +179,7 @@ BM_bare_plus_equals_breaking_sharing_optimized(benchmark::State &state) {
 
 static void BM_bare_plus_equals_no_fork_join(benchmark::State &state) {
   const int64_t count = 1000000;
-  gsl::index repeat = 64;
+  scipp::index repeat = 64;
   int num_threads = state.range(1);
   // std::vector<std::vector<double>> histograms(num_threads,
   // std::vector<double>(count * state.range(0)));
@@ -193,12 +192,12 @@ static void BM_bare_plus_equals_no_fork_join(benchmark::State &state) {
     {
       const int thread = omp_get_thread_num();
       const int threads = omp_get_num_threads();
-      // gsl::index start = 0;
-      // gsl::index end = histograms[thread].size();
-      gsl::index start = thread * (histograms.size() / threads);
-      gsl::index end = start + histograms.size() / threads;
-      for (gsl::index r = 0; r < repeat; ++r) {
-        for (gsl::index i = start; i < end; ++i) {
+      // scipp::index start = 0;
+      // scipp::index end = histograms[thread].size();
+      scipp::index start = thread * (histograms.size() / threads);
+      scipp::index end = start + histograms.size() / threads;
+      for (scipp::index r = 0; r < repeat; ++r) {
+        for (scipp::index i = start; i < end; ++i) {
           histograms[i] += histograms2[i];
           // histograms[thread][i] += histograms2[thread][i];
         }

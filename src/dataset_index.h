@@ -14,7 +14,7 @@ template <class Tag> class DatasetIndex {
 public:
   DatasetIndex(const Dataset &dataset) {
     const auto &axis = dataset.get(Tag{});
-    gsl::index current = 0;
+    scipp::index current = 0;
     for (auto item : axis)
       m_index[item] = current++;
     if (axis.size() != m_index.size())
@@ -22,12 +22,12 @@ public:
                                "to index into the data.");
   }
 
-  gsl::index operator[](const typename Tag::type &key) const {
+  scipp::index operator[](const typename Tag::type &key) const {
     return m_index.at(key);
   }
 
 private:
-  std::unordered_map<typename Tag::type, gsl::index> m_index;
+  std::unordered_map<typename Tag::type, scipp::index> m_index;
 };
 
 #endif // DATASET_INDEX_H

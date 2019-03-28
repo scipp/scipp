@@ -21,7 +21,7 @@ public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
 
-  VariableView(T *variable, const gsl::index offset,
+  VariableView(T *variable, const scipp::index offset,
                const Dimensions &targetDimensions, const Dimensions &dimensions)
       : m_variable(variable), m_offset(offset),
         m_targetDimensions(targetDimensions), m_dimensions(dimensions) {}
@@ -38,7 +38,7 @@ public:
 
   template <class Other>
   VariableView(const Other &other, const Dimensions &targetDimensions,
-               const Dim dim, const gsl::index begin)
+               const Dim dim, const scipp::index begin)
       : m_variable(other.m_variable), m_offset(other.m_offset),
         m_targetDimensions(targetDimensions) {
     m_dimensions = other.m_dimensions;
@@ -63,7 +63,7 @@ public:
                                       boost::random_access_traversal_tag> {
   public:
     iterator(T *variable, const Dimensions &targetDimensions,
-             const Dimensions &dimensions, const gsl::index index)
+             const Dimensions &dimensions, const scipp::index index)
         : m_variable(variable), m_index(targetDimensions, {dimensions}) {
       m_index.setIndex(index);
     }
@@ -98,12 +98,12 @@ public:
   iterator end() const {
     return {m_variable + m_offset, m_targetDimensions, m_dimensions, size()};
   }
-  auto &operator[](const gsl::index i) const { return *(begin() + i); }
+  auto &operator[](const scipp::index i) const { return *(begin() + i); }
 
   const T *data() const { return m_variable + m_offset; }
   T *data() { return m_variable + m_offset; }
 
-  gsl::index size() const { return m_targetDimensions.volume(); }
+  scipp::index size() const { return m_targetDimensions.volume(); }
 
   bool operator==(const VariableView<T> &other) const {
     if (m_targetDimensions != other.m_targetDimensions)
@@ -125,13 +125,13 @@ public:
 
 private:
   T *m_variable;
-  gsl::index m_offset{0};
+  scipp::index m_offset{0};
   const Dimensions m_targetDimensions;
   Dimensions m_dimensions;
 };
 
 template <class T>
-VariableView<T> makeVariableView(T *variable, const gsl::index offset,
+VariableView<T> makeVariableView(T *variable, const scipp::index offset,
                                  const Dimensions &targetDimensions,
                                  const Dimensions &dimensions) {
   return VariableView<T>(variable, offset, targetDimensions, dimensions);

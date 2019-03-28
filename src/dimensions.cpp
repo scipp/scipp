@@ -49,14 +49,14 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   return true;
 }
 
-Dim Dimensions::label(const gsl::index i) const { return m_dims[i]; }
+Dim Dimensions::label(const scipp::index i) const { return m_dims[i]; }
 
-gsl::index Dimensions::size(const gsl::index i) const { return m_shape[i]; }
+scipp::index Dimensions::size(const scipp::index i) const { return m_shape[i]; }
 
 /// Return the offset of elements along this dimension in a multi-dimensional
 /// array defined by this.
-gsl::index Dimensions::offset(const Dim label) const {
-  gsl::index offset{1};
+scipp::index Dimensions::offset(const Dim label) const {
+  scipp::index offset{1};
   for (int32_t i = m_ndim - 1; i >= 0; --i) {
     if (m_dims[i] == label)
       return offset;
@@ -65,13 +65,13 @@ gsl::index Dimensions::offset(const Dim label) const {
   throw dataset::except::DimensionNotFoundError(*this, label);
 }
 
-void Dimensions::resize(const Dim label, const gsl::index size) {
+void Dimensions::resize(const Dim label, const scipp::index size) {
   if (size < 0)
     throw std::runtime_error("Dimension size cannot be negative.");
   operator[](label) = size;
 }
 
-void Dimensions::resize(const gsl::index i, const gsl::index size) {
+void Dimensions::resize(const scipp::index i, const scipp::index size) {
   if (size < 0)
     throw std::runtime_error("Dimension size cannot be negative.");
   m_shape[i] = size;
@@ -88,7 +88,7 @@ void Dimensions::erase(const Dim label) {
 }
 
 /// Add a new dimension, which will be the outermost dimension.
-void Dimensions::add(const Dim label, const gsl::index size) {
+void Dimensions::add(const Dim label, const scipp::index size) {
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)
@@ -103,7 +103,7 @@ void Dimensions::add(const Dim label, const gsl::index size) {
 }
 
 /// Add a new dimension, which will be the innermost dimension.
-void Dimensions::addInner(const Dim label, const gsl::index size) {
+void Dimensions::addInner(const Dim label, const scipp::index size) {
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)

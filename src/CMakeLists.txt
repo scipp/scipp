@@ -24,6 +24,7 @@ set(INC_FILES
   variable.h 
   vector.h
   ../core/span.h
+  ../core/index.h
 )
 
 set(SRC_FILES

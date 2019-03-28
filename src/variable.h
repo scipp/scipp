@@ -9,10 +9,10 @@
 #include <string>
 #include <type_traits>
 
-#include <gsl/gsl_util>
 #include <numeric>
 
 #include "dimensions.h"
+#include "index.h"
 #include "span.h"
 #include "tags.h"
 #include "unit.h"
@@ -42,11 +42,11 @@ public:
   virtual std::unique_ptr<VariableConcept> makeView() const = 0;
   virtual std::unique_ptr<VariableConcept> makeView() = 0;
   virtual std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const gsl::index begin,
-           const gsl::index end = -1) const = 0;
+  makeView(const Dim dim, const scipp::index begin,
+           const scipp::index end = -1) const = 0;
   virtual std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const gsl::index begin,
-           const gsl::index end = -1) = 0;
+  makeView(const Dim dim, const scipp::index begin,
+           const scipp::index end = -1) = 0;
 
   virtual std::unique_ptr<VariableConcept>
   reshape(const Dimensions &dims) const = 0;
@@ -58,10 +58,10 @@ public:
   virtual bool isView() const = 0;
   virtual bool isConstView() const = 0;
 
-  virtual gsl::index size() const = 0;
+  virtual scipp::index size() const = 0;
   virtual void copy(const VariableConcept &other, const Dim dim,
-                    const gsl::index offset, const gsl::index otherBegin,
-                    const gsl::index otherEnd) = 0;
+                    const scipp::index offset, const scipp::index otherBegin,
+                    const scipp::index otherEnd) = 0;
 
   const Dimensions &dimensions() const { return m_dimensions; }
 
@@ -234,7 +234,7 @@ public:
     m_unit = unit;
   }
 
-  gsl::index size() const { return m_object->size(); }
+  scipp::index size() const { return m_object->size(); }
 
   const Dimensions &dimensions() const && = delete;
   const Dimensions &dimensions() const & { return m_object->dimensions(); }
@@ -278,15 +278,15 @@ public:
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
-  ConstVariableSlice operator()(const Dim dim, const gsl::index begin,
-                                const gsl::index end = -1) const &;
-  ConstVariableSlice operator()(const Dim dim, const gsl::index begin,
-                                const gsl::index end = -1) const && = delete;
+  ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
+                                const scipp::index end = -1) const &;
+  ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
+                                const scipp::index end = -1) const && = delete;
 
-  VariableSlice operator()(const Dim dim, const gsl::index begin,
-                           const gsl::index end = -1) &;
-  VariableSlice operator()(const Dim dim, const gsl::index begin,
-                           const gsl::index end = -1) && = delete;
+  VariableSlice operator()(const Dim dim, const scipp::index begin,
+                           const scipp::index end = -1) &;
+  VariableSlice operator()(const Dim dim, const scipp::index begin,
+                           const scipp::index end = -1) && = delete;
 
   ConstVariableSlice reshape(const Dimensions &dims) const &;
   VariableSlice reshape(const Dimensions &dims) &;
@@ -385,16 +385,16 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions,
         index < strides.size() ? strides[index] * dimensions.size(index) : 1;
 
     auto res = makeVariable<underlying_type_t<T>>(tag, dimensions);
-    std::vector<gsl::index> dsz(ndims);
-    for (gsl::index i = 0; i < index; ++i)
+    std::vector<scipp::index> dsz(ndims);
+    for (scipp::index i = 0; i < index; ++i)
       dsz[i] = dimensions.size(i);
-    std::vector<gsl::index> coords(ndims, 0);
+    std::vector<scipp::index> coords(ndims, 0);
     auto nBlocks = dimensions.volume() / blockSz;
 
-    for (gsl::index i = 0; i < nBlocks; ++i) {
+    for (scipp::index i = 0; i < nBlocks; ++i) {
       // calculate the array linear coordinate
       auto lin_coord = std::inner_product(coords.begin(), coords.end(),
-                                          strides.begin(), gsl::index{0});
+                                          strides.begin(), scipp::index{0});
       std::memcpy(&res.template span<T>()[i * blockSz], &ptr[lin_coord],
                   blockSz * sizeof(T));
       // get the next ND coordinate
@@ -415,16 +415,16 @@ public:
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
   ConstVariableSlice(const ConstVariableSlice &other) = default;
   ConstVariableSlice(const Variable &variable, const Dim dim,
-                     const gsl::index begin, const gsl::index end = -1)
+                     const scipp::index begin, const scipp::index end = -1)
       : m_variable(&variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
   ConstVariableSlice(const ConstVariableSlice &slice, const Dim dim,
-                     const gsl::index begin, const gsl::index end = -1)
+                     const scipp::index begin, const scipp::index end = -1)
       : m_variable(slice.m_variable),
         m_view(slice.data().makeView(dim, begin, end)) {}
 
-  ConstVariableSlice operator()(const Dim dim, const gsl::index begin,
-                                const gsl::index end = -1) const {
+  ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
+                                const scipp::index end = -1) const {
     return ConstVariableSlice(*this, dim, begin, end);
   }
 
@@ -437,7 +437,7 @@ public:
     throw std::runtime_error("Cannot rename Variable via slice view.");
   }
   Unit unit() const { return m_variable->unit(); }
-  gsl::index size() const {
+  scipp::index size() const {
     if (m_view)
       return m_view->size();
     else
@@ -453,9 +453,9 @@ public:
       return m_variable->dimensions();
   }
 
-  std::vector<gsl::index> strides() const {
+  std::vector<scipp::index> strides() const {
     const auto parent = m_variable->dimensions();
-    std::vector<gsl::index> strides;
+    std::vector<scipp::index> strides;
     for (const auto &label : parent.labels())
       if (dimensions().contains(label))
         strides.emplace_back(parent.offset(label));
@@ -521,19 +521,19 @@ public:
     m_view = variable.data().reshape(dims);
   }
   VariableSlice(const VariableSlice &other) = default;
-  VariableSlice(Variable &variable, const Dim dim, const gsl::index begin,
-                const gsl::index end = -1)
+  VariableSlice(Variable &variable, const Dim dim, const scipp::index begin,
+                const scipp::index end = -1)
       : ConstVariableSlice(variable), m_mutableVariable(&variable) {
     m_view = variable.data().makeView(dim, begin, end);
   }
   VariableSlice(const VariableSlice &slice, const Dim dim,
-                const gsl::index begin, const gsl::index end = -1)
+                const scipp::index begin, const scipp::index end = -1)
       : ConstVariableSlice(slice), m_mutableVariable(slice.m_mutableVariable) {
     m_view = slice.data().makeView(dim, begin, end);
   }
 
-  VariableSlice operator()(const Dim dim, const gsl::index begin,
-                           const gsl::index end = -1) const {
+  VariableSlice operator()(const Dim dim, const scipp::index begin,
+                           const scipp::index end = -1) const {
     return VariableSlice(*this, dim, begin, end);
   }
 
@@ -629,12 +629,12 @@ Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
 }
 
 std::vector<Variable> split(const Variable &var, const Dim dim,
-                            const std::vector<gsl::index> &indices);
+                            const std::vector<scipp::index> &indices);
 Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim);
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord);
 Variable permute(const Variable &var, const Dim dim,
-                 const std::vector<gsl::index> &indices);
+                 const std::vector<scipp::index> &indices);
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);

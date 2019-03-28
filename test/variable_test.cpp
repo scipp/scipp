@@ -307,19 +307,19 @@ TEST(Variable, setSlice) {
 
   auto d(empty);
   EXPECT_NE(parent, d);
-  for (const gsl::index index : {0, 1, 2, 3})
+  for (const scipp::index index : {0, 1, 2, 3})
     d(Dim::X, index).assign(parent(Dim::X, index));
   EXPECT_EQ(parent, d);
 
   d = empty;
   EXPECT_NE(parent, d);
-  for (const gsl::index index : {0, 1})
+  for (const scipp::index index : {0, 1})
     d(Dim::Y, index).assign(parent(Dim::Y, index));
   EXPECT_EQ(parent, d);
 
   d = empty;
   EXPECT_NE(parent, d);
-  for (const gsl::index index : {0, 1, 2})
+  for (const scipp::index index : {0, 1, 2})
     d(Dim::Z, index).assign(parent(Dim::Z, index));
   EXPECT_EQ(parent, d);
 }
@@ -331,7 +331,7 @@ TEST(Variable, slice) {
       {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
-  for (const gsl::index index : {0, 1, 2, 3}) {
+  for (const scipp::index index : {0, 1, 2, 3}) {
     Variable sliceX = parent(Dim::X, index);
     ASSERT_EQ(sliceX.dimensions(), Dimensions({{Dim::Z, 3}, {Dim::Y, 2}}));
     auto base = static_cast<double>(index);
@@ -343,12 +343,12 @@ TEST(Variable, slice) {
     EXPECT_EQ(sliceX.get(Data::Value)[5], base + 21.0);
   }
 
-  for (const gsl::index index : {0, 1}) {
+  for (const scipp::index index : {0, 1}) {
     Variable sliceY = parent(Dim::Y, index);
     ASSERT_EQ(sliceY.dimensions(), Dimensions({{Dim::Z, 3}, {Dim::X, 4}}));
     const auto &data = sliceY.get(Data::Value);
     auto base = static_cast<double>(index);
-    for (const gsl::index z : {0, 1, 2}) {
+    for (const scipp::index z : {0, 1, 2}) {
       EXPECT_EQ(data[4 * z + 0], 4 * base + 8 * static_cast<double>(z) + 1.0);
       EXPECT_EQ(data[4 * z + 1], 4 * base + 8 * static_cast<double>(z) + 2.0);
       EXPECT_EQ(data[4 * z + 2], 4 * base + 8 * static_cast<double>(z) + 3.0);
@@ -356,11 +356,11 @@ TEST(Variable, slice) {
     }
   }
 
-  for (const gsl::index index : {0, 1, 2}) {
+  for (const scipp::index index : {0, 1, 2}) {
     Variable sliceZ = parent(Dim::Z, index);
     ASSERT_EQ(sliceZ.dimensions(), Dimensions({{Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.get(Data::Value);
-    for (gsl::index xy = 0; xy < 8; ++xy)
+    for (scipp::index xy = 0; xy < 8; ++xy)
       EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
   }
 }
@@ -372,7 +372,7 @@ TEST(Variable, slice_range) {
       {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
-  for (const gsl::index index : {0, 1, 2, 3}) {
+  for (const scipp::index index : {0, 1, 2, 3}) {
     Variable sliceX = parent(Dim::X, index, index + 1);
     ASSERT_EQ(sliceX.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}));
@@ -384,7 +384,7 @@ TEST(Variable, slice_range) {
     EXPECT_EQ(sliceX.get(Data::Value)[5], index + 21.0);
   }
 
-  for (const gsl::index index : {0, 1, 2}) {
+  for (const scipp::index index : {0, 1, 2}) {
     Variable sliceX = parent(Dim::X, index, index + 2);
     ASSERT_EQ(sliceX.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}}));
@@ -402,12 +402,12 @@ TEST(Variable, slice_range) {
     EXPECT_EQ(sliceX.get(Data::Value)[11], index + 22.0);
   }
 
-  for (const gsl::index index : {0, 1}) {
+  for (const scipp::index index : {0, 1}) {
     Variable sliceY = parent(Dim::Y, index, index + 1);
     ASSERT_EQ(sliceY.dimensions(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 1}, {Dim::X, 4}}));
     const auto &data = sliceY.get(Data::Value);
-    for (const gsl::index z : {0, 1, 2}) {
+    for (const scipp::index z : {0, 1, 2}) {
       EXPECT_EQ(data[4 * z + 0], 4 * index + 8 * z + 1.0);
       EXPECT_EQ(data[4 * z + 1], 4 * index + 8 * z + 2.0);
       EXPECT_EQ(data[4 * z + 2], 4 * index + 8 * z + 3.0);
@@ -415,28 +415,28 @@ TEST(Variable, slice_range) {
     }
   }
 
-  for (const gsl::index index : {0}) {
+  for (const scipp::index index : {0}) {
     Variable sliceY = parent(Dim::Y, index, index + 2);
     EXPECT_EQ(sliceY, parent);
   }
 
-  for (const gsl::index index : {0, 1, 2}) {
+  for (const scipp::index index : {0, 1, 2}) {
     Variable sliceZ = parent(Dim::Z, index, index + 1);
     ASSERT_EQ(sliceZ.dimensions(),
               Dimensions({{Dim::Z, 1}, {Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.get(Data::Value);
-    for (gsl::index xy = 0; xy < 8; ++xy)
+    for (scipp::index xy = 0; xy < 8; ++xy)
       EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
   }
 
-  for (const gsl::index index : {0, 1}) {
+  for (const scipp::index index : {0, 1}) {
     Variable sliceZ = parent(Dim::Z, index, index + 2);
     ASSERT_EQ(sliceZ.dimensions(),
               Dimensions({{Dim::Z, 2}, {Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.get(Data::Value);
-    for (gsl::index xy = 0; xy < 8; ++xy)
+    for (scipp::index xy = 0; xy < 8; ++xy)
       EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
-    for (gsl::index xy = 0; xy < 8; ++xy)
+    for (scipp::index xy = 0; xy < 8; ++xy)
       EXPECT_EQ(data[8 + xy], 1.0 + 8 + xy + 8 * index);
   }
 }
@@ -624,25 +624,25 @@ TEST(VariableSlice, full_mutable_view) {
 
 TEST(VariableSlice, strides) {
   Variable var(Data::Value, {{Dim::Y, 3}, {Dim::X, 3}});
-  EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<gsl::index>{3}));
-  EXPECT_EQ(var(Dim::X, 1).strides(), (std::vector<gsl::index>{3}));
-  EXPECT_EQ(var(Dim::Y, 0).strides(), (std::vector<gsl::index>{1}));
-  EXPECT_EQ(var(Dim::Y, 1).strides(), (std::vector<gsl::index>{1}));
-  EXPECT_EQ(var(Dim::X, 0, 1).strides(), (std::vector<gsl::index>{3, 1}));
-  EXPECT_EQ(var(Dim::X, 1, 2).strides(), (std::vector<gsl::index>{3, 1}));
-  EXPECT_EQ(var(Dim::Y, 0, 1).strides(), (std::vector<gsl::index>{3, 1}));
-  EXPECT_EQ(var(Dim::Y, 1, 2).strides(), (std::vector<gsl::index>{3, 1}));
-  EXPECT_EQ(var(Dim::X, 0, 2).strides(), (std::vector<gsl::index>{3, 1}));
-  EXPECT_EQ(var(Dim::X, 1, 3).strides(), (std::vector<gsl::index>{3, 1}));
-  EXPECT_EQ(var(Dim::Y, 0, 2).strides(), (std::vector<gsl::index>{3, 1}));
-  EXPECT_EQ(var(Dim::Y, 1, 3).strides(), (std::vector<gsl::index>{3, 1}));
+  EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<scipp::index>{3}));
+  EXPECT_EQ(var(Dim::X, 1).strides(), (std::vector<scipp::index>{3}));
+  EXPECT_EQ(var(Dim::Y, 0).strides(), (std::vector<scipp::index>{1}));
+  EXPECT_EQ(var(Dim::Y, 1).strides(), (std::vector<scipp::index>{1}));
+  EXPECT_EQ(var(Dim::X, 0, 1).strides(), (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var(Dim::X, 1, 2).strides(), (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var(Dim::Y, 0, 1).strides(), (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var(Dim::Y, 1, 2).strides(), (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var(Dim::X, 0, 2).strides(), (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var(Dim::X, 1, 3).strides(), (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var(Dim::Y, 0, 2).strides(), (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var(Dim::Y, 1, 3).strides(), (std::vector<scipp::index>{3, 1}));
 
   EXPECT_EQ(var(Dim::X, 0, 1)(Dim::Y, 0, 1).strides(),
-            (std::vector<gsl::index>{3, 1}));
+            (std::vector<scipp::index>{3, 1}));
 
   Variable var3D(Data::Value, {{Dim::Z, 4}, {Dim::Y, 3}, {Dim::X, 2}});
   EXPECT_EQ(var3D(Dim::X, 0, 1)(Dim::Z, 0, 1).strides(),
-            (std::vector<gsl::index>{6, 2, 1}));
+            (std::vector<scipp::index>{6, 2, 1}));
 }
 
 TEST(VariableSlice, get) {
@@ -1124,8 +1124,10 @@ TEST(Variable, reshape_mutable) {
 
 TEST(Variable, reverse) {
   Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6});
-  Variable reverseX(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {3, 2, 1, 6, 5, 4});
-  Variable reverseY(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}}, {4, 5, 6, 1, 2, 3});
+  Variable reverseX(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}},
+                    {3, 2, 1, 6, 5, 4});
+  Variable reverseY(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}},
+                    {4, 5, 6, 1, 2, 3});
 
   EXPECT_EQ(reverse(var, Dim::X), reverseX);
   EXPECT_EQ(reverse(var, Dim::Y), reverseY);

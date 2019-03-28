@@ -28,14 +28,14 @@ BENCHMARK(BM_Dataset_get_with_many_columns)
 // Benchmark demonstrating a potential use of Dataset to replace Histogram. What
 // are the performance implications?
 static void BM_Dataset_as_Histogram(benchmark::State &state) {
-  gsl::index nPoint = state.range(0);
+  scipp::index nPoint = state.range(0);
   Dataset d;
   d.insert(Coord::Tof, {Dim::Tof, nPoint}, nPoint);
   d.insert(Data::Value, "", {Dim::Tof, nPoint}, nPoint);
   d.insert(Data::Variance, "", {Dim::Tof, nPoint}, nPoint);
   std::vector<Dataset> histograms;
-  gsl::index nSpec = std::min(1000000l, 10000000 / (nPoint + 1));
-  for (gsl::index i = 0; i < nSpec; ++i) {
+  scipp::index nSpec = std::min(1000000l, 10000000 / (nPoint + 1));
+  for (scipp::index i = 0; i < nSpec; ++i) {
     auto hist(d);
     // Break sharing
     hist.get(Data::Value);
@@ -45,7 +45,7 @@ static void BM_Dataset_as_Histogram(benchmark::State &state) {
 
   for (auto _ : state) {
     auto sum = histograms[0];
-    for (gsl::index i = 1; i < nSpec; ++i)
+    for (scipp::index i = 1; i < nSpec; ++i)
       sum += histograms[i];
   }
   state.SetItemsProcessed(state.iterations() * nSpec);
@@ -57,14 +57,14 @@ BENCHMARK(BM_Dataset_as_Histogram)->RangeMultiplier(2)->Range(0, 2 << 14);
 static void BM_Dataset_as_Histogram_with_slice(benchmark::State &state) {
   Dataset d;
   d.insert(Coord::Tof, {Dim::Tof, 1000}, 1000);
-  gsl::index nSpec = 10000;
+  scipp::index nSpec = 10000;
   Dimensions dims({{Dim::Tof, 1000}, {Dim::Spectrum, nSpec}});
   d.insert(Data::Value, "sample", dims, dims.volume());
   d.insert(Data::Variance, "sample", dims, dims.volume());
 
   for (auto _ : state) {
     auto sum = d(Dim::Spectrum, 0);
-    for (gsl::index i = 1; i < nSpec; ++i)
+    for (scipp::index i = 1; i < nSpec; ++i)
       sum += d(Dim::Spectrum, i);
   }
   state.SetItemsProcessed(state.iterations() * nSpec);
@@ -73,7 +73,8 @@ static void BM_Dataset_as_Histogram_with_slice(benchmark::State &state) {
 }
 BENCHMARK(BM_Dataset_as_Histogram_with_slice);
 
-Dataset makeSingleDataDataset(const gsl::index nSpec, const gsl::index nPoint) {
+Dataset makeSingleDataDataset(const scipp::index nSpec,
+                              const scipp::index nPoint) {
   Dataset d;
 
   d.insert(Coord::DetectorId, {Dim::Detector, nSpec}, nSpec);
@@ -89,7 +90,7 @@ Dataset makeSingleDataDataset(const gsl::index nSpec, const gsl::index nPoint) {
   return d;
 }
 
-Dataset makeDataset(const gsl::index nSpec, const gsl::index nPoint) {
+Dataset makeDataset(const scipp::index nSpec, const scipp::index nPoint) {
   Dataset d;
 
   d.insert(Coord::DetectorId, {Dim::Detector, nSpec}, nSpec);
@@ -108,8 +109,8 @@ Dataset makeDataset(const gsl::index nSpec, const gsl::index nPoint) {
 }
 
 static void BM_Dataset_plus(benchmark::State &state) {
-  gsl::index nSpec = 10000;
-  gsl::index nPoint = state.range(0);
+  scipp::index nSpec = 10000;
+  scipp::index nPoint = state.range(0);
   auto d = makeDataset(nSpec, nPoint);
   for (auto _ : state) {
     d += d;
@@ -123,8 +124,8 @@ static void BM_Dataset_plus(benchmark::State &state) {
 BENCHMARK(BM_Dataset_plus)->RangeMultiplier(2)->Range(2 << 9, 2 << 12);
 
 static void BM_Dataset_multiply(benchmark::State &state) {
-  gsl::index nSpec = state.range(0);
-  gsl::index nPoint = 1024;
+  scipp::index nSpec = state.range(0);
+  scipp::index nPoint = 1024;
   auto d = makeSingleDataDataset(nSpec, nPoint);
   const auto d2 = makeSingleDataDataset(nSpec, nPoint);
   for (auto _ : state) {
@@ -173,8 +174,8 @@ Dataset doWork(Dataset d) {
 }
 
 static void BM_Dataset_cache_blocking_reference(benchmark::State &state) {
-  gsl::index nSpec = 10000;
-  gsl::index nPoint = state.range(0);
+  scipp::index nSpec = 10000;
+  scipp::index nPoint = state.range(0);
   auto d = makeDataset(nSpec, nPoint);
   auto out(d);
   for (auto _ : state) {
@@ -191,11 +192,11 @@ BENCHMARK(BM_Dataset_cache_blocking_reference)
     ->Range(2 << 9, 2 << 12);
 
 static void BM_Dataset_cache_blocking(benchmark::State &state) {
-  gsl::index nSpec = 10000;
-  gsl::index nPoint = state.range(0);
+  scipp::index nSpec = 10000;
+  scipp::index nPoint = state.range(0);
   auto d = makeDataset(nSpec, nPoint);
   for (auto _ : state) {
-    for (gsl::index i = 0; i < nSpec; ++i) {
+    for (scipp::index i = 0; i < nSpec; ++i) {
       d(Dim::Spectrum, i).assign(doWork(d(Dim::Spectrum, i)));
     }
   }
@@ -210,16 +211,16 @@ BENCHMARK(BM_Dataset_cache_blocking)
     ->Range(2 << 9, 2 << 14);
 
 static void BM_Dataset_cache_blocking_no_slicing(benchmark::State &state) {
-  gsl::index nSpec = 10000;
-  gsl::index nPoint = state.range(0);
+  scipp::index nSpec = 10000;
+  scipp::index nPoint = state.range(0);
   const auto d = makeDataset(nSpec, nPoint);
   std::vector<Dataset> slices;
-  for (gsl::index i = 0; i < nSpec; ++i) {
+  for (scipp::index i = 0; i < nSpec; ++i) {
     slices.emplace_back(d(Dim::Spectrum, i));
   }
 
   for (auto _ : state) {
-    for (gsl::index i = 0; i < nSpec; ++i) {
+    for (scipp::index i = 0; i < nSpec; ++i) {
       slices[i] = doWork(std::move(slices[i]));
     }
   }
@@ -233,7 +234,7 @@ BENCHMARK(BM_Dataset_cache_blocking_no_slicing)
     ->RangeMultiplier(2)
     ->Range(2 << 9, 2 << 14);
 
-Dataset makeBeamline(const gsl::index nDet) {
+Dataset makeBeamline(const scipp::index nDet) {
   // TODO The created beamline is currently very incomplete so the full cost
   // would be higher.
   Dataset dets;
@@ -251,13 +252,13 @@ Dataset makeBeamline(const gsl::index nDet) {
   return d;
 }
 
-Dataset makeSpectra(const gsl::index nSpec) {
+Dataset makeSpectra(const scipp::index nSpec) {
   Dataset d;
 
   d.insert(Coord::DetectorGrouping, {Dim::Spectrum, nSpec});
   d.insert(Coord::SpectrumNumber, {Dim::Spectrum, nSpec});
   auto groups = d.get(Coord::DetectorGrouping);
-  for (gsl::index i = 0; i < groups.size(); ++i)
+  for (scipp::index i = 0; i < groups.size(); ++i)
     groups[i] = {i};
   auto nums = d.get(Coord::SpectrumNumber);
   std::iota(nums.begin(), nums.end(), 1);
@@ -265,7 +266,7 @@ Dataset makeSpectra(const gsl::index nSpec) {
   return d;
 }
 
-Dataset makeData(const gsl::index nSpec, const gsl::index nPoint) {
+Dataset makeData(const scipp::index nSpec, const scipp::index nPoint) {
   Dataset d;
   d.insert(Coord::Tof, {Dim::Tof, nPoint + 1});
   auto tofs = d.get(Coord::Tof);
@@ -276,7 +277,7 @@ Dataset makeData(const gsl::index nSpec, const gsl::index nPoint) {
   return d;
 }
 
-Dataset makeWorkspace2D(const gsl::index nSpec, const gsl::index nPoint) {
+Dataset makeWorkspace2D(const scipp::index nSpec, const scipp::index nPoint) {
   auto d = makeBeamline(nSpec);
   d.merge(makeSpectra(nSpec));
   d.merge(makeData(nSpec, nPoint));
@@ -284,8 +285,8 @@ Dataset makeWorkspace2D(const gsl::index nSpec, const gsl::index nPoint) {
 }
 
 static void BM_Dataset_Workspace2D_create(benchmark::State &state) {
-  gsl::index nSpec = 1024 * 1024;
-  gsl::index nPoint = 2;
+  scipp::index nSpec = 1024 * 1024;
+  scipp::index nPoint = 2;
   for (auto _ : state) {
     auto d = makeWorkspace2D(nSpec, nPoint);
   }
@@ -294,8 +295,8 @@ static void BM_Dataset_Workspace2D_create(benchmark::State &state) {
 BENCHMARK(BM_Dataset_Workspace2D_create);
 
 static void BM_Dataset_Workspace2D_copy(benchmark::State &state) {
-  gsl::index nSpec = 1024 * 1024;
-  gsl::index nPoint = 2;
+  scipp::index nSpec = 1024 * 1024;
+  scipp::index nPoint = 2;
   auto d = makeWorkspace2D(nSpec, nPoint);
   for (auto _ : state) {
     auto copy(d);
@@ -305,8 +306,8 @@ static void BM_Dataset_Workspace2D_copy(benchmark::State &state) {
 BENCHMARK(BM_Dataset_Workspace2D_copy);
 
 static void BM_Dataset_Workspace2D_copy_and_write(benchmark::State &state) {
-  gsl::index nSpec = 1024 * 1024;
-  gsl::index nPoint = state.range(0);
+  scipp::index nSpec = 1024 * 1024;
+  scipp::index nPoint = state.range(0);
   auto d = makeWorkspace2D(nSpec, nPoint);
   for (auto _ : state) {
     auto copy(d);
@@ -320,8 +321,8 @@ BENCHMARK(BM_Dataset_Workspace2D_copy_and_write)
     ->Range(2, 2 << 7);
 
 static void BM_Dataset_Workspace2D_rebin(benchmark::State &state) {
-  gsl::index nSpec = state.range(0) * 1024;
-  gsl::index nPoint = 1024;
+  scipp::index nSpec = state.range(0) * 1024;
+  scipp::index nPoint = 1024;
 
   Variable newCoord(Coord::Tof, {Dim::Tof, nPoint / 2});
   double value = 0.0;
@@ -345,7 +346,8 @@ BENCHMARK(BM_Dataset_Workspace2D_rebin)
     ->Range(32, 1024)
     ->UseRealTime();
 
-Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
+Dataset makeEventWorkspace(const scipp::index nSpec,
+                           const scipp::index nEvent) {
   auto d = makeBeamline(nSpec);
   d.merge(makeSpectra(nSpec));
 
@@ -360,7 +362,7 @@ Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
   empty.insert(Data::PulseTime, "", {Dim::Event, 0});
   for (auto &eventList : d.get(Data::Events)) {
     // 1/4 of the event lists is empty
-    gsl::index count = std::max(0l, dist(mt) - nEvent / 4);
+    scipp::index count = std::max(0l, dist(mt) - nEvent / 4);
     if (count == 0)
       eventList = empty;
     else {
@@ -373,8 +375,8 @@ Dataset makeEventWorkspace(const gsl::index nSpec, const gsl::index nEvent) {
 }
 
 static void BM_Dataset_EventWorkspace_create(benchmark::State &state) {
-  gsl::index nSpec = 1024 * 1024;
-  gsl::index nEvent = 0;
+  scipp::index nSpec = 1024 * 1024;
+  scipp::index nEvent = 0;
   for (auto _ : state) {
     auto d = makeEventWorkspace(nSpec, nEvent);
   }
@@ -383,8 +385,8 @@ static void BM_Dataset_EventWorkspace_create(benchmark::State &state) {
 BENCHMARK(BM_Dataset_EventWorkspace_create);
 
 static void BM_Dataset_EventWorkspace_copy(benchmark::State &state) {
-  gsl::index nSpec = 1024 * 1024;
-  gsl::index nEvent = 0;
+  scipp::index nSpec = 1024 * 1024;
+  scipp::index nEvent = 0;
   auto d = makeEventWorkspace(nSpec, nEvent);
   for (auto _ : state) {
     auto copy(d);
@@ -394,8 +396,8 @@ static void BM_Dataset_EventWorkspace_copy(benchmark::State &state) {
 BENCHMARK(BM_Dataset_EventWorkspace_copy);
 
 static void BM_Dataset_EventWorkspace_copy_and_write(benchmark::State &state) {
-  gsl::index nSpec = 1024 * 1024;
-  gsl::index nEvent = state.range(0);
+  scipp::index nSpec = 1024 * 1024;
+  scipp::index nEvent = state.range(0);
   auto d = makeEventWorkspace(nSpec, nEvent);
   for (auto _ : state) {
     auto copy(d);
@@ -409,14 +411,14 @@ BENCHMARK(BM_Dataset_EventWorkspace_copy_and_write)
     ->Range(2, 2 << 10);
 
 static void BM_Dataset_EventWorkspace_plus(benchmark::State &state) {
-  gsl::index nSpec = 128 * 1024;
-  gsl::index nEvent = state.range(0);
+  scipp::index nSpec = 128 * 1024;
+  scipp::index nEvent = state.range(0);
   auto d = makeEventWorkspace(nSpec, nEvent);
   for (auto _ : state) {
     auto sum = d + d;
   }
 
-  gsl::index actualEvents = 0;
+  scipp::index actualEvents = 0;
   for (auto &eventList : d.get(Data::Events))
     actualEvents += eventList.dimensions()[Dim::Event];
   state.SetItemsProcessed(state.iterations());
@@ -430,8 +432,8 @@ BENCHMARK(BM_Dataset_EventWorkspace_plus)
     ->Range(2, 2 << 12);
 
 static void BM_Dataset_EventWorkspace_grow(benchmark::State &state) {
-  gsl::index nSpec = 128 * 1024;
-  gsl::index nEvent = state.range(0);
+  scipp::index nSpec = 128 * 1024;
+  scipp::index nEvent = state.range(0);
   auto d = makeEventWorkspace(nSpec, nEvent);
   auto update = makeEventWorkspace(nSpec, 100);
   for (auto _ : state) {
@@ -442,7 +444,7 @@ static void BM_Dataset_EventWorkspace_grow(benchmark::State &state) {
     sum += update;
   }
 
-  gsl::index actualEvents = 0;
+  scipp::index actualEvents = 0;
   for (auto &eventList : update.get(Data::Events))
     actualEvents += eventList.dimensions()[Dim::Event];
   state.SetItemsProcessed(state.iterations() * actualEvents);

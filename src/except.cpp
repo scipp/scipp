@@ -305,7 +305,7 @@ DimensionNotFoundError::DimensionNotFoundError(const Dimensions &expected,
 
 DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                                            const Dim actual,
-                                           const gsl::index length)
+                                           const scipp::index length)
     : DimensionError("Expected dimension to be in " + to_string(expected) +
                      ", got " + to_string(actual) +
                      " with mismatching length " + std::to_string(length) +
@@ -351,7 +351,7 @@ UnitMismatchError::UnitMismatchError(const Unit &a, const Unit &b)
 
 namespace expect {
 void dimensionMatches(const Dimensions &dims, const Dim dim,
-                      const gsl::index length) {
+                      const scipp::index length) {
   if (dims[dim] != length)
     throw except::DimensionLengthError(dims, dim, length);
 }

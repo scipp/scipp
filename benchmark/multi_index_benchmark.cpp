@@ -18,10 +18,10 @@ static void BM_MultiIndex(benchmark::State &state) {
   dims2.add(Dim::X, 1000);
   const auto count = dims1.volume();
 
-  gsl::index result{0};
+  scipp::index result{0};
   for (auto _ : state) {
     MultiIndex index(dims1, {dims1, dims2});
-    for (gsl::index i = 0; i < count; ++i) {
+    for (scipp::index i = 0; i < count; ++i) {
       // benchmark::DoNotOptimize(index.get<0>()) leads to inefficient code (2x
       // slower), we need to actually use the index;
       result -= index.get<0>();

@@ -10,10 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include <gsl/gsl_util>
-
 #include "dimension.h"
 #include "except.h"
+#include "index.h"
 #include "span.h"
 
 /// Dimensions are accessed very frequently, so packing everything into a single
@@ -23,23 +22,23 @@
 class Dimensions {
 public:
   Dimensions() noexcept {}
-  Dimensions(const Dim dim, const gsl::index size)
+  Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
   Dimensions(const std::vector<Dim> &labels,
-             const std::vector<gsl::index> &shape) {
+             const std::vector<scipp::index> &shape) {
     if (labels.size() != shape.size())
       throw std::runtime_error("Constructing Dimensions: Number of dimensions "
                                "labels does not match shape.");
-    for (gsl::index i = labels.size() - 1; i >= 0; --i)
+    for (scipp::index i = labels.size() - 1; i >= 0; --i)
       add(labels[i], shape[i]);
   }
-  Dimensions(const std::initializer_list<std::pair<Dim, gsl::index>> dims) {
+  Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
     // TODO Check for duplicate dimension.
     if (dims.size() > 6)
       throw std::runtime_error("At most 6 dimensions are supported.");
     m_ndim = static_cast<int32_t>(dims.size());
     auto dim = dims.begin();
-    for (gsl::index i = 0; i < m_ndim; ++i, ++dim) {
+    for (scipp::index i = 0; i < m_ndim; ++i, ++dim) {
       m_dims[i] = dim->first;
       if (m_dims[i] == Dim::Invalid)
         throw std::runtime_error("Dim::Invalid is not a valid dimension.");
@@ -70,14 +69,14 @@ public:
   // TODO Remove in favor of the new ndim?
   int32_t count() const noexcept { return m_ndim; }
 
-  gsl::index volume() const noexcept {
-    gsl::index volume{1};
+  scipp::index volume() const noexcept {
+    scipp::index volume{1};
     for (int32_t dim = 0; dim < ndim(); ++dim)
       volume *= m_shape[dim];
     return volume;
   }
 
-  scipp::span<const gsl::index> shape() const noexcept {
+  scipp::span<const scipp::index> shape() const noexcept {
     return {m_shape, m_shape + m_ndim};
   }
 
@@ -85,14 +84,14 @@ public:
     return {m_dims, m_dims + m_ndim};
   }
 
-  gsl::index operator[](const Dim dim) const {
+  scipp::index operator[](const Dim dim) const {
     for (int32_t i = 0; i < 6; ++i)
       if (m_dims[i] == dim)
         return m_shape[i];
     throw dataset::except::DimensionNotFoundError(*this, dim);
   }
 
-  gsl::index &operator[](const Dim dim) {
+  scipp::index &operator[](const Dim dim) {
     for (int32_t i = 0; i < 6; ++i)
       if (m_dims[i] == dim)
         return m_shape[i];
@@ -110,17 +109,17 @@ public:
 
   bool isContiguousIn(const Dimensions &parent) const;
 
-  Dim label(const gsl::index i) const;
-  void relabel(const gsl::index i, const Dim label) { m_dims[i] = label; }
-  gsl::index size(const gsl::index i) const;
-  gsl::index offset(const Dim label) const;
-  void resize(const Dim label, const gsl::index size);
-  void resize(const gsl::index i, const gsl::index size);
+  Dim label(const scipp::index i) const;
+  void relabel(const scipp::index i, const Dim label) { m_dims[i] = label; }
+  scipp::index size(const scipp::index i) const;
+  scipp::index offset(const Dim label) const;
+  void resize(const Dim label, const scipp::index size);
+  void resize(const scipp::index i, const scipp::index size);
   void erase(const Dim label);
 
   // TODO Better names required.
-  void add(const Dim label, const gsl::index size);
-  void addInner(const Dim label, const gsl::index size);
+  void add(const Dim label, const scipp::index size);
+  void addInner(const Dim label, const scipp::index size);
 
   Dim inner() const;
 
@@ -128,10 +127,10 @@ public:
 
 private:
   // This is 56 Byte, or would be 40 Byte for small size 1.
-  // boost::container::small_vector<std::pair<Dim, gsl::index>, 2> m_dims;
+  // boost::container::small_vector<std::pair<Dim, scipp::index>, 2> m_dims;
   // Support at most 6 dimensions, should be sufficient?
   // 6*8 Byte = 48 Byte
-  gsl::index m_shape[6]{-1, -1, -1, -1, -1, -1};
+  scipp::index m_shape[6]{-1, -1, -1, -1, -1, -1};
   int32_t m_ndim{0};
   Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};

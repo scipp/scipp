@@ -12,10 +12,10 @@
 
 #include <Eigen/Dense>
 #include <boost/container/small_vector.hpp>
-#include <gsl/gsl_util>
 
 #include "bool.h"
 #include "dimension.h"
+#include "index.h"
 #include "traits.h"
 #include "unit.h"
 #include "value_with_delta.h"
@@ -175,7 +175,7 @@ struct CoordDef {
   };
   struct DetectorGrouping {
     // Dummy for now, or sufficient like this?
-    using type = boost::container::small_vector<gsl::index, 1>;
+    using type = boost::container::small_vector<scipp::index, 1>;
     static constexpr auto unit = units::dimensionless;
   };
   struct Row {
@@ -428,7 +428,8 @@ template <> constexpr bool is_dimension_coordinate<CoordDef::Row> = true;
 
 template <class Tag> constexpr Dim coordinate_dimension = Dim::Invalid;
 template <> constexpr Dim coordinate_dimension<CoordDef::Tof> = Dim::Tof;
-template <> constexpr Dim coordinate_dimension<CoordDef::DSpacing> = Dim::DSpacing;
+template <>
+constexpr Dim coordinate_dimension<CoordDef::DSpacing> = Dim::DSpacing;
 template <> constexpr Dim coordinate_dimension<CoordDef::Energy> = Dim::Energy;
 template <> constexpr Dim coordinate_dimension<CoordDef::DeltaE> = Dim::DeltaE;
 template <> constexpr Dim coordinate_dimension<CoordDef::X> = Dim::X;
@@ -442,7 +443,8 @@ constexpr Dim coordinate_dimension<CoordDef::Position> = Dim::Position;
 template <>
 constexpr Dim coordinate_dimension<CoordDef::SpectrumNumber> = Dim::Spectrum;
 template <> constexpr Dim coordinate_dimension<CoordDef::Row> = Dim::Row;
-template <> constexpr Dim coordinate_dimension<CoordDef::Temperature> = Dim::Temperature;
+template <>
+constexpr Dim coordinate_dimension<CoordDef::Temperature> = Dim::Temperature;
 } // namespace detail
 
 template <class... Ts>

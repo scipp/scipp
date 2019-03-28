@@ -80,7 +80,7 @@ template <class D, class Tag> struct ref_type {
 template <class D, class Tag> struct ref_type<D, Bin<Tag>> {
   // First is the offset to the next edge.
   using type = std::pair<
-      gsl::index,
+      scipp::index,
       scipp::span<const typename detail::value_type_t<Bin<Tag>>::type>>;
 };
 
@@ -111,14 +111,14 @@ struct ref_type<D, MDZipViewImpl<D, Tags...>> {
 template <class D, class T> using ref_type_t = typename ref_type<D, T>::type;
 
 template <class D, class Tag> struct SubdataHelper {
-  static auto get(const ref_type_t<D, Tag> &data, const gsl::index offset) {
+  static auto get(const ref_type_t<D, Tag> &data, const scipp::index offset) {
     return data.subspan(offset);
   }
 };
 
 template <class D, class Tag> struct SubdataHelper<D, Bin<Tag>> {
   static auto get(const ref_type_t<D, Bin<Tag>> &data,
-                  const gsl::index offset) {
+                  const scipp::index offset) {
     return ref_type_t<D, Bin<Tag>>{data.first, data.second.subspan(offset)};
   }
 };
@@ -127,7 +127,7 @@ template <class D, class Tag> struct SubdataHelper<D, Bin<Tag>> {
 /// Coord::Position.
 template <class D, class Tag> struct ItemHelper {
   static element_return_type_t<D, Tag> get(const ref_type_t<D, Tag> &data,
-                                           gsl::index index) {
+                                           scipp::index index) {
     return data[index];
   }
 };
@@ -136,7 +136,7 @@ template <class D, class Tag> struct ItemHelper {
 // or stored directly.
 template <class D> struct ItemHelper<D, const Coord::Position_t> {
   static element_return_type_t<D, const Coord::Position_t>
-  get(const ref_type_t<D, const Coord::Position_t> &data, gsl::index index) {
+  get(const ref_type_t<D, const Coord::Position_t> &data, scipp::index index) {
     if (data.second.empty())
       return data.first[index];
     if (data.second[index].empty())
@@ -151,7 +151,7 @@ template <class D> struct ItemHelper<D, const Coord::Position_t> {
 
 template <class D> struct ItemHelper<D, Data::Events_t> {
   static element_return_type_t<D, Data::Events_t>
-  get(const ref_type_t<D, Data::Events_t> &data, gsl::index index) {
+  get(const ref_type_t<D, Data::Events_t> &data, scipp::index index) {
     if (!std::get<1>(data).empty())
       return {std::get<1>(data)[index], std::get<2>(data)[index]};
     return {std::get<0>(data)[index]};
@@ -162,7 +162,7 @@ template <class D>
 struct ItemHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
   static element_return_type_t<D, std::remove_cv_t<decltype(Data::StdDev)>>
   get(const ref_type_t<D, std::remove_cv_t<decltype(Data::StdDev)>> &data,
-      gsl::index index) {
+      scipp::index index) {
     return std::sqrt(
         ItemHelper<D, std::remove_cv_t<decltype(Data::Variance)>>::get(data,
                                                                        index));
@@ -171,7 +171,7 @@ struct ItemHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
 
 template <class D, class Tag> struct ItemHelper<D, Bin<Tag>> {
   static element_return_type_t<D, Bin<Tag>>
-  get(const ref_type_t<D, Bin<Tag>> &data, gsl::index index) {
+  get(const ref_type_t<D, Bin<Tag>> &data, scipp::index index) {
     auto offset = data.first;
     return DataBin(data.second[index], data.second[index + offset]);
   }
@@ -184,7 +184,8 @@ struct ItemHelper<D, MDZipViewImpl<D, Tags...>> {
       detail::index<Tag, std::tuple<Tags...>>::value;
 
   static element_return_type_t<D, MDZipViewImpl<D, Tags...>>
-  get(const ref_type_t<D, MDZipViewImpl<D, Tags...>> &data, gsl::index index) {
+  get(const ref_type_t<D, MDZipViewImpl<D, Tags...>> &data,
+      scipp::index index) {
     // Add offset to each span passed to the nested MDZipView.
     MultiIndex nestedIndex = std::get<0>(data);
     nestedIndex.setIndex(index);
@@ -244,7 +245,7 @@ public:
   class iterator;
   class Item : public GetterMixin<Item, Ts>... {
   public:
-    Item(const gsl::index index, const MultiIndex &multiIndex,
+    Item(const scipp::index index, const MultiIndex &multiIndex,
          const std::tuple<ref_type_t<D, Ts>...> &variables)
         : m_index(multiIndex), m_variables(&variables) {
       setIndex(index);
@@ -267,7 +268,7 @@ public:
     // (access only by reference).
     Item(const Item &) = default;
     Item &operator=(const Item &) = default;
-    void setIndex(const gsl::index index) { m_index.setIndex(index); }
+    void setIndex(const scipp::index index) { m_index.setIndex(index); }
 
     bool operator==(const Item &other) const {
       return m_index == other.m_index;
@@ -281,7 +282,7 @@ public:
       : public boost::iterator_facade<iterator, const Item,
                                       boost::random_access_traversal_tag> {
   public:
-    iterator(const gsl::index index, const MultiIndex &multiIndex,
+    iterator(const scipp::index index, const MultiIndex &multiIndex,
              const std::tuple<ref_type_t<D, Ts>...> &variables)
         : m_item(index, multiIndex, variables) {}
 
@@ -316,7 +317,7 @@ public:
   MDZipViewImpl(const MDZipViewImpl &other,
                 const std::tuple<ref_type_t<D, Ts>...> &data);
 
-  gsl::index size() const { return std::get<0>(m_variables); }
+  scipp::index size() const { return std::get<0>(m_variables); }
   iterator begin() const {
     return {0, std::get<1>(m_variables), std::get<2>(m_variables)};
   }
@@ -326,13 +327,13 @@ public:
   }
 
 private:
-  std::tuple<const gsl::index, const MultiIndex,
+  std::tuple<const scipp::index, const MultiIndex,
              const std::tuple<ref_type_t<D, Ts>...>>
   makeVariables(D &dataset, const std::set<Dim> &fixedDimensions,
                 const std::string &name = std::string{}) const;
 
   const std::tuple<detail::unit_t<Ts>...> m_units;
-  const std::tuple<const gsl::index, const MultiIndex,
+  const std::tuple<const scipp::index, const MultiIndex,
                    const std::tuple<ref_type_t<D, Ts>...>>
       m_variables;
 };
@@ -568,10 +569,10 @@ template <class D, class Tag> struct DataHelper<D, Bin<Tag>> {
     static_cast<void>(iterationDimensions);
     static_cast<void>(name);
     // Compute offset to next edge.
-    gsl::index offset = 1;
+    scipp::index offset = 1;
     const auto &dims = dataset(Tag{}).dimensions();
     const auto &actual = dataset.dimensions();
-    for (gsl::index i = dims.ndim() - 1; i >= 0; --i) {
+    for (scipp::index i = dims.ndim() - 1; i >= 0; --i) {
       if (dims.size(i) != actual[dims.label(i)])
         break;
       offset *= dims.size(i);
@@ -722,7 +723,7 @@ MDZipViewImpl<D, Ts...>::MDZipViewImpl(
 
 template <class D, class... Ts>
 using makeVariableReturnType =
-    std::tuple<const gsl::index, const MultiIndex,
+    std::tuple<const scipp::index, const MultiIndex,
                const std::tuple<ref_type_t<D, Ts>...>>;
 
 template <class D, class... Ts>
@@ -734,7 +735,7 @@ MDZipViewImpl<D, Ts...>::makeVariables(D &dataset,
       DimensionHelper<D, Ts>::get(dataset, fixedDimensions, name)...};
   Dimensions iterationDimensions(
       relevantDimensions(dataset, subdimensions, fixedDimensions));
-  return std::tuple<const gsl::index, const MultiIndex,
+  return std::tuple<const scipp::index, const MultiIndex,
                     const std::tuple<ref_type_t<D, Ts>...>>{
       iterationDimensions.volume(),
       MultiIndex(iterationDimensions, subdimensions),
