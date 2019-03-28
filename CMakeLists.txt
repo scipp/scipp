@@ -3,7 +3,7 @@
 # Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 # National Laboratory, and European Spallation Source ERIC.
 cmake_minimum_required(VERSION 3.9)
-project(dataset)
+project(scipp)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

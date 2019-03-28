@@ -37,9 +37,9 @@ set(SRC_FILES
     unit.cpp
     variable.cpp)
 
-add_library(Dataset STATIC ${INC_FILES} ${SRC_FILES})
-target_link_libraries(Dataset PUBLIC Boost::boost OpenMP::OpenMP_CXX)
-target_include_directories(Dataset SYSTEM
+add_library(ScippCore STATIC ${INC_FILES} ${SRC_FILES})
+target_link_libraries(ScippCore PUBLIC Boost::boost OpenMP::OpenMP_CXX)
+target_include_directories(ScippCore SYSTEM
                            PUBLIC "." ".." ${CMAKE_BINARY_DIR}/Eigen-src
                            PUBLIC "../../range-v3/include")
-set_target_properties(Dataset PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(ScippCore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

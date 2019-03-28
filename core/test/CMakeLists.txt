@@ -2,7 +2,7 @@
 # @author Simon Heybrock
 # Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 # National Laboratory, and European Spallation Source ERIC.
-add_executable ( dataset_test
+add_executable ( scipp_core_test
   bool_test.cpp
   convert_test.cpp
   dataset_test.cpp
@@ -21,9 +21,9 @@ add_executable ( dataset_test
   Workspace2D_test.cpp
   zip_view_test.cpp
   )
-target_link_libraries( dataset_test
+target_link_libraries( scipp_core_test
   LINK_PRIVATE
-  Dataset
+  ScippCore
   gtest_main
   ${GTEST_LIBRARIES} ${GMOCK_LIBRARIES} )
-target_include_directories ( dataset_test SYSTEM PRIVATE "../range-v3/include" )
+target_include_directories ( scipp_core_test SYSTEM PRIVATE "../range-v3/include" )
