@@ -11,9 +11,9 @@
 #include <vector>
 
 #include <gsl/gsl_util>
-#include <gsl/span>
 
 #include "dimension.h"
+#include "span.h"
 #include "except.h"
 
 /// Dimensions are accessed very frequently, so packing everything into a single

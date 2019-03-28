@@ -528,11 +528,11 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
   if (!dims.contains(dim) && (begin != 0 || end != 1))
     throw std::runtime_error("VariableConcept: Slice index out of range.");
   if (!dims.contains(dim) || dims[dim] == end - begin) {
-    return gsl::make_span(model.data(), model.data() + model.size());
+    return gsl::span(model.data(), model.data() + model.size());
   }
   const gsl::index beginOffset = begin * dims.offset(dim);
   const gsl::index endOffset = end * dims.offset(dim);
-  return gsl::make_span(model.data() + beginOffset, model.data() + endOffset);
+  return gsl::span(model.data() + beginOffset, model.data() + endOffset);
 }
 
 /// Implementation of VariableConcept that holds data.
@@ -549,7 +549,7 @@ public:
   }
 
   gsl::span<value_type> getSpan() override {
-    return gsl::make_span(m_model.data(), m_model.data() + size());
+    return gsl::span(m_model.data(), m_model.data() + size());
   }
   gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
                                 const gsl::index end) override {
@@ -557,7 +557,7 @@ public:
   }
 
   gsl::span<const value_type> getSpan() const override {
-    return gsl::make_span(m_model.data(), m_model.data() + size());
+    return gsl::span(m_model.data(), m_model.data() + size());
   }
   gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
                                       const gsl::index end) const override {
@@ -648,7 +648,7 @@ public:
     if constexpr (std::is_const<typename T::element_type>::value)
       return gsl::span<value_type>();
     else
-      return gsl::make_span(m_model.data(), m_model.data() + size());
+      return gsl::span(m_model.data(), m_model.data() + size());
   }
   gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
                                 const gsl::index end) override {
@@ -666,7 +666,7 @@ public:
 
   gsl::span<const value_type> getSpan() const override {
     requireContiguous();
-    return gsl::make_span(m_model.data(), m_model.data() + size());
+    return gsl::span(m_model.data(), m_model.data() + size());
   }
   gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
                                       const gsl::index end) const override {

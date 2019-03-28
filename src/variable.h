@@ -10,10 +10,10 @@
 #include <type_traits>
 
 #include <gsl/gsl_util>
-#include <gsl/span>
 #include <numeric>
 
 #include "dimensions.h"
+#include "span.h"
 #include "tags.h"
 #include "unit.h"
 #include "variable_view.h"
