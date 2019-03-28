@@ -6,7 +6,6 @@
 #ifndef COUNTS_H
 #define COUNTS_H
 
-#include <initializer_list>
 #include <vector>
 
 #include "dimension.h"
@@ -18,11 +17,11 @@ class VariableSlice;
 namespace counts {
 void toDensity(const VariableSlice var, const std::vector<Variable> &binWidths);
 Dataset toDensity(Dataset d, const Dim dim);
-Dataset toDensity(Dataset d, const std::initializer_list<Dim> &dims);
+Dataset toDensity(Dataset d, const std::vector<Dim> &dims);
 void fromDensity(const VariableSlice var,
                  const std::vector<Variable> &binWidths);
 Dataset fromDensity(Dataset d, const Dim dim);
-Dataset fromDensity(Dataset d, const std::initializer_list<Dim> &dims);
+Dataset fromDensity(Dataset d, const std::vector<Dim> &dims);
 bool isDensity(const Variable &var);
 } // namespace counts
 
