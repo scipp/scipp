@@ -118,7 +118,7 @@ public:
     return ranges::view::zip(*std::get<Is>(m_fields)...);
   }
 
-  gsl::index size() const { return std::get<0>(m_fields)->size(); }
+  scipp::index size() const { return std::get<0>(m_fields)->size(); }
 
   auto begin() const noexcept {
     return makeView(std::make_index_sequence<sizeof...(Fields)>{}).begin();
@@ -297,12 +297,12 @@ public:
       if (std::count(keyList.begin(), keyList.end(), key) != 1)
         throw std::runtime_error("Duplicate key.");
       const auto &name = std::get<std::string>(key);
-      gsl::index count = 0;
+      scipp::index count = 0;
       for (const auto &key2 : keyList) {
         if (name == std::get<std::string>(key2))
           ++count;
       }
-      gsl::index requiredCount = 0;
+      scipp::index requiredCount = 0;
       for (const auto &var : dataset) {
         if (var.isData() && name == var.name())
           ++requiredCount;
@@ -311,14 +311,14 @@ public:
     }
   }
 
-  gsl::index size() const { return m_view.size(); }
-  auto operator[](const gsl::index i) const {
+  scipp::index size() const { return m_view.size(); }
+  auto operator[](const scipp::index i) const {
     return m_mayResizeItems
                ? ItemProxy<item_type, true, Keys...>::get(m_view[i])
                : ItemProxy<item_type, false, Keys...>::get(m_view[i]);
   }
 
-  // TODO WARNING: We are creating the zip view from temporary gsl::span
+  // TODO WARNING: We are creating the zip view from temporary scipp::span
   // objects. ranges::view::zip_view takes ownership of this temporary objects.
   // The iterators then reference this object (if zip_view was based on directly
   // on std::vector, the iterator would reference the vector, so this problem

@@ -26,8 +26,8 @@ namespace py = pybind11;
 
 template <typename Collection>
 auto getItemBySingleIndex(Collection &self,
-                          const std::tuple<Dim, gsl::index> &index) {
-  gsl::index idx{std::get<gsl::index>(index)};
+                          const std::tuple<Dim, scipp::index> &index) {
+  scipp::index idx{std::get<scipp::index>(index)};
   auto &dim = std::get<Dim>(index);
   auto sz = self.dimensions()[dim];
   if (idx <= -sz || idx >= sz) // index is out of range
@@ -40,13 +40,13 @@ auto getItemBySingleIndex(Collection &self,
 }
 
 template <class T> struct mutable_span_methods {
-  static void add(py::class_<gsl::span<T>> &span) {
-    span.def("__setitem__", [](gsl::span<T> &self, const gsl::index i,
+  static void add(py::class_<scipp::span<T>> &span) {
+    span.def("__setitem__", [](scipp::span<T> &self, const scipp::index i,
                                const T value) { self[i] = value; });
   }
 };
 template <class T> struct mutable_span_methods<const T> {
-  static void add(py::class_<gsl::span<const T>> &) {}
+  static void add(py::class_<scipp::span<const T>> &) {}
 };
 
 template <class T> std::string element_to_string(const T &item) {
@@ -64,11 +64,11 @@ template <class T> std::string element_to_string(const T &item) {
 }
 
 template <class T> std::string array_to_string(const T &arr) {
-  const gsl::index size = arr.size();
+  const scipp::index size = arr.size();
   if (size == 0)
     return std::string("[]");
   std::string s = "[";
-  for (gsl::index i = 0; i < arr.size(); ++i) {
+  for (scipp::index i = 0; i < arr.size(); ++i) {
     if (i == 4 && size > 8) {
       s += "..., ";
       i = size - 4;
@@ -81,17 +81,17 @@ template <class T> std::string array_to_string(const T &arr) {
 }
 
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
-  py::class_<gsl::span<T>> span(m, (std::string("span_") + suffix).c_str());
-  span.def("__getitem__", &gsl::span<T>::operator[],
+  py::class_<scipp::span<T>> span(m, (std::string("span_") + suffix).c_str());
+  span.def("__getitem__", &scipp::span<T>::operator[],
            py::return_value_policy::reference)
-      .def("size", &gsl::span<T>::size)
-      .def("__len__", &gsl::span<T>::size)
+      .def("size", &scipp::span<T>::size)
+      .def("__len__", &scipp::span<T>::size)
       .def("__iter__",
-           [](const gsl::span<T> &self) {
+           [](const scipp::span<T> &self) {
              return py::make_iterator(self.begin(), self.end());
            })
       .def("__repr__",
-           [](const gsl::span<T> &self) { return array_to_string(self); });
+           [](const scipp::span<T> &self) { return array_to_string(self); });
   mutable_span_methods<T>::add(span);
 }
 
@@ -147,7 +147,7 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
            [](const VariableView<T> &self) { return array_to_string(self); })
       .def("__getitem__", &VariableView<T>::operator[],
            py::return_value_policy::reference)
-      .def("__setitem__", [](VariableView<T> &self, const gsl::index i,
+      .def("__setitem__", [](VariableView<T> &self, const scipp::index i,
                              const T value) { self[i] = value; })
       .def("__len__", &VariableView<T>::size)
       .def("__iter__", [](const VariableView<T> &self) {
@@ -194,7 +194,7 @@ template <class T> struct MakeVariable {
 template <class T> struct MakeVariableDefaultInit {
   static Variable apply(const Tag tag, const std::vector<Dim> &labels,
                         const py::tuple &shape) {
-    Dimensions dims(labels, shape.cast<std::vector<gsl::index>>());
+    Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
     return ::makeVariable<T>(tag, dims);
   }
 };
@@ -299,7 +299,7 @@ void insert_1D(
     const std::tuple<const std::vector<Dim> &, std::vector<T> &> &data) {
   const auto & [ tag, name ] = Key::get(key);
   const auto & [ labels, array ] = data;
-  Dimensions dims{labels, {static_cast<gsl::index>(array.size())}};
+  Dimensions dims{labels, {scipp::size(array)}};
   auto var = ::makeVariable<T>(tag, dims, array);
   if (!name.empty())
     var.setName(name);
@@ -321,9 +321,9 @@ void insert(Dataset &self, const K &key, const Var &var) {
 
 // Add size factor.
 template <class T>
-std::vector<gsl::index> numpy_strides(const std::vector<gsl::index> &s) {
-  std::vector<gsl::index> strides(s.size());
-  gsl::index elemSize = sizeof(T);
+std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
+  std::vector<scipp::index> strides(s.size());
+  scipp::index elemSize = sizeof(T);
   for (size_t i = 0; i < strides.size(); ++i) {
     strides[i] = elemSize * s[i];
   }
@@ -372,9 +372,9 @@ auto pySlice(T &source, const std::tuple<Dim, const py::slice> &index)
 }
 
 void setVariableSlice(VariableSlice &self,
-                      const std::tuple<Dim, gsl::index> &index,
+                      const std::tuple<Dim, scipp::index> &index,
                       const py::array &data) {
-  auto slice = self(std::get<Dim>(index), std::get<gsl::index>(index));
+  auto slice = self(std::get<Dim>(index), std::get<scipp::index>(index));
   CallDType<double, float, int64_t, int32_t, char,
             bool>::apply<detail::SetData>(slice.dtype(), slice, data);
 }
@@ -442,7 +442,7 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
 template <class... Ts> struct as_VariableViewImpl {
   template <class Var>
   static std::variant<std::conditional_t<
-      std::is_same_v<Var, Variable>, gsl::span<underlying_type_t<Ts>>,
+      std::is_same_v<Var, Variable>, scipp::span<underlying_type_t<Ts>>,
       VariableView<underlying_type_t<Ts>>>...>
   get(Var &view) {
     switch (view.dtype()) {
@@ -705,7 +705,7 @@ PYBIND11_MODULE(dataset, m) {
              detail::pySlice(self, index).assign(other);
            })
       .def("__setitem__",
-           [](Variable &self, const std::tuple<Dim, gsl::index> &index,
+           [](Variable &self, const std::tuple<Dim, scipp::index> &index,
               const VariableSlice &other) {
              const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
@@ -836,14 +836,14 @@ PYBIND11_MODULE(dataset, m) {
           "unit", &VariableSlice::unit, &VariableSlice::setUnit,
           "Object of type Unit holding the unit of the VariableSlice.")
       .def("__getitem__",
-           [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index) {
+           [](VariableSlice &self, const std::tuple<Dim, scipp::index> &index) {
              return getItemBySingleIndex(self, index);
            },
            py::keep_alive<0, 1>())
       .def("__getitem__", &detail::pySlice<VariableSlice>,
            py::keep_alive<0, 1>())
       .def("__getitem__",
-           [](VariableSlice &self, const std::map<Dim, const gsl::index> d) {
+           [](VariableSlice &self, const std::map<Dim, const scipp::index> d) {
              auto slice(self);
              for (auto item : d)
                slice = slice(item.first, item.second);
@@ -856,7 +856,7 @@ PYBIND11_MODULE(dataset, m) {
              detail::pySlice(self, index).assign(other);
            })
       .def("__setitem__",
-           [](VariableSlice &self, const std::tuple<Dim, gsl::index> &index,
+           [](VariableSlice &self, const std::tuple<Dim, scipp::index> &index,
               const VariableSlice &other) {
              const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
@@ -929,7 +929,7 @@ PYBIND11_MODULE(dataset, m) {
       .def("reshape",
            [](const VariableSlice &self, const std::vector<Dim> &labels,
               const py::tuple &shape) {
-             Dimensions dims(labels, shape.cast<std::vector<gsl::index>>());
+             Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
              return self.reshape(dims);
            })
       .def("__repr__", [](const VariableSlice &self) {
@@ -979,7 +979,7 @@ PYBIND11_MODULE(dataset, m) {
              return self.contains(std::get<0>(key), std::get<1>(key));
            })
       .def("__getitem__",
-           [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index) {
+           [](DatasetSlice &self, const std::tuple<Dim, scipp::index> &index) {
              return getItemBySingleIndex(self, index);
            },
            py::keep_alive<0, 1>())
@@ -1015,7 +1015,7 @@ PYBIND11_MODULE(dataset, m) {
              detail::pySlice(self, index).assign(other);
            })
       .def("__setitem__",
-           [](DatasetSlice &self, const std::tuple<Dim, gsl::index> &index,
+           [](DatasetSlice &self, const std::tuple<Dim, scipp::index> &index,
               const DatasetSlice &other) {
              const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
@@ -1175,7 +1175,7 @@ PYBIND11_MODULE(dataset, m) {
       // TODO: This __getitem__ is here only to prevent unhandled
       // errors when trying to get a dataset slice by supplying only a
       // Dimension, e.g. dataset[Dim.X]. By default, an implicit
-      // conversion between Dim and gsl::index is attempted and the
+      // conversion between Dim and scipp::index is attempted and the
       // __getitem__ then crashes when self[index] is performed below.
       // This fix covers only one case and we need to find a better way
       // of protecting all unsopprted cases. This should ideally fail
@@ -1188,10 +1188,10 @@ PYBIND11_MODULE(dataset, m) {
                                       ":]");
            })
       .def("__getitem__",
-           [](Dataset &self, const gsl::index index) { return self[index]; },
+           [](Dataset &self, const scipp::index index) { return self[index]; },
            py::keep_alive<0, 1>())
       .def("__getitem__",
-           [](Dataset &self, const std::tuple<Dim, gsl::index> &index) {
+           [](Dataset &self, const std::tuple<Dim, scipp::index> &index) {
              return getItemBySingleIndex(self, index);
            },
            py::keep_alive<0, 1>())
@@ -1229,7 +1229,7 @@ PYBIND11_MODULE(dataset, m) {
              detail::pySlice(self, index).assign(other);
            })
       .def("__setitem__",
-           [](Dataset &self, const std::tuple<Dim, gsl::index> &index,
+           [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
               const DatasetSlice &other) {
              const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
@@ -1417,7 +1417,7 @@ PYBIND11_MODULE(dataset, m) {
   //-----------------------dataset free functions-------------------------------
   m.def("split",
         py::overload_cast<const Dataset &, const Dim,
-                          const std::vector<gsl::index> &>(&split),
+                          const std::vector<scipp::index> &>(&split),
         py::call_guard<py::gil_scoped_release>(),
         "Split a Dataset along a given Dimension.");
   m.def("concatenate",
@@ -1467,7 +1467,7 @@ PYBIND11_MODULE(dataset, m) {
   //-----------------------variable free functions------------------------------
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
-                          const std::vector<gsl::index> &>(&split),
+                          const std::vector<scipp::index> &>(&split),
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
   m.def("concatenate",

@@ -536,7 +536,7 @@ TEST(MDZipView, spectrum_position) {
 
   Dataset d;
   d.insert(Coord::DetectorInfo, {}, {dets});
-  Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
+  Vector<boost::container::small_vector<scipp::index, 1>> grouping = {
       {0, 2}, {1}, {}};
   d.insert(Coord::DetectorGrouping, {Dim::Spectrum, 3}, grouping);
 

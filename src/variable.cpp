@@ -60,11 +60,11 @@ template <class T> struct RebinHelper {
     const bool jointOld = oldCoordT.dimensions().ndim() == 1;
     const bool jointNew = newCoordT.dimensions().ndim() == 1;
 #pragma omp parallel for
-    for (gsl::index c = 0; c < count; ++c) {
-      gsl::index iold = 0;
-      gsl::index inew = 0;
-      const gsl::index oldEdgeOffset = jointOld ? 0 : c * (oldSize + 1);
-      const gsl::index newEdgeOffset = jointNew ? 0 : c * (newSize + 1);
+    for (scipp::index c = 0; c < count; ++c) {
+      scipp::index iold = 0;
+      scipp::index inew = 0;
+      const scipp::index oldEdgeOffset = jointOld ? 0 : c * (oldSize + 1);
+      const scipp::index newEdgeOffset = jointNew ? 0 : c * (newSize + 1);
       const auto oldOffset = c * oldSize;
       const auto newOffset = c * newSize;
       while ((iold < oldSize) && (inew < newSize)) {
@@ -217,18 +217,18 @@ public:
   DType dtype() const noexcept override { return ::dtype<T>; }
   static DType static_dtype() noexcept { return ::dtype<T>; }
 
-  virtual gsl::span<T> getSpan() = 0;
-  virtual gsl::span<T> getSpan(const Dim dim, const gsl::index begin,
-                               const gsl::index end) = 0;
-  virtual gsl::span<const T> getSpan() const = 0;
-  virtual gsl::span<const T> getSpan(const Dim dim, const gsl::index begin,
-                                     const gsl::index end) const = 0;
+  virtual scipp::span<T> getSpan() = 0;
+  virtual scipp::span<T> getSpan(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) = 0;
+  virtual scipp::span<const T> getSpan() const = 0;
+  virtual scipp::span<const T> getSpan(const Dim dim, const scipp::index begin,
+                                       const scipp::index end) const = 0;
   virtual VariableView<T> getView(const Dimensions &dims) = 0;
   virtual VariableView<T> getView(const Dimensions &dims, const Dim dim,
-                                  const gsl::index begin) = 0;
+                                  const scipp::index begin) = 0;
   virtual VariableView<const T> getView(const Dimensions &dims) const = 0;
   virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
-                                        const gsl::index begin) const = 0;
+                                        const scipp::index begin) const = 0;
   virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
   virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
 
@@ -247,8 +247,8 @@ public:
   }
 
   std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const gsl::index begin,
-           const gsl::index end) const override {
+  makeView(const Dim dim, const scipp::index begin,
+           const scipp::index end) const override {
     auto dims = this->dimensions();
     if (end == -1)
       dims.erase(dim);
@@ -259,8 +259,8 @@ public:
   }
 
   std::unique_ptr<VariableConcept> makeView(const Dim dim,
-                                            const gsl::index begin,
-                                            const gsl::index end) override {
+                                            const scipp::index begin,
+                                            const scipp::index end) override {
     if (this->isConstView())
       return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
                                                                   end);
@@ -313,10 +313,10 @@ public:
   }
 
   void copy(const VariableConcept &other, const Dim dim,
-            const gsl::index offset, const gsl::index otherBegin,
-            const gsl::index otherEnd) override {
+            const scipp::index offset, const scipp::index otherBegin,
+            const scipp::index otherEnd) override {
     auto iterDims = this->dimensions();
-    const gsl::index delta = otherEnd - otherBegin;
+    const scipp::index delta = otherEnd - otherBegin;
     if (iterDims.contains(dim))
       iterDims.resize(dim, delta);
 
@@ -524,15 +524,15 @@ public:
 
 template <class T>
 auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
-              const gsl::index begin, const gsl::index end) {
+              const scipp::index begin, const scipp::index end) {
   if (!dims.contains(dim) && (begin != 0 || end != 1))
     throw std::runtime_error("VariableConcept: Slice index out of range.");
   if (!dims.contains(dim) || dims[dim] == end - begin) {
-    return gsl::make_span(model.data(), model.data() + model.size());
+    return scipp::span(model.data(), model.data() + model.size());
   }
-  const gsl::index beginOffset = begin * dims.offset(dim);
-  const gsl::index endOffset = end * dims.offset(dim);
-  return gsl::make_span(model.data() + beginOffset, model.data() + endOffset);
+  const scipp::index beginOffset = begin * dims.offset(dim);
+  const scipp::index endOffset = end * dims.offset(dim);
+  return scipp::span(model.data() + beginOffset, model.data() + endOffset);
 }
 
 /// Implementation of VariableConcept that holds data.
@@ -543,24 +543,24 @@ public:
   DataModel(const Dimensions &dimensions, T model)
       : conceptT_t<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
-    if (this->dimensions().volume() != static_cast<gsl::index>(m_model.size()))
+    if (this->dimensions().volume() != scipp::size(m_model))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
 
-  gsl::span<value_type> getSpan() override {
-    return gsl::make_span(m_model.data(), m_model.data() + size());
+  scipp::span<value_type> getSpan() override {
+    return scipp::span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
-                                const gsl::index end) override {
+  scipp::span<value_type> getSpan(const Dim dim, const scipp::index begin,
+                                  const scipp::index end) override {
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
-  gsl::span<const value_type> getSpan() const override {
-    return gsl::make_span(m_model.data(), m_model.data() + size());
+  scipp::span<const value_type> getSpan() const override {
+    return scipp::span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
-                                      const gsl::index end) const override {
+  scipp::span<const value_type> getSpan(const Dim dim, const scipp::index begin,
+                                        const scipp::index end) const override {
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
@@ -568,10 +568,10 @@ public:
     return makeVariableView(m_model.data(), 0, dims, this->dimensions());
   }
   VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
-                                   const gsl::index begin) override {
-    gsl::index beginOffset = this->dimensions().contains(dim)
-                                 ? begin * this->dimensions().offset(dim)
-                                 : begin * this->dimensions().volume();
+                                   const scipp::index begin) override {
+    scipp::index beginOffset = this->dimensions().contains(dim)
+                                   ? begin * this->dimensions().offset(dim)
+                                   : begin * this->dimensions().volume();
     return makeVariableView(m_model.data(), beginOffset, dims,
                             this->dimensions());
   }
@@ -582,10 +582,10 @@ public:
   }
   VariableView<const value_type>
   getView(const Dimensions &dims, const Dim dim,
-          const gsl::index begin) const override {
-    gsl::index beginOffset = this->dimensions().contains(dim)
-                                 ? begin * this->dimensions().offset(dim)
-                                 : begin * this->dimensions().volume();
+          const scipp::index begin) const override {
+    scipp::index beginOffset = this->dimensions().contains(dim)
+                                   ? begin * this->dimensions().offset(dim)
+                                   : begin * this->dimensions().volume();
     return makeVariableView(m_model.data(), beginOffset, dims,
                             this->dimensions());
   }
@@ -611,7 +611,7 @@ public:
   bool isView() const override { return false; }
   bool isConstView() const override { return false; }
 
-  gsl::index size() const override { return m_model.size(); }
+  scipp::index size() const override { return m_model.size(); }
 
   T m_model;
 };
@@ -642,34 +642,34 @@ public:
                                "volume given by dimension extents");
   }
 
-  gsl::span<value_type> getSpan() override {
+  scipp::span<value_type> getSpan() override {
     requireMutable();
     requireContiguous();
     if constexpr (std::is_const<typename T::element_type>::value)
-      return gsl::span<value_type>();
+      return scipp::span<value_type>();
     else
-      return gsl::make_span(m_model.data(), m_model.data() + size());
+      return scipp::span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<value_type> getSpan(const Dim dim, const gsl::index begin,
-                                const gsl::index end) override {
+  scipp::span<value_type> getSpan(const Dim dim, const scipp::index begin,
+                                  const scipp::index end) override {
     requireMutable();
     requireContiguous();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dim);
       static_cast<void>(begin);
       static_cast<void>(end);
-      return gsl::span<value_type>();
+      return scipp::span<value_type>();
     } else {
       return makeSpan(m_model, this->dimensions(), dim, begin, end);
     }
   }
 
-  gsl::span<const value_type> getSpan() const override {
+  scipp::span<const value_type> getSpan() const override {
     requireContiguous();
-    return gsl::make_span(m_model.data(), m_model.data() + size());
+    return scipp::span(m_model.data(), m_model.data() + size());
   }
-  gsl::span<const value_type> getSpan(const Dim dim, const gsl::index begin,
-                                      const gsl::index end) const override {
+  scipp::span<const value_type> getSpan(const Dim dim, const scipp::index begin,
+                                        const scipp::index end) const override {
     requireContiguous();
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
@@ -684,7 +684,7 @@ public:
     }
   }
   VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
-                                   const gsl::index begin) override {
+                                   const scipp::index begin) override {
     requireMutable();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dim);
@@ -701,7 +701,7 @@ public:
   }
   VariableView<const value_type>
   getView(const Dimensions &dims, const Dim dim,
-          const gsl::index begin) const override {
+          const scipp::index begin) const override {
     return {m_model, dims, dim, begin};
   }
 
@@ -735,7 +735,7 @@ public:
     return std::is_const<typename T::element_type>::value;
   }
 
-  gsl::index size() const override { return m_model.size(); }
+  scipp::index size() const override { return m_model.size(); }
 
   T m_model;
 };
@@ -808,14 +808,14 @@ INSTANTIATE(bool)
 INSTANTIATE(std::pair<int64_t, int64_t>)
 INSTANTIATE(ValueWithDelta<double>)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
-INSTANTIATE(gsl::index)
-INSTANTIATE(std::pair<gsl::index, gsl::index>)
+INSTANTIATE(scipp::index)
+INSTANTIATE(std::pair<scipp::index, scipp::index>)
 #endif
-INSTANTIATE(boost::container::small_vector<gsl::index, 1>)
+INSTANTIATE(boost::container::small_vector<scipp::index, 1>)
 INSTANTIATE(boost::container::small_vector<double, 8>)
 INSTANTIATE(std::vector<double>)
 INSTANTIATE(std::vector<std::string>)
-INSTANTIATE(std::vector<gsl::index>)
+INSTANTIATE(std::vector<scipp::index>)
 INSTANTIATE(Dataset)
 INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
@@ -877,7 +877,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
       auto datasets = variable.template cast<Dataset>();
       const Dim dim = datasets[0].dimensions().label(0);
 #pragma omp parallel for
-      for (gsl::index i = 0; i < static_cast<gsl::index>(datasets.size()); ++i)
+      for (scipp::index i = 0; i < scipp::size(datasets); ++i)
         datasets[i] = concatenate(datasets[i], otherDatasets[i], dim);
     } else {
       throw std::runtime_error(
@@ -1108,13 +1108,13 @@ INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
 INSTANTIATE_SLICEVIEW(Dataset);
 INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
 
-ConstVariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
-                                        const gsl::index end) const & {
+ConstVariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
+                                        const scipp::index end) const & {
   return {*this, dim, begin, end};
 }
 
-VariableSlice Variable::operator()(const Dim dim, const gsl::index begin,
-                                   const gsl::index end) & {
+VariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
+                                   const scipp::index end) & {
   return {*this, dim, begin, end};
 }
 
@@ -1190,12 +1190,12 @@ Variable operator/(const double a, Variable b) {
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
 std::vector<Variable> split(const Variable &var, const Dim dim,
-                            const std::vector<gsl::index> &indices) {
+                            const std::vector<scipp::index> &indices) {
   if (indices.empty())
     return {var};
   std::vector<Variable> vars;
   vars.emplace_back(var(dim, 0, indices.front()));
-  for (gsl::index i = 0; i < static_cast<gsl::index>(indices.size()) - 1; ++i)
+  for (scipp::index i = 0; i < scipp::size(indices) - 1; ++i)
     vars.emplace_back(var(dim, indices[i], indices[i + 1]));
   vars.emplace_back(var(dim, indices.back(), var.dimensions()[dim]));
   return vars;
@@ -1241,8 +1241,8 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
 
   auto out(a1);
   auto dims(dims1);
-  gsl::index extent1 = 1;
-  gsl::index extent2 = 1;
+  scipp::index extent1 = 1;
+  scipp::index extent2 = 1;
   if (dims1.contains(dim))
     extent1 += dims1[dim] - 1;
   if (dims2.contains(dim))
@@ -1308,7 +1308,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
 }
 
 Variable permute(const Variable &var, const Dim dim,
-                 const std::vector<gsl::index> &indices) {
+                 const std::vector<scipp::index> &indices) {
   auto permuted(var);
   for (size_t i = 0; i < indices.size(); ++i)
     permuted.data().copy(var.data(), dim, i, indices[i], indices[i] + 1);
@@ -1322,7 +1322,7 @@ Variable filter(const Variable &var, const Variable &filter) {
   const auto dim = filter.dimensions().labels()[0];
   auto mask = filter.span<bool>();
 
-  const gsl::index removed = std::count(mask.begin(), mask.end(), 0);
+  const scipp::index removed = std::count(mask.begin(), mask.end(), 0);
   if (removed == 0)
     return var;
 
@@ -1331,11 +1331,11 @@ Variable filter(const Variable &var, const Variable &filter) {
   dims.resize(dim, dims[dim] - removed);
   out.setDimensions(dims);
 
-  gsl::index iOut = 0;
+  scipp::index iOut = 0;
   // Note: Could copy larger chunks of applicable for better(?) performance.
   // Note: This implementation is inefficient, since we need to cast to concrete
   // type for *every* slice. Should be combined into a single virtual call.
-  for (gsl::index iIn = 0; iIn < mask.size(); ++iIn)
+  for (scipp::index iIn = 0; iIn < mask.size(); ++iIn)
     if (mask[iIn])
       out.data().copy(var.data(), dim, iOut++, iIn, iIn + 1);
   return out;
@@ -1387,8 +1387,8 @@ Variable broadcast(Variable var, const Dimensions &dims) {
   return result;
 }
 
-void swap(Variable &var, const Dim dim, const gsl::index a,
-          const gsl::index b) {
+void swap(Variable &var, const Dim dim, const scipp::index a,
+          const scipp::index b) {
   const Variable tmp = var(dim, a);
   var(dim, a).assign(var(dim, b));
   var(dim, b).assign(tmp);
@@ -1396,7 +1396,7 @@ void swap(Variable &var, const Dim dim, const gsl::index a,
 
 Variable reverse(Variable var, const Dim dim) {
   const auto size = var.dimensions()[dim];
-  for (gsl::index i = 0; i < size / 2; ++i)
+  for (scipp::index i = 0; i < size / 2; ++i)
     swap(var, dim, i, size - i - 1);
   return std::move(var);
 }

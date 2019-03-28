@@ -83,7 +83,7 @@ TEST_F(MultiIndex2DTest, end) {
   MultiIndex it(xy, {xy});
   MultiIndex end(xy, {xy});
   end.setIndex(3 * 5);
-  for (gsl::index i = 0; i < 3 * 5; ++i) {
+  for (scipp::index i = 0; i < 3 * 5; ++i) {
     EXPECT_FALSE(it == end);
     it.increment();
   }
@@ -92,8 +92,8 @@ TEST_F(MultiIndex2DTest, end) {
 
 TEST_F(MultiIndex2DTest, increment_2D_transpose) {
   MultiIndex i(xy, {yx});
-  std::vector<gsl::index> expected{0,  5, 10, 1,  6, 11, 2, 7,
-                                   12, 3, 8,  13, 4, 9,  14};
+  std::vector<scipp::index> expected{0,  5, 10, 1,  6, 11, 2, 7,
+                                     12, 3, 8,  13, 4, 9,  14};
   for (const auto correct : expected) {
     EXPECT_EQ(i.get<0>(), correct);
     i.increment();
@@ -223,7 +223,7 @@ TEST_F(MultiIndex3DTest, construct) {
 
 TEST_F(MultiIndex3DTest, increment_0D) {
   MultiIndex i(xyz, {none});
-  for (gsl::index n = 0; n < 2 * 3 * 5; ++n) {
+  for (scipp::index n = 0; n < 2 * 3 * 5; ++n) {
     EXPECT_EQ(i.get<0>(), 0);
     i.increment();
   }

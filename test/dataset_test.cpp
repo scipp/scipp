@@ -908,7 +908,7 @@ TEST(Dataset, slice) {
   d.insert(Coord::X, {Dim::X, 2}, {0.0, 0.1});
   d.insert(Data::Value, "", {{Dim::Y, 3}, {Dim::X, 2}},
            {0.0, 1.0, 2.0, 3.0, 4.0, 5.0});
-  for (const gsl::index i : {0, 1}) {
+  for (const scipp::index i : {0, 1}) {
     Dataset sliceX = d(Dim::X, i);
     ASSERT_EQ(sliceX.size(), 1);
     ASSERT_EQ(sliceX.get(Data::Value).size(), 3);
@@ -916,7 +916,7 @@ TEST(Dataset, slice) {
     EXPECT_EQ(sliceX.get(Data::Value)[1], 2.0 + i);
     EXPECT_EQ(sliceX.get(Data::Value)[2], 4.0 + i);
   }
-  for (const gsl::index i : {0, 1}) {
+  for (const scipp::index i : {0, 1}) {
     Dataset sliceX = d(Dim::X, i, i + 1);
     ASSERT_EQ(sliceX.size(), 2);
     ASSERT_EQ(sliceX.get(Coord::X).size(), 1);
@@ -926,7 +926,7 @@ TEST(Dataset, slice) {
     EXPECT_EQ(sliceX.get(Data::Value)[1], 2.0 + i);
     EXPECT_EQ(sliceX.get(Data::Value)[2], 4.0 + i);
   }
-  for (const gsl::index i : {0, 1, 2}) {
+  for (const scipp::index i : {0, 1, 2}) {
     Dataset sliceY = d(Dim::Y, i);
     ASSERT_EQ(sliceY.size(), 2);
     ASSERT_EQ(sliceY.get(Coord::X), d.get(Coord::X));
@@ -1412,7 +1412,7 @@ TEST(DatasetSlice, basics) {
 
   auto check = [](const auto &view, const std::string &name) {
     ASSERT_EQ(view.size(), 4);
-    gsl::index count = 0;
+    scipp::index count = 0;
     for (const auto &var : view) {
       if (var.isData()) {
         EXPECT_EQ(var.name(), name);
@@ -1597,7 +1597,7 @@ void binary_test(T (*func)(T, T), const std::vector<T> &input,
   std::transform(input.begin(), input.end(), input.begin(),
                  std::back_inserter(result), func);
 
-  EXPECT_EQ(actual_result.get(Data::Value, name), gsl::make_span(result));
+  EXPECT_EQ(actual_result.get(Data::Value, name), scipp::span(result));
 }
 
 template <typename T>
@@ -1608,7 +1608,7 @@ void inplace_op_test(T (*func)(T, T), const std::vector<T> &input,
   auto result = input; // take copy of input
   std::transform(current.begin(), current.end(), result.begin(), result.begin(),
                  func);
-  EXPECT_EQ(actual_result.get(Data::Value, name), gsl::make_span(result));
+  EXPECT_EQ(actual_result.get(Data::Value, name), scipp::span(result));
 }
 
 std::vector<double> data_from_dataset(Dataset &dataset,

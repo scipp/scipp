@@ -71,7 +71,6 @@ Dataset tofToDSpacing(const Dataset &d) {
 
   conversionFactor *= tofToDSpacingPhysicalConstants;
 
-
   // sin(scattering_angle)
   // TODO Need `dot` for `Variable`. The following block should just be
   // conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)))
@@ -263,8 +262,8 @@ Dataset tofToDeltaE(const Dataset &d) {
   return reverse(converted, Dim::DeltaE);
 }
 
-gsl::index continuousToIndex(const double val,
-                             const gsl::span<const double> axis) {
+scipp::index continuousToIndex(const double val,
+                               const scipp::span<const double> axis) {
   const auto lower = std::lower_bound(axis.begin(), axis.end(), val);
   const auto upper = std::upper_bound(axis.begin(), axis.end(), val);
   if (upper == axis.end() || upper == axis.begin())
@@ -282,18 +281,18 @@ Dataset continuousToIndex(const Variable &values, const Dataset &coords) {
   const auto &qx = coords.get(Coord::Qx);
   const auto &qy = coords.get(Coord::Qy);
   const auto &qz = coords.get(Coord::Qz);
-  std::vector<gsl::index> ix;
-  std::vector<gsl::index> iy;
-  std::vector<gsl::index> iz;
+  std::vector<scipp::index> ix;
+  std::vector<scipp::index> iy;
+  std::vector<scipp::index> iz;
   for (const auto &val : vals) {
     ix.push_back(continuousToIndex(val[0], qx));
     iy.push_back(continuousToIndex(val[1], qy));
     iz.push_back(continuousToIndex(val[2], qz));
   }
   Dataset index;
-  index.insert<gsl::index>(Coord::Qx, values.dimensions(), ix);
-  index.insert<gsl::index>(Coord::Qy, values.dimensions(), iy);
-  index.insert<gsl::index>(Coord::Qz, values.dimensions(), iz);
+  index.insert<scipp::index>(Coord::Qx, values.dimensions(), ix);
+  index.insert<scipp::index>(Coord::Qy, values.dimensions(), iy);
+  index.insert<scipp::index>(Coord::Qz, values.dimensions(), iz);
   return index;
 }
 
@@ -342,17 +341,17 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
 
       Variable tmp(var, dims);
 
-      for (gsl::index deltaE = 0; deltaE < var.dimensions()[Dim::DeltaE];
+      for (scipp::index deltaE = 0; deltaE < var.dimensions()[Dim::DeltaE];
            ++deltaE) {
         const auto in = var(Dim::DeltaE, deltaE);
         const auto out = tmp(Dim::DeltaE, deltaE);
         const Dataset indices = qIndex(Dim::DeltaE, deltaE);
-        const auto q = zip(indices, Access::Key<gsl::index>{Coord::Qx},
-                           Access::Key<gsl::index>{Coord::Qy},
-                           Access::Key<gsl::index>{Coord::Qz});
+        const auto q = zip(indices, Access::Key<scipp::index>{Coord::Qx},
+                           Access::Key<scipp::index>{Coord::Qy},
+                           Access::Key<scipp::index>{Coord::Qz});
         if (in.dimensions()[Dim::Position] != q.size())
           throw std::runtime_error("Broken implementation of convert.");
-        for (gsl::index i = 0; i < q.size(); ++i) {
+        for (scipp::index i = 0; i < q.size(); ++i) {
           const auto[qx, qy, qz] = q[i];
           // Drop out-of-range values
           if (qx < 0 || qy < 0 || qz < 0)

@@ -23,6 +23,8 @@ set(INC_FILES
   variable_view.h
   variable.h 
   vector.h
+  ../core/span.h
+  ../core/index.h
 )
 
 set(SRC_FILES
@@ -39,5 +41,5 @@ set(SRC_FILES
 
 add_library ( Dataset STATIC  ${INC_FILES} ${SRC_FILES})
 target_link_libraries ( Dataset PUBLIC Boost::boost OpenMP::OpenMP_CXX )
-target_include_directories ( Dataset SYSTEM PUBLIC "." ${CMAKE_BINARY_DIR}/gsl-src/include ${CMAKE_BINARY_DIR}/Eigen-src PUBLIC "../range-v3/include" )
+target_include_directories ( Dataset SYSTEM PUBLIC "." "../core" ${CMAKE_BINARY_DIR}/Eigen-src PUBLIC "../range-v3/include" )
 set_target_properties ( Dataset PROPERTIES POSITION_INDEPENDENT_CODE TRUE )

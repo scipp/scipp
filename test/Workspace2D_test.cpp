@@ -27,7 +27,7 @@ TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   d.insert(Coord::DetectorInfo, {}, {dets});
 
   // Spectrum to detector mapping and spectrum numbers.
-  Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
+  Vector<boost::container::small_vector<scipp::index, 1>> grouping = {
       {0, 2}, {1}, {}};
   d.insert(Coord::DetectorGrouping, {Dim::Spectrum, 3}, grouping);
   d.insert(Coord::SpectrumNumber, {Dim::Spectrum, 3}, {1, 2, 3});
@@ -156,7 +156,7 @@ TEST(Workspace2D, scanning) {
   // access to positions of all components that is constructed on the fly:
   // class InstrumentView {
   //   InstrumentView(Dataset &d);
-  //   void setPosition(const gsl::index i, const Eigen::Vector3d &pos) {
+  //   void setPosition(const scipp::index i, const Eigen::Vector3d &pos) {
   //     if (i < m_dataset.dimensions().size(Dim::Detector))
   //       m_detPos[i] = pos;
   //     else {
@@ -182,7 +182,7 @@ TEST(Workspace2D, scanning) {
   // accordingly. Probably the easiest solution is to forbid shape operations on
   // Dim::Detector and Dim::DetectorScan if Coord::DetectorGrouping
   // is present.
-  Vector<boost::container::small_vector<gsl::index, 1>> grouping = {
+  Vector<boost::container::small_vector<scipp::index, 1>> grouping = {
       {0}, {2}, {4}};
   d.insert(Coord::DetectorGrouping, {Dim::Spectrum, 3}, grouping);
   d.insert(Coord::SpectrumNumber, {Dim::Spectrum, 3}, {1, 2, 3});

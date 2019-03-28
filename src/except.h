@@ -9,9 +9,8 @@
 #include <stdexcept>
 #include <string>
 
-#include <gsl/gsl_util>
-
 #include "dimension.h"
+#include "index.h"
 #include "tags.h"
 #include "unit.h"
 
@@ -58,7 +57,7 @@ struct DimensionNotFoundError : public DimensionError {
 
 struct DimensionLengthError : public DimensionError {
   DimensionLengthError(const Dimensions &expected, const Dim actual,
-                       const gsl::index length);
+                       const scipp::index length);
 };
 
 struct DatasetError : public std::runtime_error {
@@ -103,7 +102,7 @@ template <class A, class B> void variablesMatch(const A &a, const B &b) {
     throw except::VariableMismatchError(a, b);
 }
 void dimensionMatches(const Dimensions &dims, const Dim dim,
-                      const gsl::index length);
+                      const scipp::index length);
 void equals(const Unit &a, const Unit &b);
 void equals(const Dimensions &a, const Dimensions &b);
 

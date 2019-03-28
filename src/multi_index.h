@@ -20,15 +20,15 @@ public:
     if (subdimensions.size() > 4)
       throw std::runtime_error("MultiIndex supports at most 4 subindices.");
     m_dims = parentDimensions.count();
-    for (gsl::index d = 0; d < m_dims; ++d)
+    for (scipp::index d = 0; d < m_dims; ++d)
       m_extent[d] = parentDimensions.size(m_dims - 1 - d);
 
     m_numberOfSubindices = static_cast<int32_t>(subdimensions.size());
-    for (gsl::index j = 0; j < m_numberOfSubindices; ++j) {
+    for (scipp::index j = 0; j < m_numberOfSubindices; ++j) {
       const auto &dimensions = subdimensions[j];
-      gsl::index factor{1};
+      scipp::index factor{1};
       int32_t k = 0;
-      for (gsl::index i = dimensions.count() - 1; i >= 0; --i) {
+      for (scipp::index i = dimensions.count() - 1; i >= 0; --i) {
         const auto dimension = dimensions.label(i);
         if (parentDimensions.contains(dimension)) {
           m_offsets[j][k] = m_dims - 1 - parentDimensions.index(dimension);
@@ -39,8 +39,8 @@ public:
       }
       m_subdims[j] = k;
     }
-    gsl::index offset{1};
-    for (gsl::index d = 0; d < m_dims; ++d) {
+    scipp::index offset{1};
+    for (scipp::index d = 0; d < m_dims; ++d) {
       setIndex(offset);
       m_delta[4 * d + 0] = get<0>();
       m_delta[4 * d + 1] = get<1>();
@@ -53,7 +53,7 @@ public:
         m_delta[4 * d + 2] -= get<2>();
         m_delta[4 * d + 3] -= get<3>();
       }
-      for (gsl::index d2 = 0; d2 < d; ++d2) {
+      for (scipp::index d2 = 0; d2 < d; ++d2) {
         m_delta[4 * d + 0] -= m_delta[4 * d2 + 0];
         m_delta[4 * d + 1] -= m_delta[4 * d2 + 1];
         m_delta[4 * d + 2] -= m_delta[4 * d2 + 2];
@@ -79,7 +79,7 @@ public:
     ++m_fullIndex;
   }
 
-  void setIndex(const gsl::index index) {
+  void setIndex(const scipp::index index) {
     m_fullIndex = index;
     if (m_dims == 0)
       return;
@@ -96,8 +96,8 @@ public:
     }
   }
 
-  template <int N> gsl::index get() const { return m_index[N]; }
-  gsl::index index() const { return m_fullIndex; }
+  template <int N> scipp::index get() const { return m_index[N]; }
+  scipp::index index() const { return m_fullIndex; }
 
   bool operator==(const MultiIndex &other) const {
     return m_fullIndex == other.m_fullIndex;
@@ -127,17 +127,17 @@ private:
   // instructions.
   // Using std::array is 1.5x slower, for some reason intermediate values of
   // m_index are always stored instead of merely being kept in registers.
-  alignas(32) gsl::index m_index[4]{0, 0, 0, 0};
-  alignas(32) gsl::index m_delta[16]{0, 0, 0, 0, 0, 0, 0, 0,
-                                     0, 0, 0, 0, 0, 0, 0, 0};
-  alignas(32) gsl::index m_coord[4]{0, 0, 0, 0};
-  alignas(32) gsl::index m_extent[4]{0, 0, 0, 0};
-  gsl::index m_fullIndex;
+  alignas(32) scipp::index m_index[4]{0, 0, 0, 0};
+  alignas(32) scipp::index m_delta[16]{0, 0, 0, 0, 0, 0, 0, 0,
+                                       0, 0, 0, 0, 0, 0, 0, 0};
+  alignas(32) scipp::index m_coord[4]{0, 0, 0, 0};
+  alignas(32) scipp::index m_extent[4]{0, 0, 0, 0};
+  scipp::index m_fullIndex;
   int32_t m_dims;
   int32_t m_numberOfSubindices;
   std::array<int32_t, 4> m_subdims;
   std::array<std::array<int32_t, 4>, 4> m_offsets;
-  std::array<std::array<gsl::index, 4>, 4> m_factors;
+  std::array<std::array<scipp::index, 4>, 4> m_factors;
 };
 
 #endif // MULTI_INDEX_H

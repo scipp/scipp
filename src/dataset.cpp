@@ -42,18 +42,18 @@ DatasetSlice Dataset::subset(const Tag tag, const std::string &name) & {
   return DatasetSlice(*this, tag, name);
 }
 
-ConstDatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
-                                      const gsl::index end) const & {
+ConstDatasetSlice Dataset::operator()(const Dim dim, const scipp::index begin,
+                                      const scipp::index end) const & {
   return ConstDatasetSlice(*this)(dim, begin, end);
 }
 
-Dataset Dataset::operator()(const Dim dim, const gsl::index begin,
-                            const gsl::index end) && {
+Dataset Dataset::operator()(const Dim dim, const scipp::index begin,
+                            const scipp::index end) && {
   return {DatasetSlice(*this)(dim, begin, end)};
 }
 
-DatasetSlice Dataset::operator()(const Dim dim, const gsl::index begin,
-                                 const gsl::index end) & {
+DatasetSlice Dataset::operator()(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) & {
   return DatasetSlice(*this)(dim, begin, end);
 }
 
@@ -99,7 +99,7 @@ void Dataset::insert(Variable variable) {
 // T can be Dataset or Slice.
 template <class T>
 bool contains(const T &dataset, const Tag tag, const std::string &name) {
-  for (gsl::index i = 0; i < dataset.size(); ++i)
+  for (scipp::index i = 0; i < dataset.size(); ++i)
     if (dataset[i].tag() == tag && dataset[i].name() == name)
       return true;
   return false;
@@ -153,16 +153,16 @@ void Dataset::merge(const Dataset &other) {
   }
 }
 
-gsl::index Dataset::find(const Tag tag, const std::string &name) const {
+scipp::index Dataset::find(const Tag tag, const std::string &name) const {
   return ::find(*this, tag, name);
 }
 
 void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
-  for (gsl::index i = 0; i < dims.count(); ++i) {
+  for (scipp::index i = 0; i < dims.count(); ++i) {
     const auto dim = dims.label(i);
     auto size = dims.size(i);
     bool found = false;
-    for (gsl::index j = 0; j < m_dimensions.count(); ++j) {
+    for (scipp::index j = 0; j < m_dimensions.count(); ++j) {
       if (m_dimensions.label(j) == dim) {
         if (m_dimensions.size(j) == size) {
           found = true;
@@ -304,7 +304,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
       if (var2.isData() && names.size() == 1) {
         // Only a single (named) variable in RHS, subtract from all.
         // Not a coordinate, subtract from all.
-        gsl::index count = 0;
+        scipp::index count = 0;
         for (auto var1 : dataset) {
           if (var1.tag() == var2.tag()) {
             ++count;
@@ -338,19 +338,19 @@ template <class T> using ptr = type<T> *;
 
 // Using restrict does not seem to help much?
 #define RESTRICT __restrict
-void multiply_data(const gsl::index size, ptr<double> RESTRICT v1,
+void multiply_data(const scipp::index size, ptr<double> RESTRICT v1,
                    ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
                    ptr<const double> RESTRICT e2) {
-  for (gsl::index i = 0; i < size; ++i) {
+  for (scipp::index i = 0; i < size; ++i) {
     e1[i] = e1[i] * (v2[i] * v2[i]) + e2[i] * (v1[i] * v1[i]);
     v1[i] *= v2[i];
   }
 }
 #define RESTRICT __restrict
-void divide_data(const gsl::index size, ptr<double> RESTRICT v1,
+void divide_data(const scipp::index size, ptr<double> RESTRICT v1,
                  ptr<double> RESTRICT e1, ptr<const double> RESTRICT v2,
                  ptr<const double> RESTRICT e2) {
-  for (gsl::index i = 0; i < size; ++i) {
+  for (scipp::index i = 0; i < size; ++i) {
     e1[i] =
         (e1[i] + e2[i] * (v1[i] * v1[i]) / (v2[i] * v2[i])) / (v2[i] * v2[i]);
     v1[i] /= v2[i];
@@ -498,7 +498,7 @@ T1 &op_equals(T1 &dataset, const T2 &other,
         // op([a, b], [c]) = [op(a, c), op(b, c)] is legal
         auto rhs_slice = other.subset(rhs_var.name());
 
-        gsl::index count = 0;
+        scipp::index count = 0;
         for (auto lhs_var : dataset) {
           if (lhs_var.tag() == rhs_var.tag()) {
             ++count;
@@ -643,7 +643,7 @@ bool ConstDatasetSlice::contains(const Tag tag, const std::string &name) const {
 
 template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
   for (const auto &var2 : other) {
-    gsl::index index;
+    scipp::index index;
     try {
       index = find(dataset, var2.tag(), var2.name());
     } catch (const std::runtime_error &) {
@@ -807,7 +807,7 @@ Dataset operator+(const double a, Dataset b) { return std::move(b += a); }
 Dataset operator-(const double a, Dataset b) { return -(b -= a); }
 Dataset operator*(const double a, Dataset b) { return std::move(b *= a); }
 std::vector<Dataset> split(const Dataset &d, const Dim dim,
-                           const std::vector<gsl::index> &indices) {
+                           const std::vector<scipp::index> &indices) {
   std::vector<Dataset> out(indices.size() + 1);
   for (const auto &var : d) {
     if (var.dimensions().contains(dim)) {
@@ -834,7 +834,7 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
   // thread safety? Could cache cow_ptr for future sharing setup, done by next
   // non-const op?
   Dataset out;
-  for (gsl::index i1 = 0; i1 < d1.size(); ++i1) {
+  for (scipp::index i1 = 0; i1 < d1.size(); ++i1) {
     const auto &var1 = d1[i1];
     const auto &var2 = d2(var1.tag(), var1.name());
     // TODO may need to extend things along constant dimensions to match shapes!
@@ -904,7 +904,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
     throw std::runtime_error("Existing coordinate to be rebinned is not a bin "
                              "edge coordinate. Use `resample` instead of rebin "
                              "or convert to histogram data first.");
-  for (gsl::index i = 0; i < newDims.ndim(); ++i) {
+  for (scipp::index i = 0; i < newDims.ndim(); ++i) {
     const auto newDim = newDims.label(i);
     if (newDim == dim)
       continue;
@@ -946,7 +946,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
 
   // TODO Can we reuse some code for bin handling from MDZipView?
   const auto binDim = coordDimension[coord.tag().value()];
-  const gsl::index nBin = coord.dimensions()[binDim] - 1;
+  const scipp::index nBin = coord.dimensions()[binDim] - 1;
   Dimensions dims = var.dimensions();
   // Note that the event list contains, e.g, time-of-flight values, but *not* as
   // a coordinate. Therefore, it should not depend on, e.g., Dim::Tof.
@@ -960,7 +960,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   }
 
   dims.addInner(binDim, nBin);
-  const gsl::index nextEdgeOffset = coord.dimensions().offset(binDim);
+  const scipp::index nextEdgeOffset = coord.dimensions().offset(binDim);
 
   Dataset hist;
   hist.insert(coord);
@@ -970,7 +970,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   // Counts has outer dimensions as input, with a new inner dimension given by
   // the binning dimensions. We iterate over all dimensions as a flat array.
   auto counts = countsVar.get(Data::Value);
-  gsl::index cur = 0;
+  scipp::index cur = 0;
   // The helper `getView` allows us to ignore the tag of coord, as long as the
   // underlying type is `double`. We view the edges with the same dimensions as
   // the output. This abstracts the differences between either a shared binning
@@ -985,7 +985,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
           "TODO: Histograms can currently only be created from sorted data.");
     auto left = *edge;
     auto begin = std::lower_bound(tofs.begin(), tofs.end(), left);
-    for (gsl::index bin = 0; bin < nBin; ++bin) {
+    for (scipp::index bin = 0; bin < nBin; ++bin) {
       // The iterator cannot see the last edge, we must add the offset to the
       // memory location, *not* to the iterator.
       const auto right = *(&*edge + nextEdgeOffset);
@@ -1036,7 +1036,7 @@ template <class T> struct Sort {
     Dataset sorted;
     Variable axisVar = d(tag, name);
     auto axis = axisVar.span<T>();
-    std::vector<gsl::index> indices(axis.size());
+    std::vector<scipp::index> indices(axis.size());
     std::iota(indices.begin(), indices.end(), 0);
     auto view = ranges::view::zip(axis, indices);
     using ranges::sort;
