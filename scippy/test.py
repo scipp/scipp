@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from dataset import *
+from scippy import *
 from dataset.dataset_collection import from_dataset
 import dask
 import numpy as np

@@ -1,7 +1,7 @@
 import unittest
 
-import dataset as ds
-from dataset.xarray_compat import as_xarray
+import scippy as ds
+from scippy.xarray_compat import as_xarray
 import numpy as np
 import matplotlib.pyplot as plt
 

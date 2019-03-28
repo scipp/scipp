@@ -1,4 +1,4 @@
-from dataset import Data, Dataset, DatasetSlice, Variable, VariableSlice
+from scippy import Dataset, DatasetSlice, Variable, VariableSlice
 from xml.etree import ElementTree as et
 from collections import defaultdict
 

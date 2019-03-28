@@ -4,8 +4,8 @@ import copy
 import io
 from contextlib import redirect_stdout
 
-# Dataset imports
-from dataset import Dataset, Data, dataset, dimensionCoord, coordDimension, sqrt, units
+# Scippy imports
+from scippy import Dataset, Data, DatasetSlice, dimensionCoord, coordDimension, sqrt, units
 
 # Plotly imports
 from plotly.offline import init_notebook_mode, iplot
@@ -137,15 +137,15 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 
     entries = []
     # Case of a single dataset
-    if (type(input_data) is dataset.Dataset) or \
-       (type(input_data) is dataset.DatasetSlice):
+    if (type(input_data) is Dataset) or \
+       (type(input_data) is DatasetSlice):
         entries.append(input_data)
     # Case of a list of datasets
     elif type(input_data) is list:
         # Go through the list items:
         for item in input_data:
-            if (type(item) is dataset.Dataset) or \
-               (type(item) is dataset.DatasetSlice):
+            if (type(item) is Dataset) or \
+               (type(item) is DatasetSlice):
                 entries.append(item)
             else:
                 raise RuntimeError("Bad data type in list input of plot_1d. "

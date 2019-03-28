@@ -1,4 +1,4 @@
-import dataset as ds
+import scippy as ds
 
 def get_pos(pos):
     return [pos.X(), pos.Y(), pos.Z()]

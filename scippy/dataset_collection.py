@@ -1,4 +1,4 @@
-from .dataset import Dataset, concatenate
+from .scippy import Dataset, concatenate
 import dask
 import numpy as np
 

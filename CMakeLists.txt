@@ -50,5 +50,4 @@ add_compile_options ( $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
 add_subdirectory ( src )
 add_subdirectory ( test )
 add_subdirectory ( benchmark )
-add_subdirectory ( exports )
-add_subdirectory ( python )
+add_subdirectory ( scippy )

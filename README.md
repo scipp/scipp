@@ -50,12 +50,12 @@ Then, add the install location `/some/path` to `PYTHONPATH`.
 You can now do, e.g.,
 
 ```python
-from dataset import Dataset
+import scippy as sc
 ```
 
 ## Running the unit tests
 
-To run the Python tests, run the following in directory `python/`:
+To run the Python tests, run the following in directory `scippy/`:
 
 ```sh
 python3 -m unittest discover test
@@ -65,7 +65,7 @@ or via nose
 nosetests3 --where test
 ```
 
-Note that the tests bring in additional python dependencies. `python3 -m pip install -r python/requirements.txt` to obtain these.
+Note that the tests bring in additional python dependencies. `python3 -m pip install -r scippy/requirements.txt` to obtain these.
 
 ## Running the demo notebooks
 

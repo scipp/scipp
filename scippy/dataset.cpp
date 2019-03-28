@@ -516,7 +516,7 @@ private:
 using small_vector = boost::container::small_vector<double, 8>;
 PYBIND11_MAKE_OPAQUE(small_vector);
 
-PYBIND11_MODULE(dataset, m) {
+PYBIND11_MODULE(scippy, m) {
   py::bind_vector<boost::container::small_vector<double, 8>>(
       m, "SmallVectorDouble8");
 

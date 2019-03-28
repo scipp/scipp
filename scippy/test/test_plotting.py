@@ -1,6 +1,6 @@
 import unittest
 
-from dataset import *
+from scippy import *
 import numpy as np
 import hashlib
 import io
