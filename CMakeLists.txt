@@ -64,3 +64,5 @@ add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
 add_subdirectory(benchmark)
 add_subdirectory(core)
 add_subdirectory(scippy)
+add_subdirectory(test)
+add_subdirectory(units)

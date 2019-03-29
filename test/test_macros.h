@@ -3,7 +3,8 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include "span.h"
+#include <algorithm>
+#include <initializer_list>
 
 #define EXPECT_THROW_MSG(TRY_BLOCK, EXCEPTION_TYPE, MESSAGE)                   \
   EXPECT_THROW(                                                                \

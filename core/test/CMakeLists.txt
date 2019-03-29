@@ -15,7 +15,6 @@ add_executable ( scipp_core_test
   Run_test.cpp
   TableWorkspace_test.cpp
   tags_test.cpp
-  unit_test.cpp
   variable_test.cpp
   variable_view_test.cpp
   Workspace2D_test.cpp
@@ -25,5 +24,6 @@ target_link_libraries( scipp_core_test
   LINK_PRIVATE
   ScippCore
   gtest_main
+  scipp_test_helpers
   ${GTEST_LIBRARIES} ${GMOCK_LIBRARIES} )
 target_include_directories ( scipp_core_test SYSTEM PRIVATE "../range-v3/include" )

@@ -18,7 +18,6 @@ set(INC_FILES
     tags.h
     tag_util.h
     traits.h
-    unit.h
     value_with_delta.h
     variable_view.h
     variable.h
@@ -34,11 +33,11 @@ set(SRC_FILES
     events.cpp
     except.cpp
     md_zip_view.cpp
-    unit.cpp
     variable.cpp)
 
 add_library(ScippCore STATIC ${INC_FILES} ${SRC_FILES})
-target_link_libraries(ScippCore PUBLIC Boost::boost OpenMP::OpenMP_CXX)
+target_link_libraries(ScippCore
+                      PUBLIC ScippUnits Boost::boost OpenMP::OpenMP_CXX)
 target_include_directories(ScippCore SYSTEM
                            PUBLIC "." ".." ${CMAKE_BINARY_DIR}/Eigen-src
                            PUBLIC "../../range-v3/include")
