@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.com/mantidproject/dataset.svg?branch=master)](https://travis-ci.com/mantidproject/dataset/)
+[![Build Status](https://www.travis-ci.org/scipp/scipp.svg?branch=master)](https://www.travis-ci.org/scipp/scipp)
+[![Documentation Status](https://readthedocs.org/projects/scipp/badge/?version=latest)](https://scipp.readthedocs.io/en/latest/?badge=latest)
 
 # libDataset
 
