@@ -22,6 +22,9 @@
 #include "tags.h"
 #include "zip_view.h"
 
+using namespace scipp;
+using namespace scipp::core;
+
 namespace py = pybind11;
 
 template <typename Collection>
@@ -50,7 +53,6 @@ template <class T> struct mutable_span_methods<const T> {
 };
 
 template <class T> std::string element_to_string(const T &item) {
-  using dataset::to_string;
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>)
     return {'"' + item + "\", "};
@@ -177,7 +179,6 @@ DType convertDType(const py::dtype type) {
   throw std::runtime_error("unsupported dtype");
 }
 
-namespace detail {
 template <class T> struct MakeVariable {
   static Variable apply(const Tag tag, const std::vector<Dim> &labels,
                         py::array data) {
@@ -187,7 +188,7 @@ template <class T> struct MakeVariable {
     const py::buffer_info info = dataT.request();
     Dimensions dims(labels, info.shape);
     auto *ptr = (T *)info.ptr;
-    return ::makeVariable<T, ssize_t>(tag, dims, info.strides, ptr);
+    return scipp::core::makeVariable<T, ssize_t>(tag, dims, info.strides, ptr);
   }
 };
 
@@ -195,35 +196,36 @@ template <class T> struct MakeVariableDefaultInit {
   static Variable apply(const Tag tag, const std::vector<Dim> &labels,
                         const py::tuple &shape) {
     Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-    return ::makeVariable<T>(tag, dims);
+    return scipp::core::makeVariable<T>(tag, dims);
   }
 };
 
-Variable makeVariable(const Tag tag, const std::vector<Dim> &labels,
+Variable doMakeVariable(const Tag tag, const std::vector<Dim> &labels,
                       py::array &data,
-                      py::dtype dtype = py::dtype::of<Empty>()) {
+                      py::dtype type = py::dtype::of<Empty>()) {
   const py::buffer_info info = data.request();
   // Use custom dtype, otherwise dtype of data.
-  const auto dtypeTag = dtype.is(py::dtype::of<Empty>())
+  const auto dtypeTag = type.is(py::dtype::of<Empty>())
                             ? convertDType(data.dtype())
-                            : convertDType(dtype);
+                            : convertDType(type);
   return CallDType<double, float, int64_t, int32_t, char,
-                   bool>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
-                                                      data);
+                   bool>::apply<MakeVariable>(dtypeTag, tag, labels, data);
 }
 
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
                                  const py::tuple &shape,
-                                 py::dtype dtype = py::dtype::of<Empty>()) {
+                                 py::dtype type = py::dtype::of<Empty>()) {
   // TODO Numpy does not support strings, how can we specify std::string as a
   // dtype? The same goes for other, more complex item types we need for
   // variables. Do we need an overload with a dtype arg that does not use
   // py::dtype?
-  const auto dtypeTag = dtype.is(py::dtype::of<Empty>()) ? defaultDType(tag)
-                                                         : convertDType(dtype);
+  const auto dtypeTag =
+      type.is(py::dtype::of<Empty>()) ? defaultDType(tag) : convertDType(type);
   return CallDType<double, float, int64_t, int32_t, char, bool, Dataset,
-                   typename Data::EventTofs_t::type, Eigen::Vector3d>::
-      apply<detail::MakeVariableDefaultInit>(dtypeTag, tag, labels, shape);
+                   typename Data::EventTofs_t::type,
+                   Eigen::Vector3d>::apply<MakeVariableDefaultInit>(dtypeTag,
+                                                                    tag, labels,
+                                                                    shape);
 }
 
 namespace Key {
@@ -256,8 +258,7 @@ void insert_ndarray(
   const auto & [ labels, array ] = data;
   const auto dtypeTag = convertDType(array.dtype());
   auto var = CallDType<double, float, int64_t, int32_t, char,
-                       bool>::apply<detail::MakeVariable>(dtypeTag, tag, labels,
-                                                          array);
+                       bool>::apply<MakeVariable>(dtypeTag, tag, labels, array);
   if (!name.empty())
     var.setName(name);
   self.insert(std::move(var));
@@ -273,7 +274,7 @@ void insert_conv(
   const auto & [ labels, array ] = data;
   // TODO This is converting back and forth between py::array and py::array_t,
   // can we do this in a better way?
-  auto var = detail::MakeVariable<T>::apply(tag, labels, array);
+  auto var = MakeVariable<T>::apply(tag, labels, array);
   if (!name.empty())
     var.setName(name);
   self.insert(std::move(var));
@@ -287,7 +288,7 @@ void insert_0D(Dataset &self, const K &key,
   if (!labels.empty())
     throw std::runtime_error(
         "Got 0-D data, but nonzero number of dimension labels.");
-  auto var = ::makeVariable<T>(tag, {}, {value});
+  auto var = scipp::core::makeVariable<T>(tag, {}, {value});
   if (!name.empty())
     var.setName(name);
   self.insert(std::move(var));
@@ -300,7 +301,7 @@ void insert_1D(
   const auto & [ tag, name ] = Key::get(key);
   const auto & [ labels, array ] = data;
   Dimensions dims{labels, {scipp::size(array)}};
-  auto var = ::makeVariable<T>(tag, dims, array);
+  auto var = scipp::core::makeVariable<T>(tag, dims, array);
   if (!name.empty())
     var.setName(name);
   self.insert(std::move(var));
@@ -354,8 +355,8 @@ template <class T, class K>
 void setData(T &self, const K &key, const py::array &data) {
   const auto & [ tag, name ] = Key::get(key);
   const auto slice = self(tag, name);
-  CallDType<double, float, int64_t, int32_t, char,
-            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char, bool>::apply<SetData>(
+      slice.dtype(), slice, data);
 }
 
 template <class T>
@@ -375,18 +376,17 @@ void setVariableSlice(VariableSlice &self,
                       const std::tuple<Dim, scipp::index> &index,
                       const py::array &data) {
   auto slice = self(std::get<Dim>(index), std::get<scipp::index>(index));
-  CallDType<double, float, int64_t, int32_t, char,
-            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char, bool>::apply<SetData>(
+      slice.dtype(), slice, data);
 }
 
 void setVariableSliceRange(VariableSlice &self,
                            const std::tuple<Dim, const py::slice> &index,
                            const py::array &data) {
   auto slice = pySlice(self, index);
-  CallDType<double, float, int64_t, int32_t, char,
-            bool>::apply<detail::SetData>(slice.dtype(), slice, data);
+  CallDType<double, float, int64_t, int32_t, char, bool>::apply<SetData>(
+      slice.dtype(), slice, data);
 }
-} // namespace detail
 
 template <class T> struct MakePyBufferInfoT {
   static py::buffer_info apply(VariableSlice &view) {
@@ -398,8 +398,7 @@ template <class T> struct MakePyBufferInfoT {
             format(),              /* Python struct-style format descriptor */
         view.dimensions().count(), /* Number of dimensions */
         view.dimensions().shape(), /* Buffer dimensions */
-        detail::numpy_strides<T>(
-            view.strides()) /* Strides (in bytes) for each index */
+        numpy_strides<T>(view.strides()) /* Strides (in bytes) for each index */
     );
   }
 };
@@ -413,8 +412,7 @@ template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
   // TODO Should `Variable` also have a `strides` method?
   const auto strides = VariableSlice(view).strides();
   using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
-  return py::array_t<py_T>{view.dimensions().shape(),
-                           detail::numpy_strides<T>(strides),
+  return py::array_t<py_T>{view.dimensions().shape(), numpy_strides<T>(strides),
                            (py_T *)view.template span<T>().data(), obj};
 }
 
@@ -474,7 +472,7 @@ template <class... Ts> struct as_VariableViewImpl {
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object scalar(Var &view) {
-    dataset::expect::equals(Dimensions(), view.dimensions());
+    expect::equals(Dimensions(), view.dimensions());
     return std::visit(
         [](const auto &data) {
           return py::cast(data[0], py::return_value_policy::reference);
@@ -484,7 +482,7 @@ template <class... Ts> struct as_VariableViewImpl {
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static void set_scalar(Var &view, const py::object &o) {
-    dataset::expect::equals(Dimensions(), view.dimensions());
+    expect::equals(Dimensions(), view.dimensions());
     std::visit(
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
@@ -548,8 +546,7 @@ PYBIND11_MODULE(scippy, m) {
 
   py::class_<Tag>(m, "Tag")
       .def(py::self == py::self)
-      .def("__repr__",
-           [](const Tag &self) { return dataset::to_string(self, "."); });
+      .def("__repr__", [](const Tag &self) { return to_string(self, "."); });
 
   // Runtime tags are sufficient in Python, not exporting Tag child classes.
   auto coord_tags = m.def_submodule("Coord");
@@ -619,10 +616,11 @@ PYBIND11_MODULE(scippy, m) {
   declare_VariableView<Dataset>(m, "Dataset");
   declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
 
-  py::class_<Unit>(m, "Unit")
+  py::class_<units::Unit>(m, "Unit")
       .def(py::init())
-      .def("__repr__", [](const Unit &u) -> std::string { return u.name(); })
-      .def_property_readonly("name", &Unit::name,
+      .def("__repr__",
+           [](const units::Unit &u) -> std::string { return u.name(); })
+      .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")
       .def(py::self + py::self)
@@ -633,15 +631,15 @@ PYBIND11_MODULE(scippy, m) {
       .def(py::self != py::self);
 
   auto units = m.def_submodule("units");
-  units.attr("dimensionless") = Unit(units::dimensionless);
-  units.attr("m") = Unit(units::m);
-  units.attr("counts") = Unit(units::counts);
-  units.attr("s") = Unit(units::s);
-  units.attr("kg") = Unit(units::kg);
-  units.attr("K") = Unit(units::K);
-  units.attr("angstrom") = Unit(units::angstrom);
-  units.attr("meV") = Unit(units::meV);
-  units.attr("us") = Unit(units::us);
+  units.attr("dimensionless") = units::Unit(units::dimensionless);
+  units.attr("m") = units::Unit(units::m);
+  units.attr("counts") = units::Unit(units::counts);
+  units.attr("s") = units::Unit(units::s);
+  units.attr("kg") = units::Unit(units::kg);
+  units.attr("K") = units::Unit(units::K);
+  units.attr("angstrom") = units::Unit(units::angstrom);
+  units.attr("meV") = units::Unit(units::meV);
+  units.attr("us") = units::Unit(units::us);
 
   declare_VariableZipProxy(m, "", Access::Key(Data::EventTofs),
                            Access::Key(Data::EventPulseTimes));
@@ -652,7 +650,7 @@ PYBIND11_MODULE(scippy, m) {
       .def(py::init<>())
       .def("__repr__",
            [](const Dimensions &self) {
-             std::string out = "Dimensions = " + dataset::to_string(self, ".");
+             std::string out = "Dimensions = " + to_string(self, ".");
              return out;
            })
       .def("__len__", &Dimensions::count)
@@ -678,31 +676,31 @@ PYBIND11_MODULE(scippy, m) {
   PYBIND11_NUMPY_DTYPE(Empty, dummy);
 
   py::class_<Variable>(m, "Variable")
-      .def(py::init(&detail::makeVariableDefaultInit), py::arg("tag"),
+      .def(py::init(&makeVariableDefaultInit), py::arg("tag"),
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
-      .def(py::init([](const int64_t data, const Unit &unit) {
+      .def(py::init([](const int64_t data, const units::Unit &unit) {
              auto var = makeVariable<int64_t>(Data::NoTag, {}, {data});
              var.setUnit(unit);
              return var;
            }),
-           py::arg("data"), py::arg("unit") = Unit(units::dimensionless))
-      .def(py::init([](const double data, const Unit &unit) {
+           py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
+      .def(py::init([](const double data, const units::Unit &unit) {
              Variable var(Data::NoTag, {}, {data});
              var.setUnit(unit);
              return var;
            }),
-           py::arg("data"), py::arg("unit") = Unit(units::dimensionless))
+           py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
-      .def(py::init(&detail::makeVariable), py::arg("tag"), py::arg("labels"),
+      .def(py::init(&doMakeVariable), py::arg("tag"), py::arg("labels"),
            py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
-      .def("__getitem__", detail::pySlice<Variable>, py::keep_alive<0, 1>())
+      .def("__getitem__", pySlice<Variable>, py::keep_alive<0, 1>())
       .def("__setitem__",
            [](Variable &self, const std::tuple<Dim, py::slice> &index,
               const VariableSlice &other) {
-             detail::pySlice(self, index).assign(other);
+             pySlice(self, index).assign(other);
            })
       .def("__setitem__",
            [](Variable &self, const std::tuple<Dim, scipp::index> &index,
@@ -798,7 +796,7 @@ PYBIND11_MODULE(scippy, m) {
            py::is_operator())
       .def("__len__", &Variable::size)
       .def("__repr__",
-           [](const Variable &self) { return dataset::to_string(self, "."); });
+           [](const Variable &self) { return to_string(self, "."); });
 
   py::class_<VariableSlice> view(m, "VariableSlice", py::buffer_protocol());
   view.def_buffer(&make_py_buffer_info);
@@ -840,8 +838,7 @@ PYBIND11_MODULE(scippy, m) {
              return getItemBySingleIndex(self, index);
            },
            py::keep_alive<0, 1>())
-      .def("__getitem__", &detail::pySlice<VariableSlice>,
-           py::keep_alive<0, 1>())
+      .def("__getitem__", &pySlice<VariableSlice>, py::keep_alive<0, 1>())
       .def("__getitem__",
            [](VariableSlice &self, const std::map<Dim, const scipp::index> d) {
              auto slice(self);
@@ -853,7 +850,7 @@ PYBIND11_MODULE(scippy, m) {
       .def("__setitem__",
            [](VariableSlice &self, const std::tuple<Dim, py::slice> &index,
               const VariableSlice &other) {
-             detail::pySlice(self, index).assign(other);
+             pySlice(self, index).assign(other);
            })
       .def("__setitem__",
            [](VariableSlice &self, const std::tuple<Dim, scipp::index> &index,
@@ -861,8 +858,8 @@ PYBIND11_MODULE(scippy, m) {
              const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
            })
-      .def("__setitem__", &detail::setVariableSlice)
-      .def("__setitem__", &detail::setVariableSliceRange)
+      .def("__setitem__", &setVariableSlice)
+      .def("__setitem__", &setVariableSliceRange)
       .def("copy", [](const VariableSlice &self) { return Variable(self); },
            "Make a copy of a VariableSlice and return it as a Variable.")
       .def("__copy__", [](VariableSlice &self) { return Variable(self); })
@@ -932,9 +929,8 @@ PYBIND11_MODULE(scippy, m) {
              Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
              return self.reshape(dims);
            })
-      .def("__repr__", [](const VariableSlice &self) {
-        return dataset::to_string(self, ".");
-      });
+      .def("__repr__",
+           [](const VariableSlice &self) { return to_string(self, "."); });
 
   // Implicit conversion VariableSlice -> Variable. Reduces need for excessive
   // operator overload definitions
@@ -983,8 +979,7 @@ PYBIND11_MODULE(scippy, m) {
              return getItemBySingleIndex(self, index);
            },
            py::keep_alive<0, 1>())
-      .def("__getitem__", &detail::pySlice<DatasetSlice>,
-           py::keep_alive<0, 1>())
+      .def("__getitem__", &pySlice<DatasetSlice>, py::keep_alive<0, 1>())
       .def("__getitem__",
            [](DatasetSlice &self, const Tag &tag) { return self(tag); },
            py::keep_alive<0, 1>())
@@ -1009,19 +1004,18 @@ PYBIND11_MODULE(scippy, m) {
           "d.subset[Data.Value, 'sample'] to only get the Value and associated "
           "coordinates.\nAll other Variables (including attributes) are "
           "dropped.")
-      .def("__setitem__",
-           [](DatasetSlice &self, const std::tuple<Dim, py::slice> &index,
-              const DatasetSlice &other) {
-             detail::pySlice(self, index).assign(other);
-           })
+      .def(
+          "__setitem__",
+          [](DatasetSlice &self, const std::tuple<Dim, py::slice> &index,
+             const DatasetSlice &other) { pySlice(self, index).assign(other); })
       .def("__setitem__",
            [](DatasetSlice &self, const std::tuple<Dim, scipp::index> &index,
               const DatasetSlice &other) {
              const auto & [ dim, i ] = index;
              self(dim, i).assign(other);
            })
-      .def("__setitem__", detail::setData<DatasetSlice, detail::Key::Tag>)
-      .def("__setitem__", detail::setData<DatasetSlice, detail::Key::TagName>)
+      .def("__setitem__", setData<DatasetSlice, Key::Tag>)
+      .def("__setitem__", setData<DatasetSlice, Key::TagName>)
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
@@ -1139,9 +1133,8 @@ PYBIND11_MODULE(scippy, m) {
       .def("__rmul__",
            [](const DatasetSlice &self, double &other) { return self * other; },
            py::is_operator())
-      .def("__repr__", [](const DatasetSlice &self) {
-        return dataset::to_string(self, ".");
-      });
+      .def("__repr__",
+           [](const DatasetSlice &self) { return to_string(self, "."); });
 
   py::class_<Dataset>(m, "Dataset")
       .def(py::init<>())
@@ -1151,8 +1144,7 @@ PYBIND11_MODULE(scippy, m) {
           "A read-only Dimensions object containing the dimensions of the "
           "Dataset.")
       .def("__len__", &Dataset::size)
-      .def("__repr__",
-           [](const Dataset &self) { return dataset::to_string(self, "."); })
+      .def("__repr__", [](const Dataset &self) { return to_string(self, "."); })
       .def("__iter__",
            [](Dataset &self) {
              return py::make_iterator(self.begin(), self.end());
@@ -1195,7 +1187,7 @@ PYBIND11_MODULE(scippy, m) {
              return getItemBySingleIndex(self, index);
            },
            py::keep_alive<0, 1>())
-      .def("__getitem__", &detail::pySlice<Dataset>, py::keep_alive<0, 1>())
+      .def("__getitem__", &pySlice<Dataset>, py::keep_alive<0, 1>())
       .def("__getitem__",
            [](Dataset &self, const Tag &tag) { return self(tag); })
       .def("__getitem__",
@@ -1223,11 +1215,10 @@ PYBIND11_MODULE(scippy, m) {
       // py::array_t. I have not understood all details of this yet
       // though. See also
       // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
-      .def("__setitem__",
-           [](Dataset &self, const std::tuple<Dim, py::slice> &index,
-              const DatasetSlice &other) {
-             detail::pySlice(self, index).assign(other);
-           })
+      .def(
+          "__setitem__",
+          [](Dataset &self, const std::tuple<Dim, py::slice> &index,
+             const DatasetSlice &other) { pySlice(self, index).assign(other); })
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
               const DatasetSlice &other) {
@@ -1236,36 +1227,35 @@ PYBIND11_MODULE(scippy, m) {
            })
 
       // A) No dimensions argument, this will set data of existing item.
-      .def("__setitem__", detail::setData<Dataset, detail::Key::Tag>)
-      .def("__setitem__", detail::setData<Dataset, detail::Key::TagName>)
+      .def("__setitem__", setData<Dataset, Key::Tag>)
+      .def("__setitem__", setData<Dataset, Key::TagName>)
 
       // B) Variants with dimensions, inserting new item.
       // 0. Insertion from Variable or Variable slice.
-      .def("__setitem__", detail::insert<Variable, detail::Key::Tag>)
-      .def("__setitem__", detail::insert<Variable, detail::Key::TagName>)
-      .def("__setitem__", detail::insert<VariableSlice, detail::Key::Tag>)
-      .def("__setitem__", detail::insert<VariableSlice, detail::Key::TagName>)
+      .def("__setitem__", insert<Variable, Key::Tag>)
+      .def("__setitem__", insert<Variable, Key::TagName>)
+      .def("__setitem__", insert<VariableSlice, Key::Tag>)
+      .def("__setitem__", insert<VariableSlice, Key::TagName>)
       // 1. Insertion with default init. TODO Should this be removed?
-      .def("__setitem__", detail::insertDefaultInit<detail::Key::Tag>)
-      .def("__setitem__", detail::insertDefaultInit<detail::Key::TagName>)
+      .def("__setitem__", insertDefaultInit<Key::Tag>)
+      .def("__setitem__", insertDefaultInit<Key::TagName>)
       // 2. Insertion from numpy.ndarray
-      .def("__setitem__", detail::insert_ndarray<detail::Key::Tag>)
-      .def("__setitem__", detail::insert_ndarray<detail::Key::TagName>)
+      .def("__setitem__", insert_ndarray<Key::Tag>)
+      .def("__setitem__", insert_ndarray<Key::TagName>)
       // 2. Handle integers before case 3. below, which would convert to double.
-      .def("__setitem__", detail::insert_0D<int64_t, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_0D<int64_t, detail::Key::TagName>)
-      .def("__setitem__", detail::insert_0D<double, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_0D<double, detail::Key::TagName>)
-      .def("__setitem__", detail::insert_0D<std::string, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_0D<std::string, detail::Key::TagName>)
-      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_0D<Dataset, detail::Key::TagName>)
+      .def("__setitem__", insert_0D<int64_t, Key::Tag>)
+      .def("__setitem__", insert_0D<int64_t, Key::TagName>)
+      .def("__setitem__", insert_0D<double, Key::Tag>)
+      .def("__setitem__", insert_0D<double, Key::TagName>)
+      .def("__setitem__", insert_0D<std::string, Key::Tag>)
+      .def("__setitem__", insert_0D<std::string, Key::TagName>)
+      .def("__setitem__", insert_0D<Dataset, Key::Tag>)
+      .def("__setitem__", insert_0D<Dataset, Key::TagName>)
       // 3. Handle integers before case 4. below, which would convert to double.
-      .def("__setitem__", detail::insert_1D<int64_t, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_1D<int64_t, detail::Key::TagName>)
-      .def("__setitem__", detail::insert_1D<Eigen::Vector3d, detail::Key::Tag>)
-      .def("__setitem__",
-           detail::insert_1D<Eigen::Vector3d, detail::Key::TagName>)
+      .def("__setitem__", insert_1D<int64_t, Key::Tag>)
+      .def("__setitem__", insert_1D<int64_t, Key::TagName>)
+      .def("__setitem__", insert_1D<Eigen::Vector3d, Key::Tag>)
+      .def("__setitem__", insert_1D<Eigen::Vector3d, Key::TagName>)
       // 4. Insertion attempting forced conversion to array of double. This
       //    is handled by automatic conversion by pybind11 when using
       //    py::array_t. Handles also scalar data. See also the
@@ -1274,15 +1264,15 @@ PYBIND11_MODULE(scippy, m) {
       //    avoid some conversion we need to provide explicit variants
       //    for specific types, same as or similar to insert_1D in
       //    case 5. below.
-      .def("__setitem__", detail::insert_conv<double, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_conv<double, detail::Key::TagName>)
+      .def("__setitem__", insert_conv<double, Key::Tag>)
+      .def("__setitem__", insert_conv<double, Key::TagName>)
       // 5. Insertion of numpy-incompatible data. py::array_t does not support
       //    non-POD types like std::string, so we need to handle them
       //    separately.
-      .def("__setitem__", detail::insert_1D<std::string, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_1D<std::string, detail::Key::TagName>)
-      .def("__setitem__", detail::insert_1D<Dataset, detail::Key::Tag>)
-      .def("__setitem__", detail::insert_1D<Dataset, detail::Key::TagName>)
+      .def("__setitem__", insert_1D<std::string, Key::Tag>)
+      .def("__setitem__", insert_1D<std::string, Key::TagName>)
+      .def("__setitem__", insert_1D<Dataset, Key::Tag>)
+      .def("__setitem__", insert_1D<Dataset, Key::TagName>)
 
       // TODO Make sure we have all overloads covered to avoid implicit
       // conversion of DatasetSlice to Dataset.

@@ -10,7 +10,10 @@
 
 #include "aligned_allocator.h"
 
+namespace scipp::core {
+
 template <class T>
 using Vector = std::vector<T, AlignedAllocator<T, Alignment::AVX>>;
+}
 
 #endif // VECTOR_H

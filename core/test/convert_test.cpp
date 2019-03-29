@@ -11,6 +11,9 @@
 #include "dataset.h"
 #include "dimensions.h"
 
+using namespace scipp;
+using namespace scipp::core;
+
 Dataset makeTofDataForUnitConversion() {
   Dataset tof;
 

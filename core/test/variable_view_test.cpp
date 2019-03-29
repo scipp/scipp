@@ -9,6 +9,8 @@
 
 #include "variable_view.h"
 
+using namespace scipp::core;
+
 TEST(VariableView, full_volume) {
   Dimensions dims({{Dim::Y, 4}, {Dim::X, 2}});
   std::vector<double> variable(dims.volume());

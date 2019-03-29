@@ -11,7 +11,7 @@
 
 #include "scipp/units/unit.h"
 
-using namespace units;
+namespace scipp::units {
 
 // Helper to check whether type is a member of a given std::variant
 template <typename T, typename VARIANT_T> struct isVariantMember;
@@ -96,16 +96,14 @@ Unit sqrt(const Unit &a) {
       a()));
 }
 
-namespace units {
 bool containsCounts(const Unit &unit) {
-  if ((unit == units::counts) || unit == units::counts / units::us)
+  if ((unit == counts) || unit == counts / us)
     return true;
   return false;
 }
 bool containsCountsVariance(const Unit &unit) {
-  if (unit == units::counts * units::counts ||
-      unit == (units::counts / units::us) * (units::counts / units::us))
+  if (unit == counts * counts || unit == (counts / us) * (counts / us))
     return true;
   return false;
 }
-} // namespace units
+} // namespace scipp::units

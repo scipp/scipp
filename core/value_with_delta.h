@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cmath>
 
+namespace scipp::core {
+
 template <class T> class ValueWithDelta {
 public:
   ValueWithDelta() = default;
@@ -18,5 +20,7 @@ private:
   T m_value{0.0};
   T m_delta{0.0};
 };
+
+} // namespace scipp::core
 
 #endif // VALUE_WITH_DELTA_H

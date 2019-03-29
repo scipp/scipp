@@ -14,6 +14,8 @@
 #include "event_list_proxy.h"
 #include "md_zip_view.h"
 
+using namespace scipp::core;
+
 TEST(MDZipView, construct) {
   Dataset d;
   d.insert(Data::Value, "", {}, {1.1});

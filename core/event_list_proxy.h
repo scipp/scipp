@@ -11,6 +11,8 @@
 #include "dataset.h"
 #include "zip_view.h"
 
+namespace scipp::core {
+
 // TODO This proxy provides a unified view for different underlying data
 // formats. It is currently only used by zipMD and at this point it is unclear
 // whether we want to and can provide such a unified access. `zip` is the "new"
@@ -54,5 +56,7 @@ private:
   const typename Data::EventTofs_t::type *m_tofs{nullptr};
   const typename Data::EventPulseTimes_t::type *m_pulseTimes{nullptr};
 };
+
+} // namespace scipp::core
 
 #endif // EVENT_LIST_PROXY_H

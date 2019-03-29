@@ -9,6 +9,8 @@
 
 #include "md_zip_view.h"
 
+using namespace scipp::core;
+
 // Quick and dirty conversion to strings, should probably be part of our library
 // of basic routines.
 std::vector<std::string> asStrings(const Variable &variable) {

@@ -5,14 +5,17 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <gtest/gtest.h>
 
+#include <type_traits>
+
 #include "dataset.h"
 #include "dimensions.h"
 #include "except.h"
-#include <type_traits>
+
+using namespace scipp::core;
 
 TEST(DimensionMismatchError, what) {
   Dimensions dims{{Dim::X, 1}, {Dim::Y, 2}};
-  dataset::except::DimensionMismatchError error(dims, Dimensions{});
+  except::DimensionMismatchError error(dims, Dimensions{});
   EXPECT_EQ(
       error.what(),
       std::string("Expected dimensions {{Dim::X, 1}, {Dim::Y, 2}}, got {}."));
@@ -20,14 +23,14 @@ TEST(DimensionMismatchError, what) {
 
 TEST(DimensionNotFoundError, what) {
   Dimensions dims{{Dim::X, 1}, {Dim::Y, 2}};
-  dataset::except::DimensionNotFoundError error(dims, Dim::Z);
+  except::DimensionNotFoundError error(dims, Dim::Z);
   EXPECT_EQ(error.what(), std::string("Expected dimension to be in {{Dim::X, "
                                       "1}, {Dim::Y, 2}}, got Dim::Z."));
 }
 
 TEST(DimensionLengthError, what) {
   Dimensions dims{{Dim::X, 1}, {Dim::Y, 2}};
-  dataset::except::DimensionLengthError error(dims, Dim::Y, 3);
+  except::DimensionLengthError error(dims, Dim::Y, 3);
   EXPECT_EQ(error.what(),
             std::string("Expected dimension to be in {{Dim::X, 1}, {Dim::Y, "
                         "2}}, got Dim::Y with mismatching length 3."));
@@ -44,5 +47,5 @@ TEST(Dimensions, to_string) {
   b.insert(a[2]);
   b.insert(a[0]);
   // string representations should be the same
-  EXPECT_EQ(dataset::to_string(a), dataset::to_string(b));
+  EXPECT_EQ(to_string(a), to_string(b));
 }

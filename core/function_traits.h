@@ -5,6 +5,8 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <tuple>
 
+namespace scipp::core {
+
 // From https://stackoverflow.com/a/22784021
 // as seen on http://functionalcpp.wordpress.com/2013/08/05/function-traits/
 
@@ -58,3 +60,5 @@ public:
 template <class F> struct function_traits<F &> : public function_traits<F> {};
 
 template <class F> struct function_traits<F &&> : public function_traits<F> {};
+
+} // namespace scipp::core

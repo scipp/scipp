@@ -10,6 +10,8 @@
 #include <mutex>
 #include <vector>
 
+namespace scipp::core {
+
 class MemoryPool {
 public:
   void *allocate(size_t size) const {
@@ -63,5 +65,7 @@ inline MemoryPool &instance() {
   static MemoryPool pool;
   return pool;
 }
+
+} // namespace scipp::core
 
 #endif // MEMORY_POOL_H

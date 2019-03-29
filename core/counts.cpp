@@ -7,6 +7,8 @@
 #include "dataset.h"
 #include "except.h"
 
+namespace scipp::core {
+
 namespace counts {
 
 auto getBinWidths(const Dataset &d, const std::vector<Dim> &dims) {
@@ -66,11 +68,11 @@ void fromDensity(const VariableSlice var,
     } else if (units::containsCounts(var.unit())) {
       for (const auto &binWidth : binWidths)
         var *= binWidth;
-      dataset::expect::unit(var, units::counts);
+      expect::unit(var, units::counts);
     } else if (units::containsCountsVariance(var.unit())) {
       for (const auto &binWidth : binWidths)
         var *= binWidth * binWidth;
-      dataset::expect::unit(var, units::counts * units::counts);
+      expect::unit(var, units::counts * units::counts);
     }
   }
 }
@@ -102,3 +104,4 @@ bool isDensity(const Variable &var) {
 }
 
 } // namespace counts
+} // namespace scipp::core

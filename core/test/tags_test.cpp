@@ -7,6 +7,8 @@
 
 #include "tags.h"
 
+using namespace scipp::core;
+
 TEST(Tags, isDimensionCoord) {
   EXPECT_TRUE(isDimensionCoord[Coord::Tof.value()]);
   EXPECT_TRUE(isDimensionCoord[Coord::X.value()]);

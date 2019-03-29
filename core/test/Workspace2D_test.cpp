@@ -10,6 +10,8 @@
 #include "dataset_index.h"
 #include "md_zip_view.h"
 
+using namespace scipp::core;
+
 TEST(Workspace2D, multi_dimensional_merging_and_slicing) {
   Dataset d;
 

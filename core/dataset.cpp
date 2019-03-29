@@ -15,6 +15,8 @@
 #include "except.h"
 #include "tag_util.h"
 
+namespace scipp::core {
+
 Dataset::Dataset(std::vector<Variable> vars) {
   for (auto &var : vars)
     insert(std::move(var));
@@ -106,7 +108,7 @@ bool contains(const T &dataset, const Tag tag, const std::string &name) {
 }
 
 bool Dataset::contains(const Tag tag, const std::string &name) const {
-  return ::contains(*this, tag, name);
+  return scipp::core::contains(*this, tag, name);
 }
 
 Variable Dataset::erase(const Tag tag, const std::string &name) {
@@ -154,7 +156,7 @@ void Dataset::merge(const Dataset &other) {
 }
 
 scipp::index Dataset::find(const Tag tag, const std::string &name) const {
-  return ::find(*this, tag, name);
+  return scipp::core::find(*this, tag, name);
 }
 
 void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
@@ -282,7 +284,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
         // Coordinate variables must match
         // Strictly speaking we should allow "equivalent" coordinates, i.e.,
         // match only after projecting out any constant dimensions.
-        dataset::expect::variablesMatch(var1, var2);
+        expect::variablesMatch(var1, var2);
         // TODO We could improve sharing here magically, but whether this is
         // beneficial would depend on the shared reference count in var1 and
         // var2: var1 = var2;
@@ -298,7 +300,7 @@ T1 &binary_op_equals(Op op, T1 &dataset, const T2 &other) {
         if (var1 != var2)
           var1 += var2;
       }
-    } catch (const dataset::except::VariableNotFoundError &) {
+    } catch (const except::VariableNotFoundError &) {
       // Note that this is handled via name, i.e., there may be values and
       // variances, i.e., two variables.
       if (var2.isData() && names.size() == 1) {
@@ -478,7 +480,7 @@ T1 &op_equals(T1 &dataset, const T2 &other,
       auto lhs_var = dataset(rhs_var.tag(), rhs_var.name());
       if (lhs_var.isCoord()) {
         // Coordinate variables must match
-        dataset::expect::variablesMatch(lhs_var, rhs_var);
+        expect::variablesMatch(lhs_var, rhs_var);
       } else if (lhs_var.isData()) {
         // Use slices to capture related variables for example variance data
         // variables
@@ -638,7 +640,7 @@ Dataset &Dataset::operator/=(const double value) {
 }
 
 bool ConstDatasetSlice::contains(const Tag tag, const std::string &name) const {
-  return ::contains(*this, tag, name);
+  return scipp::core::contains(*this, tag, name);
 }
 
 template <class T1, class T2> T1 &assign(T1 &dataset, const T2 &other) {
@@ -674,10 +676,10 @@ Dataset ConstDatasetSlice::operator-() const {
 }
 
 DatasetSlice DatasetSlice::assign(const Dataset &other) const {
-  return ::assign(*this, other);
+  return scipp::core::assign(*this, other);
 }
 DatasetSlice DatasetSlice::assign(const ConstDatasetSlice &other) const {
-  return ::assign(*this, other);
+  return scipp::core::assign(*this, other);
 }
 
 DatasetSlice DatasetSlice::operator+=(const Dataset &other) const {
@@ -942,7 +944,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   // implementation of `histogram` would then also be simplified since we do not
   // need to distinguish between Data::Tof, etc. (which we are anyway not doing
   // currently).
-  dataset::expect::equals(events[0](Data::Tof).unit(), coord.unit());
+  expect::equals(events[0](Data::Tof).unit(), coord.unit());
 
   // TODO Can we reuse some code for bin handling from MDZipView?
   const auto binDim = coordDimension[coord.tag().value()];
@@ -955,7 +957,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
         "Data to histogram depends on histogram dimension.");
   for (const auto &dim : coord.dimensions().labels()) {
     if (dim != binDim) {
-      dataset::expect::dimensionMatches(dims, dim, coord.dimensions()[dim]);
+      expect::dimensionMatches(dims, dim, coord.dimensions()[dim]);
     }
   }
 
@@ -1098,10 +1100,9 @@ Dataset mean(const Dataset &d, const Dim dim) {
     if (coordDim != Dim::Invalid && coordDim != dim) {
       if (var.dimensions().contains(dim))
         throw std::runtime_error(
-            std::string("Cannot compute mean along ") +
-            dataset::to_string(dim).c_str() +
+            std::string("Cannot compute mean along ") + to_string(dim).c_str() +
             ": Dimension coordinate for dimension " +
-            dataset::to_string(coordDim).c_str() +
+            to_string(coordDim).c_str() +
             " depends also on the dimension. Rebin to common axis first.");
     }
   }
@@ -1113,7 +1114,8 @@ Dataset mean(const Dataset &d, const Dim dim) {
           // Standard deviation of the mean has an extra 1/sqrt(N). Note that
           // this is not included by the stand-alone mean(Variable), since that
           // would be confusing.
-          double scale = 1.0 / sqrt(static_cast<double>(var.dimensions()[dim]));
+          double scale =
+              1.0 / std::sqrt(static_cast<double>(var.dimensions()[dim]));
           m.insert(mean(var, dim) * Variable(Data::Value, {}, {scale}));
         } else {
           m.insert(mean(var, dim));
@@ -1132,10 +1134,9 @@ Dataset integrate(const Dataset &d, const Dim dim) {
     if (coordDim != Dim::Invalid && coordDim != dim) {
       if (var.dimensions().contains(dim))
         throw std::runtime_error(
-            std::string("Cannot compute mean along ") +
-            dataset::to_string(dim).c_str() +
+            std::string("Cannot compute mean along ") + to_string(dim).c_str() +
             ": Dimension coordinate for dimension " +
-            dataset::to_string(coordDim).c_str() +
+            to_string(coordDim).c_str() +
             " depends also on the dimension. Rebin to common axis first.");
     }
   }
@@ -1167,3 +1168,4 @@ Dataset reverse(const Dataset &d, const Dim dim) {
       out.insert(var);
   return out;
 }
+} // namespace scipp::core

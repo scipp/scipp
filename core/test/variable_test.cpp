@@ -12,6 +12,9 @@
 #include "tags.h"
 #include "variable.h"
 
+using namespace scipp;
+using namespace scipp::core;
+
 TEST(Variable, construct) {
   ASSERT_NO_THROW(Variable(Data::Value, Dimensions(Dim::Tof, 2)));
   ASSERT_NO_THROW(Variable(Data::Value, Dimensions(Dim::Tof, 2), 2));
@@ -190,7 +193,7 @@ TEST(Variable, operator_plus_equal_different_unit) {
 
   auto different_unit(a);
   different_unit.setUnit(units::m);
-  EXPECT_THROW_MSG(a += different_unit, dataset::except::UnitMismatchError,
+  EXPECT_THROW_MSG(a += different_unit, except::UnitMismatchError,
                    "Expected dimensionless to be equal to m.");
 }
 
@@ -204,7 +207,7 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   Variable a(Data::Value, {Dim::X, 1}, {1.0});
   auto b = makeVariable<int64_t>(Data::Value, {Dim::X, 1}, {2});
-  EXPECT_THROW_MSG(a += b, dataset::except::TypeError,
+  EXPECT_THROW_MSG(a += b, except::TypeError,
                    "Expected item dtype double, got int64.");
 }
 
@@ -449,7 +452,7 @@ TEST(Variable, concatenate) {
   b.setUnit(units::m);
   auto ab = concatenate(a, b, Dim::Tof);
   ASSERT_EQ(ab.size(), 2);
-  EXPECT_EQ(ab.unit(), Unit(units::m));
+  EXPECT_EQ(ab.unit(), units::Unit(units::m));
   const auto &data = ab.get(Data::Value);
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
@@ -603,8 +606,7 @@ TEST(Variable, broadcast) {
 
 TEST(Variable, broadcast_fail) {
   Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
-  EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}),
-                   dataset::except::DimensionLengthError,
+  EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}), except::DimensionLengthError,
                    "Expected dimension to be in {{Dim::Y, 2}, {Dim::X, 2}}, "
                    "got Dim::X with mismatching length 3.");
 }

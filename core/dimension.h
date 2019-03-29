@@ -8,6 +8,8 @@
 
 #include <cstdint>
 
+namespace scipp::core {
+
 enum class Dim : uint16_t {
   Component,
   DeltaE,
@@ -41,5 +43,7 @@ constexpr bool isContinuous(const Dim dim) {
     return true;
   return false;
 }
+
+} // namespace scipp::core
 
 #endif // DIMENSION_H

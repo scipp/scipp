@@ -10,6 +10,8 @@
 
 #include "dimensions.h"
 
+namespace scipp::core {
+
 class MultiIndex {
 public:
   MultiIndex(
@@ -139,5 +141,7 @@ private:
   std::array<std::array<int32_t, 4>, 4> m_offsets;
   std::array<std::array<scipp::index, 4>, 4> m_factors;
 };
+
+} // namespace scipp::core
 
 #endif // MULTI_INDEX_H

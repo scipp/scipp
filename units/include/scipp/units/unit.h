@@ -15,6 +15,7 @@
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 #include <boost/units/unit.hpp>
 
+namespace scipp::units {
 namespace neutron {
 namespace tof {
 
@@ -71,57 +72,64 @@ BOOST_UNITS_STATIC_CONSTANT(c, velocity);
 
 } // namespace tof
 } // namespace neutron
+} // namespace scipp::units
 
 // Define conversion factors: the conversion will work both ways with a single
 // macro
 
 // Convert angstroms to SI meters
-BOOST_UNITS_DEFINE_CONVERSION_FACTOR(neutron::tof::wavelength_base_unit,
-                                     boost::units::si::length, double, 1.0e-10);
+BOOST_UNITS_DEFINE_CONVERSION_FACTOR(
+    scipp::units::neutron::tof::wavelength_base_unit, boost::units::si::length,
+    double, 1.0e-10);
 // Convert meV to SI Joule
 BOOST_UNITS_DEFINE_CONVERSION_FACTOR(
-    neutron::tof::energy_base_unit, boost::units::si::energy, double,
-    1.0e-3 * boost::units::si::constants::codata::e.value().value());
+    scipp::units::neutron::tof::energy_base_unit, boost::units::si::energy,
+    double, 1.0e-3 * boost::units::si::constants::codata::e.value().value());
 // Convert tof microseconds to SI seconds
-BOOST_UNITS_DEFINE_CONVERSION_FACTOR(neutron::tof::tof_base_unit,
+BOOST_UNITS_DEFINE_CONVERSION_FACTOR(scipp::units::neutron::tof::tof_base_unit,
                                      boost::units::si::time, double, 1.0e-6);
 
 BOOST_UNITS_DEFINE_CONVERSION_FACTOR(
-    neutron::tof::velocity_base_unit, boost::units::si::velocity, double,
-    boost::units::si::constants::codata::c.value().value());
+    scipp::units::neutron::tof::velocity_base_unit, boost::units::si::velocity,
+    double, boost::units::si::constants::codata::c.value().value());
 
 // Define full and short names for the new units
 template <>
-struct boost::units::base_unit_info<neutron::tof::wavelength_base_unit> {
+struct boost::units::base_unit_info<
+    scipp::units::neutron::tof::wavelength_base_unit> {
   static std::string name() { return "angstroms"; }
   static std::string symbol() { return "\u212B"; }
 };
 
 template <>
-struct boost::units::base_unit_info<neutron::tof::counts_base_unit> {
+struct boost::units::base_unit_info<
+    scipp::units::neutron::tof::counts_base_unit> {
   static std::string name() { return "counts"; }
   static std::string symbol() { return "counts"; }
 };
 
 template <>
-struct boost::units::base_unit_info<neutron::tof::energy_base_unit> {
+struct boost::units::base_unit_info<
+    scipp::units::neutron::tof::energy_base_unit> {
   static std::string name() { return "milli-electronvolt"; }
   static std::string symbol() { return "meV"; }
 };
 
-template <> struct boost::units::base_unit_info<neutron::tof::tof_base_unit> {
+template <>
+struct boost::units::base_unit_info<scipp::units::neutron::tof::tof_base_unit> {
   static std::string name() { return "microseconds"; }
   static std::string symbol() { return "\u03BCs"; }
 };
 
 template <>
-struct boost::units::base_unit_info<neutron::tof::velocity_base_unit> {
+struct boost::units::base_unit_info<
+    scipp::units::neutron::tof::velocity_base_unit> {
   static std::string name() { return "c"; }
   static std::string symbol() { return "c"; }
 };
 
+namespace scipp::units {
 // Helper variables to make the declaration units more succinct.
-namespace units {
 static constexpr boost::units::si::dimensionless dimensionless;
 static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
@@ -164,7 +172,6 @@ using type = decltype(detail::make_unit(
                     meV / c, dimensionless / c, K, us / angstrom,
                     us / (m * angstrom))));
 } // namespace detail
-} // namespace units
 
 class Unit {
 public:
@@ -193,9 +200,8 @@ Unit operator*(const Unit &a, const Unit &b);
 Unit operator/(const Unit &a, const Unit &b);
 Unit sqrt(const Unit &a);
 
-namespace units {
 bool containsCounts(const Unit &unit);
 bool containsCountsVariance(const Unit &unit);
-} // namespace units
+} // namespace scipp::units
 
 #endif // UNIT_H

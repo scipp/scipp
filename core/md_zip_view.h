@@ -21,6 +21,8 @@
 #include "multi_index.h"
 #include "traits.h"
 
+namespace scipp::core {
+
 namespace detail {
 template <class T> struct value_type { using type = T; };
 template <class T> struct value_type<Bin<T>> { using type = const T; };
@@ -30,7 +32,7 @@ template <class T> struct is_bins : public std::false_type {};
 template <class T> struct is_bins<Bin<T>> : public std::true_type {};
 template <class T> using is_bins_t = typename is_bins<T>::type;
 
-template <class Tag> struct unit { using type = Unit; };
+template <class Tag> struct unit { using type = units::Unit; };
 template <class D, class... Tags> struct unit<MDZipViewImpl<D, Tags...>> {
   using type = std::tuple<typename unit<Tags>::type...>;
 };
@@ -396,8 +398,8 @@ template <class... Labels> auto ConstMDNested(Labels... labels) {
 }
 
 template <class D, class Tag> struct UnitHelper {
-  static Unit get(const Dataset &dataset,
-                  const std::string &name = std::string{}) {
+  static units::Unit get(const Dataset &dataset,
+                         const std::string &name = std::string{}) {
     if (is_coord<Tag>)
       return dataset(Tag{}).unit();
     else
@@ -406,8 +408,8 @@ template <class D, class Tag> struct UnitHelper {
 };
 
 template <class D, class Tag> struct UnitHelper<D, Bin<Tag>> {
-  static Unit get(const Dataset &dataset,
-                  const std::string &name = std::string{}) {
+  static units::Unit get(const Dataset &dataset,
+                         const std::string &name = std::string{}) {
     static_assert(is_coord<Tag>,
                   "Only coordinates can be defined at bin edges");
     static_cast<void>(name);
@@ -416,8 +418,8 @@ template <class D, class Tag> struct UnitHelper<D, Bin<Tag>> {
 };
 
 template <class D> struct UnitHelper<D, const Coord::Position_t> {
-  static Unit get(const Dataset &dataset,
-                  const std::string &name = std::string{}) {
+  static units::Unit get(const Dataset &dataset,
+                         const std::string &name = std::string{}) {
     static_cast<void>(name);
     if (dataset.contains(Coord::Position))
       return dataset(Coord::Position).unit();
@@ -426,8 +428,8 @@ template <class D> struct UnitHelper<D, const Coord::Position_t> {
 };
 
 template <class D> struct UnitHelper<D, Data::Events_t> {
-  static Unit get(const Dataset &dataset,
-                  const std::string &name = std::string{}) {
+  static units::Unit get(const Dataset &dataset,
+                         const std::string &name = std::string{}) {
     static_cast<void>(name);
     if (dataset.contains(Data::Events))
       return dataset.get(Data::Events)[0](Data::Tof).unit();
@@ -437,8 +439,8 @@ template <class D> struct UnitHelper<D, Data::Events_t> {
 
 template <class D>
 struct UnitHelper<D, std::remove_cv_t<decltype(Data::StdDev)>> {
-  static Unit get(const Dataset &dataset,
-                  const std::string &name = std::string{}) {
+  static units::Unit get(const Dataset &dataset,
+                         const std::string &name = std::string{}) {
     return dataset(Data::Variance, name).unit();
   }
 };
@@ -742,5 +744,7 @@ MDZipViewImpl<D, Ts...>::makeVariables(D &dataset,
       std::tuple<ref_type_t<D, Ts>...>{
           DataHelper<D, Ts>::get(dataset, iterationDimensions, name)...}};
 }
+
+} // namespace scipp::core
 
 #endif // MD_ZIP_VIEW_H

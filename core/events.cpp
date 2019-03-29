@@ -11,6 +11,8 @@
 #include "events.h"
 #include "except.h"
 
+namespace scipp::core {
+
 namespace events {
 
 void sortByTof(Dataset &dataset) {
@@ -39,3 +41,4 @@ void sortByTof(Dataset &dataset) {
 }
 
 } // namespace events
+} // namespace scipp::core

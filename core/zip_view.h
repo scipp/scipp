@@ -10,6 +10,8 @@
 
 #include "dataset.h"
 
+namespace scipp::core {
+
 template <class... Tags> struct AccessHelper {
   static void push_back(std::array<Dimensions *, sizeof...(Tags)> &dimensions,
                         std::tuple<Vector<typename Tags::type> *...> &data,
@@ -358,5 +360,7 @@ template <class... Keys>
 auto zip(const Dataset &dataset, const Keys &... keys) {
   return VariableZipProxy<const Dataset, Keys...>(dataset, keys...);
 }
+
+} // namespace scipp::core
 
 #endif // ZIP_VIEW_H

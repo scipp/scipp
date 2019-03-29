@@ -11,10 +11,13 @@
 
 #include "dimension.h"
 
+namespace scipp::core {
+
 class Dataset;
 
 namespace events {
 void sortByTof(Dataset &dataset);
 } // namespace events
+} // namespace scipp::core
 
 #endif // EVENTS_H

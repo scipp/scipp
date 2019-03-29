@@ -9,6 +9,8 @@
 #include "dimensions.h"
 #include "variable.h"
 
+namespace scipp::core {
+
 /// Returns true if all dimensions of other are also contained in *this. Does
 /// not check dimension order.
 bool Dimensions::contains(const Dimensions &other) const {
@@ -62,7 +64,7 @@ scipp::index Dimensions::offset(const Dim label) const {
       return offset;
     offset *= m_shape[i];
   }
-  throw dataset::except::DimensionNotFoundError(*this, label);
+  throw except::DimensionNotFoundError(*this, label);
 }
 
 void Dimensions::resize(const Dim label, const scipp::index size) {
@@ -115,7 +117,7 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
 
 Dim Dimensions::inner() const {
   if (ndim() == 0)
-    throw dataset::except::DimensionError(
+    throw except::DimensionError(
         "Expected Dimensions with at least 1 dimension.");
   return m_dims[m_ndim - 1];
 }
@@ -124,5 +126,7 @@ int32_t Dimensions::index(const Dim dim) const {
   for (int32_t i = 0; i < 6; ++i)
     if (m_dims[i] == dim)
       return i;
-  throw dataset::except::DimensionNotFoundError(*this, dim);
+  throw except::DimensionNotFoundError(*this, dim);
 }
+
+} // namespace scipp::core

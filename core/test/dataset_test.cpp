@@ -11,6 +11,9 @@
 #include "dataset.h"
 #include "dimensions.h"
 
+using namespace scipp;
+using namespace scipp::core;
+
 TEST(Dataset, construct_empty) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(Dataset, construct) { ASSERT_NO_THROW(Dataset d); }
@@ -171,7 +174,7 @@ TEST(Dataset, get_variable_view) {
   EXPECT_EQ(d(Data::Value, "").name(), "");
   EXPECT_EQ(d(Data::Value, "name").tag(), Data::Value);
   EXPECT_EQ(d(Data::Value, "name").name(), "name");
-  EXPECT_THROW_MSG_SUBSTR(d(Coord::Y), dataset::except::VariableNotFoundError,
+  EXPECT_THROW_MSG_SUBSTR(d(Coord::Y), except::VariableNotFoundError,
                           "could not find variable with tag "
                           "Coord::Y and name ``");
 }
@@ -282,8 +285,7 @@ TEST(Dataset, get_fail) {
   EXPECT_THROW_MSG_SUBSTR(d.get(Data::Value), std::runtime_error,
                           "could not find variable with tag "
                           "Data::Value and name ``.");
-  EXPECT_THROW_MSG_SUBSTR(d.get(Data::Variance),
-                          dataset::except::VariableNotFoundError,
+  EXPECT_THROW_MSG_SUBSTR(d.get(Data::Variance), except::VariableNotFoundError,
                           "could not find variable with tag "
                           "Data::Variance and name ``.");
 }
@@ -391,7 +393,7 @@ TEST(Dataset, subset_no_data_fail) {
   // need a clearly different way of creating them, i.e., not by accident. One
   // example could be `dataset.coords()`, a subset that contains all
   // coordinates.
-  EXPECT_THROW(d.subset(""), dataset::except::VariableNotFoundError);
+  EXPECT_THROW(d.subset(""), except::VariableNotFoundError);
 }
 
 TEST(Dataset, subset_of_subset) {
@@ -1014,7 +1016,7 @@ TEST(Dataset, concatenate_with_bin_edges) {
   not_edge.erase(Coord::X);
   not_edge.insert(Coord::X, {}, {0.3});
   EXPECT_THROW_MSG(concatenate(ds, not_edge, Dim::X),
-                   dataset::except::DimensionNotFoundError,
+                   except::DimensionNotFoundError,
                    "Expected dimension to be in {}, got Dim::X.");
 
   EXPECT_THROW_MSG(concatenate(ds, ds, Dim::X), std::runtime_error,
@@ -1093,8 +1095,7 @@ TEST(Dataset, concatenate_with_attributes) {
 TEST(Dataset, rebin_failures) {
   Dataset d;
   Variable coord(Coord::X, {Dim::X, 3}, {1.0, 3.0, 5.0});
-  EXPECT_THROW_MSG_SUBSTR(rebin(d, coord),
-                          dataset::except::VariableNotFoundError,
+  EXPECT_THROW_MSG_SUBSTR(rebin(d, coord), except::VariableNotFoundError,
                           "could not find variable with tag "
                           "Coord::X and name ``");
   Variable data(Data::Value, {Dim::X, 2}, {2.0, 4.0});
@@ -1140,11 +1141,11 @@ TEST(Dataset, rebin_accepts_only_counts_and_densities) {
   Variable coordNew(Coord::Tof, {Dim::Tof, 2}, {1.0, 5.0});
 
   d.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
-  EXPECT_THROW_MSG(rebin(d, coordNew), dataset::except::UnitError,
+  EXPECT_THROW_MSG(rebin(d, coordNew), except::UnitError,
                    "Expected counts or counts-density, got dimensionless.");
 
   d(Data::Value, "").setUnit(units::m);
-  EXPECT_THROW_MSG(rebin(d, coordNew), dataset::except::UnitError,
+  EXPECT_THROW_MSG(rebin(d, coordNew), except::UnitError,
                    "Expected counts or counts-density, got m.");
 
   d(Data::Value, "").setUnit(units::counts);
@@ -1214,13 +1215,12 @@ TEST(Dataset, histogram_failures) {
 
   Variable coordWithExtraDim(Coord::Tof, {{Dim::X, 2}, {Dim::Tof, 3}},
                              {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
-  EXPECT_THROW(histogram(d, coordWithExtraDim),
-               dataset::except::DimensionNotFoundError);
+  EXPECT_THROW(histogram(d, coordWithExtraDim), except::DimensionNotFoundError);
 
   Variable coordWithLengthMismatch(Coord::Tof,
                                    {{Dim::Spectrum, 3}, {Dim::Tof, 3}});
   EXPECT_THROW(histogram(d, coordWithLengthMismatch),
-               dataset::except::DimensionLengthError);
+               except::DimensionLengthError);
 
   Variable coordNotIncreasing(Coord::Tof, {Dim::Tof, 3}, {1.0, 1.5, 1.4});
   EXPECT_THROW_MSG(histogram(d, coordNotIncreasing), std::runtime_error,
@@ -1515,8 +1515,7 @@ TEST(DatasetSlice, subset_slice_spatial) {
   auto view_a_x01 = d.subset("a")(Dim::X, 0, 1);
   auto view_a_x12 = d.subset("a")(Dim::X, 1, 2);
   EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
-                          dataset::except::VariableMismatchError,
-                          "expected to match");
+                          except::VariableMismatchError, "expected to match");
 }
 
 TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
@@ -1579,11 +1578,9 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   // is preserved, even if the range has size 1. Thus the operation fails due to
   // coordinate mismatch, as it should.
   EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
-                          dataset::except::VariableMismatchError,
-                          "expected to match");
+                          except::VariableMismatchError, "expected to match");
   EXPECT_THROW_MSG_SUBSTR(view_a_x13 -= view_a_x02,
-                          dataset::except::VariableMismatchError,
-                          "expected to match");
+                          except::VariableMismatchError, "expected to match");
 }
 
 template <typename T>

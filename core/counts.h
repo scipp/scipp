@@ -10,6 +10,8 @@
 
 #include "dimension.h"
 
+namespace scipp::core {
+
 class Dataset;
 class Variable;
 class VariableSlice;
@@ -24,5 +26,6 @@ Dataset fromDensity(Dataset d, const Dim dim);
 Dataset fromDensity(Dataset d, const std::vector<Dim> &dims);
 bool isDensity(const Variable &var);
 } // namespace counts
+} // namespace scipp::core
 
 #endif // COUNTS_H

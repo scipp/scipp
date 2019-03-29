@@ -7,6 +7,8 @@
 
 #include "bool.h"
 
+using namespace scipp::core;
+
 TEST(Bool, size) { EXPECT_EQ(sizeof(Bool), 1ul); }
 
 TEST(Bool, std_vector_initializer_list) {

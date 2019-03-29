@@ -8,6 +8,8 @@
 
 #include <type_traits>
 
+namespace scipp::core {
+
 class Dataset;
 template <class D, class... Ts> class MDZipViewImpl;
 
@@ -34,5 +36,7 @@ template <class T> struct is_const<const T> : std::true_type {};
 template <class D, class... Ts>
 struct is_const<MDZipViewImpl<D, Ts...>> : and_<is_const<Ts>...> {};
 } // namespace detail
+
+} // namespace scipp::core
 
 #endif // TRAITS_H

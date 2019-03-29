@@ -10,6 +10,8 @@
 #include "dataset.h"
 #include "value_with_delta.h"
 
+using namespace scipp::core;
+
 Dataset makeRun() {
   Dataset run;
   run.insert(Data::Value, "total_counts", {}, {1000});
@@ -120,7 +122,7 @@ TEST(Run, meta_data_fail_coord_mismatch) {
 
   auto &run2 = d2.get(Attr::ExperimentLog, "sample_log")[0];
   run2.get(Coord::Polarization)[0] = "Spin-Down";
-  EXPECT_THROW_MSG_SUBSTR(d1 += d2, dataset::except::VariableMismatchError,
+  EXPECT_THROW_MSG_SUBSTR(d1 += d2, except::VariableMismatchError,
                           "expected to match");
 }
 
@@ -131,7 +133,7 @@ TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
 
   auto &run2 = d2.get(Attr::ExperimentLog, "sample_log")[0];
   run2.get(Coord::FuzzyTemperature)[0] = ValueWithDelta<double>(4.0, 0.1);
-  EXPECT_THROW_MSG_SUBSTR(d1 += d2, dataset::except::VariableMismatchError,
+  EXPECT_THROW_MSG_SUBSTR(d1 += d2, except::VariableMismatchError,
                           "expected to match");
 }
 

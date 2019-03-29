@@ -14,6 +14,8 @@
 #include "multi_index.h"
 #include "vector.h"
 
+namespace scipp::core {
+
 /// A view into multi-dimensional data, supporting slicing, index reordering,
 /// and broadcasting.
 template <class T> class VariableView {
@@ -136,5 +138,7 @@ VariableView<T> makeVariableView(T *variable, const scipp::index offset,
                                  const Dimensions &dimensions) {
   return VariableView<T>(variable, offset, targetDimensions, dimensions);
 }
+
+} // namespace scipp::core
 
 #endif // VARIABLE_VIEW_H

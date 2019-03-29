@@ -10,6 +10,8 @@
 
 #include "dataset.h"
 
+namespace scipp::core {
+
 template <class Tag> class DatasetIndex {
 public:
   DatasetIndex(const Dataset &dataset) {
@@ -29,5 +31,7 @@ public:
 private:
   std::unordered_map<typename Tag::type, scipp::index> m_index;
 };
+
+} // namespace scipp::core
 
 #endif // DATASET_INDEX_H
