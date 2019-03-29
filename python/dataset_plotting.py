@@ -857,8 +857,7 @@ def process_dimensions(input_data, axes, values, ndim):
             iy = i
     if (ix is None) or (iy is None):
         raise RuntimeError("Dimension of either x ({}) or y ({}) array was not "
-                           "found in z ({}) array.".format(xlabs[0], ylabs[0],
-                           zlabs))
+                           "found in z ({}) array.".format(xdims, ydims, zdims))
     if nx[0] == nz[ix]:
         xe = centers_to_edges(x)
         xc = x
@@ -866,7 +865,7 @@ def process_dimensions(input_data, axes, values, ndim):
         xe = x
         xc = edges_to_centers(x)[0]
     else:
-        raise RuntimeError("Dimensions of Coord ({}) and Value ({}) do not "
+        raise RuntimeError("Dimensions of x Coord ({}) and Value ({}) do not "
                            "match.".format(nx[0], nz[ix]))
     if ny[0] == nz[iy]:
         ye = centers_to_edges(y)
@@ -875,6 +874,6 @@ def process_dimensions(input_data, axes, values, ndim):
         ye = y
         yc = edges_to_centers(y)[0]
     else:
-        raise RuntimeError("Dimensions of Coord ({}) and Value ({}) do not "
+        raise RuntimeError("Dimensions of y Coord ({}) and Value ({}) do not "
                            "match.".format(ny[0], nz[iy]))
     return xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs
