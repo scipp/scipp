@@ -1,6 +1,6 @@
 import unittest
 
-from dataset import *
+from scippy import *
 import numpy as np
 import operator
 
@@ -13,7 +13,7 @@ class TestVariableSlice(unittest.TestCase):
 
     def test_type(self):
         variable_slice = self._a[Dim.X, :]
-        self.assertEqual(type(variable_slice), dataset.VariableSlice)
+        self.assertEqual(type(variable_slice), scippy.VariableSlice)
 
     def test_variable_type(self):
         coord_var = Variable(Coord.X, [Dim.X], np.arange(10))
@@ -32,7 +32,7 @@ class TestVariableSlice(unittest.TestCase):
 
         data = np.copy(a.numpy)
         c = a + b
-        self.assertEqual(type(c), dataset.Variable)
+        self.assertEqual(type(c), scippy.Variable)
         self.assertTrue(np.array_equal(c.numpy, data+data))
         c = a - b
         self.assertTrue(np.array_equal(c.numpy, data-data))

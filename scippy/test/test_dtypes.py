@@ -1,6 +1,6 @@
 import unittest
 
-from dataset import *
+from scippy import *
 import numpy as np
 
 class TestDTypes(unittest.TestCase):

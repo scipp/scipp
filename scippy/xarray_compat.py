@@ -1,5 +1,5 @@
 import xarray as xr
-from . import dataset as ds
+from . import scippy as ds
 
 def name(x):
     return x.__repr__().split('.')[1]
