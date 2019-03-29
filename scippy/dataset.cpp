@@ -17,9 +17,9 @@
 #include "dataset.h"
 #include "events.h"
 #include "except.h"
+#include "scipp/units/unit.h"
 #include "tag_util.h"
 #include "tags.h"
-#include "unit.h"
 #include "zip_view.h"
 
 namespace py = pybind11;

@@ -13,9 +13,9 @@
 
 #include "dimensions.h"
 #include "index.h"
+#include "scipp/units/unit.h"
 #include "span.h"
 #include "tags.h"
-#include "unit.h"
 #include "variable_view.h"
 #include "vector.h"
 
