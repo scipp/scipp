@@ -30,9 +30,9 @@ RUN conda config --add channels conda-forge && \
     'poco' \
     'nexus' \
     'mantid-framework' \
-    #installing dataset dependencies
+    #installing scipp dependencies
     'xarray' \
-    #installing plotly and jupyter extension to visualize dataset
+    #installing plotly and jupyter extension to visualize scipp
     'plotly=3.6.1' \
     #downgrade tornado for correct work
     'tornado<5.0.0' \
@@ -55,23 +55,23 @@ RUN jupyter contrib nbextension install && \
     jupyter nbextension enable exercise2/main
 
 
-#installing dataset
+#installing scipp
 RUN cd /tmp && \
-    git clone https://github.com/mantidproject/dataset.git && \
-    cd ./dataset && \
+    git clone https://github.com/mantidproject/scipp.git && \
+    cd ./scipp && \
     git submodule init && \
     git submodule update && \
-    mkdir /tmp/dataset_build && \
-    cd /tmp/dataset_build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/conda/lib/python3.6/site-packages /tmp/dataset && \
+    mkdir /tmp/scipp_build && \
+    cd /tmp/scipp_build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/conda/lib/python3.6/site-packages /tmp/scipp && \
     make -j $(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)
 
 USER root
 
-RUN cd /tmp/dataset_build && \
+RUN cd /tmp/scipp_build && \
     make install
 
-RUN chown -R $NB_USER /tmp/dataset
+RUN chown -R $NB_USER /tmp/scipp
 
 # Creating scripts for updating and making examples
 ARG UPD_EX=/usr/local/bin/update_repo_and_make_examples.sh
@@ -81,12 +81,12 @@ ARG DEMO_DIR=/home/$NB_USER/demo
 RUN touch $UPD_EX && \
     chmod a+x $UPD_EX &&\
     echo "#!/bin/bash" >> $UPD_EX && \
-    echo "cd /tmp/dataset && git reset --hard && git clean -fd && git checkout . && git pull" >> $UPD_EX && \
+    echo "cd /tmp/scipp && git reset --hard && git clean -fd && git checkout . && git pull" >> $UPD_EX && \
     echo "if [ ! -d $EX_DIR ]; then mkdir $EX_DIR; fi;" >> $UPD_EX && \
     echo "if [ ! -d $DEMO_DIR ]; then mkdir $DEMO_DIR; fi;" >> $UPD_EX && \
-    echo "if [ -d /tmp/dataset/python/demo ] && [ -d $DEMO_DIR ]; then cp -r /tmp/dataset/python/demo/* $DEMO_DIR ; fi;" >> $UPD_EX && \
-    echo "find /tmp/dataset/python/examples -name '*.py' -exec py2nb {} \; ;" >> $UPD_EX && \
-    echo "if [ -d /tmp/dataset/python/examples ] && [ -d $EX_DIR ]; then find /tmp/dataset/python/examples -name '*.ipynb' -exec mv {} $EX_DIR \; ; fi;" >> $UPD_EX && \
+    echo "if [ -d /tmp/scipp/scippy/demo ] && [ -d $DEMO_DIR ]; then cp -r /tmp/scipp/scippy/demo/* $DEMO_DIR ; fi;" >> $UPD_EX && \
+    echo "find /tmp/scipp/scippy/examples -name '*.py' -exec py2nb {} \; ;" >> $UPD_EX && \
+    echo "if [ -d /tmp/scipp/scippy/examples ] && [ -d $EX_DIR ]; then find /tmp/scipp/scippy/examples -name '*.ipynb' -exec mv {} $EX_DIR \; ; fi;" >> $UPD_EX && \
     echo "exit 0" >> $UPD_EX
 
 # Avoid using passwords for jupyter notebook
