@@ -11,6 +11,8 @@
 #include "call_wrappers.h"
 #include "dataset.h"
 
+using namespace scipp::core;
+
 struct DatasetAlgorithm {
   void apply(Dataset &dataset) const {}
 };

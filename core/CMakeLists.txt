@@ -5,7 +5,6 @@
 set(INC_FILES
     aligned_allocator.h
     convert.h
-    cow_ptr.h
     dataset.h
     dataset_index.h
     dimensions.h

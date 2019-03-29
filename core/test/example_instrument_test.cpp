@@ -10,6 +10,8 @@
 #include "dataset_index.h"
 #include "md_zip_view.h"
 
+using namespace scipp::core;
+
 TEST(ExampleInstrument, basics) {
   scipp::index ndet = 4;
 

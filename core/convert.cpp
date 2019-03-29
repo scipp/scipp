@@ -13,6 +13,8 @@
 #include "md_zip_view.h"
 #include "zip_view.h"
 
+namespace scipp::core {
+
 Variable getSpecPos(const Dataset &d) {
   // TODO There should be a better way to extract the actual spectrum positions
   // as a variable.
@@ -83,7 +85,7 @@ Dataset tofToDSpacing(const Dataset &d) {
   //   v1 dot v2 = norm(v1) norm(v2) cos(alpha).
   std::transform(scatteredVec.begin(), scatteredVec.end(), sinThetaData.begin(),
                  [&](const Eigen::Vector3d &scattered) {
-                   return sqrt(0.5 * (1.0 - beamVec.dot(scattered)));
+                   return std::sqrt(0.5 * (1.0 - beamVec.dot(scattered)));
                  });
   const auto sinTheta =
       makeVariable<double>(Data::Value, scattered.dimensions(), sinThetaData);
@@ -110,7 +112,7 @@ Dataset tofToDSpacing(const Dataset &d) {
           "TODO Converting units of event data not implemented yet.");
     } else {
       // Changing Dim::Tof to Dim::DSpacing.
-      if (::counts::isDensity(var)) {
+      if (counts::isDensity(var)) {
         throw std::runtime_error(
             "TODO Converting density data to DSpacing not implemented yet.");
       } else {
@@ -167,7 +169,7 @@ Dataset tofToEnergy(const Dataset &d) {
           "TODO Converting units of event data not implemented yet.");
     } else {
       // Changing Dim::Tof to Dim::Energy.
-      if (::counts::isDensity(var)) {
+      if (counts::isDensity(var)) {
         // The way of handling density data here looks less than optimal. We
         // either need to encapsulate this better or require manual conversion
         // from density before applying unit converions.
@@ -179,10 +181,10 @@ Dataset tofToEnergy(const Dataset &d) {
             newCoord(Dim::Energy, 1, size) - newCoord(Dim::Energy, 0, size - 1);
 
         converted.insert(var);
-        ::counts::fromDensity(converted(var.tag(), var.name()), {oldBinWidth});
+        counts::fromDensity(converted(var.tag(), var.name()), {oldBinWidth});
         converted.insert(
             converted.erase(var.tag(), var.name()).reshape(varDims));
-        ::counts::toDensity(converted(var.tag(), var.name()), {newBinWidth});
+        counts::toDensity(converted(var.tag(), var.name()), {newBinWidth});
       } else {
         converted.insert(var.reshape(varDims));
       }
@@ -248,7 +250,7 @@ Dataset tofToDeltaE(const Dataset &d) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else {
-      if (::counts::isDensity(var))
+      if (counts::isDensity(var))
         throw std::runtime_error("TODO Converting units of count-density data "
                                  "not implemented yet for this case.");
       converted.insert(var.reshape(varDims));
@@ -274,9 +276,9 @@ scipp::index continuousToIndex(const double val,
 }
 
 Dataset continuousToIndex(const Variable &values, const Dataset &coords) {
-  dataset::expect::equals(values.unit(), coords(Coord::Qx).unit());
-  dataset::expect::equals(values.unit(), coords(Coord::Qy).unit());
-  dataset::expect::equals(values.unit(), coords(Coord::Qz).unit());
+  expect::equals(values.unit(), coords(Coord::Qx).unit());
+  expect::equals(values.unit(), coords(Coord::Qy).unit());
+  expect::equals(values.unit(), coords(Coord::Qz).unit());
   const auto &vals = values.span<Eigen::Vector3d>();
   const auto &qx = coords.get(Coord::Qx);
   const auto &qy = coords.get(Coord::Qy);
@@ -432,3 +434,5 @@ Dataset convert(const Dataset &d, const std::vector<Dim> &from,
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
 }
+
+} // namespace scipp::core

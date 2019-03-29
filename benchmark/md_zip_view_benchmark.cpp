@@ -8,6 +8,8 @@
 
 #include "md_zip_view.h"
 
+using namespace scipp::core;
+
 std::array<scipp::index, 3> getIndex(scipp::index i,
                                      const std::array<scipp::index, 3> &size) {
   std::array<scipp::index, 3> index;

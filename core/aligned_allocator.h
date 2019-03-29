@@ -7,6 +7,8 @@
 // from https://stackoverflow.com/a/12942652/1458281
 #include "memory_pool.h"
 
+namespace scipp::core {
+
 enum class Alignment : size_t {
   Normal = sizeof(void *),
   SSE = 16,
@@ -182,3 +184,5 @@ inline bool operator!=(const AlignedAllocator<T, TAlign> &,
                        const AlignedAllocator<U, UAlign> &) noexcept {
   return TAlign != UAlign;
 }
+
+} // namespace scipp::core

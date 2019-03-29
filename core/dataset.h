@@ -14,6 +14,8 @@
 #include "tags.h"
 #include "variable.h"
 
+namespace scipp::core {
+
 class ConstDatasetSlice;
 class DatasetSlice;
 
@@ -290,7 +292,7 @@ scipp::index find(const T &dataset, const Tag tag, const std::string &name) {
   for (scipp::index i = 0; i < dataset.size(); ++i)
     if (dataset[i].tag() == tag && dataset[i].name() == name)
       return i;
-  throw dataset::except::VariableNotFoundError(dataset, tag, name);
+  throw except::VariableNotFoundError(dataset, tag, name);
 }
 
 namespace detail {
@@ -340,7 +342,7 @@ protected:
       }
     }
     if (!foundData)
-      throw dataset::except::VariableNotFoundError(base, select);
+      throw except::VariableNotFoundError(base, select);
     return indices;
   }
   std::vector<scipp::index> makeIndices(const ConstDatasetSlice &base,
@@ -357,7 +359,7 @@ protected:
       }
     }
     if (!foundData)
-      throw dataset::except::VariableNotFoundError(base, selectTag, selectName);
+      throw except::VariableNotFoundError(base, selectTag, selectName);
     return indices;
   }
 
@@ -591,5 +593,7 @@ Dataset sum(const Dataset &d, const Dim dim);
 Dataset mean(const Dataset &d, const Dim dim);
 Dataset integrate(const Dataset &d, const Dim dim);
 Dataset reverse(const Dataset &d, const Dim dim);
+
+} // namespace scipp::core
 
 #endif // DATASET_H

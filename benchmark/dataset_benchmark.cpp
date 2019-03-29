@@ -10,6 +10,8 @@
 
 #include "dataset.h"
 
+using namespace scipp::core;
+
 // Dataset::get requires a search based on a tag defined by the type and is thus
 // potentially expensive.
 static void BM_Dataset_get_with_many_columns(benchmark::State &state) {

@@ -9,6 +9,8 @@
 
 #include "event_list_proxy.h"
 
+using namespace scipp::core;
+
 static void BM_EventListProxy_push_back_baseline(benchmark::State &state) {
   std::random_device rd;
   std::mt19937 mt(rd());

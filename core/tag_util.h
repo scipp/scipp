@@ -8,6 +8,8 @@
 
 #include "tags.h"
 
+namespace scipp::core {
+
 /**
  * At the time of writing older clang 6 lacks support for template
  * argument deduction of class templates (OSX only?)
@@ -61,7 +63,7 @@ template <template <class> class Callable, class... Ts, class... Args>
 static auto callDType(const std::tuple<Ts...> &, const DType dtype,
                       Args &&... args) {
   auto funcs = make_array(Callable<Ts>::apply...);
-  std::array<DType, sizeof...(Ts)> dtypes{::dtype<Ts>...};
+  std::array<DType, sizeof...(Ts)> dtypes{scipp::core::dtype<Ts>...};
   for (size_t i = 0; i < dtypes.size(); ++i)
     if (dtypes[i] == dtype)
       return funcs[i](std::forward<Args>(args)...);
@@ -77,5 +79,7 @@ template <class... Ts> struct CallDType {
                                std::forward<Args>(args)...);
   }
 };
+
+} // namespace scipp::core
 
 #endif // TAG_UTIL_H

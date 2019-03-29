@@ -14,20 +14,25 @@
 #include "scipp/units/unit.h"
 #include "tags.h"
 
+namespace scipp::units {
+class Unit;
+}
+
+namespace scipp::core {
+
 class ConstDatasetSlice;
 class Dataset;
 class Dimensions;
-class Unit;
 class Variable;
 class ConstVariableSlice;
 
-namespace dataset {
 std::string to_string(const DType dtype);
 std::string to_string(const Dim dim, const std::string &separator = "::");
 std::string to_string(const Dimensions &dims,
                       const std::string &separator = "::");
 std::string to_string(const Tag tag, const std::string &separator = "::");
-std::string to_string(const Unit &unit, const std::string &separator = "::");
+std::string to_string(const units::Unit &unit,
+                      const std::string &separator = "::");
 std::string to_string(const Variable &variable,
                       const std::string &separator = "::");
 std::string to_string(const ConstVariableSlice &variable,
@@ -83,7 +88,7 @@ struct VariableError : public std::runtime_error {
 struct VariableMismatchError : public VariableError {
   template <class A, class B>
   VariableMismatchError(const A &a, const B &b)
-      : VariableError(a, "expected to match\n" + dataset::to_string(b)) {}
+      : VariableError(a, "expected to match\n" + to_string(b)) {}
 };
 
 struct UnitError : public std::runtime_error {
@@ -91,7 +96,7 @@ struct UnitError : public std::runtime_error {
 };
 
 struct UnitMismatchError : public UnitError {
-  UnitMismatchError(const Unit &a, const Unit &b);
+  UnitMismatchError(const units::Unit &a, const units::Unit &b);
 };
 
 } // namespace except
@@ -103,7 +108,7 @@ template <class A, class B> void variablesMatch(const A &a, const B &b) {
 }
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const scipp::index length);
-void equals(const Unit &a, const Unit &b);
+void equals(const units::Unit &a, const units::Unit &b);
 void equals(const Dimensions &a, const Dimensions &b);
 
 template <class T> void contains(const T &a, const T &b) {
@@ -111,7 +116,7 @@ template <class T> void contains(const T &a, const T &b) {
     throw std::runtime_error("Expected " + to_string(a) + " to contain " +
                              to_string(b) + ".");
 }
-template <class T> void unit(const T &object, const Unit &unit) {
+template <class T> void unit(const T &object, const units::Unit &unit) {
   expect::equals(object.unit(), unit);
 }
 
@@ -122,6 +127,6 @@ template <class T> void countsOrCountsDensity(const T &object) {
                             object.unit().name() + '.');
 }
 } // namespace expect
-} // namespace dataset
+} // namespace scipp::core
 
 #endif // EXCEPT_H

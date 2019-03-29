@@ -10,6 +10,8 @@
 #include "except.h"
 #include "tags.h"
 
+namespace scipp::core {
+
 namespace {
 std::string do_to_string(const Dim dim) {
   switch (dim) {
@@ -137,10 +139,8 @@ std::string do_to_string(const Tag tag) {
   }
 }
 
-std::string do_to_string(const Unit &unit) { return unit.name(); }
+std::string do_to_string(const units::Unit &unit) { return unit.name(); }
 } // namespace
-
-namespace dataset {
 
 std::string to_string(const Dimensions &dims, const std::string &separator) {
   if (dims.empty())
@@ -181,7 +181,7 @@ std::string to_string(const DType dtype) {
   };
 }
 
-std::string to_string(const Unit &unit, const std::string &separator) {
+std::string to_string(const units::Unit &unit, const std::string &separator) {
   return std::regex_replace(do_to_string(unit), std::regex("::"), separator);
 }
 std::string to_string(const Dim dim, const std::string &separator) {
@@ -343,7 +343,7 @@ VariableError::VariableError(const ConstVariableSlice &variable,
                              const std::string &message)
     : std::runtime_error(to_string(variable) + message) {}
 
-UnitMismatchError::UnitMismatchError(const Unit &a, const Unit &b)
+UnitMismatchError::UnitMismatchError(const units::Unit &a, const units::Unit &b)
     : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +
                 ".") {}
 
@@ -356,7 +356,7 @@ void dimensionMatches(const Dimensions &dims, const Dim dim,
     throw except::DimensionLengthError(dims, dim, length);
 }
 
-void equals(const Unit &a, const Unit &b) {
+void equals(const units::Unit &a, const units::Unit &b) {
   if (!(a == b))
     throw except::UnitMismatchError(a, b);
 }
@@ -366,4 +366,4 @@ void equals(const Dimensions &a, const Dimensions &b) {
     throw except::DimensionMismatchError(a, b);
 }
 } // namespace expect
-} // namespace dataset
+} // namespace scipp::core

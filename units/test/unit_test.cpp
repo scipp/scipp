@@ -9,6 +9,9 @@
 
 #include "scipp/units/unit.h"
 
+using namespace scipp;
+using namespace scipp::units;
+
 TEST(units, c) {
   auto c = 1.0 * units::c;
   EXPECT_EQ(c.value(), 1.0);

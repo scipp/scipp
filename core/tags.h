@@ -20,6 +20,8 @@
 #include "traits.h"
 #include "value_with_delta.h"
 
+namespace scipp::core {
+
 enum class DType {
   Unknown,
   Double,
@@ -505,9 +507,9 @@ inline Tag dimensionCoord(const Dim dim) {
 
 namespace detail {
 template <class... Ts>
-std::array<Unit, std::tuple_size<detail::Tags>::value>
+std::array<units::Unit, std::tuple_size<detail::Tags>::value>
 make_unit_table(const std::tuple<Ts...> &) {
-  return {Unit(Ts::unit)...};
+  return {units::Unit(Ts::unit)...};
 }
 template <class... Ts>
 constexpr std::array<DType, std::tuple_size<detail::Tags>::value>
@@ -579,5 +581,7 @@ struct element_return_type<D, MDZipViewImpl<D, Tags...>> {
 
 template <class D, class Tag>
 using element_return_type_t = typename element_return_type<D, Tag>::type;
+
+} // namespace scipp::core
 
 #endif // TAGS_H

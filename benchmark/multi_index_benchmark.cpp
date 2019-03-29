@@ -7,6 +7,8 @@
 
 #include "multi_index.h"
 
+using namespace scipp::core;
+
 static void BM_MultiIndex(benchmark::State &state) {
   Dimensions dims1;
   dims1.add(Dim::X, 1000);

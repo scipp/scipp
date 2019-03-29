@@ -12,6 +12,8 @@
 
 #include "md_zip_view.h"
 
+using namespace scipp::core;
+
 TEST(EventWorkspace, EventList) {
   Dataset e;
   e.insert(Data::Tof, "", {Dim::Event, 0}, 0);

@@ -9,13 +9,15 @@
 #include "except.h"
 #include "variable_view.h"
 
+namespace scipp::core {
+
 template <class T, class C> auto &requireT(C &concept) {
   try {
     return dynamic_cast<T &>(concept);
   } catch (const std::bad_cast &) {
-    throw dataset::except::TypeError(
-        "Expected item dtype " + dataset::to_string(T::static_dtype()) +
-        ", got " + dataset::to_string(concept.dtype()) + '.');
+    throw except::TypeError("Expected item dtype " +
+                            to_string(T::static_dtype()) + ", got " +
+                            to_string(concept.dtype()) + '.');
   }
 }
 
@@ -214,8 +216,8 @@ template <class T> class VariableConceptT : public concept_t<T> {
 public:
   VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
-  DType dtype() const noexcept override { return ::dtype<T>; }
-  static DType static_dtype() noexcept { return ::dtype<T>; }
+  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
+  static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
 
   virtual scipp::span<T> getSpan() = 0;
   virtual scipp::span<T> getSpan(const Dim dim, const scipp::index begin,
@@ -429,7 +431,7 @@ template <class T1, class T2> struct norm_of_second_arg {
 template <class T1, class T2> struct sqrt_of_second_arg {
   constexpr T1 operator()(const T1 &, const T2 &rhs) const {
     // TODO Should we make a unary ArithmeticHelper::apply?
-    return sqrt(rhs);
+    return std::sqrt(rhs);
   }
 };
 
@@ -766,8 +768,8 @@ Variable::Variable(const Variable &parent,
       m_object(std::move(data)) {}
 
 template <class T>
-Variable::Variable(const Tag tag, const Unit unit, const Dimensions &dimensions,
-                   T object)
+Variable::Variable(const Tag tag, const units::Unit unit,
+                   const Dimensions &dimensions, T object)
     : m_tag(tag), m_unit{unit},
       m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
                                               std::move(object))) {}
@@ -791,7 +793,8 @@ template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
 }
 
 #define INSTANTIATE(...)                                                       \
-  template Variable::Variable(const Tag, const Unit, const Dimensions &,       \
+  template Variable::Variable(const Tag, const units::Unit,                    \
+                              const Dimensions &,                              \
                               Vector<underlying_type_t<__VA_ARGS__>>);         \
   template Vector<underlying_type_t<__VA_ARGS__>>                              \
       &Variable::cast<__VA_ARGS__>();                                          \
@@ -856,10 +859,10 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
-  dataset::expect::equals(variable.unit(), other.unit());
+  expect::equals(variable.unit(), other.unit());
   // TODO How should attributes be handled?
   if (variable.dtype() != dtype<Dataset> || variable.isAttr()) {
-    dataset::expect::contains(variable.dimensions(), other.dimensions());
+    expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
     require<AddableVariableConcept>(variable.data()) += other.data();
@@ -910,8 +913,8 @@ Variable &Variable::operator+=(const double value) & {
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
-  dataset::expect::equals(variable.unit(), other.unit());
-  dataset::expect::contains(variable.dimensions(), other.dimensions());
+  expect::equals(variable.unit(), other.unit());
+  expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events)
     throw std::runtime_error("Subtraction of events lists not implemented.");
   require<ArithmeticVariableConcept>(variable.data()) -= other.data();
@@ -930,7 +933,7 @@ Variable &Variable::operator-=(const double value) & {
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  dataset::expect::contains(variable.dimensions(), other.dimensions());
+  expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events)
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
@@ -952,7 +955,7 @@ Variable &Variable::operator*=(const double value) & {
 }
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
-  dataset::expect::contains(variable.dimensions(), other.dimensions());
+  expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events)
     throw std::runtime_error("Division of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
@@ -981,8 +984,7 @@ template <class T> VariableSlice VariableSlice::assign(const T &other) const {
   if (unit() != other.unit())
     throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
   if (dimensions() != other.dimensions())
-    throw dataset::except::DimensionMismatchError(dimensions(),
-                                                  other.dimensions());
+    throw except::DimensionMismatchError(dimensions(), other.dimensions());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
   return *this;
 }
@@ -1059,7 +1061,7 @@ Variable ConstVariableSlice::operator-() const {
   return -copy;
 }
 
-void VariableSlice::setUnit(const Unit &unit) const {
+void VariableSlice::setUnit(const units::Unit &unit) const {
   // TODO Should we forbid setting the unit altogether? I think it is useful in
   // particular since views onto subsets of dataset do not imply slicing of
   // variables but return slice views.
@@ -1182,7 +1184,7 @@ Variable operator+(const double a, Variable b) { return std::move(b += a); }
 Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
-  b.setUnit(Unit(units::dimensionless) / b.unit());
+  b.setUnit(units::Unit(units::dimensionless) / b.unit());
   require<FloatingPointVariableConcept>(b.data()).reciprocal_times(a);
   return std::move(b);
 }
@@ -1261,7 +1263,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
 
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord) {
-  dataset::expect::countsOrCountsDensity(var);
+  expect::countsOrCountsDensity(var);
   const Dim dim = coordDimension[newCoord.tag().value()];
   if (var.unit() == units::counts ||
       var.unit() == units::counts * units::counts) {
@@ -1377,7 +1379,7 @@ Variable broadcast(Variable var, const Dimensions &dims) {
     --it;
     const auto label = *it;
     if (newDims.contains(label))
-      dataset::expect::dimensionMatches(newDims, label, dims[label]);
+      expect::dimensionMatches(newDims, label, dims[label]);
     else
       newDims.add(label, dims[label]);
   }
@@ -1406,3 +1408,5 @@ VariableView<const double> getView<double>(const Variable &var,
                                            const Dimensions &dims) {
   return requireT<const VariableConceptT<double>>(var.data()).getView(dims);
 }
+
+} // namespace scipp::core

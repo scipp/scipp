@@ -9,6 +9,8 @@
 
 #include "dimensions.h"
 
+using namespace scipp::core;
+
 TEST(Dimensions, footprint) {
   EXPECT_EQ(sizeof(Dimensions), 64ul);
   // TODO Do we want to align this? Need to run benchmarks when implementation

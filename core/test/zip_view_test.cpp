@@ -13,6 +13,8 @@
 #include "dataset.h"
 #include "zip_view.h"
 
+using namespace scipp::core;
+
 TEST(ZipView, construct_fail) {
   Dataset d;
 

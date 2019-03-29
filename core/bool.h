@@ -6,6 +6,8 @@
 #ifndef BOOL_H
 #define BOOL_H
 
+namespace scipp::core {
+
 class Bool {
 public:
   Bool(const bool value = false) : m_value(value) {}
@@ -15,5 +17,7 @@ public:
 private:
   bool m_value;
 };
+
+} // namespace scipp::core
 
 #endif // BOOL_H

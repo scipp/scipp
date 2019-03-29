@@ -19,6 +19,8 @@
 #include "variable_view.h"
 #include "vector.h"
 
+namespace scipp::core {
+
 class Variable;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
@@ -177,7 +179,7 @@ public:
   }
 
   template <class T>
-  Variable(const Tag tag, const Unit unit, const Dimensions &dimensions,
+  Variable(const Tag tag, const units::Unit unit, const Dimensions &dimensions,
            T object);
 
   const std::string &name() const && = delete;
@@ -211,7 +213,7 @@ public:
   Variable &operator*=(const double value) &;
   template <class T>
   Variable &operator*=(const boost::units::quantity<T> &quantity) & {
-    setUnit(unit() * Unit(T{}));
+    setUnit(unit() * units::Unit(T{}));
     return *this *= quantity.value();
   }
   Variable &operator/=(const Variable &other) &;
@@ -219,12 +221,12 @@ public:
   Variable &operator/=(const double value) &;
   template <class T>
   Variable &operator/=(const boost::units::quantity<T> &quantity) & {
-    setUnit(unit() / Unit(T{}));
+    setUnit(unit() / units::Unit(T{}));
     return *this /= quantity.value();
   }
 
-  Unit unit() const { return m_unit; }
-  void setUnit(const Unit &unit) {
+  units::Unit unit() const { return m_unit; }
+  void setUnit(const units::Unit &unit) {
     // TODO
     // Some variables are special, e.g., Data::Tof, which must always have a
     // time-of-flight-related unit. We need some sort of check here. Is there a
@@ -310,7 +312,7 @@ private:
   Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
   Tag m_tag;
-  Unit m_unit;
+  units::Unit m_unit;
   deep_ptr<std::string> m_name;
   deep_ptr<VariableConcept> m_object;
 };
@@ -351,61 +353,6 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions, Args &&... args) {
   }
 }
 
-template <typename T, typename SZ_TP>
-Variable makeVariable(Tag tag, const Dimensions &dimensions,
-                      const std::vector<SZ_TP> &stridesInBytes, T *ptr) {
-  auto ndims = dimensions.ndim();
-  if (ndims == 0) // empty dataset
-    return makeVariable<underlying_type_t<T>>(tag, dimensions);
-
-  std::vector<SZ_TP> varStrides(ndims, 1), strides;
-  for (auto &&strd : stridesInBytes)
-    strides.emplace_back(strd / sizeof(T));
-
-  bool sameStrides{*strides.rbegin() == 1};
-  auto i = varStrides.size() - 1;
-  while (i-- > 0) {
-    varStrides[i] = varStrides[i + 1] * dimensions.size(i + 1);
-    if (varStrides[i] != strides[i] && sameStrides)
-      sameStrides = false;
-  }
-
-  if (sameStrides) { // memory is alligned c-style and dense
-    return Variable(
-        tag, defaultUnit(tag), std::move(dimensions),
-        Vector<underlying_type_t<T>>(ptr, ptr + dimensions.volume()));
-
-  } else {
-    // Try to find blocks to copy
-    auto index = strides.size() - 1;
-    while (strides[index] == varStrides[index])
-      --index;
-    ++index;
-    auto blockSz =
-        index < strides.size() ? strides[index] * dimensions.size(index) : 1;
-
-    auto res = makeVariable<underlying_type_t<T>>(tag, dimensions);
-    std::vector<scipp::index> dsz(ndims);
-    for (scipp::index i = 0; i < index; ++i)
-      dsz[i] = dimensions.size(i);
-    std::vector<scipp::index> coords(ndims, 0);
-    auto nBlocks = dimensions.volume() / blockSz;
-
-    for (scipp::index i = 0; i < nBlocks; ++i) {
-      // calculate the array linear coordinate
-      auto lin_coord = std::inner_product(coords.begin(), coords.end(),
-                                          strides.begin(), scipp::index{0});
-      std::memcpy(&res.template span<T>()[i * blockSz], &ptr[lin_coord],
-                  blockSz * sizeof(T));
-      // get the next ND coordinate
-      auto k = coords.size();
-      while (k-- > 0)
-        ++coords[k] >= dsz[k] ? coords[k] = 0 : k = 0;
-    }
-    return res;
-  }
-}
-
 /// Non-mutable view into (a subset of) a Variable.
 class ConstVariableSlice {
 public:
@@ -436,7 +383,7 @@ public:
   void setName(const std::string &) {
     throw std::runtime_error("Cannot rename Variable via slice view.");
   }
-  Unit unit() const { return m_variable->unit(); }
+  units::Unit unit() const { return m_variable->unit(); }
   scipp::index size() const {
     if (m_view)
       return m_view->size();
@@ -588,7 +535,7 @@ public:
   VariableSlice operator/=(const ConstVariableSlice &other) const;
   VariableSlice operator/=(const double value) const;
 
-  void setUnit(const Unit &unit) const;
+  void setUnit(const units::Unit &unit) const;
 
 private:
   friend class Variable;
@@ -646,5 +593,7 @@ Variable reverse(Variable var, const Dim dim);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);
+
+} // namespace scipp::core
 
 #endif // VARIABLE_H

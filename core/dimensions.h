@@ -15,6 +15,8 @@
 #include "index.h"
 #include "span.h"
 
+namespace scipp::core {
+
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
 /// We should follow the numpy convention: First dimension is outer dimension,
@@ -88,14 +90,14 @@ public:
     for (int32_t i = 0; i < 6; ++i)
       if (m_dims[i] == dim)
         return m_shape[i];
-    throw dataset::except::DimensionNotFoundError(*this, dim);
+    throw except::DimensionNotFoundError(*this, dim);
   }
 
   scipp::index &operator[](const Dim dim) {
     for (int32_t i = 0; i < 6; ++i)
       if (m_dims[i] == dim)
         return m_shape[i];
-    throw dataset::except::DimensionNotFoundError(*this, dim);
+    throw except::DimensionNotFoundError(*this, dim);
   }
 
   bool contains(const Dim dim) const noexcept {
@@ -135,5 +137,7 @@ private:
   Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
+
+} // namespace scipp::core
 
 #endif // DIMENSIONS_H
