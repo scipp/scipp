@@ -22,9 +22,10 @@ add_executable(scipp_core_test
 target_link_libraries(scipp_core_test
                       LINK_PRIVATE
                       ScippCore
-                      gtest_main
+                      GTest::Main
                       scipp_test_helpers
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
 target_include_directories(scipp_core_test SYSTEM
                            PRIVATE "../../range-v3/include")
+gtest_discover_tests(scipp_core_test TEST_PREFIX scipp/core/)

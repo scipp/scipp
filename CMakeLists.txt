@@ -2,7 +2,7 @@
 # @author Simon Heybrock
 # Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 # National Laboratory, and European Spallation Source ERIC.
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10.2)
 project(scipp)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -25,7 +25,7 @@ find_package(Boost 1.67 REQUIRED)
 
 include(Eigen)
 include(pybind11)
-include(GoogleTest)
+include(PatchedGoogleTest)
 include(GoogleBenchmark)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fno-omit-frame-pointer")
@@ -60,6 +60,8 @@ add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
                     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
+
+enable_testing()
 
 add_subdirectory(benchmark)
 add_subdirectory(core)

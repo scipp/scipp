@@ -6,7 +6,8 @@ add_executable(scipp_units_test unit_test.cpp)
 target_link_libraries(scipp_units_test
                       LINK_PRIVATE
                       ScippUnits
-                      gtest_main
+                      GTest::Main
                       scipp_test_helpers
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
+gtest_discover_tests(scipp_units_test TEST_PREFIX scipp/units/)
