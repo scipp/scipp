@@ -25,3 +25,5 @@ target_link_libraries(event_list_proxy_benchmark
                       LINK_PRIVATE
                       ScippCore
                       benchmark)
+target_include_directories(event_list_proxy_benchmark SYSTEM
+                           PRIVATE "../range-v3/include")

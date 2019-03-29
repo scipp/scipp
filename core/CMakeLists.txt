@@ -44,7 +44,7 @@ target_include_directories(
   )
 target_include_directories(ScippCore SYSTEM
                            PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
-                                  "../range-v3/include")
+                           PRIVATE "../range-v3/include")
 set_target_properties(ScippCore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(test)

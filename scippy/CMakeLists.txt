@@ -4,6 +4,7 @@
 # National Laboratory, and European Spallation Source ERIC.
 pybind11_add_module(scippy SHARED dataset.cpp)
 target_link_libraries(scippy LINK_PRIVATE ScippCore)
+target_include_directories(scippy SYSTEM PRIVATE "../range-v3/include")
 
 set(PY_FILES __init__.py table.py xarray_compat.py plot.py)
 
