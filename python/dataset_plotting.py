@@ -87,7 +87,7 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
 
 #===============================================================================
 
-# Function to automaticall dispatch the input dataset to the appropriate
+# Function to automatically dispatch the input dataset to the appropriate
 # plotting function depending on its dimensions
 def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
               **kwargs):
@@ -450,7 +450,7 @@ class ImageViewer:
 
         # Here we perform another trick. If we plot simply the local arrays in
         # plotly, the reset axes or home functionality will be lost because
-        # plotly will now think that the data that eixsts is only the small
+        # plotly will now think that the data that exists is only the small
         # window shown after a zoom. So we add a one-pixel padding area to the
         # local z array. The size of that padding extends from the edges of the
         # initial full resolution array (e.g. x=0, y=0) up to the edge of the
