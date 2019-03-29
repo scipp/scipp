@@ -1,8 +1,5 @@
-# Other imports
+# Import numpy
 import numpy as np
-import copy
-import io
-from contextlib import redirect_stdout
 
 # Dataset imports
 from dataset import Dataset, Data, dataset, dimensionCoord, coordDimension, sqrt, units
@@ -12,21 +9,7 @@ from plotly.offline import init_notebook_mode, iplot
 from plotly.graph_objs import FigureWidget
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 from IPython.display import display
-try:
-    # Re-direct the output of init_notebook_mode to hide it from the unit tests
-    with redirect_stdout(io.StringIO()):
-        init_notebook_mode(connected=True)
-except ImportError:
-    print("Warning: the current version of this plotting module was designed to"
-          " work inside a Jupyter notebook. Other usage has not been tested.")
-try:
-    from ipywidgets import VBox, HBox, IntSlider, Label
-    ipywidgets_missing = False
-except ImportError:
-    print("Warning: possibly missing features. It was not possible to import "
-          "ipywidgets, which is required for some of the plotting "
-          "functionality.")
-    ipywidgets_missing = True
+from ipywidgets import VBox, HBox, IntSlider, Label
 
 #===============================================================================
 
@@ -629,11 +612,6 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
 # the slice in the third dimension.
 def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
 
-    if ipywidgets_missing:
-        print("Sorry, the sliceviewer requires ipywidgets which was not found "
-              "on this system.")
-        return
-
     # Check input dataset
     value_list, ndims = check_input(input_data)
     ndim = np.amax(ndims)
@@ -670,8 +648,8 @@ class SliceViewer:
     def __init__(self, plotly_data, plotly_layout, input_data, axes, value_name,
                  cb):
 
-        # Make a deep copy of the input data
-        self.input_data = copy.deepcopy(input_data)
+        # Make a copy of the input data
+        self.input_data = input_data.copy()
 
         # Get the dimensions of the image to be displayed
         naxes = len(axes)
