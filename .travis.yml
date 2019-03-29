@@ -30,7 +30,8 @@ script:
   - cd build
   - cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
   - make -j2 install
-  - ctest --output-on-failure
+  - ./units/test/scipp_units_test
+  - ./core/test/scipp_core_test
   - python3 -m pip install -r ../scippy/requirements.txt
   - export PYTHONPATH=$PYTHONPATH:../install
   - cd ../scippy
