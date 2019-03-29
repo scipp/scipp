@@ -27,6 +27,61 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
+template <typename T, typename SZ_TP>
+Variable makeVariable(Tag tag, const Dimensions &dimensions,
+                      const std::vector<SZ_TP> &stridesInBytes, T *ptr) {
+  auto ndims = dimensions.ndim();
+  if (ndims == 0) // empty dataset
+    return makeVariable<underlying_type_t<T>>(tag, dimensions);
+
+  std::vector<SZ_TP> varStrides(ndims, 1), strides;
+  for (auto &&strd : stridesInBytes)
+    strides.emplace_back(strd / sizeof(T));
+
+  bool sameStrides{*strides.rbegin() == 1};
+  auto i = varStrides.size() - 1;
+  while (i-- > 0) {
+    varStrides[i] = varStrides[i + 1] * dimensions.size(i + 1);
+    if (varStrides[i] != strides[i] && sameStrides)
+      sameStrides = false;
+  }
+
+  if (sameStrides) { // memory is alligned c-style and dense
+    return Variable(
+        tag, defaultUnit(tag), std::move(dimensions),
+        Vector<underlying_type_t<T>>(ptr, ptr + dimensions.volume()));
+
+  } else {
+    // Try to find blocks to copy
+    auto index = strides.size() - 1;
+    while (strides[index] == varStrides[index])
+      --index;
+    ++index;
+    auto blockSz =
+        index < strides.size() ? strides[index] * dimensions.size(index) : 1;
+
+    auto res = makeVariable<underlying_type_t<T>>(tag, dimensions);
+    std::vector<scipp::index> dsz(ndims);
+    for (scipp::index i = 0; i < index; ++i)
+      dsz[i] = dimensions.size(i);
+    std::vector<scipp::index> coords(ndims, 0);
+    auto nBlocks = dimensions.volume() / blockSz;
+
+    for (scipp::index i = 0; i < nBlocks; ++i) {
+      // calculate the array linear coordinate
+      auto lin_coord = std::inner_product(coords.begin(), coords.end(),
+                                          strides.begin(), scipp::index{0});
+      std::memcpy(&res.template span<T>()[i * blockSz], &ptr[lin_coord],
+                  blockSz * sizeof(T));
+      // get the next ND coordinate
+      auto k = coords.size();
+      while (k-- > 0)
+        ++coords[k] >= dsz[k] ? coords[k] = 0 : k = 0;
+    }
+    return res;
+  }
+}
+
 template <typename Collection>
 auto getItemBySingleIndex(Collection &self,
                           const std::tuple<Dim, scipp::index> &index) {
@@ -188,7 +243,7 @@ template <class T> struct MakeVariable {
     const py::buffer_info info = dataT.request();
     Dimensions dims(labels, info.shape);
     auto *ptr = (T *)info.ptr;
-    return scipp::core::makeVariable<T, ssize_t>(tag, dims, info.strides, ptr);
+    return makeVariable<T, ssize_t>(tag, dims, info.strides, ptr);
   }
 };
 
@@ -201,8 +256,8 @@ template <class T> struct MakeVariableDefaultInit {
 };
 
 Variable doMakeVariable(const Tag tag, const std::vector<Dim> &labels,
-                      py::array &data,
-                      py::dtype type = py::dtype::of<Empty>()) {
+                        py::array &data,
+                        py::dtype type = py::dtype::of<Empty>()) {
   const py::buffer_info info = data.request();
   // Use custom dtype, otherwise dtype of data.
   const auto dtypeTag = type.is(py::dtype::of<Empty>())
