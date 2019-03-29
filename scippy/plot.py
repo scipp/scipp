@@ -15,7 +15,10 @@ from ipywidgets import VBox, HBox, IntSlider, Label
 
 # Some global configuration
 default = {
-    "cb" : { "name" : "Viridis", "log" : False, "min" : None, "max" : None }
+    # The colorbar properties
+    "cb" : { "name" : "Viridis", "log" : False, "min" : None, "max" : None },
+    # The default image height (in pixels)
+    "height" : 600
 }
 
 #===============================================================================
@@ -246,6 +249,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         yaxis = dict(),
         showlegend = True,
         legend = dict(x=0.0, y=1.15, orientation="h"),
+        height = default["height"]
         )
     if histogram:
         layout["barmode"] = "overlay"
@@ -315,7 +319,8 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
 
         layout = dict(
             xaxis = dict(title = axis_label(xcoord)),
-            yaxis = dict(title = axis_label(ycoord))
+            yaxis = dict(title = axis_label(ycoord)),
+            height = default["height"]
             )
 
         if plot:
@@ -595,7 +600,8 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
                     aspectmode='manual',
                     aspectratio=adict
                     ),
-                showlegend = False
+                showlegend = False,
+                height = default["height"]
                 )
             return display(FigureWidget(data=data, layout=layout))
         else:
