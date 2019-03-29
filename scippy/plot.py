@@ -1,32 +1,15 @@
-# Other imports
+# Import numpy
 import numpy as np
-import copy
-import io
-from contextlib import redirect_stdout
 
 # Scippy imports
 from scippy import Dataset, Data, DatasetSlice, dimensionCoord, coordDimension, sqrt, units
 
 # Plotly imports
-from plotly.offline import init_notebook_mode, iplot
-try:
-    # Re-direct the output of init_notebook_mode to hide it from the unit tests
-    with redirect_stdout(io.StringIO()):
-        init_notebook_mode(connected=True)
-except ImportError:
-    print("Warning: the current version of this plotting module was designed to"
-          " work inside a Jupyter notebook. Other usage has not been tested.")
-try:
-    from plotly.graph_objs import FigureWidget
-    from ipywidgets import VBox, HBox, IntSlider, Label
-    from IPython.display import display
-    ipywidgets_missing = False
-except ImportError:
-    print("Warning: possibly missing features. It was not possible to import "
-          "ipywidgets, which is required for some of the plotting "
-          "functionality.")
-    ipywidgets_missing = True
+from plotly.offline import iplot
+from plotly.graph_objs import FigureWidget
 from plotly.colors import DEFAULT_PLOTLY_COLORS
+from IPython.display import display
+from ipywidgets import VBox, HBox, IntSlider, Label
 
 #===============================================================================
 
@@ -104,7 +87,7 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
 
 #===============================================================================
 
-# Function to automaticall dispatch the input dataset to the appropriate
+# Function to automatically dispatch the input dataset to the appropriate
 # plotting function depending on its dimensions
 def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
               **kwargs):
@@ -271,7 +254,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     if logy or logxy:
         layout["yaxis"]["type"] = "log"
 
-    return iplot(dict(data=data, layout=layout))
+    return display(FigureWidget(data=data, layout=layout))
 
 #===============================================================================
 
@@ -282,7 +265,8 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 # If plot=False, then not plot is produced, instead the data and layout dicts
 # for plotly, as well as a transpose flag, are returned (this is used when
 # calling plot_image from the sliceviewer).
-def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
+def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
+               resolution=128):
 
     values, ndims = check_input(input_data)
     ndim = np.amax(ndims)
@@ -308,8 +292,9 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
             axes = axes[-2:]
 
         # Get coordinates axes and dimensions
-        xcoord, ycoord, x, y, xlabs, ylabs, zlabs = \
-            process_dimensions(input_data, axes, values[0], ndim)
+        xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
+            process_dimensions(input_data=input_data, axes=axes,
+                               values=values[0], ndim=ndim)
 
         if contours:
             plot_type = 'contour'
@@ -325,23 +310,8 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
         if values[0].unit != units.dimensionless:
             title += " [{}]".format(values[0].unit)
 
-        data = [dict(
-            x = centers_to_edges(x),
-            y = centers_to_edges(y),
-            z = [0.0],
-            type = plot_type,
-            colorscale = cbar["name"],
-            colorbar=dict(
-                title=title,
-                titleside = 'right',
-                )
-            )]
-
-        # Apply colorbar parameters
+        # Check colorbar parameters
         cbcount = (cbar["min"] is not None) + (cbar["max"] is not None)
-        if cbcount == 2:
-            data[0]["zmin"] = cbar["min"]
-            data[0]["zmax"] = cbar["max"]
 
         layout = dict(
             xaxis = dict(title = axis_label(xcoord)),
@@ -353,21 +323,32 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
             # Check if dimensions of arrays agree, if not, plot the transpose
             if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
                 z = z.T
+            # Apply colorbar parameters
             if cbar["log"]:
                 with np.errstate(invalid="ignore", divide="ignore"):
                     z = np.log10(z)
-            if cbcount == 1:
-                if cbar["min"] is not None:
-                    data[0]["zmin"] = cbar["min"]
-                else:
-                    data[0]["zmin"] = np.amin(z[np.where(np.isfinite(z))])
-                if cbar["max"] is not None:
-                    data[0]["zmax"] = cbar["max"]
-                else:
-                    data[0]["zmax"] = np.amax(z[np.where(np.isfinite(z))])
-            data[0]["z"] = z
-            return iplot(dict(data=data, layout=layout))
+            if cbar["min"] is None:
+                cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
+            if cbar["max"] is None:
+                cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
+            imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar, plot_type,
+                                 title, contours)
+            for key, val in layout.items():
+                imview.fig.layout[key] = val
+            return display(imview.fig)
+
         else:
+            data = [dict(
+                x = xe,
+                y = ye,
+                z = [0.0],
+                type = plot_type,
+                colorscale = cbar["name"],
+                colorbar=dict(
+                    title=title,
+                    titleside = 'right',
+                    )
+                )]
             return data, layout, xlabs, ylabs, cbar
 
     else:
@@ -379,6 +360,144 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True):
                            "must then use plot=False to collect the data and "
                            "layout dicts for plotly, as well as a transpose "
                            "flag, instead of plotting an image.".format(ndim))
+
+#===============================================================================
+
+class ImageViewer:
+
+    def __init__(self, xe, xc, ye, yc, z, resolution, cb, plot_type, title, contours):
+
+        self.xe = xe
+        self.xc = xc
+        self.ye = ye
+        self.yc = yc
+        self.z = z
+        self.resolution = resolution
+        self.cb = cb
+        self.plot_type = plot_type
+        self.title = title
+        self.contours = contours
+        self.nx = len(self.xe)
+        self.ny = len(self.ye)
+
+        self.fig = FigureWidget()
+
+        # Make an initial low-resolution sampling of the image for plotting
+        self.resample_image(layout=None, x_range=[self.xe[0], self.xe[-1]],
+                            y_range=[self.ye[0], self.ye[-1]])
+
+        # Add a callback to update the view area
+        self.fig.layout.on_change(self.resample_image, 'xaxis.range', 'yaxis.range')
+
+        return
+
+    def resample_image(self, layout, x_range, y_range):
+
+        # Find indices of xe and ye that are shown in current range
+        x_in_range = np.where(np.logical_and(self.xe >= x_range[0], self.xe <= x_range[1]))
+        y_in_range = np.where(np.logical_and(self.ye >= y_range[0], self.ye <= y_range[1]))
+
+        # xmin, xmax... here are array indices, not float coordinates
+        xmin = x_in_range[0][0]
+        xmax = x_in_range[0][-1]
+        ymin = y_in_range[0][0]
+        ymax = y_in_range[0][-1]
+        # here we perform a trick so that the edges of the displayed image is
+        # not greyed out if the zoom area slices a pixel in half, only the pixel
+        # inside the view area will be shown and the outer edge between that
+        # last pixel edge and the edge of the view frame area will be empty. So
+        # we extend the selected area with an additional pixel, if the selected
+        # area is inside the global limits of the full resolution array.
+        xmin -= int(xmin > 0)
+        xmax += int(xmax < self.nx-1)
+        ymin -= int(ymin > 0)
+        ymax += int(ymax < self.ny-1)
+
+        # Par of the global coordinate arrays that are inside the viewing area
+        xview = self.xe[xmin:xmax+1]
+        yview = self.ye[ymin:ymax+1]
+
+        # Count the number of pixels in the current view
+        nx_view = xmax - xmin
+        ny_view = ymax - ymin
+
+        # Define x and y edges for histogramming
+        # If the number of pixels in the view area is larger than the maximum
+        # allowed resolution we create some custom pixels
+        if nx_view > self.resolution:
+            xe_loc = np.linspace(xview[0], xview[-1], self.resolution)
+        else:
+            xe_loc = xview
+        if ny_view > self.resolution:
+            ye_loc = np.linspace(yview[0], yview[-1], self.resolution)
+        else:
+            ye_loc = yview
+
+        # Optimize if no re-sampling is required
+        if (nx_view < self.resolution) and (ny_view < self.resolution):
+            z1 = self.z[ymin:ymax,xmin:xmax]
+        else:
+            xg, yg = np.meshgrid(self.xc[xmin:xmax], self.yc[ymin:ymax])
+            xv = np.ravel(xg)
+            yv = np.ravel(yg)
+            zv = np.ravel(self.z[ymin:ymax,xmin:xmax])
+            # Histogram the data to make a low-resolution image
+            # Using weights in the second histogram allows us to then do z1/z0 to
+            # obtain the averaged data inside the coarse pixels
+            z0, yedges1, xedges1 = np.histogram2d(yv, xv, bins=(ye_loc, xe_loc))
+            z1, yedges1, xedges1 = np.histogram2d(yv, xv, bins=(ye_loc, xe_loc), weights=zv)
+            z1 /= z0
+
+        # Here we perform another trick. If we plot simply the local arrays in
+        # plotly, the reset axes or home functionality will be lost because
+        # plotly will now think that the data that exists is only the small
+        # window shown after a zoom. So we add a one-pixel padding area to the
+        # local z array. The size of that padding extends from the edges of the
+        # initial full resolution array (e.g. x=0, y=0) up to the edge of the
+        # view area. These large (and probably elongated) pixels add very little
+        # data and will not show in the view area but allow plotly to recover
+        # the full axes limits if we double-click on the plot
+        xc_loc = edges_to_centers(xe_loc)[0]
+        yc_loc = edges_to_centers(ye_loc)[0]
+        if xmin > 0:
+            xe_loc = np.concatenate([self.xe[0:1], xe_loc])
+            xc_loc = np.concatenate([self.xc[0:1], xc_loc])
+        if xmax < self.nx-1:
+            xe_loc = np.concatenate([xe_loc, self.xe[-1:]])
+            xc_loc = np.concatenate([xc_loc, self.xc[-1:]])
+        if ymin > 0:
+            ye_loc = np.concatenate([self.ye[0:1], ye_loc])
+            yc_loc = np.concatenate([self.yc[0:1], yc_loc])
+        if ymax < self.ny-1:
+            ye_loc = np.concatenate([ye_loc, self.ye[-1:]])
+            yc_loc = np.concatenate([yc_loc, self.yc[-1:]])
+        imin = int(xmin > 0)
+        imax = int(xmax < self.nx-1)
+        jmin = int(ymin > 0)
+        jmax = int(ymax < self.ny-1)
+        nxe = len(xe_loc)
+        nye = len(ye_loc)
+
+        # The local z array
+        z_loc = np.zeros([nye-1, nxe-1])
+        z_loc[jmin:nye-jmax-1, imin:nxe-imax-1] = z1
+
+        # The 'data' dictionary
+        datadict = dict(type=self.plot_type, zmin=self.cb["min"],
+                        zmax=self.cb["max"], colorscale=self.cb["name"],
+                        colorbar={"title":self.title}, z=z_loc)
+
+        if self.contours:
+            datadict["x"] = xc_loc
+            datadict["y"] = yc_loc
+        else:
+            datadict["x"] = xe_loc
+            datadict["y"] = ye_loc
+
+        # Update the figure
+        self.fig.update({'data': [datadict]})
+
+        return
 
 #===============================================================================
 
@@ -397,8 +516,9 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
             axes = [ dimensionCoord(label) for label in labs ]
 
         # Get coordinates axes and dimensions
-        xcoord, ycoord, x, y, xlabs, ylabs, zlabs = \
-            process_dimensions(input_data, axes, values[0], ndim)
+        xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
+            process_dimensions(input_data=input_data, axes=axes,
+                               values=values[0], ndim=ndim)
 
         data = []
         z = values[0].numpy
@@ -423,11 +543,11 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
             dim = zlabs[0]
 
         if dim == zlabs[0]:
-            for i in range(len(y)):
+            for i in range(len(yc)):
                 if plot:
                     idict = pdict.copy()
-                    idict["x"] = x
-                    idict["y"] = [y[i]] * len(x)
+                    idict["x"] = xc
+                    idict["y"] = [yc[i]] * len(xc)
                     idict["z"] = z[i,:]
                     data.append(idict)
                     adict["x"] = 3
@@ -443,11 +563,11 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
                         dset[Data.Variance, key] = ([labs[0]], e[i,:])
                     data.append(dset)
         elif dim == zlabs[1]:
-            for i in range(len(x)):
+            for i in range(len(xc)):
                 if plot:
                     idict = pdict.copy()
-                    idict["x"] = [x[i]] * len(y)
-                    idict["y"] = y
+                    idict["x"] = [xc[i]] * len(yc)
+                    idict["y"] = yc
                     idict["z"] = z[:,i]
                     data.append(idict)
                     adict["x"] = 1
@@ -477,7 +597,7 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
                     ),
                 showlegend = False
                 )
-            return iplot(dict(data=data, layout=layout))
+            return display(FigureWidget(data=data, layout=layout))
         else:
             return data
 
@@ -491,11 +611,6 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
 # Plot a 2D slice through a 3D dataset with a slider to adjust the position of
 # the slice in the third dimension.
 def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
-
-    if ipywidgets_missing:
-        print("Sorry, the sliceviewer requires ipywidgets which was not found "
-              "on this system.")
-        return
 
     # Check input dataset
     value_list, ndims = check_input(input_data)
@@ -533,8 +648,8 @@ class SliceViewer:
     def __init__(self, plotly_data, plotly_layout, input_data, axes, value_name,
                  cb):
 
-        # Make a deep copy of the input data
-        self.input_data = copy.deepcopy(input_data)
+        # Make a copy of the input data
+        self.input_data = input_data.copy()
 
         # Get the dimensions of the image to be displayed
         naxes = len(axes)
@@ -711,8 +826,32 @@ def process_dimensions(input_data, axes, values, ndim):
     # Get coordinate arrays
     x = xcoord.numpy
     y = ycoord.numpy
-    if nx[0] == nz[ndim-1] + 1:
-        x = edges_to_centers(x)[0]
-    if ny[0] == nz[ndim-2] + 1:
-        y = edges_to_centers(y)[0]
-    return xcoord, ycoord, x, y, xlabs, ylabs, zlabs
+    # Find the dimension in z that corresponds to x and y
+    ix = iy = None
+    for i in range(len(zlabs)):
+        if zlabs[i] == xlabs[0]:
+            ix = i
+        if zlabs[i] == ylabs[0]:
+            iy = i
+    if (ix is None) or (iy is None):
+        raise RuntimeError("Dimension of either x ({}) or y ({}) array was not "
+                           "found in z ({}) array.".format(xdims, ydims, zdims))
+    if nx[0] == nz[ix]:
+        xe = centers_to_edges(x)
+        xc = x
+    elif nx[0] == nz[ix] + 1:
+        xe = x
+        xc = edges_to_centers(x)[0]
+    else:
+        raise RuntimeError("Dimensions of x Coord ({}) and Value ({}) do not "
+                           "match.".format(nx[0], nz[ix]))
+    if ny[0] == nz[iy]:
+        ye = centers_to_edges(y)
+        yc = y
+    elif ny[0] == nz[iy] + 1:
+        ye = y
+        yc = edges_to_centers(y)[0]
+    else:
+        raise RuntimeError("Dimensions of y Coord ({}) and Value ({}) do not "
+                           "match.".format(ny[0], nz[iy]))
+    return xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs
