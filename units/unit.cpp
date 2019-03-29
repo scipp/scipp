@@ -9,7 +9,7 @@
 #include <boost/units/cmath.hpp>
 #include <boost/units/io.hpp>
 
-#include "unit.h"
+#include "scipp/units/unit.h"
 
 using namespace units;
 

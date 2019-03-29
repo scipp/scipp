@@ -11,8 +11,8 @@
 
 #include "dimension.h"
 #include "index.h"
+#include "scipp/units/unit.h"
 #include "tags.h"
-#include "unit.h"
 
 class ConstDatasetSlice;
 class Dataset;

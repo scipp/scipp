@@ -16,8 +16,8 @@
 #include "bool.h"
 #include "dimension.h"
 #include "index.h"
+#include "scipp/units/unit.h"
 #include "traits.h"
-#include "unit.h"
 #include "value_with_delta.h"
 
 enum class DType {

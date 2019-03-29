@@ -7,7 +7,7 @@
 
 #include "test_macros.h"
 
-#include "unit.h"
+#include "scipp/units/unit.h"
 
 TEST(units, c) {
   auto c = 1.0 * units::c;
