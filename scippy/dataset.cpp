@@ -1,0 +1,1571 @@
+/// @file
+/// SPDX-License-Identifier: GPL-3.0-or-later
+/// @author Simon Heybrock
+/// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
+/// National Laboratory, and European Spallation Source ERIC.
+#include <variant>
+
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/operators.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
+
+#include "convert.h"
+#include "counts.h"
+#include "dataset.h"
+#include "events.h"
+#include "except.h"
+#include "scipp/units/unit.h"
+#include "tag_util.h"
+#include "tags.h"
+#include "zip_view.h"
+
+using namespace scipp;
+using namespace scipp::core;
+
+namespace py = pybind11;
+
+template <typename T, typename SZ_TP>
+Variable makeVariable(Tag tag, const Dimensions &dimensions,
+                      const std::vector<SZ_TP> &stridesInBytes, T *ptr) {
+  auto ndims = dimensions.ndim();
+  if (ndims == 0) // empty dataset
+    return makeVariable<underlying_type_t<T>>(tag, dimensions);
+
+  std::vector<SZ_TP> varStrides(ndims, 1), strides;
+  for (auto &&strd : stridesInBytes)
+    strides.emplace_back(strd / sizeof(T));
+
+  bool sameStrides{*strides.rbegin() == 1};
+  auto i = varStrides.size() - 1;
+  while (i-- > 0) {
+    varStrides[i] = varStrides[i + 1] * dimensions.size(i + 1);
+    if (varStrides[i] != strides[i] && sameStrides)
+      sameStrides = false;
+  }
+
+  if (sameStrides) { // memory is alligned c-style and dense
+    return Variable(
+        tag, defaultUnit(tag), std::move(dimensions),
+        Vector<underlying_type_t<T>>(ptr, ptr + dimensions.volume()));
+
+  } else {
+    // Try to find blocks to copy
+    auto index = strides.size() - 1;
+    while (strides[index] == varStrides[index])
+      --index;
+    ++index;
+    auto blockSz =
+        index < strides.size() ? strides[index] * dimensions.size(index) : 1;
+
+    auto res = makeVariable<underlying_type_t<T>>(tag, dimensions);
+    std::vector<scipp::index> dsz(ndims);
+    for (scipp::index i = 0; i < index; ++i)
+      dsz[i] = dimensions.size(i);
+    std::vector<scipp::index> coords(ndims, 0);
+    auto nBlocks = dimensions.volume() / blockSz;
+
+    for (scipp::index i = 0; i < nBlocks; ++i) {
+      // calculate the array linear coordinate
+      auto lin_coord = std::inner_product(coords.begin(), coords.end(),
+                                          strides.begin(), scipp::index{0});
+      std::memcpy(&res.template span<T>()[i * blockSz], &ptr[lin_coord],
+                  blockSz * sizeof(T));
+      // get the next ND coordinate
+      auto k = coords.size();
+      while (k-- > 0)
+        ++coords[k] >= dsz[k] ? coords[k] = 0 : k = 0;
+    }
+    return res;
+  }
+}
+
+template <typename Collection>
+auto getItemBySingleIndex(Collection &self,
+                          const std::tuple<Dim, scipp::index> &index) {
+  scipp::index idx{std::get<scipp::index>(index)};
+  auto &dim = std::get<Dim>(index);
+  auto sz = self.dimensions()[dim];
+  if (idx <= -sz || idx >= sz) // index is out of range
+    throw std::runtime_error("Dimension size is " +
+                             std::to_string(self.dimensions()[dim]) +
+                             ", can't treat " + std::to_string(idx));
+  if (idx < 0)
+    idx = sz + idx;
+  return self(std::get<Dim>(index), idx);
+}
+
+template <class T> struct mutable_span_methods {
+  static void add(py::class_<scipp::span<T>> &span) {
+    span.def("__setitem__", [](scipp::span<T> &self, const scipp::index i,
+                               const T value) { self[i] = value; });
+  }
+};
+template <class T> struct mutable_span_methods<const T> {
+  static void add(py::class_<scipp::span<const T>> &) {}
+};
+
+template <class T> std::string element_to_string(const T &item) {
+  using std::to_string;
+  if constexpr (std::is_same_v<T, std::string>)
+    return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+    return {"(Eigen::Vector3d), "};
+  else if constexpr (std::is_same_v<T,
+                                    boost::container::small_vector<double, 8>>)
+    return {"(vector), "};
+  else
+    return to_string(item) + ", ";
+}
+
+template <class T> std::string array_to_string(const T &arr) {
+  const scipp::index size = arr.size();
+  if (size == 0)
+    return std::string("[]");
+  std::string s = "[";
+  for (scipp::index i = 0; i < arr.size(); ++i) {
+    if (i == 4 && size > 8) {
+      s += "..., ";
+      i = size - 4;
+    }
+    s += element_to_string(arr[i]);
+  }
+  s.resize(s.size() - 2);
+  s += "]";
+  return s;
+}
+
+template <class T> void declare_span(py::module &m, const std::string &suffix) {
+  py::class_<scipp::span<T>> span(m, (std::string("span_") + suffix).c_str());
+  span.def("__getitem__", &scipp::span<T>::operator[],
+           py::return_value_policy::reference)
+      .def("size", &scipp::span<T>::size)
+      .def("__len__", &scipp::span<T>::size)
+      .def("__iter__",
+           [](const scipp::span<T> &self) {
+             return py::make_iterator(self.begin(), self.end());
+           })
+      .def("__repr__",
+           [](const scipp::span<T> &self) { return array_to_string(self); });
+  mutable_span_methods<T>::add(span);
+}
+
+template <class... Keys>
+void declare_VariableZipProxy(py::module &m, const std::string &suffix,
+                              const Keys &... keys) {
+  using Proxy = decltype(zip(std::declval<Dataset &>(), keys...));
+  py::class_<Proxy> proxy(m,
+                          (std::string("VariableZipProxy_") + suffix).c_str());
+  proxy.def("__len__", &Proxy::size)
+      .def("__getitem__", &Proxy::operator[])
+      .def("__iter__",
+           [](const Proxy &self) {
+             return py::make_iterator(self.begin(), self.end());
+           },
+           // WARNING The py::keep_alive is really important. It prevents
+           // deletion of the VariableZipProxy when its iterators are still in
+           // use. This is necessary due to the underlying implementation, which
+           // used ranges::view::zip based on temporary gsl::range.
+           py::keep_alive<0, 1>());
+}
+
+template <class... Fields>
+void declare_ItemZipProxy(py::module &m, const std::string &suffix) {
+  using Proxy = ItemZipProxy<Fields...>;
+  py::class_<Proxy> proxy(m, (std::string("ItemZipProxy_") + suffix).c_str());
+  proxy.def("__len__", &Proxy::size)
+      .def("__iter__",
+           [](const Proxy &self) {
+             return py::make_iterator(self.begin(), self.end());
+           })
+      .def("append",
+           [](const Proxy &self,
+              const std::tuple<typename Fields::value_type...> &item) {
+             self.push_back(item);
+           });
+}
+
+template <class... Fields>
+void declare_ranges_pair(py::module &m, const std::string &suffix) {
+  using Proxy = ranges::v3::common_pair<Fields &...>;
+  py::class_<Proxy> proxy(
+      m, (std::string("ranges_v3_common_pair_") + suffix).c_str());
+  proxy.def("first", [](const Proxy &self) { return std::get<0>(self); })
+      .def("second", [](const Proxy &self) { return std::get<1>(self); });
+}
+
+template <class T>
+void declare_VariableView(py::module &m, const std::string &suffix) {
+  py::class_<VariableView<T>> view(
+      m, (std::string("VariableView_") + suffix).c_str());
+  view.def("__repr__",
+           [](const VariableView<T> &self) { return array_to_string(self); })
+      .def("__getitem__", &VariableView<T>::operator[],
+           py::return_value_policy::reference)
+      .def("__setitem__", [](VariableView<T> &self, const scipp::index i,
+                             const T value) { self[i] = value; })
+      .def("__len__", &VariableView<T>::size)
+      .def("__iter__", [](const VariableView<T> &self) {
+        return py::make_iterator(self.begin(), self.end());
+      });
+}
+
+/// Helper to pass "default" dtype.
+struct Empty {
+  char dummy;
+};
+
+DType convertDType(const py::dtype type) {
+  if (type.is(py::dtype::of<double>()))
+    return dtype<double>;
+  if (type.is(py::dtype::of<float>()))
+    return dtype<float>;
+  // See https://github.com/pybind/pybind11/pull/1329, int64_t not matching
+  // numpy.int64 correctly.
+  if (type.is(py::dtype::of<std::int64_t>()) ||
+      (type.kind() == 'i' && type.itemsize() == 8))
+    return dtype<int64_t>;
+  if (type.is(py::dtype::of<int32_t>()))
+    return dtype<int32_t>;
+  if (type.is(py::dtype::of<bool>()))
+    return dtype<bool>;
+  throw std::runtime_error("unsupported dtype");
+}
+
+template <class T> struct MakeVariable {
+  static Variable apply(const Tag tag, const std::vector<Dim> &labels,
+                        py::array data) {
+    // Pybind11 converts py::array to py::array_t for us, with all sorts of
+    // automatic conversions such as integer to double, if required.
+    py::array_t<T> dataT(data);
+    const py::buffer_info info = dataT.request();
+    Dimensions dims(labels, info.shape);
+    auto *ptr = (T *)info.ptr;
+    return makeVariable<T, ssize_t>(tag, dims, info.strides, ptr);
+  }
+};
+
+template <class T> struct MakeVariableDefaultInit {
+  static Variable apply(const Tag tag, const std::vector<Dim> &labels,
+                        const py::tuple &shape) {
+    Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
+    return scipp::core::makeVariable<T>(tag, dims);
+  }
+};
+
+Variable doMakeVariable(const Tag tag, const std::vector<Dim> &labels,
+                        py::array &data,
+                        py::dtype type = py::dtype::of<Empty>()) {
+  const py::buffer_info info = data.request();
+  // Use custom dtype, otherwise dtype of data.
+  const auto dtypeTag = type.is(py::dtype::of<Empty>())
+                            ? convertDType(data.dtype())
+                            : convertDType(type);
+  return CallDType<double, float, int64_t, int32_t, char,
+                   bool>::apply<MakeVariable>(dtypeTag, tag, labels, data);
+}
+
+Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
+                                 const py::tuple &shape,
+                                 py::dtype type = py::dtype::of<Empty>()) {
+  // TODO Numpy does not support strings, how can we specify std::string as a
+  // dtype? The same goes for other, more complex item types we need for
+  // variables. Do we need an overload with a dtype arg that does not use
+  // py::dtype?
+  const auto dtypeTag =
+      type.is(py::dtype::of<Empty>()) ? defaultDType(tag) : convertDType(type);
+  return CallDType<double, float, int64_t, int32_t, char, bool, Dataset,
+                   typename Data::EventTofs_t::type,
+                   Eigen::Vector3d>::apply<MakeVariableDefaultInit>(dtypeTag,
+                                                                    tag, labels,
+                                                                    shape);
+}
+
+namespace Key {
+using Tag = Tag;
+using TagName = std::pair<Tag, const std::string &>;
+auto get(const Key::Tag &key) {
+  static const std::string empty;
+  return std::tuple(key, empty);
+}
+auto get(const Key::TagName &key) { return key; }
+} // namespace Key
+
+template <class K>
+void insertDefaultInit(
+    Dataset &self, const K &key,
+    const std::tuple<const std::vector<Dim> &, py::tuple> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
+  auto var = makeVariableDefaultInit(tag, labels, array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
+
+template <class K>
+void insert_ndarray(
+    Dataset &self, const K &key,
+    const std::tuple<const std::vector<Dim> &, py::array &> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
+  const auto dtypeTag = convertDType(array.dtype());
+  auto var = CallDType<double, float, int64_t, int32_t, char,
+                       bool>::apply<MakeVariable>(dtypeTag, tag, labels, array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
+
+// Note the concretely typed py::array_t. If we use py::array it will not match
+// plain Python arrays.
+template <class T, class K>
+void insert_conv(
+    Dataset &self, const K &key,
+    const std::tuple<const std::vector<Dim> &, py::array_t<T> &> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
+  // TODO This is converting back and forth between py::array and py::array_t,
+  // can we do this in a better way?
+  auto var = MakeVariable<T>::apply(tag, labels, array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
+
+template <class T, class K>
+void insert_0D(Dataset &self, const K &key,
+               const std::tuple<const std::vector<Dim> &, T &> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, value ] = data;
+  if (!labels.empty())
+    throw std::runtime_error(
+        "Got 0-D data, but nonzero number of dimension labels.");
+  auto var = scipp::core::makeVariable<T>(tag, {}, {value});
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
+
+template <class T, class K>
+void insert_1D(
+    Dataset &self, const K &key,
+    const std::tuple<const std::vector<Dim> &, std::vector<T> &> &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto & [ labels, array ] = data;
+  Dimensions dims{labels, {scipp::size(array)}};
+  auto var = scipp::core::makeVariable<T>(tag, dims, array);
+  if (!name.empty())
+    var.setName(name);
+  self.insert(std::move(var));
+}
+
+template <class Var, class K>
+void insert(Dataset &self, const K &key, const Var &var) {
+  const auto & [ tag, name ] = Key::get(key);
+  if (self.contains(tag, name))
+    if (self(tag, name) == var)
+      return;
+  Variable copy(var);
+  copy.setTag(tag);
+  if (!name.empty())
+    copy.setName(name);
+  self.insert(std::move(copy));
+}
+
+// Add size factor.
+template <class T>
+std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
+  std::vector<scipp::index> strides(s.size());
+  scipp::index elemSize = sizeof(T);
+  for (size_t i = 0; i < strides.size(); ++i) {
+    strides[i] = elemSize * s[i];
+  }
+  return strides;
+}
+
+template <class T> struct SetData {
+  static void apply(const VariableSlice &slice, const py::array &data) {
+    // Pybind11 converts py::array to py::array_t for us, with all sorts of
+    // automatic conversions such as integer to double, if required.
+    py::array_t<T> dataT(data);
+
+    const auto &dims = slice.dimensions();
+    const py::buffer_info info = dataT.request();
+    const auto &shape = dims.shape();
+    if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
+                    shape.end()))
+      throw std::runtime_error(
+          "Shape mismatch when setting data from numpy array.");
+
+    auto buf = slice.span<T>();
+    auto *ptr = (T *)info.ptr;
+    std::copy(ptr, ptr + slice.size(), buf.begin());
+  }
+};
+
+template <class T, class K>
+void setData(T &self, const K &key, const py::array &data) {
+  const auto & [ tag, name ] = Key::get(key);
+  const auto slice = self(tag, name);
+  CallDType<double, float, int64_t, int32_t, char, bool>::apply<SetData>(
+      slice.dtype(), slice, data);
+}
+
+template <class T>
+auto pySlice(T &source, const std::tuple<Dim, const py::slice> &index)
+    -> decltype(source(Dim::Invalid, 0)) {
+  const auto & [ dim, indices ] = index;
+  size_t start, stop, step, slicelength;
+  const auto size = source.dimensions()[dim];
+  if (!indices.compute(size, &start, &stop, &step, &slicelength))
+    throw py::error_already_set();
+  if (step != 1)
+    throw std::runtime_error("Step must be 1");
+  return source(dim, start, stop);
+}
+
+void setVariableSlice(VariableSlice &self,
+                      const std::tuple<Dim, scipp::index> &index,
+                      const py::array &data) {
+  auto slice = self(std::get<Dim>(index), std::get<scipp::index>(index));
+  CallDType<double, float, int64_t, int32_t, char, bool>::apply<SetData>(
+      slice.dtype(), slice, data);
+}
+
+void setVariableSliceRange(VariableSlice &self,
+                           const std::tuple<Dim, const py::slice> &index,
+                           const py::array &data) {
+  auto slice = pySlice(self, index);
+  CallDType<double, float, int64_t, int32_t, char, bool>::apply<SetData>(
+      slice.dtype(), slice, data);
+}
+
+template <class T> struct MakePyBufferInfoT {
+  static py::buffer_info apply(VariableSlice &view) {
+    return py::buffer_info(
+        view.template span<T>().data(), /* Pointer to buffer */
+        sizeof(T),                      /* Size of one scalar */
+        py::format_descriptor<
+            std::conditional_t<std::is_same_v<T, bool>, bool, T>>::
+            format(),              /* Python struct-style format descriptor */
+        view.dimensions().count(), /* Number of dimensions */
+        view.dimensions().shape(), /* Buffer dimensions */
+        numpy_strides<T>(view.strides()) /* Strides (in bytes) for each index */
+    );
+  }
+};
+
+py::buffer_info make_py_buffer_info(VariableSlice &view) {
+  return CallDType<double, float, int64_t, int32_t, char,
+                   bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
+}
+
+template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
+  // TODO Should `Variable` also have a `strides` method?
+  const auto strides = VariableSlice(view).strides();
+  using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
+  return py::array_t<py_T>{view.dimensions().shape(), numpy_strides<T>(strides),
+                           (py_T *)view.template span<T>().data(), obj};
+}
+
+template <class Var, class... Ts>
+std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
+  auto &view = obj.cast<Var &>();
+  switch (view.dtype()) {
+  case dtype<double>:
+    return {as_py_array_t<double>(obj, view)};
+  case dtype<float>:
+    return {as_py_array_t<float>(obj, view)};
+  case dtype<int64_t>:
+    return {as_py_array_t<int64_t>(obj, view)};
+  case dtype<int32_t>:
+    return {as_py_array_t<int32_t>(obj, view)};
+  case dtype<char>:
+    return {as_py_array_t<char>(obj, view)};
+  case dtype<bool>:
+    return {as_py_array_t<bool>(obj, view)};
+  default:
+    throw std::runtime_error("not implemented for this type.");
+  }
+}
+
+template <class... Ts> struct as_VariableViewImpl {
+  template <class Var>
+  static std::variant<std::conditional_t<
+      std::is_same_v<Var, Variable>, scipp::span<underlying_type_t<Ts>>,
+      VariableView<underlying_type_t<Ts>>>...>
+  get(Var &view) {
+    switch (view.dtype()) {
+    case dtype<double>:
+      return {view.template span<double>()};
+    case dtype<float>:
+      return {view.template span<float>()};
+    case dtype<int64_t>:
+      return {view.template span<int64_t>()};
+    case dtype<int32_t>:
+      return {view.template span<int32_t>()};
+    case dtype<char>:
+      return {view.template span<char>()};
+    case dtype<bool>:
+      return {view.template span<bool>()};
+    case dtype<std::string>:
+      return {view.template span<std::string>()};
+    case dtype<boost::container::small_vector<double, 8>>:
+      return {view.template span<boost::container::small_vector<double, 8>>()};
+    case dtype<Dataset>:
+      return {view.template span<Dataset>()};
+    case dtype<Eigen::Vector3d>:
+      return {view.template span<Eigen::Vector3d>()};
+    default:
+      throw std::runtime_error("not implemented for this type.");
+    }
+  }
+
+  // Return a scalar value from a variable, implicitly requiring that the
+  // variable is 0-dimensional and thus has only a single item.
+  template <class Var> static py::object scalar(Var &view) {
+    expect::equals(Dimensions(), view.dimensions());
+    return std::visit(
+        [](const auto &data) {
+          return py::cast(data[0], py::return_value_policy::reference);
+        },
+        get(view));
+  }
+  // Set a scalar value in a variable, implicitly requiring that the
+  // variable is 0-dimensional and thus has only a single item.
+  template <class Var> static void set_scalar(Var &view, const py::object &o) {
+    expect::equals(Dimensions(), view.dimensions());
+    std::visit(
+        [&o](const auto &data) {
+          data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
+        },
+        get(view));
+  }
+};
+
+using as_VariableView =
+    as_VariableViewImpl<double, float, int64_t, int32_t, char, bool,
+                        std::string, boost::container::small_vector<double, 8>,
+                        Dataset, Eigen::Vector3d>;
+
+class SubsetHelper {
+public:
+  template <class D> SubsetHelper(D &d) : m_data(d) {}
+  auto subset(const std::string &name) const { return m_data.subset(name); }
+  auto subset(const Tag tag, const std::string &name) const {
+    return m_data.subset(tag, name);
+  }
+  template <class D> void insert(const std::string &name, D &subset) {
+    m_data.insert(name, subset);
+  }
+
+private:
+  DatasetSlice m_data;
+};
+
+using small_vector = boost::container::small_vector<double, 8>;
+PYBIND11_MAKE_OPAQUE(small_vector);
+
+PYBIND11_MODULE(scippy, m) {
+  py::bind_vector<boost::container::small_vector<double, 8>>(
+      m, "SmallVectorDouble8");
+
+  py::enum_<Dim>(m, "Dim")
+      .value("Component", Dim::Component)
+      .value("DeltaE", Dim::DeltaE)
+      .value("Detector", Dim::Detector)
+      .value("DetectorScan", Dim::DetectorScan)
+      .value("DSpacing", Dim::DSpacing)
+      .value("Energy", Dim::Energy)
+      .value("Event", Dim::Event)
+      .value("Invalid", Dim::Invalid)
+      .value("Monitor", Dim::Monitor)
+      .value("Polarization", Dim::Polarization)
+      .value("Position", Dim::Position)
+      .value("Q", Dim::Q)
+      .value("Row", Dim::Row)
+      .value("Run", Dim::Run)
+      .value("Spectrum", Dim::Spectrum)
+      .value("Temperature", Dim::Temperature)
+      .value("Time", Dim::Time)
+      .value("Tof", Dim::Tof)
+      .value("Qx", Dim::Qx)
+      .value("Qy", Dim::Qy)
+      .value("Qz", Dim::Qz)
+      .value("X", Dim::X)
+      .value("Y", Dim::Y)
+      .value("Z", Dim::Z);
+
+  py::class_<Tag>(m, "Tag")
+      .def(py::self == py::self)
+      .def("__repr__", [](const Tag &self) { return to_string(self, "."); });
+
+  // Runtime tags are sufficient in Python, not exporting Tag child classes.
+  auto coord_tags = m.def_submodule("Coord");
+  coord_tags.attr("Monitor") = Tag(Coord::Monitor);
+  coord_tags.attr("DetectorInfo") = Tag(Coord::DetectorInfo);
+  coord_tags.attr("ComponentInfo") = Tag(Coord::ComponentInfo);
+  coord_tags.attr("Qx") = Tag(Coord::Qx);
+  coord_tags.attr("Qy") = Tag(Coord::Qy);
+  coord_tags.attr("Qz") = Tag(Coord::Qz);
+  coord_tags.attr("X") = Tag(Coord::X);
+  coord_tags.attr("Y") = Tag(Coord::Y);
+  coord_tags.attr("Z") = Tag(Coord::Z);
+  coord_tags.attr("Tof") = Tag(Coord::Tof);
+  coord_tags.attr("DSpacing") = Tag(Coord::DSpacing);
+  coord_tags.attr("Energy") = Tag(Coord::Energy);
+  coord_tags.attr("DeltaE") = Tag(Coord::DeltaE);
+  coord_tags.attr("Ei") = Tag(Coord::Ei);
+  coord_tags.attr("Ef") = Tag(Coord::Ef);
+  coord_tags.attr("DetectorId") = Tag(Coord::DetectorId);
+  coord_tags.attr("SpectrumNumber") = Tag(Coord::SpectrumNumber);
+  coord_tags.attr("DetectorGrouping") = Tag(Coord::DetectorGrouping);
+  coord_tags.attr("Row") = Tag(Coord::Row);
+  coord_tags.attr("Run") = Tag(Coord::Run);
+  coord_tags.attr("Polarization") = Tag(Coord::Polarization);
+  coord_tags.attr("Temperature") = Tag(Coord::Temperature);
+  coord_tags.attr("FuzzyTemperature") = Tag(Coord::FuzzyTemperature);
+  coord_tags.attr("Time") = Tag(Coord::Time);
+  coord_tags.attr("TimeInterval") = Tag(Coord::TimeInterval);
+  coord_tags.attr("Mask") = Tag(Coord::Mask);
+  coord_tags.attr("Position") = Tag(Coord::Position);
+
+  auto data_tags = m.def_submodule("Data");
+  data_tags.attr("Tof") = Tag(Data::Tof);
+  data_tags.attr("PulseTime") = Tag(Data::PulseTime);
+  data_tags.attr("Value") = Tag(Data::Value);
+  data_tags.attr("Variance") = Tag(Data::Variance);
+  data_tags.attr("StdDev") = Tag(Data::StdDev);
+  data_tags.attr("Events") = Tag(Data::Events);
+  data_tags.attr("EventTofs") = Tag(Data::EventTofs);
+  data_tags.attr("EventPulseTimes") = Tag(Data::EventPulseTimes);
+
+  auto attr_tags = m.def_submodule("Attr");
+  attr_tags.attr("ExperimentLog") = Tag(Attr::ExperimentLog);
+  attr_tags.attr("Monitor") = Tag(Attr::Monitor);
+
+  declare_span<double>(m, "double");
+  declare_span<float>(m, "float");
+  declare_span<Bool>(m, "bool");
+  declare_span<const double>(m, "double_const");
+  declare_span<const long>(m, "long_const");
+  declare_span<long>(m, "long");
+  declare_span<const std::string>(m, "string_const");
+  declare_span<std::string>(m, "string");
+  declare_span<const Dim>(m, "Dim_const");
+  declare_span<Dataset>(m, "Dataset");
+  declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
+
+  declare_VariableView<double>(m, "double");
+  declare_VariableView<float>(m, "float");
+  declare_VariableView<int64_t>(m, "int64");
+  declare_VariableView<int32_t>(m, "int32");
+  declare_VariableView<std::string>(m, "string");
+  declare_VariableView<char>(m, "char");
+  declare_VariableView<Bool>(m, "bool");
+  declare_VariableView<boost::container::small_vector<double, 8>>(
+      m, "SmallVectorDouble8");
+  declare_VariableView<Dataset>(m, "Dataset");
+  declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
+
+  py::class_<units::Unit>(m, "Unit")
+      .def(py::init())
+      .def("__repr__",
+           [](const units::Unit &u) -> std::string { return u.name(); })
+      .def_property_readonly("name", &units::Unit::name,
+                             "A read-only string describing the "
+                             "type of unit.")
+      .def(py::self + py::self)
+      .def(py::self - py::self)
+      .def(py::self * py::self)
+      .def(py::self / py::self)
+      .def(py::self == py::self)
+      .def(py::self != py::self);
+
+  auto units = m.def_submodule("units");
+  units.attr("dimensionless") = units::Unit(units::dimensionless);
+  units.attr("m") = units::Unit(units::m);
+  units.attr("counts") = units::Unit(units::counts);
+  units.attr("s") = units::Unit(units::s);
+  units.attr("kg") = units::Unit(units::kg);
+  units.attr("K") = units::Unit(units::K);
+  units.attr("angstrom") = units::Unit(units::angstrom);
+  units.attr("meV") = units::Unit(units::meV);
+  units.attr("us") = units::Unit(units::us);
+
+  declare_VariableZipProxy(m, "", Access::Key(Data::EventTofs),
+                           Access::Key(Data::EventPulseTimes));
+  declare_ItemZipProxy<small_vector, small_vector>(m, "");
+  declare_ranges_pair<double, double>(m, "double_double");
+
+  py::class_<Dimensions>(m, "Dimensions")
+      .def(py::init<>())
+      .def("__repr__",
+           [](const Dimensions &self) {
+             std::string out = "Dimensions = " + to_string(self, ".");
+             return out;
+           })
+      .def("__len__", &Dimensions::count)
+      .def("__contains__", [](const Dimensions &self,
+                              const Dim dim) { return self.contains(dim); })
+      .def("__getitem__",
+           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
+      .def_property_readonly("labels", &Dimensions::labels,
+                             "The read-only tags labelling"
+                             "the different dimensions of the underlying "
+                             "Variable or VariableSlice, e.g. [Dim.Y, Dim.X].")
+      .def_property_readonly("shape", &Dimensions::shape,
+                             "The read-only sizes of each dimension of the "
+                             "underlying Variable or VariableSlice.")
+      .def("add", &Dimensions::add,
+           "Add a new dimension, which will be the outermost dimension.")
+      .def("size",
+           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_),
+           "Get the sizes of contained dimensions.")
+      .def(py::self == py::self)
+      .def(py::self != py::self);
+
+  PYBIND11_NUMPY_DTYPE(Empty, dummy);
+
+  py::class_<Variable>(m, "Variable")
+      .def(py::init(&makeVariableDefaultInit), py::arg("tag"),
+           py::arg("labels"), py::arg("shape"),
+           py::arg("dtype") = py::dtype::of<Empty>())
+      .def(py::init([](const int64_t data, const units::Unit &unit) {
+             auto var = makeVariable<int64_t>(Data::NoTag, {}, {data});
+             var.setUnit(unit);
+             return var;
+           }),
+           py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
+      .def(py::init([](const double data, const units::Unit &unit) {
+             Variable var(Data::NoTag, {}, {data});
+             var.setUnit(unit);
+             return var;
+           }),
+           py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
+      // TODO Need to add overload for std::vector<std::string>, etc., see
+      // Dataset.__setitem__
+      .def(py::init(&doMakeVariable), py::arg("tag"), py::arg("labels"),
+           py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
+      .def(py::init<const VariableSlice &>())
+      .def("__getitem__", pySlice<Variable>, py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](Variable &self, const std::tuple<Dim, py::slice> &index,
+              const VariableSlice &other) {
+             pySlice(self, index).assign(other);
+           })
+      .def("__setitem__",
+           [](Variable &self, const std::tuple<Dim, scipp::index> &index,
+              const VariableSlice &other) {
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
+           })
+      .def("copy", [](const Variable &self) { return self; },
+           "Make a copy of a Variable.")
+      .def("__copy__", [](Variable &self) { return Variable(self); })
+      .def("__deepcopy__",
+           [](Variable &self, py::dict) { return Variable(self); })
+      .def_property_readonly("tag", &Variable::tag,
+                             "A read-only tag describing the type of Variable, "
+                             "e.g. Data.Value or Data.Variance.")
+      .def_property("name", [](const Variable &self) { return self.name(); },
+                    &Variable::setName,
+                    "A string holding the Variable's name which is used to "
+                    "uniquely identify it.")
+      .def_property("unit", &Variable::unit, &Variable::setUnit,
+                    "Object of type Unit holding the unit of the Variable.")
+      .def_property_readonly(
+          "is_coord", &Variable::isCoord,
+          "Is True if the Variable is a Coordinate, e.g. Coord.X (read-only).")
+      .def_property_readonly(
+          "is_data", &Variable::isData,
+          "Is True if the Variable is not a coordinate, i.e. it can be a "
+          "Data.Value or Data.Variance (read-only).")
+      .def_property_readonly(
+          "is_attr", &Variable::isAttr,
+          "Is True if the Variable is an attribute (read-only).")
+      .def_property_readonly(
+          "dimensions", [](const Variable &self) { return self.dimensions(); },
+          "A read-only Dimensions object containing the dimensions of the "
+          "Variable.")
+      .def_property_readonly(
+          "numpy",
+          &as_py_array_t_variant<Variable, double, float, int64_t, int32_t,
+                                 char, bool>,
+          "Returns a read-only numpy array containing the Variable's values.")
+      .def_property_readonly(
+          "data", &as_VariableView::get<Variable>,
+          "Returns a read-only VariableView onto the Variable's contents.")
+      .def_property("scalar", &as_VariableView::scalar<Variable>,
+                    &as_VariableView::set_scalar<Variable>,
+                    "The only data point for a 0-dimensional "
+                    "variable. Raises an exception if the variable is "
+                    "not 0-dimensional.")
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def("__eq__", [](Variable &a, VariableSlice &b) { return a == b; },
+           py::is_operator())
+      .def("__ne__", [](Variable &a, VariableSlice &b) { return a != b; },
+           py::is_operator())
+      .def("__add__", [](Variable &a, VariableSlice &b) { return a + b; },
+           py::is_operator())
+      .def("__sub__", [](Variable &a, VariableSlice &b) { return a - b; },
+           py::is_operator())
+      .def("__mul__", [](Variable &a, VariableSlice &b) { return a * b; },
+           py::is_operator())
+      .def("__truediv__", [](Variable &a, VariableSlice &b) { return a / b; },
+           py::is_operator())
+      .def("__iadd__", [](Variable &a, VariableSlice &b) { return a += b; },
+           py::is_operator())
+      .def("__isub__", [](Variable &a, VariableSlice &b) { return a -= b; },
+           py::is_operator())
+      .def("__imul__", [](Variable &a, VariableSlice &b) { return a *= b; },
+           py::is_operator())
+      .def("__itruediv__", [](Variable &a, VariableSlice &b) { return a /= b; },
+           py::is_operator())
+      .def("__radd__", [](Variable &a, double &b) { return a + b; },
+           py::is_operator())
+      .def("__rsub__", [](Variable &a, double &b) { return b - a; },
+           py::is_operator())
+      .def("__rmul__", [](Variable &a, double &b) { return a * b; },
+           py::is_operator())
+      .def("__len__", &Variable::size)
+      .def("__repr__",
+           [](const Variable &self) { return to_string(self, "."); });
+
+  py::class_<VariableSlice> view(m, "VariableSlice", py::buffer_protocol());
+  view.def_buffer(&make_py_buffer_info);
+  view.def_property_readonly(
+          "dimensions",
+          [](const VariableSlice &self) { return self.dimensions(); },
+          py::return_value_policy::copy,
+          "A read-only Dimensions object containing the dimensions of the "
+          "Variable.")
+      .def("__len__",
+           [](const VariableSlice &self) {
+             const auto &dims = self.dimensions();
+             if (dims.count() == 0)
+               throw std::runtime_error("len() of unsized object.");
+             return dims.shape()[0];
+           })
+      .def_property_readonly("is_coord", &VariableSlice::isCoord,
+                             "Is True if the VariableSlice is a Coordinate, "
+                             "e.g. Coord.X (read-only).")
+      .def_property_readonly(
+          "is_data", &VariableSlice::isData,
+          "Is True if the VariableSlice is not a coordinate, i.e. it can be a "
+          "Data.Value or Data.Variance (read-only).")
+      .def_property_readonly(
+          "is_attr", &VariableSlice::isAttr,
+          "Is True if the VariableSlice is an attribute (read-only).")
+      .def_property_readonly(
+          "tag", &VariableSlice::tag,
+          "A read-only tag describing the type of VariableSlice, e.g. "
+          "Data.Value or Data.Variance. ")
+      .def_property_readonly("name", &VariableSlice::name,
+                             "A read-only string holding the VariableSlice's "
+                             "name which is used to uniquely identify it.")
+      .def_property(
+          "unit", &VariableSlice::unit, &VariableSlice::setUnit,
+          "Object of type Unit holding the unit of the VariableSlice.")
+      .def("__getitem__",
+           [](VariableSlice &self, const std::tuple<Dim, scipp::index> &index) {
+             return getItemBySingleIndex(self, index);
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &pySlice<VariableSlice>, py::keep_alive<0, 1>())
+      .def("__getitem__",
+           [](VariableSlice &self, const std::map<Dim, const scipp::index> d) {
+             auto slice(self);
+             for (auto item : d)
+               slice = slice(item.first, item.second);
+             return slice;
+           },
+           py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](VariableSlice &self, const std::tuple<Dim, py::slice> &index,
+              const VariableSlice &other) {
+             pySlice(self, index).assign(other);
+           })
+      .def("__setitem__",
+           [](VariableSlice &self, const std::tuple<Dim, scipp::index> &index,
+              const VariableSlice &other) {
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
+           })
+      .def("__setitem__", &setVariableSlice)
+      .def("__setitem__", &setVariableSliceRange)
+      .def("copy", [](const VariableSlice &self) { return Variable(self); },
+           "Make a copy of a VariableSlice and return it as a Variable.")
+      .def("__copy__", [](VariableSlice &self) { return Variable(self); })
+      .def("__deepcopy__",
+           [](VariableSlice &self, py::dict) { return Variable(self); })
+      .def_property_readonly(
+          "numpy",
+          &as_py_array_t_variant<VariableSlice, double, float, int64_t, int32_t,
+                                 char, bool>,
+          "Returns a read-only numpy array containing the VariableSlice's "
+          "values.")
+      .def_property_readonly(
+          "data", &as_VariableView::get<VariableSlice>,
+          "Returns a read-only VariableView onto the VariableSlice's contents.")
+      .def_property("scalar", &as_VariableView::scalar<VariableSlice>,
+                    &as_VariableView::set_scalar<VariableSlice>,
+                    "The only data point for a 0-dimensional "
+                    "variable. Raises an exception of the variable is "
+                    "not 0-dimensional.")
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def("__eq__", [](VariableSlice &a, Variable &b) { return a == b; },
+           py::is_operator())
+      .def("__ne__", [](VariableSlice &a, Variable &b) { return a != b; },
+           py::is_operator())
+      .def("__add__", [](VariableSlice &a, Variable &b) { return a + b; },
+           py::is_operator())
+      .def("__sub__", [](VariableSlice &a, Variable &b) { return a - b; },
+           py::is_operator())
+      .def("__mul__", [](VariableSlice &a, Variable &b) { return a * b; },
+           py::is_operator())
+      .def("__truediv__", [](VariableSlice &a, Variable &b) { return a / b; },
+           py::is_operator())
+      .def("__iadd__", [](VariableSlice &a, Variable &b) { return a += b; },
+           py::is_operator())
+      .def("__isub__", [](VariableSlice &a, Variable &b) { return a -= b; },
+           py::is_operator())
+      .def("__imul__", [](VariableSlice &a, Variable &b) { return a *= b; },
+           py::is_operator())
+      .def("__itruediv__", [](VariableSlice &a, Variable &b) { return a /= b; },
+           py::is_operator())
+      .def("__radd__", [](VariableSlice &a, double &b) { return a + b; },
+           py::is_operator())
+      .def("__rsub__", [](VariableSlice &a, double &b) { return b - a; },
+           py::is_operator())
+      .def("__rmul__", [](VariableSlice &a, double &b) { return a * b; },
+           py::is_operator())
+      .def("reshape",
+           [](const VariableSlice &self, const std::vector<Dim> &labels,
+              const py::tuple &shape) {
+             Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
+             return self.reshape(dims);
+           })
+      .def("__repr__",
+           [](const VariableSlice &self) { return to_string(self, "."); });
+
+  // Implicit conversion VariableSlice -> Variable. Reduces need for excessive
+  // operator overload definitions
+  py::implicitly_convertible<VariableSlice, Variable>();
+
+  py::class_<SubsetHelper>(m, "SubsetHelper")
+      .def("__getitem__",
+           [](SubsetHelper &self, const std::string &name) {
+             return self.subset(name);
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__",
+           [](SubsetHelper &self,
+              const std::tuple<const Tag, const std::string &> &index) {
+             const auto & [ tag, name ] = index;
+             return self.subset(tag, name);
+           },
+           py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](SubsetHelper &self, const std::string &name,
+              const DatasetSlice &data) { self.insert(name, data); })
+      .def("__setitem__", [](SubsetHelper &self, const std::string &name,
+                             const Dataset &data) { self.insert(name, data); });
+  py::class_<DatasetSlice>(m, "DatasetSlice")
+      .def(py::init<Dataset &>())
+      .def_property_readonly(
+          "dimensions",
+          [](const DatasetSlice &self) { return self.dimensions(); },
+          "A read-only Dimensions object containing the dimensions of the "
+          "DatasetSlice.")
+      .def("__len__", &DatasetSlice::size)
+      .def("__iter__",
+           [](DatasetSlice &self) {
+             return py::make_iterator(self.begin(), self.end());
+           },
+           py::keep_alive<0, 1>())
+      .def("__contains__", &DatasetSlice::contains, py::arg("tag"),
+           py::arg("name") = "")
+      .def("__contains__",
+           [](const DatasetSlice &self,
+              const std::tuple<const Tag, const std::string> &key) {
+             return self.contains(std::get<0>(key), std::get<1>(key));
+           })
+      .def("__getitem__",
+           [](DatasetSlice &self, const std::tuple<Dim, scipp::index> &index) {
+             return getItemBySingleIndex(self, index);
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &pySlice<DatasetSlice>, py::keep_alive<0, 1>())
+      .def("__getitem__",
+           [](DatasetSlice &self, const Tag &tag) { return self(tag); },
+           py::keep_alive<0, 1>())
+      .def(
+          "__getitem__",
+          [](DatasetSlice &self, const std::pair<Tag, const std::string> &key) {
+            return self(key.first, key.second);
+          },
+          py::keep_alive<0, 1>())
+      .def("copy", [](const DatasetSlice &self) { return Dataset(self); },
+           "Make a copy of a DatasetSlice.")
+      .def("__copy__", [](DatasetSlice &self) { return Dataset(self); })
+      .def("__deepcopy__",
+           [](DatasetSlice &self, py::dict) { return Dataset(self); })
+      .def_property_readonly(
+          "subset", [](DatasetSlice &self) { return SubsetHelper(self); },
+          "Used to extract a read-only subset of the DatasetSlice in two "
+          "different ways:\n - one can use just a string, e.g. "
+          "d.subset['sample'] to extract the sample and its variance, and all "
+          "the relevant coordinates.\n - one can also use a tag/string "
+          "combination for a more restrictive extraction, e.g. "
+          "d.subset[Data.Value, 'sample'] to only get the Value and associated "
+          "coordinates.\nAll other Variables (including attributes) are "
+          "dropped.")
+      .def(
+          "__setitem__",
+          [](DatasetSlice &self, const std::tuple<Dim, py::slice> &index,
+             const DatasetSlice &other) { pySlice(self, index).assign(other); })
+      .def("__setitem__",
+           [](DatasetSlice &self, const std::tuple<Dim, scipp::index> &index,
+              const DatasetSlice &other) {
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
+           })
+      .def("__setitem__", setData<DatasetSlice, Key::Tag>)
+      .def("__setitem__", setData<DatasetSlice, Key::TagName>)
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
+      .def("__eq__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self == other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__ne__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self != other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self + other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self + other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self - other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self - other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self * other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self * other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self += other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self += other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self -= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self -= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self *= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self *= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](const DatasetSlice &self, const Dataset &other) {
+             return self /= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](const DatasetSlice &self, const Variable &other) {
+             return self /= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__radd__",
+           [](const DatasetSlice &self, double &other) { return self + other; },
+           py::is_operator())
+      .def("__rsub__",
+           [](const DatasetSlice &self, double &other) { return other - self; },
+           py::is_operator())
+      .def("__rmul__",
+           [](const DatasetSlice &self, double &other) { return self * other; },
+           py::is_operator())
+      .def("__repr__",
+           [](const DatasetSlice &self) { return to_string(self, "."); });
+
+  py::class_<Dataset>(m, "Dataset")
+      .def(py::init<>())
+      .def(py::init<const DatasetSlice &>())
+      .def_property_readonly(
+          "dimensions", [](const Dataset &self) { return self.dimensions(); },
+          "A read-only Dimensions object containing the dimensions of the "
+          "Dataset.")
+      .def("__len__", &Dataset::size)
+      .def("__repr__", [](const Dataset &self) { return to_string(self, "."); })
+      .def("__iter__",
+           [](Dataset &self) {
+             return py::make_iterator(self.begin(), self.end());
+           })
+      .def("__contains__", &Dataset::contains, py::arg("tag"),
+           py::arg("name") = "")
+      .def("__contains__",
+           [](const Dataset &self,
+              const std::tuple<const Tag, const std::string> &key) {
+             return self.contains(std::get<0>(key), std::get<1>(key));
+           })
+      .def("__delitem__",
+           py::overload_cast<const Tag, const std::string &>(&Dataset::erase),
+           py::arg("tag"), py::arg("name") = "")
+      .def("__delitem__",
+           [](Dataset &self,
+              const std::tuple<const Tag, const std::string &> &key) {
+             self.erase(std::get<0>(key), std::get<1>(key));
+           })
+      // TODO: This __getitem__ is here only to prevent unhandled
+      // errors when trying to get a dataset slice by supplying only a
+      // Dimension, e.g. dataset[Dim.X]. By default, an implicit
+      // conversion between Dim and scipp::index is attempted and the
+      // __getitem__ then crashes when self[index] is performed below.
+      // This fix covers only one case and we need to find a better way
+      // of protecting all unsopprted cases. This should ideally fail
+      // with a TypeError, in the same way as if only a string is
+      // supplied, e.g. dataset["a"].
+      .def("__getitem__",
+           [](Dataset &, const Dim &) {
+             throw std::runtime_error("Syntax error: cannot get slice with "
+                                      "just a Dim, please use dataset[Dim.X, "
+                                      ":]");
+           })
+      .def("__getitem__",
+           [](Dataset &self, const scipp::index index) { return self[index]; },
+           py::keep_alive<0, 1>())
+      .def("__getitem__",
+           [](Dataset &self, const std::tuple<Dim, scipp::index> &index) {
+             return getItemBySingleIndex(self, index);
+           },
+           py::keep_alive<0, 1>())
+      .def("__getitem__", &pySlice<Dataset>, py::keep_alive<0, 1>())
+      .def("__getitem__",
+           [](Dataset &self, const Tag &tag) { return self(tag); })
+      .def("__getitem__",
+           [](Dataset &self, const std::pair<Tag, const std::string> &key) {
+             return self(key.first, key.second);
+           },
+           py::keep_alive<0, 1>())
+      .def("copy", [](const Dataset &self) { return self; },
+           "Make a copy of a Dataset.")
+      .def("__copy__", [](Dataset &self) { return Dataset(self); })
+      .def("__deepcopy__",
+           [](Dataset &self, py::dict) { return Dataset(self); })
+      .def_property_readonly(
+          "subset", [](Dataset &self) { return SubsetHelper(self); },
+          "Used to extract a read-only subset of the Dataset in two different "
+          "ways: \n - one can use just a string, e.g. d.subset['sample'] to "
+          "extract the sample and its variance, and all the relevant "
+          "coordinates.\n - one can also use a tag/string combination for a "
+          "more restrictive extraction, e.g. d.subset[Data.Value, 'sample'] to "
+          "only get the Value and associated coordinates.\nAll other Variables "
+          "(including attributes) are dropped. Note that a DatasetSlice is "
+          "returned, not a new Dataset.")
+      // Careful: The order of overloads is really important here,
+      // otherwise DatasetSlice matches the overload below for
+      // py::array_t. I have not understood all details of this yet
+      // though. See also
+      // https://pybind11.readthedocs.io/en/stable/advanced/functions.html#overload-resolution-order.
+      .def(
+          "__setitem__",
+          [](Dataset &self, const std::tuple<Dim, py::slice> &index,
+             const DatasetSlice &other) { pySlice(self, index).assign(other); })
+      .def("__setitem__",
+           [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
+              const DatasetSlice &other) {
+             const auto & [ dim, i ] = index;
+             self(dim, i).assign(other);
+           })
+
+      // A) No dimensions argument, this will set data of existing item.
+      .def("__setitem__", setData<Dataset, Key::Tag>)
+      .def("__setitem__", setData<Dataset, Key::TagName>)
+
+      // B) Variants with dimensions, inserting new item.
+      // 0. Insertion from Variable or Variable slice.
+      .def("__setitem__", insert<Variable, Key::Tag>)
+      .def("__setitem__", insert<Variable, Key::TagName>)
+      .def("__setitem__", insert<VariableSlice, Key::Tag>)
+      .def("__setitem__", insert<VariableSlice, Key::TagName>)
+      // 1. Insertion with default init. TODO Should this be removed?
+      .def("__setitem__", insertDefaultInit<Key::Tag>)
+      .def("__setitem__", insertDefaultInit<Key::TagName>)
+      // 2. Insertion from numpy.ndarray
+      .def("__setitem__", insert_ndarray<Key::Tag>)
+      .def("__setitem__", insert_ndarray<Key::TagName>)
+      // 2. Handle integers before case 3. below, which would convert to double.
+      .def("__setitem__", insert_0D<int64_t, Key::Tag>)
+      .def("__setitem__", insert_0D<int64_t, Key::TagName>)
+      .def("__setitem__", insert_0D<double, Key::Tag>)
+      .def("__setitem__", insert_0D<double, Key::TagName>)
+      .def("__setitem__", insert_0D<std::string, Key::Tag>)
+      .def("__setitem__", insert_0D<std::string, Key::TagName>)
+      .def("__setitem__", insert_0D<Dataset, Key::Tag>)
+      .def("__setitem__", insert_0D<Dataset, Key::TagName>)
+      // 3. Handle integers before case 4. below, which would convert to double.
+      .def("__setitem__", insert_1D<int64_t, Key::Tag>)
+      .def("__setitem__", insert_1D<int64_t, Key::TagName>)
+      .def("__setitem__", insert_1D<Eigen::Vector3d, Key::Tag>)
+      .def("__setitem__", insert_1D<Eigen::Vector3d, Key::TagName>)
+      // 4. Insertion attempting forced conversion to array of double. This
+      //    is handled by automatic conversion by pybind11 when using
+      //    py::array_t. Handles also scalar data. See also the
+      //    py::array::forcecast argument, we need to minimize implicit
+      //    (and potentially expensive conversion). If we wanted to
+      //    avoid some conversion we need to provide explicit variants
+      //    for specific types, same as or similar to insert_1D in
+      //    case 5. below.
+      .def("__setitem__", insert_conv<double, Key::Tag>)
+      .def("__setitem__", insert_conv<double, Key::TagName>)
+      // 5. Insertion of numpy-incompatible data. py::array_t does not support
+      //    non-POD types like std::string, so we need to handle them
+      //    separately.
+      .def("__setitem__", insert_1D<std::string, Key::Tag>)
+      .def("__setitem__", insert_1D<std::string, Key::TagName>)
+      .def("__setitem__", insert_1D<Dataset, Key::Tag>)
+      .def("__setitem__", insert_1D<Dataset, Key::TagName>)
+
+      // TODO Make sure we have all overloads covered to avoid implicit
+      // conversion of DatasetSlice to Dataset.
+      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
+      .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
+      .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
+      .def("__eq__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self == other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__ne__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self != other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self += other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__iadd__",
+           [](Dataset &self, const Variable &other) { return self += other; },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self -= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__isub__",
+           [](Dataset &self, const Variable &other) { return self -= other; },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self *= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__imul__",
+           [](Dataset &self, const Variable &other) { return self *= other; },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](Dataset &self, const DatasetSlice &other) {
+             return self /= other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__itruediv__",
+           [](Dataset &self, const Variable &other) { return self /= other; },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self + other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__add__",
+           [](const Dataset &self, const Variable &other) {
+             return self + other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self - other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__sub__",
+           [](const Dataset &self, const Variable &other) {
+             return self - other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self * other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__mul__",
+           [](const Dataset &self, const Variable &other) {
+             return self * other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const Dataset &self, const DatasetSlice &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__truediv__",
+           [](const Dataset &self, const Variable &other) {
+             return self / other;
+           },
+           py::call_guard<py::gil_scoped_release>())
+      .def("__radd__",
+           [](const Dataset &self, double &other) { return self + other; },
+           py::is_operator())
+      .def("__rsub__",
+           [](const Dataset &self, double &other) { return other - self; },
+           py::is_operator())
+      .def("__rmul__",
+           [](const Dataset &self, double &other) { return self * other; },
+           py::is_operator())
+      .def("merge", &Dataset::merge,
+           "Merge two Datasets together: all the "
+           "Variables from the Dataset passed as an argument that do not exist "
+           "in the present Dataset are copied. Variables from the argument "
+           "Dataset that already exist (i.e. have the same Tag and name) in "
+           "the present Dataset, are compared; if the two are identical, it is "
+           "simply left alone in the parent Dataset. If they are not, the "
+           "merge operation fails.")
+      // TODO For now this is just for testing. We need to decide on an
+      // API for specifying the keys.
+      .def("zip", [](Dataset &self) {
+        return zip(self, Access::Key(Data::EventTofs),
+                   Access::Key(Data::EventPulseTimes));
+      });
+
+  // Implicit conversion DatasetSlice -> Dataset. Reduces need for
+  // excessive operator overload definitions
+  py::implicitly_convertible<DatasetSlice, Dataset>();
+
+  //-----------------------dataset free functions-------------------------------
+  m.def("split",
+        py::overload_cast<const Dataset &, const Dim,
+                          const std::vector<scipp::index> &>(&split),
+        py::call_guard<py::gil_scoped_release>(),
+        "Split a Dataset along a given Dimension.");
+  m.def("concatenate",
+        py::overload_cast<const Dataset &, const Dataset &, const Dim>(
+            &concatenate),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new dataset containing a concatenation of two Datasets "
+        "and their underlying Variables along a given Dimension. All the "
+        "Variable arrays are concatenated one by one. If there is any "
+        "disagreement between the Datasets on Variable names, units, tags or "
+        "dimensions, then the concatenation operation fails.");
+  m.def("rebin", py::overload_cast<const Dataset &, const Variable &>(&rebin),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Dataset whose data is re-gridded/rebinned/resampled to "
+        "a new coordinate axis.");
+  m.def("histogram",
+        py::overload_cast<const Dataset &, const Variable &>(&histogram),
+        py::call_guard<py::gil_scoped_release>(),
+        "Perform histogramming of events.");
+  m.def(
+      "sort",
+      py::overload_cast<const Dataset &, const Tag, const std::string &>(&sort),
+      py::arg("dataset"), py::arg("tag"), py::arg("name") = "",
+      py::call_guard<py::gil_scoped_release>());
+  m.def("filter", py::overload_cast<const Dataset &, const Variable &>(&filter),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("sum", py::overload_cast<const Dataset &, const Dim>(&sum),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Dataset containing the sum of the data along the "
+        "specified dimension.");
+  m.def("mean", py::overload_cast<const Dataset &, const Dim>(&mean),
+        py::call_guard<py::gil_scoped_release>(), py::arg("dataset"),
+        py::arg("dim"),
+        "Returns a new Dataset containing the mean of the data along the "
+        "specified dimension. Any variances in the input dataset are "
+        "transformed into the variance of the mean.");
+  m.def("integrate", py::overload_cast<const Dataset &, const Dim>(&integrate),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("convert",
+        py::overload_cast<const Dataset &, const Dim, const Dim>(&convert),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("convert",
+        py::overload_cast<const Dataset &, const std::vector<Dim> &,
+                          const Dataset &>(&convert),
+        py::call_guard<py::gil_scoped_release>());
+
+  //-----------------------variable free functions------------------------------
+  m.def("split",
+        py::overload_cast<const Variable &, const Dim,
+                          const std::vector<scipp::index> &>(&split),
+        py::call_guard<py::gil_scoped_release>(),
+        "Split a Variable along a given Dimension.");
+  m.def("concatenate",
+        py::overload_cast<const Variable &, const Variable &, const Dim>(
+            &concatenate),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing a concatenation "
+        "of two Variables along a given Dimension.");
+  m.def("rebin",
+        py::overload_cast<const Variable &, const Variable &, const Variable &>(
+            &rebin),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable whose data is rebinned with new bin edges.");
+  m.def("filter",
+        py::overload_cast<const Variable &, const Variable &>(&filter),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the sum of the data along the "
+        "specified dimension.");
+  m.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the mean of the data along the "
+        "specified dimension.");
+  m.def("norm", py::overload_cast<const Variable &>(&norm),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the norm of the data.");
+  // find out why py::overload_cast is not working correctly here
+  m.def("sqrt", [](const Variable &self) { return sqrt(self); },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the square root of the data.");
+
+  //-----------------------dimensions free functions----------------------------
+  m.def("dimensionCoord", &dimensionCoord);
+  m.def("coordDimension",
+        [](const Tag t) { return coordDimension[t.value()]; });
+
+  auto events = m.def_submodule("events");
+  events.def("sort_by_tof", &events::sortByTof);
+
+  auto counts = m.def_submodule("counts");
+  counts.def("to_density",
+             py::overload_cast<Dataset, const Dim>(&counts::toDensity),
+             py::call_guard<py::gil_scoped_release>());
+  counts.def(
+      "to_density",
+      py::overload_cast<Dataset, const std::vector<Dim> &>(&counts::toDensity),
+      py::call_guard<py::gil_scoped_release>());
+  counts.def("from_density",
+             py::overload_cast<Dataset, const Dim>(&counts::fromDensity),
+             py::call_guard<py::gil_scoped_release>());
+  counts.def("from_density",
+             py::overload_cast<Dataset, const std::vector<Dim> &>(
+                 &counts::fromDensity),
+             py::call_guard<py::gil_scoped_release>());
+}

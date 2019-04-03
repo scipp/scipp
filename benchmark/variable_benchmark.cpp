@@ -7,6 +7,8 @@
 
 #include "variable.h"
 
+using namespace scipp::core;
+
 static void BM_Variable_copy(benchmark::State &state) {
   Variable var(Coord::X, {{Dim::Z, 10}, {Dim::Y, 20}, {Dim::X, 30}});
 

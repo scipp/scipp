@@ -30,8 +30,9 @@ script:
   - cd build
   - cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
   - make -j2 install
-  - ./test/dataset_test
-  - python3 -m pip install -r ../python/requirements.txt
+  - ./units/test/scipp_units_test
+  - ./core/test/scipp_core_test
+  - python3 -m pip install -r ../scippy/requirements.txt
   - export PYTHONPATH=$PYTHONPATH:../install
-  - cd ../python
+  - cd ../scippy
   - python3 -m unittest discover test

@@ -8,9 +8,11 @@
 
 #include "md_zip_view.h"
 
-std::array<gsl::index, 3> getIndex(gsl::index i,
-                                   const std::array<gsl::index, 3> &size) {
-  std::array<gsl::index, 3> index;
+using namespace scipp::core;
+
+std::array<scipp::index, 3> getIndex(scipp::index i,
+                                     const std::array<scipp::index, 3> &size) {
+  std::array<scipp::index, 3> index;
   // i = x + Nx(y + Ny z)
   index[0] = i % size[0];
   index[1] = (i / size[0]) % size[1];
@@ -19,8 +21,8 @@ std::array<gsl::index, 3> getIndex(gsl::index i,
 }
 
 static void BM_index_math(benchmark::State &state) {
-  std::array<gsl::index, 3> size{123, 1234, 1245};
-  gsl::index volume = size[0] * size[1] * size[2];
+  std::array<scipp::index, 3> size{123, 1234, 1245};
+  scipp::index volume = size[0] * size[1] * size[2];
   for (auto _ : state) {
     for (int i = 0; i < volume; ++i) {
       benchmark::DoNotOptimize(getIndex(i, size));
@@ -31,8 +33,8 @@ static void BM_index_math(benchmark::State &state) {
 BENCHMARK(BM_index_math)->UseRealTime();
 
 static void BM_index_math_threaded(benchmark::State &state) {
-  std::array<gsl::index, 3> size{123, 1234, 1245};
-  gsl::index volume = size[0] * size[1] * size[2];
+  std::array<scipp::index, 3> size{123, 1234, 1245};
+  scipp::index volume = size[0] * size[1] * size[2];
 // Warmup
 #pragma omp parallel for num_threads(state.range(0))
   for (int i = 0; i < volume; ++i)
@@ -61,7 +63,7 @@ static void BM_MDZipView_multi_column_mixed_dimension(benchmark::State &state) {
   d.insert(Data::DeprecatedInt, "", dims, state.range(0));
   dims.add(Dim::Tof, 1000);
   d.insert(Data::Value, "", dims, state.range(0) * 1000);
-  gsl::index elements = 1000 * state.range(0);
+  scipp::index elements = 1000 * state.range(0);
 
   for (auto _ : state) {
     auto view = zipMD(d, MDWrite(Data::Value), MDRead(Data::DeprecatedInt));
@@ -84,7 +86,7 @@ static void BM_MDZipView_mixed_dimension_addition(benchmark::State &state) {
   d.insert(Data::Variance, "", dims, state.range(0));
   dims.add(Dim::Tof, 100);
   dims.add(Dim::Run, 10);
-  gsl::index elements = state.range(0) * 100 * 10;
+  scipp::index elements = state.range(0) * 100 * 10;
   d.insert(Data::Value, "", dims, elements);
 
   for (auto _ : state) {
@@ -110,7 +112,7 @@ BM_MDZipView_mixed_dimension_addition_threaded(benchmark::State &state) {
   d.insert(Data::Variance, "", dims, state.range(0));
   dims.add(Dim::Tof, 100);
   dims.add(Dim::Run, 10);
-  gsl::index elements = state.range(0) * 100 * 10;
+  scipp::index elements = state.range(0) * 100 * 10;
   d.insert(Data::Value, "", dims, elements);
 
   for (auto _ : state) {
@@ -131,7 +133,7 @@ BENCHMARK(BM_MDZipView_mixed_dimension_addition_threaded)
 
 static void
 BM_MDZipView_multi_column_mixed_dimension_nested(benchmark::State &state) {
-  gsl::index nSpec = state.range(0);
+  scipp::index nSpec = state.range(0);
   Dataset d;
   d.insert(Data::DeprecatedInt, "", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
@@ -160,7 +162,7 @@ BENCHMARK(BM_MDZipView_multi_column_mixed_dimension_nested)
 
 static void BM_MDZipView_multi_column_mixed_dimension_nested_threaded(
     benchmark::State &state) {
-  gsl::index nSpec = state.range(0);
+  scipp::index nSpec = state.range(0);
   Dataset d;
   d.insert(Data::DeprecatedInt, "specnums", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;
@@ -192,7 +194,7 @@ BENCHMARK(BM_MDZipView_multi_column_mixed_dimension_nested_threaded)
 
 static void BM_MDZipView_multi_column_mixed_dimension_nested_transpose(
     benchmark::State &state) {
-  gsl::index nSpec = state.range(0);
+  scipp::index nSpec = state.range(0);
   Dataset d;
   d.insert(Data::DeprecatedInt, "", {Dim::Spectrum, nSpec}, nSpec);
   Dimensions dims;

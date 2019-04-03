@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(googletest-download NONE)
+
+find_package(Git REQUIRED)
+
+include(ExternalProject)
+
+set ( _tag release-@gtest_version@ )
+ExternalProject_Add(googletest
+  GIT_REPOSITORY    https://github.com/google/googletest.git
+  GIT_TAG           "${_tag}"
+  SOURCE_DIR        "@CMAKE_BINARY_DIR@/googletest-src"
+  BINARY_DIR        "@CMAKE_BINARY_DIR@/googletest-build"
+  PATCH_COMMAND     git reset --hard ${_tag}
+            COMMAND git apply --whitespace fix "@CMAKE_SOURCE_DIR@/CMake/googletest_override.patch"
+            COMMAND git apply --whitespace fix "@CMAKE_SOURCE_DIR@/CMake/googletest_static.patch"
+  INSTALL_COMMAND   mkdir -p @CMAKE_BINARY_DIR@/googletest/include
+          COMMAND   mkdir -p @CMAKE_BINARY_DIR@/googletest/lib
+            COMMAND cp -a @CMAKE_BINARY_DIR@/googletest-src/googletest/include/gtest @CMAKE_BINARY_DIR@/googletest/include
+            COMMAND cp -a @CMAKE_BINARY_DIR@/googletest-build/googlemock/gtest/libgtest_main.a @CMAKE_BINARY_DIR@/googletest-build/googlemock/gtest/libgtest.a @CMAKE_BINARY_DIR@/googletest/lib/
+  TEST_COMMAND      ""
+)
