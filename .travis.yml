@@ -8,7 +8,7 @@ dist: xenial
 
 jobs:
   include:
-    - stage: build
+    - stage: compile
       before_install: sh .travis/before_install.sh
       install: sh .travis/install.sh
       script:
