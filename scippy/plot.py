@@ -1,3 +1,9 @@
+# @file
+# SPDX-License-Identifier: GPL-3.0-or-later
+# @author Neil Vaytet
+# Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
+# National Laboratory, and European Spallation Source ERIC.
+
 # Import numpy
 import numpy as np
 
@@ -5,9 +11,9 @@ import numpy as np
 from scippy import Dataset, Data, DatasetSlice, dimensionCoord, coordDimension, sqrt, units
 
 # Plotly imports
-from plotly.offline import iplot
 from plotly.graph_objs import FigureWidget
 from plotly.colors import DEFAULT_PLOTLY_COLORS
+from plotly.io import write_image
 from IPython.display import display
 from ipywidgets import VBox, HBox, IntSlider, Label
 
@@ -42,11 +48,12 @@ def check_input(input_data, check_multiple_values=True):
 #===============================================================================
 
 # Wrapper function to plot any kind of dataset
-def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
+def plot(input_data, axes=None, waterfall=None, collapse=None, filename=None,
+         **kwargs):
 
     # A list of datasets is only supported for 1d
     if type(input_data) is list:
-        return plot_1d(input_data, axes=axes, **kwargs)
+        return plot_1d(input_data, axes=axes, filename=filename, **kwargs)
     # Case of a single dataset
     else:
         values, ndims = check_input(input_data, check_multiple_values=False)
@@ -80,34 +87,38 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, **kwargs):
                     for l in val[1]:
                         color.append(DEFAULT_PLOTLY_COLORS[color_count%10])
                         color_count += 1
-                    plot_1d(val[1], color=color)
+                    plot_1d(val[1], color=color, filename=filename)
                 else:
-                    plot_auto(val[1], ndim=val[0])
+                    plot_auto(val[1], ndim=val[0], filename=filename)
             return
         else:
             return plot_auto(input_data, ndim=np.amax(ndims), axes=axes,
-                             waterfall=waterfall, collapse=collapse, **kwargs)
+                             waterfall=waterfall, collapse=collapse,
+                             filename=filename, **kwargs)
 
 #===============================================================================
 
 # Function to automatically dispatch the input dataset to the appropriate
 # plotting function depending on its dimensions
 def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
-              **kwargs):
+              filename=None, **kwargs):
 
     if ndim == 1:
-        return plot_1d(input_data, axes=axes, **kwargs)
+        return plot_1d(input_data, axes=axes, filename=filename, **kwargs)
     elif ndim == 2:
         if collapse is not None:
             return plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes,
-                                          plot=False), **kwargs)
+                                          plot=False), filename=filename,
+                                          **kwargs)
         elif waterfall is not None:
             return plot_waterfall(input_data, dim=waterfall, axes=axes,
-                                  **kwargs)
+                                  filename=filename, **kwargs)
         else:
-            return plot_image(input_data, axes=axes, **kwargs)
+            return plot_image(input_data, axes=axes, filename=filename,
+                              **kwargs)
     else:
-        return plot_sliceviewer(input_data, axes=axes, **kwargs)
+        return plot_sliceviewer(input_data, axes=axes, filename=filename,
+                                **kwargs)
 
 #===============================================================================
 
@@ -119,7 +130,7 @@ def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
 # TODO: find a more general way of handling arguments to be sent to plotly,
 # probably via a dictionay of arguments
 def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
-            color=None):
+            color=None, filename=None):
 
     entries = []
     # Case of a single dataset
@@ -258,7 +269,12 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     if logy or logxy:
         layout["yaxis"]["type"] = "log"
 
-    return display(FigureWidget(data=data, layout=layout))
+    fig = FigureWidget(data=data, layout=layout)
+    if filename is not None:
+        write_image(fig=fig, file=filename)
+    else:
+        display(fig)
+    return
 
 #===============================================================================
 
@@ -270,7 +286,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 # for plotly, as well as a transpose flag, are returned (this is used when
 # calling plot_image from the sliceviewer).
 def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
-               resolution=128):
+               resolution=128, filename=None):
 
     values, ndims = check_input(input_data)
     ndim = np.amax(ndims)
@@ -340,8 +356,11 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
                                  title, contours)
             for key, val in layout.items():
                 imview.fig.layout[key] = val
-            return display(imview.fig)
-
+            if filename is not None:
+                write_image(fig=imview.fig, file=filename)
+            else:
+                display(imview.fig)
+            return
         else:
             data = [dict(
                 x = xe,
@@ -508,7 +527,7 @@ class ImageViewer:
 
 # Make a 3D waterfall plot
 #
-def plot_waterfall(input_data, dim=None, axes=None, plot=True):
+def plot_waterfall(input_data, dim=None, axes=None, plot=True, filename=None):
 
     values, ndims = check_input(input_data)
     ndim = np.amax(ndims)
@@ -603,7 +622,12 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
                 showlegend = False,
                 height = default["height"]
                 )
-            return display(FigureWidget(data=data, layout=layout))
+            fig = FigureWidget(data=data, layout=layout)
+            if filename is not None:
+                write_image(fig=fig, file=filename)
+            else:
+                display(fig)
+            return
         else:
             return data
 
@@ -616,7 +640,8 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True):
 
 # Plot a 2D slice through a 3D dataset with a slider to adjust the position of
 # the slice in the third dimension.
-def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
+def plot_sliceviewer(input_data, axes=None, contours=False, cb=None,
+                     filename=None):
 
     # Check input dataset
     value_list, ndims = check_input(input_data)
@@ -639,7 +664,11 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None):
                          input_data=input_data, axes=axes,
                          value_name=value_list[0].name, cb=cbar)
 
-        return display(sv.vbox)
+        if filename is not None:
+            write_image(fig=sv.fig, file=filename)
+        else:
+            display(sv.vbox)
+        return
 
     else:
         raise RuntimeError("Unsupported number of dimensions in "
