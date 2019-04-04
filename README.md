@@ -1,10 +1,11 @@
 [![Build Status](https://www.travis-ci.org/scipp/scipp.svg?branch=master)](https://www.travis-ci.org/scipp/scipp)
 [![Documentation Status](https://readthedocs.org/projects/scipp/badge/?version=latest)](https://scipp.readthedocs.io/en/latest/?badge=latest)
 
-# libDataset
+# Scipp
 
-This a prototype for the `Dataset` library.
-`Dataset` is inspired by `xarray.Dataset` and could replace most of the workspace types available in Mantid while at the same time providing more flexibility and features.
+See https://scipp.readthedocs.io for documentation of **scipp*.
+
+Scipp mainly provides the `Dataset` container, which is inspired by `xarray.Dataset`.
 
 ## Build instructions
 
