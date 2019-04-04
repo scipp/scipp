@@ -29,7 +29,3 @@ For the time being, please refer to the (slightly outdated) `design document <ht
 
 Navigate to ``localhost:8888`` in your browser.
 The relevant demo notebooks can be found in the ``demo/`` folder.
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
