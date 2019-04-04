@@ -6,6 +6,8 @@ compiler:
   - clang
 dist: xenial
 
+cache: ccache
+
 before_install:
   # C++17
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
@@ -23,12 +25,13 @@ install:
   - sudo apt install python3-setuptools
   - sudo apt install python3-pip
   - sudo apt install ipython3
+  - sudo apt install ccache
 
 script: 
   - mkdir -p build
   - mkdir -p install
   - cd build
-  - cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
+  - cmake -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
   - make -j2 install
   - ./units/test/scipp_units_test
   - ./core/test/scipp_core_test
