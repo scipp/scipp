@@ -1,7 +1,7 @@
 Welcome to Scipp!
 =================
 
-**scipp** is heavily inspired by `xarray <xarray.pydata.org>`_.
+**scipp** is heavily inspired by `xarray <https://xarray.pydata.org>`_.
 While for many applications xarray is certainly more suitable than scipp, there is a number of features missing in other situations.
 If you are missing one or several of the items on the following list in xarray, using scipp may be worth considering:
 
