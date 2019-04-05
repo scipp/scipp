@@ -35,10 +35,15 @@ This could work as follows:
 
 6. Operations.
    - `sort`, `concatenate`, `filter`, ... work well and are useful for sparse dimensions.
-   - binary operations do not work, need to provide alternatives.
+   - For operations between two sparse variables with matching dimensions we can apply binary operations as usual.
+     Note that is is different from Mantid's behavior of translating binary operations into special other operations such as concatenation.
+   - For operations between two sparse variables with mismatching dimensions, we need to provide alternatives.
      - use `concatenate` instead of `+`.
      - instead of `-`, add weights (negative for second operand) and then concatenate.
      - ...
+   - Operation between dense and sparse data, assuming the dense data does not depend on the sparse dimensions work naturally.
+     The result is sparse data, i.e, the dense data is simply broadcast into the sparse dimensions.
+     This makes implementation of, e.g., unit conversion convenient.
 
 7. Data layout. With the access described in 4.), we can choose to store sparse data in various ways.
    - One option is to use a `Variable` with element type `std::vector<T>` or `boost::small_vector<T>`, but an extra negative dimension as described in 2.).
