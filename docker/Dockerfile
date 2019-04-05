@@ -34,6 +34,7 @@ RUN conda config --add channels conda-forge && \
     'xarray' \
     #installing plotly and jupyter extension to visualize scipp
     'plotly=3.6.1' \
+    'plotly-orca>=1.2.1' \
     #downgrade tornado for correct work
     'tornado<5.0.0' \
     'jupyterlab=0.35' \
