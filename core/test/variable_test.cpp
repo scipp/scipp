@@ -1214,7 +1214,7 @@ TEST(VariableSlice, scalar_operations) {
 }
 
 TEST(Variable, apply_unary_in_place) {
-  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}},
-               {11.0, 12.0, 13.0, 21.0, 22.0, 23.0});
+  Variable var(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   var.transform_in_place([](const double x) { return -x; });
+  EXPECT_TRUE(equals(var.span<double>(), {-1.1, -2.2}));
 }

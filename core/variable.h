@@ -73,6 +73,137 @@ private:
   Dimensions m_dimensions;
 };
 
+// Some types such as Dataset support `+` (effectively appending table rows),
+// but are not arithmetic.
+class AddableVariableConcept : public VariableConcept {
+public:
+  static constexpr const char *name = "addable";
+  using VariableConcept::VariableConcept;
+  virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
+};
+
+// This is also used for implementing operations for vector spaces, notably
+// Eigen::Vector3d.
+class ArithmeticVariableConcept : public AddableVariableConcept {
+public:
+  static constexpr const char *name = "arithmetic";
+  using AddableVariableConcept::AddableVariableConcept;
+  virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
+  virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
+  virtual VariableConcept &operator/=(const VariableConcept &other) = 0;
+  /// Returns the absolute value (for scalars) or the norm (for vectors).
+  virtual std::unique_ptr<VariableConcept> norm() const = 0;
+};
+
+class FloatingPointVariableConcept : public ArithmeticVariableConcept {
+public:
+  static constexpr const char *name = "floating-point";
+  using ArithmeticVariableConcept::ArithmeticVariableConcept;
+  /// Set x = value/x
+  virtual VariableConcept &reciprocal_times(const double value) = 0;
+  virtual std::unique_ptr<VariableConcept> sqrt() const = 0;
+  virtual void rebin(const VariableConcept &old, const Dim dim,
+                     const VariableConcept &oldCoord,
+                     const VariableConcept &newCoord) = 0;
+};
+
+template <class T> class ViewModel;
+template <class T> class VariableConceptT;
+template <class T> class AddableVariableConceptT;
+template <class T> class ArithmeticVariableConceptT;
+template <class T> class FloatingPointVariableConceptT;
+
+template <class T, typename Enable = void> struct concept {
+  using type = VariableConcept;
+  using typeT = VariableConceptT<T>;
+};
+template <class T>
+struct concept<T, std::enable_if_t<std::is_same<T, Dataset>::value>> {
+  using type = AddableVariableConcept;
+  using typeT = AddableVariableConceptT<T>;
+};
+template <class T> struct is_vector_space : std::false_type {};
+template <class T, int Rows>
+struct is_vector_space<Eigen::Matrix<T, Rows, 1>> : std::true_type {};
+template <class T>
+struct concept<T, std::enable_if_t<std::is_integral<T>::value ||
+                                   is_vector_space<T>::value>> {
+  using type = ArithmeticVariableConcept;
+  using typeT = ArithmeticVariableConceptT<T>;
+};
+template <class T>
+struct concept<T, std::enable_if_t<std::is_floating_point<T>::value>> {
+  using type = FloatingPointVariableConcept;
+  using typeT = FloatingPointVariableConceptT<T>;
+};
+
+template <class T> using concept_t = typename concept<T>::type;
+template <class T> using conceptT_t = typename concept<T>::typeT;
+
+/// Partially typed implementation of VariableConcept. This is a common base
+/// class for DataModel<T> and ViewModel<T>. The former holds data in a
+/// contiguous array, whereas the latter is a (potentially non-contiguous) view
+/// into the former. This base class implements functionality that is common to
+/// both, for a specific T.
+template <class T> class VariableConceptT : public concept_t<T> {
+public:
+  VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
+
+  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
+  static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
+
+  virtual scipp::span<T> getSpan() = 0;
+  virtual scipp::span<T> getSpan(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) = 0;
+  virtual scipp::span<const T> getSpan() const = 0;
+  virtual scipp::span<const T> getSpan(const Dim dim, const scipp::index begin,
+                                       const scipp::index end) const = 0;
+  virtual VariableView<T> getView(const Dimensions &dims) = 0;
+  virtual VariableView<T> getView(const Dimensions &dims, const Dim dim,
+                                  const scipp::index begin) = 0;
+  virtual VariableView<const T> getView(const Dimensions &dims) const = 0;
+  virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
+                                        const scipp::index begin) const = 0;
+  virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
+  virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
+
+  std::unique_ptr<VariableConcept> makeView() const override;
+
+  std::unique_ptr<VariableConcept> makeView() override;
+
+  std::unique_ptr<VariableConcept>
+  makeView(const Dim dim, const scipp::index begin,
+           const scipp::index end) const override;
+
+  std::unique_ptr<VariableConcept> makeView(const Dim dim,
+                                            const scipp::index begin,
+                                            const scipp::index end) override;
+
+  std::unique_ptr<VariableConcept>
+  reshape(const Dimensions &dims) const override;
+
+  std::unique_ptr<VariableConcept> reshape(const Dimensions &dims) override;
+
+  bool operator==(const VariableConcept &other) const override;
+  void copy(const VariableConcept &other, const Dim dim,
+            const scipp::index offset, const scipp::index otherBegin,
+            const scipp::index otherEnd) override;
+
+  template <template <class, class> class Op, class OtherT = T>
+  VariableConcept &apply(const VariableConcept &other);
+};
+
+template <class Op> struct TransformInPlace {
+  Op op;
+  void operator()(auto &&handle) const {
+    auto data = handle->getSpan();
+    std::transform(data.begin(), data.end(), data.begin(), op);
+  }
+};
+
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
 namespace detail {
 template <class T> std::unique_ptr<T> clone(const T &other) {
   return std::make_unique<T>(other);
@@ -81,6 +212,14 @@ template <class T> std::unique_ptr<T> clone(const T &other) {
 template <>
 inline std::unique_ptr<VariableConcept> clone(const VariableConcept &other) {
   return other.clone();
+}
+
+template <>
+inline std::unique_ptr<VariableConceptT<double>>
+clone(const VariableConceptT<double> &other) {
+  // TODO Make clone() with covariant return type.
+  return std::unique_ptr<VariableConceptT<double>>{
+      dynamic_cast<VariableConceptT<double> *>(other.clone().release())};
 }
 } // namespace detail
 
@@ -115,18 +254,6 @@ private:
   std::unique_ptr<T> m_data;
 };
 
-template <class Op> struct TransformInPlace {
-  Op op;
-  void operator()(auto &&handle) const {
-    auto data = handle->getSpan();
-    std::transform(data.begin(), data.end(), data.begin(), op);
-  }
-};
-
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
-
-template <class T> class VariableConceptT;
 class VariableConceptHandle {
 public:
   VariableConceptHandle(const VariableConceptHandle &) = default;
@@ -136,12 +263,12 @@ public:
   template <class T> VariableConceptHandle(T &&object) {
     if constexpr (std::is_same_v<typename T::element_type, VariableConcept>)
       m_object = deep_ptr<VariableConcept>(std::move(object));
-    else if constexpr (std::is_same_v<T::element_type::value_type, double>)
+    else if constexpr (std::is_same_v<typename T::element_type::value_type,
+                                      double>)
       m_object = deep_ptr<VariableConceptT<double>>(std::move(object));
     else
       m_object = deep_ptr<VariableConcept>(std::move(object));
   }
-  ~VariableConceptHandle();
 
   VariableConcept &operator*();
   const VariableConcept &operator*() const;
@@ -156,7 +283,6 @@ public:
                           }},
                m_object);
   }
-  // return std::visit(apply([](const auto &x) { return -x; }), var);
 
 private:
   std::variant<deep_ptr<VariableConcept>, deep_ptr<VariableConceptT<double>>>
