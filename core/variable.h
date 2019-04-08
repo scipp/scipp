@@ -115,32 +115,52 @@ private:
   std::unique_ptr<T> m_data;
 };
 
+template <class Op> struct TransformInPlace {
+  Op op;
+  void operator()(auto &&handle) const {
+    auto data = handle->getSpan();
+    std::transform(data.begin(), data.end(), data.begin(), op);
+  }
+};
+
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
+template <class T> class VariableConceptT;
 class VariableConceptHandle {
 public:
-  template <class T>
-  VariableConceptHandle(T &&object)
-      : m_object(deep_ptr<VariableConcept>{std::move(object)}) {}
-  VariableConcept &operator*() {
-    return std::visit([](auto &&arg) -> VariableConcept & { return *arg; },
-                      m_object);
+  VariableConceptHandle(const VariableConceptHandle &) = default;
+  VariableConceptHandle(VariableConceptHandle &&) = default;
+  VariableConceptHandle &operator=(const VariableConceptHandle &) = default;
+  VariableConceptHandle &operator=(VariableConceptHandle &&) = default;
+  template <class T> VariableConceptHandle(T &&object) {
+    if constexpr (std::is_same_v<typename T::element_type, VariableConcept>)
+      m_object = deep_ptr<VariableConcept>(std::move(object));
+    else if constexpr (std::is_same_v<T::element_type::value_type, double>)
+      m_object = deep_ptr<VariableConceptT<double>>(std::move(object));
+    else
+      m_object = deep_ptr<VariableConcept>(std::move(object));
   }
-  const VariableConcept &operator*() const {
-    return std::visit(
-        [](auto &&arg) -> const VariableConcept & { return *arg; }, m_object);
+  ~VariableConceptHandle();
+
+  VariableConcept &operator*();
+  const VariableConcept &operator*() const;
+  VariableConcept *operator->();
+  const VariableConcept *operator->() const;
+
+  template <class Op> void transform_in_place(Op op) {
+    std::visit(overloaded{TransformInPlace<Op>{op},
+                          [](deep_ptr<VariableConcept> &) {
+                            throw std::runtime_error(
+                                "Operation not implemented for this type.");
+                          }},
+               m_object);
   }
-  VariableConcept *operator->() {
-    return std::visit(
-        [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
-        m_object);
-  }
-  const VariableConcept *operator->() const {
-    return std::visit(
-        [](auto &&arg) -> const VariableConcept * { return arg.operator->(); },
-        m_object);
-  }
+  // return std::visit(apply([](const auto &x) { return -x; }), var);
 
 private:
-  std::variant<deep_ptr<VariableConcept>> m_object;
+  std::variant<deep_ptr<VariableConcept>, deep_ptr<VariableConceptT<double>>>
+      m_object;
 };
 
 template <class... Tags> class ZipView;
@@ -327,6 +347,11 @@ public:
   // will not go out of scope, so that is ok (unless someone changes var and
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
+
+  template <class Op> void transform_in_place(Op op) {
+    // TODO handle units
+    m_object.transform_in_place(op);
+  }
 
   template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);

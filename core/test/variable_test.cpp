@@ -1212,3 +1212,9 @@ TEST(VariableSlice, scalar_operations) {
   var(Dim::Y, 0) /= 2;
   EXPECT_TRUE(equals(var.get(Data::Value), {6, 6, 0, 23, 23, 0}));
 }
+
+TEST(Variable, apply_unary_in_place) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 3}},
+               {11.0, 12.0, 13.0, 21.0, 22.0, 23.0});
+  var.transform_in_place([](const double x) { return -x; });
+}
