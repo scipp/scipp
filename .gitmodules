@@ -1,3 +1,6 @@
 [submodule "range-v3"]
 	path = range-v3
 	url = https://github.com/ericniebler/range-v3.git
+[submodule "CMake/sanitizers-cmake"]
+	path = CMake/sanitizers-cmake
+	url = git://github.com/arsenm/sanitizers-cmake.git
