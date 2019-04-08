@@ -1218,3 +1218,12 @@ TEST(Variable, apply_unary_in_place) {
   var.transform_in_place([](const double x) { return -x; });
   EXPECT_TRUE(equals(var.span<double>(), {-1.1, -2.2}));
 }
+
+TEST(Variable, apply_unary) {
+  const Variable var(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  auto out = var.transform([](const double x) { return -x; });
+  ASSERT_EQ(out.span<double>().size(), 2);
+  EXPECT_EQ(out.span<double>()[0], -1.1);
+  EXPECT_EQ(out.span<double>()[1], -2.2);
+  EXPECT_TRUE(equals(out.span<double>(), {-1.1, -2.2}));
+}

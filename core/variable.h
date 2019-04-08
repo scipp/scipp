@@ -147,6 +147,8 @@ template <class T> using conceptT_t = typename concept<T>::typeT;
 /// both, for a specific T.
 template <class T> class VariableConceptT : public concept_t<T> {
 public:
+  using value_type = T;
+
   VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
   DType dtype() const noexcept override { return scipp::core::dtype<T>; }
@@ -193,17 +195,6 @@ public:
   VariableConcept &apply(const VariableConcept &other);
 };
 
-template <class Op> struct TransformInPlace {
-  Op op;
-  void operator()(auto &&handle) const {
-    auto data = handle->getSpan();
-    std::transform(data.begin(), data.end(), data.begin(), op);
-  }
-};
-
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
-
 namespace detail {
 template <class T> std::unique_ptr<T> clone(const T &other) {
   return std::make_unique<T>(other);
@@ -226,6 +217,7 @@ clone(const VariableConceptT<double> &other) {
 /// Like std::unique_ptr, but copy causes a deep copy.
 template <class T> class deep_ptr {
 public:
+  using element_type = typename std::unique_ptr<T>::element_type;
   deep_ptr() = default;
   deep_ptr(std::unique_ptr<T> &&other) : m_data(std::move(other)) {}
   deep_ptr(const deep_ptr<T> &other)
@@ -254,13 +246,30 @@ private:
   std::unique_ptr<T> m_data;
 };
 
+template <class Op> struct TransformInPlace {
+  Op op;
+  void operator()(auto &&handle) const {
+    auto data = handle->getSpan();
+    std::transform(data.begin(), data.end(), data.begin(), op);
+  }
+};
+
+class VariableConceptHandle;
+template <class Op> struct Transform {
+  Op op;
+  VariableConceptHandle operator()(auto &&handle) const;
+};
+
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
 class VariableConceptHandle {
 public:
   VariableConceptHandle(const VariableConceptHandle &) = default;
   VariableConceptHandle(VariableConceptHandle &&) = default;
   VariableConceptHandle &operator=(const VariableConceptHandle &) = default;
   VariableConceptHandle &operator=(VariableConceptHandle &&) = default;
-  template <class T> VariableConceptHandle(T &&object) {
+  template <class T> VariableConceptHandle(T object) {
     if constexpr (std::is_same_v<typename T::element_type, VariableConcept>)
       m_object = deep_ptr<VariableConcept>(std::move(object));
     else if constexpr (std::is_same_v<typename T::element_type::value_type,
@@ -284,10 +293,33 @@ public:
                m_object);
   }
 
+  template <class Op> VariableConceptHandle transform(Op op) const {
+    return std::visit(
+        overloaded{
+            Transform<Op>{op},
+            [](const deep_ptr<VariableConcept> &) -> VariableConceptHandle {
+              throw std::runtime_error(
+                  "Operation not implemented for this type.");
+            }},
+        m_object);
+  }
+
 private:
   std::variant<deep_ptr<VariableConcept>, deep_ptr<VariableConceptT<double>>>
       m_object;
 };
+
+template <class Op>
+VariableConceptHandle Transform<Op>::operator()(auto &&handle) const {
+  auto data = handle->getSpan();
+  // TODO Should just make empty container here, without init.
+  auto out = detail::clone(*handle);
+  // TODO Typo data->getSpan() also compiles, but const-correctness should
+  // forbid this.
+  auto outData = out->getSpan();
+  std::transform(data.begin(), data.end(), outData.begin(), op);
+  return {std::move(out)};
+}
 
 template <class... Tags> class ZipView;
 class ConstVariableSlice;
@@ -477,6 +509,14 @@ public:
   template <class Op> void transform_in_place(Op op) {
     // TODO handle units
     m_object.transform_in_place(op);
+  }
+
+  template <class Op> Variable transform(Op op) const {
+    // TODO handle units
+    // TODO Need constructor from parent var and new object.
+    Variable out(*this, Dimensions{});
+    out.m_object = m_object.transform(op);
+    return out;
   }
 
   template <class... Tags> friend class ZipView;
