@@ -4,7 +4,7 @@
 
 # Scipp
 
-See https://scipp.readthedocs.io for documentation of **scipp*.
+See https://scipp.readthedocs.io for documentation of **scipp**.
 
 Scipp mainly provides the `Dataset` container, which is inspired by `xarray.Dataset`.
 
