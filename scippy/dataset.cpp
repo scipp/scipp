@@ -53,12 +53,13 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions,
 
   } else {
     // Try to find blocks to copy
-    auto index = strides.size() - 1;
+    auto index = scipp::size(strides) - 1;
     while (strides[index] == varStrides[index])
       --index;
     ++index;
-    auto blockSz =
-        index < strides.size() ? strides[index] * dimensions.size(index) : 1;
+    auto blockSz = index < scipp::size(strides)
+                       ? strides[index] * dimensions.size(index)
+                       : 1;
 
     auto res = makeVariable<underlying_type_t<T>>(tag, dimensions);
     std::vector<scipp::index> dsz(ndims);

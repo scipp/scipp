@@ -19,7 +19,7 @@ public:
     scipp::index current = 0;
     for (auto item : axis)
       m_index[item] = current++;
-    if (axis.size() != m_index.size())
+    if (scipp::size(axis) != scipp::size(m_index))
       throw std::runtime_error("Axis contains duplicate labels. Cannot use it "
                                "to index into the data.");
   }
