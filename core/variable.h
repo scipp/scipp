@@ -6,10 +6,10 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <numeric>
 #include <string>
 #include <type_traits>
-
-#include <numeric>
+#include <variant>
 
 #include "dimensions.h"
 #include "index.h"
@@ -113,6 +113,34 @@ public:
 
 private:
   std::unique_ptr<T> m_data;
+};
+
+class VariableConceptHandle {
+public:
+  template <class T>
+  VariableConceptHandle(T &&object)
+      : m_object(deep_ptr<VariableConcept>{std::move(object)}) {}
+  VariableConcept &operator*() {
+    return std::visit([](auto &&arg) -> VariableConcept & { return *arg; },
+                      m_object);
+  }
+  const VariableConcept &operator*() const {
+    return std::visit(
+        [](auto &&arg) -> const VariableConcept & { return *arg; }, m_object);
+  }
+  VariableConcept *operator->() {
+    return std::visit(
+        [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
+        m_object);
+  }
+  const VariableConcept *operator->() const {
+    return std::visit(
+        [](auto &&arg) -> const VariableConcept * { return arg.operator->(); },
+        m_object);
+  }
+
+private:
+  std::variant<deep_ptr<VariableConcept>> m_object;
 };
 
 template <class... Tags> class ZipView;
@@ -314,7 +342,7 @@ private:
   Tag m_tag;
   units::Unit m_unit;
   deep_ptr<std::string> m_name;
-  deep_ptr<VariableConcept> m_object;
+  VariableConceptHandle m_object;
 };
 
 template <class T>
