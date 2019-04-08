@@ -34,16 +34,16 @@ set(SRC_FILES
     md_zip_view.cpp
     variable.cpp)
 
-add_library(ScippCore STATIC ${INC_FILES} ${SRC_FILES})
-target_link_libraries(ScippCore
-                      PUBLIC ScippUnits Boost::boost OpenMP::OpenMP_CXX)
+add_library(scipp-core STATIC ${INC_FILES} ${SRC_FILES})
+target_link_libraries(scipp-core
+                      PUBLIC scipp-units Boost::boost OpenMP::OpenMP_CXX)
 target_include_directories(
-  ScippCore
+  scipp-core
   PUBLIC $<INSTALL_INTERFACE:.> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/.>
   )
-target_include_directories(ScippCore SYSTEM
+target_include_directories(scipp-core SYSTEM
                            PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
                            PRIVATE "../range-v3/include")
-set_target_properties(ScippCore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(scipp-core PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(test)

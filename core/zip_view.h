@@ -256,11 +256,13 @@ constexpr auto doMakeItemZipProxy(const bool mayResize, const T &item,
                                   std::index_sequence<Is...>) noexcept {
   if constexpr ((std::is_const_v<
                      std::remove_reference_t<decltype(std::get<Is>(item))>> &&
-                 ...))
+                 ...)) {
+    static_cast<void>(mayResize);
     return ConstItemZipProxy(std::get<Is>(item)...);
 
-  else
+  } else {
     return ItemZipProxy(mayResize, std::get<Is>(item)...);
+  }
 }
 
 template <class T, bool Resizable, class... Keys> struct ItemProxy {

@@ -33,8 +33,7 @@ public:
   // want to support read-only access if only a subset of all fields is
   // requested, e.g., for reading only TOF, without need to know whether also
   // pulse-times or weights are present.
-  template <class... Tags>
-  ZipView<Tags...> getMutable(const Tags... tags) const {
+  template <class... Tags> ZipView<Tags...> getMutable(const Tags...) const {
     return ZipView<Tags...>(*m_dataset);
   }
 
