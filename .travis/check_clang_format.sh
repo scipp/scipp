@@ -31,8 +31,8 @@ else
   echo "Then apply the patch using 'git apply /path/to/0001-${PATCH}.patch'";
   echo "and commit the changes.";
   echo;
-  ls -a;
-  echo;
+  echo "==== START OF PATCH ====";
   cat 0001-${PATCH}.patch;
+  echo "===== END OF PATCH =====";
   exit 1;
 fi

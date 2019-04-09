@@ -15,13 +15,13 @@ template <typename R1, typename R2>
 constexpr bool equal(R1&& r1, R2&& r2)
 {
     auto first1 = std::begin(r1);
-    const auto last1 =  std::end(r1);
+    const auto last1 = std::end(r1);
     auto first2 = std::begin(r2);
     const auto last2 = std::end(r2);
 
-    while (first1 != last1 && first2 !=  last2) {
-        if (*first1 !=  *first2) {
-            return  false;
+    while (first1 != last1 && first2 != last2) {
+        if (*first1 != *first2) {
+            return false;
         }
         ++first1;
         ++first2;
