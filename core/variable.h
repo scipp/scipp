@@ -270,10 +270,6 @@ template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
 class VariableConceptHandle {
 public:
-  VariableConceptHandle(const VariableConceptHandle &) = default;
-  VariableConceptHandle(VariableConceptHandle &&) = default;
-  VariableConceptHandle &operator=(const VariableConceptHandle &) = default;
-  VariableConceptHandle &operator=(VariableConceptHandle &&) = default;
   template <class T> VariableConceptHandle(T object) {
     if constexpr (std::is_same_v<typename T::element_type, VariableConcept>)
       m_object = deep_ptr<VariableConcept>(std::move(object));
@@ -360,7 +356,7 @@ public:
   Variable(const ConstVariableSlice &slice);
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const ConstVariableSlice &parent, const Dimensions &dims);
-  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data);
+  Variable(const Variable &parent, VariableConceptHandle data);
 
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
@@ -522,10 +518,7 @@ public:
 
   template <class Op> Variable transform(Op op) const {
     // TODO handle units
-    // TODO Need constructor from parent var and new object.
-    Variable out(*this, Dimensions{});
-    out.m_object = m_object.transform(op);
-    return out;
+    return Variable(*this, m_object.transform(op));
   }
 
   template <class... Tags> friend class ZipView;

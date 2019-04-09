@@ -698,8 +698,7 @@ Variable::Variable(const ConstVariableSlice &parent, const Dimensions &dims)
   setName(parent.name());
 }
 
-Variable::Variable(const Variable &parent,
-                   std::unique_ptr<VariableConcept> data)
+Variable::Variable(const Variable &parent, VariableConceptHandle data)
     : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
       m_object(std::move(data)) {}
 
