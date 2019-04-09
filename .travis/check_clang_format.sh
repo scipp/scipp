@@ -30,6 +30,6 @@ else
   echo "Then apply the patch using 'git apply /path/to/0001-${PATCH}.patch'";
   echo "and commit the changes.";
   echo;
-  cat ${PATCH}.patch;
+  cat 0001-${PATCH}.patch;
   exit 1;
 fi
