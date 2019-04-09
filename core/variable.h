@@ -101,7 +101,6 @@ public:
   using ArithmeticVariableConcept::ArithmeticVariableConcept;
   /// Set x = value/x
   virtual VariableConcept &reciprocal_times(const double value) = 0;
-  virtual std::unique_ptr<VariableConcept> sqrt() const = 0;
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
                      const VariableConcept &newCoord) = 0;

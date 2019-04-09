@@ -3,6 +3,8 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <cmath>
+
 #include "variable.h"
 #include "counts.h"
 #include "dataset.h"
@@ -173,12 +175,6 @@ template <class T1, class T2> struct norm_of_second_arg {
       return abs(rhs);
   }
 };
-template <class T1, class T2> struct sqrt_of_second_arg {
-  constexpr T1 operator()(const T1 &, const T2 &rhs) const {
-    // TODO Should we make a unary ArithmeticHelper::apply?
-    return std::sqrt(rhs);
-  }
-};
 
 template <class T> struct scalar_type { using type = T; };
 template <class T, int Rows> struct scalar_type<Eigen::Matrix<T, Rows, 1>> {
@@ -241,13 +237,6 @@ public:
   VariableConcept &reciprocal_times(const double value) override {
     Variable other(Data::Value, {}, {value});
     return this->template apply<ReciprocalTimes>(other.data());
-  }
-
-  std::unique_ptr<VariableConcept> sqrt() const override {
-    auto sqrt = std::make_unique<DataModel<Vector<T>>>(
-        this->dimensions(), Vector<T>(this->dimensions().volume()));
-    sqrt->template apply<sqrt_of_second_arg, T>(*this);
-    return sqrt;
   }
 
   void rebin(const VariableConcept &old, const Dim dim,
@@ -1298,9 +1287,15 @@ Variable norm(const Variable &var) {
   return {var, require<const ArithmeticVariableConcept>(var.data()).norm()};
 }
 
+namespace detail {
+struct sqrt {
+  auto operator()(const double x) { return std::sqrt(x); }
+  auto operator()(const float x) { return std::sqrt(x); }
+};
+} // namespace detail
+
 Variable sqrt(const Variable &var) {
-  Variable result(
-      var, require<const FloatingPointVariableConcept>(var.data()).sqrt());
+  Variable result = var.transform(detail::sqrt());
   result.setUnit(sqrt(var.unit()));
   return result;
 }

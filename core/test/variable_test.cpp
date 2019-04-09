@@ -577,12 +577,20 @@ TEST(Variable, norm_of_vector) {
   EXPECT_EQ(norm(var), reference);
 }
 
-TEST(Variable, sqrt) {
+TEST(Variable, sqrt_double) {
   // TODO Currently comparisons of variables do not provide special handling of
   // NaN, so sqrt of negative values will lead variables that are never equal.
-  Variable reference(Data::Value, {Dim::X, 2}, {1, 2});
+  auto reference = makeVariable<double>(Data::Value, {Dim::X, 2}, {1, 2});
   reference.setUnit(units::m);
-  Variable var(Data::Value, {Dim::X, 2}, {1, 4});
+  auto var = makeVariable<double>(Data::Value, {Dim::X, 2}, {1, 4});
+  var.setUnit(units::m * units::m);
+  EXPECT_EQ(sqrt(var), reference);
+}
+
+TEST(Variable, sqrt_float) {
+  auto reference = makeVariable<float>(Data::Value, {Dim::X, 2}, {1, 2});
+  reference.setUnit(units::m);
+  auto var = makeVariable<float>(Data::Value, {Dim::X, 2}, {1, 4});
   var.setUnit(units::m * units::m);
   EXPECT_EQ(sqrt(var), reference);
 }
