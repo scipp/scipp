@@ -1271,11 +1271,6 @@ Variable mean(const Variable &var, const Dim dim) {
 }
 
 namespace detail {
-struct sqrt {
-  template <class T> constexpr auto operator()(const T x) const {
-    return std::sqrt(x);
-  }
-};
 struct norm {
   template <class T> constexpr auto operator()(const T &x) const {
     if constexpr (is_vector_space<T>::value)
@@ -1294,7 +1289,8 @@ Variable norm(const Variable &var) {
 }
 
 Variable sqrt(const Variable &var) {
-  Variable result = var.transform<double, float>(detail::sqrt());
+  Variable result =
+      var.transform<double, float>([](const auto x) { return std::sqrt(x); });
   result.setUnit(sqrt(var.unit()));
   return result;
 }
