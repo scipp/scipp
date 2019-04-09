@@ -21,5 +21,15 @@ if [ -z "${DIRTY}" ]; then
 else
   echo "Clang format FAILED on the following files:";
   echo "${DIRTY}" | tr ' ' '\n';
+  SHA=$(git rev-parse --short HEAD);
+  PATCH="clang-format-PR${TRAVIS_PULL_REQUEST}-${SHA}";
+  git add -A;
+  git commit --no-verify --quiet -m ${PATCH};
+  echo "Below is a patch to automatically fix the formatting of your files.";
+  echo "Copy the text and paste it into a 0001-${PATCH}.patch file.";
+  echo "Then apply the patch using 'git apply /path/to/0001-${PATCH}.patch'";
+  echo "and commit the changes.";
+  echo;
+  cat ${PATCH}.patch;
   exit 1;
 fi
