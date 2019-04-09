@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Check that the source conforms to the Flake8 style
+# Check that the source conforms to the PEP8 style
 
 # Find flake8 executable
 FLAKE8_EXE=flake8
@@ -11,9 +11,8 @@ else
   ${FLAKE8_EXE} --version
 fi
 
-# Perform formatting
-find scippy -type f -name '*.py' | xargs ${FLAKE8_EXE} -q;
-DIRTY=$(git ls-files --modified);
+# Check formatting
+DIRTY=$(find scippy -type f -name '*.py' | xargs ${FLAKE8_EXE} -q);
 
 if [ -z "${DIRTY}" ]; then
   echo "Flake8 [ OK ]";
