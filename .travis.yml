@@ -1,39 +1,20 @@
 language: cpp
-compiler:
-  - gcc
-  - clang
 dist: xenial
 
 cache: ccache
 
-before_install:
-  # C++17
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update -qq
-  - pyenv global system 3.7
+# Check clang format in the first stage
+before_install: sh .travis/before_install.sh
+script: sh .travis/check_clang_format.sh
 
-install: 
-  # C++17
-  - sudo apt-get install -qq g++-7
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
-  - sudo add-apt-repository -y ppa:mhier/libboost-latest
-  - sudo apt update
-  - sudo apt install libboost1.67-dev
-  - sudo apt install libomp-dev
-  - sudo apt install python3-setuptools
-  - sudo apt install python3-pip
-  - sudo apt install ipython3
-  - sudo apt install ccache
-
-script: 
-  - mkdir -p build
-  - mkdir -p install
-  - cd build
-  - cmake -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
-  - make -j2 install
-  - ./units/test/scipp-units-test
-  - ./core/test/scipp-core-test
-  - python3 -m pip install -r ../scippy/requirements.txt
-  - export PYTHONPATH=$PYTHONPATH:../install
-  - cd ../scippy
-  - python3 -m unittest discover test
+# Then start parallel build of gcc and clang
+matrix:
+  include:
+    - compiler: gcc
+      before_install: sh .travis/before_install.sh
+      install: sh .travis/install.sh
+      script: sh .travis/run_tests.sh
+    - compiler: clang
+      before_install: sh .travis/before_install.sh
+      install: sh .travis/install.sh
+      script: sh .travis/run_tests.sh
