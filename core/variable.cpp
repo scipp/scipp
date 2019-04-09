@@ -499,12 +499,18 @@ public:
 namespace detail {
 template <class T>
 std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const VariableConcept &in) {
-  return std::make_unique<DataModel<Vector<T>>>(
-      in.dimensions(), Vector<T>(in.dimensions().volume()));
+makeVariableConceptT(const Dimensions &dims) {
+  return std::make_unique<DataModel<Vector<T>>>(dims, Vector<T>(dims.volume()));
+}
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims, Vector<T> data) {
+  return std::make_unique<DataModel<Vector<T>>>(dims, std::move(data));
 }
 template std::unique_ptr<VariableConceptT<double>>
-makeVariableConceptT<double>(scipp::core::VariableConcept const &);
+makeVariableConceptT<double>(const Dimensions &);
+template std::unique_ptr<VariableConceptT<double>>
+makeVariableConceptT<double>(const Dimensions &, Vector<double>);
 } // namespace detail
 
 /// Implementation of VariableConcept that represents a view onto data.
@@ -1273,8 +1279,7 @@ struct norm {
 /// Returns the element-wise absolute value (for scalars) or the norm (for
 /// vectors).
 Variable norm(const Variable &var) {
-  return var.transform<double, float, Eigen::Vector3d>(
-      overloaded{detail::norm()});
+  return var.transform<double, float, Eigen::Vector3d>(detail::norm());
 }
 
 Variable sqrt(const Variable &var) {

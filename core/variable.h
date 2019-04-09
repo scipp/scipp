@@ -246,6 +246,15 @@ private:
   std::unique_ptr<T> m_data;
 };
 
+namespace detail {
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims);
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims, Vector<T> data);
+} // namespace detail
+
 template <class Op> struct TransformInPlace {
   Op op;
   void operator()(auto &&handle) const {
@@ -260,15 +269,16 @@ template <class Op> struct TransformInPlace {
     const auto &dimsA = a->dimensions();
     const auto &dimsB = b.dimensions();
     try {
-      if constexpr (std::is_same_v<decltype(*a), decltype(b)>)
+      if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>)
         if (a->getView(dimsA).overlaps(b.getView(dimsA))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
           // applying the operation.
-          throw std::runtime_error("todo");
-          // const auto &data = otherT.getView(otherT.dimensions());
-          // DataModel<Vector<OtherT>> copy(
-          //    other.dimensions(), Vector<OtherT>(data.begin(), data.end()));
-          // return apply<Op, OtherT>(copy);
+          const auto &data = b.getView(b.dimensions());
+          using T = typename std::remove_reference_t<decltype(b)>::value_type;
+          const deep_ptr<VariableConceptT<T>> copy =
+              detail::makeVariableConceptT<T>(
+                  dimsB, Vector<T>(data.begin(), data.end()));
+          operator()(a, copy);
         }
 
       if (a->isContiguous() && dimsA.contains(dimsB)) {
@@ -379,17 +389,12 @@ private:
       m_object;
 };
 
-namespace detail {
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const VariableConcept &in);
-}
-
 template <class Op>
 VariableConceptHandle Transform<Op>::operator()(auto &&handle) const {
   auto data = handle->getSpan();
   // TODO Should just make empty container here, without init.
-  auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(*handle);
+  auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
+      handle->dimensions());
   // TODO Typo data->getSpan() also compiles, but const-correctness should
   // forbid this.
   auto outData = out->getSpan();
