@@ -196,22 +196,27 @@ public:
 };
 
 namespace detail {
-template <class T> std::unique_ptr<T> clone(const T &other) {
-  return std::make_unique<T>(other);
-}
+template <class T> struct clone {
+  clone(const T &other) : other(other) {}
+  const T &other;
+  std::unique_ptr<T> get() { return std::make_unique<T>(other); }
+};
 
-template <>
-inline std::unique_ptr<VariableConcept> clone(const VariableConcept &other) {
-  return other.clone();
-}
+template <> struct clone<VariableConcept> {
+  clone(const VariableConcept &other) : other(other) {}
+  const VariableConcept &other;
+  std::unique_ptr<VariableConcept> get() { return other.clone(); }
+};
 
-template <>
-inline std::unique_ptr<VariableConceptT<double>>
-clone(const VariableConceptT<double> &other) {
-  // TODO Make clone() with covariant return type.
-  return std::unique_ptr<VariableConceptT<double>>{
-      dynamic_cast<VariableConceptT<double> *>(other.clone().release())};
-}
+template <class T> struct clone<VariableConceptT<T>> {
+  clone(const VariableConceptT<T> &other) : other(other) {}
+  const VariableConceptT<T> &other;
+  auto get() {
+    // TODO Make clone() with covariant return type.
+    return std::unique_ptr<VariableConceptT<T>>{
+        dynamic_cast<VariableConceptT<T> *>(other.clone().release())};
+  }
+};
 } // namespace detail
 
 /// Like std::unique_ptr, but copy causes a deep copy.
@@ -221,12 +226,12 @@ public:
   deep_ptr() = default;
   deep_ptr(std::unique_ptr<T> &&other) : m_data(std::move(other)) {}
   deep_ptr(const deep_ptr<T> &other)
-      : m_data(other ? detail::clone(*other) : nullptr) {}
+      : m_data(other ? detail::clone(*other).get() : nullptr) {}
   deep_ptr(deep_ptr<T> &&) = default;
   constexpr deep_ptr(std::nullptr_t){};
   deep_ptr<T> &operator=(const deep_ptr<T> &other) {
     if (&other != this && other)
-      m_data = detail::clone(*other);
+      m_data = detail::clone(*other).get();
     return *this;
   }
   deep_ptr<T> &operator=(deep_ptr<T> &&) = default;
@@ -275,6 +280,9 @@ public:
     else if constexpr (std::is_same_v<typename T::element_type::value_type,
                                       double>)
       m_object = deep_ptr<VariableConceptT<double>>(std::move(object));
+    else if constexpr (std::is_same_v<typename T::element_type::value_type,
+                                      float>)
+      m_object = deep_ptr<VariableConceptT<float>>(std::move(object));
     else
       m_object = deep_ptr<VariableConcept>(std::move(object));
   }
@@ -305,7 +313,8 @@ public:
   }
 
 private:
-  std::variant<deep_ptr<VariableConcept>, deep_ptr<VariableConceptT<double>>>
+  std::variant<deep_ptr<VariableConcept>, deep_ptr<VariableConceptT<double>>,
+               deep_ptr<VariableConceptT<float>>>
       m_object;
 };
 
@@ -313,7 +322,7 @@ template <class Op>
 VariableConceptHandle Transform<Op>::operator()(auto &&handle) const {
   auto data = handle->getSpan();
   // TODO Should just make empty container here, without init.
-  auto out = detail::clone(*handle);
+  auto out = detail::clone(*handle).get();
   // TODO Typo data->getSpan() also compiles, but const-correctness should
   // forbid this.
   auto outData = out->getSpan();

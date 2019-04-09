@@ -1219,11 +1219,21 @@ TEST(Variable, apply_unary_in_place) {
   EXPECT_TRUE(equals(var.span<double>(), {-1.1, -2.2}));
 }
 
-TEST(Variable, apply_unary) {
-  const Variable var(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+TEST(Variable, apply_unary_implicit_conversion) {
+  const auto var = makeVariable<double>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  // TODO Note: This functor is also used for float data and is using implicit
+  // conversions. We may consider changes this and fail at compile time.
   auto out = var.transform([](const double x) { return -x; });
-  ASSERT_EQ(out.span<double>().size(), 2);
-  EXPECT_EQ(out.span<double>()[0], -1.1);
-  EXPECT_EQ(out.span<double>()[1], -2.2);
   EXPECT_TRUE(equals(out.span<double>(), {-1.1, -2.2}));
+}
+
+TEST(Variable, apply_unary) {
+  const auto varD = makeVariable<double>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  const auto varF = makeVariable<float>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  auto outD = varD.transform(overloaded{[](const double x) { return -x; },
+                                        [](const float x) { return -x; }});
+  auto outF = varF.transform(overloaded{[](const double x) { return -x; },
+                                        [](const float x) { return -x; }});
+  EXPECT_TRUE(equals(outD.span<double>(), {-1.1, -2.2}));
+  EXPECT_TRUE(equals(outF.span<float>(), {-1.1f, -2.2f}));
 }
