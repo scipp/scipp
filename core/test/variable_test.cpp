@@ -1258,3 +1258,11 @@ TEST(Variable, apply_unary) {
   EXPECT_TRUE(equals(outD.span<double>(), {-1.1, -2.2}));
   EXPECT_TRUE(equals(outF.span<float>(), {-1.1f, -2.2f}));
 }
+
+TEST(Variable, apply_binary_in_place) {
+  Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  const Variable b(Data::Value, {}, {3.3});
+  a.transform_in_place<double>([](const auto x, const auto y) { return x + y; },
+                               b);
+  EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
+}

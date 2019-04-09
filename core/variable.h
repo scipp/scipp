@@ -253,6 +253,59 @@ template <class Op> struct TransformInPlace {
     auto data = handle->getSpan();
     std::transform(data.begin(), data.end(), data.begin(), op);
   }
+  void operator()(auto &&a, auto &&b) const {
+    const auto &dimsA = a->dimensions();
+    const auto &dimsB = b->dimensions();
+    try {
+      if constexpr (std::is_same_v<decltype(a), decltype(b)>)
+        if (a->getView(dimsA).overlaps(b->getView(dimsA))) {
+          // If there is an overlap between lhs and rhs we copy the rhs before
+          // applying the operation.
+          throw std::runtime_error("todo");
+          // const auto &data = otherT.getView(otherT.dimensions());
+          // DataModel<Vector<OtherT>> copy(
+          //    other.dimensions(), Vector<OtherT>(data.begin(), data.end()));
+          // return apply<Op, OtherT>(copy);
+        }
+
+      if (a->isContiguous() && dimsA.contains(dimsB)) {
+        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+          auto a_ = a->getSpan();
+          auto b_ = b->getSpan();
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        } else {
+          auto a_ = a->getSpan();
+          auto b_ = b->getView(dimsA);
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        }
+      } else if (dimsA.contains(dimsB)) {
+        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+          auto a_ = a->getView(dimsA);
+          auto b_ = b->getSpan();
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        } else {
+          auto a_ = a->getView(dimsA);
+          auto b_ = b->getView(dimsA);
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        }
+      } else {
+        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+          auto a_ = a->getView(dimsB);
+          auto b_ = b->getSpan();
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        } else {
+          auto a_ = a->getView(dimsB);
+          auto b_ = b->getView(dimsB);
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        }
+      }
+    } catch (const std::bad_cast &) {
+      throw std::runtime_error("Cannot apply arithmetic operation to "
+                               "Variables: Underlying data types do not "
+                               "match.");
+    }
+  }
 };
 
 class VariableConceptHandle;
@@ -291,6 +344,16 @@ public:
   template <class... Ts, class Op> void transform_in_place(Op op) {
     try {
       scipp::core::visit<Ts...>::apply(TransformInPlace<Op>{op}, m_object);
+    } catch (const std::bad_variant_access &) {
+      throw std::runtime_error("Operation not implemented for this type.");
+    }
+  }
+
+  template <class... Ts, class Op>
+  void transform_in_place(Op op, const VariableConceptHandle &var) {
+    try {
+      scipp::core::visit<Ts...>::apply(TransformInPlace<Op>{op}, m_object,
+                                       var.m_object);
     } catch (const std::bad_variant_access &) {
       throw std::runtime_error("Operation not implemented for this type.");
     }
@@ -518,6 +581,12 @@ public:
   template <class... Ts, class Op> void transform_in_place(Op op) {
     // TODO handle units
     m_object.transform_in_place<Ts...>(op);
+  }
+
+  template <class... Ts, class Op>
+  void transform_in_place(Op op, const Variable &other) {
+    // TODO handle units
+    m_object.transform_in_place<Ts...>(op, other.m_object);
   }
 
   template <class... Ts, class Op> Variable transform(Op op) const {

@@ -40,6 +40,46 @@ decltype(auto) invoke_active(F &&f, Variant &&v, const std::tuple<Ts...> &) {
 //          std::variant_size_v<std::remove_reference_t<Variant>>>{});
 //}
 
+template <class F, class V1, class V2, class... Ts>
+decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2,
+                             const std::tuple<Ts...> &) {
+  using Ret = decltype(std::invoke(std::forward<F>(f),
+                                   std::get<0>(std::forward<V1>(v1)),
+                                   std::get<0>(std::forward<V2>(v2))));
+
+  if constexpr (!std::is_same_v<void, Ret>) {
+    Ret ret;
+    // For now we only support same type in both variants. Eventually this will
+    // be generalized.
+    if (!((std::holds_alternative<Ts>(v1) && std::holds_alternative<Ts>(v2)
+               ? (ret = std::invoke(std::forward<F>(f),
+                                    std::get<Ts>(std::forward<V1>(v1)),
+                                    std::get<Ts>(std::forward<V2>(v2))),
+                  true)
+               : false) ||
+          ...))
+      throw std::bad_variant_access{};
+
+    return ret;
+  } else {
+    if (!((std::holds_alternative<Ts>(v1) && std::holds_alternative<Ts>(v2)
+               ? (std::invoke(std::forward<F>(f),
+                              std::get<Ts>(std::forward<V1>(v1)),
+                              std::get<Ts>(std::forward<V2>(v2))),
+                  true)
+               : false) ||
+          ...))
+      throw std::bad_variant_access{};
+  }
+}
+// template <class F, class Variant> decltype(auto) visit(F &&f, Variant &&var)
+// {
+//  return invoke_active(
+//      std::forward<F>(f), std::forward<Variant>(var),
+//      std::make_index_sequence<
+//          std::variant_size_v<std::remove_reference_t<Variant>>>{});
+//}
+
 template <class T> class deep_ptr;
 template <class T> class VariableConceptT;
 template <class T> using alternative = deep_ptr<VariableConceptT<T>>;
@@ -47,6 +87,12 @@ template <class... Ts> struct visit {
   template <class F, class Variant>
   static decltype(auto) apply(F &&f, Variant &&var) {
     return invoke_active(std::forward<F>(f), std::forward<Variant>(var),
+                         std::tuple<alternative<Ts>...>());
+  }
+  template <class F, class V1, class V2>
+  static decltype(auto) apply(F &&f, V1 &&v1, V2 &&v2) {
+    return invoke_active(std::forward<F>(f), std::forward<V1>(v1),
+                         std::forward<V2>(v2),
                          std::tuple<alternative<Ts>...>());
   }
 };
