@@ -99,8 +99,6 @@ class FloatingPointVariableConcept : public ArithmeticVariableConcept {
 public:
   static constexpr const char *name = "floating-point";
   using ArithmeticVariableConcept::ArithmeticVariableConcept;
-  /// Set x = value/x
-  virtual VariableConcept &reciprocal_times(const double value) = 0;
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
                      const VariableConcept &newCoord) = 0;

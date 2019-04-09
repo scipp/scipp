@@ -299,6 +299,22 @@ TEST(Variable, operator_divide_equal_scalar) {
   EXPECT_EQ(a.unit(), units::m);
 }
 
+TEST(Variable, operator_divide_scalar_double) {
+  const auto a = makeVariable<double>(Coord::X, {Dim::X, 2}, {2.0, 4.0});
+  const auto result = 1.111 / a;
+  EXPECT_EQ(result.span<double>()[0], 1.111 / 2.0);
+  EXPECT_EQ(result.span<double>()[1], 1.111 / 4.0);
+  EXPECT_EQ(result.unit(), units::dimensionless / units::m);
+}
+
+TEST(Variable, operator_divide_scalar_float) {
+  const auto a = makeVariable<float>(Coord::X, {Dim::X, 2}, {2.0, 4.0});
+  const auto result = 1.111 / a;
+  EXPECT_EQ(result.span<float>()[0], 1.111f / 2.0f);
+  EXPECT_EQ(result.span<float>()[1], 1.111f / 4.0f);
+  EXPECT_EQ(result.unit(), units::dimensionless / units::m);
+}
+
 TEST(Variable, setSlice) {
   Dimensions dims(Dim::Tof, 1);
   const Variable parent(

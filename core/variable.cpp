@@ -217,10 +217,6 @@ public:
   }
 };
 
-template <class T1, class T2> struct ReciprocalTimes {
-  T2 operator()(const T1 a, const T2 b) { return b / a; };
-};
-
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
                            const Dimensions &toMatch) {
   if (edges.ndim() == 1)
@@ -233,11 +229,6 @@ template <class T>
 class FloatingPointVariableConceptT : public ArithmeticVariableConceptT<T> {
 public:
   using ArithmeticVariableConceptT<T>::ArithmeticVariableConceptT;
-
-  VariableConcept &reciprocal_times(const double value) override {
-    Variable other(Data::Value, {}, {value});
-    return this->template apply<ReciprocalTimes>(other.data());
-  }
 
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
@@ -1109,7 +1100,8 @@ Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
-  require<FloatingPointVariableConcept>(b.data()).reciprocal_times(a);
+  b.transform_in_place(overloaded{[a](const double b) { return a / b; },
+                                  [a](const float b) { return a / b; }});
   return std::move(b);
 }
 
