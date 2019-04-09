@@ -11,8 +11,10 @@
 
 using tcb::span;
 
-struct base {};
-struct derived : base {};
+struct base {
+};
+struct derived : base {
+};
 
 TEST_CASE("default construction")
 {

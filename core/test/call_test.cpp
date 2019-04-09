@@ -114,8 +114,10 @@ void try_get_column(Dataset &d, Types types, std::index_sequence<Is...>) {
 
 template <class Alg, size_t... Is>
 gsl::index run_impl(Dataset &d, std::index_sequence<Is...>) {
-  auto types = std::tuple_cat(typename supported<
-      Alg, void, std::tuple_element_t<Is, decltype(allowed_types)>>::type{}...);
+  auto types = std::tuple_cat(
+      typename supported<
+          Alg, void,
+          std::tuple_element_t<Is, decltype(allowed_types)>>::type{}...);
   try_get_column<Alg>(
       d, types,
       std::make_index_sequence<std::tuple_size<decltype(types)>::value>{});

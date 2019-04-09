@@ -84,7 +84,7 @@ bool test_const_vec()
     return equal(arr, s);
 }
 
-}
+} // namespace
 
 TEST_CASE("Deduction from raw arrays")
 {

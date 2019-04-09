@@ -13,13 +13,13 @@ fi
 
 # Perform formatting
 find core scippy test units -type f -name '*.h' -o -name '*.cpp' | xargs -I{} ${CLANG_FORMAT_EXE} -i -style=file {};
-dirty=$(git ls-files --modified);
+DIRTY=$(git ls-files --modified);
 
-if [ -z "$dirty" ]; then
+if [ -z "${DIRTY}" ]; then
     echo "Clang format [ OK ]";
     exit 0;
 else
   echo "Clang format FAILED on the following files:";
-  echo $dirty;
+  echo "${DIRTY}" | tr ' ' '\n';
   exit 1;
 fi
