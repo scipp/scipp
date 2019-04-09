@@ -11,8 +11,8 @@ else
   ${FLAKE8_EXE} --version
 fi
 
-# Check formatting
-DIRTY=$(find scippy -type f -name '*.py' | xargs ${FLAKE8_EXE} -q);
+# Check formatting (exclude the examples directory)
+DIRTY=$(find scippy -type f -name '*.py' -not -path "scippy/examples/*" | xargs ${FLAKE8_EXE} -q);
 
 if [ -z "${DIRTY}" ]; then
   echo "Flake8 [ OK ]";

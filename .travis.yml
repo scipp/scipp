@@ -16,7 +16,7 @@ jobs:
       before_install: sh .travis/before_install.sh
       script: sh .travis/check_flake8.sh
       # Then start parallel build of gcc and clang in the Test stage
-    - stage: "Test"
+    - stage: "Unit tests"
       compiler: gcc
       name: "gcc"
       before_install: sh .travis/before_install.sh
