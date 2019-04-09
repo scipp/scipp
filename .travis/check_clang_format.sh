@@ -25,6 +25,7 @@ else
   PATCH="clang-format-PR${TRAVIS_PULL_REQUEST}-${SHA}";
   git add -A;
   git commit --no-verify --quiet -m ${PATCH};
+  git format-patch --quiet HEAD~;
   echo "Below is a patch to automatically fix the formatting of your files.";
   echo "Copy the text and paste it into a 0001-${PATCH}.patch file.";
   echo "Then apply the patch using 'git apply /path/to/0001-${PATCH}.patch'";
