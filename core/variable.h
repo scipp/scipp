@@ -336,10 +336,11 @@ public:
       m_object = deep_ptr<VariableConcept>(std::move(object));
   }
 
-  VariableConcept &operator*();
-  const VariableConcept &operator*() const;
-  VariableConcept *operator->();
-  const VariableConcept *operator->() const;
+  explicit operator bool() const noexcept {
+    return std::visit([](auto &&ptr) { return bool(ptr); }, m_object);
+  }
+  VariableConcept &operator*() const;
+  VariableConcept *operator->() const;
 
   template <class... Ts, class Op> void transform_in_place(Op op) {
     try {
@@ -525,6 +526,11 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
 
+  const VariableConceptHandle &dataHandle() const && = delete;
+  const VariableConceptHandle &dataHandle() const & { return m_object; }
+  VariableConceptHandle &dataHandle() && = delete;
+  VariableConceptHandle &dataHandle() & { return m_object; }
+
   DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_tag; }
   void setTag(const Tag tag) { m_tag = tag; }
@@ -583,10 +589,11 @@ public:
     m_object.transform_in_place<Ts...>(op);
   }
 
-  template <class... Ts, class Op>
-  void transform_in_place(Op op, const Variable &other) {
+  template <class... Ts, class Op, class Var>
+  Variable &transform_in_place(Op op, const Var &other) {
     // TODO handle units
-    m_object.transform_in_place<Ts...>(op, other.m_object);
+    dataHandle().transform_in_place<Ts...>(op, other.dataHandle());
+    return *this;
   }
 
   template <class... Ts, class Op> Variable transform(Op op) const {
@@ -705,12 +712,21 @@ public:
 
   DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_variable->tag(); }
+
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & {
     if (m_view)
       return *m_view;
     else
       return m_variable->data();
+  }
+
+  const VariableConceptHandle &dataHandle() const && = delete;
+  const VariableConceptHandle &dataHandle() const & {
+    if (m_view)
+      return m_view;
+    else
+      return m_variable->dataHandle();
   }
 
   bool isCoord() const { return m_variable->isCoord(); }
@@ -744,7 +760,7 @@ protected:
   const VariableView<const underlying_type_t<T>> cast() const;
 
   const Variable *m_variable;
-  deep_ptr<VariableConcept> m_view;
+  VariableConceptHandle m_view;
 };
 
 /** Mutable view into (a subset of) a Variable.
@@ -792,6 +808,13 @@ public:
     return *m_view;
   }
 
+  const VariableConceptHandle &dataHandle() const && = delete;
+  const VariableConceptHandle &dataHandle() const & {
+    if (!m_view)
+      return m_mutableVariable->dataHandle();
+    return m_view;
+  }
+
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
   template <class TagT> auto get(const TagT t) const {
     if (t != tag())
@@ -830,6 +853,13 @@ public:
   VariableSlice operator/=(const double value) const;
 
   void setUnit(const units::Unit &unit) const;
+
+  template <class... Ts, class Op, class Var>
+  VariableSlice transform_in_place(Op op, const Var &other) {
+    // TODO handle units
+    dataHandle().transform_in_place<Ts...>(op, other.dataHandle());
+    return *this;
+  }
 
 private:
   friend class Variable;

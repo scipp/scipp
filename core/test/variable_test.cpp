@@ -146,7 +146,7 @@ TEST(VariableSlice, unary_minus) {
 TEST(Variable, operator_plus_equal) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
 
-  EXPECT_NO_THROW(a += a);
+  ASSERT_NO_THROW(a += a);
   EXPECT_EQ(a.get(Data::Value)[0], 2.2);
   EXPECT_EQ(a.get(Data::Value)[1], 4.4);
 
@@ -160,7 +160,7 @@ TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
 
   Variable fewer_dimensions(Data::Value, {}, {1.0});
 
-  EXPECT_NO_THROW(a += fewer_dimensions);
+  ASSERT_NO_THROW(a += fewer_dimensions);
   EXPECT_EQ(a.get(Data::Value)[0], 2.1);
   EXPECT_EQ(a.get(Data::Value)[1], 3.2);
 }
@@ -1264,5 +1264,13 @@ TEST(Variable, apply_binary_in_place) {
   const Variable b(Data::Value, {}, {3.3});
   a.transform_in_place<double>([](const auto x, const auto y) { return x + y; },
                                b);
+  EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
+}
+
+TEST(Variable, apply_binary_view_with_in_place) {
+  Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  const Variable b(Data::Value, {Dim::Y, 2}, {0.1, 3.3});
+  a.transform_in_place<double>([](const auto x, const auto y) { return x + y; },
+                               b(Dim::Y, 1));
   EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
 }

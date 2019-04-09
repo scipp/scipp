@@ -633,22 +633,13 @@ public:
   T m_model;
 };
 
-VariableConcept &VariableConceptHandle::operator*() {
+VariableConcept &VariableConceptHandle::operator*() const {
   return std::visit([](auto &&arg) -> VariableConcept & { return *arg; },
                     m_object);
 }
-const VariableConcept &VariableConceptHandle::operator*() const {
-  return std::visit([](auto &&arg) -> const VariableConcept & { return *arg; },
-                    m_object);
-}
-VariableConcept *VariableConceptHandle::operator->() {
+VariableConcept *VariableConceptHandle::operator->() const {
   return std::visit(
       [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
-      m_object);
-}
-const VariableConcept *VariableConceptHandle::operator->() const {
-  return std::visit(
-      [](auto &&arg) -> const VariableConcept * { return arg.operator->(); },
       m_object);
 }
 
