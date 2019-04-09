@@ -245,15 +245,13 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
   return scipp::span(model.data() + beginOffset, model.data() + endOffset);
 }
 
-template <class T>
-std::unique_ptr<VariableConcept> VariableConceptT<T>::makeView() const {
+template <class T> VariableConceptHandle VariableConceptT<T>::makeView() const {
   auto &dims = this->dimensions();
   return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
                                                               getView(dims));
 }
 
-template <class T>
-std::unique_ptr<VariableConcept> VariableConceptT<T>::makeView() {
+template <class T> VariableConceptHandle VariableConceptT<T>::makeView() {
   if (this->isConstView())
     return const_cast<const VariableConceptT &>(*this).makeView();
   auto &dims = this->dimensions();
@@ -262,7 +260,7 @@ std::unique_ptr<VariableConcept> VariableConceptT<T>::makeView() {
 }
 
 template <class T>
-std::unique_ptr<VariableConcept>
+VariableConceptHandle
 VariableConceptT<T>::makeView(const Dim dim, const scipp::index begin,
                               const scipp::index end) const {
   auto dims = this->dimensions();
@@ -275,9 +273,9 @@ VariableConceptT<T>::makeView(const Dim dim, const scipp::index begin,
 }
 
 template <class T>
-std::unique_ptr<VariableConcept>
-VariableConceptT<T>::makeView(const Dim dim, const scipp::index begin,
-                              const scipp::index end) {
+VariableConceptHandle VariableConceptT<T>::makeView(const Dim dim,
+                                                    const scipp::index begin,
+                                                    const scipp::index end) {
   if (this->isConstView())
     return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
                                                                 end);
@@ -513,8 +511,6 @@ makeVariableConceptT<double>(scipp::core::VariableConcept const &);
 template <class T>
 class ViewModel
     : public conceptT_t<std::remove_const_t<typename T::element_type>> {
-  using value_type = typename T::value_type;
-
   void requireMutable() const {
     if (isConstView())
       throw std::runtime_error(
@@ -527,6 +523,8 @@ class ViewModel
   }
 
 public:
+  using value_type = typename T::value_type;
+
   ViewModel(const Dimensions &dimensions, T model)
       : conceptT_t<value_type>(std::move(dimensions)),
         m_model(std::move(model)) {

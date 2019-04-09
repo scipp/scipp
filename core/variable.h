@@ -23,6 +23,7 @@
 namespace scipp::core {
 
 class Variable;
+class VariableConceptHandle;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableSlice. This is using so-called
@@ -42,14 +43,14 @@ public:
   virtual std::unique_ptr<VariableConcept> clone() const = 0;
   virtual std::unique_ptr<VariableConcept>
   clone(const Dimensions &dims) const = 0;
-  virtual std::unique_ptr<VariableConcept> makeView() const = 0;
-  virtual std::unique_ptr<VariableConcept> makeView() = 0;
-  virtual std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const scipp::index begin,
-           const scipp::index end = -1) const = 0;
-  virtual std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const scipp::index begin,
-           const scipp::index end = -1) = 0;
+  virtual VariableConceptHandle makeView() const = 0;
+  virtual VariableConceptHandle makeView() = 0;
+  virtual VariableConceptHandle makeView(const Dim dim,
+                                         const scipp::index begin,
+                                         const scipp::index end = -1) const = 0;
+  virtual VariableConceptHandle makeView(const Dim dim,
+                                         const scipp::index begin,
+                                         const scipp::index end = -1) = 0;
 
   virtual std::unique_ptr<VariableConcept>
   reshape(const Dimensions &dims) const = 0;
@@ -165,17 +166,15 @@ public:
   virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
   virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
 
-  std::unique_ptr<VariableConcept> makeView() const override;
+  VariableConceptHandle makeView() const override;
 
-  std::unique_ptr<VariableConcept> makeView() override;
+  VariableConceptHandle makeView() override;
 
-  std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const scipp::index begin,
-           const scipp::index end) const override;
+  VariableConceptHandle makeView(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) const override;
 
-  std::unique_ptr<VariableConcept> makeView(const Dim dim,
-                                            const scipp::index begin,
-                                            const scipp::index end) override;
+  VariableConceptHandle makeView(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) override;
 
   std::unique_ptr<VariableConcept>
   reshape(const Dimensions &dims) const override;
@@ -253,12 +252,16 @@ template <class Op> struct TransformInPlace {
     auto data = handle->getSpan();
     std::transform(data.begin(), data.end(), data.begin(), op);
   }
-  void operator()(auto &&a, auto &&b) const {
+  void operator()(auto &&a, auto &&b_ptr) const {
+    // deep_ptr::operator*() is const, but returns mutable reference, just like
+    // std::unique_ptr, need to artificially put const to we call the corect
+    // overloads of ViewModel.
+    const auto &b = *b_ptr;
     const auto &dimsA = a->dimensions();
-    const auto &dimsB = b->dimensions();
+    const auto &dimsB = b.dimensions();
     try {
-      if constexpr (std::is_same_v<decltype(a), decltype(b)>)
-        if (a->getView(dimsA).overlaps(b->getView(dimsA))) {
+      if constexpr (std::is_same_v<decltype(*a), decltype(b)>)
+        if (a->getView(dimsA).overlaps(b.getView(dimsA))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
           // applying the operation.
           throw std::runtime_error("todo");
@@ -269,34 +272,34 @@ template <class Op> struct TransformInPlace {
         }
 
       if (a->isContiguous() && dimsA.contains(dimsB)) {
-        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
           auto a_ = a->getSpan();
-          auto b_ = b->getSpan();
+          auto b_ = b.getSpan();
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         } else {
           auto a_ = a->getSpan();
-          auto b_ = b->getView(dimsA);
+          auto b_ = b.getView(dimsA);
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         }
       } else if (dimsA.contains(dimsB)) {
-        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
           auto a_ = a->getView(dimsA);
-          auto b_ = b->getSpan();
+          auto b_ = b.getSpan();
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         } else {
           auto a_ = a->getView(dimsA);
-          auto b_ = b->getView(dimsA);
+          auto b_ = b.getView(dimsA);
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         }
       } else {
         // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
           auto a_ = a->getView(dimsB);
-          auto b_ = b->getSpan();
+          auto b_ = b.getSpan();
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         } else {
           auto a_ = a->getView(dimsB);
-          auto b_ = b->getView(dimsB);
+          auto b_ = b.getView(dimsB);
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         }
       }
@@ -342,7 +345,7 @@ public:
   VariableConcept &operator*() const;
   VariableConcept *operator->() const;
 
-  template <class... Ts, class Op> void transform_in_place(Op op) {
+  template <class... Ts, class Op> void transform_in_place(Op op) const {
     try {
       scipp::core::visit<Ts...>::apply(TransformInPlace<Op>{op}, m_object);
     } catch (const std::bad_variant_access &) {
@@ -351,7 +354,7 @@ public:
   }
 
   template <class... Ts, class Op>
-  void transform_in_place(Op op, const VariableConceptHandle &var) {
+  void transform_in_place(Op op, const VariableConceptHandle &var) const {
     try {
       scipp::core::visit<Ts...>::apply(TransformInPlace<Op>{op}, m_object,
                                        var.m_object);
@@ -855,7 +858,7 @@ public:
   void setUnit(const units::Unit &unit) const;
 
   template <class... Ts, class Op, class Var>
-  VariableSlice transform_in_place(Op op, const Var &other) {
+  VariableSlice transform_in_place(Op op, const Var &other) const {
     // TODO handle units
     dataHandle().transform_in_place<Ts...>(op, other.dataHandle());
     return *this;
