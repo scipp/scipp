@@ -8,6 +8,4 @@ sudo apt update
 sudo apt install libboost1.67-dev
 sudo apt install libomp-dev
 sudo apt install python3-setuptools
-sudo apt install python3-pip
 sudo apt install ipython3
-pip install --upgrade pip

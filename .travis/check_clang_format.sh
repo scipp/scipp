@@ -12,12 +12,12 @@ else
 fi
 
 # Perform formatting
-find core scippy test units -type f -name '*.h' -o -name '*.cpp' | xargs -I{} ${CLANG_FORMAT_EXE} -i -style=file {};
+find core scippy test units -type f -name '*.h' -o -name '*.cpp' | xargs ${CLANG_FORMAT_EXE} -i -style=file;
 DIRTY=$(git ls-files --modified);
 
 if [ -z "${DIRTY}" ]; then
-    echo "Clang format [ OK ]";
-    exit 0;
+  echo "Clang format [ OK ]";
+  exit 0;
 else
   echo "Clang format FAILED on the following files:";
   echo "${DIRTY}" | tr ' ' '\n';
