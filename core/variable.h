@@ -18,6 +18,7 @@
 #include "tags.h"
 #include "variable_view.h"
 #include "vector.h"
+#include "visit.h"
 
 namespace scipp::core {
 
@@ -267,6 +268,7 @@ template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
 class VariableConceptHandle {
 public:
+  VariableConceptHandle() = default;
   template <class T> VariableConceptHandle(T object) {
     if constexpr (std::is_same_v<typename T::element_type, VariableConcept>)
       m_object = deep_ptr<VariableConcept>(std::move(object));
@@ -276,6 +278,9 @@ public:
     else if constexpr (std::is_same_v<typename T::element_type::value_type,
                                       float>)
       m_object = deep_ptr<VariableConceptT<float>>(std::move(object));
+    else if constexpr (std::is_same_v<typename T::element_type::value_type,
+                                      Eigen::Vector3d>)
+      m_object = deep_ptr<VariableConceptT<Eigen::Vector3d>>(std::move(object));
     else
       m_object = deep_ptr<VariableConcept>(std::move(object));
   }
@@ -285,29 +290,27 @@ public:
   VariableConcept *operator->();
   const VariableConcept *operator->() const;
 
-  template <class Op> void transform_in_place(Op op) {
-    std::visit(overloaded{TransformInPlace<Op>{op},
-                          [](deep_ptr<VariableConcept> &) {
-                            throw std::runtime_error(
-                                "Operation not implemented for this type.");
-                          }},
-               m_object);
+  template <class... Ts, class Op> void transform_in_place(Op op) {
+    try {
+      scipp::core::visit<Ts...>::apply(TransformInPlace<Op>{op}, m_object);
+    } catch (const std::bad_variant_access &) {
+      throw std::runtime_error("Operation not implemented for this type.");
+    }
   }
 
-  template <class Op> VariableConceptHandle transform(Op op) const {
-    return std::visit(
-        overloaded{
-            Transform<Op>{op},
-            [](const deep_ptr<VariableConcept> &) -> VariableConceptHandle {
-              throw std::runtime_error(
-                  "Operation not implemented for this type.");
-            }},
-        m_object);
+  template <class... Ts, class Op>
+  VariableConceptHandle transform(Op op) const {
+    try {
+      return scipp::core::visit<Ts...>::apply(Transform<Op>{op}, m_object);
+    } catch (const std::bad_variant_access &) {
+      throw std::runtime_error("Operation not implemented for this type.");
+    }
   }
 
 private:
   std::variant<deep_ptr<VariableConcept>, deep_ptr<VariableConceptT<double>>,
-               deep_ptr<VariableConceptT<float>>>
+               deep_ptr<VariableConceptT<float>>,
+               deep_ptr<VariableConceptT<Eigen::Vector3d>>>
       m_object;
 };
 
@@ -508,14 +511,14 @@ public:
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
 
-  template <class Op> void transform_in_place(Op op) {
+  template <class... Ts, class Op> void transform_in_place(Op op) {
     // TODO handle units
-    m_object.transform_in_place(op);
+    m_object.transform_in_place<Ts...>(op);
   }
 
-  template <class Op> Variable transform(Op op) const {
+  template <class... Ts, class Op> Variable transform(Op op) const {
     // TODO handle units
-    return Variable(*this, m_object.transform(op));
+    return Variable(*this, m_object.transform<Ts...>(op));
   }
 
   template <class... Tags> friend class ZipView;

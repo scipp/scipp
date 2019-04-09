@@ -1100,8 +1100,9 @@ Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
-  b.transform_in_place(overloaded{[a](const double b) { return a / b; },
-                                  [a](const float b) { return a / b; }});
+  b.transform_in_place<double, float>(
+      overloaded{[a](const double b) { return a / b; },
+                 [a](const float b) { return a / b; }});
   return std::move(b);
 }
 
@@ -1275,19 +1276,28 @@ Variable mean(const Variable &var, const Dim dim) {
   return summed * Variable(Data::Value, {}, {scale});
 }
 
-Variable norm(const Variable &var) {
-  return {var, require<const ArithmeticVariableConcept>(var.data()).norm()};
-}
-
 namespace detail {
 struct sqrt {
   auto operator()(const double x) { return std::sqrt(x); }
   auto operator()(const float x) { return std::sqrt(x); }
 };
+template <class T> struct norm {
+  constexpr auto operator()(const T &x) const {
+    if constexpr (is_vector_space<T>::value)
+      return x.norm();
+    else
+      return abs(x);
+  }
+};
 } // namespace detail
 
+Variable norm(const Variable &var) {
+  return var.transform<double, float>(
+      overloaded{detail::norm<double>(), detail::norm<float>()});
+}
+
 Variable sqrt(const Variable &var) {
-  Variable result = var.transform(detail::sqrt());
+  Variable result = var.transform<double, float>(detail::sqrt());
   result.setUnit(sqrt(var.unit()));
   return result;
 }
