@@ -5,18 +5,21 @@ dist: xenial
 
 cache: ccache
 
-# Check clang format in the first stage
-before_install: sh .travis/before_install.sh
-script: sh .travis/check_clang_format.sh
-
-# Then start parallel build of gcc and clang
-matrix:
+jobs:
   include:
-    - compiler: gcc
+      # Check clang format in the first stage
+    - stage: "Clang-format"
+      before_install: sh .travis/before_install.sh
+      script: sh .travis/check_clang_format.sh
+      # Then start parallel build of gcc and clang in the Test stage
+    - stage: "Test"
+      compiler: gcc
+      name: "gcc"
       before_install: sh .travis/before_install.sh
       install: sh .travis/install.sh
       script: sh .travis/run_tests.sh
     - compiler: clang
+      name: "clang"
       before_install: sh .travis/before_install.sh
       install: sh .travis/install.sh
       script: sh .travis/run_tests.sh
