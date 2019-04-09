@@ -92,8 +92,6 @@ public:
   virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
   virtual VariableConcept &operator/=(const VariableConcept &other) = 0;
-  /// Returns the absolute value (for scalars) or the norm (for vectors).
-  virtual std::unique_ptr<VariableConcept> norm() const = 0;
 };
 
 class FloatingPointVariableConcept : public ArithmeticVariableConcept {
@@ -314,11 +312,17 @@ private:
       m_object;
 };
 
+namespace detail {
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const VariableConcept &in);
+}
+
 template <class Op>
 VariableConceptHandle Transform<Op>::operator()(auto &&handle) const {
   auto data = handle->getSpan();
   // TODO Should just make empty container here, without init.
-  auto out = detail::clone(*handle).get();
+  auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(*handle);
   // TODO Typo data->getSpan() also compiles, but const-correctness should
   // forbid this.
   auto outData = out->getSpan();

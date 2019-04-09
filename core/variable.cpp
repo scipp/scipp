@@ -166,15 +166,6 @@ template <class T1, class T2 = T1> struct divides {
     return lhs / rhs;
   }
 };
-template <class T1, class T2> struct norm_of_second_arg {
-  constexpr T1 operator()(const T1 &, const T2 &rhs) const {
-    // TODO Should we make a unary ArithmeticHelper::apply?
-    if constexpr (is_vector_space<T2>::value)
-      return rhs.norm();
-    else
-      return abs(rhs);
-  }
-};
 
 template <class T> struct scalar_type { using type = T; };
 template <class T, int Rows> struct scalar_type<Eigen::Matrix<T, Rows, 1>> {
@@ -206,14 +197,6 @@ public:
 
   VariableConcept &operator/=(const VariableConcept &other) override {
     return this->template apply<divides, scalar_type_t<T>>(other);
-  }
-
-  std::unique_ptr<VariableConcept> norm() const override {
-    using ScalarT = scalar_type_t<T>;
-    auto norm = std::make_unique<DataModel<Vector<ScalarT>>>(
-        this->dimensions(), Vector<ScalarT>(this->dimensions().volume()));
-    norm->template apply<norm_of_second_arg, T>(*this);
-    return norm;
   }
 };
 
@@ -514,6 +497,17 @@ public:
 
   T m_model;
 };
+
+namespace detail {
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const VariableConcept &in) {
+  return std::make_unique<DataModel<Vector<T>>>(
+      in.dimensions(), Vector<T>(in.dimensions().volume()));
+}
+template std::unique_ptr<VariableConceptT<double>>
+makeVariableConceptT<double>(scipp::core::VariableConcept const &);
+} // namespace detail
 
 /// Implementation of VariableConcept that represents a view onto data.
 template <class T>
@@ -1278,11 +1272,12 @@ Variable mean(const Variable &var, const Dim dim) {
 
 namespace detail {
 struct sqrt {
-  auto operator()(const double x) { return std::sqrt(x); }
-  auto operator()(const float x) { return std::sqrt(x); }
+  template <class T> constexpr auto operator()(const T x) const {
+    return std::sqrt(x);
+  }
 };
-template <class T> struct norm {
-  constexpr auto operator()(const T &x) const {
+struct norm {
+  template <class T> constexpr auto operator()(const T &x) const {
     if constexpr (is_vector_space<T>::value)
       return x.norm();
     else
@@ -1291,9 +1286,11 @@ template <class T> struct norm {
 };
 } // namespace detail
 
+/// Returns the element-wise absolute value (for scalars) or the norm (for
+/// vectors).
 Variable norm(const Variable &var) {
-  return var.transform<double, float>(
-      overloaded{detail::norm<double>(), detail::norm<float>()});
+  return var.transform<double, float, Eigen::Vector3d>(
+      overloaded{detail::norm()});
 }
 
 Variable sqrt(const Variable &var) {
