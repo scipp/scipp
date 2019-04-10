@@ -11,11 +11,11 @@ import numpy as np
 from scippy import Dataset, Data, DatasetSlice, dimensionCoord, sqrt, units
 
 # Plotly imports
-from plotly.graph_objs import FigureWidget
-from plotly.colors import DEFAULT_PLOTLY_COLORS
-from plotly.io import write_image
 from IPython.display import display
+from plotly.io import write_image
+from plotly.colors import DEFAULT_PLOTLY_COLORS
 from ipywidgets import VBox, HBox, IntSlider, Label
+from plotly.graph_objs import FigureWidget
 
 # =============================================================================
 

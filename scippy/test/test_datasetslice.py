@@ -151,8 +151,8 @@ class TestDatasetSlice(unittest.TestCase):
         # Variables "a" and "b" divided despite different names
         with np.errstate(invalid='ignore'):
             np.testing.assert_equal(c[sp.Data.Value, "a"].numpy, data / data)
-        np.testing.assert_equal(
-            c[sp.Data.Variance, "a"].numpy, 2 * variance / (data * data))
+            np.testing.assert_equal(c[sp.Data.Variance, "a"].numpy,
+                                    2 * variance / (data * data))
 
         self._apply_test_op_rhs_ds_slice(operator.iadd, a, b, data)
         self._apply_test_op_rhs_ds_slice(operator.isub, a, b, data)
