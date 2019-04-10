@@ -5,18 +5,19 @@
 # National Laboratory, and European Spallation Source ERIC.
 import unittest
 
-from scippy import *
-import numpy as np
+import scippy as sp
+
 
 class TestDTypes(unittest.TestCase):
     def test_Eigen_Vector3d(self):
-        d = Dataset()
-        d[Coord.Position] = ([Dim.Position], (4,))
-        self.assertEqual(len(d[Coord.Position].data), 4)
-        self.assertEqual(len(d[Coord.Position].data[0]), 3)
-        self.assertEqual(d[Coord.Position].data[0][0], 0.0)
-        d[Coord.Position].data[0][1] = 1.0
-        self.assertEqual(d[Coord.Position].data[0][1], 1.0)
+        d = sp.Dataset()
+        d[sp.Coord.Position] = ([sp.Dim.Position], (4,))
+        self.assertEqual(len(d[sp.Coord.Position].data), 4)
+        self.assertEqual(len(d[sp.Coord.Position].data[0]), 3)
+        self.assertEqual(d[sp.Coord.Position].data[0][0], 0.0)
+        d[sp.Coord.Position].data[0][1] = 1.0
+        self.assertEqual(d[sp.Coord.Position].data[0][1], 1.0)
+
 
 if __name__ == '__main__':
     unittest.main()
