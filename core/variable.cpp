@@ -289,7 +289,7 @@ VariableConceptHandle VariableConceptT<T>::makeView(const Dim dim,
 }
 
 template <class T>
-std::unique_ptr<VariableConcept>
+VariableConceptHandle
 VariableConceptT<T>::reshape(const Dimensions &dims) const {
   if (this->dimensions().volume() != dims.volume())
     throw std::runtime_error(
@@ -299,8 +299,7 @@ VariableConceptT<T>::reshape(const Dimensions &dims) const {
 }
 
 template <class T>
-std::unique_ptr<VariableConcept>
-VariableConceptT<T>::reshape(const Dimensions &dims) {
+VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
   if (this->dimensions().volume() != dims.volume())
     throw std::runtime_error(
         "Cannot reshape to dimensions with different volume");
@@ -478,12 +477,11 @@ public:
     return makeVariableView(m_model.data(), 0, dims, dims);
   }
 
-  std::unique_ptr<VariableConcept> clone() const override {
+  VariableConceptHandle clone() const override {
     return std::make_unique<DataModel<T>>(this->dimensions(), m_model);
   }
 
-  std::unique_ptr<VariableConcept>
-  clone(const Dimensions &dims) const override {
+  VariableConceptHandle clone(const Dimensions &dims) const override {
     return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
   }
 
@@ -616,11 +614,11 @@ public:
     }
   }
 
-  std::unique_ptr<VariableConcept> clone() const override {
+  VariableConceptHandle clone() const override {
     return std::make_unique<ViewModel<T>>(this->dimensions(), m_model);
   }
 
-  std::unique_ptr<VariableConcept> clone(const Dimensions &) const override {
+  VariableConceptHandle clone(const Dimensions &) const override {
     throw std::runtime_error("Cannot resize view.");
   }
 

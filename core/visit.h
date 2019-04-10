@@ -2,6 +2,7 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2019 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
+#include <memory>
 #include <tuple>
 #include <utility>
 
@@ -80,9 +81,8 @@ decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2,
 //          std::variant_size_v<std::remove_reference_t<Variant>>>{});
 //}
 
-template <class T> class deep_ptr;
 template <class T> class VariableConceptT;
-template <class T> using alternative = deep_ptr<VariableConceptT<T>>;
+template <class T> using alternative = std::unique_ptr<VariableConceptT<T>>;
 template <class... Ts> struct visit {
   template <class F, class Variant>
   static decltype(auto) apply(F &&f, Variant &&var) {
