@@ -6,7 +6,6 @@
 import unittest
 
 import scippy as sp
-from scippy.xarray_compat import as_xarray
 import numpy as np
 import operator
 
@@ -770,20 +769,6 @@ class TestDatasetExamples(unittest.TestCase):
 
         # Arithmetics with tables (here: add two tables)
         table += table
-
-    def test_MDHistoWorkspace_plotting_example(self):
-        d = sp.Dataset()
-        L = 30
-        d[sp.Coord.X] = ([sp.Dim.X], np.arange(L))
-        d[sp.Coord.Y] = ([sp.Dim.Y], np.arange(L))
-        d[sp.Coord.Z] = ([sp.Dim.Z], np.arange(L))
-        d[sp.Data.Value, "temperature"] = (
-            [sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
-            np.random.normal(size=L * L * L).reshape([L, L, L]))
-
-        dataset = as_xarray(d.subset['temperature'])
-        dataset['Value:temperature'][10, ...].plot()
-        # plt.savefig('test.png')
 
     def test_MDHistoWorkspace_example(self):
         L = 30
