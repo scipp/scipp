@@ -278,6 +278,7 @@ public:
   VariableConceptHandle()
       : m_object(std::unique_ptr<VariableConcept>(nullptr)) {}
   template <class T> VariableConceptHandle(T object) {
+    // TODO How can this be rewritten to avoid manual listing of all cases?
     if constexpr (std::is_same_v<typename T::element_type, VariableConcept>)
       m_object = std::unique_ptr<VariableConcept>(std::move(object));
     else if constexpr (std::is_same_v<typename T::element_type::value_type,
@@ -286,6 +287,9 @@ public:
     else if constexpr (std::is_same_v<typename T::element_type::value_type,
                                       float>)
       m_object = std::unique_ptr<VariableConceptT<float>>(std::move(object));
+    else if constexpr (std::is_same_v<typename T::element_type::value_type,
+                                      int64_t>)
+      m_object = std::unique_ptr<VariableConceptT<int64_t>>(std::move(object));
     else if constexpr (std::is_same_v<typename T::element_type::value_type,
                                       Eigen::Vector3d>)
       m_object =
@@ -341,6 +345,7 @@ private:
   std::variant<std::unique_ptr<VariableConcept>,
                std::unique_ptr<VariableConceptT<double>>,
                std::unique_ptr<VariableConceptT<float>>,
+               std::unique_ptr<VariableConceptT<int64_t>>,
                std::unique_ptr<VariableConceptT<Eigen::Vector3d>>>
       m_object;
 };

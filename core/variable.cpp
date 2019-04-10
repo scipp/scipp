@@ -652,7 +652,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
     variable.template transform_in_place<
-        pair_self_t<double, float, Eigen::Vector3d>>(
+        pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
         [](auto &&a, auto &&b) { return a + b; }, other);
   } else {
     if (variable.dimensions() == other.dimensions()) {
@@ -705,9 +705,9 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events)
     throw std::runtime_error("Subtraction of events lists not implemented.");
-  variable
-      .template transform_in_place<pair_self_t<double, float, Eigen::Vector3d>>(
-          [](auto &&a, auto &&b) { return a - b; }, other);
+  variable.template transform_in_place<
+      pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+      [](auto &&a, auto &&b) { return a - b; }, other);
   return variable;
 }
 
@@ -729,7 +729,7 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
   variable.template transform_in_place<
-      pair_self_t<double, float>,
+      pair_self_t<double, float, int64_t>,
       pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       [](auto &&a, auto &&b) { return a * b; }, other);
   return variable;
@@ -754,7 +754,7 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() / other.unit());
   variable.template transform_in_place<
-      pair_self_t<double, float>,
+      pair_self_t<double, float, int64_t>,
       pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       [](auto &&a, auto &&b) { return a / b; }, other);
   return variable;
@@ -1147,9 +1147,9 @@ Variable sum(const Variable &var, const Dim dim) {
   dims.erase(dim);
   // setDimensions zeros the data
   summed.setDimensions(dims);
-  summed
-      .template transform_in_place<pair_self_t<double, float, Eigen::Vector3d>>(
-          [](auto &&a, auto &&b) { return a + b; }, var);
+  summed.template transform_in_place<
+      pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+      [](auto &&a, auto &&b) { return a + b; }, var);
   return summed;
 }
 
