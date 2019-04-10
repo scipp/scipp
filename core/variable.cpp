@@ -488,16 +488,6 @@ public:
   T m_model;
 };
 
-VariableConcept &VariableConceptHandle::operator*() const {
-  return std::visit([](auto &&arg) -> VariableConcept & { return *arg; },
-                    m_object);
-}
-VariableConcept *VariableConceptHandle::operator->() const {
-  return std::visit(
-      [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
-      m_object);
-}
-
 Variable::Variable(const ConstVariableSlice &slice)
     : Variable(*slice.m_variable) {
   if (slice.m_view) {

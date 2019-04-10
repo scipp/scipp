@@ -23,16 +23,18 @@
 namespace scipp::core {
 
 class Variable;
-class VariableConceptHandle;
+template <class... Known> class VariableConceptHandle_impl;
+// Any item type that is listed here explicitly can be used with the templated
+// `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
+using VariableConceptHandle =
+    VariableConceptHandle_impl<double, float, int64_t, Eigen::Vector3d>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableSlice. This is using so-called
 /// concept-based polymorphism, see talks by Sean Parent.
 ///
 /// This is the most generic representation for a multi-dimensional array of
-/// data. Depending on the item type more functionality such as binary
-/// operations is supported. Virtual methods for these are added in
-/// child-classes. See, e.g., `ArithmeticVariableConcept`.
+/// data. More operations are supportd by the partially-typed VariableConceptT.
 class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
@@ -132,12 +134,6 @@ public:
             const scipp::index otherEnd) override;
 };
 
-namespace detail {
-template <class T> std::unique_ptr<T> clone(const T &other) {
-  return std::make_unique<T>(other);
-}
-} // namespace detail
-
 /// Like std::unique_ptr, but copy causes a deep copy.
 template <class T> class deep_ptr {
 public:
@@ -145,12 +141,12 @@ public:
   deep_ptr() = default;
   deep_ptr(std::unique_ptr<T> &&other) : m_data(std::move(other)) {}
   deep_ptr(const deep_ptr<T> &other)
-      : m_data(other ? detail::clone(*other) : nullptr) {}
+      : m_data(other ? std::make_unique<T>(*other) : nullptr) {}
   deep_ptr(deep_ptr<T> &&) = default;
   constexpr deep_ptr(std::nullptr_t){};
   deep_ptr<T> &operator=(const deep_ptr<T> &other) {
     if (&other != this && other)
-      m_data = detail::clone(*other);
+      m_data = std::make_unique<T>(*other);
     return *this;
   }
   deep_ptr<T> &operator=(deep_ptr<T> &&) = default;
@@ -245,7 +241,6 @@ template <class Op> struct TransformInPlace {
   }
 };
 
-class VariableConceptHandle;
 template <class Op> struct Transform {
   Op op;
   template <class T> VariableConceptHandle operator()(T &&handle) const;
@@ -254,44 +249,40 @@ template <class Op> struct Transform {
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
-class VariableConceptHandle {
+template <class... Known> class VariableConceptHandle_impl {
 public:
-  VariableConceptHandle()
+  VariableConceptHandle_impl()
       : m_object(std::unique_ptr<VariableConcept>(nullptr)) {}
-  template <class T> VariableConceptHandle(T object) {
-    // TODO How can this be rewritten to avoid manual listing of all cases?
-    if constexpr (std::is_same_v<typename T::element_type, VariableConcept>)
-      m_object = std::unique_ptr<VariableConcept>(std::move(object));
-    else if constexpr (std::is_same_v<typename T::element_type::value_type,
-                                      double>)
-      m_object = std::unique_ptr<VariableConceptT<double>>(std::move(object));
-    else if constexpr (std::is_same_v<typename T::element_type::value_type,
-                                      float>)
-      m_object = std::unique_ptr<VariableConceptT<float>>(std::move(object));
-    else if constexpr (std::is_same_v<typename T::element_type::value_type,
-                                      int64_t>)
-      m_object = std::unique_ptr<VariableConceptT<int64_t>>(std::move(object));
-    else if constexpr (std::is_same_v<typename T::element_type::value_type,
-                                      Eigen::Vector3d>)
-      m_object =
-          std::unique_ptr<VariableConceptT<Eigen::Vector3d>>(std::move(object));
+  template <class T> VariableConceptHandle_impl(T object) {
+    using value_t = typename T::element_type::value_type;
+    if constexpr ((std::is_same_v<value_t, Known> || ...))
+      m_object = std::unique_ptr<VariableConceptT<value_t>>(std::move(object));
     else
       m_object = std::unique_ptr<VariableConcept>(std::move(object));
   }
-  VariableConceptHandle(VariableConceptHandle &&) = default;
-  VariableConceptHandle(const VariableConceptHandle &other)
-      : VariableConceptHandle(other ? other->clone()
-                                    : VariableConceptHandle()) {}
-  VariableConceptHandle &operator=(VariableConceptHandle &&) = default;
-  VariableConceptHandle &operator=(const VariableConceptHandle &other) {
-    return *this = other ? other->clone() : VariableConceptHandle();
+  VariableConceptHandle_impl(VariableConceptHandle_impl &&) = default;
+  VariableConceptHandle_impl(const VariableConceptHandle_impl &other)
+      : VariableConceptHandle_impl(other ? other->clone()
+                                         : VariableConceptHandle_impl()) {}
+  VariableConceptHandle_impl &
+  operator=(VariableConceptHandle_impl &&) = default;
+  VariableConceptHandle_impl &
+  operator=(const VariableConceptHandle_impl &other) {
+    return *this = other ? other->clone() : VariableConceptHandle_impl();
   }
 
   explicit operator bool() const noexcept {
     return std::visit([](auto &&ptr) { return bool(ptr); }, m_object);
   }
-  VariableConcept &operator*() const;
-  VariableConcept *operator->() const;
+  VariableConcept &operator*() const {
+    return std::visit([](auto &&arg) -> VariableConcept & { return *arg; },
+                      m_object);
+  }
+  VariableConcept *operator->() const {
+    return std::visit(
+        [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
+        m_object);
+  }
 
   template <class... Ts, class Op> void transform_in_place(Op op) const {
     try {
@@ -302,7 +293,7 @@ public:
   }
 
   template <class... TypePairs, class Op>
-  void transform_in_place(Op op, const VariableConceptHandle &var) const {
+  void transform_in_place(Op op, const VariableConceptHandle_impl &var) const {
     try {
       scipp::core::visit(std::tuple_cat(TypePairs{}...))
           .apply(TransformInPlace<Op>{op}, m_object, var.m_object);
@@ -325,7 +316,7 @@ public:
   }
 
   template <class... Ts, class Op>
-  VariableConceptHandle transform(Op op) const {
+  VariableConceptHandle_impl transform(Op op) const {
     try {
       return scipp::core::visit_impl<Ts...>::apply(Transform<Op>{op}, m_object);
     } catch (const std::bad_variant_access &) {
@@ -335,10 +326,7 @@ public:
 
 private:
   std::variant<std::unique_ptr<VariableConcept>,
-               std::unique_ptr<VariableConceptT<double>>,
-               std::unique_ptr<VariableConceptT<float>>,
-               std::unique_ptr<VariableConceptT<int64_t>>,
-               std::unique_ptr<VariableConceptT<Eigen::Vector3d>>>
+               std::unique_ptr<VariableConceptT<Known>>...>
       m_object;
 };
 
