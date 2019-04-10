@@ -1260,23 +1260,23 @@ TEST(Variable, apply_unary) {
 TEST(Variable, apply_binary_in_place) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const Variable b(Data::Value, {}, {3.3});
-  a.transform_in_place<double>([](const auto x, const auto y) { return x + y; },
-                               b);
+  a.transform_in_place<pair_self_t<double>>(
+      [](const auto x, const auto y) { return x + y; }, b);
   EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
 }
 
 TEST(Variable, apply_binary_in_place_var_with_view) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const Variable b(Data::Value, {Dim::Y, 2}, {0.1, 3.3});
-  a.transform_in_place<double>([](const auto x, const auto y) { return x + y; },
-                               b(Dim::Y, 1));
+  a.transform_in_place<pair_self_t<double>>(
+      [](const auto x, const auto y) { return x + y; }, b(Dim::Y, 1));
   EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
 }
 
 TEST(Variable, apply_binary_in_place_view_with_var) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const Variable b(Data::Value, {}, {3.3});
-  a(Dim::X, 1).transform_in_place<double>(
+  a(Dim::X, 1).transform_in_place<pair_self_t<double>>(
       [](const auto x, const auto y) { return x + y; }, b);
   EXPECT_TRUE(equals(a.span<double>(), {1.1, 5.5}));
 }
@@ -1284,7 +1284,7 @@ TEST(Variable, apply_binary_in_place_view_with_var) {
 TEST(Variable, apply_binary_in_place_view_with_view) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const Variable b(Data::Value, {Dim::Y, 2}, {0.1, 3.3});
-  a(Dim::X, 1).transform_in_place<double>(
+  a(Dim::X, 1).transform_in_place<pair_self_t<double>>(
       [](const auto x, const auto y) { return x + y; }, b(Dim::Y, 1));
   EXPECT_TRUE(equals(a.span<double>(), {1.1, 5.5}));
 }

@@ -346,17 +346,17 @@ public:
 
   template <class... Ts, class Op> void transform_in_place(Op op) const {
     try {
-      scipp::core::visit<Ts...>::apply(TransformInPlace<Op>{op}, m_object);
+      scipp::core::visit_impl<Ts...>::apply(TransformInPlace<Op>{op}, m_object);
     } catch (const std::bad_variant_access &) {
       throw std::runtime_error("Operation not implemented for this type.");
     }
   }
 
-  template <class... Ts, class Op>
+  template <class... TypePairs, class Op>
   void transform_in_place(Op op, const VariableConceptHandle &var) const {
     try {
-      scipp::core::visit<Ts...>::apply(TransformInPlace<Op>{op}, m_object,
-                                       var.m_object);
+      scipp::core::visit(std::tuple_cat(TypePairs{}...))
+          .apply(TransformInPlace<Op>{op}, m_object, var.m_object);
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes " +
                               to_string((*this)->dtype()) + " and " +
@@ -367,7 +367,7 @@ public:
   template <class... Ts, class Op>
   VariableConceptHandle transform(Op op) const {
     try {
-      return scipp::core::visit<Ts...>::apply(Transform<Op>{op}, m_object);
+      return scipp::core::visit_impl<Ts...>::apply(Transform<Op>{op}, m_object);
     } catch (const std::bad_variant_access &) {
       throw std::runtime_error("Operation not implemented for this type.");
     }
@@ -590,10 +590,10 @@ public:
     m_object.transform_in_place<Ts...>(op);
   }
 
-  template <class... Ts, class Op, class Var>
+  template <class... TypePairs, class Op, class Var>
   Variable &transform_in_place(Op op, const Var &other) {
     // TODO handle units
-    dataHandle().transform_in_place<Ts...>(op, other.dataHandle());
+    dataHandle().transform_in_place<TypePairs...>(op, other.dataHandle());
     return *this;
   }
 
@@ -855,10 +855,10 @@ public:
 
   void setUnit(const units::Unit &unit) const;
 
-  template <class... Ts, class Op, class Var>
+  template <class... TypePairs, class Op, class Var>
   VariableSlice transform_in_place(Op op, const Var &other) const {
     // TODO handle units
-    dataHandle().transform_in_place<Ts...>(op, other.dataHandle());
+    dataHandle().transform_in_place<TypePairs...>(op, other.dataHandle());
     return *this;
   }
 

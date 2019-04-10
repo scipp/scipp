@@ -7,6 +7,21 @@
 #include <utility>
 
 namespace scipp::core {
+
+template <class... Ts> struct pair_self {
+  using type = std::tuple<std::pair<Ts, Ts>...>;
+};
+// template <class... Ts> struct pair_product {
+//  using type = decltype(std::tuple_cat(std::tuple<std::pair<Ts,
+//  Ts...>>{}...));
+//};
+template <class... Ts> struct pair_custom { using type = std::tuple<Ts...>; };
+
+template <class... Ts> using pair_self_t = typename pair_self<Ts...>::type;
+// template <class... Ts>
+// using pair_product_t = typename pair_product<Ts...>::type;
+template <class... Ts> using pair_custom_t = typename pair_custom<Ts...>::type;
+
 template <class F, class Variant, class... Ts>
 decltype(auto) invoke_active(F &&f, Variant &&v, const std::tuple<Ts...> &) {
   using Ret = decltype(
@@ -41,9 +56,9 @@ decltype(auto) invoke_active(F &&f, Variant &&v, const std::tuple<Ts...> &) {
 //          std::variant_size_v<std::remove_reference_t<Variant>>>{});
 //}
 
-template <class F, class V1, class V2, class... Ts>
-decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2,
-                             const std::tuple<Ts...> &) {
+template <class F, class V1, class V2, class... T1, class... T2>
+decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2, const std::tuple<T1...> &,
+                             const std::tuple<T2...> &) {
   using Ret = decltype(std::invoke(std::forward<F>(f),
                                    std::get<0>(std::forward<V1>(v1)),
                                    std::get<0>(std::forward<V2>(v2))));
@@ -52,10 +67,10 @@ decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2,
     Ret ret;
     // For now we only support same type in both variants. Eventually this will
     // be generalized.
-    if (!((std::holds_alternative<Ts>(v1) && std::holds_alternative<Ts>(v2)
+    if (!((std::holds_alternative<T1>(v1) && std::holds_alternative<T2>(v2)
                ? (ret = std::invoke(std::forward<F>(f),
-                                    std::get<Ts>(std::forward<V1>(v1)),
-                                    std::get<Ts>(std::forward<V2>(v2))),
+                                    std::get<T1>(std::forward<V1>(v1)),
+                                    std::get<T2>(std::forward<V2>(v2))),
                   true)
                : false) ||
           ...))
@@ -63,10 +78,10 @@ decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2,
 
     return ret;
   } else {
-    if (!((std::holds_alternative<Ts>(v1) && std::holds_alternative<Ts>(v2)
+    if (!((std::holds_alternative<T1>(v1) && std::holds_alternative<T2>(v2)
                ? (std::invoke(std::forward<F>(f),
-                              std::get<Ts>(std::forward<V1>(v1)),
-                              std::get<Ts>(std::forward<V2>(v2))),
+                              std::get<T1>(std::forward<V1>(v1)),
+                              std::get<T2>(std::forward<V2>(v2))),
                   true)
                : false) ||
           ...))
@@ -83,7 +98,7 @@ decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2,
 
 template <class T> class VariableConceptT;
 template <class T> using alternative = std::unique_ptr<VariableConceptT<T>>;
-template <class... Ts> struct visit {
+template <class... Ts> struct visit_impl {
   template <class F, class Variant>
   static decltype(auto) apply(F &&f, Variant &&var) {
     return invoke_active(std::forward<F>(f), std::forward<Variant>(var),
@@ -91,11 +106,15 @@ template <class... Ts> struct visit {
   }
   template <class F, class V1, class V2>
   static decltype(auto) apply(F &&f, V1 &&v1, V2 &&v2) {
-    return invoke_active(std::forward<F>(f), std::forward<V1>(v1),
-                         std::forward<V2>(v2),
-                         std::tuple<alternative<Ts>...>());
+    return invoke_active(
+        std::forward<F>(f), std::forward<V1>(v1), std::forward<V2>(v2),
+        std::tuple<alternative<typename Ts::first_type>...>(),
+        std::tuple<alternative<typename Ts::second_type>...>());
   }
 };
+template <class... Ts> auto visit(const std::tuple<Ts...> &) {
+  return visit_impl<Ts...>{};
+}
 
 // template <class F, class Variant, class Indices>
 // decltype(auto) visit(F &&f, Variant &&var, Indices indices) {
