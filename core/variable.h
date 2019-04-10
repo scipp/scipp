@@ -241,9 +241,8 @@ template <class Op> struct TransformInPlace {
     std::transform(data.begin(), data.end(), data.begin(), op);
   }
   template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
-    // deep_ptr::operator*() is const, but returns mutable reference, just like
-    // std::unique_ptr, need to artificially put const to we call the corect
-    // overloads of ViewModel.
+    // std::unique_ptr::operator*() is const but returns mutable reference, need
+    // to artificially put const to we call the corect overloads of ViewModel.
     const auto &b = *b_ptr;
     const auto &dimsA = a->dimensions();
     const auto &dimsB = b.dimensions();
@@ -359,7 +358,9 @@ public:
       scipp::core::visit<Ts...>::apply(TransformInPlace<Op>{op}, m_object,
                                        var.m_object);
     } catch (const std::bad_variant_access &) {
-      throw std::runtime_error("Operation not implemented for this type.");
+      throw except::TypeError("Cannot apply operation to item dtypes " +
+                              to_string((*this)->dtype()) + " and " +
+                              to_string(var->dtype()) + '.');
     }
   }
 

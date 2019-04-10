@@ -767,7 +767,8 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
     expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
-    require<AddableVariableConcept>(variable.data()) += other.data();
+    variable.template transform_in_place<double, float, Eigen::Vector3d>(
+        [](auto &&a, auto &&b) { return a + b; }, other);
   } else {
     if (variable.dimensions() == other.dimensions()) {
       using ConstViewOrRef =
@@ -819,7 +820,8 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events)
     throw std::runtime_error("Subtraction of events lists not implemented.");
-  require<ArithmeticVariableConcept>(variable.data()) -= other.data();
+  variable.template transform_in_place<double, float, Eigen::Vector3d>(
+      [](auto &&a, auto &&b) { return a - b; }, other);
   return variable;
 }
 
@@ -1253,7 +1255,8 @@ Variable sum(const Variable &var, const Dim dim) {
   dims.erase(dim);
   // setDimensions zeros the data
   summed.setDimensions(dims);
-  require<ArithmeticVariableConcept>(summed.data()) += var.data();
+  summed.template transform_in_place<double, float, Eigen::Vector3d>(
+      [](auto &&a, auto &&b) { return a + b; }, var);
   return summed;
 }
 

@@ -200,15 +200,13 @@ TEST(Variable, operator_plus_equal_different_unit) {
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
   auto a = makeVariable<std::string>(Data::Value, {Dim::X, 1},
                                      {std::string("test")});
-  EXPECT_THROW_MSG(a += a, std::runtime_error,
-                   "Cannot apply operation, requires addable type.");
+  EXPECT_THROW(a += a, except::TypeError);
 }
 
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   Variable a(Data::Value, {Dim::X, 1}, {1.0});
   auto b = makeVariable<int64_t>(Data::Value, {Dim::X, 1}, {2});
-  EXPECT_THROW_MSG(a += b, except::TypeError,
-                   "Expected item dtype double, got int64.");
+  EXPECT_THROW(a += b, except::TypeError);
 }
 
 TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
