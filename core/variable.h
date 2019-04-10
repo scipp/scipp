@@ -73,30 +73,11 @@ private:
   Dimensions m_dimensions;
 };
 
-class FloatingPointVariableConcept : public VariableConcept {
-public:
-  static constexpr const char *name = "floating-point";
-  using VariableConcept::VariableConcept;
-  virtual void rebin(const VariableConcept &old, const Dim dim,
-                     const VariableConcept &oldCoord,
-                     const VariableConcept &newCoord) = 0;
-};
-
-template <class T> class ViewModel;
 template <class T> class VariableConceptT;
-template <class T> class FloatingPointVariableConceptT;
 
 template <class T, typename Enable = void> struct concept {
   using type = VariableConcept;
   using typeT = VariableConceptT<T>;
-};
-template <class T> struct is_vector_space : std::false_type {};
-template <class T, int Rows>
-struct is_vector_space<Eigen::Matrix<T, Rows, 1>> : std::true_type {};
-template <class T>
-struct concept<T, std::enable_if_t<std::is_floating_point<T>::value>> {
-  using type = FloatingPointVariableConcept;
-  using typeT = FloatingPointVariableConceptT<T>;
 };
 
 template <class T> using concept_t = typename concept<T>::type;
@@ -332,6 +313,17 @@ public:
     }
   }
 
+  // `transform` (and its variants) applies op to all elements, `apply` applies
+  // op directly to the data arrays.
+  template <class... Ts, class Op, class... Vars>
+  void apply_in_place(Op op, const Vars &... vars) const {
+    try {
+      scipp::core::visit_impl<Ts...>::apply(op, m_object, vars.m_object...);
+    } catch (const std::bad_variant_access &) {
+      throw except::TypeError("");
+    }
+  }
+
   template <class... Ts, class Op>
   VariableConceptHandle transform(Op op) const {
     try {
@@ -563,6 +555,13 @@ public:
   Variable &transform_in_place(Op op, const Var &other) {
     // TODO handle units
     dataHandle().transform_in_place<TypePairs...>(op, other.dataHandle());
+    return *this;
+  }
+
+  template <class... Ts, class Op, class... Vars>
+  Variable &apply_in_place(Op op, const Vars &... vars) {
+    // TODO handle units
+    dataHandle().apply_in_place<Ts...>(op, vars.dataHandle()...);
     return *this;
   }
 

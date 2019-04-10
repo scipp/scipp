@@ -23,15 +23,6 @@ template <class T, class C> auto &requireT(C &concept) {
   }
 }
 
-template <class T, class C> auto &require(C &concept) {
-  try {
-    return dynamic_cast<T &>(concept);
-  } catch (const std::bad_cast &) {
-    throw std::runtime_error(std::string("Cannot apply operation, requires ") +
-                             T::name + " type.");
-  }
-}
-
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
@@ -132,6 +123,8 @@ template <typename T> struct RebinGeneralHelper {
   }
 };
 
+template <class T> class ViewModel;
+
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
@@ -142,30 +135,6 @@ bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
   edges.resize(dim, edges[dim] - 1);
   return edges == toMatch;
 }
-
-template <class T>
-class FloatingPointVariableConceptT : public VariableConceptT<T> {
-public:
-  using VariableConceptT<T>::VariableConceptT;
-
-  void rebin(const VariableConcept &old, const Dim dim,
-             const VariableConcept &oldCoord,
-             const VariableConcept &newCoord) override {
-    // Dimensions of *this and old are guaranteed to be the same.
-    auto &oldT = requireT<const FloatingPointVariableConceptT>(old);
-    auto &oldCoordT = requireT<const FloatingPointVariableConceptT>(oldCoord);
-    auto &newCoordT = requireT<const FloatingPointVariableConceptT>(newCoord);
-    const auto &dims = this->dimensions();
-    if (dims.inner() == dim &&
-        isMatchingOr1DBinEdge(dim, oldCoord.dimensions(), old.dimensions()) &&
-        isMatchingOr1DBinEdge(dim, newCoord.dimensions(), dims)) {
-      RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
-    } else {
-      throw std::runtime_error(
-          "TODO the new coord should be 1D or the same din as newCoord.");
-    }
-  }
-};
 
 template <class T>
 auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
@@ -1061,16 +1030,37 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
 
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord) {
+
   expect::countsOrCountsDensity(var);
   const Dim dim = coordDimension[newCoord.tag().value()];
+
+  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord,
+                        auto &&newCoord) {
+    // Dimensions of *this and old are guaranteed to be the same.
+    const auto &oldT = *old;
+    const auto &oldCoordT = *oldCoord;
+    const auto &newCoordT = *newCoord;
+    auto &outT = *out;
+    const auto &dims = outT.dimensions();
+    if (dims.inner() == dim &&
+        isMatchingOr1DBinEdge(dim, oldCoordT.dimensions(), oldT.dimensions()) &&
+        isMatchingOr1DBinEdge(dim, newCoordT.dimensions(), dims)) {
+      RebinHelper<typename std::remove_reference_t<decltype(
+          outT)>::value_type>::rebinInner(dim, oldT, outT, oldCoordT,
+                                          newCoordT);
+    } else {
+      throw std::runtime_error(
+          "TODO the new coord should be 1D or the same dim as newCoord.");
+    }
+  };
+
   if (var.unit() == units::counts ||
       var.unit() == units::counts * units::counts) {
     auto dims = var.dimensions();
     dims.resize(dim, newCoord.dimensions()[dim] - 1);
     Variable rebinned(var, dims);
     if (rebinned.dimensions().inner() == dim) {
-      require<FloatingPointVariableConcept>(rebinned.data())
-          .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
+      rebinned.apply_in_place<double, float>(do_rebin, var, oldCoord, newCoord);
     } else {
       if (newCoord.dimensions().ndim() > 1)
         throw std::runtime_error(
@@ -1160,6 +1150,9 @@ Variable mean(const Variable &var, const Dim dim) {
 }
 
 namespace detail {
+template <class T> struct is_vector_space : std::false_type {};
+template <class T, int Rows>
+struct is_vector_space<Eigen::Matrix<T, Rows, 1>> : std::true_type {};
 struct norm {
   template <class T> constexpr auto operator()(const T &x) const {
     if constexpr (is_vector_space<T>::value)

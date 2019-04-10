@@ -82,6 +82,40 @@ decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2, const std::tuple<T1...> &,
   }
 }
 
+template <class T, class... V> bool holds_alternative(V &&... v) {
+  return (std::holds_alternative<T>(v) && ...);
+}
+template <class T, class F, class... V> auto invoke(F &&f, V &&... v) {
+  return std::invoke(std::forward<F>(f), std::get<T>(std::forward<V>(v))...);
+}
+
+template <class F, class... Ts, class... V>
+decltype(auto) invoke_active(F &&f, const std::tuple<Ts...> &, V &&... v) {
+  using Ret = decltype(std::invoke(
+      std::forward<F>(f), std::get<std::tuple_element_t<0, std::tuple<Ts...>>>(
+                              std::forward<V>(v))...));
+
+  if constexpr (!std::is_same_v<void, Ret>) {
+    Ret ret;
+    // For now we only support same type in both variants. Eventually this will
+    // be generalized.
+    if (!((holds_alternative<Ts>(v...)
+               ? (ret = invoke<Ts>(std::forward<F>(f), std::forward<V>(v)...),
+                  true)
+               : false) ||
+          ...))
+      throw std::bad_variant_access{};
+
+    return ret;
+  } else {
+    if (!((holds_alternative<Ts>(v...)
+               ? (invoke<Ts>(std::forward<F>(f), std::forward<V>(v)...), true)
+               : false) ||
+          ...))
+      throw std::bad_variant_access{};
+  }
+}
+
 template <class T> class VariableConceptT;
 template <class T> using alternative = std::unique_ptr<VariableConceptT<T>>;
 template <class... Ts> struct visit_impl {
@@ -96,6 +130,11 @@ template <class... Ts> struct visit_impl {
         std::forward<F>(f), std::forward<V1>(v1), std::forward<V2>(v2),
         std::tuple<alternative<typename Ts::first_type>...>(),
         std::tuple<alternative<typename Ts::second_type>...>());
+  }
+  // Arbitrary number of variants, but only same alternative for all supported.
+  template <class F, class... V> static decltype(auto) apply(F &&f, V &&... v) {
+    return invoke_active(std::forward<F>(f), std::tuple<alternative<Ts>...>(),
+                         std::forward<V>(v)...);
   }
 };
 template <class... Ts> auto visit(const std::tuple<Ts...> &) {
