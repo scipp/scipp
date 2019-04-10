@@ -73,30 +73,10 @@ private:
   Dimensions m_dimensions;
 };
 
-// Some types such as Dataset support `+` (effectively appending table rows),
-// but are not arithmetic.
-class AddableVariableConcept : public VariableConcept {
-public:
-  static constexpr const char *name = "addable";
-  using VariableConcept::VariableConcept;
-  virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
-};
-
-// This is also used for implementing operations for vector spaces, notably
-// Eigen::Vector3d.
-class ArithmeticVariableConcept : public AddableVariableConcept {
-public:
-  static constexpr const char *name = "arithmetic";
-  using AddableVariableConcept::AddableVariableConcept;
-  virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
-  virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
-  virtual VariableConcept &operator/=(const VariableConcept &other) = 0;
-};
-
-class FloatingPointVariableConcept : public ArithmeticVariableConcept {
+class FloatingPointVariableConcept : public VariableConcept {
 public:
   static constexpr const char *name = "floating-point";
-  using ArithmeticVariableConcept::ArithmeticVariableConcept;
+  using VariableConcept::VariableConcept;
   virtual void rebin(const VariableConcept &old, const Dim dim,
                      const VariableConcept &oldCoord,
                      const VariableConcept &newCoord) = 0;
@@ -104,28 +84,15 @@ public:
 
 template <class T> class ViewModel;
 template <class T> class VariableConceptT;
-template <class T> class AddableVariableConceptT;
-template <class T> class ArithmeticVariableConceptT;
 template <class T> class FloatingPointVariableConceptT;
 
 template <class T, typename Enable = void> struct concept {
   using type = VariableConcept;
   using typeT = VariableConceptT<T>;
 };
-template <class T>
-struct concept<T, std::enable_if_t<std::is_same<T, Dataset>::value>> {
-  using type = AddableVariableConcept;
-  using typeT = AddableVariableConceptT<T>;
-};
 template <class T> struct is_vector_space : std::false_type {};
 template <class T, int Rows>
 struct is_vector_space<Eigen::Matrix<T, Rows, 1>> : std::true_type {};
-template <class T>
-struct concept<T, std::enable_if_t<std::is_integral<T>::value ||
-                                   is_vector_space<T>::value>> {
-  using type = ArithmeticVariableConcept;
-  using typeT = ArithmeticVariableConceptT<T>;
-};
 template <class T>
 struct concept<T, std::enable_if_t<std::is_floating_point<T>::value>> {
   using type = FloatingPointVariableConcept;
@@ -182,9 +149,6 @@ public:
   void copy(const VariableConcept &other, const Dim dim,
             const scipp::index offset, const scipp::index otherBegin,
             const scipp::index otherEnd) override;
-
-  template <template <class, class> class Op, class OtherT = T>
-  VariableConcept &apply(const VariableConcept &other);
 };
 
 namespace detail {

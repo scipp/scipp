@@ -32,14 +32,6 @@ template <class T, class C> auto &require(C &concept) {
   }
 }
 
-template <template <class, class> class Op, class T1, class T2>
-struct ArithmeticHelper {
-  template <class InputView, class OutputView>
-  static void apply(const OutputView &a, const InputView &b) {
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T1, T2>());
-  }
-};
-
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
@@ -143,63 +135,6 @@ template <typename T> struct RebinGeneralHelper {
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
 
-// For operations with vector spaces we may have operations between a scalar and
-// a vector, so we cannot use std::multiplies, which is available only for
-// arguments of matching types.
-template <class T1, class T2 = T1> struct plus {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
-    return lhs + rhs;
-  }
-};
-template <class T1, class T2 = T1> struct minus {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
-    return lhs - rhs;
-  }
-};
-template <class T1, class T2 = T1> struct multiplies {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
-    return lhs * rhs;
-  }
-};
-template <class T1, class T2 = T1> struct divides {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
-    return lhs / rhs;
-  }
-};
-
-template <class T> struct scalar_type { using type = T; };
-template <class T, int Rows> struct scalar_type<Eigen::Matrix<T, Rows, 1>> {
-  using type = T;
-};
-template <class T> using scalar_type_t = typename scalar_type<T>::type;
-
-template <class T> class AddableVariableConceptT : public VariableConceptT<T> {
-public:
-  using VariableConceptT<T>::VariableConceptT;
-
-  VariableConcept &operator+=(const VariableConcept &other) override {
-    return this->template apply<plus>(other);
-  }
-};
-
-template <class T>
-class ArithmeticVariableConceptT : public AddableVariableConceptT<T> {
-public:
-  using AddableVariableConceptT<T>::AddableVariableConceptT;
-
-  VariableConcept &operator-=(const VariableConcept &other) override {
-    return this->template apply<minus>(other);
-  }
-
-  VariableConcept &operator*=(const VariableConcept &other) override {
-    return this->template apply<multiplies, scalar_type_t<T>>(other);
-  }
-
-  VariableConcept &operator/=(const VariableConcept &other) override {
-    return this->template apply<divides, scalar_type_t<T>>(other);
-  }
-};
-
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
                            const Dimensions &toMatch) {
   if (edges.ndim() == 1)
@@ -209,9 +144,9 @@ bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
 }
 
 template <class T>
-class FloatingPointVariableConceptT : public ArithmeticVariableConceptT<T> {
+class FloatingPointVariableConceptT : public VariableConceptT<T> {
 public:
-  using ArithmeticVariableConceptT<T>::ArithmeticVariableConceptT;
+  using VariableConceptT<T>::VariableConceptT;
 
   void rebin(const VariableConcept &old, const Dim dim,
              const VariableConcept &oldCoord,
@@ -361,57 +296,6 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
       std::copy(otherView.begin(), otherView.end(), view.begin());
     }
   }
-}
-
-template <class T>
-template <template <class, class> class Op, class OtherT>
-VariableConcept &VariableConceptT<T>::apply(const VariableConcept &other) {
-  const auto &dims = this->dimensions();
-  try {
-    const auto &otherT = requireT<const VariableConceptT<OtherT>>(other);
-    if constexpr (std::is_same_v<T, OtherT>)
-      if (this->getView(dims).overlaps(otherT.getView(dims))) {
-        // If there is an overlap between lhs and rhs we copy the rhs before
-        // applying the operation.
-        const auto &data = otherT.getView(otherT.dimensions());
-        DataModel<Vector<OtherT>> copy(
-            other.dimensions(), Vector<OtherT>(data.begin(), data.end()));
-        return apply<Op, OtherT>(copy);
-      }
-
-    if (this->isContiguous() && dims.contains(other.dimensions())) {
-      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-        ArithmeticHelper<Op, T, OtherT>::apply(this->getSpan(),
-                                               otherT.getSpan());
-      } else {
-        ArithmeticHelper<Op, T, OtherT>::apply(this->getSpan(),
-                                               otherT.getView(dims));
-      }
-    } else if (dims.contains(other.dimensions())) {
-      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-        ArithmeticHelper<Op, T, OtherT>::apply(this->getView(dims),
-                                               otherT.getSpan());
-      } else {
-        ArithmeticHelper<Op, T, OtherT>::apply(this->getView(dims),
-                                               otherT.getView(dims));
-      }
-    } else {
-      // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-        ArithmeticHelper<Op, T, OtherT>::apply(
-            this->getView(other.dimensions()), otherT.getSpan());
-      } else {
-        ArithmeticHelper<Op, T, OtherT>::apply(
-            this->getView(other.dimensions()),
-            otherT.getView(other.dimensions()));
-      }
-    }
-  } catch (const std::bad_cast &) {
-    throw std::runtime_error("Cannot apply arithmetic operation to "
-                             "Variables: Underlying data types do not "
-                             "match.");
-  }
-  return *this;
 }
 
 /// Implementation of VariableConcept that holds data.
@@ -844,7 +728,10 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
-  require<ArithmeticVariableConcept>(variable.data()) *= other.data();
+  variable.template transform_in_place<
+      pair_self_t<double, float>,
+      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
+      [](auto &&a, auto &&b) { return a * b; }, other);
   return variable;
 }
 
