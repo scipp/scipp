@@ -7,8 +7,8 @@
 # Import numpy
 import numpy as np
 
-# Scippy imports
-from scippy import Dataset, Data, DatasetSlice, dimensionCoord, sqrt, units
+# Import scippy
+import scippy as sp
 
 # Plotly imports
 from IPython.display import display
@@ -35,7 +35,7 @@ def check_input(input_data, check_multiple_values=True):
     values = []
     ndims = []
     for var in input_data:
-        if var.is_data and (var.tag != Data.Variance):
+        if var.is_data and (var.tag != sp.Data.Variance):
             values.append(var)
             ndims.append(len(var.dimensions))
 
@@ -67,7 +67,7 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, filename=None,
             # tobeplotted is a dict that holds pairs of
             # [number_of_dimensions, DatasetSlice], or
             # [number_of_dimensions, [List of DatasetSlices]] in the case of
-            # 1d data.
+            # 1d sp.Data.
             # TODO: 0D data is currently ignored -> find a nice way of
             # displaying it?
             tobeplotted = dict()
@@ -148,15 +148,15 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 
     entries = []
     # Case of a single dataset
-    if (isinstance(input_data, Dataset)) or \
-       (isinstance(input_data, DatasetSlice)):
+    if (isinstance(input_data, sp.Dataset)) or \
+       (isinstance(input_data, sp.DatasetSlice)):
         entries.append(input_data)
     # Case of a list of datasets
     elif isinstance(input_data, list):
         # Go through the list items:
         for item in input_data:
-            if (isinstance(item, Dataset)) or \
-               (isinstance(item, DatasetSlice)):
+            if (isinstance(item, sp.Dataset)) or \
+               (isinstance(item, sp.DatasetSlice)):
                 entries.append(item)
             else:
                 raise RuntimeError("Bad data type in list input of plot_1d. "
@@ -178,7 +178,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         variances = dict()
         for var in item:
             key = var.name
-            if var.tag == Data.Variance:
+            if var.tag == sp.Data.Variance:
                 variances[key] = var
             elif var.is_data:
                 values[key] = var
@@ -186,7 +186,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         # variance. If they do, then use that as error bars.
         # Then go through the variances and check if there are some variances
         # that do not have an associate value; they are to be plotted as normal
-        # data.
+        # sp.Data.
         tobeplotted = []
         for key, val in values.items():
             if key in variances.keys():
@@ -228,7 +228,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 
             # Define x
             if axes_copy is None:
-                axes_copy = [dimensionCoord(v[0].dimensions.labels[0])]
+                axes_copy = [sp.dimensionCoord(v[0].dimensions.labels[0])]
             coord = item[axes_copy[0]]
             xdims = coordinate_dimensions(coord)
             nx = xdims.shape[0]
@@ -265,7 +265,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             if v[1] is not None:
                 trace["error_y"] = dict(
                     type='data',
-                    array=sqrt(v[1]).numpy,
+                    array=sp.sqrt(v[1]).numpy,
                     visible=True)
 
             data.append(trace)
@@ -325,7 +325,7 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
         if axes is None:
             dims = values[0].dimensions
             labs = dims.labels
-            axes = [dimensionCoord(label) for label in labs]
+            axes = [sp.dimensionCoord(label) for label in labs]
         else:
             axes = axes[-2:]
 
@@ -345,7 +345,7 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
         title = values[0].name
         if cbar["log"]:
             title = "log\u2081\u2080(" + title + ")"
-        if values[0].unit != units.dimensionless:
+        if values[0].unit != sp.units.dimensionless:
             title += " [{}]".format(values[0].unit)
 
         layout = dict(
@@ -367,17 +367,8 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
                 cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
             if cbar["max"] is None:
                 cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
-            imview = ImageViewer(
-                xe,
-                xc,
-                ye,
-                yc,
-                z,
-                resolution,
-                cbar,
-                plot_type,
-                title,
-                contours)
+            imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar,
+                                 plot_type, title, contours)
             for key, val in layout.items():
                 imview.fig.layout[key] = val
             if filename is not None:
@@ -415,18 +406,8 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
 
 class ImageViewer:
 
-    def __init__(
-            self,
-            xe,
-            xc,
-            ye,
-            yc,
-            z,
-            resolution,
-            cb,
-            plot_type,
-            title,
-            contours):
+    def __init__(self, xe, xc, ye, yc, z, resolution, cb, plot_type, title,
+                 contours):
 
         self.xe = xe
         self.xc = xc
@@ -588,7 +569,7 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True, filename=None):
         if axes is None:
             dims = values[0].dimensions
             labs = dims.labels
-            axes = [dimensionCoord(label) for label in labs]
+            axes = [sp.dimensionCoord(label) for label in labs]
 
         # Get coordinates axes and dimensions
         xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
@@ -602,7 +583,8 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True, filename=None):
         # Check if we need to add variances to dataset list for collapse plot
         if not plot:
             for var in input_data:
-                if (var.tag == Data.Variance) and (var.name == values[0].name):
+                if (var.tag == sp.Data.Variance) and \
+                   (var.name == values[0].name):
                     e = var.numpy
 
         if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
@@ -628,14 +610,14 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True, filename=None):
                     adict["x"] = 3
                     adict["y"] = 1
                 else:
-                    dset = Dataset()
+                    dset = sp.Dataset()
                     dset[axes[1]] = input_data[axes[1]]
                     dims = dset[axes[1]].dimensions
                     labs = dims.labels
                     key = values[0].name + "_{}".format(i)
-                    dset[Data.Value, key] = ([labs[0]], z[i, :])
+                    dset[sp.Data.Value, key] = ([labs[0]], z[i, :])
                     if e is not None:
-                        dset[Data.Variance, key] = ([labs[0]], e[i, :])
+                        dset[sp.Data.Variance, key] = ([labs[0]], e[i, :])
                     data.append(dset)
         elif dim == zlabs[1]:
             for i in range(len(xc)):
@@ -648,14 +630,14 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True, filename=None):
                     adict["x"] = 1
                     adict["y"] = 3
                 else:
-                    dset = Dataset()
+                    dset = sp.Dataset()
                     dset[axes[0]] = input_data[axes[0]]
                     dims = dset[axes[0]].dimensions
                     labs = dims.labels
                     key = values[0].name + "_{}".format(i)
-                    dset[Data.Value, key] = ([labs[0]], z[:, i])
+                    dset[sp.Data.Value, key] = ([labs[0]], z[:, i])
                     if e is not None:
-                        dset[Data.Variance, key] = ([labs[0]], e[:, i])
+                        dset[sp.Data.Variance, key] = ([labs[0]], e[:, i])
                     data.append(dset)
         else:
             raise RuntimeError("Something went wrong in plot_waterfall. The "
@@ -709,7 +691,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None,
         if axes is None:
             dims = value_list[0].dimensions
             labs = dims.labels
-            axes = [dimensionCoord(label) for label in labs]
+            axes = [sp.dimensionCoord(label) for label in labs]
 
         # Use the machinery in plot_image to make the layout
         data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
@@ -738,14 +720,8 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None,
 
 class SliceViewer:
 
-    def __init__(
-            self,
-            plotly_data,
-            plotly_layout,
-            input_data,
-            axes,
-            value_name,
-            cb):
+    def __init__(self, plotly_data, plotly_layout, input_data, axes,
+                 value_name, cb):
 
         # Make a copy of the input data
         self.input_data = input_data.copy()
@@ -841,7 +817,7 @@ class SliceViewer:
                 self.slider_x[idim][self.slider[idim].value])
             zarray = zarray[self.slider_dims[idim], self.slider[idim].value]
 
-        vslice = zarray[Data.Value, self.value_name]
+        vslice = zarray[sp.Data.Value, self.value_name]
         z = vslice.numpy
 
         # Check if dimensions of arrays agree, if not, plot the transpose
@@ -892,7 +868,7 @@ def axis_label(var):
         label = label.replace("Coord.", "")
     else:
         label = "{}".format(var.name)
-    if var.unit != units.dimensionless:
+    if var.unit != sp.units.dimensionless:
         label += " [{}]".format(var.unit)
     return label
 
