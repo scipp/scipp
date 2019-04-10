@@ -24,8 +24,9 @@ template <class... Ts> using pair_custom_t = typename pair_custom<Ts...>::type;
 
 template <class F, class Variant, class... Ts>
 decltype(auto) invoke_active(F &&f, Variant &&v, const std::tuple<Ts...> &) {
-  using Ret = decltype(
-      std::invoke(std::forward<F>(f), std::get<0>(std::forward<Variant>(v))));
+  using Ret = decltype(std::invoke(
+      std::forward<F>(f), std::get<std::tuple_element_t<0, std::tuple<Ts...>>>(
+                              std::forward<Variant>(v))));
 
   if constexpr (!std::is_same_v<void, Ret>) {
     Ret ret;

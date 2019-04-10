@@ -360,8 +360,12 @@ makeVariableConceptT(const Dimensions &dims, Vector<T> data) {
 }
 template std::unique_ptr<VariableConceptT<double>>
 makeVariableConceptT<double>(const Dimensions &);
+template std::unique_ptr<VariableConceptT<float>>
+makeVariableConceptT<float>(const Dimensions &);
 template std::unique_ptr<VariableConceptT<double>>
 makeVariableConceptT<double>(const Dimensions &, Vector<double>);
+template std::unique_ptr<VariableConceptT<float>>
+makeVariableConceptT<float>(const Dimensions &, Vector<float>);
 } // namespace detail
 
 /// Implementation of VariableConcept that represents a view onto data.
@@ -1139,24 +1143,12 @@ Variable mean(const Variable &var, const Dim dim) {
   return summed * Variable(Data::Value, {}, {scale});
 }
 
-namespace detail {
-template <class T> struct is_vector_space : std::false_type {};
-template <class T, int Rows>
-struct is_vector_space<Eigen::Matrix<T, Rows, 1>> : std::true_type {};
-struct norm {
-  template <class T> constexpr auto operator()(const T &x) const {
-    if constexpr (is_vector_space<T>::value)
-      return x.norm();
-    else
-      return abs(x);
-  }
-};
-} // namespace detail
+Variable abs(const Variable &var) {
+  return var.transform<double, float>([](const auto x) { return ::abs(x); });
+}
 
-/// Returns the element-wise absolute value (for scalars) or the norm (for
-/// vectors).
 Variable norm(const Variable &var) {
-  return var.transform<double, float, Eigen::Vector3d>(detail::norm());
+  return var.transform<Eigen::Vector3d>([](auto &&x) { return x.norm(); });
 }
 
 Variable sqrt(const Variable &var) {

@@ -576,10 +576,10 @@ TEST(Variable, mean) {
   EXPECT_TRUE(equals(meanY.get(Data::Value), {2.0, 3.0}));
 }
 
-TEST(Variable, norm_of_scalar) {
+TEST(Variable, abs_of_scalar) {
   Variable reference(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
   Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, -2.0, -3.0, 4.0});
-  EXPECT_EQ(norm(var), reference);
+  EXPECT_EQ(abs(var), reference);
 }
 
 TEST(Variable, norm_of_vector) {

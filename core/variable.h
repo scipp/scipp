@@ -866,6 +866,7 @@ Variable permute(const Variable &var, const Dim dim,
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
+Variable abs(const Variable &var);
 Variable norm(const Variable &var);
 // TODO add to dataset and python
 Variable sqrt(const Variable &var);
