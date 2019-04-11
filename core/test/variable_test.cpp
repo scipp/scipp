@@ -1287,33 +1287,34 @@ TEST(Variable, apply_binary_in_place_view_with_view) {
 }
 
 TEST(SparseVariable, create) {
-  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
-  EXPECT_TRUE(var.dimensions().sparse());
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  EXPECT_TRUE(var.isSparse());
+  EXPECT_EQ(var.sparseDim(), Dim::X);
   // Should we return the full volume here, i.e., accumulate the extents of all
   // the sparse subdata?
   EXPECT_EQ(var.size(), 2);
 }
 
 TEST(SparseVariable, DISABLED_dtype) {
-  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
   // Should we return double or the nested container type here?
   EXPECT_EQ(var.dtype(), dtype<double>);
 }
 
 TEST(SparseVariable, non_sparse_access_fail) {
-  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
   ASSERT_THROW(var.get(Data::Value), except::TypeError);
   ASSERT_THROW(var.span<double>(), except::TypeError);
 }
 
 TEST(SparseVariable, DISABLED_low_level_access) {
-  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
   // Need to decide whether we allow this direct access or not.
   ASSERT_THROW((var.span<sparse_container<double>>()), except::TypeError);
 }
 
 TEST(SparseVariable, access) {
-  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
   ASSERT_NO_THROW(var.sparseSpan<double>());
   auto data = var.sparseSpan<double>();
   ASSERT_EQ(data.size(), 2);
@@ -1322,7 +1323,32 @@ TEST(SparseVariable, access) {
 }
 
 TEST(SparseVariable, resize_sparse) {
-  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
   auto data = var.sparseSpan<double>();
   data[1] = {1, 2, 3};
+}
+
+TEST(SparseVariable, concatenate) {
+  const auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  const auto b = makeSparseVariable<double>(Data::Value, {Dim::Y, 3}, Dim::X);
+  auto var = concatenate(a, b, Dim::Y);
+  EXPECT_TRUE(var.isSparse());
+  EXPECT_EQ(var.sparseDim(), Dim::X);
+  EXPECT_EQ(var.size(), 5);
+}
+
+TEST(SparseVariable, slice) {
+  auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 4}, Dim::X);
+  auto data = var.sparseSpan<double>();
+  data[0] = {1, 2, 3};
+  data[1] = {1, 2};
+  data[2] = {1};
+  data[3] = {};
+  auto slice = var(Dim::Y, 1, 3);
+  EXPECT_TRUE(slice.isSparse());
+  EXPECT_EQ(slice.sparseDim(), Dim::X);
+  EXPECT_EQ(slice.size(), 2);
+  auto slice_data = slice.sparseSpan<double>();
+  EXPECT_TRUE(equals(slice_data[0], {1, 2}));
+  EXPECT_TRUE(equals(slice_data[1], {1}));
 }

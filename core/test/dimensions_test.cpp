@@ -154,6 +154,8 @@ TEST(SparseDimensions, sparse_must_be_inner) {
 
 TEST(SparseDimensions, create_initializer_list) {
   ASSERT_NO_THROW((Dimensions{{Dim::X, 2}, {Dim::Y, Extent::Sparse}}));
+  ASSERT_THROW((Dimensions{{Dim::Y, Extent::Sparse}, {Dim::X, 2}}),
+               except::SparseDimensionError);
 }
 
 TEST(SparseDimensions, nonSparseArea) {

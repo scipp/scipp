@@ -337,7 +337,7 @@ public:
   }
 
   VariableConceptHandle clone(const Dimensions &dims) const override {
-    return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
+    return std::make_unique<DataModel<T>>(dims, T(dims.nonSparseArea()));
   }
 
   bool isContiguous() const override { return true; }
@@ -520,16 +520,18 @@ Variable::Variable(const Variable &parent, VariableConceptHandle data)
 
 template <class T>
 Variable::Variable(const Tag tag, const units::Unit unit,
-                   const Dimensions &dimensions, T object)
-    : m_tag(tag), m_unit{unit},
+                   const Dimensions &dimensions, T object, const Dim sparseDim)
+    : m_tag(tag), m_sparseDim(sparseDim), m_unit{unit},
       m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
                                               std::move(object))) {}
 
 void Variable::setDimensions(const Dimensions &dimensions) {
-  if (dimensions.volume() == m_object->dimensions().volume()) {
-    if (dimensions != m_object->dimensions())
-      data().m_dimensions = dimensions;
-    return;
+  if (!(dimensions.sparse() || m_object->dimensions().sparse())) {
+    if (dimensions.volume() == m_object->dimensions().volume()) {
+      if (dimensions != m_object->dimensions())
+        data().m_dimensions = dimensions;
+      return;
+    }
   }
   m_object = m_object->clone(dimensions);
 }
@@ -544,9 +546,9 @@ template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
 }
 
 #define INSTANTIATE(...)                                                       \
-  template Variable::Variable(const Tag, const units::Unit,                    \
-                              const Dimensions &,                              \
-                              Vector<underlying_type_t<__VA_ARGS__>>);         \
+  template Variable::Variable(                                                 \
+      const Tag, const units::Unit, const Dimensions &,                        \
+      Vector<underlying_type_t<__VA_ARGS__>>, const Dim);                      \
   template Vector<underlying_type_t<__VA_ARGS__>>                              \
       &Variable::cast<__VA_ARGS__>();                                          \
   template const Vector<underlying_type_t<__VA_ARGS__>>                        \

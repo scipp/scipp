@@ -378,22 +378,13 @@ public:
   Variable(const ConstVariableSlice &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
 
-  template <class TagT> Variable(TagT tag, const Dimensions &dimensions) {
-    using Type = underlying_type_t<typename TagT::type>;
-    if (dimensions.sparse()) {
-      if constexpr (std::is_same_v<Type, double>)
-        *this = Variable(
-            tag, TagT::unit, std::move(dimensions),
-            Vector<sparse_container<Type>>(dimensions.nonSparseArea()));
-      else
-        throw std::runtime_error(
-            "Sparse dimensions for this dtype are not supported.");
-    } else {
-      *this = Variable(tag, TagT::unit, std::move(dimensions),
-                       Vector<Type>(dimensions.volume(),
-                                    detail::default_init<Type>::value()));
-    }
-  }
+  template <class TagT>
+  Variable(TagT tag, const Dimensions &dimensions)
+      : Variable(tag, TagT::unit, std::move(dimensions),
+                 Vector<underlying_type_t<typename TagT::type>>(
+                     dimensions.volume(),
+                     detail::default_init<
+                         underlying_type_t<typename TagT::type>>::value())) {}
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions,
            Vector<underlying_type_t<typename TagT::type>> object)
@@ -420,7 +411,7 @@ public:
 
   template <class T>
   Variable(const Tag tag, const units::Unit unit, const Dimensions &dimensions,
-           T object);
+           T object, const Dim sparseDim = Dim::Invalid);
 
   const std::string &name() const && = delete;
   const std::string &name() const & {
@@ -503,6 +494,9 @@ public:
                         std::tuple_size<detail::DataDef::tags>::value;
   }
   bool isData() const { return !isCoord() && !isAttr(); }
+
+  bool isSparse() const noexcept { return m_sparseDim != Dim::Invalid; }
+  Dim sparseDim() const { return m_sparseDim; }
 
   template <class TagT> auto get(const TagT t) const {
     // For now we support only variables that are a std::vector. In principle we
@@ -587,6 +581,7 @@ private:
   Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
   Tag m_tag;
+  Dim m_sparseDim{Dim::Invalid};
   units::Unit m_unit;
   deep_ptr<std::string> m_name;
   VariableConceptHandle m_object;
@@ -598,6 +593,15 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions) {
                   Vector<underlying_type_t<T>>(
                       dimensions.volume(),
                       detail::default_init<underlying_type_t<T>>::value()));
+}
+
+template <class T>
+Variable makeSparseVariable(Tag tag, const Dimensions &dimensions,
+                            const Dim sparseDim) {
+  return Variable(
+      tag, defaultUnit(tag), std::move(dimensions),
+      Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()),
+      sparseDim);
 }
 
 template <class T, class T2>
@@ -707,6 +711,9 @@ public:
   bool isAttr() const { return m_variable->isAttr(); }
   bool isData() const { return m_variable->isData(); }
 
+  bool isSparse() const noexcept { return m_variable->isSparse(); }
+  Dim sparseDim() const { return m_variable->sparseDim(); }
+
   // Note: This return a proxy object (a VariableView) that does reference
   // members owner by *this. Therefore we can support this even for
   // temporaries and we do not need to delete the rvalue overload, unlike for
@@ -719,6 +726,9 @@ public:
   }
 
   template <class T> auto span() const { return cast<T>(); }
+  template <class T> auto sparseSpan() const {
+    return cast<sparse_container<T>>();
+  }
 
   bool operator==(const Variable &other) const;
   bool operator==(const ConstVariableSlice &other) const;
@@ -797,6 +807,9 @@ public:
   }
 
   template <class T> auto span() const { return cast<T>(); }
+  template <class T> auto sparseSpan() const {
+    return cast<sparse_container<T>>();
+  }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in
