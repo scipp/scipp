@@ -75,6 +75,25 @@ public:
     return volume;
   }
 
+  /// Returns the volume, excluding a potentially sparse dimensions.
+  ///
+  /// This is named `area` since it typically covers one dimension less that the
+  /// volume would. Example: Consider data shaped as follows:
+  ///
+  /// xxxxxx
+  /// xxx
+  /// xxxxx
+  ///
+  /// The return value would be 3 in this case.
+  scipp::index nonSparseArea() const noexcept {
+    if (!sparse())
+      return volume();
+    scipp::index volume{1};
+    for (int32_t dim = 0; dim < ndim() - 1; ++dim)
+      volume *= m_shape[dim];
+    return volume;
+  }
+
   scipp::span<const scipp::index> shape() const noexcept {
     return {m_shape, m_shape + m_ndim};
   }

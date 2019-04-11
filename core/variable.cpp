@@ -274,7 +274,10 @@ public:
   DataModel(const Dimensions &dimensions, T model)
       : conceptT_t<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
-    if (this->dimensions().volume() != scipp::size(m_model))
+    // For now we assume that sparse data is stored in nested containers, i.e.,
+    // we have a vector of vectors. If we were to support a linearized layout
+    // this check would need to be different.
+    if (this->dimensions().nonSparseArea() != scipp::size(m_model))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }

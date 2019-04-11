@@ -375,13 +375,22 @@ public:
   Variable(const ConstVariableSlice &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
 
-  template <class TagT>
-  Variable(TagT tag, const Dimensions &dimensions)
-      : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<underlying_type_t<typename TagT::type>>(
-                     dimensions.volume(),
-                     detail::default_init<
-                         underlying_type_t<typename TagT::type>>::value())) {}
+  template <class TagT> Variable(TagT tag, const Dimensions &dimensions) {
+    using Type = underlying_type_t<typename TagT::type>;
+    if (dimensions.sparse()) {
+      if constexpr (std::is_same_v<Type, double>)
+        *this = Variable(tag, TagT::unit, std::move(dimensions),
+                         Vector<boost::container::small_vector<Type, 8>>(
+                             dimensions.nonSparseArea()));
+      else
+        throw std::runtime_error(
+            "Sparse dimensions for this dtype are not supported.");
+    } else {
+      *this = Variable(tag, TagT::unit, std::move(dimensions),
+                       Vector<Type>(dimensions.volume(),
+                                    detail::default_init<Type>::value()));
+    }
+  }
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions,
            Vector<underlying_type_t<typename TagT::type>> object)

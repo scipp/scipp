@@ -144,8 +144,21 @@ TEST(SparseDimensions, sparse_must_be_inner) {
   Dimensions dims(Dim::X, 2);
   ASSERT_THROW(dims.add(Dim::Y, Extent::Sparse), except::SparseDimensionError);
   ASSERT_NO_THROW(dims.addInner(Dim::Y, Extent::Sparse));
+  EXPECT_TRUE(dims.sparse());
   ASSERT_THROW(dims.volume(), except::SparseDimensionError);
   ASSERT_THROW(dims.addInner(Dim::Z, 2), except::SparseDimensionError);
   ASSERT_NO_THROW(dims.add(Dim::Z, 2));
+  EXPECT_TRUE(dims.sparse());
   ASSERT_THROW(dims.volume(), except::SparseDimensionError);
+}
+
+TEST(SparseDimensions, create_initializer_list) {
+  ASSERT_NO_THROW((Dimensions{{Dim::X, 2}, {Dim::Y, Extent::Sparse}}));
+}
+
+TEST(SparseDimensions, nonSparseArea) {
+  Dimensions dense{{Dim::X, 2}, {Dim::Y, 3}};
+  EXPECT_EQ(dense.nonSparseArea(), 6);
+  Dimensions sparse{{Dim::X, 2}, {Dim::Y, Extent::Sparse}};
+  EXPECT_EQ(sparse.nonSparseArea(), 2);
 }

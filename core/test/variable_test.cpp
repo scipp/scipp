@@ -1285,3 +1285,7 @@ TEST(Variable, apply_binary_in_place_view_with_view) {
       [](const auto x, const auto y) { return x + y; }, b(Dim::Y, 1));
   EXPECT_TRUE(equals(a.span<double>(), {1.1, 5.5}));
 }
+
+TEST(SparseVariable, create) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+}

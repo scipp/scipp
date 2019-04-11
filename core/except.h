@@ -65,7 +65,8 @@ struct DimensionLengthError : public DimensionError {
 };
 
 struct SparseDimensionError : public DimensionError {
-  SparseDimensionError() : DimensionError("") {}
+  SparseDimensionError()
+      : DimensionError("Unsupported operation for sparse dimensions.") {}
 };
 
 struct DatasetError : public std::runtime_error {
