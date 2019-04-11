@@ -16,7 +16,9 @@
 
 namespace scipp::core {
 
-enum Extent : scipp::index { Sparse = -1 };
+enum Extent : scipp::index {
+  Sparse = std::numeric_limits<scipp::index>::max()
+};
 
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
@@ -36,19 +38,8 @@ public:
       add(labels[i], shape[i]);
   }
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
-    // TODO Check for duplicate dimension.
-    if (dims.size() > 6)
-      throw std::runtime_error("At most 6 dimensions are supported.");
-    m_ndim = static_cast<int32_t>(dims.size());
-    auto dim = dims.begin();
-    for (scipp::index i = 0; i < m_ndim; ++i, ++dim) {
-      m_dims[i] = dim->first;
-      if (m_dims[i] == Dim::Invalid)
-        throw std::runtime_error("Dim::Invalid is not a valid dimension.");
-      m_shape[i] = dim->second;
-      if (m_shape[i] < 0)
-        throw std::runtime_error("Dimension extent cannot be negative.");
-    }
+    for (const auto[label, size] : dims)
+      addInner(label, size);
   }
 
   bool operator==(const Dimensions &other) const noexcept {
@@ -68,7 +59,7 @@ public:
 
   bool empty() const noexcept { return m_ndim == 0; }
   bool sparse() const noexcept {
-    return m_ndim == 0 ? false : m_shape[m_ndim - 1] < 0;
+    return m_ndim == 0 ? false : m_shape[m_ndim - 1] == Extent::Sparse;
   }
 
   int32_t ndim() const noexcept { return m_ndim; }
@@ -138,7 +129,7 @@ private:
   // boost::container::small_vector<std::pair<Dim, scipp::index>, 2> m_dims;
   // Support at most 6 dimensions, should be sufficient?
   // 6*8 Byte = 48 Byte
-  scipp::index m_shape[6]{-2, -2, -2, -2, -2, -2};
+  scipp::index m_shape[6]{-1, -1, -1, -1, -1, -1};
   int32_t m_ndim{0};
   Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};

@@ -84,7 +84,7 @@ void Dimensions::erase(const Dim label) {
     m_dims[i] = m_dims[i + 1];
   }
   --m_ndim;
-  m_shape[m_ndim] = -2;
+  m_shape[m_ndim] = -1;
   m_dims[m_ndim] = Dim::Invalid;
 }
 
@@ -110,6 +110,10 @@ void Dimensions::add(const Dim label, const scipp::index size) {
 void Dimensions::addInner(const Dim label, const scipp::index size) {
   if (sparse())
     throw except::SparseDimensionError();
+  if (label == Dim::Invalid)
+    throw std::runtime_error("Dim::Invalid is not a valid dimension.");
+  if (size < 0)
+    throw std::runtime_error("Dimension extent cannot be negative.");
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)
