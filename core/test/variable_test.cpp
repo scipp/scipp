@@ -26,6 +26,15 @@ TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(Variable(Data::Value, Dimensions(Dim::Tof, 3), 2));
 }
 
+TEST(Variable, DISABLED_move) {
+  Variable var(Data::Value, {Dim::X, 2});
+  Variable moved(std::move(var));
+  // We need to define the behavior on move. Currently most methods will just
+  // segfault, and we have no way of telling whether a Variable is in this
+  // state.
+  EXPECT_NE(var, moved);
+}
+
 TEST(Variable, makeVariable_custom_type) {
   auto doubles = makeVariable<double>(Data::Value, {});
   auto floats = makeVariable<float>(Data::Value, {});
@@ -1295,10 +1304,13 @@ TEST(SparseVariable, create) {
   EXPECT_EQ(var.size(), 2);
 }
 
-TEST(SparseVariable, DISABLED_dtype) {
+TEST(SparseVariable, dtype) {
   const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
-  // Should we return double or the nested container type here?
+  // It is not clear that this is the best way of handling things.
+  // Variable::dtype() makes sense like this, but it is not so clear for
+  // VariableConcept::dtype().
   EXPECT_EQ(var.dtype(), dtype<double>);
+  EXPECT_NE(var.data().dtype(), dtype<double>);
 }
 
 TEST(SparseVariable, non_sparse_access_fail) {
@@ -1326,6 +1338,49 @@ TEST(SparseVariable, resize_sparse) {
   auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
   auto data = var.sparseSpan<double>();
   data[1] = {1, 2, 3};
+}
+
+TEST(SparseVariable, comparison) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+  auto b = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto b_ = b.sparseSpan<double>();
+  b_[0] = {1, 2, 3};
+  b_[1] = {1, 2};
+  auto c = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto c_ = c.sparseSpan<double>();
+  c_[0] = {1, 3};
+  c_[1] = {};
+
+  EXPECT_EQ(a, a);
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(b, a);
+
+  EXPECT_NE(a, c);
+  EXPECT_NE(c, a);
+}
+
+TEST(SparseVariable, copy) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+
+  Variable copy(a);
+  EXPECT_EQ(a, copy);
+}
+
+TEST(SparseVariable, move) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+
+  Variable copy(a);
+  Variable moved(std::move(copy));
+  EXPECT_EQ(a, moved);
 }
 
 TEST(SparseVariable, concatenate) {

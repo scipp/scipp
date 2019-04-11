@@ -573,13 +573,10 @@ INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(Eigen::Vector3d)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
-  // Compare even before pointer comparison since data may be shared even if
-  // names differ.
   if (a.name() != b.name())
     return false;
   if (a.unit() != b.unit())
     return false;
-  // Deep comparison
   if (a.tag() != b.tag())
     return false;
   if (!(a.dimensions() == b.dimensions()))

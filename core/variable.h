@@ -5,6 +5,7 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <exception>
 #include <numeric>
 #include <string>
 #include <type_traits>
@@ -23,6 +24,9 @@ namespace scipp::core {
 
 template <class T>
 using sparse_container = boost::container::small_vector<T, 8>;
+template <class T> struct is_sparse_container : std::false_type {};
+template <class T>
+struct is_sparse_container<sparse_container<T>> : std::true_type {};
 
 class Variable;
 template <class... Known> class VariableConceptHandle_impl;
@@ -43,7 +47,7 @@ public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
 
-  virtual DType dtype() const noexcept = 0;
+  virtual DType dtype(bool sparse = false) const noexcept = 0;
 
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle clone(const Dimensions &dims) const = 0;
@@ -99,7 +103,13 @@ public:
 
   VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
-  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
+  DType dtype(bool sparse = false) const noexcept override {
+    if (!sparse)
+      return scipp::core::dtype<T>;
+    if constexpr (is_sparse_container<T>::value)
+      return scipp::core::dtype<typename T::value_type>;
+    std::terminate();
+  }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
 
   virtual scipp::span<T> getSpan() = 0;
@@ -484,7 +494,7 @@ public:
   VariableConceptHandle &dataHandle() && = delete;
   VariableConceptHandle &dataHandle() & { return m_object; }
 
-  DType dtype() const noexcept { return data().dtype(); }
+  DType dtype() const noexcept { return data().dtype(isSparse()); }
   Tag tag() const { return m_tag; }
   void setTag(const Tag tag) { m_tag = tag; }
   bool isCoord() const {
