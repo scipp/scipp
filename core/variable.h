@@ -21,12 +21,16 @@
 
 namespace scipp::core {
 
+template <class T>
+using sparse_container = boost::container::small_vector<T, 8>;
+
 class Variable;
 template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 using VariableConceptHandle =
-    VariableConceptHandle_impl<double, float, int64_t, Eigen::Vector3d>;
+    VariableConceptHandle_impl<double, float, int64_t, Eigen::Vector3d,
+                               sparse_container<double>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableSlice. This is using so-called
@@ -362,9 +366,6 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 };
 } // namespace detail
 
-template <class T>
-using sparse_container = boost::container::small_vector<T, 8>;
-
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
 /// dimensions.
@@ -555,6 +556,13 @@ public:
     // TODO handle units
     dataHandle().transform_in_place<TypePairs...>(op, other.dataHandle());
     return *this;
+  }
+
+  template <class... TypePairs, class Op, class Var>
+  Variable transform(Op op, const Var &other) const {
+    auto copy(*this);
+    copy.transform_in_place<TypePairs...>(op, other);
+    return copy;
   }
 
   template <class... Ts, class Op, class... Vars>

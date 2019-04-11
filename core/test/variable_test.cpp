@@ -1337,6 +1337,25 @@ TEST(SparseVariable, concatenate) {
   EXPECT_EQ(var.size(), 5);
 }
 
+TEST(SparseVariable, concatenate_along_sparse_dimension) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+  auto b = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto b_ = b.sparseSpan<double>();
+  b_[0] = {1, 3};
+  b_[1] = {};
+
+  auto var = concatenate(a, b, Dim::X);
+  EXPECT_TRUE(var.isSparse());
+  EXPECT_EQ(var.sparseDim(), Dim::X);
+  EXPECT_EQ(var.size(), 2);
+  auto data = var.sparseSpan<double>();
+  EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
+  EXPECT_TRUE(equals(data[1], {1, 2}));
+}
+
 TEST(SparseVariable, slice) {
   auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 4}, Dim::X);
   auto data = var.sparseSpan<double>();

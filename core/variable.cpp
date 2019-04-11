@@ -978,6 +978,16 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   if (a1.name() != a2.name())
     throw std::runtime_error(
         "Cannot concatenate Variables: Names do not match.");
+
+  if (a1.sparseDim() == dim && a2.sparseDim() == dim) {
+    return a1.transform<pair_self_t<sparse_container<double>>>(
+        [](auto a, const auto &b) {
+          a.insert(a.end(), b.begin(), b.end());
+          return a;
+        },
+        a2);
+  }
+
   const auto &dims1 = a1.dimensions();
   const auto &dims2 = a2.dimensions();
   // TODO Many things in this function should be refactored and moved in class
