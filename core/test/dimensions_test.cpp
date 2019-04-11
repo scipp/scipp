@@ -128,3 +128,24 @@ TEST(Dimensions, isContiguousIn) {
   EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::X, 4}}).isContiguousIn(parent));
   EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}}).isContiguousIn(parent));
 }
+
+TEST(SparseDimensions, sparse) {
+  Dimensions dims;
+  EXPECT_FALSE(dims.sparse());
+}
+
+TEST(SparseDimensions, empty_add) {
+  Dimensions dims;
+  ASSERT_NO_THROW(dims.add(Dim::X, Extent::Sparse));
+  ASSERT_THROW(dims.volume(), except::SparseDimensionError);
+}
+
+TEST(SparseDimensions, sparse_must_be_inner) {
+  Dimensions dims(Dim::X, 2);
+  ASSERT_THROW(dims.add(Dim::Y, Extent::Sparse), except::SparseDimensionError);
+  ASSERT_NO_THROW(dims.addInner(Dim::Y, Extent::Sparse));
+  ASSERT_THROW(dims.volume(), except::SparseDimensionError);
+  ASSERT_THROW(dims.addInner(Dim::Z, 2), except::SparseDimensionError);
+  ASSERT_NO_THROW(dims.add(Dim::Z, 2));
+  ASSERT_THROW(dims.volume(), except::SparseDimensionError);
+}

@@ -16,6 +16,8 @@
 
 namespace scipp::core {
 
+enum Extent : scipp::index { Sparse = -1 };
+
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
 /// We should follow the numpy convention: First dimension is outer dimension,
@@ -65,12 +67,17 @@ public:
   }
 
   bool empty() const noexcept { return m_ndim == 0; }
+  bool sparse() const noexcept {
+    return m_ndim == 0 ? false : m_shape[m_ndim - 1] < 0;
+  }
 
   int32_t ndim() const noexcept { return m_ndim; }
   // TODO Remove in favor of the new ndim?
   int32_t count() const noexcept { return m_ndim; }
 
-  scipp::index volume() const noexcept {
+  scipp::index volume() const {
+    if (sparse())
+      throw except::SparseDimensionError();
     scipp::index volume{1};
     for (int32_t dim = 0; dim < ndim(); ++dim)
       volume *= m_shape[dim];
@@ -131,7 +138,7 @@ private:
   // boost::container::small_vector<std::pair<Dim, scipp::index>, 2> m_dims;
   // Support at most 6 dimensions, should be sufficient?
   // 6*8 Byte = 48 Byte
-  scipp::index m_shape[6]{-1, -1, -1, -1, -1, -1};
+  scipp::index m_shape[6]{-2, -2, -2, -2, -2, -2};
   int32_t m_ndim{0};
   Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};

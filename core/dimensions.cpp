@@ -84,12 +84,15 @@ void Dimensions::erase(const Dim label) {
     m_dims[i] = m_dims[i + 1];
   }
   --m_ndim;
-  m_shape[m_ndim] = -1;
+  m_shape[m_ndim] = -2;
   m_dims[m_ndim] = Dim::Invalid;
 }
 
 /// Add a new dimension, which will be the outermost dimension.
 void Dimensions::add(const Dim label, const scipp::index size) {
+  if (!empty() && size == Extent::Sparse)
+    throw except::SparseDimensionError();
+
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)
@@ -105,6 +108,8 @@ void Dimensions::add(const Dim label, const scipp::index size) {
 
 /// Add a new dimension, which will be the innermost dimension.
 void Dimensions::addInner(const Dim label, const scipp::index size) {
+  if (sparse())
+    throw except::SparseDimensionError();
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)
