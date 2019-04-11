@@ -1288,4 +1288,41 @@ TEST(Variable, apply_binary_in_place_view_with_view) {
 
 TEST(SparseVariable, create) {
   Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  EXPECT_TRUE(var.dimensions().sparse());
+  // Should we return the full volume here, i.e., accumulate the extents of all
+  // the sparse subdata?
+  EXPECT_EQ(var.size(), 2);
+}
+
+TEST(SparseVariable, DISABLED_dtype) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  // Should we return double or the nested container type here?
+  EXPECT_EQ(var.dtype(), dtype<double>);
+}
+
+TEST(SparseVariable, non_sparse_access_fail) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  ASSERT_THROW(var.get(Data::Value), except::TypeError);
+  ASSERT_THROW(var.span<double>(), except::TypeError);
+}
+
+TEST(SparseVariable, DISABLED_low_level_access) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  // Need to decide whether we allow this direct access or not.
+  ASSERT_THROW((var.span<sparse_container<double>>()), except::TypeError);
+}
+
+TEST(SparseVariable, access) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  ASSERT_NO_THROW(var.sparseSpan<double>());
+  auto data = var.sparseSpan<double>();
+  ASSERT_EQ(data.size(), 2);
+  EXPECT_TRUE(data[0].empty());
+  EXPECT_TRUE(data[1].empty());
+}
+
+TEST(SparseVariable, resize_sparse) {
+  Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, Extent::Sparse}});
+  auto data = var.sparseSpan<double>();
+  data[1] = {1, 2, 3};
 }

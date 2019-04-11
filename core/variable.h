@@ -362,6 +362,9 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 };
 } // namespace detail
 
+template <class T>
+using sparse_container = boost::container::small_vector<T, 8>;
+
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
 /// dimensions.
@@ -379,9 +382,9 @@ public:
     using Type = underlying_type_t<typename TagT::type>;
     if (dimensions.sparse()) {
       if constexpr (std::is_same_v<Type, double>)
-        *this = Variable(tag, TagT::unit, std::move(dimensions),
-                         Vector<boost::container::small_vector<Type, 8>>(
-                             dimensions.nonSparseArea()));
+        *this = Variable(
+            tag, TagT::unit, std::move(dimensions),
+            Vector<sparse_container<Type>>(dimensions.nonSparseArea()));
       else
         throw std::runtime_error(
             "Sparse dimensions for this dtype are not supported.");
@@ -518,6 +521,12 @@ public:
 
   template <class T> auto span() const { return scipp::span(cast<T>()); }
   template <class T> auto span() { return scipp::span(cast<T>()); }
+  template <class T> auto sparseSpan() const {
+    return scipp::span(cast<sparse_container<T>>());
+  }
+  template <class T> auto sparseSpan() {
+    return scipp::span(cast<sparse_container<T>>());
+  }
 
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
