@@ -1,4 +1,6 @@
-if: type = pull_request
+branches:
+  only:
+    - master
 
 language: cpp
 dist: xenial
