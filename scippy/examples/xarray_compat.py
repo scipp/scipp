@@ -4,15 +4,15 @@
 # Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 # National Laboratory, and European Spallation Source ERIC.
 import xarray as xr
-from . import scippy as ds
+
 
 def name(x):
     return x.__repr__().split('.')[1]
 
+
 def as_xarray(dataset):
     d = xr.Dataset()
-    data = dict()
-    coords = dict()
+
     def xarray_name(var):
         if len(var.name) == 0:
             return name(var.tag)
@@ -23,8 +23,9 @@ def as_xarray(dataset):
         labels = dims.labels
         if not var.is_coord:
             try:
-                d[xarray_name(var)] = ([name(dim) for dim in labels], var.numpy)
-            except:
+                d[xarray_name(var)] = ([name(dim)
+                                        for dim in labels], var.numpy)
+            except BaseException:
                 d[xarray_name(var)] = ([name(dim) for dim in labels], var.data)
     for var in dataset:
         dims = var.dimensions
@@ -35,13 +36,18 @@ def as_xarray(dataset):
                 if dims.size(label) != d.dims[name(label)]:
                     edges = True
             if edges:
-                d.coords[xarray_name(var)] = ([name(dim) for dim in labels], 0.5*(var.numpy[:-1] + var.numpy[1:]))
+                d.coords[xarray_name(var)] = ([name(dim) for dim in labels],
+                                              0.5 * (var.numpy[:-1] +
+                                              var.numpy[1:]))
             else:
                 try:
-                    d.coords[xarray_name(var)] = ([name(dim) for dim in labels], var.numpy)
-                except:
+                    d.coords[xarray_name(var)] = ([name(dim) for dim
+                                                  in labels], var.numpy)
+                except BaseException:
                     try:
-                        d.coords[xarray_name(var)] = ([name(dim) for dim in labels], var.data)
-                    except:
-                        print("Error converting {} to xarray, dropping.".format(var))
+                        d.coords[xarray_name(var)] = (
+                            [name(dim) for dim in labels], var.data)
+                    except BaseException:
+                        print("Error converting {} to xarray, "
+                              "dropping.".format(var))
     return d

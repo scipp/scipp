@@ -26,8 +26,7 @@ std::vector<std::string> asStrings(const Variable &variable) {
 
 TEST(TableWorkspace, basics) {
   Dataset table;
-  table.insert(Coord::Row, {Dim::Row, 3},
-               Vector<std::string>{"a", "b", "c"});
+  table.insert(Coord::Row, {Dim::Row, 3}, Vector<std::string>{"a", "b", "c"});
   table.insert(Data::Value, "", {Dim::Row, 3}, {1.0, -2.0, 3.0});
   table.insert(Data::DeprecatedString, "", {Dim::Row, 3}, 3);
 

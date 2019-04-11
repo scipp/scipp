@@ -3,7 +3,8 @@
 # @author Simon Heybrock
 # Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 # National Laboratory, and European Spallation Source ERIC.
-from scippy import Dataset, DatasetSlice, Variable, VariableSlice
+
+import scippy as sp
 from xml.etree import ElementTree as et
 from collections import defaultdict
 
@@ -13,7 +14,7 @@ style_border_right = {'style': 'border: 1px solid black; text-align:right'}
 
 
 def value_to_string(val):
-    if (type(val) is not float) or (val == 0):
+    if (not isinstance(val, float)) or (val == 0):
         text = str(val)
     elif abs(val) >= 1.0e4 or abs(val) <= 1.0e-4:
         text = "{:.3e}".format(val)
@@ -35,7 +36,7 @@ def table_ds(dataset):
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
-    if type(dataset) is Dataset:
+    if isinstance(dataset, sp.Dataset):
         headline.text = 'Dataset:'
     else:
         headline.text = 'DatasetSlice:'
@@ -50,11 +51,13 @@ def table_ds(dataset):
             elif var.is_data:
                 datum0d[name].append(var)
 
-    coord_names = list(dict.fromkeys([var.name for var in dataset if var.is_coord]))
+    coord_names = list(dict.fromkeys(
+        [var.name for var in dataset if var.is_coord]))
     coords0d = defaultdict(list)
     coords1d = defaultdict(list)
     for name in coord_names:
-        for var in [var for var in dataset if var.is_coord and var.name == name]:
+        for var in [
+                var for var in dataset if var.is_coord and var.name == name]:
             if len(var.dimensions) == 1:
                 coords1d[name].append(var)
             else:
@@ -72,7 +75,8 @@ def table_ds(dataset):
 
         for key, val in coords0d.items():
             append_with_text(tr_name, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
+                             attrib=dict({'colspan': str(len(val))}.items() |
+                                         style_border_center.items()))
             for var in val:
                 append_with_text(tr_tag, 'th', str(var.tag))
                 append_with_text(tr_val, 'th', str(var.data[0]))
@@ -80,7 +84,8 @@ def table_ds(dataset):
 
         for key, val in datum0d.items():
             append_with_text(tr_name, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
+                             attrib=dict({'colspan': str(len(val))}.items() |
+                                         style_border_center.items()))
             for var in val:
                 append_with_text(tr_tag, 'th', str(var.tag))
                 append_with_text(tr_val, 'th', str(var.data[0]))
@@ -102,14 +107,15 @@ def table_ds(dataset):
         cap.text = '1D Variables:'
         tr = et.SubElement(tab, 'tr')
 
-
         # Aligned names
         for key, val in coords1d.items():
             append_with_text(tr, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
+                             attrib=dict({'colspan': str(len(val))}.items() |
+                                         style_border_center.items()))
         for key, val in datum1d.items():
             append_with_text(tr, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() | style_border_center.items()))
+                             attrib=dict({'colspan': str(len(val))}.items() |
+                                         style_border_center.items()))
 
         length = min([len(x) for x in datas] + [len(x) for x in coords])
 
@@ -118,23 +124,32 @@ def table_ds(dataset):
         tr = et.SubElement(tab, 'tr')
 
         for x in coords:
-            append_with_text(tr, 'th', '{}'.format(x.tag, x.name), style_border_center)
+            append_with_text(
+                tr, 'th', '{}'.format(
+                    x.tag, x.name), style_border_center)
 
         for x in datas:
-            append_with_text(tr, 'th', '{}'.format(x.tag, x.name), style_border_center)
+            append_with_text(
+                tr, 'th', '{}'.format(
+                    x.tag, x.name), style_border_center)
 
         tr = et.SubElement(tab, 'tr')
         for x in coords:
-            append_with_text(tr, 'th', '[{}]'.format(x.unit), style_border_center)
+            append_with_text(
+                tr, 'th', '[{}]'.format(
+                    x.unit), style_border_center)
         for x in datas:
-            append_with_text(tr, 'th', '[{}]'.format(x.unit), style_border_center)
+            append_with_text(
+                tr, 'th', '[{}]'.format(
+                    x.unit), style_border_center)
 
         for i in range(length):
             tr = et.SubElement(tab, 'tr')
             for x, h in zip(coords, is_hist):
                 text = value_to_string(x.data[i])
                 if h:
-                    text = '[{}; {}]'.format(text, value_to_string(x.data[i+1]))
+                    text = '[{}; {}]'.format(
+                        text, value_to_string(x.data[i + 1]))
                 append_with_text(tr, 'th', text)
             for x in datas:
                 append_with_text(tr, 'th', value_to_string(x.data[i]))
@@ -149,7 +164,7 @@ def table_var(variable):
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
-    if type(variable) is Variable:
+    if isinstance(variable, sp.Variable):
         headline.text = 'Variable:'
     else:
         headline.text = 'VariableSlice:'
@@ -174,10 +189,9 @@ def table_var(variable):
 
 def table(some):
     tp = type(some)
-    if tp is Dataset or tp is DatasetSlice:
+    if tp is sp.Dataset or tp is sp.DatasetSlice:
         table_ds(some)
-    elif tp is Variable or tp is VariableSlice:
+    elif tp is sp.Variable or tp is sp.VariableSlice:
         table_var(some)
     else:
         raise RuntimeError("Type {} is not supported".format(tp))
-
