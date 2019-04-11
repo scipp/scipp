@@ -274,10 +274,7 @@ public:
   DataModel(const Dimensions &dimensions, T model)
       : conceptT_t<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
-    // For now we assume that sparse data is stored in nested containers, i.e.,
-    // we have a vector of vectors. If we were to support a linearized layout
-    // this check would need to be different.
-    if (this->dimensions().nonSparseArea() != scipp::size(m_model))
+    if (this->dimensions().volume() != scipp::size(m_model))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
@@ -337,7 +334,7 @@ public:
   }
 
   VariableConceptHandle clone(const Dimensions &dims) const override {
-    return std::make_unique<DataModel<T>>(dims, T(dims.nonSparseArea()));
+    return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
   }
 
   bool isContiguous() const override { return true; }
@@ -526,13 +523,11 @@ Variable::Variable(const Tag tag, const units::Unit unit,
                                               std::move(object))) {}
 
 void Variable::setDimensions(const Dimensions &dimensions) {
-  if (!(dimensions.sparse() || m_object->dimensions().sparse())) {
     if (dimensions.volume() == m_object->dimensions().volume()) {
       if (dimensions != m_object->dimensions())
         data().m_dimensions = dimensions;
       return;
     }
-  }
   m_object = m_object->clone(dimensions);
 }
 

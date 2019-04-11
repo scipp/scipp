@@ -16,10 +16,6 @@
 
 namespace scipp::core {
 
-enum Extent : scipp::index {
-  Sparse = std::numeric_limits<scipp::index>::max()
-};
-
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
 /// We should follow the numpy convention: First dimension is outer dimension,
@@ -58,38 +54,14 @@ public:
   }
 
   bool empty() const noexcept { return m_ndim == 0; }
-  bool sparse() const noexcept {
-    return m_ndim == 0 ? false : m_shape[m_ndim - 1] == Extent::Sparse;
-  }
 
   int32_t ndim() const noexcept { return m_ndim; }
   // TODO Remove in favor of the new ndim?
   int32_t count() const noexcept { return m_ndim; }
 
   scipp::index volume() const {
-    if (sparse())
-      throw except::SparseDimensionError();
     scipp::index volume{1};
     for (int32_t dim = 0; dim < ndim(); ++dim)
-      volume *= m_shape[dim];
-    return volume;
-  }
-
-  /// Returns the volume, excluding a potentially sparse dimensions.
-  ///
-  /// This is named `area` since it typically covers one dimension less that the
-  /// volume would. Example: Consider data shaped as follows:
-  ///
-  /// xxxxxx
-  /// xxx
-  /// xxxxx
-  ///
-  /// The return value would be 3 in this case.
-  scipp::index nonSparseArea() const noexcept {
-    if (!sparse())
-      return volume();
-    scipp::index volume{1};
-    for (int32_t dim = 0; dim < ndim() - 1; ++dim)
       volume *= m_shape[dim];
     return volume;
   }
