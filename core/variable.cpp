@@ -5,10 +5,10 @@
 /// National Laboratory, and European Spallation Source ERIC.
 #include <cmath>
 
-#include "variable.h"
 #include "counts.h"
 #include "dataset.h"
 #include "except.h"
+#include "variable.h"
 #include "variable_view.h"
 
 namespace scipp::core {
