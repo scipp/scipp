@@ -33,7 +33,10 @@ Dataset makeRun() {
   return run;
 }
 
-TEST(Run, meta_data_propagation) {
+// A number of tests that is currently disabled. It is not clear how we will
+// support attribute propagation in the future, in particular nested datasets
+// may not be concatenated automatically.
+TEST(Run, DISABLED_meta_data_propagation) {
   Dataset run1 = makeRun();
 
   Dataset d1;
@@ -115,7 +118,7 @@ TEST(Run, meta_data_propagation) {
   // Again there was no automatic merging, can be done by hand if required.
 }
 
-TEST(Run, meta_data_fail_coord_mismatch) {
+TEST(Run, DISABLED_meta_data_fail_coord_mismatch) {
   Dataset d1;
   d1.insert(Attr::ExperimentLog, "sample_log", {}, {makeRun()});
   Dataset d2(d1);
@@ -126,7 +129,7 @@ TEST(Run, meta_data_fail_coord_mismatch) {
                           "expected to match");
 }
 
-TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
+TEST(Run, DISABLED_meta_data_fail_fuzzy_coord_mismatch) {
   Dataset d1;
   d1.insert(Attr::ExperimentLog, "sample_log", {}, {makeRun()});
   Dataset d2(d1);
@@ -137,7 +140,7 @@ TEST(Run, meta_data_fail_fuzzy_coord_mismatch) {
                           "expected to match");
 }
 
-TEST(Run, meta_data_fail_missing) {
+TEST(Run, DISABLED_meta_data_fail_missing) {
   Dataset d1;
   d1.insert(Attr::ExperimentLog, "sample_log", {}, {makeRun()});
   Dataset d2(d1);

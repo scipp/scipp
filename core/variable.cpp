@@ -3,10 +3,12 @@
 /// @author Simon Heybrock
 /// Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
 /// National Laboratory, and European Spallation Source ERIC.
-#include "variable.h"
+#include <cmath>
+
 #include "counts.h"
 #include "dataset.h"
 #include "except.h"
+#include "variable.h"
 #include "variable_view.h"
 
 namespace scipp::core {
@@ -20,23 +22,6 @@ template <class T, class C> auto &requireT(C &concept) {
                             to_string(concept.dtype()) + '.');
   }
 }
-
-template <class T, class C> auto &require(C &concept) {
-  try {
-    return dynamic_cast<T &>(concept);
-  } catch (const std::bad_cast &) {
-    throw std::runtime_error(std::string("Cannot apply operation, requires ") +
-                             T::name + " type.");
-  }
-}
-
-template <template <class, class> class Op, class T1, class T2>
-struct ArithmeticHelper {
-  template <class InputView, class OutputView>
-  static void apply(const OutputView &a, const InputView &b) {
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(), Op<T1, T2>());
-  }
-};
 
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
@@ -138,347 +123,10 @@ template <typename T> struct RebinGeneralHelper {
   }
 };
 
+template <class T> class ViewModel;
+
 VariableConcept::VariableConcept(const Dimensions &dimensions)
     : m_dimensions(dimensions){};
-
-// Some types such as Dataset support `+` (effectively appending table rows),
-// but are not arithmetic.
-class AddableVariableConcept : public VariableConcept {
-public:
-  static constexpr const char *name = "addable";
-  using VariableConcept::VariableConcept;
-  virtual VariableConcept &operator+=(const VariableConcept &other) = 0;
-};
-
-// This is also used for implementing operations for vector spaces, notably
-// Eigen::Vector3d.
-class ArithmeticVariableConcept : public AddableVariableConcept {
-public:
-  static constexpr const char *name = "arithmetic";
-  using AddableVariableConcept::AddableVariableConcept;
-  virtual VariableConcept &operator-=(const VariableConcept &other) = 0;
-  virtual VariableConcept &operator*=(const VariableConcept &other) = 0;
-  virtual VariableConcept &operator/=(const VariableConcept &other) = 0;
-  /// Returns the absolute value (for scalars) or the norm (for vectors).
-  virtual std::unique_ptr<VariableConcept> norm() const = 0;
-};
-
-class FloatingPointVariableConcept : public ArithmeticVariableConcept {
-public:
-  static constexpr const char *name = "floating-point";
-  using ArithmeticVariableConcept::ArithmeticVariableConcept;
-  /// Set x = value/x
-  virtual VariableConcept &reciprocal_times(const double value) = 0;
-  virtual std::unique_ptr<VariableConcept> sqrt() const = 0;
-  virtual void rebin(const VariableConcept &old, const Dim dim,
-                     const VariableConcept &oldCoord,
-                     const VariableConcept &newCoord) = 0;
-};
-
-template <class T> class ViewModel;
-template <class T> class AddableVariableConceptT;
-template <class T> class ArithmeticVariableConceptT;
-template <class T> class FloatingPointVariableConceptT;
-
-template <class T, typename Enable = void> struct concept {
-  using type = VariableConcept;
-  using typeT = VariableConceptT<T>;
-};
-template <class T>
-struct concept<T, std::enable_if_t<std::is_same<T, Dataset>::value>> {
-  using type = AddableVariableConcept;
-  using typeT = AddableVariableConceptT<T>;
-};
-template <class T> struct is_vector_space : std::false_type {};
-template <class T, int Rows>
-struct is_vector_space<Eigen::Matrix<T, Rows, 1>> : std::true_type {};
-template <class T>
-struct concept<T, std::enable_if_t<std::is_integral<T>::value ||
-                                   is_vector_space<T>::value>> {
-  using type = ArithmeticVariableConcept;
-  using typeT = ArithmeticVariableConceptT<T>;
-};
-template <class T>
-struct concept<T, std::enable_if_t<std::is_floating_point<T>::value>> {
-  using type = FloatingPointVariableConcept;
-  using typeT = FloatingPointVariableConceptT<T>;
-};
-
-template <class T> using concept_t = typename concept<T>::type;
-template <class T> using conceptT_t = typename concept<T>::typeT;
-
-/// Partially typed implementation of VariableConcept. This is a common base
-/// class for DataModel<T> and ViewModel<T>. The former holds data in a
-/// contiguous array, whereas the latter is a (potentially non-contiguous) view
-/// into the former. This base class implements functionality that is common to
-/// both, for a specific T.
-template <class T> class VariableConceptT : public concept_t<T> {
-public:
-  VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
-
-  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
-  static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
-
-  virtual scipp::span<T> getSpan() = 0;
-  virtual scipp::span<T> getSpan(const Dim dim, const scipp::index begin,
-                                 const scipp::index end) = 0;
-  virtual scipp::span<const T> getSpan() const = 0;
-  virtual scipp::span<const T> getSpan(const Dim dim, const scipp::index begin,
-                                       const scipp::index end) const = 0;
-  virtual VariableView<T> getView(const Dimensions &dims) = 0;
-  virtual VariableView<T> getView(const Dimensions &dims, const Dim dim,
-                                  const scipp::index begin) = 0;
-  virtual VariableView<const T> getView(const Dimensions &dims) const = 0;
-  virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
-                                        const scipp::index begin) const = 0;
-  virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
-  virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
-
-  std::unique_ptr<VariableConcept> makeView() const override {
-    auto &dims = this->dimensions();
-    return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
-                                                                getView(dims));
-  }
-
-  std::unique_ptr<VariableConcept> makeView() override {
-    if (this->isConstView())
-      return const_cast<const VariableConceptT &>(*this).makeView();
-    auto &dims = this->dimensions();
-    return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
-                                                                getView(dims));
-  }
-
-  std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const scipp::index begin,
-           const scipp::index end) const override {
-    auto dims = this->dimensions();
-    if (end == -1)
-      dims.erase(dim);
-    else
-      dims.resize(dim, end - begin);
-    return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
-        dims, getView(dims, dim, begin));
-  }
-
-  std::unique_ptr<VariableConcept> makeView(const Dim dim,
-                                            const scipp::index begin,
-                                            const scipp::index end) override {
-    if (this->isConstView())
-      return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
-                                                                  end);
-    auto dims = this->dimensions();
-    if (end == -1)
-      dims.erase(dim);
-    else
-      dims.resize(dim, end - begin);
-    return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
-        dims, getView(dims, dim, begin));
-  }
-
-  std::unique_ptr<VariableConcept>
-  reshape(const Dimensions &dims) const override {
-    if (this->dimensions().volume() != dims.volume())
-      throw std::runtime_error(
-          "Cannot reshape to dimensions with different volume");
-    return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
-        dims, getReshaped(dims));
-  }
-
-  std::unique_ptr<VariableConcept> reshape(const Dimensions &dims) override {
-    if (this->dimensions().volume() != dims.volume())
-      throw std::runtime_error(
-          "Cannot reshape to dimensions with different volume");
-    return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
-        dims, getReshaped(dims));
-  }
-
-  bool operator==(const VariableConcept &other) const override {
-    const auto &dims = this->dimensions();
-    if (dims != other.dimensions())
-      return false;
-    if (this->dtype() != other.dtype())
-      return false;
-    const auto &otherT = requireT<const VariableConceptT>(other);
-    if (this->isContiguous()) {
-      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-        return equal(getSpan(), otherT.getSpan());
-      } else {
-        return equal(getSpan(), otherT.getView(dims));
-      }
-    } else {
-      if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-        return equal(getView(dims), otherT.getSpan());
-      } else {
-        return equal(getView(dims), otherT.getView(dims));
-      }
-    }
-  }
-
-  void copy(const VariableConcept &other, const Dim dim,
-            const scipp::index offset, const scipp::index otherBegin,
-            const scipp::index otherEnd) override {
-    auto iterDims = this->dimensions();
-    const scipp::index delta = otherEnd - otherBegin;
-    if (iterDims.contains(dim))
-      iterDims.resize(dim, delta);
-
-    const auto &otherT = requireT<const VariableConceptT>(other);
-    auto otherView = otherT.getView(iterDims, dim, otherBegin);
-    // Four cases for minimizing use of VariableView --- just copy contiguous
-    // range where possible.
-    if (this->isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
-      auto target = getSpan(dim, offset, offset + delta);
-      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
-        auto source = otherT.getSpan(dim, otherBegin, otherEnd);
-        std::copy(source.begin(), source.end(), target.begin());
-      } else {
-        std::copy(otherView.begin(), otherView.end(), target.begin());
-      }
-    } else {
-      auto view = getView(iterDims, dim, offset);
-      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
-        auto source = otherT.getSpan(dim, otherBegin, otherEnd);
-        std::copy(source.begin(), source.end(), view.begin());
-      } else {
-        std::copy(otherView.begin(), otherView.end(), view.begin());
-      }
-    }
-  }
-
-  template <template <class, class> class Op, class OtherT = T>
-  VariableConcept &apply(const VariableConcept &other) {
-    const auto &dims = this->dimensions();
-    try {
-      const auto &otherT = requireT<const VariableConceptT<OtherT>>(other);
-      if constexpr (std::is_same_v<T, OtherT>)
-        if (this->getView(dims).overlaps(otherT.getView(dims))) {
-          // If there is an overlap between lhs and rhs we copy the rhs before
-          // applying the operation.
-          const auto &data = otherT.getView(otherT.dimensions());
-          DataModel<Vector<OtherT>> copy(
-              other.dimensions(), Vector<OtherT>(data.begin(), data.end()));
-          return apply<Op, OtherT>(copy);
-        }
-
-      if (this->isContiguous() && dims.contains(other.dimensions())) {
-        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T, OtherT>::apply(this->getSpan(),
-                                                 otherT.getSpan());
-        } else {
-          ArithmeticHelper<Op, T, OtherT>::apply(this->getSpan(),
-                                                 otherT.getView(dims));
-        }
-      } else if (dims.contains(other.dimensions())) {
-        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T, OtherT>::apply(this->getView(dims),
-                                                 otherT.getSpan());
-        } else {
-          ArithmeticHelper<Op, T, OtherT>::apply(this->getView(dims),
-                                                 otherT.getView(dims));
-        }
-      } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-          ArithmeticHelper<Op, T, OtherT>::apply(
-              this->getView(other.dimensions()), otherT.getSpan());
-        } else {
-          ArithmeticHelper<Op, T, OtherT>::apply(
-              this->getView(other.dimensions()),
-              otherT.getView(other.dimensions()));
-        }
-      }
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error("Cannot apply arithmetic operation to "
-                               "Variables: Underlying data types do not "
-                               "match.");
-    }
-    return *this;
-  }
-};
-
-// For operations with vector spaces we may have operations between a scalar and
-// a vector, so we cannot use std::multiplies, which is available only for
-// arguments of matching types.
-template <class T1, class T2 = T1> struct plus {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
-    return lhs + rhs;
-  }
-};
-template <class T1, class T2 = T1> struct minus {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
-    return lhs - rhs;
-  }
-};
-template <class T1, class T2 = T1> struct multiplies {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
-    return lhs * rhs;
-  }
-};
-template <class T1, class T2 = T1> struct divides {
-  constexpr T1 operator()(const T1 &lhs, const T2 &rhs) const {
-    return lhs / rhs;
-  }
-};
-template <class T1, class T2> struct norm_of_second_arg {
-  constexpr T1 operator()(const T1 &, const T2 &rhs) const {
-    // TODO Should we make a unary ArithmeticHelper::apply?
-    if constexpr (is_vector_space<T2>::value)
-      return rhs.norm();
-    else
-      return abs(rhs);
-  }
-};
-template <class T1, class T2> struct sqrt_of_second_arg {
-  constexpr T1 operator()(const T1 &, const T2 &rhs) const {
-    // TODO Should we make a unary ArithmeticHelper::apply?
-    return std::sqrt(rhs);
-  }
-};
-
-template <class T> struct scalar_type { using type = T; };
-template <class T, int Rows> struct scalar_type<Eigen::Matrix<T, Rows, 1>> {
-  using type = T;
-};
-template <class T> using scalar_type_t = typename scalar_type<T>::type;
-
-template <class T> class AddableVariableConceptT : public VariableConceptT<T> {
-public:
-  using VariableConceptT<T>::VariableConceptT;
-
-  VariableConcept &operator+=(const VariableConcept &other) override {
-    return this->template apply<plus>(other);
-  }
-};
-
-template <class T>
-class ArithmeticVariableConceptT : public AddableVariableConceptT<T> {
-public:
-  using AddableVariableConceptT<T>::AddableVariableConceptT;
-
-  VariableConcept &operator-=(const VariableConcept &other) override {
-    return this->template apply<minus>(other);
-  }
-
-  VariableConcept &operator*=(const VariableConcept &other) override {
-    return this->template apply<multiplies, scalar_type_t<T>>(other);
-  }
-
-  VariableConcept &operator/=(const VariableConcept &other) override {
-    return this->template apply<divides, scalar_type_t<T>>(other);
-  }
-
-  std::unique_ptr<VariableConcept> norm() const override {
-    using ScalarT = scalar_type_t<T>;
-    auto norm = std::make_unique<DataModel<Vector<ScalarT>>>(
-        this->dimensions(), Vector<ScalarT>(this->dimensions().volume()));
-    norm->template apply<norm_of_second_arg, T>(*this);
-    return norm;
-  }
-};
-
-template <class T1, class T2> struct ReciprocalTimes {
-  T2 operator()(const T1 a, const T2 b) { return b / a; };
-};
 
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
                            const Dimensions &toMatch) {
@@ -487,42 +135,6 @@ bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
   edges.resize(dim, edges[dim] - 1);
   return edges == toMatch;
 }
-
-template <class T>
-class FloatingPointVariableConceptT : public ArithmeticVariableConceptT<T> {
-public:
-  using ArithmeticVariableConceptT<T>::ArithmeticVariableConceptT;
-
-  VariableConcept &reciprocal_times(const double value) override {
-    Variable other(Data::Value, {}, {value});
-    return this->template apply<ReciprocalTimes>(other.data());
-  }
-
-  std::unique_ptr<VariableConcept> sqrt() const override {
-    auto sqrt = std::make_unique<DataModel<Vector<T>>>(
-        this->dimensions(), Vector<T>(this->dimensions().volume()));
-    sqrt->template apply<sqrt_of_second_arg, T>(*this);
-    return sqrt;
-  }
-
-  void rebin(const VariableConcept &old, const Dim dim,
-             const VariableConcept &oldCoord,
-             const VariableConcept &newCoord) override {
-    // Dimensions of *this and old are guaranteed to be the same.
-    auto &oldT = requireT<const FloatingPointVariableConceptT>(old);
-    auto &oldCoordT = requireT<const FloatingPointVariableConceptT>(oldCoord);
-    auto &newCoordT = requireT<const FloatingPointVariableConceptT>(newCoord);
-    const auto &dims = this->dimensions();
-    if (dims.inner() == dim &&
-        isMatchingOr1DBinEdge(dim, oldCoord.dimensions(), old.dimensions()) &&
-        isMatchingOr1DBinEdge(dim, newCoord.dimensions(), dims)) {
-      RebinHelper<T>::rebinInner(dim, oldT, *this, oldCoordT, newCoordT);
-    } else {
-      throw std::runtime_error(
-          "TODO the new coord should be 1D or the same din as newCoord.");
-    }
-  }
-};
 
 template <class T>
 auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
@@ -537,11 +149,129 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
   return scipp::span(model.data() + beginOffset, model.data() + endOffset);
 }
 
+template <class T> VariableConceptHandle VariableConceptT<T>::makeView() const {
+  auto &dims = this->dimensions();
+  return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
+                                                              getView(dims));
+}
+
+template <class T> VariableConceptHandle VariableConceptT<T>::makeView() {
+  if (this->isConstView())
+    return const_cast<const VariableConceptT &>(*this).makeView();
+  auto &dims = this->dimensions();
+  return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
+                                                              getView(dims));
+}
+
+template <class T>
+VariableConceptHandle
+VariableConceptT<T>::makeView(const Dim dim, const scipp::index begin,
+                              const scipp::index end) const {
+  auto dims = this->dimensions();
+  if (end == -1)
+    dims.erase(dim);
+  else
+    dims.resize(dim, end - begin);
+  return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
+      dims, getView(dims, dim, begin));
+}
+
+template <class T>
+VariableConceptHandle VariableConceptT<T>::makeView(const Dim dim,
+                                                    const scipp::index begin,
+                                                    const scipp::index end) {
+  if (this->isConstView())
+    return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
+                                                                end);
+  auto dims = this->dimensions();
+  if (end == -1)
+    dims.erase(dim);
+  else
+    dims.resize(dim, end - begin);
+  return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
+      dims, getView(dims, dim, begin));
+}
+
+template <class T>
+VariableConceptHandle
+VariableConceptT<T>::reshape(const Dimensions &dims) const {
+  if (this->dimensions().volume() != dims.volume())
+    throw std::runtime_error(
+        "Cannot reshape to dimensions with different volume");
+  return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
+      dims, getReshaped(dims));
+}
+
+template <class T>
+VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
+  if (this->dimensions().volume() != dims.volume())
+    throw std::runtime_error(
+        "Cannot reshape to dimensions with different volume");
+  return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
+      dims, getReshaped(dims));
+}
+
+template <class T>
+bool VariableConceptT<T>::operator==(const VariableConcept &other) const {
+  const auto &dims = this->dimensions();
+  if (dims != other.dimensions())
+    return false;
+  if (this->dtype() != other.dtype())
+    return false;
+  const auto &otherT = requireT<const VariableConceptT>(other);
+  if (this->isContiguous()) {
+    if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+      return equal(getSpan(), otherT.getSpan());
+    } else {
+      return equal(getSpan(), otherT.getView(dims));
+    }
+  } else {
+    if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+      return equal(getView(dims), otherT.getSpan());
+    } else {
+      return equal(getView(dims), otherT.getView(dims));
+    }
+  }
+}
+
+template <class T>
+void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
+                               const scipp::index offset,
+                               const scipp::index otherBegin,
+                               const scipp::index otherEnd) {
+  auto iterDims = this->dimensions();
+  const scipp::index delta = otherEnd - otherBegin;
+  if (iterDims.contains(dim))
+    iterDims.resize(dim, delta);
+
+  const auto &otherT = requireT<const VariableConceptT>(other);
+  auto otherView = otherT.getView(iterDims, dim, otherBegin);
+  // Four cases for minimizing use of VariableView --- just copy contiguous
+  // range where possible.
+  if (this->isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
+    auto target = getSpan(dim, offset, offset + delta);
+    if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+      auto source = otherT.getSpan(dim, otherBegin, otherEnd);
+      std::copy(source.begin(), source.end(), target.begin());
+    } else {
+      std::copy(otherView.begin(), otherView.end(), target.begin());
+    }
+  } else {
+    auto view = getView(iterDims, dim, offset);
+    if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+      auto source = otherT.getSpan(dim, otherBegin, otherEnd);
+      std::copy(source.begin(), source.end(), view.begin());
+    } else {
+      std::copy(otherView.begin(), otherView.end(), view.begin());
+    }
+  }
+}
+
 /// Implementation of VariableConcept that holds data.
 template <class T> class DataModel : public conceptT_t<typename T::value_type> {
+public:
   using value_type = std::remove_const_t<typename T::value_type>;
 
-public:
   DataModel(const Dimensions &dimensions, T model)
       : conceptT_t<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
@@ -600,12 +330,11 @@ public:
     return makeVariableView(m_model.data(), 0, dims, dims);
   }
 
-  std::unique_ptr<VariableConcept> clone() const override {
+  VariableConceptHandle clone() const override {
     return std::make_unique<DataModel<T>>(this->dimensions(), m_model);
   }
 
-  std::unique_ptr<VariableConcept>
-  clone(const Dimensions &dims) const override {
+  VariableConceptHandle clone(const Dimensions &dims) const override {
     return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
   }
 
@@ -618,12 +347,31 @@ public:
   T m_model;
 };
 
+namespace detail {
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims) {
+  return std::make_unique<DataModel<Vector<T>>>(dims, Vector<T>(dims.volume()));
+}
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims, Vector<T> data) {
+  return std::make_unique<DataModel<Vector<T>>>(dims, std::move(data));
+}
+template std::unique_ptr<VariableConceptT<double>>
+makeVariableConceptT<double>(const Dimensions &);
+template std::unique_ptr<VariableConceptT<float>>
+makeVariableConceptT<float>(const Dimensions &);
+template std::unique_ptr<VariableConceptT<double>>
+makeVariableConceptT<double>(const Dimensions &, Vector<double>);
+template std::unique_ptr<VariableConceptT<float>>
+makeVariableConceptT<float>(const Dimensions &, Vector<float>);
+} // namespace detail
+
 /// Implementation of VariableConcept that represents a view onto data.
 template <class T>
 class ViewModel
     : public conceptT_t<std::remove_const_t<typename T::element_type>> {
-  using value_type = typename T::value_type;
-
   void requireMutable() const {
     if (isConstView())
       throw std::runtime_error(
@@ -636,6 +384,8 @@ class ViewModel
   }
 
 public:
+  using value_type = typename T::value_type;
+
   ViewModel(const Dimensions &dimensions, T model)
       : conceptT_t<value_type>(std::move(dimensions)),
         m_model(std::move(model)) {
@@ -721,11 +471,11 @@ public:
     }
   }
 
-  std::unique_ptr<VariableConcept> clone() const override {
+  VariableConceptHandle clone() const override {
     return std::make_unique<ViewModel<T>>(this->dimensions(), m_model);
   }
 
-  std::unique_ptr<VariableConcept> clone(const Dimensions &) const override {
+  VariableConceptHandle clone(const Dimensions &) const override {
     throw std::runtime_error("Cannot resize view.");
   }
 
@@ -762,8 +512,7 @@ Variable::Variable(const ConstVariableSlice &parent, const Dimensions &dims)
   setName(parent.name());
 }
 
-Variable::Variable(const Variable &parent,
-                   std::unique_ptr<VariableConcept> data)
+Variable::Variable(const Variable &parent, VariableConceptHandle data)
     : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
       m_object(std::move(data)) {}
 
@@ -865,7 +614,9 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
     expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
-    require<AddableVariableConcept>(variable.data()) += other.data();
+    variable.template transform_in_place<
+        pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+        [](auto &&a, auto &&b) { return a + b; }, other);
   } else {
     if (variable.dimensions() == other.dimensions()) {
       using ConstViewOrRef =
@@ -917,7 +668,9 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events)
     throw std::runtime_error("Subtraction of events lists not implemented.");
-  require<ArithmeticVariableConcept>(variable.data()) -= other.data();
+  variable.template transform_in_place<
+      pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+      [](auto &&a, auto &&b) { return a - b; }, other);
   return variable;
 }
 
@@ -938,7 +691,10 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
-  require<ArithmeticVariableConcept>(variable.data()) *= other.data();
+  variable.template transform_in_place<
+      pair_self_t<double, float, int64_t>,
+      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
+      [](auto &&a, auto &&b) { return a * b; }, other);
   return variable;
 }
 
@@ -960,7 +716,10 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
     throw std::runtime_error("Division of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() / other.unit());
-  require<ArithmeticVariableConcept>(variable.data()) /= other.data();
+  variable.template transform_in_place<
+      pair_self_t<double, float, int64_t>,
+      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
+      [](auto &&a, auto &&b) { return a / b; }, other);
   return variable;
 }
 
@@ -1185,7 +944,9 @@ Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
-  require<FloatingPointVariableConcept>(b.data()).reciprocal_times(a);
+  b.transform_in_place<double, float>(
+      overloaded{[a](const double b) { return a / b; },
+                 [a](const float b) { return a / b; }});
   return std::move(b);
 }
 
@@ -1263,16 +1024,37 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
 
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord) {
+
   expect::countsOrCountsDensity(var);
   const Dim dim = coordDimension[newCoord.tag().value()];
+
+  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord,
+                        auto &&newCoord) {
+    // Dimensions of *this and old are guaranteed to be the same.
+    const auto &oldT = *old;
+    const auto &oldCoordT = *oldCoord;
+    const auto &newCoordT = *newCoord;
+    auto &outT = *out;
+    const auto &dims = outT.dimensions();
+    if (dims.inner() == dim &&
+        isMatchingOr1DBinEdge(dim, oldCoordT.dimensions(), oldT.dimensions()) &&
+        isMatchingOr1DBinEdge(dim, newCoordT.dimensions(), dims)) {
+      RebinHelper<typename std::remove_reference_t<decltype(
+          outT)>::value_type>::rebinInner(dim, oldT, outT, oldCoordT,
+                                          newCoordT);
+    } else {
+      throw std::runtime_error(
+          "TODO the new coord should be 1D or the same dim as newCoord.");
+    }
+  };
+
   if (var.unit() == units::counts ||
       var.unit() == units::counts * units::counts) {
     auto dims = var.dimensions();
     dims.resize(dim, newCoord.dimensions()[dim] - 1);
     Variable rebinned(var, dims);
     if (rebinned.dimensions().inner() == dim) {
-      require<FloatingPointVariableConcept>(rebinned.data())
-          .rebin(var.data(), dim, oldCoord.data(), newCoord.data());
+      rebinned.apply_in_place<double, float>(do_rebin, var, oldCoord, newCoord);
     } else {
       if (newCoord.dimensions().ndim() > 1)
         throw std::runtime_error(
@@ -1349,7 +1131,9 @@ Variable sum(const Variable &var, const Dim dim) {
   dims.erase(dim);
   // setDimensions zeros the data
   summed.setDimensions(dims);
-  require<ArithmeticVariableConcept>(summed.data()) += var.data();
+  summed.template transform_in_place<
+      pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+      [](auto &&a, auto &&b) { return a + b; }, var);
   return summed;
 }
 
@@ -1359,13 +1143,17 @@ Variable mean(const Variable &var, const Dim dim) {
   return summed * Variable(Data::Value, {}, {scale});
 }
 
+Variable abs(const Variable &var) {
+  return var.transform<double, float>([](const auto x) { return ::abs(x); });
+}
+
 Variable norm(const Variable &var) {
-  return {var, require<const ArithmeticVariableConcept>(var.data()).norm()};
+  return var.transform<Eigen::Vector3d>([](auto &&x) { return x.norm(); });
 }
 
 Variable sqrt(const Variable &var) {
-  Variable result(
-      var, require<const FloatingPointVariableConcept>(var.data()).sqrt());
+  Variable result =
+      var.transform<double, float>([](const auto x) { return std::sqrt(x); });
   result.setUnit(sqrt(var.unit()));
   return result;
 }

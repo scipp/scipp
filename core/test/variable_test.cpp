@@ -146,7 +146,7 @@ TEST(VariableSlice, unary_minus) {
 TEST(Variable, operator_plus_equal) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
 
-  EXPECT_NO_THROW(a += a);
+  ASSERT_NO_THROW(a += a);
   EXPECT_EQ(a.get(Data::Value)[0], 2.2);
   EXPECT_EQ(a.get(Data::Value)[1], 4.4);
 
@@ -160,7 +160,7 @@ TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
 
   Variable fewer_dimensions(Data::Value, {}, {1.0});
 
-  EXPECT_NO_THROW(a += fewer_dimensions);
+  ASSERT_NO_THROW(a += fewer_dimensions);
   EXPECT_EQ(a.get(Data::Value)[0], 2.1);
   EXPECT_EQ(a.get(Data::Value)[1], 3.2);
 }
@@ -200,15 +200,13 @@ TEST(Variable, operator_plus_equal_different_unit) {
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
   auto a = makeVariable<std::string>(Data::Value, {Dim::X, 1},
                                      {std::string("test")});
-  EXPECT_THROW_MSG(a += a, std::runtime_error,
-                   "Cannot apply operation, requires addable type.");
+  EXPECT_THROW(a += a, except::TypeError);
 }
 
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   Variable a(Data::Value, {Dim::X, 1}, {1.0});
   auto b = makeVariable<int64_t>(Data::Value, {Dim::X, 1}, {2});
-  EXPECT_THROW_MSG(a += b, except::TypeError,
-                   "Expected item dtype double, got int64.");
+  EXPECT_THROW(a += b, except::TypeError);
 }
 
 TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
@@ -297,6 +295,22 @@ TEST(Variable, operator_divide_equal_scalar) {
   EXPECT_EQ(a.get(Coord::X)[0], 1.0);
   EXPECT_EQ(a.get(Coord::X)[1], 2.0);
   EXPECT_EQ(a.unit(), units::m);
+}
+
+TEST(Variable, operator_divide_scalar_double) {
+  const auto a = makeVariable<double>(Coord::X, {Dim::X, 2}, {2.0, 4.0});
+  const auto result = 1.111 / a;
+  EXPECT_EQ(result.span<double>()[0], 1.111 / 2.0);
+  EXPECT_EQ(result.span<double>()[1], 1.111 / 4.0);
+  EXPECT_EQ(result.unit(), units::dimensionless / units::m);
+}
+
+TEST(Variable, operator_divide_scalar_float) {
+  const auto a = makeVariable<float>(Coord::X, {Dim::X, 2}, {2.0, 4.0});
+  const auto result = 1.111 / a;
+  EXPECT_EQ(result.span<float>()[0], 1.111f / 2.0f);
+  EXPECT_EQ(result.span<float>()[1], 1.111f / 4.0f);
+  EXPECT_EQ(result.unit(), units::dimensionless / units::m);
 }
 
 TEST(Variable, setSlice) {
@@ -562,10 +576,10 @@ TEST(Variable, mean) {
   EXPECT_TRUE(equals(meanY.get(Data::Value), {2.0, 3.0}));
 }
 
-TEST(Variable, norm_of_scalar) {
+TEST(Variable, abs_of_scalar) {
   Variable reference(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
   Variable var(Data::Value, {{Dim::Y, 2}, {Dim::X, 2}}, {1.0, -2.0, -3.0, 4.0});
-  EXPECT_EQ(norm(var), reference);
+  EXPECT_EQ(abs(var), reference);
 }
 
 TEST(Variable, norm_of_vector) {
@@ -577,12 +591,20 @@ TEST(Variable, norm_of_vector) {
   EXPECT_EQ(norm(var), reference);
 }
 
-TEST(Variable, sqrt) {
+TEST(Variable, sqrt_double) {
   // TODO Currently comparisons of variables do not provide special handling of
   // NaN, so sqrt of negative values will lead variables that are never equal.
-  Variable reference(Data::Value, {Dim::X, 2}, {1, 2});
+  auto reference = makeVariable<double>(Data::Value, {Dim::X, 2}, {1, 2});
   reference.setUnit(units::m);
-  Variable var(Data::Value, {Dim::X, 2}, {1, 4});
+  auto var = makeVariable<double>(Data::Value, {Dim::X, 2}, {1, 4});
+  var.setUnit(units::m * units::m);
+  EXPECT_EQ(sqrt(var), reference);
+}
+
+TEST(Variable, sqrt_float) {
+  auto reference = makeVariable<float>(Data::Value, {Dim::X, 2}, {1, 2});
+  reference.setUnit(units::m);
+  auto var = makeVariable<float>(Data::Value, {Dim::X, 2}, {1, 4});
   var.setUnit(units::m * units::m);
   EXPECT_EQ(sqrt(var), reference);
 }
@@ -1211,4 +1233,58 @@ TEST(VariableSlice, scalar_operations) {
   EXPECT_TRUE(equals(var.get(Data::Value), {12, 12, 0, 23, 23, 0}));
   var(Dim::Y, 0) /= 2;
   EXPECT_TRUE(equals(var.get(Data::Value), {6, 6, 0, 23, 23, 0}));
+}
+
+TEST(Variable, apply_unary_in_place) {
+  Variable var(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  var.transform_in_place<double>([](const double x) { return -x; });
+  EXPECT_TRUE(equals(var.span<double>(), {-1.1, -2.2}));
+}
+
+TEST(Variable, apply_unary_implicit_conversion) {
+  const auto var = makeVariable<float>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  // The functor returns double, so the output type is also double.
+  auto out = var.transform<double, float>([](const double x) { return -x; });
+  EXPECT_TRUE(equals(out.span<double>(), {-1.1f, -2.2f}));
+}
+
+TEST(Variable, apply_unary) {
+  const auto varD = makeVariable<double>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  const auto varF = makeVariable<float>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  auto outD = varD.transform<double, float>([](const auto x) { return -x; });
+  auto outF = varF.transform<double, float>([](const auto x) { return -x; });
+  EXPECT_TRUE(equals(outD.span<double>(), {-1.1, -2.2}));
+  EXPECT_TRUE(equals(outF.span<float>(), {-1.1f, -2.2f}));
+}
+
+TEST(Variable, apply_binary_in_place) {
+  Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  const Variable b(Data::Value, {}, {3.3});
+  a.transform_in_place<pair_self_t<double>>(
+      [](const auto x, const auto y) { return x + y; }, b);
+  EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
+}
+
+TEST(Variable, apply_binary_in_place_var_with_view) {
+  Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  const Variable b(Data::Value, {Dim::Y, 2}, {0.1, 3.3});
+  a.transform_in_place<pair_self_t<double>>(
+      [](const auto x, const auto y) { return x + y; }, b(Dim::Y, 1));
+  EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
+}
+
+TEST(Variable, apply_binary_in_place_view_with_var) {
+  Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  const Variable b(Data::Value, {}, {3.3});
+  a(Dim::X, 1).transform_in_place<pair_self_t<double>>(
+      [](const auto x, const auto y) { return x + y; }, b);
+  EXPECT_TRUE(equals(a.span<double>(), {1.1, 5.5}));
+}
+
+TEST(Variable, apply_binary_in_place_view_with_view) {
+  Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
+  const Variable b(Data::Value, {Dim::Y, 2}, {0.1, 3.3});
+  a(Dim::X, 1).transform_in_place<pair_self_t<double>>(
+      [](const auto x, const auto y) { return x + y; }, b(Dim::Y, 1));
+  EXPECT_TRUE(equals(a.span<double>(), {1.1, 5.5}));
 }

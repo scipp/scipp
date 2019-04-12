@@ -6,10 +6,10 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <numeric>
 #include <string>
 #include <type_traits>
-
-#include <numeric>
+#include <variant>
 
 #include "dimensions.h"
 #include "index.h"
@@ -18,19 +18,23 @@
 #include "tags.h"
 #include "variable_view.h"
 #include "vector.h"
+#include "visit.h"
 
 namespace scipp::core {
 
 class Variable;
+template <class... Known> class VariableConceptHandle_impl;
+// Any item type that is listed here explicitly can be used with the templated
+// `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
+using VariableConceptHandle =
+    VariableConceptHandle_impl<double, float, int64_t, Eigen::Vector3d>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableSlice. This is using so-called
 /// concept-based polymorphism, see talks by Sean Parent.
 ///
 /// This is the most generic representation for a multi-dimensional array of
-/// data. Depending on the item type more functionality such as binary
-/// operations is supported. Virtual methods for these are added in
-/// child-classes. See, e.g., `ArithmeticVariableConcept`.
+/// data. More operations are supportd by the partially-typed VariableConceptT.
 class VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
@@ -38,21 +42,19 @@ public:
 
   virtual DType dtype() const noexcept = 0;
 
-  virtual std::unique_ptr<VariableConcept> clone() const = 0;
-  virtual std::unique_ptr<VariableConcept>
-  clone(const Dimensions &dims) const = 0;
-  virtual std::unique_ptr<VariableConcept> makeView() const = 0;
-  virtual std::unique_ptr<VariableConcept> makeView() = 0;
-  virtual std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const scipp::index begin,
-           const scipp::index end = -1) const = 0;
-  virtual std::unique_ptr<VariableConcept>
-  makeView(const Dim dim, const scipp::index begin,
-           const scipp::index end = -1) = 0;
+  virtual VariableConceptHandle clone() const = 0;
+  virtual VariableConceptHandle clone(const Dimensions &dims) const = 0;
+  virtual VariableConceptHandle makeView() const = 0;
+  virtual VariableConceptHandle makeView() = 0;
+  virtual VariableConceptHandle makeView(const Dim dim,
+                                         const scipp::index begin,
+                                         const scipp::index end = -1) const = 0;
+  virtual VariableConceptHandle makeView(const Dim dim,
+                                         const scipp::index begin,
+                                         const scipp::index end = -1) = 0;
 
-  virtual std::unique_ptr<VariableConcept>
-  reshape(const Dimensions &dims) const = 0;
-  virtual std::unique_ptr<VariableConcept> reshape(const Dimensions &dims) = 0;
+  virtual VariableConceptHandle reshape(const Dimensions &dims) const = 0;
+  virtual VariableConceptHandle reshape(const Dimensions &dims) = 0;
 
   virtual bool operator==(const VariableConcept &other) const = 0;
 
@@ -73,29 +75,78 @@ private:
   Dimensions m_dimensions;
 };
 
-namespace detail {
-template <class T> std::unique_ptr<T> clone(const T &other) {
-  return std::make_unique<T>(other);
-}
+template <class T> class VariableConceptT;
 
-template <>
-inline std::unique_ptr<VariableConcept> clone(const VariableConcept &other) {
-  return other.clone();
-}
-} // namespace detail
+template <class T, typename Enable = void> struct concept {
+  using type = VariableConcept;
+  using typeT = VariableConceptT<T>;
+};
+
+template <class T> using concept_t = typename concept<T>::type;
+template <class T> using conceptT_t = typename concept<T>::typeT;
+
+/// Partially typed implementation of VariableConcept. This is a common base
+/// class for DataModel<T> and ViewModel<T>. The former holds data in a
+/// contiguous array, whereas the latter is a (potentially non-contiguous) view
+/// into the former. This base class implements functionality that is common to
+/// both, for a specific T.
+template <class T> class VariableConceptT : public concept_t<T> {
+public:
+  using value_type = T;
+
+  VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
+
+  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
+  static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
+
+  virtual scipp::span<T> getSpan() = 0;
+  virtual scipp::span<T> getSpan(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) = 0;
+  virtual scipp::span<const T> getSpan() const = 0;
+  virtual scipp::span<const T> getSpan(const Dim dim, const scipp::index begin,
+                                       const scipp::index end) const = 0;
+  virtual VariableView<T> getView(const Dimensions &dims) = 0;
+  virtual VariableView<T> getView(const Dimensions &dims, const Dim dim,
+                                  const scipp::index begin) = 0;
+  virtual VariableView<const T> getView(const Dimensions &dims) const = 0;
+  virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
+                                        const scipp::index begin) const = 0;
+  virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
+  virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
+
+  VariableConceptHandle makeView() const override;
+
+  VariableConceptHandle makeView() override;
+
+  VariableConceptHandle makeView(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) const override;
+
+  VariableConceptHandle makeView(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) override;
+
+  VariableConceptHandle reshape(const Dimensions &dims) const override;
+
+  VariableConceptHandle reshape(const Dimensions &dims) override;
+
+  bool operator==(const VariableConcept &other) const override;
+  void copy(const VariableConcept &other, const Dim dim,
+            const scipp::index offset, const scipp::index otherBegin,
+            const scipp::index otherEnd) override;
+};
 
 /// Like std::unique_ptr, but copy causes a deep copy.
 template <class T> class deep_ptr {
 public:
+  using element_type = typename std::unique_ptr<T>::element_type;
   deep_ptr() = default;
   deep_ptr(std::unique_ptr<T> &&other) : m_data(std::move(other)) {}
   deep_ptr(const deep_ptr<T> &other)
-      : m_data(other ? detail::clone(*other) : nullptr) {}
+      : m_data(other ? std::make_unique<T>(*other) : nullptr) {}
   deep_ptr(deep_ptr<T> &&) = default;
   constexpr deep_ptr(std::nullptr_t){};
   deep_ptr<T> &operator=(const deep_ptr<T> &other) {
     if (&other != this && other)
-      m_data = detail::clone(*other);
+      m_data = std::make_unique<T>(*other);
     return *this;
   }
   deep_ptr<T> &operator=(deep_ptr<T> &&) = default;
@@ -114,6 +165,184 @@ public:
 private:
   std::unique_ptr<T> m_data;
 };
+
+namespace detail {
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims);
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims, Vector<T> data);
+} // namespace detail
+
+template <class Op> struct TransformInPlace {
+  Op op;
+  template <class T> void operator()(T &&handle) const {
+    auto data = handle->getSpan();
+    std::transform(data.begin(), data.end(), data.begin(), op);
+  }
+  template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
+    // std::unique_ptr::operator*() is const but returns mutable reference, need
+    // to artificially put const to we call the corect overloads of ViewModel.
+    const auto &b = *b_ptr;
+    const auto &dimsA = a->dimensions();
+    const auto &dimsB = b.dimensions();
+    try {
+      if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
+        if (a->getView(dimsA).overlaps(b.getView(dimsA))) {
+          // If there is an overlap between lhs and rhs we copy the rhs before
+          // applying the operation.
+          const auto &data = b.getView(b.dimensions());
+          using T = typename std::remove_reference_t<decltype(b)>::value_type;
+          const std::unique_ptr<VariableConceptT<T>> copy =
+              detail::makeVariableConceptT<T>(
+                  dimsB, Vector<T>(data.begin(), data.end()));
+          return operator()(a, copy);
+        }
+      }
+
+      if (a->isContiguous() && dimsA.contains(dimsB)) {
+        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+          auto a_ = a->getSpan();
+          auto b_ = b.getSpan();
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        } else {
+          auto a_ = a->getSpan();
+          auto b_ = b.getView(dimsA);
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        }
+      } else if (dimsA.contains(dimsB)) {
+        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+          auto a_ = a->getView(dimsA);
+          auto b_ = b.getSpan();
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        } else {
+          auto a_ = a->getView(dimsA);
+          auto b_ = b.getView(dimsA);
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        }
+      } else {
+        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+          auto a_ = a->getView(dimsB);
+          auto b_ = b.getSpan();
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        } else {
+          auto a_ = a->getView(dimsB);
+          auto b_ = b.getView(dimsB);
+          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+        }
+      }
+    } catch (const std::bad_cast &) {
+      throw std::runtime_error("Cannot apply arithmetic operation to "
+                               "Variables: Underlying data types do not "
+                               "match.");
+    }
+  }
+};
+
+template <class Op> struct Transform {
+  Op op;
+  template <class T> VariableConceptHandle operator()(T &&handle) const;
+};
+
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
+template <class... Known> class VariableConceptHandle_impl {
+public:
+  VariableConceptHandle_impl()
+      : m_object(std::unique_ptr<VariableConcept>(nullptr)) {}
+  template <class T> VariableConceptHandle_impl(T object) {
+    using value_t = typename T::element_type::value_type;
+    if constexpr ((std::is_same_v<value_t, Known> || ...))
+      m_object = std::unique_ptr<VariableConceptT<value_t>>(std::move(object));
+    else
+      m_object = std::unique_ptr<VariableConcept>(std::move(object));
+  }
+  VariableConceptHandle_impl(VariableConceptHandle_impl &&) = default;
+  VariableConceptHandle_impl(const VariableConceptHandle_impl &other)
+      : VariableConceptHandle_impl(other ? other->clone()
+                                         : VariableConceptHandle_impl()) {}
+  VariableConceptHandle_impl &
+  operator=(VariableConceptHandle_impl &&) = default;
+  VariableConceptHandle_impl &
+  operator=(const VariableConceptHandle_impl &other) {
+    return *this = other ? other->clone() : VariableConceptHandle_impl();
+  }
+
+  explicit operator bool() const noexcept {
+    return std::visit([](auto &&ptr) { return bool(ptr); }, m_object);
+  }
+  VariableConcept &operator*() const {
+    return std::visit([](auto &&arg) -> VariableConcept & { return *arg; },
+                      m_object);
+  }
+  VariableConcept *operator->() const {
+    return std::visit(
+        [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
+        m_object);
+  }
+
+  template <class... Ts, class Op> void transform_in_place(Op op) const {
+    try {
+      scipp::core::visit_impl<Ts...>::apply(TransformInPlace<Op>{op}, m_object);
+    } catch (const std::bad_variant_access &) {
+      throw std::runtime_error("Operation not implemented for this type.");
+    }
+  }
+
+  template <class... TypePairs, class Op>
+  void transform_in_place(Op op, const VariableConceptHandle_impl &var) const {
+    try {
+      scipp::core::visit(std::tuple_cat(TypePairs{}...))
+          .apply(TransformInPlace<Op>{op}, m_object, var.m_object);
+    } catch (const std::bad_variant_access &) {
+      throw except::TypeError("Cannot apply operation to item dtypes " +
+                              to_string((*this)->dtype()) + " and " +
+                              to_string(var->dtype()) + '.');
+    }
+  }
+
+  // `transform` (and its variants) applies op to all elements, `apply` applies
+  // op directly to the data arrays.
+  template <class... Ts, class Op, class... Vars>
+  void apply_in_place(Op op, const Vars &... vars) const {
+    try {
+      scipp::core::visit_impl<Ts...>::apply(op, m_object, vars.m_object...);
+    } catch (const std::bad_variant_access &) {
+      throw except::TypeError("");
+    }
+  }
+
+  template <class... Ts, class Op>
+  VariableConceptHandle_impl transform(Op op) const {
+    try {
+      return scipp::core::visit_impl<Ts...>::apply(Transform<Op>{op}, m_object);
+    } catch (const std::bad_variant_access &) {
+      throw std::runtime_error("Operation not implemented for this type.");
+    }
+  }
+
+private:
+  std::variant<std::unique_ptr<VariableConcept>,
+               std::unique_ptr<VariableConceptT<Known>>...>
+      m_object;
+};
+
+template <class Op>
+template <class T>
+VariableConceptHandle Transform<Op>::operator()(T &&handle) const {
+  auto data = handle->getSpan();
+  // TODO Should just make empty container here, without init.
+  auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
+      handle->dimensions());
+  // TODO Typo data->getSpan() also compiles, but const-correctness should
+  // forbid this.
+  auto outData = out->getSpan();
+  std::transform(data.begin(), data.end(), outData.begin(), op);
+  return {std::move(out)};
+}
 
 template <class... Tags> class ZipView;
 class ConstVariableSlice;
@@ -145,7 +374,7 @@ public:
   Variable(const ConstVariableSlice &slice);
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const ConstVariableSlice &parent, const Dimensions &dims);
-  Variable(const Variable &parent, std::unique_ptr<VariableConcept> data);
+  Variable(const Variable &parent, VariableConceptHandle data);
 
   template <class TagT>
   Variable(TagT tag, const Dimensions &dimensions)
@@ -247,6 +476,11 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
 
+  const VariableConceptHandle &dataHandle() const && = delete;
+  const VariableConceptHandle &dataHandle() const & { return m_object; }
+  VariableConceptHandle &dataHandle() && = delete;
+  VariableConceptHandle &dataHandle() & { return m_object; }
+
   DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_tag; }
   void setTag(const Tag tag) { m_tag = tag; }
@@ -300,6 +534,30 @@ public:
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
 
+  template <class... Ts, class Op> void transform_in_place(Op op) {
+    // TODO handle units
+    m_object.transform_in_place<Ts...>(op);
+  }
+
+  template <class... TypePairs, class Op, class Var>
+  Variable &transform_in_place(Op op, const Var &other) {
+    // TODO handle units
+    dataHandle().transform_in_place<TypePairs...>(op, other.dataHandle());
+    return *this;
+  }
+
+  template <class... Ts, class Op, class... Vars>
+  Variable &apply_in_place(Op op, const Vars &... vars) {
+    // TODO handle units
+    dataHandle().apply_in_place<Ts...>(op, vars.dataHandle()...);
+    return *this;
+  }
+
+  template <class... Ts, class Op> Variable transform(Op op) const {
+    // TODO handle units
+    return Variable(*this, m_object.transform<Ts...>(op));
+  }
+
   template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
@@ -314,7 +572,7 @@ private:
   Tag m_tag;
   units::Unit m_unit;
   deep_ptr<std::string> m_name;
-  deep_ptr<VariableConcept> m_object;
+  VariableConceptHandle m_object;
 };
 
 template <class T>
@@ -411,12 +669,21 @@ public:
 
   DType dtype() const noexcept { return data().dtype(); }
   Tag tag() const { return m_variable->tag(); }
+
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & {
     if (m_view)
       return *m_view;
     else
       return m_variable->data();
+  }
+
+  const VariableConceptHandle &dataHandle() const && = delete;
+  const VariableConceptHandle &dataHandle() const & {
+    if (m_view)
+      return m_view;
+    else
+      return m_variable->dataHandle();
   }
 
   bool isCoord() const { return m_variable->isCoord(); }
@@ -450,7 +717,7 @@ protected:
   const VariableView<const underlying_type_t<T>> cast() const;
 
   const Variable *m_variable;
-  deep_ptr<VariableConcept> m_view;
+  VariableConceptHandle m_view;
 };
 
 /** Mutable view into (a subset of) a Variable.
@@ -498,6 +765,13 @@ public:
     return *m_view;
   }
 
+  const VariableConceptHandle &dataHandle() const && = delete;
+  const VariableConceptHandle &dataHandle() const & {
+    if (!m_view)
+      return m_mutableVariable->dataHandle();
+    return m_view;
+  }
+
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
   template <class TagT> auto get(const TagT t) const {
     if (t != tag())
@@ -536,6 +810,13 @@ public:
   VariableSlice operator/=(const double value) const;
 
   void setUnit(const units::Unit &unit) const;
+
+  template <class... TypePairs, class Op, class Var>
+  VariableSlice transform_in_place(Op op, const Var &other) const {
+    // TODO handle units
+    dataHandle().transform_in_place<TypePairs...>(op, other.dataHandle());
+    return *this;
+  }
 
 private:
   friend class Variable;
@@ -585,6 +866,7 @@ Variable permute(const Variable &var, const Dim dim,
 Variable filter(const Variable &var, const Variable &filter);
 Variable sum(const Variable &var, const Dim dim);
 Variable mean(const Variable &var, const Dim dim);
+Variable abs(const Variable &var);
 Variable norm(const Variable &var);
 // TODO add to dataset and python
 Variable sqrt(const Variable &var);
