@@ -9,3 +9,10 @@ set(PY_FILES __init__.py table.py plot.py)
 install(TARGETS scippy DESTINATION "scippy")
 install(FILES ${PY_FILES} DESTINATION "scippy")
 install(FILES "compat/mantid.py" DESTINATION "scippy/compat")
+file(GLOB test_files
+    "test/*.py"
+)
+foreach(test_file ${test_files})
+    get_filename_component(test_name ${test_file} NAME_WE)
+    add_test("scippy/${test_name}" "python" ${test_file})
+endforeach()
