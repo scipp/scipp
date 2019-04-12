@@ -147,38 +147,6 @@ public:
             const scipp::index otherEnd) override;
 };
 
-/// Like std::unique_ptr, but copy causes a deep copy.
-template <class T> class deep_ptr {
-public:
-  using element_type = typename std::unique_ptr<T>::element_type;
-  deep_ptr() = default;
-  deep_ptr(std::unique_ptr<T> &&other) : m_data(std::move(other)) {}
-  deep_ptr(const deep_ptr<T> &other)
-      : m_data(other ? std::make_unique<T>(*other) : nullptr) {}
-  deep_ptr(deep_ptr<T> &&) = default;
-  constexpr deep_ptr(std::nullptr_t){};
-  deep_ptr<T> &operator=(const deep_ptr<T> &other) {
-    if (&other != this && other)
-      m_data = std::make_unique<T>(*other);
-    return *this;
-  }
-  deep_ptr<T> &operator=(deep_ptr<T> &&) = default;
-
-  explicit operator bool() const noexcept { return bool(m_data); }
-  bool operator==(const deep_ptr<T> &other) const noexcept {
-    return m_data == other.m_data;
-  }
-  bool operator!=(const deep_ptr<T> &other) const noexcept {
-    return m_data != other.m_data;
-  }
-
-  T &operator*() const { return *m_data; }
-  T *operator->() const { return m_data.get(); }
-
-private:
-  std::unique_ptr<T> m_data;
-};
-
 namespace detail {
 template <class T>
 std::unique_ptr<VariableConceptT<T>>
@@ -446,20 +414,8 @@ public:
            T object, const Dim sparseDim = Dim::Invalid);
 
   const std::string &name() const && = delete;
-  const std::string &name() const & {
-    static const std::string empty;
-    if (!m_name)
-      return empty;
-    return *m_name;
-  }
-  void setName(const std::string &name) {
-    if (name.empty())
-      m_name = nullptr;
-    else if (m_name)
-      *m_name = name;
-    else
-      m_name = std::make_unique<std::string>(name);
-  }
+  const std::string &name() const & { return m_name; }
+  void setName(const std::string &name) { m_name = name; }
   bool operator==(const Variable &other) const;
   bool operator==(const ConstVariableSlice &other) const;
   bool operator!=(const Variable &other) const;
@@ -622,7 +578,7 @@ private:
   Tag m_tag;
   Dim m_sparseDim{Dim::Invalid};
   units::Unit m_unit;
-  deep_ptr<std::string> m_name;
+  std::string m_name;
   VariableConceptHandle m_object;
 };
 
