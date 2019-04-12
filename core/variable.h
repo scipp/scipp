@@ -727,7 +727,7 @@ public:
     return strides;
   }
 
-  DType dtype() const noexcept { return data().dtype(); }
+  DType dtype() const noexcept { return m_variable->dtype(); }
   Tag tag() const { return m_variable->tag(); }
 
   const VariableConcept &data() const && = delete;
