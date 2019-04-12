@@ -1,8 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
-/// SPDX-License-Identifier: GPL-3.0-or-later
 /// @author Simon Heybrock
-/// Copyright &copy; 2019 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
-/// National Laboratory, and European Spallation Source ERIC.
 #include "counts.h"
 #include "dataset.h"
 #include "except.h"
