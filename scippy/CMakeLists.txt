@@ -14,5 +14,5 @@ file(GLOB test_files
 )
 foreach(test_file ${test_files})
     get_filename_component(test_name ${test_file} NAME_WE)
-    add_test("scippy/${test_name}" "python" ${test_file})
+    add_test("scippy/${test_name}" "python3" ${test_file})
 endforeach()
