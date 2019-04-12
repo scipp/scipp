@@ -196,6 +196,8 @@ template <class Op> struct TransformSparse {
     std::transform(x.begin(), x.end(), x.begin(), op);
     return x;
   }
+  // TODO Would like to use T1 and T2 for a and b, but currently this leads to
+  // selection of the wrong overloads.
   template <class T>
   constexpr auto operator()(sparse_container<T> a, const T b) const {
     std::transform(a.begin(), a.end(), a.begin(),

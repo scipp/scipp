@@ -1439,6 +1439,25 @@ TEST(SparseVariable, unary) {
   EXPECT_TRUE(equals(a_[1], {2}));
 }
 
+TEST(SparseVariable, DISABLED_unary_on_sparse_container) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 4, 9};
+  a_[1] = {4};
+
+  // TODO This is currently broken: The wrong overload of
+  // TransformSparse::operator() is selected, so the lambda here is not applied
+  // to the whole sparse container (clearing it), but instead to each item of
+  // each sparse container. Is there a way to handle this correctly
+  // automatically, or do we need to manually specify whether we want to
+  // transform items of the variable, or items of the sparse containers that are
+  // items of the variable?
+  a.transform_in_place<sparse_container<double>>(
+      [](const auto &x) { return decltype(x){}; });
+  EXPECT_TRUE(a_[0].empty());
+  EXPECT_TRUE(a_[1].empty());
+}
+
 TEST(SparseVariable, binary_with_dense) {
   auto sparse = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
   auto sparse_ = sparse.sparseSpan<double>();
