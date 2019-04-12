@@ -1,8 +1,7 @@
-# @file
 # SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+# @file
 # @author Simon Heybrock
-# Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
-# National Laboratory, and European Spallation Source ERIC.
 import xarray as xr
 
 

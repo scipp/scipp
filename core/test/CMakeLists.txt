@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# @author Simon Heybrock
-# Copyright &copy; 2018 ISIS Rutherford Appleton Laboratory, NScD Oak Ridge
-# National Laboratory, and European Spallation Source ERIC.
+# Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 add_executable(scipp-core-test
                bool_test.cpp
                convert_test.cpp

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
 #ifndef VALUE_WITH_DELTA_H
 #define VALUE_WITH_DELTA_H
 
