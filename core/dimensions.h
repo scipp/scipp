@@ -34,19 +34,8 @@ public:
       add(labels[i], shape[i]);
   }
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
-    // TODO Check for duplicate dimension.
-    if (dims.size() > 6)
-      throw std::runtime_error("At most 6 dimensions are supported.");
-    m_ndim = static_cast<int32_t>(dims.size());
-    auto dim = dims.begin();
-    for (scipp::index i = 0; i < m_ndim; ++i, ++dim) {
-      m_dims[i] = dim->first;
-      if (m_dims[i] == Dim::Invalid)
-        throw std::runtime_error("Dim::Invalid is not a valid dimension.");
-      m_shape[i] = dim->second;
-      if (m_shape[i] < 0)
-        throw std::runtime_error("Dimension extent cannot be negative.");
-    }
+    for (const auto[label, size] : dims)
+      addInner(label, size);
   }
 
   bool operator==(const Dimensions &other) const noexcept {
@@ -70,7 +59,7 @@ public:
   // TODO Remove in favor of the new ndim?
   int32_t count() const noexcept { return m_ndim; }
 
-  scipp::index volume() const noexcept {
+  scipp::index volume() const {
     scipp::index volume{1};
     for (int32_t dim = 0; dim < ndim(); ++dim)
       volume *= m_shape[dim];

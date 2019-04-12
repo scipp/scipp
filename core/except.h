@@ -64,6 +64,11 @@ struct DimensionLengthError : public DimensionError {
                        const scipp::index length);
 };
 
+struct SparseDimensionError : public DimensionError {
+  SparseDimensionError()
+      : DimensionError("Unsupported operation for sparse dimensions.") {}
+};
+
 struct DatasetError : public std::runtime_error {
   DatasetError(const Dataset &dataset, const std::string &message);
   DatasetError(const ConstDatasetSlice &dataset, const std::string &message);

@@ -199,9 +199,14 @@ std::string make_dims_labels(const Variable &variable,
     return "()";
   std::string diminfo = "(";
   for (const auto dim : dims.labels()) {
-    if (datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim]))
-      diminfo += "Bin-edges: ";
     diminfo += to_string(dim, separator);
+    if (datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim]))
+      diminfo += " [bin-edges]";
+    diminfo += ", ";
+  }
+  if (variable.isSparse()) {
+    diminfo += to_string(variable.sparseDim(), separator);
+    diminfo += " [sparse]";
     diminfo += ", ";
   }
   diminfo.resize(diminfo.size() - 2);

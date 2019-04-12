@@ -26,6 +26,15 @@ TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(Variable(Data::Value, Dimensions(Dim::Tof, 3), 2));
 }
 
+TEST(Variable, DISABLED_move) {
+  Variable var(Data::Value, {Dim::X, 2});
+  Variable moved(std::move(var));
+  // We need to define the behavior on move. Currently most methods will just
+  // segfault, and we have no way of telling whether a Variable is in this
+  // state.
+  EXPECT_NE(var, moved);
+}
+
 TEST(Variable, makeVariable_custom_type) {
   auto doubles = makeVariable<double>(Data::Value, {});
   auto floats = makeVariable<float>(Data::Value, {});
@@ -1284,4 +1293,195 @@ TEST(Variable, apply_binary_in_place_view_with_view) {
   a(Dim::X, 1).transform_in_place<pair_self_t<double>>(
       [](const auto x, const auto y) { return x + y; }, b(Dim::Y, 1));
   EXPECT_TRUE(equals(a.span<double>(), {1.1, 5.5}));
+}
+
+TEST(SparseVariable, create) {
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  EXPECT_TRUE(var.isSparse());
+  EXPECT_EQ(var.sparseDim(), Dim::X);
+  // Should we return the full volume here, i.e., accumulate the extents of all
+  // the sparse subdata?
+  EXPECT_EQ(var.size(), 2);
+}
+
+TEST(SparseVariable, dtype) {
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  // It is not clear that this is the best way of handling things.
+  // Variable::dtype() makes sense like this, but it is not so clear for
+  // VariableConcept::dtype().
+  EXPECT_EQ(var.dtype(), dtype<double>);
+  EXPECT_NE(var.data().dtype(), dtype<double>);
+}
+
+TEST(SparseVariable, non_sparse_access_fail) {
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  ASSERT_THROW(var.get(Data::Value), except::TypeError);
+  ASSERT_THROW(var.span<double>(), except::TypeError);
+}
+
+TEST(SparseVariable, DISABLED_low_level_access) {
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  // Need to decide whether we allow this direct access or not.
+  ASSERT_THROW((var.span<sparse_container<double>>()), except::TypeError);
+}
+
+TEST(SparseVariable, access) {
+  const auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  ASSERT_NO_THROW(var.sparseSpan<double>());
+  auto data = var.sparseSpan<double>();
+  ASSERT_EQ(data.size(), 2);
+  EXPECT_TRUE(data[0].empty());
+  EXPECT_TRUE(data[1].empty());
+}
+
+TEST(SparseVariable, resize_sparse) {
+  auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto data = var.sparseSpan<double>();
+  data[1] = {1, 2, 3};
+}
+
+TEST(SparseVariable, comparison) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+  auto b = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto b_ = b.sparseSpan<double>();
+  b_[0] = {1, 2, 3};
+  b_[1] = {1, 2};
+  auto c = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto c_ = c.sparseSpan<double>();
+  c_[0] = {1, 3};
+  c_[1] = {};
+
+  EXPECT_EQ(a, a);
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(b, a);
+
+  EXPECT_NE(a, c);
+  EXPECT_NE(c, a);
+}
+
+TEST(SparseVariable, copy) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+
+  Variable copy(a);
+  EXPECT_EQ(a, copy);
+}
+
+TEST(SparseVariable, move) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+
+  Variable copy(a);
+  Variable moved(std::move(copy));
+  EXPECT_EQ(a, moved);
+}
+
+TEST(SparseVariable, concatenate) {
+  const auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  const auto b = makeSparseVariable<double>(Data::Value, {Dim::Y, 3}, Dim::X);
+  auto var = concatenate(a, b, Dim::Y);
+  EXPECT_TRUE(var.isSparse());
+  EXPECT_EQ(var.sparseDim(), Dim::X);
+  EXPECT_EQ(var.size(), 5);
+}
+
+TEST(SparseVariable, concatenate_along_sparse_dimension) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+  auto b = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto b_ = b.sparseSpan<double>();
+  b_[0] = {1, 3};
+  b_[1] = {};
+
+  auto var = concatenate(a, b, Dim::X);
+  EXPECT_TRUE(var.isSparse());
+  EXPECT_EQ(var.sparseDim(), Dim::X);
+  EXPECT_EQ(var.size(), 2);
+  auto data = var.sparseSpan<double>();
+  EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
+  EXPECT_TRUE(equals(data[1], {1, 2}));
+}
+
+TEST(SparseVariable, slice) {
+  auto var = makeSparseVariable<double>(Data::Value, {Dim::Y, 4}, Dim::X);
+  auto data = var.sparseSpan<double>();
+  data[0] = {1, 2, 3};
+  data[1] = {1, 2};
+  data[2] = {1};
+  data[3] = {};
+  auto slice = var(Dim::Y, 1, 3);
+  EXPECT_TRUE(slice.isSparse());
+  EXPECT_EQ(slice.sparseDim(), Dim::X);
+  EXPECT_EQ(slice.size(), 2);
+  auto slice_data = slice.sparseSpan<double>();
+  EXPECT_TRUE(equals(slice_data[0], {1, 2}));
+  EXPECT_TRUE(equals(slice_data[1], {1}));
+}
+
+TEST(SparseVariable, unary) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 4, 9};
+  a_[1] = {4};
+
+  a.transform_in_place<sparse_container<double>>(
+      [](const double x) { return sqrt(x); });
+  EXPECT_TRUE(equals(a_[0], {1, 2, 3}));
+  EXPECT_TRUE(equals(a_[1], {2}));
+}
+
+TEST(SparseVariable, DISABLED_unary_on_sparse_container) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 4, 9};
+  a_[1] = {4};
+
+  // TODO This is currently broken: The wrong overload of
+  // TransformSparse::operator() is selected, so the lambda here is not applied
+  // to the whole sparse container (clearing it), but instead to each item of
+  // each sparse container. Is there a way to handle this correctly
+  // automatically, or do we need to manually specify whether we want to
+  // transform items of the variable, or items of the sparse containers that are
+  // items of the variable?
+  a.transform_in_place<sparse_container<double>>(
+      [](const auto &x) { return decltype(x){}; });
+  EXPECT_TRUE(a_[0].empty());
+  EXPECT_TRUE(a_[1].empty());
+}
+
+TEST(SparseVariable, binary_with_dense) {
+  auto sparse = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto sparse_ = sparse.sparseSpan<double>();
+  sparse_[0] = {1, 2, 3};
+  sparse_[1] = {4};
+  auto dense = makeVariable<double>(Data::Value, {Dim::Y, 2}, {1.5, 0.5});
+
+  sparse.transform_in_place<
+      pair_custom_t<std::pair<sparse_container<double>, double>>>(
+      [](const double a, const double b) { return a * b; }, dense);
+
+  EXPECT_TRUE(equals(sparse_[0], {1.5, 3.0, 4.5}));
+  EXPECT_TRUE(equals(sparse_[1], {2.0}));
+}
+
+TEST(SparseVariable, operator_plus) {
+  auto sparse = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto sparse_ = sparse.sparseSpan<double>();
+  sparse_[0] = {1, 2, 3};
+  sparse_[1] = {4};
+  auto dense = makeVariable<double>(Data::Value, {Dim::Y, 2}, {1.5, 0.5});
+
+  sparse += dense;
+
+  EXPECT_TRUE(equals(sparse_[0], {2.5, 3.5, 4.5}));
+  EXPECT_TRUE(equals(sparse_[1], {4.5}));
 }

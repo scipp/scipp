@@ -1899,3 +1899,24 @@ TEST(Dataset, counts_toDensity_fromDensity) {
   EXPECT_EQ(result.unit(), units::counts);
   EXPECT_TRUE(equals(result.get(Data::Value), {12, 12, 12}));
 }
+
+TEST(SparseDataset, different_variables_can_have_different_sparse_dimensions) {
+  Dataset d;
+  d.insert(makeSparseVariable<double>(Coord::X, {Dim::X, 2}, Dim::Y));
+  d.insert(makeSparseVariable<double>(Coord::Y, {Dim::X, 2}, Dim::Z));
+  EXPECT_EQ(d.size(), 2);
+}
+
+TEST(SparseDataset, dimensions_of_dataset_does_not_contain_sparse_dims) {
+  Dataset d;
+  d.insert(makeSparseVariable<double>(Coord::X, {Dim::X, 2}, Dim::Y));
+  EXPECT_EQ(d.dimensions(), Dimensions({Dim::X, 2}));
+}
+
+TEST(SparseDataset, dimension_can_be_dense_in_some_vars_and_sparse_in_others) {
+  Dataset d;
+  d.insert(makeSparseVariable<double>(Coord::X, {Dim::X, 2}, Dim::Y));
+  d.insert(makeVariable<double>(Coord::Y, {Dim::Y, 3}));
+  EXPECT_EQ(d.size(), 2);
+  EXPECT_EQ(d.dimensions(), Dimensions({{Dim::Y, 3}, {Dim::X, 2}}));
+}

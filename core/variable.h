@@ -5,6 +5,7 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+#include <exception>
 #include <numeric>
 #include <string>
 #include <type_traits>
@@ -21,12 +22,19 @@
 
 namespace scipp::core {
 
+template <class T>
+using sparse_container = boost::container::small_vector<T, 8>;
+template <class T> struct is_sparse_container : std::false_type {};
+template <class T>
+struct is_sparse_container<sparse_container<T>> : std::true_type {};
+
 class Variable;
 template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 using VariableConceptHandle =
-    VariableConceptHandle_impl<double, float, int64_t, Eigen::Vector3d>;
+    VariableConceptHandle_impl<double, float, int64_t, Eigen::Vector3d,
+                               sparse_container<double>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableSlice. This is using so-called
@@ -39,7 +47,7 @@ public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
 
-  virtual DType dtype() const noexcept = 0;
+  virtual DType dtype(bool sparse = false) const noexcept = 0;
 
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle clone(const Dimensions &dims) const = 0;
@@ -95,7 +103,13 @@ public:
 
   VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
 
-  DType dtype() const noexcept override { return scipp::core::dtype<T>; }
+  DType dtype(bool sparse = false) const noexcept override {
+    if (!sparse)
+      return scipp::core::dtype<T>;
+    if constexpr (is_sparse_container<T>::value)
+      return scipp::core::dtype<typename T::value_type>;
+    std::terminate();
+  }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
 
   virtual scipp::span<T> getSpan() = 0;
@@ -174,6 +188,27 @@ std::unique_ptr<VariableConceptT<T>>
 makeVariableConceptT(const Dimensions &dims, Vector<T> data);
 } // namespace detail
 
+template <class Op> struct TransformSparse {
+  Op op;
+  // TODO avoid copies... need in place transform (for_each, but with a second
+  // input range).
+  template <class T> constexpr auto operator()(sparse_container<T> x) const {
+    std::transform(x.begin(), x.end(), x.begin(), op);
+    return x;
+  }
+  // TODO Would like to use T1 and T2 for a and b, but currently this leads to
+  // selection of the wrong overloads.
+  template <class T>
+  constexpr auto operator()(sparse_container<T> a, const T b) const {
+    std::transform(a.begin(), a.end(), a.begin(),
+                   [&, b](const T a) { return op(a, b); });
+    return a;
+  }
+};
+
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
 template <class Op> struct TransformInPlace {
   Op op;
   template <class T> void operator()(T &&handle) const {
@@ -239,14 +274,12 @@ template <class Op> struct TransformInPlace {
     }
   }
 };
+template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
 
 template <class Op> struct Transform {
   Op op;
   template <class T> VariableConceptHandle operator()(T &&handle) const;
 };
-
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
 template <class... Known> class VariableConceptHandle_impl {
 public:
@@ -285,7 +318,8 @@ public:
 
   template <class... Ts, class Op> void transform_in_place(Op op) const {
     try {
-      scipp::core::visit_impl<Ts...>::apply(TransformInPlace<Op>{op}, m_object);
+      scipp::core::visit_impl<Ts...>::apply(
+          TransformInPlace{overloaded{op, TransformSparse<Op>{op}}}, m_object);
     } catch (const std::bad_variant_access &) {
       throw std::runtime_error("Operation not implemented for this type.");
     }
@@ -295,7 +329,8 @@ public:
   void transform_in_place(Op op, const VariableConceptHandle_impl &var) const {
     try {
       scipp::core::visit(std::tuple_cat(TypePairs{}...))
-          .apply(TransformInPlace<Op>{op}, m_object, var.m_object);
+          .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
+                 m_object, var.m_object);
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes " +
                               to_string((*this)->dtype()) + " and " +
@@ -408,7 +443,7 @@ public:
 
   template <class T>
   Variable(const Tag tag, const units::Unit unit, const Dimensions &dimensions,
-           T object);
+           T object, const Dim sparseDim = Dim::Invalid);
 
   const std::string &name() const && = delete;
   const std::string &name() const & {
@@ -480,7 +515,7 @@ public:
   VariableConceptHandle &dataHandle() && = delete;
   VariableConceptHandle &dataHandle() & { return m_object; }
 
-  DType dtype() const noexcept { return data().dtype(); }
+  DType dtype() const noexcept { return data().dtype(isSparse()); }
   Tag tag() const { return m_tag; }
   void setTag(const Tag tag) { m_tag = tag; }
   bool isCoord() const {
@@ -491,6 +526,9 @@ public:
                         std::tuple_size<detail::DataDef::tags>::value;
   }
   bool isData() const { return !isCoord() && !isAttr(); }
+
+  bool isSparse() const noexcept { return m_sparseDim != Dim::Invalid; }
+  Dim sparseDim() const { return m_sparseDim; }
 
   template <class TagT> auto get(const TagT t) const {
     // For now we support only variables that are a std::vector. In principle we
@@ -509,6 +547,12 @@ public:
 
   template <class T> auto span() const { return scipp::span(cast<T>()); }
   template <class T> auto span() { return scipp::span(cast<T>()); }
+  template <class T> auto sparseSpan() const {
+    return scipp::span(cast<sparse_container<T>>());
+  }
+  template <class T> auto sparseSpan() {
+    return scipp::span(cast<sparse_container<T>>());
+  }
 
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
@@ -545,6 +589,13 @@ public:
     return *this;
   }
 
+  template <class... TypePairs, class Op, class Var>
+  Variable transform(Op op, const Var &other) const {
+    auto copy(*this);
+    copy.transform_in_place<TypePairs...>(op, other);
+    return copy;
+  }
+
   template <class... Ts, class Op, class... Vars>
   Variable &apply_in_place(Op op, const Vars &... vars) {
     // TODO handle units
@@ -569,6 +620,7 @@ private:
   Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
   Tag m_tag;
+  Dim m_sparseDim{Dim::Invalid};
   units::Unit m_unit;
   deep_ptr<std::string> m_name;
   VariableConceptHandle m_object;
@@ -580,6 +632,15 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions) {
                   Vector<underlying_type_t<T>>(
                       dimensions.volume(),
                       detail::default_init<underlying_type_t<T>>::value()));
+}
+
+template <class T>
+Variable makeSparseVariable(Tag tag, const Dimensions &dimensions,
+                            const Dim sparseDim) {
+  return Variable(
+      tag, defaultUnit(tag), std::move(dimensions),
+      Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()),
+      sparseDim);
 }
 
 template <class T, class T2>
@@ -666,7 +727,7 @@ public:
     return strides;
   }
 
-  DType dtype() const noexcept { return data().dtype(); }
+  DType dtype() const noexcept { return m_variable->dtype(); }
   Tag tag() const { return m_variable->tag(); }
 
   const VariableConcept &data() const && = delete;
@@ -689,6 +750,9 @@ public:
   bool isAttr() const { return m_variable->isAttr(); }
   bool isData() const { return m_variable->isData(); }
 
+  bool isSparse() const noexcept { return m_variable->isSparse(); }
+  Dim sparseDim() const { return m_variable->sparseDim(); }
+
   // Note: This return a proxy object (a VariableView) that does reference
   // members owner by *this. Therefore we can support this even for
   // temporaries and we do not need to delete the rvalue overload, unlike for
@@ -701,6 +765,9 @@ public:
   }
 
   template <class T> auto span() const { return cast<T>(); }
+  template <class T> auto sparseSpan() const {
+    return cast<sparse_container<T>>();
+  }
 
   bool operator==(const Variable &other) const;
   bool operator==(const ConstVariableSlice &other) const;
@@ -779,6 +846,9 @@ public:
   }
 
   template <class T> auto span() const { return cast<T>(); }
+  template <class T> auto sparseSpan() const {
+    return cast<sparse_container<T>>();
+  }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in

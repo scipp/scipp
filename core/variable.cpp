@@ -517,8 +517,8 @@ Variable::Variable(const Variable &parent, VariableConceptHandle data)
 
 template <class T>
 Variable::Variable(const Tag tag, const units::Unit unit,
-                   const Dimensions &dimensions, T object)
-    : m_tag(tag), m_unit{unit},
+                   const Dimensions &dimensions, T object, const Dim sparseDim)
+    : m_tag(tag), m_sparseDim(sparseDim), m_unit{unit},
       m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
                                               std::move(object))) {}
 
@@ -541,9 +541,9 @@ template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
 }
 
 #define INSTANTIATE(...)                                                       \
-  template Variable::Variable(const Tag, const units::Unit,                    \
-                              const Dimensions &,                              \
-                              Vector<underlying_type_t<__VA_ARGS__>>);         \
+  template Variable::Variable(                                                 \
+      const Tag, const units::Unit, const Dimensions &,                        \
+      Vector<underlying_type_t<__VA_ARGS__>>, const Dim);                      \
   template Vector<underlying_type_t<__VA_ARGS__>>                              \
       &Variable::cast<__VA_ARGS__>();                                          \
   template const Vector<underlying_type_t<__VA_ARGS__>>                        \
@@ -573,13 +573,10 @@ INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(Eigen::Vector3d)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
-  // Compare even before pointer comparison since data may be shared even if
-  // names differ.
   if (a.name() != b.name())
     return false;
   if (a.unit() != b.unit())
     return false;
-  // Deep comparison
   if (a.tag() != b.tag())
     return false;
   if (!(a.dimensions() == b.dimensions()))
@@ -614,7 +611,8 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
     variable.template transform_in_place<
-        pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+        pair_self_t<double, float, int64_t, Eigen::Vector3d>,
+        pair_custom_t<std::pair<sparse_container<double>, double>>>(
         [](auto &&a, auto &&b) { return a + b; }, other);
   } else {
     if (variable.dimensions() == other.dimensions()) {
@@ -973,6 +971,16 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   if (a1.name() != a2.name())
     throw std::runtime_error(
         "Cannot concatenate Variables: Names do not match.");
+
+  if (a1.sparseDim() == dim && a2.sparseDim() == dim) {
+    return a1.transform<pair_self_t<sparse_container<double>>>(
+        [](auto a, const auto &b) {
+          a.insert(a.end(), b.begin(), b.end());
+          return a;
+        },
+        a2);
+  }
+
   const auto &dims1 = a1.dimensions();
   const auto &dims2 = a2.dimensions();
   // TODO Many things in this function should be refactored and moved in class
