@@ -188,6 +188,25 @@ std::unique_ptr<VariableConceptT<T>>
 makeVariableConceptT(const Dimensions &dims, Vector<T> data);
 } // namespace detail
 
+template <class Op> struct TransformSparse {
+  Op op;
+  // TODO avoid copies... need in place transform (for_each, but with a second
+  // input range).
+  template <class T> constexpr auto operator()(sparse_container<T> x) const {
+    std::transform(x.begin(), x.end(), x.begin(), op);
+    return x;
+  }
+  template <class T>
+  constexpr auto operator()(sparse_container<T> a, const T b) const {
+    std::transform(a.begin(), a.end(), a.begin(),
+                   [&, b](const T a) { return op(a, b); });
+    return a;
+  }
+};
+
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
 template <class Op> struct TransformInPlace {
   Op op;
   template <class T> void operator()(T &&handle) const {
@@ -253,14 +272,12 @@ template <class Op> struct TransformInPlace {
     }
   }
 };
+template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
 
 template <class Op> struct Transform {
   Op op;
   template <class T> VariableConceptHandle operator()(T &&handle) const;
 };
-
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
 template <class... Known> class VariableConceptHandle_impl {
 public:
@@ -299,7 +316,8 @@ public:
 
   template <class... Ts, class Op> void transform_in_place(Op op) const {
     try {
-      scipp::core::visit_impl<Ts...>::apply(TransformInPlace<Op>{op}, m_object);
+      scipp::core::visit_impl<Ts...>::apply(
+          TransformInPlace{overloaded{op, TransformSparse<Op>{op}}}, m_object);
     } catch (const std::bad_variant_access &) {
       throw std::runtime_error("Operation not implemented for this type.");
     }
@@ -309,7 +327,8 @@ public:
   void transform_in_place(Op op, const VariableConceptHandle_impl &var) const {
     try {
       scipp::core::visit(std::tuple_cat(TypePairs{}...))
-          .apply(TransformInPlace<Op>{op}, m_object, var.m_object);
+          .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
+                 m_object, var.m_object);
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes " +
                               to_string((*this)->dtype()) + " and " +

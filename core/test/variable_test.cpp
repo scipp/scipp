@@ -1426,3 +1426,30 @@ TEST(SparseVariable, slice) {
   EXPECT_TRUE(equals(slice_data[0], {1, 2}));
   EXPECT_TRUE(equals(slice_data[1], {1}));
 }
+
+TEST(SparseVariable, unary) {
+  auto a = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto a_ = a.sparseSpan<double>();
+  a_[0] = {1, 4, 9};
+  a_[1] = {4};
+
+  a.transform_in_place<sparse_container<double>>(
+      [](const double x) { return sqrt(x); });
+  EXPECT_TRUE(equals(a_[0], {1, 2, 3}));
+  EXPECT_TRUE(equals(a_[1], {2}));
+}
+
+TEST(SparseVariable, binary_with_dense) {
+  auto sparse = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto sparse_ = sparse.sparseSpan<double>();
+  sparse_[0] = {1, 2, 3};
+  sparse_[1] = {4};
+  auto dense = makeVariable<double>(Data::Value, {Dim::Y, 2}, {1.5, 0.5});
+
+  sparse.transform_in_place<
+      pair_custom_t<std::pair<sparse_container<double>, double>>>(
+      [](const double a, const double b) { return a * b; }, dense);
+
+  EXPECT_TRUE(equals(sparse_[0], {1.5, 3.0, 4.5}));
+  EXPECT_TRUE(equals(sparse_[1], {2.0}));
+}
