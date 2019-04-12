@@ -1472,3 +1472,16 @@ TEST(SparseVariable, binary_with_dense) {
   EXPECT_TRUE(equals(sparse_[0], {1.5, 3.0, 4.5}));
   EXPECT_TRUE(equals(sparse_[1], {2.0}));
 }
+
+TEST(SparseVariable, operator_plus) {
+  auto sparse = makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X);
+  auto sparse_ = sparse.sparseSpan<double>();
+  sparse_[0] = {1, 2, 3};
+  sparse_[1] = {4};
+  auto dense = makeVariable<double>(Data::Value, {Dim::Y, 2}, {1.5, 0.5});
+
+  sparse += dense;
+
+  EXPECT_TRUE(equals(sparse_[0], {2.5, 3.5, 4.5}));
+  EXPECT_TRUE(equals(sparse_[1], {4.5}));
+}

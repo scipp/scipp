@@ -611,7 +611,8 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
     variable.template transform_in_place<
-        pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+        pair_self_t<double, float, int64_t, Eigen::Vector3d>,
+        pair_custom_t<std::pair<sparse_container<double>, double>>>(
         [](auto &&a, auto &&b) { return a + b; }, other);
   } else {
     if (variable.dimensions() == other.dimensions()) {
