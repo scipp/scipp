@@ -6,13 +6,19 @@
 #define APPLY_H
 
 #include "variable.h"
+#include "visit.h"
 
 namespace scipp::core {
 
 /// Apply functor to variables of given arguments.
 template <class... Ts, class Op, class Var, class... Vars>
 void apply_in_place(Op op, Var &&var, const Vars &... vars) {
-  var.dataHandle().template apply_in_place<Ts...>(op, vars.dataHandle()...);
+  try {
+    scipp::core::visit_impl<Ts...>::apply(op, var.dataHandle().m_object,
+                                          vars.dataHandle().m_object...);
+  } catch (const std::bad_variant_access &) {
+    throw except::TypeError("");
+  }
 }
 
 } // namespace scipp::core

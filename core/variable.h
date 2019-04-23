@@ -6,7 +6,6 @@
 #define VARIABLE_H
 
 #include <exception>
-#include <numeric>
 #include <string>
 #include <type_traits>
 #include <variant>
@@ -18,7 +17,6 @@
 #include "tags.h"
 #include "variable_view.h"
 #include "vector.h"
-#include "visit.h"
 
 namespace scipp::core {
 
@@ -147,108 +145,6 @@ public:
             const scipp::index otherEnd) override;
 };
 
-namespace detail {
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims);
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims, Vector<T> data);
-} // namespace detail
-
-template <class Op> struct TransformSparse {
-  Op op;
-  // TODO avoid copies... need in place transform (for_each, but with a second
-  // input range).
-  template <class T> constexpr auto operator()(sparse_container<T> x) const {
-    std::transform(x.begin(), x.end(), x.begin(), op);
-    return x;
-  }
-  // TODO Would like to use T1 and T2 for a and b, but currently this leads to
-  // selection of the wrong overloads.
-  template <class T>
-  constexpr auto operator()(sparse_container<T> a, const T b) const {
-    std::transform(a.begin(), a.end(), a.begin(),
-                   [&, b](const T a) { return op(a, b); });
-    return a;
-  }
-};
-
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
-
-template <class Op> struct TransformInPlace {
-  Op op;
-  template <class T> void operator()(T &&handle) const {
-    auto data = handle->getSpan();
-    std::transform(data.begin(), data.end(), data.begin(), op);
-  }
-  template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
-    // std::unique_ptr::operator*() is const but returns mutable reference, need
-    // to artificially put const to we call the corect overloads of ViewModel.
-    const auto &b = *b_ptr;
-    const auto &dimsA = a->dimensions();
-    const auto &dimsB = b.dimensions();
-    try {
-      if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
-        if (a->getView(dimsA).overlaps(b.getView(dimsA))) {
-          // If there is an overlap between lhs and rhs we copy the rhs before
-          // applying the operation.
-          const auto &data = b.getView(b.dimensions());
-          using T = typename std::remove_reference_t<decltype(b)>::value_type;
-          const std::unique_ptr<VariableConceptT<T>> copy =
-              detail::makeVariableConceptT<T>(
-                  dimsB, Vector<T>(data.begin(), data.end()));
-          return operator()(a, copy);
-        }
-      }
-
-      if (a->isContiguous() && dimsA.contains(dimsB)) {
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getSpan();
-          auto b_ = b.getSpan();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
-        } else {
-          auto a_ = a->getSpan();
-          auto b_ = b.getView(dimsA);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
-        }
-      } else if (dimsA.contains(dimsB)) {
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getView(dimsA);
-          auto b_ = b.getSpan();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
-        } else {
-          auto a_ = a->getView(dimsA);
-          auto b_ = b.getView(dimsA);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
-        }
-      } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getView(dimsB);
-          auto b_ = b.getSpan();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
-        } else {
-          auto a_ = a->getView(dimsB);
-          auto b_ = b.getView(dimsB);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
-        }
-      }
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error("Cannot apply arithmetic operation to "
-                               "Variables: Underlying data types do not "
-                               "match.");
-    }
-  }
-};
-template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
-
-template <class Op> struct Transform {
-  Op op;
-  template <class T> VariableConceptHandle operator()(T &&handle) const;
-};
-
 template <class... Known> class VariableConceptHandle_impl {
 public:
   VariableConceptHandle_impl()
@@ -284,67 +180,10 @@ public:
         m_object);
   }
 
-  template <class... Ts, class Op> void transform_in_place(Op op) const {
-    try {
-      scipp::core::visit_impl<Ts...>::apply(
-          TransformInPlace{overloaded{op, TransformSparse<Op>{op}}}, m_object);
-    } catch (const std::bad_variant_access &) {
-      throw std::runtime_error("Operation not implemented for this type.");
-    }
-  }
-
-  template <class... TypePairs, class Op>
-  void transform_in_place(Op op, const VariableConceptHandle_impl &var) const {
-    try {
-      scipp::core::visit(std::tuple_cat(TypePairs{}...))
-          .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
-                 m_object, var.m_object);
-    } catch (const std::bad_variant_access &) {
-      throw except::TypeError("Cannot apply operation to item dtypes " +
-                              to_string((*this)->dtype()) + " and " +
-                              to_string(var->dtype()) + '.');
-    }
-  }
-
-  // `transform` (and its variants) applies op to all elements, `apply` applies
-  // op directly to the data arrays.
-  template <class... Ts, class Op, class... Vars>
-  void apply_in_place(Op op, const Vars &... vars) const {
-    try {
-      scipp::core::visit_impl<Ts...>::apply(op, m_object, vars.m_object...);
-    } catch (const std::bad_variant_access &) {
-      throw except::TypeError("");
-    }
-  }
-
-  template <class... Ts, class Op>
-  VariableConceptHandle_impl transform(Op op) const {
-    try {
-      return scipp::core::visit_impl<Ts...>::apply(Transform<Op>{op}, m_object);
-    } catch (const std::bad_variant_access &) {
-      throw std::runtime_error("Operation not implemented for this type.");
-    }
-  }
-
-private:
   std::variant<std::unique_ptr<VariableConcept>,
                std::unique_ptr<VariableConceptT<Known>>...>
       m_object;
 };
-
-template <class Op>
-template <class T>
-VariableConceptHandle Transform<Op>::operator()(T &&handle) const {
-  auto data = handle->getSpan();
-  // TODO Should just make empty container here, without init.
-  auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
-      handle->dimensions());
-  // TODO Typo data->getSpan() also compiles, but const-correctness should
-  // forbid this.
-  auto outData = out->getSpan();
-  std::transform(data.begin(), data.end(), outData.begin(), op);
-  return {std::move(out)};
-}
 
 template <class... Tags> class ZipView;
 class ConstVariableSlice;
