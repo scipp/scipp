@@ -180,6 +180,9 @@ public:
         m_object);
   }
 
+  const auto &variant() const noexcept { return m_object; }
+
+private:
   std::variant<std::unique_ptr<VariableConcept>,
                std::unique_ptr<VariableConceptT<Known>>...>
       m_object;
@@ -307,8 +310,6 @@ public:
 
   const VariableConceptHandle &dataHandle() const && = delete;
   const VariableConceptHandle &dataHandle() const & { return m_object; }
-  VariableConceptHandle &dataHandle() && = delete;
-  VariableConceptHandle &dataHandle() & { return m_object; }
 
   DType dtype() const noexcept { return data().dtype(isSparse()); }
   Tag tag() const { return m_tag; }

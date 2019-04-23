@@ -45,7 +45,7 @@ template <class Op> struct TransformInPlace {
   }
   template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
     // std::unique_ptr::operator*() is const but returns mutable reference, need
-    // to artificially put const to we call the corect overloads of ViewModel.
+    // to artificially put const to we call the correct overloads of ViewModel.
     const auto &b = *b_ptr;
     const auto &dimsA = a->dimensions();
     const auto &dimsB = b.dimensions();
@@ -136,7 +136,7 @@ void transform_in_place(Var &var, Op op) {
   try {
     scipp::core::visit_impl<Ts...>::apply(
         TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
-        var.dataHandle().m_object);
+        var.dataHandle().variant());
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
@@ -153,7 +153,7 @@ void transform_in_place(const Var1 &other, Var &&var, Op op) {
   try {
     scipp::core::visit(std::tuple_cat(TypePairs{}...))
         .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
-               var.dataHandle().m_object, other.dataHandle().m_object);
+               var.dataHandle().variant(), other.dataHandle().variant());
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes " +
                             to_string(var.dtype()) + " and " +
@@ -171,7 +171,7 @@ Variable transform(const Var &var, Op op) {
   using namespace detail;
   try {
     return Variable(var, scipp::core::visit_impl<Ts...>::apply(
-                             Transform<Op>{op}, var.dataHandle().m_object));
+                             Transform<Op>{op}, var.dataHandle().variant()));
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
