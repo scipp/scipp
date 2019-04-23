@@ -7,6 +7,7 @@
 
 #include "dimensions.h"
 #include "tags.h"
+#include "transform.h"
 #include "variable.h"
 
 using namespace scipp;
@@ -1243,22 +1244,22 @@ TEST(VariableSlice, scalar_operations) {
 
 TEST(Variable, apply_unary_in_place) {
   Variable var(Data::Value, {Dim::X, 2}, {1.1, 2.2});
-  var.transform_in_place<double>([](const double x) { return -x; });
+  transform_in_place<double>(var, [](const double x) { return -x; });
   EXPECT_TRUE(equals(var.span<double>(), {-1.1, -2.2}));
 }
 
 TEST(Variable, apply_unary_implicit_conversion) {
   const auto var = makeVariable<float>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out = var.transform<double, float>([](const double x) { return -x; });
+  auto out = transform<double, float>(var, [](const double x) { return -x; });
   EXPECT_TRUE(equals(out.span<double>(), {-1.1f, -2.2f}));
 }
 
 TEST(Variable, apply_unary) {
   const auto varD = makeVariable<double>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const auto varF = makeVariable<float>(Data::Value, {Dim::X, 2}, {1.1, 2.2});
-  auto outD = varD.transform<double, float>([](const auto x) { return -x; });
-  auto outF = varF.transform<double, float>([](const auto x) { return -x; });
+  auto outD = transform<double, float>(varD, [](const auto x) { return -x; });
+  auto outF = transform<double, float>(varF, [](const auto x) { return -x; });
   EXPECT_TRUE(equals(outD.span<double>(), {-1.1, -2.2}));
   EXPECT_TRUE(equals(outF.span<float>(), {-1.1f, -2.2f}));
 }
@@ -1266,32 +1267,33 @@ TEST(Variable, apply_unary) {
 TEST(Variable, apply_binary_in_place) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const Variable b(Data::Value, {}, {3.3});
-  a.transform_in_place<pair_self_t<double>>(
-      [](const auto x, const auto y) { return x + y; }, b);
+  transform_in_place<pair_self_t<double>>(
+      b, a, [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
 }
 
 TEST(Variable, apply_binary_in_place_var_with_view) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const Variable b(Data::Value, {Dim::Y, 2}, {0.1, 3.3});
-  a.transform_in_place<pair_self_t<double>>(
-      [](const auto x, const auto y) { return x + y; }, b(Dim::Y, 1));
+  transform_in_place<pair_self_t<double>>(
+      b(Dim::Y, 1), a, [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.span<double>(), {4.4, 5.5}));
 }
 
 TEST(Variable, apply_binary_in_place_view_with_var) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const Variable b(Data::Value, {}, {3.3});
-  a(Dim::X, 1).transform_in_place<pair_self_t<double>>(
-      [](const auto x, const auto y) { return x + y; }, b);
+  transform_in_place<pair_self_t<double>>(
+      b, a(Dim::X, 1), [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.span<double>(), {1.1, 5.5}));
 }
 
 TEST(Variable, apply_binary_in_place_view_with_view) {
   Variable a(Data::Value, {Dim::X, 2}, {1.1, 2.2});
   const Variable b(Data::Value, {Dim::Y, 2}, {0.1, 3.3});
-  a(Dim::X, 1).transform_in_place<pair_self_t<double>>(
-      [](const auto x, const auto y) { return x + y; }, b(Dim::Y, 1));
+  transform_in_place<pair_self_t<double>>(
+      b(Dim::Y, 1), a(Dim::X, 1),
+      [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.span<double>(), {1.1, 5.5}));
 }
 
@@ -1407,6 +1409,7 @@ TEST(SparseVariable, concatenate_along_sparse_dimension) {
   EXPECT_EQ(var.sparseDim(), Dim::X);
   EXPECT_EQ(var.size(), 2);
   auto data = var.sparseSpan<double>();
+  EXPECT_EQ(data[0].size(), 5);
   EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
   EXPECT_TRUE(equals(data[1], {1, 2}));
 }
@@ -1433,8 +1436,8 @@ TEST(SparseVariable, unary) {
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
-  a.transform_in_place<sparse_container<double>>(
-      [](const double x) { return sqrt(x); });
+  transform_in_place<sparse_container<double>>(
+      a, [](const double x) { return sqrt(x); });
   EXPECT_TRUE(equals(a_[0], {1, 2, 3}));
   EXPECT_TRUE(equals(a_[1], {2}));
 }
@@ -1452,8 +1455,8 @@ TEST(SparseVariable, DISABLED_unary_on_sparse_container) {
   // automatically, or do we need to manually specify whether we want to
   // transform items of the variable, or items of the sparse containers that are
   // items of the variable?
-  a.transform_in_place<sparse_container<double>>(
-      [](const auto &x) { return decltype(x){}; });
+  transform_in_place<sparse_container<double>>(
+      a, [](const auto &x) { return decltype(x){}; });
   EXPECT_TRUE(a_[0].empty());
   EXPECT_TRUE(a_[1].empty());
 }
@@ -1465,9 +1468,9 @@ TEST(SparseVariable, binary_with_dense) {
   sparse_[1] = {4};
   auto dense = makeVariable<double>(Data::Value, {Dim::Y, 2}, {1.5, 0.5});
 
-  sparse.transform_in_place<
+  transform_in_place<
       pair_custom_t<std::pair<sparse_container<double>, double>>>(
-      [](const double a, const double b) { return a * b; }, dense);
+      dense, sparse, [](const double a, const double b) { return a * b; });
 
   EXPECT_TRUE(equals(sparse_[0], {1.5, 3.0, 4.5}));
   EXPECT_TRUE(equals(sparse_[1], {2.0}));

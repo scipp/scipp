@@ -7,6 +7,7 @@
 #include "counts.h"
 #include "dataset.h"
 #include "except.h"
+#include "transform.h"
 #include "variable.h"
 #include "variable_view.h"
 
@@ -610,10 +611,10 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
     expect::contains(variable.dimensions(), other.dimensions());
     // Note: This will broadcast/transpose the RHS if required. We do not
     // support changing the dimensions of the LHS though!
-    variable.template transform_in_place<
+    transform_in_place<
         pair_self_t<double, float, int64_t, Eigen::Vector3d>,
         pair_custom_t<std::pair<sparse_container<double>, double>>>(
-        [](auto &&a, auto &&b) { return a + b; }, other);
+        other, variable, [](auto &&a, auto &&b) { return a + b; });
   } else {
     if (variable.dimensions() == other.dimensions()) {
       using ConstViewOrRef =
@@ -665,9 +666,8 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dimensions(), other.dimensions());
   if (variable.tag() == Data::Events)
     throw std::runtime_error("Subtraction of events lists not implemented.");
-  variable.template transform_in_place<
-      pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      [](auto &&a, auto &&b) { return a - b; }, other);
+  transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+      other, variable, [](auto &&a, auto &&b) { return a - b; });
   return variable;
 }
 
@@ -688,10 +688,9 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
     throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
-  variable.template transform_in_place<
-      pair_self_t<double, float, int64_t>,
-      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
-      [](auto &&a, auto &&b) { return a * b; }, other);
+  transform_in_place<pair_self_t<double, float, int64_t>,
+                     pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
+      other, variable, [](auto &&a, auto &&b) { return a * b; });
   return variable;
 }
 
@@ -713,10 +712,9 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
     throw std::runtime_error("Division of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() / other.unit());
-  variable.template transform_in_place<
-      pair_self_t<double, float, int64_t>,
-      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
-      [](auto &&a, auto &&b) { return a / b; }, other);
+  transform_in_place<pair_self_t<double, float, int64_t>,
+                     pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
+      other, variable, [](auto &&a, auto &&b) { return a / b; });
   return variable;
 }
 
@@ -941,9 +939,9 @@ Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
-  b.transform_in_place<double, float>(
-      overloaded{[a](const double b) { return a / b; },
-                 [a](const float b) { return a / b; }});
+  transform_in_place<double, float>(
+      b, overloaded{[a](const double b) { return a / b; },
+                    [a](const float b) { return a / b; }});
   return std::move(b);
 }
 
@@ -973,12 +971,15 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
         "Cannot concatenate Variables: Names do not match.");
 
   if (a1.sparseDim() == dim && a2.sparseDim() == dim) {
-    return a1.transform<pair_self_t<sparse_container<double>>>(
-        [](auto a, const auto &b) {
+    Variable out(a1);
+    // TODO Sanitize transform_in_place implementation so the functor signature
+    // is more reasonable.
+    transform_in_place<pair_self_t<sparse_container<double>>>(
+        a2, out, [](auto a, const auto &b) {
           a.insert(a.end(), b.begin(), b.end());
           return a;
-        },
-        a2);
+        });
+    return out;
   }
 
   const auto &dims1 = a1.dimensions();
@@ -1138,9 +1139,8 @@ Variable sum(const Variable &var, const Dim dim) {
   dims.erase(dim);
   // setDimensions zeros the data
   summed.setDimensions(dims);
-  summed.template transform_in_place<
-      pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      [](auto &&a, auto &&b) { return a + b; }, var);
+  transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+      var, summed, [](auto &&a, auto &&b) { return a + b; });
   return summed;
 }
 
@@ -1151,16 +1151,16 @@ Variable mean(const Variable &var, const Dim dim) {
 }
 
 Variable abs(const Variable &var) {
-  return var.transform<double, float>([](const auto x) { return ::abs(x); });
+  return transform<double, float>(var, [](const auto x) { return ::abs(x); });
 }
 
 Variable norm(const Variable &var) {
-  return var.transform<Eigen::Vector3d>([](auto &&x) { return x.norm(); });
+  return transform<Eigen::Vector3d>(var, [](auto &&x) { return x.norm(); });
 }
 
 Variable sqrt(const Variable &var) {
   Variable result =
-      var.transform<double, float>([](const auto x) { return std::sqrt(x); });
+      transform<double, float>(var, [](const auto x) { return std::sqrt(x); });
   result.setUnit(sqrt(var.unit()));
   return result;
 }

@@ -533,35 +533,11 @@ public:
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
 
-  template <class... Ts, class Op> void transform_in_place(Op op) {
-    // TODO handle units
-    m_object.transform_in_place<Ts...>(op);
-  }
-
-  template <class... TypePairs, class Op, class Var>
-  Variable &transform_in_place(Op op, const Var &other) {
-    // TODO handle units
-    dataHandle().transform_in_place<TypePairs...>(op, other.dataHandle());
-    return *this;
-  }
-
-  template <class... TypePairs, class Op, class Var>
-  Variable transform(Op op, const Var &other) const {
-    auto copy(*this);
-    copy.transform_in_place<TypePairs...>(op, other);
-    return copy;
-  }
-
   template <class... Ts, class Op, class... Vars>
   Variable &apply_in_place(Op op, const Vars &... vars) {
     // TODO handle units
     dataHandle().apply_in_place<Ts...>(op, vars.dataHandle()...);
     return *this;
-  }
-
-  template <class... Ts, class Op> Variable transform(Op op) const {
-    // TODO handle units
-    return Variable(*this, m_object.transform<Ts...>(op));
   }
 
   template <class... Tags> friend class ZipView;
@@ -835,13 +811,6 @@ public:
   VariableSlice operator/=(const double value) const;
 
   void setUnit(const units::Unit &unit) const;
-
-  template <class... TypePairs, class Op, class Var>
-  VariableSlice transform_in_place(Op op, const Var &other) const {
-    // TODO handle units
-    dataHandle().transform_in_place<TypePairs...>(op, other.dataHandle());
-    return *this;
-  }
 
 private:
   friend class Variable;
