@@ -116,7 +116,7 @@ template <class Op> struct Transform {
     auto outData = out->getSpan();
     std::transform(data.begin(), data.end(), outData.begin(), op);
     return {std::move(out)};
-}
+  }
 };
 
 } // namespace detail
