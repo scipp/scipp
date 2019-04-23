@@ -607,36 +607,13 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
   expect::equals(variable.unit(), other.unit());
-  // TODO How should attributes be handled?
-  if (variable.dtype() != dtype<Dataset> || variable.isAttr()) {
-    expect::contains(variable.dimensions(), other.dimensions());
-    // Note: This will broadcast/transpose the RHS if required. We do not
-    // support changing the dimensions of the LHS though!
-    transform_in_place<
-        pair_self_t<double, float, int64_t, Eigen::Vector3d>,
-        pair_custom_t<std::pair<sparse_container<double>, double>>>(
-        other, variable, [](auto &&a, auto &&b) { return a + b; });
-  } else {
-    if (variable.dimensions() == other.dimensions()) {
-      using ConstViewOrRef =
-          std::conditional_t<std::is_same<T2, Variable>::value,
-                             const Vector<Dataset> &,
-                             const VariableView<const Dataset>>;
-      ConstViewOrRef otherDatasets = other.template cast<Dataset>();
-      if (otherDatasets.size() > 0 &&
-          otherDatasets[0].dimensions().count() != 1)
-        throw std::runtime_error(
-            "Cannot add Variable: Nested Dataset dimension must be 1.");
-      auto datasets = variable.template cast<Dataset>();
-      const Dim dim = datasets[0].dimensions().label(0);
-#pragma omp parallel for
-      for (scipp::index i = 0; i < scipp::size(datasets); ++i)
-        datasets[i] = concatenate(datasets[i], otherDatasets[i], dim);
-    } else {
-      throw std::runtime_error(
-          "Cannot add Variables: Dimensions do not match.");
-    }
-  }
+  expect::contains(variable.dimensions(), other.dimensions());
+  // Note: This will broadcast/transpose the RHS if required. We do not support
+  // changing the dimensions of the LHS though!
+  transform_in_place<
+      pair_self_t<double, float, int64_t, Eigen::Vector3d>,
+      pair_custom_t<std::pair<sparse_container<double>, double>>>(
+      other, variable, [](auto &&a, auto &&b) { return a + b; });
   return variable;
 }
 
@@ -665,8 +642,6 @@ Variable &Variable::operator+=(const double value) & {
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   expect::equals(variable.unit(), other.unit());
   expect::contains(variable.dimensions(), other.dimensions());
-  if (variable.tag() == Data::Events)
-    throw std::runtime_error("Subtraction of events lists not implemented.");
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
       other, variable, [](auto &&a, auto &&b) { return a - b; });
   return variable;
@@ -685,8 +660,6 @@ Variable &Variable::operator-=(const double value) & {
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dimensions(), other.dimensions());
-  if (variable.tag() == Data::Events)
-    throw std::runtime_error("Multiplication of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
@@ -709,8 +682,6 @@ Variable &Variable::operator*=(const double value) & {
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dimensions(), other.dimensions());
-  if (variable.tag() == Data::Events)
-    throw std::runtime_error("Division of events lists not implemented.");
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() / other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,

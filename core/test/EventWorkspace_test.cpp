@@ -119,32 +119,40 @@ TEST(EventWorkspace, basics) {
 }
 
 TEST(EventWorkspace, plus) {
+  // Note that unlike the tests above this is now using sparse dimensions.
+  // Addition for nested Dataset as event list is not supported anymore.
   Dataset d;
+  d.insert(
+      makeSparseVariable<double>(Coord::Tof, {Dim::Spectrum, 2}, Dim::Tof));
+  auto tofs = d(Coord::Tof).sparseSpan<double>();
+  tofs[0].resize(10);
+  tofs[1].resize(20);
+  d.insert(
+      makeSparseVariable<double>(Data::Value, {Dim::Spectrum, 2}, Dim::Tof));
+  auto weights = d(Data::Value).sparseSpan<double>();
+  weights[0].resize(10);
+  weights[1].resize(20);
 
-  Dataset e;
-  e.insert(Data::Tof, "", {Dim::Event, 10});
-  e.insert(Data::PulseTime, "", {Dim::Event, 10});
-  auto e2 = concatenate(e, e, Dim::Event);
+  auto sum = concatenate(d, d, Dim::Tof);
 
-  d.insert(Data::Events, "", {Dim::Spectrum, 2}, {e, e2});
+  auto tofLists = sum(Coord::Tof).sparseSpan<double>();
+  EXPECT_EQ(tofLists.size(), 2);
+  EXPECT_EQ(tofLists[0].size(), 2 * 10);
+  EXPECT_EQ(tofLists[1].size(), 2 * 20);
 
-  EXPECT_THROW_MSG(d - d, std::runtime_error,
-                   "Subtraction of events lists not implemented.");
-  EXPECT_THROW_MSG(d * d, std::runtime_error,
-                   "Multiplication of events lists not implemented.");
+  sum = concatenate(sum, d, Dim::Tof);
+  tofLists = sum(Coord::Tof).sparseSpan<double>();
 
-  // Special handling: Adding datasets *concatenates* the event lists.
-  auto sum = d + d;
+  EXPECT_EQ(tofLists.size(), 2);
+  EXPECT_EQ(tofLists[0].size(), 3 * 10);
+  EXPECT_EQ(tofLists[1].size(), 3 * 20);
 
-  auto eventLists = sum.get(Data::Events);
-  EXPECT_EQ(eventLists.size(), 2);
-  EXPECT_EQ(eventLists[0].get(Data::Tof).size(), 2 * 10);
-  EXPECT_EQ(eventLists[1].get(Data::Tof).size(), 2 * 20);
+  // Coordinate mismatch.
+  EXPECT_THROW(d + sum, std::runtime_error);
+  EXPECT_THROW(d - sum, std::runtime_error);
+  EXPECT_THROW(d * sum, std::runtime_error);
 
-  sum += d;
-
-  eventLists = sum.get(Data::Events);
-  EXPECT_EQ(eventLists.size(), 2);
-  EXPECT_EQ(eventLists[0].get(Data::Tof).size(), 3 * 10);
-  EXPECT_EQ(eventLists[1].get(Data::Tof).size(), 3 * 20);
+  // Self-addition has matching coords, however we still fail here (on purpose)
+  // since this probably does not make sense?
+  EXPECT_THROW(d += d, std::runtime_error);
 }

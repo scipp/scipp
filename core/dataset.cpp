@@ -839,22 +839,27 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
     const auto &var1 = d1[i1];
     const auto &var2 = d2(var1.tag(), var1.name());
     // TODO may need to extend things along constant dimensions to match shapes!
-    if (var1.dimensions().contains(dim)) {
-      const auto extent = d1.dimensions()[dim];
-      if (var1.dimensions()[dim] == extent)
+    if (var1.dimensions().contains(dim) || var1.sparseDim() == dim) {
+      if (var1.sparseDim() == dim) {
         out.insert(concatenate(var1, var2, dim));
-      else {
-        // Variable contains bin edges, check matching first/last boundary,
-        // do not duplicate joint boundary.
-        const auto extent2 = var2.dimensions()[dim];
-        if (extent2 == d2.dimensions()[dim])
-          throw std::runtime_error(
-              "Cannot concatenate: Second variable is not an edge variable.");
-        if (var1(dim, extent) != var2(dim, 0))
-          throw std::runtime_error("Cannot concatenate: Last bin edge of first "
-                                   "edge variable does not match first bin "
-                                   "edge of second edge variable.");
-        out.insert(concatenate(var1, var2(dim, 1, extent2), dim));
+      } else {
+        const auto extent = d1.dimensions()[dim];
+        if (var1.dimensions()[dim] == extent)
+          out.insert(concatenate(var1, var2, dim));
+        else {
+          // Variable contains bin edges, check matching first/last boundary,
+          // do not duplicate joint boundary.
+          const auto extent2 = var2.dimensions()[dim];
+          if (extent2 == d2.dimensions()[dim])
+            throw std::runtime_error(
+                "Cannot concatenate: Second variable is not an edge variable.");
+          if (var1(dim, extent) != var2(dim, 0))
+            throw std::runtime_error(
+                "Cannot concatenate: Last bin edge of first "
+                "edge variable does not match first bin "
+                "edge of second edge variable.");
+          out.insert(concatenate(var1, var2(dim, 1, extent2), dim));
+        }
       }
     } else {
       if (var1 == var2) {
