@@ -1409,7 +1409,6 @@ TEST(SparseVariable, concatenate_along_sparse_dimension) {
   EXPECT_EQ(var.sparseDim(), Dim::X);
   EXPECT_EQ(var.size(), 2);
   auto data = var.sparseSpan<double>();
-  EXPECT_EQ(data[0].size(), 5);
   EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
   EXPECT_TRUE(equals(data[1], {1, 2}));
 }

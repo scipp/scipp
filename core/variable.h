@@ -533,13 +533,6 @@ public:
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
 
-  template <class... Ts, class Op, class... Vars>
-  Variable &apply_in_place(Op op, const Vars &... vars) {
-    // TODO handle units
-    dataHandle().apply_in_place<Ts...>(op, vars.dataHandle()...);
-    return *this;
-  }
-
   template <class... Tags> friend class ZipView;
   template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 

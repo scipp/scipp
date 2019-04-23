@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <cmath>
 
+#include "apply.h"
 #include "counts.h"
 #include "dataset.h"
 #include "except.h"
@@ -1062,7 +1063,8 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     dims.resize(dim, newCoord.dimensions()[dim] - 1);
     Variable rebinned(var, dims);
     if (rebinned.dimensions().inner() == dim) {
-      rebinned.apply_in_place<double, float>(do_rebin, var, oldCoord, newCoord);
+      apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord,
+                                    newCoord);
     } else {
       if (newCoord.dimensions().ndim() > 1)
         throw std::runtime_error(
