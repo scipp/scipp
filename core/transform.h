@@ -124,6 +124,12 @@ template <class Op> struct Transform {
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
+/// Transform the data elements of a variable in-place.
+//
+// Note that this is deliberately not named `for_each`: Unlike std::for_each,
+// this function does not promise in-order execution. This overload is
+// equivalent to std::transform with a single input range and an output range
+// identical to the input range, but avoids potentially costly element copies.
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &var, Op op) {
   using namespace detail;
@@ -136,6 +142,11 @@ void transform_in_place(Var &var, Op op) {
   }
 }
 
+/// Transform the data elements of a variable in-place.
+//
+// This overload is equivalent to std::transform with two input ranges and an
+// output range identical to the secound input range, but avoids potentially
+// costly element copies.
 template <class... TypePairs, class Var1, class Var, class Op>
 void transform_in_place(const Var1 &other, Var &&var, Op op) {
   using namespace detail;
@@ -150,6 +161,11 @@ void transform_in_place(const Var1 &other, Var &&var, Op op) {
   }
 }
 
+/// Transform the data elements of a variable and return a new Variable.
+//
+// This overload is equivalent to std::transform with a single input range, but
+// avoids the need to manually create a new variable for the output and the need
+// for, e.g., std::back_inserter.
 template <class... Ts, class Var, class Op>
 Variable transform(const Var &var, Op op) {
   using namespace detail;
