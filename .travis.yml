@@ -34,6 +34,8 @@ jobs:
       install: sh .travis/install.sh
       script: sh .travis/run_tests.sh
     - os: linux
+      compiler:
+        - clang
       addons:
         apt:
           sources:
