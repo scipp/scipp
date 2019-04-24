@@ -20,20 +20,18 @@ jobs:
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
       # works on Precise and Trusty
-      os: linux
+      - os: linux
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
+#            - llvm-toolchain-trusty-5.0
           packages:
             - g++-7
-            - clang-5.0
+  #          - clang-5.0
       env:
-        - JOBS_EVAL="CC=gcc-7 && CXX=g++-7" && CC=clang-5.0 && CXX=clang++-5.0"
-      compiler:
-        - gcc
-        - clang
+        - JOBS_EVAL="CC=gcc-7 && CXX=g++-7"
+#        - JOBS_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
       before_install:
         - eval "${JOBS_EVAL}"
       install: sh .travis/install.sh
