@@ -39,7 +39,7 @@ jobs:
           sources:
             - llvm-toolchain-xenial-7
           packages:
-            - clang-8
+            - clang-7
       env:
         - JOB_EVAL="CC=clang-7 && CXX=clang++-7"
       before_install:
