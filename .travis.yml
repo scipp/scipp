@@ -11,31 +11,30 @@ jobs:
   include:
       # Check clang format and flake8 in the first stage
     - stage: "Code formatting"
-        name: "Clang-format"
-        before_install: sh .travis/before_install.sh
-        script: sh .travis/check_clang_format.sh
-      - name: "Flake8"
-        before_install: sh .travis/before_install.sh
-        script: sh .travis/check_flake8.sh
+      name: "Clang-format"
+      before_install: sh .travis/before_install.sh
+      script: sh .travis/check_clang_format.sh
+    - name: "Flake8"
+      before_install: sh .travis/before_install.sh
+      script: sh .travis/check_flake8.sh
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
-        os: linux
-            addons:
-              apt:
-                sources:
-                  - ubuntu-toolchain-r-test
-                packages:
-                  - g++-7
-            env:
-              - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
-        name: "gcc"
-        before_install:
-          - eval "${MATRIX_EVAL}"
-          - sh .travis/before_install.sh
-        install: sh .travis/install.sh
-        script: sh .travis/run_tests.sh
-      - compiler: clang
-        name: "clang"
-        before_install: sh .travis/before_install.sh
-        install: sh .travis/install.sh
-        script: sh .travis/run_tests.sh
+      os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+      before_install:
+        - eval "${MATRIX_EVAL}"
+        - sh .travis/before_install.sh
+      install: sh .travis/install.sh
+      script: sh .travis/run_tests.sh
+    - compiler: clang
+      name: "clang"
+      before_install: sh .travis/before_install.sh
+      install: sh .travis/install.sh
+      script: sh .travis/run_tests.sh
