@@ -19,7 +19,7 @@ jobs:
         script: sh .travis/check_flake8.sh
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
-        - os: linux
+        os: linux
             addons:
               apt:
                 sources:
