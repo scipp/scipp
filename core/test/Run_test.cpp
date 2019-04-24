@@ -111,7 +111,7 @@ TEST(Run, DISABLED_meta_data_propagation) {
       generic_log.span<Dataset>(Data::Value, "root")[1];
   // 1 entry from run 2.
   EXPECT_EQ(generic_log_run2.size(), 1);
-  EXPECT_EQ(generic_log_run2[0].name(), "user comment");
+  EXPECT_NO_THROW(generic_log_run2(Data::DeprecatedString, "user comment"));
   // Again there was no automatic merging, can be done by hand if required.
 }
 

@@ -35,10 +35,11 @@ TEST(TableWorkspace, basics) {
       item.get(Data::DeprecatedString) = "why is this negative?";
 
   // Get string representation of arbitrary table, e.g., for visualization.
-  EXPECT_EQ(asStrings(table[0]), std::vector<std::string>({"a", "b", "c"}));
-  EXPECT_EQ(asStrings(table[1]),
+  EXPECT_EQ(asStrings(table(Coord::Row)),
+            std::vector<std::string>({"a", "b", "c"}));
+  EXPECT_EQ(asStrings(table(Data::Value, "")),
             std::vector<std::string>({"1.000000", "-2.000000", "3.000000"}));
-  EXPECT_EQ(asStrings(table[2]),
+  EXPECT_EQ(asStrings(table(Data::DeprecatedString, "")),
             std::vector<std::string>({"", "why is this negative?", ""}));
 
   // Standard shape operations provide basic things required for tables:
@@ -55,11 +56,11 @@ TEST(TableWorkspace, basics) {
 
   // Can sort by arbitrary column.
   auto sortedTable = sort(table, Data::Value);
-  EXPECT_EQ(asStrings(sortedTable[0]),
+  EXPECT_EQ(asStrings(sortedTable(Coord::Row)),
             std::vector<std::string>({"b", "a", "c"}));
-  EXPECT_EQ(asStrings(sortedTable[1]),
+  EXPECT_EQ(asStrings(sortedTable(Data::Value, "")),
             std::vector<std::string>({"-2.000000", "1.000000", "3.000000"}));
-  EXPECT_EQ(asStrings(sortedTable[2]),
+  EXPECT_EQ(asStrings(sortedTable(Data::DeprecatedString, "")),
             std::vector<std::string>({"why is this negative?", "", ""}));
 
   // Split (opposite of concatenate).
@@ -71,7 +72,7 @@ TEST(TableWorkspace, basics) {
   // Remove rows from the middle of a table.
   auto recombined = concatenate(mergedTable(Dim::Row, 0, 2),
                                 mergedTable(Dim::Row, 4, 6), Dim::Row);
-  EXPECT_EQ(asStrings(recombined[0]),
+  EXPECT_EQ(asStrings(recombined(Coord::Row)),
             std::vector<std::string>({"a", "b", "b", "c"}));
 
   // Other basics (to be implemented): cut/truncate/chop/extract (naming

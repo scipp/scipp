@@ -18,16 +18,34 @@ namespace scipp::core {
 class ConstDatasetSlice;
 class DatasetSlice;
 
+// struct ItemProxy {
+//  const std::string &name;
+//  Tag tag;
+//  ConstDatasetSlice data;
+//};
+//
+
+using DatasetItemConstProxy =
+    std::tuple<const std::string &, Tag, ConstVariableSlice>;
+using DatasetItemProxy = std::tuple<const std::string &, Tag, VariableSlice>;
+
+template <class Var> auto itemProxy(Var &var) {
+  if constexpr (std::is_const_v<Var>)
+    return DatasetItemConstProxy(var.name(), var.tag(), var);
+  else
+    return DatasetItemProxy(var.name(), var.tag(), var);
+}
+
 /// Dataset is a set of Variables, identified with a unique (tag, name)
 /// identifier.
 class Dataset {
 private:
   // Helper lambdas for creating iterators.
   static constexpr auto makeConstSlice = [](const Variable &var) {
-    return ConstVariableSlice(var);
+    return itemProxy(var);
   };
   static constexpr auto makeSlice = [](Variable &var) {
-    return VariableSlice(var);
+    return itemProxy(var);
   };
 
 public:
@@ -44,13 +62,11 @@ public:
   // (Const)VariableSlice or (Const)DatasetSlice for rvalue Dataset. Otherwise
   // the resulting slice will point to free'ed memory.
   ConstVariableSlice operator[](const scipp::index i) const && = delete;
-  ConstVariableSlice operator[](const scipp::index i) const & {
-    return ConstVariableSlice{m_variables[i]};
+  auto operator[](const scipp::index i) const & {
+    return itemProxy(m_variables[i]);
   }
   VariableSlice operator[](const scipp::index i) && = delete;
-  VariableSlice operator[](const scipp::index i) & {
-    return VariableSlice{m_variables[i]};
-  }
+  auto operator[](const scipp::index i) & { return itemProxy(m_variables[i]); }
 
   ConstDatasetSlice subset(const std::string &) const && = delete;
   ConstDatasetSlice subset(const Tag, const std::string &) const && = delete;
@@ -104,17 +120,25 @@ public:
   }
 
   void insert(Variable variable);
-  template <class T> void insert(const std::string &name, const T &slice) {
+  void insert(DatasetItemConstProxy item) {
+    const auto & [ name, tag, var ] = item;
+    insert(tag, name, var);
+  }
+  void insert(DatasetItemProxy item) {
+    const auto & [ name, tag, var ] = item;
+    insert(tag, name, var);
+  }
+  template <class T> void insert(const std::string &newName, const T &slice) {
     // Note the lack of atomicity
-    for (const auto &var : slice) {
+    for (const auto & [ name, tag, var ] : slice) {
       Variable newVar(var);
-      if (var.isCoord()) {
-        if (!contains(newVar.tag(), newVar.name())) {
+      if (tag.isCoord()) {
+        if (!contains(tag, name)) {
           throw std::runtime_error(
               "Cannot provide new coordinate variables via subset");
         }
       } else {
-        newVar.setName(name); // As long as !cood var, name gets rewritten.
+        newVar.setName(newName); // As long as !cood var, name gets rewritten.
       }
       this->insert(newVar);
     }
@@ -230,9 +254,9 @@ public:
     return m_variables[find(tag, name)].template span<T>();
   }
 
-  // Currently `Dimensions` does not allocate memory so we could return by value
-  // instead of disabling this, but this way leaves more room for changes, I
-  // think.
+  // Currently `Dimensions` does not allocate memory so we could return by
+  // value instead of disabling this, but this way leaves more room for
+  // changes, I think.
   const Dimensions &dimensions() const && = delete;
   const Dimensions &dimensions() const & { return m_dimensions; }
 
@@ -270,8 +294,8 @@ private:
 
 template <class T> scipp::index count(const T &dataset, const Tag tag) {
   scipp::index n = 0;
-  for (const auto &item : dataset)
-    if (item.tag() == tag)
+  for (const auto & [ n, t, var ] : dataset)
+    if (t == tag)
       ++n;
   return n;
 }
@@ -279,8 +303,8 @@ template <class T> scipp::index count(const T &dataset, const Tag tag) {
 template <class T>
 scipp::index count(const T &dataset, const Tag tag, const std::string &name) {
   scipp::index n = 0;
-  for (const auto item : dataset)
-    if (item.tag() == tag && item.name() == name)
+  for (const auto & [ n, t, var ] : dataset)
+    if (t == tag && n == name)
       ++n;
   return n;
 }
@@ -288,9 +312,11 @@ scipp::index count(const T &dataset, const Tag tag, const std::string &name) {
 // T can be Dataset or Slice.
 template <class T>
 scipp::index find(const T &dataset, const Tag tag, const std::string &name) {
-  for (scipp::index i = 0; i < dataset.size(); ++i)
-    if (dataset[i].tag() == tag && dataset[i].name() == name)
+  for (scipp::index i = 0; i < dataset.size(); ++i) {
+    const auto & [ n, t, var ] = dataset[i];
+    if (t == tag && n == name)
       return i;
+  }
   throw except::VariableNotFoundError(dataset, tag, name);
 }
 
@@ -320,7 +346,9 @@ class ConstDatasetSlice {
 private:
   struct IterAccess {
     auto operator()(const scipp::index i) const {
-      return detail::makeSlice(m_view.m_dataset[i], m_view.m_slices);
+      const auto & [ name, tag, var ] = m_view.m_dataset[i];
+      return std::tuple<const std::string &, Tag, ConstVariableSlice>(
+          name, tag, detail::makeSlice(var, m_view.m_slices));
     }
     const ConstDatasetSlice &m_view;
   };
@@ -333,10 +361,11 @@ protected:
     std::vector<scipp::index> indices;
     bool foundData = false;
     for (const auto i : base.m_indices) {
-      const auto &var = base.m_dataset[i];
+      const auto & [ name, tag, var ] = base.m_dataset[i];
+      static_cast<void>(var);
       // TODO Should we also keep attributes? Probably yes?
-      if (var.isCoord() || var.name() == select) {
-        foundData |= var.isData();
+      if (tag.isCoord() || name == select) {
+        foundData |= tag.isData();
         indices.push_back(i);
       }
     }
@@ -350,10 +379,10 @@ protected:
     std::vector<scipp::index> indices;
     bool foundData = false;
     for (const auto i : base.m_indices) {
-      const auto &var = base.m_dataset[i];
-      if (var.isCoord() ||
-          (var.tag() == selectTag && var.name() == selectName)) {
-        foundData |= var.isData();
+      const auto & [ name, tag, var ] = base.m_dataset[i];
+      static_cast<void>(var);
+      if (tag.isCoord() || (tag == selectTag && name == selectName)) {
+        foundData |= tag.isData();
         indices.push_back(i);
       }
     }
@@ -418,8 +447,10 @@ public:
 
   scipp::index size() const { return m_indices.size(); }
 
-  ConstVariableSlice operator[](const scipp::index i) const {
-    return detail::makeSlice(m_dataset[m_indices[i]], m_slices);
+  auto operator[](const scipp::index i) const {
+    const auto & [ name, tag, var ] = m_dataset[m_indices[i]];
+    return std::tuple<const std::string &, Tag, ConstVariableSlice>(
+        name, tag, detail::makeSlice(var, m_slices));
   }
 
   auto begin() const {
@@ -462,7 +493,7 @@ protected:
       for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
         // TODO Should all coordinates with matching dimension be removed, or
         // only dimension-coordinates?
-        if (coordDimension[slice.m_dataset[*it].tag().value()] == dim)
+        if (coordDimension[std::get<Tag>(slice.m_dataset[*it]).value()] == dim)
           it = slice.m_indices.erase(it);
         else
           ++it;
@@ -477,7 +508,9 @@ class DatasetSlice : public ConstDatasetSlice {
 private:
   struct IterAccess {
     auto operator()(const scipp::index i) const {
-      return detail::makeSlice(m_view.m_mutableDataset[i], m_view.m_slices);
+      const auto & [ name, tag, var ] = m_view.m_mutableDataset[i];
+      return std::tuple<const std::string &, Tag, VariableSlice>(
+          name, tag, detail::makeSlice(var, m_view.m_slices));
     }
     const DatasetSlice &m_view;
   };
@@ -498,8 +531,10 @@ public:
         m_mutableDataset(dataset) {}
 
   using ConstDatasetSlice::operator[];
-  VariableSlice operator[](const scipp::index i) const {
-    return detail::makeSlice(m_mutableDataset[m_indices[i]], m_slices);
+  auto operator[](const scipp::index i) const {
+    const auto & [ name, tag, var ] = m_mutableDataset[m_indices[i]];
+    return std::tuple<const std::string &, Tag, VariableSlice>(
+        name, tag, detail::makeSlice(var, m_slices));
   }
 
   DatasetSlice operator()(const Dim dim, const scipp::index begin,

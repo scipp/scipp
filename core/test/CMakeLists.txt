@@ -2,7 +2,6 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 add_executable(scipp-core-test
                bool_test.cpp
-               convert_test.cpp
                dataset_test.cpp
                dimensions_test.cpp
                EventWorkspace_test.cpp

@@ -217,9 +217,20 @@ std::string make_dims_labels(const Variable &variable,
 template <class Var>
 auto to_string_components(const Var &variable, const std::string &separator,
                           const Dimensions &datasetDims = Dimensions()) {
+  std::array<std::string, 3> out;
+  out[0] = to_string(variable.dtype());
+  out[1] = '[' + variable.unit().name() + ']';
+  out[2] = make_dims_labels(variable, separator, datasetDims);
+  return out;
+}
+
+template <class Var>
+auto to_string_components(const std::string &name, const Tag tag,
+                          const Var &variable, const std::string &separator,
+                          const Dimensions &datasetDims = Dimensions()) {
   std::array<std::string, 5> out;
-  out[0] = variable.name();
-  out[1] = to_string(variable.tag(), separator);
+  out[0] = name;
+  out[1] = to_string(tag, separator);
   out[2] = to_string(variable.dtype());
   out[3] = '[' + variable.unit().name() + ']';
   out[4] = make_dims_labels(variable, separator, datasetDims);
@@ -245,6 +256,16 @@ void format_line(std::stringstream &s,
   s << '\n';
 }
 
+void format_line(std::stringstream &s,
+                 const std::array<std::string, 3> &columns) {
+  const auto & [ dtype, unit, dims ] = columns;
+  const std::string colSep("  ");
+  s << colSep << std::setw(8) << dtype;
+  s << colSep << std::setw(15) << unit;
+  s << colSep << dims;
+  s << '\n';
+}
+
 std::string to_string(const Variable &variable, const std::string &separator) {
   std::stringstream s;
   s << "<Variable>";
@@ -260,6 +281,23 @@ std::string to_string(const ConstVariableSlice &variable,
   return s.str();
 }
 
+std::string to_string(const std::string &name, const Tag tag,
+                      const Variable &variable, const std::string &separator) {
+  std::stringstream s;
+  s << "<Variable>";
+  format_line(s, to_string_components(name, tag, variable, separator));
+  return s.str();
+}
+
+std::string to_string(const std::string &name, const Tag tag,
+                      const ConstVariableSlice &variable,
+                      const std::string &separator) {
+  std::stringstream s;
+  s << "<VariableSlice>";
+  format_line(s, to_string_components(name, tag, variable, separator));
+  return s.str();
+}
+
 template <class D>
 std::string do_to_string(const D &dataset, const std::string &id,
                          const Dimensions &dims, const std::string &separator) {
@@ -267,19 +305,19 @@ std::string do_to_string(const D &dataset, const std::string &id,
   s << id + '\n';
   s << "Dimensions: " << to_string(dims, separator) << '\n';
   s << "Coordinates:\n";
-  for (const auto &var : dataset) {
-    if (var.isCoord())
-      format_line(s, to_string_components(var, separator, dims));
+  for (const auto & [ name, tag, var ] : dataset) {
+    if (tag.isCoord())
+      format_line(s, to_string_components(name, tag, var, separator, dims));
   }
   s << "Data:\n";
-  for (const auto &var : dataset) {
-    if (var.isData())
-      format_line(s, to_string_components(var, separator, dims));
+  for (const auto & [ name, tag, var ] : dataset) {
+    if (tag.isData())
+      format_line(s, to_string_components(name, tag, var, separator, dims));
   }
   s << "Attributes:\n";
-  for (const auto &var : dataset) {
-    if (var.isAttr())
-      format_line(s, to_string_components(var, separator, dims));
+  for (const auto & [ name, tag, var ] : dataset) {
+    if (tag.isAttr())
+      format_line(s, to_string_components(name, tag, var, separator, dims));
   }
   s << '\n';
   return s.str();

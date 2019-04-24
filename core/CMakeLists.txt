@@ -2,7 +2,6 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(INC_FILES
     aligned_allocator.h
-    convert.h
     dataset.h
     dataset_index.h
     dimensions.h
@@ -23,7 +22,6 @@ set(INC_FILES
     vector.h)
 
 set(SRC_FILES
-    convert.cpp
     counts.cpp
     dataset.cpp
     dimensions.cpp

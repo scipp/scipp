@@ -36,6 +36,12 @@ std::string to_string(const Variable &variable,
                       const std::string &separator = "::");
 std::string to_string(const ConstVariableSlice &variable,
                       const std::string &separator = "::");
+std::string to_string(const std::string &name, const Tag tag,
+                      const Variable &variable,
+                      const std::string &separator = "::");
+std::string to_string(const std::string &name, const Tag tag,
+                      const ConstVariableSlice &variable,
+                      const std::string &separator = "::");
 std::string to_string(const Dataset &dataset,
                       const std::string &separator = "::");
 std::string to_string(const ConstDatasetSlice &dataset,

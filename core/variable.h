@@ -460,10 +460,6 @@ public:
   // slice in general so we must return a copy of the data.
   Variable reshape(const Dimensions &dims) const;
 
-  const std::string &name() const { return m_variable->name(); }
-  void setName(const std::string &) {
-    throw std::runtime_error("Cannot rename Variable via slice view.");
-  }
   units::Unit unit() const { return m_variable->unit(); }
   scipp::index size() const {
     if (m_view)
@@ -491,7 +487,6 @@ public:
   }
 
   DType dtype() const noexcept { return m_variable->dtype(); }
-  Tag tag() const { return m_variable->tag(); }
 
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & {
@@ -509,10 +504,6 @@ public:
       return m_variable->dataHandle();
   }
 
-  bool isCoord() const { return m_variable->isCoord(); }
-  bool isAttr() const { return m_variable->isAttr(); }
-  bool isData() const { return m_variable->isData(); }
-
   bool isSparse() const noexcept { return m_variable->isSparse(); }
   Dim sparseDim() const { return m_variable->sparseDim(); }
 
@@ -521,12 +512,6 @@ public:
   // temporaries and we do not need to delete the rvalue overload, unlike for
   // many other methods. The data is owned by the underlying variable so it
   // will not be deleted even if *this is a temporary and gets deleted.
-  template <class TagT> auto get(const TagT t) const {
-    if (t != tag())
-      throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return this->template cast<typename TagT::type>();
-  }
-
   template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
@@ -540,7 +525,6 @@ public:
 
 protected:
   friend class Variable;
-  template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
   template <class T>
   const VariableView<const underlying_type_t<T>> cast() const;
@@ -580,12 +564,7 @@ public:
     return VariableSlice(*this, dim, begin, end);
   }
 
-  void setName(const std::string &) {
-    throw std::runtime_error("Cannot rename Variable via slice view.");
-  }
-
   using ConstVariableSlice::data;
-  using ConstVariableSlice::get;
 
   VariableConcept &data() const && = delete;
   VariableConcept &data() const & {
@@ -602,12 +581,6 @@ public:
   }
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
-  template <class TagT> auto get(const TagT t) const {
-    if (t != tag())
-      throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return this->template cast<typename TagT::type>();
-  }
-
   template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
@@ -646,7 +619,6 @@ public:
 private:
   friend class Variable;
   template <class... Tags> friend class ZipView;
-  template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
   template <class T> VariableView<underlying_type_t<T>> cast() const;
 

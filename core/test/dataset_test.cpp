@@ -3,7 +3,6 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "convert.h"
 #include "counts.h"
 #include "dataset.h"
 #include "dimensions.h"
@@ -166,11 +165,9 @@ TEST(Dataset, get_variable_view) {
   d.insert(Data::Value, "name", {});
   d.insert(Coord::X, {});
 
-  EXPECT_EQ(d(Coord::X).tag(), Coord::X);
-  EXPECT_EQ(d(Data::Value, "").tag(), Data::Value);
-  EXPECT_EQ(d(Data::Value, "").name(), "");
-  EXPECT_EQ(d(Data::Value, "name").tag(), Data::Value);
-  EXPECT_EQ(d(Data::Value, "name").name(), "name");
+  EXPECT_NO_THROW(d(Coord::X));
+  EXPECT_NO_THROW(d(Data::Value, ""));
+  EXPECT_NO_THROW(d(Data::Value, "name"));
   EXPECT_THROW_MSG_SUBSTR(d(Coord::Y), except::VariableNotFoundError,
                           "could not find variable with tag "
                           "Coord::Y and name ``");
@@ -1410,9 +1407,9 @@ TEST(DatasetSlice, basics) {
   auto check = [](const auto &view, const std::string &name) {
     ASSERT_EQ(view.size(), 4);
     scipp::index count = 0;
-    for (const auto &var : view) {
-      if (var.isData()) {
-        EXPECT_EQ(var.name(), name);
+    for (const auto & [ n, t, var ] : view) {
+      if (t.isData()) {
+        EXPECT_EQ(n, name);
         ++count;
       }
     }
@@ -1462,10 +1459,12 @@ TEST(DatasetSlice, slice_spatial) {
 
   auto view_x13 = d(Dim::X, 1, 3);
   ASSERT_EQ(view_x13.size(), 4);
-  EXPECT_EQ(view_x13[0].dimensions(), (Dimensions{Dim::X, 2}));
-  EXPECT_EQ(view_x13[1].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_x13[2].dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_EQ(view_x13[3].dimensions(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
+  EXPECT_EQ(view_x13(Coord::X).dimensions(), (Dimensions{Dim::X, 2}));
+  EXPECT_EQ(view_x13(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_x13(Data::Value, "a").dimensions(),
+            (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
+  EXPECT_EQ(view_x13(Data::Value, "a").dimensions(),
+            (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
 }
 
 TEST(DatasetSlice, subset_slice_spatial) {
@@ -1486,16 +1485,16 @@ TEST(DatasetSlice, subset_slice_spatial) {
   // Slice with single index (not range) => corresponding dimension coordinate
   // is removed.
   ASSERT_EQ(view_a_x0.size(), 3);
-  EXPECT_EQ(view_a_x0[0].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x0[1].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x0[2].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0(Coord::X).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
 
   auto view_a_x1 = d.subset("a")(Dim::X, 1);
 
   ASSERT_EQ(view_a_x1.size(), 3);
-  EXPECT_EQ(view_a_x1[0].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x1[1].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x1[2].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1(Coord::X).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
 
   EXPECT_NO_THROW(view_a_x1 -= view_a_x0);
 
@@ -1533,16 +1532,16 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   // Slice with single index (not range) => corresponding dimension coordinate
   // is removed.
   ASSERT_EQ(view_a_x0.size(), 3);
-  EXPECT_EQ(view_a_x0[0].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x0[1].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x0[2].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0(Coord::X).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
 
   auto view_a_x1 = d.subset("a")(Dim::X, 1);
 
   ASSERT_EQ(view_a_x1.size(), 3);
-  EXPECT_EQ(view_a_x1[0].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x1[1].dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x1[2].dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1(Coord::X).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
 
   EXPECT_NO_THROW(view_a_x1 -= view_a_x0);
 
@@ -1555,21 +1554,21 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
 
   auto view_a_x01 = d.subset("a")(Dim::X, 0, 1);
   auto view_a_x12 = d.subset("a")(Dim::X, 1, 2);
-  ASSERT_EQ(view_a_x01[0].tag(), Coord::X);
+  ASSERT_NO_THROW(view_a_x01(Coord::X));
   // View extent is 1 so we get 2 edges.
   ASSERT_EQ(view_a_x01.dimensions()[Dim::X], 1);
-  ASSERT_EQ(view_a_x01[0].dimensions()[Dim::X], 2);
-  EXPECT_TRUE(equals(view_a_x01[0].get(Coord::X), {1, 2}));
-  EXPECT_TRUE(equals(view_a_x12[0].get(Coord::X), {2, 3}));
+  ASSERT_EQ(view_a_x01(Coord::X).dimensions()[Dim::X], 2);
+  EXPECT_TRUE(equals(view_a_x01(Coord::X).span<double>(), {1, 2}));
+  EXPECT_TRUE(equals(view_a_x12(Coord::X).span<double>(), {2, 3}));
 
   auto view_a_x02 = d.subset("a")(Dim::X, 0, 2);
   auto view_a_x13 = d.subset("a")(Dim::X, 1, 3);
-  ASSERT_EQ(view_a_x02[0].tag(), Coord::X);
+  ASSERT_NO_THROW(view_a_x02(Coord::X));
   // View extent is 2 so we get 3 edges.
   ASSERT_EQ(view_a_x02.dimensions()[Dim::X], 2);
-  ASSERT_EQ(view_a_x02[0].dimensions()[Dim::X], 3);
-  EXPECT_TRUE(equals(view_a_x02[0].get(Coord::X), {1, 2, 3}));
-  EXPECT_TRUE(equals(view_a_x13[0].get(Coord::X), {2, 3, 4}));
+  ASSERT_EQ(view_a_x02(Coord::X).dimensions()[Dim::X], 3);
+  EXPECT_TRUE(equals(view_a_x02(Coord::X).span<double>(), {1, 2, 3}));
+  EXPECT_TRUE(equals(view_a_x13(Coord::X).span<double>(), {2, 3, 4}));
 
   // If we slice with a range index the corresponding coordinate (and dimension)
   // is preserved, even if the range has size 1. Thus the operation fails due to
@@ -1869,18 +1868,18 @@ TEST(DatasetSlice, binary_operator_equals_with_variable) {
   Variable bvar(Data::Value, {Dim::X, 1}, {5});
 
   a_slice += bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 + 5);
+  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 + 5);
   a_slice -= bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25);
+  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25);
   a_slice *= bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 * 5);
+  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 * 5);
   a_slice /= bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25);
+  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25);
 
   // Test notag treated as data value
   Variable cvar(Data::NoTag, {Dim::X, 1}, {5});
   a_slice += cvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").get(Data::Value).data()[0], 25 + 5);
+  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 + 5);
 }
 
 TEST(Dataset, counts_toDensity_fromDensity) {
@@ -1892,12 +1891,12 @@ TEST(Dataset, counts_toDensity_fromDensity) {
   d = counts::toDensity(std::move(d), Dim::Tof);
   auto result = d(Data::Value, "");
   EXPECT_EQ(result.unit(), units::counts / units::us);
-  EXPECT_TRUE(equals(result.get(Data::Value), {12, 6, 3}));
+  EXPECT_TRUE(equals(result.span<double>(), {12, 6, 3}));
 
   d = counts::fromDensity(std::move(d), Dim::Tof);
   result = d(Data::Value, "");
   EXPECT_EQ(result.unit(), units::counts);
-  EXPECT_TRUE(equals(result.get(Data::Value), {12, 12, 12}));
+  EXPECT_TRUE(equals(result.span<double>(), {12, 12, 12}));
 }
 
 TEST(SparseDataset, different_variables_can_have_different_sparse_dimensions) {

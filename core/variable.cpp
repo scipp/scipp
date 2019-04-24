@@ -496,7 +496,7 @@ public:
 Variable::Variable(const ConstVariableSlice &slice)
     : Variable(*slice.m_variable) {
   if (slice.m_view) {
-    m_tag = slice.tag();
+    m_tag = slice.m_variable->tag();
     m_name = slice.m_variable->m_name;
     setUnit(slice.unit());
     setDimensions(slice.dimensions());
@@ -508,9 +508,8 @@ Variable::Variable(const Variable &parent, const Dimensions &dims)
       m_object(parent.m_object->clone(dims)) {}
 
 Variable::Variable(const ConstVariableSlice &parent, const Dimensions &dims)
-    : m_tag(parent.tag()), m_unit(parent.unit()),
+    : m_tag(Data::NoTag), m_unit(parent.unit()),
       m_object(parent.data().clone(dims)) {
-  setName(parent.name());
 }
 
 Variable::Variable(const Variable &parent, VariableConceptHandle data)
@@ -575,11 +574,7 @@ INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(Eigen::Vector3d)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
-  if (a.name() != b.name())
-    return false;
   if (a.unit() != b.unit())
-    return false;
-  if (a.tag() != b.tag())
     return false;
   if (!(a.dimensions() == b.dimensions()))
     return false;
@@ -703,10 +698,6 @@ Variable &Variable::operator/=(const double value) & {
 }
 
 template <class T> VariableSlice VariableSlice::assign(const T &other) const {
-  // TODO Should mismatching tags be allowed, as long as the type matches?
-  if (tag() != other.tag())
-    throw std::runtime_error("Cannot assign to slice: Type mismatch.");
-  // Name mismatch ok, but do not assign it.
   if (unit() != other.unit())
     throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
   if (dimensions() != other.dimensions())
