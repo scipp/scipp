@@ -6,7 +6,6 @@
 #define VARIABLE_H
 
 #include <exception>
-#include <string>
 #include <type_traits>
 #include <variant>
 
@@ -14,7 +13,6 @@
 #include "index.h"
 #include "scipp/units/unit.h"
 #include "span.h"
-#include "tags.h"
 #include "variable_view.h"
 #include "vector.h"
 
@@ -219,44 +217,14 @@ public:
   Variable(const ConstVariableSlice &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
 
-  template <class TagT>
-  Variable(TagT tag, const Dimensions &dimensions)
-      : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<underlying_type_t<typename TagT::type>>(
-                     dimensions.volume(),
-                     detail::default_init<
-                         underlying_type_t<typename TagT::type>>::value())) {}
-  template <class TagT>
-  Variable(TagT tag, const Dimensions &dimensions,
-           Vector<underlying_type_t<typename TagT::type>> object)
-      : Variable(tag, TagT::unit, std::move(dimensions), std::move(object)) {}
-  template <class TagT, class... Args>
-  Variable(TagT tag, const Dimensions &dimensions, Args &&... args)
-      : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<underlying_type_t<typename TagT::type>>(
-                     std::forward<Args>(args)...)) {}
-  template <class TagT, class T>
-  Variable(TagT tag, const Dimensions &dimensions,
-           std::initializer_list<T> values)
-      : Variable(tag, TagT::unit, std::move(dimensions),
-                 Vector<underlying_type_t<typename TagT::type>>(values.begin(),
-                                                                values.end())) {
-  }
-  template <class TagT, class T>
-  Variable(TagT tag, const Dimensions &dimensions, const std::vector<T> &values)
-      : Variable(tag, TagT::unit, std::move(dimensions),
-                 // Copy to aligned memory.
-                 Vector<underlying_type_t<typename TagT::type>>(values.begin(),
-                                                                values.end())) {
-  }
-
   template <class T>
-  Variable(const Tag tag, const units::Unit unit, const Dimensions &dimensions,
-           T object, const Dim sparseDim = Dim::Invalid);
+  Variable(const units::Unit unit, const Dimensions &dimensions, T object,
+           const Dim sparseDim = Dim::Invalid);
+  template <class T>
+  Variable(const Dimensions &dimensions, std::initializer_list<T> values)
+      : Variable(units::dimensionless, std::move(dimensions),
+                 Vector<underlying_type_t<T>>(values.begin(), values.end())) {}
 
-  const std::string &name() const && = delete;
-  const std::string &name() const & { return m_name; }
-  void setName(const std::string &name) { m_name = name; }
   bool operator==(const Variable &other) const;
   bool operator==(const ConstVariableSlice &other) const;
   bool operator!=(const Variable &other) const;
@@ -311,34 +279,9 @@ public:
   const VariableConceptHandle &dataHandle() const & { return m_object; }
 
   DType dtype() const noexcept { return data().dtype(isSparse()); }
-  Tag tag() const { return m_tag; }
-  void setTag(const Tag tag) { m_tag = tag; }
-  bool isCoord() const {
-    return m_tag < std::tuple_size<detail::CoordDef::tags>::value;
-  }
-  bool isAttr() const {
-    return m_tag >= std::tuple_size<detail::CoordDef::tags>::value +
-                        std::tuple_size<detail::DataDef::tags>::value;
-  }
-  bool isData() const { return !isCoord() && !isAttr(); }
 
   bool isSparse() const noexcept { return m_sparseDim != Dim::Invalid; }
   Dim sparseDim() const { return m_sparseDim; }
-
-  template <class TagT> auto get(const TagT t) const {
-    // For now we support only variables that are a std::vector. In principle we
-    // could support anything that is convertible to scipp::span (or an adequate
-    // replacement).
-    if (t != tag())
-      throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return scipp::span(cast<typename TagT::type>());
-  }
-
-  template <class TagT> auto get(const TagT t) {
-    if (t != tag())
-      throw std::runtime_error("Attempt to access variable with wrong tag.");
-    return scipp::span(cast<typename TagT::type>());
-  }
 
   template <class T> auto span() const { return scipp::span(cast<T>()); }
   template <class T> auto span() { return scipp::span(cast<T>()); }
@@ -382,34 +325,30 @@ private:
   // friend.
   Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
-  Tag m_tag;
   Dim m_sparseDim{Dim::Invalid};
   units::Unit m_unit;
-  std::string m_name;
   VariableConceptHandle m_object;
 };
 
-template <class T>
-Variable makeVariable(Tag tag, const Dimensions &dimensions) {
-  return Variable(tag, defaultUnit(tag), std::move(dimensions),
+template <class T> Variable makeVariable(const Dimensions &dimensions) {
+  return Variable(units::dimensionless, std::move(dimensions),
                   Vector<underlying_type_t<T>>(
                       dimensions.volume(),
                       detail::default_init<underlying_type_t<T>>::value()));
 }
 
 template <class T>
-Variable makeSparseVariable(Tag tag, const Dimensions &dimensions,
-                            const Dim sparseDim) {
+Variable makeSparseVariable(const Dimensions &dimensions, const Dim sparseDim) {
   return Variable(
-      tag, defaultUnit(tag), std::move(dimensions),
+      units::dimensionless, std::move(dimensions),
       Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()),
       sparseDim);
 }
 
-template <class T, class T2>
-Variable makeVariable(Tag tag, const Dimensions &dimensions,
+template <class T, class T2 = T>
+Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
-  return Variable(tag, defaultUnit(tag), std::move(dimensions),
+  return Variable(units::dimensionless, std::move(dimensions),
                   Vector<underlying_type_t<T>>(values.begin(), values.end()));
 }
 
@@ -420,16 +359,16 @@ struct is_vector<std::vector<N, A>> : std::true_type {};
 } // namespace detail
 
 template <class T, class... Args>
-Variable makeVariable(Tag tag, const Dimensions &dimensions, Args &&... args) {
+Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
   // Note: Using `if constexpr` instead of another overload, since overloading
   // on universal reference arguments is problematic.
   if constexpr (detail::is_vector<std::remove_cv_t<
                     std::remove_reference_t<Args>>...>::value) {
     // Copies to aligned memory.
-    return Variable(tag, defaultUnit(tag), std::move(dimensions),
+    return Variable(units::dimensionless, std::move(dimensions),
                     Vector<underlying_type_t<T>>(args.begin(), args.end())...);
   } else {
-    return Variable(tag, defaultUnit(tag), std::move(dimensions),
+    return Variable(units::dimensionless, std::move(dimensions),
                     Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
   }
 }

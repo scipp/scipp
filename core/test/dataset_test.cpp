@@ -695,7 +695,7 @@ TEST(Dataset, binary_operator_equal_with_variable) {
   a.insert(Data::Value, "a", {Dim::X, 1}, {25});
 
   auto a_copy(a);
-  Variable bvar(Data::Value, {Dim::X, 1}, {5});
+  auto bvar = makeVariable<double>({Dim::X, 1}, {5});
 
   a += bvar;
   EXPECT_EQ(a.get(Data::Value, "a")[0], 25 + 5);
@@ -709,8 +709,7 @@ TEST(Dataset, binary_operator_equal_with_variable) {
   a /= bvar;
   EXPECT_EQ(a.get(Data::Value, "a")[0], 25);
 
-  // Test notag treated as data value
-  Variable cvar(Data::NoTag, {Dim::X, 1}, {10});
+  auto cvar = makeVariable<double>({Dim::X, 1}, {10});
   a_copy += cvar;
   EXPECT_EQ(a_copy.get(Data::Value, "a")[0], 35);
 }
@@ -823,12 +822,12 @@ TEST(Dataset, operator_binary_op_equal_uncertainty_failures) {
 TEST(Dataset, operator_times_equal_with_units) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
+  auto values = makeVariable<double>({Dim::X, 1}, {3.0});
   values.setUnit(units::m);
-  Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
+  auto variances = makeVariable<double>({Dim::X, 1}, {2.0});
   variances.setUnit(units::m * units::m);
-  a.insert(values);
-  a.insert(variances);
+  a.insert(Data::Value, values);
+  a.insert(Data::Variance, variances);
   a *= a;
   EXPECT_EQ(a(Data::Value).unit(), units::m * units::m);
   EXPECT_EQ(a(Data::Variance).unit(),
@@ -839,29 +838,26 @@ TEST(Dataset, operator_times_equal_with_units) {
 TEST(Dataset, operator_divide_equal_with_units) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
+  auto values = makeVariable<double>({Dim::X, 1}, {3.0});
   values.setUnit(units::m);
-  Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
+  auto variances = makeVariable<double>({Dim::X, 1}, {2.0});
   variances.setUnit(units::m * units::m);
-  a.insert(values);
-  a.insert(variances);
+  a.insert(Data::Value, values);
+  a.insert(Data::Variance, variances);
   a /= a;
   EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
   EXPECT_EQ(a(Data::Variance).unit(), units::dimensionless);
   EXPECT_EQ(a.get(Data::Variance)[0], 2.0 * (2.0 / 9.0));
 }
 
+// TODO Why is this test named `histogram_data`? There is no histogram.
 TEST(Dataset, operator_times_equal_histogram_data) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  Variable values(Data::Value, Dimensions({{Dim::X, 1}}), {3.0});
-  values.setName("name1");
-  values.setUnit(units::counts);
-  Variable variances(Data::Variance, Dimensions({{Dim::X, 1}}), {2.0});
-  variances.setName("name1");
-  variances.setUnit(units::counts * units::counts);
-  a.insert(values);
-  a.insert(variances);
+  a.insert(Data::Value, "name1", {Dim::X, 1}, {3.0});
+  a.insert(Data::Variance, "name1", {Dim::X, 1}, {2.0});
+  a(Data::Value, "name1").setUnit(units::counts);
+  a(Data::Variance, "name1").setUnit(units::counts * units::counts);
 
   Dataset b;
   b.insert(Coord::X, {Dim::X, 1}, {0.1});
@@ -986,12 +982,13 @@ TEST(Dataset, concatenate_extends_dimension) {
 
   auto x = concatenate(a, b, Dim::X);
   EXPECT_EQ(x.dimensions(), Dimensions({Dim::X, 4}));
-  Variable reference1(Data::Value, {Dim::X, 4}, {1.1, 1.1, 2.2, 2.2});
+  auto reference1 = makeVariable<double>({Dim::X, 4}, {1.1, 1.1, 2.2, 2.2});
   EXPECT_EQ(x(Data::Value), reference1);
 
   x = concatenate(x, c, Dim::X);
   EXPECT_EQ(x.dimensions(), Dimensions({Dim::X, 5}));
-  Variable reference2(Data::Value, {Dim::X, 5}, {1.1, 1.1, 2.2, 2.2, 3.3});
+  auto reference2 =
+      makeVariable<double>({Dim::X, 5}, {1.1, 1.1, 2.2, 2.2, 3.3});
   EXPECT_EQ(x(Data::Value), reference2);
 }
 
@@ -1088,43 +1085,31 @@ TEST(Dataset, concatenate_with_attributes) {
 
 TEST(Dataset, rebin_failures) {
   Dataset d;
-  Variable coord(Coord::X, {Dim::X, 3}, {1.0, 3.0, 5.0});
+  auto coord = makeVariable<double>({Dim::X, 3}, {1.0, 3.0, 5.0});
   EXPECT_THROW_MSG_SUBSTR(rebin(d, coord), except::VariableNotFoundError,
                           "could not find variable with tag "
                           "Coord::X and name ``");
-  Variable data(Data::Value, {Dim::X, 2}, {2.0, 4.0});
-  EXPECT_THROW_MSG(
-      rebin(d, data), std::runtime_error,
-      "The provided rebin coordinate is not a coordinate variable.");
-  Variable nonDimCoord(Coord::Mask, {Dim::Detector, 2});
-  EXPECT_THROW_MSG(
-      rebin(d, nonDimCoord), std::runtime_error,
-      "The provided rebin coordinate is not a dimension coordinate.");
-  Variable missingDimCoord(Coord::X, {Dim::Y, 2}, {2.0, 4.0});
-  EXPECT_THROW_MSG(rebin(d, missingDimCoord), std::runtime_error,
-                   "The provided rebin coordinate lacks the dimension "
-                   "corresponding to the coordinate.");
-  Variable nonContinuousCoord(Coord::SpectrumNumber, {Dim::Spectrum, 2},
-                              {2.0, 4.0});
+  auto nonContinuousCoord =
+      makeVariable<double>({Dim::Spectrum, 2}, {2.0, 4.0});
   EXPECT_THROW_MSG(
       rebin(d, nonContinuousCoord), std::runtime_error,
       "The provided rebin coordinate is not a continuous coordinate.");
-  Variable oldMissingDimCoord(Coord::X, {Dim::Y, 3}, {1.0, 3.0, 5.0});
-  d.insert(oldMissingDimCoord);
+  auto oldMissingDimCoord = makeVariable<double>({Dim::Y, 3}, {1.0, 3.0, 5.0});
+  d.insert(Coord::X, oldMissingDimCoord);
   EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
                    "Existing coordinate to be rebined lacks the dimension "
                    "corresponding to the new coordinate.");
   d.erase(Coord::X);
-  d.insert(coord);
+  d.insert(Coord::X, coord);
   EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
                    "Existing coordinate to be rebinned is not a bin edge "
                    "coordinate. Use `resample` instead of rebin or convert to "
                    "histogram data first.");
   d.erase(Coord::X);
-  d.insert(coord);
+  d.insert(Coord::X, coord);
   d.insert(Data::Value, "badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
   d(Data::Value, "badAuxDim").setUnit(units::counts);
-  Variable badAuxDim(Coord::X, Dimensions({{Dim::X, 3}, {Dim::Y, 3}}));
+  auto badAuxDim = makeVariable<double>(Dimensions({{Dim::Y, 3}, {Dim::X, 3}}));
   EXPECT_THROW_MSG(rebin(d, badAuxDim), std::runtime_error,
                    "Size mismatch in auxiliary dimension of new coordinate.");
 }
@@ -1132,7 +1117,7 @@ TEST(Dataset, rebin_failures) {
 TEST(Dataset, rebin_accepts_only_counts_and_densities) {
   Dataset d;
   d.insert(Coord::Tof, {Dim::Tof, 3}, {1.0, 3.0, 5.0});
-  Variable coordNew(Coord::Tof, {Dim::Tof, 2}, {1.0, 5.0});
+  auto coordNew = makeVariable<double>({Dim::Tof, 2}, {1.0, 5.0});
 
   d.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
   EXPECT_THROW_MSG(rebin(d, coordNew), except::UnitError,
@@ -1156,7 +1141,7 @@ TEST(Dataset, rebin_accepts_only_counts_and_densities) {
 TEST(Dataset, rebin) {
   Dataset d;
   d.insert(Coord::X, {Dim::X, 3}, {1.0, 3.0, 5.0});
-  Variable coordNew(Coord::X, {Dim::X, 2}, {1.0, 5.0});
+  auto coordNew = makeVariable<double>({Dim::X, 2}, {1.0, 5.0});
   // With only the coord in the dataset there is no way to tell it is an edge,
   // so this fails.
   EXPECT_THROW_MSG(rebin(d, coordNew), std::runtime_error,
@@ -1173,13 +1158,13 @@ TEST(Dataset, rebin) {
 
 TEST(Dataset, rebin_density) {
   Dataset d;
-  d.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 4, 8});
-  Variable coordNew(Coord::Tof, {Dim::Tof, 3}, {1, 3, 8});
+  d.insert(Coord::Tof, {Dim::Tof, 4}, {1.0, 2.0, 4.0, 8.0});
+  auto coordNew = makeVariable<double>({Dim::Tof, 3}, {1.0, 3.0, 8.0});
 
   d.insert(Data::Value, "", {Dim::Tof, 3}, {10, 20, 30});
   d(Data::Value).setUnit(units::counts);
 
-  Variable reference(Data::Value, {Dim::Tof, 2}, {10.0, 40.0 / 5});
+  auto reference = makeVariable<double>({Dim::Tof, 2}, {10.0, 40.0 / 5});
   reference.setUnit(units::counts / units::us);
 
   auto rebinned1 = rebin(counts::toDensity(d, Dim::Tof), coordNew);
@@ -1202,28 +1187,30 @@ TEST(Dataset, histogram_failures) {
   auto d = makeEvents();
 
   Dataset dependsOnBinDim;
-  dependsOnBinDim.insert(d(Data::Events, "sample1").reshape({Dim::Tof, 2}));
-  Variable coord(Coord::Tof, {Dim::Tof, 3}, {1.0, 1.5, 4.5});
+  dependsOnBinDim.insert(Data::Events, "sample1",
+                         d(Data::Events, "sample1").reshape({Dim::Tof, 2}));
+  auto coord = makeVariable<double>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
   EXPECT_THROW_MSG(histogram(dependsOnBinDim, coord), std::runtime_error,
                    "Data to histogram depends on histogram dimension.");
 
-  Variable coordWithExtraDim(Coord::Tof, {{Dim::X, 2}, {Dim::Tof, 3}},
-                             {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
+  auto coordWithExtraDim = makeVariable<double>({{Dim::X, 2}, {Dim::Tof, 3}},
+                                                {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
   EXPECT_THROW(histogram(d, coordWithExtraDim), except::DimensionNotFoundError);
 
-  Variable coordWithLengthMismatch(Coord::Tof,
-                                   {{Dim::Spectrum, 3}, {Dim::Tof, 3}});
+  auto coordWithLengthMismatch =
+      makeVariable<double>({{Dim::Spectrum, 3}, {Dim::Tof, 3}});
   EXPECT_THROW(histogram(d, coordWithLengthMismatch),
                except::DimensionLengthError);
 
-  Variable coordNotIncreasing(Coord::Tof, {Dim::Tof, 3}, {1.0, 1.5, 1.4});
+  auto coordNotIncreasing =
+      makeVariable<double>({Dim::Tof, 3}, {1.0, 1.5, 1.4});
   EXPECT_THROW_MSG(histogram(d, coordNotIncreasing), std::runtime_error,
                    "Coordinate used for binning is not increasing.");
 }
 
 TEST(Dataset, histogram) {
   auto d = makeEvents();
-  Variable coord(Coord::Tof, {Dim::Tof, 3}, {1.0, 1.5, 4.5});
+  auto coord = makeVariable<double>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
   auto hist = histogram(d, coord);
 
   ASSERT_TRUE(hist.contains(Coord::Tof));
@@ -1239,8 +1226,8 @@ TEST(Dataset, histogram) {
 
 TEST(Dataset, histogram_2D_coord) {
   auto d = makeEvents();
-  Variable coord(Coord::Tof, {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
-                 {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
+  auto coord = makeVariable<double>({{Dim::Spectrum, 2}, {Dim::Tof, 3}},
+                                    {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
   auto hist = histogram(d, coord);
 
   ASSERT_TRUE(hist.contains(Coord::Tof));
@@ -1256,8 +1243,8 @@ TEST(Dataset, histogram_2D_coord) {
 
 TEST(Dataset, histogram_2D_transpose_coord) {
   auto d = makeEvents();
-  Variable coord(Coord::Tof, {{Dim::Tof, 3}, {Dim::Spectrum, 2}},
-                 {1.0, 1.5, 1.5, 4.5, 4.5, 7.5});
+  auto coord = makeVariable<double>({{Dim::Tof, 3}, {Dim::Spectrum, 2}},
+                                    {1.0, 1.5, 1.5, 4.5, 4.5, 7.5});
   auto hist = histogram(d, coord);
 
   ASSERT_TRUE(hist.contains(Coord::Tof));
@@ -1336,7 +1323,7 @@ TEST(Dataset, filter) {
   d.insert(Coord::Y, {Dim::Y, 2}, {1.0, 0.9});
   d.insert(Data::Value, "", {{Dim::Y, 2}, {Dim::X, 4}},
            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  Variable select(Coord::Mask, {Dim::X, 4}, {false, true, false, true});
+  auto select = makeVariable<double>({Dim::X, 4}, {false, true, false, true});
 
   auto filtered = filter(d, select);
 
@@ -1365,7 +1352,7 @@ TEST(Dataset, integrate_counts) {
   // maybe an indicator that we should rather use `sum` for counts? On the other
   // hand, supporting `integrate` is convenient and thanks to the unit this
   // should be safe.
-  Variable reference(Data::Value, {}, {30.0});
+  auto reference = makeVariable<double>({}, {30.0});
   reference.setUnit(units::counts);
 
   Dataset integral;
@@ -1382,7 +1369,7 @@ TEST(Dataset, integrate_counts_density) {
   ds.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
   ds(Data::Value, "").setUnit(units::counts / units::us);
 
-  Variable reference(Data::Value, {}, {10.0 * 0.1 + 20.0 * 0.2});
+  auto reference = makeVariable<double>({}, {10.0 * 0.1 + 20.0 * 0.2});
   reference.setUnit(units::counts);
 
   Dataset integral;
@@ -1865,7 +1852,7 @@ TEST(DatasetSlice, binary_operator_equals_with_variable) {
   a.insert(Data::Value, "a", {Dim::X, 1}, {25});
 
   DatasetSlice a_slice = a.subset("a");
-  Variable bvar(Data::Value, {Dim::X, 1}, {5});
+  auto bvar = makeVariable<double>({Dim::X, 1}, {5});
 
   a_slice += bvar;
   EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 + 5);
@@ -1875,11 +1862,6 @@ TEST(DatasetSlice, binary_operator_equals_with_variable) {
   EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 * 5);
   a_slice /= bvar;
   EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25);
-
-  // Test notag treated as data value
-  Variable cvar(Data::NoTag, {Dim::X, 1}, {5});
-  a_slice += cvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 + 5);
 }
 
 TEST(Dataset, counts_toDensity_fromDensity) {
@@ -1901,34 +1883,34 @@ TEST(Dataset, counts_toDensity_fromDensity) {
 
 TEST(SparseDataset, different_variables_can_have_different_sparse_dimensions) {
   Dataset d;
-  d.insert(makeSparseVariable<double>(Coord::X, {Dim::X, 2}, Dim::Y));
-  d.insert(makeSparseVariable<double>(Coord::Y, {Dim::X, 2}, Dim::Z));
+  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
+  d.insert(Coord::Y, makeSparseVariable<double>({Dim::X, 2}, Dim::Z));
   EXPECT_EQ(d.size(), 2);
 }
 
 TEST(SparseDataset, dimensions_of_dataset_does_not_contain_sparse_dims) {
   Dataset d;
-  d.insert(makeSparseVariable<double>(Coord::X, {Dim::X, 2}, Dim::Y));
+  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
   EXPECT_EQ(d.dimensions(), Dimensions({Dim::X, 2}));
 }
 
 TEST(SparseDataset, dimension_can_be_dense_in_some_vars_and_sparse_in_others) {
   Dataset d;
-  d.insert(makeSparseVariable<double>(Coord::X, {Dim::X, 2}, Dim::Y));
-  d.insert(makeVariable<double>(Coord::Y, {Dim::Y, 3}));
+  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
+  d.insert(Coord::Y, makeVariable<double>({Dim::Y, 3}));
   EXPECT_EQ(d.size(), 2);
   EXPECT_EQ(d.dimensions(), Dimensions({{Dim::Y, 3}, {Dim::X, 2}}));
 }
 
 TEST(SparseDataset, concatenate_along_sparse_dimension) {
   Dataset d1;
-  d1.insert(makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X));
+  d1.insert(Data::Value, makeSparseVariable<double>({Dim::Y, 2}, Dim::X));
   auto a_ = d1(Data::Value).sparseSpan<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
 
   Dataset d2;
-  d2.insert(makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X));
+  d2.insert(Data::Value, makeSparseVariable<double>({Dim::Y, 2}, Dim::X));
   auto b_ = d2(Data::Value).sparseSpan<double>();
   b_[0] = {1, 3};
   b_[1] = {};

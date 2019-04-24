@@ -15,7 +15,8 @@ Dataset makeRun() {
   run.insert(Coord::Polarization, {}, {"Spin-Up"});
   run.insert(Coord::FuzzyTemperature, {}, {ValueWithDelta<double>(4.2, 0.1)});
   Dataset comment;
-  comment.insert(Data::DeprecatedString, "", {Dim::Row, 1}, {"first run"});
+  comment.insert(Data::DeprecatedString, "",
+                 makeVariable<std::string>({Dim::Row, 1}, {"first run"}));
   run.insert<Dataset>(Data::Value, "comment", {}, {comment});
   Dataset timeSeriesLog;
   timeSeriesLog.insert(Coord::Time, {Dim::Time, 3}, {0, 1000, 1500});
@@ -48,8 +49,11 @@ TEST(Run, DISABLED_meta_data_propagation) {
       "second run";
   run2.span<Dataset>(Data::Value, "generic_log")[0]
       .span<Dataset>(Data::Value, "root")[0]
-      .insert(Data::DeprecatedString, "user comment", {},
-              {"Spider walked through beam, verify data before publishing."});
+      .insert(
+          Data::DeprecatedString, "user comment",
+          makeVariable<std::string>(
+              {},
+              {"Spider walked through beam, verify data before publishing."}));
 
   Dataset d2;
   d2.insert(Attr::ExperimentLog, "sample_log", {}, {run2});

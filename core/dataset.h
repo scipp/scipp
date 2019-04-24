@@ -18,39 +18,34 @@ namespace scipp::core {
 class ConstDatasetSlice;
 class DatasetSlice;
 
-// struct ItemProxy {
-//  const std::string &name;
-//  Tag tag;
-//  ConstDatasetSlice data;
-//};
-//
-
-using DatasetItemConstProxy =
-    std::tuple<const std::string &, Tag, ConstVariableSlice>;
-using DatasetItemProxy = std::tuple<const std::string &, Tag, VariableSlice>;
-
-template <class Var> auto itemProxy(Var &var) {
-  if constexpr (std::is_const_v<Var>)
-    return DatasetItemConstProxy(var.name(), var.tag(), var);
-  else
-    return DatasetItemProxy(var.name(), var.tag(), var);
-}
-
 /// Dataset is a set of Variables, identified with a unique (tag, name)
 /// identifier.
 class Dataset {
+public:
+  using Item = std::tuple<std::string, Tag, Variable>;
+  using ItemConstProxy =
+      std::tuple<const std::string &, Tag, ConstVariableSlice>;
+  using ItemProxy = std::tuple<const std::string &, Tag, VariableSlice>;
+
+  static ItemConstProxy itemProxy(const Item &item) {
+    auto & [ name, tag, data ] = item;
+    return {name, tag, ConstVariableSlice(data)};
+  }
+  static ItemProxy itemProxy(Item &item) {
+    auto & [ name, tag, data ] = item;
+    return {name, tag, VariableSlice(data)};
+  }
+
 private:
   // Helper lambdas for creating iterators.
-  static constexpr auto makeConstSlice = [](const Variable &var) {
-    return itemProxy(var);
+  static constexpr auto makeConstSlice = [](const Item &item) {
+    return itemProxy(item);
   };
-  static constexpr auto makeSlice = [](Variable &var) {
-    return itemProxy(var);
-  };
+  static constexpr auto makeSlice = [](Item &item) { return itemProxy(item); };
 
 public:
   Dataset() = default;
-  Dataset(std::vector<Variable> vars);
+  Dataset(std::vector<Item> items);
   // Allowing implicit construction from views facilitates calling functions
   // that do not explicitly support views. It is open for discussion whether
   // this is a good idea or not.
@@ -119,104 +114,97 @@ public:
     return boost::make_transform_iterator(m_variables.end(), makeSlice);
   }
 
-  void insert(Variable variable);
-  void insert(DatasetItemConstProxy item) {
+  void insert(Item item);
+  void insert(ItemConstProxy item) {
     const auto & [ name, tag, var ] = item;
     insert(tag, name, var);
   }
-  void insert(DatasetItemProxy item) {
+  void insert(ItemProxy item) {
     const auto & [ name, tag, var ] = item;
     insert(tag, name, var);
   }
   template <class T> void insert(const std::string &newName, const T &slice) {
     // Note the lack of atomicity
     for (const auto & [ name, tag, var ] : slice) {
-      Variable newVar(var);
       if (tag.isCoord()) {
         if (!contains(tag, name)) {
           throw std::runtime_error(
               "Cannot provide new coordinate variables via subset");
         }
       } else {
-        newVar.setName(newName); // As long as !cood var, name gets rewritten.
+        // TODO Should we insert named coordinates? This would be required,
+        // e.g., for event data.
+        insert(tag, newName, var);
       }
-      this->insert(newVar);
     }
   }
   void insert(const Tag tag, Variable variable) {
-    variable.setTag(tag);
-    variable.setName("");
-    insert(std::move(variable));
+    insert(Item{"", tag, std::move(variable)});
   }
   void insert(const Tag tag, const std::string &name, Variable variable) {
-    variable.setTag(tag);
-    variable.setName(name);
-    insert(std::move(variable));
+    insert(Item{name, tag, std::move(variable)});
   }
 
   template <class Tag, class... Args>
   void insert(const Tag tag, const Dimensions &dimensions, Args &&... args) {
-    Variable a(tag, std::move(dimensions), std::forward<Args>(args)...);
-    insert(std::move(a));
+    insert(tag, makeVariable<typename Tag::type>(std::move(dimensions),
+                                                 std::forward<Args>(args)...));
   }
 
   template <class Tag, class... Args>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, Args &&... args) {
-    Variable a(tag, std::move(dimensions), std::forward<Args>(args)...);
-    a.setName(name);
-    insert(std::move(a));
+    insert(tag, name,
+           makeVariable<typename Tag::type>(std::move(dimensions),
+                                            std::forward<Args>(args)...));
   }
 
   template <class Tag, class T>
   void insert(const Tag tag, const Dimensions &dimensions,
               std::initializer_list<T> values) {
-    Variable a(tag, std::move(dimensions), values);
-    insert(std::move(a));
+    insert(tag,
+           makeVariable<typename Tag::type>(std::move(dimensions), values));
   }
 
   template <class Tag, class T>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, std::initializer_list<T> values) {
-    Variable a(tag, std::move(dimensions), values);
-    a.setName(name);
-    insert(std::move(a));
+    Variable a(std::move(dimensions), values);
+    insert(tag, name, std::move(a));
   }
 
   // Insert variants with custom type
   template <class T, class Tag, class... Args>
   void insert(const Tag tag, const Dimensions &dimensions, Args &&... args) {
-    auto a = makeVariable<T>(tag, std::move(dimensions),
-                             std::forward<Args>(args)...);
-    insert(std::move(a));
+    auto a =
+        makeVariable<T>(std::move(dimensions), std::forward<Args>(args)...);
+    insert(tag, std::move(a));
   }
 
   template <class T, class Tag, class... Args>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, Args &&... args) {
-    auto a = makeVariable<T>(tag, std::move(dimensions),
-                             std::forward<Args>(args)...);
-    a.setName(name);
-    insert(std::move(a));
+    auto a =
+        makeVariable<T>(std::move(dimensions), std::forward<Args>(args)...);
+    insert(tag, name, std::move(a));
   }
 
   template <class T, class Tag, class T2>
   void insert(const Tag tag, const Dimensions &dimensions,
               std::initializer_list<T2> values) {
-    auto a = makeVariable<T>(tag, std::move(dimensions), values);
-    insert(std::move(a));
+    auto a = makeVariable<T>(std::move(dimensions), values);
+    insert(tag, std::move(a));
   }
 
   template <class T, class Tag, class T2>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, std::initializer_list<T2> values) {
-    auto a = makeVariable<T>(tag, std::move(dimensions), values);
-    a.setName(name);
-    insert(std::move(a));
+    auto a = makeVariable<T, T2>(std::move(dimensions), values);
+    insert(tag, name, std::move(a));
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
-  Variable erase(const Tag tag, const std::string &name = "");
+  Item erase(const Tag tag, const std::string &name = "");
 
   // TODO This should probably also include a copy of all or all relevant
   // coordinates.
@@ -229,14 +217,14 @@ public:
            const std::string &name = std::string{}) const && = delete;
   template <class TagT>
   auto get(const TagT tag, const std::string &name = std::string{}) const & {
-    return m_variables[find(tag, name)].get(tag);
+    return span<typename TagT::type>(tag, name);
   }
 
   template <class TagT>
   auto get(const TagT, const std::string &name = std::string{}) && = delete;
   template <class TagT>
   auto get(const TagT tag, const std::string &name = std::string{}) & {
-    return m_variables[find(tag, name)].get(tag);
+    return span<typename TagT::type>(tag, name);
   }
 
   template <class T>
@@ -244,14 +232,14 @@ public:
             const std::string &name = std::string{}) const && = delete;
   template <class T>
   auto span(const Tag tag, const std::string &name = std::string{}) const & {
-    return m_variables[find(tag, name)].template span<T>();
+    return std::get<Variable>(m_variables[find(tag, name)]).template span<T>();
   }
 
   template <class T>
   auto span(const Tag, const std::string &name = std::string{}) && = delete;
   template <class T>
   auto span(const Tag tag, const std::string &name = std::string{}) & {
-    return m_variables[find(tag, name)].template span<T>();
+    return std::get<Variable>(m_variables[find(tag, name)]).template span<T>();
   }
 
   // Currently `Dimensions` does not allocate memory so we could return by
@@ -289,7 +277,7 @@ private:
   // TODO These dimensions do not imply any ordering, should use another class
   // in place of `Dimensions`, which *does* imply an order.
   Dimensions m_dimensions;
-  boost::container::small_vector<Variable, 4> m_variables;
+  boost::container::small_vector<Item, 4> m_variables;
 };
 
 template <class T> scipp::index count(const T &dataset, const Tag tag) {

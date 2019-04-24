@@ -16,9 +16,9 @@
 
 namespace scipp::core {
 
-Dataset::Dataset(std::vector<Variable> vars) {
-  for (auto &var : vars)
-    insert(std::move(var));
+Dataset::Dataset(std::vector<Item> items) {
+  for (auto &item : items)
+    insert(std::move(item));
 }
 
 Dataset::Dataset(const ConstDatasetSlice &view) {
@@ -61,40 +61,36 @@ DatasetSlice Dataset::operator()(const Dim dim, const scipp::index begin,
 
 ConstVariableSlice Dataset::operator()(const Tag tag,
                                        const std::string &name) const & {
-  return ConstVariableSlice(m_variables[find(tag, name)]);
+  return ConstVariableSlice(std::get<Variable>(m_variables[find(tag, name)]));
 }
 
 VariableSlice Dataset::operator()(const Tag tag, const std::string &name) & {
-  return VariableSlice(m_variables[find(tag, name)]);
+  return VariableSlice(std::get<Variable>(m_variables[find(tag, name)]));
 }
 
-void Dataset::insert(Variable variable) {
-  if (variable.tag() == Data::NoTag)
-    throw std::runtime_error(
-        "Data with meta-tag Data::NoTag cannot be inserted into a dataset.");
+void Dataset::insert(Item item) {
+  auto & [ name, tag, variable ] = item;
   // TODO special handling for special variables types like
   // Data::Histogram (either prevent adding, or extract into underlying
   // variables).
-  if (contains(variable.tag(), variable.name())) {
-    auto &old = m_variables[find(variable.tag(), variable.name())];
+  if (contains(tag, name)) {
+    auto &old = std::get<Variable>(m_variables[find(tag, name)]);
     for (const auto dim : old.dimensions().labels()) {
       bool found = false;
       for (const auto &var : m_variables) {
-        if (var == old)
+        if (std::get<Variable>(var) == old)
           continue;
-        if (var.dimensions().contains(dim))
+        if (std::get<Variable>(var).dimensions().contains(dim))
           found = true;
       }
       if (!found)
         m_dimensions.erase(dim);
     }
-    mergeDimensions(variable.dimensions(),
-                    coordDimension[variable.tag().value()]);
+    mergeDimensions(variable.dimensions(), coordDimension[tag.value()]);
     old = std::move(variable);
   } else {
-    mergeDimensions(variable.dimensions(),
-                    coordDimension[variable.tag().value()]);
-    m_variables.push_back(std::move(variable));
+    mergeDimensions(variable.dimensions(), coordDimension[tag.value()]);
+    m_variables.emplace_back(name, tag, std::move(variable));
   }
 }
 
@@ -111,26 +107,26 @@ bool Dataset::contains(const Tag tag, const std::string &name) const {
   return scipp::core::contains(*this, tag, name);
 }
 
-Variable Dataset::erase(const Tag tag, const std::string &name) {
+Dataset::Item Dataset::erase(const Tag tag, const std::string &name) {
   const auto it = m_variables.begin() + find(tag, name);
-  const auto dims = it->dimensions();
-  Variable var(std::move(*it));
+  const auto dims = std::get<Variable>(*it).dimensions();
+  Item item(std::move(*it));
   m_variables.erase(it);
   for (const auto dim : dims.labels()) {
     bool found = false;
     for (const auto &var : m_variables)
-      if (var.dimensions().contains(dim))
+      if (std::get<Variable>(var).dimensions().contains(dim))
         found = true;
     if (!found)
       m_dimensions.erase(dim);
   }
-  return var;
+  return item;
 }
 
 Dataset Dataset::extract(const std::string &name) {
   Dataset subset;
   for (auto it = m_variables.begin(); it != m_variables.end();) {
-    if (it->name() == name) {
+    if (std::get<std::string>(*it) == name) {
       subset.insert(*it);
       it = m_variables.erase(it);
     } else {
@@ -187,9 +183,9 @@ void Dataset::mergeDimensions(const Dimensions &dims, const Dim coordDim) {
             // If the dataset so far contains only edge variables for this
             // dimension, shrink its size.
             bool canShrink = true;
-            for (const auto &var : m_variables) {
+            for (const auto & [ name, tag, var ] : m_variables) {
               if (var.dimensions().contains(dim) &&
-                  coordDimension[var.tag().value()] != dim)
+                  coordDimension[tag.value()] != dim)
                 canShrink = false;
             }
             if (canShrink) {
@@ -549,19 +545,14 @@ Dataset &Dataset::operator+=(const ConstDatasetSlice &other) {
       *this, other);
 }
 Dataset &Dataset::operator+=(const Variable &other) {
-  if (other.tag() != Data::NoTag)
-    // For variable of known tag, simply wrap rhs with Dataset
-    return *this += Dataset({other});
-  else
-    for (auto &var : m_variables)
-      // TODO Should this operate also on events etc.?
-      if (var.tag() == Data::Value)
-        var += other;
+  for (auto & [ name, tag, var ] : m_variables)
+    if (tag == Data::Value)
+      var += other;
   return *this;
 }
 Dataset &Dataset::operator+=(const double value) {
-  for (auto &var : m_variables)
-    if (var.tag() == Data::Value)
+  for (auto & [ name, tag, var ] : m_variables)
+    if (tag == Data::Value)
       var += value;
   return *this;
 }
@@ -578,19 +569,14 @@ Dataset &Dataset::operator-=(const ConstDatasetSlice &other) {
 }
 
 Dataset &Dataset::operator-=(const Variable &other) {
-  if (other.tag() != Data::NoTag)
-    // For variable of known tag, simply wrap rhs with Dataset
-    return *this -= Dataset({other});
-  else
-    for (auto &var : m_variables)
-      // TODO Should this operate also on events etc.?
-      if (var.tag() == Data::Value)
-        var -= other;
+  for (auto & [ name, tag, var ] : m_variables)
+    if (tag == Data::Value)
+      var -= other;
   return *this;
 }
 Dataset &Dataset::operator-=(const double value) {
-  for (auto &var : m_variables)
-    if (var.tag() == Data::Value)
+  for (auto & [ name, tag, var ] : m_variables)
+    if (tag == Data::Value)
       var -= value;
   return *this;
 }
@@ -602,22 +588,20 @@ Dataset &Dataset::operator*=(const ConstDatasetSlice &other) {
   return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 Dataset &Dataset::operator*=(const double value) {
-  for (auto &var : m_variables)
-    if (var.tag() == Data::Value)
+  for (auto & [ name, tag, var ] : m_variables)
+    if (tag == Data::Value)
       var *= value;
-    else if (var.tag() == Data::Variance)
+    else if (tag == Data::Variance)
       var *= value * value;
   return *this;
 }
 
 Dataset &Dataset::operator*=(const Variable &other) {
-  if (other.tag() != Data::NoTag)
-    // For variable of known tag, simply wrap rhs with Dataset
-    return *this *= Dataset({other});
-  else
-    for (auto &var : m_variables)
-      if (var.tag() == Data::Value)
-        var *= other;
+  for (auto & [ name, tag, var ] : m_variables)
+    if (tag == Data::Value)
+      var *= other;
+    else if (tag == Data::Variance)
+      var *= other * other;
   return *this;
 }
 Dataset &Dataset::operator/=(const Dataset &other) {
@@ -628,21 +612,19 @@ Dataset &Dataset::operator/=(const ConstDatasetSlice &other) {
 }
 
 Dataset &Dataset::operator/=(const Variable &other) {
-  if (other.tag() != Data::NoTag)
-    // For variable of known tag, simply wrap rhs with Dataset
-    return *this /= Dataset({other});
-  else
-    for (auto &var : m_variables)
-      if (var.tag() == Data::Value)
-        var /= other;
+  for (auto & [ name, tag, var ] : m_variables)
+    if (tag == Data::Value)
+      var /= other;
+    else if (tag == Data::Variance)
+      var /= other * other;
   return *this;
 }
 Dataset &Dataset::operator/=(const double value) {
-  for (auto &var : m_variables)
-    if (var.tag() == Data::Value)
+  for (auto & [ name, tag, var ] : m_variables)
+    if (tag == Data::Value)
       var /= value;
-    else if (var.tag() == Data::Variance)
-      var *= value * value;
+    else if (tag == Data::Variance)
+      var /= value * value;
   return *this;
 }
 
@@ -699,12 +681,9 @@ DatasetSlice DatasetSlice::operator+=(const ConstDatasetSlice &other) const {
       *this, other);
 }
 DatasetSlice DatasetSlice::operator+=(const Variable &other) const {
-  if (other.tag() != Data::NoTag)
-    return *this += Dataset({other});
-  else
-    for (const auto[name, tag, var] : *this)
-      if (tag == Data::Value)
-        var += other;
+  for (const auto[name, tag, var] : *this)
+    if (tag == Data::Value)
+      var += other;
   return *this;
 }
 DatasetSlice DatasetSlice::operator+=(const double value) const {
@@ -724,12 +703,9 @@ DatasetSlice DatasetSlice::operator-=(const ConstDatasetSlice &other) const {
 }
 
 DatasetSlice DatasetSlice::operator-=(const Variable &other) const {
-  if (other.tag() != Data::NoTag)
-    return *this -= Dataset({other});
-  else
-    for (const auto[name, tag, var] : *this)
-      if (tag == Data::Value)
-        var -= other;
+  for (const auto[name, tag, var] : *this)
+    if (tag == Data::Value)
+      var -= other;
   return *this;
 }
 DatasetSlice DatasetSlice::operator-=(const double value) const {
@@ -746,12 +722,11 @@ DatasetSlice DatasetSlice::operator*=(const ConstDatasetSlice &other) const {
   return op_equals(*this, other, &aligned::multiply, &aligned::multiply);
 }
 DatasetSlice DatasetSlice::operator*=(const Variable &other) const {
-  if (other.tag() != Data::NoTag)
-    return *this *= Dataset({other});
-  else
-    for (const auto[name, tag, var] : *this)
-      if (tag == Data::Value)
-        var *= other;
+  for (const auto[name, tag, var] : *this)
+    if (tag == Data::Value)
+      var *= other;
+    else if (tag == Data::Variance)
+      var *= other * other;
   return *this;
 }
 DatasetSlice DatasetSlice::operator*=(const double value) const {
@@ -769,20 +744,19 @@ DatasetSlice DatasetSlice::operator/=(const ConstDatasetSlice &other) const {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
 }
 DatasetSlice DatasetSlice::operator/=(const Variable &other) const {
-  if (other.tag() != Data::NoTag)
-    return *this /= Dataset({other});
-  else
     for (const auto[name, tag, var] : *this)
       if (tag == Data::Value)
         var /= other;
-  return *this;
+      else if (tag == Data::Variance)
+        var /= other * other;
+    return *this;
 }
 DatasetSlice DatasetSlice::operator/=(const double value) const {
   for (const auto[name, tag, var] : *this)
     if (tag == Data::Value)
       var /= value;
     else if (tag == Data::Variance)
-      var *= value * value;
+      var /= value * value;
   return *this;
 }
 
@@ -838,7 +812,7 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
     // TODO may need to extend things along constant dimensions to match shapes!
     if (var1.dimensions().contains(dim) || var1.sparseDim() == dim) {
       if (var1.sparseDim() == dim) {
-        out.insert(concatenate(var1, var2, dim));
+        out.insert(tag1, name1, concatenate(var1, var2, dim));
       } else {
         const auto extent = d1.dimensions()[dim];
         if (var1.dimensions()[dim] == extent)
@@ -885,21 +859,13 @@ Dataset concatenate(const Dataset &d1, const Dataset &d2, const Dim dim) {
 }
 
 Dataset rebin(const Dataset &d, const Variable &newCoord) {
-  if (!newCoord.isCoord())
-    throw std::runtime_error(
-        "The provided rebin coordinate is not a coordinate variable.");
-  const auto dim = coordDimension[newCoord.tag().value()];
-  if (dim == Dim::Invalid)
-    throw std::runtime_error(
-        "The provided rebin coordinate is not a dimension coordinate.");
+  // Rebinned dimension must be the inner dimension of the coordinate.
+  const auto dim = newCoord.dimensions().inner();
   const auto &newDims = newCoord.dimensions();
-  if (!newDims.contains(dim))
-    throw std::runtime_error("The provided rebin coordinate lacks the "
-                             "dimension corresponding to the coordinate.");
   if (!isContinuous(dim))
     throw std::runtime_error(
         "The provided rebin coordinate is not a continuous coordinate.");
-  const auto &oldCoord = d(Tag(newCoord.tag().value()));
+  const auto &oldCoord = d(dimensionCoord(dim));
   const auto &oldDims = oldCoord.dimensions();
   const auto &datasetDims = d.dimensions();
   if (!oldDims.contains(dim))
@@ -925,7 +891,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   for (const auto & [ name, tag, var ] : d) {
     if (!var.dimensions().contains(dim)) {
       out.insert(tag, name, var);
-    } else if (tag == newCoord.tag()) {
+    } else if (tag == dimensionCoord(dim)) {
       out.insert(tag, name, newCoord);
     } else {
       out.insert(tag, name, rebin(var, oldCoord, newCoord));
@@ -934,11 +900,12 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   return out;
 }
 
-Dataset histogram(const Variable &var, const Variable &coord) {
+Dataset histogram(const Variable &var, const Variable &coord,
+                  const std::string &name) {
   // TODO Is there are more generic way to find "histogrammable" data, not
   // specific to (neutron) events? Something like Data::ValueVector, i.e., any
   // data variable that contains a vector of values at each point?
-  const auto &events = var.get(Data::Events);
+  const auto &events = var.span<Dataset>();
   // TODO This way of handling events (and their units) as nested Dataset feels
   // a bit unwieldy. Would it be a better option to store TOF (or any derived
   // values) as simple vectors in Data::Events? There would be a separate
@@ -950,7 +917,7 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   expect::equals(events[0](Data::Tof).unit(), coord.unit());
 
   // TODO Can we reuse some code for bin handling from MDZipView?
-  const auto binDim = coordDimension[coord.tag().value()];
+  const auto binDim = coord.dimensions().inner();
   const scipp::index nBin = coord.dimensions()[binDim] - 1;
   Dimensions dims = var.dimensions();
   // Note that the event list contains, e.g, time-of-flight values, but *not* as
@@ -968,13 +935,13 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   const scipp::index nextEdgeOffset = coord.dimensions().offset(binDim);
 
   Dataset hist;
-  hist.insert(coord);
-  Variable countsVar(Data::Value, dims);
+  hist.insert(dimensionCoord(binDim), coord);
+  auto countsVar = makeVariable<double>(dims);
   countsVar.setUnit(units::counts);
 
   // Counts has outer dimensions as input, with a new inner dimension given by
   // the binning dimensions. We iterate over all dimensions as a flat array.
-  auto counts = countsVar.get(Data::Value);
+  auto counts = countsVar.span<double>();
   scipp::index cur = 0;
   // The helper `getView` allows us to ignore the tag of coord, as long as the
   // underlying type is `double`. We view the edges with the same dimensions as
@@ -1007,9 +974,9 @@ Dataset histogram(const Variable &var, const Variable &coord) {
   }
 
   // TODO Would need to add handling for weighted events etc. here.
-  hist.insert(Data::Value, var.name(), countsVar);
-  hist.insert(Data::Variance, var.name(), std::move(countsVar));
-  hist(Data::Variance, var.name()).setUnit(units::counts * units::counts);
+  hist.insert(Data::Value, name, countsVar);
+  hist.insert(Data::Variance, name, std::move(countsVar));
+  hist(Data::Variance, name).setUnit(units::counts * units::counts);
   return hist;
 }
 
@@ -1017,7 +984,7 @@ Dataset histogram(const Dataset &d, const Variable &coord) {
   Dataset hist;
   for (const auto & [ name, tag, var ] : d)
     if (tag == Data::Events)
-      hist.merge(histogram(var, coord));
+      hist.merge(histogram(var, coord, name));
   if (hist.size() == 0)
     throw std::runtime_error("Dataset does not contain any variables with "
                              "event data, cannot histogram.");
@@ -1052,7 +1019,7 @@ template <class T> struct Sort {
     // code size?
     for (const auto & [ n, t, var ] : d) {
       if (!var.dimensions().contains(sortDim))
-        sorted.insert(var);
+        sorted.insert(t, n, var);
       else if (t == tag && n == name)
         sorted.insert(t, n, axisVar);
       else
@@ -1076,9 +1043,9 @@ Dataset filter(const Dataset &d, const Variable &select) {
   Dataset filtered;
   for (auto[name, tag, var] : d)
     if (var.dimensions().contains(dim))
-      filtered.insert(filter(var, select));
+      filtered.insert(tag, name, filter(var, select));
     else
-      filtered.insert(var);
+      filtered.insert(tag, name, var);
   return filtered;
 }
 
@@ -1087,9 +1054,9 @@ Dataset sum(const Dataset &d, const Dim dim) {
   for (auto[name, tag, var] : d) {
     if (var.dimensions().contains(dim)) {
       if (tag.isData())
-        summed.insert(sum(var, dim));
+        summed.insert(tag, name, sum(var, dim));
     } else {
-      summed.insert(var);
+      summed.insert(tag, name, var);
     }
   }
   return summed;
@@ -1119,13 +1086,14 @@ Dataset mean(const Dataset &d, const Dim dim) {
           // would be confusing.
           double scale =
               1.0 / std::sqrt(static_cast<double>(var.dimensions()[dim]));
-          m.insert(mean(var, dim) * Variable(Data::Value, {}, {scale}));
+          m.insert(tag, name,
+                   mean(var, dim) * makeVariable<double>({}, {scale}));
         } else {
-          m.insert(mean(var, dim));
+          m.insert(tag, name, mean(var, dim));
         }
       }
     } else {
-      m.insert(var);
+      m.insert(tag, name, var);
     }
   }
   return m;
@@ -1166,9 +1134,9 @@ Dataset reverse(const Dataset &d, const Dim dim) {
   Dataset out;
   for (const auto[name, tag, var] : d)
     if (var.dimensions().contains(dim))
-      out.insert(reverse(var, dim));
+      out.insert(tag, name, reverse(var, dim));
     else
-      out.insert(var);
+      out.insert(tag, name, var);
   return out;
 }
 } // namespace scipp::core

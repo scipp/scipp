@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <cmath>
+#include <string>
 
 #include "apply.h"
 #include "counts.h"
@@ -496,30 +497,24 @@ public:
 Variable::Variable(const ConstVariableSlice &slice)
     : Variable(*slice.m_variable) {
   if (slice.m_view) {
-    m_tag = slice.m_variable->tag();
-    m_name = slice.m_variable->m_name;
     setUnit(slice.unit());
     setDimensions(slice.dimensions());
     data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
   }
 }
 Variable::Variable(const Variable &parent, const Dimensions &dims)
-    : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
-      m_object(parent.m_object->clone(dims)) {}
+    : m_unit(parent.unit()), m_object(parent.m_object->clone(dims)) {}
 
 Variable::Variable(const ConstVariableSlice &parent, const Dimensions &dims)
-    : m_tag(Data::NoTag), m_unit(parent.unit()),
-      m_object(parent.data().clone(dims)) {
-}
+    : m_unit(parent.unit()), m_object(parent.data().clone(dims)) {}
 
 Variable::Variable(const Variable &parent, VariableConceptHandle data)
-    : m_tag(parent.tag()), m_unit(parent.unit()), m_name(parent.m_name),
-      m_object(std::move(data)) {}
+    : m_unit(parent.unit()), m_object(std::move(data)) {}
 
 template <class T>
-Variable::Variable(const Tag tag, const units::Unit unit,
-                   const Dimensions &dimensions, T object, const Dim sparseDim)
-    : m_tag(tag), m_sparseDim(sparseDim), m_unit{unit},
+Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
+                   T object, const Dim sparseDim)
+    : m_sparseDim(sparseDim), m_unit{unit},
       m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
                                               std::move(object))) {}
 
@@ -542,9 +537,9 @@ template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
 }
 
 #define INSTANTIATE(...)                                                       \
-  template Variable::Variable(                                                 \
-      const Tag, const units::Unit, const Dimensions &,                        \
-      Vector<underlying_type_t<__VA_ARGS__>>, const Dim);                      \
+  template Variable::Variable(const units::Unit, const Dimensions &,           \
+                              Vector<underlying_type_t<__VA_ARGS__>>,          \
+                              const Dim);                                      \
   template Vector<underlying_type_t<__VA_ARGS__>>                              \
       &Variable::cast<__VA_ARGS__>();                                          \
   template const Vector<underlying_type_t<__VA_ARGS__>>                        \
@@ -630,8 +625,7 @@ Variable &Variable::operator+=(const double value) & {
   // TODO By not setting a unit here this operator is only usable if the
   // variable is dimensionless. Should we ignore the unit for scalar operations,
   // i.e., set the same unit as *this.unit()?
-  Variable other(Data::Value, {}, {value});
-  return plus_equals(*this, other);
+  return plus_equals(*this, makeVariable<double>({}, {value}));
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
@@ -649,8 +643,7 @@ Variable &Variable::operator-=(const ConstVariableSlice &other) & {
   return minus_equals(*this, other);
 }
 Variable &Variable::operator-=(const double value) & {
-  Variable other(Data::Value, {}, {value});
-  return minus_equals(*this, other);
+  return minus_equals(*this, makeVariable<double>({}, {value}));
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
@@ -670,7 +663,7 @@ Variable &Variable::operator*=(const ConstVariableSlice &other) & {
   return times_equals(*this, other);
 }
 Variable &Variable::operator*=(const double value) & {
-  Variable other(Data::Value, {}, {value});
+  auto other = makeVariable<double>({}, {value});
   other.setUnit(units::dimensionless);
   return times_equals(*this, other);
 }
@@ -692,9 +685,7 @@ Variable &Variable::operator/=(const ConstVariableSlice &other) & {
   return divide_equals(*this, other);
 }
 Variable &Variable::operator/=(const double value) & {
-  Variable other(Data::Value, {}, {value});
-  other.setUnit(units::dimensionless);
-  return divide_equals(*this, other);
+  return divide_equals(*this, makeVariable<double>({}, {value}));
 }
 
 template <class T> VariableSlice VariableSlice::assign(const T &other) const {
@@ -716,9 +707,7 @@ VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) const {
   return plus_equals(*this, other);
 }
 VariableSlice VariableSlice::operator+=(const double value) const {
-  Variable other(Data::Value, {}, {value});
-  other.setUnit(units::dimensionless);
-  return plus_equals(*this, other);
+  return plus_equals(*this, makeVariable<double>({}, {value}));
 }
 
 VariableSlice VariableSlice::operator-=(const Variable &other) const {
@@ -728,9 +717,7 @@ VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) const {
   return minus_equals(*this, other);
 }
 VariableSlice VariableSlice::operator-=(const double value) const {
-  Variable other(Data::Value, {}, {value});
-  other.setUnit(units::dimensionless);
-  return minus_equals(*this, other);
+  return minus_equals(*this, makeVariable<double>({}, {value}));
 }
 
 VariableSlice VariableSlice::operator*=(const Variable &other) const {
@@ -740,9 +727,7 @@ VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) const {
   return times_equals(*this, other);
 }
 VariableSlice VariableSlice::operator*=(const double value) const {
-  Variable other(Data::Value, {}, {value});
-  other.setUnit(units::dimensionless);
-  return times_equals(*this, other);
+  return times_equals(*this, makeVariable<double>({}, {value}));
 }
 
 VariableSlice VariableSlice::operator/=(const Variable &other) const {
@@ -752,9 +737,7 @@ VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) const {
   return divide_equals(*this, other);
 }
 VariableSlice VariableSlice::operator/=(const double value) const {
-  Variable other(Data::Value, {}, {value});
-  other.setUnit(units::dimensionless);
-  return divide_equals(*this, other);
+  return divide_equals(*this, makeVariable<double>({}, {value}));
 }
 
 bool ConstVariableSlice::operator==(const Variable &other) const {
@@ -923,15 +906,12 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
 }
 
 Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
-  if (a1.tag() != a2.tag())
+  if (a1.dtype() != a2.dtype())
     throw std::runtime_error(
         "Cannot concatenate Variables: Data types do not match.");
   if (a1.unit() != a2.unit())
     throw std::runtime_error(
         "Cannot concatenate Variables: Units do not match.");
-  if (a1.name() != a2.name())
-    throw std::runtime_error(
-        "Cannot concatenate Variables: Names do not match.");
 
   if (a1.sparseDim() == dim && a2.sparseDim() == dim) {
     Variable out(a1);
@@ -997,7 +977,12 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord) {
 
   expect::countsOrCountsDensity(var);
-  const Dim dim = coordDimension[newCoord.tag().value()];
+  Dim dim = Dim::Invalid;
+  for (const auto d : oldCoord.dimensions().labels())
+    if (oldCoord.dimensions()[d] == var.dimensions()[d] + 1) {
+      dim = d;
+      break;
+    }
 
   auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord,
                         auto &&newCoord) {
@@ -1050,6 +1035,8 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     // TODO This will currently fail if the data is a multi-dimensional density.
     // Would need a conversion that converts only the rebinned dimension.
     // TODO This could be done more efficiently without a temporary Dataset.
+    throw std::runtime_error("Temporarily disabled for refactor");
+    /*
     Dataset density;
     density.insert(oldCoord);
     density.insert(var);
@@ -1060,6 +1047,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     rebinnedCounts.insert(rebin(cnts, oldCoord, newCoord));
     return counts::toDensity(std::move(rebinnedCounts), dim)
         .erase(var.tag(), var.name());
+    */
   }
 }
 
@@ -1111,7 +1099,7 @@ Variable sum(const Variable &var, const Dim dim) {
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dimensions()[dim]);
-  return summed * Variable(Data::Value, {}, {scale});
+  return summed * makeVariable<double>({}, {scale});
 }
 
 Variable abs(const Variable &var) {
