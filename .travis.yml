@@ -37,11 +37,11 @@ jobs:
       addons:
         apt:
           sources:
-            - llvm-toolchain-xenial-6
+            - llvm-toolchain-xenial-7
           packages:
-            - clang-6
+            - clang-7
       env:
-        - JOB_EVAL="CC=clang-6 && CXX=clang++-6"
+        - JOB_EVAL="CC=clang-7 && CXX=clang++-7"
       before_install:
         - sh .travis/before_install.sh
         - eval "${JOB_EVAL}"
