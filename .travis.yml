@@ -27,14 +27,23 @@ jobs:
           packages:
             - g++-7
       env:
-        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+        - JOB_EVAL="CC=gcc-7 && CXX=g++-7"
       before_install:
-        - eval "${MATRIX_EVAL}"
+        - eval "${JOB_EVAL}"
         - sh .travis/before_install.sh
       install: sh .travis/install.sh
       script: sh .travis/run_tests.sh
-    - compiler: clang
-      name: "clang"
-      before_install: sh .travis/before_install.sh
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-xenial-8
+          packages:
+            - clang-8.0
+      env:
+        - JOB_EVAL="CC=clang-8.0 && CXX=clang++-8.0"
+      before_install:
+        - sh .travis/before_install.sh
+        - eval "${JOB_EVAL}"
       install: sh .travis/install.sh
       script: sh .travis/run_tests.sh
