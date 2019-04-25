@@ -12,23 +12,16 @@ import operator
 class TestVariableSlice(unittest.TestCase):
 
     def setUp(self):
-        self._a = sp.Variable(
-            sp.Data.Value, [
-                sp.Dim.X], np.arange(
-                1, 10, dtype=float))
-        self._b = sp.Variable(
-            sp.Data.Value, [
-                sp.Dim.X], np.arange(
-                1, 10, dtype=float))
+        self._a = sp.Variable([sp.Dim.X], np.arange(1, 10, dtype=float))
+        self._b = sp.Variable([sp.Dim.X], np.arange(1, 10, dtype=float))
 
     def test_type(self):
         variable_slice = self._a[sp.Dim.X, :]
         self.assertEqual(type(variable_slice), sp.VariableSlice)
 
     def test_variable_type(self):
-        coord_var = sp.Variable(sp.Coord.X, [sp.Dim.X], np.arange(10))
+        coord_var = sp.Variable([sp.Dim.X], np.arange(10))
         coord_slice = coord_var[sp.Dim.X, :]
-        self.assertTrue(coord_slice.is_coord)
 
     def _apply_test_op(self, op, a, b, data):
         op(a, b)
@@ -85,7 +78,7 @@ class TestVariableSlice(unittest.TestCase):
 
     def test_correct_temporaries(self):
         v = sp.Variable(
-            sp.Data.Value, [
+            [
                 sp.Dim.X], np.arange(100).astype(
                 np.float32))
         b = sp.sqrt(v)[sp.Dim.X, 0:10]

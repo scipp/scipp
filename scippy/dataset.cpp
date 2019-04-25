@@ -266,7 +266,7 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &data,
                    bool>::apply<MakeVariable>(dtypeTag, labels, data);
 }
 
-Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
+Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const py::tuple &shape,
                                  py::dtype type = py::dtype::of<Empty>()) {
   // TODO Numpy does not support strings, how can we specify std::string as a
@@ -274,7 +274,7 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   // variables. Do we need an overload with a dtype arg that does not use
   // py::dtype?
   const auto dtypeTag =
-      type.is(py::dtype::of<Empty>()) ? defaultDType(tag) : convertDType(type);
+      type.is(py::dtype::of<Empty>()) ? dtype<double> : convertDType(type);
   return CallDType<double, float, int64_t, int32_t, char, bool, Dataset,
                    typename Data::EventTofs_t::type,
                    Eigen::Vector3d>::apply<MakeVariableDefaultInit>(dtypeTag,
@@ -298,7 +298,7 @@ void insertDefaultInit(
     const std::tuple<const std::vector<Dim> &, py::tuple> &data) {
   const auto & [ tag, name ] = Key::get(key);
   const auto & [ labels, array ] = data;
-  auto var = makeVariableDefaultInit(tag, labels, array);
+  auto var = makeVariableDefaultInit(labels, array);
   self.insert(tag, name, std::move(var));
 }
 
@@ -587,7 +587,10 @@ PYBIND11_MODULE(scippy, m) {
 
   py::class_<Tag>(m, "Tag")
       .def(py::self == py::self)
-      .def("__repr__", [](const Tag &self) { return to_string(self, "."); });
+      .def("__repr__", [](const Tag &self) { return to_string(self, "."); })
+      .def_property_readonly("is_coord", &Tag::isCoord)
+      .def_property_readonly("is_data", &Tag::isData)
+      .def_property_readonly("is_attr", &Tag::isAttr);
 
   // Runtime tags are sufficient in Python, not exporting Tag child classes.
   auto coord_tags = m.def_submodule("Coord");
@@ -717,9 +720,8 @@ PYBIND11_MODULE(scippy, m) {
   PYBIND11_NUMPY_DTYPE(Empty, dummy);
 
   py::class_<Variable>(m, "Variable")
-      .def(py::init(&makeVariableDefaultInit), py::arg("tag"),
-           py::arg("labels"), py::arg("shape"),
-           py::arg("dtype") = py::dtype::of<Empty>())
+      .def(py::init(&makeVariableDefaultInit), py::arg("labels"),
+           py::arg("shape"), py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init([](const int64_t data, const units::Unit &unit) {
              auto var = makeVariable<int64_t>({}, {data});
              var.setUnit(unit);

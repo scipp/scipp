@@ -13,19 +13,9 @@ class TestUnits(unittest.TestCase):
         u = sp.units.angstrom
         self.assertEqual(repr(u), "\u212B")
 
-    def test_variable_unit(self):
-        var1 = sp.Variable(sp.Data.Value, [sp.Dim.X], np.arange(4))
-        var2 = sp.Variable(sp.Coord.X, [sp.Dim.X], np.arange(4))
-        self.assertEqual(var1.unit, sp.units.dimensionless)
-        self.assertEqual(var2.unit, sp.units.m)
-        self.assertNotEqual(var2.unit, sp.units.counts)
-        self.assertTrue(var2.unit != sp.units.counts)
-
     def test_variable_unit_repr(self):
-        var1 = sp.Variable(sp.Data.Value, [sp.Dim.X], np.arange(4))
-        var2 = sp.Variable(sp.Coord.X, [sp.Dim.X], np.arange(4))
-        self.assertEqual(repr(var1.unit), "dimensionless")
-        self.assertEqual(repr(var2.unit), "m")
+        var1 = sp.Variable([sp.Dim.X], np.arange(4))
+        var2 = sp.Variable([sp.Dim.X], np.arange(4))
         u = sp.units.angstrom
         var1.unit = u
         self.assertEqual(repr(var1.unit), "\u212B")

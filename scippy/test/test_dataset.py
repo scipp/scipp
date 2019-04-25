@@ -121,7 +121,7 @@ class TestDataset(unittest.TestCase):
         d[sp.Data.Value, "data1"] = (
             [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], np.arange(24).reshape(4, 3, 2))
 
-        var = sp.Variable(sp.Data.Value, [sp.Dim.X], np.arange(2))
+        var = sp.Variable([sp.Dim.X], np.arange(2))
         d[sp.Data.Value, "data2"] = var
         d[sp.Data.Variance, "data2"] = var
         self.assertEqual(len(d), 3)
@@ -162,19 +162,9 @@ class TestDataset(unittest.TestCase):
         d[sp.Data.Value, "data1"] = np.arange(24.0).reshape(4, 3, 2)
         self.assertEqual(d[sp.Data.Value, "data1"].numpy.dtype, np.int64)
 
-    def test_nested_default_init(self):
-        d = sp.Dataset()
-        d[sp.Data.Events] = ([sp.Dim.X], (1,))
-        self.assertEqual(d[sp.Data.Events].data[0], sp.Dataset())
-
     def test_nested_0D_empty_item(self):
         d = sp.Dataset()
         d[sp.Data.Events] = ([], sp.Dataset())
-        self.assertEqual(d[sp.Data.Events].data[0], sp.Dataset())
-
-    def test_nested_0D_empty_size_tuple(self):
-        d = sp.Dataset()
-        d[sp.Data.Events] = ([], ())
         self.assertEqual(d[sp.Data.Events].data[0], sp.Dataset())
 
     def test_set_data_nested(self):
@@ -253,7 +243,7 @@ class TestDataset(unittest.TestCase):
 
     def test_insert_subdata_different_variable_types(self):
         a = sp.Dataset()
-        xcoord = sp.Variable(sp.Coord.X, [sp.Dim.X], np.arange(4))
+        xcoord = sp.Variable([sp.Dim.X], np.arange(4))
         a[sp.Data.Value] = ([sp.Dim.X], np.arange(3))
         a[sp.Coord.X] = xcoord
         a[sp.Attr.ExperimentLog] = ([], sp.Dataset())
@@ -461,7 +451,7 @@ class TestDataset(unittest.TestCase):
         a[sp.Coord.X] = ([sp.Dim.X], np.arange(10))
         a[sp.Data.Value, "i"] = ([sp.Dim.X], data)
 
-        b_var = sp.Variable(sp.Data.Value, [sp.Dim.X], data)
+        b_var = sp.Variable([sp.Dim.X], data)
 
         c = a + b_var
         self.assertTrue(np.array_equal(c[sp.Data.Value, "i"].numpy,
@@ -594,21 +584,6 @@ class TestDataset(unittest.TestCase):
         np.testing.assert_array_equal(
             self.dataset[sp.Data.Value, "data2"].numpy, self.reference_data2)
 
-    def test_split(self):
-        dataset = sp.Dataset()
-        dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.arange(4))
-        dataset[sp.Coord.X] = ([sp.Dim.X], np.array([3, 2, 4, 1]))
-        datasets = sp.split(dataset, sp.Dim.X, [2])
-        self.assertEqual(len(datasets), 2)
-        d0 = datasets[0]
-        np.testing.assert_array_equal(d0[sp.Coord.X].numpy, np.array([3, 2]))
-        np.testing.assert_array_equal(
-            d0[sp.Data.Value, "data"].numpy, np.array([0, 1]))
-        d1 = datasets[1]
-        np.testing.assert_array_equal(d1[sp.Coord.X].numpy, np.array([4, 1]))
-        np.testing.assert_array_equal(
-            d1[sp.Data.Value, "data"].numpy, np.array([2, 3]))
-
     def test_concatenate(self):
         dataset = sp.Dataset()
         dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.arange(4))
@@ -635,7 +610,7 @@ class TestDataset(unittest.TestCase):
         dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.array(10 * [1.0]))
         dataset[sp.Data.Value, "data"].unit = sp.units.counts
         dataset[sp.Coord.X] = ([sp.Dim.X], np.arange(11.0))
-        new_coord = sp.Variable(sp.Coord.X, [sp.Dim.X], np.arange(0.0, 11, 2))
+        new_coord = sp.Variable([sp.Dim.X], np.arange(0.0, 11, 2))
         dataset = sp.rebin(dataset, new_coord)
         np.testing.assert_array_equal(
             dataset[sp.Data.Value, "data"].numpy, np.array(5 * [2]))
@@ -662,8 +637,7 @@ class TestDataset(unittest.TestCase):
         dataset = sp.Dataset()
         dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.arange(4))
         dataset[sp.Coord.X] = ([sp.Dim.X], np.array([3, 2, 4, 1]))
-        select = sp.Variable(sp.Coord.Mask, [sp.Dim.X], np.array(
-            [False, True, False, True]))
+        select = sp.Variable([sp.Dim.X], np.array([False, True, False, True]))
         dataset = sp.filter(dataset, select)
         np.testing.assert_array_equal(
             dataset[sp.Data.Value, "data"].numpy, np.array([1, 3]))
@@ -684,8 +658,8 @@ class TestDatasetExamples(unittest.TestCase):
         table[sp.Data.Value, "sum"] = ([sp.Dim.Row],
                                        (len(table[sp.Coord.Row]),))
 
-        for col in table:
-            if not col.is_coord and col.name != "sum":
+        for name, tag, col in table:
+            if not tag.is_coord and name != "sum":
                 table[sp.Data.Value, "sum"] += col
         np.testing.assert_array_equal(
             table[sp.Data.Value, "col2"].numpy, np.array([0, 1, 2, 3]))
@@ -737,8 +711,8 @@ class TestDatasetExamples(unittest.TestCase):
         table[sp.Data.Value, "sum"] = ([sp.Dim.Row], (4,))
 
         # Do something for each column (here: sum)
-        for col in table:
-            if not col.is_coord and col.name != "sum":
+        for name, tag, col in table:
+            if not tag.is_coord and name != "sum":
                 table[sp.Data.Value, "sum"] += col
 
         # Append tables (append rows of second table to first)
@@ -814,8 +788,8 @@ class TestDatasetExamples(unittest.TestCase):
             d = d * d
 
         # Rebin the X axis
-        d = sp.rebin(d, sp.Variable(sp.Coord.X, [sp.Dim.X], np.arange(
-            0, L + 1, 2).astype(np.float64)))
+        d = sp.rebin(d, sp.Variable(
+            [sp.Dim.X], np.arange(0, L + 1, 2).astype(np.float64)))
         # Rebin to different axis for every y
         # Our rebin implementatinon is broken for this case for now
         # rebinned = sp.rebin(d, sp.Variable(sp.Coord.X, [sp.Dim.Y, sp.Dim.X],
@@ -853,7 +827,7 @@ class TestDatasetExamples(unittest.TestCase):
         d[sp.Data.Variance, "sample1"] = d[sp.Data.Value, "sample1"]
 
         # Create a mask and use it to extract some of the spectra
-        select = sp.Variable(sp.Coord.Mask, [sp.Dim.Spectrum], np.isin(
+        select = sp.Variable([sp.Dim.Spectrum], np.isin(
             d[sp.Coord.SpectrumNumber], np.arange(10, 20)))
         spectra = sp.filter(d, select)
         self.assertEqual(spectra.dimensions.shape[1], 10)
@@ -918,6 +892,7 @@ class TestDatasetExamples(unittest.TestCase):
             [sp.Dim.Energy], np.random.exponential(size=8))
         d[sp.Coord.Monitor, "transmission"] = ([], ())
 
+    @unittest.skip("Tag-derived dtype not available anymore, need to implement way of specifying list type for events.")
     def test_zip(self):
         d = sp.Dataset()
         d[sp.Coord.SpectrumNumber] = ([sp.Dim.Position], np.arange(1, 6))
@@ -973,7 +948,7 @@ class TestDatasetExamples(unittest.TestCase):
         d1[sp.Data.Value, "B"] = ([sp.Dim.Y, sp.Dim.X], arr2)
         d1[sp.Data.Value, "A"].unit = sp.units.counts
         d1[sp.Data.Value, "B"].unit = sp.units.counts
-        rd1 = sp.rebin(d1, sp.Variable(sp.Coord.X, [sp.Dim.X], np.arange(
+        rd1 = sp.rebin(d1, sp.Variable([sp.Dim.X], np.arange(
             0, N + 1, 1.5).astype(np.float64)))
         np.testing.assert_array_equal(rd1[sp.Data.Value, "A"].numpy,
                                       np.transpose(
