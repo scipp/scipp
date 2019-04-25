@@ -30,7 +30,6 @@ TEST(Dataset, insert_data) {
   ASSERT_EQ(d.size(), 2);
   EXPECT_NO_THROW(d.insert(Data::Value, "name2", {}, {3}));
   ASSERT_EQ(d.size(), 2);
-  EXPECT_THROW(d.insert(Data::NoTag, "", {}, {1}), std::runtime_error);
 }
 
 TEST(Dataset, insert_variables_with_dimensions) {
@@ -692,7 +691,7 @@ TEST(Dataset, operator_plus_equal_with_attributes) {
 TEST(Dataset, binary_operator_equal_with_variable) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "a", {Dim::X, 1}, {25});
+  a.insert(Data::Value, "a", {Dim::X, 1}, {25.0});
 
   auto a_copy(a);
   auto bvar = makeVariable<double>({Dim::X, 1}, {5});
@@ -1116,8 +1115,9 @@ TEST(Dataset, rebin_failures) {
 
 TEST(Dataset, rebin_accepts_only_counts_and_densities) {
   Dataset d;
-  d.insert(Coord::Tof, {Dim::Tof, 3}, {1.0, 3.0, 5.0});
-  auto coordNew = makeVariable<double>({Dim::Tof, 2}, {1.0, 5.0});
+  d.insert(Coord::Tof,
+           makeVariable<double>({Dim::Tof, 3}, units::us, {1.0, 3.0, 5.0}));
+  auto coordNew = makeVariable<double>({Dim::Tof, 2}, units::us, {1.0, 5.0});
 
   d.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
   EXPECT_THROW_MSG(rebin(d, coordNew), except::UnitError,
@@ -1135,7 +1135,6 @@ TEST(Dataset, rebin_accepts_only_counts_and_densities) {
 
   d(Data::Value, "").setUnit(units::counts / units::us);
   EXPECT_NO_THROW(rebin(d, coordNew));
-  rebin(d, coordNew);
 }
 
 TEST(Dataset, rebin) {
@@ -1158,10 +1157,12 @@ TEST(Dataset, rebin) {
 
 TEST(Dataset, rebin_density) {
   Dataset d;
-  d.insert(Coord::Tof, {Dim::Tof, 4}, {1.0, 2.0, 4.0, 8.0});
-  auto coordNew = makeVariable<double>({Dim::Tof, 3}, {1.0, 3.0, 8.0});
+  d.insert(Coord::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
+                                            {1.0, 2.0, 4.0, 8.0}));
+  auto coordNew =
+      makeVariable<double>({Dim::Tof, 3}, units::us, {1.0, 3.0, 8.0});
 
-  d.insert(Data::Value, "", {Dim::Tof, 3}, {10, 20, 30});
+  d.insert(Data::Value, "", {Dim::Tof, 3}, {10.0, 20.0, 30.0});
   d(Data::Value).setUnit(units::counts);
 
   auto reference = makeVariable<double>({Dim::Tof, 2}, {10.0, 40.0 / 5});
@@ -1175,9 +1176,10 @@ TEST(Dataset, rebin_density) {
 
 Dataset makeEvents() {
   Dataset e1;
-  e1.insert(Data::Tof, "", {Dim::Event, 5}, {1, 2, 3, 4, 5});
+  e1.insert(Data::Tof, "", {Dim::Event, 5}, {1.0, 2.0, 3.0, 4.0, 5.0});
   Dataset e2;
-  e2.insert(Data::Tof, "", {Dim::Event, 7}, {1, 2, 3, 4, 4, 5, 7});
+  e2.insert(Data::Tof, "", {Dim::Event, 7},
+            {1.0, 2.0, 3.0, 4.0, 4.0, 5.0, 7.0});
   Dataset d;
   d.insert(Data::Events, "sample1", {Dim::Spectrum, 2}, {e1, e2});
   return d;
@@ -1241,7 +1243,11 @@ TEST(Dataset, histogram_2D_coord) {
             units::counts * units::counts);
 }
 
-TEST(Dataset, histogram_2D_transpose_coord) {
+// We are (currently?) not supporting this anymore. With variables without tags
+// `histogram` cannot tell which dimension to histogram, so it uses the inner
+// dimension. We could change the function signature to explicitly accect the
+// dimension, if we wanted to support other options as well.
+TEST(Dataset, DISABLED_histogram_2D_transpose_coord) {
   auto d = makeEvents();
   auto coord = makeVariable<double>({{Dim::Tof, 3}, {Dim::Spectrum, 2}},
                                     {1.0, 1.5, 1.5, 4.5, 4.5, 7.5});
@@ -1323,7 +1329,7 @@ TEST(Dataset, filter) {
   d.insert(Coord::Y, {Dim::Y, 2}, {1.0, 0.9});
   d.insert(Data::Value, "", {{Dim::Y, 2}, {Dim::X, 4}},
            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  auto select = makeVariable<double>({Dim::X, 4}, {false, true, false, true});
+  auto select = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
 
   auto filtered = filter(d, select);
 
@@ -1344,7 +1350,8 @@ TEST(Dataset, filter) {
 
 TEST(Dataset, integrate_counts) {
   Dataset ds;
-  ds.insert(Coord::X, {Dim::X, 3}, {0.1, 0.2, 0.4});
+  ds.insert(Coord::X,
+            makeVariable<double>({Dim::X, 3}, units::m, {0.1, 0.2, 0.4}));
   ds.insert(Data::Value, "", {Dim::X, 2}, {10.0, 20.0});
   ds(Data::Value, "").setUnit(units::counts);
 
@@ -1365,7 +1372,8 @@ TEST(Dataset, integrate_counts) {
 
 TEST(Dataset, integrate_counts_density) {
   Dataset ds;
-  ds.insert(Coord::Tof, {Dim::Tof, 3}, {0.1, 0.2, 0.4});
+  ds.insert(Coord::Tof,
+            makeVariable<double>({Dim::Tof, 3}, units::us, {0.1, 0.2, 0.4}));
   ds.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
   ds(Data::Value, "").setUnit(units::counts / units::us);
 
@@ -1472,16 +1480,18 @@ TEST(DatasetSlice, subset_slice_spatial) {
   // Slice with single index (not range) => corresponding dimension coordinate
   // is removed.
   ASSERT_EQ(view_a_x0.size(), 3);
-  EXPECT_EQ(view_a_x0(Coord::X).dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x0(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x0(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0(Data::Variance, "a").dimensions(),
+            (Dimensions{Dim::Y, 2}));
 
   auto view_a_x1 = d.subset("a")(Dim::X, 1);
 
   ASSERT_EQ(view_a_x1.size(), 3);
-  EXPECT_EQ(view_a_x1(Coord::X).dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x1(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x1(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1(Data::Variance, "a").dimensions(),
+            (Dimensions{Dim::Y, 2}));
 
   EXPECT_NO_THROW(view_a_x1 -= view_a_x0);
 
@@ -1519,16 +1529,18 @@ TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
   // Slice with single index (not range) => corresponding dimension coordinate
   // is removed.
   ASSERT_EQ(view_a_x0.size(), 3);
-  EXPECT_EQ(view_a_x0(Coord::X).dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x0(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x0(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x0(Data::Variance, "a").dimensions(),
+            (Dimensions{Dim::Y, 2}));
 
   auto view_a_x1 = d.subset("a")(Dim::X, 1);
 
   ASSERT_EQ(view_a_x1.size(), 3);
-  EXPECT_EQ(view_a_x1(Coord::X).dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x1(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
   EXPECT_EQ(view_a_x1(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
+  EXPECT_EQ(view_a_x1(Data::Variance, "a").dimensions(),
+            (Dimensions{Dim::Y, 2}));
 
   EXPECT_NO_THROW(view_a_x1 -= view_a_x0);
 
@@ -1656,11 +1668,11 @@ TEST(Dataset, binary_operations_with_non_identical_lhs_rhs_operand_structures) {
 
 TEST(Dataset, unary_minus) {
   Dataset a;
-  a.insert(Coord::X, {Dim::X, 2}, {1, 2});
-  a.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
-  a.insert(Data::Value, "b", {}, {3});
-  a.insert(Data::Variance, "a", {Dim::X, 2}, {4, 5});
-  a.insert(Data::Variance, "b", {}, {6});
+  a.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
+  a.insert(Data::Value, "a", {Dim::X, 2}, {1.0, 2.0});
+  a.insert(Data::Value, "b", {}, {3.0});
+  a.insert(Data::Variance, "a", {Dim::X, 2}, {4.0, 5.0});
+  a.insert(Data::Variance, "b", {}, {6.0});
 
   auto b = -a;
   EXPECT_EQ(b(Coord::X), a(Coord::X));
@@ -1673,11 +1685,11 @@ TEST(Dataset, unary_minus) {
 
 TEST(Dataset, binary_assign_with_scalar) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {1, 2});
-  d.insert(Data::Value, "d1", {Dim::X, 2}, {1, 2});
-  d.insert(Data::Value, "d2", {}, {3});
-  d.insert(Data::Variance, "d1", {Dim::X, 2}, {4, 5});
-  d.insert(Data::Variance, "d2", {}, {6});
+  d.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
+  d.insert(Data::Value, "d1", {Dim::X, 2}, {1.0, 2.0});
+  d.insert(Data::Value, "d2", {}, {3.0});
+  d.insert(Data::Variance, "d1", {Dim::X, 2}, {4.0, 5.0});
+  d.insert(Data::Variance, "d2", {}, {6.0});
 
   d += 1;
   EXPECT_TRUE(equals(d.get(Data::Value, "d1"), {2, 3}));
@@ -1704,17 +1716,18 @@ TEST(Dataset, binary_assign_with_scalar) {
   EXPECT_TRUE(equals(d.get(Data::Value, "d1"), {0, 1}));
   EXPECT_TRUE(equals(d.get(Data::Value, "d2"), {2}));
   // Scalar treated as having 0 variance, `/` affects variance.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d1"), {16 * 2 * 2, 20 * 2 * 2}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {24 * 2 * 2}));
+  EXPECT_TRUE(
+      equals(d.get(Data::Variance, "d1"), {16 / (2 * 2), 20 / (2 * 2)}));
+  EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {24 / (2 * 2)}));
 }
 
 TEST(DatasetSlice, binary_assign_with_scalar) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {1, 2});
-  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
-  d.insert(Data::Value, "b", {}, {3});
-  d.insert(Data::Variance, "a", {Dim::X, 2}, {4, 5});
-  d.insert(Data::Variance, "b", {}, {6});
+  d.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1.0, 2.0});
+  d.insert(Data::Value, "b", {}, {3.0});
+  d.insert(Data::Variance, "a", {Dim::X, 2}, {4.0, 5.0});
+  d.insert(Data::Variance, "b", {}, {6.0});
 
   auto slice = d(Dim::X, 1);
 
@@ -1747,17 +1760,17 @@ TEST(DatasetSlice, binary_assign_with_scalar) {
   EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 1}));
   EXPECT_TRUE(equals(d.get(Data::Value, "b"), {2}));
   // Scalar treated as having 0 variance, `/` affects variance.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4, 20 * 2 * 2}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {6 * 4 * 4}));
+  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4.0, 20.0 / (2 * 2)}));
+  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {24.0 / (2 * 2)}));
 }
 
 TEST(Dataset, binary_with_scalar) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {1, 2});
-  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
-  d.insert(Data::Value, "b", {}, {3});
-  d.insert(Data::Variance, "a", {Dim::X, 2}, {4, 5});
-  d.insert(Data::Variance, "b", {}, {6});
+  d.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1.0, 2.0});
+  d.insert(Data::Value, "b", {}, {3.0});
+  d.insert(Data::Variance, "a", {Dim::X, 2}, {4.0, 5.0});
+  d.insert(Data::Variance, "b", {}, {6.0});
 
   auto sum = d + 1;
   EXPECT_TRUE(equals(sum.get(Data::Value, "a"), {2, 3}));
@@ -1795,11 +1808,11 @@ TEST(Dataset, binary_with_scalar) {
 
 TEST(DatasetSlice, binary_with_scalar) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {1, 2});
-  d.insert(Data::Value, "a", {Dim::X, 2}, {1, 2});
-  d.insert(Data::Value, "b", {}, {3});
-  d.insert(Data::Variance, "a", {Dim::X, 2}, {4, 5});
-  d.insert(Data::Variance, "b", {}, {6});
+  d.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
+  d.insert(Data::Value, "a", {Dim::X, 2}, {1.0, 2.0});
+  d.insert(Data::Value, "b", {}, {3.0});
+  d.insert(Data::Variance, "a", {Dim::X, 2}, {4.0, 5.0});
+  d.insert(Data::Variance, "b", {}, {6.0});
 
   auto slice = d(Dim::X, 1);
 
@@ -1842,17 +1855,17 @@ TEST(DatasetSlice, binary_with_scalar) {
   auto fraction = slice / 2;
   EXPECT_TRUE(equals(fraction.get(Data::Value, "a"), {1}));
   EXPECT_TRUE(equals(fraction.get(Data::Value, "b"), {1.5}));
-  EXPECT_TRUE(equals(fraction.get(Data::Variance, "a"), {20}));
-  EXPECT_TRUE(equals(fraction.get(Data::Variance, "b"), {24}));
+  EXPECT_TRUE(equals(fraction.get(Data::Variance, "a"), {5.0 / 4}));
+  EXPECT_TRUE(equals(fraction.get(Data::Variance, "b"), {6.0 / 4}));
 }
 
 TEST(DatasetSlice, binary_operator_equals_with_variable) {
   Dataset a;
   a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "a", {Dim::X, 1}, {25});
+  a.insert(Data::Value, "a", {Dim::X, 1}, {25.0});
 
   DatasetSlice a_slice = a.subset("a");
-  auto bvar = makeVariable<double>({Dim::X, 1}, {5});
+  auto bvar = makeVariable<double>({Dim::X, 1}, {5.0});
 
   a_slice += bvar;
   EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 + 5);
@@ -1866,9 +1879,10 @@ TEST(DatasetSlice, binary_operator_equals_with_variable) {
 
 TEST(Dataset, counts_toDensity_fromDensity) {
   Dataset d;
-  d.insert(Coord::Tof, {Dim::Tof, 4}, {1, 2, 4, 8});
-  d.insert(Data::Value, "", {Dim::Tof, 3}, {12, 12, 12});
-  d(Data::Value, "").setUnit(units::counts);
+  d.insert(Coord::Tof,
+           makeVariable<double>({Dim::Tof, 4}, units::us, {1, 2, 4, 8}));
+  d.insert(Data::Value, "",
+           makeVariable<double>({Dim::Tof, 3}, units::counts, {12, 12, 12}));
 
   d = counts::toDensity(std::move(d), Dim::Tof);
   auto result = d(Data::Value, "");

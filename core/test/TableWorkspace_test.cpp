@@ -63,12 +63,6 @@ TEST(TableWorkspace, basics) {
   EXPECT_EQ(asStrings(sortedTable(Data::DeprecatedString, "")),
             std::vector<std::string>({"why is this negative?", "", ""}));
 
-  // Split (opposite of concatenate).
-  auto parts = split(mergedTable, Dim::Row, {3});
-  ASSERT_EQ(parts.size(), 2ul);
-  EXPECT_EQ(parts[0], table);
-  EXPECT_EQ(parts[1], table);
-
   // Remove rows from the middle of a table.
   auto recombined = concatenate(mergedTable(Dim::Row, 0, 2),
                                 mergedTable(Dim::Row, 4, 6), Dim::Row);

@@ -1035,19 +1035,19 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     // TODO This will currently fail if the data is a multi-dimensional density.
     // Would need a conversion that converts only the rebinned dimension.
     // TODO This could be done more efficiently without a temporary Dataset.
-    throw std::runtime_error("Temporarily disabled for refactor");
     /*
-    Dataset density;
-    density.insert(oldCoord);
-    density.insert(var);
-    auto cnts = counts::fromDensity(std::move(density), dim)
-                    .erase(var.tag(), var.name());
-    Dataset rebinnedCounts;
-    rebinnedCounts.insert(newCoord);
-    rebinnedCounts.insert(rebin(cnts, oldCoord, newCoord));
-    return counts::toDensity(std::move(rebinnedCounts), dim)
-        .erase(var.tag(), var.name());
+    throw std::runtime_error("Temporarily disabled for refactor");
     */
+    Dataset density;
+    density.insert(dimensionCoord(dim), oldCoord);
+    density.insert(Data::Value, var);
+    auto cnts = counts::fromDensity(std::move(density), dim).erase(Data::Value);
+    Dataset rebinnedCounts;
+    rebinnedCounts.insert(dimensionCoord(dim), newCoord);
+    rebinnedCounts.insert(Data::Value,
+                          rebin(std::get<Variable>(cnts), oldCoord, newCoord));
+    return std::get<Variable>(
+        counts::toDensity(std::move(rebinnedCounts), dim).erase(Data::Value));
   }
 }
 

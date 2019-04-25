@@ -228,7 +228,7 @@ TEST(Variable, operator_plus_equal_custom_type) {
 }
 
 TEST(Variable, operator_times_equal) {
-  auto a = makeVariable<double>({Dim::X, 2}, {2.0, 3.0});
+  auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= a);
@@ -238,7 +238,7 @@ TEST(Variable, operator_times_equal) {
 }
 
 TEST(Variable, operator_times_equal_scalar) {
-  auto a = makeVariable<double>({Dim::X, 2}, {2.0, 3.0});
+  auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a *= 2.0);
@@ -269,7 +269,7 @@ TEST(Variable, operator_divide_equal) {
 }
 
 TEST(Variable, operator_divide_equal_self) {
-  auto a = makeVariable<double>({Dim::X, 2}, {2.0, 3.0});
+  auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= a);
@@ -279,7 +279,7 @@ TEST(Variable, operator_divide_equal_self) {
 }
 
 TEST(Variable, operator_divide_equal_scalar) {
-  auto a = makeVariable<double>({Dim::X, 2}, {2.0, 4.0});
+  auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 4.0});
 
   EXPECT_EQ(a.unit(), units::m);
   EXPECT_NO_THROW(a /= 2.0);
@@ -289,7 +289,7 @@ TEST(Variable, operator_divide_equal_scalar) {
 }
 
 TEST(Variable, operator_divide_scalar_double) {
-  const auto a = makeVariable<double>({Dim::X, 2}, {2.0, 4.0});
+  const auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 4.0});
   const auto result = 1.111 / a;
   EXPECT_EQ(result.span<double>()[0], 1.111 / 2.0);
   EXPECT_EQ(result.span<double>()[1], 1.111 / 4.0);
@@ -297,7 +297,7 @@ TEST(Variable, operator_divide_scalar_double) {
 }
 
 TEST(Variable, operator_divide_scalar_float) {
-  const auto a = makeVariable<float>({Dim::X, 2}, {2.0, 4.0});
+  const auto a = makeVariable<float>({Dim::X, 2}, units::m, {2.0, 4.0});
   const auto result = 1.111 / a;
   EXPECT_EQ(result.span<float>()[0], 1.111f / 2.0f);
   EXPECT_EQ(result.span<float>()[1], 1.111f / 4.0f);
@@ -510,7 +510,7 @@ TEST(Variable, concatenate_fail) {
   Dimensions dims(Dim::Tof, 1);
   auto a = makeVariable<double>(dims, {1.0});
   auto b = makeVariable<double>(dims, {2.0});
-  auto c = makeVariable<double>(dims, {2.0});
+  auto c = makeVariable<float>(dims, {2.0});
   EXPECT_THROW_MSG(concatenate(a, c, Dim::Tof), std::runtime_error,
                    "Cannot concatenate Variables: Data types do not match.");
   auto aa = concatenate(a, a, Dim::Tof);

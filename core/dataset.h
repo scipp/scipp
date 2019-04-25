@@ -169,8 +169,8 @@ public:
   template <class Tag, class T>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, std::initializer_list<T> values) {
-    Variable a(std::move(dimensions), values);
-    insert(tag, name, std::move(a));
+    insert(tag, name,
+           makeVariable<typename Tag::type>(std::move(dimensions), values));
   }
 
   // Insert variants with custom type

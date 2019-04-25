@@ -5,7 +5,6 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
-#include <exception>
 #include <type_traits>
 #include <variant>
 
@@ -330,8 +329,10 @@ private:
   VariableConceptHandle m_object;
 };
 
-template <class T> Variable makeVariable(const Dimensions &dimensions) {
-  return Variable(units::dimensionless, std::move(dimensions),
+template <class T>
+Variable makeVariable(const Dimensions &dimensions,
+                      const units::Unit unit = units::dimensionless) {
+  return Variable(unit, std::move(dimensions),
                   Vector<underlying_type_t<T>>(
                       dimensions.volume(),
                       detail::default_init<underlying_type_t<T>>::value()));
@@ -349,6 +350,13 @@ template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
   return Variable(units::dimensionless, std::move(dimensions),
+                  Vector<underlying_type_t<T>>(values.begin(), values.end()));
+}
+
+template <class T, class T2 = T>
+Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
+                      std::initializer_list<T2> values) {
+  return Variable(unit, std::move(dimensions),
                   Vector<underlying_type_t<T>>(values.begin(), values.end()));
 }
 
