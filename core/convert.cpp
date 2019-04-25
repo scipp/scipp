@@ -20,9 +20,10 @@ Variable getSpecPos(const Dataset &d) {
   if (d.contains(Coord::Position))
     return d(Coord::Position);
   auto specPosView = zipMD(d, MDRead(Coord::Position));
-  Variable specPos(Coord::Position, d(Coord::DetectorGrouping).dimensions());
+  auto specPos =
+      makeVariable<double>(d(Coord::DetectorGrouping).dimensions(), units::m);
   std::transform(specPosView.begin(), specPosView.end(),
-                 specPos.get(Coord::Position).begin(),
+                 specPos.span<Eigen::Vector3d>().begin(),
                  [](const auto &item) { return item.get(Coord::Position); });
   return specPos;
 }
@@ -87,7 +88,7 @@ Dataset tofToDSpacing(const Dataset &d) {
                    return std::sqrt(0.5 * (1.0 - beamVec.dot(scattered)));
                  });
   const auto sinTheta =
-      makeVariable<double>(Data::Value, scattered.dimensions(), sinThetaData);
+      makeVariable<double>(scattered.dimensions(), sinThetaData);
   conversionFactor *= sinTheta;
 
   // 2. Transform coordinate
@@ -100,13 +101,13 @@ Dataset tofToDSpacing(const Dataset &d) {
                    coord.reshape(coordDims) / conversionFactor);
 
   // 3. Transform variables
-  for (const auto &var : d) {
+  for (const auto & [ name, tag, var ] : d) {
     auto varDims = var.dimensions();
     if (varDims.contains(Dim::Tof))
       varDims.relabel(varDims.index(Dim::Tof), Dim::DSpacing);
-    if (var.tag() == Coord::Tof) {
+    if (tag == Coord::Tof) {
       // Done already.
-    } else if (var.tag() == Data::Events) {
+    } else if (tag == Data::Events) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else {
@@ -115,7 +116,7 @@ Dataset tofToDSpacing(const Dataset &d) {
         throw std::runtime_error(
             "TODO Converting density data to DSpacing not implemented yet.");
       } else {
-        converted.insert(var.reshape(varDims));
+        converted.insert(tag, name, var.reshape(varDims));
       }
     }
   }
@@ -157,13 +158,13 @@ Dataset tofToEnergy(const Dataset &d) {
   converted.insert(Coord::Energy, std::move(inv) * conversionFactor);
 
   // 3. Transform variables
-  for (const auto &var : d) {
+  for (const auto & [ name, tag, var ] : d) {
     auto varDims = var.dimensions();
     if (varDims.contains(Dim::Tof))
       varDims.relabel(varDims.index(Dim::Tof), Dim::Energy);
-    if (var.tag() == Coord::Tof) {
+    if (tag == Coord::Tof) {
       // Done already.
-    } else if (var.tag() == Data::Events) {
+    } else if (tag == Data::Events) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else {
@@ -179,13 +180,14 @@ Dataset tofToEnergy(const Dataset &d) {
         const auto newBinWidth =
             newCoord(Dim::Energy, 1, size) - newCoord(Dim::Energy, 0, size - 1);
 
-        converted.insert(var);
-        counts::fromDensity(converted(var.tag(), var.name()), {oldBinWidth});
+        converted.insert(tag, name, var);
+        counts::fromDensity(converted(tag, name), {oldBinWidth});
         converted.insert(
-            converted.erase(var.tag(), var.name()).reshape(varDims));
-        counts::toDensity(converted(var.tag(), var.name()), {newBinWidth});
+            tag, name,
+            std::get<Variable>(converted.erase(tag, name)).reshape(varDims));
+        counts::toDensity(converted(tag, name), {newBinWidth});
       } else {
-        converted.insert(var.reshape(varDims));
+        converted.insert(tag, name, var.reshape(varDims));
       }
     }
   }
@@ -212,8 +214,8 @@ Dataset tofToDeltaE(const Dataset &d) {
   l2_square *= l2_square;
   l2_square *= tofToEnergyPhysicalConstants;
 
-  Variable tofShift(Data::Value, {});
-  Variable scale(Data::Value, {});
+  auto tofShift = makeVariable<double>({});
+  auto scale = makeVariable<double>({});
 
   if (d.contains(Coord::Ei)) {
     // Direct-inelastic.
@@ -233,11 +235,11 @@ Dataset tofToDeltaE(const Dataset &d) {
 
   // 2. Transform variables
   Dataset converted;
-  for (const auto &var : d) {
+  for (const auto & [ name, tag, var ] : d) {
     auto varDims = var.dimensions();
     if (varDims.contains(Dim::Tof))
       varDims.relabel(varDims.index(Dim::Tof), Dim::DeltaE);
-    if (var.tag() == Coord::Tof) {
+    if (tag == Coord::Tof) {
       Variable inv_tof = 1.0 / (var.reshape(varDims) - tofShift);
       Variable E = inv_tof * inv_tof * scale;
       if (d.contains(Coord::Ei)) {
@@ -245,14 +247,14 @@ Dataset tofToDeltaE(const Dataset &d) {
       } else {
         converted.insert(Coord::DeltaE, std::move(E) - d(Coord::Ef));
       }
-    } else if (var.tag() == Data::Events) {
+    } else if (tag == Data::Events) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else {
       if (counts::isDensity(var))
         throw std::runtime_error("TODO Converting units of count-density data "
                                  "not implemented yet for this case.");
-      converted.insert(var.reshape(varDims));
+      converted.insert(tag, name, var.reshape(varDims));
     }
   }
 
@@ -325,8 +327,8 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
 
   Dataset converted(qCoords);
   converted.erase(Coord::DeltaE);
-  for (const auto &var : d) {
-    if (var.tag() == Data::Events || var.tag() == Data::EventTofs) {
+  for (const auto & [ name, tag, var ] : d) {
+    if (tag == Data::Events || tag == Data::EventTofs) {
       throw std::runtime_error(
           "TODO Converting units of event data not implemented yet.");
     } else if (var.dimensions().contains(Dim::Position) &&
@@ -361,11 +363,11 @@ Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
           out(Dim::Qx, qx)(Dim::Qy, qy)(Dim::Qz, qz) += in(Dim::Position, i);
         }
       }
-      converted.insert(std::move(tmp));
+      converted.insert(tag, name, std::move(tmp));
     } else if (var.dimensions().contains(Dim::Position)) {
       // TODO Drop?
     } else {
-      converted.insert(var);
+      converted.insert(tag, name, var);
     }
   }
 

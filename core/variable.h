@@ -329,10 +329,8 @@ private:
   VariableConceptHandle m_object;
 };
 
-template <class T>
-Variable makeVariable(const Dimensions &dimensions,
-                      const units::Unit unit = units::dimensionless) {
-  return Variable(unit, std::move(dimensions),
+template <class T> Variable makeVariable(const Dimensions &dimensions) {
+  return Variable(units::dimensionless, std::move(dimensions),
                   Vector<underlying_type_t<T>>(
                       dimensions.volume(),
                       detail::default_init<underlying_type_t<T>>::value()));
@@ -375,6 +373,12 @@ Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
     // Copies to aligned memory.
     return Variable(units::dimensionless, std::move(dimensions),
                     Vector<underlying_type_t<T>>(args.begin(), args.end())...);
+  } else if constexpr (sizeof...(Args) == 1 &&
+                       (std::is_convertible_v<Args, units::Unit> && ...)) {
+    return Variable(args..., std::move(dimensions),
+                    Vector<underlying_type_t<T>>(
+                        dimensions.volume(),
+                        detail::default_init<underlying_type_t<T>>::value()));
   } else {
     return Variable(units::dimensionless, std::move(dimensions),
                     Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
