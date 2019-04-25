@@ -325,9 +325,9 @@ static void BM_Dataset_Workspace2D_rebin(benchmark::State &state) {
   scipp::index nSpec = state.range(0) * 1024;
   scipp::index nPoint = 1024;
 
-  Variable newCoord(Coord::Tof, {Dim::Tof, nPoint / 2});
+  auto newCoord = makeVariable<double>({Dim::Tof, nPoint / 2});
   double value = 0.0;
-  for (auto &tof : newCoord.get(Coord::Tof)) {
+  for (auto &tof : newCoord.span<double>()) {
     tof = value;
     value += 3.0;
   }

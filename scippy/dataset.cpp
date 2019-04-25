@@ -27,11 +27,12 @@ using namespace scipp::core;
 namespace py = pybind11;
 
 template <typename T, typename SZ_TP>
-Variable makeVariable(Tag tag, const Dimensions &dimensions,
-                      const std::vector<SZ_TP> &stridesInBytes, T *ptr) {
+Variable makeVariableFromBuffer(const Dimensions &dimensions,
+                                const std::vector<SZ_TP> &stridesInBytes,
+                                T *ptr) {
   auto ndims = dimensions.ndim();
   if (ndims == 0) // empty dataset
-    return makeVariable<underlying_type_t<T>>(tag, dimensions);
+    return makeVariable<underlying_type_t<T>>(dimensions);
 
   std::vector<SZ_TP> varStrides(ndims, 1), strides;
   for (auto &&strd : stridesInBytes)
@@ -47,7 +48,7 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions,
 
   if (sameStrides) { // memory is alligned c-style and dense
     return Variable(
-        tag, defaultUnit(tag), std::move(dimensions),
+        units::dimensionless, std::move(dimensions),
         Vector<underlying_type_t<T>>(ptr, ptr + dimensions.volume()));
 
   } else {
@@ -60,7 +61,7 @@ Variable makeVariable(Tag tag, const Dimensions &dimensions,
                        ? strides[index] * dimensions.size(index)
                        : 1;
 
-    auto res = makeVariable<underlying_type_t<T>>(tag, dimensions);
+    auto res = makeVariable<underlying_type_t<T>>(dimensions);
     std::vector<scipp::index> dsz(ndims);
     for (scipp::index i = 0; i < index; ++i)
       dsz[i] = dimensions.size(i);
@@ -235,28 +236,26 @@ DType convertDType(const py::dtype type) {
 }
 
 template <class T> struct MakeVariable {
-  static Variable apply(const Tag tag, const std::vector<Dim> &labels,
-                        py::array data) {
+  static Variable apply(const std::vector<Dim> &labels, py::array data) {
     // Pybind11 converts py::array to py::array_t for us, with all sorts of
     // automatic conversions such as integer to double, if required.
     py::array_t<T> dataT(data);
     const py::buffer_info info = dataT.request();
     Dimensions dims(labels, info.shape);
     auto *ptr = (T *)info.ptr;
-    return makeVariable<T, ssize_t>(tag, dims, info.strides, ptr);
+    return makeVariableFromBuffer<T, ssize_t>(dims, info.strides, ptr);
   }
 };
 
 template <class T> struct MakeVariableDefaultInit {
-  static Variable apply(const Tag tag, const std::vector<Dim> &labels,
+  static Variable apply(const std::vector<Dim> &labels,
                         const py::tuple &shape) {
     Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-    return scipp::core::makeVariable<T>(tag, dims);
+    return scipp::core::makeVariable<T>(dims);
   }
 };
 
-Variable doMakeVariable(const Tag tag, const std::vector<Dim> &labels,
-                        py::array &data,
+Variable doMakeVariable(const std::vector<Dim> &labels, py::array &data,
                         py::dtype type = py::dtype::of<Empty>()) {
   const py::buffer_info info = data.request();
   // Use custom dtype, otherwise dtype of data.
@@ -264,7 +263,7 @@ Variable doMakeVariable(const Tag tag, const std::vector<Dim> &labels,
                             ? convertDType(data.dtype())
                             : convertDType(type);
   return CallDType<double, float, int64_t, int32_t, char,
-                   bool>::apply<MakeVariable>(dtypeTag, tag, labels, data);
+                   bool>::apply<MakeVariable>(dtypeTag, labels, data);
 }
 
 Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
@@ -279,7 +278,7 @@ Variable makeVariableDefaultInit(const Tag tag, const std::vector<Dim> &labels,
   return CallDType<double, float, int64_t, int32_t, char, bool, Dataset,
                    typename Data::EventTofs_t::type,
                    Eigen::Vector3d>::apply<MakeVariableDefaultInit>(dtypeTag,
-                                                                    tag, labels,
+                                                                    labels,
                                                                     shape);
 }
 
@@ -300,9 +299,7 @@ void insertDefaultInit(
   const auto & [ tag, name ] = Key::get(key);
   const auto & [ labels, array ] = data;
   auto var = makeVariableDefaultInit(tag, labels, array);
-  if (!name.empty())
-    var.setName(name);
-  self.insert(std::move(var));
+  self.insert(tag, name, std::move(var));
 }
 
 template <class K>
@@ -313,10 +310,8 @@ void insert_ndarray(
   const auto & [ labels, array ] = data;
   const auto dtypeTag = convertDType(array.dtype());
   auto var = CallDType<double, float, int64_t, int32_t, char,
-                       bool>::apply<MakeVariable>(dtypeTag, tag, labels, array);
-  if (!name.empty())
-    var.setName(name);
-  self.insert(std::move(var));
+                       bool>::apply<MakeVariable>(dtypeTag, labels, array);
+  self.insert(tag, name, std::move(var));
 }
 
 // Note the concretely typed py::array_t. If we use py::array it will not match
@@ -329,10 +324,8 @@ void insert_conv(
   const auto & [ labels, array ] = data;
   // TODO This is converting back and forth between py::array and py::array_t,
   // can we do this in a better way?
-  auto var = MakeVariable<T>::apply(tag, labels, array);
-  if (!name.empty())
-    var.setName(name);
-  self.insert(std::move(var));
+  auto var = MakeVariable<T>::apply(labels, array);
+  self.insert(tag, name, std::move(var));
 }
 
 template <class T, class K>
@@ -343,10 +336,8 @@ void insert_0D(Dataset &self, const K &key,
   if (!labels.empty())
     throw std::runtime_error(
         "Got 0-D data, but nonzero number of dimension labels.");
-  auto var = scipp::core::makeVariable<T>(tag, {}, {value});
-  if (!name.empty())
-    var.setName(name);
-  self.insert(std::move(var));
+  auto var = scipp::core::makeVariable<T>({}, {value});
+  self.insert(tag, name, std::move(var));
 }
 
 template <class T, class K>
@@ -356,10 +347,8 @@ void insert_1D(
   const auto & [ tag, name ] = Key::get(key);
   const auto & [ labels, array ] = data;
   Dimensions dims{labels, {scipp::size(array)}};
-  auto var = scipp::core::makeVariable<T>(tag, dims, array);
-  if (!name.empty())
-    var.setName(name);
-  self.insert(std::move(var));
+  auto var = scipp::core::makeVariable<T>(dims, array);
+  self.insert(tag, name, std::move(var));
 }
 
 template <class Var, class K>
@@ -369,10 +358,7 @@ void insert(Dataset &self, const K &key, const Var &var) {
     if (self(tag, name) == var)
       return;
   Variable copy(var);
-  copy.setTag(tag);
-  if (!name.empty())
-    copy.setName(name);
-  self.insert(std::move(copy));
+  self.insert(tag, name, std::move(copy));
 }
 
 // Add size factor.
@@ -735,21 +721,21 @@ PYBIND11_MODULE(scippy, m) {
            py::arg("labels"), py::arg("shape"),
            py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init([](const int64_t data, const units::Unit &unit) {
-             auto var = makeVariable<int64_t>(Data::NoTag, {}, {data});
+             auto var = makeVariable<int64_t>({}, {data});
              var.setUnit(unit);
              return var;
            }),
            py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
       .def(py::init([](const double data, const units::Unit &unit) {
-             Variable var(Data::NoTag, {}, {data});
+             Variable var({}, {data});
              var.setUnit(unit);
              return var;
            }),
            py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
-      .def(py::init(&doMakeVariable), py::arg("tag"), py::arg("labels"),
-           py::arg("data"), py::arg("dtype") = py::dtype::of<Empty>())
+      .def(py::init(&doMakeVariable), py::arg("labels"), py::arg("data"),
+           py::arg("dtype") = py::dtype::of<Empty>())
       .def(py::init<const VariableSlice &>())
       .def("__getitem__", pySlice<Variable>, py::keep_alive<0, 1>())
       .def("__setitem__",
@@ -768,25 +754,8 @@ PYBIND11_MODULE(scippy, m) {
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
-      .def_property_readonly("tag", &Variable::tag,
-                             "A read-only tag describing the type of Variable, "
-                             "e.g. Data.Value or Data.Variance.")
-      .def_property("name", [](const Variable &self) { return self.name(); },
-                    &Variable::setName,
-                    "A string holding the Variable's name which is used to "
-                    "uniquely identify it.")
       .def_property("unit", &Variable::unit, &Variable::setUnit,
                     "Object of type Unit holding the unit of the Variable.")
-      .def_property_readonly(
-          "is_coord", &Variable::isCoord,
-          "Is True if the Variable is a Coordinate, e.g. Coord.X (read-only).")
-      .def_property_readonly(
-          "is_data", &Variable::isData,
-          "Is True if the Variable is not a coordinate, i.e. it can be a "
-          "Data.Value or Data.Variance (read-only).")
-      .def_property_readonly(
-          "is_attr", &Variable::isAttr,
-          "Is True if the Variable is an attribute (read-only).")
       .def_property_readonly(
           "dimensions", [](const Variable &self) { return self.dimensions(); },
           "A read-only Dimensions object containing the dimensions of the "
@@ -868,23 +837,6 @@ PYBIND11_MODULE(scippy, m) {
                throw std::runtime_error("len() of unsized object.");
              return dims.shape()[0];
            })
-      .def_property_readonly("is_coord", &VariableSlice::isCoord,
-                             "Is True if the VariableSlice is a Coordinate, "
-                             "e.g. Coord.X (read-only).")
-      .def_property_readonly(
-          "is_data", &VariableSlice::isData,
-          "Is True if the VariableSlice is not a coordinate, i.e. it can be a "
-          "Data.Value or Data.Variance (read-only).")
-      .def_property_readonly(
-          "is_attr", &VariableSlice::isAttr,
-          "Is True if the VariableSlice is an attribute (read-only).")
-      .def_property_readonly(
-          "tag", &VariableSlice::tag,
-          "A read-only tag describing the type of VariableSlice, e.g. "
-          "Data.Value or Data.Variance. ")
-      .def_property_readonly("name", &VariableSlice::name,
-                             "A read-only string holding the VariableSlice's "
-                             "name which is used to uniquely identify it.")
       .def_property(
           "unit", &VariableSlice::unit, &VariableSlice::setUnit,
           "Object of type Unit holding the unit of the VariableSlice.")
