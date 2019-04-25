@@ -251,7 +251,8 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei_to_QxQyQz) {
   qCoords.insert(Coord::Qz,
                  makeVariable<double>({Dim::Qz, 4}, units::meV / units::c,
                                       {8, 9, 10, 11}));
-  qCoords.insert(Coord::DeltaE, makeVariable<double>({Dim::DeltaE, 3}, units::meV , {9, 10, 11}));
+  qCoords.insert(Coord::DeltaE, makeVariable<double>({Dim::DeltaE, 3},
+                                                     units::meV, {9, 10, 11}));
 
   EXPECT_NO_THROW(convert(energy, {Dim::DeltaE, Dim::Position}, qCoords));
 }

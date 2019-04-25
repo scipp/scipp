@@ -427,7 +427,7 @@ class TestDataset(unittest.TestCase):
         c = a * b
         # Variables "a" and "b" multiplied despite different names
         self.assertTrue(np.array_equal(c[sp.Data.Value, "i"].numpy,
-                        data * data))
+                                       data * data))
         self.assertTrue(np.array_equal(
             c[sp.Data.Variance, "i"].numpy, variance * (data * data) * 2))
 
@@ -576,7 +576,7 @@ class TestDataset(unittest.TestCase):
         self.dataset[sp.Data.Value, 'data2'][sp.Dim.Y, 1:3] = np.exp(
             self.dataset[sp.Data.Value, 'data1'][sp.Dim.Y, 0:2])
         np.testing.assert_array_equal(self.dataset[sp.Data.Value,
-                                      "data2"].numpy[:, 1:3, :],
+                                                   "data2"].numpy[:, 1:3, :],
                                       np.exp(self.reference_data1[:, 0:2, :]))
 
         # Restore original value.

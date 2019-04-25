@@ -744,12 +744,12 @@ DatasetSlice DatasetSlice::operator/=(const ConstDatasetSlice &other) const {
   return op_equals(*this, other, &aligned::divide, &aligned::divide);
 }
 DatasetSlice DatasetSlice::operator/=(const Variable &other) const {
-    for (const auto[name, tag, var] : *this)
-      if (tag == Data::Value)
-        var /= other;
-      else if (tag == Data::Variance)
-        var /= other * other;
-    return *this;
+  for (const auto[name, tag, var] : *this)
+    if (tag == Data::Value)
+      var /= other;
+    else if (tag == Data::Variance)
+      var /= other * other;
+  return *this;
 }
 DatasetSlice DatasetSlice::operator/=(const double value) const {
   for (const auto[name, tag, var] : *this)
