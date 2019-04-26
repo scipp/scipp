@@ -14,40 +14,13 @@
 
 #include "bool.h"
 #include "dimension.h"
+#include "dtype.h"
 #include "index.h"
 #include "scipp/units/unit.h"
 #include "traits.h"
 #include "value_with_delta.h"
 
 namespace scipp::core {
-
-enum class DType {
-  Unknown,
-  Double,
-  Float,
-  Int32,
-  Int64,
-  String,
-  Char,
-  Bool,
-  SmallVectorDouble8,
-  Dataset,
-  EigenVector3d
-};
-template <class T> constexpr DType dtype = DType::Unknown;
-template <> constexpr DType dtype<double> = DType::Double;
-template <> constexpr DType dtype<float> = DType::Float;
-template <> constexpr DType dtype<int32_t> = DType::Int32;
-template <> constexpr DType dtype<int64_t> = DType::Int64;
-template <> constexpr DType dtype<std::string> = DType::String;
-template <> constexpr DType dtype<char> = DType::Char;
-template <> constexpr DType dtype<bool> = DType::Bool;
-template <> constexpr DType dtype<Bool> = DType::Bool;
-template <>
-constexpr DType dtype<boost::container::small_vector<double, 8>> =
-    DType::SmallVectorDouble8;
-template <> constexpr DType dtype<Dataset> = DType::Dataset;
-template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
 
 // Adding new tags
 // ===============

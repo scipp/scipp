@@ -6,9 +6,24 @@
 #include <numeric>
 
 #include "dimensions.h"
+#include "except.h"
 #include "variable.h"
 
 namespace scipp::core {
+
+scipp::index Dimensions::operator[](const Dim dim) const {
+  for (int32_t i = 0; i < 6; ++i)
+    if (m_dims[i] == dim)
+      return m_shape[i];
+  throw except::DimensionNotFoundError(*this, dim);
+}
+
+scipp::index &Dimensions::operator[](const Dim dim) {
+  for (int32_t i = 0; i < 6; ++i)
+    if (m_dims[i] == dim)
+      return m_shape[i];
+  throw except::DimensionNotFoundError(*this, dim);
+}
 
 /// Returns true if all dimensions of other are also contained in *this. Does
 /// not check dimension order.

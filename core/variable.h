@@ -8,10 +8,13 @@
 #include <type_traits>
 #include <variant>
 
+#include <Eigen/Dense>
+
 #include "dimensions.h"
 #include "index.h"
 #include "scipp/units/unit.h"
 #include "span.h"
+#include "tags.h"
 #include "variable_view.h"
 #include "vector.h"
 

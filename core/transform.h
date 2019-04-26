@@ -5,6 +5,7 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
+#include "except.h"
 #include "variable.h"
 #include "visit.h"
 
