@@ -127,7 +127,7 @@ public:
 private:
   T *m_variable;
   scipp::index m_offset{0};
-  const Dimensions m_targetDimensions;
+  Dimensions m_targetDimensions;
   Dimensions m_dimensions;
 };
 

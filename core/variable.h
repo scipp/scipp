@@ -191,7 +191,6 @@ private:
 template <class... Tags> class ZipView;
 class ConstVariableSlice;
 class VariableSlice;
-template <class T1, class T2> T1 &plus_equals(T1 &, const T2 &);
 
 namespace detail {
 template <class T> struct default_init {
@@ -374,7 +373,6 @@ public:
   Variable reshape(const Dimensions &dims) &&;
 
   template <class... Tags> friend class ZipView;
-  template <class T1, class T2> friend T1 &plus_equals(T1 &, const T2 &);
 
 private:
   template <class T> const Vector<underlying_type_t<T>> &cast() const;

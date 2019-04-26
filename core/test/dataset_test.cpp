@@ -1920,3 +1920,27 @@ TEST(SparseDataset, dimension_can_be_dense_in_some_vars_and_sparse_in_others) {
   EXPECT_EQ(d.size(), 2);
   EXPECT_EQ(d.dimensions(), Dimensions({{Dim::Y, 3}, {Dim::X, 2}}));
 }
+
+TEST(SparseDataset, concatenate_along_sparse_dimension) {
+  Dataset d1;
+  d1.insert(makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X));
+  auto a_ = d1(Data::Value).sparseSpan<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+
+  Dataset d2;
+  d2.insert(makeSparseVariable<double>(Data::Value, {Dim::Y, 2}, Dim::X));
+  auto b_ = d2(Data::Value).sparseSpan<double>();
+  b_[0] = {1, 3};
+  b_[1] = {};
+
+  auto d = concatenate(d1, d2, Dim::X);
+
+  const auto var = d(Data::Value);
+  EXPECT_TRUE(var.isSparse());
+  EXPECT_EQ(var.sparseDim(), Dim::X);
+  EXPECT_EQ(var.size(), 2);
+  auto data = var.sparseSpan<double>();
+  EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
+  EXPECT_TRUE(equals(data[1], {1, 2}));
+}
