@@ -26,9 +26,11 @@ class TestDatasetSlice(unittest.TestCase):
         ds_slice = self._d.subset["a"]
         self.assertEqual(type(ds_slice), sp.DatasetSlice)
         # We should have just one data variable
-        self.assertEqual(1, len([var for var in ds_slice if var.is_data]))
+        self.assertEqual(
+            1, len([var for name, tag, var in ds_slice if tag.is_data]))
         # We should have just one coord variable
-        self.assertEqual(1, len([var for var in ds_slice if var.is_coord]))
+        self.assertEqual(
+            1, len([var for name, tag, var in ds_slice if tag.is_coord]))
         self.assertEqual(2, len(ds_slice))
 
     def test_slice_back_ommit_range(self):
@@ -164,7 +166,7 @@ class TestDatasetSlice(unittest.TestCase):
         d[sp.Data.Value, "a"] = ([sp.Dim.X], data)
         d[sp.Data.Variance, "a"] = ([sp.Dim.X], data)
         a = d.subset[sp.Data.Value, "a"]
-        b_var = sp.Variable(sp.Data.Value, [sp.Dim.X], data)
+        b_var = sp.Variable([sp.Dim.X], data)
 
         c = a + b_var
         self.assertTrue(np.array_equal(

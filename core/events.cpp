@@ -15,9 +15,9 @@ namespace scipp::core {
 namespace events {
 
 void sortByTof(Dataset &dataset) {
-  for (const auto &var : dataset) {
-    if (var.tag() == Data::Events) {
-      for (auto &el : var.get(Data::Events)) {
+  for (const auto & [ name, tag, var ] : dataset) {
+    if (tag == Data::Events) {
+      for (auto &el : var.span<Dataset>()) {
         if (el.size() == 1) {
           const auto tofs = el.get(Data::Tof);
           std::sort(tofs.begin(), tofs.end());
@@ -32,7 +32,7 @@ void sortByTof(Dataset &dataset) {
               "Sorting for this event type is not implemented yet.");
         }
       }
-    } else if (var.tag() == Data::EventTofs) {
+    } else if (tag == Data::EventTofs) {
       throw std::runtime_error(
           "Sorting for this event-storage mode is not implemented yet.");
     }

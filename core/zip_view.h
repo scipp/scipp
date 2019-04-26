@@ -61,7 +61,7 @@ public:
     // TODO Probably we can also support 0-dimensional variables that are not
     // touched?
     for (const auto &var : dataset)
-      if (var.dimensions().count() != 1)
+      if (std::get<VariableSlice>(var).dimensions().count() != 1)
         throw std::runtime_error("ZipView supports only datasets where "
                                  "all variables are 1-dimensional.");
     if (dataset.dimensions().count() != 1)
@@ -306,8 +306,8 @@ public:
           ++count;
       }
       scipp::index requiredCount = 0;
-      for (const auto &var : dataset) {
-        if (var.isData() && name == var.name())
+      for (const auto & [ n, t, var ] : dataset) {
+        if (t.isData() && name == n)
           ++requiredCount;
       }
       m_mayResizeItems &= (count == requiredCount);

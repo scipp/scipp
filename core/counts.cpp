@@ -25,27 +25,25 @@ auto getBinWidths(const Dataset &d, const std::vector<Dim> &dims) {
 
 void toDensity(const VariableSlice var,
                const std::vector<Variable> &binWidths) {
-  if (var.isData()) {
-    if (var.unit() == units::counts) {
-      for (const auto &binWidth : binWidths)
-        var /= binWidth;
-    } else if (var.unit() == units::counts * units::counts) {
-      for (const auto &binWidth : binWidths)
-        var /= binWidth * binWidth;
-    } else if (units::containsCounts(var.unit())) {
-      // This error implies that conversion to multi-dimensional densities
-      // must be done in one step, e.g., counts -> counts/(m*m*s). We cannot
-      // do counts -> counts/m -> counts/(m*m) -> counts/(m*m*s) since the
-      // unit-based distinction between counts and counts-density cannot tell
-      // apart different length dimensions such as X and Y, so we would not be
-      // able to prevent converting to density using Dim::X twice.
-      throw std::runtime_error("Cannot convert counts-variable to density, "
-                               "it looks like it has already been "
-                               "converted.");
-    }
-    // No `else`, variables that do not contain a `counts` factor are left
-    // unchanged.
+  if (var.unit() == units::counts) {
+    for (const auto &binWidth : binWidths)
+      var /= binWidth;
+  } else if (var.unit() == units::counts * units::counts) {
+    for (const auto &binWidth : binWidths)
+      var /= binWidth * binWidth;
+  } else if (units::containsCounts(var.unit())) {
+    // This error implies that conversion to multi-dimensional densities
+    // must be done in one step, e.g., counts -> counts/(m*m*s). We cannot
+    // do counts -> counts/m -> counts/(m*m) -> counts/(m*m*s) since the
+    // unit-based distinction between counts and counts-density cannot tell
+    // apart different length dimensions such as X and Y, so we would not be
+    // able to prevent converting to density using Dim::X twice.
+    throw std::runtime_error("Cannot convert counts-variable to density, "
+                             "it looks like it has already been "
+                             "converted.");
   }
+  // No `else`, variables that do not contain a `counts` factor are left
+  // unchanged.
 }
 
 Dataset toDensity(Dataset d, const Dim dim) {
@@ -54,25 +52,26 @@ Dataset toDensity(Dataset d, const Dim dim) {
 
 Dataset toDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d, dims);
-  for (const auto &var : d)
-    toDensity(var, binWidths);
+  for (const auto & [ name, tag, var ] : d) {
+    static_cast<void>(name);
+    if (tag.isData())
+      toDensity(var, binWidths);
+  }
   return std::move(d);
 }
 
 void fromDensity(const VariableSlice var,
                  const std::vector<Variable> &binWidths) {
-  if (var.isData()) {
-    if (var.unit() == units::counts) {
-      // Do nothing, but do not fail either.
-    } else if (units::containsCounts(var.unit())) {
-      for (const auto &binWidth : binWidths)
-        var *= binWidth;
-      expect::unit(var, units::counts);
-    } else if (units::containsCountsVariance(var.unit())) {
-      for (const auto &binWidth : binWidths)
-        var *= binWidth * binWidth;
-      expect::unit(var, units::counts * units::counts);
-    }
+  if (var.unit() == units::counts) {
+    // Do nothing, but do not fail either.
+  } else if (units::containsCounts(var.unit())) {
+    for (const auto &binWidth : binWidths)
+      var *= binWidth;
+    expect::unit(var, units::counts);
+  } else if (units::containsCountsVariance(var.unit())) {
+    for (const auto &binWidth : binWidths)
+      var *= binWidth * binWidth;
+    expect::unit(var, units::counts * units::counts);
   }
 }
 
@@ -82,8 +81,11 @@ Dataset fromDensity(Dataset d, const Dim dim) {
 
 Dataset fromDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d, dims);
-  for (const auto &var : d)
-    fromDensity(var, binWidths);
+  for (const auto & [ name, tag, var ] : d) {
+    static_cast<void>(name);
+    if (tag.isData())
+      fromDensity(var, binWidths);
+  }
   return std::move(d);
 }
 

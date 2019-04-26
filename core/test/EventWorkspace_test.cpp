@@ -122,13 +122,13 @@ TEST(EventWorkspace, plus) {
   // Note that unlike the tests above this is now using sparse dimensions.
   // Addition for nested Dataset as event list is not supported anymore.
   Dataset d;
-  d.insert(
-      makeSparseVariable<double>(Coord::Tof, {Dim::Spectrum, 2}, Dim::Tof));
+  d.insert(Coord::Tof,
+           makeSparseVariable<double>({Dim::Spectrum, 2}, Dim::Tof));
   auto tofs = d(Coord::Tof).sparseSpan<double>();
   tofs[0].resize(10);
   tofs[1].resize(20);
-  d.insert(
-      makeSparseVariable<double>(Data::Value, {Dim::Spectrum, 2}, Dim::Tof));
+  d.insert(Data::Value,
+           makeSparseVariable<double>({Dim::Spectrum, 2}, Dim::Tof));
   auto weights = d(Data::Value).sparseSpan<double>();
   weights[0].resize(10);
   weights[1].resize(20);

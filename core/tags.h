@@ -85,6 +85,10 @@ public:
     return m_value >= value;
   }
 
+  bool isCoord() const;
+  bool isAttr() const;
+  bool isData() const;
+
 private:
   uint16_t m_value;
 };
@@ -580,6 +584,15 @@ struct element_return_type<D, MDZipViewImpl<D, Tags...>> {
 
 template <class D, class Tag>
 using element_return_type_t = typename element_return_type<D, Tag>::type;
+
+inline bool Tag::isCoord() const {
+  return m_value < std::tuple_size<detail::CoordDef::tags>::value;
+}
+inline bool Tag::isAttr() const {
+  return m_value >= std::tuple_size<detail::CoordDef::tags>::value +
+                        std::tuple_size<detail::DataDef::tags>::value;
+}
+inline bool Tag::isData() const { return !isCoord() && !isAttr(); }
 
 } // namespace scipp::core
 

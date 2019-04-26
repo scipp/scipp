@@ -8,6 +8,8 @@ import scippy as sp
 
 
 class TestDTypes(unittest.TestCase):
+    @unittest.skip("Tag-derived dtype not available anymore, need to implement \
+                   way of specifying Eigen types.")
     def test_Eigen_Vector3d(self):
         d = sp.Dataset()
         d[sp.Coord.Position] = ([sp.Dim.Position], (4,))

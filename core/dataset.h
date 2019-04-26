@@ -21,18 +21,31 @@ class DatasetSlice;
 /// Dataset is a set of Variables, identified with a unique (tag, name)
 /// identifier.
 class Dataset {
+public:
+  using Item = std::tuple<std::string, Tag, Variable>;
+  using ItemConstProxy =
+      std::tuple<const std::string &, Tag, ConstVariableSlice>;
+  using ItemProxy = std::tuple<const std::string &, Tag, VariableSlice>;
+
+  static ItemConstProxy itemProxy(const Item &item) {
+    auto & [ name, tag, data ] = item;
+    return {name, tag, ConstVariableSlice(data)};
+  }
+  static ItemProxy itemProxy(Item &item) {
+    auto & [ name, tag, data ] = item;
+    return {name, tag, VariableSlice(data)};
+  }
+
 private:
   // Helper lambdas for creating iterators.
-  static constexpr auto makeConstSlice = [](const Variable &var) {
-    return ConstVariableSlice(var);
+  static constexpr auto makeConstSlice = [](const Item &item) {
+    return itemProxy(item);
   };
-  static constexpr auto makeSlice = [](Variable &var) {
-    return VariableSlice(var);
-  };
+  static constexpr auto makeSlice = [](Item &item) { return itemProxy(item); };
 
 public:
   Dataset() = default;
-  Dataset(std::vector<Variable> vars);
+  Dataset(std::vector<Item> items);
   // Allowing implicit construction from views facilitates calling functions
   // that do not explicitly support views. It is open for discussion whether
   // this is a good idea or not.
@@ -44,13 +57,11 @@ public:
   // (Const)VariableSlice or (Const)DatasetSlice for rvalue Dataset. Otherwise
   // the resulting slice will point to free'ed memory.
   ConstVariableSlice operator[](const scipp::index i) const && = delete;
-  ConstVariableSlice operator[](const scipp::index i) const & {
-    return ConstVariableSlice{m_variables[i]};
+  auto operator[](const scipp::index i) const & {
+    return itemProxy(m_variables[i]);
   }
   VariableSlice operator[](const scipp::index i) && = delete;
-  VariableSlice operator[](const scipp::index i) & {
-    return VariableSlice{m_variables[i]};
-  }
+  auto operator[](const scipp::index i) & { return itemProxy(m_variables[i]); }
 
   ConstDatasetSlice subset(const std::string &) const && = delete;
   ConstDatasetSlice subset(const Tag, const std::string &) const && = delete;
@@ -103,96 +114,97 @@ public:
     return boost::make_transform_iterator(m_variables.end(), makeSlice);
   }
 
-  void insert(Variable variable);
-  template <class T> void insert(const std::string &name, const T &slice) {
+  void insert(Item item);
+  void insert(ItemConstProxy item) {
+    const auto & [ name, tag, var ] = item;
+    insert(tag, name, var);
+  }
+  void insert(ItemProxy item) {
+    const auto & [ name, tag, var ] = item;
+    insert(tag, name, var);
+  }
+  template <class T> void insert(const std::string &newName, const T &slice) {
     // Note the lack of atomicity
-    for (const auto &var : slice) {
-      Variable newVar(var);
-      if (var.isCoord()) {
-        if (!contains(newVar.tag(), newVar.name())) {
+    for (const auto & [ name, tag, var ] : slice) {
+      if (tag.isCoord()) {
+        if (!contains(tag, name)) {
           throw std::runtime_error(
               "Cannot provide new coordinate variables via subset");
         }
       } else {
-        newVar.setName(name); // As long as !cood var, name gets rewritten.
+        // TODO Should we insert named coordinates? This would be required,
+        // e.g., for event data.
+        insert(tag, newName, var);
       }
-      this->insert(newVar);
     }
   }
   void insert(const Tag tag, Variable variable) {
-    variable.setTag(tag);
-    variable.setName("");
-    insert(std::move(variable));
+    insert(Item{"", tag, std::move(variable)});
   }
   void insert(const Tag tag, const std::string &name, Variable variable) {
-    variable.setTag(tag);
-    variable.setName(name);
-    insert(std::move(variable));
+    insert(Item{name, tag, std::move(variable)});
   }
 
   template <class Tag, class... Args>
   void insert(const Tag tag, const Dimensions &dimensions, Args &&... args) {
-    Variable a(tag, std::move(dimensions), std::forward<Args>(args)...);
-    insert(std::move(a));
+    insert(tag, makeVariable<typename Tag::type>(std::move(dimensions),
+                                                 std::forward<Args>(args)...));
   }
 
   template <class Tag, class... Args>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, Args &&... args) {
-    Variable a(tag, std::move(dimensions), std::forward<Args>(args)...);
-    a.setName(name);
-    insert(std::move(a));
+    insert(tag, name,
+           makeVariable<typename Tag::type>(std::move(dimensions),
+                                            std::forward<Args>(args)...));
   }
 
   template <class Tag, class T>
   void insert(const Tag tag, const Dimensions &dimensions,
               std::initializer_list<T> values) {
-    Variable a(tag, std::move(dimensions), values);
-    insert(std::move(a));
+    insert(tag,
+           makeVariable<typename Tag::type>(std::move(dimensions), values));
   }
 
   template <class Tag, class T>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, std::initializer_list<T> values) {
-    Variable a(tag, std::move(dimensions), values);
-    a.setName(name);
-    insert(std::move(a));
+    insert(tag, name,
+           makeVariable<typename Tag::type>(std::move(dimensions), values));
   }
 
   // Insert variants with custom type
   template <class T, class Tag, class... Args>
   void insert(const Tag tag, const Dimensions &dimensions, Args &&... args) {
-    auto a = makeVariable<T>(tag, std::move(dimensions),
-                             std::forward<Args>(args)...);
-    insert(std::move(a));
+    auto a =
+        makeVariable<T>(std::move(dimensions), std::forward<Args>(args)...);
+    insert(tag, std::move(a));
   }
 
   template <class T, class Tag, class... Args>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, Args &&... args) {
-    auto a = makeVariable<T>(tag, std::move(dimensions),
-                             std::forward<Args>(args)...);
-    a.setName(name);
-    insert(std::move(a));
+    auto a =
+        makeVariable<T>(std::move(dimensions), std::forward<Args>(args)...);
+    insert(tag, name, std::move(a));
   }
 
   template <class T, class Tag, class T2>
   void insert(const Tag tag, const Dimensions &dimensions,
               std::initializer_list<T2> values) {
-    auto a = makeVariable<T>(tag, std::move(dimensions), values);
-    insert(std::move(a));
+    auto a = makeVariable<T>(std::move(dimensions), values);
+    insert(tag, std::move(a));
   }
 
   template <class T, class Tag, class T2>
   void insert(const Tag tag, const std::string &name,
               const Dimensions &dimensions, std::initializer_list<T2> values) {
-    auto a = makeVariable<T>(tag, std::move(dimensions), values);
-    a.setName(name);
-    insert(std::move(a));
+    auto a = makeVariable<T, T2>(std::move(dimensions), values);
+    insert(tag, name, std::move(a));
   }
 
   bool contains(const Tag tag, const std::string &name = "") const;
-  Variable erase(const Tag tag, const std::string &name = "");
+  Item erase(const Tag tag, const std::string &name = "");
 
   // TODO This should probably also include a copy of all or all relevant
   // coordinates.
@@ -205,14 +217,14 @@ public:
            const std::string &name = std::string{}) const && = delete;
   template <class TagT>
   auto get(const TagT tag, const std::string &name = std::string{}) const & {
-    return m_variables[find(tag, name)].get(tag);
+    return span<typename TagT::type>(tag, name);
   }
 
   template <class TagT>
   auto get(const TagT, const std::string &name = std::string{}) && = delete;
   template <class TagT>
   auto get(const TagT tag, const std::string &name = std::string{}) & {
-    return m_variables[find(tag, name)].get(tag);
+    return span<typename TagT::type>(tag, name);
   }
 
   template <class T>
@@ -220,19 +232,19 @@ public:
             const std::string &name = std::string{}) const && = delete;
   template <class T>
   auto span(const Tag tag, const std::string &name = std::string{}) const & {
-    return m_variables[find(tag, name)].template span<T>();
+    return std::get<Variable>(m_variables[find(tag, name)]).template span<T>();
   }
 
   template <class T>
   auto span(const Tag, const std::string &name = std::string{}) && = delete;
   template <class T>
   auto span(const Tag tag, const std::string &name = std::string{}) & {
-    return m_variables[find(tag, name)].template span<T>();
+    return std::get<Variable>(m_variables[find(tag, name)]).template span<T>();
   }
 
-  // Currently `Dimensions` does not allocate memory so we could return by value
-  // instead of disabling this, but this way leaves more room for changes, I
-  // think.
+  // Currently `Dimensions` does not allocate memory so we could return by
+  // value instead of disabling this, but this way leaves more room for
+  // changes, I think.
   const Dimensions &dimensions() const && = delete;
   const Dimensions &dimensions() const & { return m_dimensions; }
 
@@ -265,13 +277,13 @@ private:
   // TODO These dimensions do not imply any ordering, should use another class
   // in place of `Dimensions`, which *does* imply an order.
   Dimensions m_dimensions;
-  boost::container::small_vector<Variable, 4> m_variables;
+  boost::container::small_vector<Item, 4> m_variables;
 };
 
 template <class T> scipp::index count(const T &dataset, const Tag tag) {
   scipp::index n = 0;
-  for (const auto &item : dataset)
-    if (item.tag() == tag)
+  for (const auto & [ n, t, var ] : dataset)
+    if (t == tag)
       ++n;
   return n;
 }
@@ -279,8 +291,8 @@ template <class T> scipp::index count(const T &dataset, const Tag tag) {
 template <class T>
 scipp::index count(const T &dataset, const Tag tag, const std::string &name) {
   scipp::index n = 0;
-  for (const auto item : dataset)
-    if (item.tag() == tag && item.name() == name)
+  for (const auto & [ n, t, var ] : dataset)
+    if (t == tag && n == name)
       ++n;
   return n;
 }
@@ -288,9 +300,11 @@ scipp::index count(const T &dataset, const Tag tag, const std::string &name) {
 // T can be Dataset or Slice.
 template <class T>
 scipp::index find(const T &dataset, const Tag tag, const std::string &name) {
-  for (scipp::index i = 0; i < dataset.size(); ++i)
-    if (dataset[i].tag() == tag && dataset[i].name() == name)
+  for (scipp::index i = 0; i < dataset.size(); ++i) {
+    const auto & [ n, t, var ] = dataset[i];
+    if (t == tag && n == name)
       return i;
+  }
   throw except::VariableNotFoundError(dataset, tag, name);
 }
 
@@ -320,7 +334,9 @@ class ConstDatasetSlice {
 private:
   struct IterAccess {
     auto operator()(const scipp::index i) const {
-      return detail::makeSlice(m_view.m_dataset[i], m_view.m_slices);
+      const auto & [ name, tag, var ] = m_view.m_dataset[i];
+      return std::tuple<const std::string &, Tag, ConstVariableSlice>(
+          name, tag, detail::makeSlice(var, m_view.m_slices));
     }
     const ConstDatasetSlice &m_view;
   };
@@ -333,10 +349,11 @@ protected:
     std::vector<scipp::index> indices;
     bool foundData = false;
     for (const auto i : base.m_indices) {
-      const auto &var = base.m_dataset[i];
+      const auto & [ name, tag, var ] = base.m_dataset[i];
+      static_cast<void>(var);
       // TODO Should we also keep attributes? Probably yes?
-      if (var.isCoord() || var.name() == select) {
-        foundData |= var.isData();
+      if (tag.isCoord() || name == select) {
+        foundData |= tag.isData();
         indices.push_back(i);
       }
     }
@@ -350,10 +367,10 @@ protected:
     std::vector<scipp::index> indices;
     bool foundData = false;
     for (const auto i : base.m_indices) {
-      const auto &var = base.m_dataset[i];
-      if (var.isCoord() ||
-          (var.tag() == selectTag && var.name() == selectName)) {
-        foundData |= var.isData();
+      const auto & [ name, tag, var ] = base.m_dataset[i];
+      static_cast<void>(var);
+      if (tag.isCoord() || (tag == selectTag && name == selectName)) {
+        foundData |= tag.isData();
         indices.push_back(i);
       }
     }
@@ -418,8 +435,10 @@ public:
 
   scipp::index size() const { return m_indices.size(); }
 
-  ConstVariableSlice operator[](const scipp::index i) const {
-    return detail::makeSlice(m_dataset[m_indices[i]], m_slices);
+  auto operator[](const scipp::index i) const {
+    const auto & [ name, tag, var ] = m_dataset[m_indices[i]];
+    return std::tuple<const std::string &, Tag, ConstVariableSlice>(
+        name, tag, detail::makeSlice(var, m_slices));
   }
 
   auto begin() const {
@@ -462,7 +481,7 @@ protected:
       for (auto it = slice.m_indices.begin(); it != slice.m_indices.end();) {
         // TODO Should all coordinates with matching dimension be removed, or
         // only dimension-coordinates?
-        if (coordDimension[slice.m_dataset[*it].tag().value()] == dim)
+        if (coordDimension[std::get<Tag>(slice.m_dataset[*it]).value()] == dim)
           it = slice.m_indices.erase(it);
         else
           ++it;
@@ -477,7 +496,9 @@ class DatasetSlice : public ConstDatasetSlice {
 private:
   struct IterAccess {
     auto operator()(const scipp::index i) const {
-      return detail::makeSlice(m_view.m_mutableDataset[i], m_view.m_slices);
+      const auto & [ name, tag, var ] = m_view.m_mutableDataset[i];
+      return std::tuple<const std::string &, Tag, VariableSlice>(
+          name, tag, detail::makeSlice(var, m_view.m_slices));
     }
     const DatasetSlice &m_view;
   };
@@ -498,8 +519,10 @@ public:
         m_mutableDataset(dataset) {}
 
   using ConstDatasetSlice::operator[];
-  VariableSlice operator[](const scipp::index i) const {
-    return detail::makeSlice(m_mutableDataset[m_indices[i]], m_slices);
+  auto operator[](const scipp::index i) const {
+    const auto & [ name, tag, var ] = m_mutableDataset[m_indices[i]];
+    return std::tuple<const std::string &, Tag, VariableSlice>(
+        name, tag, detail::makeSlice(var, m_slices));
   }
 
   DatasetSlice operator()(const Dim dim, const scipp::index begin,
