@@ -33,9 +33,9 @@ def check_input(input_data, check_multiple_values=True):
 
     values = []
     ndims = []
-    for var in input_data:
-        if var.is_data and (var.tag != sp.Data.Variance):
-            values.append(var)
+    for name, tag, var in input_data:
+        if tag.is_data and (tag != sp.Data.Variance):
+            values.append((name, tag, var))
             ndims.append(len(var.dimensions))
 
     if check_multiple_values and (len(values) > 1) and (np.amax(ndims) > 1):
@@ -175,12 +175,12 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         # Scan the datasets
         values = dict()
         variances = dict()
-        for var in item:
-            key = var.name
-            if var.tag == sp.Data.Variance:
+        for name, tag, var in item:
+            key = name
+            if tag == sp.Data.Variance:
                 variances[key] = var
-            elif var.is_data:
-                values[key] = var
+            elif tag.is_data:
+                values[key] = (name, tag, var)
         # Now go through the values and see if they have an associated
         # variance. If they do, then use that as error bars.
         # Then go through the variances and check if there are some variances
@@ -217,7 +217,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             # If .numpy fails, try to extract as an array of strings
             except RuntimeError:
                 y = np.array(v[0].data, dtype=np.str)
-            name = axis_label(v[0])
+            name = axis_label(*v[0])
             # TODO: getting the shape of the dimension array is done in two
             # steps here because v.dimensions.shape[0] returns garbage. One of
             # the objects is going out of scope, we need to figure out which
@@ -240,7 +240,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             if nx == ny + 1:
                 x, w = edges_to_centers(x)
                 histogram = True
-            xlab = axis_label(coord)
+            xlab = axis_label(*coord)
             if (coord_check is not None) and (coord.tag != coord_check):
                 raise RuntimeError("All Value fields must have the same "
                                    "x-coordinate axis in plot_1d.")
@@ -348,8 +348,8 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
             title += " [{}]".format(values[0].unit)
 
         layout = dict(
-            xaxis=dict(title=axis_label(xcoord)),
-            yaxis=dict(title=axis_label(ycoord)),
+            xaxis=dict(title=axis_label(*xcoord)),
+            yaxis=dict(title=axis_label(*ycoord)),
             height=default["height"]
         )
 
@@ -581,9 +581,9 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True, filename=None):
         e = None
         # Check if we need to add variances to dataset list for collapse plot
         if not plot:
-            for var in input_data:
-                if (var.tag == sp.Data.Variance) and \
-                   (var.name == values[0].name):
+            for name, tag, var in input_data:
+                if (tag == sp.Data.Variance) and \
+                   (name == values[0].name):
                     e = var.numpy
 
         if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
@@ -646,9 +646,9 @@ def plot_waterfall(input_data, dim=None, axes=None, plot=True, filename=None):
             layout = dict(
                 scene=dict(
                     xaxis=dict(
-                        title=axis_label(xcoord)),
+                        title=axis_label(*xcoord)),
                     yaxis=dict(
-                        title=axis_label(ycoord)),
+                        title=axis_label(*ycoord)),
                     zaxis=dict(
                         title="{} [{}]".format(
                             values[0].name,
@@ -794,7 +794,7 @@ class SliceViewer:
             # Add an observer to the slider
             self.slider[i].observe(self.update_slice, names="value")
             # Add coordinate name and unit
-            title = Label(value=axis_label(self.slider_coords[i]))
+            title = Label(value=axis_label(*self.slider_coords[i]))
             self.vbox += (HBox([title, self.slider[i], self.lab[i]]),)
 
         # Call update_slice once to make the initial image
@@ -858,15 +858,15 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def axis_label(var):
+def axis_label(name, tag, var):
     """
     Make an axis label with "Name [unit]"
     """
-    if var.is_coord:
-        label = "{}".format(var.tag)
+    if tag.is_coord:
+        label = "{}".format(tag)
         label = label.replace("Coord.", "")
     else:
-        label = "{}".format(var.name)
+        label = "{}".format(name)
     if var.unit != sp.units.dimensionless:
         label += " [{}]".format(var.unit)
     return label
