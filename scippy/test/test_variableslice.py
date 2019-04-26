@@ -19,10 +19,6 @@ class TestVariableSlice(unittest.TestCase):
         variable_slice = self._a[sp.Dim.X, :]
         self.assertEqual(type(variable_slice), sp.VariableSlice)
 
-    def test_variable_type(self):
-        coord_var = sp.Variable([sp.Dim.X], np.arange(10))
-        coord_slice = coord_var[sp.Dim.X, :]
-
     def _apply_test_op(self, op, a, b, data):
         op(a, b)
         # Assume numpy operations are correct as comparitor

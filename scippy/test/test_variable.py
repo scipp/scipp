@@ -42,7 +42,7 @@ class TestVariable(unittest.TestCase):
         np.testing.assert_array_equal(var.numpy, np.arange(4))
 
     def test_create_default_init(self):
-        var = sp.Variable([sp.Dim.X], (4,))
+        sp.Variable([sp.Dim.X], (4,))
 
     def test_create_scalar(self):
         var = sp.Variable(1.2)

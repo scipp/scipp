@@ -892,7 +892,8 @@ class TestDatasetExamples(unittest.TestCase):
             [sp.Dim.Energy], np.random.exponential(size=8))
         d[sp.Coord.Monitor, "transmission"] = ([], ())
 
-    @unittest.skip("Tag-derived dtype not available anymore, need to implement way of specifying list type for events.")
+    @unittest.skip("Tag-derived dtype not available anymore, need to implement \
+                   way of specifying list type for events.")
     def test_zip(self):
         d = sp.Dataset()
         d[sp.Coord.SpectrumNumber] = ([sp.Dim.Position], np.arange(1, 6))
