@@ -45,22 +45,17 @@ private:
     std::map<std::string, Variable> m_labels;
   };
 
-  std::map<Dim, Variable> m_coords;
-  std::map<std::string, Variable> m_labels;
-  std::map<std::string, DataCols> m_data;
+  std::map<std::pair<std::string, Dim>, Variable> m_coords;
+  std::map<std::pair<std::string, std::string>, Variable> m_labels;
+  std::map<std::string, Values> m_values;
+  std::map<std::string, Variances> m_variances;
 };
 
 class CoordsConstProxy {
 public:
   explicit CoordsConstProxy(const Dataset *dataset,
                             const std::string *name = nullptr)
-      : m_dataset(dataset), m_name(name) {}
-
-  ConstVariableSlice operator[](const Dim dim) const;
-
-  index size() const noexcept {
-    if (!m_name)
-      return scipp::size(m_dataset->m_coords);
+      : m_dataset(dataset), m_name(name) {
     // If data is sparse we must hide global coords, even if there is no
     // name-specific coord.
     // TODO Sparse data without coords does not make sense, can we check this
@@ -68,21 +63,36 @@ public:
     // TODO If the coord exists it should imply that the data is sparse? In
     // principle we can imagine supporting a more general unaligned type of
     // data, even if it is not sparse?
-    if (!m_data[*m_name].m_coord)
-      return scipp::size(m_dataset->m_coords);
-    // Count all shadowed global coordinates.
-    const auto dim = *m_data[*m_name].m_coord;
-    index count;
-    for (const auto &coord : m_dataset->m_coords)
-      if (coord.dimensions().contains(dim))
-        ++count;
-    // +1 is the local (sparse) coordinate.
-    return scipp::size(m_dataset->m_coords) + 1 - count;
+    if (!m_name || !m_dataset.m_coords.count(std::pair(*name, Dim::Invalid))) {
+      index i = 0;
+      for (const auto &item : m_dataset->m_coords) {
+        if (item.first.first.empty())
+          m_indices.push_back(i);
+        ++i;
+      }
+    } else {
+      // Count all shadowed global coordinates.
+      const auto dim =
+          m_dataset.m_coords.at(std::pair(*name, Dim::Invalid)).sparseDim();
+      index i = 0;
+      for (const auto &item : m_dataset->m_coords) {
+        if (item.first.first.empty() && !item.second.dimensions().contains(dim))
+          m_indices.push_back(i);
+        else if (item.first.first == *m_name)
+          m_indices.push_back(i);
+        ++i;
+      }
+    }
   }
+
+  ConstVariableSlice operator[](const Dim dim) const;
+
+  index size() const noexcept { return scipp::size(m_indices); }
 
 private:
   const Dataset *m_dataset;
   const std::string *m_name;
+  std::vector<index> m_indices;
 };
 
 class LabelsConstProxy {
