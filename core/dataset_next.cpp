@@ -8,10 +8,12 @@
 
 namespace scipp::core::next {
 
+/// Return a proxy to all coordinates of the dataset.
 CoordsConstProxy Dataset::coords() const noexcept {
   return CoordsConstProxy(*this);
 }
 
+/// Return a proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);
   if (it == m_data.end())
@@ -19,6 +21,7 @@ DataConstProxy Dataset::operator[](const std::string &name) const {
   return DataConstProxy(*this, it->second);
 }
 
+/// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   m_coords.insert_or_assign(dim, std::move(coord));
 }
@@ -45,6 +48,10 @@ void check_dimensions(const A &values, const B &variances) {
         "Values and variances must have identical dimensions.");
 }
 
+/// Set (insert or replace) the data values with given name.
+///
+/// Throws if the provided values bring the dataset into an inconsistent state
+/// (mismatching dtype, unit, or dimensions).
 void Dataset::setValues(const std::string &name, Variable values) {
   const auto it = m_data.find(name);
   if (it != m_data.end() && it->second.variances) {
@@ -56,6 +63,10 @@ void Dataset::setValues(const std::string &name, Variable values) {
   m_data[name].values = std::move(values);
 }
 
+/// Set (insert or replace) the data variances with given name.
+///
+/// Throws if the provided variances bring the dataset into an inconsistent
+/// state (mismatching dtype, unit, or dimensions).
 void Dataset::setVariances(const std::string &name, Variable variances) {
   const auto it = m_data.find(name);
   if (it == m_data.end() || !it->second.values)
@@ -68,6 +79,9 @@ void Dataset::setVariances(const std::string &name, Variable variances) {
   m_data.at(name).variances = std::move(variances);
 }
 
+/// Set (insert or replace) the sparse coordinate with given name.
+///
+/// Sparse coordinates can exist even without corresponding data.
 void Dataset::setSparseCoord(const std::string &name, Variable coord) {
   if (!coord.isSparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseCoord does "
@@ -82,10 +96,12 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
   m_data[name].coord = std::move(coord);
 }
 
+/// Return a proxy to the coordinate for given dimension.
 ConstVariableSlice CoordsConstProxy::operator[](const Dim dim) const {
   return ConstVariableSlice(*m_coords.at(dim));
 }
 
+/// Return true if the proxy represents sparse data.
 bool DataConstProxy::isSparse() const noexcept {
   if (m_data->coord)
     return true;
@@ -94,6 +110,7 @@ bool DataConstProxy::isSparse() const noexcept {
   return false;
 }
 
+/// Return the label of the sparse dimension, Dim::Invalid if there is none.
 Dim DataConstProxy::sparseDim() const noexcept {
   if (m_data->coord)
     return m_data->coord->sparseDim();
@@ -102,24 +119,38 @@ Dim DataConstProxy::sparseDim() const noexcept {
   return Dim::Invalid;
 }
 
+/// Return an ordered range of dimension labels, excluding a potential sparse
+/// dimension.
 scipp::span<const Dim> DataConstProxy::dims() const noexcept {
   if (hasValues())
     return m_data->values->dimensions().labels();
   return m_data->coord->dimensions().labels();
 }
 
+/// Return an ordered range of dimension extents, excluding a potential sparse
+/// dimension.
+///
+/// The first item in the range corresponds to the outermost dimension and the
+/// last item corresponds to the inntermost dimension of the underlying data.
 scipp::span<const index> DataConstProxy::shape() const noexcept {
   if (hasValues())
     return m_data->values->dimensions().shape();
   return m_data->coord->dimensions().shape();
 }
 
+/// Return the unit of the data values.
+///
+/// Throws if there are no data values.
 units::Unit DataConstProxy::unit() const {
   if (hasValues())
     return values().unit();
   throw std::runtime_error("Data without values, unit is undefined.");
 }
 
+/// Return a proxy to all coordinates of the data proxy.
+///
+/// If the data has a sparse dimension the returned proxy will not contain any
+/// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstProxy DataConstProxy::coords() const noexcept {
   if (!isSparse())
     return CoordsConstProxy(*m_dataset);

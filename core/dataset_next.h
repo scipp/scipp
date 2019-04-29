@@ -20,15 +20,20 @@ class CoordsConstProxy;
 class Dataset;
 
 namespace detail {
+/// Helper for holding data items in Dataset.
 struct DatasetData {
+  /// Optional data values.
   std::optional<Variable> values;
+  /// Optional data variance.
   std::optional<Variable> variances;
-  /// Dimension coord for sparse dim (there can be only 1):
+  /// Dimension coord for the sparse dimension (there can be only 1).
   std::optional<Variable> coord;
+  /// Potential labels for the sparse dimension.
   std::map<std::string, Variable> labels;
 };
 } // namespace detail
 
+/// Proxy for a data item and related coordinates of Dataset.
 class DataConstProxy {
 public:
   DataConstProxy(const Dataset &dataset, const detail::DatasetData &data)
@@ -42,9 +47,12 @@ public:
 
   CoordsConstProxy coords() const noexcept;
 
+  /// Return true if the proxy contains data values.
   bool hasValues() const noexcept { return m_data->values.has_value(); }
+  /// Return true if the proxy contains data variances.
   bool hasVariances() const noexcept { return m_data->variances.has_value(); }
 
+  /// Return untyped or typed proxy for data values.
   template <class T = void> auto values() const {
     if constexpr (std::is_same_v<T, void>)
       return *m_data->values;
@@ -52,6 +60,7 @@ public:
       return m_data->values->span<T>();
   }
 
+  /// Return untyped or typed proxy for data variances.
   template <class T = void> auto variances() const {
     if constexpr (std::is_same_v<T, void>)
       return *m_data->variances;
@@ -64,6 +73,7 @@ private:
   const detail::DatasetData *m_data;
 };
 
+/// Collection of data arrays.
 class Dataset {
 private:
   struct make_const_item {
@@ -75,7 +85,13 @@ private:
   };
 
 public:
+  /// Return the number of data items in the dataset.
+  ///
+  /// This does not include coordinates or attributes, but only all named
+  /// entities (which can consist of various combinations of values, variances,
+  /// and sparse coordinates).
   index size() const noexcept { return scipp::size(m_data); }
+  /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   CoordsConstProxy coords() const noexcept;
@@ -83,11 +99,13 @@ public:
   DataConstProxy operator[](const std::string &name) const;
 
   auto begin() const && = delete;
+  /// Return iterator to the beginning of all data items.
   auto begin() const &noexcept {
     return boost::make_transform_iterator(m_data.begin(),
                                           make_const_item{*this});
   }
   auto end() const && = delete;
+  /// Return iterator to the end of all data items.
   auto end() const &noexcept {
     return boost::make_transform_iterator(m_data.end(), make_const_item{*this});
   }
@@ -106,6 +124,7 @@ private:
   std::map<std::string, detail::DatasetData> m_data;
 };
 
+/// Proxy for accessing coordinates of Dataset, DataProxy, and DataConstProxy.
 class CoordsConstProxy {
 private:
   static constexpr auto make_const_item = [](const auto &item) {
@@ -129,16 +148,20 @@ public:
     }
   }
 
+  /// Return the number of coordinates in the proxy.
   index size() const noexcept { return scipp::size(m_coords); }
+  /// Return true if there are 0 coordinates in the proxy.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   ConstVariableSlice operator[](const Dim dim) const;
 
   auto begin() const && = delete;
+  /// Return iterator to the beginning of all coordinates.
   auto begin() const &noexcept {
     return boost::make_transform_iterator(m_coords.begin(), make_const_item);
   }
   auto end() const && = delete;
+  /// Return iterator to the end of all coordinates.
   auto end() const &noexcept {
     return boost::make_transform_iterator(m_coords.end(), make_const_item);
   }
