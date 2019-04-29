@@ -150,6 +150,53 @@ TEST(DatasetNext, setSparseCoord) {
   ASSERT_NO_THROW(d["a"]);
 }
 
+TEST(DatasetNext, iterators_empty_dataset) {
+  next::Dataset d;
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+  EXPECT_EQ(d.begin(), d.end());
+}
+
+TEST(DatasetNext, iterators_only_coords) {
+  next::Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({}));
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+  EXPECT_EQ(d.begin(), d.end());
+}
+
+TEST(DatasetNext, iterators) {
+  next::Dataset d;
+  d.setValues("a", makeVariable<double>({}));
+  d.setValues("b", makeVariable<float>({}));
+  d.setValues("c", makeVariable<int64_t>({}));
+
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+
+  auto it = d.begin();
+  ASSERT_NE(it, d.end());
+  EXPECT_EQ(it->first, "a");
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_NE(it, d.end());
+  EXPECT_EQ(it->first, "b");
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_NE(it, d.end());
+  EXPECT_EQ(it->first, "c");
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_EQ(it, d.end());
+}
+
+TEST(CoordsConstProxy, empty) {
+  next::Dataset d;
+  const auto coords = d.coords();
+  ASSERT_TRUE(coords.empty());
+  ASSERT_EQ(coords.size(), 0);
+}
+
 TEST(CoordsConstProxy, bad_item_access) {
   next::Dataset d;
   const auto coords = d.coords();
@@ -166,6 +213,38 @@ TEST(CoordsConstProxy, item_access) {
   const auto coords = d.coords();
   ASSERT_EQ(coords[Dim::X], x);
   ASSERT_EQ(coords[Dim::Y], y);
+}
+
+TEST(CoordsConstProxy, iterators_empty_coords) {
+  next::Dataset d;
+  const auto coords = d.coords();
+
+  ASSERT_NO_THROW(coords.begin());
+  ASSERT_NO_THROW(coords.end());
+  EXPECT_EQ(coords.begin(), coords.end());
+}
+
+TEST(CoordsConstProxy, iterators) {
+  next::Dataset d;
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  const auto coords = d.coords();
+
+  ASSERT_NO_THROW(coords.begin());
+  ASSERT_NO_THROW(coords.end());
+
+  auto it = coords.begin();
+  ASSERT_NE(it, coords.end());
+  EXPECT_EQ(it->first, Dim::X);
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_NE(it, coords.end());
+  EXPECT_EQ(it->first, Dim::Y);
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_EQ(it, coords.end());
 }
 
 TEST(DataConstProxy, isSparse_sparseDim) {

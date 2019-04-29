@@ -16,9 +16,7 @@ DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);
   if (it == m_data.end())
     throw std::runtime_error("Could not find data with name " + name + ".");
-  // Note that we are passing it->first instead of name to avoid storing a
-  // reference to a temporary.
-  return DataConstProxy(this, it->first);
+  return DataConstProxy(*this, it->second);
 }
 
 void Dataset::setCoord(const Dim dim, Variable coord) {
