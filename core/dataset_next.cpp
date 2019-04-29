@@ -9,8 +9,16 @@
 namespace scipp::core::next {
 
 /// Return a proxy to all coordinates of the dataset.
+///
+/// This proxy includes only "dimension-coordinates". To access
+/// non-dimension-coordinates" see labels().
 CoordsConstProxy Dataset::coords() const noexcept {
   return CoordsConstProxy(*this);
+}
+
+/// Return a proxy to all labels of the dataset.
+LabelsConstProxy Dataset::labels() const noexcept {
+  return LabelsConstProxy(*this);
 }
 
 /// Return a proxy to data and coordinates with given name.
@@ -24,6 +32,11 @@ DataConstProxy Dataset::operator[](const std::string &name) const {
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   m_coords.insert_or_assign(dim, std::move(coord));
+}
+
+/// Set (insert or replace) the labels for the given name.
+void Dataset::setLabels(const std::string &name, Variable labels) {
+  m_labels.insert_or_assign(name, std::move(labels));
 }
 
 template <class A, class B>
@@ -96,11 +109,6 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
   m_data[name].coord = std::move(coord);
 }
 
-/// Return a proxy to the coordinate for given dimension.
-ConstVariableSlice CoordsConstProxy::operator[](const Dim dim) const {
-  return ConstVariableSlice(*m_coords.at(dim));
-}
-
 /// Return true if the proxy represents sparse data.
 bool DataConstProxy::isSparse() const noexcept {
   if (m_data->coord)
@@ -155,6 +163,16 @@ CoordsConstProxy DataConstProxy::coords() const noexcept {
   if (!isSparse())
     return CoordsConstProxy(*m_dataset);
   return CoordsConstProxy(*m_dataset, sparseDim(), m_data->coord);
+}
+
+/// Return a proxy to all labels of the data proxy.
+///
+/// If the data has a sparse dimension the returned proxy will not contain any
+/// of the dataset's labels that depends on the sparse dimension.
+LabelsConstProxy DataConstProxy::labels() const noexcept {
+  if (!isSparse())
+    return LabelsConstProxy(*m_dataset);
+  return LabelsConstProxy(*m_dataset, sparseDim(), &m_data->labels);
 }
 
 } // namespace scipp::core::next

@@ -6,6 +6,8 @@
 #define DATASET_NEXT_H
 
 #include <optional>
+#include <string>
+#include <string_view>
 
 #include <boost/iterator/transform_iterator.hpp>
 
@@ -17,6 +19,7 @@ namespace scipp::core {
 namespace next {
 
 class CoordsConstProxy;
+class LabelsConstProxy;
 class Dataset;
 
 namespace detail {
@@ -46,6 +49,7 @@ public:
   units::Unit unit() const;
 
   CoordsConstProxy coords() const noexcept;
+  LabelsConstProxy labels() const noexcept;
 
   /// Return true if the proxy contains data values.
   bool hasValues() const noexcept { return m_data->values.has_value(); }
@@ -95,6 +99,7 @@ public:
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   CoordsConstProxy coords() const noexcept;
+  LabelsConstProxy labels() const noexcept;
 
   DataConstProxy operator[](const std::string &name) const;
 
@@ -111,63 +116,93 @@ public:
   }
 
   void setCoord(const Dim dim, Variable coord);
+  void setLabels(const std::string &name, Variable labels);
   void setValues(const std::string &name, Variable values);
   void setVariances(const std::string &name, Variable variances);
   void setSparseCoord(const std::string &name, Variable coord);
 
 private:
   friend class CoordsConstProxy;
+  friend class LabelsConstProxy;
   friend class DataConstProxy;
 
   std::map<Dim, Variable> m_coords;
   std::map<std::string, Variable> m_labels;
+  std::map<std::string, Variable> m_attrs;
   std::map<std::string, detail::DatasetData> m_data;
 };
 
 /// Proxy for accessing coordinates of Dataset, DataProxy, and DataConstProxy.
-class CoordsConstProxy {
+template <class Key> class ConstProxy {
 private:
   static constexpr auto make_const_item = [](const auto &item) {
-    return std::pair(item.first, ConstVariableSlice(*item.second));
+    return std::pair<Key, ConstVariableSlice>(item.first,
+                                              ConstVariableSlice(*item.second));
   };
 
+public:
+  /// Return the number of coordinates in the proxy.
+  index size() const noexcept { return scipp::size(m_items); }
+  /// Return true if there are 0 coordinates in the proxy.
+  [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+
+  /// Return a proxy to the coordinate for given dimension.
+  ConstVariableSlice operator[](const Key key) const {
+    return ConstVariableSlice(*m_items.at(key));
+  }
+
+  auto begin() const && = delete;
+  /// Return iterator to the beginning of all coordinates.
+  auto begin() const &noexcept {
+    return boost::make_transform_iterator(m_items.begin(), make_const_item);
+  }
+  auto end() const && = delete;
+  /// Return iterator to the end of all coordinates.
+  auto end() const &noexcept {
+    return boost::make_transform_iterator(m_items.end(), make_const_item);
+  }
+
+protected:
+  std::map<Key, const Variable *> m_items;
+};
+
+class CoordsConstProxy : public ConstProxy<Dim> {
 public:
   explicit CoordsConstProxy(
       const Dataset &dataset, const Dim sparseDim = Dim::Invalid,
       const std::optional<Variable> &sparseCoord = std::nullopt) {
     if (sparseDim == Dim::Invalid) {
       for (const auto &item : dataset.m_coords)
-        m_coords.emplace(item.first, &item.second);
+        m_items.emplace(item.first, &item.second);
     } else {
       // Shadow all global coordinates that depend on the sparse dimension.
       for (const auto &item : dataset.m_coords)
         if (!item.second.dimensions().contains(sparseDim))
-          m_coords.emplace(item.first, &item.second);
+          m_items.emplace(item.first, &item.second);
       if (sparseCoord)
-        m_coords.emplace(sparseDim, &*sparseCoord);
+        m_items.emplace(sparseDim, &*sparseCoord);
     }
   }
+};
 
-  /// Return the number of coordinates in the proxy.
-  index size() const noexcept { return scipp::size(m_coords); }
-  /// Return true if there are 0 coordinates in the proxy.
-  [[nodiscard]] bool empty() const noexcept { return size() == 0; }
-
-  ConstVariableSlice operator[](const Dim dim) const;
-
-  auto begin() const && = delete;
-  /// Return iterator to the beginning of all coordinates.
-  auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_coords.begin(), make_const_item);
+class LabelsConstProxy : public ConstProxy<std::string_view> {
+public:
+  explicit LabelsConstProxy(
+      const Dataset &dataset, const Dim sparseDim = Dim::Invalid,
+      const std::map<std::string, Variable> *sparseLabels = nullptr) {
+    if (sparseDim == Dim::Invalid) {
+      for (const auto &item : dataset.m_labels)
+        m_items.emplace(item.first, &item.second);
+    } else {
+      // Shadow all global labels that depend on the sparse dimension.
+      for (const auto &item : dataset.m_labels)
+        if (!item.second.dimensions().contains(sparseDim))
+          m_items.emplace(item.first, &item.second);
+      if (sparseLabels)
+        for (const auto &item : *sparseLabels)
+          m_items.emplace(item.first, &item.second);
+    }
   }
-  auto end() const && = delete;
-  /// Return iterator to the end of all coordinates.
-  auto end() const &noexcept {
-    return boost::make_transform_iterator(m_coords.end(), make_const_item);
-  }
-
-private:
-  std::map<Dim, const Variable *> m_coords;
 };
 
 } // namespace next

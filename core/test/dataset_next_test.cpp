@@ -23,6 +23,11 @@ TEST(DatasetNext, coords) {
   ASSERT_NO_THROW(d.coords());
 }
 
+TEST(DatasetNext, labels) {
+  next::Dataset d;
+  ASSERT_NO_THROW(d.labels());
+}
+
 TEST(DatasetNext, bad_item_access) {
   next::Dataset d;
   ASSERT_ANY_THROW(d[""]);
@@ -49,6 +54,26 @@ TEST(DatasetNext, setCoord) {
   ASSERT_EQ(d.coords().size(), 2);
 }
 
+TEST(DatasetNext, setLabels) {
+  next::Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.labels().size(), 0);
+
+  ASSERT_NO_THROW(d.setLabels("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.labels().size(), 1);
+
+  ASSERT_NO_THROW(d.setLabels("b", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.labels().size(), 2);
+
+  ASSERT_NO_THROW(d.setLabels("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.labels().size(), 2);
+}
+
 TEST(DatasetNext, setValues_setVariances) {
   next::Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
@@ -66,6 +91,20 @@ TEST(DatasetNext, setValues_setVariances) {
   ASSERT_EQ(d.size(), 2);
 
   ASSERT_ANY_THROW(d.setVariances("c", var));
+}
+TEST(DatasetNext, setLabels_with_name_matching_data_name) {
+  next::Dataset d;
+  d.setValues("a", makeVariable<double>({Dim::X, 3}));
+  d.setValues("b", makeVariable<double>({Dim::X, 3}));
+
+  // It is possible to set labels with a name matching data. However, there is
+  // no special meaning attached to this. In particular it is *not* linking the
+  // labels to that data item.
+  ASSERT_NO_THROW(d.setLabels("a", makeVariable<double>({})));
+  ASSERT_EQ(d.size(), 2);
+  ASSERT_EQ(d.labels().size(), 1);
+  ASSERT_EQ(d["a"].labels().size(), 1);
+  ASSERT_EQ(d["b"].labels().size(), 1);
 }
 
 TEST(DatasetNext, setVariances_dtype_mismatch) {
@@ -160,6 +199,14 @@ TEST(DatasetNext, iterators_empty_dataset) {
 TEST(DatasetNext, iterators_only_coords) {
   next::Dataset d;
   d.setCoord(Dim::X, makeVariable<double>({}));
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+  EXPECT_EQ(d.begin(), d.end());
+}
+
+TEST(DatasetNext, iterators_only_labels) {
+  next::Dataset d;
+  d.setLabels("a", makeVariable<double>({}));
   ASSERT_NO_THROW(d.begin());
   ASSERT_NO_THROW(d.end());
   EXPECT_EQ(d.begin(), d.end());
