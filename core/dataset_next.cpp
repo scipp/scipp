@@ -25,12 +25,49 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
   m_coords.insert_or_assign(dim, std::move(coord));
 }
 
+template <class A, class B>
+void check_dtype(const A &values, const B &variances) {
+  if (values.dtype() != variances.dtype())
+    throw std::runtime_error("Values and variances must have the same dtype.");
+}
+
+template <class A, class B>
+void check_unit(const A &values, const B &variances) {
+  const auto unit = values.unit();
+  if (variances.unit() != unit * unit)
+    throw std::runtime_error(
+        "Values and variances must have compatible units.");
+}
+
+template <class A, class B>
+void check_dimensions(const A &values, const B &variances) {
+  if ((values.dimensions() != variances.dimensions()) ||
+      values.sparseDim() != variances.sparseDim())
+    throw std::runtime_error(
+        "Values and variances must have identical dimensions.");
+}
+
 void Dataset::setValues(const std::string &name, Variable values) {
+  const auto it = m_data.find(name);
+  if (it != m_data.end() && it->second.variances) {
+    const auto &variances = *it->second.variances;
+    check_dtype(values, variances);
+    check_unit(values, variances);
+    check_dimensions(values, variances);
+  }
   m_data[name].values = std::move(values);
 }
 
 void Dataset::setVariances(const std::string &name, Variable variances) {
-  m_data[name].variances = std::move(variances);
+  const auto it = m_data.find(name);
+  if (it == m_data.end() || !it->second.values)
+    throw std::runtime_error("Cannot set variances: No data values for " +
+                             name + " found in dataset.");
+  const auto &values = *it->second.values;
+  check_dtype(values, variances);
+  check_unit(values, variances);
+  check_dimensions(values, variances);
+  m_data.at(name).variances = std::move(variances);
 }
 
 void Dataset::setSparseCoord(const std::string &name, Variable coord) {
@@ -69,6 +106,24 @@ Dim DataConstProxy::sparseDim() const noexcept {
   if (hasVariances())
     return variances().sparseDim();
   return Dim::Invalid;
+}
+
+scipp::span<const Dim> DataConstProxy::dims() const noexcept {
+  if (hasValues())
+    return m_data->values->dimensions().labels();
+  return m_data->coord->dimensions().labels();
+}
+
+scipp::span<const index> DataConstProxy::shape() const noexcept {
+  if (hasValues())
+    return m_data->values->dimensions().shape();
+  return m_data->coord->dimensions().shape();
+}
+
+units::Unit DataConstProxy::unit() const {
+  if (hasValues())
+    return values().unit();
+  throw std::runtime_error("Data without values, unit is undefined.");
 }
 
 CoordsConstProxy DataConstProxy::coords() const noexcept {

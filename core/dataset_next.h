@@ -74,19 +74,6 @@ private:
   std::map<Dim, const Variable *> m_coords;
 };
 
-/*
-class LabelsConstProxy {
-public:
-  explicit LabelsConstProxy(const Dataset *dataset) : m_dataset(dataset) {}
-
-  ConstVariableSlice operator[](const std::string &name) const;
-
-  index size() const noexcept { return scipp::size(m_dataset->m_labels); }
-
-private:
-  const Dataset *m_dataset;
-}*/
-
 class DataConstProxy {
 public:
   DataConstProxy(const Dataset *dataset, const std::string &name)
@@ -94,6 +81,9 @@ public:
 
   bool isSparse() const noexcept;
   Dim sparseDim() const noexcept;
+  scipp::span<const Dim> dims() const noexcept;
+  scipp::span<const index> shape() const noexcept;
+  units::Unit unit() const;
 
   CoordsConstProxy coords() const noexcept;
 
@@ -113,9 +103,6 @@ public:
     else
       return m_data->variances->span<T>();
   }
-
-  // Unit unit() const;
-  // void setUnit(const Unit unit);
 
 private:
   const Dataset *m_dataset;

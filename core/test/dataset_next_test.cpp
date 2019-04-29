@@ -65,8 +65,73 @@ TEST(DatasetNext, setValues_setVariances) {
   ASSERT_NO_THROW(d.setVariances("a", var));
   ASSERT_EQ(d.size(), 2);
 
-  ASSERT_NO_THROW(d.setVariances("c", var));
-  ASSERT_EQ(d.size(), 3);
+  ASSERT_ANY_THROW(d.setVariances("c", var));
+}
+
+TEST(DatasetNext, setVariances_dtype_mismatch) {
+  next::Dataset d;
+  d.setValues("", makeVariable<double>({}));
+  ASSERT_ANY_THROW(d.setVariances("", makeVariable<float>({})));
+  ASSERT_NO_THROW(d.setVariances("", makeVariable<double>({})));
+}
+
+TEST(DatasetNext, setVariances_unit_mismatch) {
+  next::Dataset d;
+  auto values = makeVariable<double>({});
+  values.setUnit(units::m);
+  d.setValues("", values);
+  auto variances = makeVariable<double>({});
+  ASSERT_ANY_THROW(d.setVariances("", variances));
+  variances.setUnit(units::m);
+  ASSERT_ANY_THROW(d.setVariances("", variances));
+  variances.setUnit(units::m * units::m);
+  ASSERT_NO_THROW(d.setVariances("", variances));
+}
+
+TEST(DatasetNext, setVariances_dimensions_mismatch) {
+  next::Dataset d;
+  d.setValues("", makeVariable<double>({}));
+  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({Dim::X, 1})));
+  ASSERT_NO_THROW(d.setVariances("", makeVariable<double>({})));
+}
+
+TEST(DatasetNext, setVariances_sparseDim_mismatch) {
+  next::Dataset d;
+  d.setValues("", makeSparseVariable<double>({}, Dim::X));
+  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({Dim::X, 1})));
+  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({})));
+  ASSERT_ANY_THROW(d.setVariances("", makeSparseVariable<double>({}, Dim::Y)));
+  ASSERT_ANY_THROW(
+      d.setVariances("", makeSparseVariable<double>({Dim::X, 1}, Dim::X)));
+  ASSERT_NO_THROW(d.setVariances("", makeSparseVariable<double>({}, Dim::X)));
+}
+
+TEST(DatasetNext, setValues_dtype_mismatch) {
+  next::Dataset d;
+  d.setValues("", makeVariable<double>({}));
+  d.setVariances("", makeVariable<double>({}));
+  ASSERT_ANY_THROW(d.setValues("", makeVariable<float>({})));
+  ASSERT_NO_THROW(d.setValues("", makeVariable<double>({})));
+}
+
+TEST(DatasetNext, setValues_dimensions_mismatch) {
+  next::Dataset d;
+  d.setValues("", makeVariable<double>({}));
+  d.setVariances("", makeVariable<double>({}));
+  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({Dim::X, 1})));
+  ASSERT_NO_THROW(d.setValues("", makeVariable<double>({})));
+}
+
+TEST(DatasetNext, setValues_sparseDim_mismatch) {
+  next::Dataset d;
+  d.setValues("", makeSparseVariable<double>({}, Dim::X));
+  d.setVariances("", makeSparseVariable<double>({}, Dim::X));
+  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({Dim::X, 1})));
+  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({})));
+  ASSERT_ANY_THROW(d.setValues("", makeSparseVariable<double>({}, Dim::Y)));
+  ASSERT_ANY_THROW(
+      d.setValues("", makeSparseVariable<double>({Dim::X, 1}, Dim::X)));
+  ASSERT_NO_THROW(d.setValues("", makeSparseVariable<double>({}, Dim::X)));
 }
 
 TEST(DatasetNext, setSparseCoord_not_sparse_fail) {
@@ -108,18 +173,14 @@ TEST(DataConstProxy, hasValues_hasVariances) {
   const auto var = makeVariable<double>({});
 
   d.setValues("a", var);
+  d.setValues("b", var);
   d.setVariances("b", var);
-  d.setValues("c", var);
-  d.setVariances("c", var);
 
   ASSERT_TRUE(d["a"].hasValues());
   ASSERT_FALSE(d["a"].hasVariances());
 
-  ASSERT_FALSE(d["b"].hasValues());
+  ASSERT_TRUE(d["b"].hasValues());
   ASSERT_TRUE(d["b"].hasVariances());
-
-  ASSERT_TRUE(d["c"].hasValues());
-  ASSERT_TRUE(d["c"].hasVariances());
 }
 
 TEST(DataConstProxy, values_variances) {
