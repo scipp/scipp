@@ -26,11 +26,25 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 }
 
 void Dataset::setValues(const std::string &name, Variable values) {
-  m_data[name].m_values = std::move(values);
+  m_data[name].values = std::move(values);
 }
 
 void Dataset::setVariances(const std::string &name, Variable variances) {
-  m_data[name].m_variances = std::move(variances);
+  m_data[name].variances = std::move(variances);
+}
+
+void Dataset::setSparseCoord(const std::string &name, Variable coord) {
+  if (!coord.isSparse())
+    throw std::runtime_error("Variable passed to Dataset::setSparseCoord does "
+                             "not contain sparse data.");
+  if (m_data.count(name)) {
+    const auto &data = m_data.at(name);
+    if ((data.values && (data.values->sparseDim() != coord.sparseDim())) ||
+        (data.variances && (data.variances->sparseDim() != coord.sparseDim())))
+      throw std::runtime_error("Cannot set sparse coordinate if values or "
+                               "variances are not sparse.");
+  }
+  m_data[name].coord = std::move(coord);
 }
 
 ConstVariableSlice CoordsConstProxy::operator[](const Dim dim) const {
@@ -38,7 +52,10 @@ ConstVariableSlice CoordsConstProxy::operator[](const Dim dim) const {
 }
 
 CoordsConstProxy DataConstProxy::coords() const noexcept {
-  return CoordsConstProxy(*m_dataset);
+  if (!data().coord)
+    return CoordsConstProxy(*m_dataset);
+  return CoordsConstProxy(*m_dataset, data().coord->sparseDim(),
+                          &*data().coord);
 }
 
 } // namespace scipp::core::next

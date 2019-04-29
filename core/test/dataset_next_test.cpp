@@ -49,7 +49,7 @@ TEST(DatasetNext, setCoord) {
   ASSERT_EQ(d.coords().size(), 2);
 }
 
-TEST(DatasetNext, setValues) {
+TEST(DatasetNext, setValues_setVariances) {
   next::Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
 
@@ -61,6 +61,28 @@ TEST(DatasetNext, setValues) {
 
   ASSERT_NO_THROW(d.setValues("a", var));
   ASSERT_EQ(d.size(), 2);
+
+  ASSERT_NO_THROW(d.setVariances("a", var));
+  ASSERT_EQ(d.size(), 2);
+
+  ASSERT_NO_THROW(d.setVariances("c", var));
+  ASSERT_EQ(d.size(), 3);
+}
+
+TEST(DatasetNext, setSparseCoord_not_sparse_fail) {
+  next::Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+
+  ASSERT_ANY_THROW(d.setSparseCoord("a", var));
+}
+
+TEST(DatasetNext, setSparseCoord) {
+  next::Dataset d;
+  const auto var = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
+
+  ASSERT_NO_THROW(d.setSparseCoord("a", var));
+  ASSERT_EQ(d.size(), 1);
+  ASSERT_NO_THROW(d["a"]);
 }
 
 TEST(CoordsConstProxy, bad_item_access) {
@@ -100,53 +122,57 @@ TEST(DataConstProxy, hasValues_hasVariances) {
   ASSERT_TRUE(d["c"].hasVariances());
 }
 
-#if 0
-coords()[Dim::X]
-coords().size()
+TEST(DataConstProxy, values_variances) {
+  next::Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
+  d.setValues("a", var);
+  d.setVariances("a", var);
 
-coords(Dim::X)
-coordsSize()
+  ASSERT_EQ(d["a"].values(), var);
+  ASSERT_EQ(d["a"].variances(), var);
+  ASSERT_TRUE(equals(d["a"].values<double>(), {1, 2}));
+  ASSERT_TRUE(equals(d["a"].variances<double>(), {1, 2}));
+  ASSERT_ANY_THROW(d["a"].values<float>());
+  ASSERT_ANY_THROW(d["a"].variances<float>());
+}
 
+TEST(DataConstProxy, coords) {
+  next::Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, var);
+  d.setValues("a", var);
 
-coords()[Dim::Position]
-coords()["specNum"]
+  ASSERT_NO_THROW(d["a"].coords());
+  ASSERT_EQ(d["a"].coords().size(), 1);
+  ASSERT_NO_THROW(d["a"].coords()[Dim::X]);
+  ASSERT_EQ(d["a"].coords()[Dim::X], var);
+}
 
-coords().size() // 2
+TEST(DataConstProxy, coords_sparse) {
+  next::Dataset d;
+  const auto var = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
+  d.setSparseCoord("a", var);
 
+  ASSERT_NO_THROW(d["a"].coords());
+  ASSERT_EQ(d["a"].coords().size(), 1);
+  ASSERT_NO_THROW(d["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d["a"].coords()[Dim::Y], var);
+}
 
-coords()[0]
-coords()[1]
+TEST(DataConstProxy, coords_sparse_shadow) {
+  next::Dataset d;
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setSparseCoord("a", sparse);
 
-coords().begin()
-coords().end()
-
-for dim, coord in dataset.coords:
-
-for name, coord in dataset.aux_coords:
-
-
-for key, coord in dataset.coords:
-  if len(key.name) == 0:
-    print('dim coord')
-
-class Dataset {
-std::vector<Variables> m_coords;
-
-auto coords(const Dim dim) {
-  for (const auto &coord : m_coords)
-    if(coord.dimensions().inner() == dim)
-      return ConstVariableSlice(coord);
-  throw;
-};
-  
-
-d.coords()
-
-d.attrs()["specNum"]
-d.labels()["specNum"]
-
-d.coords()[Dim.Tof] // X axis
-d.coords()[Dim.Position]
-d["sample"].coords()[Dim.Position] // mapped from global coords
-d["sample"].coords()[Dim.Tof] // event tof (replacing global coord)
-#endif
+  ASSERT_NO_THROW(d["a"].coords());
+  ASSERT_EQ(d["a"].coords().size(), 2);
+  ASSERT_NO_THROW(d["a"].coords()[Dim::X]);
+  ASSERT_NO_THROW(d["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d["a"].coords()[Dim::X], x);
+  ASSERT_NE(d["a"].coords()[Dim::Y], y);
+  ASSERT_EQ(d["a"].coords()[Dim::Y], sparse);
+}

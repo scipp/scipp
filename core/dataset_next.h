@@ -26,37 +26,31 @@ public:
   index size() const noexcept { return scipp::size(m_data); }
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
-  // ConstVariableSlice coords(const Dim dim) const;
-  // VariableSlice coords(const Dim dim);
-
   CoordsConstProxy coords() const noexcept;
   CoordsConstProxy labels() const noexcept;
-  // CoordsProxy coords();
 
   DataConstProxy operator[](const std::string &name) const;
-  // DataProxy operator[](const std::string &name);
 
   void setCoord(const Dim dim, Variable coord);
   void setValues(const std::string &name, Variable values);
   void setVariances(const std::string &name, Variable variances);
-  // void setCoord(const std::string &name, const Dim dim, Variable values);
+  void setSparseCoord(const std::string &name, Variable coord);
 
 private:
   friend class CoordsConstProxy;
-  friend class LabelsConstProxy;
   friend class DataConstProxy;
 
-  struct DataCols {
-    std::optional<Variable> m_values;
-    std::optional<Variable> m_variances;
+  struct Data {
+    std::optional<Variable> values;
+    std::optional<Variable> variances;
     /// Dimension coord for sparse dim (there can be only 1):
-    std::optional<Variable> m_coord;
-    std::map<std::string, Variable> m_labels;
+    std::optional<Variable> coord;
+    std::map<std::string, Variable> labels;
   };
 
   std::map<Dim, Variable> m_coords;
   std::map<std::string, Variable> m_labels;
-  std::map<std::string, DataCols> m_data;
+  std::map<std::string, Data> m_data;
 };
 
 class CoordsConstProxy {
@@ -106,25 +100,28 @@ public:
   // would need more complicated implementation, coords in different sections
   CoordsConstProxy coords() const noexcept;
 
-  bool hasValues() const noexcept {
-    return m_dataset->m_data.at(*m_name).m_values.has_value();
-  }
-  bool hasVariances() const noexcept {
-    return m_dataset->m_data.at(*m_name).m_variances.has_value();
+  bool hasValues() const noexcept { return data().values.has_value(); }
+  bool hasVariances() const noexcept { return data().variances.has_value(); }
+
+  template <class T = void> auto values() const {
+    if constexpr (std::is_same_v<T, void>)
+      return *data().values;
+    else
+      return data().values->span<T>();
   }
 
-  // should we provide this, or just `values<T>()`?
-  // ConstVariableSlice values() const;
-  // ConstVariableSlice variances() const;
-
-  // Returns a typed view (VariableView<T> or span<T>)?
-  template <class T = void> auto values() const;
-  template <class T = void> auto variances() const;
+  template <class T = void> auto variances() const {
+    if constexpr (std::is_same_v<T, void>)
+      return *data().variances;
+    else
+      return data().variances->span<T>();
+  }
 
   // Unit unit() const;
   // void setUnit(const Unit unit);
 
 private:
+  const Dataset::Data &data() const { return m_dataset->m_data.at(*m_name); }
   const Dataset *m_dataset;
   const std::string *m_name;
 };
