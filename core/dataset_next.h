@@ -24,6 +24,7 @@ class DataConstProxy;
 class Dataset {
 public:
   index size() const noexcept { return scipp::size(m_data); }
+  [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   // ConstVariableSlice coords(const Dim dim) const;
   // VariableSlice coords(const Dim dim);
@@ -35,10 +36,17 @@ public:
   DataConstProxy operator[](const std::string &name) const;
   // DataProxy operator[](const std::string &name);
 
+  void setCoord(const Dim dim, Variable coord);
+  void setValues(const std::string &name, Variable values);
+  void setVariances(const std::string &name, Variable variances);
+  // void setCoord(const std::string &name, const Dim dim, Variable values);
+
 private:
   friend class CoordsConstProxy;
   friend class LabelsConstProxy;
-  class DataCols {
+  friend class DataConstProxy;
+
+  struct DataCols {
     std::optional<Variable> m_values;
     std::optional<Variable> m_variances;
     /// Dimension coord for sparse dim (there can be only 1):
@@ -64,7 +72,8 @@ public:
       for (const auto &item : dataset.m_coords)
         if (!item.second.dimensions().contains(sparseDim))
           m_coords.emplace(item.first, &item.second);
-      m_coords.emplace(sparseDim, sparseCoord);
+      if (sparseCoord)
+        m_coords.emplace(sparseDim, sparseCoord);
     }
   }
 
@@ -92,10 +101,17 @@ private:
 class DataConstProxy {
 public:
   DataConstProxy(const Dataset *dataset, const std::string &name)
-      : m_dataset(dataset), m_name(name) {}
+      : m_dataset(dataset), m_name(&name) {}
 
   // would need more complicated implementation, coords in different sections
   CoordsConstProxy coords() const noexcept;
+
+  bool hasValues() const noexcept {
+    return m_dataset->m_data.at(*m_name).m_values.has_value();
+  }
+  bool hasVariances() const noexcept {
+    return m_dataset->m_data.at(*m_name).m_variances.has_value();
+  }
 
   // should we provide this, or just `values<T>()`?
   // ConstVariableSlice values() const;
@@ -110,7 +126,7 @@ public:
 
 private:
   const Dataset *m_dataset;
-  const std::string &m_name;
+  const std::string *m_name;
 };
 
 } // namespace next
