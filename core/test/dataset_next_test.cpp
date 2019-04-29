@@ -168,33 +168,55 @@ TEST(CoordsConstProxy, item_access) {
   ASSERT_EQ(coords[Dim::Y], y);
 }
 
-TEST(DataConstProxy, hasValues_hasVariances) {
+TEST(DataConstProxy, isSparse_sparseDim) {
   next::Dataset d;
-  const auto var = makeVariable<double>({});
 
-  d.setValues("a", var);
-  d.setValues("b", var);
-  d.setVariances("b", var);
+  d.setValues("dense", makeVariable<double>({}));
+  ASSERT_FALSE(d["dense"].isSparse());
+  ASSERT_EQ(d["dense"].sparseDim(), Dim::Invalid);
 
-  ASSERT_TRUE(d["a"].hasValues());
-  ASSERT_FALSE(d["a"].hasVariances());
+  d.setValues("sparse_data", makeSparseVariable<double>({}, Dim::X));
+  ASSERT_TRUE(d["sparse_data"].isSparse());
+  ASSERT_EQ(d["sparse_data"].sparseDim(), Dim::X);
 
-  ASSERT_TRUE(d["b"].hasValues());
-  ASSERT_TRUE(d["b"].hasVariances());
+  d.setSparseCoord("sparse_coord", makeSparseVariable<double>({}, Dim::X));
+  ASSERT_TRUE(d["sparse_coord"].isSparse());
+  ASSERT_EQ(d["sparse_coord"].sparseDim(), Dim::X);
 }
 
-TEST(DataConstProxy, values_variances) {
+TEST(DataConstProxy, dims_shape) {
   next::Dataset d;
-  const auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
-  d.setValues("a", var);
-  d.setVariances("a", var);
 
-  ASSERT_EQ(d["a"].values(), var);
-  ASSERT_EQ(d["a"].variances(), var);
-  ASSERT_TRUE(equals(d["a"].values<double>(), {1, 2}));
-  ASSERT_TRUE(equals(d["a"].variances<double>(), {1, 2}));
-  ASSERT_ANY_THROW(d["a"].values<float>());
-  ASSERT_ANY_THROW(d["a"].variances<float>());
+  d.setValues("dense", makeVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}));
+  ASSERT_TRUE(equals(d["dense"].dims(), {Dim::X, Dim::Y}));
+  ASSERT_TRUE(equals(d["dense"].shape(), {1, 2}));
+
+  // Sparse dimension is currently not included in dims(). It is unclear whether
+  // this is the right choice. An unfinished idea involves returning
+  // std::tuple<std::span<const Dim>, std::optional<Dim>> instead, using `auto [
+  // dims, sparse ] = data.dims();`.
+  d.setValues("sparse_data",
+              makeSparseVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z));
+  ASSERT_TRUE(equals(d["sparse_data"].dims(), {Dim::X, Dim::Y}));
+  ASSERT_TRUE(equals(d["sparse_data"].shape(), {1, 2}));
+
+  d.setSparseCoord("sparse_coord", makeSparseVariable<double>(
+                                       {{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z));
+  ASSERT_TRUE(equals(d["sparse_coord"].dims(), {Dim::X, Dim::Y}));
+  ASSERT_TRUE(equals(d["sparse_coord"].shape(), {1, 2}));
+}
+
+TEST(DataConstProxy, unit) {
+  next::Dataset d;
+
+  d.setValues("dense", makeVariable<double>({}));
+  EXPECT_EQ(d["dense"].unit(), units::dimensionless);
+}
+
+TEST(DataConstProxy, unit_access_fails_without_values) {
+  next::Dataset d;
+  d.setSparseCoord("sparse", makeSparseVariable<double>({}, Dim::X));
+  EXPECT_ANY_THROW(d["sparse"].unit());
 }
 
 TEST(DataConstProxy, coords) {
@@ -254,4 +276,33 @@ TEST(DataConstProxy, coords_sparse_shadow_even_if_no_coord) {
   ASSERT_NO_THROW(d["a"].coords()[Dim::X]);
   ASSERT_ANY_THROW(d["a"].coords()[Dim::Y]);
   ASSERT_EQ(d["a"].coords()[Dim::X], x);
+}
+
+TEST(DataConstProxy, hasValues_hasVariances) {
+  next::Dataset d;
+  const auto var = makeVariable<double>({});
+
+  d.setValues("a", var);
+  d.setValues("b", var);
+  d.setVariances("b", var);
+
+  ASSERT_TRUE(d["a"].hasValues());
+  ASSERT_FALSE(d["a"].hasVariances());
+
+  ASSERT_TRUE(d["b"].hasValues());
+  ASSERT_TRUE(d["b"].hasVariances());
+}
+
+TEST(DataConstProxy, values_variances) {
+  next::Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
+  d.setValues("a", var);
+  d.setVariances("a", var);
+
+  ASSERT_EQ(d["a"].values(), var);
+  ASSERT_EQ(d["a"].variances(), var);
+  ASSERT_TRUE(equals(d["a"].values<double>(), {1, 2}));
+  ASSERT_TRUE(equals(d["a"].variances<double>(), {1, 2}));
+  ASSERT_ANY_THROW(d["a"].values<float>());
+  ASSERT_ANY_THROW(d["a"].variances<float>());
 }

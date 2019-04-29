@@ -93,8 +93,6 @@ bool DataConstProxy::isSparse() const noexcept {
     return true;
   if (hasValues())
     return values().isSparse();
-  if (hasVariances())
-    return variances().isSparse();
   return false;
 }
 
@@ -103,8 +101,6 @@ Dim DataConstProxy::sparseDim() const noexcept {
     return m_data->coord->sparseDim();
   if (hasValues())
     return values().sparseDim();
-  if (hasVariances())
-    return variances().sparseDim();
   return Dim::Invalid;
 }
 
