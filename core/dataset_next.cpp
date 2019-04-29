@@ -51,11 +51,30 @@ ConstVariableSlice CoordsConstProxy::operator[](const Dim dim) const {
   return ConstVariableSlice(*m_coords.at(dim));
 }
 
+bool DataConstProxy::isSparse() const noexcept {
+  if (m_data->coord)
+    return true;
+  if (hasValues())
+    return values().isSparse();
+  if (hasVariances())
+    return variances().isSparse();
+  return false;
+}
+
+Dim DataConstProxy::sparseDim() const noexcept {
+  if (m_data->coord)
+    return m_data->coord->sparseDim();
+  if (hasValues())
+    return values().sparseDim();
+  if (hasVariances())
+    return variances().sparseDim();
+  return Dim::Invalid;
+}
+
 CoordsConstProxy DataConstProxy::coords() const noexcept {
-  if (!data().coord)
+  if (!isSparse())
     return CoordsConstProxy(*m_dataset);
-  return CoordsConstProxy(*m_dataset, data().coord->sparseDim(),
-                          &*data().coord);
+  return CoordsConstProxy(*m_dataset, sparseDim(), m_data->coord);
 }
 
 } // namespace scipp::core::next

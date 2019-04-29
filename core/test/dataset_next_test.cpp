@@ -176,3 +176,21 @@ TEST(DataConstProxy, coords_sparse_shadow) {
   ASSERT_NE(d["a"].coords()[Dim::Y], y);
   ASSERT_EQ(d["a"].coords()[Dim::Y], sparse);
 }
+
+TEST(DataConstProxy, coords_sparse_shadow_even_if_no_coord) {
+  next::Dataset d;
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", sparse);
+
+  ASSERT_NO_THROW(d["a"].coords());
+  // Dim::Y is sparse, so the global (non-sparse) Y coordinate does not make
+  // sense and is thus hidden.
+  ASSERT_EQ(d["a"].coords().size(), 1);
+  ASSERT_NO_THROW(d["a"].coords()[Dim::X]);
+  ASSERT_ANY_THROW(d["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d["a"].coords()[Dim::X], x);
+}

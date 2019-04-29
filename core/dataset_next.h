@@ -6,10 +6,6 @@
 #define DATASET_NEXT_H
 
 #include <optional>
-#include <vector>
-
-#include <boost/container/small_vector.hpp>
-#include <boost/iterator/transform_iterator.hpp>
 
 #include "dimension.h"
 #include "variable.h"
@@ -27,7 +23,6 @@ public:
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   CoordsConstProxy coords() const noexcept;
-  CoordsConstProxy labels() const noexcept;
 
   DataConstProxy operator[](const std::string &name) const;
 
@@ -55,9 +50,9 @@ private:
 
 class CoordsConstProxy {
 public:
-  explicit CoordsConstProxy(const Dataset &dataset,
-                            const Dim sparseDim = Dim::Invalid,
-                            const Variable *sparseCoord = nullptr) {
+  explicit CoordsConstProxy(
+      const Dataset &dataset, const Dim sparseDim = Dim::Invalid,
+      const std::optional<Variable> &sparseCoord = std::nullopt) {
     if (sparseDim == Dim::Invalid) {
       for (const auto &item : dataset.m_coords)
         m_coords.emplace(item.first, &item.second);
@@ -67,7 +62,7 @@ public:
         if (!item.second.dimensions().contains(sparseDim))
           m_coords.emplace(item.first, &item.second);
       if (sparseCoord)
-        m_coords.emplace(sparseDim, sparseCoord);
+        m_coords.emplace(sparseDim, &*sparseCoord);
     }
   }
 
@@ -95,35 +90,36 @@ private:
 class DataConstProxy {
 public:
   DataConstProxy(const Dataset *dataset, const std::string &name)
-      : m_dataset(dataset), m_name(&name) {}
+      : m_dataset(dataset), m_data(&m_dataset->m_data.at(name)) {}
 
-  // would need more complicated implementation, coords in different sections
+  bool isSparse() const noexcept;
+  Dim sparseDim() const noexcept;
+
   CoordsConstProxy coords() const noexcept;
 
-  bool hasValues() const noexcept { return data().values.has_value(); }
-  bool hasVariances() const noexcept { return data().variances.has_value(); }
+  bool hasValues() const noexcept { return m_data->values.has_value(); }
+  bool hasVariances() const noexcept { return m_data->variances.has_value(); }
 
   template <class T = void> auto values() const {
     if constexpr (std::is_same_v<T, void>)
-      return *data().values;
+      return *m_data->values;
     else
-      return data().values->span<T>();
+      return m_data->values->span<T>();
   }
 
   template <class T = void> auto variances() const {
     if constexpr (std::is_same_v<T, void>)
-      return *data().variances;
+      return *m_data->variances;
     else
-      return data().variances->span<T>();
+      return m_data->variances->span<T>();
   }
 
   // Unit unit() const;
   // void setUnit(const Unit unit);
 
 private:
-  const Dataset::Data &data() const { return m_dataset->m_data.at(*m_name); }
   const Dataset *m_dataset;
-  const std::string *m_name;
+  const Dataset::Data *m_data;
 };
 
 } // namespace next
