@@ -122,17 +122,20 @@ private:
   detail::DatasetData *m_mutableData;
 };
 
+namespace detail {
+/// Helper for creating iterators of Dataset.
+template <class D> struct make_item {
+  D *dataset;
+  using P = std::conditional_t<std::is_const_v<D>, DataConstProxy, DataProxy>;
+  std::pair<std::string_view, P> operator()(auto &item) const {
+    return {item.first, P(*dataset, item.second)};
+  }
+};
+template <class D> make_item(D *)->make_item<D>;
+} // namespace detail
+
 /// Collection of data arrays.
 class Dataset {
-private:
-  struct make_const_item {
-    const Dataset &dataset;
-    std::pair<const std::string &, DataConstProxy>
-    operator()(const auto &item) const {
-      return std::pair(item.first, DataConstProxy(dataset, item.second));
-    }
-  };
-
 public:
   /// Return the number of data items in the dataset.
   ///
@@ -153,15 +156,28 @@ public:
   DataProxy operator[](const std::string &name);
 
   auto begin() const && = delete;
-  /// Return iterator to the beginning of all data items.
+  auto begin() && = delete;
+  /// Return const iterator to the beginning of all data items.
   auto begin() const &noexcept {
     return boost::make_transform_iterator(m_data.begin(),
-                                          make_const_item{*this});
+                                          detail::make_item{this});
+  }
+  /// Return iterator to the beginning of all data items.
+  auto begin() & noexcept {
+    return boost::make_transform_iterator(m_data.begin(),
+                                          detail::make_item{this});
   }
   auto end() const && = delete;
-  /// Return iterator to the end of all data items.
+  auto end() && = delete;
+  /// Return const iterator to the end of all data items.
   auto end() const &noexcept {
-    return boost::make_transform_iterator(m_data.end(), make_const_item{*this});
+    return boost::make_transform_iterator(m_data.end(),
+                                          detail::make_item{this});
+  }
+  /// Return iterator to the end of all data items.
+  auto end() & noexcept {
+    return boost::make_transform_iterator(m_data.end(),
+                                          detail::make_item{this});
   }
 
   void setCoord(const Dim dim, Variable coord);
@@ -192,7 +208,6 @@ private:
 
 public:
   using key_type = Key;
-  using mapped_type = std::pair<const Variable *, Variable *>;
 
   ConstProxy(std::map<Key, std::pair<const Variable *, Variable *>> &&items)
       : m_items(std::move(items)) {}
