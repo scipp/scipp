@@ -349,6 +349,31 @@ TEST(CoordsConstProxy, iterators) {
   ASSERT_EQ(it, coords.end());
 }
 
+TEST(CoordsConstProxy, slice) {
+  next::Dataset d;
+  const auto x =
+      makeVariable<double>({{Dim::X, 3}, {Dim::Y, 2}}, {1, 2, 3, 4, 5, 6});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  const auto coords = d.coords();
+
+  const auto sliceX = coords.slice({Dim::X, 1});
+  ASSERT_ANY_THROW(sliceX[Dim::X]);
+  ASSERT_ANY_THROW(sliceX[Dim::Y]);
+  const auto sliceDX = coords.slice({Dim::X, 1, 2});
+  EXPECT_EQ(sliceDX[Dim::X].dimensions(),
+            Dimensions({{Dim::X, 1}, {Dim::Y, 2}}));
+  ASSERT_ANY_THROW(sliceDX[Dim::Y]);
+
+  const auto sliceY = coords.slice({Dim::Y, 1});
+  ASSERT_ANY_THROW(sliceY[Dim::X]);
+  ASSERT_ANY_THROW(sliceY[Dim::Y]);
+  const auto sliceDY = coords.slice({Dim::Y, 1, 2});
+  ASSERT_ANY_THROW(sliceDY[Dim::X]);
+  EXPECT_EQ(sliceDY[Dim::Y].dimensions(), Dimensions({Dim::Y, 1}));
+}
+
 // Using typed tests for common functionality of DataProxy and DataConstProxy.
 template <typename T> class DataProxyTest : public ::testing::Test {
 public:
