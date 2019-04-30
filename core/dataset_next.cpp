@@ -20,7 +20,9 @@ CoordsConstProxy Dataset::coords() const noexcept {
 ///
 /// This proxy includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
-CoordsProxy Dataset::coords() noexcept { return CoordsProxy(*this); }
+CoordsProxy Dataset::coords() noexcept {
+  return CoordsProxy(makeProxyItems<Dim>(m_coords));
+}
 
 /// Return a const proxy to all labels of the dataset.
 LabelsConstProxy Dataset::labels() const noexcept {
@@ -28,7 +30,9 @@ LabelsConstProxy Dataset::labels() const noexcept {
 }
 
 /// Return a proxy to all labels of the dataset.
-LabelsProxy Dataset::labels() noexcept { return LabelsProxy(*this); }
+LabelsProxy Dataset::labels() noexcept {
+  return LabelsProxy(makeProxyItems<std::string_view>(m_labels));
+}
 
 /// Return a proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string &name) const {

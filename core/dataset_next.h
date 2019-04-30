@@ -18,8 +18,6 @@ namespace scipp::core {
 
 namespace next {
 
-class CoordsProxy;
-class LabelsProxy;
 class Dataset;
 
 namespace ProxyId {
@@ -27,11 +25,16 @@ class Coords;
 class Labels;
 }
 template <class Id, class Key> class ConstProxy;
+template <class Base> class MutableProxy;
 
 /// Proxy for accessing coordinates of const Dataset and DataConstProxy.
 using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
+/// Proxy for accessing coordinates of Dataset and DataProxy.
+using CoordsProxy = MutableProxy<CoordsConstProxy>;
 /// Proxy for accessing labels of const Dataset and DataConstProxy.
 using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string_view>;
+/// Proxy for accessing labels of Dataset and DataProxy.
+using LabelsProxy = MutableProxy<LabelsConstProxy>;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
@@ -138,8 +141,6 @@ public:
                        Variable labels);
 
 private:
-  friend class CoordsProxy;
-  friend class LabelsProxy;
   friend class DataConstProxy;
 
   std::map<Dim, Variable> m_coords;
@@ -254,32 +255,16 @@ auto makeProxyItems(T1 &coords, const Dim sparseDim = Dim::Invalid,
   return items;
 }
 
-/// Proxy for accessing coordinates of Dataset and DataProxy.
-class CoordsProxy
-    : public MutableProxyMixin<CoordsProxy, CoordsConstProxy::key_type>,
-      public CoordsConstProxy {
+template <class Base>
+class MutableProxy
+    : public MutableProxyMixin<MutableProxy<Base>, typename Base::key_type>,
+      public Base {
 public:
-  explicit CoordsProxy(Dataset &dataset, const Dim sparseDim = Dim::Invalid,
-                       Variable *sparseCoord = nullptr)
-      : CoordsConstProxy(
-            makeProxyItems<Dim>(dataset.m_coords, sparseDim, sparseCoord)) {}
-  using MutableProxyMixin<CoordsProxy, CoordsConstProxy::key_type>::operator[];
-  using MutableProxyMixin<CoordsProxy, CoordsConstProxy::key_type>::begin;
-  using MutableProxyMixin<CoordsProxy, CoordsConstProxy::key_type>::end;
-};
-
-/// Proxy for accessing labels of Dataset and DataProxy.
-class LabelsProxy
-    : public MutableProxyMixin<LabelsProxy, LabelsConstProxy::key_type>,
-      public LabelsConstProxy {
-public:
-  explicit LabelsProxy(Dataset &dataset, const Dim sparseDim = Dim::Invalid,
-                       std::map<std::string, Variable> *sparseLabels = nullptr)
-      : LabelsConstProxy(makeProxyItems<std::string_view>(
-            dataset.m_labels, sparseDim, sparseLabels)) {}
-  using MutableProxyMixin<LabelsProxy, LabelsConstProxy::key_type>::operator[];
-  using MutableProxyMixin<LabelsProxy, LabelsConstProxy::key_type>::begin;
-  using MutableProxyMixin<LabelsProxy, LabelsConstProxy::key_type>::end;
+  using Base::Base;
+  using MutableProxyMixin<MutableProxy<Base>, typename Base::key_type>::
+  operator[];
+  using MutableProxyMixin<MutableProxy<Base>, typename Base::key_type>::begin;
+  using MutableProxyMixin<MutableProxy<Base>, typename Base::key_type>::end;
 };
 
 } // namespace next
