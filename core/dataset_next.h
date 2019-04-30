@@ -18,11 +18,20 @@ namespace scipp::core {
 
 namespace next {
 
-class CoordsConstProxy;
 class CoordsProxy;
-class LabelsConstProxy;
 class LabelsProxy;
 class Dataset;
+
+namespace ProxyId {
+class Coords;
+class Labels;
+}
+template <class Id, class Key> class ConstProxy;
+
+/// Proxy for accessing coordinates of const Dataset and DataConstProxy.
+using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
+/// Proxy for accessing labels of const Dataset and DataConstProxy.
+using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string_view>;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
@@ -129,9 +138,7 @@ public:
                        Variable labels);
 
 private:
-  friend class CoordsConstProxy;
   friend class CoordsProxy;
-  friend class LabelsConstProxy;
   friend class LabelsProxy;
   friend class DataConstProxy;
 
@@ -142,7 +149,7 @@ private:
 };
 
 /// Common functionality for other const-proxy classes.
-template <class Key> class ConstProxy {
+template <class Id, class Key> class ConstProxy {
 private:
   static constexpr auto make_const_item = [](const auto &item) {
     return std::pair<Key, ConstVariableSlice>(
@@ -221,9 +228,10 @@ std::pair<const Variable *, Variable *> makeProxyItem(T *variable) {
     return {variable, variable};
 }
 
-template <class T1, class T2>
-auto makeCoordsProxyItems(T1 &coords, const Dim sparseDim, T2 &sparseCoord) {
-  std::map<Dim, std::pair<const Variable *, Variable *>> items;
+template <class Key, class T1, class T2 = void>
+auto makeProxyItems(T1 &coords, const Dim sparseDim = Dim::Invalid,
+                    T2 *sparse = nullptr) {
+  std::map<Key, std::pair<const Variable *, Variable *>> items;
   if (sparseDim == Dim::Invalid) {
     for (auto &item : coords)
       items.emplace(item.first, makeProxyItem(&item.second));
@@ -232,40 +240,19 @@ auto makeCoordsProxyItems(T1 &coords, const Dim sparseDim, T2 &sparseCoord) {
     for (auto &item : coords)
       if (!item.second.dimensions().contains(sparseDim))
         items.emplace(item.first, makeProxyItem(&item.second));
-    if (sparseCoord)
-      items.emplace(sparseDim, makeProxyItem(&*sparseCoord));
+    if (sparse) {
+      if constexpr (std::is_same_v<T2, void>) {
+      } else if constexpr (std::is_same_v<T2, const Variable> ||
+                           std::is_same_v<T2, Variable>) {
+        items.emplace(sparseDim, makeProxyItem(&*sparse));
+      } else {
+        for (const auto &item : *sparse)
+          items.emplace(item.first, makeProxyItem(&item.second));
+      }
+    }
   }
   return items;
 }
-
-template <class T1, class T2>
-auto makeLabelsProxyItems(T1 &labels, const Dim sparseDim, T2 *sparseLabels) {
-  std::map<std::string_view, std::pair<const Variable *, Variable *>> items;
-  if (sparseDim == Dim::Invalid) {
-    for (const auto &item : labels)
-      items.emplace(item.first, makeProxyItem(&item.second));
-  } else {
-    // Shadow all global labels that depend on the sparse dimension.
-    for (const auto &item : labels)
-      if (!item.second.dimensions().contains(sparseDim))
-        items.emplace(item.first, makeProxyItem(&item.second));
-    if (sparseLabels)
-      for (const auto &item : *sparseLabels)
-        items.emplace(item.first, makeProxyItem(&item.second));
-  }
-  return items;
-}
-
-/// Proxy for accessing coordinates of const Dataset and DataConstProxy.
-class CoordsConstProxy : public ConstProxy<Dim> {
-public:
-  using ConstProxy<Dim>::ConstProxy;
-  explicit CoordsConstProxy(
-      const Dataset &dataset, const Dim sparseDim = Dim::Invalid,
-      const std::optional<Variable> &sparseCoord = std::nullopt)
-      : ConstProxy<Dim>(
-            makeCoordsProxyItems(dataset.m_coords, sparseDim, sparseCoord)) {}
-};
 
 /// Proxy for accessing coordinates of Dataset and DataProxy.
 class CoordsProxy
@@ -275,21 +262,10 @@ public:
   explicit CoordsProxy(Dataset &dataset, const Dim sparseDim = Dim::Invalid,
                        Variable *sparseCoord = nullptr)
       : CoordsConstProxy(
-            makeCoordsProxyItems(dataset.m_coords, sparseDim, sparseCoord)) {}
+            makeProxyItems<Dim>(dataset.m_coords, sparseDim, sparseCoord)) {}
   using MutableProxyMixin<CoordsProxy, CoordsConstProxy::key_type>::operator[];
   using MutableProxyMixin<CoordsProxy, CoordsConstProxy::key_type>::begin;
   using MutableProxyMixin<CoordsProxy, CoordsConstProxy::key_type>::end;
-};
-
-/// Proxy for accessing labels of const Dataset and DataConstProxy.
-class LabelsConstProxy : public ConstProxy<std::string_view> {
-public:
-  using ConstProxy<std::string_view>::ConstProxy;
-  explicit LabelsConstProxy(
-      const Dataset &dataset, const Dim sparseDim = Dim::Invalid,
-      const std::map<std::string, Variable> *sparseLabels = nullptr)
-      : ConstProxy<std::string_view>(
-            makeLabelsProxyItems(dataset.m_labels, sparseDim, sparseLabels)) {}
 };
 
 /// Proxy for accessing labels of Dataset and DataProxy.
@@ -299,8 +275,8 @@ class LabelsProxy
 public:
   explicit LabelsProxy(Dataset &dataset, const Dim sparseDim = Dim::Invalid,
                        std::map<std::string, Variable> *sparseLabels = nullptr)
-      : LabelsConstProxy(
-            makeLabelsProxyItems(dataset.m_labels, sparseDim, sparseLabels)) {}
+      : LabelsConstProxy(makeProxyItems<std::string_view>(
+            dataset.m_labels, sparseDim, sparseLabels)) {}
   using MutableProxyMixin<LabelsProxy, LabelsConstProxy::key_type>::operator[];
   using MutableProxyMixin<LabelsProxy, LabelsConstProxy::key_type>::begin;
   using MutableProxyMixin<LabelsProxy, LabelsConstProxy::key_type>::end;

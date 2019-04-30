@@ -13,7 +13,7 @@ namespace scipp::core::next {
 /// This proxy includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsConstProxy Dataset::coords() const noexcept {
-  return CoordsConstProxy(*this);
+  return CoordsConstProxy(makeProxyItems<Dim>(m_coords));
 }
 
 /// Return a proxy to all coordinates of the dataset.
@@ -24,7 +24,7 @@ CoordsProxy Dataset::coords() noexcept { return CoordsProxy(*this); }
 
 /// Return a const proxy to all labels of the dataset.
 LabelsConstProxy Dataset::labels() const noexcept {
-  return LabelsConstProxy(*this);
+  return LabelsConstProxy(makeProxyItems<std::string_view>(m_labels));
 }
 
 /// Return a proxy to all labels of the dataset.
@@ -194,8 +194,10 @@ units::Unit DataConstProxy::unit() const {
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstProxy DataConstProxy::coords() const noexcept {
   if (!isSparse())
-    return CoordsConstProxy(*m_dataset);
-  return CoordsConstProxy(*m_dataset, sparseDim(), m_data->coord);
+    return m_dataset->coords();
+  return CoordsConstProxy(
+      makeProxyItems<Dim>(m_dataset->m_coords, sparseDim(),
+                          m_data->coord ? &*m_data->coord : nullptr));
 }
 
 /// Return a proxy to all labels of the data proxy.
@@ -204,8 +206,9 @@ CoordsConstProxy DataConstProxy::coords() const noexcept {
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsConstProxy DataConstProxy::labels() const noexcept {
   if (!isSparse())
-    return LabelsConstProxy(*m_dataset);
-  return LabelsConstProxy(*m_dataset, sparseDim(), &m_data->labels);
+    return m_dataset->labels();
+  return LabelsConstProxy(makeProxyItems<std::string_view>(
+      m_dataset->m_labels, sparseDim(), &m_data->labels));
 }
 
 } // namespace scipp::core::next
