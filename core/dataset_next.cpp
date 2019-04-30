@@ -8,6 +8,40 @@
 
 namespace scipp::core::next {
 
+template <class T>
+std::pair<const Variable *, Variable *> makeProxyItem(T *variable) {
+  if constexpr (std::is_const_v<T>)
+    return {variable, nullptr};
+  else
+    return {variable, variable};
+}
+
+template <class Key, class T1, class T2 = void>
+auto makeProxyItems(T1 &coords, const Dim sparseDim = Dim::Invalid,
+                    T2 *sparse = nullptr) {
+  std::map<Key, std::pair<const Variable *, Variable *>> items;
+  if (sparseDim == Dim::Invalid) {
+    for (auto &item : coords)
+      items.emplace(item.first, makeProxyItem(&item.second));
+  } else {
+    // Shadow all global coordinates that depend on the sparse dimension.
+    for (auto &item : coords)
+      if (!item.second.dimensions().contains(sparseDim))
+        items.emplace(item.first, makeProxyItem(&item.second));
+    if (sparse) {
+      if constexpr (std::is_same_v<T2, void>) {
+      } else if constexpr (std::is_same_v<T2, const Variable> ||
+                           std::is_same_v<T2, Variable>) {
+        items.emplace(sparseDim, makeProxyItem(&*sparse));
+      } else {
+        for (const auto &item : *sparse)
+          items.emplace(item.first, makeProxyItem(&item.second));
+      }
+    }
+  }
+  return items;
+}
+
 /// Return a const proxy to all coordinates of the dataset.
 ///
 /// This proxy includes only "dimension-coordinates". To access
