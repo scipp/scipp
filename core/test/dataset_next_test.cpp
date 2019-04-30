@@ -337,85 +337,100 @@ TEST(CoordsConstProxy, iterators) {
   ASSERT_EQ(it, coords.end());
 }
 
-TEST(DataConstProxy, isSparse_sparseDim) {
+template <typename T> class DataProxyTest : public ::testing::Test {
+public:
+  using proxy_type = T;
+};
+
+using DataProxyTypes = ::testing::Types<next::Dataset, const next::Dataset>;
+TYPED_TEST_CASE(DataProxyTest, DataProxyTypes);
+
+TYPED_TEST(DataProxyTest, isSparse_sparseDim) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
 
   d.setValues("dense", makeVariable<double>({}));
-  ASSERT_FALSE(d["dense"].isSparse());
-  ASSERT_EQ(d["dense"].sparseDim(), Dim::Invalid);
+  ASSERT_FALSE(d_ref["dense"].isSparse());
+  ASSERT_EQ(d_ref["dense"].sparseDim(), Dim::Invalid);
 
   d.setValues("sparse_data", makeSparseVariable<double>({}, Dim::X));
-  ASSERT_TRUE(d["sparse_data"].isSparse());
-  ASSERT_EQ(d["sparse_data"].sparseDim(), Dim::X);
+  ASSERT_TRUE(d_ref["sparse_data"].isSparse());
+  ASSERT_EQ(d_ref["sparse_data"].sparseDim(), Dim::X);
 
   d.setSparseCoord("sparse_coord", makeSparseVariable<double>({}, Dim::X));
-  ASSERT_TRUE(d["sparse_coord"].isSparse());
-  ASSERT_EQ(d["sparse_coord"].sparseDim(), Dim::X);
+  ASSERT_TRUE(d_ref["sparse_coord"].isSparse());
+  ASSERT_EQ(d_ref["sparse_coord"].sparseDim(), Dim::X);
 }
 
-TEST(DataConstProxy, dims_shape) {
+TYPED_TEST(DataProxyTest, dims_shape) {
   next::Dataset d;
   const auto dense = makeVariable<double>({{Dim::X, 1}, {Dim::Y, 2}});
   const auto sparse =
       makeSparseVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z);
+  typename TestFixture::proxy_type &d_ref(d);
 
   d.setValues("dense", dense);
-  ASSERT_EQ(d["dense"].dims(), dense.dimensions());
-  ASSERT_TRUE(equals(d["dense"].shape(), {1, 2}));
+  ASSERT_EQ(d_ref["dense"].dims(), dense.dimensions());
+  ASSERT_TRUE(equals(d_ref["dense"].shape(), {1, 2}));
 
   // Sparse dimension is currently not included in dims(). It is unclear whether
   // this is the right choice. An unfinished idea involves returning
   // std::tuple<std::span<const Dim>, std::optional<Dim>> instead, using `auto [
   // dims, sparse ] = data.dims();`.
   d.setValues("sparse_data", sparse);
-  ASSERT_EQ(d["sparse_data"].dims(), dense.dimensions());
-  ASSERT_EQ(d["sparse_data"].dims(), sparse.dimensions());
-  ASSERT_TRUE(equals(d["sparse_data"].shape(), {1, 2}));
+  ASSERT_EQ(d_ref["sparse_data"].dims(), dense.dimensions());
+  ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dimensions());
+  ASSERT_TRUE(equals(d_ref["sparse_data"].shape(), {1, 2}));
 
   d.setSparseCoord("sparse_coord", sparse);
-  ASSERT_EQ(d["sparse_coord"].dims(), dense.dimensions());
-  ASSERT_EQ(d["sparse_coord"].dims(), sparse.dimensions());
-  ASSERT_TRUE(equals(d["sparse_coord"].shape(), {1, 2}));
+  ASSERT_EQ(d_ref["sparse_coord"].dims(), dense.dimensions());
+  ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dimensions());
+  ASSERT_TRUE(equals(d_ref["sparse_coord"].shape(), {1, 2}));
 }
 
-TEST(DataConstProxy, unit) {
+TYPED_TEST(DataProxyTest, unit) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
 
   d.setValues("dense", makeVariable<double>({}));
-  EXPECT_EQ(d["dense"].unit(), units::dimensionless);
+  EXPECT_EQ(d_ref["dense"].unit(), units::dimensionless);
 }
 
-TEST(DataConstProxy, unit_access_fails_without_values) {
+TYPED_TEST(DataProxyTest, unit_access_fails_without_values) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
   d.setSparseCoord("sparse", makeSparseVariable<double>({}, Dim::X));
-  EXPECT_ANY_THROW(d["sparse"].unit());
+  EXPECT_ANY_THROW(d_ref["sparse"].unit());
 }
 
-TEST(DataConstProxy, coords) {
+TYPED_TEST(DataProxyTest, coords) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
   const auto var = makeVariable<double>({Dim::X, 3});
   d.setCoord(Dim::X, var);
   d.setValues("a", var);
 
-  ASSERT_NO_THROW(d["a"].coords());
-  ASSERT_EQ(d["a"].coords().size(), 1);
-  ASSERT_NO_THROW(d["a"].coords()[Dim::X]);
-  ASSERT_EQ(d["a"].coords()[Dim::X], var);
+  ASSERT_NO_THROW(d_ref["a"].coords());
+  ASSERT_EQ(d_ref["a"].coords().size(), 1);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::X], var);
 }
 
-TEST(DataConstProxy, coords_sparse) {
+TYPED_TEST(DataProxyTest, coords_sparse) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
   const auto var = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
   d.setSparseCoord("a", var);
 
-  ASSERT_NO_THROW(d["a"].coords());
-  ASSERT_EQ(d["a"].coords().size(), 1);
-  ASSERT_NO_THROW(d["a"].coords()[Dim::Y]);
-  ASSERT_EQ(d["a"].coords()[Dim::Y], var);
+  ASSERT_NO_THROW(d_ref["a"].coords());
+  ASSERT_EQ(d_ref["a"].coords().size(), 1);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::Y], var);
 }
 
-TEST(DataConstProxy, coords_sparse_shadow) {
+TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
   const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
@@ -423,17 +438,18 @@ TEST(DataConstProxy, coords_sparse_shadow) {
   d.setCoord(Dim::Y, y);
   d.setSparseCoord("a", sparse);
 
-  ASSERT_NO_THROW(d["a"].coords());
-  ASSERT_EQ(d["a"].coords().size(), 2);
-  ASSERT_NO_THROW(d["a"].coords()[Dim::X]);
-  ASSERT_NO_THROW(d["a"].coords()[Dim::Y]);
-  ASSERT_EQ(d["a"].coords()[Dim::X], x);
-  ASSERT_NE(d["a"].coords()[Dim::Y], y);
-  ASSERT_EQ(d["a"].coords()[Dim::Y], sparse);
+  ASSERT_NO_THROW(d_ref["a"].coords());
+  ASSERT_EQ(d_ref["a"].coords().size(), 2);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::X], x);
+  ASSERT_NE(d_ref["a"].coords()[Dim::Y], y);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::Y], sparse);
 }
 
-TEST(DataConstProxy, coords_sparse_shadow_even_if_no_coord) {
+TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
   const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
@@ -441,40 +457,42 @@ TEST(DataConstProxy, coords_sparse_shadow_even_if_no_coord) {
   d.setCoord(Dim::Y, y);
   d.setValues("a", sparse);
 
-  ASSERT_NO_THROW(d["a"].coords());
+  ASSERT_NO_THROW(d_ref["a"].coords());
   // Dim::Y is sparse, so the global (non-sparse) Y coordinate does not make
   // sense and is thus hidden.
-  ASSERT_EQ(d["a"].coords().size(), 1);
-  ASSERT_NO_THROW(d["a"].coords()[Dim::X]);
-  ASSERT_ANY_THROW(d["a"].coords()[Dim::Y]);
-  ASSERT_EQ(d["a"].coords()[Dim::X], x);
+  ASSERT_EQ(d_ref["a"].coords().size(), 1);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
+  ASSERT_ANY_THROW(d_ref["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::X], x);
 }
 
-TEST(DataConstProxy, hasValues_hasVariances) {
+TYPED_TEST(DataProxyTest, hasValues_hasVariances) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
   const auto var = makeVariable<double>({});
 
   d.setValues("a", var);
   d.setValues("b", var);
   d.setVariances("b", var);
 
-  ASSERT_TRUE(d["a"].hasValues());
-  ASSERT_FALSE(d["a"].hasVariances());
+  ASSERT_TRUE(d_ref["a"].hasValues());
+  ASSERT_FALSE(d_ref["a"].hasVariances());
 
-  ASSERT_TRUE(d["b"].hasValues());
-  ASSERT_TRUE(d["b"].hasVariances());
+  ASSERT_TRUE(d_ref["b"].hasValues());
+  ASSERT_TRUE(d_ref["b"].hasVariances());
 }
 
-TEST(DataConstProxy, values_variances) {
+TYPED_TEST(DataProxyTest, values_variances) {
   next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
   const auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
   d.setValues("a", var);
   d.setVariances("a", var);
 
-  ASSERT_EQ(d["a"].values(), var);
-  ASSERT_EQ(d["a"].variances(), var);
-  ASSERT_TRUE(equals(d["a"].values<double>(), {1, 2}));
-  ASSERT_TRUE(equals(d["a"].variances<double>(), {1, 2}));
-  ASSERT_ANY_THROW(d["a"].values<float>());
-  ASSERT_ANY_THROW(d["a"].variances<float>());
+  ASSERT_EQ(d_ref["a"].values(), var);
+  ASSERT_EQ(d_ref["a"].variances(), var);
+  ASSERT_TRUE(equals(d_ref["a"].template values<double>(), {1, 2}));
+  ASSERT_TRUE(equals(d_ref["a"].template variances<double>(), {1, 2}));
+  ASSERT_ANY_THROW(d_ref["a"].template values<float>());
+  ASSERT_ANY_THROW(d_ref["a"].template variances<float>());
 }
