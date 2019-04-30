@@ -68,12 +68,20 @@ LabelsProxy Dataset::labels() noexcept {
   return LabelsProxy(makeProxyItems<std::string_view>(m_labels));
 }
 
-/// Return a proxy to data and coordinates with given name.
+/// Return a const proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);
   if (it == m_data.end())
     throw std::runtime_error("Could not find data with name " + name + ".");
   return DataConstProxy(*this, it->second);
+}
+
+/// Return a proxy to data and coordinates with given name.
+DataProxy Dataset::operator[](const std::string &name) {
+  const auto it = m_data.find(name);
+  if (it == m_data.end())
+    throw std::runtime_error("Could not find data with name " + name + ".");
+  return DataProxy(*this, it->second);
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
@@ -226,7 +234,7 @@ units::Unit DataConstProxy::unit() const {
   throw std::runtime_error("Data without values, unit is undefined.");
 }
 
-/// Return a proxy to all coordinates of the data proxy.
+/// Return a const proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
@@ -238,7 +246,7 @@ CoordsConstProxy DataConstProxy::coords() const noexcept {
                           m_data->coord ? &*m_data->coord : nullptr));
 }
 
-/// Return a proxy to all labels of the data proxy.
+/// Return a const proxy to all labels of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
@@ -247,6 +255,29 @@ LabelsConstProxy DataConstProxy::labels() const noexcept {
     return m_dataset->labels();
   return LabelsConstProxy(makeProxyItems<std::string_view>(
       m_dataset->m_labels, sparseDim(), &m_data->labels));
+}
+
+/// Return a proxy to all coordinates of the data proxy.
+///
+/// If the data has a sparse dimension the returned proxy will not contain any
+/// of the dataset's coordinates that depends on the sparse dimension.
+CoordsProxy DataProxy::coords() const noexcept {
+  if (!isSparse())
+    return m_mutableDataset->coords();
+  return CoordsProxy(makeProxyItems<Dim>(
+      m_mutableDataset->m_coords, sparseDim(),
+      m_mutableData->coord ? &*m_mutableData->coord : nullptr));
+}
+
+/// Return a proxy to all labels of the data proxy.
+///
+/// If the data has a sparse dimension the returned proxy will not contain any
+/// of the dataset's labels that depends on the sparse dimension.
+LabelsProxy DataProxy::labels() const noexcept {
+  if (!isSparse())
+    return m_mutableDataset->labels();
+  return LabelsProxy(makeProxyItems<std::string_view>(
+      m_mutableDataset->m_labels, sparseDim(), &m_mutableData->labels));
 }
 
 } // namespace scipp::core::next

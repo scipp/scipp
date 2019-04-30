@@ -50,7 +50,7 @@ struct DatasetData {
 };
 } // namespace detail
 
-/// Proxy for a data item and related coordinates of Dataset.
+/// Const proxy for a data item and related coordinates of Dataset.
 class DataConstProxy {
 public:
   DataConstProxy(const Dataset &dataset, const detail::DatasetData &data)
@@ -70,7 +70,7 @@ public:
   /// Return true if the proxy contains data variances.
   bool hasVariances() const noexcept { return m_data->variances.has_value(); }
 
-  /// Return untyped or typed proxy for data values.
+  /// Return untyped or typed const proxy for data values.
   template <class T = void> auto values() const {
     if constexpr (std::is_same_v<T, void>)
       return *m_data->values;
@@ -78,7 +78,7 @@ public:
       return m_data->values->span<T>();
   }
 
-  /// Return untyped or typed proxy for data variances.
+  /// Return untyped or typed const proxy for data variances.
   template <class T = void> auto variances() const {
     if constexpr (std::is_same_v<T, void>)
       return *m_data->variances;
@@ -89,6 +89,37 @@ public:
 private:
   const Dataset *m_dataset;
   const detail::DatasetData *m_data;
+};
+
+/// Proxy for a data item and related coordinates of Dataset.
+class DataProxy : public DataConstProxy {
+public:
+  DataProxy(Dataset &dataset, detail::DatasetData &data)
+      : DataConstProxy(dataset, data), m_mutableDataset(&dataset),
+        m_mutableData(&data) {}
+
+  CoordsProxy coords() const noexcept;
+  LabelsProxy labels() const noexcept;
+
+  /// Return untyped or typed proxy for data values.
+  template <class T = void> auto values() const {
+    if constexpr (std::is_same_v<T, void>)
+      return *m_mutableData->values;
+    else
+      return m_mutableData->values->span<T>();
+  }
+
+  /// Return untyped or typed proxy for data variances.
+  template <class T = void> auto variances() const {
+    if constexpr (std::is_same_v<T, void>)
+      return *m_mutableData->variances;
+    else
+      return m_mutableData->variances->span<T>();
+  }
+
+private:
+  Dataset *m_mutableDataset;
+  detail::DatasetData *m_mutableData;
 };
 
 /// Collection of data arrays.
@@ -119,6 +150,7 @@ public:
   LabelsProxy labels() noexcept;
 
   DataConstProxy operator[](const std::string &name) const;
+  DataProxy operator[](const std::string &name);
 
   auto begin() const && = delete;
   /// Return iterator to the beginning of all data items.
@@ -142,6 +174,7 @@ public:
 
 private:
   friend class DataConstProxy;
+  friend class DataProxy;
 
   std::map<Dim, Variable> m_coords;
   std::map<std::string, Variable> m_labels;
@@ -175,12 +208,12 @@ public:
   }
 
   auto begin() const && = delete;
-  /// Return const iterator to the beginning of all coordinates.
+  /// Return const iterator to the beginning of all items.
   auto begin() const &noexcept {
     return boost::make_transform_iterator(m_items.begin(), make_const_item);
   }
   auto end() const && = delete;
-  /// Return const iterator to the end of all coordinates.
+  /// Return const iterator to the end of all items.
   auto end() const &noexcept {
     return boost::make_transform_iterator(m_items.end(), make_const_item);
   }
@@ -210,12 +243,12 @@ public:
   }
 
   auto begin() const && = delete;
-  /// Return iterator to the beginning of all coordinates.
+  /// Return iterator to the beginning of all items.
   auto begin() const &noexcept {
     return boost::make_transform_iterator(derived().items().begin(), make_item);
   }
   auto end() const && = delete;
-  /// Return iterator to the end of all coordinates.
+  /// Return iterator to the end of all items.
   auto end() const &noexcept {
     return boost::make_transform_iterator(derived().items().end(), make_item);
   }
