@@ -44,7 +44,7 @@ public:
 
   bool isSparse() const noexcept;
   Dim sparseDim() const noexcept;
-  scipp::span<const Dim> dims() const noexcept;
+  Dimensions dims() const noexcept;
   scipp::span<const index> shape() const noexcept;
   units::Unit unit() const;
 

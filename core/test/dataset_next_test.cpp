@@ -341,23 +341,26 @@ TEST(DataConstProxy, isSparse_sparseDim) {
 
 TEST(DataConstProxy, dims_shape) {
   next::Dataset d;
+  const auto dense = makeVariable<double>({{Dim::X, 1}, {Dim::Y, 2}});
+  const auto sparse =
+      makeSparseVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z);
 
-  d.setValues("dense", makeVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}));
-  ASSERT_TRUE(equals(d["dense"].dims(), {Dim::X, Dim::Y}));
+  d.setValues("dense", dense);
+  ASSERT_EQ(d["dense"].dims(), dense.dimensions());
   ASSERT_TRUE(equals(d["dense"].shape(), {1, 2}));
 
   // Sparse dimension is currently not included in dims(). It is unclear whether
   // this is the right choice. An unfinished idea involves returning
   // std::tuple<std::span<const Dim>, std::optional<Dim>> instead, using `auto [
   // dims, sparse ] = data.dims();`.
-  d.setValues("sparse_data",
-              makeSparseVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z));
-  ASSERT_TRUE(equals(d["sparse_data"].dims(), {Dim::X, Dim::Y}));
+  d.setValues("sparse_data", sparse);
+  ASSERT_EQ(d["sparse_data"].dims(), dense.dimensions());
+  ASSERT_EQ(d["sparse_data"].dims(), sparse.dimensions());
   ASSERT_TRUE(equals(d["sparse_data"].shape(), {1, 2}));
 
-  d.setSparseCoord("sparse_coord", makeSparseVariable<double>(
-                                       {{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z));
-  ASSERT_TRUE(equals(d["sparse_coord"].dims(), {Dim::X, Dim::Y}));
+  d.setSparseCoord("sparse_coord", sparse);
+  ASSERT_EQ(d["sparse_coord"].dims(), dense.dimensions());
+  ASSERT_EQ(d["sparse_coord"].dims(), sparse.dimensions());
   ASSERT_TRUE(equals(d["sparse_coord"].shape(), {1, 2}));
 }
 

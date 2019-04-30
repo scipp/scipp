@@ -151,12 +151,12 @@ Dim DataConstProxy::sparseDim() const noexcept {
   return Dim::Invalid;
 }
 
-/// Return an ordered range of dimension labels, excluding a potential sparse
-/// dimension.
-scipp::span<const Dim> DataConstProxy::dims() const noexcept {
+/// Return an ordered mapping of dimension labels to extents, excluding a
+/// potentialy sparse dimensions.
+Dimensions DataConstProxy::dims() const noexcept {
   if (hasValues())
-    return m_data->values->dimensions().labels();
-  return m_data->coord->dimensions().labels();
+    return m_data->values->dimensions();
+  return m_data->coord->dimensions();
 }
 
 /// Return an ordered range of dimension extents, excluding a potential sparse
