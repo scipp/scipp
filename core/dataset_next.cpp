@@ -34,9 +34,11 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
   m_coords.insert_or_assign(dim, std::move(coord));
 }
 
-/// Set (insert or replace) the labels for the given name.
-void Dataset::setLabels(const std::string &name, Variable labels) {
-  m_labels.insert_or_assign(name, std::move(labels));
+/// Set (insert or replace) the labels for the given label name.
+///
+/// Note that the label name has no relation to names of data items.
+void Dataset::setLabels(const std::string &labelName, Variable labels) {
+  m_labels.insert_or_assign(labelName, std::move(labels));
 }
 
 template <class A, class B>
@@ -102,11 +104,33 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
   if (m_data.count(name)) {
     const auto &data = m_data.at(name);
     if ((data.values && (data.values->sparseDim() != coord.sparseDim())) ||
-        (data.variances && (data.variances->sparseDim() != coord.sparseDim())))
+        (!data.labels.empty() &&
+         (data.labels.begin()->second.sparseDim() != coord.sparseDim())))
       throw std::runtime_error("Cannot set sparse coordinate if values or "
                                "variances are not sparse.");
   }
   m_data[name].coord = std::move(coord);
+}
+
+/// Set (insert or replace) the sparse labels with given name and label name.
+void Dataset::setSparseLabels(const std::string &name,
+                              const std::string &labelName, Variable labels) {
+  if (!labels.isSparse())
+    throw std::runtime_error("Variable passed to Dataset::setSparseLabels does "
+                             "not contain sparse data.");
+  if (m_data.count(name)) {
+    const auto &data = m_data.at(name);
+    if ((data.values && (data.values->sparseDim() != labels.sparseDim())) ||
+        (data.coord && (data.coord->sparseDim() != labels.sparseDim())))
+      throw std::runtime_error("Cannot set sparse labels if values or "
+                               "variances are not sparse.");
+  }
+  const auto &data = m_data.at(name);
+  if (!data.values && !data.coord)
+    throw std::runtime_error(
+        "Cannot set sparse labels: Require either values or a sparse coord.");
+
+  m_data[name].labels.insert_or_assign(labelName, std::move(labels));
 }
 
 /// Return true if the proxy represents sparse data.

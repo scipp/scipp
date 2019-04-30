@@ -116,10 +116,12 @@ public:
   }
 
   void setCoord(const Dim dim, Variable coord);
-  void setLabels(const std::string &name, Variable labels);
+  void setLabels(const std::string &labelName, Variable labels);
   void setValues(const std::string &name, Variable values);
   void setVariances(const std::string &name, Variable variances);
   void setSparseCoord(const std::string &name, Variable coord);
+  void setSparseLabels(const std::string &name, const std::string &labelName,
+                       Variable labels);
 
 private:
   friend class CoordsConstProxy;
@@ -132,7 +134,7 @@ private:
   std::map<std::string, detail::DatasetData> m_data;
 };
 
-/// Proxy for accessing coordinates of Dataset, DataProxy, and DataConstProxy.
+/// Common functionality for other proxy classes.
 template <class Key> class ConstProxy {
 private:
   static constexpr auto make_const_item = [](const auto &item) {
@@ -166,6 +168,7 @@ protected:
   std::map<Key, const Variable *> m_items;
 };
 
+/// Proxy for accessing coordinates of Dataset, DataProxy, and DataConstProxy.
 class CoordsConstProxy : public ConstProxy<Dim> {
 public:
   explicit CoordsConstProxy(
@@ -185,6 +188,7 @@ public:
   }
 };
 
+/// Proxy for accessing labels of Dataset, DataProxy, and DataConstProxy.
 class LabelsConstProxy : public ConstProxy<std::string_view> {
 public:
   explicit LabelsConstProxy(

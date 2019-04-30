@@ -189,6 +189,35 @@ TEST(DatasetNext, setSparseCoord) {
   ASSERT_NO_THROW(d["a"]);
 }
 
+TEST(DatasetNext, setSparseLabels_missing_values_or_coord) {
+  next::Dataset d;
+  const auto sparse = makeSparseVariable<double>({}, Dim::X);
+
+  ASSERT_ANY_THROW(d.setSparseLabels("a", "x", sparse));
+  d.setSparseCoord("a", sparse);
+  ASSERT_NO_THROW(d.setSparseLabels("a", "x", sparse));
+}
+
+TEST(DatasetNext, setSparseLabels_not_sparse_fail) {
+  next::Dataset d;
+  const auto dense = makeVariable<double>({});
+  const auto sparse = makeSparseVariable<double>({}, Dim::X);
+
+  d.setSparseCoord("a", sparse);
+  ASSERT_ANY_THROW(d.setSparseLabels("a", "x", dense));
+}
+
+TEST(DatasetNext, setSparseLabels) {
+  next::Dataset d;
+  const auto sparse = makeSparseVariable<double>({}, Dim::X);
+  d.setSparseCoord("a", sparse);
+
+  ASSERT_NO_THROW(d.setSparseLabels("a", "x", sparse));
+  ASSERT_EQ(d.size(), 1);
+  ASSERT_NO_THROW(d["a"]);
+  ASSERT_EQ(d["a"].labels().size(), 1);
+}
+
 TEST(DatasetNext, iterators_empty_dataset) {
   next::Dataset d;
   ASSERT_NO_THROW(d.begin());
