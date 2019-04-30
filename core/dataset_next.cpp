@@ -8,7 +8,7 @@
 
 namespace scipp::core::next {
 
-/// Return a proxy to all coordinates of the dataset.
+/// Return a const proxy to all coordinates of the dataset.
 ///
 /// This proxy includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
@@ -16,10 +16,19 @@ CoordsConstProxy Dataset::coords() const noexcept {
   return CoordsConstProxy(*this);
 }
 
-/// Return a proxy to all labels of the dataset.
+/// Return a proxy to all coordinates of the dataset.
+///
+/// This proxy includes only "dimension-coordinates". To access
+/// non-dimension-coordinates" see labels().
+CoordsProxy Dataset::coords() noexcept { return CoordsProxy(*this); }
+
+/// Return a const proxy to all labels of the dataset.
 LabelsConstProxy Dataset::labels() const noexcept {
   return LabelsConstProxy(*this);
 }
+
+/// Return a proxy to all labels of the dataset.
+LabelsProxy Dataset::labels() noexcept { return LabelsProxy(*this); }
 
 /// Return a proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string &name) const {

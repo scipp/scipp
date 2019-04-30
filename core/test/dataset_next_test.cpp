@@ -291,6 +291,20 @@ TEST(CoordsConstProxy, item_access) {
   ASSERT_EQ(coords[Dim::Y], y);
 }
 
+TEST(CoordsConstProxy, item_write) {
+  next::Dataset d;
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+
+  const auto coords = d.coords();
+  coords[Dim::X].span<double>()[0] += 0.5;
+  coords[Dim::Y].span<double>()[0] += 0.5;
+  ASSERT_TRUE(equals(coords[Dim::X].span<double>(), {1.5, 2.0, 3.0}));
+  ASSERT_TRUE(equals(coords[Dim::Y].span<double>(), {4.5, 5.0}));
+}
+
 TEST(CoordsConstProxy, iterators_empty_coords) {
   next::Dataset d;
   const auto coords = d.coords();
