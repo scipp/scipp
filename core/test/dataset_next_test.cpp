@@ -417,6 +417,8 @@ TEST(CoordsConstProxy, slice_of_slice) {
 
   check_slice_of_slice(coords.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
   check_slice_of_slice(coords.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
+  check_slice_of_slice(coords.slice({Dim::X, 1, 3}, {Dim::Y, 1, 2}));
+  check_slice_of_slice(coords.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
 }
 
 TEST(CoordsConstProxy, slice_return_type) {

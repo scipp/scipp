@@ -279,6 +279,16 @@ public:
     return sliced;
   }
 
+  ConstProxy slice(const Dataset::Slice slice1,
+                   const Dataset::Slice slice2) const {
+    return slice(slice1).slice(slice2);
+  }
+
+  ConstProxy slice(const Dataset::Slice slice1, const Dataset::Slice slice2,
+                   const Dataset::Slice slice3) const {
+    return slice(slice1, slice2).slice(slice3);
+  }
+
   const auto &items() const noexcept { return m_items; }
   const auto &slices() const noexcept { return m_slices; }
 
@@ -324,6 +334,16 @@ public:
 
   MutableProxy slice(const Dataset::Slice slice) const {
     return MutableProxy(Base::slice(slice));
+  }
+
+  MutableProxy slice(const Dataset::Slice slice1,
+                     const Dataset::Slice slice2) const {
+    return slice(slice1).slice(slice2);
+  }
+
+  MutableProxy slice(const Dataset::Slice slice1, const Dataset::Slice slice2,
+                     const Dataset::Slice slice3) const {
+    return slice(slice1, slice2).slice(slice3);
   }
 };
 
