@@ -86,7 +86,6 @@ public:
   bool isSparse() const noexcept;
   Dim sparseDim() const noexcept;
   Dimensions dims() const noexcept;
-  scipp::span<const index> shape() const noexcept;
   units::Unit unit() const;
 
   CoordsConstProxy coords() const noexcept;
@@ -108,10 +107,9 @@ public:
   /// Return untyped or typed const proxy for data variances.
   template <class T = void> auto variances() const {
     if constexpr (std::is_same_v<T, void>)
-      // TODO slice
-      return *m_data->variances;
+      return detail::makeSlice(*m_data->variances, slices());
     else
-      return m_data->variances->span<T>();
+      return detail::makeSlice(*m_data->variances, slices()).template span<T>();
   }
 
   DataConstProxy slice(const Slice slice) const {
@@ -150,10 +148,10 @@ public:
   /// Return untyped or typed proxy for data variances.
   template <class T = void> auto variances() const {
     if constexpr (std::is_same_v<T, void>)
-      // TODO slice
-      return *m_mutableData->variances;
+      return detail::makeSlice(*m_mutableData->variances, slices());
     else
-      return m_mutableData->variances->span<T>();
+      return detail::makeSlice(*m_mutableData->variances, slices())
+          .template span<T>();
   }
 
 private:

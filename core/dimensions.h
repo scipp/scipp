@@ -65,11 +65,13 @@ public:
     return volume;
   }
 
-  scipp::span<const scipp::index> shape() const noexcept {
+  scipp::span<const scipp::index> shape() const && = delete;
+  scipp::span<const scipp::index> shape() const &noexcept {
     return {m_shape, m_shape + m_ndim};
   }
 
-  scipp::span<const Dim> labels() const noexcept {
+  scipp::span<const Dim> labels() const && = delete;
+  scipp::span<const Dim> labels() const &noexcept {
     return {m_dims, m_dims + m_ndim};
   }
 

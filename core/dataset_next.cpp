@@ -228,20 +228,7 @@ Dim DataConstProxy::sparseDim() const noexcept {
 Dimensions DataConstProxy::dims() const noexcept {
   if (hasValues())
     return values().dimensions();
-  // TODO need to slice here
-  return m_data->coord->dimensions();
-}
-
-/// Return an ordered range of dimension extents, excluding a potential sparse
-/// dimension.
-///
-/// The first item in the range corresponds to the outermost dimension and the
-/// last item corresponds to the inntermost dimension of the underlying data.
-scipp::span<const index> DataConstProxy::shape() const noexcept {
-  if (hasValues())
-    return values().dimensions().shape();
-  // TODO need to slice here
-  return m_data->coord->dimensions().shape();
+  return detail::makeSlice(*m_data->coord, slices()).dimensions();
 }
 
 /// Return the unit of the data values.

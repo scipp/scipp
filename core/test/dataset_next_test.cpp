@@ -530,7 +530,7 @@ TYPED_TEST(DataProxyTest, isSparse_sparseDim) {
   ASSERT_EQ(d_ref["sparse_coord"].sparseDim(), Dim::X);
 }
 
-TYPED_TEST(DataProxyTest, dims_shape) {
+TYPED_TEST(DataProxyTest, dims) {
   next::Dataset d;
   const auto dense = makeVariable<double>({{Dim::X, 1}, {Dim::Y, 2}});
   const auto sparse =
@@ -539,7 +539,6 @@ TYPED_TEST(DataProxyTest, dims_shape) {
 
   d.setValues("dense", dense);
   ASSERT_EQ(d_ref["dense"].dims(), dense.dimensions());
-  ASSERT_TRUE(equals(d_ref["dense"].shape(), {1, 2}));
 
   // Sparse dimension is currently not included in dims(). It is unclear whether
   // this is the right choice. An unfinished idea involves returning
@@ -548,12 +547,10 @@ TYPED_TEST(DataProxyTest, dims_shape) {
   d.setValues("sparse_data", sparse);
   ASSERT_EQ(d_ref["sparse_data"].dims(), dense.dimensions());
   ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dimensions());
-  ASSERT_TRUE(equals(d_ref["sparse_data"].shape(), {1, 2}));
 
   d.setSparseCoord("sparse_coord", sparse);
   ASSERT_EQ(d_ref["sparse_coord"].dims(), dense.dimensions());
   ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dimensions());
-  ASSERT_TRUE(equals(d_ref["sparse_coord"].shape(), {1, 2}));
 }
 
 TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
