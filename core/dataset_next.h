@@ -36,6 +36,15 @@ using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string_view>;
 /// Proxy for accessing labels of Dataset and DataProxy.
 using LabelsProxy = MutableProxy<LabelsConstProxy>;
 
+/// Helper for passing slicing parameters.
+struct Slice {
+  Slice(const Dim dim, const scipp::index begin, const scipp::index end = -1)
+      : dim(dim), begin(begin), end(end) {}
+  Dim dim;
+  scipp::index begin;
+  scipp::index end;
+};
+
 namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {
@@ -48,6 +57,23 @@ struct DatasetData {
   /// Potential labels for the sparse dimension.
   std::map<std::string, Variable> labels;
 };
+
+template <class Var>
+auto makeSlice(Var &var,
+               const std::vector<std::pair<Slice, scipp::index>> &slices) {
+  std::conditional_t<std::is_const_v<Var>, ConstVariableSlice, VariableSlice>
+      slice(var);
+  for (const auto[params, extent] : slices) {
+    const auto[dim, begin, end] = params;
+    if (slice.dimensions().contains(dim)) {
+      if (slice.dimensions()[dim] == extent)
+        slice = slice(dim, begin, end);
+      else
+        slice = slice(dim, begin, end - 1);
+    }
+  }
+  return slice;
+}
 } // namespace detail
 
 /// Const proxy for a data item and related coordinates of Dataset.
@@ -191,14 +217,6 @@ public:
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
 
-  struct Slice {
-    Slice(const Dim dim, const scipp::index begin, const scipp::index end = -1)
-        : dim(dim), begin(begin), end(end) {}
-    Dim dim;
-    scipp::index begin;
-    scipp::index end;
-  };
-
   DatasetConstSlice slice(const Dim dim, const scipp::index begin,
                           const scipp::index end = -1) const;
   DatasetConstSlice slice(const Slice slice) const;
@@ -214,24 +232,6 @@ private:
   std::map<std::string, detail::DatasetData> m_data;
 };
 
-namespace detail {
-template <class VarSlice>
-auto makeSlice(
-    VarSlice slice,
-    const std::vector<std::pair<Dataset::Slice, scipp::index>> &slices) {
-  for (const auto[params, extent] : slices) {
-    const auto[dim, begin, end] = params;
-    if (slice.dimensions().contains(dim)) {
-      if (slice.dimensions()[dim] == extent)
-        slice = slice(dim, begin, end);
-      else
-        slice = slice(dim, begin, end - 1);
-    }
-  }
-  return slice;
-}
-} // namespace detail
-
 /// Common functionality for other const-proxy classes.
 template <class Id, class Key> class ConstProxy {
 private:
@@ -239,8 +239,7 @@ private:
     const ConstProxy *proxy;
     auto operator()(const auto &item) const {
       return std::pair<Key, ConstVariableSlice>(
-          item.first, detail::makeSlice(ConstVariableSlice(*item.second.first),
-                                        proxy->slices()));
+          item.first, detail::makeSlice(*item.second.first, proxy->slices()));
     }
   };
 
@@ -257,8 +256,7 @@ public:
 
   /// Return a const proxy to the coordinate for given dimension.
   ConstVariableSlice operator[](const Key key) const {
-    return detail::makeSlice(ConstVariableSlice(*m_items.at(key).first),
-                             m_slices);
+    return detail::makeSlice(*m_items.at(key).first, m_slices);
   }
 
   auto begin() const && = delete;
@@ -272,7 +270,7 @@ public:
     return boost::make_transform_iterator(m_items.end(), make_item{this});
   }
 
-  ConstProxy slice(const Dataset::Slice slice) const {
+  ConstProxy slice(const Slice slice) const {
     std::map<Key, std::pair<const Variable *, Variable *>> items;
     const auto &coord = *m_items.at(slice.dim).first;
     std::copy_if(m_items.begin(), m_items.end(),
@@ -302,13 +300,12 @@ public:
     return sliced;
   }
 
-  ConstProxy slice(const Dataset::Slice slice1,
-                   const Dataset::Slice slice2) const {
+  ConstProxy slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
   }
 
-  ConstProxy slice(const Dataset::Slice slice1, const Dataset::Slice slice2,
-                   const Dataset::Slice slice3) const {
+  ConstProxy slice(const Slice slice1, const Slice slice2,
+                   const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
 
@@ -317,7 +314,7 @@ public:
 
 protected:
   std::map<Key, std::pair<const Variable *, Variable *>> m_items;
-  std::vector<std::pair<Dataset::Slice, scipp::index>> m_slices;
+  std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
 /// Common functionality for other proxy classes.
@@ -327,8 +324,7 @@ private:
     const MutableProxy<Base> *proxy;
     auto operator()(const auto &item) const {
       return std::pair<typename Base::key_type, VariableSlice>(
-          item.first, detail::makeSlice(VariableSlice(*item.second.second),
-                                        proxy->slices()));
+          item.first, detail::makeSlice(*item.second.second, proxy->slices()));
     }
   };
 
@@ -339,8 +335,7 @@ public:
 
   /// Return a proxy to the coordinate for given dimension.
   VariableSlice operator[](const typename Base::key_type key) const {
-    return detail::makeSlice(VariableSlice(*Base::items().at(key).second),
-                             Base::slices());
+    return detail::makeSlice(*Base::items().at(key).second, Base::slices());
   }
 
   auto begin() const && = delete;
@@ -355,17 +350,16 @@ public:
     return boost::make_transform_iterator(Base::items().end(), make_item{this});
   }
 
-  MutableProxy slice(const Dataset::Slice slice) const {
+  MutableProxy slice(const Slice slice) const {
     return MutableProxy(Base::slice(slice));
   }
 
-  MutableProxy slice(const Dataset::Slice slice1,
-                     const Dataset::Slice slice2) const {
+  MutableProxy slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
   }
 
-  MutableProxy slice(const Dataset::Slice slice1, const Dataset::Slice slice2,
-                     const Dataset::Slice slice3) const {
+  MutableProxy slice(const Slice slice1, const Slice slice2,
+                     const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
 };
