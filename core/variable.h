@@ -268,7 +268,7 @@ public:
 
   scipp::index size() const { return m_object->size(); }
 
-  const Dimensions &dimensions() const && = delete;
+  Dimensions dimensions() const && { return m_object->dimensions(); }
   const Dimensions &dimensions() const & { return m_object->dimensions(); }
   void setDimensions(const Dimensions &dimensions);
 

@@ -66,6 +66,7 @@ auto makeSlice(Var &var,
   for (const auto[params, extent] : slices) {
     const auto[dim, begin, end] = params;
     if (slice.dimensions().contains(dim)) {
+      // TODO rewrite so we can use +1
       if (slice.dimensions()[dim] == extent)
         slice = slice(dim, begin, end);
       else
@@ -99,17 +100,24 @@ public:
   /// Return untyped or typed const proxy for data values.
   template <class T = void> auto values() const {
     if constexpr (std::is_same_v<T, void>)
-      return *m_data->values;
+      return detail::makeSlice(*m_data->values, slices());
     else
-      return m_data->values->span<T>();
+      return detail::makeSlice(*m_data->values, slices()).template span<T>();
   }
 
   /// Return untyped or typed const proxy for data variances.
   template <class T = void> auto variances() const {
     if constexpr (std::is_same_v<T, void>)
+      // TODO slice
       return *m_data->variances;
     else
       return m_data->variances->span<T>();
+  }
+
+  DataConstProxy slice(const Slice slice) const {
+    DataConstProxy sliced(*this);
+    sliced.m_slices.emplace_back(slice, dims()[slice.dim]);
+    return sliced;
   }
 
   const auto &slices() const noexcept { return m_slices; }
@@ -133,14 +141,16 @@ public:
   /// Return untyped or typed proxy for data values.
   template <class T = void> auto values() const {
     if constexpr (std::is_same_v<T, void>)
-      return *m_mutableData->values;
+      return detail::makeSlice(*m_mutableData->values, slices());
     else
-      return m_mutableData->values->span<T>();
+      return detail::makeSlice(*m_mutableData->values, slices())
+          .template span<T>();
   }
 
   /// Return untyped or typed proxy for data variances.
   template <class T = void> auto variances() const {
     if constexpr (std::is_same_v<T, void>)
+      // TODO slice
       return *m_mutableData->variances;
     else
       return m_mutableData->variances->span<T>();

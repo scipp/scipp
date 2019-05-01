@@ -30,8 +30,13 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
   if (sparseDim == Dim::Invalid) {
     for (auto &item : coords) {
       // We preserve only items that are part of the space spanned by the
-      // provided parent dimensions.
-      if (dims.contains(item.second.dimensions()))
+      // provided parent dimensions. Note that Dimensions::contains(const
+      // Dimensions &) is not doing the job here, since the extents may differ
+      // before slicing.
+      const auto &labels = item.second.dimensions().labels();
+      if (std::all_of(labels.begin(), labels.end(), [&dims](const Dim label) {
+            return dims.contains(label);
+          }))
         items.emplace(item.first, makeProxyItem(&item.second));
     }
   } else {
@@ -222,7 +227,8 @@ Dim DataConstProxy::sparseDim() const noexcept {
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
   if (hasValues())
-    return m_data->values->dimensions();
+    return values().dimensions();
+  // TODO need to slice here
   return m_data->coord->dimensions();
 }
 
@@ -233,7 +239,8 @@ Dimensions DataConstProxy::dims() const noexcept {
 /// last item corresponds to the inntermost dimension of the underlying data.
 scipp::span<const index> DataConstProxy::shape() const noexcept {
   if (hasValues())
-    return m_data->values->dimensions().shape();
+    return values().dimensions().shape();
+  // TODO need to slice here
   return m_data->coord->dimensions().shape();
 }
 
