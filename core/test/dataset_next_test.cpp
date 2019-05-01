@@ -351,27 +351,72 @@ TEST(CoordsConstProxy, iterators) {
 
 TEST(CoordsConstProxy, slice) {
   next::Dataset d;
-  const auto x =
-      makeVariable<double>({{Dim::X, 3}, {Dim::Y, 2}}, {1, 2, 3, 4, 5, 6});
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   const auto coords = d.coords();
 
   const auto sliceX = coords.slice({Dim::X, 1});
-  ASSERT_ANY_THROW(sliceX[Dim::X]);
-  ASSERT_ANY_THROW(sliceX[Dim::Y]);
+  EXPECT_ANY_THROW(sliceX[Dim::X]);
+  EXPECT_ANY_THROW(sliceX[Dim::Y]);
+
+  const auto sliceDX = coords.slice({Dim::X, 1, 2});
+  EXPECT_EQ(sliceDX[Dim::X].dimensions(), Dimensions({Dim::X, 1}));
+  EXPECT_ANY_THROW(sliceDX[Dim::Y]);
+
+  const auto sliceY = coords.slice({Dim::Y, 1});
+  EXPECT_ANY_THROW(sliceY[Dim::X]);
+  EXPECT_ANY_THROW(sliceY[Dim::Y]);
+
+  const auto sliceDY = coords.slice({Dim::Y, 1, 2});
+  EXPECT_ANY_THROW(sliceDY[Dim::X]);
+  EXPECT_EQ(sliceDY[Dim::Y].dimensions(), Dimensions({Dim::Y, 1}));
+}
+
+auto make_dataset_2d_coord_x_1d_coord_y() {
+  next::Dataset d;
+  const auto x =
+      makeVariable<double>({{Dim::X, 3}, {Dim::Y, 2}}, {1, 2, 3, 4, 5, 6});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  return d;
+}
+
+TEST(CoordsConstProxy, slice_2D_coord) {
+  const auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto coords = d.coords();
+
+  const auto sliceX = coords.slice({Dim::X, 1});
+  EXPECT_ANY_THROW(sliceX[Dim::X]);
+  EXPECT_ANY_THROW(sliceX[Dim::Y]);
+
   const auto sliceDX = coords.slice({Dim::X, 1, 2});
   EXPECT_EQ(sliceDX[Dim::X].dimensions(),
             Dimensions({{Dim::X, 1}, {Dim::Y, 2}}));
-  ASSERT_ANY_THROW(sliceDX[Dim::Y]);
+  EXPECT_ANY_THROW(sliceDX[Dim::Y]);
 
   const auto sliceY = coords.slice({Dim::Y, 1});
-  ASSERT_ANY_THROW(sliceY[Dim::X]);
-  ASSERT_ANY_THROW(sliceY[Dim::Y]);
+  EXPECT_TRUE(equals(sliceY[Dim::X].span<double>(), {2, 4, 6}));
+  EXPECT_ANY_THROW(sliceY[Dim::Y]);
+
   const auto sliceDY = coords.slice({Dim::Y, 1, 2});
-  ASSERT_ANY_THROW(sliceDY[Dim::X]);
+  EXPECT_TRUE(equals(sliceY[Dim::X].span<double>(), {2, 4, 6}));
   EXPECT_EQ(sliceDY[Dim::Y].dimensions(), Dimensions({Dim::Y, 1}));
+}
+
+auto check_slice_of_slice = [](const auto slice) {
+  EXPECT_TRUE(equals(slice[Dim::X].template span<double>(), {4, 6}));
+  EXPECT_ANY_THROW(slice[Dim::Y]);
+};
+
+TEST(CoordsConstProxy, slice_of_slice) {
+  const auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto coords = d.coords();
+
+  check_slice_of_slice(coords.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
+  check_slice_of_slice(coords.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
 }
 
 // Using typed tests for common functionality of DataProxy and DataConstProxy.

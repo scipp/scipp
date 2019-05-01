@@ -265,9 +265,18 @@ public:
   }
 
   ConstProxy slice(const Dataset::Slice slice) const {
-    auto copy(*this);
-    copy.m_slices.push_back(slice);
-    return copy;
+    std::map<Key, std::pair<const Variable *, Variable *>> items;
+    std::copy_if(m_items.begin(), m_items.end(),
+                 std::inserter(items, items.end()), [slice](const auto &item) {
+                   // Delete coords that do not depend in dim, and coord of
+                   // sliced dimension if slice is not a range.
+                   return item.second.first->dimensions().contains(slice.dim) &&
+                          !((slice.end == -1) && (item.first == slice.dim));
+                 });
+    ConstProxy sliced(std::move(items));
+    sliced.m_slices = m_slices;
+    sliced.m_slices.push_back(slice);
+    return sliced;
   }
 
   const auto &items() const noexcept { return m_items; }
