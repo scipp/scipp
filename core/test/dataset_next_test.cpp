@@ -408,17 +408,32 @@ TEST(CoordsConstProxy, slice_2D_coord) {
 
 auto check_slice_of_slice = [](const auto slice) {
   EXPECT_TRUE(equals(slice[Dim::X].template span<double>(), {4, 6}));
-  EXPECT_TRUE(equals(slice[Dim::Y].template span<double>(), {2}));
+  EXPECT_ANY_THROW(slice[Dim::Y]);
 };
 
 TEST(CoordsConstProxy, slice_of_slice) {
   const auto d = make_dataset_2d_coord_x_1d_coord_y();
-  const auto coords = d.coords();
+  const auto cs = d.coords();
 
-  check_slice_of_slice(coords.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
-  check_slice_of_slice(coords.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
-  check_slice_of_slice(coords.slice({Dim::X, 1, 3}, {Dim::Y, 1, 2}));
-  check_slice_of_slice(coords.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
+  check_slice_of_slice(cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
+  check_slice_of_slice(cs.slice({Dim::Y, 1}).slice({Dim::X, 1, 3}));
+  check_slice_of_slice(cs.slice({Dim::X, 1, 3}, {Dim::Y, 1}));
+  check_slice_of_slice(cs.slice({Dim::Y, 1}, {Dim::X, 1, 3}));
+}
+
+auto check_slice_of_slice_range = [](const auto slice) {
+  EXPECT_TRUE(equals(slice[Dim::X].template span<double>(), {4, 6}));
+  EXPECT_TRUE(equals(slice[Dim::Y].template span<double>(), {2}));
+};
+
+TEST(CoordsConstProxy, slice_of_slice_range) {
+  const auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto cs = d.coords();
+
+  check_slice_of_slice_range(cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
+  check_slice_of_slice_range(cs.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
+  check_slice_of_slice_range(cs.slice({Dim::X, 1, 3}, {Dim::Y, 1, 2}));
+  check_slice_of_slice_range(cs.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
 }
 
 TEST(CoordsConstProxy, slice_return_type) {
