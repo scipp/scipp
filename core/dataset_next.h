@@ -112,9 +112,12 @@ public:
       return m_data->variances->span<T>();
   }
 
+  const auto &slices() const noexcept { return m_slices; }
+
 private:
   const Dataset *m_dataset;
   const detail::DatasetData *m_data;
+  std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
 /// Proxy for a data item and related coordinates of Dataset.
@@ -246,8 +249,9 @@ private:
 public:
   using key_type = Key;
 
-  ConstProxy(std::map<Key, std::pair<const Variable *, Variable *>> &&items)
-      : m_items(std::move(items)) {}
+  ConstProxy(std::map<Key, std::pair<const Variable *, Variable *>> &&items,
+             const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      : m_items(std::move(items)), m_slices(slices) {}
 
   /// Return the number of coordinates in the proxy.
   index size() const noexcept { return scipp::size(m_items); }

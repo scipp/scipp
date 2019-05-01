@@ -545,6 +545,19 @@ TYPED_TEST(DataProxyTest, dims_shape) {
   ASSERT_TRUE(equals(d_ref["sparse_coord"].shape(), {1, 2}));
 }
 
+TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
+  next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", var);
+
+  ASSERT_EQ(d_ref["a"].dims(), var.dimensions());
+}
+
 TYPED_TEST(DataProxyTest, unit) {
   next::Dataset d;
   typename TestFixture::proxy_type &d_ref(d);
@@ -621,6 +634,56 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
   ASSERT_ANY_THROW(d_ref["a"].coords()[Dim::Y]);
   ASSERT_EQ(d_ref["a"].coords()[Dim::X], x);
+}
+
+TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
+  next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", var);
+  const auto coords = d_ref["a"].coords();
+
+  ASSERT_EQ(coords.size(), 1);
+  ASSERT_NO_THROW(coords[Dim::X]);
+  ASSERT_EQ(coords[Dim::X], x);
+}
+
+TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
+  next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", var);
+  const auto coords = d_ref["a"].coords();
+
+  ASSERT_EQ(coords.size(), 1);
+  ASSERT_NO_THROW(coords[Dim::X]);
+  ASSERT_EQ(coords[Dim::X], x);
+}
+
+TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped_relevant) {
+  next::Dataset d;
+  typename TestFixture::proxy_type &d_ref(d);
+  const auto x = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
+  const auto y = makeVariable<double>({Dim::Y, 3});
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", var);
+  const auto coords = d_ref["a"].coords();
+
+  // This is a very special case which is probably unlikely to occur in
+  // practice. If the coordinate depends on extra dimensions and the data is
+  // not, it implies that the coordinate cannot be for this data item, so it is
+  // dropped.
+  ASSERT_EQ(coords.size(), 0);
 }
 
 TYPED_TEST(DataProxyTest, hasValues_hasVariances) {
