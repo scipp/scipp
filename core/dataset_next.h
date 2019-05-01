@@ -216,10 +216,18 @@ private:
 
 namespace detail {
 template <class VarSlice>
-auto makeSlice(VarSlice slice, const std::vector<Dataset::Slice> &slices) {
-  for (const auto[dim, begin, end] : slices)
-    if (slice.dimensions().contains(dim))
-      slice = slice(dim, begin, end);
+auto makeSlice(
+    VarSlice slice,
+    const std::vector<std::pair<Dataset::Slice, scipp::index>> &slices) {
+  for (const auto[params, extent] : slices) {
+    const auto[dim, begin, end] = params;
+    if (slice.dimensions().contains(dim)) {
+      if (slice.dimensions()[dim] == extent)
+        slice = slice(dim, begin, end);
+      else
+        slice = slice(dim, begin, end - 1);
+    }
+  }
   return slice;
 }
 } // namespace detail
@@ -266,16 +274,31 @@ public:
 
   ConstProxy slice(const Dataset::Slice slice) const {
     std::map<Key, std::pair<const Variable *, Variable *>> items;
+    const auto &coord = *m_items.at(slice.dim).first;
     std::copy_if(m_items.begin(), m_items.end(),
-                 std::inserter(items, items.end()), [slice](const auto &item) {
-                   // Delete coords that do not depend in dim, and coord of
-                   // sliced dimension if slice is not a range.
-                   return item.second.first->dimensions().contains(slice.dim) &&
-                          !((slice.end == -1) && (item.first == slice.dim));
+                 std::inserter(items, items.end()),
+                 [slice, &coord](const auto &item) {
+                   const auto &dims = item.second.first->dimensions();
+                   // Delete coords that do not depend on slice dim, unless the
+                   // sliced coord depends on this coord's dimension.
+                   if (!dims.contains(slice.dim) &&
+                       !coord.dimensions().contains(item.first))
+                     return false;
+                   // Delete coord of sliced dimension if slice is not a range.
+                   if ((slice.end == -1) && (item.first == slice.dim))
+                     return false;
+                   // If sliced dimension is bin edges and slice thickness is
+                   // not 2 or larger, delete other coords depending on the
+                   // sliced dimension.
+                   if (dims.contains(slice.dim) &&
+                       coord.dimensions()[slice.dim] == dims[slice.dim] + 1)
+                     if (slice.end - slice.begin < 2)
+                       return false;
+                   return true;
                  });
     ConstProxy sliced(std::move(items));
     sliced.m_slices = m_slices;
-    sliced.m_slices.push_back(slice);
+    sliced.m_slices.emplace_back(slice, coord.dimensions()[slice.dim]);
     return sliced;
   }
 
@@ -294,7 +317,7 @@ public:
 
 protected:
   std::map<Key, std::pair<const Variable *, Variable *>> m_items;
-  std::vector<Dataset::Slice> m_slices;
+  std::vector<std::pair<Dataset::Slice, scipp::index>> m_slices;
 };
 
 /// Common functionality for other proxy classes.

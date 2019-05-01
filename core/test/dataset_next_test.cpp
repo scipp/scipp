@@ -390,12 +390,12 @@ TEST(CoordsConstProxy, slice_2D_coord) {
 
   const auto sliceX = coords.slice({Dim::X, 1});
   EXPECT_ANY_THROW(sliceX[Dim::X]);
-  EXPECT_ANY_THROW(sliceX[Dim::Y]);
+  EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceDX = coords.slice({Dim::X, 1, 2});
   EXPECT_EQ(sliceDX[Dim::X].dimensions(),
             Dimensions({{Dim::X, 1}, {Dim::Y, 2}}));
-  EXPECT_ANY_THROW(sliceDX[Dim::Y]);
+  EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceY = coords.slice({Dim::Y, 1});
   EXPECT_TRUE(equals(sliceY[Dim::X].span<double>(), {2, 4, 6}));
@@ -408,7 +408,7 @@ TEST(CoordsConstProxy, slice_2D_coord) {
 
 auto check_slice_of_slice = [](const auto slice) {
   EXPECT_TRUE(equals(slice[Dim::X].template span<double>(), {4, 6}));
-  EXPECT_ANY_THROW(slice[Dim::Y]);
+  EXPECT_TRUE(equals(slice[Dim::Y].template span<double>(), {2}));
 };
 
 TEST(CoordsConstProxy, slice_of_slice) {
@@ -444,6 +444,38 @@ TEST(CoordsProxy, modify_slice) {
   const auto reference =
       makeVariable<double>({{Dim::X, 3}, {Dim::Y, 2}}, {1, 2, 0, 0, 5, 6});
   EXPECT_EQ(d.coords()[Dim::X], reference);
+}
+
+TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
+  next::Dataset d;
+  const auto x = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  const auto y_edges = makeVariable<double>({Dim::Y, 3}, {1, 2, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y_edges);
+  const auto coords = d.coords();
+
+  const auto sliceX = coords.slice({Dim::X, 1});
+  EXPECT_ANY_THROW(sliceX[Dim::X]);
+  EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
+
+  const auto sliceDX = coords.slice({Dim::X, 1, 2});
+  EXPECT_EQ(sliceDX[Dim::X].dimensions(),
+            Dimensions({{Dim::Y, 2}, {Dim::X, 1}}));
+  EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
+
+  const auto sliceY = coords.slice({Dim::Y, 1});
+  EXPECT_ANY_THROW(sliceY[Dim::X]);
+  EXPECT_ANY_THROW(sliceY[Dim::Y]);
+
+  const auto sliceY_edge = coords.slice({Dim::Y, 1, 2});
+  // The X coord is dropped if a single bin is in the range.
+  EXPECT_ANY_THROW(sliceY_edge[Dim::X]);
+  EXPECT_EQ(sliceY_edge[Dim::Y].dimensions(), Dimensions({Dim::Y, 1}));
+
+  const auto sliceY_bin = coords.slice({Dim::Y, 1, 3});
+  EXPECT_EQ(sliceY_bin[Dim::X].dimensions(),
+            Dimensions({{Dim::Y, 1}, {Dim::X, 2}}));
+  EXPECT_EQ(sliceY_bin[Dim::Y].dimensions(), Dimensions({Dim::Y, 2}));
 }
 
 // Using typed tests for common functionality of DataProxy and DataConstProxy.
