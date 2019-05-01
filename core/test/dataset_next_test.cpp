@@ -497,17 +497,6 @@ TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
 template <typename T> class DataProxyTest : public ::testing::Test {
 public:
   using proxy_type = T;
-
-  auto make_values_xy_coords_x_y() {
-    next::Dataset d;
-    const auto x = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
-    const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
-    const auto var = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}});
-    d.setCoord(Dim::X, x);
-    d.setCoord(Dim::Y, y);
-    d.setValues("a", var);
-    return d;
-  }
 };
 
 using DataProxyTypes = ::testing::Types<next::Dataset, const next::Dataset>;
@@ -725,55 +714,144 @@ TYPED_TEST(DataProxyTest, values_variances) {
   ASSERT_ANY_THROW(d_ref["a"].template variances<float>());
 }
 
-TYPED_TEST(DataProxyTest, slice_single) {
-  typename TestFixture::proxy_type d = TestFixture::make_values_xy_coords_x_y();
+template <typename T>
+class DataProxy_values_xy_coords_x_y : public ::testing::Test {
+protected:
+  T dataset = []() {
+    next::Dataset d;
+    const auto x = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
+    const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+    const auto var = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}});
+    d.setCoord(Dim::X, x);
+    d.setCoord(Dim::Y, y);
+    d.setValues("a", var);
+    return d;
+  }();
+};
+
+using DataProxyTypes = ::testing::Types<next::Dataset, const next::Dataset>;
+TYPED_TEST_CASE(DataProxy_values_xy_coords_x_y, DataProxyTypes);
+
+TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_single) {
+  auto &d = TestFixture::dataset;
 
   ASSERT_NO_THROW(d["a"].slice({Dim::X, 1}));
   const auto sliceX = d["a"].slice({Dim::X, 1});
   ASSERT_EQ(sliceX.dims(), Dimensions({Dim::Y, 3}));
 }
 
-TYPED_TEST(DataProxyTest, slice_length_1) {
-  typename TestFixture::proxy_type d = TestFixture::make_values_xy_coords_x_y();
+TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_length_1) {
+  auto &d = TestFixture::dataset;
 
   ASSERT_NO_THROW(d["a"].slice({Dim::X, 1, 2}));
   const auto sliceX = d["a"].slice({Dim::X, 1, 2});
   ASSERT_EQ(sliceX.dims(), Dimensions({{Dim::Y, 3}, {Dim::X, 1}}));
 }
 
-TYPED_TEST(DataProxyTest, slice) {
-  typename TestFixture::proxy_type d = TestFixture::make_values_xy_coords_x_y();
+TYPED_TEST(DataProxy_values_xy_coords_x_y, slice) {
+  auto &d = TestFixture::dataset;
 
   ASSERT_NO_THROW(d["a"].slice({Dim::X, 1, 3}));
   const auto sliceX = d["a"].slice({Dim::X, 1, 3});
   ASSERT_EQ(sliceX.dims(), Dimensions({{Dim::Y, 3}, {Dim::X, 2}}));
 }
 
-TYPED_TEST(DataProxyTest, slice_single_coords) {
-  typename TestFixture::proxy_type d = TestFixture::make_values_xy_coords_x_y();
+TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_single_coords) {
+  auto &d = TestFixture::dataset;
   const auto slice = d["a"].slice({Dim::X, 1});
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 1);
-  ASSERT_NO_THROW(coords[Dim::Y]);
+  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
 }
 
-TYPED_TEST(DataProxyTest, slice_length_1_coords) {
-  typename TestFixture::proxy_type d = TestFixture::make_values_xy_coords_x_y();
+TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_length_1_coords) {
+  auto &d = TestFixture::dataset;
   const auto slice = d["a"].slice({Dim::X, 1, 2});
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 2);
-  ASSERT_NO_THROW(coords[Dim::X]);
-  ASSERT_NO_THROW(coords[Dim::Y]);
+  ASSERT_EQ(coords[Dim::X].dimensions(), Dimensions({Dim::X, 1}));
+  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
 }
 
-TYPED_TEST(DataProxyTest, slice_coords) {
-  typename TestFixture::proxy_type d = TestFixture::make_values_xy_coords_x_y();
+TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_coords) {
+  auto &d = TestFixture::dataset;
   const auto slice = d["a"].slice({Dim::X, 1, 3});
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 2);
-  ASSERT_NO_THROW(coords[Dim::X]);
-  ASSERT_NO_THROW(coords[Dim::Y]);
+  ASSERT_EQ(coords[Dim::X].dimensions(), Dimensions({Dim::X, 2}));
+  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+}
+
+template <typename T>
+class DataProxy_values_xy_coords_xbins_y : public ::testing::Test {
+protected:
+  T dataset = []() {
+    next::Dataset d;
+    const auto x = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
+    const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+    const auto var = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
+    d.setCoord(Dim::X, x);
+    d.setCoord(Dim::Y, y);
+    d.setValues("a", var);
+    return d;
+  }();
+};
+
+using DataProxyTypes = ::testing::Types<next::Dataset, const next::Dataset>;
+TYPED_TEST_CASE(DataProxy_values_xy_coords_xbins_y, DataProxyTypes);
+
+TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_single) {
+  auto &d = TestFixture::dataset;
+
+  ASSERT_NO_THROW(d["a"].slice({Dim::X, 1}));
+  const auto sliceX = d["a"].slice({Dim::X, 1});
+  ASSERT_EQ(sliceX.dims(), Dimensions({Dim::Y, 3}));
+}
+
+TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_length_1) {
+  auto &d = TestFixture::dataset;
+
+  ASSERT_NO_THROW(d["a"].slice({Dim::X, 1, 2}));
+  const auto sliceX = d["a"].slice({Dim::X, 1, 2});
+  ASSERT_EQ(sliceX.dims(), Dimensions({{Dim::Y, 3}, {Dim::X, 1}}));
+}
+
+TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice) {
+  auto &d = TestFixture::dataset;
+
+  ASSERT_NO_THROW(d["a"].slice({Dim::X, 1, 3}));
+  const auto sliceX = d["a"].slice({Dim::X, 1, 3});
+  ASSERT_EQ(sliceX.dims(), Dimensions({{Dim::Y, 3}, {Dim::X, 2}}));
+}
+
+TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_single_coords) {
+  auto &d = TestFixture::dataset;
+  const auto slice = d["a"].slice({Dim::X, 1});
+  const auto coords = slice.coords();
+
+  ASSERT_EQ(coords.size(), 1);
+  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+}
+
+TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_length_1_coords) {
+  auto &d = TestFixture::dataset;
+  const auto slice = d["a"].slice({Dim::X, 1, 2});
+  const auto coords = slice.coords();
+
+  ASSERT_EQ(coords.size(), 2);
+  ASSERT_EQ(coords[Dim::X].dimensions(), Dimensions({Dim::X, 2}));
+  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+}
+
+TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_coords) {
+  auto &d = TestFixture::dataset;
+  const auto slice = d["a"].slice({Dim::X, 1, 3});
+  const auto coords = slice.coords();
+
+  ASSERT_EQ(coords.size(), 2);
+  ASSERT_EQ(coords[Dim::X].dimensions(), Dimensions({Dim::X, 3}));
+  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
 }
