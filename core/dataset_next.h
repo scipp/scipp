@@ -299,6 +299,8 @@ private:
     }
   };
 
+  explicit MutableProxy(Base &&base) : Base(std::move(base)) {}
+
 public:
   using Base::Base;
 
@@ -318,6 +320,10 @@ public:
   /// Return iterator to the end of all items.
   auto end() const &noexcept {
     return boost::make_transform_iterator(Base::items().end(), make_item{this});
+  }
+
+  MutableProxy slice(const Dataset::Slice slice) const {
+    return MutableProxy(Base::slice(slice));
   }
 };
 

@@ -419,6 +419,31 @@ TEST(CoordsConstProxy, slice_of_slice) {
   check_slice_of_slice(coords.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
 }
 
+TEST(CoordsConstProxy, slice_return_type) {
+  const next::Dataset d;
+  ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
+                              CoordsConstProxy>));
+}
+
+TEST(CoordsProxy, slice_return_type) {
+  next::Dataset d;
+  ASSERT_TRUE(
+      (std::is_same_v<decltype(d.coords().slice({Dim::X, 0})), CoordsProxy>));
+}
+
+TEST(CoordsProxy, modify_slice) {
+  auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto coords = d.coords();
+
+  const auto slice = coords.slice({Dim::X, 1, 2});
+  for (auto &x : slice[Dim::X].span<double>())
+    x = 0.0;
+
+  const auto reference =
+      makeVariable<double>({{Dim::X, 3}, {Dim::Y, 2}}, {1, 2, 0, 0, 5, 6});
+  EXPECT_EQ(d.coords()[Dim::X], reference);
+}
+
 // Using typed tests for common functionality of DataProxy and DataConstProxy.
 template <typename T> class DataProxyTest : public ::testing::Test {
 public:
