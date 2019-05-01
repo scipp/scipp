@@ -288,52 +288,37 @@ protected:
 };
 
 /// Common functionality for other proxy classes.
-template <class Derived, class Key> class MutableProxyMixin {
+template <class Base> class MutableProxy : public Base {
 private:
   struct make_item {
-    const Derived *proxy;
+    const MutableProxy<Base> *proxy;
     auto operator()(const auto &item) const {
-      return std::pair<Key, VariableSlice>(
+      return std::pair<typename Base::key_type, VariableSlice>(
           item.first, detail::makeSlice(VariableSlice(*item.second.second),
                                         proxy->slices()));
     }
   };
 
-  const Derived &derived() const noexcept {
-    return static_cast<const Derived &>(*this);
-  }
-
 public:
+  using Base::Base;
+
   /// Return a proxy to the coordinate for given dimension.
-  VariableSlice operator[](const Key key) const {
-    return detail::makeSlice(VariableSlice(*derived().items().at(key).second),
-                             derived().slices());
+  VariableSlice operator[](const typename Base::key_type key) const {
+    return detail::makeSlice(VariableSlice(*Base::items().at(key).second),
+                             Base::slices());
   }
 
   auto begin() const && = delete;
   /// Return iterator to the beginning of all items.
   auto begin() const &noexcept {
-    return boost::make_transform_iterator(derived().items().begin(),
-                                          make_item{&derived()});
+    return boost::make_transform_iterator(Base::items().begin(),
+                                          make_item{this});
   }
   auto end() const && = delete;
   /// Return iterator to the end of all items.
   auto end() const &noexcept {
-    return boost::make_transform_iterator(derived().items().end(),
-                                          make_item{&derived()});
+    return boost::make_transform_iterator(Base::items().end(), make_item{this});
   }
-};
-
-template <class Base>
-class MutableProxy
-    : public MutableProxyMixin<MutableProxy<Base>, typename Base::key_type>,
-      public Base {
-public:
-  using Base::Base;
-  using MutableProxyMixin<MutableProxy<Base>, typename Base::key_type>::
-  operator[];
-  using MutableProxyMixin<MutableProxy<Base>, typename Base::key_type>::begin;
-  using MutableProxyMixin<MutableProxy<Base>, typename Base::key_type>::end;
 };
 
 /*
