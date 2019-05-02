@@ -209,6 +209,32 @@ void Dataset::setSparseLabels(const std::string &name,
   m_data[name].labels.insert_or_assign(labelName, std::move(labels));
 }
 
+DatasetConstProxy Dataset::slice(const Slice slice1) const {
+  return DatasetConstProxy(*this).slice(slice1);
+}
+
+DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2) const {
+  return DatasetConstProxy(*this).slice(slice1, slice2);
+}
+
+DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2,
+                                 const Slice slice3) const {
+  return DatasetConstProxy(*this).slice(slice1, slice2, slice3);
+}
+
+DatasetProxy Dataset::slice(const Slice slice1) {
+  return DatasetProxy(*this).slice(slice1);
+}
+
+DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2) {
+  return DatasetProxy(*this).slice(slice1, slice2);
+}
+
+DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
+                            const Slice slice3) {
+  return DatasetProxy(*this).slice(slice1, slice2, slice3);
+}
+
 /// Return true if the proxy represents sparse data.
 bool DataConstProxy::isSparse() const noexcept {
   if (m_data->coord)
@@ -315,6 +341,14 @@ LabelsConstProxy DatasetConstProxy::labels() const noexcept {
 LabelsProxy DatasetProxy::labels() const noexcept {
   return LabelsProxy(
       makeProxyItems<std::string_view>(m_mutableDataset->m_labels), slices());
+}
+
+DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
+  return {*m_dataset, (*m_dataset).m_data.at(name), slices()};
+}
+
+DataProxy DatasetProxy::operator[](const std::string &name) const {
+  return {*m_mutableDataset, (*m_mutableDataset).m_data.at(name), slices()};
 }
 
 } // namespace scipp::core::next

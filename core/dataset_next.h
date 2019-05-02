@@ -69,8 +69,9 @@ auto makeSlice(Var &var,
 /// Const proxy for a data item and related coordinates of Dataset.
 class DataConstProxy {
 public:
-  DataConstProxy(const Dataset &dataset, const detail::DatasetData &data)
-      : m_dataset(&dataset), m_data(&data) {}
+  DataConstProxy(const Dataset &dataset, const detail::DatasetData &data,
+                 const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      : m_dataset(&dataset), m_data(&data), m_slices(slices) {}
 
   bool isSparse() const noexcept;
   Dim sparseDim() const noexcept;
@@ -101,10 +102,10 @@ public:
       return variances().template span<T>();
   }
 
-  DataConstProxy slice(const Slice slice) const {
-    DataConstProxy sliced(*this);
-    sliced.m_slices.emplace_back(slice, dims()[slice.dim]);
-    return sliced;
+  DataConstProxy slice(const Slice slice1) const {
+    auto tmp(m_slices);
+    tmp.emplace_back(slice1, dims()[slice1.dim]);
+    return {*m_dataset, *m_data, std::move(tmp)};
   }
 
   DataConstProxy slice(const Slice slice1, const Slice slice2) const {
@@ -119,18 +120,20 @@ public:
   const auto &slices() const noexcept { return m_slices; }
 
 private:
+  friend class DatasetConstProxy;
+  friend class DatasetProxy;
+
   const Dataset *m_dataset;
   const detail::DatasetData *m_data;
-
-protected:
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
 /// Proxy for a data item and related coordinates of Dataset.
 class DataProxy : public DataConstProxy {
 public:
-  DataProxy(Dataset &dataset, detail::DatasetData &data)
-      : DataConstProxy(dataset, data), m_mutableDataset(&dataset),
+  DataProxy(Dataset &dataset, detail::DatasetData &data,
+            const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      : DataConstProxy(dataset, data, slices), m_mutableDataset(&dataset),
         m_mutableData(&data) {}
 
   CoordsProxy coords() const noexcept;
@@ -152,10 +155,10 @@ public:
       return variances().template span<T>();
   }
 
-  DataProxy slice(const Slice slice) const {
-    DataProxy sliced(*this);
-    sliced.m_slices.emplace_back(slice, dims()[slice.dim]);
-    return sliced;
+  DataProxy slice(const Slice slice1) const {
+    auto tmp(slices());
+    tmp.emplace_back(slice1, dims()[slice1.dim]);
+    return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
   }
 
   DataProxy slice(const Slice slice1, const Slice slice2) const {
@@ -181,7 +184,7 @@ template <class D> struct make_item {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
       return {item.first, P(*dataset, item.second)};
     else
-      return {item.first, P(*dataset, item.second).slice(dataset->slices())};
+      return {item, dataset->parent()[item].slice(dataset->slices())};
   }
 };
 template <class D> make_item(D *)->make_item<D>;
@@ -244,10 +247,14 @@ public:
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
 
-  DatasetConstProxy slice(const Dim dim, const scipp::index begin,
-                          const scipp::index end = -1) const;
-  DatasetConstProxy slice(const Slice slice) const;
+  DatasetConstProxy slice(const Slice slice1) const;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2) const;
+  DatasetConstProxy slice(const Slice slice1, const Slice slice2,
+                          const Slice slice3) const;
+  DatasetProxy slice(const Slice slice1);
+  DatasetProxy slice(const Slice slice1, const Slice slice2);
+  DatasetProxy slice(const Slice slice1, const Slice slice2,
+                     const Slice slice3);
 
 private:
   friend class DatasetConstProxy;
@@ -300,17 +307,17 @@ public:
     return boost::make_transform_iterator(m_items.end(), make_item{this});
   }
 
-  ConstProxy slice(const Slice slice) const {
+  ConstProxy slice(const Slice slice1) const {
     std::map<Key, std::pair<const Variable *, Variable *>> items;
-    const auto &coord = *m_items.at(slice.dim).first;
+    const auto &coord = *m_items.at(slice1.dim).first;
     // Delete coord of sliced dimension if slice is not a range.
     std::copy_if(m_items.begin(), m_items.end(),
-                 std::inserter(items, items.end()), [slice](const auto &item) {
-                   return (slice.end != -1) || (item.first != slice.dim);
+                 std::inserter(items, items.end()), [slice1](const auto &item) {
+                   return (slice1.end != -1) || (item.first != slice1.dim);
                  });
     ConstProxy sliced(std::move(items));
     sliced.m_slices = m_slices;
-    sliced.m_slices.emplace_back(slice, coord.dimensions()[slice.dim]);
+    sliced.m_slices.emplace_back(slice1, coord.dimensions()[slice1.dim]);
     return sliced;
   }
 
@@ -364,8 +371,8 @@ public:
     return boost::make_transform_iterator(Base::items().end(), make_item{this});
   }
 
-  MutableProxy slice(const Slice slice) const {
-    return MutableProxy(Base::slice(slice));
+  MutableProxy slice(const Slice slice1) const {
+    return MutableProxy(Base::slice(slice1));
   }
 
   MutableProxy slice(const Slice slice1, const Slice slice2) const {
@@ -378,9 +385,13 @@ public:
   }
 };
 
+/// Const proxy for Dataset, implementing slicing and item selection.
 class DatasetConstProxy {
 public:
-  explicit DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {}
+  explicit DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
+    for (const auto &item : dataset.m_data)
+      m_indices.emplace_back(item.first);
+  }
 
   index size() const noexcept { return m_dataset->size(); }
   [[nodiscard]] bool empty() const noexcept { return m_dataset->empty(); }
@@ -391,22 +402,54 @@ public:
 
   auto begin() const && = delete;
   auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_dataset->m_data.begin(),
+    return boost::make_transform_iterator(m_indices.begin(),
                                           detail::make_item{this});
   }
   auto end() const && = delete;
   auto end() const &noexcept {
-    return boost::make_transform_iterator(m_dataset->m_data.end(),
+    return boost::make_transform_iterator(m_indices.end(),
                                           detail::make_item{this});
   }
 
+  /// Return a slice of the dataset proxy.
+  ///
+  /// The returned proxy will not contain references to data items that do not
+  /// depend on the sliced dimension.
+  DatasetConstProxy slice(const Slice slice1) const {
+    DatasetConstProxy sliced(*this);
+    auto &indices = sliced.m_indices;
+    sliced.m_indices.erase(
+        std::remove_if(indices.begin(), indices.end(),
+                       [&slice1, this](const auto &index) {
+                         return !(*this)[index].dims().contains(slice1.dim);
+                       }),
+        indices.end());
+    sliced.m_slices.emplace_back(slice1,
+                                 coords()[slice1.dim].dims()[slice1.dim]);
+    return sliced;
+  }
+
+  DatasetConstProxy slice(const Slice slice1, const Slice slice2) const {
+    return slice(slice1).slice(slice2);
+  }
+
+  DatasetConstProxy slice(const Slice slice1, const Slice slice2,
+                          const Slice slice3) const {
+    return slice(slice1, slice2).slice(slice3);
+  }
+
+  const Dataset &parent() const noexcept { return *m_dataset; }
   const auto &slices() const noexcept { return m_slices; }
 
 private:
   const Dataset *m_dataset;
+
+protected:
+  std::vector<std::string> m_indices;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
+/// Proxy for Dataset, implementing slicing and item selection.
 class DatasetProxy : public DatasetConstProxy {
 public:
   explicit DatasetProxy(Dataset &dataset)
@@ -418,14 +461,32 @@ public:
 
   auto begin() const && = delete;
   auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_mutableDataset->m_data.begin(),
+    return boost::make_transform_iterator(m_indices.begin(),
                                           detail::make_item{this});
   }
   auto end() const && = delete;
   auto end() const &noexcept {
-    return boost::make_transform_iterator(m_mutableDataset->m_data.end(),
+    return boost::make_transform_iterator(m_indices.end(),
                                           detail::make_item{this});
   }
+
+  DatasetProxy slice(const Slice slice1) const {
+    DatasetProxy sliced(*this);
+    sliced.m_slices.emplace_back(slice1,
+                                 coords()[slice1.dim].dims()[slice1.dim]);
+    return sliced;
+  }
+
+  DatasetProxy slice(const Slice slice1, const Slice slice2) const {
+    return slice(slice1).slice(slice2);
+  }
+
+  DatasetProxy slice(const Slice slice1, const Slice slice2,
+                     const Slice slice3) const {
+    return slice(slice1, slice2).slice(slice3);
+  }
+
+  Dataset &parent() const noexcept { return *m_mutableDataset; }
 
 private:
   Dataset *m_mutableDataset;
