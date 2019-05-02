@@ -114,11 +114,22 @@ public:
     return sliced;
   }
 
+  DataConstProxy slice(const Slice slice1, const Slice slice2) const {
+    return slice(slice1).slice(slice2);
+  }
+
+  DataConstProxy slice(const Slice slice1, const Slice slice2,
+                       const Slice slice3) const {
+    return slice(slice1, slice2).slice(slice3);
+  }
+
   const auto &slices() const noexcept { return m_slices; }
 
 private:
   const Dataset *m_dataset;
   const detail::DatasetData *m_data;
+
+protected:
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
@@ -146,6 +157,21 @@ public:
       return detail::makeSlice(*m_mutableData->variances, slices());
     else
       return variances().template span<T>();
+  }
+
+  DataProxy slice(const Slice slice) const {
+    DataProxy sliced(*this);
+    sliced.m_slices.emplace_back(slice, dims()[slice.dim]);
+    return sliced;
+  }
+
+  DataProxy slice(const Slice slice1, const Slice slice2) const {
+    return slice(slice1).slice(slice2);
+  }
+
+  DataProxy slice(const Slice slice1, const Slice slice2,
+                  const Slice slice3) const {
+    return slice(slice1, slice2).slice(slice3);
   }
 
 private:
