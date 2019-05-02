@@ -278,6 +278,34 @@ TEST(DatasetNext, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
 }
 
+TEST(DatasetNext, slice) {
+  next::Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1, 2, 3}));
+  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 4}, {4, 5, 6, 7}));
+  const auto data_x = makeVariable<double>({Dim::X, 3}, {3, 2, 1});
+  const auto data_y = makeVariable<double>({Dim::Y, 4}, {7, 6, 5, 4});
+  const auto data_xy = makeVariable<double>(
+      {{Dim::Y, 4}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+  d.setValues("x", data_x);
+  d.setValues("y", data_y);
+  d.setValues("xy", data_xy);
+
+  const auto slice = d.slice({Dim::Y, 1, 3});
+  EXPECT_EQ(slice.size(), 2);
+  EXPECT_ANY_THROW(slice["x"]);
+  EXPECT_NO_THROW(slice["y"]);
+  EXPECT_NO_THROW(slice["xy"]);
+
+  std::map<std::string, ConstVariableSlice> expected;
+  expected.emplace("y", data_y.slice({Dim::Y, 1, 3}));
+  expected.emplace("xy", data_xy.slice({Dim::Y, 1, 3}));
+
+  std::map<std::string, ConstVariableSlice> actual;
+  for (const auto & [ name, data ] : slice)
+    EXPECT_TRUE(actual.emplace(name, data.values()).second);
+  EXPECT_EQ(actual, expected);
+}
+
 TEST(CoordsConstProxy, empty) {
   next::Dataset d;
   const auto coords = d.coords();

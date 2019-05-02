@@ -184,7 +184,8 @@ template <class D> struct make_item {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
       return {item.first, P(*dataset, item.second)};
     else
-      return {item, dataset->parent()[item].slice(dataset->slices())};
+      // TODO Using operator[] is quite inefficient, revert the logic.
+      return {item, dataset->operator[](item)};
   }
 };
 template <class D> make_item(D *)->make_item<D>;
@@ -393,8 +394,8 @@ public:
       m_indices.emplace_back(item.first);
   }
 
-  index size() const noexcept { return m_dataset->size(); }
-  [[nodiscard]] bool empty() const noexcept { return m_dataset->empty(); }
+  index size() const noexcept { return m_indices.size(); }
+  [[nodiscard]] bool empty() const noexcept { return m_indices.empty(); }
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
@@ -445,12 +446,17 @@ private:
   const Dataset *m_dataset;
 
 protected:
+  void expectValidKey(const std::string &name) const;
   std::vector<std::string> m_indices;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
 /// Proxy for Dataset, implementing slicing and item selection.
 class DatasetProxy : public DatasetConstProxy {
+private:
+  DatasetProxy(DatasetConstProxy &&base, Dataset *dataset)
+      : DatasetConstProxy(std::move(base)), m_mutableDataset(dataset) {}
+
 public:
   explicit DatasetProxy(Dataset &dataset)
       : DatasetConstProxy(dataset), m_mutableDataset(&dataset) {}
@@ -471,10 +477,7 @@ public:
   }
 
   DatasetProxy slice(const Slice slice1) const {
-    DatasetProxy sliced(*this);
-    sliced.m_slices.emplace_back(slice1,
-                                 coords()[slice1.dim].dims()[slice1.dim]);
-    return sliced;
+    return {DatasetConstProxy::slice(slice1), m_mutableDataset};
   }
 
   DatasetProxy slice(const Slice slice1, const Slice slice2) const {

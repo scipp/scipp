@@ -343,11 +343,18 @@ LabelsProxy DatasetProxy::labels() const noexcept {
       makeProxyItems<std::string_view>(m_mutableDataset->m_labels), slices());
 }
 
+void DatasetConstProxy::expectValidKey(const std::string &name) const {
+  if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
+    throw std::runtime_error("Invalid key `" + name + "` in Dataset access.");
+}
+
 DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
+  expectValidKey(name);
   return {*m_dataset, (*m_dataset).m_data.at(name), slices()};
 }
 
 DataProxy DatasetProxy::operator[](const std::string &name) const {
+  expectValidKey(name);
   return {*m_mutableDataset, (*m_mutableDataset).m_data.at(name), slices()};
 }
 
