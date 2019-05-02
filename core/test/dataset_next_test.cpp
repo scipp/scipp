@@ -311,10 +311,10 @@ TEST(CoordsConstProxy, item_write) {
   d.setCoord(Dim::Y, y);
 
   const auto coords = d.coords();
-  coords[Dim::X].span<double>()[0] += 0.5;
-  coords[Dim::Y].span<double>()[0] += 0.5;
-  ASSERT_TRUE(equals(coords[Dim::X].span<double>(), {1.5, 2.0, 3.0}));
-  ASSERT_TRUE(equals(coords[Dim::Y].span<double>(), {4.5, 5.0}));
+  coords[Dim::X].values<double>()[0] += 0.5;
+  coords[Dim::Y].values<double>()[0] += 0.5;
+  ASSERT_TRUE(equals(coords[Dim::X].values<double>(), {1.5, 2.0, 3.0}));
+  ASSERT_TRUE(equals(coords[Dim::Y].values<double>(), {4.5, 5.0}));
 }
 
 TEST(CoordsConstProxy, iterators_empty_coords) {
@@ -362,7 +362,7 @@ TEST(CoordsConstProxy, slice) {
   EXPECT_ANY_THROW(sliceX[Dim::Y]);
 
   const auto sliceDX = coords.slice({Dim::X, 1, 2});
-  EXPECT_EQ(sliceDX[Dim::X].dimensions(), Dimensions({Dim::X, 1}));
+  EXPECT_EQ(sliceDX[Dim::X].dims(), Dimensions({Dim::X, 1}));
   EXPECT_ANY_THROW(sliceDX[Dim::Y]);
 
   const auto sliceY = coords.slice({Dim::Y, 1});
@@ -371,7 +371,7 @@ TEST(CoordsConstProxy, slice) {
 
   const auto sliceDY = coords.slice({Dim::Y, 1, 2});
   EXPECT_ANY_THROW(sliceDY[Dim::X]);
-  EXPECT_EQ(sliceDY[Dim::Y].dimensions(), Dimensions({Dim::Y, 1}));
+  EXPECT_EQ(sliceDY[Dim::Y].dims(), Dimensions({Dim::Y, 1}));
 }
 
 auto make_dataset_2d_coord_x_1d_coord_y() {
@@ -393,21 +393,20 @@ TEST(CoordsConstProxy, slice_2D_coord) {
   EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceDX = coords.slice({Dim::X, 1, 2});
-  EXPECT_EQ(sliceDX[Dim::X].dimensions(),
-            Dimensions({{Dim::X, 1}, {Dim::Y, 2}}));
+  EXPECT_EQ(sliceDX[Dim::X].dims(), Dimensions({{Dim::X, 1}, {Dim::Y, 2}}));
   EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceY = coords.slice({Dim::Y, 1});
-  EXPECT_TRUE(equals(sliceY[Dim::X].span<double>(), {2, 4, 6}));
+  EXPECT_TRUE(equals(sliceY[Dim::X].values<double>(), {2, 4, 6}));
   EXPECT_ANY_THROW(sliceY[Dim::Y]);
 
   const auto sliceDY = coords.slice({Dim::Y, 1, 2});
-  EXPECT_TRUE(equals(sliceY[Dim::X].span<double>(), {2, 4, 6}));
-  EXPECT_EQ(sliceDY[Dim::Y].dimensions(), Dimensions({Dim::Y, 1}));
+  EXPECT_TRUE(equals(sliceY[Dim::X].values<double>(), {2, 4, 6}));
+  EXPECT_EQ(sliceDY[Dim::Y].dims(), Dimensions({Dim::Y, 1}));
 }
 
 auto check_slice_of_slice = [](const auto slice) {
-  EXPECT_TRUE(equals(slice[Dim::X].template span<double>(), {4, 6}));
+  EXPECT_TRUE(equals(slice[Dim::X].template values<double>(), {4, 6}));
   EXPECT_ANY_THROW(slice[Dim::Y]);
 };
 
@@ -422,8 +421,8 @@ TEST(CoordsConstProxy, slice_of_slice) {
 }
 
 auto check_slice_of_slice_range = [](const auto slice) {
-  EXPECT_TRUE(equals(slice[Dim::X].template span<double>(), {4, 6}));
-  EXPECT_TRUE(equals(slice[Dim::Y].template span<double>(), {2}));
+  EXPECT_TRUE(equals(slice[Dim::X].template values<double>(), {4, 6}));
+  EXPECT_TRUE(equals(slice[Dim::Y].template values<double>(), {2}));
 };
 
 TEST(CoordsConstProxy, slice_of_slice_range) {
@@ -453,7 +452,7 @@ TEST(CoordsProxy, modify_slice) {
   const auto coords = d.coords();
 
   const auto slice = coords.slice({Dim::X, 1, 2});
-  for (auto &x : slice[Dim::X].span<double>())
+  for (auto &x : slice[Dim::X].values<double>())
     x = 0.0;
 
   const auto reference =
@@ -474,8 +473,7 @@ TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
   EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceDX = coords.slice({Dim::X, 1, 2});
-  EXPECT_EQ(sliceDX[Dim::X].dimensions(),
-            Dimensions({{Dim::Y, 2}, {Dim::X, 1}}));
+  EXPECT_EQ(sliceDX[Dim::X].dims(), Dimensions({{Dim::Y, 2}, {Dim::X, 1}}));
   EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceY = coords.slice({Dim::Y, 1});
@@ -485,12 +483,11 @@ TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
   const auto sliceY_edge = coords.slice({Dim::Y, 1, 2});
   // The X coord is dropped if a single bin is in the range.
   EXPECT_ANY_THROW(sliceY_edge[Dim::X]);
-  EXPECT_EQ(sliceY_edge[Dim::Y].dimensions(), Dimensions({Dim::Y, 1}));
+  EXPECT_EQ(sliceY_edge[Dim::Y].dims(), Dimensions({Dim::Y, 1}));
 
   const auto sliceY_bin = coords.slice({Dim::Y, 1, 3});
-  EXPECT_EQ(sliceY_bin[Dim::X].dimensions(),
-            Dimensions({{Dim::Y, 1}, {Dim::X, 2}}));
-  EXPECT_EQ(sliceY_bin[Dim::Y].dimensions(), Dimensions({Dim::Y, 2}));
+  EXPECT_EQ(sliceY_bin[Dim::X].dims(), Dimensions({{Dim::Y, 1}, {Dim::X, 2}}));
+  EXPECT_EQ(sliceY_bin[Dim::Y].dims(), Dimensions({Dim::Y, 2}));
 }
 
 // Using typed tests for common functionality of DataProxy and DataConstProxy.
@@ -527,19 +524,19 @@ TYPED_TEST(DataProxyTest, dims) {
   typename TestFixture::proxy_type &d_ref(d);
 
   d.setValues("dense", dense);
-  ASSERT_EQ(d_ref["dense"].dims(), dense.dimensions());
+  ASSERT_EQ(d_ref["dense"].dims(), dense.dims());
 
   // Sparse dimension is currently not included in dims(). It is unclear whether
   // this is the right choice. An unfinished idea involves returning
   // std::tuple<std::span<const Dim>, std::optional<Dim>> instead, using `auto [
   // dims, sparse ] = data.dims();`.
   d.setValues("sparse_data", sparse);
-  ASSERT_EQ(d_ref["sparse_data"].dims(), dense.dimensions());
-  ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dimensions());
+  ASSERT_EQ(d_ref["sparse_data"].dims(), dense.dims());
+  ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dims());
 
   d.setSparseCoord("sparse_coord", sparse);
-  ASSERT_EQ(d_ref["sparse_coord"].dims(), dense.dimensions());
-  ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dimensions());
+  ASSERT_EQ(d_ref["sparse_coord"].dims(), dense.dims());
+  ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dims());
 }
 
 TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
@@ -552,7 +549,7 @@ TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
   d.setCoord(Dim::Y, y);
   d.setValues("a", var);
 
-  ASSERT_EQ(d_ref["a"].dims(), var.dimensions());
+  ASSERT_EQ(d_ref["a"].dims(), var.dims());
 }
 
 TYPED_TEST(DataProxyTest, unit) {
@@ -762,7 +759,7 @@ TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_single_coords) {
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 1);
-  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
 }
 
 TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_length_1_coords) {
@@ -771,8 +768,8 @@ TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_length_1_coords) {
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 2);
-  ASSERT_EQ(coords[Dim::X].dimensions(), Dimensions({Dim::X, 1}));
-  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+  ASSERT_EQ(coords[Dim::X].dims(), Dimensions({Dim::X, 1}));
+  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
 }
 
 TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_coords) {
@@ -781,8 +778,8 @@ TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_coords) {
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 2);
-  ASSERT_EQ(coords[Dim::X].dimensions(), Dimensions({Dim::X, 2}));
-  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+  ASSERT_EQ(coords[Dim::X].dims(), Dimensions({Dim::X, 2}));
+  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
 }
 
 template <typename T>
@@ -833,7 +830,7 @@ TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_single_coords) {
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 1);
-  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
 }
 
 TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_length_1_coords) {
@@ -842,8 +839,8 @@ TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_length_1_coords) {
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 2);
-  ASSERT_EQ(coords[Dim::X].dimensions(), Dimensions({Dim::X, 2}));
-  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+  ASSERT_EQ(coords[Dim::X].dims(), Dimensions({Dim::X, 2}));
+  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
 }
 
 TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_coords) {
@@ -852,6 +849,6 @@ TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_coords) {
   const auto coords = slice.coords();
 
   ASSERT_EQ(coords.size(), 2);
-  ASSERT_EQ(coords[Dim::X].dimensions(), Dimensions({Dim::X, 3}));
-  ASSERT_EQ(coords[Dim::Y].dimensions(), Dimensions({Dim::Y, 3}));
+  ASSERT_EQ(coords[Dim::X].dims(), Dimensions({Dim::X, 3}));
+  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
 }

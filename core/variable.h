@@ -268,8 +268,10 @@ public:
 
   scipp::index size() const { return m_object->size(); }
 
-  Dimensions dimensions() const && { return m_object->dimensions(); }
-  const Dimensions &dimensions() const & { return m_object->dimensions(); }
+  Dimensions dims() const && { return m_object->dimensions(); }
+  const Dimensions &dims() const & { return m_object->dimensions(); }
+  Dimensions dimensions() const && { return dims(); }
+  const Dimensions &dimensions() const & { return dims(); }
   void setDimensions(const Dimensions &dimensions);
 
   const VariableConcept &data() const && = delete;
@@ -285,6 +287,8 @@ public:
   bool isSparse() const noexcept { return m_sparseDim != Dim::Invalid; }
   Dim sparseDim() const { return m_sparseDim; }
 
+  template <class T> auto values() const { return scipp::span(cast<T>()); }
+  template <class T> auto values() { return scipp::span(cast<T>()); }
   template <class T> auto span() const { return scipp::span(cast<T>()); }
   template <class T> auto span() { return scipp::span(cast<T>()); }
   template <class T> auto sparseSpan() const {
@@ -424,7 +428,8 @@ public:
 
   // Note: Returning by value to avoid issues with referencing a temporary
   // (VariableSlice is returned by-value from DatasetSlice).
-  Dimensions dimensions() const {
+  Dimensions dimensions() const { return dims(); }
+  Dimensions dims() const {
     if (m_view)
       return m_view->dimensions();
     else
@@ -466,6 +471,7 @@ public:
   // temporaries and we do not need to delete the rvalue overload, unlike for
   // many other methods. The data is owned by the underlying variable so it
   // will not be deleted even if *this is a temporary and gets deleted.
+  template <class T> auto values() const { return cast<T>(); }
   template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
@@ -535,6 +541,7 @@ public:
   }
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
+  template <class T> auto values() const { return cast<T>(); }
   template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
