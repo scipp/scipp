@@ -97,7 +97,7 @@ public:
     if constexpr (std::is_same_v<T, void>)
       return detail::makeSlice(*m_data->values, slices());
     else
-      return detail::makeSlice(*m_data->values, slices()).template span<T>();
+      return values().template span<T>();
   }
 
   /// Return untyped or typed const proxy for data variances.
@@ -105,7 +105,7 @@ public:
     if constexpr (std::is_same_v<T, void>)
       return detail::makeSlice(*m_data->variances, slices());
     else
-      return detail::makeSlice(*m_data->variances, slices()).template span<T>();
+      return variances().template span<T>();
   }
 
   DataConstProxy slice(const Slice slice) const {
@@ -137,8 +137,7 @@ public:
     if constexpr (std::is_same_v<T, void>)
       return detail::makeSlice(*m_mutableData->values, slices());
     else
-      return detail::makeSlice(*m_mutableData->values, slices())
-          .template span<T>();
+      return values().template span<T>();
   }
 
   /// Return untyped or typed proxy for data variances.
@@ -146,8 +145,7 @@ public:
     if constexpr (std::is_same_v<T, void>)
       return detail::makeSlice(*m_mutableData->variances, slices());
     else
-      return detail::makeSlice(*m_mutableData->variances, slices())
-          .template span<T>();
+      return variances().template span<T>();
   }
 
 private:
