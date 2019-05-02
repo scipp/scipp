@@ -810,14 +810,22 @@ INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
 INSTANTIATE_SLICEVIEW(Dataset);
 INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
 
+ConstVariableSlice Variable::slice(const Slice slice) const & {
+  return {*this, slice.dim, slice.begin, slice.end};
+}
+
+VariableSlice Variable::slice(const Slice slice) & {
+  return {*this, slice.dim, slice.begin, slice.end};
+}
+
 ConstVariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
                                         const scipp::index end) const & {
-  return {*this, dim, begin, end};
+  return slice({dim, begin, end});
 }
 
 VariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
                                    const scipp::index end) & {
-  return {*this, dim, begin, end};
+  return slice({dim, begin, end});
 }
 
 ConstVariableSlice Variable::reshape(const Dimensions &dims) const & {

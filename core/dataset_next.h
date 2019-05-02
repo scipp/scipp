@@ -36,15 +36,6 @@ using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string_view>;
 /// Proxy for accessing labels of Dataset and DataProxy.
 using LabelsProxy = MutableProxy<LabelsConstProxy>;
 
-/// Helper for passing slicing parameters.
-struct Slice {
-  Slice(const Dim dim, const scipp::index begin, const scipp::index end = -1)
-      : dim(dim), begin(begin), end(end) {}
-  Dim dim;
-  scipp::index begin;
-  scipp::index end;
-};
-
 namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {

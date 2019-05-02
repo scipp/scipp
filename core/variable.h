@@ -20,6 +20,15 @@
 
 namespace scipp::core {
 
+/// Helper for passing slicing parameters.
+struct Slice {
+  Slice(const Dim dim, const scipp::index begin, const scipp::index end = -1)
+      : dim(dim), begin(begin), end(end) {}
+  Dim dim;
+  scipp::index begin;
+  scipp::index end;
+};
+
 template <class T>
 using sparse_container = boost::container::small_vector<T, 8>;
 template <class T> struct is_sparse_container : std::false_type {};
@@ -301,6 +310,11 @@ public:
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
+  ConstVariableSlice slice(const Slice slice) const &;
+  ConstVariableSlice slice(const Slice slice) const && = delete;
+  VariableSlice slice(const Slice slice) &;
+  VariableSlice slice(const Slice slice) && = delete;
+
   ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
                                 const scipp::index end = -1) const &;
   ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
@@ -409,9 +423,13 @@ public:
       : m_variable(slice.m_variable),
         m_view(slice.data().makeView(dim, begin, end)) {}
 
+  ConstVariableSlice slice(const Slice slice) const {
+    return ConstVariableSlice(*this, slice.dim, slice.begin, slice.end);
+  }
+
   ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
                                 const scipp::index end = -1) const {
-    return ConstVariableSlice(*this, dim, begin, end);
+    return slice({dim, begin, end});
   }
 
   // Note the return type. Reshaping a non-contiguous slice cannot return a
@@ -519,9 +537,13 @@ public:
     m_view = slice.data().makeView(dim, begin, end);
   }
 
+  VariableSlice slice(const Slice slice) const {
+    return VariableSlice(*this, slice.dim, slice.begin, slice.end);
+  }
+
   VariableSlice operator()(const Dim dim, const scipp::index begin,
                            const scipp::index end = -1) const {
-    return VariableSlice(*this, dim, begin, end);
+    return slice({dim, begin, end});
   }
 
   using ConstVariableSlice::data;
