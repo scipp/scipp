@@ -117,6 +117,11 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
+  bool operator==(const DataConstProxy &other) const;
+  bool operator!=(const DataConstProxy &other) const {
+    return !operator==(other);
+  }
+
   const auto &slices() const noexcept { return m_slices; }
 
 private:
@@ -257,6 +262,9 @@ public:
   DatasetProxy slice(const Slice slice1, const Slice slice2,
                      const Slice slice3);
 
+  bool operator==(const Dataset &other) const;
+  bool operator==(const DatasetConstProxy &other) const;
+
 private:
   friend class DatasetConstProxy;
   friend class DatasetProxy;
@@ -330,6 +338,21 @@ public:
                    const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
+
+  bool operator==(const ConstProxy &other) const {
+    if (size() != other.size())
+      return false;
+    for (const auto & [ name, data ] : *this) {
+      try {
+        if (data != other[name])
+          return false;
+      } catch (std::out_of_range &) {
+        return false;
+      }
+    }
+    return true;
+  }
+  bool operator!=(const ConstProxy &other) const { return !operator==(other); }
 
   const auto &items() const noexcept { return m_items; }
   const auto &slices() const noexcept { return m_slices; }
@@ -441,6 +464,9 @@ public:
 
   const Dataset &parent() const noexcept { return *m_dataset; }
   const auto &slices() const noexcept { return m_slices; }
+
+  bool operator==(const Dataset &other) const;
+  bool operator==(const DatasetConstProxy &other) const;
 
 private:
   const Dataset *m_dataset;

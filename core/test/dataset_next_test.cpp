@@ -280,16 +280,27 @@ TEST(DatasetNext, const_iterators_return_types) {
 
 TEST(DatasetNext, slice) {
   next::Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1, 2, 3}));
-  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 4}, {4, 5, 6, 7}));
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 4}, {4, 5, 6, 7});
   const auto data_x = makeVariable<double>({Dim::X, 3}, {3, 2, 1});
   const auto data_y = makeVariable<double>({Dim::Y, 4}, {7, 6, 5, 4});
   const auto data_xy = makeVariable<double>(
       {{Dim::Y, 4}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
   d.setValues("x", data_x);
   d.setValues("y", data_y);
   d.setValues("xy", data_xy);
 
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x);
+  reference.setCoord(Dim::Y, y.slice({Dim::Y, 1, 3}));
+  reference.setValues("y", data_y.slice({Dim::Y, 1, 3}));
+  reference.setValues("xy", data_xy.slice({Dim::Y, 1, 3}));
+
+  EXPECT_EQ(d.slice({Dim::Y, 1, 3}), reference);
+
+  // TODO These assertions should move to a test of DatasetProxy
   const auto slice = d.slice({Dim::Y, 1, 3});
   EXPECT_EQ(slice.size(), 2);
   EXPECT_ANY_THROW(slice["x"]);

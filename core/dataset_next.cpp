@@ -358,4 +358,54 @@ DataProxy DatasetProxy::operator[](const std::string &name) const {
   return {*m_mutableDataset, (*m_mutableDataset).m_data.at(name), slices()};
 }
 
+bool DataConstProxy::operator==(const DataConstProxy &other) const {
+  if (hasValues() != other.hasValues())
+    return false;
+  if (hasVariances() != other.hasVariances())
+    return false;
+  if (coords() != other.coords())
+    return false;
+  if (labels() != other.labels())
+    return false;
+  if (hasValues() && values() != other.values())
+    return false;
+  if (hasVariances() && variances() != other.variances())
+    return false;
+  return true;
+}
+
+template <class A, class B> bool dataset_equals(const A &a, const B &b) {
+  if (a.size() != b.size())
+    return false;
+  if (a.coords() != b.coords())
+    return false;
+  if (a.labels() != b.labels())
+    return false;
+  for (const auto & [ name, data ] : a) {
+    try {
+      if (data != b[std::string(name)])
+        return false;
+    } catch (std::out_of_range &) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Dataset::operator==(const Dataset &other) const {
+  return dataset_equals(*this, other);
+}
+
+bool Dataset::operator==(const DatasetConstProxy &other) const {
+  return dataset_equals(*this, other);
+}
+
+bool DatasetConstProxy::operator==(const Dataset &other) const {
+  return dataset_equals(*this, other);
+}
+
+bool DatasetConstProxy::operator==(const DatasetConstProxy &other) const {
+  return dataset_equals(*this, other);
+}
+
 } // namespace scipp::core::next
