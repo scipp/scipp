@@ -19,6 +19,8 @@ namespace scipp::core {
 namespace next {
 
 class Dataset;
+class DatasetConstProxy;
+class DatasetProxy;
 
 namespace ProxyId {
 class Coords;
@@ -176,14 +178,17 @@ template <class D> struct make_item {
   D *dataset;
   using P = std::conditional_t<std::is_const_v<D>, DataConstProxy, DataProxy>;
   std::pair<std::string_view, P> operator()(auto &item) const {
-    return {item.first, P(*dataset, item.second)};
+    if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
+      return {item.first, P(*dataset, item.second)};
+    else
+      return {item.first, P(*dataset, item.second).slice(dataset->slices())};
   }
 };
 template <class D> make_item(D *)->make_item<D>;
 } // namespace detail
 
-class DatasetConstSlice;
-class DatasetSlice;
+class DatasetConstProxy;
+class DatasetProxy;
 
 /// Collection of data arrays.
 class Dataset {
@@ -239,12 +244,14 @@ public:
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
 
-  DatasetConstSlice slice(const Dim dim, const scipp::index begin,
+  DatasetConstProxy slice(const Dim dim, const scipp::index begin,
                           const scipp::index end = -1) const;
-  DatasetConstSlice slice(const Slice slice) const;
-  DatasetConstSlice slice(const Slice slice1, const Slice slice2) const;
+  DatasetConstProxy slice(const Slice slice) const;
+  DatasetConstProxy slice(const Slice slice1, const Slice slice2) const;
 
 private:
+  friend class DatasetConstProxy;
+  friend class DatasetProxy;
   friend class DataConstProxy;
   friend class DataProxy;
 
@@ -387,38 +394,58 @@ public:
   }
 };
 
-/*
-class DatasetConstSlice {
+class DatasetConstProxy {
 public:
-  DatasetConstSlice(const Dataset &dataset,
-                    const std::initializer_list<Dataset::Slice> &slices)
-      : m_dataset(&dataset), m_slices(slices) {}
+  explicit DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {}
 
-  index size() const noexcept { return scipp::size(m_data); }
-  [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+  index size() const noexcept { return m_dataset->size(); }
+  [[nodiscard]] bool empty() const noexcept { return m_dataset->empty(); }
 
   CoordsConstProxy coords() const noexcept;
-
   LabelsConstProxy labels() const noexcept;
-
   DataConstProxy operator[](const std::string &name) const;
 
   auto begin() const && = delete;
   auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_data.begin(),
+    return boost::make_transform_iterator(m_dataset->m_data.begin(),
                                           detail::make_item{this});
   }
   auto end() const && = delete;
   auto end() const &noexcept {
-    return boost::make_transform_iterator(m_data.end(),
+    return boost::make_transform_iterator(m_dataset->m_data.end(),
+                                          detail::make_item{this});
+  }
+
+  const auto &slices() const noexcept { return m_slices; }
+
+private:
+  const Dataset *m_dataset;
+  std::vector<std::pair<Slice, scipp::index>> m_slices;
+};
+
+class DatasetProxy : public DatasetConstProxy {
+public:
+  explicit DatasetProxy(Dataset &dataset)
+      : DatasetConstProxy(dataset), m_mutableDataset(&dataset) {}
+
+  CoordsProxy coords() const noexcept;
+  LabelsProxy labels() const noexcept;
+  DataProxy operator[](const std::string &name) const;
+
+  auto begin() const && = delete;
+  auto begin() const &noexcept {
+    return boost::make_transform_iterator(m_mutableDataset->m_data.begin(),
+                                          detail::make_item{this});
+  }
+  auto end() const && = delete;
+  auto end() const &noexcept {
+    return boost::make_transform_iterator(m_mutableDataset->m_data.end(),
                                           detail::make_item{this});
   }
 
 private:
-  const Dataset *m_dataset;
-  std::vector<Dataset::Slice> m_slices;
+  Dataset *m_mutableDataset;
 };
-*/
 
 } // namespace next
 } // namespace scipp::core

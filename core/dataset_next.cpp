@@ -285,4 +285,32 @@ LabelsProxy DataProxy::labels() const noexcept {
       slices());
 }
 
+/// Return a const proxy to all coordinates of the dataset slice.
+///
+/// This proxy includes only "dimension-coordinates". To access
+/// non-dimension-coordinates" see labels().
+CoordsConstProxy DatasetConstProxy::coords() const noexcept {
+  return CoordsConstProxy(makeProxyItems<Dim>(m_dataset->m_coords), slices());
+}
+
+/// Return a proxy to all coordinates of the dataset slice.
+///
+/// This proxy includes only "dimension-coordinates". To access
+/// non-dimension-coordinates" see labels().
+CoordsProxy DatasetProxy::coords() const noexcept {
+  return CoordsProxy(makeProxyItems<Dim>(m_mutableDataset->m_coords), slices());
+}
+
+/// Return a const proxy to all labels of the dataset slice.
+LabelsConstProxy DatasetConstProxy::labels() const noexcept {
+  return LabelsConstProxy(makeProxyItems<std::string_view>(m_dataset->m_labels),
+                          slices());
+}
+
+/// Return a proxy to all labels of the dataset slice.
+LabelsProxy DatasetProxy::labels() const noexcept {
+  return LabelsProxy(
+      makeProxyItems<std::string_view>(m_mutableDataset->m_labels), slices());
+}
+
 } // namespace scipp::core::next
