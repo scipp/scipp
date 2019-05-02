@@ -303,26 +303,10 @@ public:
   ConstProxy slice(const Slice slice) const {
     std::map<Key, std::pair<const Variable *, Variable *>> items;
     const auto &coord = *m_items.at(slice.dim).first;
+    // Delete coord of sliced dimension if slice is not a range.
     std::copy_if(m_items.begin(), m_items.end(),
-                 std::inserter(items, items.end()),
-                 [slice, &coord](const auto &item) {
-                   const auto &dims = item.second.first->dimensions();
-                   // Delete coords that do not depend on slice dim, unless the
-                   // sliced coord depends on this coord's dimension.
-                   if (!dims.contains(slice.dim) &&
-                       !coord.dimensions().contains(item.first))
-                     return false;
-                   // Delete coord of sliced dimension if slice is not a range.
-                   if ((slice.end == -1) && (item.first == slice.dim))
-                     return false;
-                   // If sliced dimension is bin edges and slice thickness is
-                   // not 2 or larger, delete other coords depending on the
-                   // sliced dimension.
-                   if (dims.contains(slice.dim) &&
-                       coord.dimensions()[slice.dim] == dims[slice.dim] + 1)
-                     if (slice.end - slice.begin < 2)
-                       return false;
-                   return true;
+                 std::inserter(items, items.end()), [slice](const auto &item) {
+                   return (slice.end != -1) || (item.first != slice.dim);
                  });
     ConstProxy sliced(std::move(items));
     sliced.m_slices = m_slices;

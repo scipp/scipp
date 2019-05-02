@@ -41,10 +41,14 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
     }
   } else {
     // Shadow all global coordinates that depend on the sparse dimension.
-    for (auto &item : coords)
-      if (dims.contains(item.second.dimensions()))
+    for (auto &item : coords) {
+      const auto &labels = item.second.dimensions().labels();
+      if (std::all_of(labels.begin(), labels.end(), [&dims](const Dim label) {
+            return dims.contains(label);
+          }))
         if (!item.second.dimensions().contains(sparseDim))
           items.emplace(item.first, makeProxyItem(&item.second));
+    }
     if (sparse) {
       if constexpr (std::is_same_v<T2, void>) {
       } else if constexpr (std::is_same_v<T2, const Variable> ||

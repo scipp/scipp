@@ -359,19 +359,19 @@ TEST(CoordsConstProxy, slice) {
 
   const auto sliceX = coords.slice({Dim::X, 1});
   EXPECT_ANY_THROW(sliceX[Dim::X]);
-  EXPECT_ANY_THROW(sliceX[Dim::Y]);
+  EXPECT_EQ(sliceX[Dim::Y], y);
 
   const auto sliceDX = coords.slice({Dim::X, 1, 2});
-  EXPECT_EQ(sliceDX[Dim::X].dims(), Dimensions({Dim::X, 1}));
-  EXPECT_ANY_THROW(sliceDX[Dim::Y]);
+  EXPECT_EQ(sliceDX[Dim::X], x.slice({Dim::X, 1, 2}));
+  EXPECT_EQ(sliceDX[Dim::Y], y);
 
   const auto sliceY = coords.slice({Dim::Y, 1});
-  EXPECT_ANY_THROW(sliceY[Dim::X]);
+  EXPECT_EQ(sliceY[Dim::X], x);
   EXPECT_ANY_THROW(sliceY[Dim::Y]);
 
   const auto sliceDY = coords.slice({Dim::Y, 1, 2});
-  EXPECT_ANY_THROW(sliceDY[Dim::X]);
-  EXPECT_EQ(sliceDY[Dim::Y].dims(), Dimensions({Dim::Y, 1}));
+  EXPECT_EQ(sliceDY[Dim::X], x);
+  EXPECT_EQ(sliceDY[Dim::Y], y.slice({Dim::Y, 1, 2}));
 }
 
 auto make_dataset_2d_coord_x_1d_coord_y() {
@@ -393,20 +393,21 @@ TEST(CoordsConstProxy, slice_2D_coord) {
   EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceDX = coords.slice({Dim::X, 1, 2});
-  EXPECT_EQ(sliceDX[Dim::X].dims(), Dimensions({{Dim::X, 1}, {Dim::Y, 2}}));
+  EXPECT_EQ(sliceDX[Dim::X], coords[Dim::X].slice({Dim::X, 1, 2}));
   EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceY = coords.slice({Dim::Y, 1});
-  EXPECT_TRUE(equals(sliceY[Dim::X].values<double>(), {2, 4, 6}));
+  EXPECT_EQ(sliceY[Dim::X], coords[Dim::X].slice({Dim::Y, 1}));
   EXPECT_ANY_THROW(sliceY[Dim::Y]);
 
   const auto sliceDY = coords.slice({Dim::Y, 1, 2});
-  EXPECT_TRUE(equals(sliceY[Dim::X].values<double>(), {2, 4, 6}));
-  EXPECT_EQ(sliceDY[Dim::Y].dims(), Dimensions({Dim::Y, 1}));
+  EXPECT_EQ(sliceDY[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 2}));
+  EXPECT_EQ(sliceDY[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 2}));
 }
 
-auto check_slice_of_slice = [](const auto slice) {
-  EXPECT_TRUE(equals(slice[Dim::X].template values<double>(), {4, 6}));
+auto check_slice_of_slice = [](const auto &dataset, const auto slice) {
+  EXPECT_EQ(slice[Dim::X],
+            dataset.coords()[Dim::X].slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
   EXPECT_ANY_THROW(slice[Dim::Y]);
 };
 
@@ -414,25 +415,27 @@ TEST(CoordsConstProxy, slice_of_slice) {
   const auto d = make_dataset_2d_coord_x_1d_coord_y();
   const auto cs = d.coords();
 
-  check_slice_of_slice(cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
-  check_slice_of_slice(cs.slice({Dim::Y, 1}).slice({Dim::X, 1, 3}));
-  check_slice_of_slice(cs.slice({Dim::X, 1, 3}, {Dim::Y, 1}));
-  check_slice_of_slice(cs.slice({Dim::Y, 1}, {Dim::X, 1, 3}));
+  check_slice_of_slice(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
+  check_slice_of_slice(d, cs.slice({Dim::Y, 1}).slice({Dim::X, 1, 3}));
+  check_slice_of_slice(d, cs.slice({Dim::X, 1, 3}, {Dim::Y, 1}));
+  check_slice_of_slice(d, cs.slice({Dim::Y, 1}, {Dim::X, 1, 3}));
 }
 
-auto check_slice_of_slice_range = [](const auto slice) {
-  EXPECT_TRUE(equals(slice[Dim::X].template values<double>(), {4, 6}));
-  EXPECT_TRUE(equals(slice[Dim::Y].template values<double>(), {2}));
+auto check_slice_of_slice_range = [](const auto &dataset, const auto slice) {
+  EXPECT_EQ(
+      slice[Dim::X],
+      dataset.coords()[Dim::X].slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
+  EXPECT_EQ(slice[Dim::Y], dataset.coords()[Dim::Y].slice({Dim::Y, 1, 2}));
 };
 
 TEST(CoordsConstProxy, slice_of_slice_range) {
   const auto d = make_dataset_2d_coord_x_1d_coord_y();
   const auto cs = d.coords();
 
-  check_slice_of_slice_range(cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
-  check_slice_of_slice_range(cs.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
-  check_slice_of_slice_range(cs.slice({Dim::X, 1, 3}, {Dim::Y, 1, 2}));
-  check_slice_of_slice_range(cs.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
+  check_slice_of_slice_range(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
+  check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
+  check_slice_of_slice_range(d, cs.slice({Dim::X, 1, 3}, {Dim::Y, 1, 2}));
+  check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
 }
 
 TEST(CoordsConstProxy, slice_return_type) {
@@ -477,17 +480,17 @@ TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
   EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
 
   const auto sliceY = coords.slice({Dim::Y, 1});
+  // TODO Would it be more consistent to preserve X with 0 thickness?
   EXPECT_ANY_THROW(sliceY[Dim::X]);
   EXPECT_ANY_THROW(sliceY[Dim::Y]);
 
   const auto sliceY_edge = coords.slice({Dim::Y, 1, 2});
-  // The X coord is dropped if a single bin is in the range.
-  EXPECT_ANY_THROW(sliceY_edge[Dim::X]);
-  EXPECT_EQ(sliceY_edge[Dim::Y].dims(), Dimensions({Dim::Y, 1}));
+  EXPECT_EQ(sliceY_edge[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 1}));
+  EXPECT_EQ(sliceY_edge[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 2}));
 
   const auto sliceY_bin = coords.slice({Dim::Y, 1, 3});
-  EXPECT_EQ(sliceY_bin[Dim::X].dims(), Dimensions({{Dim::Y, 1}, {Dim::X, 2}}));
-  EXPECT_EQ(sliceY_bin[Dim::Y].dims(), Dimensions({Dim::Y, 2}));
+  EXPECT_EQ(sliceY_bin[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 2}));
+  EXPECT_EQ(sliceY_bin[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 3}));
 }
 
 // Using typed tests for common functionality of DataProxy and DataConstProxy.
