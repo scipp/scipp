@@ -5,6 +5,7 @@
 #ifndef DATASET_NEXT_H
 #define DATASET_NEXT_H
 
+#include <iosfwd>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -524,6 +525,12 @@ public:
 private:
   Dataset *m_mutableDataset;
 };
+
+std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable);
+std::ostream &operator<<(std::ostream &os, const DataConstProxy &data);
+std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset);
+std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset);
+std::ostream &operator<<(std::ostream &os, const Dataset &dataset);
 
 } // namespace next
 } // namespace scipp::core

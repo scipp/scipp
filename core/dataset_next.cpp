@@ -2,6 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <ostream>
+
 #include "dataset_next.h"
 #include "dataset.h"
 #include "except.h"
@@ -422,6 +424,40 @@ bool DatasetConstProxy::operator!=(const Dataset &other) const {
 
 bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
+}
+
+std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
+  return os << to_string(variable);
+}
+
+std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
+  // TODO sparse
+  if (data.hasValues())
+    os << to_string(data.values());
+  if (data.hasVariances())
+    os << to_string(data.variances());
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
+  os << "Coordinates:\n";
+  for (const auto & [ name, coord ] : dataset.coords())
+    os << to_string(name) << " " << coord;
+  os << "Labels:\n";
+  for (const auto & [ name, labels ] : dataset.labels())
+    os << name << " " << labels;
+  os << "Data:\n";
+  for (const auto & [ name, data ] : dataset)
+    os << name << " " << data;
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset) {
+  return os << DatasetConstProxy(dataset);
+}
+
+std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
+  return os << DatasetConstProxy(dataset);
 }
 
 } // namespace scipp::core::next
