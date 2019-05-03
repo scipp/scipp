@@ -296,7 +296,24 @@ public:
 
   ConstProxy(std::map<Key, std::pair<const Variable *, Variable *>> &&items,
              const std::vector<std::pair<Slice, scipp::index>> &slices = {})
-      : m_items(std::move(items)), m_slices(slices) {}
+      : m_items(std::move(items)), m_slices(slices) {
+    // TODO duplication of slice() below?
+    // Remove any items that depend only on a non-range sliced dimension.
+    // This should be the intended behavior for coordinates and labels, but what
+    // about attributes?
+    for (const auto &s : m_slices) {
+      const auto slice = s.first;
+      if (slice.end == -1) {
+        for (auto it = m_items.begin(); it != m_items.end();) {
+          const auto &dims = it->second.first->dims();
+          if (dims.ndim() == 1 && dims.contains(slice.dim))
+            it = m_items.erase(it);
+          else
+            ++it;
+        }
+      }
+    }
+  }
 
   /// Return the number of coordinates in the proxy.
   index size() const noexcept { return scipp::size(m_items); }
@@ -527,7 +544,9 @@ private:
 };
 
 std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable);
+std::ostream &operator<<(std::ostream &os, const VariableSlice &variable);
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data);
+std::ostream &operator<<(std::ostream &os, const DataProxy &data);
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset);

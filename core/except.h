@@ -47,6 +47,36 @@ std::string to_string(const Dataset &dataset,
 std::string to_string(const ConstDatasetSlice &dataset,
                       const std::string &separator = "::");
 
+template <class T> std::string element_to_string(const T &item) {
+  using std::to_string;
+  if constexpr (std::is_same_v<T, std::string>)
+    return {'"' + item + "\", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+    return {"(Eigen::Vector3d), "};
+  else if constexpr (std::is_same_v<T,
+                                    boost::container::small_vector<double, 8>>)
+    return {"(vector), "};
+  else
+    return to_string(item) + ", ";
+}
+
+template <class T> std::string array_to_string(const T &arr) {
+  const scipp::index size = arr.size();
+  if (size == 0)
+    return std::string("[]");
+  std::string s = "[";
+  for (scipp::index i = 0; i < arr.size(); ++i) {
+    if (i == 4 && size > 8) {
+      s += "..., ";
+      i = size - 4;
+    }
+    s += element_to_string(arr[i]);
+  }
+  s.resize(s.size() - 2);
+  s += "]";
+  return s;
+}
+
 namespace except {
 
 struct TypeError : public std::runtime_error {

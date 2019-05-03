@@ -573,106 +573,154 @@ protected:
   next::Dataset dataset;
 };
 
-TEST_F(Dataset_slice, range_x) {
-  next::Dataset reference;
-  reference.setCoord(Dim::X, x().slice({Dim::X, 1, 3}));
-  reference.setCoord(Dim::Y, y());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::X, 1, 3}));
-  reference.setLabels("x", x().slice({Dim::X, 1, 3}));
-  reference.setLabels("y", xy().slice({Dim::X, 1, 3}));
-  reference.setLabels("z", z());
-  reference.setValues("a", x().slice({Dim::X, 1, 3}));
-  reference.setVariances("a", x().slice({Dim::X, 1, 3}));
-  reference.setValues("b", xy().slice({Dim::X, 1, 3}));
-  reference.setVariances("b", xy().slice({Dim::X, 1, 3}));
-  reference.setValues("c", zyx().slice({Dim::X, 1, 3}));
-  reference.setVariances("c", zyx().slice({Dim::X, 1, 3}));
-  reference.setValues("d", xyz().slice({Dim::X, 1, 3}));
+class Dataset_slice_x : public Dataset_slice,
+                        public ::testing::WithParamInterface<int> {};
+class Dataset_slice_y : public Dataset_slice,
+                        public ::testing::WithParamInterface<int> {};
+class Dataset_slice_z : public Dataset_slice,
+                        public ::testing::WithParamInterface<int> {};
 
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}), reference);
+class Dataset_slice_range_x : public Dataset_slice,
+                              public ::testing::WithParamInterface<
+                                  std::pair<scipp::index, scipp::index>> {};
+class Dataset_slice_range_y : public Dataset_slice,
+                              public ::testing::WithParamInterface<
+                                  std::pair<scipp::index, scipp::index>> {};
+class Dataset_slice_range_z : public Dataset_slice,
+                              public ::testing::WithParamInterface<
+                                  std::pair<scipp::index, scipp::index>> {};
+
+template <int max> constexpr auto positive_cartesian_products() {
+  using scipp::index;
+  const auto size = max + 1;
+  std::array<std::pair<index, index>, (size * size - size) / 2> pairs;
+  index i = 0;
+  for (index first = 0; first <= max; ++first)
+    for (index second = first + 1; second <= max; ++second) {
+      pairs[i].first = first;
+      pairs[i].second = second;
+      ++i;
+    }
+  return pairs;
 }
 
-TEST_F(Dataset_slice, range_y) {
+constexpr auto ranges_x = positive_cartesian_products<4>();
+constexpr auto ranges_y = positive_cartesian_products<5>();
+constexpr auto ranges_z = positive_cartesian_products<6>();
+
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset_slice_x, ::testing::Range(0, 4));
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset_slice_y, ::testing::Range(0, 5));
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset_slice_z, ::testing::Range(0, 6));
+
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset_slice_range_x,
+                        ::testing::ValuesIn(ranges_x));
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset_slice_range_y,
+                        ::testing::ValuesIn(ranges_y));
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset_slice_range_z,
+                        ::testing::ValuesIn(ranges_z));
+
+TEST_P(Dataset_slice_x, slice) {
+  const auto pos = GetParam();
+  next::Dataset reference;
+  reference.setCoord(Dim::Y, y());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::X, pos}));
+  reference.setLabels("y", xy().slice({Dim::X, pos}));
+  reference.setLabels("z", z());
+  reference.setValues("a", x().slice({Dim::X, pos}));
+  reference.setVariances("a", x().slice({Dim::X, pos}));
+  reference.setValues("b", xy().slice({Dim::X, pos}));
+  reference.setVariances("b", xy().slice({Dim::X, pos}));
+  reference.setValues("c", zyx().slice({Dim::X, pos}));
+  reference.setVariances("c", zyx().slice({Dim::X, pos}));
+  reference.setValues("d", xyz().slice({Dim::X, pos}));
+
+  EXPECT_EQ(dataset.slice({Dim::X, pos}), reference);
+}
+
+TEST_P(Dataset_slice_y, slice) {
+  const auto pos = GetParam();
   next::Dataset reference;
   reference.setCoord(Dim::X, x());
-  reference.setCoord(Dim::Y, y().slice({Dim::Y, 1, 3}));
-  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, 1, 3}));
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, pos}));
   reference.setLabels("x", x());
-  reference.setLabels("y", xy().slice({Dim::Y, 1, 3}));
+  reference.setLabels("y", xy().slice({Dim::Y, pos}));
   reference.setLabels("z", z());
-  reference.setValues("b", xy().slice({Dim::Y, 1, 3}));
-  reference.setVariances("b", xy().slice({Dim::Y, 1, 3}));
-  reference.setValues("c", zyx().slice({Dim::Y, 1, 3}));
-  reference.setVariances("c", zyx().slice({Dim::Y, 1, 3}));
-  reference.setValues("d", xyz().slice({Dim::Y, 1, 3}));
+  reference.setValues("b", xy().slice({Dim::Y, pos}));
+  reference.setVariances("b", xy().slice({Dim::Y, pos}));
+  reference.setValues("c", zyx().slice({Dim::Y, pos}));
+  reference.setVariances("c", zyx().slice({Dim::Y, pos}));
+  reference.setValues("d", xyz().slice({Dim::Y, pos}));
 
-  EXPECT_EQ(dataset.slice({Dim::Y, 1, 3}), reference);
+  EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
 
-TEST_F(Dataset_slice, range_z) {
+TEST_P(Dataset_slice_z, slice) {
+  const auto pos = GetParam();
   next::Dataset reference;
   reference.setCoord(Dim::X, x());
   reference.setCoord(Dim::Y, y());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::Z, 1, 3}));
-  reference.setLabels("x", x());
-  reference.setLabels("y", xy());
-  reference.setLabels("z", z().slice({Dim::Z, 1, 3}));
-  reference.setValues("c", zyx().slice({Dim::Z, 1, 3}));
-  reference.setVariances("c", zyx().slice({Dim::Z, 1, 3}));
-  reference.setValues("d", xyz().slice({Dim::Z, 1, 3}));
-
-  EXPECT_EQ(dataset.slice({Dim::Z, 1, 3}), reference);
-}
-
-TEST_F(Dataset_slice, size_1_range_x) {
-  next::Dataset reference;
-  reference.setCoord(Dim::X, x().slice({Dim::X, 1, 2}));
-  reference.setCoord(Dim::Y, y());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::X, 1, 2}));
-  reference.setLabels("x", x().slice({Dim::X, 1, 2}));
-  reference.setLabels("y", xy().slice({Dim::X, 1, 2}));
-  reference.setLabels("z", z());
-  reference.setValues("a", x().slice({Dim::X, 1, 2}));
-  reference.setVariances("a", x().slice({Dim::X, 1, 2}));
-  reference.setValues("b", xy().slice({Dim::X, 1, 2}));
-  reference.setVariances("b", xy().slice({Dim::X, 1, 2}));
-  reference.setValues("c", zyx().slice({Dim::X, 1, 2}));
-  reference.setVariances("c", zyx().slice({Dim::X, 1, 2}));
-  reference.setValues("d", xyz().slice({Dim::X, 1, 2}));
-
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 2}), reference);
-}
-
-TEST_F(Dataset_slice, size_1_range_y) {
-  next::Dataset reference;
-  reference.setCoord(Dim::X, x());
-  reference.setCoord(Dim::Y, y().slice({Dim::Y, 1, 2}));
-  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, 1, 2}));
-  reference.setLabels("x", x());
-  reference.setLabels("y", xy().slice({Dim::Y, 1, 2}));
-  reference.setLabels("z", z());
-  reference.setValues("b", xy().slice({Dim::Y, 1, 2}));
-  reference.setVariances("b", xy().slice({Dim::Y, 1, 2}));
-  reference.setValues("c", zyx().slice({Dim::Y, 1, 2}));
-  reference.setVariances("c", zyx().slice({Dim::Y, 1, 2}));
-  reference.setValues("d", xyz().slice({Dim::Y, 1, 2}));
-
-  EXPECT_EQ(dataset.slice({Dim::Y, 1, 2}), reference);
-}
-
-TEST_F(Dataset_slice, size_1_range_z) {
-  next::Dataset reference;
-  reference.setCoord(Dim::X, x());
-  reference.setCoord(Dim::Y, y());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::Z, 1, 2}));
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Z, pos}));
   reference.setLabels("x", x());
   reference.setLabels("y", xy());
-  reference.setLabels("z", z().slice({Dim::Z, 1, 2}));
-  reference.setValues("c", zyx().slice({Dim::Z, 1, 2}));
-  reference.setVariances("c", zyx().slice({Dim::Z, 1, 2}));
-  reference.setValues("d", xyz().slice({Dim::Z, 1, 2}));
+  reference.setValues("c", zyx().slice({Dim::Z, pos}));
+  reference.setVariances("c", zyx().slice({Dim::Z, pos}));
+  reference.setValues("d", xyz().slice({Dim::Z, pos}));
 
-  EXPECT_EQ(dataset.slice({Dim::Z, 1, 2}), reference);
+  EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
+}
+
+TEST_P(Dataset_slice_range_x, slice) {
+  const auto[begin, end] = GetParam();
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x().slice({Dim::X, begin, end}));
+  reference.setCoord(Dim::Y, y());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::X, begin, end}));
+  reference.setLabels("x", x().slice({Dim::X, begin, end}));
+  reference.setLabels("y", xy().slice({Dim::X, begin, end}));
+  reference.setLabels("z", z());
+  reference.setValues("a", x().slice({Dim::X, begin, end}));
+  reference.setVariances("a", x().slice({Dim::X, begin, end}));
+  reference.setValues("b", xy().slice({Dim::X, begin, end}));
+  reference.setVariances("b", xy().slice({Dim::X, begin, end}));
+  reference.setValues("c", zyx().slice({Dim::X, begin, end}));
+  reference.setVariances("c", zyx().slice({Dim::X, begin, end}));
+  reference.setValues("d", xyz().slice({Dim::X, begin, end}));
+
+  EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
+}
+
+TEST_P(Dataset_slice_range_y, slice) {
+  const auto[begin, end] = GetParam();
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x());
+  reference.setCoord(Dim::Y, y().slice({Dim::Y, begin, end}));
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, begin, end}));
+  reference.setLabels("x", x());
+  reference.setLabels("y", xy().slice({Dim::Y, begin, end}));
+  reference.setLabels("z", z());
+  reference.setValues("b", xy().slice({Dim::Y, begin, end}));
+  reference.setVariances("b", xy().slice({Dim::Y, begin, end}));
+  reference.setValues("c", zyx().slice({Dim::Y, begin, end}));
+  reference.setVariances("c", zyx().slice({Dim::Y, begin, end}));
+  reference.setValues("d", xyz().slice({Dim::Y, begin, end}));
+
+  EXPECT_EQ(dataset.slice({Dim::Y, begin, end}), reference);
+}
+
+TEST_P(Dataset_slice_range_z, slice) {
+  const auto[begin, end] = GetParam();
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x());
+  reference.setCoord(Dim::Y, y());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Z, begin, end}));
+  reference.setLabels("x", x());
+  reference.setLabels("y", xy());
+  reference.setLabels("z", z().slice({Dim::Z, begin, end}));
+  reference.setValues("c", zyx().slice({Dim::Z, begin, end}));
+  reference.setVariances("c", zyx().slice({Dim::Z, begin, end}));
+  reference.setValues("d", xyz().slice({Dim::Z, begin, end}));
+
+  EXPECT_EQ(dataset.slice({Dim::Z, begin, end}), reference);
 }
 
 TEST(DatasetNext, slice) {

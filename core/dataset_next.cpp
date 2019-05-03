@@ -34,9 +34,11 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
       // We preserve only items that are part of the space spanned by the
       // provided parent dimensions. Note that Dimensions::contains(const
       // Dimensions &) is not doing the job here, since the extents may differ
-      // before slicing.
+      // before slicing. Note the use of std::any_of (not std::all_of): At this
+      // point there may still be extra dimensions in item, but they will be
+      // sliced out.
       const auto &labels = item.second.dimensions().labels();
-      if (std::all_of(labels.begin(), labels.end(), [&dims](const Dim label) {
+      if (std::any_of(labels.begin(), labels.end(), [&dims](const Dim label) {
             return dims.contains(label);
           }))
         items.emplace(item.first, makeProxyItem(&item.second));
@@ -427,16 +429,25 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
-  return os << to_string(variable);
+  return os << to_string(variable) << " "
+            << array_to_string(variable.values<double>()) << std::endl;
+}
+
+std::ostream &operator<<(std::ostream &os, const VariableSlice &variable) {
+  return os << ConstVariableSlice(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
   // TODO sparse
   if (data.hasValues())
-    os << to_string(data.values());
+    os << data.values();
   if (data.hasVariances())
-    os << to_string(data.variances());
+    os << data.variances();
   return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const DataProxy &data) {
+  return os << DataConstProxy(data);
 }
 
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
