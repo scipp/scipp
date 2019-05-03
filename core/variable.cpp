@@ -814,9 +814,15 @@ ConstVariableSlice Variable::slice(const Slice slice) const & {
   return {*this, slice.dim, slice.begin, slice.end};
 }
 
+Variable Variable::slice(const Slice slice) const && {
+  return {this->slice(slice)};
+}
+
 VariableSlice Variable::slice(const Slice slice) & {
   return {*this, slice.dim, slice.begin, slice.end};
 }
+
+Variable Variable::slice(const Slice slice) && { return {this->slice(slice)}; }
 
 ConstVariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
                                         const scipp::index end) const & {

@@ -3,6 +3,8 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
+#include <numeric>
+
 #include "dataset_next.h"
 #include "dimensions.h"
 
@@ -514,6 +516,163 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   b.setValues("y", dataset.coords()[Dim::Y]);
   b.setValues("x", dataset.coords()[Dim::X]);
   expect_eq(a, b);
+}
+
+// TODO sparse, bin edges
+class Dataset_slice : public ::testing::Test {
+protected:
+  Dataset_slice() {
+    dataset.setCoord(Dim::X, x());
+    dataset.setCoord(Dim::Y, y());
+    dataset.setCoord(Dim::Z, xyz());
+
+    dataset.setLabels("x", x());
+    dataset.setLabels("y", xy());
+    dataset.setLabels("z", z());
+
+    dataset.setValues("a", x());
+    dataset.setVariances("a", x());
+
+    dataset.setValues("b", xy());
+    dataset.setVariances("b", xy());
+
+    dataset.setValues("c", zyx());
+    dataset.setVariances("c", zyx());
+
+    dataset.setValues("d", xyz());
+  }
+
+  Variable x() const { return makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4}); }
+  Variable y() const {
+    return makeVariable<double>({Dim::Y, 5}, {5, 6, 7, 8, 9});
+  }
+  Variable z() const {
+    return makeVariable<double>({Dim::Z, 6}, {10, 11, 12, 13, 14, 15});
+  }
+  Variable xy() const {
+    std::vector<double> data(4 * 5);
+    std::iota(data.begin(), data.end(), 16);
+    auto var = makeVariable<double>({{Dim::X, 4}, {Dim::Y, 5}}, data);
+    return var;
+  }
+  Variable xyz() const {
+    std::vector<double> data(4 * 5 * 6);
+    std::iota(data.begin(), data.end(), 4 * 5 + 16);
+    auto var =
+        makeVariable<double>({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 6}}, data);
+    return var;
+  }
+  Variable zyx() const {
+    std::vector<double> data(4 * 5 * 6);
+    std::iota(data.begin(), data.end(), 4 * 5 + 4 * 5 * 6 + 16);
+    auto var =
+        makeVariable<double>({{Dim::Z, 6}, {Dim::Y, 5}, {Dim::X, 4}}, data);
+    return var;
+  }
+
+  next::Dataset dataset;
+};
+
+TEST_F(Dataset_slice, range_x) {
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x().slice({Dim::X, 1, 3}));
+  reference.setCoord(Dim::Y, y());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::X, 1, 3}));
+  reference.setLabels("x", x().slice({Dim::X, 1, 3}));
+  reference.setLabels("y", xy().slice({Dim::X, 1, 3}));
+  reference.setLabels("z", z());
+  reference.setValues("a", x().slice({Dim::X, 1, 3}));
+  reference.setVariances("a", x().slice({Dim::X, 1, 3}));
+  reference.setValues("b", xy().slice({Dim::X, 1, 3}));
+  reference.setVariances("b", xy().slice({Dim::X, 1, 3}));
+  reference.setValues("c", zyx().slice({Dim::X, 1, 3}));
+  reference.setVariances("c", zyx().slice({Dim::X, 1, 3}));
+  reference.setValues("d", xyz().slice({Dim::X, 1, 3}));
+
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}), reference);
+}
+
+TEST_F(Dataset_slice, range_y) {
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x());
+  reference.setCoord(Dim::Y, y().slice({Dim::Y, 1, 3}));
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, 1, 3}));
+  reference.setLabels("x", x());
+  reference.setLabels("y", xy().slice({Dim::Y, 1, 3}));
+  reference.setLabels("z", z());
+  reference.setValues("b", xy().slice({Dim::Y, 1, 3}));
+  reference.setVariances("b", xy().slice({Dim::Y, 1, 3}));
+  reference.setValues("c", zyx().slice({Dim::Y, 1, 3}));
+  reference.setVariances("c", zyx().slice({Dim::Y, 1, 3}));
+  reference.setValues("d", xyz().slice({Dim::Y, 1, 3}));
+
+  EXPECT_EQ(dataset.slice({Dim::Y, 1, 3}), reference);
+}
+
+TEST_F(Dataset_slice, range_z) {
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x());
+  reference.setCoord(Dim::Y, y());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Z, 1, 3}));
+  reference.setLabels("x", x());
+  reference.setLabels("y", xy());
+  reference.setLabels("z", z().slice({Dim::Z, 1, 3}));
+  reference.setValues("c", zyx().slice({Dim::Z, 1, 3}));
+  reference.setVariances("c", zyx().slice({Dim::Z, 1, 3}));
+  reference.setValues("d", xyz().slice({Dim::Z, 1, 3}));
+
+  EXPECT_EQ(dataset.slice({Dim::Z, 1, 3}), reference);
+}
+
+TEST_F(Dataset_slice, size_1_range_x) {
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x().slice({Dim::X, 1, 2}));
+  reference.setCoord(Dim::Y, y());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::X, 1, 2}));
+  reference.setLabels("x", x().slice({Dim::X, 1, 2}));
+  reference.setLabels("y", xy().slice({Dim::X, 1, 2}));
+  reference.setLabels("z", z());
+  reference.setValues("a", x().slice({Dim::X, 1, 2}));
+  reference.setVariances("a", x().slice({Dim::X, 1, 2}));
+  reference.setValues("b", xy().slice({Dim::X, 1, 2}));
+  reference.setVariances("b", xy().slice({Dim::X, 1, 2}));
+  reference.setValues("c", zyx().slice({Dim::X, 1, 2}));
+  reference.setVariances("c", zyx().slice({Dim::X, 1, 2}));
+  reference.setValues("d", xyz().slice({Dim::X, 1, 2}));
+
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 2}), reference);
+}
+
+TEST_F(Dataset_slice, size_1_range_y) {
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x());
+  reference.setCoord(Dim::Y, y().slice({Dim::Y, 1, 2}));
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, 1, 2}));
+  reference.setLabels("x", x());
+  reference.setLabels("y", xy().slice({Dim::Y, 1, 2}));
+  reference.setLabels("z", z());
+  reference.setValues("b", xy().slice({Dim::Y, 1, 2}));
+  reference.setVariances("b", xy().slice({Dim::Y, 1, 2}));
+  reference.setValues("c", zyx().slice({Dim::Y, 1, 2}));
+  reference.setVariances("c", zyx().slice({Dim::Y, 1, 2}));
+  reference.setValues("d", xyz().slice({Dim::Y, 1, 2}));
+
+  EXPECT_EQ(dataset.slice({Dim::Y, 1, 2}), reference);
+}
+
+TEST_F(Dataset_slice, size_1_range_z) {
+  next::Dataset reference;
+  reference.setCoord(Dim::X, x());
+  reference.setCoord(Dim::Y, y());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Z, 1, 2}));
+  reference.setLabels("x", x());
+  reference.setLabels("y", xy());
+  reference.setLabels("z", z().slice({Dim::Z, 1, 2}));
+  reference.setValues("c", zyx().slice({Dim::Z, 1, 2}));
+  reference.setVariances("c", zyx().slice({Dim::Z, 1, 2}));
+  reference.setValues("d", xyz().slice({Dim::Z, 1, 2}));
+
+  EXPECT_EQ(dataset.slice({Dim::Z, 1, 2}), reference);
 }
 
 TEST(DatasetNext, slice) {

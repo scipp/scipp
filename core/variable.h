@@ -311,9 +311,9 @@ public:
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
   ConstVariableSlice slice(const Slice slice) const &;
-  ConstVariableSlice slice(const Slice slice) const && = delete;
+  Variable slice(const Slice slice) const &&;
   VariableSlice slice(const Slice slice) &;
-  VariableSlice slice(const Slice slice) && = delete;
+  Variable slice(const Slice slice) &&;
 
   ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
                                 const scipp::index end = -1) const &;
