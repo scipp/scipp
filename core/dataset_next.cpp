@@ -37,8 +37,10 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
       // before slicing. Note the use of std::any_of (not std::all_of): At this
       // point there may still be extra dimensions in item, but they will be
       // sliced out.
+      // TODO I have the feeling that there is a hole in this logic.
       const auto &labels = item.second.dimensions().labels();
-      if (std::any_of(labels.begin(), labels.end(), [&dims](const Dim label) {
+      if (labels.empty() ||
+          std::any_of(labels.begin(), labels.end(), [&dims](const Dim label) {
             return dims.contains(label);
           }))
         items.emplace(item.first, makeProxyItem(&item.second));
