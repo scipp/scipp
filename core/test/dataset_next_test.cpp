@@ -278,6 +278,234 @@ TEST(DatasetNext, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
 }
 
+class DatasetFactory {
+public:
+  DatasetFactory(const Dimensions &dims) : m_dims(dims) {}
+
+  // static auto x(const Dimensions &dims = Dim::X, const units::Unit unit =
+  // units::dimensionless) const {
+
+private : Dimensions m_dims;
+};
+
+auto make_empty() { return next::Dataset(); };
+auto make_coord_x_1d() {
+  auto d = make_empty();
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1.1, 2.2, 3.3}));
+  return d;
+};
+auto make_labels_1d() {
+  auto d = make_empty();
+  d.setLabels("label1", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
+  return d;
+};
+
+template <class T, class T2>
+auto variable(const Dimensions &dims, const units::Unit unit,
+              const std::initializer_list<T2> &data) {
+  auto var = makeVariable<T>(dims, data);
+  var.setUnit(unit);
+  return var;
+}
+
+class Dataset_comparison_operators : public ::testing::Test {
+private:
+  template <class A, class B>
+  void expect_eq_impl(const A &a, const B &b) const {
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(b == a);
+    EXPECT_FALSE(a != b);
+    EXPECT_FALSE(b != a);
+  }
+  template <class A, class B>
+  void expect_ne_impl(const A &a, const B &b) const {
+    EXPECT_TRUE(a != b);
+    EXPECT_TRUE(b != a);
+    EXPECT_FALSE(a == b);
+    EXPECT_FALSE(b == a);
+  }
+
+protected:
+  Dataset_comparison_operators()
+      : sparse_variable(
+            makeSparseVariable<double>({{Dim::Y, 3}, {Dim::Z, 2}}, Dim::X)) {
+    dataset.setCoord(Dim::X, makeVariable<double>({Dim::X, 4}));
+    dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
+
+    dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
+
+    dataset.setValues("val_and_var",
+                      makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}}));
+    dataset.setVariances("val_and_var",
+                         makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}}));
+
+    dataset.setValues("val", makeVariable<double>({Dim::X, 4}));
+
+    dataset.setSparseCoord("sparse_coord", sparse_variable);
+    dataset.setValues("sparse_coord_and_val", sparse_variable);
+    dataset.setSparseCoord("sparse_coord_and_val", sparse_variable);
+  }
+  void expect_eq(const next::Dataset &a, const next::Dataset &b) const {
+    expect_eq_impl(a, DatasetConstProxy(b));
+    expect_eq_impl(DatasetConstProxy(a), b);
+    expect_eq_impl(DatasetConstProxy(a), DatasetConstProxy(b));
+  }
+  void expect_ne(const next::Dataset &a, const next::Dataset &b) const {
+    expect_ne_impl(a, DatasetConstProxy(b));
+    expect_ne_impl(DatasetConstProxy(a), b);
+    expect_ne_impl(DatasetConstProxy(a), DatasetConstProxy(b));
+  }
+
+  next::Dataset dataset;
+  Variable sparse_variable;
+};
+
+TEST_F(Dataset_comparison_operators, empty) {
+  const auto empty = make_empty();
+  expect_eq(empty, empty);
+}
+
+template <class T, class T2>
+auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
+                  const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setCoord(dim, variable<T>(dims, unit, data));
+  return d;
+}
+
+template <class T, class T2>
+auto make_1_labels(const std::string &name, const Dimensions &dims,
+                   const units::Unit unit,
+                   const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setLabels(name, variable<T>(dims, unit, data));
+  return d;
+}
+
+template <class T, class T2>
+auto make_1_values(const std::string &name, const Dimensions &dims,
+                   const units::Unit unit,
+                   const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setValues(name, variable<T>(dims, unit, data));
+  return d;
+}
+
+template <class T, class T2>
+auto make_1_values_and_variances(const std::string &name,
+                                 const Dimensions &dims, const units::Unit unit,
+                                 const std::initializer_list<T2> &values,
+                                 const std::initializer_list<T2> &variances) {
+  auto d = make_empty();
+  d.setValues(name, variable<T>(dims, unit, values));
+  d.setVariances(name, variable<T>(dims, unit * unit, variances));
+  return d;
+}
+
+// Baseline checks: Does dataset comparison pick up arbitrary mismatch of
+// individual items? Strictly speaking many of these are just retesting the
+// comparison of Variable, but it ensures that the content is actually compared
+// and thus serves as a baseline for the follow-up tests.
+TEST_F(Dataset_comparison_operators, single_coord) {
+  auto d = make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_coord<float>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::Y, {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::Y, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 2}, units::m, {1, 2}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 3}, units::s, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(Dataset_comparison_operators, single_labels) {
+  auto d = make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_labels<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 2}, units::m, {1, 2}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(Dataset_comparison_operators, single_values) {
+  auto d = make_1_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_values<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 2}, units::m, {1, 2}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(Dataset_comparison_operators, single_values_and_variances) {
+  auto d = make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+                                               {1, 2, 3}, {4, 5, 6});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_values_and_variances<float>("a", {Dim::X, 3}, units::m,
+                                                  {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("b", {Dim::X, 3}, units::m,
+                                                   {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::Y, 3}, units::m,
+                                                   {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 2}, units::m,
+                                                   {1, 2}, {4, 5}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::s,
+                                                   {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+                                                   {1, 2, 4}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+                                                   {1, 2, 3}, {4, 5, 7}));
+}
+// End baseline checks.
+
+TEST_F(Dataset_comparison_operators, self) {
+  expect_eq(dataset, dataset);
+  const auto copy(dataset);
+  expect_eq(copy, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_coord) {
+  auto extra = dataset;
+  extra.setCoord(Dim::Z, makeVariable<double>({Dim::Z, 2}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_labels) {
+  auto extra = dataset;
+  extra.setLabels("extra", makeVariable<double>({Dim::Z, 2}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_data) {
+  auto extra = dataset;
+  extra.setValues("extra", makeVariable<double>({Dim::Z, 2}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_variance) {
+  auto extra = dataset;
+  extra.setVariances("val", makeVariable<double>({Dim::X, 4}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_sparse_values) {
+  auto extra = dataset;
+  extra.setValues("sparse_coord", sparse_variable);
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_sparse_label) {
+  auto extra = dataset;
+  extra.setSparseLabels("sparse_coord_and_val", "extra", sparse_variable);
+  expect_ne(extra, dataset);
+}
+
 TEST(DatasetNext, slice) {
   next::Dataset d;
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});

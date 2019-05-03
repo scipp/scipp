@@ -93,7 +93,7 @@ LabelsProxy Dataset::labels() noexcept {
 DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);
   if (it == m_data.end())
-    throw std::runtime_error("Could not find data with name " + name + ".");
+    throw std::out_of_range("Could not find data with name " + name + ".");
   return DataConstProxy(*this, it->second);
 }
 
@@ -101,7 +101,7 @@ DataConstProxy Dataset::operator[](const std::string &name) const {
 DataProxy Dataset::operator[](const std::string &name) {
   const auto it = m_data.find(name);
   if (it == m_data.end())
-    throw std::runtime_error("Could not find data with name " + name + ".");
+    throw std::out_of_range("Could not find data with name " + name + ".");
   return DataProxy(*this, it->second);
 }
 
@@ -345,7 +345,7 @@ LabelsProxy DatasetProxy::labels() const noexcept {
 
 void DatasetConstProxy::expectValidKey(const std::string &name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
-    throw std::runtime_error("Invalid key `" + name + "` in Dataset access.");
+    throw std::out_of_range("Invalid key `" + name + "` in Dataset access.");
 }
 
 DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
@@ -406,6 +406,22 @@ bool DatasetConstProxy::operator==(const Dataset &other) const {
 
 bool DatasetConstProxy::operator==(const DatasetConstProxy &other) const {
   return dataset_equals(*this, other);
+}
+
+bool Dataset::operator!=(const Dataset &other) const {
+  return !dataset_equals(*this, other);
+}
+
+bool Dataset::operator!=(const DatasetConstProxy &other) const {
+  return !dataset_equals(*this, other);
+}
+
+bool DatasetConstProxy::operator!=(const Dataset &other) const {
+  return !dataset_equals(*this, other);
+}
+
+bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
+  return !dataset_equals(*this, other);
 }
 
 } // namespace scipp::core::next

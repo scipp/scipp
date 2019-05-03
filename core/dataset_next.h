@@ -264,6 +264,8 @@ public:
 
   bool operator==(const Dataset &other) const;
   bool operator==(const DatasetConstProxy &other) const;
+  bool operator!=(const Dataset &other) const;
+  bool operator!=(const DatasetConstProxy &other) const;
 
 private:
   friend class DatasetConstProxy;
@@ -467,6 +469,8 @@ public:
 
   bool operator==(const Dataset &other) const;
   bool operator==(const DatasetConstProxy &other) const;
+  bool operator!=(const Dataset &other) const;
+  bool operator!=(const DatasetConstProxy &other) const;
 
 private:
   const Dataset *m_dataset;
