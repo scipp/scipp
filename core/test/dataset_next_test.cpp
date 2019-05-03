@@ -278,28 +278,6 @@ TEST(DatasetNext, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
 }
 
-class DatasetFactory {
-public:
-  DatasetFactory(const Dimensions &dims) : m_dims(dims) {}
-
-  // static auto x(const Dimensions &dims = Dim::X, const units::Unit unit =
-  // units::dimensionless) const {
-
-private : Dimensions m_dims;
-};
-
-auto make_empty() { return next::Dataset(); };
-auto make_coord_x_1d() {
-  auto d = make_empty();
-  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 3}, {1.1, 2.2, 3.3}));
-  return d;
-};
-auto make_labels_1d() {
-  auto d = make_empty();
-  d.setLabels("label1", makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
-  return d;
-};
-
 template <class T, class T2>
 auto variable(const Dimensions &dims, const units::Unit unit,
               const std::initializer_list<T2> &data) {
@@ -360,10 +338,7 @@ protected:
   Variable sparse_variable;
 };
 
-TEST_F(Dataset_comparison_operators, empty) {
-  const auto empty = make_empty();
-  expect_eq(empty, empty);
-}
+auto make_empty() { return next::Dataset(); };
 
 template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
@@ -464,6 +439,11 @@ TEST_F(Dataset_comparison_operators, single_values_and_variances) {
 }
 // End baseline checks.
 
+TEST_F(Dataset_comparison_operators, empty) {
+  const auto empty = make_empty();
+  expect_eq(empty, empty);
+}
+
 TEST_F(Dataset_comparison_operators, self) {
   expect_eq(dataset, dataset);
   const auto copy(dataset);
@@ -504,6 +484,36 @@ TEST_F(Dataset_comparison_operators, extra_sparse_label) {
   auto extra = dataset;
   extra.setSparseLabels("sparse_coord_and_val", "extra", sparse_variable);
   expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
+  auto a = make_empty();
+  auto b = make_empty();
+  a.setCoord(Dim::X, dataset.coords()[Dim::X]);
+  a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+  b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+  b.setCoord(Dim::X, dataset.coords()[Dim::X]);
+  expect_eq(a, b);
+}
+
+TEST_F(Dataset_comparison_operators, different_label_insertion_order) {
+  auto a = make_empty();
+  auto b = make_empty();
+  a.setLabels("x", dataset.coords()[Dim::X]);
+  a.setLabels("y", dataset.coords()[Dim::Y]);
+  b.setLabels("y", dataset.coords()[Dim::Y]);
+  b.setLabels("x", dataset.coords()[Dim::X]);
+  expect_eq(a, b);
+}
+
+TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
+  auto a = make_empty();
+  auto b = make_empty();
+  a.setValues("x", dataset.coords()[Dim::X]);
+  a.setValues("y", dataset.coords()[Dim::Y]);
+  b.setValues("y", dataset.coords()[Dim::Y]);
+  b.setValues("x", dataset.coords()[Dim::X]);
+  expect_eq(a, b);
 }
 
 TEST(DatasetNext, slice) {
