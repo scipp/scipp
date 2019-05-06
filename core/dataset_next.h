@@ -305,8 +305,13 @@ public:
       const auto slice = s.first;
       if (slice.end == -1) {
         for (auto it = m_items.begin(); it != m_items.end();) {
-          const auto &dims = it->second.first->dims();
-          if (dims.ndim() == 1 && dims.contains(slice.dim))
+          auto erase = [slice](const auto it) {
+            if constexpr (std::is_same_v<Key, Dim>)
+              return (it->first == slice.dim);
+            else
+              return (it->second.first->dims().inner() == slice.dim);
+          };
+          if (erase(it))
             it = m_items.erase(it);
           else
             ++it;
@@ -337,17 +342,11 @@ public:
   }
 
   ConstProxy slice(const Slice slice1) const {
-    std::map<Key, std::pair<const Variable *, Variable *>> items;
     const auto &coord = *m_items.at(slice1.dim).first;
-    // Delete coord of sliced dimension if slice is not a range.
-    std::copy_if(m_items.begin(), m_items.end(),
-                 std::inserter(items, items.end()), [slice1](const auto &item) {
-                   return (slice1.end != -1) || (item.first != slice1.dim);
-                 });
-    ConstProxy sliced(std::move(items));
-    sliced.m_slices = m_slices;
-    sliced.m_slices.emplace_back(slice1, coord.dimensions()[slice1.dim]);
-    return sliced;
+    auto slices = m_slices;
+    slices.emplace_back(slice1, coord.dimensions()[slice1.dim]);
+    auto items = m_items;
+    return ConstProxy(std::move(items), slices);
   }
 
   ConstProxy slice(const Slice slice1, const Slice slice2) const {

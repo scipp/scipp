@@ -643,7 +643,6 @@ TEST_P(Dataset_slice_y, slice) {
   reference.setCoord(Dim::X, x());
   reference.setCoord(Dim::Z, xyz().slice({Dim::Y, pos}));
   reference.setLabels("x", x());
-  reference.setLabels("y", xy().slice({Dim::Y, pos}));
   reference.setLabels("z", z());
   reference.setValues("b", xy().slice({Dim::Y, pos}));
   reference.setVariances("b", xy().slice({Dim::Y, pos}));
@@ -659,7 +658,6 @@ TEST_P(Dataset_slice_z, slice) {
   next::Dataset reference;
   reference.setCoord(Dim::X, x());
   reference.setCoord(Dim::Y, y());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::Z, pos}));
   reference.setLabels("x", x());
   reference.setLabels("y", xy());
   reference.setValues("c", zyx().slice({Dim::Z, pos}));
