@@ -793,100 +793,60 @@ TEST_P(Dataset_slice_range_z, slice) {
   EXPECT_EQ(dataset.slice({Dim::Z, begin, end}), reference);
 }
 
-TEST(DatasetNext, slice) {
+template <typename T> class CoordsProxyTest : public ::testing::Test {
+protected:
+  std::conditional_t<std::is_same_v<T, next::CoordsProxy>, next::Dataset,
+                     const next::Dataset> &
+  access(auto &dataset) {
+    return dataset;
+  }
+};
+
+using CoordsProxyTypes =
+    ::testing::Types<next::CoordsProxy, next::CoordsConstProxy>;
+TYPED_TEST_CASE(CoordsProxyTest, CoordsProxyTypes);
+
+TYPED_TEST(CoordsProxyTest, empty) {
   next::Dataset d;
-  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  const auto y = makeVariable<double>({Dim::Y, 4}, {4, 5, 6, 7});
-  const auto data_x = makeVariable<double>({Dim::X, 3}, {3, 2, 1});
-  const auto data_y = makeVariable<double>({Dim::Y, 4}, {7, 6, 5, 4});
-  const auto data_xy = makeVariable<double>(
-      {{Dim::Y, 4}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-  d.setValues("x", data_x);
-  d.setValues("y", data_y);
-  d.setValues("xy", data_xy);
-
-  next::Dataset reference;
-  reference.setCoord(Dim::X, x);
-  reference.setCoord(Dim::Y, y.slice({Dim::Y, 1, 3}));
-  reference.setValues("y", data_y.slice({Dim::Y, 1, 3}));
-  reference.setValues("xy", data_xy.slice({Dim::Y, 1, 3}));
-
-  EXPECT_EQ(d.slice({Dim::Y, 1, 3}), reference);
-
-  // TODO These assertions should move to a test of DatasetProxy
-  const auto slice = d.slice({Dim::Y, 1, 3});
-  EXPECT_EQ(slice.size(), 2);
-  EXPECT_ANY_THROW(slice["x"]);
-  EXPECT_NO_THROW(slice["y"]);
-  EXPECT_NO_THROW(slice["xy"]);
-
-  std::map<std::string, ConstVariableSlice> expected;
-  expected.emplace("y", data_y.slice({Dim::Y, 1, 3}));
-  expected.emplace("xy", data_xy.slice({Dim::Y, 1, 3}));
-
-  std::map<std::string, ConstVariableSlice> actual;
-  for (const auto & [ name, data ] : slice)
-    EXPECT_TRUE(actual.emplace(name, data.values()).second);
-  EXPECT_EQ(actual, expected);
-}
-
-TEST(CoordsConstProxy, empty) {
-  next::Dataset d;
-  const auto coords = d.coords();
+  const auto coords = TestFixture::access(d).coords();
   ASSERT_TRUE(coords.empty());
   ASSERT_EQ(coords.size(), 0);
 }
 
-TEST(CoordsConstProxy, bad_item_access) {
+TYPED_TEST(CoordsProxyTest, bad_item_access) {
   next::Dataset d;
-  const auto coords = d.coords();
+  const auto coords = TestFixture::access(d).coords();
   ASSERT_ANY_THROW(coords[Dim::X]);
 }
 
-TEST(CoordsConstProxy, item_access) {
+TYPED_TEST(CoordsProxyTest, item_access) {
   next::Dataset d;
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
 
-  const auto coords = d.coords();
+  const auto coords = TestFixture::access(d).coords();
   ASSERT_EQ(coords[Dim::X], x);
   ASSERT_EQ(coords[Dim::Y], y);
 }
 
-TEST(CoordsConstProxy, item_write) {
+TYPED_TEST(CoordsProxyTest, iterators_empty_coords) {
   next::Dataset d;
-  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-
-  const auto coords = d.coords();
-  coords[Dim::X].values<double>()[0] += 0.5;
-  coords[Dim::Y].values<double>()[0] += 0.5;
-  ASSERT_TRUE(equals(coords[Dim::X].values<double>(), {1.5, 2.0, 3.0}));
-  ASSERT_TRUE(equals(coords[Dim::Y].values<double>(), {4.5, 5.0}));
-}
-
-TEST(CoordsConstProxy, iterators_empty_coords) {
-  next::Dataset d;
-  const auto coords = d.coords();
+  const auto coords = TestFixture::access(d).coords();
 
   ASSERT_NO_THROW(coords.begin());
   ASSERT_NO_THROW(coords.end());
   EXPECT_EQ(coords.begin(), coords.end());
 }
 
-TEST(CoordsConstProxy, iterators) {
+TYPED_TEST(CoordsProxyTest, iterators) {
   next::Dataset d;
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  const auto coords = d.coords();
+  const auto coords = TestFixture::access(d).coords();
 
   ASSERT_NO_THROW(coords.begin());
   ASSERT_NO_THROW(coords.end());
@@ -894,22 +854,24 @@ TEST(CoordsConstProxy, iterators) {
   auto it = coords.begin();
   ASSERT_NE(it, coords.end());
   EXPECT_EQ(it->first, Dim::X);
+  EXPECT_EQ(it->second, x);
 
   ASSERT_NO_THROW(++it);
   ASSERT_NE(it, coords.end());
   EXPECT_EQ(it->first, Dim::Y);
+  EXPECT_EQ(it->second, y);
 
   ASSERT_NO_THROW(++it);
   ASSERT_EQ(it, coords.end());
 }
 
-TEST(CoordsConstProxy, slice) {
+TYPED_TEST(CoordsProxyTest, slice) {
   next::Dataset d;
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  const auto coords = d.coords();
+  const auto coords = TestFixture::access(d).coords();
 
   const auto sliceX = coords.slice({Dim::X, 1});
   EXPECT_ANY_THROW(sliceX[Dim::X]);
@@ -938,9 +900,9 @@ auto make_dataset_2d_coord_x_1d_coord_y() {
   return d;
 }
 
-TEST(CoordsConstProxy, slice_2D_coord) {
-  const auto d = make_dataset_2d_coord_x_1d_coord_y();
-  const auto coords = d.coords();
+TYPED_TEST(CoordsProxyTest, slice_2D_coord) {
+  auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto coords = TestFixture::access(d).coords();
 
   const auto sliceX = coords.slice({Dim::X, 1});
   EXPECT_ANY_THROW(sliceX[Dim::X]);
@@ -965,9 +927,9 @@ auto check_slice_of_slice = [](const auto &dataset, const auto slice) {
   EXPECT_ANY_THROW(slice[Dim::Y]);
 };
 
-TEST(CoordsConstProxy, slice_of_slice) {
-  const auto d = make_dataset_2d_coord_x_1d_coord_y();
-  const auto cs = d.coords();
+TYPED_TEST(CoordsProxyTest, slice_of_slice) {
+  auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto cs = TestFixture::access(d).coords();
 
   check_slice_of_slice(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
   check_slice_of_slice(d, cs.slice({Dim::Y, 1}).slice({Dim::X, 1, 3}));
@@ -982,9 +944,9 @@ auto check_slice_of_slice_range = [](const auto &dataset, const auto slice) {
   EXPECT_EQ(slice[Dim::Y], dataset.coords()[Dim::Y].slice({Dim::Y, 1, 2}));
 };
 
-TEST(CoordsConstProxy, slice_of_slice_range) {
-  const auto d = make_dataset_2d_coord_x_1d_coord_y();
-  const auto cs = d.coords();
+TYPED_TEST(CoordsProxyTest, slice_of_slice_range) {
+  auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto cs = TestFixture::access(d).coords();
 
   check_slice_of_slice_range(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
   check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
@@ -1002,6 +964,22 @@ TEST(CoordsProxy, slice_return_type) {
   next::Dataset d;
   ASSERT_TRUE(
       (std::is_same_v<decltype(d.coords().slice({Dim::X, 0})), CoordsProxy>));
+}
+
+TEST(MutableCoordsProxyTest, item_write) {
+  next::Dataset d;
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
+  const auto x_reference = makeVariable<double>({Dim::X, 3}, {1.5, 2.0, 3.0});
+  const auto y_reference = makeVariable<double>({Dim::Y, 2}, {4.5, 5.0});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+
+  const auto coords = d.coords();
+  coords[Dim::X].values<double>()[0] += 0.5;
+  coords[Dim::Y].values<double>()[0] += 0.5;
+  ASSERT_EQ(coords[Dim::X], x_reference);
+  ASSERT_EQ(coords[Dim::Y], y_reference);
 }
 
 TEST(CoordsProxy, modify_slice) {
