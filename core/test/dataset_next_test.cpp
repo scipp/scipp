@@ -591,9 +591,9 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
 }
 
 // TODO sparse, bin edges
-class Dataset_slice : public ::testing::Test {
+class Dataset3DTest : public ::testing::Test {
 protected:
-  Dataset_slice() {
+  Dataset3DTest() {
     dataset.setCoord(Dim::Time, scalar());
     dataset.setCoord(Dim::X, x());
     dataset.setCoord(Dim::Y, y());
@@ -649,20 +649,20 @@ protected:
   next::Dataset dataset;
 };
 
-class Dataset_slice_x : public Dataset_slice,
+class Dataset_slice_x : public Dataset3DTest,
                         public ::testing::WithParamInterface<int> {};
-class Dataset_slice_y : public Dataset_slice,
+class Dataset_slice_y : public Dataset3DTest,
                         public ::testing::WithParamInterface<int> {};
-class Dataset_slice_z : public Dataset_slice,
+class Dataset_slice_z : public Dataset3DTest,
                         public ::testing::WithParamInterface<int> {};
 
-class Dataset_slice_range_x : public Dataset_slice,
+class Dataset_slice_range_x : public Dataset3DTest,
                               public ::testing::WithParamInterface<
                                   std::pair<scipp::index, scipp::index>> {};
-class Dataset_slice_range_y : public Dataset_slice,
+class Dataset_slice_range_y : public Dataset3DTest,
                               public ::testing::WithParamInterface<
                                   std::pair<scipp::index, scipp::index>> {};
-class Dataset_slice_range_z : public Dataset_slice,
+class Dataset_slice_range_z : public Dataset3DTest,
                               public ::testing::WithParamInterface<
                                   std::pair<scipp::index, scipp::index>> {};
 
@@ -801,6 +801,45 @@ TEST_P(Dataset_slice_range_z, slice) {
   reference.setValues("d", xyz().slice({Dim::Z, begin, end}));
 
   EXPECT_EQ(dataset.slice({Dim::Z, begin, end}), reference);
+}
+
+TEST_F(Dataset3DTest, nested_slice) {
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::X, 1}),
+            dataset.slice({Dim::X, 2}));
+}
+
+TEST_F(Dataset3DTest, nested_slice_range) {
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::X, 0, 2}),
+            dataset.slice({Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::X, 1, 2}),
+            dataset.slice({Dim::X, 2, 3}));
+}
+
+TEST_F(Dataset3DTest, commutative_slice) {
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}),
+            dataset.slice({Dim::Y, 2}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Y, 2}, {Dim::Z, 3, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2}));
+}
+
+TEST_F(Dataset3DTest, commutative_slice_range) {
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}),
+            dataset.slice({Dim::Y, 2, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Y, 2, 4}, {Dim::Z, 3, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2, 4}));
+}
+
+TEST_F(Dataset3DTest, commutative_slice_and_item_access) {
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3})["a"],
+            dataset["a"].slice({Dim::X, 1, 3}));
 }
 
 template <typename T> class CoordsProxyTest : public ::testing::Test {
