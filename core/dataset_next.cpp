@@ -476,15 +476,6 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
-std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
-  return os << to_string(variable) << " "
-            << array_to_string(variable.values<double>()) << std::endl;
-}
-
-std::ostream &operator<<(std::ostream &os, const VariableSlice &variable) {
-  return os << ConstVariableSlice(variable);
-}
-
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
   // TODO sparse
   if (data.hasValues())
@@ -523,3 +514,16 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
 }
 
 } // namespace scipp::core::next
+
+namespace scipp::core {
+
+std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
+  return os << to_string(variable) << " "
+            << array_to_string(variable.values<double>()) << std::endl;
+}
+
+std::ostream &operator<<(std::ostream &os, const VariableSlice &variable) {
+  return os << ConstVariableSlice(variable);
+}
+
+} // namespace scipp::core

@@ -66,9 +66,8 @@ auto makeSlice(Var &var,
       slice(var);
   for (const auto[params, extent] : slices) {
     const auto[dim, begin, end] = params;
-    if (slice.dimensions().contains(dim)) {
+    if (slice.dimensions().contains(dim))
       slice = slice(dim, begin, end + slice.dimensions()[dim] - extent);
-    }
   }
   return slice;
 }
@@ -323,7 +322,8 @@ public:
             if constexpr (std::is_same_v<Key, Dim>)
               return (it->first == slice.dim);
             else
-              return (it->second.first->dims().inner() == slice.dim);
+              return !it->second.first->dims().empty() &&
+                     (it->second.first->dims().inner() == slice.dim);
           };
           if (erase(it))
             it = m_items.erase(it);
@@ -482,8 +482,16 @@ public:
                          return !(*this)[index].dims().contains(slice1.dim);
                        }),
         indices.end());
-    sliced.m_slices.emplace_back(slice1,
-                                 coords()[slice1.dim].dims()[slice1.dim]);
+    // The dimension extent is either given by the coordinate, or by data, which
+    // can be 1 shorter in case of a bin-edge coordinate.
+    scipp::index extent = coords()[slice1.dim].dims()[slice1.dim];
+    for (const auto item : *this)
+      if (item.second.dims().contains(slice1.dim) &&
+          item.second.dims()[slice1.dim] == extent - 1) {
+        --extent;
+        break;
+      }
+    sliced.m_slices.emplace_back(slice1, extent);
     return sliced;
   }
 
@@ -555,8 +563,6 @@ private:
   Dataset *m_mutableDataset;
 };
 
-std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable);
-std::ostream &operator<<(std::ostream &os, const VariableSlice &variable);
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data);
 std::ostream &operator<<(std::ostream &os, const DataProxy &data);
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset);
@@ -564,6 +570,10 @@ std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset);
 
 } // namespace next
+
+std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable);
+std::ostream &operator<<(std::ostream &os, const VariableSlice &variable);
+
 } // namespace scipp::core
 
 #endif // DATASET_NEXT_H
