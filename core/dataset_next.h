@@ -24,6 +24,7 @@ class DatasetConstProxy;
 class DatasetProxy;
 
 namespace ProxyId {
+class Attrs;
 class Coords;
 class Labels;
 }
@@ -38,6 +39,10 @@ using CoordsProxy = MutableProxy<CoordsConstProxy>;
 using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string_view>;
 /// Proxy for accessing labels of Dataset and DataProxy.
 using LabelsProxy = MutableProxy<LabelsConstProxy>;
+/// Proxy for accessing attributes of const Dataset and DataConstProxy.
+using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string_view>;
+/// Proxy for accessing attributes of Dataset and DataProxy.
+using AttrsProxy = MutableProxy<AttrsConstProxy>;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
@@ -81,6 +86,7 @@ public:
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
+  AttrsConstProxy attrs() const noexcept;
 
   /// Return true if the proxy contains data values.
   bool hasValues() const noexcept { return m_data->values.has_value(); }
@@ -144,6 +150,7 @@ public:
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
+  AttrsProxy attrs() const noexcept;
 
   /// Return untyped or typed proxy for data values.
   template <class T = void> auto values() const {
@@ -218,6 +225,9 @@ public:
   LabelsConstProxy labels() const noexcept;
   LabelsProxy labels() noexcept;
 
+  AttrsConstProxy attrs() const noexcept;
+  AttrsProxy attrs() noexcept;
+
   DataConstProxy operator[](const std::string &name) const;
   DataProxy operator[](const std::string &name);
 
@@ -248,6 +258,7 @@ public:
 
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
+  void setAttr(const std::string &attrName, Variable attr);
   void setValues(const std::string &name, Variable values);
   void setVariances(const std::string &name, Variable variances);
   void setSparseCoord(const std::string &name, Variable coord);
@@ -440,6 +451,7 @@ public:
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
+  AttrsConstProxy attrs() const noexcept;
   DataConstProxy operator[](const std::string &name) const;
 
   auto begin() const && = delete;
@@ -509,6 +521,7 @@ public:
 
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
+  AttrsProxy attrs() const noexcept;
   DataProxy operator[](const std::string &name) const;
 
   auto begin() const && = delete;

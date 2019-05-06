@@ -90,6 +90,16 @@ LabelsProxy Dataset::labels() noexcept {
   return LabelsProxy(makeProxyItems<std::string_view>(m_labels));
 }
 
+/// Return a const proxy to all attributes of the dataset.
+AttrsConstProxy Dataset::attrs() const noexcept {
+  return AttrsConstProxy(makeProxyItems<std::string_view>(m_attrs));
+}
+
+/// Return a proxy to all attributes of the dataset.
+AttrsProxy Dataset::attrs() noexcept {
+  return AttrsProxy(makeProxyItems<std::string_view>(m_attrs));
+}
+
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);
@@ -116,6 +126,13 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 /// Note that the label name has no relation to names of data items.
 void Dataset::setLabels(const std::string &labelName, Variable labels) {
   m_labels.insert_or_assign(labelName, std::move(labels));
+}
+
+/// Set (insert or replace) an attribute for the given attribute name.
+///
+/// Note that the attribute name has no relation to names of data items.
+void Dataset::setAttr(const std::string &attrName, Variable attr) {
+  m_attrs.insert_or_assign(attrName, std::move(attr));
 }
 
 template <class A, class B>
@@ -293,6 +310,12 @@ LabelsConstProxy DataConstProxy::labels() const noexcept {
       slices());
 }
 
+/// Return a const proxy to all attributes of the data proxy.
+AttrsConstProxy DataConstProxy::attrs() const noexcept {
+  return AttrsConstProxy(
+      makeProxyItems<std::string_view>(dims(), m_dataset->m_attrs), slices());
+}
+
 /// Return a proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
@@ -313,6 +336,13 @@ LabelsProxy DataProxy::labels() const noexcept {
   return LabelsProxy(
       makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_labels,
                                        sparseDim(), &m_mutableData->labels),
+      slices());
+}
+
+/// Return a const proxy to all attributes of the data proxy.
+AttrsProxy DataProxy::attrs() const noexcept {
+  return AttrsProxy(
+      makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_attrs),
       slices());
 }
 
@@ -344,6 +374,18 @@ LabelsProxy DatasetProxy::labels() const noexcept {
       makeProxyItems<std::string_view>(m_mutableDataset->m_labels), slices());
 }
 
+/// Return a const proxy to all attributes of the dataset slice.
+AttrsConstProxy DatasetConstProxy::attrs() const noexcept {
+  return AttrsConstProxy(makeProxyItems<std::string_view>(m_dataset->m_attrs),
+                         slices());
+}
+
+/// Return a proxy to all attributes of the dataset slice.
+AttrsProxy DatasetProxy::attrs() const noexcept {
+  return AttrsProxy(makeProxyItems<std::string_view>(m_mutableDataset->m_attrs),
+                    slices());
+}
+
 void DatasetConstProxy::expectValidKey(const std::string &name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
     throw std::out_of_range("Invalid key `" + name + "` in Dataset access.");
@@ -368,6 +410,8 @@ bool DataConstProxy::operator==(const DataConstProxy &other) const {
     return false;
   if (labels() != other.labels())
     return false;
+  if (attrs() != other.attrs())
+    return false;
   if (hasValues() && values() != other.values())
     return false;
   if (hasVariances() && variances() != other.variances())
@@ -381,6 +425,8 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
   if (a.coords() != b.coords())
     return false;
   if (a.labels() != b.labels())
+    return false;
+  if (a.attrs() != b.attrs())
     return false;
   for (const auto & [ name, data ] : a) {
     try {
@@ -454,6 +500,9 @@ std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
   os << "Labels:\n";
   for (const auto & [ name, labels ] : dataset.labels())
     os << name << " " << labels;
+  os << "Attributes:\n";
+  for (const auto & [ name, attr ] : dataset.attrs())
+    os << name << " " << attr;
   os << "Data:\n";
   for (const auto & [ name, data ] : dataset)
     os << name << " " << data;
