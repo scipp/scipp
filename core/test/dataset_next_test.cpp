@@ -891,6 +891,15 @@ TEST_F(Dataset3DTest, nested_slice_range) {
   }
 }
 
+TEST_F(Dataset3DTest, nested_slice_range_bin_edges) {
+  auto datasetWithEdges = dataset;
+  datasetWithEdges.setCoord(Dim::X, x(5));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 0, 2}),
+            datasetWithEdges.slice({Dim::X, 1, 3}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 1, 2}),
+            datasetWithEdges.slice({Dim::X, 2, 3}));
+}
+
 TEST_F(Dataset3DTest, commutative_slice) {
   EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}),
             dataset.slice({Dim::Y, 2}, {Dim::X, 1, 3}));
