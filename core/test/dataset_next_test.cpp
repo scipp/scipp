@@ -30,6 +30,11 @@ TEST(DatasetNext, labels) {
   ASSERT_NO_THROW(d.labels());
 }
 
+TEST(DatasetNext, attrs) {
+  next::Dataset d;
+  ASSERT_NO_THROW(d.attrs());
+}
+
 TEST(DatasetNext, bad_item_access) {
   next::Dataset d;
   ASSERT_ANY_THROW(d[""]);
@@ -74,6 +79,26 @@ TEST(DatasetNext, setLabels) {
   ASSERT_NO_THROW(d.setLabels("a", var));
   ASSERT_EQ(d.size(), 0);
   ASSERT_EQ(d.labels().size(), 2);
+}
+
+TEST(DatasetNext, setAttr) {
+  next::Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.attrs().size(), 0);
+
+  ASSERT_NO_THROW(d.setAttr("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.attrs().size(), 1);
+
+  ASSERT_NO_THROW(d.setAttr("b", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.attrs().size(), 2);
+
+  ASSERT_NO_THROW(d.setAttr("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.attrs().size(), 2);
 }
 
 TEST(DatasetNext, setValues_setVariances) {
@@ -243,6 +268,14 @@ TEST(DatasetNext, iterators_only_labels) {
   EXPECT_EQ(d.begin(), d.end());
 }
 
+TEST(DatasetNext, iterators_only_attrs) {
+  next::Dataset d;
+  d.setAttr("a", makeVariable<double>({}));
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+  EXPECT_EQ(d.begin(), d.end());
+}
+
 TEST(DatasetNext, iterators) {
   next::Dataset d;
   d.setValues("a", makeVariable<double>({}));
@@ -314,6 +347,8 @@ protected:
 
     dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
 
+    dataset.setAttr("attr", makeVariable<int>({}));
+
     dataset.setValues("val_and_var",
                       makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}}));
     dataset.setVariances("val_and_var",
@@ -356,6 +391,15 @@ auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const std::initializer_list<T2> &data) {
   auto d = make_empty();
   d.setLabels(name, variable<T>(dims, unit, data));
+  return d;
+}
+
+template <class T, class T2>
+auto make_1_attr(const std::string &name, const Dimensions &dims,
+                 const units::Unit unit,
+                 const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setAttr(name, variable<T>(dims, unit, data));
   return d;
 }
 
@@ -405,6 +449,18 @@ TEST_F(Dataset_comparison_operators, single_labels) {
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 2}, units::m, {1, 2}));
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(Dataset_comparison_operators, single_attr) {
+  auto d = make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_attr<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_attr<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_attr<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_attr<double>("a", {Dim::X, 2}, units::m, {1, 2}));
+  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
+  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
 }
 
 TEST_F(Dataset_comparison_operators, single_values) {
@@ -464,6 +520,12 @@ TEST_F(Dataset_comparison_operators, extra_labels) {
   expect_ne(extra, dataset);
 }
 
+TEST_F(Dataset_comparison_operators, extra_attr) {
+  auto extra = dataset;
+  extra.setAttr("extra", makeVariable<double>({Dim::Z, 2}));
+  expect_ne(extra, dataset);
+}
+
 TEST_F(Dataset_comparison_operators, extra_data) {
   auto extra = dataset;
   extra.setValues("extra", makeVariable<double>({Dim::Z, 2}));
@@ -505,6 +567,16 @@ TEST_F(Dataset_comparison_operators, different_label_insertion_order) {
   a.setLabels("y", dataset.coords()[Dim::Y]);
   b.setLabels("y", dataset.coords()[Dim::Y]);
   b.setLabels("x", dataset.coords()[Dim::X]);
+  expect_eq(a, b);
+}
+
+TEST_F(Dataset_comparison_operators, different_attr_insertion_order) {
+  auto a = make_empty();
+  auto b = make_empty();
+  a.setAttr("x", dataset.coords()[Dim::X]);
+  a.setAttr("y", dataset.coords()[Dim::Y]);
+  b.setAttr("y", dataset.coords()[Dim::Y]);
+  b.setAttr("x", dataset.coords()[Dim::X]);
   expect_eq(a, b);
 }
 
