@@ -311,6 +311,9 @@ public:
   ConstProxy(std::map<Key, std::pair<const Variable *, Variable *>> &&items,
              const std::vector<std::pair<Slice, scipp::index>> &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
+    // TODO This is very similar to the code in makeProxyItems(), provided that
+    // we can give a good definion of the `dims` argument (roughly the space
+    // spanned by all coords, excluding the dimensions that are sliced away).
     // Remove any items for a non-range sliced dimension. Identified via the
     // item in case of coords, or via the inner dimension in case of labels and
     // attributes.

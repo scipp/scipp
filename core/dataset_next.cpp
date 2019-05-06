@@ -31,13 +31,11 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
   std::map<Key, std::pair<const Variable *, Variable *>> items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
-    // provided parent dimensions. Note that Dimensions::contains(const
-    // Dimensions &) is not doing the job here, since the extents may differ
-    // before slicing. Note the use of std::any_of (not std::all_of): At this
-    // point there may still be extra dimensions in item, but they will be
-    // sliced out. Maybe a better implementation would be to slice the coords
-    // first? That would also eliminate a potential loophole for
-    // multi-dimensional coordinates.
+    // provided parent dimensions. Note the use of std::any_of (not
+    // std::all_of): At this point there may still be extra dimensions in item,
+    // but they will be sliced out. Maybe a better implementation would be to
+    // slice the coords first? That would also eliminate a potential loophole
+    // for multi-dimensional coordinates.
     auto contained = [&dims](const auto item) {
       const auto &coordDims = item.second.dims();
       if constexpr (std::is_same_v<Key, Dim>)
