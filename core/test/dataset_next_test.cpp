@@ -732,7 +732,8 @@ protected:
   }
 };
 
-template <int max> constexpr auto nonnegative_cartesian_products() {
+/// Return all valid ranges (iterator pairs) for a container of given length.
+template <int max> constexpr auto valid_ranges() {
   using scipp::index;
   const auto size = max + 1;
   std::array<std::pair<index, index>, (size * size + size) / 2> pairs;
@@ -746,9 +747,9 @@ template <int max> constexpr auto nonnegative_cartesian_products() {
   return pairs;
 }
 
-constexpr auto ranges_x = nonnegative_cartesian_products<4>();
-constexpr auto ranges_y = nonnegative_cartesian_products<5>();
-constexpr auto ranges_z = nonnegative_cartesian_products<6>();
+constexpr auto ranges_x = valid_ranges<4>();
+constexpr auto ranges_y = valid_ranges<5>();
+constexpr auto ranges_z = valid_ranges<6>();
 
 INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_x,
                         ::testing::Range(0, 4));
@@ -847,6 +848,7 @@ TEST_P(Dataset3DTest_slice_range_y, slice_with_edges) {
   auto datasetWithEdges = dataset;
   datasetWithEdges.setCoord(Dim::Y, y(6));
   auto referenceWithEdges = reference(begin, end);
+  // Is this the correct behavior for edges also in case the range is empty?
   referenceWithEdges.setCoord(Dim::Y, y(6).slice({Dim::Y, begin, end + 1}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
 }
