@@ -35,8 +35,9 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
     // Dimensions &) is not doing the job here, since the extents may differ
     // before slicing. Note the use of std::any_of (not std::all_of): At this
     // point there may still be extra dimensions in item, but they will be
-    // sliced out.
-    // TODO I have the feeling that there is a hole in this logic.
+    // sliced out. Maybe a better implementation would be to slice the coords
+    // first? That would also eliminate a potential loophole for
+    // multi-dimensional coordinates.
     auto contained = [&dims](const auto item) {
       const auto &coordDims = item.second.dims();
       if constexpr (std::is_same_v<Key, Dim>)
@@ -52,11 +53,10 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
     }
   }
   if (sparse) {
-    if constexpr (std::is_same_v<T2, void>) {
-    } else if constexpr (std::is_same_v<T2, const Variable> ||
-                         std::is_same_v<T2, Variable>) {
+    if constexpr (std::is_same_v<T2, const Variable> ||
+                  std::is_same_v<T2, Variable>) {
       items.emplace(sparseDim, makeProxyItem(&*sparse));
-    } else {
+    } else if constexpr (!std::is_same_v<T2, void>) {
       for (const auto &item : *sparse)
         items.emplace(item.first, makeProxyItem(&item.second));
     }

@@ -297,10 +297,9 @@ public:
   ConstProxy(std::map<Key, std::pair<const Variable *, Variable *>> &&items,
              const std::vector<std::pair<Slice, scipp::index>> &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
-    // TODO duplication of slice() below?
-    // Remove any items that depend only on a non-range sliced dimension.
-    // This should be the intended behavior for coordinates and labels, but what
-    // about attributes?
+    // Remove any items for a non-range sliced dimension. Identified via the
+    // item in case of coords, or via the inner dimension in case of labels and
+    // attributes.
     for (const auto &s : m_slices) {
       const auto slice = s.first;
       if (slice.end == -1) {
