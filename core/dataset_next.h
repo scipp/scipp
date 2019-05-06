@@ -288,6 +288,10 @@ private:
   friend class DataConstProxy;
   friend class DataProxy;
 
+  void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
+  void setDims(const Dimensions &dims, const bool isCoord = false);
+
+  std::map<Dim, scipp::index> m_dims;
   std::map<Dim, Variable> m_coords;
   std::map<std::string, Variable> m_labels;
   std::map<std::string, Variable> m_attrs;

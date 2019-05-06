@@ -657,6 +657,38 @@ protected:
   next::Dataset dataset;
 };
 
+TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
+  auto edge_coord = dataset;
+  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, x(5)));
+  ASSERT_NE(edge_coord["data_xyz"], dataset["data_xyz"]);
+  // Cannot incrementally grow.
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, x(6)));
+  // Minor implementation shortcoming: Currently we cannot go back to non-edges.
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, x(4)));
+}
+
+TEST_F(Dataset3DTest,
+       dimension_extent_check_prevents_non_edge_coord_with_edge_data) {
+  // If we reduce the X extent to 3 we would have data defined at the edges, but
+  // the coord is not. This is forbidden.
+  auto edge_data = dataset;
+  ASSERT_ANY_THROW(edge_data.setCoord(Dim::X, x(3)));
+  // We *can* set data with X extent 3. The X coord is now bin edges, and other
+  // data is defined on the edges.
+  ASSERT_NO_THROW(edge_data.setValues("non_edge_data", x(3)));
+  // Now the X extent of the dataset is 3, but since we have data on the edges
+  // we still cannot change the coord to non-edges.
+  ASSERT_ANY_THROW(edge_data.setCoord(Dim::X, x(3)));
+}
+
+TEST_F(Dataset3DTest,
+       dimension_extent_check_prevents_setting_edge_data_without_edge_coord) {
+  auto edge_data = dataset;
+  ASSERT_ANY_THROW(edge_data.setValues("edge_data", x(5)));
+  ASSERT_NO_THROW(edge_data.setCoord(Dim::X, x(5)));
+  ASSERT_NO_THROW(edge_data.setValues("edge_data", x(5)));
+}
+
 class Dataset3DTest_slice_x : public Dataset3DTest,
                               public ::testing::WithParamInterface<int> {
 protected:

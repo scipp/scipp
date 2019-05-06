@@ -116,8 +116,47 @@ DataProxy Dataset::operator[](const std::string_view name) {
   return DataProxy(*this, it->second);
 }
 
+/// Helper for setDims().
+void Dataset::setExtent(const Dim dim, const scipp::index extent,
+                        const bool isCoord) {
+  const auto it = m_dims.find(dim);
+  // Internally use negative extent to indicate unknown edge state.
+  if (it == m_dims.end()) {
+    m_dims[dim] = -extent;
+  } else {
+    if (it->second < 0) {
+      if (extent == -it->second) {
+      } else if (extent == (-it->second + 1) && isCoord) {
+        it->second = extent - 1;
+      } else if (extent == (-it->second - 1) && !isCoord) {
+        it->second = extent;
+      } else {
+        throw std::runtime_error("Length mismatch on insertion");
+      }
+    } else {
+      if ((extent != it->second || isCoord) && extent != it->second + 1)
+        throw std::runtime_error("Length mismatch on insertion");
+    }
+  }
+}
+
+/// Consistency-enforcing update of the dimensions of the dataset.
+///
+/// Calling this in the various set* methods prevents insertion of variable with
+/// bad shape. This supports insertion of bin edges. Note that the current
+/// implementation does not support shape-changing operations which would in
+/// theory be permitted but are probably not important in reality: The previous
+/// extent of a replaced item is not excluded from the check, so even if that
+/// replaced item is the only one in the dataset with that dimension it cannot
+/// be "resized" in this way.
+void Dataset::setDims(const Dimensions &dims, const bool isCoord) {
+  for (const auto dim : dims.labels())
+    setExtent(dim, dims[dim], isCoord);
+}
+
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
+  setDims(coord.dims(), true);
   m_coords.insert_or_assign(dim, std::move(coord));
 }
 
@@ -125,6 +164,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 ///
 /// Note that the label name has no relation to names of data items.
 void Dataset::setLabels(const std::string &labelName, Variable labels) {
+  setDims(labels.dims());
   m_labels.insert_or_assign(labelName, std::move(labels));
 }
 
@@ -132,6 +172,7 @@ void Dataset::setLabels(const std::string &labelName, Variable labels) {
 ///
 /// Note that the attribute name has no relation to names of data items.
 void Dataset::setAttr(const std::string &attrName, Variable attr) {
+  setDims(attr.dims());
   m_attrs.insert_or_assign(attrName, std::move(attr));
 }
 
@@ -162,6 +203,7 @@ void check_dimensions(const A &values, const B &variances) {
 /// Throws if the provided values bring the dataset into an inconsistent state
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setValues(const std::string &name, Variable values) {
+  setDims(values.dims());
   const auto it = m_data.find(name);
   if (it != m_data.end() && it->second.variances) {
     const auto &variances = *it->second.variances;
@@ -177,6 +219,7 @@ void Dataset::setValues(const std::string &name, Variable values) {
 /// Throws if the provided variances bring the dataset into an inconsistent
 /// state (mismatching dtype, unit, or dimensions).
 void Dataset::setVariances(const std::string &name, Variable variances) {
+  setDims(variances.dims());
   const auto it = m_data.find(name);
   if (it == m_data.end() || !it->second.values)
     throw std::runtime_error("Cannot set variances: No data values for " +
@@ -192,6 +235,7 @@ void Dataset::setVariances(const std::string &name, Variable variances) {
 ///
 /// Sparse coordinates can exist even without corresponding data.
 void Dataset::setSparseCoord(const std::string &name, Variable coord) {
+  setDims(coord.dims());
   if (!coord.isSparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseCoord does "
                              "not contain sparse data.");
@@ -209,6 +253,7 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
 /// Set (insert or replace) the sparse labels with given name and label name.
 void Dataset::setSparseLabels(const std::string &name,
                               const std::string &labelName, Variable labels) {
+  setDims(labels.dims());
   if (!labels.isSparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseLabels does "
                              "not contain sparse data.");
