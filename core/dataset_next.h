@@ -14,6 +14,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "dimension.h"
+#include "except.h"
 #include "variable.h"
 
 namespace scipp::core {
@@ -111,6 +112,7 @@ public:
   }
 
   DataConstProxy slice(const Slice slice1) const {
+    expect::validSlice(dims(), slice1);
     auto tmp(m_slices);
     tmp.emplace_back(slice1, dims()[slice1.dim]);
     return {*m_dataset, *m_data, std::move(tmp)};
@@ -170,6 +172,7 @@ public:
   }
 
   DataProxy slice(const Slice slice1) const {
+    expect::validSlice(dims(), slice1);
     auto tmp(slices());
     tmp.emplace_back(slice1, dims()[slice1.dim]);
     return {*m_mutableDataset, *m_mutableData, std::move(tmp)};

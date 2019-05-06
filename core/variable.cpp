@@ -221,6 +221,8 @@ bool VariableConceptT<T>::operator==(const VariableConcept &other) const {
   if (this->dtype() != other.dtype())
     return false;
   const auto &otherT = requireT<const VariableConceptT>(other);
+  if (dims.volume() == 0 && dims == other.dimensions())
+    return true;
   if (this->isContiguous()) {
     if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
       return equal(getSpan(), otherT.getSpan());

@@ -1076,16 +1076,17 @@ TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
 
 // Using typed tests for common functionality of DataProxy and DataConstProxy.
 template <typename T> class DataProxyTest : public ::testing::Test {
-public:
-  using proxy_type = T;
+protected:
+  using dataset_type = std::conditional_t<std::is_same_v<T, next::DataProxy>,
+                                          next::Dataset, const next::Dataset>;
 };
 
-using DataProxyTypes = ::testing::Types<next::Dataset, const next::Dataset>;
+using DataProxyTypes = ::testing::Types<next::DataProxy, next::DataConstProxy>;
 TYPED_TEST_CASE(DataProxyTest, DataProxyTypes);
 
 TYPED_TEST(DataProxyTest, isSparse_sparseDim) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
 
   d.setValues("dense", makeVariable<double>({}));
   ASSERT_FALSE(d_ref["dense"].isSparse());
@@ -1105,7 +1106,7 @@ TYPED_TEST(DataProxyTest, dims) {
   const auto dense = makeVariable<double>({{Dim::X, 1}, {Dim::Y, 2}});
   const auto sparse =
       makeSparseVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z);
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
 
   d.setValues("dense", dense);
   ASSERT_EQ(d_ref["dense"].dims(), dense.dims());
@@ -1125,7 +1126,7 @@ TYPED_TEST(DataProxyTest, dims) {
 
 TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
   const auto var = makeVariable<double>({Dim::X, 3});
@@ -1138,7 +1139,7 @@ TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
 
 TYPED_TEST(DataProxyTest, unit) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
 
   d.setValues("dense", makeVariable<double>({}));
   EXPECT_EQ(d_ref["dense"].unit(), units::dimensionless);
@@ -1146,31 +1147,30 @@ TYPED_TEST(DataProxyTest, unit) {
 
 TYPED_TEST(DataProxyTest, unit_access_fails_without_values) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   d.setSparseCoord("sparse", makeSparseVariable<double>({}, Dim::X));
   EXPECT_ANY_THROW(d_ref["sparse"].unit());
 }
 
 TYPED_TEST(DataProxyTest, coords) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<double>({Dim::X, 3});
   d.setCoord(Dim::X, var);
   d.setValues("a", var);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
-  ASSERT_EQ(d_ref["a"].coords().size(), 1);
-  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
-  ASSERT_EQ(d_ref["a"].coords()[Dim::X], var);
+  ASSERT_EQ(d_ref["a"].coords(), d.coords());
 }
 
 TYPED_TEST(DataProxyTest, coords_sparse) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
   d.setSparseCoord("a", var);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
+  ASSERT_NE(d_ref["a"].coords(), d.coords());
   ASSERT_EQ(d_ref["a"].coords().size(), 1);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
   ASSERT_EQ(d_ref["a"].coords()[Dim::Y], var);
@@ -1178,7 +1178,7 @@ TYPED_TEST(DataProxyTest, coords_sparse) {
 
 TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
   const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
@@ -1187,6 +1187,7 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
   d.setSparseCoord("a", sparse);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
+  ASSERT_NE(d_ref["a"].coords(), d.coords());
   ASSERT_EQ(d_ref["a"].coords().size(), 2);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
@@ -1197,7 +1198,7 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
 
 TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
   const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
@@ -1208,6 +1209,7 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
   ASSERT_NO_THROW(d_ref["a"].coords());
   // Dim::Y is sparse, so the global (non-sparse) Y coordinate does not make
   // sense and is thus hidden.
+  ASSERT_NE(d_ref["a"].coords(), d.coords());
   ASSERT_EQ(d_ref["a"].coords().size(), 1);
   ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
   ASSERT_ANY_THROW(d_ref["a"].coords()[Dim::Y]);
@@ -1216,7 +1218,7 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
 
 TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
   const auto var = makeVariable<double>({Dim::X, 3});
@@ -1225,6 +1227,7 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
   d.setValues("a", var);
   const auto coords = d_ref["a"].coords();
 
+  ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);
@@ -1232,7 +1235,7 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
 
 TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   const auto y = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
   const auto var = makeVariable<double>({Dim::X, 3});
@@ -1241,6 +1244,7 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
   d.setValues("a", var);
   const auto coords = d_ref["a"].coords();
 
+  ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);
@@ -1249,7 +1253,7 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
 TYPED_TEST(DataProxyTest,
            coords_contains_only_relevant_2d_not_dropped_inconsistency) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
   const auto y = makeVariable<double>({Dim::Y, 3});
   const auto var = makeVariable<double>({Dim::X, 3});
@@ -1263,6 +1267,7 @@ TYPED_TEST(DataProxyTest,
   // not, it implies that the coordinate cannot be for this data item, so it
   // should be dropped... HOWEVER, the current implementation DOES NOT DROP IT.
   // Should that be changed?
+  ASSERT_NE(coords, d.coords());
   ASSERT_EQ(coords.size(), 1);
   ASSERT_NO_THROW(coords[Dim::X]);
   ASSERT_EQ(coords[Dim::X], x);
@@ -1270,7 +1275,7 @@ TYPED_TEST(DataProxyTest,
 
 TYPED_TEST(DataProxyTest, hasValues_hasVariances) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<double>({});
 
   d.setValues("a", var);
@@ -1286,7 +1291,7 @@ TYPED_TEST(DataProxyTest, hasValues_hasVariances) {
 
 TYPED_TEST(DataProxyTest, values_variances) {
   next::Dataset d;
-  typename TestFixture::proxy_type &d_ref(d);
+  typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
   d.setValues("a", var);
   d.setVariances("a", var);
@@ -1299,81 +1304,95 @@ TYPED_TEST(DataProxyTest, values_variances) {
   ASSERT_ANY_THROW(d_ref["a"].template variances<float>());
 }
 
-template <typename T>
-class DataProxy_values_xy_coords_x_y : public ::testing::Test {
+template <typename T> class DataProxy3DTest : public Dataset3DTest {
 protected:
-  T dataset = []() {
-    next::Dataset d;
-    const auto x = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
-    const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
-    const auto var = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}});
-    d.setCoord(Dim::X, x);
-    d.setCoord(Dim::Y, y);
-    d.setValues("a", var);
-    return d;
-  }();
+  using dataset_type = std::conditional_t<std::is_same_v<T, next::DataProxy>,
+                                          next::Dataset, const next::Dataset>;
+
+  dataset_type &dataset() { return Dataset3DTest::dataset; }
 };
 
-using DataProxyTypes = ::testing::Types<next::Dataset, const next::Dataset>;
-TYPED_TEST_CASE(DataProxy_values_xy_coords_x_y, DataProxyTypes);
+TYPED_TEST_CASE(DataProxy3DTest, DataProxyTypes);
 
-TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_single) {
-  auto &d = TestFixture::dataset;
-
-  ASSERT_NO_THROW(d["a"].slice({Dim::X, 1}));
-  const auto sliceX = d["a"].slice({Dim::X, 1});
-  ASSERT_EQ(sliceX.dims(), Dimensions({Dim::Y, 3}));
+// We have tests that ensure that Dataset::slice is correct (and its item access
+// returns the correct data), so we rely on that for verifying the results of
+// slicing DataProxy.
+TYPED_TEST(DataProxy3DTest, slice_single) {
+  auto &d = TestFixture::dataset();
+  for (const auto[name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1}));
+        for (scipp::index i = 0; i < item.dims()[dim]; ++i)
+          EXPECT_EQ(item.slice({dim, i}), d.slice({dim, i})[name]);
+        EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0}));
+      }
+    }
+  }
 }
 
-TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_length_1) {
-  auto &d = TestFixture::dataset;
-
-  ASSERT_NO_THROW(d["a"].slice({Dim::X, 1, 2}));
-  const auto sliceX = d["a"].slice({Dim::X, 1, 2});
-  ASSERT_EQ(sliceX.dims(), Dimensions({{Dim::Y, 3}, {Dim::X, 1}}));
+TYPED_TEST(DataProxy3DTest, slice_length_0) {
+  auto &d = TestFixture::dataset();
+  for (const auto[name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1, -1}));
+        for (scipp::index i = 0; i < item.dims()[dim]; ++i)
+          EXPECT_EQ(item.slice({dim, i, i + 0}),
+                    d.slice({dim, i, i + 0})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 0}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
+      }
+    }
+  }
 }
 
-TYPED_TEST(DataProxy_values_xy_coords_x_y, slice) {
-  auto &d = TestFixture::dataset;
-
-  ASSERT_NO_THROW(d["a"].slice({Dim::X, 1, 3}));
-  const auto sliceX = d["a"].slice({Dim::X, 1, 3});
-  ASSERT_EQ(sliceX.dims(), Dimensions({{Dim::Y, 3}, {Dim::X, 2}}));
+TYPED_TEST(DataProxy3DTest, slice_length_1) {
+  auto &d = TestFixture::dataset();
+  for (const auto[name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1, 0}));
+        for (scipp::index i = 0; i < item.dims()[dim]; ++i)
+          EXPECT_EQ(item.slice({dim, i, i + 1}),
+                    d.slice({dim, i, i + 1})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 1}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
+      }
+    }
+  }
 }
 
-TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_single_coords) {
-  auto &d = TestFixture::dataset;
-  const auto slice = d["a"].slice({Dim::X, 1});
-  const auto coords = slice.coords();
-
-  ASSERT_EQ(coords.size(), 1);
-  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
-}
-
-TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_length_1_coords) {
-  auto &d = TestFixture::dataset;
-  const auto slice = d["a"].slice({Dim::X, 1, 2});
-  const auto coords = slice.coords();
-
-  ASSERT_EQ(coords.size(), 2);
-  ASSERT_EQ(coords[Dim::X].dims(), Dimensions({Dim::X, 1}));
-  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
-}
-
-TYPED_TEST(DataProxy_values_xy_coords_x_y, slice_coords) {
-  auto &d = TestFixture::dataset;
-  const auto slice = d["a"].slice({Dim::X, 1, 3});
-  const auto coords = slice.coords();
-
-  ASSERT_EQ(coords.size(), 2);
-  ASSERT_EQ(coords[Dim::X].dims(), Dimensions({Dim::X, 2}));
-  ASSERT_EQ(coords[Dim::Y].dims(), Dimensions({Dim::Y, 3}));
+TYPED_TEST(DataProxy3DTest, slice) {
+  auto &d = TestFixture::dataset();
+  for (const auto[name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1, 1}));
+        for (scipp::index i = 0; i < item.dims()[dim] - 1; ++i)
+          EXPECT_EQ(item.slice({dim, i, i + 2}),
+                    d.slice({dim, i, i + 2})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 2}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0, 2}));
+      }
+    }
+  }
 }
 
 template <typename T>
 class DataProxy_values_xy_coords_xbins_y : public ::testing::Test {
 protected:
-  T dataset = []() {
+  using dataset_type = std::conditional_t<std::is_same_v<T, next::DataProxy>,
+                                          next::Dataset, const next::Dataset>;
+  dataset_type dataset = []() {
     next::Dataset d;
     const auto x = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
     const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
@@ -1385,7 +1404,6 @@ protected:
   }();
 };
 
-using DataProxyTypes = ::testing::Types<next::Dataset, const next::Dataset>;
 TYPED_TEST_CASE(DataProxy_values_xy_coords_xbins_y, DataProxyTypes);
 
 TYPED_TEST(DataProxy_values_xy_coords_xbins_y, slice_single) {
