@@ -594,6 +594,7 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
 class Dataset_slice : public ::testing::Test {
 protected:
   Dataset_slice() {
+    dataset.setCoord(Dim::Time, scalar());
     dataset.setCoord(Dim::X, x());
     dataset.setCoord(Dim::Y, y());
     dataset.setCoord(Dim::Z, xyz());
@@ -612,8 +613,11 @@ protected:
     dataset.setVariances("c", zyx());
 
     dataset.setValues("d", xyz());
+
+    dataset.setValues("e", scalar());
   }
 
+  Variable scalar() const { return makeVariable<double>({}, {1000}); }
   Variable x() const { return makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4}); }
   Variable y() const {
     return makeVariable<double>({Dim::Y, 5}, {5, 6, 7, 8, 9});
@@ -694,6 +698,7 @@ INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset_slice_range_z,
 TEST_P(Dataset_slice_x, slice) {
   const auto pos = GetParam();
   next::Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
   reference.setCoord(Dim::Y, y());
   reference.setCoord(Dim::Z, xyz().slice({Dim::X, pos}));
   reference.setLabels("y", xy().slice({Dim::X, pos}));
@@ -712,6 +717,7 @@ TEST_P(Dataset_slice_x, slice) {
 TEST_P(Dataset_slice_y, slice) {
   const auto pos = GetParam();
   next::Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
   reference.setCoord(Dim::X, x());
   reference.setCoord(Dim::Z, xyz().slice({Dim::Y, pos}));
   reference.setLabels("x", x());
@@ -728,6 +734,7 @@ TEST_P(Dataset_slice_y, slice) {
 TEST_P(Dataset_slice_z, slice) {
   const auto pos = GetParam();
   next::Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
   reference.setCoord(Dim::X, x());
   reference.setCoord(Dim::Y, y());
   reference.setLabels("x", x());
@@ -742,6 +749,7 @@ TEST_P(Dataset_slice_z, slice) {
 TEST_P(Dataset_slice_range_x, slice) {
   const auto[begin, end] = GetParam();
   next::Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
   reference.setCoord(Dim::X, x().slice({Dim::X, begin, end}));
   reference.setCoord(Dim::Y, y());
   reference.setCoord(Dim::Z, xyz().slice({Dim::X, begin, end}));
@@ -762,6 +770,7 @@ TEST_P(Dataset_slice_range_x, slice) {
 TEST_P(Dataset_slice_range_y, slice) {
   const auto[begin, end] = GetParam();
   next::Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
   reference.setCoord(Dim::X, x());
   reference.setCoord(Dim::Y, y().slice({Dim::Y, begin, end}));
   reference.setCoord(Dim::Z, xyz().slice({Dim::Y, begin, end}));
@@ -780,6 +789,7 @@ TEST_P(Dataset_slice_range_y, slice) {
 TEST_P(Dataset_slice_range_z, slice) {
   const auto[begin, end] = GetParam();
   next::Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
   reference.setCoord(Dim::X, x());
   reference.setCoord(Dim::Y, y());
   reference.setCoord(Dim::Z, xyz().slice({Dim::Z, begin, end}));
