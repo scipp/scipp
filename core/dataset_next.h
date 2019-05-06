@@ -496,7 +496,6 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  const Dataset &parent() const noexcept { return *m_dataset; }
   const auto &slices() const noexcept { return m_slices; }
 
   bool operator==(const Dataset &other) const;
@@ -551,8 +550,6 @@ public:
                      const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
-
-  Dataset &parent() const noexcept { return *m_mutableDataset; }
 
 private:
   Dataset *m_mutableDataset;

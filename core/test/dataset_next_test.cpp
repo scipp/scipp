@@ -649,22 +649,25 @@ protected:
   next::Dataset dataset;
 };
 
-class Dataset_slice_x : public Dataset3DTest,
-                        public ::testing::WithParamInterface<int> {};
-class Dataset_slice_y : public Dataset3DTest,
-                        public ::testing::WithParamInterface<int> {};
-class Dataset_slice_z : public Dataset3DTest,
-                        public ::testing::WithParamInterface<int> {};
+class Dataset3DTest_slice_x : public Dataset3DTest,
+                              public ::testing::WithParamInterface<int> {};
+class Dataset3DTest_slice_y : public Dataset3DTest,
+                              public ::testing::WithParamInterface<int> {};
+class Dataset3DTest_slice_z : public Dataset3DTest,
+                              public ::testing::WithParamInterface<int> {};
 
-class Dataset_slice_range_x : public Dataset3DTest,
-                              public ::testing::WithParamInterface<
-                                  std::pair<scipp::index, scipp::index>> {};
-class Dataset_slice_range_y : public Dataset3DTest,
-                              public ::testing::WithParamInterface<
-                                  std::pair<scipp::index, scipp::index>> {};
-class Dataset_slice_range_z : public Dataset3DTest,
-                              public ::testing::WithParamInterface<
-                                  std::pair<scipp::index, scipp::index>> {};
+class Dataset3DTest_slice_range_x : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
+};
+class Dataset3DTest_slice_range_y : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
+};
+class Dataset3DTest_slice_range_z : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
+};
 
 template <int max> constexpr auto positive_cartesian_products() {
   using scipp::index;
@@ -684,18 +687,21 @@ constexpr auto ranges_x = positive_cartesian_products<4>();
 constexpr auto ranges_y = positive_cartesian_products<5>();
 constexpr auto ranges_z = positive_cartesian_products<6>();
 
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset_slice_x, ::testing::Range(0, 4));
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset_slice_y, ::testing::Range(0, 5));
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset_slice_z, ::testing::Range(0, 6));
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_x,
+                        ::testing::Range(0, 4));
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_y,
+                        ::testing::Range(0, 5));
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_z,
+                        ::testing::Range(0, 6));
 
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset_slice_range_x,
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_x,
                         ::testing::ValuesIn(ranges_x));
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset_slice_range_y,
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
                         ::testing::ValuesIn(ranges_y));
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset_slice_range_z,
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
                         ::testing::ValuesIn(ranges_z));
 
-TEST_P(Dataset_slice_x, slice) {
+TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
   next::Dataset reference;
   reference.setCoord(Dim::Time, scalar());
@@ -714,7 +720,7 @@ TEST_P(Dataset_slice_x, slice) {
   EXPECT_EQ(dataset.slice({Dim::X, pos}), reference);
 }
 
-TEST_P(Dataset_slice_y, slice) {
+TEST_P(Dataset3DTest_slice_y, slice) {
   const auto pos = GetParam();
   next::Dataset reference;
   reference.setCoord(Dim::Time, scalar());
@@ -731,7 +737,7 @@ TEST_P(Dataset_slice_y, slice) {
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
 
-TEST_P(Dataset_slice_z, slice) {
+TEST_P(Dataset3DTest_slice_z, slice) {
   const auto pos = GetParam();
   next::Dataset reference;
   reference.setCoord(Dim::Time, scalar());
@@ -746,7 +752,7 @@ TEST_P(Dataset_slice_z, slice) {
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
 
-TEST_P(Dataset_slice_range_x, slice) {
+TEST_P(Dataset3DTest_slice_range_x, slice) {
   const auto[begin, end] = GetParam();
   next::Dataset reference;
   reference.setCoord(Dim::Time, scalar());
@@ -767,7 +773,7 @@ TEST_P(Dataset_slice_range_x, slice) {
   EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
 }
 
-TEST_P(Dataset_slice_range_y, slice) {
+TEST_P(Dataset3DTest_slice_range_y, slice) {
   const auto[begin, end] = GetParam();
   next::Dataset reference;
   reference.setCoord(Dim::Time, scalar());
@@ -786,7 +792,7 @@ TEST_P(Dataset_slice_range_y, slice) {
   EXPECT_EQ(dataset.slice({Dim::Y, begin, end}), reference);
 }
 
-TEST_P(Dataset_slice_range_z, slice) {
+TEST_P(Dataset3DTest_slice_range_z, slice) {
   const auto[begin, end] = GetParam();
   next::Dataset reference;
   reference.setCoord(Dim::Time, scalar());
@@ -835,11 +841,6 @@ TEST_F(Dataset3DTest, commutative_slice_range) {
             dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2, 4}, {Dim::X, 1, 3}));
   EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
             dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2, 4}));
-}
-
-TEST_F(Dataset3DTest, commutative_slice_and_item_access) {
-  EXPECT_EQ(dataset.slice({Dim::X, 1, 3})["a"],
-            dataset["a"].slice({Dim::X, 1, 3}));
 }
 
 template <typename T> class CoordsProxyTest : public ::testing::Test {
