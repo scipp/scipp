@@ -501,7 +501,10 @@ Variable::Variable(const ConstVariableSlice &slice)
   if (slice.m_view) {
     setUnit(slice.unit());
     setDimensions(slice.dimensions());
-    data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
+    // There is a bug in the implementation of MultiIndex used in VariableView
+    // in case one of the dimensions has extent 0.
+    if (dims().volume() != 0)
+      data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
   }
 }
 Variable::Variable(const Variable &parent, const Dimensions &dims)

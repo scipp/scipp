@@ -732,13 +732,13 @@ protected:
   }
 };
 
-template <int max> constexpr auto positive_cartesian_products() {
+template <int max> constexpr auto nonnegative_cartesian_products() {
   using scipp::index;
   const auto size = max + 1;
-  std::array<std::pair<index, index>, (size * size - size) / 2> pairs;
+  std::array<std::pair<index, index>, (size * size + size) / 2> pairs;
   index i = 0;
   for (index first = 0; first <= max; ++first)
-    for (index second = first + 1; second <= max; ++second) {
+    for (index second = first + 0; second <= max; ++second) {
       pairs[i].first = first;
       pairs[i].second = second;
       ++i;
@@ -746,9 +746,9 @@ template <int max> constexpr auto positive_cartesian_products() {
   return pairs;
 }
 
-constexpr auto ranges_x = positive_cartesian_products<4>();
-constexpr auto ranges_y = positive_cartesian_products<5>();
-constexpr auto ranges_z = positive_cartesian_products<6>();
+constexpr auto ranges_x = nonnegative_cartesian_products<4>();
+constexpr auto ranges_y = nonnegative_cartesian_products<5>();
+constexpr auto ranges_z = nonnegative_cartesian_products<6>();
 
 INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_x,
                         ::testing::Range(0, 4));
