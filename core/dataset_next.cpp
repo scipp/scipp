@@ -37,11 +37,14 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
     // point there may still be extra dimensions in item, but they will be
     // sliced out.
     // TODO I have the feeling that there is a hole in this logic.
-    const auto &labels = item.second.dimensions().labels();
-    if (labels.empty() ||
-        std::any_of(labels.begin(), labels.end(), [&dims](const Dim label) {
-          return dims.contains(label);
-        })) {
+    auto contained = [&dims](const auto item) {
+      const auto &coordDims = item.second.dims();
+      if constexpr (std::is_same_v<Key, Dim>)
+        return coordDims.empty() || dims.contains(item.first);
+      else
+        return coordDims.empty() || dims.contains(coordDims.inner());
+    };
+    if (contained(item)) {
       // Shadow all global coordinates that depend on the sparse dimension.
       if ((sparseDim == Dim::Invalid) ||
           (!item.second.dimensions().contains(sparseDim)))
