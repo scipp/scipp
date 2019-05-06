@@ -101,18 +101,20 @@ AttrsProxy Dataset::attrs() noexcept {
 }
 
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy Dataset::operator[](const std::string &name) const {
+DataConstProxy Dataset::operator[](const std::string_view name) const {
   const auto it = m_data.find(name);
   if (it == m_data.end())
-    throw std::out_of_range("Could not find data with name " + name + ".");
+    throw std::out_of_range("Could not find data with name " +
+                            std::string(name) + ".");
   return DataConstProxy(*this, it->second);
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy Dataset::operator[](const std::string &name) {
+DataProxy Dataset::operator[](const std::string_view name) {
   const auto it = m_data.find(name);
   if (it == m_data.end())
-    throw std::out_of_range("Could not find data with name " + name + ".");
+    throw std::out_of_range("Could not find data with name " +
+                            std::string(name) + ".");
   return DataProxy(*this, it->second);
 }
 
@@ -386,19 +388,22 @@ AttrsProxy DatasetProxy::attrs() const noexcept {
                     slices());
 }
 
-void DatasetConstProxy::expectValidKey(const std::string &name) const {
+void DatasetConstProxy::expectValidKey(const std::string_view name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
-    throw std::out_of_range("Invalid key `" + name + "` in Dataset access.");
+    throw std::out_of_range("Invalid key `" + std::string(name) +
+                            "` in Dataset access.");
 }
 
-DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
+DataConstProxy DatasetConstProxy::
+operator[](const std::string_view name) const {
   expectValidKey(name);
-  return {*m_dataset, (*m_dataset).m_data.at(name), slices()};
+  return {*m_dataset, (*m_dataset).m_data.find(name)->second, slices()};
 }
 
-DataProxy DatasetProxy::operator[](const std::string &name) const {
+DataProxy DatasetProxy::operator[](const std::string_view name) const {
   expectValidKey(name);
-  return {*m_mutableDataset, (*m_mutableDataset).m_data.at(name), slices()};
+  return {*m_mutableDataset, (*m_mutableDataset).m_data.find(name)->second,
+          slices()};
 }
 
 bool DataConstProxy::operator==(const DataConstProxy &other) const {

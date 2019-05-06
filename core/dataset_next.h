@@ -5,6 +5,7 @@
 #ifndef DATASET_NEXT_H
 #define DATASET_NEXT_H
 
+#include <functional>
 #include <iosfwd>
 #include <optional>
 #include <string>
@@ -228,8 +229,8 @@ public:
   AttrsConstProxy attrs() const noexcept;
   AttrsProxy attrs() noexcept;
 
-  DataConstProxy operator[](const std::string &name) const;
-  DataProxy operator[](const std::string &name);
+  DataConstProxy operator[](const std::string_view name) const;
+  DataProxy operator[](const std::string_view name);
 
   auto begin() const && = delete;
   auto begin() && = delete;
@@ -288,7 +289,7 @@ private:
   std::map<Dim, Variable> m_coords;
   std::map<std::string, Variable> m_labels;
   std::map<std::string, Variable> m_attrs;
-  std::map<std::string, detail::DatasetData> m_data;
+  std::map<std::string, detail::DatasetData, std::less<>> m_data;
 };
 
 /// Common functionality for other const-proxy classes.
@@ -452,7 +453,7 @@ public:
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
-  DataConstProxy operator[](const std::string &name) const;
+  DataConstProxy operator[](const std::string_view name) const;
 
   auto begin() const && = delete;
   auto begin() const &noexcept {
@@ -504,7 +505,7 @@ private:
   const Dataset *m_dataset;
 
 protected:
-  void expectValidKey(const std::string &name) const;
+  void expectValidKey(const std::string_view name) const;
   std::vector<std::string> m_indices;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
@@ -522,7 +523,7 @@ public:
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
-  DataProxy operator[](const std::string &name) const;
+  DataProxy operator[](const std::string_view name) const;
 
   auto begin() const && = delete;
   auto begin() const &noexcept {
