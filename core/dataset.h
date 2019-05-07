@@ -92,20 +92,20 @@ public:
   /// Return true if the proxy contains data variances.
   bool hasVariances() const noexcept { return m_data->variances.has_value(); }
 
-  /// Return untyped or typed const proxy for data values.
-  template <class T = void> auto values() const {
-    if constexpr (std::is_same_v<T, void>)
-      return detail::makeSlice(*m_data->values, slices());
-    else
-      return values().template span<T>();
+  /// Return untyped const proxy for data values.
+  ConstVariableSlice values() const {
+    return detail::makeSlice(*m_data->values, slices());
   }
+  /// Return typed const proxy for data values.
+  template <class T> auto values() const { return values().template span<T>(); }
 
-  /// Return untyped or typed const proxy for data variances.
-  template <class T = void> auto variances() const {
-    if constexpr (std::is_same_v<T, void>)
-      return detail::makeSlice(*m_data->variances, slices());
-    else
-      return variances().template span<T>();
+  /// Return untyped const proxy for data variances.
+  ConstVariableSlice variances() const {
+    return detail::makeSlice(*m_data->variances, slices());
+  }
+  /// Return typed const proxy for data variances.
+  template <class T> auto variances() const {
+    return variances().template span<T>();
   }
 
   DataConstProxy slice(const Slice slice1) const {
@@ -129,7 +129,9 @@ public:
     return !operator==(other);
   }
 
-  const auto &slices() const noexcept { return m_slices; }
+  const std::vector<std::pair<Slice, scipp::index>> &slices() const noexcept {
+    return m_slices;
+  }
 
 private:
   friend class DatasetConstProxy;
@@ -152,20 +154,20 @@ public:
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
 
-  /// Return untyped or typed proxy for data values.
-  template <class T = void> auto values() const {
-    if constexpr (std::is_same_v<T, void>)
-      return detail::makeSlice(*m_mutableData->values, slices());
-    else
-      return values().template span<T>();
+  /// Return untyped proxy for data values.
+  VariableSlice values() const {
+    return detail::makeSlice(*m_mutableData->values, slices());
   }
+  /// Return typed proxy for data values.
+  template <class T> auto values() const { return values().template span<T>(); }
 
-  /// Return untyped or typed proxy for data variances.
-  template <class T = void> auto variances() const {
-    if constexpr (std::is_same_v<T, void>)
-      return detail::makeSlice(*m_mutableData->variances, slices());
-    else
-      return variances().template span<T>();
+  /// Return untyped proxy for data variances.
+  VariableSlice variances() const {
+    return detail::makeSlice(*m_mutableData->variances, slices());
+  }
+  /// Return typed proxy for data variances.
+  template <class T> auto variances() const {
+    return variances().template span<T>();
   }
 
   DataProxy slice(const Slice slice1) const {
