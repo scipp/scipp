@@ -120,15 +120,16 @@ DataProxy Dataset::operator[](const std::string_view name) {
 void Dataset::setExtent(const Dim dim, const scipp::index extent,
                         const bool isCoord) {
   const auto it = m_dims.find(dim);
-  // Internally use negative extent to indicate unknown edge state.
+  // Internally use negative extent -1 to indicate unknown edge state. The `-1`
+  // is required for dimensions with extent 0.
   if (it == m_dims.end()) {
-    m_dims[dim] = -extent;
+    m_dims[dim] = -extent - 1;
   } else {
     if (it->second < 0) {
-      if (extent == -it->second) {
-      } else if (extent == (-it->second + 1) && isCoord) {
+      if (extent == -it->second - 1) {
+      } else if (extent == (-it->second - 1 + 1) && isCoord) {
         it->second = extent - 1;
-      } else if (extent == (-it->second - 1) && !isCoord) {
+      } else if (extent == (-it->second - 1 - 1) && !isCoord) {
         it->second = extent;
       } else {
         throw std::runtime_error("Length mismatch on insertion");
