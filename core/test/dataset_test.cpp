@@ -11,36 +11,36 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(DatasetNext, construct_default) { ASSERT_NO_THROW(Dataset d); }
+TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
-TEST(DatasetNext, empty) {
+TEST(DatasetTest, empty) {
   Dataset d;
   ASSERT_TRUE(d.empty());
   ASSERT_EQ(d.size(), 0);
 }
 
-TEST(DatasetNext, coords) {
+TEST(DatasetTest, coords) {
   Dataset d;
   ASSERT_NO_THROW(d.coords());
 }
 
-TEST(DatasetNext, labels) {
+TEST(DatasetTest, labels) {
   Dataset d;
   ASSERT_NO_THROW(d.labels());
 }
 
-TEST(DatasetNext, attrs) {
+TEST(DatasetTest, attrs) {
   Dataset d;
   ASSERT_NO_THROW(d.attrs());
 }
 
-TEST(DatasetNext, bad_item_access) {
+TEST(DatasetTest, bad_item_access) {
   Dataset d;
   ASSERT_ANY_THROW(d[""]);
   ASSERT_ANY_THROW(d["abc"]);
 }
 
-TEST(DatasetNext, setCoord) {
+TEST(DatasetTest, setCoord) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
 
@@ -60,7 +60,7 @@ TEST(DatasetNext, setCoord) {
   ASSERT_EQ(d.coords().size(), 2);
 }
 
-TEST(DatasetNext, setLabels) {
+TEST(DatasetTest, setLabels) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
 
@@ -80,7 +80,7 @@ TEST(DatasetNext, setLabels) {
   ASSERT_EQ(d.labels().size(), 2);
 }
 
-TEST(DatasetNext, setAttr) {
+TEST(DatasetTest, setAttr) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
 
@@ -100,7 +100,7 @@ TEST(DatasetNext, setAttr) {
   ASSERT_EQ(d.attrs().size(), 2);
 }
 
-TEST(DatasetNext, setValues_setVariances) {
+TEST(DatasetTest, setValues_setVariances) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
 
@@ -118,7 +118,7 @@ TEST(DatasetNext, setValues_setVariances) {
 
   ASSERT_ANY_THROW(d.setVariances("c", var));
 }
-TEST(DatasetNext, setLabels_with_name_matching_data_name) {
+TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
   d.setValues("a", makeVariable<double>({Dim::X, 3}));
   d.setValues("b", makeVariable<double>({Dim::X, 3}));
@@ -133,14 +133,14 @@ TEST(DatasetNext, setLabels_with_name_matching_data_name) {
   ASSERT_EQ(d["b"].labels().size(), 1);
 }
 
-TEST(DatasetNext, setVariances_dtype_mismatch) {
+TEST(DatasetTest, setVariances_dtype_mismatch) {
   Dataset d;
   d.setValues("", makeVariable<double>({}));
   ASSERT_ANY_THROW(d.setVariances("", makeVariable<float>({})));
   ASSERT_NO_THROW(d.setVariances("", makeVariable<double>({})));
 }
 
-TEST(DatasetNext, setVariances_unit_mismatch) {
+TEST(DatasetTest, setVariances_unit_mismatch) {
   Dataset d;
   auto values = makeVariable<double>({});
   values.setUnit(units::m);
@@ -153,14 +153,14 @@ TEST(DatasetNext, setVariances_unit_mismatch) {
   ASSERT_NO_THROW(d.setVariances("", variances));
 }
 
-TEST(DatasetNext, setVariances_dimensions_mismatch) {
+TEST(DatasetTest, setVariances_dimensions_mismatch) {
   Dataset d;
   d.setValues("", makeVariable<double>({}));
   ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({Dim::X, 1})));
   ASSERT_NO_THROW(d.setVariances("", makeVariable<double>({})));
 }
 
-TEST(DatasetNext, setVariances_sparseDim_mismatch) {
+TEST(DatasetTest, setVariances_sparseDim_mismatch) {
   Dataset d;
   d.setValues("", makeSparseVariable<double>({}, Dim::X));
   ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({Dim::X, 1})));
@@ -171,7 +171,7 @@ TEST(DatasetNext, setVariances_sparseDim_mismatch) {
   ASSERT_NO_THROW(d.setVariances("", makeSparseVariable<double>({}, Dim::X)));
 }
 
-TEST(DatasetNext, setValues_dtype_mismatch) {
+TEST(DatasetTest, setValues_dtype_mismatch) {
   Dataset d;
   d.setValues("", makeVariable<double>({}));
   d.setVariances("", makeVariable<double>({}));
@@ -179,7 +179,7 @@ TEST(DatasetNext, setValues_dtype_mismatch) {
   ASSERT_NO_THROW(d.setValues("", makeVariable<double>({})));
 }
 
-TEST(DatasetNext, setValues_dimensions_mismatch) {
+TEST(DatasetTest, setValues_dimensions_mismatch) {
   Dataset d;
   d.setValues("", makeVariable<double>({}));
   d.setVariances("", makeVariable<double>({}));
@@ -187,7 +187,7 @@ TEST(DatasetNext, setValues_dimensions_mismatch) {
   ASSERT_NO_THROW(d.setValues("", makeVariable<double>({})));
 }
 
-TEST(DatasetNext, setValues_sparseDim_mismatch) {
+TEST(DatasetTest, setValues_sparseDim_mismatch) {
   Dataset d;
   d.setValues("", makeSparseVariable<double>({}, Dim::X));
   d.setVariances("", makeSparseVariable<double>({}, Dim::X));
@@ -199,14 +199,14 @@ TEST(DatasetNext, setValues_sparseDim_mismatch) {
   ASSERT_NO_THROW(d.setValues("", makeSparseVariable<double>({}, Dim::X)));
 }
 
-TEST(DatasetNext, setSparseCoord_not_sparse_fail) {
+TEST(DatasetTest, setSparseCoord_not_sparse_fail) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
 
   ASSERT_ANY_THROW(d.setSparseCoord("a", var));
 }
 
-TEST(DatasetNext, setSparseCoord) {
+TEST(DatasetTest, setSparseCoord) {
   Dataset d;
   const auto var = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
 
@@ -215,7 +215,7 @@ TEST(DatasetNext, setSparseCoord) {
   ASSERT_NO_THROW(d["a"]);
 }
 
-TEST(DatasetNext, setSparseLabels_missing_values_or_coord) {
+TEST(DatasetTest, setSparseLabels_missing_values_or_coord) {
   Dataset d;
   const auto sparse = makeSparseVariable<double>({}, Dim::X);
 
@@ -224,7 +224,7 @@ TEST(DatasetNext, setSparseLabels_missing_values_or_coord) {
   ASSERT_NO_THROW(d.setSparseLabels("a", "x", sparse));
 }
 
-TEST(DatasetNext, setSparseLabels_not_sparse_fail) {
+TEST(DatasetTest, setSparseLabels_not_sparse_fail) {
   Dataset d;
   const auto dense = makeVariable<double>({});
   const auto sparse = makeSparseVariable<double>({}, Dim::X);
@@ -233,7 +233,7 @@ TEST(DatasetNext, setSparseLabels_not_sparse_fail) {
   ASSERT_ANY_THROW(d.setSparseLabels("a", "x", dense));
 }
 
-TEST(DatasetNext, setSparseLabels) {
+TEST(DatasetTest, setSparseLabels) {
   Dataset d;
   const auto sparse = makeSparseVariable<double>({}, Dim::X);
   d.setSparseCoord("a", sparse);
@@ -244,14 +244,14 @@ TEST(DatasetNext, setSparseLabels) {
   ASSERT_EQ(d["a"].labels().size(), 1);
 }
 
-TEST(DatasetNext, iterators_empty_dataset) {
+TEST(DatasetTest, iterators_empty_dataset) {
   Dataset d;
   ASSERT_NO_THROW(d.begin());
   ASSERT_NO_THROW(d.end());
   EXPECT_EQ(d.begin(), d.end());
 }
 
-TEST(DatasetNext, iterators_only_coords) {
+TEST(DatasetTest, iterators_only_coords) {
   Dataset d;
   d.setCoord(Dim::X, makeVariable<double>({}));
   ASSERT_NO_THROW(d.begin());
@@ -259,7 +259,7 @@ TEST(DatasetNext, iterators_only_coords) {
   EXPECT_EQ(d.begin(), d.end());
 }
 
-TEST(DatasetNext, iterators_only_labels) {
+TEST(DatasetTest, iterators_only_labels) {
   Dataset d;
   d.setLabels("a", makeVariable<double>({}));
   ASSERT_NO_THROW(d.begin());
@@ -267,7 +267,7 @@ TEST(DatasetNext, iterators_only_labels) {
   EXPECT_EQ(d.begin(), d.end());
 }
 
-TEST(DatasetNext, iterators_only_attrs) {
+TEST(DatasetTest, iterators_only_attrs) {
   Dataset d;
   d.setAttr("a", makeVariable<double>({}));
   ASSERT_NO_THROW(d.begin());
@@ -275,7 +275,7 @@ TEST(DatasetNext, iterators_only_attrs) {
   EXPECT_EQ(d.begin(), d.end());
 }
 
-TEST(DatasetNext, iterators) {
+TEST(DatasetTest, iterators) {
   Dataset d;
   d.setValues("a", makeVariable<double>({}));
   d.setValues("b", makeVariable<float>({}));
@@ -300,13 +300,13 @@ TEST(DatasetNext, iterators) {
   ASSERT_EQ(it, d.end());
 }
 
-TEST(DatasetNext, iterators_return_types) {
+TEST(DatasetTest, iterators_return_types) {
   Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(d.begin()->second), DataProxy>));
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataProxy>));
 }
 
-TEST(DatasetNext, const_iterators_return_types) {
+TEST(DatasetTest, const_iterators_return_types) {
   const Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(d.begin()->second), DataConstProxy>));
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
