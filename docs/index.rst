@@ -18,9 +18,11 @@ The intention is to provide a generic core library (**scipp-core**), and more sp
 Documentation
 -------------
 
+** Getting started **
+
 The documentation of **scipp** is under construction.
 
-For the time being, please refer to the (slightly outdated) `design document <https://github.com/scipp/scipp/blob/master/doc/design.md>`_, or to the demo Jupyter notebooks in the Docker image:
+For the time being, please refer to the (slightly outdated, we are in the process of refactoring the API to eliminate the need for tags) `design document <https://github.com/scipp/scipp/blob/master/doc/design.md>`_, or to the demo Jupyter notebooks in the Docker image:
 
 .. code-block:: sh
 
@@ -29,3 +31,7 @@ For the time being, please refer to the (slightly outdated) `design document <ht
 
 Navigate to ``localhost:8888`` in your browser.
 The relevant demo notebooks can be found in the ``demo/`` folder.
+
+** Reference **
+
+* :doc:`api`
