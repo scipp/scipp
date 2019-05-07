@@ -10,7 +10,7 @@ set(INC_FILES
     except.h
     function_traits.h
     index.h
-    md_zip_view.h
+    #md_zip_view.h
     memory_pool.h
     multi_index.h
     span.h
@@ -30,7 +30,7 @@ set(SRC_FILES
     dimensions.cpp
     events.cpp
     except.cpp
-    md_zip_view.cpp
+    #md_zip_view.cpp
     variable.cpp)
 
 add_library(scipp-core STATIC ${INC_FILES} ${SRC_FILES})

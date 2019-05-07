@@ -7,7 +7,7 @@
 
 #include "apply.h"
 #include "counts.h"
-#include "dataset.h"
+#include "dataset_next.h"
 #include "except.h"
 #include "transform.h"
 #include "variable.h"
@@ -568,7 +568,7 @@ INSTANTIATE(boost::container::small_vector<double, 8>)
 INSTANTIATE(std::vector<double>)
 INSTANTIATE(std::vector<std::string>)
 INSTANTIATE(std::vector<scipp::index>)
-INSTANTIATE(Dataset)
+INSTANTIATE(next::Dataset)
 INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(Eigen::Vector3d)
@@ -812,7 +812,7 @@ INSTANTIATE_SLICEVIEW(char);
 INSTANTIATE_SLICEVIEW(bool);
 INSTANTIATE_SLICEVIEW(std::string);
 INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
-INSTANTIATE_SLICEVIEW(Dataset);
+INSTANTIATE_SLICEVIEW(next::Dataset);
 INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
 
 ConstVariableSlice Variable::slice(const Slice slice) const & {
@@ -1054,9 +1054,8 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     // TODO This will currently fail if the data is a multi-dimensional density.
     // Would need a conversion that converts only the rebinned dimension.
     // TODO This could be done more efficiently without a temporary Dataset.
-    /*
     throw std::runtime_error("Temporarily disabled for refactor");
-    */
+    /*
     Dataset density;
     density.insert(dimensionCoord(dim), oldCoord);
     density.insert(Data::Value, var);
@@ -1067,6 +1066,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
                           rebin(std::get<Variable>(cnts), oldCoord, newCoord));
     return std::get<Variable>(
         counts::toDensity(std::move(rebinnedCounts), dim).erase(Data::Value));
+    */
   }
 }
 

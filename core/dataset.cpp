@@ -900,6 +900,7 @@ Dataset rebin(const Dataset &d, const Variable &newCoord) {
   return out;
 }
 
+/*
 Dataset histogram(const Variable &var, const Variable &coord,
                   const std::string &name) {
   // TODO Is there are more generic way to find "histogrammable" data, not
@@ -979,12 +980,14 @@ Dataset histogram(const Variable &var, const Variable &coord,
   hist(Data::Variance, name).setUnit(units::counts * units::counts);
   return hist;
 }
+*/
 
 Dataset histogram(const Dataset &d, const Variable &coord) {
   Dataset hist;
   for (const auto & [ name, tag, var ] : d)
     if (tag == Data::Events)
-      hist.merge(histogram(var, coord, name));
+      throw std::runtime_error("Disabled for refactor");
+  // hist.merge(histogram(var, coord, name));
   if (hist.size() == 0)
     throw std::runtime_error("Dataset does not contain any variables with "
                              "event data, cannot histogram.");

@@ -35,14 +35,12 @@ TEST(DimensionLengthError, what) {
 
 TEST(Dimensions, to_string) {
   Dataset a;
-  a.insert(Attr::ExperimentLog, "log", Dimensions{{Dim::X, 2}});
   a.insert(Data::Value, "values", Dimensions{{Dim::X, 2}}, {1, 2});
   a.insert(Coord::X, Dimensions{{Dim::X, 3}}, {1, 2, 3});
   // Create new dataset with same variables but different order
   Dataset b;
-  b.insert(a[1]);
-  b.insert(a[2]);
   b.insert(a[0]);
+  b.insert(a[1]);
   // string representations should be the same
   EXPECT_EQ(to_string(a), to_string(b));
 }
