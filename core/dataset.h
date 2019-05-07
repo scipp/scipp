@@ -27,7 +27,7 @@ namespace ProxyId {
 class Attrs;
 class Coords;
 class Labels;
-}
+} // namespace ProxyId
 template <class Id, class Key> class ConstProxy;
 template <class Base> class MutableProxy;
 
