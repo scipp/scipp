@@ -8,7 +8,6 @@ set(INC_FILES
     dimensions.h
     events.h
     except.h
-    function_traits.h
     index.h
     #md_zip_view.h
     memory_pool.h
