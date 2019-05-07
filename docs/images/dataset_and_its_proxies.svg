@@ -15,7 +15,10 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="dataset_and_its_proxies.svg">
+   sodipodi:docname="dataset_and_its_proxies.svg"
+   inkscape:export-filename="/home/simon/code/scipp/docs/images/dataset_and_its_proxies.png"
+   inkscape:export-xdpi="300.116"
+   inkscape:export-ydpi="300.116">
   <defs
      id="defs2">
     <marker
@@ -290,8 +293,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="303.96386"
-     inkscape:cy="680.65764"
+     inkscape:cx="304.06314"
+     inkscape:cy="680.6577"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -301,9 +304,9 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:object-nodes="true"
      inkscape:snap-bbox-midpoints="true"
-     inkscape:window-width="1989"
-     inkscape:window-height="1364"
-     inkscape:window-x="569"
+     inkscape:window-width="1367"
+     inkscape:window-height="1349"
+     inkscape:window-x="1191"
      inkscape:window-y="45"
      inkscape:window-maximized="0">
     <inkscape:grid
