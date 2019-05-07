@@ -12,7 +12,6 @@ add_executable(scipp-core-test
                multi_index_test.cpp
                #Run_test.cpp
                #TableWorkspace_test.cpp
-               tags_test.cpp
                variable_test.cpp
                variable_view_test.cpp
                #Workspace2D_test.cpp

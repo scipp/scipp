@@ -13,7 +13,6 @@ set(INC_FILES
     memory_pool.h
     multi_index.h
     span.h
-    tags.h
     tag_util.h
     traits.h
     value_with_delta.h
