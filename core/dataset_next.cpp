@@ -149,14 +149,14 @@ void Dataset::setExtent(const Dim dim, const scipp::index extent,
 /// extent of a replaced item is not excluded from the check, so even if that
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
-void Dataset::setDims(const Dimensions &dims, const bool isCoord) {
+void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   for (const auto dim : dims.labels())
-    setExtent(dim, dims[dim], isCoord);
+    setExtent(dim, dims[dim], dim == coordDim);
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
-  setDims(coord.dims(), true);
+  setDims(coord.dims(), dim);
   m_coords.insert_or_assign(dim, std::move(coord));
 }
 

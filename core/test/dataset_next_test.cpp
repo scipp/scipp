@@ -343,7 +343,7 @@ protected:
       : sparse_variable(
             makeSparseVariable<double>({{Dim::Y, 3}, {Dim::Z, 2}}, Dim::X)) {
     dataset.setCoord(Dim::X, makeVariable<double>({Dim::X, 4}));
-    dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
+    dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}));
 
     dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
 
@@ -633,10 +633,10 @@ protected:
   Variable z() const {
     return makeVariable<double>({Dim::Z, 6}, {10, 11, 12, 13, 14, 15});
   }
-  Variable xy() const {
-    std::vector<double> data(4 * 5);
+  Variable xy(const scipp::index lx = 4, const scipp::index ly = 5) const {
+    std::vector<double> data(lx * ly);
     std::iota(data.begin(), data.end(), 16);
-    auto var = makeVariable<double>({{Dim::X, 4}, {Dim::Y, 5}}, data);
+    auto var = makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}}, data);
     return var;
   }
   Variable xyz(const scipp::index lz = 6) const {
@@ -687,6 +687,12 @@ TEST_F(Dataset3DTest,
   ASSERT_ANY_THROW(edge_data.setValues("edge_data", x(5)));
   ASSERT_NO_THROW(edge_data.setCoord(Dim::X, x(5)));
   ASSERT_NO_THROW(edge_data.setValues("edge_data", x(5)));
+}
+
+TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
+  auto edge_data = dataset;
+  // This is the Y coordinate but has extra extent in X.
+  ASSERT_ANY_THROW(edge_data.setCoord(Dim::Y, xy(5, 5)));
 }
 
 class Dataset3DTest_slice_x : public Dataset3DTest,
