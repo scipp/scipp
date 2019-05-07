@@ -986,8 +986,9 @@ TEST_F(Dataset3DTest, commutative_slice_range) {
 
 template <typename T> class CoordsProxyTest : public ::testing::Test {
 protected:
+  template <class D>
   std::conditional_t<std::is_same_v<T, CoordsProxy>, Dataset, const Dataset> &
-  access(auto &dataset) {
+  access(D &dataset) {
     return dataset;
   }
 };

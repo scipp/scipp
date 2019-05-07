@@ -196,7 +196,7 @@ namespace detail {
 template <class D> struct make_item {
   D *dataset;
   using P = std::conditional_t<std::is_const_v<D>, DataConstProxy, DataProxy>;
-  std::pair<std::string_view, P> operator()(auto &item) const {
+  template <class T> std::pair<std::string_view, P> operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
       return {item.first, P(*dataset, item.second)};
     else
@@ -303,7 +303,7 @@ template <class Id, class Key> class ConstProxy {
 private:
   struct make_item {
     const ConstProxy *proxy;
-    auto operator()(const auto &item) const {
+    template <class T> auto operator()(const T &item) const {
       return std::pair<Key, ConstVariableSlice>(
           item.first, detail::makeSlice(*item.second.first, proxy->slices()));
     }
@@ -407,7 +407,7 @@ template <class Base> class MutableProxy : public Base {
 private:
   struct make_item {
     const MutableProxy<Base> *proxy;
-    auto operator()(const auto &item) const {
+    template <class T> auto operator()(const T &item) const {
       return std::pair<typename Base::key_type, VariableSlice>(
           item.first, detail::makeSlice(*item.second.second, proxy->slices()));
     }
