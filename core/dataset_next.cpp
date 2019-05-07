@@ -273,27 +273,45 @@ void Dataset::setSparseLabels(const std::string &name,
   m_data[name].labels.insert_or_assign(labelName, std::move(labels));
 }
 
+/// Return const slice of the dataset along given dimension with given extents.
+///
+/// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetConstProxy Dataset::slice(const Slice slice1) const {
   return DatasetConstProxy(*this).slice(slice1);
 }
 
+/// Return const slice of the dataset, sliced in two dimensions.
+///
+/// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2) const {
   return DatasetConstProxy(*this).slice(slice1, slice2);
 }
 
+/// Return const slice of the dataset, sliced in three dimensions.
+///
+/// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2,
                                  const Slice slice3) const {
   return DatasetConstProxy(*this).slice(slice1, slice2, slice3);
 }
 
+/// Return slice of the dataset along given dimension with given extents.
+///
+/// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetProxy Dataset::slice(const Slice slice1) {
   return DatasetProxy(*this).slice(slice1);
 }
 
+/// Return slice of the dataset, sliced in two dimensions.
+///
+/// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2) {
   return DatasetProxy(*this).slice(slice1, slice2);
 }
 
+/// Return slice of the dataset, sliced in three dimensions.
+///
+/// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
                             const Slice slice3) {
   return DatasetProxy(*this).slice(slice1, slice2, slice3);
@@ -438,18 +456,21 @@ void DatasetConstProxy::expectValidKey(const std::string_view name) const {
                             "` in Dataset access.");
 }
 
+/// Return a const proxy to data and coordinates with given name.
 DataConstProxy DatasetConstProxy::
 operator[](const std::string_view name) const {
   expectValidKey(name);
   return {*m_dataset, (*m_dataset).m_data.find(name)->second, slices()};
 }
 
+/// Return a proxy to data and coordinates with given name.
 DataProxy DatasetProxy::operator[](const std::string_view name) const {
   expectValidKey(name);
   return {*m_mutableDataset, (*m_mutableDataset).m_data.find(name)->second,
           slices()};
 }
 
+/// Return true if the dataset proxies have identical content.
 bool DataConstProxy::operator==(const DataConstProxy &other) const {
   if (hasValues() != other.hasValues())
     return false;
@@ -488,34 +509,42 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
   return true;
 }
 
+/// Return true if the datasets have identical content.
 bool Dataset::operator==(const Dataset &other) const {
   return dataset_equals(*this, other);
 }
 
+/// Return true if the datasets have identical content.
 bool Dataset::operator==(const DatasetConstProxy &other) const {
   return dataset_equals(*this, other);
 }
 
+/// Return true if the datasets have identical content.
 bool DatasetConstProxy::operator==(const Dataset &other) const {
   return dataset_equals(*this, other);
 }
 
+/// Return true if the datasets have identical content.
 bool DatasetConstProxy::operator==(const DatasetConstProxy &other) const {
   return dataset_equals(*this, other);
 }
 
+/// Return true if the datasets have mismatching content.
 bool Dataset::operator!=(const Dataset &other) const {
   return !dataset_equals(*this, other);
 }
 
+/// Return true if the datasets have mismatching content.
 bool Dataset::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
+/// Return true if the datasets have mismatching content.
 bool DatasetConstProxy::operator!=(const Dataset &other) const {
   return !dataset_equals(*this, other);
 }
 
+/// Return true if the datasets have mismatching content.
 bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
