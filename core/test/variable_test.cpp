@@ -6,7 +6,6 @@
 #include "test_macros.h"
 
 #include "dimensions.h"
-#include "tags.h"
 #include "transform.h"
 #include "variable.h"
 

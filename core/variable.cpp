@@ -7,7 +7,7 @@
 
 #include "apply.h"
 #include "counts.h"
-#include "dataset_next.h"
+#include "dataset.h"
 #include "except.h"
 #include "transform.h"
 #include "variable.h"
@@ -558,7 +558,6 @@ INSTANTIATE(int32_t)
 INSTANTIATE(char)
 INSTANTIATE(bool)
 INSTANTIATE(std::pair<int64_t, int64_t>)
-INSTANTIATE(ValueWithDelta<double>)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
 INSTANTIATE(scipp::index)
 INSTANTIATE(std::pair<scipp::index, scipp::index>)
@@ -568,7 +567,7 @@ INSTANTIATE(boost::container::small_vector<double, 8>)
 INSTANTIATE(std::vector<double>)
 INSTANTIATE(std::vector<std::string>)
 INSTANTIATE(std::vector<scipp::index>)
-INSTANTIATE(next::Dataset)
+INSTANTIATE(Dataset)
 INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(Eigen::Vector3d)
@@ -812,7 +811,7 @@ INSTANTIATE_SLICEVIEW(char);
 INSTANTIATE_SLICEVIEW(bool);
 INSTANTIATE_SLICEVIEW(std::string);
 INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
-INSTANTIATE_SLICEVIEW(next::Dataset);
+INSTANTIATE_SLICEVIEW(Dataset);
 INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
 
 ConstVariableSlice Variable::slice(const Slice slice) const & {

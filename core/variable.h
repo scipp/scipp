@@ -11,10 +11,10 @@
 #include <Eigen/Dense>
 
 #include "dimensions.h"
+#include "dtype.h"
 #include "index.h"
 #include "scipp/units/unit.h"
 #include "span.h"
-#include "tags.h"
 #include "variable_view.h"
 #include "vector.h"
 
@@ -34,6 +34,12 @@ using sparse_container = boost::container::small_vector<T, 8>;
 template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
 struct is_sparse_container<sparse_container<T>> : std::true_type {};
+
+// std::vector<bool> may have a packed non-thread-safe implementation which we
+// need to avoid. Therefore we use std::vector<Bool> instead.
+template <class T> struct underlying_type { using type = T; };
+template <> struct underlying_type<bool> { using type = Bool; };
+template <class T> using underlying_type_t = typename underlying_type<T>::type;
 
 class Variable;
 template <class... Known> class VariableConceptHandle_impl;

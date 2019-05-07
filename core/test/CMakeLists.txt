@@ -3,7 +3,7 @@
 add_executable(scipp-core-test
                bool_test.cpp
                #convert_test.cpp
-               dataset_next_test.cpp
+               dataset_test.cpp
                dimensions_test.cpp
                #EventWorkspace_test.cpp
                #example_instrument_test.cpp

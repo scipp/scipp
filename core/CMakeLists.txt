@@ -23,12 +23,11 @@ set(INC_FILES
     vector.h)
 
 set(SRC_FILES
-    convert.cpp
-    counts.cpp
+    #convert.cpp
+    #counts.cpp
     dataset.cpp
-    dataset_next.cpp
     dimensions.cpp
-    events.cpp
+    #events.cpp
     except.cpp
     #md_zip_view.cpp
     variable.cpp)
