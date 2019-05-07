@@ -24,7 +24,7 @@ class Dataset;
 class Dimensions;
 class Variable;
 class ConstVariableSlice;
-class Slice;
+struct Slice;
 
 std::string to_string(const DType dtype);
 std::string to_string(const Dim dim, const std::string &separator = "::");
