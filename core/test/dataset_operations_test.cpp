@@ -80,3 +80,37 @@ TEST_P(DataProxyBinaryOpEqualsTest, times_lhs_without_variance) {
     EXPECT_FALSE(target.hasVariances());
   }
 }
+
+TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
+  const auto &item = GetParam().second;
+  auto dataset = datasetFactory.make();
+  const auto target = dataset["data_zyx"];
+  const auto &dims = item.dims();
+  for (const Dim dim : dims.labels()) {
+    auto reference_values = target.values() + item.values().slice({dim, 2});
+    auto reference_variances = target.variances();
+    if (item.hasVariances())
+      reference_variances += item.variances().slice({dim, 2});
+
+    // Fails if any *other* multi-dimensional coord/label also depends on the
+    // slicing dimension, since it will have mismatching values.
+    const auto coords = item.coords();
+    const auto labels = item.labels();
+    if (std::all_of(coords.begin(), coords.end(),
+                    [dim](const auto &coord) {
+                      return coord.first == dim ||
+                             !coord.second.dims().contains(dim);
+                    }) &&
+        std::all_of(labels.begin(), labels.end(), [dim](const auto &labels) {
+          return labels.second.dims().inner() == dim ||
+                 !labels.second.dims().contains(dim);
+        })) {
+      ASSERT_NO_THROW(target += item.slice({dim, 2}));
+
+      EXPECT_EQ(target.values(), reference_values);
+      EXPECT_EQ(target.variances(), reference_variances);
+    } else {
+      ASSERT_ANY_THROW(target += item.slice({dim, 2}));
+    }
+  }
+}
