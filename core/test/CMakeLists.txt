@@ -4,6 +4,7 @@ add_executable(scipp-core-test
                bool_test.cpp
                #convert_test.cpp
                dataset_test.cpp
+               dataset_test_common.cpp
                dataset_operations_test.cpp
                dimensions_test.cpp
                #EventWorkspace_test.cpp

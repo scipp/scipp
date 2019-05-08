@@ -742,19 +742,19 @@ constexpr auto ranges_x = valid_ranges<4>();
 constexpr auto ranges_y = valid_ranges<5>();
 constexpr auto ranges_z = valid_ranges<6>();
 
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_x,
-                        ::testing::Range(0, 4));
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_y,
-                        ::testing::Range(0, 5));
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_z,
-                        ::testing::Range(0, 6));
+INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_x,
+                         ::testing::Range(0, 4));
+INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_y,
+                         ::testing::Range(0, 5));
+INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_z,
+                         ::testing::Range(0, 6));
 
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_x,
-                        ::testing::ValuesIn(ranges_x));
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
-                        ::testing::ValuesIn(ranges_y));
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
-                        ::testing::ValuesIn(ranges_z));
+INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_x,
+                         ::testing::ValuesIn(ranges_x));
+INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
+                         ::testing::ValuesIn(ranges_y));
+INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
+                         ::testing::ValuesIn(ranges_z));
 
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
@@ -923,7 +923,7 @@ protected:
 };
 
 using CoordsProxyTypes = ::testing::Types<CoordsProxy, CoordsConstProxy>;
-TYPED_TEST_CASE(CoordsProxyTest, CoordsProxyTypes);
+TYPED_TEST_SUITE(CoordsProxyTest, CoordsProxyTypes);
 
 TYPED_TEST(CoordsProxyTest, empty) {
   Dataset d;
@@ -1152,7 +1152,7 @@ protected:
 };
 
 using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
-TYPED_TEST_CASE(DataProxyTest, DataProxyTypes);
+TYPED_TEST_SUITE(DataProxyTest, DataProxyTypes);
 
 TYPED_TEST(DataProxyTest, isSparse_sparseDim) {
   Dataset d;
@@ -1382,7 +1382,7 @@ protected:
   dataset_type &dataset() { return Dataset3DTest::dataset; }
 };
 
-TYPED_TEST_CASE(DataProxy3DTest, DataProxyTypes);
+TYPED_TEST_SUITE(DataProxy3DTest, DataProxyTypes);
 
 // We have tests that ensure that Dataset::slice is correct (and its item access
 // returns the correct data), so we rely on that for verifying the results of

@@ -11,68 +11,72 @@
 using namespace scipp;
 using namespace scipp::core;
 
-class DataProxyBinaryOperationsTest : public Dataset3DTest {};
+class DataProxyBinaryOpEqualsTest
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<Dataset::value_type> {};
 
-TEST_F(DataProxyBinaryOperationsTest, plus_equals) {
+DatasetFactory3D datasetFactory;
+auto d = datasetFactory.make();
+
+INSTANTIATE_TEST_SUITE_P(AllItems, DataProxyBinaryOpEqualsTest,
+                         ::testing::ValuesIn(d));
+
+TEST_P(DataProxyBinaryOpEqualsTest, plus_lhs_with_variance) {
+  const auto &item = GetParam().second;
+  auto dataset = datasetFactory.make();
   const auto target = dataset["data_zyx"];
-  for (const auto & [ name, item ] : dataset) {
-    static_cast<void>(name);
-    auto reference_values = target.values() + item.values();
-    auto reference_variances = target.variances();
-    if (item.hasVariances())
-      reference_variances += item.variances();
+  auto reference_values = target.values() + item.values();
+  auto reference_variances = target.variances();
+  if (item.hasVariances())
+    reference_variances += item.variances();
 
+  ASSERT_NO_THROW(target += item);
+
+  EXPECT_EQ(target.values(), reference_values);
+  EXPECT_EQ(target.variances(), reference_variances);
+}
+
+TEST_P(DataProxyBinaryOpEqualsTest, plus_lhs_without_variance) {
+  const auto &item = GetParam().second;
+  auto dataset = datasetFactory.make();
+  const auto target = dataset["data_xyz"];
+  auto reference_values = target.values() + item.values();
+  if (item.hasVariances()) {
+    ASSERT_ANY_THROW(target += item);
+  } else {
     ASSERT_NO_THROW(target += item);
-
     EXPECT_EQ(target.values(), reference_values);
-    EXPECT_EQ(target.variances(), reference_variances);
+    EXPECT_FALSE(target.hasVariances());
   }
 }
 
-TEST_F(DataProxyBinaryOperationsTest, plus_equals_no_lhs_variance) {
-  const auto target = dataset["data_xyz"];
-  for (const auto & [ name, item ] : dataset) {
-    static_cast<void>(name);
-    auto reference_values = target.values() + item.values();
-    if (item.hasVariances()) {
-      ASSERT_ANY_THROW(target += item);
-    } else {
-      ASSERT_NO_THROW(target += item);
-      EXPECT_EQ(target.values(), reference_values);
-      EXPECT_FALSE(target.hasVariances());
-    }
-  }
-}
-
-TEST_F(DataProxyBinaryOperationsTest, times_equals) {
+TEST_P(DataProxyBinaryOpEqualsTest, times_lhs_with_variance) {
+  const auto &item = GetParam().second;
+  auto dataset = datasetFactory.make();
   const auto target = dataset["data_zyx"];
-  for (const auto & [ name, item ] : dataset) {
-    static_cast<void>(name);
-    auto reference_values = target.values() * item.values();
-    auto reference_variances =
-        target.variances() * (item.values() * item.values());
-    if (item.hasVariances())
-      reference_variances +=
-          (target.values() * target.values()) * item.variances();
+  auto reference_values = target.values() * item.values();
+  auto reference_variances =
+      target.variances() * (item.values() * item.values());
+  if (item.hasVariances())
+    reference_variances +=
+        (target.values() * target.values()) * item.variances();
 
-    ASSERT_NO_THROW(target *= item);
+  ASSERT_NO_THROW(target *= item);
 
-    EXPECT_EQ(target.values(), reference_values);
-    EXPECT_EQ(target.variances(), reference_variances);
-  }
+  EXPECT_EQ(target.values(), reference_values);
+  EXPECT_EQ(target.variances(), reference_variances);
 }
 
-TEST_F(DataProxyBinaryOperationsTest, times_equals_no_lhs_variance) {
+TEST_P(DataProxyBinaryOpEqualsTest, times_lhs_without_variance) {
+  const auto &item = GetParam().second;
+  auto dataset = datasetFactory.make();
   const auto target = dataset["data_xyz"];
-  for (const auto & [ name, item ] : dataset) {
-    static_cast<void>(name);
-    auto reference_values = target.values() * item.values();
-    if (item.hasVariances()) {
-      ASSERT_ANY_THROW(target *= item);
-    } else {
-      ASSERT_NO_THROW(target *= item);
-      EXPECT_EQ(target.values(), reference_values);
-      EXPECT_FALSE(target.hasVariances());
-    }
+  auto reference_values = target.values() * item.values();
+  if (item.hasVariances()) {
+    ASSERT_ANY_THROW(target *= item);
+  } else {
+    ASSERT_NO_THROW(target *= item);
+    EXPECT_EQ(target.values(), reference_values);
+    EXPECT_FALSE(target.hasVariances());
   }
 }

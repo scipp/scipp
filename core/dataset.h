@@ -216,6 +216,8 @@ class DatasetProxy;
 /// Collection of data arrays.
 class Dataset {
 public:
+  using value_type = std::pair<std::string_view, DataConstProxy>;
+
   /// Return the number of data items in the dataset.
   ///
   /// This does not include coordinates or attributes, but only all named
