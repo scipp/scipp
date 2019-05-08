@@ -413,16 +413,29 @@ DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
   if (hasValues())
     values() += other.values();
-  if (hasVariances())
-    variances() += other.variances();
+  if (other.hasVariances()) {
+    if (hasVariances())
+      variances() += other.variances();
+    else
+      throw std::runtime_error(
+          "RHS in operation has variances but LHS does not.");
+  }
+
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasVariances())
-    variances().assign(variances() * (other.values() * other.values()) +
-                       (values() * values()) * other.variances());
+  if (hasVariances()) {
+    if (other.hasVariances())
+      variances().assign(variances() * (other.values() * other.values()) +
+                         (values() * values()) * other.variances());
+    else
+      variances().assign(variances() * (other.values() * other.values()));
+  } else if (other.hasVariances()) {
+    throw std::runtime_error(
+        "RHS in operation has variances but LHS does not.");
+  }
   if (hasValues())
     values() *= other.values();
   return *this;
