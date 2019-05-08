@@ -133,6 +133,8 @@ public:
     return m_slices;
   }
 
+  auto &data() const { return *m_data; }
+
 private:
   friend class DatasetConstProxy;
   friend class DatasetProxy;
@@ -286,6 +288,13 @@ public:
   bool operator==(const DatasetConstProxy &other) const;
   bool operator!=(const Dataset &other) const;
   bool operator!=(const DatasetConstProxy &other) const;
+
+  Dataset &operator+=(const DataConstProxy &other);
+  Dataset &operator*=(const DataConstProxy &other);
+  Dataset &operator+=(const DatasetConstProxy &other);
+  Dataset &operator*=(const DatasetConstProxy &other);
+  Dataset &operator+=(const Dataset &other);
+  Dataset &operator*=(const Dataset &other);
 
 private:
   friend class DatasetConstProxy;

@@ -114,3 +114,127 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
     }
   }
 }
+
+TEST(DatasetBinaryOpTest, plus_equals_DataProxy_self_overlap) {
+  auto dataset = datasetFactory.make();
+  auto reference(dataset);
+
+  ASSERT_NO_THROW(dataset += dataset["data_scalar"]);
+
+  for (const auto[name, item] : dataset) {
+    EXPECT_EQ(item.values(),
+              reference[name].values() + reference["data_scalar"].values());
+    if (item.hasVariances()) {
+      EXPECT_EQ(item.variances(), reference[name].variances());
+    }
+  }
+}
+
+TEST(DatasetBinaryOpTest, times_equals_DataProxy_self_overlap) {
+  auto dataset = datasetFactory.make();
+  auto reference(dataset);
+
+  ASSERT_NO_THROW(dataset *= dataset["data_scalar"]);
+
+  for (const auto[name, item] : dataset) {
+    EXPECT_EQ(item.values(),
+              reference[name].values() * reference["data_scalar"].values());
+    if (item.hasVariances()) {
+      EXPECT_EQ(item.variances(), reference[name].variances() *
+                                      (reference["data_scalar"].values() *
+                                       reference["data_scalar"].values()));
+    }
+  }
+}
+
+TEST(DatasetBinaryOpTest, plus_equals_Dataset) {
+  auto a = datasetFactory.make();
+  auto b = datasetFactory.make();
+  auto result(a);
+
+  ASSERT_NO_THROW(result += b);
+
+  for (const auto[name, item] : result) {
+    EXPECT_EQ(item.values(), a[name].values() + b[name].values());
+    if (item.hasVariances()) {
+      EXPECT_EQ(item.variances(), a[name].variances() + b[name].variances());
+    }
+  }
+}
+
+TEST(DatasetBinaryOpTest, plus_equals_Dataset_with_missing_items) {
+  auto a = datasetFactory.make();
+  a.setValues("extra", makeVariable<double>({}));
+  auto b = datasetFactory.make();
+  auto result(a);
+
+  ASSERT_NO_THROW(result += b);
+
+  for (const auto[name, item] : result) {
+    if (name == "extra") {
+      EXPECT_EQ(item.values(), a[name].values());
+    } else {
+      EXPECT_EQ(item.values(), a[name].values() + b[name].values());
+      if (item.hasVariances()) {
+        EXPECT_EQ(item.variances(), a[name].variances() + b[name].variances());
+      }
+    }
+  }
+}
+
+TEST(DatasetBinaryOpTest, plus_equals_Dataset_with_extra_items) {
+  auto a = datasetFactory.make();
+  auto b = datasetFactory.make();
+  b.setValues("extra", makeVariable<double>({}));
+
+  ASSERT_ANY_THROW(a += b);
+}
+
+TEST(DatasetBinaryOpTest, times_equals_Dataset) {
+  auto a = datasetFactory.make();
+  auto b = datasetFactory.make();
+  auto result(a);
+
+  ASSERT_NO_THROW(result *= b);
+
+  for (const auto[name, item] : result) {
+    EXPECT_EQ(item.values(), a[name].values() * b[name].values());
+    if (item.hasVariances()) {
+      EXPECT_EQ(item.variances(),
+                a[name].variances() * (b[name].values() * b[name].values()) +
+                    b[name].variances() *
+                        (a[name].values() * a[name].values()));
+    }
+  }
+}
+
+TEST(DatasetBinaryOpTest, times_equals_Dataset_with_missing_items) {
+  auto a = datasetFactory.make();
+  a.setValues("extra", makeVariable<double>({}));
+  auto b = datasetFactory.make();
+  auto result(a);
+
+  ASSERT_NO_THROW(result *= b);
+
+  for (const auto[name, item] : result) {
+    if (name == "extra") {
+      EXPECT_EQ(item.values(), a[name].values());
+    } else {
+      EXPECT_EQ(item.values(), a[name].values() * b[name].values());
+      if (item.hasVariances()) {
+        EXPECT_EQ(item.variances(),
+                  a[name].variances() * (b[name].values() * b[name].values()) +
+                      b[name].variances() *
+                          (a[name].values() * a[name].values()));
+      }
+    }
+  }
+}
+
+TEST(DatasetBinaryOpTest, times_equals_Dataset_with_extra_items) {
+  auto a = datasetFactory.make();
+  auto b = datasetFactory.make();
+  b.setValues("extra", makeVariable<double>({}));
+
+  ASSERT_ANY_THROW(a *= b);
+}

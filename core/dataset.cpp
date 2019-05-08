@@ -580,6 +580,58 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
+Dataset &Dataset::operator+=(const DataConstProxy &other) {
+  // For `other` referencing data in *this we delay operation. The alternative
+  // would be to make a deep copy of `other` before starting the iteration over
+  // items.
+  std::optional<std::string_view> delayed;
+  // Note the inefficiency here: We are comparing some or all of the coords and
+  // labels for each item. This could be improved by implementing the operations
+  // for detail::DatasetData instead of DataProxy.
+  for (const auto item : *this) {
+    if (&item.second.data() == &other.data())
+      delayed = item.first;
+    else
+      item.second += other;
+  }
+  if (delayed)
+    operator[](*delayed) += other;
+  return *this;
+}
+Dataset &Dataset::operator*=(const DataConstProxy &other) {
+  std::optional<std::string_view> delayed;
+  for (const auto item : *this) {
+    if (&item.second.data() == &other.data())
+      delayed = item.first;
+    else
+      item.second *= other;
+  }
+  if (delayed)
+    operator[](*delayed) *= other;
+  return *this;
+}
+
+Dataset &Dataset::operator+=(const DatasetConstProxy &other) {
+  for (const auto & [ name, item ] : other)
+    operator[](name) += item;
+  return *this;
+}
+Dataset &Dataset::operator*=(const DatasetConstProxy &other) {
+  for (const auto & [ name, item ] : other)
+    operator[](name) *= item;
+  return *this;
+}
+Dataset &Dataset::operator+=(const Dataset &other) {
+  for (const auto & [ name, item ] : other)
+    operator[](name) += item;
+  return *this;
+}
+Dataset &Dataset::operator*=(const Dataset &other) {
+  for (const auto & [ name, item ] : other)
+    operator[](name) *= item;
+  return *this;
+}
+
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
   // TODO sparse
   if (data.hasValues())
