@@ -8,6 +8,8 @@
 #include "dataset.h"
 #include "dimensions.h"
 
+#include "dataset_test_common.h"
+
 using namespace scipp;
 using namespace scipp::core;
 
@@ -589,85 +591,6 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   expect_eq(a, b);
 }
 
-class Dataset3DTest : public ::testing::Test {
-protected:
-  Dataset3DTest() {
-    dataset.setCoord(Dim::Time, scalar());
-    dataset.setCoord(Dim::X, x());
-    dataset.setCoord(Dim::Y, y());
-    dataset.setCoord(Dim::Z, xyz());
-
-    dataset.setLabels("labels_x", x());
-    dataset.setLabels("labels_xy", xy());
-    dataset.setLabels("labels_z", z());
-
-    dataset.setAttr("attr_scalar", scalar());
-    dataset.setAttr("attr_x", x());
-
-    dataset.setValues("data_x", x());
-    dataset.setVariances("data_x", x());
-
-    dataset.setValues("data_xy", xy());
-    dataset.setVariances("data_xy", xy());
-
-    dataset.setValues("data_zyx", zyx());
-    dataset.setVariances("data_zyx", zyx());
-
-    dataset.setValues("data_xyz", xyz());
-
-    dataset.setValues("data_scalar", scalar());
-  }
-
-  Variable scalar() const { return makeVariable<double>({}, {1000}); }
-  Variable x(const scipp::index lx = 4) const {
-    std::vector<double> data(lx);
-    std::iota(data.begin(), data.end(), 1);
-    return makeVariable<double>({Dim::X, lx}, data);
-  }
-  Variable y(const scipp::index ly = 5) const {
-    std::vector<double> data(ly);
-    std::iota(data.begin(), data.end(), 5);
-    return makeVariable<double>({Dim::Y, ly}, data);
-  }
-  Variable z() const {
-    return makeVariable<double>({Dim::Z, 6}, {10, 11, 12, 13, 14, 15});
-  }
-  Variable xy(const scipp::index lx = 4, const scipp::index ly = 5) const {
-    std::vector<double> data(lx * ly);
-    std::iota(data.begin(), data.end(), 16);
-    auto var = makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}}, data);
-    return var;
-  }
-  Variable xyz(const scipp::index lz = 6) const {
-    std::vector<double> data(4 * 5 * lz);
-    std::iota(data.begin(), data.end(), 4 * 5 + 16);
-    auto var =
-        makeVariable<double>({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, lz}}, data);
-    return var;
-  }
-  Variable zyx() const {
-    std::vector<double> data(4 * 5 * 6);
-    std::iota(data.begin(), data.end(), 4 * 5 + 4 * 5 * 6 + 16);
-    auto var =
-        makeVariable<double>({{Dim::Z, 6}, {Dim::Y, 5}, {Dim::X, 4}}, data);
-    return var;
-  }
-
-  Dataset datasetWithEdges(const std::initializer_list<Dim> &edgeDims) {
-    auto d = dataset;
-    for (const auto dim : edgeDims) {
-      auto dims = dataset.coords()[dim].dims();
-      dims.resize(dim, dims[dim] + 1);
-      std::vector<double> data(dims.volume());
-      std::iota(data.begin(), data.end(), 1000 * static_cast<int>(dim));
-      d.setCoord(dim, makeVariable<double>(dims, data));
-    }
-    return d;
-  }
-
-  Dataset dataset;
-};
-
 TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
   auto edge_coord = dataset;
   ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, x(5)));
@@ -724,19 +647,23 @@ class Dataset3DTest_slice_x : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index pos) {
     Dataset d;
-    d.setCoord(Dim::Time, scalar());
-    d.setCoord(Dim::Y, y());
-    d.setCoord(Dim::Z, xyz().slice({Dim::X, pos}));
-    d.setLabels("labels_xy", xy().slice({Dim::X, pos}));
-    d.setLabels("labels_z", z());
-    d.setAttr("attr_scalar", scalar());
-    d.setValues("data_x", x().slice({Dim::X, pos}));
-    d.setVariances("data_x", x().slice({Dim::X, pos}));
-    d.setValues("data_xy", xy().slice({Dim::X, pos}));
-    d.setVariances("data_xy", xy().slice({Dim::X, pos}));
-    d.setValues("data_zyx", zyx().slice({Dim::X, pos}));
-    d.setVariances("data_zyx", zyx().slice({Dim::X, pos}));
-    d.setValues("data_xyz", xyz().slice({Dim::X, pos}));
+    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+    d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::X, pos}));
+    d.setLabels("labels_xy",
+                dataset.labels()["labels_xy"].slice({Dim::X, pos}));
+    d.setLabels("labels_z", dataset.labels()["labels_z"]);
+    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+    d.setValues("data_x", dataset["data_x"].values().slice({Dim::X, pos}));
+    d.setVariances("data_x",
+                   dataset["data_x"].variances().slice({Dim::X, pos}));
+    d.setValues("data_xy", dataset["data_xy"].values().slice({Dim::X, pos}));
+    d.setVariances("data_xy",
+                   dataset["data_xy"].variances().slice({Dim::X, pos}));
+    d.setValues("data_zyx", dataset["data_zyx"].values().slice({Dim::X, pos}));
+    d.setVariances("data_zyx",
+                   dataset["data_zyx"].variances().slice({Dim::X, pos}));
+    d.setValues("data_xyz", dataset["data_xyz"].values().slice({Dim::X, pos}));
     return d;
   }
 };
@@ -755,6 +682,8 @@ class Dataset3DTest_slice_range_y : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
+    // TODO rewrite generation of this and other reference data as for
+    // Dataset3DTest_slice_x above, then enable random seed in Dataset3DTest.
     d.setCoord(Dim::Time, scalar());
     d.setCoord(Dim::X, x());
     d.setCoord(Dim::Y, y().slice({Dim::Y, begin, end}));

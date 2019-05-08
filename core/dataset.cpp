@@ -409,6 +409,25 @@ AttrsProxy DataProxy::attrs() const noexcept {
       slices());
 }
 
+DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  if (hasValues())
+    values() += other.values();
+  if (hasVariances())
+    variances() += other.variances();
+  return *this;
+}
+
+DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  if (hasVariances())
+    variances().assign(variances() * (other.values() * other.values()) +
+                       (values() * values()) * other.variances());
+  if (hasValues())
+    values() *= other.values();
+  return *this;
+}
+
 /// Return a const proxy to all coordinates of the dataset slice.
 ///
 /// This proxy includes only "dimension-coordinates". To access
@@ -591,6 +610,10 @@ std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
 }
 
 std::ostream &operator<<(std::ostream &os, const VariableSlice &variable) {
+  return os << ConstVariableSlice(variable);
+}
+
+std::ostream &operator<<(std::ostream &os, const Variable &variable) {
   return os << ConstVariableSlice(variable);
 }
 

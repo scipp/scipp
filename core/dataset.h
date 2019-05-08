@@ -186,6 +186,9 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
+  DataProxy operator+=(const DataConstProxy &other) const;
+  DataProxy operator*=(const DataConstProxy &other) const;
+
 private:
   Dataset *m_mutableDataset;
   detail::DatasetData *m_mutableData;
@@ -577,6 +580,7 @@ std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset);
 std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable);
 std::ostream &operator<<(std::ostream &os, const VariableSlice &variable);
+std::ostream &operator<<(std::ostream &os, const Variable &variable);
 std::ostream &operator<<(std::ostream &os, const Dim dim);
 
 } // namespace scipp::core

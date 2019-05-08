@@ -315,7 +315,22 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
                               dims[slice.dim]) ||
       slice.end > dims[slice.dim])
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
-                             to_string(dims));
+                             to_string(dims) + ".");
+}
+
+void coordsAndLabelsMatch(const DataConstProxy &a, const DataConstProxy &b) {
+  if (a.coords() != b.coords() || a.labels() != b.labels())
+    throw except::CoordMismatchError("Expected coords and labels to match.");
+}
+
+void coordsAndLabelsAreSuperset(const DataConstProxy &a,
+                                const DataConstProxy &b) {
+  for (const auto & [ dim, coord ] : b.coords())
+    if (a.coords()[dim] != coord)
+      throw except::CoordMismatchError("Expected coords to match.");
+  for (const auto & [ name, labels ] : b.labels())
+    if (a.labels()[name] != labels)
+      throw except::CoordMismatchError("Expected labels to match.");
 }
 
 } // namespace expect
