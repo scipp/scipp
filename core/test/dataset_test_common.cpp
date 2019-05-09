@@ -23,6 +23,7 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx, const scipp::index ly,
 
 Dataset DatasetFactory3D::make() {
   Dataset dataset(base);
+  dataset.setValues("values_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
   dataset.setValues("data_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
   dataset.setVariances("data_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
 

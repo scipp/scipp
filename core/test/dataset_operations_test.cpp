@@ -21,6 +21,21 @@ auto d = datasetFactory.make();
 INSTANTIATE_TEST_SUITE_P(AllItems, DataProxyBinaryOpEqualsTest,
                          ::testing::ValuesIn(d));
 
+TEST_P(DataProxyBinaryOpEqualsTest, other_data_unchanged) {
+  const auto &item = GetParam().second;
+  auto dataset = datasetFactory.make();
+  const auto original(dataset);
+  const auto target = dataset["data_zyx"];
+
+  ASSERT_NO_THROW(target += item);
+
+  for (const auto & [ name, data ] : dataset) {
+    if (name != "data_zyx") {
+      EXPECT_EQ(data, original[name]);
+    }
+  }
+}
+
 TEST_P(DataProxyBinaryOpEqualsTest, plus_lhs_with_variance) {
   const auto &item = GetParam().second;
   auto dataset = datasetFactory.make();
@@ -115,50 +130,38 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
   }
 }
 
+// DataProxyBinaryOpEqualsTest ensures correctness of operations between
+// DataProxy with itself, so we can rely on that for building the reference.
 TEST(DatasetBinaryOpTest, plus_equals_DataProxy_self_overlap) {
   auto dataset = datasetFactory.make();
+  auto original(dataset);
   auto reference(dataset);
 
   ASSERT_NO_THROW(dataset += dataset["data_scalar"]);
-
   for (const auto[name, item] : dataset) {
-    EXPECT_EQ(item.values(),
-              reference[name].values() + reference["data_scalar"].values());
-    if (item.hasVariances()) {
-      EXPECT_EQ(item.variances(), reference[name].variances());
-    }
+    EXPECT_EQ(item, reference[name] += original["data_scalar"]);
   }
 }
 
 TEST(DatasetBinaryOpTest, times_equals_DataProxy_self_overlap) {
   auto dataset = datasetFactory.make();
+  auto original(dataset);
   auto reference(dataset);
 
   ASSERT_NO_THROW(dataset *= dataset["data_scalar"]);
-
   for (const auto[name, item] : dataset) {
-    EXPECT_EQ(item.values(),
-              reference[name].values() * reference["data_scalar"].values());
-    if (item.hasVariances()) {
-      EXPECT_EQ(item.variances(), reference[name].variances() *
-                                      (reference["data_scalar"].values() *
-                                       reference["data_scalar"].values()));
-    }
+    EXPECT_EQ(item, reference[name] *= original["data_scalar"]);
   }
 }
 
 TEST(DatasetBinaryOpTest, plus_equals_Dataset) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  auto result(a);
+  auto reference(a);
 
-  ASSERT_NO_THROW(result += b);
-
-  for (const auto[name, item] : result) {
-    EXPECT_EQ(item.values(), a[name].values() + b[name].values());
-    if (item.hasVariances()) {
-      EXPECT_EQ(item.variances(), a[name].variances() + b[name].variances());
-    }
+  ASSERT_NO_THROW(a += b);
+  for (const auto[name, item] : a) {
+    EXPECT_EQ(item, reference[name] += b[name]);
   }
 }
 
@@ -166,18 +169,14 @@ TEST(DatasetBinaryOpTest, plus_equals_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
   a.setValues("extra", makeVariable<double>({}));
   auto b = datasetFactory.make();
-  auto result(a);
+  auto reference(a);
 
-  ASSERT_NO_THROW(result += b);
-
-  for (const auto[name, item] : result) {
+  ASSERT_NO_THROW(a += b);
+  for (const auto[name, item] : a) {
     if (name == "extra") {
-      EXPECT_EQ(item.values(), a[name].values());
+      EXPECT_EQ(item, reference[name]);
     } else {
-      EXPECT_EQ(item.values(), a[name].values() + b[name].values());
-      if (item.hasVariances()) {
-        EXPECT_EQ(item.variances(), a[name].variances() + b[name].variances());
-      }
+      EXPECT_EQ(item, reference[name] += b[name]);
     }
   }
 }
@@ -193,18 +192,11 @@ TEST(DatasetBinaryOpTest, plus_equals_Dataset_with_extra_items) {
 TEST(DatasetBinaryOpTest, times_equals_Dataset) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  auto result(a);
+  auto reference(a);
 
-  ASSERT_NO_THROW(result *= b);
-
-  for (const auto[name, item] : result) {
-    EXPECT_EQ(item.values(), a[name].values() * b[name].values());
-    if (item.hasVariances()) {
-      EXPECT_EQ(item.variances(),
-                a[name].variances() * (b[name].values() * b[name].values()) +
-                    b[name].variances() *
-                        (a[name].values() * a[name].values()));
-    }
+  ASSERT_NO_THROW(a *= b);
+  for (const auto[name, item] : a) {
+    EXPECT_EQ(item, reference[name] *= b[name]);
   }
 }
 
@@ -212,21 +204,14 @@ TEST(DatasetBinaryOpTest, times_equals_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
   a.setValues("extra", makeVariable<double>({}));
   auto b = datasetFactory.make();
-  auto result(a);
+  auto reference(a);
 
-  ASSERT_NO_THROW(result *= b);
-
-  for (const auto[name, item] : result) {
+  ASSERT_NO_THROW(a *= b);
+  for (const auto[name, item] : a) {
     if (name == "extra") {
-      EXPECT_EQ(item.values(), a[name].values());
+      EXPECT_EQ(item, reference[name]);
     } else {
-      EXPECT_EQ(item.values(), a[name].values() * b[name].values());
-      if (item.hasVariances()) {
-        EXPECT_EQ(item.variances(),
-                  a[name].variances() * (b[name].values() * b[name].values()) +
-                      b[name].variances() *
-                          (a[name].values() * a[name].values()));
-      }
+      EXPECT_EQ(item, reference[name] *= b[name]);
     }
   }
 }

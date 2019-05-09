@@ -598,6 +598,7 @@ Dataset &Dataset::operator+=(const DataConstProxy &other) {
     operator[](*delayed) += other;
   return *this;
 }
+
 Dataset &Dataset::operator*=(const DataConstProxy &other) {
   std::optional<std::string_view> delayed;
   for (const auto item : *this) {
