@@ -133,126 +133,90 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
   }
 }
 
+// We need the decltype(auto) since we are using these operators for both
+// proxies and non-proxies. The former return by reference, the latter by value.
+struct plus_equals {
+  template <class A, class B>
+  decltype(auto) operator()(A &&a, const B &b) const {
+    return a += b;
+  }
+};
+struct times_equals {
+  template <class A, class B>
+  decltype(auto) operator()(A &&a, const B &b) const {
+    return a *= b;
+  }
+};
+
+template <class Op>
+class DatasetBinaryOpTest : public ::testing::Test,
+                            public ::testing::WithParamInterface<Op> {
+protected:
+  Op op;
+};
+
+using Ops = ::testing::Types<plus_equals, times_equals>;
+TYPED_TEST_SUITE(DatasetBinaryOpTest, Ops);
+
 // DataProxyBinaryOpEqualsTest ensures correctness of operations between
 // DataProxy with itself, so we can rely on that for building the reference.
-TEST(DatasetBinaryOpTest, plus_equals_DataProxy_self_overlap) {
+TYPED_TEST(DatasetBinaryOpTest, rhs_DataProxy_self_overlap) {
   auto dataset = datasetFactory.make();
   auto original(dataset);
   auto reference(dataset);
 
-  ASSERT_NO_THROW(dataset += dataset["data_scalar"]);
+  ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"]));
   for (const auto[name, item] : dataset) {
-    EXPECT_EQ(item, reference[name] += original["data_scalar"]);
+    EXPECT_EQ(item, TestFixture::op(reference[name], original["data_scalar"]));
   }
 }
 
-TEST(DatasetBinaryOpTest, times_equals_DataProxy_self_overlap) {
-  auto dataset = datasetFactory.make();
-  auto original(dataset);
-  auto reference(dataset);
-
-  ASSERT_NO_THROW(dataset *= dataset["data_scalar"]);
-  for (const auto[name, item] : dataset) {
-    EXPECT_EQ(item, reference[name] *= original["data_scalar"]);
-  }
-}
-
-TEST(DatasetBinaryOpTest, plus_equals_Dataset) {
+TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
   auto reference(a);
 
-  ASSERT_NO_THROW(a += b);
+  ASSERT_NO_THROW(TestFixture::op(a, b));
   for (const auto[name, item] : a) {
-    EXPECT_EQ(item, reference[name] += b[name]);
+    EXPECT_EQ(item, TestFixture::op(reference[name], b[name]));
   }
 }
 
-TEST(DatasetBinaryOpTest, plus_equals_Dataset_with_missing_items) {
+TYPED_TEST(DatasetBinaryOpTest, rhs__Dataset_with_missing_items) {
   auto a = datasetFactory.make();
   a.setValues("extra", makeVariable<double>({}));
   auto b = datasetFactory.make();
   auto reference(a);
 
-  ASSERT_NO_THROW(a += b);
+  ASSERT_NO_THROW(TestFixture::op(a, b));
   for (const auto[name, item] : a) {
     if (name == "extra") {
       EXPECT_EQ(item, reference[name]);
     } else {
-      EXPECT_EQ(item, reference[name] += b[name]);
+      EXPECT_EQ(item, TestFixture::op(reference[name], b[name]));
     }
   }
 }
 
-TEST(DatasetBinaryOpTest, plus_equals_Dataset_with_extra_items) {
+TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
   b.setValues("extra", makeVariable<double>({}));
 
-  ASSERT_ANY_THROW(a += b);
+  ASSERT_ANY_THROW(TestFixture::op(a, b));
 }
 
-TEST(DatasetBinaryOpTest, times_equals_Dataset) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
-  auto reference(a);
-
-  ASSERT_NO_THROW(a *= b);
-  for (const auto[name, item] : a) {
-    EXPECT_EQ(item, reference[name] *= b[name]);
-  }
-}
-
-TEST(DatasetBinaryOpTest, times_equals_Dataset_with_missing_items) {
-  auto a = datasetFactory.make();
-  a.setValues("extra", makeVariable<double>({}));
-  auto b = datasetFactory.make();
-  auto reference(a);
-
-  ASSERT_NO_THROW(a *= b);
-  for (const auto[name, item] : a) {
-    if (name == "extra") {
-      EXPECT_EQ(item, reference[name]);
-    } else {
-      EXPECT_EQ(item, reference[name] *= b[name]);
-    }
-  }
-}
-
-TEST(DatasetBinaryOpTest, times_equals_Dataset_with_extra_items) {
-  auto a = datasetFactory.make();
-  auto b = datasetFactory.make();
-  b.setValues("extra", makeVariable<double>({}));
-
-  ASSERT_ANY_THROW(a *= b);
-}
-
-TEST(DatasetBinaryOpTest, plus_equals_DatasetProxy_self_overlap) {
+TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_self_overlap) {
   auto dataset = datasetFactory.make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
 
-  ASSERT_NO_THROW(dataset += slice);
+  ASSERT_NO_THROW(TestFixture::op(dataset, slice));
   for (const auto[name, item] : dataset) {
     // Items independent of Z are removed when creating `slice`.
     if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item, reference[name] += reference[name].slice({Dim::Z, 3}));
-    } else {
-      EXPECT_EQ(item, reference[name]);
-    }
-  }
-}
-
-TEST(DatasetBinaryOpTest, times_equals_DatasetProxy_self_overlap) {
-  auto dataset = datasetFactory.make();
-  const auto slice = dataset.slice({Dim::Z, 3});
-  auto reference(dataset);
-
-  ASSERT_NO_THROW(dataset *= slice);
-  for (const auto[name, item] : dataset) {
-    // Items independent of Z are removed when creating `slice`.
-    if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item, reference[name] *= reference[name].slice({Dim::Z, 3}));
+      EXPECT_EQ(item, TestFixture::op(reference[name],
+                                      reference[name].slice({Dim::Z, 3})));
     } else {
       EXPECT_EQ(item, reference[name]);
     }
