@@ -204,8 +204,7 @@ template <> struct is_const<const DatasetProxy> : std::false_type {};
 template <> struct is_const<const DatasetConstProxy> : std::true_type {};
 
 /// Helper for creating iterators of Dataset.
-template <class D>
-struct make_item {
+template <class D> struct make_item {
   D *dataset;
   using P = std::conditional_t<is_const<D>::value, DataConstProxy, DataProxy>;
   template <class T> std::pair<std::string_view, P> operator()(T &item) const {
