@@ -20,20 +20,14 @@ class Random {
   std::uniform_real_distribution<double> dist{-2.0, 2.0};
 
 public:
-  // TODO Eliminate the `seed` argument and the local `mt` once all tests have
-  // been refactored to work with random data.
-  std::vector<double> operator()(const int seed, const scipp::index size) {
-    std::mt19937 mt{seed};
-    std::vector<double> data(size);
-    std::generate(data.begin(), data.end(), [this, &mt]() { return dist(mt); });
-    return data;
-  }
   std::vector<double> operator()(const scipp::index size) {
     std::vector<double> data(size);
     std::generate(data.begin(), data.end(), [this]() { return dist(mt); });
     return data;
   }
 };
+
+Variable makeRandom(const Dimensions &dims);
 
 /// Factory for creating datasets for testing. For a given instance, `make()`
 /// will return datasets with identical coords and labels, such that they are
@@ -52,10 +46,5 @@ private:
   Random rand;
   Dataset base;
 };
-
-inline auto makeRandom(const Dimensions &dims) {
-  Random rand;
-  return makeVariable<double>(dims, rand(dims.volume()));
-}
 
 #endif // DATASET_TEST_COMMON_H

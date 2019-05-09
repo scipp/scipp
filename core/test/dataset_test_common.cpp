@@ -2,6 +2,11 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include "dataset_test_common.h"
 
+Variable makeRandom(const Dimensions &dims) {
+  Random rand;
+  return makeVariable<double>(dims, rand(dims.volume()));
+}
+
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx, const scipp::index ly,
                                    const scipp::index lz)
     : lx(lx), ly(ly), lz(lz) {
