@@ -587,6 +587,13 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
+  DatasetProxy operator+=(const DataConstProxy &other) const;
+  DatasetProxy operator*=(const DataConstProxy &other) const;
+  DatasetProxy operator+=(const DatasetConstProxy &other) const;
+  DatasetProxy operator*=(const DatasetConstProxy &other) const;
+  DatasetProxy operator+=(const Dataset &other) const;
+  DatasetProxy operator*=(const Dataset &other) const;
+
 private:
   Dataset *m_mutableDataset;
 };

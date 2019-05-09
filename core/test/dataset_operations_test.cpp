@@ -148,6 +148,8 @@ struct times_equals {
   }
 };
 
+using BinaryEquals = ::testing::Types<plus_equals, times_equals>;
+
 template <class Op>
 class DatasetBinaryOpTest : public ::testing::Test,
                             public ::testing::WithParamInterface<Op> {
@@ -155,8 +157,15 @@ protected:
   Op op;
 };
 
-using BinaryEquals = ::testing::Types<plus_equals, times_equals>;
+template <class Op>
+class DatasetProxyBinaryOpTest : public ::testing::Test,
+                                 public ::testing::WithParamInterface<Op> {
+protected:
+  Op op;
+};
+
 TYPED_TEST_SUITE(DatasetBinaryOpTest, BinaryEquals);
+TYPED_TEST_SUITE(DatasetProxyBinaryOpTest, BinaryEquals);
 
 // DataProxyBinaryOpEqualsTest ensures correctness of operations between
 // DataProxy with itself, so we can rely on that for building the reference.
@@ -199,6 +208,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
 
+  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, b)), Dataset &>));
   const auto &result = TestFixture::op(a, b);
   ASSERT_EQ(&result, &a);
 }
@@ -267,4 +277,14 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
                except::CoordMismatchError);
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::Z, 3, 4})),
                except::CoordMismatchError);
+}
+
+TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_return_value) {
+  auto a = datasetFactory.make();
+  auto b = datasetFactory.make();
+  DatasetProxy proxy(a);
+
+  ASSERT_TRUE(
+      (std::is_same_v<decltype(TestFixture::op(proxy, b)), DatasetProxy>));
+  const auto &result = TestFixture::op(proxy, b);
 }
