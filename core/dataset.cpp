@@ -580,57 +580,66 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
-Dataset &Dataset::operator+=(const DataConstProxy &other) {
-  // For `other` referencing data in *this we delay operation. The alternative
-  // would be to make a deep copy of `other` before starting the iteration over
-  // items.
+struct plus_equals {
+  template <class A, class B>
+  decltype(auto) operator()(A &&a, const B &b) const {
+    return a += b;
+  }
+};
+struct times_equals {
+  template <class A, class B>
+  decltype(auto) operator()(A &&a, const B &b) const {
+    return a *= b;
+  }
+};
+
+template <class Op, class A, class B> decltype(auto) apply(A &&a, const B &b) {
+  for (const auto & [ name, item ] : b)
+    Op()(a[name], item);
+  return std::forward<A>(a);
+}
+
+template <class Op, class A, class B>
+decltype(auto) apply_with_delay(A &&a, const B &b) {
+  // For `b` referencing data in `a` we delay operation. The alternative would
+  // be to make a deep copy of `other` before starting the iteration over items.
   std::optional<std::string_view> delayed;
   // Note the inefficiency here: We are comparing some or all of the coords and
   // labels for each item. This could be improved by implementing the operations
   // for detail::DatasetData instead of DataProxy.
-  for (const auto item : *this) {
-    if (&item.second.data() == &other.data())
-      delayed = item.first;
+  for (const auto & [ name, item ] : a) {
+    if (&item.data() == &b.data())
+      delayed = name;
     else
-      item.second += other;
+      Op()(item, b);
   }
   if (delayed)
-    operator[](*delayed) += other;
-  return *this;
+    Op()(a[*delayed], b);
+  return std::forward<A>(a);
+}
+
+Dataset &Dataset::operator+=(const DataConstProxy &other) {
+  return apply_with_delay<plus_equals>(*this, other);
 }
 
 Dataset &Dataset::operator*=(const DataConstProxy &other) {
-  std::optional<std::string_view> delayed;
-  for (const auto item : *this) {
-    if (&item.second.data() == &other.data())
-      delayed = item.first;
-    else
-      item.second *= other;
-  }
-  if (delayed)
-    operator[](*delayed) *= other;
-  return *this;
+  return apply_with_delay<times_equals>(*this, other);
 }
 
 Dataset &Dataset::operator+=(const DatasetConstProxy &other) {
-  for (const auto & [ name, item ] : other)
-    operator[](name) += item;
-  return *this;
+  return apply<plus_equals>(*this, other);
 }
+
 Dataset &Dataset::operator*=(const DatasetConstProxy &other) {
-  for (const auto & [ name, item ] : other)
-    operator[](name) *= item;
-  return *this;
+  return apply<times_equals>(*this, other);
 }
+
 Dataset &Dataset::operator+=(const Dataset &other) {
-  for (const auto & [ name, item ] : other)
-    operator[](name) += item;
-  return *this;
+  return apply<plus_equals>(*this, other);
 }
+
 Dataset &Dataset::operator*=(const Dataset &other) {
-  for (const auto & [ name, item ] : other)
-    operator[](name) *= item;
-  return *this;
+  return apply<times_equals>(*this, other);
 }
 
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {

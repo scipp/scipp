@@ -195,6 +195,14 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset) {
   }
 }
 
+TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_return_value) {
+  auto a = datasetFactory.make();
+  auto b = datasetFactory.make();
+
+  const auto &result = TestFixture::op(a, b);
+  ASSERT_EQ(&result, &a);
+}
+
 TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_coord_mismatch) {
   auto a = datasetFactory.make();
   DatasetFactory3D otherCoordsFactory;
