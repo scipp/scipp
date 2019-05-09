@@ -684,20 +684,26 @@ protected:
     Dataset d;
     // TODO rewrite generation of this and other reference data as for
     // Dataset3DTest_slice_x above, then enable random seed in Dataset3DTest.
-    d.setCoord(Dim::Time, scalar());
-    d.setCoord(Dim::X, x());
-    d.setCoord(Dim::Y, y().slice({Dim::Y, begin, end}));
-    d.setCoord(Dim::Z, xyz().slice({Dim::Y, begin, end}));
-    d.setLabels("labels_x", x());
-    d.setLabels("labels_xy", xy().slice({Dim::Y, begin, end}));
-    d.setLabels("labels_z", z());
-    d.setAttr("attr_scalar", scalar());
-    d.setAttr("attr_x", x());
-    d.setValues("data_xy", xy().slice({Dim::Y, begin, end}));
-    d.setVariances("data_xy", xy().slice({Dim::Y, begin, end}));
-    d.setValues("data_zyx", zyx().slice({Dim::Y, begin, end}));
-    d.setVariances("data_zyx", zyx().slice({Dim::Y, begin, end}));
-    d.setValues("data_xyz", xyz().slice({Dim::Y, begin, end}));
+    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+    d.setCoord(Dim::X, dataset.coords()[Dim::X]);
+    d.setCoord(Dim::Y, dataset.coords()[Dim::Y].slice({Dim::Y, begin, end}));
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, begin, end}));
+    d.setLabels("labels_x", dataset.labels()["labels_x"]);
+    d.setLabels("labels_xy",
+                dataset.labels()["labels_xy"].slice({Dim::Y, begin, end}));
+    d.setLabels("labels_z", dataset.labels()["labels_z"]);
+    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+    d.setAttr("attr_x", dataset.attrs()["attr_x"]);
+    d.setValues("data_xy",
+                dataset["data_xy"].values().slice({Dim::Y, begin, end}));
+    d.setVariances("data_xy",
+                   dataset["data_xy"].variances().slice({Dim::Y, begin, end}));
+    d.setValues("data_zyx",
+                dataset["data_zyx"].values().slice({Dim::Y, begin, end}));
+    d.setVariances("data_zyx",
+                   dataset["data_zyx"].variances().slice({Dim::Y, begin, end}));
+    d.setValues("data_xyz",
+                dataset["data_xyz"].values().slice({Dim::Y, begin, end}));
     return d;
   }
 };
@@ -707,18 +713,22 @@ class Dataset3DTest_slice_range_z : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
-    d.setCoord(Dim::Time, scalar());
-    d.setCoord(Dim::X, x());
-    d.setCoord(Dim::Y, y());
-    d.setCoord(Dim::Z, xyz().slice({Dim::Z, begin, end}));
-    d.setLabels("labels_x", x());
-    d.setLabels("labels_xy", xy());
-    d.setLabels("labels_z", z().slice({Dim::Z, begin, end}));
-    d.setAttr("attr_scalar", scalar());
-    d.setAttr("attr_x", x());
-    d.setValues("data_zyx", zyx().slice({Dim::Z, begin, end}));
-    d.setVariances("data_zyx", zyx().slice({Dim::Z, begin, end}));
-    d.setValues("data_xyz", xyz().slice({Dim::Z, begin, end}));
+    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+    d.setCoord(Dim::X, dataset.coords()[Dim::X]);
+    d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Z, begin, end}));
+    d.setLabels("labels_x", dataset.labels()["labels_x"]);
+    d.setLabels("labels_xy", dataset.labels()["labels_xy"]);
+    d.setLabels("labels_z",
+                dataset.labels()["labels_z"].slice({Dim::Z, begin, end}));
+    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+    d.setAttr("attr_x", dataset.attrs()["attr_x"]);
+    d.setValues("data_zyx",
+                dataset["data_zyx"].values().slice({Dim::Z, begin, end}));
+    d.setVariances("data_zyx",
+                   dataset["data_zyx"].variances().slice({Dim::Z, begin, end}));
+    d.setValues("data_xyz",
+                dataset["data_xyz"].values().slice({Dim::Z, begin, end}));
     return d;
   }
 };
@@ -773,18 +783,23 @@ TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
 TEST_P(Dataset3DTest_slice_y, slice) {
   const auto pos = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, scalar());
-  reference.setCoord(Dim::X, x());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, pos}));
-  reference.setLabels("labels_x", x());
-  reference.setLabels("labels_z", z());
-  reference.setAttr("attr_scalar", scalar());
-  reference.setAttr("attr_x", x());
-  reference.setValues("data_xy", xy().slice({Dim::Y, pos}));
-  reference.setVariances("data_xy", xy().slice({Dim::Y, pos}));
-  reference.setValues("data_zyx", zyx().slice({Dim::Y, pos}));
-  reference.setVariances("data_zyx", zyx().slice({Dim::Y, pos}));
-  reference.setValues("data_xyz", xyz().slice({Dim::Y, pos}));
+  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
+  reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, pos}));
+  reference.setLabels("labels_x", dataset.labels()["labels_x"]);
+  reference.setLabels("labels_z", dataset.labels()["labels_z"]);
+  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+  reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
+  reference.setValues("data_xy",
+                      dataset["data_xy"].values().slice({Dim::Y, pos}));
+  reference.setVariances("data_xy",
+                         dataset["data_xy"].variances().slice({Dim::Y, pos}));
+  reference.setValues("data_zyx",
+                      dataset["data_zyx"].values().slice({Dim::Y, pos}));
+  reference.setVariances("data_zyx",
+                         dataset["data_zyx"].variances().slice({Dim::Y, pos}));
+  reference.setValues("data_xyz",
+                      dataset["data_xyz"].values().slice({Dim::Y, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
@@ -792,16 +807,19 @@ TEST_P(Dataset3DTest_slice_y, slice) {
 TEST_P(Dataset3DTest_slice_z, slice) {
   const auto pos = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, scalar());
-  reference.setCoord(Dim::X, x());
-  reference.setCoord(Dim::Y, y());
-  reference.setLabels("labels_x", x());
-  reference.setLabels("labels_xy", xy());
-  reference.setAttr("attr_scalar", scalar());
-  reference.setAttr("attr_x", x());
-  reference.setValues("data_zyx", zyx().slice({Dim::Z, pos}));
-  reference.setVariances("data_zyx", zyx().slice({Dim::Z, pos}));
-  reference.setValues("data_xyz", xyz().slice({Dim::Z, pos}));
+  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
+  reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+  reference.setLabels("labels_x", dataset.labels()["labels_x"]);
+  reference.setLabels("labels_xy", dataset.labels()["labels_xy"]);
+  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+  reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
+  reference.setValues("data_zyx",
+                      dataset["data_zyx"].values().slice({Dim::Z, pos}));
+  reference.setVariances("data_zyx",
+                         dataset["data_zyx"].variances().slice({Dim::Z, pos}));
+  reference.setValues("data_xyz",
+                      dataset["data_xyz"].values().slice({Dim::Z, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
@@ -809,22 +827,34 @@ TEST_P(Dataset3DTest_slice_z, slice) {
 TEST_P(Dataset3DTest_slice_range_x, slice) {
   const auto[begin, end] = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, scalar());
-  reference.setCoord(Dim::X, x().slice({Dim::X, begin, end}));
-  reference.setCoord(Dim::Y, y());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::X, begin, end}));
-  reference.setLabels("labels_x", x().slice({Dim::X, begin, end}));
-  reference.setLabels("labels_xy", xy().slice({Dim::X, begin, end}));
-  reference.setLabels("labels_z", z());
-  reference.setAttr("attr_scalar", scalar());
-  reference.setAttr("attr_x", x().slice({Dim::X, begin, end}));
-  reference.setValues("data_x", x().slice({Dim::X, begin, end}));
-  reference.setVariances("data_x", x().slice({Dim::X, begin, end}));
-  reference.setValues("data_xy", xy().slice({Dim::X, begin, end}));
-  reference.setVariances("data_xy", xy().slice({Dim::X, begin, end}));
-  reference.setValues("data_zyx", zyx().slice({Dim::X, begin, end}));
-  reference.setVariances("data_zyx", zyx().slice({Dim::X, begin, end}));
-  reference.setValues("data_xyz", xyz().slice({Dim::X, begin, end}));
+  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setCoord(Dim::X,
+                     dataset.coords()[Dim::X].slice({Dim::X, begin, end}));
+  reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+  reference.setCoord(Dim::Z,
+                     dataset.coords()[Dim::Z].slice({Dim::X, begin, end}));
+  reference.setLabels("labels_x",
+                      dataset.labels()["labels_x"].slice({Dim::X, begin, end}));
+  reference.setLabels(
+      "labels_xy", dataset.labels()["labels_xy"].slice({Dim::X, begin, end}));
+  reference.setLabels("labels_z", dataset.labels()["labels_z"]);
+  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+  reference.setAttr("attr_x",
+                    dataset.attrs()["attr_x"].slice({Dim::X, begin, end}));
+  reference.setValues("data_x",
+                      dataset["data_x"].values().slice({Dim::X, begin, end}));
+  reference.setVariances(
+      "data_x", dataset["data_x"].variances().slice({Dim::X, begin, end}));
+  reference.setValues("data_xy",
+                      dataset["data_xy"].values().slice({Dim::X, begin, end}));
+  reference.setVariances(
+      "data_xy", dataset["data_xy"].variances().slice({Dim::X, begin, end}));
+  reference.setValues("data_zyx",
+                      dataset["data_zyx"].values().slice({Dim::X, begin, end}));
+  reference.setVariances(
+      "data_zyx", dataset["data_zyx"].variances().slice({Dim::X, begin, end}));
+  reference.setValues("data_xyz",
+                      dataset["data_xyz"].values().slice({Dim::X, begin, end}));
 
   EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
 }
