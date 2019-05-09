@@ -108,7 +108,10 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
       reference_variances += item.variances().slice({dim, 2});
 
     // Fails if any *other* multi-dimensional coord/label also depends on the
-    // slicing dimension, since it will have mismatching values.
+    // slicing dimension, since it will have mismatching values. Note that this
+    // behavior is intended and important. It is crucial for preventing
+    // operations between misaligned data in case a coordinate is
+    // multi-dimensional.
     const auto coords = item.coords();
     const auto labels = item.labels();
     if (std::all_of(coords.begin(), coords.end(),
@@ -222,4 +225,36 @@ TEST(DatasetBinaryOpTest, times_equals_Dataset_with_extra_items) {
   b.setValues("extra", makeVariable<double>({}));
 
   ASSERT_ANY_THROW(a *= b);
+}
+
+TEST(DatasetBinaryOpTest, plus_equals_DatasetProxy_self_overlap) {
+  auto dataset = datasetFactory.make();
+  const auto slice = dataset.slice({Dim::Z, 3});
+  auto reference(dataset);
+
+  ASSERT_NO_THROW(dataset += slice);
+  for (const auto[name, item] : dataset) {
+    // Items independent of Z are removed when creating `slice`.
+    if (item.dims().contains(Dim::Z)) {
+      EXPECT_EQ(item, reference[name] += reference[name].slice({Dim::Z, 3}));
+    } else {
+      EXPECT_EQ(item, reference[name]);
+    }
+  }
+}
+
+TEST(DatasetBinaryOpTest, times_equals_DatasetProxy_self_overlap) {
+  auto dataset = datasetFactory.make();
+  const auto slice = dataset.slice({Dim::Z, 3});
+  auto reference(dataset);
+
+  ASSERT_NO_THROW(dataset *= slice);
+  for (const auto[name, item] : dataset) {
+    // Items independent of Z are removed when creating `slice`.
+    if (item.dims().contains(Dim::Z)) {
+      EXPECT_EQ(item, reference[name] *= reference[name].slice({Dim::Z, 3}));
+    } else {
+      EXPECT_EQ(item, reference[name]);
+    }
+  }
 }
