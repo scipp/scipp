@@ -591,39 +591,58 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   expect_eq(a, b);
 }
 
+class Dataset3DTest : public ::testing::Test {
+protected:
+  Dataset3DTest() : dataset(factory.make()) {}
+
+  Dataset datasetWithEdges(const std::initializer_list<Dim> &edgeDims) {
+    auto d = dataset;
+    for (const auto dim : edgeDims) {
+      auto dims = dataset.coords()[dim].dims();
+      dims.resize(dim, dims[dim] + 1);
+      d.setCoord(dim, makeRandom(dims));
+    }
+    return d;
+  }
+
+  DatasetFactory3D factory;
+  Dataset dataset;
+};
+
 TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
   auto edge_coord = dataset;
-  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, x(5)));
+  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 5})));
   ASSERT_NE(edge_coord["data_xyz"], dataset["data_xyz"]);
   // Cannot incrementally grow.
-  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, x(6)));
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 6})));
   // Minor implementation shortcoming: Currently we cannot go back to non-edges.
-  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, x(4)));
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 4})));
 }
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_non_edge_coord_with_edge_data) {
   // If we reduce the X extent to 3 we would have data defined at the edges, but
   // the coord is not. This is forbidden.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, x(3)));
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
   // We *can* set data with X extent 3. The X coord is now bin edges, and other
   // data is defined on the edges.
-  ASSERT_NO_THROW(dataset.setValues("non_edge_data", x(3)));
+  ASSERT_NO_THROW(dataset.setValues("non_edge_data", makeRandom({Dim::X, 3})));
   // Now the X extent of the dataset is 3, but since we have data on the edges
   // we still cannot change the coord to non-edges.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, x(3)));
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
 }
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_setting_edge_data_without_edge_coord) {
-  ASSERT_ANY_THROW(dataset.setValues("edge_data", x(5)));
-  ASSERT_NO_THROW(dataset.setCoord(Dim::X, x(5)));
-  ASSERT_NO_THROW(dataset.setValues("edge_data", x(5)));
+  ASSERT_ANY_THROW(dataset.setValues("edge_data", makeRandom({Dim::X, 5})));
+  ASSERT_NO_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 5})));
+  ASSERT_NO_THROW(dataset.setValues("edge_data", makeRandom({Dim::X, 5})));
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
   // This is the Y coordinate but has extra extent in X.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::Y, xy(5, 5)));
+  ASSERT_ANY_THROW(
+      dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
@@ -631,15 +650,22 @@ TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
   // slight inconsistency though: Labels are typically though of as being for a
   // particular dimension (the inner one), but we can have labels on edges also
   // for the other dimensions (x in this case), just like data.
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(4, 6)));
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(5, 5)));
-  dataset.setCoord(Dim::Y, xy(4, 6));
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(5, 5)));
-  dataset.setCoord(Dim::X, x(5));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(5, 5)));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(5, 6)));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(4, 6)));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(4, 5)));
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 4}, {Dim::Y, 6}}));
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  dataset.setCoord(Dim::X, makeRandom({Dim::X, 5}));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 6}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 5}})));
 }
 
 class Dataset3DTest_slice_x : public Dataset3DTest,
@@ -654,6 +680,7 @@ protected:
                 dataset.labels()["labels_xy"].slice({Dim::X, pos}));
     d.setLabels("labels_z", dataset.labels()["labels_z"]);
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+    d.setValues("values_x", dataset["values_x"].values().slice({Dim::X, pos}));
     d.setValues("data_x", dataset["data_x"].values().slice({Dim::X, pos}));
     d.setVariances("data_x",
                    dataset["data_x"].variances().slice({Dim::X, pos}));
@@ -682,8 +709,6 @@ class Dataset3DTest_slice_range_y : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
-    // TODO rewrite generation of this and other reference data as for
-    // Dataset3DTest_slice_x above, then enable random seed in Dataset3DTest.
     d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y].slice({Dim::Y, begin, end}));
@@ -774,7 +799,7 @@ TEST_P(Dataset3DTest_slice_x, slice) {
 TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
   const auto pos = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::X, x(5));
+  datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), reference(pos));
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}),
             dataset.slice({Dim::X, pos}));
@@ -841,6 +866,8 @@ TEST_P(Dataset3DTest_slice_range_x, slice) {
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x",
                     dataset.attrs()["attr_x"].slice({Dim::X, begin, end}));
+  reference.setValues("values_x",
+                      dataset["values_x"].values().slice({Dim::X, begin, end}));
   reference.setValues("data_x",
                       dataset["data_x"].values().slice({Dim::X, begin, end}));
   reference.setVariances(
@@ -867,19 +894,21 @@ TEST_P(Dataset3DTest_slice_range_y, slice) {
 TEST_P(Dataset3DTest_slice_range_y, slice_with_edges) {
   const auto[begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::Y, y(6));
+  const auto yEdges = makeRandom({Dim::Y, 6});
+  datasetWithEdges.setCoord(Dim::Y, yEdges);
   auto referenceWithEdges = reference(begin, end);
   // Is this the correct behavior for edges also in case the range is empty?
-  referenceWithEdges.setCoord(Dim::Y, y(6).slice({Dim::Y, begin, end + 1}));
+  referenceWithEdges.setCoord(Dim::Y, yEdges.slice({Dim::Y, begin, end + 1}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
 }
 
 TEST_P(Dataset3DTest_slice_range_y, slice_with_z_edges) {
   const auto[begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::Z, xyz(7));
+  const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
+  datasetWithEdges.setCoord(Dim::Z, zEdges);
   auto referenceWithEdges = reference(begin, end);
-  referenceWithEdges.setCoord(Dim::Z, xyz(7).slice({Dim::Y, begin, end}));
+  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({Dim::Y, begin, end}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
 }
 
@@ -891,9 +920,10 @@ TEST_P(Dataset3DTest_slice_range_z, slice) {
 TEST_P(Dataset3DTest_slice_range_z, slice_with_edges) {
   const auto[begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::Z, xyz(7));
+  const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
+  datasetWithEdges.setCoord(Dim::Z, zEdges);
   auto referenceWithEdges = reference(begin, end);
-  referenceWithEdges.setCoord(Dim::Z, xyz(7).slice({Dim::Z, begin, end + 1}));
+  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({Dim::Z, begin, end + 1}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Z, begin, end}), referenceWithEdges);
 }
 
@@ -914,7 +944,7 @@ TEST_F(Dataset3DTest, nested_slice_range) {
 
 TEST_F(Dataset3DTest, nested_slice_range_bin_edges) {
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::X, x(5));
+  datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 0, 2}),
             datasetWithEdges.slice({Dim::X, 1, 3}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 1, 2}),
