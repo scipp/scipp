@@ -35,6 +35,9 @@ public:
   }
 };
 
+/// Factory for creating datasets for testing. For a given instance, `make()`
+/// will return datasets with identical coords and labels, such that they are
+/// compatible in binary operations.
 class DatasetFactory3D {
 public:
   DatasetFactory3D(const scipp::index lx = 4, const scipp::index ly = 5,

@@ -155,8 +155,8 @@ protected:
   Op op;
 };
 
-using Ops = ::testing::Types<plus_equals, times_equals>;
-TYPED_TEST_SUITE(DatasetBinaryOpTest, Ops);
+using BinaryEquals = ::testing::Types<plus_equals, times_equals>;
+TYPED_TEST_SUITE(DatasetBinaryOpTest, BinaryEquals);
 
 // DataProxyBinaryOpEqualsTest ensures correctness of operations between
 // DataProxy with itself, so we can rely on that for building the reference.
@@ -171,6 +171,19 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DataProxy_self_overlap) {
   }
 }
 
+TYPED_TEST(DatasetBinaryOpTest, rhs_DataProxy_self_overlap_slice) {
+  auto dataset = datasetFactory.make();
+  auto original(dataset);
+  auto reference(dataset);
+
+  ASSERT_NO_THROW(
+      TestFixture::op(dataset, dataset["values_x"].slice({Dim::X, 1})));
+  for (const auto[name, item] : dataset) {
+    EXPECT_EQ(item, TestFixture::op(reference[name],
+                                    original["values_x"].slice({Dim::X, 1})));
+  }
+}
+
 TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
@@ -182,7 +195,15 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs__Dataset_with_missing_items) {
+TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_coord_mismatch) {
+  auto a = datasetFactory.make();
+  DatasetFactory3D otherCoordsFactory;
+  auto b = otherCoordsFactory.make();
+
+  ASSERT_THROW(TestFixture::op(a, b), except::CoordMismatchError);
+}
+
+TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
   a.setValues("extra", makeVariable<double>({}));
   auto b = datasetFactory.make();
@@ -221,4 +242,21 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_self_overlap) {
       EXPECT_EQ(item, reference[name]);
     }
   }
+}
+
+TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
+  auto dataset = datasetFactory.make();
+
+  // Non-range sliced throws for X and Y due to multi-dimensional coords.
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),
+               except::CoordMismatchError);
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::Y, 3})),
+               except::CoordMismatchError);
+
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3, 4})),
+               except::CoordMismatchError);
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::Y, 3, 4})),
+               except::CoordMismatchError);
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::Z, 3, 4})),
+               except::CoordMismatchError);
 }
