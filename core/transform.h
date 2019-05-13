@@ -92,7 +92,15 @@ template <class T1, class T2, class Op>
 void transform_with_variance(const VariableConceptT<sparse_container<T1>> &a,
                              const T2 &b,
                              VariableConceptT<sparse_container<T1>> &c, Op op) {
+  throw std::runtime_error(
+      "Propagation of uncertainties for sparse data not implemented yet.");
 }
+
+template <class T> struct is_eigen_type : std::false_type {};
+template <class T, int Rows, int Cols>
+struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
+template <class T>
+inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
 template <class Op> struct TransformInPlace {
   Op op;
@@ -123,12 +131,10 @@ template <class Op> struct TransformInPlace {
       if (a->isContiguous() && dimsA.contains(dimsB)) {
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
           if (a->hasVariances()) {
-            if constexpr (std::is_same_v<typename std::remove_reference_t<
-                                             decltype(*a)>::value_type,
-                                         double> &&
-                          std::is_same_v<typename std::remove_reference_t<
-                                             decltype(b)>::value_type,
-                                         double>)
+            if constexpr (!is_eigen_type_v<typename std::remove_reference_t<
+                              decltype(*a)>::value_type> &&
+                          !is_eigen_type_v<typename std::remove_reference_t<
+                              decltype(b)>::value_type>)
               transform_with_variance(*a, b, *a, op);
             else
               throw std::runtime_error("This dtype cannot have a variance.");
