@@ -123,10 +123,10 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
                          is_eigen_type_v<typename T2::value_type>) {
       throw std::runtime_error("This dtype cannot have a variance.");
     } else {
+      auto a_var = a.variances();
+      auto c_var = c.variances();
       if (b.hasVariances()) {
-        auto a_var = a.variances();
         auto b_var = b.variances();
-        auto c_var = c.variances();
         for (scipp::index i = 0; i < a_val.size(); ++i) {
           const ValueAndVariance a_{a_val[i], a_var[i]};
           const ValueAndVariance b_{b_val[i], b_var[i]};
@@ -134,22 +134,18 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
           c_val[i] = out.value;
           c_var[i] = out.variance;
         }
-    } else {
-      auto a_var = a.variances();
-      auto c_var = c.variances();
-      for (scipp::index i = 0; i < a_val.size(); ++i) {
-        const ValueAndVariance a_{a_val[i], a_var[i]};
-        const auto out = op(a_, b_val[i]);
-        c_val[i] = out.value;
-        c_var[i] = out.variance;
+      } else {
+        for (scipp::index i = 0; i < a_val.size(); ++i) {
+          const ValueAndVariance a_{a_val[i], a_var[i]};
+          const auto out = op(a_, b_val[i]);
+          c_val[i] = out.value;
+          c_var[i] = out.variance;
+        }
       }
     }
-    }
   } else if (b.hasVariances()) {
-    if (b.hasVariances()) {
-      throw std::runtime_error(
-          "RHS in operation has variances but LHS does not.");
-    }
+    throw std::runtime_error(
+        "RHS in operation has variances but LHS does not.");
   } else {
     std::transform(a_val.begin(), a_val.end(), b_val.begin(), c_val.begin(),
                    op);
@@ -216,6 +212,9 @@ template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
 template <class Op> struct Transform {
   Op op;
   template <class T> VariableConceptHandle operator()(T &&handle) const {
+    if (handle->hasVariances())
+      throw std::runtime_error(
+          "Propgation of uncertainties not implemented for this case.");
     auto data = handle->values();
     // TODO Should just make empty container here, without init.
     auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
