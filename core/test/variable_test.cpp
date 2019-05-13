@@ -1481,3 +1481,23 @@ TEST(SparseVariable, operator_plus) {
   EXPECT_TRUE(equals(sparse_[0], {2.5, 3.5, 4.5}));
   EXPECT_TRUE(equals(sparse_[1], {4.5}));
 }
+
+TEST(VariableTest, create_with_variance) {
+  ASSERT_NO_THROW(makeVariable<double>({}, {1.0}, {0.1}));
+  ASSERT_NO_THROW(makeVariable<double>({}, units::m, {1.0}, {0.1}));
+}
+
+TEST(VariableTest, hasVariances) {
+  ASSERT_FALSE(makeVariable<double>({}).hasVariances());
+  ASSERT_FALSE(makeVariable<double>({}, {1.0}).hasVariances());
+  ASSERT_TRUE(makeVariable<double>({}, {1.0}, {0.1}).hasVariances());
+  ASSERT_TRUE(makeVariable<double>({}, units::m, {1.0}, {0.1}).hasVariances());
+}
+
+TEST(VariableTest, values_variances) {
+  const auto var = makeVariable<double>({}, {1.0}, {0.1});
+  ASSERT_NO_THROW(var.values<double>());
+  ASSERT_NO_THROW(var.variances<double>());
+  ASSERT_TRUE(equals(var.values<double>(), {1.0}));
+  ASSERT_TRUE(equals(var.variances<double>(), {0.1}));
+}

@@ -254,6 +254,9 @@ public:
   Variable(const units::Unit unit, const Dimensions &dimensions, T object,
            const Dim sparseDim = Dim::Invalid);
   template <class T>
+  Variable(const units::Unit unit, const Dimensions &dimensions, T values,
+           T variances, const Dim sparseDim = Dim::Invalid);
+  template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values)
       : Variable(units::dimensionless, std::move(dimensions),
                  Vector<underlying_type_t<T>>(values.begin(), values.end())) {}
@@ -318,8 +321,14 @@ public:
   bool isSparse() const noexcept { return m_sparseDim != Dim::Invalid; }
   Dim sparseDim() const { return m_sparseDim; }
 
+  bool hasVariances() const noexcept { return data().hasVariances(); }
+
   template <class T> auto values() const { return scipp::span(cast<T>()); }
   template <class T> auto values() { return scipp::span(cast<T>()); }
+  template <class T> auto variances() const {
+    return scipp::span(cast<T>(true));
+  }
+  template <class T> auto variances() { return scipp::span(cast<T>(true)); }
   template <class T> auto span() const { return scipp::span(cast<T>()); }
   template <class T> auto span() { return scipp::span(cast<T>()); }
   template <class T> auto sparseSpan() const {
@@ -360,8 +369,10 @@ public:
   template <class... Tags> friend class ZipView;
 
 private:
-  template <class T> const Vector<underlying_type_t<T>> &cast() const;
-  template <class T> Vector<underlying_type_t<T>> &cast();
+  template <class T>
+  const Vector<underlying_type_t<T>> &cast(const bool variances = false) const;
+  template <class T>
+  Vector<underlying_type_t<T>> &cast(const bool variances = false);
 
   // Used by ZipView. Need to find a better way instead of having everyone as
   // friend.
@@ -395,10 +406,30 @@ Variable makeVariable(const Dimensions &dimensions,
 }
 
 template <class T, class T2 = T>
+Variable makeVariable(const Dimensions &dimensions,
+                      std::initializer_list<T2> values,
+                      std::initializer_list<T2> variances) {
+  return Variable(
+      units::dimensionless, std::move(dimensions),
+      Vector<underlying_type_t<T>>(values.begin(), values.end()),
+      Vector<underlying_type_t<T>>(variances.begin(), variances.end()));
+}
+
+template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                       std::initializer_list<T2> values) {
   return Variable(unit, std::move(dimensions),
                   Vector<underlying_type_t<T>>(values.begin(), values.end()));
+}
+
+template <class T, class T2 = T>
+Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
+                      std::initializer_list<T2> values,
+                      std::initializer_list<T2> variances) {
+  return Variable(
+      unit, std::move(dimensions),
+      Vector<underlying_type_t<T>>(values.begin(), values.end()),
+      Vector<underlying_type_t<T>>(variances.begin(), variances.end()));
 }
 
 namespace detail {

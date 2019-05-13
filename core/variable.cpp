@@ -276,9 +276,10 @@ template <class T> class DataModel : public conceptT_t<typename T::value_type> {
 public:
   using value_type = std::remove_const_t<typename T::value_type>;
 
-  DataModel(const Dimensions &dimensions, T model)
+  DataModel(const Dimensions &dimensions, T model,
+            std::optional<T> variances = std::nullopt)
       : conceptT_t<typename T::value_type>(std::move(dimensions)),
-        m_model(std::move(model)) {
+        m_model(std::move(model)), m_variances(std::move(variances)) {
     if (this->dimensions().volume() != scipp::size(m_model))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
@@ -637,6 +638,12 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
     : m_sparseDim(sparseDim), m_unit{unit},
       m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
                                               std::move(object))) {}
+template <class T>
+Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
+                   T values, T variances, const Dim sparseDim)
+    : m_sparseDim(sparseDim), m_unit{unit},
+      m_object(std::make_unique<DataModel<T>>(
+          std::move(dimensions), std::move(values), std::move(variances))) {}
 
 void Variable::setDimensions(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dimensions().volume()) {
@@ -647,23 +654,42 @@ void Variable::setDimensions(const Dimensions &dimensions) {
   m_object = m_object->clone(dimensions);
 }
 
-template <class T> const Vector<underlying_type_t<T>> &Variable::cast() const {
-  return requireT<const DataModel<Vector<underlying_type_t<T>>>>(*m_object)
-      .m_model;
+template <class T>
+const Vector<underlying_type_t<T>> &Variable::cast(const bool variances) const {
+  auto &dm = requireT<const DataModel<Vector<underlying_type_t<T>>>>(*m_object);
+  if (!variances)
+    return dm.m_model;
+  else {
+    if (!hasVariances())
+      throw std::runtime_error("No variances");
+    return *dm.m_variances;
+  }
 }
 
-template <class T> Vector<underlying_type_t<T>> &Variable::cast() {
-  return requireT<DataModel<Vector<underlying_type_t<T>>>>(*m_object).m_model;
+template <class T>
+Vector<underlying_type_t<T>> &Variable::cast(const bool variances) {
+  auto &dm = requireT<DataModel<Vector<underlying_type_t<T>>>>(*m_object);
+  if (!variances)
+    return dm.m_model;
+  else {
+    if (!hasVariances())
+      throw std::runtime_error("No variances");
+    return *dm.m_variances;
+  }
 }
 
 #define INSTANTIATE(...)                                                       \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               Vector<underlying_type_t<__VA_ARGS__>>,          \
                               const Dim);                                      \
+  template Variable::Variable(const units::Unit, const Dimensions &,           \
+                              Vector<underlying_type_t<__VA_ARGS__>>,          \
+                              Vector<underlying_type_t<__VA_ARGS__>>,          \
+                              const Dim);                                      \
   template Vector<underlying_type_t<__VA_ARGS__>>                              \
-      &Variable::cast<__VA_ARGS__>();                                          \
+      &Variable::cast<__VA_ARGS__>(const bool);                                \
   template const Vector<underlying_type_t<__VA_ARGS__>>                        \
-      &Variable::cast<__VA_ARGS__>() const;
+      &Variable::cast<__VA_ARGS__>(const bool) const;
 
 INSTANTIATE(std::string)
 INSTANTIATE(double)
