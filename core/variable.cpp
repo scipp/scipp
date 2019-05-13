@@ -300,6 +300,23 @@ public:
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
+  scipp::span<value_type> variances() override {
+    return scipp::span(m_variances->data(), m_variances->data() + size());
+  }
+  scipp::span<value_type> variances(const Dim dim, const scipp::index begin,
+                                    const scipp::index end) override {
+    return makeSpan(*m_variances, this->dimensions(), dim, begin, end);
+  }
+
+  scipp::span<const value_type> variances() const override {
+    return scipp::span(m_model.data(), m_model.data() + size());
+  }
+  scipp::span<const value_type>
+  variances(const Dim dim, const scipp::index begin,
+            const scipp::index end) const override {
+    return makeSpan(*m_variances, this->dimensions(), dim, begin, end);
+  }
+
   VariableView<value_type> valuesView(const Dimensions &dims) override {
     return makeVariableView(m_model.data(), 0, dims, this->dimensions());
   }
@@ -326,6 +343,32 @@ public:
                             this->dimensions());
   }
 
+  VariableView<value_type> variancesView(const Dimensions &dims) override {
+    return makeVariableView(m_variances->data(), 0, dims, this->dimensions());
+  }
+  VariableView<value_type> variancesView(const Dimensions &dims, const Dim dim,
+                                         const scipp::index begin) override {
+    scipp::index beginOffset = this->dimensions().contains(dim)
+                                   ? begin * this->dimensions().offset(dim)
+                                   : begin * this->dimensions().volume();
+    return makeVariableView(m_variances->data(), beginOffset, dims,
+                            this->dimensions());
+  }
+
+  VariableView<const value_type>
+  variancesView(const Dimensions &dims) const override {
+    return makeVariableView(m_variances->data(), 0, dims, this->dimensions());
+  }
+  VariableView<const value_type>
+  variancesView(const Dimensions &dims, const Dim dim,
+                const scipp::index begin) const override {
+    scipp::index beginOffset = this->dimensions().contains(dim)
+                                   ? begin * this->dimensions().offset(dim)
+                                   : begin * this->dimensions().volume();
+    return makeVariableView(m_variances->data(), beginOffset, dims,
+                            this->dimensions());
+  }
+
   VariableView<const value_type>
   getReshaped(const Dimensions &dims) const override {
     return makeVariableView(m_model.data(), 0, dims, dims);
@@ -345,6 +388,9 @@ public:
   bool isContiguous() const override { return true; }
   bool isView() const override { return false; }
   bool isConstView() const override { return false; }
+  bool hasVariances() const noexcept override {
+    return m_variances.has_value();
+  }
 
   scipp::index size() const override { return m_model.size(); }
 
@@ -431,6 +477,39 @@ public:
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
+  scipp::span<value_type> variances() override {
+    requireMutable();
+    requireContiguous();
+    if constexpr (std::is_const<typename T::element_type>::value)
+      return scipp::span<value_type>();
+    else
+      return scipp::span(m_variances->data(), m_variances->data() + size());
+  }
+  scipp::span<value_type> variances(const Dim dim, const scipp::index begin,
+                                    const scipp::index end) override {
+    requireMutable();
+    requireContiguous();
+    if constexpr (std::is_const<typename T::element_type>::value) {
+      static_cast<void>(dim);
+      static_cast<void>(begin);
+      static_cast<void>(end);
+      return scipp::span<value_type>();
+    } else {
+      return makeSpan(*m_variances, this->dimensions(), dim, begin, end);
+    }
+  }
+
+  scipp::span<const value_type> variances() const override {
+    requireContiguous();
+    return scipp::span(m_variances->data(), m_variances->data() + size());
+  }
+  scipp::span<const value_type>
+  variances(const Dim dim, const scipp::index begin,
+            const scipp::index end) const override {
+    requireContiguous();
+    return makeSpan(*m_variances, this->dimensions(), dim, begin, end);
+  }
+
   VariableView<value_type> valuesView(const Dimensions &dims) override {
     requireMutable();
     if constexpr (std::is_const<typename T::element_type>::value) {
@@ -462,6 +541,37 @@ public:
     return {m_model, dims, dim, begin};
   }
 
+  VariableView<value_type> variancesView(const Dimensions &dims) override {
+    requireMutable();
+    if constexpr (std::is_const<typename T::element_type>::value) {
+      static_cast<void>(dims);
+      return VariableView<value_type>(nullptr, 0, {}, {});
+    } else {
+      return {*m_variances, dims};
+    }
+  }
+  VariableView<value_type> variancesView(const Dimensions &dims, const Dim dim,
+                                         const scipp::index begin) override {
+    requireMutable();
+    if constexpr (std::is_const<typename T::element_type>::value) {
+      static_cast<void>(dim);
+      static_cast<void>(begin);
+      return VariableView<value_type>(nullptr, 0, {}, {});
+    } else {
+      return {*m_variances, dims, dim, begin};
+    }
+  }
+
+  VariableView<const value_type>
+  variancesView(const Dimensions &dims) const override {
+    return {*m_variances, dims};
+  }
+  VariableView<const value_type>
+  variancesView(const Dimensions &dims, const Dim dim,
+                const scipp::index begin) const override {
+    return {*m_variances, dims, dim, begin};
+  }
+
   VariableView<const value_type>
   getReshaped(const Dimensions &dims) const override {
     return {m_model, dims};
@@ -490,6 +600,9 @@ public:
   bool isView() const override { return true; }
   bool isConstView() const override {
     return std::is_const<typename T::element_type>::value;
+  }
+  bool hasVariances() const noexcept override {
+    return m_variances.has_value();
   }
 
   scipp::index size() const override { return m_model.size(); }

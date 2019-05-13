@@ -81,6 +81,7 @@ public:
   virtual bool isContiguous() const = 0;
   virtual bool isView() const = 0;
   virtual bool isConstView() const = 0;
+  virtual bool hasVariances() const noexcept = 0;
 
   virtual scipp::index size() const = 0;
   virtual void copy(const VariableConcept &other, const Dim dim,
@@ -131,6 +132,13 @@ public:
   virtual scipp::span<const T> values() const = 0;
   virtual scipp::span<const T> values(const Dim dim, const scipp::index begin,
                                       const scipp::index end) const = 0;
+  virtual scipp::span<T> variances() = 0;
+  virtual scipp::span<T> variances(const Dim dim, const scipp::index begin,
+                                   const scipp::index end) = 0;
+  virtual scipp::span<const T> variances() const = 0;
+  virtual scipp::span<const T> variances(const Dim dim,
+                                         const scipp::index begin,
+                                         const scipp::index end) const = 0;
   virtual VariableView<T> valuesView(const Dimensions &dims) = 0;
   virtual VariableView<T> valuesView(const Dimensions &dims, const Dim dim,
                                      const scipp::index begin) = 0;
@@ -138,6 +146,13 @@ public:
   virtual VariableView<const T> valuesView(const Dimensions &dims,
                                            const Dim dim,
                                            const scipp::index begin) const = 0;
+  virtual VariableView<T> variancesView(const Dimensions &dims) = 0;
+  virtual VariableView<T> variancesView(const Dimensions &dims, const Dim dim,
+                                        const scipp::index begin) = 0;
+  virtual VariableView<const T> variancesView(const Dimensions &dims) const = 0;
+  virtual VariableView<const T>
+  variancesView(const Dimensions &dims, const Dim dim,
+                const scipp::index begin) const = 0;
   virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
   virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
 
