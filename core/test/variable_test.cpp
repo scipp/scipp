@@ -102,27 +102,112 @@ TEST(Variable, copy) {
   EXPECT_EQ(data2[1], 2.2);
 }
 
-TEST(Variable, operator_equals) {
-  const auto a = makeVariable<double>({Dim::Tof, 2}, {1.1, 2.2});
-  const auto a_copy(a);
-  const auto b = makeVariable<double>({Dim::Tof, 2}, {1.1, 2.2});
-  const auto diff1 = makeVariable<double>({Dim::Tof, 2}, {1.1, 2.1});
-  const auto diff2 = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
-  auto diff3(a);
-  diff3.setUnit(units::m);
-  EXPECT_EQ(a, a);
-  EXPECT_EQ(a, a_copy);
-  EXPECT_EQ(a, b);
-  EXPECT_EQ(b, a);
-  EXPECT_FALSE(a == diff1);
-  EXPECT_FALSE(a == diff2);
-  EXPECT_FALSE(a == diff3);
+class Variable_comparison_operators : public ::testing::Test {
+private:
+  template <class A, class B>
+  void expect_eq_impl(const A &a, const B &b) const {
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(b == a);
+    EXPECT_FALSE(a != b);
+    EXPECT_FALSE(b != a);
+  }
+  template <class A, class B>
+  void expect_ne_impl(const A &a, const B &b) const {
+    EXPECT_TRUE(a != b);
+    EXPECT_TRUE(b != a);
+    EXPECT_FALSE(a == b);
+    EXPECT_FALSE(b == a);
+  }
+
+protected:
+  void expect_eq(const Variable &a, const Variable &b) const {
+    expect_eq_impl(a, ConstVariableSlice(b));
+    expect_eq_impl(ConstVariableSlice(a), b);
+    expect_eq_impl(ConstVariableSlice(a), ConstVariableSlice(b));
+  }
+  void expect_ne(const Variable &a, const Variable &b) const {
+    expect_ne_impl(a, ConstVariableSlice(b));
+    expect_ne_impl(ConstVariableSlice(a), b);
+    expect_ne_impl(ConstVariableSlice(a), ConstVariableSlice(b));
+  }
+};
+
+TEST_F(Variable_comparison_operators, values_0d) {
+  const auto base = makeVariable<double>({}, {1.1});
+  expect_eq(base, base);
+  expect_eq(base, makeVariable<double>({}, {1.1}));
+  expect_ne(base, makeVariable<double>({}, {1.2}));
 }
 
-TEST(Variable, operator_equals_mismatching_dtype) {
-  auto a = makeVariable<double>({});
-  auto b = makeVariable<float>({});
-  EXPECT_NE(a, b);
+TEST_F(Variable_comparison_operators, values_1d) {
+  const auto base = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  expect_eq(base, base);
+  expect_eq(base, makeVariable<double>({Dim::X, 2}, {1.1, 2.2}));
+  expect_ne(base, makeVariable<double>({Dim::X, 2}, {1.1, 2.3}));
+}
+
+TEST_F(Variable_comparison_operators, values_2d) {
+  const auto base =
+      makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, {1.1, 2.2});
+  expect_eq(base, base);
+  expect_eq(base, makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, {1.1, 2.2}));
+  expect_ne(base, makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, {1.1, 2.3}));
+}
+
+TEST_F(Variable_comparison_operators, variances_0d) {
+  const auto base = makeVariable<double>({}, {1.1}, {0.1});
+  expect_eq(base, base);
+  expect_eq(base, makeVariable<double>({}, {1.1}, {0.1}));
+  expect_ne(base, makeVariable<double>({}, {1.1}));
+  expect_ne(base, makeVariable<double>({}, {1.1}, {0.2}));
+}
+
+TEST_F(Variable_comparison_operators, variances_1d) {
+  const auto base = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {0.1, 0.2});
+  expect_eq(base, base);
+  expect_eq(base, makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {0.1, 0.2}));
+  expect_ne(base, makeVariable<double>({Dim::X, 2}, {1.1, 2.2}));
+  expect_ne(base, makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {0.1, 0.3}));
+}
+
+TEST_F(Variable_comparison_operators, variances_2d) {
+  const auto base =
+      makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, {1.1, 2.2}, {0.1, 0.2});
+  expect_eq(base, base);
+  expect_eq(base, makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, {1.1, 2.2},
+                                       {0.1, 0.2}));
+  expect_ne(base, makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, {1.1, 2.2}));
+  expect_ne(base, makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, {1.1, 2.2},
+                                       {0.1, 0.3}));
+}
+
+TEST_F(Variable_comparison_operators, dimension_mismatch) {
+  expect_ne(makeVariable<double>({}, {1.1}),
+            makeVariable<double>({Dim::X, 1}, {1.1}));
+  expect_ne(makeVariable<double>({Dim::X, 1}, {1.1}),
+            makeVariable<double>({Dim::Y, 1}, {1.1}));
+}
+
+TEST_F(Variable_comparison_operators, dimension_transpose) {
+  expect_ne(makeVariable<double>({{Dim::X, 1}, {Dim::Y, 1}}, {1.1}),
+            makeVariable<double>({{Dim::Y, 1}, {Dim::X, 1}}, {1.1}));
+}
+
+TEST_F(Variable_comparison_operators, dimension_length) {
+  expect_ne(makeVariable<double>({Dim::X, 1}),
+            makeVariable<double>({Dim::X, 2}));
+}
+
+TEST_F(Variable_comparison_operators, unit) {
+  const auto m = makeVariable<double>({Dim::X, 1}, units::m, {1.1});
+  const auto s = makeVariable<double>({Dim::X, 1}, units::s, {1.1});
+  expect_eq(m, m);
+  expect_ne(m, s);
+}
+
+TEST_F(Variable_comparison_operators, dtype) {
+  const auto base = makeVariable<double>({}, {1.0});
+  expect_ne(base, makeVariable<float>({}, {1.0}));
 }
 
 TEST(Variable, operator_unary_minus) {
