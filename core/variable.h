@@ -125,18 +125,19 @@ public:
   }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
 
-  virtual scipp::span<T> getSpan() = 0;
-  virtual scipp::span<T> getSpan(const Dim dim, const scipp::index begin,
-                                 const scipp::index end) = 0;
-  virtual scipp::span<const T> getSpan() const = 0;
-  virtual scipp::span<const T> getSpan(const Dim dim, const scipp::index begin,
-                                       const scipp::index end) const = 0;
-  virtual VariableView<T> getView(const Dimensions &dims) = 0;
-  virtual VariableView<T> getView(const Dimensions &dims, const Dim dim,
-                                  const scipp::index begin) = 0;
-  virtual VariableView<const T> getView(const Dimensions &dims) const = 0;
-  virtual VariableView<const T> getView(const Dimensions &dims, const Dim dim,
-                                        const scipp::index begin) const = 0;
+  virtual scipp::span<T> values() = 0;
+  virtual scipp::span<T> values(const Dim dim, const scipp::index begin,
+                                const scipp::index end) = 0;
+  virtual scipp::span<const T> values() const = 0;
+  virtual scipp::span<const T> values(const Dim dim, const scipp::index begin,
+                                      const scipp::index end) const = 0;
+  virtual VariableView<T> valuesView(const Dimensions &dims) = 0;
+  virtual VariableView<T> valuesView(const Dimensions &dims, const Dim dim,
+                                     const scipp::index begin) = 0;
+  virtual VariableView<const T> valuesView(const Dimensions &dims) const = 0;
+  virtual VariableView<const T> valuesView(const Dimensions &dims,
+                                           const Dim dim,
+                                           const scipp::index begin) const = 0;
   virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
   virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
 

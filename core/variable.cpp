@@ -37,13 +37,13 @@ template <class T> struct RebinHelper {
                          VariableConceptT<T> &newT,
                          const VariableConceptT<T> &oldCoordT,
                          const VariableConceptT<T> &newCoordT) {
-    const auto &oldData = oldT.getSpan();
-    auto newData = newT.getSpan();
+    const auto &oldData = oldT.values();
+    auto newData = newT.values();
     const auto oldSize = oldT.dimensions()[dim];
     const auto newSize = newT.dimensions()[dim];
     const auto count = oldT.dimensions().volume() / oldSize;
-    const auto *xold = &*oldCoordT.getSpan().begin();
-    const auto *xnew = &*newCoordT.getSpan().begin();
+    const auto *xold = &*oldCoordT.values().begin();
+    const auto *xnew = &*newCoordT.values().begin();
     // This function assumes that dimensions between coord and data either
     // match, or coord is 1D.
     const bool jointOld = oldCoordT.dimensions().ndim() == 1;
@@ -153,16 +153,16 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
 
 template <class T> VariableConceptHandle VariableConceptT<T>::makeView() const {
   auto &dims = this->dimensions();
-  return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
-                                                              getView(dims));
+  return std::make_unique<ViewModel<decltype(valuesView(dims))>>(
+      dims, valuesView(dims));
 }
 
 template <class T> VariableConceptHandle VariableConceptT<T>::makeView() {
   if (this->isConstView())
     return const_cast<const VariableConceptT &>(*this).makeView();
   auto &dims = this->dimensions();
-  return std::make_unique<ViewModel<decltype(getView(dims))>>(dims,
-                                                              getView(dims));
+  return std::make_unique<ViewModel<decltype(valuesView(dims))>>(
+      dims, valuesView(dims));
 }
 
 template <class T>
@@ -174,8 +174,8 @@ VariableConceptT<T>::makeView(const Dim dim, const scipp::index begin,
     dims.erase(dim);
   else
     dims.resize(dim, end - begin);
-  return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
-      dims, getView(dims, dim, begin));
+  return std::make_unique<ViewModel<decltype(valuesView(dims, dim, begin))>>(
+      dims, valuesView(dims, dim, begin));
 }
 
 template <class T>
@@ -190,8 +190,8 @@ VariableConceptHandle VariableConceptT<T>::makeView(const Dim dim,
     dims.erase(dim);
   else
     dims.resize(dim, end - begin);
-  return std::make_unique<ViewModel<decltype(getView(dims, dim, begin))>>(
-      dims, getView(dims, dim, begin));
+  return std::make_unique<ViewModel<decltype(valuesView(dims, dim, begin))>>(
+      dims, valuesView(dims, dim, begin));
 }
 
 template <class T>
@@ -225,15 +225,15 @@ bool VariableConceptT<T>::operator==(const VariableConcept &other) const {
     return true;
   if (this->isContiguous()) {
     if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-      return equal(getSpan(), otherT.getSpan());
+      return equal(values(), otherT.values());
     } else {
-      return equal(getSpan(), otherT.getView(dims));
+      return equal(values(), otherT.valuesView(dims));
     }
   } else {
     if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-      return equal(getView(dims), otherT.getSpan());
+      return equal(valuesView(dims), otherT.values());
     } else {
-      return equal(getView(dims), otherT.getView(dims));
+      return equal(valuesView(dims), otherT.valuesView(dims));
     }
   }
 }
@@ -249,21 +249,21 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
     iterDims.resize(dim, delta);
 
   const auto &otherT = requireT<const VariableConceptT>(other);
-  auto otherView = otherT.getView(iterDims, dim, otherBegin);
+  auto otherView = otherT.valuesView(iterDims, dim, otherBegin);
   // Four cases for minimizing use of VariableView --- just copy contiguous
   // range where possible.
   if (this->isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
-    auto target = getSpan(dim, offset, offset + delta);
+    auto target = values(dim, offset, offset + delta);
     if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
-      auto source = otherT.getSpan(dim, otherBegin, otherEnd);
+      auto source = otherT.values(dim, otherBegin, otherEnd);
       std::copy(source.begin(), source.end(), target.begin());
     } else {
       std::copy(otherView.begin(), otherView.end(), target.begin());
     }
   } else {
-    auto view = getView(iterDims, dim, offset);
+    auto view = valuesView(iterDims, dim, offset);
     if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
-      auto source = otherT.getSpan(dim, otherBegin, otherEnd);
+      auto source = otherT.values(dim, otherBegin, otherEnd);
       std::copy(source.begin(), source.end(), view.begin());
     } else {
       std::copy(otherView.begin(), otherView.end(), view.begin());
@@ -284,27 +284,27 @@ public:
                                "volume given by dimension extents");
   }
 
-  scipp::span<value_type> getSpan() override {
+  scipp::span<value_type> values() override {
     return scipp::span(m_model.data(), m_model.data() + size());
   }
-  scipp::span<value_type> getSpan(const Dim dim, const scipp::index begin,
-                                  const scipp::index end) override {
+  scipp::span<value_type> values(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) override {
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
-  scipp::span<const value_type> getSpan() const override {
+  scipp::span<const value_type> values() const override {
     return scipp::span(m_model.data(), m_model.data() + size());
   }
-  scipp::span<const value_type> getSpan(const Dim dim, const scipp::index begin,
-                                        const scipp::index end) const override {
+  scipp::span<const value_type> values(const Dim dim, const scipp::index begin,
+                                       const scipp::index end) const override {
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
-  VariableView<value_type> getView(const Dimensions &dims) override {
+  VariableView<value_type> valuesView(const Dimensions &dims) override {
     return makeVariableView(m_model.data(), 0, dims, this->dimensions());
   }
-  VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
-                                   const scipp::index begin) override {
+  VariableView<value_type> valuesView(const Dimensions &dims, const Dim dim,
+                                      const scipp::index begin) override {
     scipp::index beginOffset = this->dimensions().contains(dim)
                                    ? begin * this->dimensions().offset(dim)
                                    : begin * this->dimensions().volume();
@@ -313,12 +313,12 @@ public:
   }
 
   VariableView<const value_type>
-  getView(const Dimensions &dims) const override {
+  valuesView(const Dimensions &dims) const override {
     return makeVariableView(m_model.data(), 0, dims, this->dimensions());
   }
   VariableView<const value_type>
-  getView(const Dimensions &dims, const Dim dim,
-          const scipp::index begin) const override {
+  valuesView(const Dimensions &dims, const Dim dim,
+             const scipp::index begin) const override {
     scipp::index beginOffset = this->dimensions().contains(dim)
                                    ? begin * this->dimensions().offset(dim)
                                    : begin * this->dimensions().volume();
@@ -349,6 +349,7 @@ public:
   scipp::index size() const override { return m_model.size(); }
 
   T m_model;
+  std::optional<T> m_variances;
 };
 
 namespace detail {
@@ -398,7 +399,7 @@ public:
                                "volume given by dimension extents");
   }
 
-  scipp::span<value_type> getSpan() override {
+  scipp::span<value_type> values() override {
     requireMutable();
     requireContiguous();
     if constexpr (std::is_const<typename T::element_type>::value)
@@ -406,8 +407,8 @@ public:
     else
       return scipp::span(m_model.data(), m_model.data() + size());
   }
-  scipp::span<value_type> getSpan(const Dim dim, const scipp::index begin,
-                                  const scipp::index end) override {
+  scipp::span<value_type> values(const Dim dim, const scipp::index begin,
+                                 const scipp::index end) override {
     requireMutable();
     requireContiguous();
     if constexpr (std::is_const<typename T::element_type>::value) {
@@ -420,17 +421,17 @@ public:
     }
   }
 
-  scipp::span<const value_type> getSpan() const override {
+  scipp::span<const value_type> values() const override {
     requireContiguous();
     return scipp::span(m_model.data(), m_model.data() + size());
   }
-  scipp::span<const value_type> getSpan(const Dim dim, const scipp::index begin,
-                                        const scipp::index end) const override {
+  scipp::span<const value_type> values(const Dim dim, const scipp::index begin,
+                                       const scipp::index end) const override {
     requireContiguous();
     return makeSpan(m_model, this->dimensions(), dim, begin, end);
   }
 
-  VariableView<value_type> getView(const Dimensions &dims) override {
+  VariableView<value_type> valuesView(const Dimensions &dims) override {
     requireMutable();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dims);
@@ -439,8 +440,8 @@ public:
       return {m_model, dims};
     }
   }
-  VariableView<value_type> getView(const Dimensions &dims, const Dim dim,
-                                   const scipp::index begin) override {
+  VariableView<value_type> valuesView(const Dimensions &dims, const Dim dim,
+                                      const scipp::index begin) override {
     requireMutable();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dim);
@@ -452,12 +453,12 @@ public:
   }
 
   VariableView<const value_type>
-  getView(const Dimensions &dims) const override {
+  valuesView(const Dimensions &dims) const override {
     return {m_model, dims};
   }
   VariableView<const value_type>
-  getView(const Dimensions &dims, const Dim dim,
-          const scipp::index begin) const override {
+  valuesView(const Dimensions &dims, const Dim dim,
+             const scipp::index begin) const override {
     return {m_model, dims, dim, begin};
   }
 
@@ -494,6 +495,7 @@ public:
   scipp::index size() const override { return m_model.size(); }
 
   T m_model;
+  std::optional<T> m_variances;
 };
 
 Variable::Variable(const ConstVariableSlice &slice)
@@ -781,7 +783,8 @@ const VariableView<const underlying_type_t<T>>
 ConstVariableSlice::cast() const {
   using TT = underlying_type_t<T>;
   if (!m_view)
-    return requireT<const DataModel<Vector<TT>>>(data()).getView(dimensions());
+    return requireT<const DataModel<Vector<TT>>>(data()).valuesView(
+        dimensions());
   if (m_view->isConstView())
     return requireT<const ViewModel<VariableView<const TT>>>(data()).m_model;
   // Make a const view from the mutable one.
@@ -794,7 +797,7 @@ VariableView<underlying_type_t<T>> VariableSlice::cast() const {
   using TT = underlying_type_t<T>;
   if (m_view)
     return requireT<const ViewModel<VariableView<TT>>>(data()).m_model;
-  return requireT<DataModel<Vector<TT>>>(data()).getView(dimensions());
+  return requireT<DataModel<Vector<TT>>>(data()).valuesView(dimensions());
 }
 
 #define INSTANTIATE_SLICEVIEW(...)                                             \
@@ -1171,7 +1174,7 @@ Variable reverse(Variable var, const Dim dim) {
 template <>
 VariableView<const double> getView<double>(const Variable &var,
                                            const Dimensions &dims) {
-  return requireT<const VariableConceptT<double>>(var.data()).getView(dims);
+  return requireT<const VariableConceptT<double>>(var.data()).valuesView(dims);
 }
 
 } // namespace scipp::core

@@ -41,7 +41,7 @@ template <class Op> struct TransformSparse {
 template <class Op> struct TransformInPlace {
   Op op;
   template <class T> void operator()(T &&handle) const {
-    auto data = handle->getSpan();
+    auto data = handle->values();
     std::transform(data.begin(), data.end(), data.begin(), op);
   }
   template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
@@ -52,10 +52,10 @@ template <class Op> struct TransformInPlace {
     const auto &dimsB = b.dimensions();
     try {
       if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
-        if (a->getView(dimsA).overlaps(b.getView(dimsA))) {
+        if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
           // applying the operation.
-          const auto &data = b.getView(b.dimensions());
+          const auto &data = b.valuesView(b.dimensions());
           using T = typename std::remove_reference_t<decltype(b)>::value_type;
           const std::unique_ptr<VariableConceptT<T>> copy =
               detail::makeVariableConceptT<T>(
@@ -66,33 +66,33 @@ template <class Op> struct TransformInPlace {
 
       if (a->isContiguous() && dimsA.contains(dimsB)) {
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getSpan();
-          auto b_ = b.getSpan();
+          auto a_ = a->values();
+          auto b_ = b.values();
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         } else {
-          auto a_ = a->getSpan();
-          auto b_ = b.getView(dimsA);
+          auto a_ = a->values();
+          auto b_ = b.valuesView(dimsA);
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         }
       } else if (dimsA.contains(dimsB)) {
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getView(dimsA);
-          auto b_ = b.getSpan();
+          auto a_ = a->valuesView(dimsA);
+          auto b_ = b.values();
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         } else {
-          auto a_ = a->getView(dimsA);
-          auto b_ = b.getView(dimsA);
+          auto a_ = a->valuesView(dimsA);
+          auto b_ = b.valuesView(dimsA);
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         }
       } else {
         // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getView(dimsB);
-          auto b_ = b.getSpan();
+          auto a_ = a->valuesView(dimsB);
+          auto b_ = b.values();
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         } else {
-          auto a_ = a->getView(dimsB);
-          auto b_ = b.getView(dimsB);
+          auto a_ = a->valuesView(dimsB);
+          auto b_ = b.valuesView(dimsB);
           std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
         }
       }
@@ -108,13 +108,13 @@ template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
 template <class Op> struct Transform {
   Op op;
   template <class T> VariableConceptHandle operator()(T &&handle) const {
-    auto data = handle->getSpan();
+    auto data = handle->values();
     // TODO Should just make empty container here, without init.
     auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
         handle->dimensions());
-    // TODO Typo data->getSpan() also compiles, but const-correctness should
+    // TODO Typo data->values() also compiles, but const-correctness should
     // forbid this.
-    auto outData = out->getSpan();
+    auto outData = out->values();
     std::transform(data.begin(), data.end(), outData.begin(), op);
     return {std::move(out)};
   }
