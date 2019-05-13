@@ -1501,3 +1501,13 @@ TEST(VariableTest, values_variances) {
   ASSERT_TRUE(equals(var.values<double>(), {1.0}));
   ASSERT_TRUE(equals(var.variances<double>(), {0.1}));
 }
+
+TEST(VariableTest, comparison_missing_variances) {
+  ASSERT_NE(makeVariable<double>({}, {1.0}, {0.1}),
+            makeVariable<double>({}, {1.0}));
+}
+
+TEST(VariableTest, comparison_mismatching_variances) {
+  ASSERT_NE(makeVariable<double>({}, {1.0}, {0.1}),
+            makeVariable<double>({}, {1.0}, {0.2}));
+}

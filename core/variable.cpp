@@ -220,20 +220,29 @@ bool VariableConceptT<T>::operator==(const VariableConcept &other) const {
     return false;
   if (this->dtype() != other.dtype())
     return false;
+  if (this->hasVariances() != other.hasVariances())
+    return false;
   const auto &otherT = requireT<const VariableConceptT>(other);
   if (dims.volume() == 0 && dims == other.dimensions())
     return true;
   if (this->isContiguous()) {
     if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-      return equal(values(), otherT.values());
+      return equal(values(), otherT.values()) &&
+             (!this->hasVariances() || equal(variances(), otherT.variances()));
     } else {
-      return equal(values(), otherT.valuesView(dims));
+      return equal(values(), otherT.valuesView(dims)) &&
+             (!this->hasVariances() ||
+              equal(variances(), otherT.variancesView(dims)));
     }
   } else {
     if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
-      return equal(valuesView(dims), otherT.values());
+      return equal(valuesView(dims), otherT.values()) &&
+             (!this->hasVariances() ||
+              equal(variancesView(dims), otherT.variances()));
     } else {
-      return equal(valuesView(dims), otherT.valuesView(dims));
+      return equal(valuesView(dims), otherT.valuesView(dims)) &&
+             (!this->hasVariances() ||
+              equal(variancesView(dims), otherT.variancesView(dims)));
     }
   }
 }
@@ -310,7 +319,7 @@ public:
   }
 
   scipp::span<const value_type> variances() const override {
-    return scipp::span(m_model.data(), m_model.data() + size());
+    return scipp::span(m_variances->data(), m_model.data() + size());
   }
   scipp::span<const value_type>
   variances(const Dim dim, const scipp::index begin,
