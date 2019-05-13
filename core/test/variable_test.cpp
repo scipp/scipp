@@ -79,27 +79,11 @@ TEST(Variable, span_references_Variable) {
   // This line does not compile, const-correctness works:
   // observer[0] = 1.0;
 
-  // Note: This also has the "usual" problem of copy-on-write: This non-const
-  // call can invalidate the references stored in observer if the underlying
-  // data was shared.
   auto span = a.values<double>();
 
   EXPECT_EQ(span.size(), 2);
   span[0] = 1.0;
   EXPECT_EQ(observer[0], 1.0);
-}
-
-TEST(Variable, copy) {
-  const auto a1 = makeVariable<double>({Dim::Tof, 2}, {1.1, 2.2});
-  const auto &data1 = a1.values<double>();
-  EXPECT_EQ(data1[0], 1.1);
-  EXPECT_EQ(data1[1], 2.2);
-  auto a2(a1);
-  EXPECT_NE(&a1.values<double>()[0], &a2.values<double>()[0]);
-  EXPECT_NE(&a1.values<double>()[0], &a2.values<double>()[0]);
-  const auto &data2 = a2.values<double>();
-  EXPECT_EQ(data2[0], 1.1);
-  EXPECT_EQ(data2[1], 2.2);
 }
 
 class Variable_comparison_operators : public ::testing::Test {
@@ -208,6 +192,22 @@ TEST_F(Variable_comparison_operators, unit) {
 TEST_F(Variable_comparison_operators, dtype) {
   const auto base = makeVariable<double>({}, {1.0});
   expect_ne(base, makeVariable<float>({}, {1.0}));
+}
+
+TEST(Variable, copy_and_move) {
+  const auto reference = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}},
+                                              units::m, {1.1, 2.2}, {0.1, 0.2});
+  const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, units::m,
+                                        {1.1, 2.2}, {0.1, 0.2});
+
+  const auto copy(var);
+  EXPECT_EQ(copy, reference);
+
+  const Variable copy_via_slice{ConstVariableSlice(var)};
+  EXPECT_EQ(copy_via_slice, reference);
+
+  const auto moved(std::move(var));
+  EXPECT_EQ(moved, reference);
 }
 
 TEST(Variable, operator_unary_minus) {
