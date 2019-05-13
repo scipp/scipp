@@ -1550,3 +1550,12 @@ TEST(VariableTest, binary_op_with_variance) {
   tmp = var * sum;
   EXPECT_EQ(tmp.variances<double>()[0], 0.1 * 2.0 * 2.0 + 0.2 * 1.0 * 1.0);
 }
+
+TEST(VariableTest, transform_combines_uncertainty_propgation) {
+  auto a = makeVariable<double>({Dim::X, 1}, {2.0}, {0.1});
+  const auto b = makeVariable<double>({}, {3.0}, {0.2});
+  transform_in_place<pair_self_t<double>>(
+      b, a, [](const auto x, const auto y) { return x * y + y; });
+  EXPECT_TRUE(equals(a.values<double>(), {2.0 * 3.0 + 3.0}));
+  EXPECT_TRUE(equals(a.variances<double>(), {0.1 * 3 * 3 + 0.2 * 2 * 2 + 0.2}));
+}

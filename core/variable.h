@@ -416,6 +416,15 @@ Variable makeVariable(const Dimensions &dimensions,
 }
 
 template <class T, class T2 = T>
+Variable makeVariable(const Dimensions &dimensions, std::vector<T2> values,
+                      std::vector<T2> variances) {
+  return Variable(
+      units::dimensionless, std::move(dimensions),
+      Vector<underlying_type_t<T>>(values.begin(), values.end()),
+      Vector<underlying_type_t<T>>(variances.begin(), variances.end()));
+}
+
+template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                       std::initializer_list<T2> values) {
   return Variable(unit, std::move(dimensions),
