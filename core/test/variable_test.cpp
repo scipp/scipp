@@ -1494,6 +1494,18 @@ TEST(VariableTest, hasVariances) {
   ASSERT_TRUE(makeVariable<double>({}, units::m, {1.0}, {0.1}).hasVariances());
 }
 
+TEST(VariableTest, copy_with_variance) {
+  const auto var = makeVariable<double>({}, {1.0}, {0.1});
+  const auto copy(var);
+  ASSERT_TRUE(copy.hasVariances());
+}
+
+TEST(VariableTest, move_with_variance) {
+  const auto var = makeVariable<double>({}, {1.0}, {0.1});
+  const auto moved(std::move(var));
+  ASSERT_TRUE(moved.hasVariances());
+}
+
 TEST(VariableTest, values_variances) {
   const auto var = makeVariable<double>({}, {1.0}, {0.1});
   ASSERT_NO_THROW(var.values<double>());
@@ -1510,4 +1522,31 @@ TEST(VariableTest, comparison_missing_variances) {
 TEST(VariableTest, comparison_mismatching_variances) {
   ASSERT_NE(makeVariable<double>({}, {1.0}, {0.1}),
             makeVariable<double>({}, {1.0}, {0.2}));
+}
+
+TEST(VariableProxyTest, create_with_variance) {
+  const auto var = makeVariable<double>({Dim::X, 2}, {1.0, 2.0}, {0.1, 0.2});
+  ASSERT_NO_THROW(var.slice({Dim::X, 1, 2}));
+  const auto slice = var.slice({Dim::X, 1, 2});
+  ASSERT_TRUE(slice.hasVariances());
+  ASSERT_EQ(slice.variances<double>().size(), 1);
+  ASSERT_EQ(slice.variances<double>()[0], 0.2);
+  const auto reference = makeVariable<double>({Dim::X, 1}, {2.0}, {0.2});
+  ASSERT_EQ(slice, reference);
+}
+
+TEST(VariableTest, binary_op_with_variance) {
+  const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}},
+                                        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
+                                        {0.1, 0.2, 0.3, 0.4, 0.5, 0.6});
+  const auto sum = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}},
+                                        {2.0, 4.0, 6.0, 8.0, 10.0, 12.0},
+                                        {0.2, 0.4, 0.6, 0.8, 1.0, 1.2});
+  auto tmp = var + var;
+  EXPECT_TRUE(tmp.hasVariances());
+  EXPECT_EQ(tmp.variances<double>()[0], 0.2);
+  EXPECT_EQ(var + var, sum);
+
+  tmp = var * sum;
+  EXPECT_EQ(tmp.variances<double>()[0], 0.1 * 2.0 * 2.0 + 0.2 * 1.0 * 1.0);
 }

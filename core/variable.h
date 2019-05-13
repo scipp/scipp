@@ -537,12 +537,15 @@ public:
   bool isSparse() const noexcept { return m_variable->isSparse(); }
   Dim sparseDim() const { return m_variable->sparseDim(); }
 
+  bool hasVariances() const noexcept { return m_variable->hasVariances(); }
+
   // Note: This return a proxy object (a VariableView) that does reference
   // members owner by *this. Therefore we can support this even for
   // temporaries and we do not need to delete the rvalue overload, unlike for
   // many other methods. The data is owned by the underlying variable so it
   // will not be deleted even if *this is a temporary and gets deleted.
   template <class T> auto values() const { return cast<T>(); }
+  template <class T> auto variances() const { return castVariances<T>(); }
   template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
@@ -559,6 +562,8 @@ protected:
 
   template <class T>
   const VariableView<const underlying_type_t<T>> cast() const;
+  template <class T>
+  const VariableView<const underlying_type_t<T>> castVariances() const;
 
   const Variable *m_variable;
   VariableConceptHandle m_view;
@@ -617,6 +622,7 @@ public:
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
   template <class T> auto values() const { return cast<T>(); }
+  template <class T> auto variances() const { return castVariances<T>(); }
   template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
@@ -657,6 +663,7 @@ private:
   template <class... Tags> friend class ZipView;
 
   template <class T> VariableView<underlying_type_t<T>> cast() const;
+  template <class T> VariableView<underlying_type_t<T>> castVariances() const;
 
   Variable *m_mutableVariable;
 };

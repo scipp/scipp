@@ -13,6 +13,39 @@ namespace scipp::core {
 
 namespace detail {
 
+template <class T> struct ValueAndVariance {
+  T value;
+  T variance;
+};
+
+template <class T1, class T2>
+constexpr auto operator+(const ValueAndVariance<T1> &a,
+                         const ValueAndVariance<T2> &b) noexcept {
+  return ValueAndVariance{a.value + b.value, a.variance + b.variance};
+}
+template <class T1, class T2>
+constexpr auto operator-(const ValueAndVariance<T1> &a,
+                         const ValueAndVariance<T2> &b) noexcept {
+  return ValueAndVariance{a.value - b.value, a.variance - b.variance};
+}
+template <class T1, class T2>
+constexpr auto operator*(const ValueAndVariance<T1> &a,
+                         const ValueAndVariance<T2> &b) noexcept {
+  return ValueAndVariance{a.value * b.value,
+                          a.variance * b.value * b.value +
+                              b.variance * a.value * a.value};
+}
+template <class T1, class T2>
+constexpr auto operator/(const ValueAndVariance<T1> &a,
+                         const ValueAndVariance<T2> &b) noexcept {
+  return ValueAndVariance{a.value / b.value,
+                          a.variance / (b.value * b.value) +
+                              b.variance / (a.value * a.value)};
+}
+
+template <class T>
+ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
+
 template <class T>
 std::unique_ptr<VariableConceptT<T>>
 makeVariableConceptT(const Dimensions &dims);
@@ -37,6 +70,29 @@ template <class Op> struct TransformSparse {
     return a;
   }
 };
+
+template <class T1, class T2, class Op>
+void transform_with_variance(const T1 &a, const T2 &b, T1 &c, Op op) {
+  auto a_val = a.values();
+  auto a_var = a.variances();
+  auto b_val = b.values();
+  auto b_var = b.variances();
+  auto c_val = c.values();
+  auto c_var = c.variances();
+  for (scipp::index i = 0; i < a_val.size(); ++i) {
+    const ValueAndVariance a_{a_val[i], a_var[i]};
+    const ValueAndVariance b_{b_val[i], b_var[i]};
+    const auto out = op(a_, b_);
+    c_val[i] = out.value;
+    c_var[i] = out.variance;
+  }
+}
+
+template <class T1, class T2, class Op>
+void transform_with_variance(const VariableConceptT<sparse_container<T1>> &a,
+                             const T2 &b,
+                             VariableConceptT<sparse_container<T1>> &c, Op op) {
+}
 
 template <class Op> struct TransformInPlace {
   Op op;
@@ -66,9 +122,21 @@ template <class Op> struct TransformInPlace {
 
       if (a->isContiguous() && dimsA.contains(dimsB)) {
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->values();
-          auto b_ = b.values();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          if (a->hasVariances()) {
+            if constexpr (std::is_same_v<typename std::remove_reference_t<
+                                             decltype(*a)>::value_type,
+                                         double> &&
+                          std::is_same_v<typename std::remove_reference_t<
+                                             decltype(b)>::value_type,
+                                         double>)
+              transform_with_variance(*a, b, *a, op);
+            else
+              throw std::runtime_error("This dtype cannot have a variance.");
+          } else {
+            auto a_ = a->values();
+            auto b_ = b.values();
+            std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          }
         } else {
           auto a_ = a->values();
           auto b_ = b.valuesView(dimsA);

@@ -151,10 +151,17 @@ auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
   return scipp::span(model.data() + beginOffset, model.data() + endOffset);
 }
 
+template <class T, class... Args>
+auto optionalVariancesView(T &concept, Args &&... args) {
+  return concept.hasVariances()
+             ? std::optional(concept.variancesView(std::forward<Args>(args)...))
+             : std::nullopt;
+}
+
 template <class T> VariableConceptHandle VariableConceptT<T>::makeView() const {
   auto &dims = this->dimensions();
   return std::make_unique<ViewModel<decltype(valuesView(dims))>>(
-      dims, valuesView(dims));
+      dims, valuesView(dims), optionalVariancesView(*this, dims));
 }
 
 template <class T> VariableConceptHandle VariableConceptT<T>::makeView() {
@@ -162,7 +169,7 @@ template <class T> VariableConceptHandle VariableConceptT<T>::makeView() {
     return const_cast<const VariableConceptT &>(*this).makeView();
   auto &dims = this->dimensions();
   return std::make_unique<ViewModel<decltype(valuesView(dims))>>(
-      dims, valuesView(dims));
+      dims, valuesView(dims), optionalVariancesView(*this, dims));
 }
 
 template <class T>
@@ -175,7 +182,8 @@ VariableConceptT<T>::makeView(const Dim dim, const scipp::index begin,
   else
     dims.resize(dim, end - begin);
   return std::make_unique<ViewModel<decltype(valuesView(dims, dim, begin))>>(
-      dims, valuesView(dims, dim, begin));
+      dims, valuesView(dims, dim, begin),
+      optionalVariancesView(*this, dims, dim, begin));
 }
 
 template <class T>
@@ -191,7 +199,8 @@ VariableConceptHandle VariableConceptT<T>::makeView(const Dim dim,
   else
     dims.resize(dim, end - begin);
   return std::make_unique<ViewModel<decltype(valuesView(dims, dim, begin))>>(
-      dims, valuesView(dims, dim, begin));
+      dims, valuesView(dims, dim, begin),
+      optionalVariancesView(*this, dims, dim, begin));
 }
 
 template <class T>
@@ -319,7 +328,7 @@ public:
   }
 
   scipp::span<const value_type> variances() const override {
-    return scipp::span(m_variances->data(), m_model.data() + size());
+    return scipp::span(m_variances->data(), m_variances->data() + size());
   }
   scipp::span<const value_type>
   variances(const Dim dim, const scipp::index begin,
@@ -388,11 +397,16 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<DataModel<T>>(this->dimensions(), m_model);
+    return std::make_unique<DataModel<T>>(this->dimensions(), m_model,
+                                          m_variances);
   }
 
   VariableConceptHandle clone(const Dimensions &dims) const override {
-    return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
+    if (hasVariances())
+      return std::make_unique<DataModel<T>>(dims, T(dims.volume()),
+                                            T(dims.volume()));
+    else
+      return std::make_unique<DataModel<T>>(dims, T(dims.volume()));
   }
 
   bool isContiguous() const override { return true; }
@@ -447,9 +461,10 @@ class ViewModel
 public:
   using value_type = typename T::value_type;
 
-  ViewModel(const Dimensions &dimensions, T model)
+  ViewModel(const Dimensions &dimensions, T model,
+            std::optional<T> variances = std::nullopt)
       : conceptT_t<value_type>(std::move(dimensions)),
-        m_model(std::move(model)) {
+        m_model(std::move(model)), m_variances(std::move(variances)) {
     if (this->dimensions().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
@@ -941,6 +956,21 @@ ConstVariableSlice::cast() const {
 }
 
 template <class T>
+const VariableView<const underlying_type_t<T>>
+ConstVariableSlice::castVariances() const {
+  using TT = underlying_type_t<T>;
+  if (!m_view)
+    return requireT<const DataModel<Vector<TT>>>(data()).variancesView(
+        dimensions());
+  if (m_view->isConstView())
+    return *requireT<const ViewModel<VariableView<const TT>>>(data())
+                .m_variances;
+  // Make a const view from the mutable one.
+  return {*requireT<const ViewModel<VariableView<TT>>>(data()).m_variances,
+          dimensions()};
+}
+
+template <class T>
 VariableView<underlying_type_t<T>> VariableSlice::cast() const {
   using TT = underlying_type_t<T>;
   if (m_view)
@@ -948,11 +978,23 @@ VariableView<underlying_type_t<T>> VariableSlice::cast() const {
   return requireT<DataModel<Vector<TT>>>(data()).valuesView(dimensions());
 }
 
+template <class T>
+VariableView<underlying_type_t<T>> VariableSlice::castVariances() const {
+  using TT = underlying_type_t<T>;
+  if (m_view)
+    return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
+  return requireT<DataModel<Vector<TT>>>(data()).variancesView(dimensions());
+}
+
 #define INSTANTIATE_SLICEVIEW(...)                                             \
   template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
   ConstVariableSlice::cast<__VA_ARGS__>() const;                               \
+  template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
+  ConstVariableSlice::castVariances<__VA_ARGS__>() const;                      \
   template VariableView<underlying_type_t<__VA_ARGS__>>                        \
-  VariableSlice::cast<__VA_ARGS__>() const;
+  VariableSlice::cast<__VA_ARGS__>() const;                                    \
+  template VariableView<underlying_type_t<__VA_ARGS__>>                        \
+  VariableSlice::castVariances<__VA_ARGS__>() const;
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(float);
