@@ -329,8 +329,6 @@ public:
     return scipp::span(cast<T>(true));
   }
   template <class T> auto variances() { return scipp::span(cast<T>(true)); }
-  template <class T> auto span() const { return scipp::span(cast<T>()); }
-  template <class T> auto span() { return scipp::span(cast<T>()); }
   template <class T> auto sparseSpan() const {
     return scipp::span(cast<sparse_container<T>>());
   }
@@ -555,7 +553,6 @@ public:
   // will not be deleted even if *this is a temporary and gets deleted.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
   }
@@ -632,7 +629,6 @@ public:
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
   }

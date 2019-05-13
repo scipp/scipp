@@ -92,8 +92,8 @@ template <typename T> struct RebinGeneralHelper {
     const auto oldSize = oldT.dimensions()[dim];
     const auto newSize = newT.dimensions()[dim];
 
-    const auto *xold = oldCoordT.span<T>().data();
-    const auto *xnew = newCoordT.span<T>().data();
+    const auto *xold = oldCoordT.values<T>().data();
+    const auto *xnew = newCoordT.values<T>().data();
     // This function assumes that dimensions between coord and data
     // coord is 1D.
     int iold = 0;
@@ -1297,7 +1297,7 @@ Variable filter(const Variable &var, const Variable &filter) {
     throw std::runtime_error(
         "Cannot filter variable: The filter must by 1-dimensional.");
   const auto dim = filter.dimensions().labels()[0];
-  auto mask = filter.span<bool>();
+  auto mask = filter.values<bool>();
 
   const scipp::index removed = std::count(mask.begin(), mask.end(), 0);
   if (removed == 0)
