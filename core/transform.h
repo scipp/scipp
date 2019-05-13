@@ -71,36 +71,64 @@ template <class Op> struct TransformSparse {
   }
 };
 
-template <class T1, class T2, class Op>
-void transform_with_variance(const T1 &a, const T2 &b, T1 &c, Op op) {
-  auto a_val = a.values();
-  auto a_var = a.variances();
-  auto b_val = b.values();
-  auto b_var = b.variances();
-  auto c_val = c.values();
-  auto c_var = c.variances();
-  for (scipp::index i = 0; i < a_val.size(); ++i) {
-    const ValueAndVariance a_{a_val[i], a_var[i]};
-    const ValueAndVariance b_{b_val[i], b_var[i]};
-    const auto out = op(a_, b_);
-    c_val[i] = out.value;
-    c_var[i] = out.variance;
-  }
-}
-
-template <class T1, class T2, class Op>
-void transform_with_variance(const VariableConceptT<sparse_container<T1>> &a,
-                             const T2 &b,
-                             VariableConceptT<sparse_container<T1>> &c, Op op) {
-  throw std::runtime_error(
-      "Propagation of uncertainties for sparse data not implemented yet.");
-}
-
 template <class T> struct is_eigen_type : std::false_type {};
 template <class T, int Rows, int Cols>
 struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
+
+template <class T> struct is_sparse : std::false_type {};
+template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
+template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+
+template <class T> struct as_view {
+  using value_type = typename T::value_type;
+  bool hasVariances() const { return data.hasVariances(); }
+  auto values() const { return data.valuesView(dims); }
+  auto variances() const { return data.variancesView(dims); }
+
+  T &data;
+  const Dimensions &dims;
+};
+template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
+
+template <class T1, class T2, class Op>
+void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
+  auto a_val = a.values();
+  auto b_val = b.values();
+  auto c_val = c.values();
+  if (a.hasVariances() && b.hasVariances()) {
+    if constexpr (is_sparse_v<typename T1::value_type> ||
+                  is_sparse_v<typename T2::value_type>) {
+      throw std::runtime_error(
+          "Propagation of uncertainties for sparse data not implemented yet.");
+    } else if constexpr (is_eigen_type_v<typename T1::value_type> ||
+                         is_eigen_type_v<typename T2::value_type>) {
+      static_cast<void>(a);
+      static_cast<void>(b);
+      static_cast<void>(c);
+      static_cast<void>(op);
+      throw std::runtime_error("This dtype cannot have a variance.");
+    } else {
+      auto a_var = a.variances();
+      auto b_var = b.variances();
+      auto c_var = c.variances();
+      for (scipp::index i = 0; i < a_val.size(); ++i) {
+        const ValueAndVariance a_{a_val[i], a_var[i]};
+        const ValueAndVariance b_{b_val[i], b_var[i]};
+        const auto out = op(a_, b_);
+        c_val[i] = out.value;
+        c_var[i] = out.variance;
+      }
+    }
+  } else if (a.hasVariances() != b.hasVariances()) {
+    throw std::runtime_error(
+        "Currently either both operands or neither must have a variances.");
+  } else {
+    std::transform(a_val.begin(), a_val.end(), b_val.begin(), c_val.begin(),
+                   op);
+  }
+}
 
 template <class Op> struct TransformInPlace {
   Op op;
@@ -130,44 +158,24 @@ template <class Op> struct TransformInPlace {
 
       if (a->isContiguous() && dimsA.contains(dimsB)) {
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          if (a->hasVariances()) {
-            if constexpr (!is_eigen_type_v<typename std::remove_reference_t<
-                              decltype(*a)>::value_type> &&
-                          !is_eigen_type_v<typename std::remove_reference_t<
-                              decltype(b)>::value_type>)
-              transform_with_variance(*a, b, *a, op);
-            else
-              throw std::runtime_error("This dtype cannot have a variance.");
-          } else {
-            auto a_ = a->values();
-            auto b_ = b.values();
-            std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
-          }
+          do_transform(*a, b, *a, op);
         } else {
-          auto a_ = a->values();
-          auto b_ = b.valuesView(dimsA);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(*a, as_view{b, dimsA}, *a, op);
         }
       } else if (dimsA.contains(dimsB)) {
+        auto a_view = as_view{*a, dimsA};
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->valuesView(dimsA);
-          auto b_ = b.values();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(a_view, b, a_view, op);
         } else {
-          auto a_ = a->valuesView(dimsA);
-          auto b_ = b.valuesView(dimsA);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(a_view, as_view{b, dimsA}, a_view, op);
         }
       } else {
         // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+        auto a_view = as_view{*a, dimsB};
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->valuesView(dimsB);
-          auto b_ = b.values();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(a_view, b, a_view, op);
         } else {
-          auto a_ = a->valuesView(dimsB);
-          auto b_ = b.valuesView(dimsB);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(a_view, as_view{b, dimsB}, a_view, op);
         }
       }
     } catch (const std::bad_cast &) {
