@@ -40,27 +40,22 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_lhs_with_variance) {
   const auto &item = GetParam().second;
   auto dataset = datasetFactory.make();
   const auto target = dataset["data_zyx"];
-  auto reference_values = target.values() + item.values();
-  auto reference_variances = target.variances();
-  if (item.hasVariances())
-    reference_variances += item.variances();
+  auto reference = target.data() + item.data();
 
   ASSERT_NO_THROW(target += item);
-
-  EXPECT_EQ(target.values(), reference_values);
-  EXPECT_EQ(target.variances(), reference_variances);
+  EXPECT_EQ(target.data(), reference);
 }
 
 TEST_P(DataProxyBinaryOpEqualsTest, plus_lhs_without_variance) {
   const auto &item = GetParam().second;
   auto dataset = datasetFactory.make();
   const auto target = dataset["data_xyz"];
-  auto reference_values = target.values() + item.values();
+  auto reference = target.data() + item.data();
   if (item.hasVariances()) {
     ASSERT_ANY_THROW(target += item);
   } else {
     ASSERT_NO_THROW(target += item);
-    EXPECT_EQ(target.values(), reference_values);
+    EXPECT_EQ(target.data(), reference);
     EXPECT_FALSE(target.hasVariances());
   }
 }
@@ -69,29 +64,22 @@ TEST_P(DataProxyBinaryOpEqualsTest, times_lhs_with_variance) {
   const auto &item = GetParam().second;
   auto dataset = datasetFactory.make();
   const auto target = dataset["data_zyx"];
-  auto reference_values = target.values() * item.values();
-  auto reference_variances =
-      target.variances() * (item.values() * item.values());
-  if (item.hasVariances())
-    reference_variances +=
-        (target.values() * target.values()) * item.variances();
+  auto reference = target.data() * item.data();
 
   ASSERT_NO_THROW(target *= item);
-
-  EXPECT_EQ(target.values(), reference_values);
-  EXPECT_EQ(target.variances(), reference_variances);
+  EXPECT_EQ(target.data(), reference);
 }
 
 TEST_P(DataProxyBinaryOpEqualsTest, times_lhs_without_variance) {
   const auto &item = GetParam().second;
   auto dataset = datasetFactory.make();
   const auto target = dataset["data_xyz"];
-  auto reference_values = target.values() * item.values();
+  auto reference = target.data() * item.data();
   if (item.hasVariances()) {
     ASSERT_ANY_THROW(target *= item);
   } else {
     ASSERT_NO_THROW(target *= item);
-    EXPECT_EQ(target.values(), reference_values);
+    EXPECT_EQ(target.data(), reference);
     EXPECT_FALSE(target.hasVariances());
   }
 }
@@ -102,10 +90,7 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
   const auto target = dataset["data_zyx"];
   const auto &dims = item.dims();
   for (const Dim dim : dims.labels()) {
-    auto reference_values = target.values() + item.values().slice({dim, 2});
-    auto reference_variances = target.variances();
-    if (item.hasVariances())
-      reference_variances += item.variances().slice({dim, 2});
+    auto reference = target.data() + item.data().slice({dim, 2});
 
     // Fails if any *other* multi-dimensional coord/label also depends on the
     // slicing dimension, since it will have mismatching values. Note that this
@@ -125,8 +110,7 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
         })) {
       ASSERT_NO_THROW(target += item.slice({dim, 2}));
 
-      EXPECT_EQ(target.values(), reference_values);
-      EXPECT_EQ(target.variances(), reference_variances);
+      EXPECT_EQ(target.data(), reference);
     } else {
       ASSERT_ANY_THROW(target += item.slice({dim, 2}));
     }
@@ -234,7 +218,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_coord_mismatch) {
 
 TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
-  a.setValues("extra", makeVariable<double>({}));
+  a.setData("extra", makeVariable<double>({}));
   auto b = datasetFactory.make();
   auto reference(a);
 
@@ -251,7 +235,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_missing_items) {
 TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  b.setValues("extra", makeVariable<double>({}));
+  b.setData("extra", makeVariable<double>({}));
 
   ASSERT_ANY_THROW(TestFixture::op(a, b));
 }
@@ -364,7 +348,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_coord_mismatch) {
 
 TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
-  a.setValues("extra", makeVariable<double>({}));
+  a.setData("extra", makeVariable<double>({}));
   auto b = datasetFactory.make();
   auto reference(a);
 
@@ -381,7 +365,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_with_missing_items) {
 TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
-  b.setValues("extra", makeVariable<double>({}));
+  b.setData("extra", makeVariable<double>({}));
 
   ASSERT_ANY_THROW(TestFixture::op(DatasetProxy(a), b));
 }

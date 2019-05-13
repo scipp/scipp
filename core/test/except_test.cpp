@@ -35,12 +35,12 @@ TEST(DimensionLengthError, what) {
 
 TEST(StringFormattingTest, to_string_Dataset) {
   Dataset a;
-  a.setValues("a", makeVariable<double>({}));
-  a.setValues("b", makeVariable<double>({}));
+  a.setData("a", makeVariable<double>({}));
+  a.setData("b", makeVariable<double>({}));
   // Create new dataset with same variables but different order
   Dataset b;
-  b.setValues("b", makeVariable<double>({}));
-  b.setValues("a", makeVariable<double>({}));
+  b.setData("b", makeVariable<double>({}));
+  b.setData("a", makeVariable<double>({}));
   // string representations should be the same
   EXPECT_EQ(to_string(a), to_string(b));
 }

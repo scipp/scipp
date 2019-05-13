@@ -219,10 +219,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
     format_line(s, to_string_components(name, var, separator, dims));
   s << "Data:\n";
   for (const auto & [ name, var ] : dataset) {
-    format_line(s, to_string_components(name, var.values(), separator, dims));
-    if (var.hasVariances())
-      format_line(s,
-                  to_string_components(name, var.variances(), separator, dims));
+    format_line(s, to_string_components(name, var.data(), separator, dims));
   }
   s << "Attributes:\n";
   for (const auto & [ name, var ] : dataset.attrs())

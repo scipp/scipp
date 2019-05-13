@@ -104,10 +104,6 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
           "Propagation of uncertainties for sparse data not implemented yet.");
     } else if constexpr (is_eigen_type_v<typename T1::value_type> ||
                          is_eigen_type_v<typename T2::value_type>) {
-      static_cast<void>(a);
-      static_cast<void>(b);
-      static_cast<void>(c);
-      static_cast<void>(op);
       throw std::runtime_error("This dtype cannot have a variance.");
     } else {
       auto a_var = a.variances();

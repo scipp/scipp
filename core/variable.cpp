@@ -287,6 +287,27 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
       std::copy(otherView.begin(), otherView.end(), view.begin());
     }
   }
+  // TODO Avoid code duplication for variances.
+  if (this->hasVariances()) {
+    auto otherView = otherT.variancesView(iterDims, dim, otherBegin);
+    if (this->isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
+      auto target = variances(dim, offset, offset + delta);
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+        auto source = otherT.variances(dim, otherBegin, otherEnd);
+        std::copy(source.begin(), source.end(), target.begin());
+      } else {
+        std::copy(otherView.begin(), otherView.end(), target.begin());
+      }
+    } else {
+      auto view = variancesView(iterDims, dim, offset);
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+        auto source = otherT.variances(dim, otherBegin, otherEnd);
+        std::copy(source.begin(), source.end(), view.begin());
+      } else {
+        std::copy(otherView.begin(), otherView.end(), view.begin());
+      }
+    }
+  }
 }
 
 /// Implementation of VariableConcept that holds data.
@@ -612,7 +633,8 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<ViewModel<T>>(this->dimensions(), m_model);
+    return std::make_unique<ViewModel<T>>(this->dimensions(), m_model,
+                                          m_variances);
   }
 
   VariableConceptHandle clone(const Dimensions &) const override {

@@ -102,28 +102,28 @@ TEST(DatasetTest, setAttr) {
   ASSERT_EQ(d.attrs().size(), 2);
 }
 
-TEST(DatasetTest, setValues_setVariances) {
+TEST(DatasetTest, setData_with_and_without_variances) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
 
-  ASSERT_NO_THROW(d.setValues("a", var));
+  ASSERT_NO_THROW(d.setData("a", var));
   ASSERT_EQ(d.size(), 1);
 
-  ASSERT_NO_THROW(d.setValues("b", var));
+  ASSERT_NO_THROW(d.setData("b", var));
   ASSERT_EQ(d.size(), 2);
 
-  ASSERT_NO_THROW(d.setValues("a", var));
+  ASSERT_NO_THROW(d.setData("a", var));
   ASSERT_EQ(d.size(), 2);
 
-  ASSERT_NO_THROW(d.setVariances("a", var));
+  ASSERT_NO_THROW(
+      d.setData("a", makeVariable<double>({Dim::X, 3}, {1, 1, 1}, {0, 0, 0})));
   ASSERT_EQ(d.size(), 2);
-
-  ASSERT_ANY_THROW(d.setVariances("c", var));
 }
+
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
-  d.setValues("a", makeVariable<double>({Dim::X, 3}));
-  d.setValues("b", makeVariable<double>({Dim::X, 3}));
+  d.setData("a", makeVariable<double>({Dim::X, 3}));
+  d.setData("b", makeVariable<double>({Dim::X, 3}));
 
   // It is possible to set labels with a name matching data. However, there is
   // no special meaning attached to this. In particular it is *not* linking the
@@ -133,72 +133,6 @@ TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   ASSERT_EQ(d.labels().size(), 1);
   ASSERT_EQ(d["a"].labels().size(), 1);
   ASSERT_EQ(d["b"].labels().size(), 1);
-}
-
-TEST(DatasetTest, setVariances_dtype_mismatch) {
-  Dataset d;
-  d.setValues("", makeVariable<double>({}));
-  ASSERT_ANY_THROW(d.setVariances("", makeVariable<float>({})));
-  ASSERT_NO_THROW(d.setVariances("", makeVariable<double>({})));
-}
-
-TEST(DatasetTest, setVariances_unit_mismatch) {
-  Dataset d;
-  auto values = makeVariable<double>({});
-  values.setUnit(units::m);
-  d.setValues("", values);
-  auto variances = makeVariable<double>({});
-  ASSERT_ANY_THROW(d.setVariances("", variances));
-  variances.setUnit(units::m);
-  ASSERT_ANY_THROW(d.setVariances("", variances));
-  variances.setUnit(units::m * units::m);
-  ASSERT_NO_THROW(d.setVariances("", variances));
-}
-
-TEST(DatasetTest, setVariances_dimensions_mismatch) {
-  Dataset d;
-  d.setValues("", makeVariable<double>({}));
-  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({Dim::X, 1})));
-  ASSERT_NO_THROW(d.setVariances("", makeVariable<double>({})));
-}
-
-TEST(DatasetTest, setVariances_sparseDim_mismatch) {
-  Dataset d;
-  d.setValues("", makeSparseVariable<double>({}, Dim::X));
-  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({Dim::X, 1})));
-  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({})));
-  ASSERT_ANY_THROW(d.setVariances("", makeSparseVariable<double>({}, Dim::Y)));
-  ASSERT_ANY_THROW(
-      d.setVariances("", makeSparseVariable<double>({Dim::X, 1}, Dim::X)));
-  ASSERT_NO_THROW(d.setVariances("", makeSparseVariable<double>({}, Dim::X)));
-}
-
-TEST(DatasetTest, setValues_dtype_mismatch) {
-  Dataset d;
-  d.setValues("", makeVariable<double>({}));
-  d.setVariances("", makeVariable<double>({}));
-  ASSERT_ANY_THROW(d.setValues("", makeVariable<float>({})));
-  ASSERT_NO_THROW(d.setValues("", makeVariable<double>({})));
-}
-
-TEST(DatasetTest, setValues_dimensions_mismatch) {
-  Dataset d;
-  d.setValues("", makeVariable<double>({}));
-  d.setVariances("", makeVariable<double>({}));
-  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({Dim::X, 1})));
-  ASSERT_NO_THROW(d.setValues("", makeVariable<double>({})));
-}
-
-TEST(DatasetTest, setValues_sparseDim_mismatch) {
-  Dataset d;
-  d.setValues("", makeSparseVariable<double>({}, Dim::X));
-  d.setVariances("", makeSparseVariable<double>({}, Dim::X));
-  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({Dim::X, 1})));
-  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({})));
-  ASSERT_ANY_THROW(d.setValues("", makeSparseVariable<double>({}, Dim::Y)));
-  ASSERT_ANY_THROW(
-      d.setValues("", makeSparseVariable<double>({Dim::X, 1}, Dim::X)));
-  ASSERT_NO_THROW(d.setValues("", makeSparseVariable<double>({}, Dim::X)));
 }
 
 TEST(DatasetTest, setSparseCoord_not_sparse_fail) {
@@ -279,9 +213,9 @@ TEST(DatasetTest, iterators_only_attrs) {
 
 TEST(DatasetTest, iterators) {
   Dataset d;
-  d.setValues("a", makeVariable<double>({}));
-  d.setValues("b", makeVariable<float>({}));
-  d.setValues("c", makeVariable<int64_t>({}));
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
 
   ASSERT_NO_THROW(d.begin());
   ASSERT_NO_THROW(d.end());
@@ -314,14 +248,6 @@ TEST(DatasetTest, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
 }
 
-template <class T, class T2>
-auto variable(const Dimensions &dims, const units::Unit unit,
-              const std::initializer_list<T2> &data) {
-  auto var = makeVariable<T>(dims, data);
-  var.setUnit(unit);
-  return var;
-}
-
 class Dataset_comparison_operators : public ::testing::Test {
 private:
   template <class A, class B>
@@ -350,15 +276,15 @@ protected:
 
     dataset.setAttr("attr", makeVariable<int>({}));
 
-    dataset.setValues("val_and_var",
-                      makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}}));
-    dataset.setVariances("val_and_var",
-                         makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}}));
+    dataset.setData("val_and_var",
+                    makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}},
+                                         std::vector<double>(12),
+                                         std::vector<double>(12)));
 
-    dataset.setValues("val", makeVariable<double>({Dim::X, 4}));
+    dataset.setData("val", makeVariable<double>({Dim::X, 4}));
 
     dataset.setSparseCoord("sparse_coord", sparse_variable);
-    dataset.setValues("sparse_coord_and_val", sparse_variable);
+    dataset.setData("sparse_coord_and_val", sparse_variable);
     dataset.setSparseCoord("sparse_coord_and_val", sparse_variable);
   }
   void expect_eq(const Dataset &a, const Dataset &b) const {
@@ -382,7 +308,7 @@ template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
                   const std::initializer_list<T2> &data) {
   auto d = make_empty();
-  d.setCoord(dim, variable<T>(dims, unit, data));
+  d.setCoord(dim, makeVariable<T>(dims, unit, data));
   return d;
 }
 
@@ -391,7 +317,7 @@ auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
   auto d = make_empty();
-  d.setLabels(name, variable<T>(dims, unit, data));
+  d.setLabels(name, makeVariable<T>(dims, unit, data));
   return d;
 }
 
@@ -400,7 +326,7 @@ auto make_1_attr(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
   auto d = make_empty();
-  d.setAttr(name, variable<T>(dims, unit, data));
+  d.setAttr(name, makeVariable<T>(dims, unit, data));
   return d;
 }
 
@@ -409,7 +335,7 @@ auto make_1_values(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
   auto d = make_empty();
-  d.setValues(name, variable<T>(dims, unit, data));
+  d.setData(name, makeVariable<T>(dims, unit, data));
   return d;
 }
 
@@ -419,8 +345,7 @@ auto make_1_values_and_variances(const std::string &name,
                                  const std::initializer_list<T2> &values,
                                  const std::initializer_list<T2> &variances) {
   auto d = make_empty();
-  d.setValues(name, variable<T>(dims, unit, values));
-  d.setVariances(name, variable<T>(dims, unit * unit, variances));
+  d.setData(name, makeVariable<T>(dims, unit, values, variances));
   return d;
 }
 
@@ -529,19 +454,20 @@ TEST_F(Dataset_comparison_operators, extra_attr) {
 
 TEST_F(Dataset_comparison_operators, extra_data) {
   auto extra = dataset;
-  extra.setValues("extra", makeVariable<double>({Dim::Z, 2}));
+  extra.setData("extra", makeVariable<double>({Dim::Z, 2}));
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, extra_variance) {
   auto extra = dataset;
-  extra.setVariances("val", makeVariable<double>({Dim::X, 4}));
+  extra.setData("val", makeVariable<double>({Dim::X, 4}, std::vector<double>(4),
+                                            std::vector<double>(4)));
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, extra_sparse_values) {
   auto extra = dataset;
-  extra.setValues("sparse_coord", sparse_variable);
+  extra.setData("sparse_coord", sparse_variable);
   expect_ne(extra, dataset);
 }
 
@@ -584,10 +510,10 @@ TEST_F(Dataset_comparison_operators, different_attr_insertion_order) {
 TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   auto a = make_empty();
   auto b = make_empty();
-  a.setValues("x", dataset.coords()[Dim::X]);
-  a.setValues("y", dataset.coords()[Dim::Y]);
-  b.setValues("y", dataset.coords()[Dim::Y]);
-  b.setValues("x", dataset.coords()[Dim::X]);
+  a.setData("x", dataset.coords()[Dim::X]);
+  a.setData("y", dataset.coords()[Dim::Y]);
+  b.setData("y", dataset.coords()[Dim::Y]);
+  b.setData("x", dataset.coords()[Dim::X]);
   expect_eq(a, b);
 }
 
@@ -626,7 +552,7 @@ TEST_F(Dataset3DTest,
   ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
   // We *can* set data with X extent 3. The X coord is now bin edges, and other
   // data is defined on the edges.
-  ASSERT_NO_THROW(dataset.setValues("non_edge_data", makeRandom({Dim::X, 3})));
+  ASSERT_NO_THROW(dataset.setData("non_edge_data", makeRandom({Dim::X, 3})));
   // Now the X extent of the dataset is 3, but since we have data on the edges
   // we still cannot change the coord to non-edges.
   ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
@@ -634,9 +560,9 @@ TEST_F(Dataset3DTest,
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_setting_edge_data_without_edge_coord) {
-  ASSERT_ANY_THROW(dataset.setValues("edge_data", makeRandom({Dim::X, 5})));
+  ASSERT_ANY_THROW(dataset.setData("edge_data", makeRandom({Dim::X, 5})));
   ASSERT_NO_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 5})));
-  ASSERT_NO_THROW(dataset.setValues("edge_data", makeRandom({Dim::X, 5})));
+  ASSERT_NO_THROW(dataset.setData("edge_data", makeRandom({Dim::X, 5})));
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
@@ -680,17 +606,11 @@ protected:
                 dataset.labels()["labels_xy"].slice({Dim::X, pos}));
     d.setLabels("labels_z", dataset.labels()["labels_z"]);
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
-    d.setValues("values_x", dataset["values_x"].values().slice({Dim::X, pos}));
-    d.setValues("data_x", dataset["data_x"].values().slice({Dim::X, pos}));
-    d.setVariances("data_x",
-                   dataset["data_x"].variances().slice({Dim::X, pos}));
-    d.setValues("data_xy", dataset["data_xy"].values().slice({Dim::X, pos}));
-    d.setVariances("data_xy",
-                   dataset["data_xy"].variances().slice({Dim::X, pos}));
-    d.setValues("data_zyx", dataset["data_zyx"].values().slice({Dim::X, pos}));
-    d.setVariances("data_zyx",
-                   dataset["data_zyx"].variances().slice({Dim::X, pos}));
-    d.setValues("data_xyz", dataset["data_xyz"].values().slice({Dim::X, pos}));
+    d.setData("values_x", dataset["values_x"].data().slice({Dim::X, pos}));
+    d.setData("data_x", dataset["data_x"].data().slice({Dim::X, pos}));
+    d.setData("data_xy", dataset["data_xy"].data().slice({Dim::X, pos}));
+    d.setData("data_zyx", dataset["data_zyx"].data().slice({Dim::X, pos}));
+    d.setData("data_xyz", dataset["data_xyz"].data().slice({Dim::X, pos}));
     return d;
   }
 };
@@ -719,16 +639,11 @@ protected:
     d.setLabels("labels_z", dataset.labels()["labels_z"]);
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
     d.setAttr("attr_x", dataset.attrs()["attr_x"]);
-    d.setValues("data_xy",
-                dataset["data_xy"].values().slice({Dim::Y, begin, end}));
-    d.setVariances("data_xy",
-                   dataset["data_xy"].variances().slice({Dim::Y, begin, end}));
-    d.setValues("data_zyx",
-                dataset["data_zyx"].values().slice({Dim::Y, begin, end}));
-    d.setVariances("data_zyx",
-                   dataset["data_zyx"].variances().slice({Dim::Y, begin, end}));
-    d.setValues("data_xyz",
-                dataset["data_xyz"].values().slice({Dim::Y, begin, end}));
+    d.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, begin, end}));
+    d.setData("data_zyx",
+              dataset["data_zyx"].data().slice({Dim::Y, begin, end}));
+    d.setData("data_xyz",
+              dataset["data_xyz"].data().slice({Dim::Y, begin, end}));
     return d;
   }
 };
@@ -748,12 +663,10 @@ protected:
                 dataset.labels()["labels_z"].slice({Dim::Z, begin, end}));
     d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
     d.setAttr("attr_x", dataset.attrs()["attr_x"]);
-    d.setValues("data_zyx",
-                dataset["data_zyx"].values().slice({Dim::Z, begin, end}));
-    d.setVariances("data_zyx",
-                   dataset["data_zyx"].variances().slice({Dim::Z, begin, end}));
-    d.setValues("data_xyz",
-                dataset["data_xyz"].values().slice({Dim::Z, begin, end}));
+    d.setData("data_zyx",
+              dataset["data_zyx"].data().slice({Dim::Z, begin, end}));
+    d.setData("data_xyz",
+              dataset["data_xyz"].data().slice({Dim::Z, begin, end}));
     return d;
   }
 };
@@ -815,16 +728,11 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setLabels("labels_z", dataset.labels()["labels_z"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
-  reference.setValues("data_xy",
-                      dataset["data_xy"].values().slice({Dim::Y, pos}));
-  reference.setVariances("data_xy",
-                         dataset["data_xy"].variances().slice({Dim::Y, pos}));
-  reference.setValues("data_zyx",
-                      dataset["data_zyx"].values().slice({Dim::Y, pos}));
-  reference.setVariances("data_zyx",
-                         dataset["data_zyx"].variances().slice({Dim::Y, pos}));
-  reference.setValues("data_xyz",
-                      dataset["data_xyz"].values().slice({Dim::Y, pos}));
+  reference.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, pos}));
+  reference.setData("data_zyx",
+                    dataset["data_zyx"].data().slice({Dim::Y, pos}));
+  reference.setData("data_xyz",
+                    dataset["data_xyz"].data().slice({Dim::Y, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
@@ -839,12 +747,10 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setLabels("labels_xy", dataset.labels()["labels_xy"]);
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
-  reference.setValues("data_zyx",
-                      dataset["data_zyx"].values().slice({Dim::Z, pos}));
-  reference.setVariances("data_zyx",
-                         dataset["data_zyx"].variances().slice({Dim::Z, pos}));
-  reference.setValues("data_xyz",
-                      dataset["data_xyz"].values().slice({Dim::Z, pos}));
+  reference.setData("data_zyx",
+                    dataset["data_zyx"].data().slice({Dim::Z, pos}));
+  reference.setData("data_xyz",
+                    dataset["data_xyz"].data().slice({Dim::Z, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
@@ -866,22 +772,16 @@ TEST_P(Dataset3DTest_slice_range_x, slice) {
   reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
   reference.setAttr("attr_x",
                     dataset.attrs()["attr_x"].slice({Dim::X, begin, end}));
-  reference.setValues("values_x",
-                      dataset["values_x"].values().slice({Dim::X, begin, end}));
-  reference.setValues("data_x",
-                      dataset["data_x"].values().slice({Dim::X, begin, end}));
-  reference.setVariances(
-      "data_x", dataset["data_x"].variances().slice({Dim::X, begin, end}));
-  reference.setValues("data_xy",
-                      dataset["data_xy"].values().slice({Dim::X, begin, end}));
-  reference.setVariances(
-      "data_xy", dataset["data_xy"].variances().slice({Dim::X, begin, end}));
-  reference.setValues("data_zyx",
-                      dataset["data_zyx"].values().slice({Dim::X, begin, end}));
-  reference.setVariances(
-      "data_zyx", dataset["data_zyx"].variances().slice({Dim::X, begin, end}));
-  reference.setValues("data_xyz",
-                      dataset["data_xyz"].values().slice({Dim::X, begin, end}));
+  reference.setData("values_x",
+                    dataset["values_x"].data().slice({Dim::X, begin, end}));
+  reference.setData("data_x",
+                    dataset["data_x"].data().slice({Dim::X, begin, end}));
+  reference.setData("data_xy",
+                    dataset["data_xy"].data().slice({Dim::X, begin, end}));
+  reference.setData("data_zyx",
+                    dataset["data_zyx"].data().slice({Dim::X, begin, end}));
+  reference.setData("data_xyz",
+                    dataset["data_xyz"].data().slice({Dim::X, begin, end}));
 
   EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
 }
@@ -1218,11 +1118,11 @@ TYPED_TEST(DataProxyTest, isSparse_sparseDim) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
-  d.setValues("dense", makeVariable<double>({}));
+  d.setData("dense", makeVariable<double>({}));
   ASSERT_FALSE(d_ref["dense"].isSparse());
   ASSERT_EQ(d_ref["dense"].sparseDim(), Dim::Invalid);
 
-  d.setValues("sparse_data", makeSparseVariable<double>({}, Dim::X));
+  d.setData("sparse_data", makeSparseVariable<double>({}, Dim::X));
   ASSERT_TRUE(d_ref["sparse_data"].isSparse());
   ASSERT_EQ(d_ref["sparse_data"].sparseDim(), Dim::X);
 
@@ -1238,14 +1138,14 @@ TYPED_TEST(DataProxyTest, dims) {
       makeSparseVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z);
   typename TestFixture::dataset_type &d_ref(d);
 
-  d.setValues("dense", dense);
+  d.setData("dense", dense);
   ASSERT_EQ(d_ref["dense"].dims(), dense.dims());
 
   // Sparse dimension is currently not included in dims(). It is unclear whether
   // this is the right choice. An unfinished idea involves returning
   // std::tuple<std::span<const Dim>, std::optional<Dim>> instead, using `auto [
   // dims, sparse ] = data.dims();`.
-  d.setValues("sparse_data", sparse);
+  d.setData("sparse_data", sparse);
   ASSERT_EQ(d_ref["sparse_data"].dims(), dense.dims());
   ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dims());
 
@@ -1262,7 +1162,7 @@ TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
   const auto var = makeVariable<double>({Dim::X, 3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  d.setValues("a", var);
+  d.setData("a", var);
 
   ASSERT_EQ(d_ref["a"].dims(), var.dims());
 }
@@ -1271,7 +1171,7 @@ TYPED_TEST(DataProxyTest, unit) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
-  d.setValues("dense", makeVariable<double>({}));
+  d.setData("dense", makeVariable<double>({}));
   EXPECT_EQ(d_ref["dense"].unit(), units::dimensionless);
 }
 
@@ -1287,7 +1187,7 @@ TYPED_TEST(DataProxyTest, coords) {
   typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<double>({Dim::X, 3});
   d.setCoord(Dim::X, var);
-  d.setValues("a", var);
+  d.setData("a", var);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
   ASSERT_EQ(d_ref["a"].coords(), d.coords());
@@ -1334,7 +1234,7 @@ TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
   const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  d.setValues("a", sparse);
+  d.setData("a", sparse);
 
   ASSERT_NO_THROW(d_ref["a"].coords());
   // Dim::Y is sparse, so the global (non-sparse) Y coordinate does not make
@@ -1354,7 +1254,7 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
   const auto var = makeVariable<double>({Dim::X, 3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  d.setValues("a", var);
+  d.setData("a", var);
   const auto coords = d_ref["a"].coords();
 
   ASSERT_NE(coords, d.coords());
@@ -1371,7 +1271,7 @@ TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
   const auto var = makeVariable<double>({Dim::X, 3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  d.setValues("a", var);
+  d.setData("a", var);
   const auto coords = d_ref["a"].coords();
 
   ASSERT_NE(coords, d.coords());
@@ -1389,7 +1289,7 @@ TYPED_TEST(DataProxyTest,
   const auto var = makeVariable<double>({Dim::X, 3});
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  d.setValues("a", var);
+  d.setData("a", var);
   const auto coords = d_ref["a"].coords();
 
   // This is a very special case which is probably unlikely to occur in
@@ -1406,11 +1306,9 @@ TYPED_TEST(DataProxyTest,
 TYPED_TEST(DataProxyTest, hasValues_hasVariances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto var = makeVariable<double>({});
 
-  d.setValues("a", var);
-  d.setValues("b", var);
-  d.setVariances("b", var);
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<double>({}, {1}, {1}));
 
   ASSERT_TRUE(d_ref["a"].hasValues());
   ASSERT_FALSE(d_ref["a"].hasVariances());
@@ -1422,14 +1320,12 @@ TYPED_TEST(DataProxyTest, hasValues_hasVariances) {
 TYPED_TEST(DataProxyTest, values_variances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-  const auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
-  d.setValues("a", var);
-  d.setVariances("a", var);
+  const auto var = makeVariable<double>({Dim::X, 2}, {1, 2}, {3, 4});
+  d.setData("a", var);
 
-  ASSERT_EQ(d_ref["a"].values(), var);
-  ASSERT_EQ(d_ref["a"].variances(), var);
+  ASSERT_EQ(d_ref["a"].data(), var);
   ASSERT_TRUE(equals(d_ref["a"].template values<double>(), {1, 2}));
-  ASSERT_TRUE(equals(d_ref["a"].template variances<double>(), {1, 2}));
+  ASSERT_TRUE(equals(d_ref["a"].template variances<double>(), {3, 4}));
   ASSERT_ANY_THROW(d_ref["a"].template values<float>());
   ASSERT_ANY_THROW(d_ref["a"].template variances<float>());
 }
