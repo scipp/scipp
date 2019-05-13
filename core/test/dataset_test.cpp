@@ -1303,17 +1303,17 @@ TYPED_TEST(DataProxyTest,
   ASSERT_EQ(coords[Dim::X], x);
 }
 
-TYPED_TEST(DataProxyTest, hasValues_hasVariances) {
+TYPED_TEST(DataProxyTest, hasData_hasVariances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("a", makeVariable<double>({}));
   d.setData("b", makeVariable<double>({}, {1}, {1}));
 
-  ASSERT_TRUE(d_ref["a"].hasValues());
+  ASSERT_TRUE(d_ref["a"].hasData());
   ASSERT_FALSE(d_ref["a"].hasVariances());
 
-  ASSERT_TRUE(d_ref["b"].hasValues());
+  ASSERT_TRUE(d_ref["b"].hasData());
   ASSERT_TRUE(d_ref["b"].hasVariances());
 }
 

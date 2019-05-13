@@ -274,7 +274,7 @@ DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
 bool DataConstProxy::isSparse() const noexcept {
   if (m_data->coord)
     return true;
-  if (hasValues())
+  if (hasData())
     return data().isSparse();
   return false;
 }
@@ -283,7 +283,7 @@ bool DataConstProxy::isSparse() const noexcept {
 Dim DataConstProxy::sparseDim() const noexcept {
   if (m_data->coord)
     return m_data->coord->sparseDim();
-  if (hasValues())
+  if (hasData())
     return data().sparseDim();
   return Dim::Invalid;
 }
@@ -291,7 +291,7 @@ Dim DataConstProxy::sparseDim() const noexcept {
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
-  if (hasValues())
+  if (hasData())
     return data().dimensions();
   return detail::makeSlice(*m_data->coord, slices()).dimensions();
 }
@@ -300,7 +300,7 @@ Dimensions DataConstProxy::dims() const noexcept {
 ///
 /// Throws if there are no data values.
 units::Unit DataConstProxy::unit() const {
-  if (hasValues())
+  if (hasData())
     return data().unit();
   throw std::runtime_error("Data without values, unit is undefined.");
 }
@@ -365,14 +365,14 @@ AttrsProxy DataProxy::attrs() const noexcept {
 
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasValues())
+  if (hasData())
     data() += other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasValues())
+  if (hasData())
     data() *= other.data();
   return *this;
 }
@@ -439,7 +439,7 @@ DataProxy DatasetProxy::operator[](const std::string_view name) const {
 
 /// Return true if the dataset proxies have identical content.
 bool DataConstProxy::operator==(const DataConstProxy &other) const {
-  if (hasValues() != other.hasValues())
+  if (hasData() != other.hasData())
     return false;
   if (hasVariances() != other.hasVariances())
     return false;
@@ -449,7 +449,7 @@ bool DataConstProxy::operator==(const DataConstProxy &other) const {
     return false;
   if (attrs() != other.attrs())
     return false;
-  if (hasValues() && data() != other.data())
+  if (hasData() && data() != other.data())
     return false;
   return true;
 }
@@ -593,7 +593,7 @@ DatasetProxy DatasetProxy::operator*=(const Dataset &other) const {
 
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
   // TODO sparse
-  if (data.hasValues())
+  if (data.hasData())
     os << data.data();
   return os;
 }

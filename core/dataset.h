@@ -86,10 +86,10 @@ public:
   AttrsConstProxy attrs() const noexcept;
 
   /// Return true if the proxy contains data values.
-  bool hasValues() const noexcept { return m_data->data.has_value(); }
+  bool hasData() const noexcept { return m_data->data.has_value(); }
   /// Return true if the proxy contains data variances.
   bool hasVariances() const noexcept {
-    return hasValues() && m_data->data->hasVariances();
+    return hasData() && m_data->data->hasVariances();
   }
 
   /// Return untyped const proxy for data (values and optional variances).
