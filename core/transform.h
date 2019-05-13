@@ -43,6 +43,23 @@ constexpr auto operator/(const ValueAndVariance<T1> &a,
                               b.variance / (a.value * a.value)};
 }
 
+template <class T1, class T2>
+constexpr auto operator+(const ValueAndVariance<T1> &a, const T2 &b) noexcept {
+  return ValueAndVariance{a.value + b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator-(const ValueAndVariance<T1> &a, const T2 &b) noexcept {
+  return ValueAndVariance{a.value - b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator*(const ValueAndVariance<T1> &a, const T2 &b) noexcept {
+  return ValueAndVariance{a.value * b, a.variance * b * b};
+}
+template <class T1, class T2>
+constexpr auto operator/(const ValueAndVariance<T1> &a, const T2 &b) noexcept {
+  return ValueAndVariance{a.value / b, a.variance / (b * b)};
+}
+
 template <class T>
 ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
 
@@ -97,7 +114,7 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
   auto a_val = a.values();
   auto b_val = b.values();
   auto c_val = c.values();
-  if (a.hasVariances() && b.hasVariances()) {
+  if (a.hasVariances()) {
     if constexpr (is_sparse_v<typename T1::value_type> ||
                   is_sparse_v<typename T2::value_type>) {
       throw std::runtime_error(
@@ -106,20 +123,33 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
                          is_eigen_type_v<typename T2::value_type>) {
       throw std::runtime_error("This dtype cannot have a variance.");
     } else {
+      if (b.hasVariances()) {
+        auto a_var = a.variances();
+        auto b_var = b.variances();
+        auto c_var = c.variances();
+        for (scipp::index i = 0; i < a_val.size(); ++i) {
+          const ValueAndVariance a_{a_val[i], a_var[i]};
+          const ValueAndVariance b_{b_val[i], b_var[i]};
+          const auto out = op(a_, b_);
+          c_val[i] = out.value;
+          c_var[i] = out.variance;
+        }
+    } else {
       auto a_var = a.variances();
-      auto b_var = b.variances();
       auto c_var = c.variances();
       for (scipp::index i = 0; i < a_val.size(); ++i) {
         const ValueAndVariance a_{a_val[i], a_var[i]};
-        const ValueAndVariance b_{b_val[i], b_var[i]};
-        const auto out = op(a_, b_);
+        const auto out = op(a_, b_val[i]);
         c_val[i] = out.value;
         c_var[i] = out.variance;
       }
     }
-  } else if (a.hasVariances() != b.hasVariances()) {
-    throw std::runtime_error(
-        "Currently either both operands or neither must have a variances.");
+    }
+  } else if (b.hasVariances()) {
+    if (b.hasVariances()) {
+      throw std::runtime_error(
+          "RHS in operation has variances but LHS does not.");
+    }
   } else {
     std::transform(a_val.begin(), a_val.end(), b_val.begin(), c_val.begin(),
                    op);
