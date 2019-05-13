@@ -39,15 +39,15 @@ template <class T> struct RebinHelper {
                          const VariableConceptT<T> &newCoordT) {
     const auto &oldData = oldT.values();
     auto newData = newT.values();
-    const auto oldSize = oldT.dimensions()[dim];
-    const auto newSize = newT.dimensions()[dim];
-    const auto count = oldT.dimensions().volume() / oldSize;
+    const auto oldSize = oldT.dims()[dim];
+    const auto newSize = newT.dims()[dim];
+    const auto count = oldT.dims().volume() / oldSize;
     const auto *xold = &*oldCoordT.values().begin();
     const auto *xnew = &*newCoordT.values().begin();
     // This function assumes that dimensions between coord and data either
     // match, or coord is 1D.
-    const bool jointOld = oldCoordT.dimensions().ndim() == 1;
-    const bool jointNew = newCoordT.dimensions().ndim() == 1;
+    const bool jointOld = oldCoordT.dims().ndim() == 1;
+    const bool jointNew = newCoordT.dims().ndim() == 1;
 #pragma omp parallel for
     for (scipp::index c = 0; c < count; ++c) {
       scipp::index iold = 0;
@@ -89,8 +89,8 @@ template <class T> struct RebinHelper {
 template <typename T> struct RebinGeneralHelper {
   static void rebin(const Dim dim, const Variable &oldT, Variable &newT,
                     const Variable &oldCoordT, const Variable &newCoordT) {
-    const auto oldSize = oldT.dimensions()[dim];
-    const auto newSize = newT.dimensions()[dim];
+    const auto oldSize = oldT.dims()[dim];
+    const auto newSize = newT.dims()[dim];
 
     const auto *xold = oldCoordT.values<T>().data();
     const auto *xnew = newCoordT.values<T>().data();
@@ -159,7 +159,7 @@ auto optionalVariancesView(T &concept, Args &&... args) {
 }
 
 template <class T> VariableConceptHandle VariableConceptT<T>::makeView() const {
-  auto &dims = this->dimensions();
+  auto &dims = this->dims();
   return std::make_unique<ViewModel<decltype(valuesView(dims))>>(
       dims, valuesView(dims), optionalVariancesView(*this, dims));
 }
@@ -167,7 +167,7 @@ template <class T> VariableConceptHandle VariableConceptT<T>::makeView() const {
 template <class T> VariableConceptHandle VariableConceptT<T>::makeView() {
   if (this->isConstView())
     return const_cast<const VariableConceptT &>(*this).makeView();
-  auto &dims = this->dimensions();
+  auto &dims = this->dims();
   return std::make_unique<ViewModel<decltype(valuesView(dims))>>(
       dims, valuesView(dims), optionalVariancesView(*this, dims));
 }
@@ -176,7 +176,7 @@ template <class T>
 VariableConceptHandle
 VariableConceptT<T>::makeView(const Dim dim, const scipp::index begin,
                               const scipp::index end) const {
-  auto dims = this->dimensions();
+  auto dims = this->dims();
   if (end == -1)
     dims.erase(dim);
   else
@@ -193,7 +193,7 @@ VariableConceptHandle VariableConceptT<T>::makeView(const Dim dim,
   if (this->isConstView())
     return const_cast<const VariableConceptT &>(*this).makeView(dim, begin,
                                                                 end);
-  auto dims = this->dimensions();
+  auto dims = this->dims();
   if (end == -1)
     dims.erase(dim);
   else
@@ -206,7 +206,7 @@ VariableConceptHandle VariableConceptT<T>::makeView(const Dim dim,
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::reshape(const Dimensions &dims) const {
-  if (this->dimensions().volume() != dims.volume())
+  if (this->dims().volume() != dims.volume())
     throw std::runtime_error(
         "Cannot reshape to dimensions with different volume");
   return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
@@ -215,7 +215,7 @@ VariableConceptT<T>::reshape(const Dimensions &dims) const {
 
 template <class T>
 VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
-  if (this->dimensions().volume() != dims.volume())
+  if (this->dims().volume() != dims.volume())
     throw std::runtime_error(
         "Cannot reshape to dimensions with different volume");
   return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
@@ -224,18 +224,18 @@ VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
 
 template <class T>
 bool VariableConceptT<T>::operator==(const VariableConcept &other) const {
-  const auto &dims = this->dimensions();
-  if (dims != other.dimensions())
+  const auto &dims = this->dims();
+  if (dims != other.dims())
     return false;
   if (this->dtype() != other.dtype())
     return false;
   if (this->hasVariances() != other.hasVariances())
     return false;
   const auto &otherT = requireT<const VariableConceptT>(other);
-  if (dims.volume() == 0 && dims == other.dimensions())
+  if (dims.volume() == 0 && dims == other.dims())
     return true;
   if (this->isContiguous()) {
-    if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+    if (other.isContiguous() && dims.isContiguousIn(other.dims())) {
       return equal(values(), otherT.values()) &&
              (!this->hasVariances() || equal(variances(), otherT.variances()));
     } else {
@@ -244,7 +244,7 @@ bool VariableConceptT<T>::operator==(const VariableConcept &other) const {
               equal(variances(), otherT.variancesView(dims)));
     }
   } else {
-    if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
+    if (other.isContiguous() && dims.isContiguousIn(other.dims())) {
       return equal(valuesView(dims), otherT.values()) &&
              (!this->hasVariances() ||
               equal(variancesView(dims), otherT.variances()));
@@ -261,7 +261,7 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
                                const scipp::index offset,
                                const scipp::index otherBegin,
                                const scipp::index otherEnd) {
-  auto iterDims = this->dimensions();
+  auto iterDims = this->dims();
   const scipp::index delta = otherEnd - otherBegin;
   if (iterDims.contains(dim))
     iterDims.resize(dim, delta);
@@ -270,9 +270,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   auto otherView = otherT.valuesView(iterDims, dim, otherBegin);
   // Four cases for minimizing use of VariableView --- just copy contiguous
   // range where possible.
-  if (this->isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
+  if (this->isContiguous() && iterDims.isContiguousIn(this->dims())) {
     auto target = values(dim, offset, offset + delta);
-    if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+    if (other.isContiguous() && iterDims.isContiguousIn(other.dims())) {
       auto source = otherT.values(dim, otherBegin, otherEnd);
       std::copy(source.begin(), source.end(), target.begin());
     } else {
@@ -280,7 +280,7 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
     }
   } else {
     auto view = valuesView(iterDims, dim, offset);
-    if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+    if (other.isContiguous() && iterDims.isContiguousIn(other.dims())) {
       auto source = otherT.values(dim, otherBegin, otherEnd);
       std::copy(source.begin(), source.end(), view.begin());
     } else {
@@ -290,9 +290,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   // TODO Avoid code duplication for variances.
   if (this->hasVariances()) {
     auto otherView = otherT.variancesView(iterDims, dim, otherBegin);
-    if (this->isContiguous() && iterDims.isContiguousIn(this->dimensions())) {
+    if (this->isContiguous() && iterDims.isContiguousIn(this->dims())) {
       auto target = variances(dim, offset, offset + delta);
-      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dims())) {
         auto source = otherT.variances(dim, otherBegin, otherEnd);
         std::copy(source.begin(), source.end(), target.begin());
       } else {
@@ -300,7 +300,7 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
       }
     } else {
       auto view = variancesView(iterDims, dim, offset);
-      if (other.isContiguous() && iterDims.isContiguousIn(other.dimensions())) {
+      if (other.isContiguous() && iterDims.isContiguousIn(other.dims())) {
         auto source = otherT.variances(dim, otherBegin, otherEnd);
         std::copy(source.begin(), source.end(), view.begin());
       } else {
@@ -319,7 +319,7 @@ public:
             std::optional<T> variances = std::nullopt)
       : conceptT_t<typename T::value_type>(std::move(dimensions)),
         m_model(std::move(model)), m_variances(std::move(variances)) {
-    if (this->dimensions().volume() != scipp::size(m_model))
+    if (this->dims().volume() != scipp::size(m_model))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
@@ -329,7 +329,7 @@ public:
   }
   scipp::span<value_type> values(const Dim dim, const scipp::index begin,
                                  const scipp::index end) override {
-    return makeSpan(m_model, this->dimensions(), dim, begin, end);
+    return makeSpan(m_model, this->dims(), dim, begin, end);
   }
 
   scipp::span<const value_type> values() const override {
@@ -337,7 +337,7 @@ public:
   }
   scipp::span<const value_type> values(const Dim dim, const scipp::index begin,
                                        const scipp::index end) const override {
-    return makeSpan(m_model, this->dimensions(), dim, begin, end);
+    return makeSpan(m_model, this->dims(), dim, begin, end);
   }
 
   scipp::span<value_type> variances() override {
@@ -345,7 +345,7 @@ public:
   }
   scipp::span<value_type> variances(const Dim dim, const scipp::index begin,
                                     const scipp::index end) override {
-    return makeSpan(*m_variances, this->dimensions(), dim, begin, end);
+    return makeSpan(*m_variances, this->dims(), dim, begin, end);
   }
 
   scipp::span<const value_type> variances() const override {
@@ -354,59 +354,57 @@ public:
   scipp::span<const value_type>
   variances(const Dim dim, const scipp::index begin,
             const scipp::index end) const override {
-    return makeSpan(*m_variances, this->dimensions(), dim, begin, end);
+    return makeSpan(*m_variances, this->dims(), dim, begin, end);
   }
 
   VariableView<value_type> valuesView(const Dimensions &dims) override {
-    return makeVariableView(m_model.data(), 0, dims, this->dimensions());
+    return makeVariableView(m_model.data(), 0, dims, this->dims());
   }
   VariableView<value_type> valuesView(const Dimensions &dims, const Dim dim,
                                       const scipp::index begin) override {
-    scipp::index beginOffset = this->dimensions().contains(dim)
-                                   ? begin * this->dimensions().offset(dim)
-                                   : begin * this->dimensions().volume();
-    return makeVariableView(m_model.data(), beginOffset, dims,
-                            this->dimensions());
+    scipp::index beginOffset = this->dims().contains(dim)
+                                   ? begin * this->dims().offset(dim)
+                                   : begin * this->dims().volume();
+    return makeVariableView(m_model.data(), beginOffset, dims, this->dims());
   }
 
   VariableView<const value_type>
   valuesView(const Dimensions &dims) const override {
-    return makeVariableView(m_model.data(), 0, dims, this->dimensions());
+    return makeVariableView(m_model.data(), 0, dims, this->dims());
   }
   VariableView<const value_type>
   valuesView(const Dimensions &dims, const Dim dim,
              const scipp::index begin) const override {
-    scipp::index beginOffset = this->dimensions().contains(dim)
-                                   ? begin * this->dimensions().offset(dim)
-                                   : begin * this->dimensions().volume();
-    return makeVariableView(m_model.data(), beginOffset, dims,
-                            this->dimensions());
+    scipp::index beginOffset = this->dims().contains(dim)
+                                   ? begin * this->dims().offset(dim)
+                                   : begin * this->dims().volume();
+    return makeVariableView(m_model.data(), beginOffset, dims, this->dims());
   }
 
   VariableView<value_type> variancesView(const Dimensions &dims) override {
-    return makeVariableView(m_variances->data(), 0, dims, this->dimensions());
+    return makeVariableView(m_variances->data(), 0, dims, this->dims());
   }
   VariableView<value_type> variancesView(const Dimensions &dims, const Dim dim,
                                          const scipp::index begin) override {
-    scipp::index beginOffset = this->dimensions().contains(dim)
-                                   ? begin * this->dimensions().offset(dim)
-                                   : begin * this->dimensions().volume();
+    scipp::index beginOffset = this->dims().contains(dim)
+                                   ? begin * this->dims().offset(dim)
+                                   : begin * this->dims().volume();
     return makeVariableView(m_variances->data(), beginOffset, dims,
-                            this->dimensions());
+                            this->dims());
   }
 
   VariableView<const value_type>
   variancesView(const Dimensions &dims) const override {
-    return makeVariableView(m_variances->data(), 0, dims, this->dimensions());
+    return makeVariableView(m_variances->data(), 0, dims, this->dims());
   }
   VariableView<const value_type>
   variancesView(const Dimensions &dims, const Dim dim,
                 const scipp::index begin) const override {
-    scipp::index beginOffset = this->dimensions().contains(dim)
-                                   ? begin * this->dimensions().offset(dim)
-                                   : begin * this->dimensions().volume();
+    scipp::index beginOffset = this->dims().contains(dim)
+                                   ? begin * this->dims().offset(dim)
+                                   : begin * this->dims().volume();
     return makeVariableView(m_variances->data(), beginOffset, dims,
-                            this->dimensions());
+                            this->dims());
   }
 
   VariableView<const value_type>
@@ -418,8 +416,7 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<DataModel<T>>(this->dimensions(), m_model,
-                                          m_variances);
+    return std::make_unique<DataModel<T>>(this->dims(), m_model, m_variances);
   }
 
   VariableConceptHandle clone(const Dimensions &dims) const override {
@@ -486,7 +483,7 @@ public:
             std::optional<T> variances = std::nullopt)
       : conceptT_t<value_type>(std::move(dimensions)),
         m_model(std::move(model)), m_variances(std::move(variances)) {
-    if (this->dimensions().volume() != m_model.size())
+    if (this->dims().volume() != m_model.size())
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
@@ -509,7 +506,7 @@ public:
       static_cast<void>(end);
       return scipp::span<value_type>();
     } else {
-      return makeSpan(m_model, this->dimensions(), dim, begin, end);
+      return makeSpan(m_model, this->dims(), dim, begin, end);
     }
   }
 
@@ -520,7 +517,7 @@ public:
   scipp::span<const value_type> values(const Dim dim, const scipp::index begin,
                                        const scipp::index end) const override {
     requireContiguous();
-    return makeSpan(m_model, this->dimensions(), dim, begin, end);
+    return makeSpan(m_model, this->dims(), dim, begin, end);
   }
 
   scipp::span<value_type> variances() override {
@@ -541,7 +538,7 @@ public:
       static_cast<void>(end);
       return scipp::span<value_type>();
     } else {
-      return makeSpan(*m_variances, this->dimensions(), dim, begin, end);
+      return makeSpan(*m_variances, this->dims(), dim, begin, end);
     }
   }
 
@@ -553,7 +550,7 @@ public:
   variances(const Dim dim, const scipp::index begin,
             const scipp::index end) const override {
     requireContiguous();
-    return makeSpan(*m_variances, this->dimensions(), dim, begin, end);
+    return makeSpan(*m_variances, this->dims(), dim, begin, end);
   }
 
   VariableView<value_type> valuesView(const Dimensions &dims) override {
@@ -633,8 +630,7 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<ViewModel<T>>(this->dimensions(), m_model,
-                                          m_variances);
+    return std::make_unique<ViewModel<T>>(this->dims(), m_model, m_variances);
   }
 
   VariableConceptHandle clone(const Dimensions &) const override {
@@ -642,7 +638,7 @@ public:
   }
 
   bool isContiguous() const override {
-    return this->dimensions().isContiguousIn(m_model.parentDimensions());
+    return this->dims().isContiguousIn(m_model.parentDimensions());
   }
   bool isView() const override { return true; }
   bool isConstView() const override {
@@ -662,7 +658,7 @@ Variable::Variable(const ConstVariableSlice &slice)
     : Variable(*slice.m_variable) {
   if (slice.m_view) {
     setUnit(slice.unit());
-    setDimensions(slice.dimensions());
+    setDimensions(slice.dims());
     // There is a bug in the implementation of MultiIndex used in VariableView
     // in case one of the dimensions has extent 0.
     if (dims().volume() != 0)
@@ -692,8 +688,8 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
           std::move(dimensions), std::move(values), std::move(variances))) {}
 
 void Variable::setDimensions(const Dimensions &dimensions) {
-  if (dimensions.volume() == m_object->dimensions().volume()) {
-    if (dimensions != m_object->dimensions())
+  if (dimensions.volume() == m_object->dims().volume()) {
+    if (dimensions != m_object->dims())
       data().m_dimensions = dimensions;
     return;
   }
@@ -762,7 +758,7 @@ INSTANTIATE(Eigen::Vector3d)
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   if (a.unit() != b.unit())
     return false;
-  if (!(a.dimensions() == b.dimensions()))
+  if (!(a.dims() == b.dims()))
     return false;
   return a.data() == b.data();
 }
@@ -788,7 +784,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
   expect::equals(variable.unit(), other.unit());
-  expect::contains(variable.dimensions(), other.dimensions());
+  expect::contains(variable.dims(), other.dims());
   // Note: This will broadcast/transpose the RHS if required. We do not support
   // changing the dimensions of the LHS though!
   transform_in_place<
@@ -821,7 +817,7 @@ Variable &Variable::operator+=(const double value) & {
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   expect::equals(variable.unit(), other.unit());
-  expect::contains(variable.dimensions(), other.dimensions());
+  expect::contains(variable.dims(), other.dims());
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
       other, variable, [](auto &&a, auto &&b) { return a - b; });
   return variable;
@@ -838,7 +834,7 @@ Variable &Variable::operator-=(const double value) & {
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  expect::contains(variable.dimensions(), other.dimensions());
+  expect::contains(variable.dims(), other.dims());
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() * other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
@@ -860,7 +856,7 @@ Variable &Variable::operator*=(const double value) & {
 }
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
-  expect::contains(variable.dimensions(), other.dimensions());
+  expect::contains(variable.dims(), other.dims());
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.setUnit(variable.unit() / other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
@@ -882,8 +878,8 @@ Variable &Variable::operator/=(const double value) & {
 template <class T> VariableSlice VariableSlice::assign(const T &other) const {
   if (unit() != other.unit())
     throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
-  if (dimensions() != other.dimensions())
-    throw except::DimensionMismatchError(dimensions(), other.dimensions());
+  if (dims() != other.dims())
+    throw except::DimensionMismatchError(dims(), other.dims());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
   return *this;
 }
@@ -956,8 +952,7 @@ void VariableSlice::setUnit(const units::Unit &unit) const {
   // TODO Should we forbid setting the unit altogether? I think it is useful in
   // particular since views onto subsets of dataset do not imply slicing of
   // variables but return slice views.
-  if ((this->unit() != unit) &&
-      (dimensions() != m_mutableVariable->dimensions()))
+  if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
     throw std::runtime_error("Partial view on data of variable cannot be used "
                              "to change the unit.\n");
   m_mutableVariable->setUnit(unit);
@@ -968,13 +963,11 @@ const VariableView<const underlying_type_t<T>>
 ConstVariableSlice::cast() const {
   using TT = underlying_type_t<T>;
   if (!m_view)
-    return requireT<const DataModel<Vector<TT>>>(data()).valuesView(
-        dimensions());
+    return requireT<const DataModel<Vector<TT>>>(data()).valuesView(dims());
   if (m_view->isConstView())
     return requireT<const ViewModel<VariableView<const TT>>>(data()).m_model;
   // Make a const view from the mutable one.
-  return {requireT<const ViewModel<VariableView<TT>>>(data()).m_model,
-          dimensions()};
+  return {requireT<const ViewModel<VariableView<TT>>>(data()).m_model, dims()};
 }
 
 template <class T>
@@ -982,14 +975,13 @@ const VariableView<const underlying_type_t<T>>
 ConstVariableSlice::castVariances() const {
   using TT = underlying_type_t<T>;
   if (!m_view)
-    return requireT<const DataModel<Vector<TT>>>(data()).variancesView(
-        dimensions());
+    return requireT<const DataModel<Vector<TT>>>(data()).variancesView(dims());
   if (m_view->isConstView())
     return *requireT<const ViewModel<VariableView<const TT>>>(data())
                 .m_variances;
   // Make a const view from the mutable one.
   return {*requireT<const ViewModel<VariableView<TT>>>(data()).m_variances,
-          dimensions()};
+          dims()};
 }
 
 template <class T>
@@ -997,7 +989,7 @@ VariableView<underlying_type_t<T>> VariableSlice::cast() const {
   using TT = underlying_type_t<T>;
   if (m_view)
     return requireT<const ViewModel<VariableView<TT>>>(data()).m_model;
-  return requireT<DataModel<Vector<TT>>>(data()).valuesView(dimensions());
+  return requireT<DataModel<Vector<TT>>>(data()).valuesView(dims());
 }
 
 template <class T>
@@ -1005,7 +997,7 @@ VariableView<underlying_type_t<T>> VariableSlice::castVariances() const {
   using TT = underlying_type_t<T>;
   if (m_view)
     return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
-  return requireT<DataModel<Vector<TT>>>(data()).variancesView(dimensions());
+  return requireT<DataModel<Vector<TT>>>(data()).variancesView(dims());
 }
 
 #define INSTANTIATE_SLICEVIEW(...)                                             \
@@ -1078,35 +1070,35 @@ Variable ConstVariableSlice::reshape(const Dimensions &dims) const {
 // Note: The std::move here is necessary because RVO does not work for variables
 // that are function parameters.
 Variable operator+(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dimensions());
+  auto result = broadcast(std::move(a), b.dims());
   return result += b;
 }
 Variable operator-(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dimensions());
+  auto result = broadcast(std::move(a), b.dims());
   return result -= b;
 }
 Variable operator*(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dimensions());
+  auto result = broadcast(std::move(a), b.dims());
   return result *= b;
 }
 Variable operator/(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dimensions());
+  auto result = broadcast(std::move(a), b.dims());
   return result /= b;
 }
 Variable operator+(Variable a, const ConstVariableSlice &b) {
-  auto result = broadcast(std::move(a), b.dimensions());
+  auto result = broadcast(std::move(a), b.dims());
   return result += b;
 }
 Variable operator-(Variable a, const ConstVariableSlice &b) {
-  auto result = broadcast(std::move(a), b.dimensions());
+  auto result = broadcast(std::move(a), b.dims());
   return result -= b;
 }
 Variable operator*(Variable a, const ConstVariableSlice &b) {
-  auto result = broadcast(std::move(a), b.dimensions());
+  auto result = broadcast(std::move(a), b.dims());
   return result *= b;
 }
 Variable operator/(Variable a, const ConstVariableSlice &b) {
-  auto result = broadcast(std::move(a), b.dimensions());
+  auto result = broadcast(std::move(a), b.dims());
   return result /= b;
 }
 Variable operator+(Variable a, const double b) { return std::move(a += b); }
@@ -1134,7 +1126,7 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   vars.emplace_back(var(dim, 0, indices.front()));
   for (scipp::index i = 0; i < scipp::size(indices) - 1; ++i)
     vars.emplace_back(var(dim, indices[i], indices[i + 1]));
-  vars.emplace_back(var(dim, indices.back(), var.dimensions()[dim]));
+  vars.emplace_back(var(dim, indices.back(), var.dims()[dim]));
   return vars;
 }
 
@@ -1158,8 +1150,8 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
     return out;
   }
 
-  const auto &dims1 = a1.dimensions();
-  const auto &dims2 = a2.dimensions();
+  const auto &dims1 = a1.dims();
+  const auto &dims2 = a2.dims();
   // TODO Many things in this function should be refactored and moved in class
   // Dimensions.
   // TODO Special handling for edge variables.
@@ -1211,8 +1203,8 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
 
   expect::countsOrCountsDensity(var);
   Dim dim = Dim::Invalid;
-  for (const auto d : oldCoord.dimensions().labels())
-    if (oldCoord.dimensions()[d] == var.dimensions()[d] + 1) {
+  for (const auto d : oldCoord.dims().labels())
+    if (oldCoord.dims()[d] == var.dims()[d] + 1) {
       dim = d;
       break;
     }
@@ -1224,10 +1216,10 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     const auto &oldCoordT = *oldCoord;
     const auto &newCoordT = *newCoord;
     auto &outT = *out;
-    const auto &dims = outT.dimensions();
+    const auto &dims = outT.dims();
     if (dims.inner() == dim &&
-        isMatchingOr1DBinEdge(dim, oldCoordT.dimensions(), oldT.dimensions()) &&
-        isMatchingOr1DBinEdge(dim, newCoordT.dimensions(), dims)) {
+        isMatchingOr1DBinEdge(dim, oldCoordT.dims(), oldT.dims()) &&
+        isMatchingOr1DBinEdge(dim, newCoordT.dims(), dims)) {
       RebinHelper<typename std::remove_reference_t<decltype(
           outT)>::value_type>::rebinInner(dim, oldT, outT, oldCoordT,
                                           newCoordT);
@@ -1239,14 +1231,14 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
 
   if (var.unit() == units::counts ||
       var.unit() == units::counts * units::counts) {
-    auto dims = var.dimensions();
-    dims.resize(dim, newCoord.dimensions()[dim] - 1);
+    auto dims = var.dims();
+    dims.resize(dim, newCoord.dims()[dim] - 1);
     Variable rebinned(var, dims);
-    if (rebinned.dimensions().inner() == dim) {
+    if (rebinned.dims().inner() == dim) {
       apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord,
                                     newCoord);
     } else {
-      if (newCoord.dimensions().ndim() > 1)
+      if (newCoord.dims().ndim() > 1)
         throw std::runtime_error(
             "Not inner rebin works only for 1d coordinates for now.");
       switch (rebinned.dtype()) {
@@ -1293,10 +1285,10 @@ Variable permute(const Variable &var, const Dim dim,
 }
 
 Variable filter(const Variable &var, const Variable &filter) {
-  if (filter.dimensions().ndim() != 1)
+  if (filter.dims().ndim() != 1)
     throw std::runtime_error(
         "Cannot filter variable: The filter must by 1-dimensional.");
-  const auto dim = filter.dimensions().labels()[0];
+  const auto dim = filter.dims().labels()[0];
   auto mask = filter.values<bool>();
 
   const scipp::index removed = std::count(mask.begin(), mask.end(), 0);
@@ -1304,7 +1296,7 @@ Variable filter(const Variable &var, const Variable &filter) {
     return var;
 
   auto out(var);
-  auto dims = out.dimensions();
+  auto dims = out.dims();
   dims.resize(dim, dims[dim] - removed);
   out.setDimensions(dims);
 
@@ -1320,7 +1312,7 @@ Variable filter(const Variable &var, const Variable &filter) {
 
 Variable sum(const Variable &var, const Dim dim) {
   auto summed(var);
-  auto dims = summed.dimensions();
+  auto dims = summed.dims();
   dims.erase(dim);
   // setDimensions zeros the data
   summed.setDimensions(dims);
@@ -1331,7 +1323,7 @@ Variable sum(const Variable &var, const Dim dim) {
 
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
-  double scale = 1.0 / static_cast<double>(var.dimensions()[dim]);
+  double scale = 1.0 / static_cast<double>(var.dims()[dim]);
   return summed * makeVariable<double>({}, {scale});
 }
 
@@ -1351,9 +1343,9 @@ Variable sqrt(const Variable &var) {
 }
 
 Variable broadcast(Variable var, const Dimensions &dims) {
-  if (var.dimensions().contains(dims))
+  if (var.dims().contains(dims))
     return std::move(var);
-  auto newDims = var.dimensions();
+  auto newDims = var.dims();
   const auto labels = dims.labels();
   for (auto it = labels.end(); it != labels.begin();) {
     --it;
@@ -1377,7 +1369,7 @@ void swap(Variable &var, const Dim dim, const scipp::index a,
 }
 
 Variable reverse(Variable var, const Dim dim) {
-  const auto size = var.dimensions()[dim];
+  const auto size = var.dims()[dim];
   for (scipp::index i = 0; i < size / 2; ++i)
     swap(var, dim, i, size - i - 1);
   return std::move(var);

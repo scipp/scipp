@@ -162,14 +162,14 @@ template <class Op> struct TransformInPlace {
     // std::unique_ptr::operator*() is const but returns mutable reference, need
     // to artificially put const to we call the correct overloads of ViewModel.
     const auto &b = *b_ptr;
-    const auto &dimsA = a->dimensions();
-    const auto &dimsB = b.dimensions();
+    const auto &dimsA = a->dims();
+    const auto &dimsB = b.dims();
     try {
       if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
         if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
           // applying the operation.
-          const auto &data = b.valuesView(b.dimensions());
+          const auto &data = b.valuesView(b.dims());
           using T = typename std::remove_reference_t<decltype(b)>::value_type;
           const std::unique_ptr<VariableConceptT<T>> copy =
               detail::makeVariableConceptT<T>(
@@ -218,7 +218,7 @@ template <class Op> struct Transform {
     auto data = handle->values();
     // TODO Should just make empty container here, without init.
     auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
-        handle->dimensions());
+        handle->dims());
     // TODO Typo data->values() also compiles, but const-correctness should
     // forbid this.
     auto outData = out->values();

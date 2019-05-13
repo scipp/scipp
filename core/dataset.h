@@ -62,8 +62,8 @@ auto makeSlice(Var &var,
       slice(var);
   for (const auto[params, extent] : slices) {
     const auto[dim, begin, end] = params;
-    if (slice.dimensions().contains(dim))
-      slice = slice(dim, begin, end + slice.dimensions()[dim] - extent);
+    if (slice.dims().contains(dim))
+      slice = slice(dim, begin, end + slice.dims()[dim] - extent);
   }
   return slice;
 }
@@ -376,7 +376,7 @@ public:
   ConstProxy slice(const Slice slice1) const {
     const auto &coord = *m_items.at(slice1.dim).first;
     auto slices = m_slices;
-    slices.emplace_back(slice1, coord.dimensions()[slice1.dim]);
+    slices.emplace_back(slice1, coord.dims()[slice1.dim]);
     auto items = m_items;
     return ConstProxy(std::move(items), slices);
   }

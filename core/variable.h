@@ -88,7 +88,7 @@ public:
                     const scipp::index offset, const scipp::index otherBegin,
                     const scipp::index otherEnd) = 0;
 
-  const Dimensions &dimensions() const { return m_dimensions; }
+  const Dimensions &dims() const { return m_dimensions; }
 
   friend class Variable;
 
@@ -302,10 +302,8 @@ public:
 
   scipp::index size() const { return m_object->size(); }
 
-  Dimensions dims() const && { return m_object->dimensions(); }
-  const Dimensions &dims() const & { return m_object->dimensions(); }
-  Dimensions dimensions() const && { return dims(); }
-  const Dimensions &dimensions() const & { return dims(); }
+  Dimensions dims() const && { return m_object->dims(); }
+  const Dimensions &dims() const & { return m_object->dims(); }
   void setDimensions(const Dimensions &dimensions);
 
   const VariableConcept &data() const && = delete;
@@ -506,19 +504,18 @@ public:
 
   // Note: Returning by value to avoid issues with referencing a temporary
   // (VariableSlice is returned by-value from DatasetSlice).
-  Dimensions dimensions() const { return dims(); }
   Dimensions dims() const {
     if (m_view)
-      return m_view->dimensions();
+      return m_view->dims();
     else
-      return m_variable->dimensions();
+      return m_variable->dims();
   }
 
   std::vector<scipp::index> strides() const {
-    const auto parent = m_variable->dimensions();
+    const auto parent = m_variable->dims();
     std::vector<scipp::index> strides;
     for (const auto &label : parent.labels())
-      if (dimensions().contains(label))
+      if (dims().contains(label))
         strides.emplace_back(parent.offset(label));
     return strides;
   }

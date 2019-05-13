@@ -45,7 +45,7 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
     if (contained(item)) {
       // Shadow all global coordinates that depend on the sparse dimension.
       if ((sparseDim == Dim::Invalid) ||
-          (!item.second.dimensions().contains(sparseDim)))
+          (!item.second.dims().contains(sparseDim)))
         items.emplace(item.first, makeProxyItem(&item.second));
     }
   }
@@ -292,8 +292,8 @@ Dim DataConstProxy::sparseDim() const noexcept {
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
   if (hasData())
-    return data().dimensions();
-  return detail::makeSlice(*m_data->coord, slices()).dimensions();
+    return data().dims();
+  return detail::makeSlice(*m_data->coord, slices()).dims();
 }
 
 /// Return the unit of the data values.

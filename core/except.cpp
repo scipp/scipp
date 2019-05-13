@@ -124,7 +124,7 @@ std::string to_string(const Dim dim, const std::string &separator) {
 std::string make_dims_labels(const Variable &variable,
                              const std::string &separator,
                              const Dimensions &datasetDims) {
-  const auto &dims = variable.dimensions();
+  const auto &dims = variable.dims();
   if (dims.empty())
     return "()";
   std::string diminfo = "(";
