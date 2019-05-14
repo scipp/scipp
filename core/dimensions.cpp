@@ -11,6 +11,8 @@
 
 namespace scipp::core {
 
+/// Return the extent of `dim`. Throws if the space defined by this does not
+/// contain `dim` or if `dim` is a sparse dimension label.
 scipp::index Dimensions::operator[](const Dim dim) const {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
@@ -20,6 +22,9 @@ scipp::index Dimensions::operator[](const Dim dim) const {
   throw except::DimensionNotFoundError(*this, dim);
 }
 
+/// Return a mutable reference to the extent of `dim`. Throws if the space
+/// defined by this does not contain `dim` or if `dim` is a sparse dimension
+/// label.
 scipp::index &Dimensions::operator[](const Dim dim) {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)

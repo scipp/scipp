@@ -83,7 +83,8 @@ public:
   }
 
   scipp::span<const Dim> labels() const && = delete;
-  /// Return the labels of the space defined by *this.
+  /// Return the labels of the space defined by *this, including the label of a
+  /// potential sparse dimension.
   constexpr scipp::span<const Dim> labels() const &noexcept {
     if (!isSparse())
       return {m_dims, m_dims + m_ndim};
@@ -98,8 +99,6 @@ public:
     return {m_dims, m_dims + m_ndim};
   }
 
-  /// Return the extent `dim`. Throws if the space defined by this does not
-  /// contain `dim` or if `dim` is a sparse dimension label.
   scipp::index operator[](const Dim dim) const;
   scipp::index &operator[](const Dim dim);
 
