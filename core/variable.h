@@ -268,58 +268,12 @@ public:
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
 
-  bool operator==(const Variable &other) const;
-  bool operator==(const VariableConstProxy &other) const;
-  bool operator!=(const Variable &other) const;
-  bool operator!=(const VariableConstProxy &other) const;
-  Variable operator-() const;
-  Variable &operator+=(const Variable &other) &;
-  Variable &operator+=(const VariableConstProxy &other) &;
-  Variable &operator+=(const double value) &;
-  Variable &operator-=(const Variable &other) &;
-  Variable &operator-=(const VariableConstProxy &other) &;
-  Variable &operator-=(const double value) &;
-  Variable &operator*=(const Variable &other) &;
-  Variable &operator*=(const VariableConstProxy &other) &;
-  Variable &operator*=(const double value) &;
-  template <class T>
-  Variable &operator*=(const boost::units::quantity<T> &quantity) & {
-    setUnit(unit() * units::Unit(T{}));
-    return *this *= quantity.value();
-  }
-  Variable &operator/=(const Variable &other) &;
-  Variable &operator/=(const VariableConstProxy &other) &;
-  Variable &operator/=(const double value) &;
-  template <class T>
-  Variable &operator/=(const boost::units::quantity<T> &quantity) & {
-    setUnit(unit() / units::Unit(T{}));
-    return *this /= quantity.value();
-  }
-
   units::Unit unit() const { return m_unit; }
-  void setUnit(const units::Unit &unit) {
-    // TODO
-    // Some variables are special, e.g., Data::Tof, which must always have a
-    // time-of-flight-related unit. We need some sort of check here. Is there a
-    // better mechanism to implement this that does not require gatekeeping here
-    // but expresses itself on the interface instead? Does it make sense to
-    // handle all unit changes by conversion functions?
-    m_unit = unit;
-  }
-
-  scipp::index size() const { return m_object->size(); }
+  void setUnit(const units::Unit &unit) { m_unit = unit; }
 
   Dimensions dims() const && { return m_object->dims(); }
   const Dimensions &dims() const & { return m_object->dims(); }
-  void setDimensions(const Dimensions &dimensions);
-
-  const VariableConcept &data() const && = delete;
-  const VariableConcept &data() const & { return *m_object; }
-  VariableConcept &data() && = delete;
-  VariableConcept &data() & { return *m_object; }
-
-  const VariableConceptHandle &dataHandle() const && = delete;
-  const VariableConceptHandle &dataHandle() const & { return m_object; }
+  void setDims(const Dimensions &dimensions);
 
   DType dtype() const noexcept { return data().dtype(isSparse()); }
 
@@ -368,6 +322,42 @@ public:
   // will not go out of scope, so that is ok (unless someone changes var and
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
+
+  bool operator==(const Variable &other) const;
+  bool operator==(const VariableConstProxy &other) const;
+  bool operator!=(const Variable &other) const;
+  bool operator!=(const VariableConstProxy &other) const;
+  Variable operator-() const;
+  Variable &operator+=(const Variable &other) &;
+  Variable &operator+=(const VariableConstProxy &other) &;
+  Variable &operator+=(const double value) &;
+  Variable &operator-=(const Variable &other) &;
+  Variable &operator-=(const VariableConstProxy &other) &;
+  Variable &operator-=(const double value) &;
+  Variable &operator*=(const Variable &other) &;
+  Variable &operator*=(const VariableConstProxy &other) &;
+  Variable &operator*=(const double value) &;
+  template <class T>
+  Variable &operator*=(const boost::units::quantity<T> &quantity) & {
+    setUnit(unit() * units::Unit(T{}));
+    return *this *= quantity.value();
+  }
+  Variable &operator/=(const Variable &other) &;
+  Variable &operator/=(const VariableConstProxy &other) &;
+  Variable &operator/=(const double value) &;
+  template <class T>
+  Variable &operator/=(const boost::units::quantity<T> &quantity) & {
+    setUnit(unit() / units::Unit(T{}));
+    return *this /= quantity.value();
+  }
+
+  const VariableConcept &data() const && = delete;
+  const VariableConcept &data() const & { return *m_object; }
+  VariableConcept &data() && = delete;
+  VariableConcept &data() & { return *m_object; }
+
+  const VariableConceptHandle &dataHandle() const && = delete;
+  const VariableConceptHandle &dataHandle() const & { return m_object; }
 
   template <class... Tags> friend class ZipView;
 
@@ -506,12 +496,6 @@ public:
   Variable reshape(const Dimensions &dims) const;
 
   units::Unit unit() const { return m_variable->unit(); }
-  scipp::index size() const {
-    if (m_view)
-      return m_view->size();
-    else
-      return m_variable->size();
-  }
 
   // Note: Returning by value to avoid issues with referencing a temporary
   // (VariableProxy is returned by-value from DatasetSlice).

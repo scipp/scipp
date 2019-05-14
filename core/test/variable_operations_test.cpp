@@ -197,14 +197,14 @@ TEST(Variable, concatenate) {
   a.setUnit(units::m);
   b.setUnit(units::m);
   auto ab = concatenate(a, b, Dim::Tof);
-  ASSERT_EQ(ab.size(), 2);
+  ASSERT_EQ(ab.dims().volume(), 2);
   EXPECT_EQ(ab.unit(), units::Unit(units::m));
   const auto &data = ab.values<double>();
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
   auto ba = concatenate(b, a, Dim::Tof);
   const auto abba = concatenate(ab, ba, Dim::Q);
-  ASSERT_EQ(abba.size(), 4);
+  ASSERT_EQ(abba.dims().volume(), 4);
   EXPECT_EQ(abba.dims().count(), 2);
   const auto &data2 = abba.values<double>();
   EXPECT_EQ(data2[0], 1.0);
@@ -212,7 +212,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data2[2], 2.0);
   EXPECT_EQ(data2[3], 1.0);
   const auto ababbaba = concatenate(abba, abba, Dim::Tof);
-  ASSERT_EQ(ababbaba.size(), 8);
+  ASSERT_EQ(ababbaba.dims().volume(), 8);
   const auto &data3 = ababbaba.values<double>();
   EXPECT_EQ(data3[0], 1.0);
   EXPECT_EQ(data3[1], 2.0);
@@ -223,7 +223,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data3[6], 2.0);
   EXPECT_EQ(data3[7], 1.0);
   const auto abbaabba = concatenate(abba, abba, Dim::Q);
-  ASSERT_EQ(abbaabba.size(), 8);
+  ASSERT_EQ(abbaabba.dims().volume(), 8);
   const auto &data4 = abbaabba.values<double>();
   EXPECT_EQ(data4[0], 1.0);
   EXPECT_EQ(data4[1], 2.0);

@@ -687,7 +687,7 @@ Variable::Variable(const VariableConstProxy &slice)
     : Variable(*slice.m_variable) {
   if (slice.m_view) {
     setUnit(slice.unit());
-    setDimensions(slice.dims());
+    setDims(slice.dims());
     // There is a bug in the implementation of MultiIndex used in VariableView
     // in case one of the dimensions has extent 0.
     if (dims().volume() != 0)
@@ -716,7 +716,7 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
       m_object(std::make_unique<DataModel<T>>(
           std::move(dimensions), std::move(values), std::move(variances))) {}
 
-void Variable::setDimensions(const Dimensions &dimensions) {
+void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {
     if (dimensions != m_object->dims())
       data().m_dimensions = dimensions;
@@ -1084,7 +1084,7 @@ VariableProxy Variable::reshape(const Dimensions &dims) & {
 
 Variable Variable::reshape(const Dimensions &dims) && {
   Variable reshaped(std::move(*this));
-  reshaped.setDimensions(dims);
+  reshaped.setDims(dims);
   return reshaped;
 }
 
@@ -1092,7 +1092,7 @@ Variable VariableConstProxy::reshape(const Dimensions &dims) const {
   // In general a variable slice is not contiguous. Therefore we cannot reshape
   // without making a copy (except for special cases).
   Variable reshaped(*this);
-  reshaped.setDimensions(dims);
+  reshaped.setDims(dims);
   return reshaped;
 }
 
@@ -1219,7 +1219,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
     dims.resize(dim, extent1 + extent2);
   else
     dims.add(dim, extent1 + extent2);
-  out.setDimensions(dims);
+  out.setDims(dims);
 
   out.data().copy(a1.data(), dim, 0, 0, extent1);
   out.data().copy(a2.data(), dim, extent1, 0, extent2);
@@ -1327,7 +1327,7 @@ Variable filter(const Variable &var, const Variable &filter) {
   auto out(var);
   auto dims = out.dims();
   dims.resize(dim, dims[dim] - removed);
-  out.setDimensions(dims);
+  out.setDims(dims);
 
   scipp::index iOut = 0;
   // Note: Could copy larger chunks of applicable for better(?) performance.
@@ -1343,8 +1343,8 @@ Variable sum(const Variable &var, const Dim dim) {
   auto summed(var);
   auto dims = summed.dims();
   dims.erase(dim);
-  // setDimensions zeros the data
-  summed.setDimensions(dims);
+  // setDims zeros the data
+  summed.setDims(dims);
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
       var, summed, [](auto &&a, auto &&b) { return a + b; });
   return summed;
@@ -1385,7 +1385,7 @@ Variable broadcast(Variable var, const Dimensions &dims) {
       newDims.add(label, dims[label]);
   }
   Variable result(var);
-  result.setDimensions(newDims);
+  result.setDims(newDims);
   result.data().copy(var.data(), Dim::Invalid, 0, 0, 1);
   return result;
 }
