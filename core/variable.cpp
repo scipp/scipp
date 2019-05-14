@@ -325,26 +325,26 @@ public:
   DataModel(const Dimensions &dimensions, T model,
             std::optional<T> variances = std::nullopt)
       : conceptT_t<typename T::value_type>(std::move(dimensions)),
-        m_model(std::move(model)), m_variances(std::move(variances)) {
-    if (this->dims().volume() != scipp::size(m_model))
+        m_values(std::move(model)), m_variances(std::move(variances)) {
+    if (this->dims().volume() != scipp::size(m_values))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
 
   scipp::span<value_type> values() override {
-    return scipp::span(m_model.data(), m_model.data() + size());
+    return scipp::span(m_values.data(), m_values.data() + size());
   }
   scipp::span<value_type> values(const Dim dim, const scipp::index begin,
                                  const scipp::index end) override {
-    return makeSpan(m_model, this->dims(), dim, begin, end);
+    return makeSpan(m_values, this->dims(), dim, begin, end);
   }
 
   scipp::span<const value_type> values() const override {
-    return scipp::span(m_model.data(), m_model.data() + size());
+    return scipp::span(m_values.data(), m_values.data() + size());
   }
   scipp::span<const value_type> values(const Dim dim, const scipp::index begin,
                                        const scipp::index end) const override {
-    return makeSpan(m_model, this->dims(), dim, begin, end);
+    return makeSpan(m_values, this->dims(), dim, begin, end);
   }
 
   scipp::span<value_type> variances() override {
@@ -365,19 +365,19 @@ public:
   }
 
   VariableView<value_type> valuesView(const Dimensions &dims) override {
-    return makeVariableView(m_model.data(), 0, dims, this->dims());
+    return makeVariableView(m_values.data(), 0, dims, this->dims());
   }
   VariableView<value_type> valuesView(const Dimensions &dims, const Dim dim,
                                       const scipp::index begin) override {
     scipp::index beginOffset = this->dims().contains(dim)
                                    ? begin * this->dims().offset(dim)
                                    : begin * this->dims().volume();
-    return makeVariableView(m_model.data(), beginOffset, dims, this->dims());
+    return makeVariableView(m_values.data(), beginOffset, dims, this->dims());
   }
 
   VariableView<const value_type>
   valuesView(const Dimensions &dims) const override {
-    return makeVariableView(m_model.data(), 0, dims, this->dims());
+    return makeVariableView(m_values.data(), 0, dims, this->dims());
   }
   VariableView<const value_type>
   valuesView(const Dimensions &dims, const Dim dim,
@@ -385,7 +385,7 @@ public:
     scipp::index beginOffset = this->dims().contains(dim)
                                    ? begin * this->dims().offset(dim)
                                    : begin * this->dims().volume();
-    return makeVariableView(m_model.data(), beginOffset, dims, this->dims());
+    return makeVariableView(m_values.data(), beginOffset, dims, this->dims());
   }
 
   VariableView<value_type> variancesView(const Dimensions &dims) override {
@@ -416,10 +416,10 @@ public:
 
   VariableView<const value_type>
   valuesReshaped(const Dimensions &dims) const override {
-    return makeVariableView(m_model.data(), 0, dims, dims);
+    return makeVariableView(m_values.data(), 0, dims, dims);
   }
   VariableView<value_type> valuesReshaped(const Dimensions &dims) override {
-    return makeVariableView(m_model.data(), 0, dims, dims);
+    return makeVariableView(m_values.data(), 0, dims, dims);
   }
 
   VariableView<const value_type>
@@ -431,7 +431,7 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<DataModel<T>>(this->dims(), m_model, m_variances);
+    return std::make_unique<DataModel<T>>(this->dims(), m_values, m_variances);
   }
 
   VariableConceptHandle clone(const Dimensions &dims) const override {
@@ -449,9 +449,9 @@ public:
     return m_variances.has_value();
   }
 
-  scipp::index size() const override { return m_model.size(); }
+  scipp::index size() const override { return m_values.size(); }
 
-  T m_model;
+  T m_values;
   std::optional<T> m_variances;
 };
 
@@ -497,8 +497,8 @@ public:
   ViewModel(const Dimensions &dimensions, T model,
             std::optional<T> variances = std::nullopt)
       : conceptT_t<value_type>(std::move(dimensions)),
-        m_model(std::move(model)), m_variances(std::move(variances)) {
-    if (this->dims().volume() != m_model.size())
+        m_values(std::move(model)), m_variances(std::move(variances)) {
+    if (this->dims().volume() != m_values.size())
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
@@ -509,7 +509,7 @@ public:
     if constexpr (std::is_const<typename T::element_type>::value)
       return scipp::span<value_type>();
     else
-      return scipp::span(m_model.data(), m_model.data() + size());
+      return scipp::span(m_values.data(), m_values.data() + size());
   }
   scipp::span<value_type> values(const Dim dim, const scipp::index begin,
                                  const scipp::index end) override {
@@ -521,18 +521,18 @@ public:
       static_cast<void>(end);
       return scipp::span<value_type>();
     } else {
-      return makeSpan(m_model, this->dims(), dim, begin, end);
+      return makeSpan(m_values, this->dims(), dim, begin, end);
     }
   }
 
   scipp::span<const value_type> values() const override {
     requireContiguous();
-    return scipp::span(m_model.data(), m_model.data() + size());
+    return scipp::span(m_values.data(), m_values.data() + size());
   }
   scipp::span<const value_type> values(const Dim dim, const scipp::index begin,
                                        const scipp::index end) const override {
     requireContiguous();
-    return makeSpan(m_model, this->dims(), dim, begin, end);
+    return makeSpan(m_values, this->dims(), dim, begin, end);
   }
 
   scipp::span<value_type> variances() override {
@@ -574,7 +574,7 @@ public:
       static_cast<void>(dims);
       return VariableView<value_type>(nullptr, 0, {}, {});
     } else {
-      return {m_model, dims};
+      return {m_values, dims};
     }
   }
   VariableView<value_type> valuesView(const Dimensions &dims, const Dim dim,
@@ -585,18 +585,18 @@ public:
       static_cast<void>(begin);
       return VariableView<value_type>(nullptr, 0, {}, {});
     } else {
-      return {m_model, dims, dim, begin};
+      return {m_values, dims, dim, begin};
     }
   }
 
   VariableView<const value_type>
   valuesView(const Dimensions &dims) const override {
-    return {m_model, dims};
+    return {m_values, dims};
   }
   VariableView<const value_type>
   valuesView(const Dimensions &dims, const Dim dim,
              const scipp::index begin) const override {
-    return {m_model, dims, dim, begin};
+    return {m_values, dims, dim, begin};
   }
 
   VariableView<value_type> variancesView(const Dimensions &dims) override {
@@ -632,7 +632,7 @@ public:
 
   VariableView<const value_type>
   valuesReshaped(const Dimensions &dims) const override {
-    return {m_model, dims};
+    return {m_values, dims};
   }
   VariableView<value_type> valuesReshaped(const Dimensions &dims) override {
     requireMutable();
@@ -640,7 +640,7 @@ public:
       static_cast<void>(dims);
       return VariableView<value_type>(nullptr, 0, {}, {});
     } else {
-      return {m_model, dims};
+      return {m_values, dims};
     }
   }
 
@@ -659,7 +659,7 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<ViewModel<T>>(this->dims(), m_model, m_variances);
+    return std::make_unique<ViewModel<T>>(this->dims(), m_values, m_variances);
   }
 
   VariableConceptHandle clone(const Dimensions &) const override {
@@ -667,7 +667,7 @@ public:
   }
 
   bool isContiguous() const override {
-    return this->dims().isContiguousIn(m_model.parentDimensions());
+    return this->dims().isContiguousIn(m_values.parentDimensions());
   }
   bool isView() const override { return true; }
   bool isConstView() const override {
@@ -677,9 +677,9 @@ public:
     return m_variances.has_value();
   }
 
-  scipp::index size() const override { return m_model.size(); }
+  scipp::index size() const override { return m_values.size(); }
 
-  T m_model;
+  T m_values;
   std::optional<T> m_variances;
 };
 
@@ -729,7 +729,7 @@ template <class T>
 const Vector<underlying_type_t<T>> &Variable::cast(const bool variances) const {
   auto &dm = requireT<const DataModel<Vector<underlying_type_t<T>>>>(*m_object);
   if (!variances)
-    return dm.m_model;
+    return dm.m_values;
   else {
     if (!hasVariances())
       throw std::runtime_error("No variances");
@@ -741,7 +741,7 @@ template <class T>
 Vector<underlying_type_t<T>> &Variable::cast(const bool variances) {
   auto &dm = requireT<DataModel<Vector<underlying_type_t<T>>>>(*m_object);
   if (!variances)
-    return dm.m_model;
+    return dm.m_values;
   else {
     if (!hasVariances())
       throw std::runtime_error("No variances");
@@ -994,9 +994,9 @@ VariableConstProxy::cast() const {
   if (!m_view)
     return requireT<const DataModel<Vector<TT>>>(data()).valuesView(dims());
   if (m_view->isConstView())
-    return requireT<const ViewModel<VariableView<const TT>>>(data()).m_model;
+    return requireT<const ViewModel<VariableView<const TT>>>(data()).m_values;
   // Make a const view from the mutable one.
-  return {requireT<const ViewModel<VariableView<TT>>>(data()).m_model, dims()};
+  return {requireT<const ViewModel<VariableView<TT>>>(data()).m_values, dims()};
 }
 
 template <class T>
@@ -1017,7 +1017,7 @@ template <class T>
 VariableView<underlying_type_t<T>> VariableProxy::cast() const {
   using TT = underlying_type_t<T>;
   if (m_view)
-    return requireT<const ViewModel<VariableView<TT>>>(data()).m_model;
+    return requireT<const ViewModel<VariableView<TT>>>(data()).m_values;
   return requireT<DataModel<Vector<TT>>>(data()).valuesView(dims());
 }
 
