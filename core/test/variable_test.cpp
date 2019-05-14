@@ -194,7 +194,7 @@ TEST_F(Variable_comparison_operators, dtype) {
   expect_ne(base, makeVariable<float>({}, {1.0}));
 }
 
-TEST(Variable, copy_and_move) {
+TEST(VariableTest, copy_and_move) {
   const auto reference = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}},
                                               units::m, {1.1, 2.2}, {0.1, 0.2});
   const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 1}}, units::m,
@@ -1168,69 +1168,66 @@ TEST(VariableProxy, slice_binary_operations) {
   EXPECT_TRUE(equals(ratio.values<double>(), {1.0 / 2.0, 3.0 / 4.0}));
 }
 
-TEST(Variable, reshape) {
+TEST(VariableTest, reshape) {
   const auto var =
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
-  auto view = var.reshape({Dim::Row, 6});
-  ASSERT_EQ(view.size(), 6);
-  ASSERT_EQ(view.dims(), Dimensions({Dim::Row, 6}));
-  EXPECT_TRUE(equals(view.values<double>(), {1, 2, 3, 4, 5, 6}));
 
-  auto view2 = var.reshape({{Dim::Row, 3}, {Dim::Z, 2}});
-  ASSERT_EQ(view2.size(), 6);
-  ASSERT_EQ(view2.dims(), Dimensions({{Dim::Row, 3}, {Dim::Z, 2}}));
-  EXPECT_TRUE(equals(view2.values<double>(), {1, 2, 3, 4, 5, 6}));
+  ASSERT_EQ(var.reshape({Dim::Row, 6}),
+            makeVariable<double>({Dim::Row, 6}, {1, 2, 3, 4, 5, 6}));
+  ASSERT_EQ(
+      var.reshape({{Dim::Row, 3}, {Dim::Z, 2}}),
+      makeVariable<double>({{Dim::Row, 3}, {Dim::Z, 2}}, {1, 2, 3, 4, 5, 6}));
 }
 
-TEST(Variable, reshape_temporary) {
+TEST(VariableTest, reshape_temporary) {
   const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Row, 4}},
                                         {1, 2, 3, 4, 5, 6, 7, 8});
   auto reshaped = sum(var, Dim::X).reshape({{Dim::Y, 2}, {Dim::Z, 2}});
-  ASSERT_EQ(reshaped.size(), 4);
-  ASSERT_EQ(reshaped.dims(), Dimensions({{Dim::Y, 2}, {Dim::Z, 2}}));
-  EXPECT_TRUE(equals(reshaped.values<double>(), {6, 8, 10, 12}));
+  ASSERT_EQ(reshaped,
+            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 2}}, {6, 8, 10, 12}));
 
   // This is not a temporary, we get a view into `var`.
   EXPECT_EQ(typeid(decltype(std::move(var).reshape({}))),
             typeid(VariableConstProxy));
 }
 
-TEST(Variable, reshape_fail) {
+TEST(VariableTest, reshape_fail) {
   auto var =
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
   EXPECT_THROW_MSG(var.reshape({Dim::Row, 5}), std::runtime_error,
                    "Cannot reshape to dimensions with different volume");
 }
 
-TEST(Variable, reshape_and_slice) {
+TEST(VariableTest, reshape_and_slice) {
   auto var =
       makeVariable<double>({Dim::Spectrum, 16}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                                                  11, 12, 13, 14, 15, 16});
 
   auto slice =
       var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3);
-  EXPECT_TRUE(equals(slice.values<double>(), {6, 7, 10, 11}));
+  ASSERT_EQ(slice,
+            makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}}, {6, 7, 10, 11}));
 
   Variable center =
       var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3)
           .reshape({Dim::Spectrum, 4});
 
-  ASSERT_EQ(center.size(), 4);
-  ASSERT_EQ(center.dims(), Dimensions({Dim::Spectrum, 4}));
-  EXPECT_TRUE(equals(center.values<double>(), {6, 7, 10, 11}));
+  ASSERT_EQ(center, makeVariable<double>({Dim::Spectrum, 4}, {6, 7, 10, 11}));
 }
 
-TEST(Variable, reshape_mutable) {
+TEST(VariableTest, reshape_mutable) {
+  auto modified_original =
+      makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 0, 5, 6});
+  auto reference = makeVariable<double>({Dim::Row, 6}, {1, 2, 3, 0, 5, 6});
+
   auto var =
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
-  const auto copy(var);
 
   auto view = var.reshape({Dim::Row, 6});
   view.values<double>()[3] = 0;
 
-  EXPECT_TRUE(equals(view.values<double>(), {1, 2, 3, 0, 5, 6}));
-  EXPECT_TRUE(equals(var.values<double>(), {1, 2, 3, 0, 5, 6}));
-  EXPECT_TRUE(equals(copy.values<double>(), {1, 2, 3, 4, 5, 6}));
+  ASSERT_EQ(view, reference);
+  ASSERT_EQ(var, modified_original);
 }
 
 TEST(Variable, reverse) {
@@ -1583,34 +1580,12 @@ TEST(VariableTest, hasVariances) {
   ASSERT_TRUE(makeVariable<double>({}, units::m, {1.0}, {0.1}).hasVariances());
 }
 
-TEST(VariableTest, copy_with_variance) {
-  const auto var = makeVariable<double>({}, {1.0}, {0.1});
-  const auto copy(var);
-  ASSERT_TRUE(copy.hasVariances());
-}
-
-TEST(VariableTest, move_with_variance) {
-  const auto var = makeVariable<double>({}, {1.0}, {0.1});
-  const auto moved(std::move(var));
-  ASSERT_TRUE(moved.hasVariances());
-}
-
 TEST(VariableTest, values_variances) {
   const auto var = makeVariable<double>({}, {1.0}, {0.1});
   ASSERT_NO_THROW(var.values<double>());
   ASSERT_NO_THROW(var.variances<double>());
   ASSERT_TRUE(equals(var.values<double>(), {1.0}));
   ASSERT_TRUE(equals(var.variances<double>(), {0.1}));
-}
-
-TEST(VariableTest, comparison_missing_variances) {
-  ASSERT_NE(makeVariable<double>({}, {1.0}, {0.1}),
-            makeVariable<double>({}, {1.0}));
-}
-
-TEST(VariableTest, comparison_mismatching_variances) {
-  ASSERT_NE(makeVariable<double>({}, {1.0}, {0.1}),
-            makeVariable<double>({}, {1.0}, {0.2}));
 }
 
 TEST(VariableProxyTest, create_with_variance) {
