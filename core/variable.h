@@ -246,6 +246,7 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 /// dimensions.
 class Variable {
 public:
+  Variable() = default;
   // Having this non-explicit is convenient when passing (potential)
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
@@ -264,6 +265,8 @@ public:
   Variable(const Dimensions &dimensions, std::initializer_list<T> values)
       : Variable(units::dimensionless, std::move(dimensions),
                  Vector<underlying_type_t<T>>(values.begin(), values.end())) {}
+
+  explicit operator bool() const noexcept { return m_object.operator bool(); }
 
   bool operator==(const Variable &other) const;
   bool operator==(const VariableConstProxy &other) const;
@@ -484,6 +487,10 @@ public:
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(slice.m_variable),
         m_view(slice.data().makeView(dim, begin, end)) {}
+
+  explicit operator bool() const noexcept {
+    return m_variable->operator bool();
+  }
 
   VariableConstProxy slice(const Slice slice) const {
     return VariableConstProxy(*this, slice.dim, slice.begin, slice.end);

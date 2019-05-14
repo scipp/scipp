@@ -12,6 +12,12 @@
 using namespace scipp;
 using namespace scipp::core;
 
+TEST(Variable, construct_default) {
+  ASSERT_NO_THROW(Variable());
+  Variable var;
+  ASSERT_FALSE(var);
+}
+
 TEST(Variable, construct) {
   ASSERT_NO_THROW(makeVariable<double>(Dimensions(Dim::Tof, 2)));
   ASSERT_NO_THROW(makeVariable<double>(Dimensions(Dim::Tof, 2), 2));
@@ -26,13 +32,14 @@ TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(makeVariable<double>(Dimensions(Dim::Tof, 3), 2));
 }
 
-TEST(Variable, DISABLED_move) {
+TEST(Variable, move) {
   auto var = makeVariable<double>({Dim::X, 2});
   Variable moved(std::move(var));
   // We need to define the behavior on move. Currently most methods will just
   // segfault, and we have no way of telling whether a Variable is in this
   // state.
-  EXPECT_NE(var, moved);
+  EXPECT_FALSE(var);
+  EXPECT_NE(moved, var);
 }
 
 TEST(Variable, makeVariable_custom_type) {

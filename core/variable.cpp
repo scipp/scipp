@@ -785,9 +785,9 @@ INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(Eigen::Vector3d)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
+  if (!a || !b)
+    return static_cast<bool>(a) == static_cast<bool>(b);
   if (a.unit() != b.unit())
-    return false;
-  if (!(a.dims() == b.dims()))
     return false;
   return a.data() == b.data();
 }
