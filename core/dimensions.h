@@ -32,9 +32,6 @@ public:
       throw std::runtime_error("Constructing Dimensions: Number of dimensions "
                                "labels does not match shape.");
     for (scipp::index i = 0; i < scipp::size(shape); ++i)
-      if (i == scipp::size(shape) - 1 && shape[i] == Dimensions::Sparse)
-        addSparse(labels[i]);
-      else
         addInner(labels[i], shape[i]);
   }
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
@@ -59,13 +56,10 @@ public:
 
   constexpr bool empty() const noexcept { return m_ndim == 0 && !isSparse(); }
 
-  constexpr int32_t ndim() const noexcept { return m_ndim; }
-  // TODO Remove in favor of the new ndim?
-  int32_t count() const noexcept { return m_ndim; }
-
+  /// exclude sparse fake extent
   scipp::index volume() const {
     scipp::index volume{1};
-    for (int32_t dim = 0; dim < ndim(); ++dim)
+    for (int32_t dim = 0; dim < m_ndim; ++dim)
       volume *= m_shape[dim];
     return volume;
   }
@@ -74,8 +68,10 @@ public:
     return m_dims[m_ndim] != Dim::Invalid;
   }
 
+  /// Dim::Invalid if not sparse
   constexpr Dim sparseDim() const noexcept { return m_dims[m_ndim]; }
 
+  ///  exclude sparse fake extent
   scipp::span<const scipp::index> shape() const && = delete;
   scipp::span<const scipp::index> shape() const &noexcept {
     return {m_shape, m_shape + m_ndim};
@@ -94,15 +90,18 @@ public:
     return {m_dims, m_dims + m_ndim};
   }
 
+  /// throws if sparse dim specified
   scipp::index operator[](const Dim dim) const;
   scipp::index &operator[](const Dim dim);
 
+  /// return true if dim is sparse dim
   bool contains(const Dim dim) const noexcept {
-    for (int32_t i = 0; i < ndim(); ++i)
+    for (int32_t i = 0; i < m_ndim; ++i)
       if (m_dims[i] == dim)
         return true;
     return false;
   }
+  // bool denseContains(const Dim dim) const noexcept;
 
   bool contains(const Dimensions &other) const;
 
@@ -119,7 +118,6 @@ public:
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);
   void addInner(const Dim label, const scipp::index size);
-  void addSparse(const Dim label);
 
   Dim inner() const;
 

@@ -205,7 +205,7 @@ TEST(Variable, concatenate) {
   auto ba = concatenate(b, a, Dim::Tof);
   const auto abba = concatenate(ab, ba, Dim::Q);
   ASSERT_EQ(abba.dims().volume(), 4);
-  EXPECT_EQ(abba.dims().count(), 2);
+  EXPECT_EQ(abba.dims().shape().size(), 2);
   const auto &data2 = abba.values<double>();
   EXPECT_EQ(data2[0], 1.0);
   EXPECT_EQ(data2[1], 2.0);
@@ -278,7 +278,7 @@ TEST(Variable, rebin) {
   const auto oldEdge = makeVariable<double>({Dim::X, 3}, {1.0, 2.0, 3.0});
   const auto newEdge = makeVariable<double>({Dim::X, 2}, {1.0, 3.0});
   auto rebinned = rebin(var, oldEdge, newEdge);
-  ASSERT_EQ(rebinned.dims().count(), 1);
+  ASSERT_EQ(rebinned.dims().shape().size(), 1);
   ASSERT_EQ(rebinned.dims().volume(), 1);
   ASSERT_EQ(rebinned.values<double>().size(), 1);
   EXPECT_EQ(rebinned.values<double>()[0], 3.0);

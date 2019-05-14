@@ -46,8 +46,8 @@ template <class T> struct RebinHelper {
     const auto *xnew = &*newCoordT.values().begin();
     // This function assumes that dimensions between coord and data either
     // match, or coord is 1D.
-    const bool jointOld = oldCoordT.dims().ndim() == 1;
-    const bool jointNew = newCoordT.dims().ndim() == 1;
+    const bool jointOld = oldCoordT.dims().shape().size() == 1;
+    const bool jointNew = newCoordT.dims().shape().size() == 1;
 #pragma omp parallel for
     for (scipp::index c = 0; c < count; ++c) {
       scipp::index iold = 0;
@@ -132,7 +132,7 @@ VariableConcept::VariableConcept(const Dimensions &dimensions)
 
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
                            const Dimensions &toMatch) {
-  if (edges.ndim() == 1)
+  if (edges.shape().size() == 1)
     return true;
   edges.resize(dim, edges[dim] - 1);
   return edges == toMatch;
@@ -1195,8 +1195,8 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
             "Cannot concatenate Variables: Dimension extents do not match.");
     }
   }
-  auto size1 = dims1.count();
-  auto size2 = dims2.count();
+  auto size1 = dims1.shape().size();
+  auto size2 = dims2.shape().size();
   if (dims1.contains(dim))
     size1--;
   if (dims2.contains(dim))
@@ -1267,7 +1267,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
       apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord,
                                     newCoord);
     } else {
-      if (newCoord.dims().ndim() > 1)
+      if (newCoord.dims().shape().size() > 1)
         throw std::runtime_error(
             "Not inner rebin works only for 1d coordinates for now.");
       switch (rebinned.dtype()) {
@@ -1314,7 +1314,7 @@ Variable permute(const Variable &var, const Dim dim,
 }
 
 Variable filter(const Variable &var, const Variable &filter) {
-  if (filter.dims().ndim() != 1)
+  if (filter.dims().shape().size() != 1)
     throw std::runtime_error(
         "Cannot filter variable: The filter must by 1-dimensional.");
   const auto dim = filter.dims().labels()[0];

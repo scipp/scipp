@@ -16,11 +16,11 @@ public:
   MultiIndex(
       const Dimensions &parentDimensions,
       const boost::container::small_vector<Dimensions, 4> &subdimensions) {
-    if (parentDimensions.count() > 4)
+    if (parentDimensions.shape().size() > 4)
       throw std::runtime_error("MultiIndex supports at most 4 dimensions.");
     if (subdimensions.size() > 4)
       throw std::runtime_error("MultiIndex supports at most 4 subindices.");
-    m_dims = parentDimensions.count();
+    m_dims = parentDimensions.shape().size();
     for (scipp::index d = 0; d < m_dims; ++d)
       m_extent[d] = parentDimensions.size(m_dims - 1 - d);
 
@@ -29,7 +29,7 @@ public:
       const auto &dimensions = subdimensions[j];
       scipp::index factor{1};
       int32_t k = 0;
-      for (scipp::index i = dimensions.count() - 1; i >= 0; --i) {
+      for (scipp::index i = dimensions.shape().size() - 1; i >= 0; --i) {
         const auto dimension = dimensions.label(i);
         if (parentDimensions.contains(dimension)) {
           m_offsets[j][k] = m_dims - 1 - parentDimensions.index(dimension);

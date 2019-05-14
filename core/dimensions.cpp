@@ -37,7 +37,7 @@ bool Dimensions::contains(const Dimensions &other) const {
   for (const auto dim : other.labels())
     if (!contains(dim))
       return false;
-  for (int32_t i = 0; i < other.ndim(); ++i)
+  for (int32_t i = 0; i < other.m_ndim; ++i)
     if (other.shape()[i] != operator[](other.labels()[i]))
       return false;
   return true;
@@ -50,10 +50,10 @@ bool Dimensions::contains(const Dimensions &other) const {
 bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   if (parent == *this)
     return true;
-  int32_t offset = parent.count() - count();
+  int32_t offset = parent.m_ndim - m_ndim;
   if (offset < 0)
     return false;
-  for (int32_t i = 0; i < count(); ++i) {
+  for (int32_t i = 0; i < m_ndim; ++i) {
     // All shared dimension labels must match.
     if (parent.label(i + offset) != label(i))
       return false;
@@ -85,13 +85,20 @@ scipp::index Dimensions::offset(const Dim label) const {
   throw except::DimensionNotFoundError(*this, label);
 }
 
+void expectNotSparseExtent(const scipp::index size) {
+  if (size == Dimensions::Sparse)
+    throw except::DimensionError("Expected non-sparse dimension extent.");
+}
+
 void Dimensions::resize(const Dim label, const scipp::index size) {
+  expectNotSparseExtent(size);
   if (size < 0)
     throw std::runtime_error("Dimension size cannot be negative.");
   operator[](label) = size;
 }
 
 void Dimensions::resize(const scipp::index i, const scipp::index size) {
+  expectNotSparseExtent(size);
   if (size < 0)
     throw std::runtime_error("Dimension size cannot be negative.");
   m_shape[i] = size;
@@ -105,11 +112,6 @@ void Dimensions::erase(const Dim label) {
   --m_ndim;
   m_shape[m_ndim] = -1;
   m_dims[m_ndim] = Dim::Invalid;
-}
-
-void expectNotSparseExtent(const scipp::index size) {
-  if (size == Dimensions::Sparse)
-    throw except::DimensionError("Expected non-sparse dimension extent.");
 }
 
 /// Add a new dimension, which will be the outermost dimension.
@@ -133,30 +135,23 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
   expect::notSparse(*this);
   if (label == Dim::Invalid)
     throw std::runtime_error("Dim::Invalid is not a valid dimension.");
-  expectNotSparseExtent(size);
-  if (size < 0)
-    throw std::runtime_error("Dimension extent cannot be negative.");
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)
     throw std::runtime_error("More than 6 dimensions are not supported.");
-  m_shape[m_ndim] = size;
-  m_dims[m_ndim] = label;
-  ++m_ndim;
-}
-
-/// Add a sparse dimension, which will be the innermost dimension.
-void Dimensions::addSparse(const Dim label) {
-  expect::notSparse(*this);
-  if (label == Dim::Invalid)
-    throw std::runtime_error("Dim::Invalid is not a valid dimension.");
-  if (contains(label))
-    throw std::runtime_error("Duplicate dimension.");
-  m_dims[m_ndim] = label;
+  if (size == Dimensions::Sparse) {
+    m_dims[m_ndim] = label;
+  } else {
+    if (size < 0)
+      throw std::runtime_error("Dimension extent cannot be negative.");
+    m_shape[m_ndim] = size;
+    m_dims[m_ndim] = label;
+    ++m_ndim;
+  }
 }
 
 Dim Dimensions::inner() const {
-  if (ndim() == 0)
+  if (m_ndim == 0)
     throw except::DimensionError(
         "Expected Dimensions with at least 1 dimension.");
   return m_dims[m_ndim - 1];
