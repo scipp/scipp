@@ -12,9 +12,11 @@ add_executable(scipp-core-test
                except_test.cpp
                #md_zip_view_test.cpp
                multi_index_test.cpp
+               transform_test.cpp
                #Run_test.cpp
                #TableWorkspace_test.cpp
                variable_test.cpp
+               variable_operations_test.cpp
                variable_view_test.cpp
                #Workspace2D_test.cpp
                #zip_view_test.cpp
