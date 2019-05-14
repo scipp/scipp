@@ -5,6 +5,7 @@
 #ifndef DIMENSIONS_H
 #define DIMENSIONS_H
 
+#include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -21,6 +22,7 @@ namespace scipp::core {
 /// last dimension is inner dimension, for now we do not.
 class Dimensions {
 public:
+  static constexpr auto Sparse = std::numeric_limits<scipp::index>::min();
   Dimensions() noexcept {}
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
@@ -29,8 +31,11 @@ public:
     if (labels.size() != shape.size())
       throw std::runtime_error("Constructing Dimensions: Number of dimensions "
                                "labels does not match shape.");
-    for (scipp::index i = labels.size() - 1; i >= 0; --i)
-      add(labels[i], shape[i]);
+    for (scipp::index i = 0; i < scipp::size(shape); ++i)
+      if (i == scipp::size(shape) - 1 && shape[i] == Dimensions::Sparse)
+        addSparse(labels[i]);
+      else
+        addInner(labels[i], shape[i]);
   }
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
     for (const auto[label, size] : dims)
@@ -52,9 +57,9 @@ public:
     return !(*this == other);
   }
 
-  bool empty() const noexcept { return m_ndim == 0; }
+  constexpr bool empty() const noexcept { return m_ndim == 0 && !isSparse(); }
 
-  int32_t ndim() const noexcept { return m_ndim; }
+  constexpr int32_t ndim() const noexcept { return m_ndim; }
   // TODO Remove in favor of the new ndim?
   int32_t count() const noexcept { return m_ndim; }
 
@@ -65,6 +70,12 @@ public:
     return volume;
   }
 
+  constexpr bool isSparse() const noexcept {
+    return m_dims[m_ndim] != Dim::Invalid;
+  }
+
+  constexpr Dim sparseDim() const noexcept { return m_dims[m_ndim]; }
+
   scipp::span<const scipp::index> shape() const && = delete;
   scipp::span<const scipp::index> shape() const &noexcept {
     return {m_shape, m_shape + m_ndim};
@@ -72,6 +83,14 @@ public:
 
   scipp::span<const Dim> labels() const && = delete;
   scipp::span<const Dim> labels() const &noexcept {
+    if (!isSparse())
+      return {m_dims, m_dims + m_ndim};
+    else
+      return {m_dims, m_dims + m_ndim + 1};
+  }
+
+  scipp::span<const Dim> denseLabels() const && = delete;
+  scipp::span<const Dim> denseLabels() const &noexcept {
     return {m_dims, m_dims + m_ndim};
   }
 
@@ -100,6 +119,7 @@ public:
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);
   void addInner(const Dim label, const scipp::index size);
+  void addSparse(const Dim label);
 
   Dim inner() const;
 
@@ -111,8 +131,10 @@ private:
   // Support at most 6 dimensions, should be sufficient?
   // 6*8 Byte = 48 Byte
   scipp::index m_shape[6]{-1, -1, -1, -1, -1, -1};
-  int32_t m_ndim{0};
-  Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
+  int16_t m_ndim{0};
+  /// Dimensions labels. This is exceeding the size of the shape by one for the
+  /// purpose of storing the sparse dimension's label.
+  Dim m_dims[7]{Dim::Invalid, Dim::Invalid, Dim::Invalid, Dim::Invalid,
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
 

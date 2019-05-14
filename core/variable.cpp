@@ -705,14 +705,13 @@ Variable::Variable(const Variable &parent, VariableConceptHandle data)
 
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T object, const Dim sparseDim)
-    : m_sparseDim(sparseDim), m_unit{unit},
-      m_object(std::make_unique<DataModel<T>>(std::move(dimensions),
-                                              std::move(object))) {}
+                   T object)
+    : m_unit{unit}, m_object(std::make_unique<DataModel<T>>(
+                        std::move(dimensions), std::move(object))) {}
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T values, T variances, const Dim sparseDim)
-    : m_sparseDim(sparseDim), m_unit{unit},
+                   T values, T variances)
+    : m_unit{unit},
       m_object(std::make_unique<DataModel<T>>(
           std::move(dimensions), std::move(values), std::move(variances))) {}
 
@@ -751,12 +750,10 @@ Vector<underlying_type_t<T>> &Variable::cast(const bool variances) {
 
 #define INSTANTIATE(...)                                                       \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              Vector<underlying_type_t<__VA_ARGS__>>,          \
-                              const Dim);                                      \
+                              Vector<underlying_type_t<__VA_ARGS__>>);         \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               Vector<underlying_type_t<__VA_ARGS__>>,          \
-                              Vector<underlying_type_t<__VA_ARGS__>>,          \
-                              const Dim);                                      \
+                              Vector<underlying_type_t<__VA_ARGS__>>);         \
   template Vector<underlying_type_t<__VA_ARGS__>>                              \
       &Variable::cast<__VA_ARGS__>(const bool);                                \
   template const Vector<underlying_type_t<__VA_ARGS__>>                        \
@@ -841,7 +838,7 @@ Variable &Variable::operator+=(const double value) & {
   // TODO By not setting a unit here this operator is only usable if the
   // variable is dimensionless. Should we ignore the unit for scalar operations,
   // i.e., set the same unit as *this.unit()?
-  return plus_equals(*this, makeVariable<double>({}, {value}));
+  return plus_equals(*this, makeVariable<double>(value));
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
@@ -859,7 +856,7 @@ Variable &Variable::operator-=(const VariableConstProxy &other) & {
   return minus_equals(*this, other);
 }
 Variable &Variable::operator-=(const double value) & {
-  return minus_equals(*this, makeVariable<double>({}, {value}));
+  return minus_equals(*this, makeVariable<double>(value));
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
@@ -879,7 +876,7 @@ Variable &Variable::operator*=(const VariableConstProxy &other) & {
   return times_equals(*this, other);
 }
 Variable &Variable::operator*=(const double value) & {
-  auto other = makeVariable<double>({}, {value});
+  auto other = makeVariable<double>(value);
   other.setUnit(units::dimensionless);
   return times_equals(*this, other);
 }
@@ -901,7 +898,7 @@ Variable &Variable::operator/=(const VariableConstProxy &other) & {
   return divide_equals(*this, other);
 }
 Variable &Variable::operator/=(const double value) & {
-  return divide_equals(*this, makeVariable<double>({}, {value}));
+  return divide_equals(*this, makeVariable<double>(value));
 }
 
 template <class T> VariableProxy VariableProxy::assign(const T &other) const {
@@ -923,7 +920,7 @@ VariableProxy VariableProxy::operator+=(const VariableConstProxy &other) const {
   return plus_equals(*this, other);
 }
 VariableProxy VariableProxy::operator+=(const double value) const {
-  return plus_equals(*this, makeVariable<double>({}, {value}));
+  return plus_equals(*this, makeVariable<double>(value));
 }
 
 VariableProxy VariableProxy::operator-=(const Variable &other) const {
@@ -933,7 +930,7 @@ VariableProxy VariableProxy::operator-=(const VariableConstProxy &other) const {
   return minus_equals(*this, other);
 }
 VariableProxy VariableProxy::operator-=(const double value) const {
-  return minus_equals(*this, makeVariable<double>({}, {value}));
+  return minus_equals(*this, makeVariable<double>(value));
 }
 
 VariableProxy VariableProxy::operator*=(const Variable &other) const {
@@ -943,7 +940,7 @@ VariableProxy VariableProxy::operator*=(const VariableConstProxy &other) const {
   return times_equals(*this, other);
 }
 VariableProxy VariableProxy::operator*=(const double value) const {
-  return times_equals(*this, makeVariable<double>({}, {value}));
+  return times_equals(*this, makeVariable<double>(value));
 }
 
 VariableProxy VariableProxy::operator/=(const Variable &other) const {
@@ -953,7 +950,7 @@ VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
   return divide_equals(*this, other);
 }
 VariableProxy VariableProxy::operator/=(const double value) const {
-  return divide_equals(*this, makeVariable<double>({}, {value}));
+  return divide_equals(*this, makeVariable<double>(value));
 }
 
 bool VariableConstProxy::operator==(const Variable &other) const {
@@ -1167,7 +1164,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
     throw std::runtime_error(
         "Cannot concatenate Variables: Units do not match.");
 
-  if (a1.sparseDim() == dim && a2.sparseDim() == dim) {
+  if (a1.dims().sparseDim() == dim && a2.dims().sparseDim() == dim) {
     Variable out(a1);
     // TODO Sanitize transform_in_place implementation so the functor signature
     // is more reasonable.
@@ -1352,7 +1349,7 @@ Variable sum(const Variable &var, const Dim dim) {
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
-  return summed * makeVariable<double>({}, {scale});
+  return summed * makeVariable<double>(scale);
 }
 
 Variable abs(const Variable &var) {

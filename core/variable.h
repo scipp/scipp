@@ -256,11 +256,10 @@ public:
   Variable(const Variable &parent, VariableConceptHandle data);
 
   template <class T>
-  Variable(const units::Unit unit, const Dimensions &dimensions, T object,
-           const Dim sparseDim = Dim::Invalid);
+  Variable(const units::Unit unit, const Dimensions &dimensions, T object);
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
-           T variances, const Dim sparseDim = Dim::Invalid);
+           T variances);
   template <class T>
   Variable(const Dimensions &dimensions, std::initializer_list<T> values)
       : Variable(units::dimensionless, std::move(dimensions),
@@ -275,10 +274,7 @@ public:
   const Dimensions &dims() const & { return m_object->dims(); }
   void setDims(const Dimensions &dimensions);
 
-  DType dtype() const noexcept { return data().dtype(isSparse()); }
-
-  bool isSparse() const noexcept { return m_sparseDim != Dim::Invalid; }
-  Dim sparseDim() const { return m_sparseDim; }
+  DType dtype() const noexcept { return data().dtype(dims().isSparse()); }
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
@@ -371,24 +367,32 @@ private:
   // friend.
   Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
-  Dim m_sparseDim{Dim::Invalid};
   units::Unit m_unit;
   VariableConceptHandle m_object;
 };
 
 template <class T> Variable makeVariable(const Dimensions &dimensions) {
-  return Variable(units::dimensionless, std::move(dimensions),
-                  Vector<underlying_type_t<T>>(
-                      dimensions.volume(),
-                      detail::default_init<underlying_type_t<T>>::value()));
+  if (dimensions.isSparse())
+    if constexpr (std::is_same_v<T, double>) {
+      return Variable(
+          units::dimensionless, std::move(dimensions),
+          Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()));
+    } else {
+      // TODO Just for now, avoiding the need to instantiate Variable methods
+      // for all types also in the sparse case.
+      throw std::runtime_error("Unsupported dtype for sparse data.");
+    }
+  else
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<underlying_type_t<T>>(
+                        dimensions.volume(),
+                        detail::default_init<underlying_type_t<T>>::value()));
 }
 
 template <class T>
-Variable makeSparseVariable(const Dimensions &dimensions, const Dim sparseDim) {
-  return Variable(
-      units::dimensionless, std::move(dimensions),
-      Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()),
-      sparseDim);
+Variable makeVariable(const std::initializer_list<Dim> &dims,
+                      const std::initializer_list<scipp::index> &shape) {
+  return makeVariable<T>(Dimensions(dims, shape));
 }
 
 template <class T, class T2 = T>
@@ -396,6 +400,24 @@ Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
   return Variable(units::dimensionless, std::move(dimensions),
                   Vector<underlying_type_t<T>>(values.begin(), values.end()));
+}
+
+// This overload is required to avoid wrongly selecting the single-value
+// overload with two template arguments.
+// template <class T>
+// Variable makeVariable(const std::pair<Dim, scipp::index> &dims_init) {
+//  return makeVariable<T>(Dimensions(dims_init.first, dims_init.second));
+//}
+
+template <class T> Variable makeVariable(T value) {
+  return Variable(units::dimensionless, Dimensions{},
+                  Vector<underlying_type_t<T>>(1, value));
+}
+
+template <class T> Variable makeVariable(T value, T variance) {
+  return Variable(units::dimensionless, Dimensions{},
+                  Vector<underlying_type_t<T>>(1, value),
+                  Vector<underlying_type_t<T>>(1, variance));
 }
 
 template <class T, class T2 = T>
@@ -532,9 +554,6 @@ public:
     else
       return m_variable->dataHandle();
   }
-
-  bool isSparse() const noexcept { return m_variable->isSparse(); }
-  Dim sparseDim() const { return m_variable->sparseDim(); }
 
   bool hasVariances() const noexcept { return m_variable->hasVariances(); }
 

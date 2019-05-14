@@ -124,10 +124,10 @@ protected:
 };
 
 TEST_F(Variable_comparison_operators, values_0d) {
-  const auto base = makeVariable<double>({}, {1.1});
+  const auto base = makeVariable<double>(1.1);
   expect_eq(base, base);
-  expect_eq(base, makeVariable<double>({}, {1.1}));
-  expect_ne(base, makeVariable<double>({}, {1.2}));
+  expect_eq(base, makeVariable<double>(1.1));
+  expect_ne(base, makeVariable<double>(1.2));
 }
 
 TEST_F(Variable_comparison_operators, values_1d) {
@@ -146,11 +146,11 @@ TEST_F(Variable_comparison_operators, values_2d) {
 }
 
 TEST_F(Variable_comparison_operators, variances_0d) {
-  const auto base = makeVariable<double>({}, {1.1}, {0.1});
+  const auto base = makeVariable<double>(1.1, 0.1);
   expect_eq(base, base);
-  expect_eq(base, makeVariable<double>({}, {1.1}, {0.1}));
-  expect_ne(base, makeVariable<double>({}, {1.1}));
-  expect_ne(base, makeVariable<double>({}, {1.1}, {0.2}));
+  expect_eq(base, makeVariable<double>(1.1, 0.1));
+  expect_ne(base, makeVariable<double>(1.1));
+  expect_ne(base, makeVariable<double>(1.1, 0.2));
 }
 
 TEST_F(Variable_comparison_operators, variances_1d) {
@@ -173,7 +173,7 @@ TEST_F(Variable_comparison_operators, variances_2d) {
 }
 
 TEST_F(Variable_comparison_operators, dimension_mismatch) {
-  expect_ne(makeVariable<double>({}, {1.1}),
+  expect_ne(makeVariable<double>(1.1),
             makeVariable<double>({Dim::X, 1}, {1.1}));
   expect_ne(makeVariable<double>({Dim::X, 1}, {1.1}),
             makeVariable<double>({Dim::Y, 1}, {1.1}));
@@ -197,8 +197,8 @@ TEST_F(Variable_comparison_operators, unit) {
 }
 
 TEST_F(Variable_comparison_operators, dtype) {
-  const auto base = makeVariable<double>({}, {1.0});
-  expect_ne(base, makeVariable<float>({}, {1.0}));
+  const auto base = makeVariable<double>(1.0);
+  expect_ne(base, makeVariable<float>(1.0));
 }
 
 TEST(VariableTest, copy_and_move) {
@@ -637,16 +637,17 @@ TEST(Variable, access_typed_view_edges) {
 }
 
 TEST(SparseVariable, create) {
-  const auto var = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
-  EXPECT_TRUE(var.isSparse());
-  EXPECT_EQ(var.sparseDim(), Dim::X);
+  const auto var = makeVariable<double>({Dim::Y, Dim::X}, {2});
+  EXPECT_TRUE(var.dims().isSparse());
+  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
   // Should we return the full volume here, i.e., accumulate the extents of all
   // the sparse subdata?
   EXPECT_EQ(var.dims().volume(), 2);
 }
 
 TEST(SparseVariable, dtype) {
-  const auto var = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  const auto var =
+      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   // It is not clear that this is the best way of handling things.
   // Variable::dtype() makes sense like this, but it is not so clear for
   // VariableConcept::dtype().
@@ -655,19 +656,22 @@ TEST(SparseVariable, dtype) {
 }
 
 TEST(SparseVariable, non_sparse_access_fail) {
-  const auto var = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  const auto var =
+      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   ASSERT_THROW(var.values<double>(), except::TypeError);
   ASSERT_THROW(var.values<double>(), except::TypeError);
 }
 
 TEST(SparseVariable, DISABLED_low_level_access) {
-  const auto var = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  const auto var =
+      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   // Need to decide whether we allow this direct access or not.
   ASSERT_THROW((var.values<sparse_container<double>>()), except::TypeError);
 }
 
 TEST(SparseVariable, access) {
-  const auto var = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  const auto var =
+      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   ASSERT_NO_THROW(var.sparseSpan<double>());
   auto data = var.sparseSpan<double>();
   ASSERT_EQ(data.size(), 2);
@@ -676,21 +680,21 @@ TEST(SparseVariable, access) {
 }
 
 TEST(SparseVariable, resize_sparse) {
-  auto var = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto data = var.sparseSpan<double>();
   data[1] = {1, 2, 3};
 }
 
 TEST(SparseVariable, comparison) {
-  auto a = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto a_ = a.sparseSpan<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
-  auto b = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto b = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto b_ = b.sparseSpan<double>();
   b_[0] = {1, 2, 3};
   b_[1] = {1, 2};
-  auto c = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto c = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto c_ = c.sparseSpan<double>();
   c_[0] = {1, 3};
   c_[1] = {};
@@ -704,7 +708,7 @@ TEST(SparseVariable, comparison) {
 }
 
 TEST(SparseVariable, copy) {
-  auto a = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto a_ = a.sparseSpan<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
@@ -714,7 +718,7 @@ TEST(SparseVariable, copy) {
 }
 
 TEST(SparseVariable, move) {
-  auto a = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto a_ = a.sparseSpan<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
@@ -725,27 +729,29 @@ TEST(SparseVariable, move) {
 }
 
 TEST(SparseVariable, concatenate) {
-  const auto a = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
-  const auto b = makeSparseVariable<double>({Dim::Y, 3}, Dim::X);
+  const auto a =
+      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  const auto b =
+      makeVariable<double>({Dim::Y, Dim::X}, {3, Dimensions::Sparse});
   auto var = concatenate(a, b, Dim::Y);
-  EXPECT_TRUE(var.isSparse());
-  EXPECT_EQ(var.sparseDim(), Dim::X);
+  EXPECT_TRUE(var.dims().isSparse());
+  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
   EXPECT_EQ(var.dims().volume(), 5);
 }
 
 TEST(SparseVariable, concatenate_along_sparse_dimension) {
-  auto a = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto a_ = a.sparseSpan<double>();
   a_[0] = {1, 2, 3};
   a_[1] = {1, 2};
-  auto b = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto b = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto b_ = b.sparseSpan<double>();
   b_[0] = {1, 3};
   b_[1] = {};
 
   auto var = concatenate(a, b, Dim::X);
-  EXPECT_TRUE(var.isSparse());
-  EXPECT_EQ(var.sparseDim(), Dim::X);
+  EXPECT_TRUE(var.dims().isSparse());
+  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
   EXPECT_EQ(var.dims().volume(), 2);
   auto data = var.sparseSpan<double>();
   EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
@@ -753,15 +759,15 @@ TEST(SparseVariable, concatenate_along_sparse_dimension) {
 }
 
 TEST(SparseVariable, slice) {
-  auto var = makeSparseVariable<double>({Dim::Y, 4}, Dim::X);
+  auto var = makeVariable<double>({Dim::Y, Dim::X}, {4, Dimensions::Sparse});
   auto data = var.sparseSpan<double>();
   data[0] = {1, 2, 3};
   data[1] = {1, 2};
   data[2] = {1};
   data[3] = {};
   auto slice = var(Dim::Y, 1, 3);
-  EXPECT_TRUE(slice.isSparse());
-  EXPECT_EQ(slice.sparseDim(), Dim::X);
+  EXPECT_TRUE(slice.dims().isSparse());
+  EXPECT_EQ(slice.dims().sparseDim(), Dim::X);
   EXPECT_EQ(slice.dims().volume(), 2);
   auto slice_data = slice.sparseSpan<double>();
   EXPECT_TRUE(equals(slice_data[0], {1, 2}));
@@ -769,7 +775,7 @@ TEST(SparseVariable, slice) {
 }
 
 TEST(SparseVariable, operator_plus) {
-  auto sparse = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto sparse_ = sparse.sparseSpan<double>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};
@@ -782,19 +788,19 @@ TEST(SparseVariable, operator_plus) {
 }
 
 TEST(VariableTest, create_with_variance) {
-  ASSERT_NO_THROW(makeVariable<double>({}, {1.0}, {0.1}));
+  ASSERT_NO_THROW(makeVariable<double>(1.0, 0.1));
   ASSERT_NO_THROW(makeVariable<double>({}, units::m, {1.0}, {0.1}));
 }
 
 TEST(VariableTest, hasVariances) {
   ASSERT_FALSE(makeVariable<double>({}).hasVariances());
-  ASSERT_FALSE(makeVariable<double>({}, {1.0}).hasVariances());
-  ASSERT_TRUE(makeVariable<double>({}, {1.0}, {0.1}).hasVariances());
+  ASSERT_FALSE(makeVariable<double>(1.0).hasVariances());
+  ASSERT_TRUE(makeVariable<double>(1.0, 0.1).hasVariances());
   ASSERT_TRUE(makeVariable<double>({}, units::m, {1.0}, {0.1}).hasVariances());
 }
 
 TEST(VariableTest, values_variances) {
-  const auto var = makeVariable<double>({}, {1.0}, {0.1});
+  const auto var = makeVariable<double>(1.0, 0.1);
   ASSERT_NO_THROW(var.values<double>());
   ASSERT_NO_THROW(var.variances<double>());
   ASSERT_TRUE(equals(var.values<double>(), {1.0}));

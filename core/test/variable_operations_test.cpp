@@ -40,7 +40,7 @@ TEST(Variable, operator_plus_equal) {
 TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
 
-  auto fewer_dimensions = makeVariable<double>({}, {1.0});
+  auto fewer_dimensions = makeVariable<double>(1.0);
 
   ASSERT_NO_THROW(a += fewer_dimensions);
   EXPECT_EQ(a.values<double>()[0], 2.1);
@@ -145,7 +145,7 @@ TEST(Variable, operator_times_can_broadcast) {
 
 TEST(Variable, operator_divide_equal) {
   auto a = makeVariable<double>({Dim::X, 2}, {2.0, 3.0});
-  auto b = makeVariable<double>({}, {2.0});
+  auto b = makeVariable<double>(2.0);
   b.setUnit(units::m);
 
   EXPECT_NO_THROW(a /= b);

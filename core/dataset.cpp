@@ -190,14 +190,16 @@ void Dataset::setData(const std::string &name, Variable data) {
 /// Sparse coordinates can exist even without corresponding data.
 void Dataset::setSparseCoord(const std::string &name, Variable coord) {
   setDims(coord.dims());
-  if (!coord.isSparse())
+  if (!coord.dims().isSparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseCoord does "
                              "not contain sparse data.");
   if (m_data.count(name)) {
     const auto &data = m_data.at(name);
-    if ((data.data && (data.data->sparseDim() != coord.sparseDim())) ||
+    if ((data.data &&
+         (data.data->dims().sparseDim() != coord.dims().sparseDim())) ||
         (!data.labels.empty() &&
-         (data.labels.begin()->second.sparseDim() != coord.sparseDim())))
+         (data.labels.begin()->second.dims().sparseDim() !=
+          coord.dims().sparseDim())))
       throw std::runtime_error("Cannot set sparse coordinate if values or "
                                "variances are not sparse.");
   }
@@ -208,13 +210,15 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
 void Dataset::setSparseLabels(const std::string &name,
                               const std::string &labelName, Variable labels) {
   setDims(labels.dims());
-  if (!labels.isSparse())
+  if (!labels.dims().isSparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseLabels does "
                              "not contain sparse data.");
   if (m_data.count(name)) {
     const auto &data = m_data.at(name);
-    if ((data.data && (data.data->sparseDim() != labels.sparseDim())) ||
-        (data.coord && (data.coord->sparseDim() != labels.sparseDim())))
+    if ((data.data &&
+         (data.data->dims().sparseDim() != labels.dims().sparseDim())) ||
+        (data.coord &&
+         (data.coord->dims().sparseDim() != labels.dims().sparseDim())))
       throw std::runtime_error("Cannot set sparse labels if values or "
                                "variances are not sparse.");
   }
@@ -275,16 +279,16 @@ bool DataConstProxy::isSparse() const noexcept {
   if (m_data->coord)
     return true;
   if (hasData())
-    return data().isSparse();
+    return data().dims().isSparse();
   return false;
 }
 
 /// Return the label of the sparse dimension, Dim::Invalid if there is none.
 Dim DataConstProxy::sparseDim() const noexcept {
   if (m_data->coord)
-    return m_data->coord->sparseDim();
+    return m_data->coord->dims().sparseDim();
   if (hasData())
-    return data().sparseDim();
+    return data().dims().sparseDim();
   return Dim::Invalid;
 }
 

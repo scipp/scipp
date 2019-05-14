@@ -128,3 +128,43 @@ TEST(Dimensions, isContiguousIn) {
   EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::X, 4}}).isContiguousIn(parent));
   EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}}).isContiguousIn(parent));
 }
+
+TEST(DimensionsTest, isSparse) {
+  Dimensions denseXY({Dim::X, Dim::Y}, {2, 3});
+  Dimensions denseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
+  Dimensions sparseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3});
+
+  EXPECT_FALSE(denseXY.isSparse());
+  EXPECT_FALSE(denseXYZ.isSparse());
+  EXPECT_TRUE(sparseXYZ.isSparse());
+}
+
+class DimensionsTest_comparison_operators : public ::testing::Test {
+protected:
+  void expect_eq(const Dimensions &a, const Dimensions &b) const {
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(b == a);
+    EXPECT_FALSE(a != b);
+    EXPECT_FALSE(b != a);
+  }
+  void expect_ne(const Dimensions &a, const Dimensions &b) const {
+    EXPECT_TRUE(a != b);
+    EXPECT_TRUE(b != a);
+    EXPECT_FALSE(a == b);
+    EXPECT_FALSE(b == a);
+  }
+};
+
+TEST_F(DimensionsTest_comparison_operators, sparse) {
+  Dimensions dense_xy({Dim::X, Dim::Y}, {2, 3});
+  Dimensions dense_xyz({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
+  Dimensions sparse_xyz({Dim::X, Dim::Y, Dim::Z}, {2, 3});
+  Dimensions sparse_yxz({Dim::Y, Dim::X, Dim::Z}, {2, 3});
+  Dimensions sparse_xyr({Dim::X, Dim::Y, Dim::Row}, {2, 3});
+
+  expect_eq(sparse_xyz, sparse_xyz);
+  expect_ne(sparse_xyz, sparse_yxz);
+  expect_ne(sparse_xyz, sparse_xyr);
+  expect_ne(sparse_xyz, dense_xy);
+  expect_ne(sparse_xyz, dense_xyz);
+}

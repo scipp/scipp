@@ -36,7 +36,7 @@ TEST(Variable, apply_unary) {
 
 TEST(Variable, apply_binary_in_place) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
-  const auto b = makeVariable<double>({}, {3.3});
+  const auto b = makeVariable<double>(3.3);
   transform_in_place<pair_self_t<double>>(
       b, a, [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.values<double>(), {4.4, 5.5}));
@@ -52,7 +52,7 @@ TEST(Variable, apply_binary_in_place_var_with_view) {
 
 TEST(Variable, apply_binary_in_place_view_with_var) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
-  const auto b = makeVariable<double>({}, {3.3});
+  const auto b = makeVariable<double>(3.3);
   transform_in_place<pair_self_t<double>>(
       b, a(Dim::X, 1), [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.values<double>(), {1.1, 5.5}));
@@ -69,7 +69,7 @@ TEST(Variable, apply_binary_in_place_view_with_view) {
 
 TEST(VariableTest, transform_combines_uncertainty_propgation) {
   auto a = makeVariable<double>({Dim::X, 1}, {2.0}, {0.1});
-  const auto b = makeVariable<double>({}, {3.0}, {0.2});
+  const auto b = makeVariable<double>(3.0, 0.2);
   transform_in_place<pair_self_t<double>>(
       b, a, [](const auto x, const auto y) { return x * y + y; });
   EXPECT_TRUE(equals(a.values<double>(), {2.0 * 3.0 + 3.0}));
@@ -77,7 +77,7 @@ TEST(VariableTest, transform_combines_uncertainty_propgation) {
 }
 
 TEST(SparseVariable, unary) {
-  auto a = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto a_ = a.sparseSpan<double>();
   a_[0] = {1, 4, 9};
   a_[1] = {4};
@@ -89,7 +89,7 @@ TEST(SparseVariable, unary) {
 }
 
 TEST(SparseVariable, DISABLED_unary_on_sparse_container) {
-  auto a = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto a_ = a.sparseSpan<double>();
   a_[0] = {1, 4, 9};
   a_[1] = {4};
@@ -108,7 +108,7 @@ TEST(SparseVariable, DISABLED_unary_on_sparse_container) {
 }
 
 TEST(SparseVariable, binary_with_dense) {
-  auto sparse = makeSparseVariable<double>({Dim::Y, 2}, Dim::X);
+  auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto sparse_ = sparse.sparseSpan<double>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};

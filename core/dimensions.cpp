@@ -12,6 +12,8 @@
 namespace scipp::core {
 
 scipp::index Dimensions::operator[](const Dim dim) const {
+  if (dim == sparseDim())
+    throw std::runtime_error("Sparse dimension extent is undefined.");
   for (int32_t i = 0; i < 6; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
@@ -19,6 +21,8 @@ scipp::index Dimensions::operator[](const Dim dim) const {
 }
 
 scipp::index &Dimensions::operator[](const Dim dim) {
+  if (dim == sparseDim())
+    throw std::runtime_error("Sparse dimension extent is undefined.");
   for (int32_t i = 0; i < 6; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
@@ -103,12 +107,18 @@ void Dimensions::erase(const Dim label) {
   m_dims[m_ndim] = Dim::Invalid;
 }
 
+void expectNotSparseExtent(const scipp::index size) {
+  if (size == Dimensions::Sparse)
+    throw except::DimensionError("Expected non-sparse dimension extent.");
+}
+
 /// Add a new dimension, which will be the outermost dimension.
 void Dimensions::add(const Dim label, const scipp::index size) {
   if (contains(label))
     throw std::runtime_error("Duplicate dimension.");
   if (m_ndim == 6)
     throw std::runtime_error("More than 6 dimensions are not supported.");
+  expectNotSparseExtent(size);
   for (int32_t i = m_ndim - 1; i >= 0; --i) {
     m_shape[i + 1] = m_shape[i];
     m_dims[i + 1] = m_dims[i];
@@ -120,8 +130,10 @@ void Dimensions::add(const Dim label, const scipp::index size) {
 
 /// Add a new dimension, which will be the innermost dimension.
 void Dimensions::addInner(const Dim label, const scipp::index size) {
+  expect::notSparse(*this);
   if (label == Dim::Invalid)
     throw std::runtime_error("Dim::Invalid is not a valid dimension.");
+  expectNotSparseExtent(size);
   if (size < 0)
     throw std::runtime_error("Dimension extent cannot be negative.");
   if (contains(label))
@@ -131,6 +143,16 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
   m_shape[m_ndim] = size;
   m_dims[m_ndim] = label;
   ++m_ndim;
+}
+
+/// Add a sparse dimension, which will be the innermost dimension.
+void Dimensions::addSparse(const Dim label) {
+  expect::notSparse(*this);
+  if (label == Dim::Invalid)
+    throw std::runtime_error("Dim::Invalid is not a valid dimension.");
+  if (contains(label))
+    throw std::runtime_error("Duplicate dimension.");
+  m_dims[m_ndim] = label;
 }
 
 Dim Dimensions::inner() const {
