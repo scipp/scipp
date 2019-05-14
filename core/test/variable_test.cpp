@@ -105,14 +105,14 @@ private:
 
 protected:
   void expect_eq(const Variable &a, const Variable &b) const {
-    expect_eq_impl(a, ConstVariableSlice(b));
-    expect_eq_impl(ConstVariableSlice(a), b);
-    expect_eq_impl(ConstVariableSlice(a), ConstVariableSlice(b));
+    expect_eq_impl(a, VariableConstProxy(b));
+    expect_eq_impl(VariableConstProxy(a), b);
+    expect_eq_impl(VariableConstProxy(a), VariableConstProxy(b));
   }
   void expect_ne(const Variable &a, const Variable &b) const {
-    expect_ne_impl(a, ConstVariableSlice(b));
-    expect_ne_impl(ConstVariableSlice(a), b);
-    expect_ne_impl(ConstVariableSlice(a), ConstVariableSlice(b));
+    expect_ne_impl(a, VariableConstProxy(b));
+    expect_ne_impl(VariableConstProxy(a), b);
+    expect_ne_impl(VariableConstProxy(a), VariableConstProxy(b));
   }
 };
 
@@ -203,7 +203,7 @@ TEST(Variable, copy_and_move) {
   const auto copy(var);
   EXPECT_EQ(copy, reference);
 
-  const Variable copy_via_slice{ConstVariableSlice(var)};
+  const Variable copy_via_slice{VariableConstProxy(var)};
   EXPECT_EQ(copy_via_slice, reference);
 
   const auto moved(std::move(var));
@@ -219,7 +219,7 @@ TEST(Variable, operator_unary_minus) {
   EXPECT_EQ(b.values<double>()[1], -2.2);
 }
 
-TEST(VariableSlice, unary_minus) {
+TEST(VariableProxy, unary_minus) {
   const auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   auto b = -a(Dim::X, 1);
   EXPECT_EQ(a.values<double>()[0], 1.1);
@@ -708,20 +708,20 @@ TEST(Variable, broadcast_fail) {
                    "got Dim::X with mismatching length 3.");
 }
 
-TEST(VariableSlice, full_const_view) {
+TEST(VariableProxy, full_const_view) {
   const auto var = makeVariable<double>({{Dim::X, 3}});
-  ConstVariableSlice view(var);
+  VariableConstProxy view(var);
   EXPECT_EQ(var.values<double>().data(), view.values<double>().data());
 }
 
-TEST(VariableSlice, full_mutable_view) {
+TEST(VariableProxy, full_mutable_view) {
   auto var = makeVariable<double>({{Dim::X, 3}});
-  VariableSlice view(var);
+  VariableProxy view(var);
   EXPECT_EQ(var.values<double>().data(), view.values<double>().data());
   EXPECT_EQ(var.values<double>().data(), view.values<double>().data());
 }
 
-TEST(VariableSlice, strides) {
+TEST(VariableProxy, strides) {
   auto var = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
   EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<scipp::index>{3}));
   EXPECT_EQ(var(Dim::X, 1).strides(), (std::vector<scipp::index>{3}));
@@ -744,19 +744,19 @@ TEST(VariableSlice, strides) {
             (std::vector<scipp::index>{6, 2, 1}));
 }
 
-TEST(VariableSlice, get) {
+TEST(VariableProxy, get) {
   const auto var = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
   EXPECT_EQ(var(Dim::X, 1, 2).values<double>()[0], 2.0);
 }
 
-TEST(VariableSlice, slicing_does_not_transpose) {
+TEST(VariableProxy, slicing_does_not_transpose) {
   auto var = makeVariable<double>({{Dim::X, 3}, {Dim::Y, 3}});
   Dimensions expected{{Dim::X, 1}, {Dim::Y, 1}};
   EXPECT_EQ(var(Dim::X, 1, 2)(Dim::Y, 1, 2).dims(), expected);
   EXPECT_EQ(var(Dim::Y, 1, 2)(Dim::X, 1, 2).dims(), expected);
 }
 
-TEST(VariableSlice, minus_equals_failures) {
+TEST(VariableProxy, minus_equals_failures) {
   auto var =
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}}, {1.0, 2.0, 3.0, 4.0});
 
@@ -765,7 +765,7 @@ TEST(VariableSlice, minus_equals_failures) {
                    "1}, {Dim::Y, 2}}.");
 }
 
-TEST(VariableSlice, self_overlapping_view_operation) {
+TEST(VariableProxy, self_overlapping_view_operation) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
@@ -780,7 +780,7 @@ TEST(VariableSlice, self_overlapping_view_operation) {
   EXPECT_EQ(data[3], 2.0);
 }
 
-TEST(VariableSlice, minus_equals_slice_const_outer) {
+TEST(VariableProxy, minus_equals_slice_const_outer) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   const auto copy(var);
@@ -798,7 +798,7 @@ TEST(VariableSlice, minus_equals_slice_const_outer) {
   EXPECT_EQ(data[3], -2.0);
 }
 
-TEST(VariableSlice, minus_equals_slice_outer) {
+TEST(VariableProxy, minus_equals_slice_outer) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   auto copy(var);
@@ -816,7 +816,7 @@ TEST(VariableSlice, minus_equals_slice_outer) {
   EXPECT_EQ(data[3], -2.0);
 }
 
-TEST(VariableSlice, minus_equals_slice_inner) {
+TEST(VariableProxy, minus_equals_slice_inner) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   auto copy(var);
@@ -834,7 +834,7 @@ TEST(VariableSlice, minus_equals_slice_inner) {
   EXPECT_EQ(data[3], -3.0);
 }
 
-TEST(VariableSlice, minus_equals_slice_of_slice) {
+TEST(VariableProxy, minus_equals_slice_of_slice) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   auto copy(var);
@@ -847,7 +847,7 @@ TEST(VariableSlice, minus_equals_slice_of_slice) {
   EXPECT_EQ(data[3], 0.0);
 }
 
-TEST(VariableSlice, minus_equals_nontrivial_slices) {
+TEST(VariableProxy, minus_equals_nontrivial_slices) {
   auto source = makeVariable<double>(
       {{Dim::Y, 3}, {Dim::X, 3}},
       {11.0, 12.0, 13.0, 21.0, 22.0, 23.0, 31.0, 32.0, 33.0});
@@ -889,7 +889,7 @@ TEST(VariableSlice, minus_equals_nontrivial_slices) {
   }
 }
 
-TEST(VariableSlice, slice_inner_minus_equals) {
+TEST(VariableProxy, slice_inner_minus_equals) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
@@ -901,7 +901,7 @@ TEST(VariableSlice, slice_inner_minus_equals) {
   EXPECT_EQ(data[3], 4.0);
 }
 
-TEST(VariableSlice, slice_outer_minus_equals) {
+TEST(VariableProxy, slice_outer_minus_equals) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
@@ -913,7 +913,7 @@ TEST(VariableSlice, slice_outer_minus_equals) {
   EXPECT_EQ(data[3], 4.0);
 }
 
-TEST(VariableSlice, nontrivial_slice_minus_equals) {
+TEST(VariableProxy, nontrivial_slice_minus_equals) {
   {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
@@ -980,7 +980,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals) {
   }
 }
 
-TEST(VariableSlice, nontrivial_slice_minus_equals_slice) {
+TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
   {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
@@ -1047,7 +1047,7 @@ TEST(VariableSlice, nontrivial_slice_minus_equals_slice) {
   }
 }
 
-TEST(VariableSlice, slice_minus_lower_dimensional) {
+TEST(VariableProxy, slice_minus_lower_dimensional) {
   auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
   auto source = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
   EXPECT_EQ(target(Dim::Y, 1, 2).dims(),
@@ -1062,7 +1062,7 @@ TEST(VariableSlice, slice_minus_lower_dimensional) {
   EXPECT_EQ(data[3], -2.0);
 }
 
-TEST(VariableSlice, variable_copy_from_slice) {
+TEST(VariableProxy, variable_copy_from_slice) {
   const auto source = makeVariable<double>(
       {{Dim::Y, 3}, {Dim::X, 3}}, {11, 12, 13, 21, 22, 23, 31, 32, 33});
 
@@ -1083,7 +1083,7 @@ TEST(VariableSlice, variable_copy_from_slice) {
   EXPECT_TRUE(equals(target4.values<double>(), {22, 23, 32, 33}));
 }
 
-TEST(VariableSlice, variable_assign_from_slice) {
+TEST(VariableProxy, variable_assign_from_slice) {
   auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
   const auto source = makeVariable<double>(
       {{Dim::Y, 3}, {Dim::X, 3}}, {11, 12, 13, 21, 22, 23, 31, 32, 33});
@@ -1105,7 +1105,7 @@ TEST(VariableSlice, variable_assign_from_slice) {
   EXPECT_TRUE(equals(target.values<double>(), {22, 23, 32, 33}));
 }
 
-TEST(VariableSlice, variable_self_assign_via_slice) {
+TEST(VariableProxy, variable_self_assign_via_slice) {
   auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}},
                                      {11, 12, 13, 21, 22, 23, 31, 32, 33});
 
@@ -1116,7 +1116,7 @@ TEST(VariableSlice, variable_self_assign_via_slice) {
   EXPECT_TRUE(equals(target.values<double>(), {22, 23, 32, 33}));
 }
 
-TEST(VariableSlice, slice_assign_from_variable) {
+TEST(VariableProxy, slice_assign_from_variable) {
   const auto source =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {11, 12, 21, 22});
 
@@ -1152,7 +1152,7 @@ TEST(VariableSlice, slice_assign_from_variable) {
   }
 }
 
-TEST(VariableSlice, slice_binary_operations) {
+TEST(VariableProxy, slice_binary_operations) {
   auto v = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
   // Note: There does not seem to be a way to test whether this is using the
   // operators that convert the second argument to Variable (it should not), or
@@ -1192,7 +1192,7 @@ TEST(Variable, reshape_temporary) {
 
   // This is not a temporary, we get a view into `var`.
   EXPECT_EQ(typeid(decltype(std::move(var).reshape({}))),
-            typeid(ConstVariableSlice));
+            typeid(VariableConstProxy));
 }
 
 TEST(Variable, reshape_fail) {
@@ -1307,7 +1307,7 @@ TEST(Variable, non_in_place_scalar_operations) {
   EXPECT_TRUE(equals(ratio.values<double>(), {3.0, 1.5}));
 }
 
-TEST(VariableSlice, scalar_operations) {
+TEST(VariableProxy, scalar_operations) {
   auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
                                   {11, 12, 13, 21, 22, 23});
 

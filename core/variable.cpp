@@ -654,7 +654,7 @@ public:
   std::optional<T> m_variances;
 };
 
-Variable::Variable(const ConstVariableSlice &slice)
+Variable::Variable(const VariableConstProxy &slice)
     : Variable(*slice.m_variable) {
   if (slice.m_view) {
     setUnit(slice.unit());
@@ -668,7 +668,7 @@ Variable::Variable(const ConstVariableSlice &slice)
 Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_unit(parent.unit()), m_object(parent.m_object->clone(dims)) {}
 
-Variable::Variable(const ConstVariableSlice &parent, const Dimensions &dims)
+Variable::Variable(const VariableConstProxy &parent, const Dimensions &dims)
     : m_unit(parent.unit()), m_object(parent.data().clone(dims)) {}
 
 Variable::Variable(const Variable &parent, VariableConceptHandle data)
@@ -767,7 +767,7 @@ bool Variable::operator==(const Variable &other) const {
   return equals(*this, other);
 }
 
-bool Variable::operator==(const ConstVariableSlice &other) const {
+bool Variable::operator==(const VariableConstProxy &other) const {
   return equals(*this, other);
 }
 
@@ -775,7 +775,7 @@ bool Variable::operator!=(const Variable &other) const {
   return !(*this == other);
 }
 
-bool Variable::operator!=(const ConstVariableSlice &other) const {
+bool Variable::operator!=(const VariableConstProxy &other) const {
   return !(*this == other);
 }
 
@@ -805,7 +805,7 @@ Variable Variable::operator-() const {
 Variable &Variable::operator+=(const Variable &other) & {
   return plus_equals(*this, other);
 }
-Variable &Variable::operator+=(const ConstVariableSlice &other) & {
+Variable &Variable::operator+=(const VariableConstProxy &other) & {
   return plus_equals(*this, other);
 }
 Variable &Variable::operator+=(const double value) & {
@@ -826,7 +826,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
 Variable &Variable::operator-=(const Variable &other) & {
   return minus_equals(*this, other);
 }
-Variable &Variable::operator-=(const ConstVariableSlice &other) & {
+Variable &Variable::operator-=(const VariableConstProxy &other) & {
   return minus_equals(*this, other);
 }
 Variable &Variable::operator-=(const double value) & {
@@ -846,7 +846,7 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
 Variable &Variable::operator*=(const Variable &other) & {
   return times_equals(*this, other);
 }
-Variable &Variable::operator*=(const ConstVariableSlice &other) & {
+Variable &Variable::operator*=(const VariableConstProxy &other) & {
   return times_equals(*this, other);
 }
 Variable &Variable::operator*=(const double value) & {
@@ -868,14 +868,14 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
 Variable &Variable::operator/=(const Variable &other) & {
   return divide_equals(*this, other);
 }
-Variable &Variable::operator/=(const ConstVariableSlice &other) & {
+Variable &Variable::operator/=(const VariableConstProxy &other) & {
   return divide_equals(*this, other);
 }
 Variable &Variable::operator/=(const double value) & {
   return divide_equals(*this, makeVariable<double>({}, {value}));
 }
 
-template <class T> VariableSlice VariableSlice::assign(const T &other) const {
+template <class T> VariableProxy VariableProxy::assign(const T &other) const {
   if (unit() != other.unit())
     throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
   if (dims() != other.dims())
@@ -884,71 +884,71 @@ template <class T> VariableSlice VariableSlice::assign(const T &other) const {
   return *this;
 }
 
-template VariableSlice VariableSlice::assign(const Variable &) const;
-template VariableSlice VariableSlice::assign(const ConstVariableSlice &) const;
+template VariableProxy VariableProxy::assign(const Variable &) const;
+template VariableProxy VariableProxy::assign(const VariableConstProxy &) const;
 
-VariableSlice VariableSlice::operator+=(const Variable &other) const {
+VariableProxy VariableProxy::operator+=(const Variable &other) const {
   return plus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator+=(const ConstVariableSlice &other) const {
+VariableProxy VariableProxy::operator+=(const VariableConstProxy &other) const {
   return plus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator+=(const double value) const {
+VariableProxy VariableProxy::operator+=(const double value) const {
   return plus_equals(*this, makeVariable<double>({}, {value}));
 }
 
-VariableSlice VariableSlice::operator-=(const Variable &other) const {
+VariableProxy VariableProxy::operator-=(const Variable &other) const {
   return minus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator-=(const ConstVariableSlice &other) const {
+VariableProxy VariableProxy::operator-=(const VariableConstProxy &other) const {
   return minus_equals(*this, other);
 }
-VariableSlice VariableSlice::operator-=(const double value) const {
+VariableProxy VariableProxy::operator-=(const double value) const {
   return minus_equals(*this, makeVariable<double>({}, {value}));
 }
 
-VariableSlice VariableSlice::operator*=(const Variable &other) const {
+VariableProxy VariableProxy::operator*=(const Variable &other) const {
   return times_equals(*this, other);
 }
-VariableSlice VariableSlice::operator*=(const ConstVariableSlice &other) const {
+VariableProxy VariableProxy::operator*=(const VariableConstProxy &other) const {
   return times_equals(*this, other);
 }
-VariableSlice VariableSlice::operator*=(const double value) const {
+VariableProxy VariableProxy::operator*=(const double value) const {
   return times_equals(*this, makeVariable<double>({}, {value}));
 }
 
-VariableSlice VariableSlice::operator/=(const Variable &other) const {
+VariableProxy VariableProxy::operator/=(const Variable &other) const {
   return divide_equals(*this, other);
 }
-VariableSlice VariableSlice::operator/=(const ConstVariableSlice &other) const {
+VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
   return divide_equals(*this, other);
 }
-VariableSlice VariableSlice::operator/=(const double value) const {
+VariableProxy VariableProxy::operator/=(const double value) const {
   return divide_equals(*this, makeVariable<double>({}, {value}));
 }
 
-bool ConstVariableSlice::operator==(const Variable &other) const {
+bool VariableConstProxy::operator==(const Variable &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
   return equals(*this, other);
 }
-bool ConstVariableSlice::operator==(const ConstVariableSlice &other) const {
+bool VariableConstProxy::operator==(const VariableConstProxy &other) const {
   return equals(*this, other);
 }
 
-bool ConstVariableSlice::operator!=(const Variable &other) const {
+bool VariableConstProxy::operator!=(const Variable &other) const {
   return !(*this == other);
 }
-bool ConstVariableSlice::operator!=(const ConstVariableSlice &other) const {
+bool VariableConstProxy::operator!=(const VariableConstProxy &other) const {
   return !(*this == other);
 }
 
-Variable ConstVariableSlice::operator-() const {
+Variable VariableConstProxy::operator-() const {
   Variable copy(*this);
   return -copy;
 }
 
-void VariableSlice::setUnit(const units::Unit &unit) const {
+void VariableProxy::setUnit(const units::Unit &unit) const {
   // TODO Should we forbid setting the unit altogether? I think it is useful in
   // particular since views onto subsets of dataset do not imply slicing of
   // variables but return slice views.
@@ -960,7 +960,7 @@ void VariableSlice::setUnit(const units::Unit &unit) const {
 
 template <class T>
 const VariableView<const underlying_type_t<T>>
-ConstVariableSlice::cast() const {
+VariableConstProxy::cast() const {
   using TT = underlying_type_t<T>;
   if (!m_view)
     return requireT<const DataModel<Vector<TT>>>(data()).valuesView(dims());
@@ -972,7 +972,7 @@ ConstVariableSlice::cast() const {
 
 template <class T>
 const VariableView<const underlying_type_t<T>>
-ConstVariableSlice::castVariances() const {
+VariableConstProxy::castVariances() const {
   using TT = underlying_type_t<T>;
   if (!m_view)
     return requireT<const DataModel<Vector<TT>>>(data()).variancesView(dims());
@@ -985,7 +985,7 @@ ConstVariableSlice::castVariances() const {
 }
 
 template <class T>
-VariableView<underlying_type_t<T>> VariableSlice::cast() const {
+VariableView<underlying_type_t<T>> VariableProxy::cast() const {
   using TT = underlying_type_t<T>;
   if (m_view)
     return requireT<const ViewModel<VariableView<TT>>>(data()).m_model;
@@ -993,7 +993,7 @@ VariableView<underlying_type_t<T>> VariableSlice::cast() const {
 }
 
 template <class T>
-VariableView<underlying_type_t<T>> VariableSlice::castVariances() const {
+VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   using TT = underlying_type_t<T>;
   if (m_view)
     return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
@@ -1002,13 +1002,13 @@ VariableView<underlying_type_t<T>> VariableSlice::castVariances() const {
 
 #define INSTANTIATE_SLICEVIEW(...)                                             \
   template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
-  ConstVariableSlice::cast<__VA_ARGS__>() const;                               \
+  VariableConstProxy::cast<__VA_ARGS__>() const;                               \
   template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
-  ConstVariableSlice::castVariances<__VA_ARGS__>() const;                      \
+  VariableConstProxy::castVariances<__VA_ARGS__>() const;                      \
   template VariableView<underlying_type_t<__VA_ARGS__>>                        \
-  VariableSlice::cast<__VA_ARGS__>() const;                                    \
+  VariableProxy::cast<__VA_ARGS__>() const;                                    \
   template VariableView<underlying_type_t<__VA_ARGS__>>                        \
-  VariableSlice::castVariances<__VA_ARGS__>() const;
+  VariableProxy::castVariances<__VA_ARGS__>() const;
 
 INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(float);
@@ -1021,7 +1021,7 @@ INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
 INSTANTIATE_SLICEVIEW(Dataset);
 INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
 
-ConstVariableSlice Variable::slice(const Slice slice) const & {
+VariableConstProxy Variable::slice(const Slice slice) const & {
   return {*this, slice.dim, slice.begin, slice.end};
 }
 
@@ -1029,27 +1029,27 @@ Variable Variable::slice(const Slice slice) const && {
   return {this->slice(slice)};
 }
 
-VariableSlice Variable::slice(const Slice slice) & {
+VariableProxy Variable::slice(const Slice slice) & {
   return {*this, slice.dim, slice.begin, slice.end};
 }
 
 Variable Variable::slice(const Slice slice) && { return {this->slice(slice)}; }
 
-ConstVariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
+VariableConstProxy Variable::operator()(const Dim dim, const scipp::index begin,
                                         const scipp::index end) const & {
   return slice({dim, begin, end});
 }
 
-VariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
+VariableProxy Variable::operator()(const Dim dim, const scipp::index begin,
                                    const scipp::index end) & {
   return slice({dim, begin, end});
 }
 
-ConstVariableSlice Variable::reshape(const Dimensions &dims) const & {
+VariableConstProxy Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
 }
 
-VariableSlice Variable::reshape(const Dimensions &dims) & {
+VariableProxy Variable::reshape(const Dimensions &dims) & {
   return {*this, dims};
 }
 
@@ -1059,7 +1059,7 @@ Variable Variable::reshape(const Dimensions &dims) && {
   return reshaped;
 }
 
-Variable ConstVariableSlice::reshape(const Dimensions &dims) const {
+Variable VariableConstProxy::reshape(const Dimensions &dims) const {
   // In general a variable slice is not contiguous. Therefore we cannot reshape
   // without making a copy (except for special cases).
   Variable reshaped(*this);
@@ -1085,19 +1085,19 @@ Variable operator/(Variable a, const Variable &b) {
   auto result = broadcast(std::move(a), b.dims());
   return result /= b;
 }
-Variable operator+(Variable a, const ConstVariableSlice &b) {
+Variable operator+(Variable a, const VariableConstProxy &b) {
   auto result = broadcast(std::move(a), b.dims());
   return result += b;
 }
-Variable operator-(Variable a, const ConstVariableSlice &b) {
+Variable operator-(Variable a, const VariableConstProxy &b) {
   auto result = broadcast(std::move(a), b.dims());
   return result -= b;
 }
-Variable operator*(Variable a, const ConstVariableSlice &b) {
+Variable operator*(Variable a, const VariableConstProxy &b) {
   auto result = broadcast(std::move(a), b.dims());
   return result *= b;
 }
-Variable operator/(Variable a, const ConstVariableSlice &b) {
+Variable operator/(Variable a, const VariableConstProxy &b) {
   auto result = broadcast(std::move(a), b.dims());
   return result /= b;
 }

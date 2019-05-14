@@ -198,10 +198,10 @@ std::string to_string(const Variable &variable, const std::string &separator) {
   return s.str();
 }
 
-std::string to_string(const ConstVariableSlice &variable,
+std::string to_string(const VariableConstProxy &variable,
                       const std::string &separator) {
   std::stringstream s;
-  s << "<VariableSlice>";
+  s << "<VariableProxy>";
   format_line(s, to_string_components(variable, separator));
   return s.str();
 }
@@ -279,7 +279,7 @@ DatasetError::DatasetError(const DatasetConstProxy &dataset,
 VariableError::VariableError(const Variable &variable,
                              const std::string &message)
     : std::runtime_error(to_string(variable) + message) {}
-VariableError::VariableError(const ConstVariableSlice &variable,
+VariableError::VariableError(const VariableConstProxy &variable,
                              const std::string &message)
     : std::runtime_error(to_string(variable) + message) {}
 

@@ -50,7 +50,7 @@ using VariableConceptHandle =
                                sparse_container<double>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
-/// hold views to data by (Const)VariableSlice. This is using so-called
+/// hold views to data by (Const)VariableProxy. This is using so-called
 /// concept-based polymorphism, see talks by Sean Parent.
 ///
 /// This is the most generic representation for a multi-dimensional array of
@@ -220,8 +220,8 @@ private:
 };
 
 template <class... Tags> class ZipView;
-class ConstVariableSlice;
-class VariableSlice;
+class VariableConstProxy;
+class VariableProxy;
 
 namespace detail {
 template <class T> struct default_init {
@@ -245,9 +245,9 @@ public:
   // Having this non-explicit is convenient when passing (potential)
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
-  Variable(const ConstVariableSlice &slice);
+  Variable(const VariableConstProxy &slice);
   Variable(const Variable &parent, const Dimensions &dims);
-  Variable(const ConstVariableSlice &parent, const Dimensions &dims);
+  Variable(const VariableConstProxy &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
 
   template <class T>
@@ -262,18 +262,18 @@ public:
                  Vector<underlying_type_t<T>>(values.begin(), values.end())) {}
 
   bool operator==(const Variable &other) const;
-  bool operator==(const ConstVariableSlice &other) const;
+  bool operator==(const VariableConstProxy &other) const;
   bool operator!=(const Variable &other) const;
-  bool operator!=(const ConstVariableSlice &other) const;
+  bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
   Variable &operator+=(const Variable &other) &;
-  Variable &operator+=(const ConstVariableSlice &other) &;
+  Variable &operator+=(const VariableConstProxy &other) &;
   Variable &operator+=(const double value) &;
   Variable &operator-=(const Variable &other) &;
-  Variable &operator-=(const ConstVariableSlice &other) &;
+  Variable &operator-=(const VariableConstProxy &other) &;
   Variable &operator-=(const double value) &;
   Variable &operator*=(const Variable &other) &;
-  Variable &operator*=(const ConstVariableSlice &other) &;
+  Variable &operator*=(const VariableConstProxy &other) &;
   Variable &operator*=(const double value) &;
   template <class T>
   Variable &operator*=(const boost::units::quantity<T> &quantity) & {
@@ -281,7 +281,7 @@ public:
     return *this *= quantity.value();
   }
   Variable &operator/=(const Variable &other) &;
-  Variable &operator/=(const ConstVariableSlice &other) &;
+  Variable &operator/=(const VariableConstProxy &other) &;
   Variable &operator/=(const double value) &;
   template <class T>
   Variable &operator/=(const boost::units::quantity<T> &quantity) & {
@@ -335,25 +335,25 @@ public:
   }
 
   // ATTENTION: It is really important to delete any function returning a
-  // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
+  // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
-  ConstVariableSlice slice(const Slice slice) const &;
+  VariableConstProxy slice(const Slice slice) const &;
   Variable slice(const Slice slice) const &&;
-  VariableSlice slice(const Slice slice) &;
+  VariableProxy slice(const Slice slice) &;
   Variable slice(const Slice slice) &&;
 
-  ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
+  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
                                 const scipp::index end = -1) const &;
-  ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
+  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
                                 const scipp::index end = -1) const && = delete;
 
-  VariableSlice operator()(const Dim dim, const scipp::index begin,
+  VariableProxy operator()(const Dim dim, const scipp::index begin,
                            const scipp::index end = -1) &;
-  VariableSlice operator()(const Dim dim, const scipp::index begin,
+  VariableProxy operator()(const Dim dim, const scipp::index begin,
                            const scipp::index end = -1) && = delete;
 
-  ConstVariableSlice reshape(const Dimensions &dims) const &;
-  VariableSlice reshape(const Dimensions &dims) &;
+  VariableConstProxy reshape(const Dimensions &dims) const &;
+  VariableProxy reshape(const Dimensions &dims) &;
   // Note: Do we have to delete the `const &&` version? Consider
   //   const Variable var;
   //   std::move(var).reshape({});
@@ -465,27 +465,27 @@ Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
 }
 
 /// Non-mutable view into (a subset of) a Variable.
-class ConstVariableSlice {
+class VariableConstProxy {
 public:
-  explicit ConstVariableSlice(const Variable &variable)
+  explicit VariableConstProxy(const Variable &variable)
       : m_variable(&variable) {}
-  ConstVariableSlice(const Variable &variable, const Dimensions &dims)
+  VariableConstProxy(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
-  ConstVariableSlice(const ConstVariableSlice &other) = default;
-  ConstVariableSlice(const Variable &variable, const Dim dim,
+  VariableConstProxy(const VariableConstProxy &other) = default;
+  VariableConstProxy(const Variable &variable, const Dim dim,
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(&variable),
         m_view(variable.data().makeView(dim, begin, end)) {}
-  ConstVariableSlice(const ConstVariableSlice &slice, const Dim dim,
+  VariableConstProxy(const VariableConstProxy &slice, const Dim dim,
                      const scipp::index begin, const scipp::index end = -1)
       : m_variable(slice.m_variable),
         m_view(slice.data().makeView(dim, begin, end)) {}
 
-  ConstVariableSlice slice(const Slice slice) const {
-    return ConstVariableSlice(*this, slice.dim, slice.begin, slice.end);
+  VariableConstProxy slice(const Slice slice) const {
+    return VariableConstProxy(*this, slice.dim, slice.begin, slice.end);
   }
 
-  ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
+  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
                                 const scipp::index end = -1) const {
     return slice({dim, begin, end});
   }
@@ -503,7 +503,7 @@ public:
   }
 
   // Note: Returning by value to avoid issues with referencing a temporary
-  // (VariableSlice is returned by-value from DatasetSlice).
+  // (VariableProxy is returned by-value from DatasetSlice).
   Dimensions dims() const {
     if (m_view)
       return m_view->dims();
@@ -555,9 +555,9 @@ public:
   }
 
   bool operator==(const Variable &other) const;
-  bool operator==(const ConstVariableSlice &other) const;
+  bool operator==(const VariableConstProxy &other) const;
   bool operator!=(const Variable &other) const;
-  bool operator!=(const ConstVariableSlice &other) const;
+  bool operator!=(const VariableConstProxy &other) const;
   Variable operator-() const;
 
 protected:
@@ -574,40 +574,40 @@ protected:
 
 /** Mutable view into (a subset of) a Variable.
  *
- * By inheriting from ConstVariableSlice any code that works for
- * ConstVariableSlice will automatically work also for this mutable variant. */
-class VariableSlice : public ConstVariableSlice {
+ * By inheriting from VariableConstProxy any code that works for
+ * VariableConstProxy will automatically work also for this mutable variant. */
+class VariableProxy : public VariableConstProxy {
 public:
-  explicit VariableSlice(Variable &variable)
-      : ConstVariableSlice(variable), m_mutableVariable(&variable) {}
-  // Note that we use the basic constructor of ConstVariableSlice to avoid
+  explicit VariableProxy(Variable &variable)
+      : VariableConstProxy(variable), m_mutableVariable(&variable) {}
+  // Note that we use the basic constructor of VariableConstProxy to avoid
   // creation of a const m_view, which would be overwritten immediately.
-  VariableSlice(Variable &variable, const Dimensions &dims)
-      : ConstVariableSlice(variable), m_mutableVariable(&variable) {
+  VariableProxy(Variable &variable, const Dimensions &dims)
+      : VariableConstProxy(variable), m_mutableVariable(&variable) {
     m_view = variable.data().reshape(dims);
   }
-  VariableSlice(const VariableSlice &other) = default;
-  VariableSlice(Variable &variable, const Dim dim, const scipp::index begin,
+  VariableProxy(const VariableProxy &other) = default;
+  VariableProxy(Variable &variable, const Dim dim, const scipp::index begin,
                 const scipp::index end = -1)
-      : ConstVariableSlice(variable), m_mutableVariable(&variable) {
+      : VariableConstProxy(variable), m_mutableVariable(&variable) {
     m_view = variable.data().makeView(dim, begin, end);
   }
-  VariableSlice(const VariableSlice &slice, const Dim dim,
+  VariableProxy(const VariableProxy &slice, const Dim dim,
                 const scipp::index begin, const scipp::index end = -1)
-      : ConstVariableSlice(slice), m_mutableVariable(slice.m_mutableVariable) {
+      : VariableConstProxy(slice), m_mutableVariable(slice.m_mutableVariable) {
     m_view = slice.data().makeView(dim, begin, end);
   }
 
-  VariableSlice slice(const Slice slice) const {
-    return VariableSlice(*this, slice.dim, slice.begin, slice.end);
+  VariableProxy slice(const Slice slice) const {
+    return VariableProxy(*this, slice.dim, slice.begin, slice.end);
   }
 
-  VariableSlice operator()(const Dim dim, const scipp::index begin,
+  VariableProxy operator()(const Dim dim, const scipp::index begin,
                            const scipp::index end = -1) const {
     return slice({dim, begin, end});
   }
 
-  using ConstVariableSlice::data;
+  using VariableConstProxy::data;
 
   VariableConcept &data() const && = delete;
   VariableConcept &data() const & {
@@ -623,7 +623,7 @@ public:
     return m_view;
   }
 
-  // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
+  // Note: No need to delete rvalue overloads here, see VariableConstProxy.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
   template <class T> auto sparseSpan() const {
@@ -632,7 +632,7 @@ public:
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
   // the left-hand-side is a temporary. This is ok since data is modified in
-  // underlying Variable. However, we do not return the typical `VariableSlice
+  // underlying Variable. However, we do not return the typical `VariableProxy
   // &` from these operations since that could reference a temporary. Due to the
   // way Python implements things like __iadd__ we must return an object
   // referencing the data though. We therefore return by value (this is not for
@@ -644,19 +644,19 @@ public:
   // the Python exports to return `a` after calling `a += b` instead of
   // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
   // (would this suffer from the same issue?).
-  template <class T> VariableSlice assign(const T &other) const;
-  VariableSlice operator+=(const Variable &other) const;
-  VariableSlice operator+=(const ConstVariableSlice &other) const;
-  VariableSlice operator+=(const double value) const;
-  VariableSlice operator-=(const Variable &other) const;
-  VariableSlice operator-=(const ConstVariableSlice &other) const;
-  VariableSlice operator-=(const double value) const;
-  VariableSlice operator*=(const Variable &other) const;
-  VariableSlice operator*=(const ConstVariableSlice &other) const;
-  VariableSlice operator*=(const double value) const;
-  VariableSlice operator/=(const Variable &other) const;
-  VariableSlice operator/=(const ConstVariableSlice &other) const;
-  VariableSlice operator/=(const double value) const;
+  template <class T> VariableProxy assign(const T &other) const;
+  VariableProxy operator+=(const Variable &other) const;
+  VariableProxy operator+=(const VariableConstProxy &other) const;
+  VariableProxy operator+=(const double value) const;
+  VariableProxy operator-=(const Variable &other) const;
+  VariableProxy operator-=(const VariableConstProxy &other) const;
+  VariableProxy operator-=(const double value) const;
+  VariableProxy operator*=(const Variable &other) const;
+  VariableProxy operator*=(const VariableConstProxy &other) const;
+  VariableProxy operator*=(const double value) const;
+  VariableProxy operator/=(const Variable &other) const;
+  VariableProxy operator/=(const VariableConstProxy &other) const;
+  VariableProxy operator/=(const double value) const;
 
   void setUnit(const units::Unit &unit) const;
 
@@ -670,17 +670,17 @@ private:
   Variable *m_mutableVariable;
 };
 
-// Note: If the left-hand-side in an addition is a VariableSlice this simply
+// Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
 Variable operator+(Variable a, const Variable &b);
 Variable operator-(Variable a, const Variable &b);
 Variable operator*(Variable a, const Variable &b);
 Variable operator/(Variable a, const Variable &b);
-Variable operator+(Variable a, const ConstVariableSlice &b);
-Variable operator-(Variable a, const ConstVariableSlice &b);
-Variable operator*(Variable a, const ConstVariableSlice &b);
-Variable operator/(Variable a, const ConstVariableSlice &b);
+Variable operator+(Variable a, const VariableConstProxy &b);
+Variable operator-(Variable a, const VariableConstProxy &b);
+Variable operator*(Variable a, const VariableConstProxy &b);
+Variable operator/(Variable a, const VariableConstProxy &b);
 Variable operator+(Variable a, const double b);
 Variable operator-(Variable a, const double b);
 Variable operator*(Variable a, const double b);

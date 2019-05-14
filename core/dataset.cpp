@@ -626,7 +626,7 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
   return os << DatasetConstProxy(dataset);
 }
 
-std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
+std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable) {
   os << to_string(variable) << " "
      << array_to_string(variable.values<double>());
   if (variable.hasVariances())
@@ -634,12 +634,12 @@ std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
   return os << std::endl;
 }
 
-std::ostream &operator<<(std::ostream &os, const VariableSlice &variable) {
-  return os << ConstVariableSlice(variable);
+std::ostream &operator<<(std::ostream &os, const VariableProxy &variable) {
+  return os << VariableConstProxy(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const Variable &variable) {
-  return os << ConstVariableSlice(variable);
+  return os << VariableConstProxy(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const Dim dim) {

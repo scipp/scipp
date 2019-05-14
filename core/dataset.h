@@ -58,7 +58,7 @@ struct DatasetData {
 template <class Var>
 auto makeSlice(Var &var,
                const std::vector<std::pair<Slice, scipp::index>> &slices) {
-  std::conditional_t<std::is_const_v<Var>, ConstVariableSlice, VariableSlice>
+  std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
   for (const auto[params, extent] : slices) {
     const auto[dim, begin, end] = params;
@@ -93,7 +93,7 @@ public:
   }
 
   /// Return untyped const proxy for data (values and optional variances).
-  ConstVariableSlice data() const {
+  VariableConstProxy data() const {
     return detail::makeSlice(*m_data->data, slices());
   }
   /// Return typed const proxy for data values.
@@ -153,7 +153,7 @@ public:
   AttrsProxy attrs() const noexcept;
 
   /// Return untyped proxy for data (values and optional variances).
-  VariableSlice data() const {
+  VariableProxy data() const {
     return detail::makeSlice(*m_mutableData->data, slices());
   }
   /// Return typed proxy for data values.
@@ -315,7 +315,7 @@ private:
   struct make_item {
     const ConstProxy *proxy;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<Key, ConstVariableSlice>(
+      return std::pair<Key, VariableConstProxy>(
           item.first, detail::makeSlice(*item.second.first, proxy->slices()));
     }
   };
@@ -358,7 +358,7 @@ public:
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   /// Return a const proxy to the coordinate for given dimension.
-  ConstVariableSlice operator[](const Key key) const {
+  VariableConstProxy operator[](const Key key) const {
     return detail::makeSlice(*m_items.at(key).first, m_slices);
   }
 
@@ -419,7 +419,7 @@ private:
   struct make_item {
     const MutableProxy<Base> *proxy;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<typename Base::key_type, VariableSlice>(
+      return std::pair<typename Base::key_type, VariableProxy>(
           item.first, detail::makeSlice(*item.second.second, proxy->slices()));
     }
   };
@@ -430,7 +430,7 @@ public:
   using Base::Base;
 
   /// Return a proxy to the coordinate for given dimension.
-  VariableSlice operator[](const typename Base::key_type key) const {
+  VariableProxy operator[](const typename Base::key_type key) const {
     return detail::makeSlice(*Base::items().at(key).second, Base::slices());
   }
 
@@ -593,8 +593,8 @@ std::ostream &operator<<(std::ostream &os, const DataProxy &data);
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset);
-std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable);
-std::ostream &operator<<(std::ostream &os, const VariableSlice &variable);
+std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable);
+std::ostream &operator<<(std::ostream &os, const VariableProxy &variable);
 std::ostream &operator<<(std::ostream &os, const Variable &variable);
 std::ostream &operator<<(std::ostream &os, const Dim dim);
 
