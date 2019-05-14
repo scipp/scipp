@@ -153,8 +153,12 @@ public:
   virtual VariableView<const T>
   variancesView(const Dimensions &dims, const Dim dim,
                 const scipp::index begin) const = 0;
-  virtual VariableView<const T> getReshaped(const Dimensions &dims) const = 0;
-  virtual VariableView<T> getReshaped(const Dimensions &dims) = 0;
+  virtual VariableView<const T>
+  valuesReshaped(const Dimensions &dims) const = 0;
+  virtual VariableView<T> valuesReshaped(const Dimensions &dims) = 0;
+  virtual VariableView<const T>
+  variancesReshaped(const Dimensions &dims) const = 0;
+  virtual VariableView<T> variancesReshaped(const Dimensions &dims) = 0;
 
   VariableConceptHandle makeView() const override;
 

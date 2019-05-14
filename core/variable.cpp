@@ -203,14 +203,21 @@ VariableConceptHandle VariableConceptT<T>::makeView(const Dim dim,
       optionalVariancesView(*this, dims, dim, begin));
 }
 
+template <class T, class... Args>
+auto optionalVariancesReshaped(T &concept, Args &&... args) {
+  return concept.hasVariances() ? std::optional(concept.variancesReshaped(
+                                      std::forward<Args>(args)...))
+                                : std::nullopt;
+}
+
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::reshape(const Dimensions &dims) const {
   if (this->dims().volume() != dims.volume())
     throw std::runtime_error(
         "Cannot reshape to dimensions with different volume");
-  return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
-      dims, getReshaped(dims));
+  return std::make_unique<ViewModel<decltype(valuesReshaped(dims))>>(
+      dims, valuesReshaped(dims), optionalVariancesReshaped(*this, dims));
 }
 
 template <class T>
@@ -218,8 +225,8 @@ VariableConceptHandle VariableConceptT<T>::reshape(const Dimensions &dims) {
   if (this->dims().volume() != dims.volume())
     throw std::runtime_error(
         "Cannot reshape to dimensions with different volume");
-  return std::make_unique<ViewModel<decltype(getReshaped(dims))>>(
-      dims, getReshaped(dims));
+  return std::make_unique<ViewModel<decltype(valuesReshaped(dims))>>(
+      dims, valuesReshaped(dims), optionalVariancesReshaped(*this, dims));
 }
 
 template <class T>
@@ -408,11 +415,19 @@ public:
   }
 
   VariableView<const value_type>
-  getReshaped(const Dimensions &dims) const override {
+  valuesReshaped(const Dimensions &dims) const override {
     return makeVariableView(m_model.data(), 0, dims, dims);
   }
-  VariableView<value_type> getReshaped(const Dimensions &dims) override {
+  VariableView<value_type> valuesReshaped(const Dimensions &dims) override {
     return makeVariableView(m_model.data(), 0, dims, dims);
+  }
+
+  VariableView<const value_type>
+  variancesReshaped(const Dimensions &dims) const override {
+    return makeVariableView(m_variances->data(), 0, dims, dims);
+  }
+  VariableView<value_type> variancesReshaped(const Dimensions &dims) override {
+    return makeVariableView(m_variances->data(), 0, dims, dims);
   }
 
   VariableConceptHandle clone() const override {
@@ -616,16 +631,30 @@ public:
   }
 
   VariableView<const value_type>
-  getReshaped(const Dimensions &dims) const override {
+  valuesReshaped(const Dimensions &dims) const override {
     return {m_model, dims};
   }
-  VariableView<value_type> getReshaped(const Dimensions &dims) override {
+  VariableView<value_type> valuesReshaped(const Dimensions &dims) override {
     requireMutable();
     if constexpr (std::is_const<typename T::element_type>::value) {
       static_cast<void>(dims);
       return VariableView<value_type>(nullptr, 0, {}, {});
     } else {
       return {m_model, dims};
+    }
+  }
+
+  VariableView<const value_type>
+  variancesReshaped(const Dimensions &dims) const override {
+    return {*m_variances, dims};
+  }
+  VariableView<value_type> variancesReshaped(const Dimensions &dims) override {
+    requireMutable();
+    if constexpr (std::is_const<typename T::element_type>::value) {
+      static_cast<void>(dims);
+      return VariableView<value_type>(nullptr, 0, {}, {});
+    } else {
+      return {*m_variances, dims};
     }
   }
 

@@ -1179,6 +1179,18 @@ TEST(VariableTest, reshape) {
       makeVariable<double>({{Dim::Row, 3}, {Dim::Z, 2}}, {1, 2, 3, 4, 5, 6}));
 }
 
+TEST(VariableTest, reshape_with_variance) {
+  const auto var = makeVariable<double>(
+      {{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12});
+
+  ASSERT_EQ(var.reshape({Dim::Row, 6}),
+            makeVariable<double>({Dim::Row, 6}, {1, 2, 3, 4, 5, 6},
+                                 {7, 8, 9, 10, 11, 12}));
+  ASSERT_EQ(var.reshape({{Dim::Row, 3}, {Dim::Z, 2}}),
+            makeVariable<double>({{Dim::Row, 3}, {Dim::Z, 2}},
+                                 {1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}));
+}
+
 TEST(VariableTest, reshape_temporary) {
   const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Row, 4}},
                                         {1, 2, 3, 4, 5, 6, 7, 8});
