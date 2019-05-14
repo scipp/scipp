@@ -1258,8 +1258,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     }
   };
 
-  if (var.unit() == units::counts ||
-      var.unit() == units::counts * units::counts) {
+  if (var.unit() == units::counts) {
     auto dims = var.dims();
     dims.resize(dim, newCoord.dims()[dim] - 1);
     Variable rebinned(var, dims);

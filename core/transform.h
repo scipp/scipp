@@ -19,44 +19,44 @@ template <class T> struct ValueAndVariance {
 };
 
 template <class T1, class T2>
-constexpr auto operator+(const ValueAndVariance<T1> &a,
-                         const ValueAndVariance<T2> &b) noexcept {
+constexpr auto operator+(const ValueAndVariance<T1> a,
+                         const ValueAndVariance<T2> b) noexcept {
   return ValueAndVariance{a.value + b.value, a.variance + b.variance};
 }
 template <class T1, class T2>
-constexpr auto operator-(const ValueAndVariance<T1> &a,
-                         const ValueAndVariance<T2> &b) noexcept {
+constexpr auto operator-(const ValueAndVariance<T1> a,
+                         const ValueAndVariance<T2> b) noexcept {
   return ValueAndVariance{a.value - b.value, a.variance - b.variance};
 }
 template <class T1, class T2>
-constexpr auto operator*(const ValueAndVariance<T1> &a,
-                         const ValueAndVariance<T2> &b) noexcept {
+constexpr auto operator*(const ValueAndVariance<T1> a,
+                         const ValueAndVariance<T2> b) noexcept {
   return ValueAndVariance{a.value * b.value,
                           a.variance * b.value * b.value +
                               b.variance * a.value * a.value};
 }
 template <class T1, class T2>
-constexpr auto operator/(const ValueAndVariance<T1> &a,
-                         const ValueAndVariance<T2> &b) noexcept {
+constexpr auto operator/(const ValueAndVariance<T1> a,
+                         const ValueAndVariance<T2> b) noexcept {
   return ValueAndVariance{a.value / b.value,
                           a.variance / (b.value * b.value) +
                               b.variance / (a.value * a.value)};
 }
 
 template <class T1, class T2>
-constexpr auto operator+(const ValueAndVariance<T1> &a, const T2 &b) noexcept {
+constexpr auto operator+(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value + b, a.variance};
 }
 template <class T1, class T2>
-constexpr auto operator-(const ValueAndVariance<T1> &a, const T2 &b) noexcept {
+constexpr auto operator-(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value - b, a.variance};
 }
 template <class T1, class T2>
-constexpr auto operator*(const ValueAndVariance<T1> &a, const T2 &b) noexcept {
+constexpr auto operator*(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value * b, a.variance * b * b};
 }
 template <class T1, class T2>
-constexpr auto operator/(const ValueAndVariance<T1> &a, const T2 &b) noexcept {
+constexpr auto operator/(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value / b, a.variance / (b * b)};
 }
 
