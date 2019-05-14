@@ -48,6 +48,8 @@ public:
       if (m_dims[i] != other.m_dims[i])
         return false;
     }
+    if (m_dims[6] != other.m_dims[6])
+      return false;
     return true;
   }
   bool operator!=(const Dimensions &other) const noexcept {
@@ -56,29 +58,33 @@ public:
 
   constexpr bool empty() const noexcept { return m_ndim == 0 && !isSparse(); }
 
-  /// exclude sparse fake extent
-  scipp::index volume() const {
+  /// Return the volume of the space defined by *this. If there is a sparse
+  /// dimension the volume of the dense subspace is returned.
+  constexpr scipp::index volume() const noexcept {
     scipp::index volume{1};
     for (int32_t dim = 0; dim < m_ndim; ++dim)
       volume *= m_shape[dim];
     return volume;
   }
 
+  /// Return true if there is a sparse dimension.
   constexpr bool isSparse() const noexcept {
     return m_dims[m_ndim] != Dim::Invalid;
   }
 
-  /// Dim::Invalid if not sparse
+  /// Return the label of a potential sparse dimension, Dim::Invalid otherwise.
   constexpr Dim sparseDim() const noexcept { return m_dims[m_ndim]; }
 
-  ///  exclude sparse fake extent
   scipp::span<const scipp::index> shape() const && = delete;
-  scipp::span<const scipp::index> shape() const &noexcept {
+  /// Return the shape of the space defined by *this. If there is a sparse
+  /// dimension the shape of the dense subspace is returned.
+  constexpr scipp::span<const scipp::index> shape() const &noexcept {
     return {m_shape, m_shape + m_ndim};
   }
 
   scipp::span<const Dim> labels() const && = delete;
-  scipp::span<const Dim> labels() const &noexcept {
+  /// Return the labels of the space defined by *this.
+  constexpr scipp::span<const Dim> labels() const &noexcept {
     if (!isSparse())
       return {m_dims, m_dims + m_ndim};
     else
@@ -86,22 +92,29 @@ public:
   }
 
   scipp::span<const Dim> denseLabels() const && = delete;
-  scipp::span<const Dim> denseLabels() const &noexcept {
+  /// Return the labels of the space defined by *this, excluding the label of a
+  /// potential sparse dimension.
+  constexpr scipp::span<const Dim> denseLabels() const &noexcept {
     return {m_dims, m_dims + m_ndim};
   }
 
-  /// throws if sparse dim specified
+  /// Return the extent `dim`. Throws if the space defined by this does not
+  /// contain `dim` or if `dim` is a sparse dimension label.
   scipp::index operator[](const Dim dim) const;
   scipp::index &operator[](const Dim dim);
 
-  /// return true if dim is sparse dim
-  bool contains(const Dim dim) const noexcept {
+  /// Return true if `dim` is one of the labels in *this.
+  constexpr bool contains(const Dim dim) const noexcept {
     for (int32_t i = 0; i < m_ndim; ++i)
       if (m_dims[i] == dim)
         return true;
+    if (isSparse() && sparseDim() == dim)
+      return true;
     return false;
   }
-  // bool denseContains(const Dim dim) const noexcept;
+
+  /// Return true if `dim` is one of the dense labels in *this.
+  bool denseContains(const Dim dim) const noexcept;
 
   bool contains(const Dimensions &other) const;
 

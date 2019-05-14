@@ -12,41 +12,45 @@
 namespace scipp::core {
 
 scipp::index Dimensions::operator[](const Dim dim) const {
-  if (dim == sparseDim())
-    throw std::runtime_error("Sparse dimension extent is undefined.");
-  for (int32_t i = 0; i < 6; ++i)
+  for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
+  if (dim == sparseDim())
+    throw std::runtime_error("Sparse dimension extent is undefined.");
   throw except::DimensionNotFoundError(*this, dim);
 }
 
 scipp::index &Dimensions::operator[](const Dim dim) {
-  if (dim == sparseDim())
-    throw std::runtime_error("Sparse dimension extent is undefined.");
-  for (int32_t i = 0; i < 6; ++i)
+  for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
+  if (dim == sparseDim())
+    throw std::runtime_error("Sparse dimension extent is undefined.");
   throw except::DimensionNotFoundError(*this, dim);
 }
 
-/// Returns true if all dimensions of other are also contained in *this. Does
-/// not check dimension order.
+/// Return true if all dimensions of other are also contained in *this. Does not
+/// check dimension order.
 bool Dimensions::contains(const Dimensions &other) const {
   if (*this == other)
     return true;
   for (const auto dim : other.labels())
     if (!contains(dim))
       return false;
-  for (int32_t i = 0; i < other.m_ndim; ++i)
-    if (other.shape()[i] != operator[](other.labels()[i]))
+  for (const auto dim : other.denseLabels())
+    if (other[dim] != operator[](dim))
       return false;
   return true;
 }
 
-/// Returns true if *this forms a contiguous block within parent, i.e.,
-/// dimensions are not transposed, missing dimensions are outer dimensions in
-/// parent, only the outermost dimensions may be shorter than the corresponding
-/// dimension in parent.
+/// Return true if *this forms a contiguous block within parent.
+///
+/// Specifically, dimensions are not transposed, missing dimensions are outer
+/// dimensions in parent, and only the outermost dimensions may be shorter than
+/// the corresponding dimension in parent. Potential sparse dimensions are
+/// ignored since they do not contribute to the shape (note that this is only a
+/// valid assumption as long as sparse data layouts are equivalent to a vector
+/// of vectors).
 bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   if (parent == *this)
     return true;

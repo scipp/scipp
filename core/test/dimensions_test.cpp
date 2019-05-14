@@ -139,6 +139,16 @@ TEST(DimensionsTest, isSparse) {
   EXPECT_TRUE(sparseXYZ.isSparse());
 }
 
+TEST(DimensionsTest, index_access) {
+  Dimensions denseXY({Dim::X, Dim::Y}, {2, 3});
+  Dimensions denseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
+  Dimensions sparseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
+
+  ASSERT_ANY_THROW(denseXY[Dim::Invalid]);
+  ASSERT_ANY_THROW(denseXYZ[Dim::Invalid]);
+  ASSERT_ANY_THROW(sparseXYZ[Dim::Invalid]);
+}
+
 class DimensionsTest_comparison_operators : public ::testing::Test {
 protected:
   void expect_eq(const Dimensions &a, const Dimensions &b) const {
