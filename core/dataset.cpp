@@ -150,7 +150,7 @@ void Dataset::setExtent(const Dim dim, const scipp::index extent,
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
-  for (const auto dim : dims.labels())
+  for (const auto dim : dims.denseLabels())
     setExtent(dim, dims[dim], dim == coordDim);
 }
 

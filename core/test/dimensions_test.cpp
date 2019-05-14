@@ -132,7 +132,7 @@ TEST(Dimensions, isContiguousIn) {
 TEST(DimensionsTest, isSparse) {
   Dimensions denseXY({Dim::X, Dim::Y}, {2, 3});
   Dimensions denseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
-  Dimensions sparseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3});
+  Dimensions sparseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
 
   EXPECT_FALSE(denseXY.isSparse());
   EXPECT_FALSE(denseXYZ.isSparse());
@@ -158,9 +158,9 @@ protected:
 TEST_F(DimensionsTest_comparison_operators, sparse) {
   Dimensions dense_xy({Dim::X, Dim::Y}, {2, 3});
   Dimensions dense_xyz({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
-  Dimensions sparse_xyz({Dim::X, Dim::Y, Dim::Z}, {2, 3});
-  Dimensions sparse_yxz({Dim::Y, Dim::X, Dim::Z}, {2, 3});
-  Dimensions sparse_xyr({Dim::X, Dim::Y, Dim::Row}, {2, 3});
+  Dimensions sparse_xyz({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
+  Dimensions sparse_yxz({Dim::Y, Dim::X, Dim::Z}, {2, 3, Dimensions::Sparse});
+  Dimensions sparse_xyr({Dim::X, Dim::Y, Dim::Row}, {2, 3, Dimensions::Sparse});
 
   expect_eq(sparse_xyz, sparse_xyz);
   expect_ne(sparse_xyz, sparse_yxz);

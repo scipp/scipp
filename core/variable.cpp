@@ -1181,7 +1181,11 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   // TODO Many things in this function should be refactored and moved in class
   // Dimensions.
   // TODO Special handling for edge variables.
-  for (const auto &dim1 : dims1.labels()) {
+  if (dims1.sparseDim() != dims2.sparseDim())
+    throw std::runtime_error("Cannot concatenate Variables: Either both or "
+                             "neither must be sparse, and the sparse "
+                             "dimensions must be the same.");
+  for (const auto &dim1 : dims1.denseLabels()) {
     if (dim1 != dim) {
       if (!dims2.contains(dim1))
         throw std::runtime_error(

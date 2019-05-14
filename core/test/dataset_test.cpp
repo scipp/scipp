@@ -1144,16 +1144,10 @@ TYPED_TEST(DataProxyTest, dims) {
   d.setData("dense", dense);
   ASSERT_EQ(d_ref["dense"].dims(), dense.dims());
 
-  // Sparse dimension is currently not included in dims(). It is unclear whether
-  // this is the right choice. An unfinished idea involves returning
-  // std::tuple<std::span<const Dim>, std::optional<Dim>> instead, using `auto [
-  // dims, sparse ] = data.dims();`.
   d.setData("sparse_data", sparse);
-  ASSERT_EQ(d_ref["sparse_data"].dims(), dense.dims());
   ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dims());
 
   d.setSparseCoord("sparse_coord", sparse);
-  ASSERT_EQ(d_ref["sparse_coord"].dims(), dense.dims());
   ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dims());
 }
 

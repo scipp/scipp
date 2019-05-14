@@ -637,7 +637,8 @@ TEST(Variable, access_typed_view_edges) {
 }
 
 TEST(SparseVariable, create) {
-  const auto var = makeVariable<double>({Dim::Y, Dim::X}, {2});
+  const auto var =
+      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   EXPECT_TRUE(var.dims().isSparse());
   EXPECT_EQ(var.dims().sparseDim(), Dim::X);
   // Should we return the full volume here, i.e., accumulate the extents of all
