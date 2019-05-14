@@ -221,6 +221,8 @@ bool VariableConceptT<T>::operator==(const VariableConcept &other) const {
   if (this->dtype() != other.dtype())
     return false;
   const auto &otherT = requireT<const VariableConceptT>(other);
+  if (dims.volume() == 0 && dims == other.dimensions())
+    return true;
   if (this->isContiguous()) {
     if (other.isContiguous() && dims.isContiguousIn(other.dimensions())) {
       return equal(getSpan(), otherT.getSpan());
@@ -499,7 +501,10 @@ Variable::Variable(const ConstVariableSlice &slice)
   if (slice.m_view) {
     setUnit(slice.unit());
     setDimensions(slice.dimensions());
-    data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
+    // There is a bug in the implementation of MultiIndex used in VariableView
+    // in case one of the dimensions has extent 0.
+    if (dims().volume() != 0)
+      data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
   }
 }
 Variable::Variable(const Variable &parent, const Dimensions &dims)
@@ -810,14 +815,28 @@ INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
 INSTANTIATE_SLICEVIEW(Dataset);
 INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
 
+ConstVariableSlice Variable::slice(const Slice slice) const & {
+  return {*this, slice.dim, slice.begin, slice.end};
+}
+
+Variable Variable::slice(const Slice slice) const && {
+  return {this->slice(slice)};
+}
+
+VariableSlice Variable::slice(const Slice slice) & {
+  return {*this, slice.dim, slice.begin, slice.end};
+}
+
+Variable Variable::slice(const Slice slice) && { return {this->slice(slice)}; }
+
 ConstVariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
                                         const scipp::index end) const & {
-  return {*this, dim, begin, end};
+  return slice({dim, begin, end});
 }
 
 VariableSlice Variable::operator()(const Dim dim, const scipp::index begin,
                                    const scipp::index end) & {
-  return {*this, dim, begin, end};
+  return slice({dim, begin, end});
 }
 
 ConstVariableSlice Variable::reshape(const Dimensions &dims) const & {

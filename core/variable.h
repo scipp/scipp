@@ -8,14 +8,26 @@
 #include <type_traits>
 #include <variant>
 
+#include <Eigen/Dense>
+
 #include "dimensions.h"
 #include "index.h"
 #include "scipp/units/unit.h"
 #include "span.h"
+#include "tags.h"
 #include "variable_view.h"
 #include "vector.h"
 
 namespace scipp::core {
+
+/// Helper for passing slicing parameters.
+struct Slice {
+  Slice(const Dim dim, const scipp::index begin, const scipp::index end = -1)
+      : dim(dim), begin(begin), end(end) {}
+  Dim dim;
+  scipp::index begin;
+  scipp::index end;
+};
 
 template <class T>
 using sparse_container = boost::container::small_vector<T, 8>;
@@ -265,8 +277,10 @@ public:
 
   scipp::index size() const { return m_object->size(); }
 
-  const Dimensions &dimensions() const && = delete;
-  const Dimensions &dimensions() const & { return m_object->dimensions(); }
+  Dimensions dims() const && { return m_object->dimensions(); }
+  const Dimensions &dims() const & { return m_object->dimensions(); }
+  Dimensions dimensions() const && { return dims(); }
+  const Dimensions &dimensions() const & { return dims(); }
   void setDimensions(const Dimensions &dimensions);
 
   const VariableConcept &data() const && = delete;
@@ -282,6 +296,8 @@ public:
   bool isSparse() const noexcept { return m_sparseDim != Dim::Invalid; }
   Dim sparseDim() const { return m_sparseDim; }
 
+  template <class T> auto values() const { return scipp::span(cast<T>()); }
+  template <class T> auto values() { return scipp::span(cast<T>()); }
   template <class T> auto span() const { return scipp::span(cast<T>()); }
   template <class T> auto span() { return scipp::span(cast<T>()); }
   template <class T> auto sparseSpan() const {
@@ -294,6 +310,11 @@ public:
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableSlice for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
+  ConstVariableSlice slice(const Slice slice) const &;
+  Variable slice(const Slice slice) const &&;
+  VariableSlice slice(const Slice slice) &;
+  Variable slice(const Slice slice) &&;
+
   ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
                                 const scipp::index end = -1) const &;
   ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
@@ -402,9 +423,13 @@ public:
       : m_variable(slice.m_variable),
         m_view(slice.data().makeView(dim, begin, end)) {}
 
+  ConstVariableSlice slice(const Slice slice) const {
+    return ConstVariableSlice(*this, slice.dim, slice.begin, slice.end);
+  }
+
   ConstVariableSlice operator()(const Dim dim, const scipp::index begin,
                                 const scipp::index end = -1) const {
-    return ConstVariableSlice(*this, dim, begin, end);
+    return slice({dim, begin, end});
   }
 
   // Note the return type. Reshaping a non-contiguous slice cannot return a
@@ -421,7 +446,8 @@ public:
 
   // Note: Returning by value to avoid issues with referencing a temporary
   // (VariableSlice is returned by-value from DatasetSlice).
-  Dimensions dimensions() const {
+  Dimensions dimensions() const { return dims(); }
+  Dimensions dims() const {
     if (m_view)
       return m_view->dimensions();
     else
@@ -463,6 +489,7 @@ public:
   // temporaries and we do not need to delete the rvalue overload, unlike for
   // many other methods. The data is owned by the underlying variable so it
   // will not be deleted even if *this is a temporary and gets deleted.
+  template <class T> auto values() const { return cast<T>(); }
   template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();
@@ -510,9 +537,13 @@ public:
     m_view = slice.data().makeView(dim, begin, end);
   }
 
+  VariableSlice slice(const Slice slice) const {
+    return VariableSlice(*this, slice.dim, slice.begin, slice.end);
+  }
+
   VariableSlice operator()(const Dim dim, const scipp::index begin,
                            const scipp::index end = -1) const {
-    return VariableSlice(*this, dim, begin, end);
+    return slice({dim, begin, end});
   }
 
   using ConstVariableSlice::data;
@@ -532,6 +563,7 @@ public:
   }
 
   // Note: No need to delete rvalue overloads here, see ConstVariableSlice.
+  template <class T> auto values() const { return cast<T>(); }
   template <class T> auto span() const { return cast<T>(); }
   template <class T> auto sparseSpan() const {
     return cast<sparse_container<T>>();

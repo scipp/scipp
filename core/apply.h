@@ -5,6 +5,7 @@
 #ifndef APPLY_H
 #define APPLY_H
 
+#include "except.h"
 #include "variable.h"
 #include "visit.h"
 

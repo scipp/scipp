@@ -180,6 +180,12 @@ std::string to_string(const DType dtype) {
   };
 }
 
+std::string to_string(const Slice &slice, const std::string &separator) {
+  std::string end = slice.end >= 0 ? ", " + std::to_string(slice.end) : "";
+  return "Slice(" + to_string(slice.dim, separator) + ", " +
+         std::to_string(slice.begin) + end + ")\n";
+}
+
 std::string to_string(const units::Unit &unit, const std::string &separator) {
   return std::regex_replace(do_to_string(unit), std::regex("::"), separator);
 }
@@ -407,5 +413,15 @@ void equals(const Dimensions &a, const Dimensions &b) {
   if (!(a == b))
     throw except::DimensionMismatchError(a, b);
 }
+
+void validSlice(const Dimensions &dims, const Slice &slice) {
+  if (!dims.contains(slice.dim) || slice.begin < 0 ||
+      slice.begin >= std::min(slice.end >= 0 ? slice.end + 1 : dims[slice.dim],
+                              dims[slice.dim]) ||
+      slice.end > dims[slice.dim])
+    throw except::SliceError("Expected " + to_string(slice) + " to be in " +
+                             to_string(dims));
+}
+
 } // namespace expect
 } // namespace scipp::core

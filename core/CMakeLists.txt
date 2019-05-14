@@ -26,6 +26,7 @@ set(SRC_FILES
     convert.cpp
     counts.cpp
     dataset.cpp
+    dataset_next.cpp
     dimensions.cpp
     events.cpp
     except.cpp

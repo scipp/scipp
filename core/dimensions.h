@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "dimension.h"
-#include "except.h"
 #include "index.h"
 #include "span.h"
 
@@ -66,27 +65,18 @@ public:
     return volume;
   }
 
-  scipp::span<const scipp::index> shape() const noexcept {
+  scipp::span<const scipp::index> shape() const && = delete;
+  scipp::span<const scipp::index> shape() const &noexcept {
     return {m_shape, m_shape + m_ndim};
   }
 
-  scipp::span<const Dim> labels() const noexcept {
+  scipp::span<const Dim> labels() const && = delete;
+  scipp::span<const Dim> labels() const &noexcept {
     return {m_dims, m_dims + m_ndim};
   }
 
-  scipp::index operator[](const Dim dim) const {
-    for (int32_t i = 0; i < 6; ++i)
-      if (m_dims[i] == dim)
-        return m_shape[i];
-    throw except::DimensionNotFoundError(*this, dim);
-  }
-
-  scipp::index &operator[](const Dim dim) {
-    for (int32_t i = 0; i < 6; ++i)
-      if (m_dims[i] == dim)
-        return m_shape[i];
-    throw except::DimensionNotFoundError(*this, dim);
-  }
+  scipp::index operator[](const Dim dim) const;
+  scipp::index &operator[](const Dim dim);
 
   bool contains(const Dim dim) const noexcept {
     for (int32_t i = 0; i < ndim(); ++i)
