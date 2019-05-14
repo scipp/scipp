@@ -3,1939 +3,1656 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "counts.h"
+#include <numeric>
+
 #include "dataset.h"
 #include "dimensions.h"
 
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(Dataset, construct_empty) { ASSERT_NO_THROW(Dataset d); }
+TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
-TEST(Dataset, construct) { ASSERT_NO_THROW(Dataset d); }
-
-TEST(Dataset, insert_coords) {
+TEST(DatasetTest, empty) {
   Dataset d;
-  d.insert(Coord::Tof, {}, {1.1});
-  d.insert(Coord::SpectrumNumber, {}, {2});
-  ASSERT_EQ(d.size(), 2);
-  EXPECT_NO_THROW(d.insert(Coord::SpectrumNumber, {}, {3}));
-  ASSERT_EQ(d.size(), 2);
+  ASSERT_TRUE(d.empty());
+  ASSERT_EQ(d.size(), 0);
 }
 
-TEST(Dataset, insert_data) {
+TEST(DatasetTest, coords) {
   Dataset d;
-  d.insert(Data::Value, "name1", {}, {1.1});
-  d.insert(Data::Value, "name2", {}, {2});
-  ASSERT_EQ(d.size(), 2);
-  EXPECT_NO_THROW(d.insert(Data::Value, "name2", {}, {3}));
-  ASSERT_EQ(d.size(), 2);
+  ASSERT_NO_THROW(d.coords());
 }
 
-TEST(Dataset, insert_variables_with_dimensions) {
+TEST(DatasetTest, labels) {
   Dataset d;
-  d.insert(Data::Value, "name1", Dimensions(Dim::Tof, 2), {1.1, 2.2});
-  d.insert(Data::Value, "name2", {}, {2});
+  ASSERT_NO_THROW(d.labels());
 }
 
-TEST(Dataset, insert_updated_dimensions_correctly) {
+TEST(DatasetTest, attrs) {
   Dataset d;
-  d.insert(Data::Value, "name1", {Dim::X, 1});
-  d.insert(Data::Value, "name1", {Dim::Y, 1});
+  ASSERT_NO_THROW(d.attrs());
+}
+
+TEST(DatasetTest, bad_item_access) {
+  Dataset d;
+  ASSERT_ANY_THROW(d[""]);
+  ASSERT_ANY_THROW(d["abc"]);
+}
+
+TEST(DatasetTest, setCoord) {
+  Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.coords().size(), 0);
+
+  ASSERT_NO_THROW(d.setCoord(Dim::X, var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.coords().size(), 1);
+
+  ASSERT_NO_THROW(d.setCoord(Dim::Y, var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.coords().size(), 2);
+
+  ASSERT_NO_THROW(d.setCoord(Dim::X, var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.coords().size(), 2);
+}
+
+TEST(DatasetTest, setLabels) {
+  Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.labels().size(), 0);
+
+  ASSERT_NO_THROW(d.setLabels("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.labels().size(), 1);
+
+  ASSERT_NO_THROW(d.setLabels("b", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.labels().size(), 2);
+
+  ASSERT_NO_THROW(d.setLabels("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.labels().size(), 2);
+}
+
+TEST(DatasetTest, setAttr) {
+  Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.attrs().size(), 0);
+
+  ASSERT_NO_THROW(d.setAttr("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.attrs().size(), 1);
+
+  ASSERT_NO_THROW(d.setAttr("b", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.attrs().size(), 2);
+
+  ASSERT_NO_THROW(d.setAttr("a", var));
+  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.attrs().size(), 2);
+}
+
+TEST(DatasetTest, setValues_setVariances) {
+  Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+
+  ASSERT_NO_THROW(d.setValues("a", var));
   ASSERT_EQ(d.size(), 1);
-  ASSERT_EQ(d.dimensions(), Dimensions({Dim::Y, 1}));
+
+  ASSERT_NO_THROW(d.setValues("b", var));
+  ASSERT_EQ(d.size(), 2);
+
+  ASSERT_NO_THROW(d.setValues("a", var));
+  ASSERT_EQ(d.size(), 2);
+
+  ASSERT_NO_THROW(d.setVariances("a", var));
+  ASSERT_EQ(d.size(), 2);
+
+  ASSERT_ANY_THROW(d.setVariances("c", var));
 }
-
-TEST(Dataset, insert_variables_different_order) {
-  Dimensions xy;
-  Dimensions xz;
-  Dimensions yz;
-  xy.add(Dim::X, 1);
-  xz.add(Dim::X, 1);
-  xy.add(Dim::Y, 2);
-  yz.add(Dim::Y, 2);
-  xz.add(Dim::Z, 3);
-  yz.add(Dim::Z, 3);
-
-  Dataset xyz;
-  xyz.insert(Data::Value, "name1", xy, 2);
-  EXPECT_NO_THROW(xyz.insert(Data::Value, "name2", yz, 6));
-  EXPECT_NO_THROW(xyz.insert(Data::Value, "name3", xz, 3));
-
-  Dataset xzy;
-  xzy.insert(Data::Value, "name1", xz, 3);
-  EXPECT_NO_THROW(xzy.insert(Data::Value, "name2", xy, 2));
-  EXPECT_NO_THROW(xzy.insert(Data::Value, "name3", yz, 6));
-}
-
-TEST(Dataset, insert_edges) {
+TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
-  d.insert(Data::Value, "name1", {Dim::Tof, 2});
-  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
-  EXPECT_NO_THROW(d.insert(Coord::Tof, {Dim::Tof, 3}));
-  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
+  d.setValues("a", makeVariable<double>({Dim::X, 3}));
+  d.setValues("b", makeVariable<double>({Dim::X, 3}));
+
+  // It is possible to set labels with a name matching data. However, there is
+  // no special meaning attached to this. In particular it is *not* linking the
+  // labels to that data item.
+  ASSERT_NO_THROW(d.setLabels("a", makeVariable<double>({})));
+  ASSERT_EQ(d.size(), 2);
+  ASSERT_EQ(d.labels().size(), 1);
+  ASSERT_EQ(d["a"].labels().size(), 1);
+  ASSERT_EQ(d["b"].labels().size(), 1);
 }
 
-TEST(Dataset, insert_edges_first) {
+TEST(DatasetTest, setVariances_dtype_mismatch) {
   Dataset d;
-  EXPECT_NO_THROW(d.insert(Coord::Tof, {Dim::Tof, 3}));
-  EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
-  EXPECT_NO_THROW(d.insert(Data::Value, "name1", {Dim::Tof, 2}));
-  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
+  d.setValues("", makeVariable<double>({}));
+  ASSERT_ANY_THROW(d.setVariances("", makeVariable<float>({})));
+  ASSERT_NO_THROW(d.setVariances("", makeVariable<double>({})));
 }
 
-TEST(Dataset, insert_edges_first_fail) {
+TEST(DatasetTest, setVariances_unit_mismatch) {
   Dataset d;
-  EXPECT_NO_THROW(d.insert(Coord::Tof, {Dim::Tof, 3}));
-  EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
-  EXPECT_NO_THROW(d.insert(Data::Value, "name1", {Dim::Tof, 2}));
-  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
-  // Once we have edges and non-edges dimensions cannot change further.
-  EXPECT_THROW_MSG(
-      d.insert(Data::Value, "name2", {Dim::Tof, 1}), std::runtime_error,
-      "Cannot insert variable into Dataset: Dimensions do not match.");
-  EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 4}), std::runtime_error,
-                   "Cannot insert variable into Dataset: Variable is a "
-                   "dimension coordinate, but the dimension length matches "
-                   "neither as default coordinate nor as edge coordinate.");
-}
-
-TEST(Dataset, insert_edges_fail) {
-  Dataset d;
-  EXPECT_NO_THROW(d.insert(Data::Value, "name1", {Dim::Tof, 2}));
-  EXPECT_EQ(d.dimensions()[Dim::Tof], 2);
-  EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 4}), std::runtime_error,
-                   "Cannot insert variable into Dataset: Variable is a "
-                   "dimension coordinate, but the dimension length matches "
-                   "neither as default coordinate nor as edge coordinate.");
-  EXPECT_THROW_MSG(d.insert(Coord::Tof, {Dim::Tof, 1}), std::runtime_error,
-                   "Cannot insert variable into Dataset: Variable is a "
-                   "dimension coordinate, but the dimension length matches "
-                   "neither as default coordinate nor as edge coordinate.");
-}
-
-TEST(Dataset, insert_edges_reverse_fail) {
-  Dataset d;
-  EXPECT_NO_THROW(d.insert(Coord::Tof, {Dim::Tof, 3}));
-  EXPECT_EQ(d.dimensions()[Dim::Tof], 3);
-  EXPECT_THROW_MSG(
-      d.insert(Data::Value, "name1", Dimensions(Dim::Tof, 1)),
-      std::runtime_error,
-      "Cannot insert variable into Dataset: Dimensions do not match.");
-  EXPECT_THROW_MSG(
-      d.insert(Data::Value, "name1", Dimensions(Dim::Tof, 4)),
-      std::runtime_error,
-      "Cannot insert variable into Dataset: Dimensions do not match.");
-}
-
-TEST(Dataset, can_use_normal_insert_to_copy_edges) {
-  Dataset d;
-  d.insert(Data::Value, "", {Dim::X, 2});
-  d.insert(Coord::X, {Dim::X, 3});
-
-  Dataset copy;
-  for (auto var : d)
-    EXPECT_NO_THROW(copy.insert(var));
-}
-
-TEST(Dataset, custom_type) {
-  Dataset d;
-  d.insert<float>(Data::Value, "", {Dim::Tof, 2});
-  EXPECT_EQ(d(Data::Value, "").dtype(), dtype<float>);
-  EXPECT_TRUE(
-      (std::is_same<decltype(d(Data::Value, "").span<float>())::element_type,
-                    float>::value));
-}
-
-TEST(Dataset, mixed_type_operations_fails_currently) {
-  // This *currently* fails, but we would eventually want to support this.
-  Dataset d1;
-  d1.insert<float>(Data::Value, "", {});
-  Dataset d2;
-  d2.insert<double>(Data::Value, "", {});
-  EXPECT_NO_THROW(d1 += d1);
-  EXPECT_NO_THROW(d2 += d2);
-  EXPECT_ANY_THROW(d1 += d2);
-}
-
-TEST(Dataset, get_variable_view) {
-  Dataset d;
-  d.insert(Data::Value, "", {});
-  d.insert(Data::Value, "name", {});
-  d.insert(Coord::X, {});
-
-  EXPECT_NO_THROW(d(Coord::X));
-  EXPECT_NO_THROW(d(Data::Value, ""));
-  EXPECT_NO_THROW(d(Data::Value, "name"));
-  EXPECT_THROW_MSG_SUBSTR(d(Coord::Y), except::VariableNotFoundError,
-                          "could not find variable with tag "
-                          "Coord::Y and name ``");
-}
-
-TEST(Dataset, extract) {
-  Dataset d;
-  d.insert(Data::Value, "name1", {}, {1.1});
-  d.insert(Data::Variance, "name1", {}, {1.1});
-  d.insert(Data::Value, "name2", {}, {2});
-  EXPECT_EQ(d.size(), 3);
-  auto name1 = d.extract("name1");
-  EXPECT_EQ(d.size(), 1);
-  EXPECT_EQ(name1.size(), 2);
-  auto name2 = d.extract("name2");
-  EXPECT_EQ(d.size(), 0);
-  EXPECT_EQ(name2.size(), 1);
-}
-
-TEST(Dataset, merge) {
-  Dataset d;
-  d.insert(Data::Value, "name1", {}, {1.1});
-  d.insert(Data::Variance, "name1", {}, {1.1});
-  d.insert(Data::Value, "name2", {}, {2});
-
-  Dataset merged;
-  merged.merge(d);
-  EXPECT_EQ(merged.size(), 3);
-
-  Dataset copy(merged);
-
-  // We can merge twice, it is idempotent.
-  EXPECT_NO_THROW(merged.merge(d));
-  EXPECT_EQ(copy, merged);
-
-  Dataset d2;
-  d2.insert(Data::Value, "name3", {}, {1.1});
-  merged.merge(d2);
-  EXPECT_EQ(merged.size(), 4);
-}
-
-TEST(Dataset, merge_matching_coordinates) {
-  Dataset d1;
-  d1.insert(Coord::X, {Dim::X, 2}, {1.1, 2.2});
-  d1.insert(Data::Value, "data1", {Dim::X, 2});
-
-  Dataset d2;
-  d2.insert(Coord::X, {Dim::X, 2}, {1.1, 2.2});
-  d2.insert(Data::Value, "data2", {Dim::X, 2});
-
-  ASSERT_NO_THROW(d1.merge(d2));
-  EXPECT_EQ(d1.size(), 3);
-}
-
-TEST(Dataset, merge_coord_mismatch_fail) {
-  Dataset d1;
-  d1.insert(Coord::X, {Dim::X, 2}, {1.1, 2.2});
-  d1.insert(Data::Value, "data1", {Dim::X, 2});
-
-  Dataset d2;
-  d2.insert(Coord::X, {Dim::X, 2}, {1.1, 2.3});
-  d2.insert(Data::Value, "data2", {Dim::X, 2});
-
-  EXPECT_THROW_MSG(
-      d1.merge(d2), std::runtime_error,
-      "Cannot merge: Variable found in both operands, but does not match.");
-}
-
-TEST(Dataset, const_get) {
-  Dataset d;
-  d.insert(Data::Value, "", {}, {1.1});
-  d.insert(Data::Variance, "", {}, {2});
-  const auto &const_d(d);
-  auto view = const_d.get(Data::Value);
-  // No non-const access to variable if Dataset is const, will not compile:
-  // auto &view = const_d.get(Data::Value);
-  ASSERT_EQ(view.size(), 1);
-  EXPECT_EQ(view[0], 1.1);
-  // auto is deduced to be const, so assignment will not compile:
-  // view[0] = 1.2;
-}
-
-TEST(Dataset, get) {
-  Dataset d;
-  d.insert(Data::Value, "", {}, {1.1});
-  d.insert(Data::Variance, "", {}, {2});
-  auto view = d.get(Data::Value);
-  ASSERT_EQ(view.size(), 1);
-  EXPECT_EQ(view[0], 1.1);
-  view[0] = 2.2;
-  EXPECT_EQ(view[0], 2.2);
-}
-
-TEST(Dataset, get_const) {
-  Dataset d;
-  d.insert(Data::Value, "", {}, {1.1});
-  d.insert(Data::Variance, "", {}, {2});
-  auto view = d.get(Data::Value);
-  ASSERT_EQ(view.size(), 1);
-  EXPECT_EQ(view[0], 1.1);
-  // auto is now deduced to be const, so assignment will not compile:
-  // view[0] = 1.2;
-}
-
-TEST(Dataset, get_fail) {
-  Dataset d;
-  d.insert(Data::Value, "name1", {}, {1.1});
-  d.insert(Data::Value, "name2", {}, {1.1});
-  EXPECT_THROW_MSG_SUBSTR(d.get(Data::Value), std::runtime_error,
-                          "could not find variable with tag "
-                          "Data::Value and name ``.");
-  EXPECT_THROW_MSG_SUBSTR(d.get(Data::Variance), except::VariableNotFoundError,
-                          "could not find variable with tag "
-                          "Data::Variance and name ``.");
-}
-
-TEST(Dataset, get_named) {
-  Dataset d;
-  d.insert(Data::Value, "name1", {}, {1.1});
-  d.insert(Data::Value, "name2", {}, {2.2});
-  auto var1 = d.get(Data::Value, "name1");
-  ASSERT_EQ(var1.size(), 1);
-  EXPECT_EQ(var1[0], 1.1);
-  auto var2 = d.get(Data::Value, "name2");
-  ASSERT_EQ(var2.size(), 1);
-  EXPECT_EQ(var2[0], 2.2);
-}
-
-TEST(Dataset, comparison_different_insertion_order) {
-  Dataset d1;
-  d1.insert(Data::Value, "a", {});
-  d1.insert(Data::Value, "b", {});
-  Dataset d2;
-  d2.insert(Data::Value, "b", {});
-  d2.insert(Data::Value, "a", {});
-  EXPECT_EQ(d1, d1);
-  EXPECT_EQ(d1, d2);
-  EXPECT_EQ(d2, d1);
-  EXPECT_EQ(d2, d2);
-}
-
-TEST(Dataset, comparison_different_data) {
-  Dataset d1;
-  d1.insert(Data::Value, "a", {});
-  d1.insert(Data::Value, "b", {});
-  Dataset d2;
-  d2.insert(Data::Value, "b", {});
-  d2.insert(Data::Value, "a", {}, {1.0});
-  EXPECT_EQ(d1, d1);
-  EXPECT_NE(d1, d2);
-  EXPECT_NE(d2, d1);
-  EXPECT_EQ(d2, d2);
-}
-
-TEST(Dataset, comparison_missing_variable) {
-  Dataset d1;
-  d1.insert(Data::Value, "a", {});
-  d1.insert(Data::Value, "b", {});
-  Dataset d2;
-  d2.insert(Data::Value, "a", {});
-  EXPECT_EQ(d1, d1);
-  EXPECT_NE(d1, d2);
-  EXPECT_NE(d2, d1);
-  EXPECT_EQ(d2, d2);
-}
-
-TEST(Dataset, comparison_with_subset) {
-  Dataset d1;
-  d1.insert(Data::Value, "a", {});
-  d1.insert(Data::Variance, "a", {});
-  Dataset d2;
-  d2.insert(Data::Value, "b", {});
-  d2.insert(Data::Value, "a", {});
-  d2.insert(Data::Variance, "a", {});
-  EXPECT_NE(d1, d2);
-  EXPECT_EQ(d1, d2.subset("a"));
-  EXPECT_EQ(d2.subset("a"), d1);
-}
-
-TEST(Dataset, subset) {
-  Dataset d;
-  d.insert(Coord::X, {});
-  d.insert(Data::Value, "a", {});
-  d.insert(Data::Variance, "a", {});
-  d.insert(Data::Value, "b", {});
-  d.insert(Data::Variance, "b", {});
-
-  const auto value = d.subset(Data::Value, "a");
-  EXPECT_EQ(value.size(), 2);
-  EXPECT_TRUE(value.contains(Coord::X));
-  EXPECT_TRUE(value.contains(Data::Value, "a"));
-
-  const auto variance = d.subset(Data::Variance, "a");
-  EXPECT_EQ(variance.size(), 2);
-  EXPECT_TRUE(variance.contains(Coord::X));
-  EXPECT_TRUE(variance.contains(Data::Variance, "a"));
-
-  const auto both = d.subset("a");
-  EXPECT_EQ(both.size(), 3);
-  EXPECT_TRUE(both.contains(Coord::X));
-  EXPECT_TRUE(both.contains(Data::Value, "a"));
-  EXPECT_TRUE(both.contains(Data::Variance, "a"));
-}
-
-TEST(Dataset, subset_no_data_fail) {
-  Dataset d;
-  d.insert(Coord::X, {});
-  d.insert(Data::Value, "a", {});
-  d.insert(Data::Variance, "a", {});
-  d.insert(Data::Value, "b", {});
-  d.insert(Data::Variance, "b", {});
-
-  // Note: This is required to fail, otherwise we silently do nothing if a
-  // subset is used in operations, e.g.,
-  // d.subset("a") += d.subset("c")
-  // TODO DatasetSlice itself *does* support subsets with empty data, we just
-  // need a clearly different way of creating them, i.e., not by accident. One
-  // example could be `dataset.coords()`, a subset that contains all
-  // coordinates.
-  EXPECT_THROW(d.subset(""), except::VariableNotFoundError);
-}
-
-TEST(Dataset, subset_of_subset) {
-  Dataset d;
-  d.insert(Coord::X, {});
-  d.insert(Data::Value, "a", {});
-  d.insert(Data::Variance, "a", {});
-  d.insert(Data::Value, "b", {});
-  d.insert(Data::Variance, "b", {});
-
-  const auto value = d.subset(Data::Value, "a");
-  const auto both = d.subset("a");
-
-  const auto value_from_subset = both.subset(Data::Value, "a");
-
-  EXPECT_EQ(value, value_from_subset);
-  EXPECT_EQ(value_from_subset.size(), 2);
-  EXPECT_TRUE(value_from_subset.contains(Coord::X));
-  EXPECT_TRUE(value_from_subset.contains(Data::Value, "a"));
-}
-
-TEST(Dataset, subset_of_full_subset) {
-  Dataset d;
-  d.insert(Coord::X, {});
-  d.insert(Data::Value, "a", {});
-  d.insert(Data::Variance, "a", {});
-  d.insert(Data::Value, "b", {});
-  d.insert(Data::Variance, "b", {});
-
-  const auto both = d.subset("a");
-  const DatasetSlice full(d);
-  EXPECT_EQ(full.size(), 5);
-
-  const auto both_from_subset = full.subset("a");
-
-  EXPECT_EQ(both, both_from_subset);
-  EXPECT_EQ(both_from_subset.size(), 3);
-  EXPECT_TRUE(both_from_subset.contains(Coord::X));
-  EXPECT_TRUE(both_from_subset.contains(Data::Value, "a"));
-  EXPECT_TRUE(both_from_subset.contains(Data::Variance, "a"));
-}
-
-template <class T> void do_subset_of_slice(T &d, bool useTag) {
-  const auto slice = d(Dim::X, 1, 2);
-  const auto subset =
-      useTag ? slice.subset(Data::Value, "a") : slice.subset("a");
-
-  EXPECT_EQ(subset(Coord::X).size(), 1);
-  EXPECT_EQ(subset(Coord::X).template span<double>()[0], 2);
-  EXPECT_EQ(subset.dimensions(), Dimensions({Dim::X, 1}));
-}
-
-TEST(Dataset, subset_of_slice) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 3, 4});
-  d.insert(Data::Value, "a", {});
-  d.insert(Data::Value, "b", {});
-
-  do_subset_of_slice<Dataset>(d, true);
-  do_subset_of_slice<Dataset>(d, false);
-  do_subset_of_slice<const Dataset>(d, true);
-  do_subset_of_slice<const Dataset>(d, false);
-}
-
-TEST(Dataset, comparison_with_spatial_slice) {
-  Dataset d1;
-  d1.insert(Data::Value, "a", {Dim::X, 2}, {2, 3});
-  Dataset d2;
-  d2.insert(Data::Value, "b", {});
-  d2.insert(Data::Value, "a", {Dim::X, 3}, {1, 2, 3});
-
-  EXPECT_NE(d1, d2);
-
-  EXPECT_NE(d1, d2.subset("a"));
-  EXPECT_NE(d1, d2.subset("a")(Dim::X, 0, 2));
-  EXPECT_NE(d1, d2.subset("a")(Dim::X, 0));
-  EXPECT_NE(d1, d2.subset("a")(Dim::X, 1));
-  EXPECT_EQ(d1, d2.subset("a")(Dim::X, 1, 3));
-
-  EXPECT_NE(d2.subset("a"), d1);
-  EXPECT_NE(d2.subset("a")(Dim::X, 0, 2), d1);
-  EXPECT_NE(d2.subset("a")(Dim::X, 0), d1);
-  EXPECT_NE(d2.subset("a")(Dim::X, 1), d1);
-  EXPECT_EQ(d2.subset("a")(Dim::X, 1, 3), d1);
-}
-
-TEST(Dataset, comparison_two_slices) {
-  Dataset d;
-  d.insert(Data::Value, "a", {Dim::X, 4}, {1, 2, 3, 4});
-  d.insert(Data::Value, "b", {Dim::X, 4}, {1, 2, 1, 2});
-
-  // Data is same but name differs.
-  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("b")(Dim::X, 0, 2));
-
-  EXPECT_EQ(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 0, 2));
-  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 1, 3));
-  EXPECT_NE(d.subset("a")(Dim::X, 0, 2), d.subset("a")(Dim::X, 2, 4));
-
-  EXPECT_EQ(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 0, 2));
-  EXPECT_NE(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 1, 3));
-  EXPECT_EQ(d.subset("b")(Dim::X, 0, 2), d.subset("b")(Dim::X, 2, 4));
-}
-
-TEST(Dataset, operator_plus_equal) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {2.2});
-  a += a;
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 4.4);
-}
-
-TEST(Dataset, insert_named_subset) {
-  Dataset a;
-  a.insert(Data::Value, "a", {Dim::X, 1}, 1);
-  a.insert(Data::Variance, "a", {Dim::X, 1}, 1);
-  a.insert(Coord::X, "a", {Dim::X, 1}, 1);
-  auto subset = a.subset("a");
-
-  Dataset b;
-  b.insert(Coord::X, "a", {Dim::X, 1}, 1);
-  b.insert("b", subset);
-  EXPECT_NE(b, a);
-  EXPECT_EQ(b.size(), 3);
-
-  EXPECT_TRUE(b.contains(Data::Value, "b"));
-  EXPECT_TRUE(b.contains(Data::Variance, "b"));
-  EXPECT_TRUE(b.contains(Coord::X, "a")); // Coordinates not renamed
-}
-
-TEST(Dataset, insert_named_subset_matches_coordinates) {
-  Dataset a;
-  a.insert(Data::Value, "a", {Dim::X, 1}, 1);
-  a.insert(Data::Variance, "a", {Dim::X, 1}, 1);
-  a.insert(Coord::X, {Dim::X, 1}, 1);
-  auto subset = a.subset("a");
-
-  Dataset b;
-  b.insert(Coord::Y, {Dim::Y, 3}, 3); // Coord different from subset
-  EXPECT_THROW(b.insert("b", subset),
-               std::runtime_error);   // Insert cannot be used to
-                                      // add coordinate variables
-                                      // not already present
-  b.insert(Coord::X, {Dim::X, 1}, 1); // lhs now has X coord.
-  b.insert("b", subset);
-
-  EXPECT_EQ(b.size(), 4);
-  EXPECT_TRUE(b.contains(Data::Value, "b"));
-  EXPECT_TRUE(b.contains(Data::Variance, "b"));
-  EXPECT_TRUE(b.contains(Coord::Y)); // Original coord
-  EXPECT_TRUE(b.contains(Coord::X));
-
-  Dataset c;
-  c.insert(Coord::X, {Dim::X, 3}, 3);
-  // Coord X dimension different
-  EXPECT_THROW(c.insert("c", subset), std::runtime_error);
-}
-
-TEST(Dataset, operator_plus_equal_broadcast) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}),
-           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  Dataset b;
-  b.insert(Coord::X, {Dim::X, 1}, {0.1});
-  b.insert(Data::Value, "", Dimensions({{Dim::Z, 3}}), {0.1, 0.2, 0.3});
-
-  EXPECT_NO_THROW(a += b);
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 1.1);
-  EXPECT_EQ(a.get(Data::Value)[1], 2.1);
-  EXPECT_EQ(a.get(Data::Value)[2], 3.2);
-  EXPECT_EQ(a.get(Data::Value)[3], 4.2);
-  EXPECT_EQ(a.get(Data::Value)[4], 5.3);
-  EXPECT_EQ(a.get(Data::Value)[5], 6.3);
-}
-
-TEST(Dataset, operator_multiplication_broadcast) {
-
-  Dataset a;
-  a.insert(Data::Value, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
-           {1.0, 1.0, 1.0, 1.0});
-  a(Data::Value).setUnit(units::m);
-  a.insert(Data::Variance, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
-           {1.0, 1.0, 1.0, 1.0});
-
-  Dataset b;
-  b.insert(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
-  b(Data::Value).setUnit(units::m);
-  b.insert(Data::Variance, {Dim::Y, 2}, {1.0, 1.0});
-
-  auto c = a * b;
-  // Check units
-  EXPECT_EQ(c(Data::Value).unit(), units::m * units::m);
-  EXPECT_EQ(c(Data::Variance).unit(),
-            units::m * units::m * units::m * units::m);
-
-  // Basic output structure test
-  EXPECT_EQ(c.dimensions().volume(), 4);
-  EXPECT_TRUE(c.dimensions().contains(Dim::X));
-  EXPECT_TRUE(c.dimensions().contains(Dim::Y));
-  EXPECT_TRUE(c.contains(Data::Value));
-  EXPECT_TRUE(c.contains(Data::Variance));
-
-  EXPECT_EQ(c.get(Data::Value)[0], 2);
-  EXPECT_EQ(c.get(Data::Value)[1], 3);
-  EXPECT_EQ(c.get(Data::Value)[2], 2);
-  EXPECT_EQ(c.get(Data::Value)[3], 3);
-
-  EXPECT_EQ(c.get(Data::Variance)[0], 2 * 2 * 1 + 1 * 1 * 1);
-  EXPECT_EQ(c.get(Data::Variance)[1], 3 * 3 * 1 + 1 * 1 * 1);
-  EXPECT_EQ(c.get(Data::Variance)[2], 2 * 2 * 1 + 1 * 1 * 1);
-  EXPECT_EQ(c.get(Data::Variance)[3], 3 * 3 * 1 + 1 * 1 * 1);
-}
-
-TEST(Dataset, operator_divide_broadcast) {
-
-  Dataset a;
-  a.insert(Data::Value, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
-           {1.0, 1.0, 1.0, 1.0});
-  a(Data::Value).setUnit(units::m);
-  a.insert(Data::Variance, Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
-           {1.0, 1.0, 1.0, 1.0});
-
-  Dataset b;
-  b.insert(Data::Value, {Dim::Y, 2}, {2.0, 3.0});
-  b(Data::Value).setUnit(units::m);
-  b.insert(Data::Variance, {Dim::Y, 2}, {1.1, 1.1});
-
-  a /= b;
-  // Check units
-  EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
-  EXPECT_EQ(a(Data::Variance).unit(), units::dimensionless);
-
-  // Basic output structure test
-  EXPECT_EQ(a.dimensions().volume(), 4);
-  EXPECT_TRUE(a.dimensions().contains(Dim::X));
-  EXPECT_TRUE(a.dimensions().contains(Dim::Y));
-  EXPECT_TRUE(a.contains(Data::Value));
-  EXPECT_TRUE(a.contains(Data::Variance));
-
-  EXPECT_EQ(a.get(Data::Value)[0], 1.0 / 2);
-  EXPECT_EQ(a.get(Data::Value)[1], 1.0 / 3);
-  EXPECT_EQ(a.get(Data::Value)[2], 1.0 / 2);
-  EXPECT_EQ(a.get(Data::Value)[3], 1.0 / 3);
-
-  EXPECT_DOUBLE_EQ(a.get(Data::Variance)[0], (1.0 / 4) * (1.0 / 1 + 1.1 / 4));
-  EXPECT_DOUBLE_EQ(a.get(Data::Variance)[1], (1.0 / 9) * (1.0 / 1 + 1.1 / 9));
-  EXPECT_DOUBLE_EQ(a.get(Data::Variance)[2], (1.0 / 4) * (1.0 / 1 + 1.1 / 4));
-  EXPECT_DOUBLE_EQ(a.get(Data::Variance)[3], (1.0 / 9) * (1.0 / 1 + 1.1 / 9));
-}
-
-TEST(Dataset, operator_plus_equal_transpose) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}),
-           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  Dataset b;
-  b.insert(Coord::X, {Dim::X, 1}, {0.1});
-  b.insert(Data::Value, "", Dimensions({{Dim::Y, 2}, {Dim::Z, 3}}),
-           {0.1, 0.2, 0.3, 0.1, 0.2, 0.3});
-
-  EXPECT_NO_THROW(a += b);
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 1.1);
-  EXPECT_EQ(a.get(Data::Value)[1], 2.1);
-  EXPECT_EQ(a.get(Data::Value)[2], 3.2);
-  EXPECT_EQ(a.get(Data::Value)[3], 4.2);
-  EXPECT_EQ(a.get(Data::Value)[4], 5.3);
-  EXPECT_EQ(a.get(Data::Value)[5], 6.3);
-}
-
-TEST(Dataset, operator_plus_equal_different_content) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "name1", {Dim::X, 1}, {2.2});
-  Dataset b;
-  b.insert(Coord::X, {Dim::X, 1}, {0.1});
-  b.insert(Data::Value, "name1", {Dim::X, 1}, {2.2});
-  b.insert(Data::Value, "name2", {Dim::X, 1}, {3.3});
-  EXPECT_THROW_MSG(a += b, std::runtime_error,
-                   "Right-hand-side in binary operation contains variable that "
-                   "is not present in left-hand-side.");
-  EXPECT_NO_THROW(b += a);
-}
-
-TEST(Dataset, operator_plus_equal_with_attributes) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {2.2});
-  Dataset logs;
-  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
-  a.insert(Attr::ExperimentLog, "", {}, {logs});
-  a += a;
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 4.4);
-  // For now there is no special merging behavior, just keep attributes of first
-  // operand.
-  EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
-}
-
-TEST(Dataset, binary_operator_equal_with_variable) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "a", {Dim::X, 1}, {25.0});
-
-  auto a_copy(a);
-  auto bvar = makeVariable<double>({Dim::X, 1}, {5});
-
-  a += bvar;
-  EXPECT_EQ(a.get(Data::Value, "a")[0], 25 + 5);
-
-  a -= bvar; // TODO this test setup should throw since only one
-  EXPECT_EQ(a.get(Data::Value, "a")[0], 25);
-
-  a *= bvar;
-  EXPECT_EQ(a.get(Data::Value, "a")[0], 25 * 5);
-
-  a /= bvar;
-  EXPECT_EQ(a.get(Data::Value, "a")[0], 25);
-
-  auto cvar = makeVariable<double>({Dim::X, 1}, {10});
-  a_copy += cvar;
-  EXPECT_EQ(a_copy.get(Data::Value, "a")[0], 35);
-}
-
-TEST(Dataset, operator_times_equal) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
-  a *= a;
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 9.0);
-}
-
-TEST(Dataset, operator_divide_equal) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
-
-  a /= a;
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 1.0);
-}
-
-TEST(Dataset, operator_times_equal_with_attributes) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
-  Dataset logs;
-  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
-  a.insert(Attr::ExperimentLog, "", {}, {logs});
-  a *= a;
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 9.0);
-  EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
-}
-
-TEST(Dataset, operator_divide_equal_with_attributes) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {3.0});
-  Dataset logs;
-  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
-  a.insert(Attr::ExperimentLog, "", {}, {logs});
-  a /= a;
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], 1.0);
-  EXPECT_EQ(a.get(Attr::ExperimentLog)[0], logs);
-}
-
-TEST(Dataset, operator_times_and_divide_equal_with_uncertainty) {
-  Dataset a;
-  const auto value1 = 3.0;
-  const auto variance1 = 2.0;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {value1});
-  a.insert(Data::Variance, "", {Dim::X, 1}, {variance1});
-  Dataset b;
-  const auto value2 = 4.0;
-  const auto variance2 = 3.0;
-  b.insert(Coord::X, {Dim::X, 1}, {0.1});
-  b.insert(Data::Value, "", {Dim::X, 1}, {value2});
-  b.insert(Data::Variance, "", {Dim::X, 1}, {variance2});
-  a *= b;
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  auto value3 = value1 * value2;
-  EXPECT_EQ(a.get(Data::Value)[0], value3);
-  auto variance3 = variance1 * value2 * value2 + variance2 * value1 * value1;
-  EXPECT_EQ(a.get(Data::Variance)[0], variance3);
-
-  a /= a;
-  auto value4 = 1.0;
-  EXPECT_EQ(a.get(Coord::X)[0], 0.1);
-  EXPECT_EQ(a.get(Data::Value)[0], value4);
-  EXPECT_EQ(a.get(Data::Variance)[0],
-            value4 * value4 * 2 * (variance3 / (value3 * value3)));
-}
-
-void operator_uncertaintly_failures(void (*op)(Dataset &lhs,
-                                               const Dataset &rhs),
-                                    Dataset &a, Dataset &b, Dataset &c) {
-  EXPECT_THROW_MSG(op(a, b), std::runtime_error,
-                   "Either both or none of the operands must have a variance "
-                   "for their values.");
-  EXPECT_THROW_MSG(op(b, a), std::runtime_error,
-                   "Either both or none of the operands must have a variance "
-                   "for their values.");
-  EXPECT_THROW_MSG(op(c, c), std::runtime_error,
-                   "Cannot operate on datasets that contain a variance but no "
-                   "corresponding value.");
-  EXPECT_THROW_MSG(op(a, c), std::runtime_error,
-                   "Cannot operate on datasets that contain a variance but no "
-                   "corresponding value.");
-}
-
-TEST(Dataset, operator_binary_op_equal_uncertainty_failures) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "name1", {Dim::X, 1}, {3.0});
-  a.insert(Data::Variance, "name1", {Dim::X, 1}, {2.0});
-  Dataset b;
-  b.insert(Coord::X, {Dim::X, 1}, {0.1});
-  b.insert(Data::Value, "name1", {Dim::X, 1}, {4.0});
-  Dataset c;
-  c.insert(Coord::X, {Dim::X, 1}, {0.1});
-  c.insert(Data::Variance, "name1", {Dim::X, 1}, {2.0});
-  operator_uncertaintly_failures([](auto i, auto j) { i *= j; }, a, b, c);
-  operator_uncertaintly_failures([](auto i, auto j) { i /= j; }, a, b, c);
-}
-
-TEST(Dataset, operator_times_equal_with_units) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  auto values = makeVariable<double>({Dim::X, 1}, {3.0});
+  auto values = makeVariable<double>({});
   values.setUnit(units::m);
-  auto variances = makeVariable<double>({Dim::X, 1}, {2.0});
+  d.setValues("", values);
+  auto variances = makeVariable<double>({});
+  ASSERT_ANY_THROW(d.setVariances("", variances));
+  variances.setUnit(units::m);
+  ASSERT_ANY_THROW(d.setVariances("", variances));
   variances.setUnit(units::m * units::m);
-  a.insert(Data::Value, values);
-  a.insert(Data::Variance, variances);
-  a *= a;
-  EXPECT_EQ(a(Data::Value).unit(), units::m * units::m);
-  EXPECT_EQ(a(Data::Variance).unit(),
-            units::m * units::m * units::m * units::m);
-  EXPECT_EQ(a.get(Data::Variance)[0], 36.0);
+  ASSERT_NO_THROW(d.setVariances("", variances));
 }
 
-TEST(Dataset, operator_divide_equal_with_units) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  auto values = makeVariable<double>({Dim::X, 1}, {3.0});
-  values.setUnit(units::m);
-  auto variances = makeVariable<double>({Dim::X, 1}, {2.0});
-  variances.setUnit(units::m * units::m);
-  a.insert(Data::Value, values);
-  a.insert(Data::Variance, variances);
-  a /= a;
-  EXPECT_EQ(a(Data::Value).unit(), units::dimensionless);
-  EXPECT_EQ(a(Data::Variance).unit(), units::dimensionless);
-  EXPECT_EQ(a.get(Data::Variance)[0], 2.0 * (2.0 / 9.0));
-}
-
-// TODO Why is this test named `histogram_data`? There is no histogram.
-TEST(Dataset, operator_times_equal_histogram_data) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "name1", {Dim::X, 1}, {3.0});
-  a.insert(Data::Variance, "name1", {Dim::X, 1}, {2.0});
-  a(Data::Value, "name1").setUnit(units::counts);
-  a(Data::Variance, "name1").setUnit(units::counts * units::counts);
-
-  Dataset b;
-  b.insert(Coord::X, {Dim::X, 1}, {0.1});
-  b.insert(Data::Value, "name1", {Dim::X, 1}, {4.0});
-  b.insert(Data::Variance, "name1", {Dim::X, 1}, {4.0});
-
-  auto c =
-      a; // Copy a because the failing operation below c *= a lacks atomicity,
-         // leaves assigned units of the variable even though the variance unit
-         // setting failed.
-  // Counts (aka "histogram data") times counts not possible.
-  EXPECT_THROW_MSG(
-      c *= c, std::runtime_error,
-      "Unsupported unit as result of multiplication: (counts^2) * (counts^2)");
-  // Counts times frequencies (aka "distribution") ok.
-  // TODO Works for dimensionless right now, but do we need to handle other
-  // cases as well?
-  auto a_copy(a);
-  a *= b;
-  EXPECT_NO_THROW(b *= a_copy);
-}
-
-TEST(Dataset, operator_plus_with_temporary_avoids_copy) {
-  Dataset a;
-  a.insert(Data::Value, "", {Dim::X, 1}, {2.2});
-  const auto a2(a);
-  const auto b(a);
-
-  const auto *addr = &a.get(Data::Value)[0];
-  auto sum = std::move(a) + b;
-  EXPECT_EQ(&sum.get(Data::Value)[0], addr);
-
-  const auto *addr2 = &a2.get(Data::Value)[0];
-  auto sum2 = a2 + b;
-  EXPECT_NE(&sum2.get(Data::Value)[0], addr2);
-}
-
-TEST(Dataset, slice) {
+TEST(DatasetTest, setVariances_dimensions_mismatch) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {0.0, 0.1});
-  d.insert(Data::Value, "", {{Dim::Y, 3}, {Dim::X, 2}},
-           {0.0, 1.0, 2.0, 3.0, 4.0, 5.0});
-  for (const scipp::index i : {0, 1}) {
-    Dataset sliceX = d(Dim::X, i);
-    ASSERT_EQ(sliceX.size(), 1);
-    ASSERT_EQ(sliceX.get(Data::Value).size(), 3);
-    EXPECT_EQ(sliceX.get(Data::Value)[0], 0.0 + i);
-    EXPECT_EQ(sliceX.get(Data::Value)[1], 2.0 + i);
-    EXPECT_EQ(sliceX.get(Data::Value)[2], 4.0 + i);
+  d.setValues("", makeVariable<double>({}));
+  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({Dim::X, 1})));
+  ASSERT_NO_THROW(d.setVariances("", makeVariable<double>({})));
+}
+
+TEST(DatasetTest, setVariances_sparseDim_mismatch) {
+  Dataset d;
+  d.setValues("", makeSparseVariable<double>({}, Dim::X));
+  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({Dim::X, 1})));
+  ASSERT_ANY_THROW(d.setVariances("", makeVariable<double>({})));
+  ASSERT_ANY_THROW(d.setVariances("", makeSparseVariable<double>({}, Dim::Y)));
+  ASSERT_ANY_THROW(
+      d.setVariances("", makeSparseVariable<double>({Dim::X, 1}, Dim::X)));
+  ASSERT_NO_THROW(d.setVariances("", makeSparseVariable<double>({}, Dim::X)));
+}
+
+TEST(DatasetTest, setValues_dtype_mismatch) {
+  Dataset d;
+  d.setValues("", makeVariable<double>({}));
+  d.setVariances("", makeVariable<double>({}));
+  ASSERT_ANY_THROW(d.setValues("", makeVariable<float>({})));
+  ASSERT_NO_THROW(d.setValues("", makeVariable<double>({})));
+}
+
+TEST(DatasetTest, setValues_dimensions_mismatch) {
+  Dataset d;
+  d.setValues("", makeVariable<double>({}));
+  d.setVariances("", makeVariable<double>({}));
+  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({Dim::X, 1})));
+  ASSERT_NO_THROW(d.setValues("", makeVariable<double>({})));
+}
+
+TEST(DatasetTest, setValues_sparseDim_mismatch) {
+  Dataset d;
+  d.setValues("", makeSparseVariable<double>({}, Dim::X));
+  d.setVariances("", makeSparseVariable<double>({}, Dim::X));
+  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({Dim::X, 1})));
+  ASSERT_ANY_THROW(d.setValues("", makeVariable<double>({})));
+  ASSERT_ANY_THROW(d.setValues("", makeSparseVariable<double>({}, Dim::Y)));
+  ASSERT_ANY_THROW(
+      d.setValues("", makeSparseVariable<double>({Dim::X, 1}, Dim::X)));
+  ASSERT_NO_THROW(d.setValues("", makeSparseVariable<double>({}, Dim::X)));
+}
+
+TEST(DatasetTest, setSparseCoord_not_sparse_fail) {
+  Dataset d;
+  const auto var = makeVariable<double>({Dim::X, 3});
+
+  ASSERT_ANY_THROW(d.setSparseCoord("a", var));
+}
+
+TEST(DatasetTest, setSparseCoord) {
+  Dataset d;
+  const auto var = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
+
+  ASSERT_NO_THROW(d.setSparseCoord("a", var));
+  ASSERT_EQ(d.size(), 1);
+  ASSERT_NO_THROW(d["a"]);
+}
+
+TEST(DatasetTest, setSparseLabels_missing_values_or_coord) {
+  Dataset d;
+  const auto sparse = makeSparseVariable<double>({}, Dim::X);
+
+  ASSERT_ANY_THROW(d.setSparseLabels("a", "x", sparse));
+  d.setSparseCoord("a", sparse);
+  ASSERT_NO_THROW(d.setSparseLabels("a", "x", sparse));
+}
+
+TEST(DatasetTest, setSparseLabels_not_sparse_fail) {
+  Dataset d;
+  const auto dense = makeVariable<double>({});
+  const auto sparse = makeSparseVariable<double>({}, Dim::X);
+
+  d.setSparseCoord("a", sparse);
+  ASSERT_ANY_THROW(d.setSparseLabels("a", "x", dense));
+}
+
+TEST(DatasetTest, setSparseLabels) {
+  Dataset d;
+  const auto sparse = makeSparseVariable<double>({}, Dim::X);
+  d.setSparseCoord("a", sparse);
+
+  ASSERT_NO_THROW(d.setSparseLabels("a", "x", sparse));
+  ASSERT_EQ(d.size(), 1);
+  ASSERT_NO_THROW(d["a"]);
+  ASSERT_EQ(d["a"].labels().size(), 1);
+}
+
+TEST(DatasetTest, iterators_empty_dataset) {
+  Dataset d;
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+  EXPECT_EQ(d.begin(), d.end());
+}
+
+TEST(DatasetTest, iterators_only_coords) {
+  Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({}));
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+  EXPECT_EQ(d.begin(), d.end());
+}
+
+TEST(DatasetTest, iterators_only_labels) {
+  Dataset d;
+  d.setLabels("a", makeVariable<double>({}));
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+  EXPECT_EQ(d.begin(), d.end());
+}
+
+TEST(DatasetTest, iterators_only_attrs) {
+  Dataset d;
+  d.setAttr("a", makeVariable<double>({}));
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+  EXPECT_EQ(d.begin(), d.end());
+}
+
+TEST(DatasetTest, iterators) {
+  Dataset d;
+  d.setValues("a", makeVariable<double>({}));
+  d.setValues("b", makeVariable<float>({}));
+  d.setValues("c", makeVariable<int64_t>({}));
+
+  ASSERT_NO_THROW(d.begin());
+  ASSERT_NO_THROW(d.end());
+
+  auto it = d.begin();
+  ASSERT_NE(it, d.end());
+  EXPECT_EQ(it->first, "a");
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_NE(it, d.end());
+  EXPECT_EQ(it->first, "b");
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_NE(it, d.end());
+  EXPECT_EQ(it->first, "c");
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_EQ(it, d.end());
+}
+
+TEST(DatasetTest, iterators_return_types) {
+  Dataset d;
+  ASSERT_TRUE((std::is_same_v<decltype(d.begin()->second), DataProxy>));
+  ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataProxy>));
+}
+
+TEST(DatasetTest, const_iterators_return_types) {
+  const Dataset d;
+  ASSERT_TRUE((std::is_same_v<decltype(d.begin()->second), DataConstProxy>));
+  ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
+}
+
+template <class T, class T2>
+auto variable(const Dimensions &dims, const units::Unit unit,
+              const std::initializer_list<T2> &data) {
+  auto var = makeVariable<T>(dims, data);
+  var.setUnit(unit);
+  return var;
+}
+
+class Dataset_comparison_operators : public ::testing::Test {
+private:
+  template <class A, class B>
+  void expect_eq_impl(const A &a, const B &b) const {
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(b == a);
+    EXPECT_FALSE(a != b);
+    EXPECT_FALSE(b != a);
   }
-  for (const scipp::index i : {0, 1}) {
-    Dataset sliceX = d(Dim::X, i, i + 1);
-    ASSERT_EQ(sliceX.size(), 2);
-    ASSERT_EQ(sliceX.get(Coord::X).size(), 1);
-    EXPECT_EQ(sliceX.get(Coord::X)[0], 0.1 * i);
-    ASSERT_EQ(sliceX.get(Data::Value).size(), 3);
-    EXPECT_EQ(sliceX.get(Data::Value)[0], 0.0 + i);
-    EXPECT_EQ(sliceX.get(Data::Value)[1], 2.0 + i);
-    EXPECT_EQ(sliceX.get(Data::Value)[2], 4.0 + i);
+  template <class A, class B>
+  void expect_ne_impl(const A &a, const B &b) const {
+    EXPECT_TRUE(a != b);
+    EXPECT_TRUE(b != a);
+    EXPECT_FALSE(a == b);
+    EXPECT_FALSE(b == a);
   }
-  for (const scipp::index i : {0, 1, 2}) {
-    Dataset sliceY = d(Dim::Y, i);
-    ASSERT_EQ(sliceY.size(), 2);
-    ASSERT_EQ(sliceY.get(Coord::X), d.get(Coord::X));
-    ASSERT_EQ(sliceY.get(Data::Value).size(), 2);
-    EXPECT_EQ(sliceY.get(Data::Value)[0], 0.0 + 2 * i);
-    EXPECT_EQ(sliceY.get(Data::Value)[1], 1.0 + 2 * i);
+
+protected:
+  Dataset_comparison_operators()
+      : sparse_variable(
+            makeSparseVariable<double>({{Dim::Y, 3}, {Dim::Z, 2}}, Dim::X)) {
+    dataset.setCoord(Dim::X, makeVariable<double>({Dim::X, 4}));
+    dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 3}));
+
+    dataset.setLabels("labels", makeVariable<int>({Dim::X, 4}));
+
+    dataset.setAttr("attr", makeVariable<int>({}));
+
+    dataset.setValues("val_and_var",
+                      makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}}));
+    dataset.setVariances("val_and_var",
+                         makeVariable<double>({{Dim::Y, 3}, {Dim::X, 4}}));
+
+    dataset.setValues("val", makeVariable<double>({Dim::X, 4}));
+
+    dataset.setSparseCoord("sparse_coord", sparse_variable);
+    dataset.setValues("sparse_coord_and_val", sparse_variable);
+    dataset.setSparseCoord("sparse_coord_and_val", sparse_variable);
   }
-  EXPECT_THROW_MSG(
-      d(Dim::Z, 0), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
-  EXPECT_THROW_MSG(
-      d(Dim::Z, 1), std::runtime_error,
-      "Expected dimension to be in {{Dim::Y, 3}, {Dim::X, 2}}, got Dim::Z.");
-}
+  void expect_eq(const Dataset &a, const Dataset &b) const {
+    expect_eq_impl(a, DatasetConstProxy(b));
+    expect_eq_impl(DatasetConstProxy(a), b);
+    expect_eq_impl(DatasetConstProxy(a), DatasetConstProxy(b));
+  }
+  void expect_ne(const Dataset &a, const Dataset &b) const {
+    expect_ne_impl(a, DatasetConstProxy(b));
+    expect_ne_impl(DatasetConstProxy(a), b);
+    expect_ne_impl(DatasetConstProxy(a), DatasetConstProxy(b));
+  }
 
-TEST(Dataset, concatenate_constant_dimension_broken) {
-  Dataset a;
-  a.insert(Data::Value, "name1", {}, {1.1});
-  a.insert(Data::Value, "name2", {}, {2.2});
-  auto d = concatenate(a, a, Dim::X);
-  // TODO Special case: No variable depends on X so the result does not contain
-  // this dimension either. Change this behavior?!
-  EXPECT_FALSE(d.dimensions().contains(Dim::X));
-}
+  Dataset dataset;
+  Variable sparse_variable;
+};
 
-TEST(Dataset, concatenate) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {2.2});
-  auto x = concatenate(a, a, Dim::X);
-  EXPECT_TRUE(x.dimensions().contains(Dim::X));
-  EXPECT_EQ(x.get(Coord::X).size(), 2);
-  EXPECT_EQ(x.get(Data::Value).size(), 2);
-  auto x2(x);
-  x2.get(Data::Value)[0] = 100.0;
-  auto xy = concatenate(x, x2, Dim::Y);
-  EXPECT_TRUE(xy.dimensions().contains(Dim::X));
-  EXPECT_TRUE(xy.dimensions().contains(Dim::Y));
-  EXPECT_EQ(xy.get(Coord::X).size(), 2);
-  EXPECT_EQ(xy.get(Data::Value).size(), 4);
+auto make_empty() { return Dataset(); };
 
-  xy = concatenate(xy, x, Dim::Y);
-  EXPECT_EQ(xy.get(Coord::X).size(), 2);
-  EXPECT_EQ(xy.get(Data::Value).size(), 6);
-
-  xy = concatenate(xy, xy, Dim::Y);
-  EXPECT_EQ(xy.get(Coord::X).size(), 2);
-  EXPECT_EQ(xy.get(Data::Value).size(), 12);
-}
-
-TEST(Dataset, concatenate_extends_dimension) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 2}, {1, 2});
-  a.insert(Data::Value, "", {}, {1.1});
-  Dataset b;
-  b.insert(Coord::X, {Dim::X, 2}, {1, 2});
-  b.insert(Data::Value, "", {}, {2.2});
-  Dataset c;
-  c.insert(Coord::X, {}, {3});
-  c.insert(Data::Value, "", {}, {3.3});
-
-  auto x = concatenate(a, b, Dim::X);
-  EXPECT_EQ(x.dimensions(), Dimensions({Dim::X, 4}));
-  auto reference1 = makeVariable<double>({Dim::X, 4}, {1.1, 1.1, 2.2, 2.2});
-  EXPECT_EQ(x(Data::Value), reference1);
-
-  x = concatenate(x, c, Dim::X);
-  EXPECT_EQ(x.dimensions(), Dimensions({Dim::X, 5}));
-  auto reference2 =
-      makeVariable<double>({Dim::X, 5}, {1.1, 1.1, 2.2, 2.2, 3.3});
-  EXPECT_EQ(x(Data::Value), reference2);
-}
-
-TEST(Dataset, concatenate_with_bin_edges) {
-  Dataset ds;
-  ds.insert(Coord::X, {Dim::X, 2}, {0.1, 0.2});
-  ds.insert(Data::Value, "", {Dim::X, 1}, {2.2});
-  EXPECT_NO_THROW(concatenate(ds, ds, Dim::Y));
-
-  Dataset not_edge;
-  not_edge.insert(Coord::X, {Dim::X, 1}, {0.3});
-  not_edge.insert(Data::Value, "", {Dim::X, 1}, {2.2});
-  EXPECT_THROW_MSG(
-      concatenate(ds, not_edge, Dim::X), std::runtime_error,
-      "Cannot concatenate: Second variable is not an edge variable.");
-  not_edge.erase(Coord::X);
-  not_edge.insert(Coord::X, {}, {0.3});
-  EXPECT_THROW_MSG(concatenate(ds, not_edge, Dim::X),
-                   except::DimensionNotFoundError,
-                   "Expected dimension to be in {}, got Dim::X.");
-
-  EXPECT_THROW_MSG(concatenate(ds, ds, Dim::X), std::runtime_error,
-                   "Cannot concatenate: Last bin edge of first edge variable "
-                   "does not match first bin edge of second edge variable.");
-
-  Dataset ds2;
-  ds2.insert(Coord::X, {Dim::X, 2}, {0.2, 0.3});
-  ds2.insert(Data::Value, "", {Dim::X, 1}, {3.3});
-
-  Dataset merged;
-  EXPECT_NO_THROW(merged = concatenate(ds, ds2, Dim::X));
-  EXPECT_EQ(merged.dimensions().count(), 1);
-  EXPECT_TRUE(merged.dimensions().contains(Dim::X));
-  EXPECT_TRUE(equals(merged.get(Coord::X), {0.1, 0.2, 0.3}));
-  EXPECT_TRUE(equals(merged.get(Data::Value), {2.2, 3.3}));
-}
-
-TEST(Dataset, concatenate_with_varying_bin_edges) {
-  Dataset ds;
-  ds.insert(Coord::X, {{Dim::Y, 2}, {Dim::X, 2}}, {0.1, 0.2, 0.11, 0.21});
-  ds.insert(Data::Value, "", {{Dim::Y, 2}, {Dim::X, 1}}, {2.2, 3.3});
-
-  Dataset ds2;
-  ds2.insert(Coord::X, {{Dim::Y, 2}, {Dim::X, 2}}, {0.2, 0.3, 0.21, 0.31});
-  ds2.insert(Data::Value, "", {{Dim::Y, 2}, {Dim::X, 1}}, {4.4, 5.5});
-
-  Dataset merged;
-  merged = concatenate(ds, ds2, Dim::X);
-  ASSERT_NO_THROW(merged = concatenate(ds, ds2, Dim::X));
-  ASSERT_EQ(merged.dimensions().count(), 2);
-  ASSERT_TRUE(merged.dimensions().contains(Dim::X));
-  ASSERT_TRUE(merged.dimensions().contains(Dim::Y));
-  EXPECT_EQ(merged.dimensions()[Dim::X], 2);
-  EXPECT_EQ(merged.dimensions()[Dim::Y], 2);
-  EXPECT_TRUE(equals(merged.get(Coord::X), {0.1, 0.2, 0.3, 0.11, 0.21, 0.31}));
-  EXPECT_TRUE(equals(merged.get(Data::Value), {2.2, 4.4, 3.3, 5.5}));
-}
-
-TEST(Dataset, concatenate_with_attributes) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "", {Dim::X, 1}, {2.2});
-  Dataset logs;
-  logs.insert<std::string>(Data::Value, "comments", {}, {std::string("test")});
-  a.insert(Attr::ExperimentLog, "", {}, {logs});
-
-  auto x = concatenate(a, a, Dim::X);
-  EXPECT_TRUE(x.dimensions().contains(Dim::X));
-  EXPECT_EQ(x.get(Coord::X).size(), 2);
-  EXPECT_EQ(x.get(Data::Value).size(), 2);
-  EXPECT_EQ(x.get(Attr::ExperimentLog).size(), 1);
-  EXPECT_EQ(x.get(Attr::ExperimentLog)[0], logs);
-
-  auto x2(x);
-  x2.get(Data::Value)[0] = 100.0;
-  x2.get(Attr::ExperimentLog)[0].span<std::string>(Data::Value, "comments")[0] =
-      "different";
-  auto xy = concatenate(x, x2, Dim::Y);
-  EXPECT_TRUE(xy.dimensions().contains(Dim::X));
-  EXPECT_TRUE(xy.dimensions().contains(Dim::Y));
-  EXPECT_EQ(xy.get(Coord::X).size(), 2);
-  EXPECT_EQ(xy.get(Data::Value).size(), 4);
-  // Attributes get a dimension, no merging happens. This might be useful
-  // behavior, e.g., when dealing with multiple runs in a single dataset?
-  EXPECT_EQ(xy.get(Attr::ExperimentLog).size(), 2);
-  EXPECT_EQ(xy.get(Attr::ExperimentLog)[0], logs);
-
-  EXPECT_NO_THROW(concatenate(xy, xy, Dim::X));
-
-  auto xy2(xy);
-  xy2.get(Attr::ExperimentLog)[0].span<std::string>(Data::Value,
-                                                    "comments")[0] = "";
-}
-
-TEST(Dataset, rebin_failures) {
-  Dataset d;
-  auto coord = makeVariable<double>({Dim::X, 3}, {1.0, 3.0, 5.0});
-  EXPECT_THROW_MSG_SUBSTR(rebin(d, coord), except::VariableNotFoundError,
-                          "could not find variable with tag "
-                          "Coord::X and name ``");
-  auto nonContinuousCoord =
-      makeVariable<double>({Dim::Spectrum, 2}, {2.0, 4.0});
-  EXPECT_THROW_MSG(
-      rebin(d, nonContinuousCoord), std::runtime_error,
-      "The provided rebin coordinate is not a continuous coordinate.");
-  auto oldMissingDimCoord = makeVariable<double>({Dim::Y, 3}, {1.0, 3.0, 5.0});
-  d.insert(Coord::X, oldMissingDimCoord);
-  EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
-                   "Existing coordinate to be rebined lacks the dimension "
-                   "corresponding to the new coordinate.");
-  d.erase(Coord::X);
-  d.insert(Coord::X, coord);
-  EXPECT_THROW_MSG(rebin(d, coord), std::runtime_error,
-                   "Existing coordinate to be rebinned is not a bin edge "
-                   "coordinate. Use `resample` instead of rebin or convert to "
-                   "histogram data first.");
-  d.erase(Coord::X);
-  d.insert(Coord::X, coord);
-  d.insert(Data::Value, "badAuxDim", Dimensions({{Dim::X, 2}, {Dim::Y, 2}}));
-  d(Data::Value, "badAuxDim").setUnit(units::counts);
-  auto badAuxDim = makeVariable<double>(Dimensions({{Dim::Y, 3}, {Dim::X, 3}}));
-  EXPECT_THROW_MSG(rebin(d, badAuxDim), std::runtime_error,
-                   "Size mismatch in auxiliary dimension of new coordinate.");
-}
-
-TEST(Dataset, rebin_accepts_only_counts_and_densities) {
-  Dataset d;
-  d.insert(Coord::Tof,
-           makeVariable<double>({Dim::Tof, 3}, units::us, {1.0, 3.0, 5.0}));
-  auto coordNew = makeVariable<double>({Dim::Tof, 2}, units::us, {1.0, 5.0});
-
-  d.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
-  EXPECT_THROW_MSG(rebin(d, coordNew), except::UnitError,
-                   "Expected counts or counts-density, got dimensionless.");
-
-  d(Data::Value, "").setUnit(units::m);
-  EXPECT_THROW_MSG(rebin(d, coordNew), except::UnitError,
-                   "Expected counts or counts-density, got m.");
-
-  d(Data::Value, "").setUnit(units::counts);
-  EXPECT_NO_THROW(rebin(d, coordNew));
-
-  d(Data::Value, "").setUnit(units::counts * units::counts);
-  EXPECT_NO_THROW(rebin(d, coordNew));
-
-  d(Data::Value, "").setUnit(units::counts / units::us);
-  EXPECT_NO_THROW(rebin(d, coordNew));
-}
-
-TEST(Dataset, rebin) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 3}, {1.0, 3.0, 5.0});
-  auto coordNew = makeVariable<double>({Dim::X, 2}, {1.0, 5.0});
-  // With only the coord in the dataset there is no way to tell it is an edge,
-  // so this fails.
-  EXPECT_THROW_MSG(rebin(d, coordNew), std::runtime_error,
-                   "Existing coordinate to be rebinned is not a bin edge "
-                   "coordinate. Use `resample` instead of rebin or convert to "
-                   "histogram data first.");
-
-  d.insert(Data::Value, "", {Dim::X, 2}, {10.0, 20.0});
-  d(Data::Value).setUnit(units::counts);
-  auto rebinned = rebin(d, coordNew);
-  EXPECT_EQ(rebinned.get(Data::Value).size(), 1);
-  EXPECT_EQ(rebinned.get(Data::Value)[0], 30.0);
-}
-
-TEST(Dataset, rebin_density) {
-  Dataset d;
-  d.insert(Coord::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
-                                            {1.0, 2.0, 4.0, 8.0}));
-  auto coordNew =
-      makeVariable<double>({Dim::Tof, 3}, units::us, {1.0, 3.0, 8.0});
-
-  d.insert(Data::Value, "", {Dim::Tof, 3}, {10.0, 20.0, 30.0});
-  d(Data::Value).setUnit(units::counts);
-
-  auto reference = makeVariable<double>({Dim::Tof, 2}, {10.0, 40.0 / 5});
-  reference.setUnit(units::counts / units::us);
-
-  auto rebinned1 = rebin(counts::toDensity(d, Dim::Tof), coordNew);
-  auto rebinned2 = counts::toDensity(rebin(d, coordNew), Dim::Tof);
-  EXPECT_EQ(rebinned1, rebinned2);
-  EXPECT_EQ(rebinned1(Data::Value), reference);
-}
-
-Dataset makeEvents() {
-  Dataset e1;
-  e1.insert(Data::Tof, "", {Dim::Event, 5}, {1.0, 2.0, 3.0, 4.0, 5.0});
-  Dataset e2;
-  e2.insert(Data::Tof, "", {Dim::Event, 7},
-            {1.0, 2.0, 3.0, 4.0, 4.0, 5.0, 7.0});
-  Dataset d;
-  d.insert(Data::Events, "sample1", {Dim::Spectrum, 2}, {e1, e2});
+template <class T, class T2>
+auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
+                  const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setCoord(dim, variable<T>(dims, unit, data));
   return d;
 }
 
-TEST(Dataset, histogram_failures) {
-  auto d = makeEvents();
-
-  Dataset dependsOnBinDim;
-  dependsOnBinDim.insert(Data::Events, "sample1",
-                         d(Data::Events, "sample1").reshape({Dim::Tof, 2}));
-  auto coord = makeVariable<double>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
-  EXPECT_THROW_MSG(histogram(dependsOnBinDim, coord), std::runtime_error,
-                   "Data to histogram depends on histogram dimension.");
-
-  auto coordWithExtraDim = makeVariable<double>({{Dim::X, 2}, {Dim::Tof, 3}},
-                                                {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
-  EXPECT_THROW(histogram(d, coordWithExtraDim), except::DimensionNotFoundError);
-
-  auto coordWithLengthMismatch =
-      makeVariable<double>({{Dim::Spectrum, 3}, {Dim::Tof, 3}});
-  EXPECT_THROW(histogram(d, coordWithLengthMismatch),
-               except::DimensionLengthError);
-
-  auto coordNotIncreasing =
-      makeVariable<double>({Dim::Tof, 3}, {1.0, 1.5, 1.4});
-  EXPECT_THROW_MSG(histogram(d, coordNotIncreasing), std::runtime_error,
-                   "Coordinate used for binning is not increasing.");
+template <class T, class T2>
+auto make_1_labels(const std::string &name, const Dimensions &dims,
+                   const units::Unit unit,
+                   const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setLabels(name, variable<T>(dims, unit, data));
+  return d;
 }
 
-TEST(Dataset, histogram) {
-  auto d = makeEvents();
-  auto coord = makeVariable<double>({Dim::Tof, 3}, {1.0, 1.5, 4.5});
-  auto hist = histogram(d, coord);
-
-  ASSERT_TRUE(hist.contains(Coord::Tof));
-  EXPECT_EQ(hist(Coord::Tof), coord);
-  ASSERT_TRUE(hist.contains(Data::Value, "sample1"));
-  ASSERT_TRUE(hist.contains(Data::Variance, "sample1"));
-  EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 1, 4}));
-  EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 1, 4}));
-  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
-  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
-            units::counts * units::counts);
+template <class T, class T2>
+auto make_1_attr(const std::string &name, const Dimensions &dims,
+                 const units::Unit unit,
+                 const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setAttr(name, variable<T>(dims, unit, data));
+  return d;
 }
 
-TEST(Dataset, histogram_2D_coord) {
-  auto d = makeEvents();
-  auto coord = makeVariable<double>({{Dim::Spectrum, 2}, {Dim::Tof, 3}},
-                                    {1.0, 1.5, 4.5, 1.5, 4.5, 7.5});
-  auto hist = histogram(d, coord);
-
-  ASSERT_TRUE(hist.contains(Coord::Tof));
-  EXPECT_EQ(hist(Coord::Tof), coord);
-  ASSERT_TRUE(hist.contains(Data::Value, "sample1"));
-  ASSERT_TRUE(hist.contains(Data::Variance, "sample1"));
-  EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 4, 2}));
-  EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 4, 2}));
-  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
-  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
-            units::counts * units::counts);
+template <class T, class T2>
+auto make_1_values(const std::string &name, const Dimensions &dims,
+                   const units::Unit unit,
+                   const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setValues(name, variable<T>(dims, unit, data));
+  return d;
 }
 
-// We are (currently?) not supporting this anymore. With variables without tags
-// `histogram` cannot tell which dimension to histogram, so it uses the inner
-// dimension. We could change the function signature to explicitly accect the
-// dimension, if we wanted to support other options as well.
-TEST(Dataset, DISABLED_histogram_2D_transpose_coord) {
-  auto d = makeEvents();
-  auto coord = makeVariable<double>({{Dim::Tof, 3}, {Dim::Spectrum, 2}},
-                                    {1.0, 1.5, 1.5, 4.5, 4.5, 7.5});
-  auto hist = histogram(d, coord);
-
-  ASSERT_TRUE(hist.contains(Coord::Tof));
-  EXPECT_EQ(hist(Coord::Tof), coord);
-  ASSERT_TRUE(hist.contains(Data::Value, "sample1"));
-  ASSERT_TRUE(hist.contains(Data::Variance, "sample1"));
-  // Dimensionality of output is determined by that of the input events, the bin
-  // dimension will almost be the innermost one.
-  ASSERT_EQ(hist(Data::Value, "sample1").dimensions(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Tof, 2}}));
-  EXPECT_TRUE(equals(hist.get(Data::Value, "sample1"), {1, 3, 4, 2}));
-  EXPECT_TRUE(equals(hist.get(Data::Variance, "sample1"), {1, 3, 4, 2}));
-  EXPECT_EQ(hist(Data::Value, "sample1").unit(), units::counts);
-  EXPECT_EQ(hist(Data::Variance, "sample1").unit(),
-            units::counts * units::counts);
+template <class T, class T2>
+auto make_1_values_and_variances(const std::string &name,
+                                 const Dimensions &dims, const units::Unit unit,
+                                 const std::initializer_list<T2> &values,
+                                 const std::initializer_list<T2> &variances) {
+  auto d = make_empty();
+  d.setValues(name, variable<T>(dims, unit, values));
+  d.setVariances(name, variable<T>(dims, unit * unit, variances));
+  return d;
 }
 
-TEST(Dataset, sort) {
+// Baseline checks: Does dataset comparison pick up arbitrary mismatch of
+// individual items? Strictly speaking many of these are just retesting the
+// comparison of Variable, but it ensures that the content is actually compared
+// and thus serves as a baseline for the follow-up tests.
+TEST_F(Dataset_comparison_operators, single_coord) {
+  auto d = make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_coord<float>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::Y, {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::Y, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 2}, units::m, {1, 2}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 3}, units::s, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(Dataset_comparison_operators, single_labels) {
+  auto d = make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_labels<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 2}, units::m, {1, 2}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(Dataset_comparison_operators, single_attr) {
+  auto d = make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_attr<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_attr<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_attr<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_attr<double>("a", {Dim::X, 2}, units::m, {1, 2}));
+  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
+  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(Dataset_comparison_operators, single_values) {
+  auto d = make_1_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_values<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 2}, units::m, {1, 2}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+}
+
+TEST_F(Dataset_comparison_operators, single_values_and_variances) {
+  auto d = make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+                                               {1, 2, 3}, {4, 5, 6});
+  expect_eq(d, d);
+  expect_ne(d, make_empty());
+  expect_ne(d, make_1_values_and_variances<float>("a", {Dim::X, 3}, units::m,
+                                                  {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("b", {Dim::X, 3}, units::m,
+                                                   {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::Y, 3}, units::m,
+                                                   {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 2}, units::m,
+                                                   {1, 2}, {4, 5}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::s,
+                                                   {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+                                                   {1, 2, 4}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+                                                   {1, 2, 3}, {4, 5, 7}));
+}
+// End baseline checks.
+
+TEST_F(Dataset_comparison_operators, empty) {
+  const auto empty = make_empty();
+  expect_eq(empty, empty);
+}
+
+TEST_F(Dataset_comparison_operators, self) {
+  expect_eq(dataset, dataset);
+  const auto copy(dataset);
+  expect_eq(copy, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_coord) {
+  auto extra = dataset;
+  extra.setCoord(Dim::Z, makeVariable<double>({Dim::Z, 2}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_labels) {
+  auto extra = dataset;
+  extra.setLabels("extra", makeVariable<double>({Dim::Z, 2}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_attr) {
+  auto extra = dataset;
+  extra.setAttr("extra", makeVariable<double>({Dim::Z, 2}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_data) {
+  auto extra = dataset;
+  extra.setValues("extra", makeVariable<double>({Dim::Z, 2}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_variance) {
+  auto extra = dataset;
+  extra.setVariances("val", makeVariable<double>({Dim::X, 4}));
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_sparse_values) {
+  auto extra = dataset;
+  extra.setValues("sparse_coord", sparse_variable);
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, extra_sparse_label) {
+  auto extra = dataset;
+  extra.setSparseLabels("sparse_coord_and_val", "extra", sparse_variable);
+  expect_ne(extra, dataset);
+}
+
+TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
+  auto a = make_empty();
+  auto b = make_empty();
+  a.setCoord(Dim::X, dataset.coords()[Dim::X]);
+  a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+  b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+  b.setCoord(Dim::X, dataset.coords()[Dim::X]);
+  expect_eq(a, b);
+}
+
+TEST_F(Dataset_comparison_operators, different_label_insertion_order) {
+  auto a = make_empty();
+  auto b = make_empty();
+  a.setLabels("x", dataset.coords()[Dim::X]);
+  a.setLabels("y", dataset.coords()[Dim::Y]);
+  b.setLabels("y", dataset.coords()[Dim::Y]);
+  b.setLabels("x", dataset.coords()[Dim::X]);
+  expect_eq(a, b);
+}
+
+TEST_F(Dataset_comparison_operators, different_attr_insertion_order) {
+  auto a = make_empty();
+  auto b = make_empty();
+  a.setAttr("x", dataset.coords()[Dim::X]);
+  a.setAttr("y", dataset.coords()[Dim::Y]);
+  b.setAttr("y", dataset.coords()[Dim::Y]);
+  b.setAttr("x", dataset.coords()[Dim::X]);
+  expect_eq(a, b);
+}
+
+TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
+  auto a = make_empty();
+  auto b = make_empty();
+  a.setValues("x", dataset.coords()[Dim::X]);
+  a.setValues("y", dataset.coords()[Dim::Y]);
+  b.setValues("y", dataset.coords()[Dim::Y]);
+  b.setValues("x", dataset.coords()[Dim::X]);
+  expect_eq(a, b);
+}
+
+class Dataset3DTest : public ::testing::Test {
+protected:
+  Dataset3DTest() {
+    dataset.setCoord(Dim::Time, scalar());
+    dataset.setCoord(Dim::X, x());
+    dataset.setCoord(Dim::Y, y());
+    dataset.setCoord(Dim::Z, xyz());
+
+    dataset.setLabels("labels_x", x());
+    dataset.setLabels("labels_xy", xy());
+    dataset.setLabels("labels_z", z());
+
+    dataset.setAttr("attr_scalar", scalar());
+    dataset.setAttr("attr_x", x());
+
+    dataset.setValues("data_x", x());
+    dataset.setVariances("data_x", x());
+
+    dataset.setValues("data_xy", xy());
+    dataset.setVariances("data_xy", xy());
+
+    dataset.setValues("data_zyx", zyx());
+    dataset.setVariances("data_zyx", zyx());
+
+    dataset.setValues("data_xyz", xyz());
+
+    dataset.setValues("data_scalar", scalar());
+  }
+
+  Variable scalar() const { return makeVariable<double>({}, {1000}); }
+  Variable x(const scipp::index lx = 4) const {
+    std::vector<double> data(lx);
+    std::iota(data.begin(), data.end(), 1);
+    return makeVariable<double>({Dim::X, lx}, data);
+  }
+  Variable y(const scipp::index ly = 5) const {
+    std::vector<double> data(ly);
+    std::iota(data.begin(), data.end(), 5);
+    return makeVariable<double>({Dim::Y, ly}, data);
+  }
+  Variable z() const {
+    return makeVariable<double>({Dim::Z, 6}, {10, 11, 12, 13, 14, 15});
+  }
+  Variable xy(const scipp::index lx = 4, const scipp::index ly = 5) const {
+    std::vector<double> data(lx * ly);
+    std::iota(data.begin(), data.end(), 16);
+    auto var = makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}}, data);
+    return var;
+  }
+  Variable xyz(const scipp::index lz = 6) const {
+    std::vector<double> data(4 * 5 * lz);
+    std::iota(data.begin(), data.end(), 4 * 5 + 16);
+    auto var =
+        makeVariable<double>({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, lz}}, data);
+    return var;
+  }
+  Variable zyx() const {
+    std::vector<double> data(4 * 5 * 6);
+    std::iota(data.begin(), data.end(), 4 * 5 + 4 * 5 * 6 + 16);
+    auto var =
+        makeVariable<double>({{Dim::Z, 6}, {Dim::Y, 5}, {Dim::X, 4}}, data);
+    return var;
+  }
+
+  Dataset datasetWithEdges(const std::initializer_list<Dim> &edgeDims) {
+    auto d = dataset;
+    for (const auto dim : edgeDims) {
+      auto dims = dataset.coords()[dim].dims();
+      dims.resize(dim, dims[dim] + 1);
+      std::vector<double> data(dims.volume());
+      std::iota(data.begin(), data.end(), 1000 * static_cast<int>(dim));
+      d.setCoord(dim, makeVariable<double>(dims, data));
+    }
+    return d;
+  }
+
+  Dataset dataset;
+};
+
+TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
+  auto edge_coord = dataset;
+  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, x(5)));
+  ASSERT_NE(edge_coord["data_xyz"], dataset["data_xyz"]);
+  // Cannot incrementally grow.
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, x(6)));
+  // Minor implementation shortcoming: Currently we cannot go back to non-edges.
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, x(4)));
+}
+
+TEST_F(Dataset3DTest,
+       dimension_extent_check_prevents_non_edge_coord_with_edge_data) {
+  // If we reduce the X extent to 3 we would have data defined at the edges, but
+  // the coord is not. This is forbidden.
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, x(3)));
+  // We *can* set data with X extent 3. The X coord is now bin edges, and other
+  // data is defined on the edges.
+  ASSERT_NO_THROW(dataset.setValues("non_edge_data", x(3)));
+  // Now the X extent of the dataset is 3, but since we have data on the edges
+  // we still cannot change the coord to non-edges.
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, x(3)));
+}
+
+TEST_F(Dataset3DTest,
+       dimension_extent_check_prevents_setting_edge_data_without_edge_coord) {
+  ASSERT_ANY_THROW(dataset.setValues("edge_data", x(5)));
+  ASSERT_NO_THROW(dataset.setCoord(Dim::X, x(5)));
+  ASSERT_NO_THROW(dataset.setValues("edge_data", x(5)));
+}
+
+TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
+  // This is the Y coordinate but has extra extent in X.
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::Y, xy(5, 5)));
+}
+
+TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
+  // We cannot have labels on edges unless the coords are also edges. Note the
+  // slight inconsistency though: Labels are typically though of as being for a
+  // particular dimension (the inner one), but we can have labels on edges also
+  // for the other dimensions (x in this case), just like data.
+  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(4, 6)));
+  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(5, 5)));
+  dataset.setCoord(Dim::Y, xy(4, 6));
+  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(5, 5)));
+  dataset.setCoord(Dim::X, x(5));
+  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(5, 5)));
+  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(5, 6)));
+  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(4, 6)));
+  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(4, 5)));
+}
+
+class Dataset3DTest_slice_x : public Dataset3DTest,
+                              public ::testing::WithParamInterface<int> {
+protected:
+  Dataset reference(const scipp::index pos) {
+    Dataset d;
+    d.setCoord(Dim::Time, scalar());
+    d.setCoord(Dim::Y, y());
+    d.setCoord(Dim::Z, xyz().slice({Dim::X, pos}));
+    d.setLabels("labels_xy", xy().slice({Dim::X, pos}));
+    d.setLabels("labels_z", z());
+    d.setAttr("attr_scalar", scalar());
+    d.setValues("data_x", x().slice({Dim::X, pos}));
+    d.setVariances("data_x", x().slice({Dim::X, pos}));
+    d.setValues("data_xy", xy().slice({Dim::X, pos}));
+    d.setVariances("data_xy", xy().slice({Dim::X, pos}));
+    d.setValues("data_zyx", zyx().slice({Dim::X, pos}));
+    d.setVariances("data_zyx", zyx().slice({Dim::X, pos}));
+    d.setValues("data_xyz", xyz().slice({Dim::X, pos}));
+    return d;
+  }
+};
+class Dataset3DTest_slice_y : public Dataset3DTest,
+                              public ::testing::WithParamInterface<int> {};
+class Dataset3DTest_slice_z : public Dataset3DTest,
+                              public ::testing::WithParamInterface<int> {};
+
+class Dataset3DTest_slice_range_x : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
+};
+class Dataset3DTest_slice_range_y : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
+protected:
+  Dataset reference(const scipp::index begin, const scipp::index end) {
+    Dataset d;
+    d.setCoord(Dim::Time, scalar());
+    d.setCoord(Dim::X, x());
+    d.setCoord(Dim::Y, y().slice({Dim::Y, begin, end}));
+    d.setCoord(Dim::Z, xyz().slice({Dim::Y, begin, end}));
+    d.setLabels("labels_x", x());
+    d.setLabels("labels_xy", xy().slice({Dim::Y, begin, end}));
+    d.setLabels("labels_z", z());
+    d.setAttr("attr_scalar", scalar());
+    d.setAttr("attr_x", x());
+    d.setValues("data_xy", xy().slice({Dim::Y, begin, end}));
+    d.setVariances("data_xy", xy().slice({Dim::Y, begin, end}));
+    d.setValues("data_zyx", zyx().slice({Dim::Y, begin, end}));
+    d.setVariances("data_zyx", zyx().slice({Dim::Y, begin, end}));
+    d.setValues("data_xyz", xyz().slice({Dim::Y, begin, end}));
+    return d;
+  }
+};
+class Dataset3DTest_slice_range_z : public Dataset3DTest,
+                                    public ::testing::WithParamInterface<
+                                        std::pair<scipp::index, scipp::index>> {
+protected:
+  Dataset reference(const scipp::index begin, const scipp::index end) {
+    Dataset d;
+    d.setCoord(Dim::Time, scalar());
+    d.setCoord(Dim::X, x());
+    d.setCoord(Dim::Y, y());
+    d.setCoord(Dim::Z, xyz().slice({Dim::Z, begin, end}));
+    d.setLabels("labels_x", x());
+    d.setLabels("labels_xy", xy());
+    d.setLabels("labels_z", z().slice({Dim::Z, begin, end}));
+    d.setAttr("attr_scalar", scalar());
+    d.setAttr("attr_x", x());
+    d.setValues("data_zyx", zyx().slice({Dim::Z, begin, end}));
+    d.setVariances("data_zyx", zyx().slice({Dim::Z, begin, end}));
+    d.setValues("data_xyz", xyz().slice({Dim::Z, begin, end}));
+    return d;
+  }
+};
+
+/// Return all valid ranges (iterator pairs) for a container of given length.
+template <int max> constexpr auto valid_ranges() {
+  using scipp::index;
+  const auto size = max + 1;
+  std::array<std::pair<index, index>, (size * size + size) / 2> pairs;
+  index i = 0;
+  for (index first = 0; first <= max; ++first)
+    for (index second = first + 0; second <= max; ++second) {
+      pairs[i].first = first;
+      pairs[i].second = second;
+      ++i;
+    }
+  return pairs;
+}
+
+constexpr auto ranges_x = valid_ranges<4>();
+constexpr auto ranges_y = valid_ranges<5>();
+constexpr auto ranges_z = valid_ranges<6>();
+
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_x,
+                        ::testing::Range(0, 4));
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_y,
+                        ::testing::Range(0, 5));
+INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_z,
+                        ::testing::Range(0, 6));
+
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_x,
+                        ::testing::ValuesIn(ranges_x));
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
+                        ::testing::ValuesIn(ranges_y));
+INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
+                        ::testing::ValuesIn(ranges_z));
+
+TEST_P(Dataset3DTest_slice_x, slice) {
+  const auto pos = GetParam();
+  EXPECT_EQ(dataset.slice({Dim::X, pos}), reference(pos));
+}
+
+TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
+  const auto pos = GetParam();
+  auto datasetWithEdges = dataset;
+  datasetWithEdges.setCoord(Dim::X, x(5));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), reference(pos));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}),
+            dataset.slice({Dim::X, pos}));
+}
+
+TEST_P(Dataset3DTest_slice_y, slice) {
+  const auto pos = GetParam();
+  Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
+  reference.setCoord(Dim::X, x());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, pos}));
+  reference.setLabels("labels_x", x());
+  reference.setLabels("labels_z", z());
+  reference.setAttr("attr_scalar", scalar());
+  reference.setAttr("attr_x", x());
+  reference.setValues("data_xy", xy().slice({Dim::Y, pos}));
+  reference.setVariances("data_xy", xy().slice({Dim::Y, pos}));
+  reference.setValues("data_zyx", zyx().slice({Dim::Y, pos}));
+  reference.setVariances("data_zyx", zyx().slice({Dim::Y, pos}));
+  reference.setValues("data_xyz", xyz().slice({Dim::Y, pos}));
+
+  EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
+}
+
+TEST_P(Dataset3DTest_slice_z, slice) {
+  const auto pos = GetParam();
+  Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
+  reference.setCoord(Dim::X, x());
+  reference.setCoord(Dim::Y, y());
+  reference.setLabels("labels_x", x());
+  reference.setLabels("labels_xy", xy());
+  reference.setAttr("attr_scalar", scalar());
+  reference.setAttr("attr_x", x());
+  reference.setValues("data_zyx", zyx().slice({Dim::Z, pos}));
+  reference.setVariances("data_zyx", zyx().slice({Dim::Z, pos}));
+  reference.setValues("data_xyz", xyz().slice({Dim::Z, pos}));
+
+  EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
+}
+
+TEST_P(Dataset3DTest_slice_range_x, slice) {
+  const auto[begin, end] = GetParam();
+  Dataset reference;
+  reference.setCoord(Dim::Time, scalar());
+  reference.setCoord(Dim::X, x().slice({Dim::X, begin, end}));
+  reference.setCoord(Dim::Y, y());
+  reference.setCoord(Dim::Z, xyz().slice({Dim::X, begin, end}));
+  reference.setLabels("labels_x", x().slice({Dim::X, begin, end}));
+  reference.setLabels("labels_xy", xy().slice({Dim::X, begin, end}));
+  reference.setLabels("labels_z", z());
+  reference.setAttr("attr_scalar", scalar());
+  reference.setAttr("attr_x", x().slice({Dim::X, begin, end}));
+  reference.setValues("data_x", x().slice({Dim::X, begin, end}));
+  reference.setVariances("data_x", x().slice({Dim::X, begin, end}));
+  reference.setValues("data_xy", xy().slice({Dim::X, begin, end}));
+  reference.setVariances("data_xy", xy().slice({Dim::X, begin, end}));
+  reference.setValues("data_zyx", zyx().slice({Dim::X, begin, end}));
+  reference.setVariances("data_zyx", zyx().slice({Dim::X, begin, end}));
+  reference.setValues("data_xyz", xyz().slice({Dim::X, begin, end}));
+
+  EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
+}
+
+TEST_P(Dataset3DTest_slice_range_y, slice) {
+  const auto[begin, end] = GetParam();
+  EXPECT_EQ(dataset.slice({Dim::Y, begin, end}), reference(begin, end));
+}
+
+TEST_P(Dataset3DTest_slice_range_y, slice_with_edges) {
+  const auto[begin, end] = GetParam();
+  auto datasetWithEdges = dataset;
+  datasetWithEdges.setCoord(Dim::Y, y(6));
+  auto referenceWithEdges = reference(begin, end);
+  // Is this the correct behavior for edges also in case the range is empty?
+  referenceWithEdges.setCoord(Dim::Y, y(6).slice({Dim::Y, begin, end + 1}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
+}
+
+TEST_P(Dataset3DTest_slice_range_y, slice_with_z_edges) {
+  const auto[begin, end] = GetParam();
+  auto datasetWithEdges = dataset;
+  datasetWithEdges.setCoord(Dim::Z, xyz(7));
+  auto referenceWithEdges = reference(begin, end);
+  referenceWithEdges.setCoord(Dim::Z, xyz(7).slice({Dim::Y, begin, end}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
+}
+
+TEST_P(Dataset3DTest_slice_range_z, slice) {
+  const auto[begin, end] = GetParam();
+  EXPECT_EQ(dataset.slice({Dim::Z, begin, end}), reference(begin, end));
+}
+
+TEST_P(Dataset3DTest_slice_range_z, slice_with_edges) {
+  const auto[begin, end] = GetParam();
+  auto datasetWithEdges = dataset;
+  datasetWithEdges.setCoord(Dim::Z, xyz(7));
+  auto referenceWithEdges = reference(begin, end);
+  referenceWithEdges.setCoord(Dim::Z, xyz(7).slice({Dim::Z, begin, end + 1}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::Z, begin, end}), referenceWithEdges);
+}
+
+TEST_F(Dataset3DTest, nested_slice) {
+  for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 1}), dataset.slice({dim, 2}));
+  }
+}
+
+TEST_F(Dataset3DTest, nested_slice_range) {
+  for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 0, 2}),
+              dataset.slice({dim, 1, 3}));
+    EXPECT_EQ(dataset.slice({dim, 1, 3}, {dim, 1, 2}),
+              dataset.slice({dim, 2, 3}));
+  }
+}
+
+TEST_F(Dataset3DTest, nested_slice_range_bin_edges) {
+  auto datasetWithEdges = dataset;
+  datasetWithEdges.setCoord(Dim::X, x(5));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 0, 2}),
+            datasetWithEdges.slice({Dim::X, 1, 3}));
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 1, 2}),
+            datasetWithEdges.slice({Dim::X, 2, 3}));
+}
+
+TEST_F(Dataset3DTest, commutative_slice) {
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}),
+            dataset.slice({Dim::Y, 2}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Y, 2}, {Dim::Z, 3, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2}));
+}
+
+TEST_F(Dataset3DTest, commutative_slice_range) {
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}),
+            dataset.slice({Dim::Y, 2, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Y, 2, 4}, {Dim::Z, 3, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::Y, 2, 4}, {Dim::X, 1, 3}));
+  EXPECT_EQ(dataset.slice({Dim::X, 1, 3}, {Dim::Y, 2, 4}, {Dim::Z, 3, 4}),
+            dataset.slice({Dim::Z, 3, 4}, {Dim::X, 1, 3}, {Dim::Y, 2, 4}));
+}
+
+template <typename T> class CoordsProxyTest : public ::testing::Test {
+protected:
+  template <class D>
+  std::conditional_t<std::is_same_v<T, CoordsProxy>, Dataset, const Dataset> &
+  access(D &dataset) {
+    return dataset;
+  }
+};
+
+using CoordsProxyTypes = ::testing::Types<CoordsProxy, CoordsConstProxy>;
+TYPED_TEST_CASE(CoordsProxyTest, CoordsProxyTypes);
+
+TYPED_TEST(CoordsProxyTest, empty) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
-  d.insert(Coord::Y, {Dim::Y, 2}, {1.0, 0.9});
-  d.insert(Data::Value, "", {Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
-
-  auto sorted = sort(d, Coord::X);
-
-  ASSERT_EQ(sorted.get(Coord::X).size(), 4);
-  EXPECT_EQ(sorted.get(Coord::X)[0], 0.0);
-  EXPECT_EQ(sorted.get(Coord::X)[1], 1.0);
-  EXPECT_EQ(sorted.get(Coord::X)[2], 3.0);
-  EXPECT_EQ(sorted.get(Coord::X)[3], 5.0);
-
-  ASSERT_EQ(sorted.get(Coord::Y).size(), 2);
-  EXPECT_EQ(sorted.get(Coord::Y)[0], 1.0);
-  EXPECT_EQ(sorted.get(Coord::Y)[1], 0.9);
-
-  ASSERT_EQ(sorted.get(Data::Value).size(), 4);
-  EXPECT_EQ(sorted.get(Data::Value)[0], 4.0);
-  EXPECT_EQ(sorted.get(Data::Value)[1], 2.0);
-  EXPECT_EQ(sorted.get(Data::Value)[2], 3.0);
-  EXPECT_EQ(sorted.get(Data::Value)[3], 1.0);
+  const auto coords = TestFixture::access(d).coords();
+  ASSERT_TRUE(coords.empty());
+  ASSERT_EQ(coords.size(), 0);
 }
 
-TEST(Dataset, sort_2D) {
+TYPED_TEST(CoordsProxyTest, bad_item_access) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
-  d.insert(Coord::Y, {Dim::Y, 2}, {1.0, 0.9});
-  d.insert(Data::Value, "", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-
-  auto sorted = sort(d, Coord::X);
-
-  ASSERT_EQ(sorted.get(Coord::X).size(), 4);
-  EXPECT_EQ(sorted.get(Coord::X)[0], 0.0);
-  EXPECT_EQ(sorted.get(Coord::X)[1], 1.0);
-  EXPECT_EQ(sorted.get(Coord::X)[2], 3.0);
-  EXPECT_EQ(sorted.get(Coord::X)[3], 5.0);
-
-  ASSERT_EQ(sorted.get(Coord::Y).size(), 2);
-  EXPECT_EQ(sorted.get(Coord::Y)[0], 1.0);
-  EXPECT_EQ(sorted.get(Coord::Y)[1], 0.9);
-
-  ASSERT_EQ(sorted.get(Data::Value).size(), 8);
-  EXPECT_EQ(sorted.get(Data::Value)[0], 4.0);
-  EXPECT_EQ(sorted.get(Data::Value)[1], 2.0);
-  EXPECT_EQ(sorted.get(Data::Value)[2], 3.0);
-  EXPECT_EQ(sorted.get(Data::Value)[3], 1.0);
-  EXPECT_EQ(sorted.get(Data::Value)[4], 8.0);
-  EXPECT_EQ(sorted.get(Data::Value)[5], 6.0);
-  EXPECT_EQ(sorted.get(Data::Value)[6], 7.0);
-  EXPECT_EQ(sorted.get(Data::Value)[7], 5.0);
+  const auto coords = TestFixture::access(d).coords();
+  ASSERT_ANY_THROW(coords[Dim::X]);
 }
 
-TEST(Dataset, filter) {
+TYPED_TEST(CoordsProxyTest, item_access) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {5.0, 1.0, 3.0, 0.0});
-  d.insert(Coord::Y, {Dim::Y, 2}, {1.0, 0.9});
-  d.insert(Data::Value, "", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
-  auto select = makeVariable<bool>({Dim::X, 4}, {false, true, false, true});
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
 
-  auto filtered = filter(d, select);
-
-  ASSERT_EQ(filtered.get(Coord::X).size(), 2);
-  EXPECT_EQ(filtered.get(Coord::X)[0], 1.0);
-  EXPECT_EQ(filtered.get(Coord::X)[1], 0.0);
-
-  ASSERT_EQ(filtered.get(Coord::Y).size(), 2);
-  EXPECT_EQ(filtered.get(Coord::Y)[0], 1.0);
-  EXPECT_EQ(filtered.get(Coord::Y)[1], 0.9);
-
-  ASSERT_EQ(filtered.get(Data::Value).size(), 4);
-  EXPECT_EQ(filtered.get(Data::Value)[0], 2.0);
-  EXPECT_EQ(filtered.get(Data::Value)[1], 4.0);
-  EXPECT_EQ(filtered.get(Data::Value)[2], 6.0);
-  EXPECT_EQ(filtered.get(Data::Value)[3], 8.0);
+  const auto coords = TestFixture::access(d).coords();
+  ASSERT_EQ(coords[Dim::X], x);
+  ASSERT_EQ(coords[Dim::Y], y);
 }
 
-TEST(Dataset, integrate_counts) {
-  Dataset ds;
-  ds.insert(Coord::X,
-            makeVariable<double>({Dim::X, 3}, units::m, {0.1, 0.2, 0.4}));
-  ds.insert(Data::Value, "", {Dim::X, 2}, {10.0, 20.0});
-  ds(Data::Value, "").setUnit(units::counts);
-
-  // Note that in this special case the integral has the same unit. This is
-  // maybe an indicator that we should rather use `sum` for counts? On the other
-  // hand, supporting `integrate` is convenient and thanks to the unit this
-  // should be safe.
-  auto reference = makeVariable<double>({}, {30.0});
-  reference.setUnit(units::counts);
-
-  Dataset integral;
-  integral = integrate(ds, Dim::X);
-  EXPECT_NO_THROW(integral = integrate(ds, Dim::X));
-  EXPECT_EQ(integral.dimensions().count(), 0);
-  EXPECT_FALSE(integral.contains(Coord::X));
-  EXPECT_EQ(integral(Data::Value), reference);
-}
-
-TEST(Dataset, integrate_counts_density) {
-  Dataset ds;
-  ds.insert(Coord::Tof,
-            makeVariable<double>({Dim::Tof, 3}, units::us, {0.1, 0.2, 0.4}));
-  ds.insert(Data::Value, "", {Dim::Tof, 2}, {10.0, 20.0});
-  ds(Data::Value, "").setUnit(units::counts / units::us);
-
-  auto reference = makeVariable<double>({}, {10.0 * 0.1 + 20.0 * 0.2});
-  reference.setUnit(units::counts);
-
-  Dataset integral;
-  EXPECT_NO_THROW(integral = integrate(ds, Dim::Tof));
-  EXPECT_EQ(integral.dimensions().count(), 0);
-  EXPECT_FALSE(integral.contains(Coord::Tof));
-  EXPECT_EQ(integral(Data::Value), reference);
-}
-
-TEST(DatasetSlice, basics) {
+TYPED_TEST(CoordsProxyTest, iterators_empty_coords) {
   Dataset d;
-  d.insert(Coord::X, {Dim::X, 4});
-  d.insert(Coord::Y, {Dim::Y, 2});
-  d.insert(Data::Value, "a", {{Dim::Y, 2}, {Dim::X, 4}});
-  d.insert(Data::Value, "b", {{Dim::Y, 2}, {Dim::X, 4}});
-  d.insert(Data::Variance, "a", {{Dim::Y, 2}, {Dim::X, 4}});
-  d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}});
+  const auto coords = TestFixture::access(d).coords();
 
-  ConstDatasetSlice viewA(d, "a");
-  ConstDatasetSlice viewB(d, "b");
+  ASSERT_NO_THROW(coords.begin());
+  ASSERT_NO_THROW(coords.end());
+  EXPECT_EQ(coords.begin(), coords.end());
+}
 
-  auto check = [](const auto &view, const std::string &name) {
-    ASSERT_EQ(view.size(), 4);
-    scipp::index count = 0;
-    for (const auto & [ n, t, var ] : view) {
-      if (t.isData()) {
-        EXPECT_EQ(n, name);
-        ++count;
+TYPED_TEST(CoordsProxyTest, iterators) {
+  Dataset d;
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  const auto coords = TestFixture::access(d).coords();
+
+  ASSERT_NO_THROW(coords.begin());
+  ASSERT_NO_THROW(coords.end());
+
+  auto it = coords.begin();
+  ASSERT_NE(it, coords.end());
+  EXPECT_EQ(it->first, Dim::X);
+  EXPECT_EQ(it->second, x);
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_NE(it, coords.end());
+  EXPECT_EQ(it->first, Dim::Y);
+  EXPECT_EQ(it->second, y);
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_EQ(it, coords.end());
+}
+
+TYPED_TEST(CoordsProxyTest, slice) {
+  Dataset d;
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  const auto coords = TestFixture::access(d).coords();
+
+  const auto sliceX = coords.slice({Dim::X, 1});
+  EXPECT_ANY_THROW(sliceX[Dim::X]);
+  EXPECT_EQ(sliceX[Dim::Y], y);
+
+  const auto sliceDX = coords.slice({Dim::X, 1, 2});
+  EXPECT_EQ(sliceDX[Dim::X], x.slice({Dim::X, 1, 2}));
+  EXPECT_EQ(sliceDX[Dim::Y], y);
+
+  const auto sliceY = coords.slice({Dim::Y, 1});
+  EXPECT_EQ(sliceY[Dim::X], x);
+  EXPECT_ANY_THROW(sliceY[Dim::Y]);
+
+  const auto sliceDY = coords.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(sliceDY[Dim::X], x);
+  EXPECT_EQ(sliceDY[Dim::Y], y.slice({Dim::Y, 1, 2}));
+}
+
+auto make_dataset_2d_coord_x_1d_coord_y() {
+  Dataset d;
+  const auto x =
+      makeVariable<double>({{Dim::X, 3}, {Dim::Y, 2}}, {1, 2, 3, 4, 5, 6});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  return d;
+}
+
+TYPED_TEST(CoordsProxyTest, slice_2D_coord) {
+  auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto coords = TestFixture::access(d).coords();
+
+  const auto sliceX = coords.slice({Dim::X, 1});
+  EXPECT_ANY_THROW(sliceX[Dim::X]);
+  EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
+
+  const auto sliceDX = coords.slice({Dim::X, 1, 2});
+  EXPECT_EQ(sliceDX[Dim::X], coords[Dim::X].slice({Dim::X, 1, 2}));
+  EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
+
+  const auto sliceY = coords.slice({Dim::Y, 1});
+  EXPECT_EQ(sliceY[Dim::X], coords[Dim::X].slice({Dim::Y, 1}));
+  EXPECT_ANY_THROW(sliceY[Dim::Y]);
+
+  const auto sliceDY = coords.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(sliceDY[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 2}));
+  EXPECT_EQ(sliceDY[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 2}));
+}
+
+auto check_slice_of_slice = [](const auto &dataset, const auto slice) {
+  EXPECT_EQ(slice[Dim::X],
+            dataset.coords()[Dim::X].slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
+  EXPECT_ANY_THROW(slice[Dim::Y]);
+};
+
+TYPED_TEST(CoordsProxyTest, slice_of_slice) {
+  auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto cs = TestFixture::access(d).coords();
+
+  check_slice_of_slice(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1}));
+  check_slice_of_slice(d, cs.slice({Dim::Y, 1}).slice({Dim::X, 1, 3}));
+  check_slice_of_slice(d, cs.slice({Dim::X, 1, 3}, {Dim::Y, 1}));
+  check_slice_of_slice(d, cs.slice({Dim::Y, 1}, {Dim::X, 1, 3}));
+}
+
+auto check_slice_of_slice_range = [](const auto &dataset, const auto slice) {
+  EXPECT_EQ(
+      slice[Dim::X],
+      dataset.coords()[Dim::X].slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
+  EXPECT_EQ(slice[Dim::Y], dataset.coords()[Dim::Y].slice({Dim::Y, 1, 2}));
+};
+
+TYPED_TEST(CoordsProxyTest, slice_of_slice_range) {
+  auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto cs = TestFixture::access(d).coords();
+
+  check_slice_of_slice_range(d, cs.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 2}));
+  check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 3}));
+  check_slice_of_slice_range(d, cs.slice({Dim::X, 1, 3}, {Dim::Y, 1, 2}));
+  check_slice_of_slice_range(d, cs.slice({Dim::Y, 1, 2}, {Dim::X, 1, 3}));
+}
+
+TEST(CoordsConstProxy, slice_return_type) {
+  const Dataset d;
+  ASSERT_TRUE((std::is_same_v<decltype(d.coords().slice({Dim::X, 0})),
+                              CoordsConstProxy>));
+}
+
+TEST(CoordsProxy, slice_return_type) {
+  Dataset d;
+  ASSERT_TRUE(
+      (std::is_same_v<decltype(d.coords().slice({Dim::X, 0})), CoordsProxy>));
+}
+
+TEST(MutableCoordsProxyTest, item_write) {
+  Dataset d;
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {4, 5});
+  const auto x_reference = makeVariable<double>({Dim::X, 3}, {1.5, 2.0, 3.0});
+  const auto y_reference = makeVariable<double>({Dim::Y, 2}, {4.5, 5.0});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+
+  const auto coords = d.coords();
+  coords[Dim::X].values<double>()[0] += 0.5;
+  coords[Dim::Y].values<double>()[0] += 0.5;
+  ASSERT_EQ(coords[Dim::X], x_reference);
+  ASSERT_EQ(coords[Dim::Y], y_reference);
+}
+
+TEST(CoordsProxy, modify_slice) {
+  auto d = make_dataset_2d_coord_x_1d_coord_y();
+  const auto coords = d.coords();
+
+  const auto slice = coords.slice({Dim::X, 1, 2});
+  for (auto &x : slice[Dim::X].values<double>())
+    x = 0.0;
+
+  const auto reference =
+      makeVariable<double>({{Dim::X, 3}, {Dim::Y, 2}}, {1, 2, 0, 0, 5, 6});
+  EXPECT_EQ(d.coords()[Dim::X], reference);
+}
+
+TEST(CoordsConstProxy, slice_bin_edges_with_2D_coord) {
+  Dataset d;
+  const auto x = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+  const auto y_edges = makeVariable<double>({Dim::Y, 3}, {1, 2, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y_edges);
+  const auto coords = d.coords();
+
+  const auto sliceX = coords.slice({Dim::X, 1});
+  EXPECT_ANY_THROW(sliceX[Dim::X]);
+  EXPECT_EQ(sliceX[Dim::Y], coords[Dim::Y]);
+
+  const auto sliceDX = coords.slice({Dim::X, 1, 2});
+  EXPECT_EQ(sliceDX[Dim::X].dims(), Dimensions({{Dim::Y, 2}, {Dim::X, 1}}));
+  EXPECT_EQ(sliceDX[Dim::Y], coords[Dim::Y]);
+
+  const auto sliceY = coords.slice({Dim::Y, 1});
+  // TODO Would it be more consistent to preserve X with 0 thickness?
+  EXPECT_ANY_THROW(sliceY[Dim::X]);
+  EXPECT_ANY_THROW(sliceY[Dim::Y]);
+
+  const auto sliceY_edge = coords.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(sliceY_edge[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 1}));
+  EXPECT_EQ(sliceY_edge[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 2}));
+
+  const auto sliceY_bin = coords.slice({Dim::Y, 1, 3});
+  EXPECT_EQ(sliceY_bin[Dim::X], coords[Dim::X].slice({Dim::Y, 1, 2}));
+  EXPECT_EQ(sliceY_bin[Dim::Y], coords[Dim::Y].slice({Dim::Y, 1, 3}));
+}
+
+// Using typed tests for common functionality of DataProxy and DataConstProxy.
+template <typename T> class DataProxyTest : public ::testing::Test {
+protected:
+  using dataset_type =
+      std::conditional_t<std::is_same_v<T, DataProxy>, Dataset, const Dataset>;
+};
+
+using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
+TYPED_TEST_CASE(DataProxyTest, DataProxyTypes);
+
+TYPED_TEST(DataProxyTest, isSparse_sparseDim) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+
+  d.setValues("dense", makeVariable<double>({}));
+  ASSERT_FALSE(d_ref["dense"].isSparse());
+  ASSERT_EQ(d_ref["dense"].sparseDim(), Dim::Invalid);
+
+  d.setValues("sparse_data", makeSparseVariable<double>({}, Dim::X));
+  ASSERT_TRUE(d_ref["sparse_data"].isSparse());
+  ASSERT_EQ(d_ref["sparse_data"].sparseDim(), Dim::X);
+
+  d.setSparseCoord("sparse_coord", makeSparseVariable<double>({}, Dim::X));
+  ASSERT_TRUE(d_ref["sparse_coord"].isSparse());
+  ASSERT_EQ(d_ref["sparse_coord"].sparseDim(), Dim::X);
+}
+
+TYPED_TEST(DataProxyTest, dims) {
+  Dataset d;
+  const auto dense = makeVariable<double>({{Dim::X, 1}, {Dim::Y, 2}});
+  const auto sparse =
+      makeSparseVariable<double>({{Dim::X, 1}, {Dim::Y, 2}}, Dim::Z);
+  typename TestFixture::dataset_type &d_ref(d);
+
+  d.setValues("dense", dense);
+  ASSERT_EQ(d_ref["dense"].dims(), dense.dims());
+
+  // Sparse dimension is currently not included in dims(). It is unclear whether
+  // this is the right choice. An unfinished idea involves returning
+  // std::tuple<std::span<const Dim>, std::optional<Dim>> instead, using `auto [
+  // dims, sparse ] = data.dims();`.
+  d.setValues("sparse_data", sparse);
+  ASSERT_EQ(d_ref["sparse_data"].dims(), dense.dims());
+  ASSERT_EQ(d_ref["sparse_data"].dims(), sparse.dims());
+
+  d.setSparseCoord("sparse_coord", sparse);
+  ASSERT_EQ(d_ref["sparse_coord"].dims(), dense.dims());
+  ASSERT_EQ(d_ref["sparse_coord"].dims(), sparse.dims());
+}
+
+TYPED_TEST(DataProxyTest, dims_with_extra_coords) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", var);
+
+  ASSERT_EQ(d_ref["a"].dims(), var.dims());
+}
+
+TYPED_TEST(DataProxyTest, unit) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+
+  d.setValues("dense", makeVariable<double>({}));
+  EXPECT_EQ(d_ref["dense"].unit(), units::dimensionless);
+}
+
+TYPED_TEST(DataProxyTest, unit_access_fails_without_values) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  d.setSparseCoord("sparse", makeSparseVariable<double>({}, Dim::X));
+  EXPECT_ANY_THROW(d_ref["sparse"].unit());
+}
+
+TYPED_TEST(DataProxyTest, coords) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, var);
+  d.setValues("a", var);
+
+  ASSERT_NO_THROW(d_ref["a"].coords());
+  ASSERT_EQ(d_ref["a"].coords(), d.coords());
+}
+
+TYPED_TEST(DataProxyTest, coords_sparse) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto var = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
+  d.setSparseCoord("a", var);
+
+  ASSERT_NO_THROW(d_ref["a"].coords());
+  ASSERT_NE(d_ref["a"].coords(), d.coords());
+  ASSERT_EQ(d_ref["a"].coords().size(), 1);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::Y], var);
+}
+
+TYPED_TEST(DataProxyTest, coords_sparse_shadow) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setSparseCoord("a", sparse);
+
+  ASSERT_NO_THROW(d_ref["a"].coords());
+  ASSERT_NE(d_ref["a"].coords(), d.coords());
+  ASSERT_EQ(d_ref["a"].coords().size(), 2);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::X], x);
+  ASSERT_NE(d_ref["a"].coords()[Dim::Y], y);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::Y], sparse);
+}
+
+TYPED_TEST(DataProxyTest, coords_sparse_shadow_even_if_no_coord) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto sparse = makeSparseVariable<double>({Dim::X, 3}, Dim::Y);
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", sparse);
+
+  ASSERT_NO_THROW(d_ref["a"].coords());
+  // Dim::Y is sparse, so the global (non-sparse) Y coordinate does not make
+  // sense and is thus hidden.
+  ASSERT_NE(d_ref["a"].coords(), d.coords());
+  ASSERT_EQ(d_ref["a"].coords().size(), 1);
+  ASSERT_NO_THROW(d_ref["a"].coords()[Dim::X]);
+  ASSERT_ANY_THROW(d_ref["a"].coords()[Dim::Y]);
+  ASSERT_EQ(d_ref["a"].coords()[Dim::X], x);
+}
+
+TYPED_TEST(DataProxyTest, coords_contains_only_relevant) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 3}, {4, 5, 6});
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", var);
+  const auto coords = d_ref["a"].coords();
+
+  ASSERT_NE(coords, d.coords());
+  ASSERT_EQ(coords.size(), 1);
+  ASSERT_NO_THROW(coords[Dim::X]);
+  ASSERT_EQ(coords[Dim::X], x);
+}
+
+TYPED_TEST(DataProxyTest, coords_contains_only_relevant_2d_dropped) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", var);
+  const auto coords = d_ref["a"].coords();
+
+  ASSERT_NE(coords, d.coords());
+  ASSERT_EQ(coords.size(), 1);
+  ASSERT_NO_THROW(coords[Dim::X]);
+  ASSERT_EQ(coords[Dim::X], x);
+}
+
+TYPED_TEST(DataProxyTest,
+           coords_contains_only_relevant_2d_not_dropped_inconsistency) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto x = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
+  const auto y = makeVariable<double>({Dim::Y, 3});
+  const auto var = makeVariable<double>({Dim::X, 3});
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Y, y);
+  d.setValues("a", var);
+  const auto coords = d_ref["a"].coords();
+
+  // This is a very special case which is probably unlikely to occur in
+  // practice. If the coordinate depends on extra dimensions and the data is
+  // not, it implies that the coordinate cannot be for this data item, so it
+  // should be dropped... HOWEVER, the current implementation DOES NOT DROP IT.
+  // Should that be changed?
+  ASSERT_NE(coords, d.coords());
+  ASSERT_EQ(coords.size(), 1);
+  ASSERT_NO_THROW(coords[Dim::X]);
+  ASSERT_EQ(coords[Dim::X], x);
+}
+
+TYPED_TEST(DataProxyTest, hasValues_hasVariances) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto var = makeVariable<double>({});
+
+  d.setValues("a", var);
+  d.setValues("b", var);
+  d.setVariances("b", var);
+
+  ASSERT_TRUE(d_ref["a"].hasValues());
+  ASSERT_FALSE(d_ref["a"].hasVariances());
+
+  ASSERT_TRUE(d_ref["b"].hasValues());
+  ASSERT_TRUE(d_ref["b"].hasVariances());
+}
+
+TYPED_TEST(DataProxyTest, values_variances) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  const auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
+  d.setValues("a", var);
+  d.setVariances("a", var);
+
+  ASSERT_EQ(d_ref["a"].values(), var);
+  ASSERT_EQ(d_ref["a"].variances(), var);
+  ASSERT_TRUE(equals(d_ref["a"].template values<double>(), {1, 2}));
+  ASSERT_TRUE(equals(d_ref["a"].template variances<double>(), {1, 2}));
+  ASSERT_ANY_THROW(d_ref["a"].template values<float>());
+  ASSERT_ANY_THROW(d_ref["a"].template variances<float>());
+}
+
+template <typename T> class DataProxy3DTest : public Dataset3DTest {
+protected:
+  using dataset_type =
+      std::conditional_t<std::is_same_v<T, DataProxy>, Dataset, const Dataset>;
+
+  dataset_type &dataset() { return Dataset3DTest::dataset; }
+};
+
+TYPED_TEST_CASE(DataProxy3DTest, DataProxyTypes);
+
+// We have tests that ensure that Dataset::slice is correct (and its item access
+// returns the correct data), so we rely on that for verifying the results of
+// slicing DataProxy.
+TYPED_TEST(DataProxy3DTest, slice_single) {
+  auto &d = TestFixture::dataset();
+  for (const auto[name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1}));
+        for (scipp::index i = 0; i < item.dims()[dim]; ++i)
+          EXPECT_EQ(item.slice({dim, i}), d.slice({dim, i})[name]);
+        EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0}));
       }
     }
-    EXPECT_EQ(count, 2);
-  };
-
-  check(viewA, "a");
-  check(viewB, "b");
-  check(d.subset("a"), "a");
-  check(d.subset("b"), "b");
+  }
 }
 
-TEST(DatasetSlice, minus_equals) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 4});
-  d.insert(Coord::Y, {Dim::Y, 2});
-  d.insert(Data::Value, "a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
-  d.insert(Data::Value, "b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
-  d.insert(Data::Variance, "a", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
-  d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}}, 8, 1.0);
-
-  EXPECT_NO_THROW(d -= d.subset("a"));
-
-  EXPECT_EQ(d.get(Data::Value, "a")[0], 0.0);
-  EXPECT_EQ(d.get(Data::Value, "b")[0], 1.0);
-  EXPECT_EQ(d.get(Data::Variance, "a")[0], 2.0);
-  EXPECT_EQ(d.get(Data::Variance, "b")[0], 1.0);
-
-  ASSERT_NO_THROW(d.subset("a") -= d.subset("b"));
-
-  ASSERT_EQ(d.size(), 6);
-  // Note: Variable not renamed when operating with slices.
-  EXPECT_EQ(d.get(Data::Value, "a")[0], -1.0);
-  EXPECT_EQ(d.get(Data::Value, "b")[0], 1.0);
-  EXPECT_EQ(d.get(Data::Variance, "a")[0], 3.0);
-  EXPECT_EQ(d.get(Data::Variance, "b")[0], 1.0);
+TYPED_TEST(DataProxy3DTest, slice_length_0) {
+  auto &d = TestFixture::dataset();
+  for (const auto[name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1, -1}));
+        for (scipp::index i = 0; i < item.dims()[dim]; ++i)
+          EXPECT_EQ(item.slice({dim, i, i + 0}),
+                    d.slice({dim, i, i + 0})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 0}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
+      }
+    }
+  }
 }
 
-TEST(DatasetSlice, slice_spatial) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 3, 4});
-  d.insert(Coord::Y, {Dim::Y, 2}, {1, 2});
-  d.insert(Data::Value, "a", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert(Data::Variance, "a", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-
-  auto view_x13 = d(Dim::X, 1, 3);
-  ASSERT_EQ(view_x13.size(), 4);
-  EXPECT_EQ(view_x13(Coord::X).dimensions(), (Dimensions{Dim::X, 2}));
-  EXPECT_EQ(view_x13(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_x13(Data::Value, "a").dimensions(),
-            (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_EQ(view_x13(Data::Value, "a").dimensions(),
-            (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
+TYPED_TEST(DataProxy3DTest, slice_length_1) {
+  auto &d = TestFixture::dataset();
+  for (const auto[name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1, 0}));
+        for (scipp::index i = 0; i < item.dims()[dim]; ++i)
+          EXPECT_EQ(item.slice({dim, i, i + 1}),
+                    d.slice({dim, i, i + 1})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 1}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
+      }
+    }
+  }
 }
 
-TEST(DatasetSlice, subset_slice_spatial) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 4}, {1, 2, 3, 4});
-  d.insert(Coord::Y, {Dim::Y, 2}, {1, 2});
-  d.insert(Data::Value, "a", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert(Data::Value, "b", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert(Data::Variance, "a", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-
-  auto view_a_x0 = d.subset("a")(Dim::X, 0);
-
-  // Slice with single index (not range) => corresponding dimension coordinate
-  // is removed.
-  ASSERT_EQ(view_a_x0.size(), 3);
-  EXPECT_EQ(view_a_x0(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x0(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x0(Data::Variance, "a").dimensions(),
-            (Dimensions{Dim::Y, 2}));
-
-  auto view_a_x1 = d.subset("a")(Dim::X, 1);
-
-  ASSERT_EQ(view_a_x1.size(), 3);
-  EXPECT_EQ(view_a_x1(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x1(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x1(Data::Variance, "a").dimensions(),
-            (Dimensions{Dim::Y, 2}));
-
-  EXPECT_NO_THROW(view_a_x1 -= view_a_x0);
-
-  EXPECT_TRUE(equals(d.get(Coord::X), {1, 2, 3, 4}));
-  EXPECT_TRUE(equals(d.get(Coord::Y), {1, 2}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 1, 3, 4, 5, 1, 7, 8}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {1, 3, 3, 4, 5, 11, 7, 8}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "b"), {1, 2, 3, 4, 5, 6, 7, 8}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {1, 2, 3, 4, 5, 6, 7, 8}));
-
-  // If we slice with a range index the corresponding coordinate (and dimension)
-  // is preserved, even if the range has size 1. Thus the operation fails due to
-  // coordinate mismatch, as it should.
-  auto view_a_x01 = d.subset("a")(Dim::X, 0, 1);
-  auto view_a_x12 = d.subset("a")(Dim::X, 1, 2);
-  EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
-                          except::VariableMismatchError, "expected to match");
+TYPED_TEST(DataProxy3DTest, slice) {
+  auto &d = TestFixture::dataset();
+  for (const auto[name, item] : d) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1, 1}));
+        for (scipp::index i = 0; i < item.dims()[dim] - 1; ++i)
+          EXPECT_EQ(item.slice({dim, i, i + 2}),
+                    d.slice({dim, i, i + 2})[name]);
+        EXPECT_ANY_THROW(
+            item.slice({dim, item.dims()[dim], item.dims()[dim] + 2}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0, 2}));
+      }
+    }
+  }
 }
 
-TEST(DatasetSlice, subset_slice_spatial_with_bin_edges) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 5}, {1, 2, 3, 4, 5});
-  d.insert(Coord::Y, {Dim::Y, 2}, {1, 2});
-  d.insert(Data::Value, "a", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert(Data::Value, "b", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert(Data::Variance, "a", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-  d.insert(Data::Variance, "b", {{Dim::Y, 2}, {Dim::X, 4}},
-           {1, 2, 3, 4, 5, 6, 7, 8});
-
-  auto view_a_x0 = d.subset("a")(Dim::X, 0);
-
-  // Slice with single index (not range) => corresponding dimension coordinate
-  // is removed.
-  ASSERT_EQ(view_a_x0.size(), 3);
-  EXPECT_EQ(view_a_x0(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x0(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x0(Data::Variance, "a").dimensions(),
-            (Dimensions{Dim::Y, 2}));
-
-  auto view_a_x1 = d.subset("a")(Dim::X, 1);
-
-  ASSERT_EQ(view_a_x1.size(), 3);
-  EXPECT_EQ(view_a_x1(Coord::Y).dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x1(Data::Value, "a").dimensions(), (Dimensions{Dim::Y, 2}));
-  EXPECT_EQ(view_a_x1(Data::Variance, "a").dimensions(),
-            (Dimensions{Dim::Y, 2}));
-
-  EXPECT_NO_THROW(view_a_x1 -= view_a_x0);
-
-  EXPECT_TRUE(equals(d.get(Coord::X), {1, 2, 3, 4, 5}));
-  EXPECT_TRUE(equals(d.get(Coord::Y), {1, 2}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 1, 3, 4, 5, 1, 7, 8}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {1, 3, 3, 4, 5, 11, 7, 8}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "b"), {1, 2, 3, 4, 5, 6, 7, 8}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {1, 2, 3, 4, 5, 6, 7, 8}));
-
-  auto view_a_x01 = d.subset("a")(Dim::X, 0, 1);
-  auto view_a_x12 = d.subset("a")(Dim::X, 1, 2);
-  ASSERT_NO_THROW(view_a_x01(Coord::X));
-  // View extent is 1 so we get 2 edges.
-  ASSERT_EQ(view_a_x01.dimensions()[Dim::X], 1);
-  ASSERT_EQ(view_a_x01(Coord::X).dimensions()[Dim::X], 2);
-  EXPECT_TRUE(equals(view_a_x01(Coord::X).span<double>(), {1, 2}));
-  EXPECT_TRUE(equals(view_a_x12(Coord::X).span<double>(), {2, 3}));
-
-  auto view_a_x02 = d.subset("a")(Dim::X, 0, 2);
-  auto view_a_x13 = d.subset("a")(Dim::X, 1, 3);
-  ASSERT_NO_THROW(view_a_x02(Coord::X));
-  // View extent is 2 so we get 3 edges.
-  ASSERT_EQ(view_a_x02.dimensions()[Dim::X], 2);
-  ASSERT_EQ(view_a_x02(Coord::X).dimensions()[Dim::X], 3);
-  EXPECT_TRUE(equals(view_a_x02(Coord::X).span<double>(), {1, 2, 3}));
-  EXPECT_TRUE(equals(view_a_x13(Coord::X).span<double>(), {2, 3, 4}));
-
-  // If we slice with a range index the corresponding coordinate (and dimension)
-  // is preserved, even if the range has size 1. Thus the operation fails due to
-  // coordinate mismatch, as it should.
-  EXPECT_THROW_MSG_SUBSTR(view_a_x12 -= view_a_x01,
-                          except::VariableMismatchError, "expected to match");
-  EXPECT_THROW_MSG_SUBSTR(view_a_x13 -= view_a_x02,
-                          except::VariableMismatchError, "expected to match");
+TYPED_TEST(DataProxy3DTest, slice_slice_range) {
+  auto &d = TestFixture::dataset();
+  const auto slice = d.slice({Dim::X, 2, 4});
+  // Slice proxy created from DatasetProxy as opposed to directly from Dataset.
+  for (const auto[name, item] : slice) {
+    for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+      if (item.dims().contains(dim)) {
+        EXPECT_ANY_THROW(item.slice({dim, -1}));
+        for (scipp::index i = 0; i < item.dims()[dim]; ++i)
+          EXPECT_EQ(item.slice({dim, i}),
+                    d.slice({Dim::X, 2, 4}, {dim, i})[name]);
+        EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
+      } else {
+        EXPECT_ANY_THROW(item.slice({dim, 0}));
+      }
+    }
+  }
 }
 
-template <typename T>
-void binary_test(T (*func)(T, T), const std::vector<T> &input,
-                 Dataset &actual_result, const std::string &name = "") {
-
-  // Transform the underlying data into the same result to compare note that
-  // input must be both l and r operands of the binary expression
-  std::vector<T> result;
-  result.reserve(input.size());
-  std::transform(input.begin(), input.end(), input.begin(),
-                 std::back_inserter(result), func);
-
-  EXPECT_EQ(actual_result.get(Data::Value, name), scipp::span(result));
+TYPED_TEST(DataProxy3DTest, slice_single_with_edges) {
+  auto x = {Dim::X};
+  auto xy = {Dim::X, Dim::Y};
+  auto yz = {Dim::Y, Dim::Z};
+  auto xyz = {Dim::X, Dim::Y, Dim::Z};
+  for (const auto &edgeDims : {x, xy, yz, xyz}) {
+    typename TestFixture::dataset_type d =
+        TestFixture::datasetWithEdges(edgeDims);
+    for (const auto[name, item] : d) {
+      for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+        if (item.dims().contains(dim)) {
+          EXPECT_ANY_THROW(item.slice({dim, -1}));
+          for (scipp::index i = 0; i < item.dims()[dim]; ++i)
+            EXPECT_EQ(item.slice({dim, i}), d.slice({dim, i})[name]);
+          EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
+        } else {
+          EXPECT_ANY_THROW(item.slice({dim, 0}));
+        }
+      }
+    }
+  }
 }
 
-template <typename T>
-void inplace_op_test(T (*func)(T, T), const std::vector<T> &input,
-                     const std::vector<T> &current, Dataset &actual_result,
-                     const std::string &name = "") {
-
-  auto result = input; // take copy of input
-  std::transform(current.begin(), current.end(), result.begin(), result.begin(),
-                 func);
-  EXPECT_EQ(actual_result.get(Data::Value, name), scipp::span(result));
+TYPED_TEST(DataProxy3DTest, slice_length_0_with_edges) {
+  auto x = {Dim::X};
+  auto xy = {Dim::X, Dim::Y};
+  auto yz = {Dim::Y, Dim::Z};
+  auto xyz = {Dim::X, Dim::Y, Dim::Z};
+  for (const auto &edgeDims : {x, xy, yz, xyz}) {
+    typename TestFixture::dataset_type d =
+        TestFixture::datasetWithEdges(edgeDims);
+    for (const auto[name, item] : d) {
+      for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+        if (item.dims().contains(dim)) {
+          EXPECT_ANY_THROW(item.slice({dim, -1, -1}));
+          for (scipp::index i = 0; i < item.dims()[dim]; ++i) {
+            const auto slice = item.slice({dim, i, i + 0});
+            EXPECT_EQ(slice, d.slice({dim, i, i + 0})[name]);
+            if (std::set(edgeDims).count(dim)) {
+              EXPECT_EQ(slice.coords()[dim].dims()[dim], 1);
+            }
+          }
+          EXPECT_ANY_THROW(
+              item.slice({dim, item.dims()[dim], item.dims()[dim] + 0}));
+        } else {
+          EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
+        }
+      }
+    }
+  }
 }
 
-std::vector<double> data_from_dataset(Dataset &dataset,
-                                      const std::string &name = "") {
-  auto var = dataset.get(Data::Value, name);
-  return std::vector<double>(var.begin(), var.end());
+TYPED_TEST(DataProxy3DTest, slice_length_1_with_edges) {
+  auto x = {Dim::X};
+  auto xy = {Dim::X, Dim::Y};
+  auto yz = {Dim::Y, Dim::Z};
+  auto xyz = {Dim::X, Dim::Y, Dim::Z};
+  for (const auto &edgeDims : {x, xy, yz, xyz}) {
+    typename TestFixture::dataset_type d =
+        TestFixture::datasetWithEdges(edgeDims);
+    for (const auto[name, item] : d) {
+      for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+        if (item.dims().contains(dim)) {
+          EXPECT_ANY_THROW(item.slice({dim, -1, 0}));
+          for (scipp::index i = 0; i < item.dims()[dim]; ++i) {
+            const auto slice = item.slice({dim, i, i + 1});
+            EXPECT_EQ(slice, d.slice({dim, i, i + 1})[name]);
+            if (std::set(edgeDims).count(dim)) {
+              EXPECT_EQ(slice.coords()[dim].dims()[dim], 2);
+            }
+          }
+          EXPECT_ANY_THROW(
+              item.slice({dim, item.dims()[dim], item.dims()[dim] + 1}));
+        } else {
+          EXPECT_ANY_THROW(item.slice({dim, 0, 0}));
+        }
+      }
+    }
+  }
 }
 
-TEST(Dataset, binary_operations_with_identical_lhs_rhs_operand_structures) {
-
-  auto plus = [](auto i, auto j) { return i + j; };
-  auto minus = [](auto i, auto j) { return i - j; };
-  auto mult = [](auto i, auto j) { return i * j; };
-  auto divide = [](auto i, auto j) { return i / j; };
-
-  Dataset a;
-  std::vector<double> input = {2, 3};
-  a.insert(Data::Value, {Dim::X, 2}, input.begin(), input.end());
-  Dataset b(a); // Idential copy.
-
-  auto c = a + b;
-  binary_test<double>(plus, input, c);
-  c = a - b;
-  binary_test<double>(minus, input, c);
-  c = a * b;
-  binary_test<double>(mult, input, c);
-
-  auto c_var_data = data_from_dataset(c);
-  c += b;
-  inplace_op_test<double>(plus, input, c_var_data, c);
-  c_var_data = data_from_dataset(c);
-  c -= b;
-  inplace_op_test<double>(minus, input, c_var_data, c);
-  c_var_data = data_from_dataset(c);
-  c *= b;
-  inplace_op_test<double>(mult, input, c_var_data, c);
-  c_var_data = data_from_dataset(c);
-  c /= b;
-  inplace_op_test<double>(divide, input, c_var_data, c);
-}
-
-TEST(Dataset, binary_operations_with_non_identical_lhs_rhs_operand_structures) {
-  auto plus = [](auto i, auto j) { return i + j; };
-  auto minus = [](auto i, auto j) { return i - j; };
-  auto mult = [](auto i, auto j) { return i * j; };
-  auto divide = [](auto i, auto j) { return i / j; };
-
-  Dataset a;
-  std::vector<double> input = {2, 3};
-  a.insert(Data::Value, "u", {Dim::X, 2}, input.begin(), input.end());
-  Dataset b;
-  b.insert(Data::Value, "v", {Dim::X, 2}, input.begin(), input.end());
-
-  auto c = a + b;
-  binary_test<double>(plus, input, c, "u");
-  c = b + a;
-  binary_test<double>(plus, input, c, "v"); // output contains 'v' no 'u'
-  c = a - b;
-  binary_test<double>(minus, input, c, "u");
-  c = a * b;
-  binary_test<double>(mult, input, c, "u");
-  c = a / b;
-  binary_test<double>(divide, input, c, "u");
-}
-
-TEST(Dataset, unary_minus) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
-  a.insert(Data::Value, "a", {Dim::X, 2}, {1.0, 2.0});
-  a.insert(Data::Value, "b", {}, {3.0});
-  a.insert(Data::Variance, "a", {Dim::X, 2}, {4.0, 5.0});
-  a.insert(Data::Variance, "b", {}, {6.0});
-
-  auto b = -a;
-  EXPECT_EQ(b(Coord::X), a(Coord::X));
-  EXPECT_EQ(b(Data::Value, "a"), -a(Data::Value, "a"));
-  EXPECT_EQ(b(Data::Value, "b"), -a(Data::Value, "b"));
-  // Note variance not changing sign.
-  EXPECT_EQ(b(Data::Variance, "a"), a(Data::Variance, "a"));
-  EXPECT_EQ(b(Data::Variance, "b"), a(Data::Variance, "b"));
-}
-
-TEST(Dataset, binary_assign_with_scalar) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
-  d.insert(Data::Value, "d1", {Dim::X, 2}, {1.0, 2.0});
-  d.insert(Data::Value, "d2", {}, {3.0});
-  d.insert(Data::Variance, "d1", {Dim::X, 2}, {4.0, 5.0});
-  d.insert(Data::Variance, "d2", {}, {6.0});
-
-  d += 1;
-  EXPECT_TRUE(equals(d.get(Data::Value, "d1"), {2, 3}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "d2"), {4}));
-  // Scalar treated as having 0 variance, `+` leaves variance unchanged.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d1"), {4, 5}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {6}));
-
-  d -= 2;
-  EXPECT_TRUE(equals(d.get(Data::Value, "d1"), {0, 1}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "d2"), {2}));
-  // Scalar treated as having 0 variance, `-` leaves variance unchanged.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d1"), {4, 5}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {6}));
-
-  d *= 2;
-  EXPECT_TRUE(equals(d.get(Data::Value, "d1"), {0, 2}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "d2"), {4}));
-  // Scalar treated as having 0 variance, `*` affects variance.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d1"), {16, 20}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {24}));
-
-  d /= 2;
-  EXPECT_TRUE(equals(d.get(Data::Value, "d1"), {0, 1}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "d2"), {2}));
-  // Scalar treated as having 0 variance, `/` affects variance.
-  EXPECT_TRUE(
-      equals(d.get(Data::Variance, "d1"), {16 / (2 * 2), 20 / (2 * 2)}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "d2"), {24 / (2 * 2)}));
-}
-
-TEST(DatasetSlice, binary_assign_with_scalar) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
-  d.insert(Data::Value, "a", {Dim::X, 2}, {1.0, 2.0});
-  d.insert(Data::Value, "b", {}, {3.0});
-  d.insert(Data::Variance, "a", {Dim::X, 2}, {4.0, 5.0});
-  d.insert(Data::Variance, "b", {}, {6.0});
-
-  auto slice = d(Dim::X, 1);
-
-  slice += 1;
-  EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 3}));
-  // TODO This behavior should be reconsidered and probably change: A slice
-  // should not include variables that do not have the dimension, otherwise,
-  // e.g., looping over slices will apply an operation to that variable more
-  // than once.
-  EXPECT_TRUE(equals(d.get(Data::Value, "b"), {4}));
-  // Scalar treated as having 0 variance, `+` leaves variance unchanged.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4, 5}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {6}));
-
-  slice -= 2;
-  EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 1}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "b"), {2}));
-  // Scalar treated as having 0 variance, `-` leaves variance unchanged.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4, 5}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {6}));
-
-  slice *= 2;
-  EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 2}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "b"), {4}));
-  // Scalar treated as having 0 variance, `*` affects variance.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4, 20}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {24}));
-
-  slice /= 2;
-  EXPECT_TRUE(equals(d.get(Data::Value, "a"), {1, 1}));
-  EXPECT_TRUE(equals(d.get(Data::Value, "b"), {2}));
-  // Scalar treated as having 0 variance, `/` affects variance.
-  EXPECT_TRUE(equals(d.get(Data::Variance, "a"), {4.0, 20.0 / (2 * 2)}));
-  EXPECT_TRUE(equals(d.get(Data::Variance, "b"), {24.0 / (2 * 2)}));
-}
-
-TEST(Dataset, binary_with_scalar) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
-  d.insert(Data::Value, "a", {Dim::X, 2}, {1.0, 2.0});
-  d.insert(Data::Value, "b", {}, {3.0});
-  d.insert(Data::Variance, "a", {Dim::X, 2}, {4.0, 5.0});
-  d.insert(Data::Variance, "b", {}, {6.0});
-
-  auto sum = d + 1;
-  EXPECT_TRUE(equals(sum.get(Data::Value, "a"), {2, 3}));
-  EXPECT_TRUE(equals(sum.get(Data::Value, "b"), {4}));
-  EXPECT_TRUE(equals(sum.get(Data::Variance, "a"), {4, 5}));
-  EXPECT_TRUE(equals(sum.get(Data::Variance, "b"), {6}));
-  sum = 2 + d;
-  EXPECT_TRUE(equals(sum.get(Data::Value, "a"), {3, 4}));
-  EXPECT_TRUE(equals(sum.get(Data::Value, "b"), {5}));
-  EXPECT_TRUE(equals(sum.get(Data::Variance, "a"), {4, 5}));
-  EXPECT_TRUE(equals(sum.get(Data::Variance, "b"), {6}));
-
-  auto diff = d - 1;
-  EXPECT_TRUE(equals(diff.get(Data::Value, "a"), {0, 1}));
-  EXPECT_TRUE(equals(diff.get(Data::Value, "b"), {2}));
-  EXPECT_TRUE(equals(diff.get(Data::Variance, "a"), {4, 5}));
-  EXPECT_TRUE(equals(diff.get(Data::Variance, "b"), {6}));
-  diff = 2 - d;
-  EXPECT_TRUE(equals(diff.get(Data::Value, "a"), {1, 0}));
-  EXPECT_TRUE(equals(diff.get(Data::Value, "b"), {-1}));
-  EXPECT_TRUE(equals(diff.get(Data::Variance, "a"), {4, 5}));
-  EXPECT_TRUE(equals(diff.get(Data::Variance, "b"), {6}));
-
-  auto prod = d * 2;
-  EXPECT_TRUE(equals(prod.get(Data::Value, "a"), {2, 4}));
-  EXPECT_TRUE(equals(prod.get(Data::Value, "b"), {6}));
-  EXPECT_TRUE(equals(prod.get(Data::Variance, "a"), {16, 20}));
-  EXPECT_TRUE(equals(prod.get(Data::Variance, "b"), {24}));
-  prod = 3 * d;
-  EXPECT_TRUE(equals(prod.get(Data::Value, "a"), {3, 6}));
-  EXPECT_TRUE(equals(prod.get(Data::Value, "b"), {9}));
-  EXPECT_TRUE(equals(prod.get(Data::Variance, "a"), {36, 45}));
-  EXPECT_TRUE(equals(prod.get(Data::Variance, "b"), {54}));
-}
-
-TEST(DatasetSlice, binary_with_scalar) {
-  Dataset d;
-  d.insert(Coord::X, {Dim::X, 2}, {1.0, 2.0});
-  d.insert(Data::Value, "a", {Dim::X, 2}, {1.0, 2.0});
-  d.insert(Data::Value, "b", {}, {3.0});
-  d.insert(Data::Variance, "a", {Dim::X, 2}, {4.0, 5.0});
-  d.insert(Data::Variance, "b", {}, {6.0});
-
-  auto slice = d(Dim::X, 1);
-
-  // Note that these operations actually work by implicitly converting
-  // DatasetSlice to Dataset, so this test is actually testing that conversion,
-  // not the binary operation iteself.
-  auto sum = slice + 1;
-  EXPECT_TRUE(equals(sum.get(Data::Value, "a"), {3}));
-  EXPECT_TRUE(equals(sum.get(Data::Value, "b"), {4}));
-  EXPECT_TRUE(equals(sum.get(Data::Variance, "a"), {5}));
-  EXPECT_TRUE(equals(sum.get(Data::Variance, "b"), {6}));
-  sum = 2 + slice;
-  EXPECT_TRUE(equals(sum.get(Data::Value, "a"), {4}));
-  EXPECT_TRUE(equals(sum.get(Data::Value, "b"), {5}));
-  EXPECT_TRUE(equals(sum.get(Data::Variance, "a"), {5}));
-  EXPECT_TRUE(equals(sum.get(Data::Variance, "b"), {6}));
-
-  auto diff = slice - 1;
-  EXPECT_TRUE(equals(diff.get(Data::Value, "a"), {1}));
-  EXPECT_TRUE(equals(diff.get(Data::Value, "b"), {2}));
-  EXPECT_TRUE(equals(diff.get(Data::Variance, "a"), {5}));
-  EXPECT_TRUE(equals(diff.get(Data::Variance, "b"), {6}));
-  diff = 2 - slice;
-  EXPECT_TRUE(equals(diff.get(Data::Value, "a"), {0}));
-  EXPECT_TRUE(equals(diff.get(Data::Value, "b"), {-1}));
-  EXPECT_TRUE(equals(diff.get(Data::Variance, "a"), {5}));
-  EXPECT_TRUE(equals(diff.get(Data::Variance, "b"), {6}));
-
-  auto prod = slice * 2;
-  EXPECT_TRUE(equals(prod.get(Data::Value, "a"), {4}));
-  EXPECT_TRUE(equals(prod.get(Data::Value, "b"), {6}));
-  EXPECT_TRUE(equals(prod.get(Data::Variance, "a"), {20}));
-  EXPECT_TRUE(equals(prod.get(Data::Variance, "b"), {24}));
-  prod = 3 * slice;
-  EXPECT_TRUE(equals(prod.get(Data::Value, "a"), {6}));
-  EXPECT_TRUE(equals(prod.get(Data::Value, "b"), {9}));
-  EXPECT_TRUE(equals(prod.get(Data::Variance, "a"), {45}));
-  EXPECT_TRUE(equals(prod.get(Data::Variance, "b"), {54}));
-
-  auto fraction = slice / 2;
-  EXPECT_TRUE(equals(fraction.get(Data::Value, "a"), {1}));
-  EXPECT_TRUE(equals(fraction.get(Data::Value, "b"), {1.5}));
-  EXPECT_TRUE(equals(fraction.get(Data::Variance, "a"), {5.0 / 4}));
-  EXPECT_TRUE(equals(fraction.get(Data::Variance, "b"), {6.0 / 4}));
-}
-
-TEST(DatasetSlice, binary_operator_equals_with_variable) {
-  Dataset a;
-  a.insert(Coord::X, {Dim::X, 1}, {0.1});
-  a.insert(Data::Value, "a", {Dim::X, 1}, {25.0});
-
-  DatasetSlice a_slice = a.subset("a");
-  auto bvar = makeVariable<double>({Dim::X, 1}, {5.0});
-
-  a_slice += bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 + 5);
-  a_slice -= bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25);
-  a_slice *= bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25 * 5);
-  a_slice /= bvar;
-  EXPECT_EQ(a_slice(Data::Value, "a").span<double>().data()[0], 25);
-}
-
-TEST(Dataset, counts_toDensity_fromDensity) {
-  Dataset d;
-  d.insert(Coord::Tof,
-           makeVariable<double>({Dim::Tof, 4}, units::us, {1, 2, 4, 8}));
-  d.insert(Data::Value, "",
-           makeVariable<double>({Dim::Tof, 3}, units::counts, {12, 12, 12}));
-
-  d = counts::toDensity(std::move(d), Dim::Tof);
-  auto result = d(Data::Value, "");
-  EXPECT_EQ(result.unit(), units::counts / units::us);
-  EXPECT_TRUE(equals(result.span<double>(), {12, 6, 3}));
-
-  d = counts::fromDensity(std::move(d), Dim::Tof);
-  result = d(Data::Value, "");
-  EXPECT_EQ(result.unit(), units::counts);
-  EXPECT_TRUE(equals(result.span<double>(), {12, 12, 12}));
-}
-
-TEST(SparseDataset, different_variables_can_have_different_sparse_dimensions) {
-  Dataset d;
-  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
-  d.insert(Coord::Y, makeSparseVariable<double>({Dim::X, 2}, Dim::Z));
-  EXPECT_EQ(d.size(), 2);
-}
-
-TEST(SparseDataset, dimensions_of_dataset_does_not_contain_sparse_dims) {
-  Dataset d;
-  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
-  EXPECT_EQ(d.dimensions(), Dimensions({Dim::X, 2}));
-}
-
-TEST(SparseDataset, dimension_can_be_dense_in_some_vars_and_sparse_in_others) {
-  Dataset d;
-  d.insert(Coord::X, makeSparseVariable<double>({Dim::X, 2}, Dim::Y));
-  d.insert(Coord::Y, makeVariable<double>({Dim::Y, 3}));
-  EXPECT_EQ(d.size(), 2);
-  EXPECT_EQ(d.dimensions(), Dimensions({{Dim::Y, 3}, {Dim::X, 2}}));
-}
-
-TEST(SparseDataset, concatenate_along_sparse_dimension) {
-  Dataset d1;
-  d1.insert(Data::Value, makeSparseVariable<double>({Dim::Y, 2}, Dim::X));
-  auto a_ = d1(Data::Value).sparseSpan<double>();
-  a_[0] = {1, 2, 3};
-  a_[1] = {1, 2};
-
-  Dataset d2;
-  d2.insert(Data::Value, makeSparseVariable<double>({Dim::Y, 2}, Dim::X));
-  auto b_ = d2(Data::Value).sparseSpan<double>();
-  b_[0] = {1, 3};
-  b_[1] = {};
-
-  auto d = concatenate(d1, d2, Dim::X);
-
-  const auto var = d(Data::Value);
-  EXPECT_TRUE(var.isSparse());
-  EXPECT_EQ(var.sparseDim(), Dim::X);
-  EXPECT_EQ(var.size(), 2);
-  auto data = var.sparseSpan<double>();
-  EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
-  EXPECT_TRUE(equals(data[1], {1, 2}));
+TYPED_TEST(DataProxy3DTest, slice_with_edges) {
+  auto x = {Dim::X};
+  auto xy = {Dim::X, Dim::Y};
+  auto yz = {Dim::Y, Dim::Z};
+  auto xyz = {Dim::X, Dim::Y, Dim::Z};
+  for (const auto &edgeDims : {x, xy, yz, xyz}) {
+    typename TestFixture::dataset_type d =
+        TestFixture::datasetWithEdges(edgeDims);
+    for (const auto[name, item] : d) {
+      for (const auto dim : {Dim::X, Dim::Y, Dim::Z}) {
+        if (item.dims().contains(dim)) {
+          EXPECT_ANY_THROW(item.slice({dim, -1, 1}));
+          for (scipp::index i = 0; i < item.dims()[dim] - 1; ++i) {
+            const auto slice = item.slice({dim, i, i + 2});
+            EXPECT_EQ(slice, d.slice({dim, i, i + 2})[name]);
+            if (std::set(edgeDims).count(dim)) {
+              EXPECT_EQ(slice.coords()[dim].dims()[dim], 3);
+            }
+          }
+          EXPECT_ANY_THROW(
+              item.slice({dim, item.dims()[dim], item.dims()[dim] + 2}));
+        } else {
+          EXPECT_ANY_THROW(item.slice({dim, 0, 2}));
+        }
+      }
+    }
+  }
 }

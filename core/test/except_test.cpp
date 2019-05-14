@@ -33,16 +33,14 @@ TEST(DimensionLengthError, what) {
                         "2}}, got Dim::Y with mismatching length 3."));
 }
 
-TEST(Dimensions, to_string) {
+TEST(StringFormattingTest, to_string_Dataset) {
   Dataset a;
-  a.insert(Attr::ExperimentLog, "log", Dimensions{{Dim::X, 2}});
-  a.insert(Data::Value, "values", Dimensions{{Dim::X, 2}}, {1, 2});
-  a.insert(Coord::X, Dimensions{{Dim::X, 3}}, {1, 2, 3});
+  a.setValues("a", makeVariable<double>({}));
+  a.setValues("b", makeVariable<double>({}));
   // Create new dataset with same variables but different order
   Dataset b;
-  b.insert(a[1]);
-  b.insert(a[2]);
-  b.insert(a[0]);
+  b.setValues("b", makeVariable<double>({}));
+  b.setValues("a", makeVariable<double>({}));
   // string representations should be the same
   EXPECT_EQ(to_string(a), to_string(b));
 }

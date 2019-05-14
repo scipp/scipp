@@ -558,7 +558,6 @@ INSTANTIATE(int32_t)
 INSTANTIATE(char)
 INSTANTIATE(bool)
 INSTANTIATE(std::pair<int64_t, int64_t>)
-INSTANTIATE(ValueWithDelta<double>)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
 INSTANTIATE(scipp::index)
 INSTANTIATE(std::pair<scipp::index, scipp::index>)
@@ -1054,9 +1053,8 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     // TODO This will currently fail if the data is a multi-dimensional density.
     // Would need a conversion that converts only the rebinned dimension.
     // TODO This could be done more efficiently without a temporary Dataset.
-    /*
     throw std::runtime_error("Temporarily disabled for refactor");
-    */
+    /*
     Dataset density;
     density.insert(dimensionCoord(dim), oldCoord);
     density.insert(Data::Value, var);
@@ -1067,6 +1065,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
                           rebin(std::get<Variable>(cnts), oldCoord, newCoord));
     return std::get<Variable>(
         counts::toDensity(std::move(rebinnedCounts), dim).erase(Data::Value));
+    */
   }
 }
 

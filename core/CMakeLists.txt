@@ -8,13 +8,11 @@ set(INC_FILES
     dimensions.h
     events.h
     except.h
-    function_traits.h
     index.h
-    md_zip_view.h
+    #md_zip_view.h
     memory_pool.h
     multi_index.h
     span.h
-    tags.h
     tag_util.h
     traits.h
     value_with_delta.h
@@ -23,14 +21,13 @@ set(INC_FILES
     vector.h)
 
 set(SRC_FILES
-    convert.cpp
-    counts.cpp
+    #convert.cpp
+    #counts.cpp
     dataset.cpp
-    dataset_next.cpp
     dimensions.cpp
-    events.cpp
+    #events.cpp
     except.cpp
-    md_zip_view.cpp
+    #md_zip_view.cpp
     variable.cpp)
 
 add_library(scipp-core STATIC ${INC_FILES} ${SRC_FILES})

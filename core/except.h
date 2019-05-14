@@ -9,9 +9,9 @@
 #include <string>
 
 #include "dimension.h"
+#include "dtype.h"
 #include "index.h"
 #include "scipp/units/unit.h"
-#include "tags.h"
 
 namespace scipp::units {
 class Unit;
@@ -19,34 +19,27 @@ class Unit;
 
 namespace scipp::core {
 
-class ConstDatasetSlice;
+class DatasetConstProxy;
 class Dataset;
 class Dimensions;
 class Variable;
 class ConstVariableSlice;
-class Slice;
+struct Slice;
 
 std::string to_string(const DType dtype);
 std::string to_string(const Dim dim, const std::string &separator = "::");
 std::string to_string(const Dimensions &dims,
                       const std::string &separator = "::");
 std::string to_string(const Slice &slice, const std::string &separator = "::");
-std::string to_string(const Tag tag, const std::string &separator = "::");
 std::string to_string(const units::Unit &unit,
                       const std::string &separator = "::");
 std::string to_string(const Variable &variable,
                       const std::string &separator = "::");
 std::string to_string(const ConstVariableSlice &variable,
                       const std::string &separator = "::");
-std::string to_string(const std::string &name, const Tag tag,
-                      const Variable &variable,
-                      const std::string &separator = "::");
-std::string to_string(const std::string &name, const Tag tag,
-                      const ConstVariableSlice &variable,
-                      const std::string &separator = "::");
 std::string to_string(const Dataset &dataset,
                       const std::string &separator = "::");
-std::string to_string(const ConstDatasetSlice &dataset,
+std::string to_string(const DatasetConstProxy &dataset,
                       const std::string &separator = "::");
 
 template <class T> std::string element_to_string(const T &item) {
@@ -109,17 +102,7 @@ struct SparseDimensionError : public DimensionError {
 
 struct DatasetError : public std::runtime_error {
   DatasetError(const Dataset &dataset, const std::string &message);
-  DatasetError(const ConstDatasetSlice &dataset, const std::string &message);
-};
-
-struct VariableNotFoundError : public DatasetError {
-  VariableNotFoundError(const Dataset &dataset, const Tag tag,
-                        const std::string &name);
-  VariableNotFoundError(const ConstDatasetSlice &dataset, const Tag tag,
-                        const std::string &name);
-  VariableNotFoundError(const Dataset &dataset, const std::string &name);
-  VariableNotFoundError(const ConstDatasetSlice &dataset,
-                        const std::string &name);
+  DatasetError(const DatasetConstProxy &dataset, const std::string &message);
 };
 
 struct VariableError : public std::runtime_error {
