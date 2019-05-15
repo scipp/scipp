@@ -59,17 +59,6 @@ typedef boost::units::unit<boost::units::time_dimension, units_system> tof;
 typedef boost::units::unit<boost::units::velocity_dimension, units_system2>
     velocity;
 
-/// unit constants
-// TODO Are these actually needed? Should either have these or the constexpr
-// constants in namespace units below.
-BOOST_UNITS_STATIC_CONSTANT(angstrom, wavelength);
-BOOST_UNITS_STATIC_CONSTANT(angstroms, wavelength);
-BOOST_UNITS_STATIC_CONSTANT(meV, energy);
-BOOST_UNITS_STATIC_CONSTANT(meVs, energy);
-BOOST_UNITS_STATIC_CONSTANT(microsecond, tof);
-BOOST_UNITS_STATIC_CONSTANT(microseconds, tof);
-BOOST_UNITS_STATIC_CONSTANT(c, velocity);
-
 } // namespace tof
 } // namespace neutron
 } // namespace scipp::units
