@@ -732,3 +732,21 @@ TEST(VariableTest, binary_op_with_variance) {
   tmp = var * sum;
   EXPECT_EQ(tmp.variances<double>()[0], 0.1 * 2.0 * 2.0 + 0.2 * 1.0 * 1.0);
 }
+
+TEST(VariableTest, divide_with_variance) {
+  // Note the 0.0: With a wrong implementation the resulting variance is INF.
+  const auto a = makeVariable<double>({Dim::X, 2}, {2.0, 0.0}, {0.1, 0.1});
+  const auto b = makeVariable<double>({Dim::X, 2}, {3.0, 3.0}, {0.2, 0.2});
+  const auto expected = makeVariable<double>(
+      {Dim::X, 2}, {2.0 / 3.0, 0.0},
+      // Relative errors are added
+      {(0.1 / (2.0 * 2.0) + 0.2 / (3.0 * 3.0)) * (2.0 / 3.0) * (2.0 / 3.0),
+       // (0.1 / (0.0 * 0.0) + 0.2 / (3.0 * 3.0)) * (0.0 / 3.0) * (0.0 / 3.0)
+       // naively, but if we take the limit...
+       0.1 / (3.0 * 3.0)});
+  const auto q = a / b;
+  EXPECT_DOUBLE_EQ(q.values<double>()[0], expected.values<double>()[0]);
+  EXPECT_DOUBLE_EQ(q.values<double>()[1], expected.values<double>()[1]);
+  EXPECT_DOUBLE_EQ(q.variances<double>()[0], expected.variances<double>()[0]);
+  EXPECT_DOUBLE_EQ(q.variances<double>()[1], expected.variances<double>()[1]);
+}
