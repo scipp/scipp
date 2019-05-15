@@ -28,30 +28,23 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx, const scipp::index ly,
 
 Dataset DatasetFactory3D::make() {
   Dataset dataset(base);
-  dataset.setValues("values_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
-  dataset.setValues("data_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
-  dataset.setVariances("data_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
+  dataset.setData("values_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
+  dataset.setData("data_x",
+                  makeVariable<double>({Dim::X, lx}, rand(lx), rand(lx)));
 
-  dataset.setValues(
-      "data_xy",
-      makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}}, rand(lx * ly)));
-  dataset.setVariances(
-      "data_xy",
-      makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}}, rand(lx * ly)));
+  dataset.setData("data_xy",
+                  makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}},
+                                       rand(lx * ly), rand(lx * ly)));
 
-  dataset.setValues("data_zyx", makeVariable<double>(
-                                    {{Dim::Z, lz}, {Dim::Y, ly}, {Dim::X, lx}},
-                                    rand(lx * ly * lz)));
-  dataset.setVariances(
-      "data_zyx",
-      makeVariable<double>({{Dim::Z, lz}, {Dim::Y, ly}, {Dim::X, lx}},
-                           rand(lx * ly * lz)));
+  dataset.setData("data_zyx", makeVariable<double>(
+                                  {{Dim::Z, lz}, {Dim::Y, ly}, {Dim::X, lx}},
+                                  rand(lx * ly * lz), rand(lx * ly * lz)));
 
-  dataset.setValues("data_xyz", makeVariable<double>(
-                                    {{Dim::X, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
-                                    rand(lx * ly * lz)));
+  dataset.setData("data_xyz", makeVariable<double>(
+                                  {{Dim::X, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
+                                  rand(lx * ly * lz)));
 
-  dataset.setValues("data_scalar", makeVariable<double>({}, rand(1)));
+  dataset.setData("data_scalar", makeVariable<double>({}, rand(1)));
 
   return dataset;
 }

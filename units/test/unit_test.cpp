@@ -59,7 +59,6 @@ TEST(Unit, multiply) {
 TEST(Unit, multiply_counts) {
   Unit counts{units::counts};
   Unit none{units::dimensionless};
-  EXPECT_EQ(counts * counts, units::counts * units::counts);
   EXPECT_EQ(counts * none, counts);
   EXPECT_EQ(none * counts, counts);
 }

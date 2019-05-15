@@ -45,7 +45,7 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
     if (contained(item)) {
       // Shadow all global coordinates that depend on the sparse dimension.
       if ((sparseDim == Dim::Invalid) ||
-          (!item.second.dimensions().contains(sparseDim)))
+          (!item.second.dims().contains(sparseDim)))
         items.emplace(item.first, makeProxyItem(&item.second));
     }
   }
@@ -176,59 +176,13 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
   m_attrs.insert_or_assign(attrName, std::move(attr));
 }
 
-template <class A, class B>
-void check_dtype(const A &values, const B &variances) {
-  if (values.dtype() != variances.dtype())
-    throw std::runtime_error("Values and variances must have the same dtype.");
-}
-
-template <class A, class B>
-void check_unit(const A &values, const B &variances) {
-  const auto unit = values.unit();
-  if (variances.unit() != unit * unit)
-    throw std::runtime_error(
-        "Values and variances must have compatible units.");
-}
-
-template <class A, class B>
-void check_dimensions(const A &values, const B &variances) {
-  if ((values.dimensions() != variances.dimensions()) ||
-      values.sparseDim() != variances.sparseDim())
-    throw std::runtime_error(
-        "Values and variances must have identical dimensions.");
-}
-
-/// Set (insert or replace) the data values with given name.
+/// Set (insert or replace) data (values, optional variances) with given name.
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state
 /// (mismatching dtype, unit, or dimensions).
-void Dataset::setValues(const std::string &name, Variable values) {
-  setDims(values.dims());
-  const auto it = m_data.find(name);
-  if (it != m_data.end() && it->second.variances) {
-    const auto &variances = *it->second.variances;
-    check_dtype(values, variances);
-    check_unit(values, variances);
-    check_dimensions(values, variances);
-  }
-  m_data[name].values = std::move(values);
-}
-
-/// Set (insert or replace) the data variances with given name.
-///
-/// Throws if the provided variances bring the dataset into an inconsistent
-/// state (mismatching dtype, unit, or dimensions).
-void Dataset::setVariances(const std::string &name, Variable variances) {
-  setDims(variances.dims());
-  const auto it = m_data.find(name);
-  if (it == m_data.end() || !it->second.values)
-    throw std::runtime_error("Cannot set variances: No data values for " +
-                             name + " found in dataset.");
-  const auto &values = *it->second.values;
-  check_dtype(values, variances);
-  check_unit(values, variances);
-  check_dimensions(values, variances);
-  m_data.at(name).variances = std::move(variances);
+void Dataset::setData(const std::string &name, Variable data) {
+  setDims(data.dims());
+  m_data[name].data = std::move(data);
 }
 
 /// Set (insert or replace) the sparse coordinate with given name.
@@ -241,7 +195,7 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
                              "not contain sparse data.");
   if (m_data.count(name)) {
     const auto &data = m_data.at(name);
-    if ((data.values && (data.values->sparseDim() != coord.sparseDim())) ||
+    if ((data.data && (data.data->sparseDim() != coord.sparseDim())) ||
         (!data.labels.empty() &&
          (data.labels.begin()->second.sparseDim() != coord.sparseDim())))
       throw std::runtime_error("Cannot set sparse coordinate if values or "
@@ -259,13 +213,13 @@ void Dataset::setSparseLabels(const std::string &name,
                              "not contain sparse data.");
   if (m_data.count(name)) {
     const auto &data = m_data.at(name);
-    if ((data.values && (data.values->sparseDim() != labels.sparseDim())) ||
+    if ((data.data && (data.data->sparseDim() != labels.sparseDim())) ||
         (data.coord && (data.coord->sparseDim() != labels.sparseDim())))
       throw std::runtime_error("Cannot set sparse labels if values or "
                                "variances are not sparse.");
   }
   const auto &data = m_data.at(name);
-  if (!data.values && !data.coord)
+  if (!data.data && !data.coord)
     throw std::runtime_error(
         "Cannot set sparse labels: Require either values or a sparse coord.");
 
@@ -320,8 +274,8 @@ DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
 bool DataConstProxy::isSparse() const noexcept {
   if (m_data->coord)
     return true;
-  if (hasValues())
-    return values().isSparse();
+  if (hasData())
+    return data().isSparse();
   return false;
 }
 
@@ -329,25 +283,25 @@ bool DataConstProxy::isSparse() const noexcept {
 Dim DataConstProxy::sparseDim() const noexcept {
   if (m_data->coord)
     return m_data->coord->sparseDim();
-  if (hasValues())
-    return values().sparseDim();
+  if (hasData())
+    return data().sparseDim();
   return Dim::Invalid;
 }
 
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
-  if (hasValues())
-    return values().dimensions();
-  return detail::makeSlice(*m_data->coord, slices()).dimensions();
+  if (hasData())
+    return data().dims();
+  return detail::makeSlice(*m_data->coord, slices()).dims();
 }
 
 /// Return the unit of the data values.
 ///
 /// Throws if there are no data values.
 units::Unit DataConstProxy::unit() const {
-  if (hasValues())
-    return values().unit();
+  if (hasData())
+    return data().unit();
   throw std::runtime_error("Data without values, unit is undefined.");
 }
 
@@ -411,33 +365,15 @@ AttrsProxy DataProxy::attrs() const noexcept {
 
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasValues())
-    values() += other.values();
-  if (other.hasVariances()) {
-    if (hasVariances())
-      variances() += other.variances();
-    else
-      throw std::runtime_error(
-          "RHS in operation has variances but LHS does not.");
-  }
-
+  if (hasData())
+    data() += other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasVariances()) {
-    if (other.hasVariances())
-      variances().assign(variances() * (other.values() * other.values()) +
-                         (values() * values()) * other.variances());
-    else
-      variances().assign(variances() * (other.values() * other.values()));
-  } else if (other.hasVariances()) {
-    throw std::runtime_error(
-        "RHS in operation has variances but LHS does not.");
-  }
-  if (hasValues())
-    values() *= other.values();
+  if (hasData())
+    data() *= other.data();
   return *this;
 }
 
@@ -503,7 +439,7 @@ DataProxy DatasetProxy::operator[](const std::string_view name) const {
 
 /// Return true if the dataset proxies have identical content.
 bool DataConstProxy::operator==(const DataConstProxy &other) const {
-  if (hasValues() != other.hasValues())
+  if (hasData() != other.hasData())
     return false;
   if (hasVariances() != other.hasVariances())
     return false;
@@ -513,9 +449,7 @@ bool DataConstProxy::operator==(const DataConstProxy &other) const {
     return false;
   if (attrs() != other.attrs())
     return false;
-  if (hasValues() && values() != other.values())
-    return false;
-  if (hasVariances() && variances() != other.variances())
+  if (hasData() && data() != other.data())
     return false;
   return true;
 }
@@ -599,7 +533,7 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // labels for each item. This could be improved by implementing the operations
   // for detail::DatasetData instead of DataProxy.
   for (const auto & [ name, item ] : a) {
-    if (&item.data() == &b.data())
+    if (&item.underlying() == &b.underlying())
       delayed = name;
     else
       op(item, b);
@@ -659,10 +593,8 @@ DatasetProxy DatasetProxy::operator*=(const Dataset &other) const {
 
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
   // TODO sparse
-  if (data.hasValues())
-    os << data.values();
-  if (data.hasVariances())
-    os << data.variances();
+  if (data.hasData())
+    os << data.data();
   return os;
 }
 
@@ -694,17 +626,20 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
   return os << DatasetConstProxy(dataset);
 }
 
-std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
-  return os << to_string(variable) << " "
-            << array_to_string(variable.values<double>()) << std::endl;
+std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable) {
+  os << to_string(variable) << " "
+     << array_to_string(variable.values<double>());
+  if (variable.hasVariances())
+    os << " " << array_to_string(variable.variances<double>());
+  return os << std::endl;
 }
 
-std::ostream &operator<<(std::ostream &os, const VariableSlice &variable) {
-  return os << ConstVariableSlice(variable);
+std::ostream &operator<<(std::ostream &os, const VariableProxy &variable) {
+  return os << VariableConstProxy(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const Variable &variable) {
-  return os << ConstVariableSlice(variable);
+  return os << VariableConstProxy(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const Dim dim) {

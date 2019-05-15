@@ -124,7 +124,7 @@ std::string to_string(const Dim dim, const std::string &separator) {
 std::string make_dims_labels(const Variable &variable,
                              const std::string &separator,
                              const Dimensions &datasetDims) {
-  const auto &dims = variable.dimensions();
+  const auto &dims = variable.dims();
   if (dims.empty())
     return "()";
   std::string diminfo = "(";
@@ -198,10 +198,10 @@ std::string to_string(const Variable &variable, const std::string &separator) {
   return s.str();
 }
 
-std::string to_string(const ConstVariableSlice &variable,
+std::string to_string(const VariableConstProxy &variable,
                       const std::string &separator) {
   std::stringstream s;
-  s << "<VariableSlice>";
+  s << "<VariableProxy>";
   format_line(s, to_string_components(variable, separator));
   return s.str();
 }
@@ -219,10 +219,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
     format_line(s, to_string_components(name, var, separator, dims));
   s << "Data:\n";
   for (const auto & [ name, var ] : dataset) {
-    format_line(s, to_string_components(name, var.values(), separator, dims));
-    if (var.hasVariances())
-      format_line(s,
-                  to_string_components(name, var.variances(), separator, dims));
+    format_line(s, to_string_components(name, var.data(), separator, dims));
   }
   s << "Attributes:\n";
   for (const auto & [ name, var ] : dataset.attrs())
@@ -282,7 +279,7 @@ DatasetError::DatasetError(const DatasetConstProxy &dataset,
 VariableError::VariableError(const Variable &variable,
                              const std::string &message)
     : std::runtime_error(to_string(variable) + message) {}
-VariableError::VariableError(const ConstVariableSlice &variable,
+VariableError::VariableError(const VariableConstProxy &variable,
                              const std::string &message)
     : std::runtime_error(to_string(variable) + message) {}
 

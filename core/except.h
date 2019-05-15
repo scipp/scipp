@@ -24,7 +24,7 @@ class DatasetConstProxy;
 class Dataset;
 class Dimensions;
 class Variable;
-class ConstVariableSlice;
+class VariableConstProxy;
 struct Slice;
 
 std::string to_string(const DType dtype);
@@ -36,7 +36,7 @@ std::string to_string(const units::Unit &unit,
                       const std::string &separator = "::");
 std::string to_string(const Variable &variable,
                       const std::string &separator = "::");
-std::string to_string(const ConstVariableSlice &variable,
+std::string to_string(const VariableConstProxy &variable,
                       const std::string &separator = "::");
 std::string to_string(const Dataset &dataset,
                       const std::string &separator = "::");
@@ -108,7 +108,7 @@ struct DatasetError : public std::runtime_error {
 
 struct VariableError : public std::runtime_error {
   VariableError(const Variable &variable, const std::string &message);
-  VariableError(const ConstVariableSlice &variable, const std::string &message);
+  VariableError(const VariableConstProxy &variable, const std::string &message);
 };
 
 struct VariableMismatchError : public VariableError {
@@ -155,8 +155,7 @@ template <class T> void unit(const T &object, const units::Unit &unit) {
 }
 
 template <class T> void countsOrCountsDensity(const T &object) {
-  if (!(units::containsCounts(object.unit()) ||
-        units::containsCountsVariance(object.unit())))
+  if (!(units::containsCounts(object.unit())))
     throw except::UnitError("Expected counts or counts-density, got " +
                             object.unit().name() + '.');
 }

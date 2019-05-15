@@ -13,6 +13,57 @@ namespace scipp::core {
 
 namespace detail {
 
+template <class T> struct ValueAndVariance {
+  T value;
+  T variance;
+};
+
+template <class T1, class T2>
+constexpr auto operator+(const ValueAndVariance<T1> a,
+                         const ValueAndVariance<T2> b) noexcept {
+  return ValueAndVariance{a.value + b.value, a.variance + b.variance};
+}
+template <class T1, class T2>
+constexpr auto operator-(const ValueAndVariance<T1> a,
+                         const ValueAndVariance<T2> b) noexcept {
+  return ValueAndVariance{a.value - b.value, a.variance - b.variance};
+}
+template <class T1, class T2>
+constexpr auto operator*(const ValueAndVariance<T1> a,
+                         const ValueAndVariance<T2> b) noexcept {
+  return ValueAndVariance{a.value * b.value,
+                          a.variance * b.value * b.value +
+                              b.variance * a.value * a.value};
+}
+template <class T1, class T2>
+constexpr auto operator/(const ValueAndVariance<T1> a,
+                         const ValueAndVariance<T2> b) noexcept {
+  return ValueAndVariance{
+      a.value / b.value,
+      (a.variance + b.variance * (a.value * a.value) / (b.value * b.value)) /
+          (b.value * b.value)};
+}
+
+template <class T1, class T2>
+constexpr auto operator+(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  return ValueAndVariance{a.value + b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator-(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  return ValueAndVariance{a.value - b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator*(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  return ValueAndVariance{a.value * b, a.variance * b * b};
+}
+template <class T1, class T2>
+constexpr auto operator/(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  return ValueAndVariance{a.value / b, a.variance / (b * b)};
+}
+
+template <class T>
+ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
+
 template <class T>
 std::unique_ptr<VariableConceptT<T>>
 makeVariableConceptT(const Dimensions &dims);
@@ -38,24 +89,88 @@ template <class Op> struct TransformSparse {
   }
 };
 
+template <class T> struct is_eigen_type : std::false_type {};
+template <class T, int Rows, int Cols>
+struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
+template <class T>
+inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
+
+template <class T> struct is_sparse : std::false_type {};
+template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
+template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+
+template <class T> struct as_view {
+  using value_type = typename T::value_type;
+  bool hasVariances() const { return data.hasVariances(); }
+  auto values() const { return data.valuesView(dims); }
+  auto variances() const { return data.variancesView(dims); }
+
+  T &data;
+  const Dimensions &dims;
+};
+template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
+
+template <class T1, class T2, class Op>
+void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
+  auto a_val = a.values();
+  auto b_val = b.values();
+  auto c_val = c.values();
+  if (a.hasVariances()) {
+    if constexpr (is_sparse_v<typename T1::value_type> ||
+                  is_sparse_v<typename T2::value_type>) {
+      throw std::runtime_error(
+          "Propagation of uncertainties for sparse data not implemented yet.");
+    } else if constexpr (is_eigen_type_v<typename T1::value_type> ||
+                         is_eigen_type_v<typename T2::value_type>) {
+      throw std::runtime_error("This dtype cannot have a variance.");
+    } else {
+      auto a_var = a.variances();
+      auto c_var = c.variances();
+      if (b.hasVariances()) {
+        auto b_var = b.variances();
+        for (scipp::index i = 0; i < a_val.size(); ++i) {
+          const ValueAndVariance a_{a_val[i], a_var[i]};
+          const ValueAndVariance b_{b_val[i], b_var[i]};
+          const auto out = op(a_, b_);
+          c_val[i] = out.value;
+          c_var[i] = out.variance;
+        }
+      } else {
+        for (scipp::index i = 0; i < a_val.size(); ++i) {
+          const ValueAndVariance a_{a_val[i], a_var[i]};
+          const auto out = op(a_, b_val[i]);
+          c_val[i] = out.value;
+          c_var[i] = out.variance;
+        }
+      }
+    }
+  } else if (b.hasVariances()) {
+    throw std::runtime_error(
+        "RHS in operation has variances but LHS does not.");
+  } else {
+    std::transform(a_val.begin(), a_val.end(), b_val.begin(), c_val.begin(),
+                   op);
+  }
+}
+
 template <class Op> struct TransformInPlace {
   Op op;
   template <class T> void operator()(T &&handle) const {
-    auto data = handle->getSpan();
+    auto data = handle->values();
     std::transform(data.begin(), data.end(), data.begin(), op);
   }
   template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
     // std::unique_ptr::operator*() is const but returns mutable reference, need
     // to artificially put const to we call the correct overloads of ViewModel.
     const auto &b = *b_ptr;
-    const auto &dimsA = a->dimensions();
-    const auto &dimsB = b.dimensions();
+    const auto &dimsA = a->dims();
+    const auto &dimsB = b.dims();
     try {
       if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
-        if (a->getView(dimsA).overlaps(b.getView(dimsA))) {
+        if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
           // If there is an overlap between lhs and rhs we copy the rhs before
           // applying the operation.
-          const auto &data = b.getView(b.dimensions());
+          const auto &data = b.valuesView(b.dims());
           using T = typename std::remove_reference_t<decltype(b)>::value_type;
           const std::unique_ptr<VariableConceptT<T>> copy =
               detail::makeVariableConceptT<T>(
@@ -66,34 +181,24 @@ template <class Op> struct TransformInPlace {
 
       if (a->isContiguous() && dimsA.contains(dimsB)) {
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getSpan();
-          auto b_ = b.getSpan();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(*a, b, *a, op);
         } else {
-          auto a_ = a->getSpan();
-          auto b_ = b.getView(dimsA);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(*a, as_view{b, dimsA}, *a, op);
         }
       } else if (dimsA.contains(dimsB)) {
+        auto a_view = as_view{*a, dimsA};
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getView(dimsA);
-          auto b_ = b.getSpan();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(a_view, b, a_view, op);
         } else {
-          auto a_ = a->getView(dimsA);
-          auto b_ = b.getView(dimsA);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(a_view, as_view{b, dimsA}, a_view, op);
         }
       } else {
         // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+        auto a_view = as_view{*a, dimsB};
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          auto a_ = a->getView(dimsB);
-          auto b_ = b.getSpan();
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(a_view, b, a_view, op);
         } else {
-          auto a_ = a->getView(dimsB);
-          auto b_ = b.getView(dimsB);
-          std::transform(a_.begin(), a_.end(), b_.begin(), a_.begin(), op);
+          do_transform(a_view, as_view{b, dimsB}, a_view, op);
         }
       }
     } catch (const std::bad_cast &) {
@@ -108,13 +213,16 @@ template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
 template <class Op> struct Transform {
   Op op;
   template <class T> VariableConceptHandle operator()(T &&handle) const {
-    auto data = handle->getSpan();
+    if (handle->hasVariances())
+      throw std::runtime_error(
+          "Propgation of uncertainties not implemented for this case.");
+    auto data = handle->values();
     // TODO Should just make empty container here, without init.
     auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
-        handle->dimensions());
-    // TODO Typo data->getSpan() also compiles, but const-correctness should
+        handle->dims());
+    // TODO Typo data->values() also compiles, but const-correctness should
     // forbid this.
-    auto outData = out->getSpan();
+    auto outData = out->values();
     std::transform(data.begin(), data.end(), outData.begin(), op);
     return {std::move(out)};
   }

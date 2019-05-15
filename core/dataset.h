@@ -47,10 +47,8 @@ using AttrsProxy = MutableProxy<AttrsConstProxy>;
 namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {
-  /// Optional data values.
-  std::optional<Variable> values;
-  /// Optional data variance.
-  std::optional<Variable> variances;
+  /// Optional data values (with optional variances).
+  std::optional<Variable> data;
   /// Dimension coord for the sparse dimension (there can be only 1).
   std::optional<Variable> coord;
   /// Potential labels for the sparse dimension.
@@ -60,12 +58,12 @@ struct DatasetData {
 template <class Var>
 auto makeSlice(Var &var,
                const std::vector<std::pair<Slice, scipp::index>> &slices) {
-  std::conditional_t<std::is_const_v<Var>, ConstVariableSlice, VariableSlice>
+  std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
   for (const auto[params, extent] : slices) {
     const auto[dim, begin, end] = params;
-    if (slice.dimensions().contains(dim))
-      slice = slice(dim, begin, end + slice.dimensions()[dim] - extent);
+    if (slice.dims().contains(dim))
+      slice = slice(dim, begin, end + slice.dims()[dim] - extent);
   }
   return slice;
 }
@@ -88,24 +86,22 @@ public:
   AttrsConstProxy attrs() const noexcept;
 
   /// Return true if the proxy contains data values.
-  bool hasValues() const noexcept { return m_data->values.has_value(); }
+  bool hasData() const noexcept { return m_data->data.has_value(); }
   /// Return true if the proxy contains data variances.
-  bool hasVariances() const noexcept { return m_data->variances.has_value(); }
+  bool hasVariances() const noexcept {
+    return hasData() && m_data->data->hasVariances();
+  }
 
-  /// Return untyped const proxy for data values.
-  ConstVariableSlice values() const {
-    return detail::makeSlice(*m_data->values, slices());
+  /// Return untyped const proxy for data (values and optional variances).
+  VariableConstProxy data() const {
+    return detail::makeSlice(*m_data->data, slices());
   }
   /// Return typed const proxy for data values.
-  template <class T> auto values() const { return values().template span<T>(); }
+  template <class T> auto values() const { return data().template values<T>(); }
 
-  /// Return untyped const proxy for data variances.
-  ConstVariableSlice variances() const {
-    return detail::makeSlice(*m_data->variances, slices());
-  }
   /// Return typed const proxy for data variances.
   template <class T> auto variances() const {
-    return variances().template span<T>();
+    return data().template variances<T>();
   }
 
   DataConstProxy slice(const Slice slice1) const {
@@ -133,7 +129,7 @@ public:
     return m_slices;
   }
 
-  auto &data() const { return *m_data; }
+  auto &underlying() const { return *m_data; }
 
 private:
   friend class DatasetConstProxy;
@@ -156,20 +152,16 @@ public:
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
 
-  /// Return untyped proxy for data values.
-  VariableSlice values() const {
-    return detail::makeSlice(*m_mutableData->values, slices());
+  /// Return untyped proxy for data (values and optional variances).
+  VariableProxy data() const {
+    return detail::makeSlice(*m_mutableData->data, slices());
   }
   /// Return typed proxy for data values.
-  template <class T> auto values() const { return values().template span<T>(); }
+  template <class T> auto values() const { return data().template values<T>(); }
 
-  /// Return untyped proxy for data variances.
-  VariableSlice variances() const {
-    return detail::makeSlice(*m_mutableData->variances, slices());
-  }
   /// Return typed proxy for data variances.
   template <class T> auto variances() const {
-    return variances().template span<T>();
+    return data().template variances<T>();
   }
 
   DataProxy slice(const Slice slice1) const {
@@ -275,8 +267,7 @@ public:
   void setCoord(const Dim dim, Variable coord);
   void setLabels(const std::string &labelName, Variable labels);
   void setAttr(const std::string &attrName, Variable attr);
-  void setValues(const std::string &name, Variable values);
-  void setVariances(const std::string &name, Variable variances);
+  void setData(const std::string &name, Variable data);
   void setSparseCoord(const std::string &name, Variable coord);
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
@@ -324,7 +315,7 @@ private:
   struct make_item {
     const ConstProxy *proxy;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<Key, ConstVariableSlice>(
+      return std::pair<Key, VariableConstProxy>(
           item.first, detail::makeSlice(*item.second.first, proxy->slices()));
     }
   };
@@ -367,7 +358,7 @@ public:
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   /// Return a const proxy to the coordinate for given dimension.
-  ConstVariableSlice operator[](const Key key) const {
+  VariableConstProxy operator[](const Key key) const {
     return detail::makeSlice(*m_items.at(key).first, m_slices);
   }
 
@@ -385,7 +376,7 @@ public:
   ConstProxy slice(const Slice slice1) const {
     const auto &coord = *m_items.at(slice1.dim).first;
     auto slices = m_slices;
-    slices.emplace_back(slice1, coord.dimensions()[slice1.dim]);
+    slices.emplace_back(slice1, coord.dims()[slice1.dim]);
     auto items = m_items;
     return ConstProxy(std::move(items), slices);
   }
@@ -428,7 +419,7 @@ private:
   struct make_item {
     const MutableProxy<Base> *proxy;
     template <class T> auto operator()(const T &item) const {
-      return std::pair<typename Base::key_type, VariableSlice>(
+      return std::pair<typename Base::key_type, VariableProxy>(
           item.first, detail::makeSlice(*item.second.second, proxy->slices()));
     }
   };
@@ -439,7 +430,7 @@ public:
   using Base::Base;
 
   /// Return a proxy to the coordinate for given dimension.
-  VariableSlice operator[](const typename Base::key_type key) const {
+  VariableProxy operator[](const typename Base::key_type key) const {
     return detail::makeSlice(*Base::items().at(key).second, Base::slices());
   }
 
@@ -602,8 +593,8 @@ std::ostream &operator<<(std::ostream &os, const DataProxy &data);
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset);
-std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable);
-std::ostream &operator<<(std::ostream &os, const VariableSlice &variable);
+std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable);
+std::ostream &operator<<(std::ostream &os, const VariableProxy &variable);
 std::ostream &operator<<(std::ostream &os, const Variable &variable);
 std::ostream &operator<<(std::ostream &os, const Dim dim);
 

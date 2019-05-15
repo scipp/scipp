@@ -101,9 +101,4 @@ bool containsCounts(const Unit &unit) {
     return true;
   return false;
 }
-bool containsCountsVariance(const Unit &unit) {
-  if (unit == counts * counts || unit == (counts / us) * (counts / us))
-    return true;
-  return false;
-}
 } // namespace scipp::units
