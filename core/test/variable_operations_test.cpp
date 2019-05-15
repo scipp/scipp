@@ -272,6 +272,7 @@ TEST(Variable, concatenate_unit_fail) {
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
 }
 
+#ifdef SCIPP_UNITS_NEUTRON
 TEST(Variable, rebin) {
   auto var = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
   var.setUnit(units::counts);
@@ -283,6 +284,7 @@ TEST(Variable, rebin) {
   ASSERT_EQ(rebinned.values<double>().size(), 1);
   EXPECT_EQ(rebinned.values<double>()[0], 3.0);
 }
+#endif
 
 TEST(Variable, sum) {
   auto var =
