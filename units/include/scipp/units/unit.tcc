@@ -112,4 +112,17 @@ template <class T> bool containsCounts(const Unit_impl<T> &unit) {
   return false;
 }
 
+#define INSTANTIATE(Units)                                                     \
+  template class Unit_impl<Units>;                                             \
+  template Unit_impl<Units> operator+(const Unit_impl<Units> &,                \
+                                      const Unit_impl<Units> &);               \
+  template Unit_impl<Units> operator-(const Unit_impl<Units> &,                \
+                                      const Unit_impl<Units> &);               \
+  template Unit_impl<Units> operator*(const Unit_impl<Units> &,                \
+                                      const Unit_impl<Units> &);               \
+  template Unit_impl<Units> operator/(const Unit_impl<Units> &,                \
+                                      const Unit_impl<Units> &);               \
+  template Unit_impl<Units> sqrt(const Unit_impl<Units> &a);                   \
+  template bool containsCounts(const Unit_impl<Units> &unit);
+
 } // namespace scipp::units
