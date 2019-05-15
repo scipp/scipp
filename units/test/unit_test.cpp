@@ -64,16 +64,16 @@ TEST(Unit, multiply_counts) {
 }
 
 TEST(Unit, conversion_factors) {
-  boost::units::quantity<neutron::tof::wavelength> a(2.0 * angstrom);
+  boost::units::quantity<detail::tof::wavelength> a(2.0 * angstrom);
   boost::units::quantity<boost::units::si::length> b(3.0 * angstrom);
-  boost::units::quantity<neutron::tof::wavelength> c(4.0 *
-                                                     boost::units::si::meters);
+  boost::units::quantity<detail::tof::wavelength> c(4.0 *
+                                                    boost::units::si::meters);
   boost::units::quantity<boost::units::si::area> d(
       5.0 * boost::units::si::meters * angstrom);
-  boost::units::quantity<neutron::tof::energy> e = 6.0 * meV;
+  boost::units::quantity<detail::tof::energy> e = 6.0 * meV;
   boost::units::quantity<boost::units::si::energy> f(7.0 * meV);
   boost::units::quantity<boost::units::si::time> g(8.0 * us);
-  boost::units::quantity<neutron::tof::tof> h(9.0 * boost::units::si::seconds);
+  boost::units::quantity<detail::tof::tof> h(9.0 * boost::units::si::seconds);
   EXPECT_DOUBLE_EQ(a.value(), 2.0);
   EXPECT_DOUBLE_EQ(b.value(), 3.0e-10);
   EXPECT_DOUBLE_EQ(c.value(), 4.0e10);

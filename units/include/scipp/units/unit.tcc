@@ -9,7 +9,7 @@
 #include <boost/units/cmath.hpp>
 #include <boost/units/io.hpp>
 
-#include "scipp/units/unit.h"
+#include "scipp/units/unit_impl.h"
 
 namespace scipp::units {
 
@@ -106,12 +106,6 @@ template <class T> Unit_impl<T> sqrt(const Unit_impl<T> &a) {
       a()));
 }
 
-template <class T> bool containsCounts(const Unit_impl<T> &unit) {
-  if ((unit == counts) || unit == counts / us)
-    return true;
-  return false;
-}
-
 #define INSTANTIATE(Units)                                                     \
   template class Unit_impl<Units>;                                             \
   template Unit_impl<Units> operator+(const Unit_impl<Units> &,                \
@@ -122,7 +116,6 @@ template <class T> bool containsCounts(const Unit_impl<T> &unit) {
                                       const Unit_impl<Units> &);               \
   template Unit_impl<Units> operator/(const Unit_impl<Units> &,                \
                                       const Unit_impl<Units> &);               \
-  template Unit_impl<Units> sqrt(const Unit_impl<Units> &a);                   \
-  template bool containsCounts(const Unit_impl<Units> &unit);
+  template Unit_impl<Units> sqrt(const Unit_impl<Units> &a);
 
 } // namespace scipp::units
