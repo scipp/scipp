@@ -25,7 +25,7 @@ scipp::index Dimensions::operator[](const Dim dim) const {
 /// Return a mutable reference to the extent of `dim`. Throws if the space
 /// defined by this does not contain `dim` or if `dim` is a sparse dimension
 /// label.
-scipp::index &Dimensions::operator[](const Dim dim) {
+scipp::index &Dimensions::at(const Dim dim) {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
@@ -103,7 +103,7 @@ void Dimensions::resize(const Dim label, const scipp::index size) {
   expectNotSparseExtent(size);
   if (size < 0)
     throw std::runtime_error("Dimension size cannot be negative.");
-  operator[](label) = size;
+  at(label) = size;
 }
 
 void Dimensions::resize(const scipp::index i, const scipp::index size) {

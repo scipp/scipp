@@ -18,12 +18,13 @@ namespace scipp::core {
 
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
-/// We should follow the numpy convention: First dimension is outer dimension,
-/// last dimension is inner dimension, for now we do not.
+/// We follow the numpy convention: First dimension is outer dimension, last
+/// dimension is inner dimension.
 class Dimensions {
 public:
   static constexpr auto Sparse = std::numeric_limits<scipp::index>::min();
-  Dimensions() noexcept {}
+
+  constexpr Dimensions() noexcept {}
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
   Dimensions(const std::vector<Dim> &labels,
@@ -39,7 +40,7 @@ public:
       addInner(label, size);
   }
 
-  bool operator==(const Dimensions &other) const noexcept {
+  constexpr bool operator==(const Dimensions &other) const noexcept {
     if (m_ndim != other.m_ndim)
       return false;
     for (int32_t i = 0; i < 6; ++i) {
@@ -52,7 +53,7 @@ public:
       return false;
     return true;
   }
-  bool operator!=(const Dimensions &other) const noexcept {
+  constexpr bool operator!=(const Dimensions &other) const noexcept {
     return !(*this == other);
   }
 
@@ -100,20 +101,19 @@ public:
   }
 
   scipp::index operator[](const Dim dim) const;
-  scipp::index &operator[](const Dim dim);
 
   /// Return true if `dim` is one of the labels in *this.
   constexpr bool contains(const Dim dim) const noexcept {
-    for (int32_t i = 0; i < m_ndim; ++i)
-      if (m_dims[i] == dim)
-        return true;
-    if (isSparse() && sparseDim() == dim)
-      return true;
-    return false;
+    return denseContains(dim) || (isSparse() && sparseDim() == dim);
   }
 
   /// Return true if `dim` is one of the dense labels in *this.
-  bool denseContains(const Dim dim) const noexcept;
+  constexpr bool denseContains(const Dim dim) const noexcept {
+    for (int32_t i = 0; i < m_ndim; ++i)
+      if (m_dims[i] == dim)
+        return true;
+    return false;
+  }
 
   bool contains(const Dimensions &other) const;
 
@@ -136,6 +136,7 @@ public:
   int32_t index(const Dim label) const;
 
 private:
+  scipp::index &at(const Dim dim);
   // This is 56 Byte, or would be 40 Byte for small size 1.
   // boost::container::small_vector<std::pair<Dim, scipp::index>, 2> m_dims;
   // Support at most 6 dimensions, should be sufficient?
