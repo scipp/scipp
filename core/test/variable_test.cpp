@@ -775,6 +775,17 @@ TEST(SparseVariable, slice) {
   EXPECT_TRUE(equals(slice_data[1], {1}));
 }
 
+TEST(SparseVariable, slice_fail) {
+  auto var = makeVariable<double>({Dim::Y, Dim::X}, {4, Dimensions::Sparse});
+  auto data = var.sparseSpan<double>();
+  data[0] = {1, 2, 3};
+  data[1] = {1, 2};
+  data[2] = {1};
+  data[3] = {};
+  ASSERT_THROW(var.slice({Dim::X, 0}), except::DimensionNotFoundError);
+  ASSERT_THROW(var.slice({Dim::X, 0, 1}), except::DimensionNotFoundError);
+}
+
 TEST(SparseVariable, operator_plus) {
   auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto sparse_ = sparse.sparseSpan<double>();

@@ -17,8 +17,6 @@ scipp::index Dimensions::operator[](const Dim dim) const {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
-  if (dim == sparseDim())
-    throw std::runtime_error("Sparse dimension extent is undefined.");
   throw except::DimensionNotFoundError(*this, dim);
 }
 
@@ -29,8 +27,6 @@ scipp::index &Dimensions::at(const Dim dim) {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
-  if (dim == sparseDim())
-    throw std::runtime_error("Sparse dimension extent is undefined.");
   throw except::DimensionNotFoundError(*this, dim);
 }
 

@@ -259,8 +259,9 @@ DimensionMismatchError::DimensionMismatchError(const Dimensions &expected,
 
 DimensionNotFoundError::DimensionNotFoundError(const Dimensions &expected,
                                                const Dim actual)
-    : DimensionError("Expected dimension to be in " + to_string(expected) +
-                     ", got " + to_string(actual) + ".") {}
+    : DimensionError("Expected dimension to be a non-sparse dimension of " +
+                     to_string(expected) + ", got " + to_string(actual) + ".") {
+}
 
 DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                                            const Dim actual,
