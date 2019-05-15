@@ -124,20 +124,6 @@ static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
 static constexpr boost::units::si::mass kg;
 static constexpr boost::units::si::temperature K;
-// Note the factor `dimensionless` in units that otherwise contain only non-SI
-// factors. This is a trick to overcome some subtleties of working with
-// heterogeneous unit systems in boost::units: We are combing SI units with our
-// own, and the two are considered independent unless you convert explicitly.
-// Therefore, in operations like (counts * m) / m, boosts is not cancelling the
-// m as expected
-// --- you get counts * dimensionless. Explicitly putting a factor dimensionless
-// (dimensionless) into all our non-SI units avoids special-case handling in all
-// operations (which would attempt to remove the dimensionless factor manually).
-static constexpr decltype(neutron::tof::counts{} * dimensionless) counts;
-static constexpr decltype(neutron::tof::wavelength{} * dimensionless) angstrom;
-static constexpr decltype(neutron::tof::energy{} * dimensionless) meV;
-static constexpr decltype(neutron::tof::tof{} * dimensionless) us;
-static constexpr decltype(neutron::tof::velocity{} * dimensionless) c;
 
 // Define a std::variant which will hold the set of allowed units. Any unit that
 // does not exist in the variant will either fail to compile or throw a
@@ -189,7 +175,23 @@ template <class T> Unit_impl<T> sqrt(const Unit_impl<T> &a);
 
 template <class T> bool containsCounts(const Unit_impl<T> &unit);
 
-namespace neutron {
+inline namespace neutron {
+// Additional helper constants beyond the SI base units.
+// Note the factor `dimensionless` in units that otherwise contain only non-SI
+// factors. This is a trick to overcome some subtleties of working with
+// heterogeneous unit systems in boost::units: We are combing SI units with our
+// own, and the two are considered independent unless you convert explicitly.
+// Therefore, in operations like (counts * m) / m, boosts is not cancelling the
+// m as expected
+// --- you get counts * dimensionless. Explicitly putting a factor dimensionless
+// (dimensionless) into all our non-SI units avoids special-case handling in all
+// operations (which would attempt to remove the dimensionless factor manually).
+static constexpr decltype(neutron::tof::counts{} * dimensionless) counts;
+static constexpr decltype(neutron::tof::wavelength{} * dimensionless) angstrom;
+static constexpr decltype(neutron::tof::energy{} * dimensionless) meV;
+static constexpr decltype(neutron::tof::tof{} * dimensionless) us;
+static constexpr decltype(neutron::tof::velocity{} * dimensionless) c;
+
 using supported_units = decltype(detail::make_unit(
     std::make_tuple(m, dimensionless / m),
     std::make_tuple(dimensionless, counts, s, kg, angstrom, meV, us,
@@ -200,6 +202,7 @@ using supported_units = decltype(detail::make_unit(
                     us / (m * angstrom))));
 
 using Unit = Unit_impl<supported_units>;
+// class Unit : public Unit_impl<supported_units> {};
 } // namespace neutron
 } // namespace scipp::units
 
