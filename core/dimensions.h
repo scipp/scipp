@@ -115,7 +115,7 @@ public:
     return false;
   }
 
-  bool contains(const Dimensions &other) const;
+  bool contains(const Dimensions &other) const noexcept;
 
   bool isContiguousIn(const Dimensions &parent) const;
 

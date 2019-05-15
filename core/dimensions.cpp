@@ -34,17 +34,21 @@ scipp::index &Dimensions::at(const Dim dim) {
   throw except::DimensionNotFoundError(*this, dim);
 }
 
-/// Return true if all dimensions of other are also contained in *this. Does not
-/// check dimension order.
-bool Dimensions::contains(const Dimensions &other) const {
+/// Return true if all dimensions of other contained in *this, ignoring order.
+///
+/// If a dimension in other is sparse it must also be sparse in *this, otherwise
+/// false is returned.
+bool Dimensions::contains(const Dimensions &other) const noexcept {
   if (*this == other)
     return true;
   for (const auto dim : other.labels())
     if (!contains(dim))
       return false;
   for (const auto dim : other.denseLabels())
-    if (other[dim] != operator[](dim))
+    if (dim == sparseDim() || other[dim] != operator[](dim))
       return false;
+  if (other.isSparse() && other.sparseDim() != sparseDim())
+    return false;
   return true;
 }
 
