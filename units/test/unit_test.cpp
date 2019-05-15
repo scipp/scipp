@@ -8,6 +8,7 @@
 
 using namespace scipp;
 using namespace scipp::units;
+using scipp::units::neutron::Unit;
 
 TEST(units, c) {
   auto c = 1.0 * units::c;

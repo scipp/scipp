@@ -151,8 +151,46 @@ std::variant<Ts...,
 make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
   return {};
 }
+} // namespace detail
 
-using type = decltype(detail::make_unit(
+template <class T> class Unit_impl {
+public:
+  using unit_t = T;
+
+  constexpr Unit_impl() = default;
+  // TODO should this be explicit?
+  template <class Dim, class System, class Enable>
+  Unit_impl(boost::units::unit<Dim, System, Enable> unit) : m_unit(unit) {}
+  explicit Unit_impl(const unit_t &unit) : m_unit(unit) {}
+
+  constexpr const Unit_impl::unit_t &operator()() const noexcept {
+    return m_unit;
+  }
+
+  std::string name() const;
+
+  bool operator==(const Unit_impl<T> &other) const;
+  bool operator!=(const Unit_impl<T> &other) const;
+
+private:
+  unit_t m_unit;
+  // TODO need to support scale
+};
+
+template <class T>
+Unit_impl<T> operator+(const Unit_impl<T> &a, const Unit_impl<T> &b);
+template <class T>
+Unit_impl<T> operator-(const Unit_impl<T> &a, const Unit_impl<T> &b);
+template <class T>
+Unit_impl<T> operator*(const Unit_impl<T> &a, const Unit_impl<T> &b);
+template <class T>
+Unit_impl<T> operator/(const Unit_impl<T> &a, const Unit_impl<T> &b);
+template <class T> Unit_impl<T> sqrt(const Unit_impl<T> &a);
+
+template <class T> bool containsCounts(const Unit_impl<T> &unit);
+
+namespace neutron {
+using supported_units = decltype(detail::make_unit(
     std::make_tuple(m, dimensionless / m),
     std::make_tuple(dimensionless, counts, s, kg, angstrom, meV, us,
                     dimensionless / us, dimensionless / s, counts / us,
@@ -160,37 +198,9 @@ using type = decltype(detail::make_unit(
                     meV *us *us *dimensionless, kg *m / s, m / s, c, c *m,
                     meV / c, dimensionless / c, K, us / angstrom,
                     us / (m * angstrom))));
-} // namespace detail
 
-class Unit {
-public:
-  using unit_t = units::detail::type;
-
-  constexpr Unit() = default;
-  // TODO should this be explicit?
-  template <class Dim, class System, class Enable>
-  Unit(boost::units::unit<Dim, System, Enable> unit) : m_unit(unit) {}
-  explicit Unit(const unit_t &unit) : m_unit(unit) {}
-
-  constexpr const Unit::unit_t &operator()() const noexcept { return m_unit; }
-
-  std::string name() const;
-
-private:
-  unit_t m_unit;
-  // TODO need to support scale
-};
-
-bool operator==(const Unit &a, const Unit &b);
-bool operator!=(const Unit &a, const Unit &b);
-Unit operator+(const Unit &a, const Unit &b);
-Unit operator-(const Unit &a, const Unit &b);
-Unit operator*(const Unit &a, const Unit &b);
-Unit operator/(const Unit &a, const Unit &b);
-Unit sqrt(const Unit &a);
-
-bool containsCounts(const Unit &unit);
-bool containsCountsVariance(const Unit &unit);
+using Unit = Unit_impl<supported_units>;
+} // namespace neutron
 } // namespace scipp::units
 
 #endif // UNIT_H
