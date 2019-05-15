@@ -11,6 +11,16 @@
 
 namespace scipp::core {
 
+Dimensions::Dimensions(const std::vector<Dim> &labels,
+                       const std::vector<scipp::index> &shape) {
+  if (labels.size() != shape.size())
+    throw except::DimensionError(
+        "Constructing Dimensions: Number of dimensions "
+        "labels does not match shape.");
+  for (scipp::index i = 0; i < scipp::size(shape); ++i)
+    addInner(labels[i], shape[i]);
+}
+
 /// Return the extent of `dim`. Throws if the space defined by this does not
 /// contain `dim` or if `dim` is a sparse dimension label.
 scipp::index Dimensions::operator[](const Dim dim) const {
@@ -94,22 +104,13 @@ scipp::index Dimensions::offset(const Dim label) const {
   throw except::DimensionNotFoundError(*this, label);
 }
 
-void expectNotSparseExtent(const scipp::index size) {
-  if (size == Dimensions::Sparse)
-    throw except::DimensionError("Expected non-sparse dimension extent.");
-}
-
 void Dimensions::resize(const Dim label, const scipp::index size) {
-  expectNotSparseExtent(size);
-  if (size < 0)
-    throw std::runtime_error("Dimension size cannot be negative.");
+  expect::validExtent(size);
   at(label) = size;
 }
 
 void Dimensions::resize(const scipp::index i, const scipp::index size) {
-  expectNotSparseExtent(size);
-  if (size < 0)
-    throw std::runtime_error("Dimension size cannot be negative.");
+  expect::validExtent(size);
   m_shape[i] = size;
 }
 
@@ -118,18 +119,29 @@ void Dimensions::erase(const Dim label) {
     m_shape[i] = m_shape[i + 1];
     m_dims[i] = m_dims[i + 1];
   }
+  m_dims[m_ndim - 1] = m_dims[m_ndim];
+  m_dims[m_ndim] = Dim::Invalid;
   --m_ndim;
   m_shape[m_ndim] = -1;
-  m_dims[m_ndim] = Dim::Invalid;
+}
+
+void expectUnique(const Dimensions &dims, const Dim label) {
+  if (dims.contains(label))
+    throw except::DimensionError("Duplicate dimension.");
+}
+
+void expectExtendable(const Dimensions &dims) {
+  if (dims.shape().size() == 6)
+    throw except::DimensionError("More than 6 dimensions are not supported.");
 }
 
 /// Add a new dimension, which will be the outermost dimension.
 void Dimensions::add(const Dim label, const scipp::index size) {
-  if (contains(label))
-    throw std::runtime_error("Duplicate dimension.");
-  if (m_ndim == 6)
-    throw std::runtime_error("More than 6 dimensions are not supported.");
-  expectNotSparseExtent(size);
+  expect::validDim(label);
+  expectUnique(*this, label);
+  expectExtendable(*this);
+  expect::validExtent(size);
+  m_dims[m_ndim + 1] = m_dims[m_ndim];
   for (int32_t i = m_ndim - 1; i >= 0; --i) {
     m_shape[i + 1] = m_shape[i];
     m_dims[i + 1] = m_dims[i];
@@ -141,18 +153,14 @@ void Dimensions::add(const Dim label, const scipp::index size) {
 
 /// Add a new dimension, which will be the innermost dimension.
 void Dimensions::addInner(const Dim label, const scipp::index size) {
+  expect::validDim(label);
   expect::notSparse(*this);
-  if (label == Dim::Invalid)
-    throw std::runtime_error("Dim::Invalid is not a valid dimension.");
-  if (contains(label))
-    throw std::runtime_error("Duplicate dimension.");
-  if (m_ndim == 6)
-    throw std::runtime_error("More than 6 dimensions are not supported.");
+  expectUnique(*this, label);
   if (size == Dimensions::Sparse) {
     m_dims[m_ndim] = label;
   } else {
-    if (size < 0)
-      throw std::runtime_error("Dimension extent cannot be negative.");
+    expect::validExtent(size);
+    expectExtendable(*this);
     m_shape[m_ndim] = size;
     m_dims[m_ndim] = label;
     ++m_ndim;
@@ -160,6 +168,8 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
 }
 
 Dim Dimensions::inner() const {
+  if (isSparse())
+    return sparseDim();
   if (m_ndim == 0)
     throw except::DimensionError(
         "Expected Dimensions with at least 1 dimension.");

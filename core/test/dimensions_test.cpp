@@ -247,3 +247,17 @@ TEST_F(DimensionsTest_comparison_operators, sparse) {
   expect_ne(sparse_xyz, dense_xy);
   expect_ne(sparse_xyz, dense_xyz);
 }
+
+TEST(DimensionsTest, add_with_sparse) {
+  Dimensions expected({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
+  Dimensions dims({Dim::Y, Dim::Z}, {3, Dimensions::Sparse});
+  dims.add(Dim::X, 2);
+  ASSERT_EQ(dims, expected);
+}
+
+TEST(DimensionsTest, erase_with_sparse) {
+  Dimensions expected({Dim::Y, Dim::Z}, {3, Dimensions::Sparse});
+  Dimensions dims({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
+  dims.erase(Dim::X);
+  ASSERT_EQ(dims, expected);
+}

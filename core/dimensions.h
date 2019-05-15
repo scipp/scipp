@@ -28,13 +28,7 @@ public:
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
   Dimensions(const std::vector<Dim> &labels,
-             const std::vector<scipp::index> &shape) {
-    if (labels.size() != shape.size())
-      throw std::runtime_error("Constructing Dimensions: Number of dimensions "
-                               "labels does not match shape.");
-    for (scipp::index i = 0; i < scipp::size(shape); ++i)
-        addInner(labels[i], shape[i]);
-  }
+             const std::vector<scipp::index> &shape);
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
     for (const auto[label, size] : dims)
       addInner(label, size);
