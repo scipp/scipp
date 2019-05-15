@@ -115,6 +115,10 @@ void Dimensions::resize(const scipp::index i, const scipp::index size) {
 }
 
 void Dimensions::erase(const Dim label) {
+  if (isSparse() && sparseDim() == label) {
+    m_dims[m_ndim] = Dim::Invalid;
+    return;
+  }
   for (int32_t i = index(label); i < m_ndim - 1; ++i) {
     m_shape[i] = m_shape[i + 1];
     m_dims[i] = m_dims[i + 1];
@@ -167,6 +171,7 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
   }
 }
 
+/// Return the innermost dimension. Throws if *this is empty.
 Dim Dimensions::inner() const {
   if (isSparse())
     return sparseDim();

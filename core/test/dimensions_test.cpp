@@ -5,6 +5,7 @@
 #include <type_traits>
 
 #include "dimensions.h"
+#include "except.h"
 
 using namespace scipp::core;
 
@@ -140,27 +141,30 @@ TEST(DimensionsTest, index_access) {
   Dimensions denseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
   Dimensions sparseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
 
-  ASSERT_ANY_THROW(denseXY[Dim::Invalid]);
-  ASSERT_ANY_THROW(denseXYZ[Dim::Invalid]);
-  ASSERT_ANY_THROW(sparseXYZ[Dim::Invalid]);
+  ASSERT_THROW(denseXY[Dim::Invalid], except::DimensionNotFoundError);
+  ASSERT_THROW(denseXYZ[Dim::Invalid], except::DimensionNotFoundError);
+  ASSERT_THROW(sparseXYZ[Dim::Invalid], except::DimensionNotFoundError);
+  ASSERT_THROW(denseXY[Dim::Z], except::DimensionNotFoundError);
+  ASSERT_NO_THROW(denseXYZ[Dim::Z]);
+  ASSERT_THROW(sparseXYZ[Dim::Z], except::DimensionNotFoundError);
 }
 
 TEST(DimensionsTest, duplicate) {
   Dimensions dense({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
   Dimensions sparse({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
 
-  ASSERT_ANY_THROW(dense.add(Dim::X, 2));
-  ASSERT_ANY_THROW(dense.add(Dim::Y, 2));
-  ASSERT_ANY_THROW(dense.add(Dim::Z, 2));
-  ASSERT_ANY_THROW(dense.addInner(Dim::X, 2));
-  ASSERT_ANY_THROW(dense.addInner(Dim::Y, 2));
-  ASSERT_ANY_THROW(dense.addInner(Dim::Z, 2));
-  ASSERT_ANY_THROW(sparse.add(Dim::X, 2));
-  ASSERT_ANY_THROW(sparse.add(Dim::Y, 2));
-  ASSERT_ANY_THROW(sparse.add(Dim::Z, 2));
-  ASSERT_ANY_THROW(sparse.addInner(Dim::X, 2));
-  ASSERT_ANY_THROW(sparse.addInner(Dim::Y, 2));
-  ASSERT_ANY_THROW(sparse.addInner(Dim::Z, 2));
+  ASSERT_THROW(dense.add(Dim::X, 2), except::DimensionError);
+  ASSERT_THROW(dense.add(Dim::Y, 2), except::DimensionError);
+  ASSERT_THROW(dense.add(Dim::Z, 2), except::DimensionError);
+  ASSERT_THROW(dense.addInner(Dim::X, 2), except::DimensionError);
+  ASSERT_THROW(dense.addInner(Dim::Y, 2), except::DimensionError);
+  ASSERT_THROW(dense.addInner(Dim::Z, 2), except::DimensionError);
+  ASSERT_THROW(sparse.add(Dim::X, 2), except::DimensionError);
+  ASSERT_THROW(sparse.add(Dim::Y, 2), except::DimensionError);
+  ASSERT_THROW(sparse.add(Dim::Z, 2), except::DimensionError);
+  ASSERT_THROW(sparse.addInner(Dim::X, 2), except::DimensionError);
+  ASSERT_THROW(sparse.addInner(Dim::Y, 2), except::DimensionError);
+  ASSERT_THROW(sparse.addInner(Dim::Z, 2), except::DimensionError);
 }
 
 TEST(DimensionsTest, contains_with_sparse_data) {
@@ -259,5 +263,12 @@ TEST(DimensionsTest, erase_with_sparse) {
   Dimensions expected({Dim::Y, Dim::Z}, {3, Dimensions::Sparse});
   Dimensions dims({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
   dims.erase(Dim::X);
+  ASSERT_EQ(dims, expected);
+}
+
+TEST(DimensionsTest, erase_sparse) {
+  Dimensions expected({Dim::X, Dim::Y}, {2, 3});
+  Dimensions dims({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
+  dims.erase(Dim::Z);
   ASSERT_EQ(dims, expected);
 }

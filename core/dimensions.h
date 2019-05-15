@@ -96,6 +96,8 @@ public:
 
   scipp::index operator[](const Dim dim) const;
 
+  Dim inner() const;
+
   /// Return true if `dim` is one of the labels in *this.
   constexpr bool contains(const Dim dim) const noexcept {
     return denseContains(dim) || (isSparse() && sparseDim() == dim);
@@ -113,6 +115,8 @@ public:
 
   bool isContiguousIn(const Dimensions &parent) const;
 
+  // TODO Some of the following methods are probably legacy and should be
+  // considered for removal.
   Dim label(const scipp::index i) const;
   void relabel(const scipp::index i, const Dim label) { m_dims[i] = label; }
   scipp::index size(const scipp::index i) const;
@@ -124,8 +128,6 @@ public:
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);
   void addInner(const Dim label, const scipp::index size);
-
-  Dim inner() const;
 
   int32_t index(const Dim label) const;
 
