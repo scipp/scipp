@@ -9,6 +9,16 @@
 using namespace scipp;
 using namespace scipp::units;
 
+TEST(SimpleUnitsTest, basics) {
+  // Current neutron::Unit is inlined as Unit, but we can still use others.
+  simple::Unit m{units::m};
+  simple::Unit s{units::s};
+  ASSERT_NE(m, s);
+  simple::Unit expected{units::m / units::s};
+  auto result = m / s;
+  EXPECT_EQ(result, expected);
+}
+
 TEST(units, c) {
   auto c = 1.0 * units::c;
   EXPECT_EQ(c.value(), 1.0);

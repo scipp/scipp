@@ -6,6 +6,6 @@
 #define SCIPP_UNITS_UNIT_H
 
 #include "scipp/units/neutron.h"
-//#include "scipp/units/simple.h"
+#include "scipp/units/simple.h"
 
 #endif // SCIPP_UNITS_UNIT_H

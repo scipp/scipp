@@ -116,7 +116,7 @@ struct boost::units::base_unit_info<
 };
 
 namespace scipp::units {
-#if SCIPP_UNITS == neutron
+#ifdef SCIPP_UNITS_NEUTRON
 inline
 #endif
     namespace neutron {

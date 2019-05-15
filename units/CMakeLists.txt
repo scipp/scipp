@@ -9,7 +9,9 @@ set(INC_FILES
 set(SRC_FILES neutron.cpp simple.cpp)
 
 add_library(scipp-units STATIC ${INC_FILES} ${SRC_FILES})
-target_compile_definitions(scipp-units PUBLIC SCIPP_UNITS=neutron)
+# For now we just enable "neutron" units by default. In the future we
+# may want to build separate libraries with separate units.
+target_compile_definitions(scipp-units PUBLIC SCIPP_UNITS_NEUTRON)
 target_link_libraries(scipp-units PUBLIC Boost::boost)
 target_include_directories(
   scipp-units

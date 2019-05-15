@@ -8,7 +8,7 @@
 #include "scipp/units/unit_impl.h"
 
 namespace scipp::units {
-#if SCIPP_UNITS == simple
+#ifdef SCIPP_UNITS_SIMPLE
 inline
 #endif
     namespace simple {
