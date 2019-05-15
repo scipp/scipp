@@ -76,8 +76,6 @@ public:
                  const std::vector<std::pair<Slice, scipp::index>> &slices = {})
       : m_dataset(&dataset), m_data(&data), m_slices(slices) {}
 
-  bool isSparse() const noexcept;
-  Dim sparseDim() const noexcept;
   Dimensions dims() const noexcept;
   units::Unit unit() const;
 

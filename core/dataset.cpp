@@ -25,8 +25,8 @@ template <class Key, class T1> auto makeProxyItems(T1 &coords) {
 }
 
 template <class Key, class T1, class T2 = void>
-auto makeProxyItems(const Dimensions &dims, T1 &coords,
-                    const Dim sparseDim = Dim::Invalid, T2 *sparse = nullptr) {
+auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
+  const Dim sparseDim = dims.sparseDim();
   std::map<Key, std::pair<const Variable *, Variable *>> items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
@@ -44,8 +44,7 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords,
     };
     if (contained(item)) {
       // Shadow all global coordinates that depend on the sparse dimension.
-      if ((sparseDim == Dim::Invalid) ||
-          (!item.second.dims().contains(sparseDim)))
+      if ((!dims.isSparse()) || (!item.second.dims().contains(sparseDim)))
         items.emplace(item.first, makeProxyItem(&item.second));
     }
   }
@@ -274,24 +273,6 @@ DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
   return DatasetProxy(*this).slice(slice1, slice2, slice3);
 }
 
-/// Return true if the proxy represents sparse data.
-bool DataConstProxy::isSparse() const noexcept {
-  if (m_data->coord)
-    return true;
-  if (hasData())
-    return data().dims().isSparse();
-  return false;
-}
-
-/// Return the label of the sparse dimension, Dim::Invalid if there is none.
-Dim DataConstProxy::sparseDim() const noexcept {
-  if (m_data->coord)
-    return m_data->coord->dims().sparseDim();
-  if (hasData())
-    return data().dims().sparseDim();
-  return Dim::Invalid;
-}
-
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
@@ -315,7 +296,7 @@ units::Unit DataConstProxy::unit() const {
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstProxy DataConstProxy::coords() const noexcept {
   return CoordsConstProxy(
-      makeProxyItems<Dim>(dims(), m_dataset->m_coords, sparseDim(),
+      makeProxyItems<Dim>(dims(), m_dataset->m_coords,
                           m_data->coord ? &*m_data->coord : nullptr),
       slices());
 }
@@ -325,10 +306,9 @@ CoordsConstProxy DataConstProxy::coords() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsConstProxy DataConstProxy::labels() const noexcept {
-  return LabelsConstProxy(
-      makeProxyItems<std::string_view>(dims(), m_dataset->m_labels, sparseDim(),
-                                       &m_data->labels),
-      slices());
+  return LabelsConstProxy(makeProxyItems<std::string_view>(
+                              dims(), m_dataset->m_labels, &m_data->labels),
+                          slices());
 }
 
 /// Return a const proxy to all attributes of the data proxy.
@@ -342,11 +322,11 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsProxy DataProxy::coords() const noexcept {
-  return CoordsProxy(
-      makeProxyItems<Dim>(dims(), m_mutableDataset->m_coords, sparseDim(),
-                          m_mutableData->coord ? &*m_mutableData->coord
-                                               : nullptr),
-      slices());
+  return CoordsProxy(makeProxyItems<Dim>(dims(), m_mutableDataset->m_coords,
+                                         m_mutableData->coord
+                                             ? &*m_mutableData->coord
+                                             : nullptr),
+                     slices());
 }
 
 /// Return a proxy to all labels of the data proxy.
@@ -356,7 +336,7 @@ CoordsProxy DataProxy::coords() const noexcept {
 LabelsProxy DataProxy::labels() const noexcept {
   return LabelsProxy(
       makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_labels,
-                                       sparseDim(), &m_mutableData->labels),
+                                       &m_mutableData->labels),
       slices());
 }
 
