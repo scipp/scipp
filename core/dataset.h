@@ -133,6 +133,8 @@ public:
     return m_slices;
   }
 
+  auto &data() const { return *m_data; }
+
 private:
   friend class DatasetConstProxy;
   friend class DatasetProxy;
@@ -186,16 +188,25 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
+  DataProxy operator+=(const DataConstProxy &other) const;
+  DataProxy operator*=(const DataConstProxy &other) const;
+
 private:
   Dataset *m_mutableDataset;
   detail::DatasetData *m_mutableData;
 };
 
 namespace detail {
+template <class T> struct is_const;
+template <> struct is_const<Dataset> : std::false_type {};
+template <> struct is_const<const Dataset> : std::true_type {};
+template <> struct is_const<const DatasetProxy> : std::false_type {};
+template <> struct is_const<const DatasetConstProxy> : std::true_type {};
+
 /// Helper for creating iterators of Dataset.
 template <class D> struct make_item {
   D *dataset;
-  using P = std::conditional_t<std::is_const_v<D>, DataConstProxy, DataProxy>;
+  using P = std::conditional_t<is_const<D>::value, DataConstProxy, DataProxy>;
   template <class T> std::pair<std::string_view, P> operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
       return {item.first, P(*dataset, item.second)};
@@ -213,6 +224,8 @@ class DatasetProxy;
 /// Collection of data arrays.
 class Dataset {
 public:
+  using value_type = std::pair<std::string_view, DataConstProxy>;
+
   /// Return the number of data items in the dataset.
   ///
   /// This does not include coordinates or attributes, but only all named
@@ -281,6 +294,13 @@ public:
   bool operator==(const DatasetConstProxy &other) const;
   bool operator!=(const Dataset &other) const;
   bool operator!=(const DatasetConstProxy &other) const;
+
+  Dataset &operator+=(const DataConstProxy &other);
+  Dataset &operator*=(const DataConstProxy &other);
+  Dataset &operator+=(const DatasetConstProxy &other);
+  Dataset &operator*=(const DatasetConstProxy &other);
+  Dataset &operator+=(const Dataset &other);
+  Dataset &operator*=(const Dataset &other);
 
 private:
   friend class DatasetConstProxy;
@@ -566,6 +586,13 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
+  DatasetProxy operator+=(const DataConstProxy &other) const;
+  DatasetProxy operator*=(const DataConstProxy &other) const;
+  DatasetProxy operator+=(const DatasetConstProxy &other) const;
+  DatasetProxy operator*=(const DatasetConstProxy &other) const;
+  DatasetProxy operator+=(const Dataset &other) const;
+  DatasetProxy operator*=(const Dataset &other) const;
+
 private:
   Dataset *m_mutableDataset;
 };
@@ -577,6 +604,7 @@ std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset);
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset);
 std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable);
 std::ostream &operator<<(std::ostream &os, const VariableSlice &variable);
+std::ostream &operator<<(std::ostream &os, const Variable &variable);
 std::ostream &operator<<(std::ostream &os, const Dim dim);
 
 } // namespace scipp::core

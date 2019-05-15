@@ -2,6 +2,9 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#ifndef TEST_MACROS_H
+#define TEST_MACROS_H
+
 #include <algorithm>
 #include <initializer_list>
 
@@ -34,3 +37,5 @@ template <class T1, class T2>
 bool equals(const T1 &a, const std::initializer_list<T2> &b) {
   return std::equal(a.begin(), a.end(), b.begin(), b.end());
 }
+
+#endif // TEST_MACROS_H

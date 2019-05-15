@@ -19,6 +19,7 @@ class Unit;
 
 namespace scipp::core {
 
+class DataConstProxy;
 class DatasetConstProxy;
 class Dataset;
 class Dimensions;
@@ -128,6 +129,10 @@ struct SliceError : public std::out_of_range {
   using std::out_of_range::out_of_range;
 };
 
+struct CoordMismatchError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 } // namespace except
 
 namespace expect {
@@ -155,7 +160,12 @@ template <class T> void countsOrCountsDensity(const T &object) {
     throw except::UnitError("Expected counts or counts-density, got " +
                             object.unit().name() + '.');
 }
+
 void validSlice(const Dimensions &dims, const Slice &slice);
+void coordsAndLabelsMatch(const DataConstProxy &a, const DataConstProxy &b);
+void coordsAndLabelsAreSuperset(const DataConstProxy &a,
+                                const DataConstProxy &b);
+
 } // namespace expect
 } // namespace scipp::core
 

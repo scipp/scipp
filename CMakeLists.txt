@@ -24,7 +24,7 @@ find_package(Sanitizers REQUIRED)
 
 include(Eigen)
 include(pybind11)
-include(PatchedGoogleTest)
+include(GoogleTest)
 include(GoogleBenchmark)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fno-omit-frame-pointer")

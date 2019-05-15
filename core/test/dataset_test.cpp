@@ -8,6 +8,8 @@
 #include "dataset.h"
 #include "dimensions.h"
 
+#include "dataset_test_common.h"
+
 using namespace scipp;
 using namespace scipp::core;
 
@@ -591,116 +593,56 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
 
 class Dataset3DTest : public ::testing::Test {
 protected:
-  Dataset3DTest() {
-    dataset.setCoord(Dim::Time, scalar());
-    dataset.setCoord(Dim::X, x());
-    dataset.setCoord(Dim::Y, y());
-    dataset.setCoord(Dim::Z, xyz());
-
-    dataset.setLabels("labels_x", x());
-    dataset.setLabels("labels_xy", xy());
-    dataset.setLabels("labels_z", z());
-
-    dataset.setAttr("attr_scalar", scalar());
-    dataset.setAttr("attr_x", x());
-
-    dataset.setValues("data_x", x());
-    dataset.setVariances("data_x", x());
-
-    dataset.setValues("data_xy", xy());
-    dataset.setVariances("data_xy", xy());
-
-    dataset.setValues("data_zyx", zyx());
-    dataset.setVariances("data_zyx", zyx());
-
-    dataset.setValues("data_xyz", xyz());
-
-    dataset.setValues("data_scalar", scalar());
-  }
-
-  Variable scalar() const { return makeVariable<double>({}, {1000}); }
-  Variable x(const scipp::index lx = 4) const {
-    std::vector<double> data(lx);
-    std::iota(data.begin(), data.end(), 1);
-    return makeVariable<double>({Dim::X, lx}, data);
-  }
-  Variable y(const scipp::index ly = 5) const {
-    std::vector<double> data(ly);
-    std::iota(data.begin(), data.end(), 5);
-    return makeVariable<double>({Dim::Y, ly}, data);
-  }
-  Variable z() const {
-    return makeVariable<double>({Dim::Z, 6}, {10, 11, 12, 13, 14, 15});
-  }
-  Variable xy(const scipp::index lx = 4, const scipp::index ly = 5) const {
-    std::vector<double> data(lx * ly);
-    std::iota(data.begin(), data.end(), 16);
-    auto var = makeVariable<double>({{Dim::X, lx}, {Dim::Y, ly}}, data);
-    return var;
-  }
-  Variable xyz(const scipp::index lz = 6) const {
-    std::vector<double> data(4 * 5 * lz);
-    std::iota(data.begin(), data.end(), 4 * 5 + 16);
-    auto var =
-        makeVariable<double>({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, lz}}, data);
-    return var;
-  }
-  Variable zyx() const {
-    std::vector<double> data(4 * 5 * 6);
-    std::iota(data.begin(), data.end(), 4 * 5 + 4 * 5 * 6 + 16);
-    auto var =
-        makeVariable<double>({{Dim::Z, 6}, {Dim::Y, 5}, {Dim::X, 4}}, data);
-    return var;
-  }
+  Dataset3DTest() : dataset(factory.make()) {}
 
   Dataset datasetWithEdges(const std::initializer_list<Dim> &edgeDims) {
     auto d = dataset;
     for (const auto dim : edgeDims) {
       auto dims = dataset.coords()[dim].dims();
       dims.resize(dim, dims[dim] + 1);
-      std::vector<double> data(dims.volume());
-      std::iota(data.begin(), data.end(), 1000 * static_cast<int>(dim));
-      d.setCoord(dim, makeVariable<double>(dims, data));
+      d.setCoord(dim, makeRandom(dims));
     }
     return d;
   }
 
+  DatasetFactory3D factory;
   Dataset dataset;
 };
 
 TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
   auto edge_coord = dataset;
-  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, x(5)));
+  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 5})));
   ASSERT_NE(edge_coord["data_xyz"], dataset["data_xyz"]);
   // Cannot incrementally grow.
-  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, x(6)));
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 6})));
   // Minor implementation shortcoming: Currently we cannot go back to non-edges.
-  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, x(4)));
+  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 4})));
 }
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_non_edge_coord_with_edge_data) {
   // If we reduce the X extent to 3 we would have data defined at the edges, but
   // the coord is not. This is forbidden.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, x(3)));
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
   // We *can* set data with X extent 3. The X coord is now bin edges, and other
   // data is defined on the edges.
-  ASSERT_NO_THROW(dataset.setValues("non_edge_data", x(3)));
+  ASSERT_NO_THROW(dataset.setValues("non_edge_data", makeRandom({Dim::X, 3})));
   // Now the X extent of the dataset is 3, but since we have data on the edges
   // we still cannot change the coord to non-edges.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, x(3)));
+  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
 }
 
 TEST_F(Dataset3DTest,
        dimension_extent_check_prevents_setting_edge_data_without_edge_coord) {
-  ASSERT_ANY_THROW(dataset.setValues("edge_data", x(5)));
-  ASSERT_NO_THROW(dataset.setCoord(Dim::X, x(5)));
-  ASSERT_NO_THROW(dataset.setValues("edge_data", x(5)));
+  ASSERT_ANY_THROW(dataset.setValues("edge_data", makeRandom({Dim::X, 5})));
+  ASSERT_NO_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 5})));
+  ASSERT_NO_THROW(dataset.setValues("edge_data", makeRandom({Dim::X, 5})));
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
   // This is the Y coordinate but has extra extent in X.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::Y, xy(5, 5)));
+  ASSERT_ANY_THROW(
+      dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
@@ -708,15 +650,22 @@ TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
   // slight inconsistency though: Labels are typically though of as being for a
   // particular dimension (the inner one), but we can have labels on edges also
   // for the other dimensions (x in this case), just like data.
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(4, 6)));
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(5, 5)));
-  dataset.setCoord(Dim::Y, xy(4, 6));
-  ASSERT_ANY_THROW(dataset.setLabels("bad_labels", xy(5, 5)));
-  dataset.setCoord(Dim::X, x(5));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(5, 5)));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(5, 6)));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(4, 6)));
-  ASSERT_NO_THROW(dataset.setLabels("good_labels", xy(4, 5)));
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 4}, {Dim::Y, 6}}));
+  ASSERT_ANY_THROW(
+      dataset.setLabels("bad_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  dataset.setCoord(Dim::X, makeRandom({Dim::X, 5}));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 5}, {Dim::Y, 6}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  ASSERT_NO_THROW(
+      dataset.setLabels("good_labels", makeRandom({{Dim::X, 4}, {Dim::Y, 5}})));
 }
 
 class Dataset3DTest_slice_x : public Dataset3DTest,
@@ -724,19 +673,24 @@ class Dataset3DTest_slice_x : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index pos) {
     Dataset d;
-    d.setCoord(Dim::Time, scalar());
-    d.setCoord(Dim::Y, y());
-    d.setCoord(Dim::Z, xyz().slice({Dim::X, pos}));
-    d.setLabels("labels_xy", xy().slice({Dim::X, pos}));
-    d.setLabels("labels_z", z());
-    d.setAttr("attr_scalar", scalar());
-    d.setValues("data_x", x().slice({Dim::X, pos}));
-    d.setVariances("data_x", x().slice({Dim::X, pos}));
-    d.setValues("data_xy", xy().slice({Dim::X, pos}));
-    d.setVariances("data_xy", xy().slice({Dim::X, pos}));
-    d.setValues("data_zyx", zyx().slice({Dim::X, pos}));
-    d.setVariances("data_zyx", zyx().slice({Dim::X, pos}));
-    d.setValues("data_xyz", xyz().slice({Dim::X, pos}));
+    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+    d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::X, pos}));
+    d.setLabels("labels_xy",
+                dataset.labels()["labels_xy"].slice({Dim::X, pos}));
+    d.setLabels("labels_z", dataset.labels()["labels_z"]);
+    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+    d.setValues("values_x", dataset["values_x"].values().slice({Dim::X, pos}));
+    d.setValues("data_x", dataset["data_x"].values().slice({Dim::X, pos}));
+    d.setVariances("data_x",
+                   dataset["data_x"].variances().slice({Dim::X, pos}));
+    d.setValues("data_xy", dataset["data_xy"].values().slice({Dim::X, pos}));
+    d.setVariances("data_xy",
+                   dataset["data_xy"].variances().slice({Dim::X, pos}));
+    d.setValues("data_zyx", dataset["data_zyx"].values().slice({Dim::X, pos}));
+    d.setVariances("data_zyx",
+                   dataset["data_zyx"].variances().slice({Dim::X, pos}));
+    d.setValues("data_xyz", dataset["data_xyz"].values().slice({Dim::X, pos}));
     return d;
   }
 };
@@ -755,20 +709,26 @@ class Dataset3DTest_slice_range_y : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
-    d.setCoord(Dim::Time, scalar());
-    d.setCoord(Dim::X, x());
-    d.setCoord(Dim::Y, y().slice({Dim::Y, begin, end}));
-    d.setCoord(Dim::Z, xyz().slice({Dim::Y, begin, end}));
-    d.setLabels("labels_x", x());
-    d.setLabels("labels_xy", xy().slice({Dim::Y, begin, end}));
-    d.setLabels("labels_z", z());
-    d.setAttr("attr_scalar", scalar());
-    d.setAttr("attr_x", x());
-    d.setValues("data_xy", xy().slice({Dim::Y, begin, end}));
-    d.setVariances("data_xy", xy().slice({Dim::Y, begin, end}));
-    d.setValues("data_zyx", zyx().slice({Dim::Y, begin, end}));
-    d.setVariances("data_zyx", zyx().slice({Dim::Y, begin, end}));
-    d.setValues("data_xyz", xyz().slice({Dim::Y, begin, end}));
+    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+    d.setCoord(Dim::X, dataset.coords()[Dim::X]);
+    d.setCoord(Dim::Y, dataset.coords()[Dim::Y].slice({Dim::Y, begin, end}));
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, begin, end}));
+    d.setLabels("labels_x", dataset.labels()["labels_x"]);
+    d.setLabels("labels_xy",
+                dataset.labels()["labels_xy"].slice({Dim::Y, begin, end}));
+    d.setLabels("labels_z", dataset.labels()["labels_z"]);
+    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+    d.setAttr("attr_x", dataset.attrs()["attr_x"]);
+    d.setValues("data_xy",
+                dataset["data_xy"].values().slice({Dim::Y, begin, end}));
+    d.setVariances("data_xy",
+                   dataset["data_xy"].variances().slice({Dim::Y, begin, end}));
+    d.setValues("data_zyx",
+                dataset["data_zyx"].values().slice({Dim::Y, begin, end}));
+    d.setVariances("data_zyx",
+                   dataset["data_zyx"].variances().slice({Dim::Y, begin, end}));
+    d.setValues("data_xyz",
+                dataset["data_xyz"].values().slice({Dim::Y, begin, end}));
     return d;
   }
 };
@@ -778,18 +738,22 @@ class Dataset3DTest_slice_range_z : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
-    d.setCoord(Dim::Time, scalar());
-    d.setCoord(Dim::X, x());
-    d.setCoord(Dim::Y, y());
-    d.setCoord(Dim::Z, xyz().slice({Dim::Z, begin, end}));
-    d.setLabels("labels_x", x());
-    d.setLabels("labels_xy", xy());
-    d.setLabels("labels_z", z().slice({Dim::Z, begin, end}));
-    d.setAttr("attr_scalar", scalar());
-    d.setAttr("attr_x", x());
-    d.setValues("data_zyx", zyx().slice({Dim::Z, begin, end}));
-    d.setVariances("data_zyx", zyx().slice({Dim::Z, begin, end}));
-    d.setValues("data_xyz", xyz().slice({Dim::Z, begin, end}));
+    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+    d.setCoord(Dim::X, dataset.coords()[Dim::X]);
+    d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Z, begin, end}));
+    d.setLabels("labels_x", dataset.labels()["labels_x"]);
+    d.setLabels("labels_xy", dataset.labels()["labels_xy"]);
+    d.setLabels("labels_z",
+                dataset.labels()["labels_z"].slice({Dim::Z, begin, end}));
+    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+    d.setAttr("attr_x", dataset.attrs()["attr_x"]);
+    d.setValues("data_zyx",
+                dataset["data_zyx"].values().slice({Dim::Z, begin, end}));
+    d.setVariances("data_zyx",
+                   dataset["data_zyx"].variances().slice({Dim::Z, begin, end}));
+    d.setValues("data_xyz",
+                dataset["data_xyz"].values().slice({Dim::Z, begin, end}));
     return d;
   }
 };
@@ -813,19 +777,19 @@ constexpr auto ranges_x = valid_ranges<4>();
 constexpr auto ranges_y = valid_ranges<5>();
 constexpr auto ranges_z = valid_ranges<6>();
 
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_x,
-                        ::testing::Range(0, 4));
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_y,
-                        ::testing::Range(0, 5));
-INSTANTIATE_TEST_CASE_P(AllPositions, Dataset3DTest_slice_z,
-                        ::testing::Range(0, 6));
+INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_x,
+                         ::testing::Range(0, 4));
+INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_y,
+                         ::testing::Range(0, 5));
+INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_z,
+                         ::testing::Range(0, 6));
 
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_x,
-                        ::testing::ValuesIn(ranges_x));
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
-                        ::testing::ValuesIn(ranges_y));
-INSTANTIATE_TEST_CASE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
-                        ::testing::ValuesIn(ranges_z));
+INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_x,
+                         ::testing::ValuesIn(ranges_x));
+INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
+                         ::testing::ValuesIn(ranges_y));
+INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
+                         ::testing::ValuesIn(ranges_z));
 
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
@@ -835,7 +799,7 @@ TEST_P(Dataset3DTest_slice_x, slice) {
 TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
   const auto pos = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::X, x(5));
+  datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), reference(pos));
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}),
             dataset.slice({Dim::X, pos}));
@@ -844,18 +808,23 @@ TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
 TEST_P(Dataset3DTest_slice_y, slice) {
   const auto pos = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, scalar());
-  reference.setCoord(Dim::X, x());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::Y, pos}));
-  reference.setLabels("labels_x", x());
-  reference.setLabels("labels_z", z());
-  reference.setAttr("attr_scalar", scalar());
-  reference.setAttr("attr_x", x());
-  reference.setValues("data_xy", xy().slice({Dim::Y, pos}));
-  reference.setVariances("data_xy", xy().slice({Dim::Y, pos}));
-  reference.setValues("data_zyx", zyx().slice({Dim::Y, pos}));
-  reference.setVariances("data_zyx", zyx().slice({Dim::Y, pos}));
-  reference.setValues("data_xyz", xyz().slice({Dim::Y, pos}));
+  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
+  reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, pos}));
+  reference.setLabels("labels_x", dataset.labels()["labels_x"]);
+  reference.setLabels("labels_z", dataset.labels()["labels_z"]);
+  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+  reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
+  reference.setValues("data_xy",
+                      dataset["data_xy"].values().slice({Dim::Y, pos}));
+  reference.setVariances("data_xy",
+                         dataset["data_xy"].variances().slice({Dim::Y, pos}));
+  reference.setValues("data_zyx",
+                      dataset["data_zyx"].values().slice({Dim::Y, pos}));
+  reference.setVariances("data_zyx",
+                         dataset["data_zyx"].variances().slice({Dim::Y, pos}));
+  reference.setValues("data_xyz",
+                      dataset["data_xyz"].values().slice({Dim::Y, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
@@ -863,16 +832,19 @@ TEST_P(Dataset3DTest_slice_y, slice) {
 TEST_P(Dataset3DTest_slice_z, slice) {
   const auto pos = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, scalar());
-  reference.setCoord(Dim::X, x());
-  reference.setCoord(Dim::Y, y());
-  reference.setLabels("labels_x", x());
-  reference.setLabels("labels_xy", xy());
-  reference.setAttr("attr_scalar", scalar());
-  reference.setAttr("attr_x", x());
-  reference.setValues("data_zyx", zyx().slice({Dim::Z, pos}));
-  reference.setVariances("data_zyx", zyx().slice({Dim::Z, pos}));
-  reference.setValues("data_xyz", xyz().slice({Dim::Z, pos}));
+  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
+  reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+  reference.setLabels("labels_x", dataset.labels()["labels_x"]);
+  reference.setLabels("labels_xy", dataset.labels()["labels_xy"]);
+  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+  reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
+  reference.setValues("data_zyx",
+                      dataset["data_zyx"].values().slice({Dim::Z, pos}));
+  reference.setVariances("data_zyx",
+                         dataset["data_zyx"].variances().slice({Dim::Z, pos}));
+  reference.setValues("data_xyz",
+                      dataset["data_xyz"].values().slice({Dim::Z, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
@@ -880,22 +852,36 @@ TEST_P(Dataset3DTest_slice_z, slice) {
 TEST_P(Dataset3DTest_slice_range_x, slice) {
   const auto[begin, end] = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, scalar());
-  reference.setCoord(Dim::X, x().slice({Dim::X, begin, end}));
-  reference.setCoord(Dim::Y, y());
-  reference.setCoord(Dim::Z, xyz().slice({Dim::X, begin, end}));
-  reference.setLabels("labels_x", x().slice({Dim::X, begin, end}));
-  reference.setLabels("labels_xy", xy().slice({Dim::X, begin, end}));
-  reference.setLabels("labels_z", z());
-  reference.setAttr("attr_scalar", scalar());
-  reference.setAttr("attr_x", x().slice({Dim::X, begin, end}));
-  reference.setValues("data_x", x().slice({Dim::X, begin, end}));
-  reference.setVariances("data_x", x().slice({Dim::X, begin, end}));
-  reference.setValues("data_xy", xy().slice({Dim::X, begin, end}));
-  reference.setVariances("data_xy", xy().slice({Dim::X, begin, end}));
-  reference.setValues("data_zyx", zyx().slice({Dim::X, begin, end}));
-  reference.setVariances("data_zyx", zyx().slice({Dim::X, begin, end}));
-  reference.setValues("data_xyz", xyz().slice({Dim::X, begin, end}));
+  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setCoord(Dim::X,
+                     dataset.coords()[Dim::X].slice({Dim::X, begin, end}));
+  reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+  reference.setCoord(Dim::Z,
+                     dataset.coords()[Dim::Z].slice({Dim::X, begin, end}));
+  reference.setLabels("labels_x",
+                      dataset.labels()["labels_x"].slice({Dim::X, begin, end}));
+  reference.setLabels(
+      "labels_xy", dataset.labels()["labels_xy"].slice({Dim::X, begin, end}));
+  reference.setLabels("labels_z", dataset.labels()["labels_z"]);
+  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
+  reference.setAttr("attr_x",
+                    dataset.attrs()["attr_x"].slice({Dim::X, begin, end}));
+  reference.setValues("values_x",
+                      dataset["values_x"].values().slice({Dim::X, begin, end}));
+  reference.setValues("data_x",
+                      dataset["data_x"].values().slice({Dim::X, begin, end}));
+  reference.setVariances(
+      "data_x", dataset["data_x"].variances().slice({Dim::X, begin, end}));
+  reference.setValues("data_xy",
+                      dataset["data_xy"].values().slice({Dim::X, begin, end}));
+  reference.setVariances(
+      "data_xy", dataset["data_xy"].variances().slice({Dim::X, begin, end}));
+  reference.setValues("data_zyx",
+                      dataset["data_zyx"].values().slice({Dim::X, begin, end}));
+  reference.setVariances(
+      "data_zyx", dataset["data_zyx"].variances().slice({Dim::X, begin, end}));
+  reference.setValues("data_xyz",
+                      dataset["data_xyz"].values().slice({Dim::X, begin, end}));
 
   EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
 }
@@ -908,19 +894,21 @@ TEST_P(Dataset3DTest_slice_range_y, slice) {
 TEST_P(Dataset3DTest_slice_range_y, slice_with_edges) {
   const auto[begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::Y, y(6));
+  const auto yEdges = makeRandom({Dim::Y, 6});
+  datasetWithEdges.setCoord(Dim::Y, yEdges);
   auto referenceWithEdges = reference(begin, end);
   // Is this the correct behavior for edges also in case the range is empty?
-  referenceWithEdges.setCoord(Dim::Y, y(6).slice({Dim::Y, begin, end + 1}));
+  referenceWithEdges.setCoord(Dim::Y, yEdges.slice({Dim::Y, begin, end + 1}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
 }
 
 TEST_P(Dataset3DTest_slice_range_y, slice_with_z_edges) {
   const auto[begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::Z, xyz(7));
+  const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
+  datasetWithEdges.setCoord(Dim::Z, zEdges);
   auto referenceWithEdges = reference(begin, end);
-  referenceWithEdges.setCoord(Dim::Z, xyz(7).slice({Dim::Y, begin, end}));
+  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({Dim::Y, begin, end}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
 }
 
@@ -932,9 +920,10 @@ TEST_P(Dataset3DTest_slice_range_z, slice) {
 TEST_P(Dataset3DTest_slice_range_z, slice_with_edges) {
   const auto[begin, end] = GetParam();
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::Z, xyz(7));
+  const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
+  datasetWithEdges.setCoord(Dim::Z, zEdges);
   auto referenceWithEdges = reference(begin, end);
-  referenceWithEdges.setCoord(Dim::Z, xyz(7).slice({Dim::Z, begin, end + 1}));
+  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({Dim::Z, begin, end + 1}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Z, begin, end}), referenceWithEdges);
 }
 
@@ -955,7 +944,7 @@ TEST_F(Dataset3DTest, nested_slice_range) {
 
 TEST_F(Dataset3DTest, nested_slice_range_bin_edges) {
   auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::X, x(5));
+  datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 0, 2}),
             datasetWithEdges.slice({Dim::X, 1, 3}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, 1, 3}, {Dim::X, 1, 2}),
@@ -994,7 +983,7 @@ protected:
 };
 
 using CoordsProxyTypes = ::testing::Types<CoordsProxy, CoordsConstProxy>;
-TYPED_TEST_CASE(CoordsProxyTest, CoordsProxyTypes);
+TYPED_TEST_SUITE(CoordsProxyTest, CoordsProxyTypes);
 
 TYPED_TEST(CoordsProxyTest, empty) {
   Dataset d;
@@ -1223,7 +1212,7 @@ protected:
 };
 
 using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
-TYPED_TEST_CASE(DataProxyTest, DataProxyTypes);
+TYPED_TEST_SUITE(DataProxyTest, DataProxyTypes);
 
 TYPED_TEST(DataProxyTest, isSparse_sparseDim) {
   Dataset d;
@@ -1453,7 +1442,7 @@ protected:
   dataset_type &dataset() { return Dataset3DTest::dataset; }
 };
 
-TYPED_TEST_CASE(DataProxy3DTest, DataProxyTypes);
+TYPED_TEST_SUITE(DataProxy3DTest, DataProxyTypes);
 
 // We have tests that ensure that Dataset::slice is correct (and its item access
 // returns the correct data), so we rely on that for verifying the results of

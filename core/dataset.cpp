@@ -409,6 +409,38 @@ AttrsProxy DataProxy::attrs() const noexcept {
       slices());
 }
 
+DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  if (hasValues())
+    values() += other.values();
+  if (other.hasVariances()) {
+    if (hasVariances())
+      variances() += other.variances();
+    else
+      throw std::runtime_error(
+          "RHS in operation has variances but LHS does not.");
+  }
+
+  return *this;
+}
+
+DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  if (hasVariances()) {
+    if (other.hasVariances())
+      variances().assign(variances() * (other.values() * other.values()) +
+                         (values() * values()) * other.variances());
+    else
+      variances().assign(variances() * (other.values() * other.values()));
+  } else if (other.hasVariances()) {
+    throw std::runtime_error(
+        "RHS in operation has variances but LHS does not.");
+  }
+  if (hasValues())
+    values() *= other.values();
+  return *this;
+}
+
 /// Return a const proxy to all coordinates of the dataset slice.
 ///
 /// This proxy includes only "dimension-coordinates". To access
@@ -548,6 +580,83 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
+constexpr static auto plus_equals = [](auto &&a, auto &b) { return a += b; };
+constexpr static auto times_equals = [](auto &&a, auto &b) { return a *= b; };
+
+template <class Op, class A, class B>
+auto &apply(const Op &op, A &a, const B &b) {
+  for (const auto & [ name, item ] : b)
+    op(a[name], item);
+  return a;
+}
+
+template <class Op, class A, class B>
+decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
+  // For `b` referencing data in `a` we delay operation. The alternative would
+  // be to make a deep copy of `other` before starting the iteration over items.
+  std::optional<std::string_view> delayed;
+  // Note the inefficiency here: We are comparing some or all of the coords and
+  // labels for each item. This could be improved by implementing the operations
+  // for detail::DatasetData instead of DataProxy.
+  for (const auto & [ name, item ] : a) {
+    if (&item.data() == &b.data())
+      delayed = name;
+    else
+      op(item, b);
+  }
+  if (delayed)
+    op(a[*delayed], b);
+  return std::forward<A>(a);
+}
+
+Dataset &Dataset::operator+=(const DataConstProxy &other) {
+  return apply_with_delay(plus_equals, *this, other);
+}
+
+Dataset &Dataset::operator*=(const DataConstProxy &other) {
+  return apply_with_delay(times_equals, *this, other);
+}
+
+Dataset &Dataset::operator+=(const DatasetConstProxy &other) {
+  return apply(plus_equals, *this, other);
+}
+
+Dataset &Dataset::operator*=(const DatasetConstProxy &other) {
+  return apply(times_equals, *this, other);
+}
+
+Dataset &Dataset::operator+=(const Dataset &other) {
+  return apply(plus_equals, *this, other);
+}
+
+Dataset &Dataset::operator*=(const Dataset &other) {
+  return apply(times_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator+=(const DataConstProxy &other) const {
+  return apply_with_delay(plus_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator*=(const DataConstProxy &other) const {
+  return apply_with_delay(times_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator+=(const DatasetConstProxy &other) const {
+  return apply(plus_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator*=(const DatasetConstProxy &other) const {
+  return apply(times_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator+=(const Dataset &other) const {
+  return apply(plus_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator*=(const Dataset &other) const {
+  return apply(times_equals, *this, other);
+}
+
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
   // TODO sparse
   if (data.hasValues())
@@ -591,6 +700,10 @@ std::ostream &operator<<(std::ostream &os, const ConstVariableSlice &variable) {
 }
 
 std::ostream &operator<<(std::ostream &os, const VariableSlice &variable) {
+  return os << ConstVariableSlice(variable);
+}
+
+std::ostream &operator<<(std::ostream &os, const Variable &variable) {
   return os << ConstVariableSlice(variable);
 }
 
