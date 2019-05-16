@@ -1115,22 +1115,22 @@ protected:
 using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
 TYPED_TEST_SUITE(DataProxyTest, DataProxyTypes);
 
-TYPED_TEST(DataProxyTest, isSparse_sparseDim) {
+TYPED_TEST(DataProxyTest, sparse_sparseDim) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", makeVariable<double>({}));
-  ASSERT_FALSE(d_ref["dense"].dims().isSparse());
+  ASSERT_FALSE(d_ref["dense"].dims().sparse());
   ASSERT_EQ(d_ref["dense"].dims().sparseDim(), Dim::Invalid);
 
   d.setData("sparse_data",
             makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
-  ASSERT_TRUE(d_ref["sparse_data"].dims().isSparse());
+  ASSERT_TRUE(d_ref["sparse_data"].dims().sparse());
   ASSERT_EQ(d_ref["sparse_data"].dims().sparseDim(), Dim::X);
 
   d.setSparseCoord("sparse_coord",
                    makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
-  ASSERT_TRUE(d_ref["sparse_coord"].dims().isSparse());
+  ASSERT_TRUE(d_ref["sparse_coord"].dims().sparse());
   ASSERT_EQ(d_ref["sparse_coord"].dims().sparseDim(), Dim::X);
 }
 

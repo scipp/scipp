@@ -639,7 +639,7 @@ TEST(Variable, access_typed_view_edges) {
 TEST(SparseVariable, create) {
   const auto var =
       makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  EXPECT_TRUE(var.dims().isSparse());
+  EXPECT_TRUE(var.dims().sparse());
   EXPECT_EQ(var.dims().sparseDim(), Dim::X);
   // Should we return the full volume here, i.e., accumulate the extents of all
   // the sparse subdata?
@@ -735,7 +735,7 @@ TEST(SparseVariable, concatenate) {
   const auto b =
       makeVariable<double>({Dim::Y, Dim::X}, {3, Dimensions::Sparse});
   auto var = concatenate(a, b, Dim::Y);
-  EXPECT_TRUE(var.dims().isSparse());
+  EXPECT_TRUE(var.dims().sparse());
   EXPECT_EQ(var.dims().sparseDim(), Dim::X);
   EXPECT_EQ(var.dims().volume(), 5);
 }
@@ -751,7 +751,7 @@ TEST(SparseVariable, concatenate_along_sparse_dimension) {
   b_[1] = {};
 
   auto var = concatenate(a, b, Dim::X);
-  EXPECT_TRUE(var.dims().isSparse());
+  EXPECT_TRUE(var.dims().sparse());
   EXPECT_EQ(var.dims().sparseDim(), Dim::X);
   EXPECT_EQ(var.dims().volume(), 2);
   auto data = var.sparseSpan<double>();
@@ -767,7 +767,7 @@ TEST(SparseVariable, slice) {
   data[2] = {1};
   data[3] = {};
   auto slice = var(Dim::Y, 1, 3);
-  EXPECT_TRUE(slice.dims().isSparse());
+  EXPECT_TRUE(slice.dims().sparse());
   EXPECT_EQ(slice.dims().sparseDim(), Dim::X);
   EXPECT_EQ(slice.dims().volume(), 2);
   auto slice_data = slice.sparseSpan<double>();

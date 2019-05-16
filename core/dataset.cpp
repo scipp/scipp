@@ -44,7 +44,7 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
     };
     if (contained(item)) {
       // Shadow all global coordinates that depend on the sparse dimension.
-      if ((!dims.isSparse()) || (!item.second.dims().contains(sparseDim)))
+      if ((!dims.sparse()) || (!item.second.dims().contains(sparseDim)))
         items.emplace(item.first, makeProxyItem(&item.second));
     }
   }
@@ -189,7 +189,7 @@ void Dataset::setData(const std::string &name, Variable data) {
 /// Sparse coordinates can exist even without corresponding data.
 void Dataset::setSparseCoord(const std::string &name, Variable coord) {
   setDims(coord.dims());
-  if (!coord.dims().isSparse())
+  if (!coord.dims().sparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseCoord does "
                              "not contain sparse data.");
   if (m_data.count(name)) {
@@ -209,7 +209,7 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
 void Dataset::setSparseLabels(const std::string &name,
                               const std::string &labelName, Variable labels) {
   setDims(labels.dims());
-  if (!labels.dims().isSparse())
+  if (!labels.dims().sparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseLabels does "
                              "not contain sparse data.");
   if (m_data.count(name)) {

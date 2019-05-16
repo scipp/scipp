@@ -134,7 +134,7 @@ std::string make_dims_labels(const Variable &variable,
       diminfo += " [bin-edges]";
     diminfo += ", ";
   }
-  if (variable.dims().isSparse()) {
+  if (variable.dims().sparse()) {
     diminfo += to_string(variable.dims().sparseDim(), separator);
     diminfo += " [sparse]";
     diminfo += ", ";
@@ -332,7 +332,7 @@ void coordsAndLabelsAreSuperset(const DataConstProxy &a,
 }
 
 void notSparse(const Dimensions &dims) {
-  if (dims.isSparse())
+  if (dims.sparse())
     throw except::DimensionError("Expected non-sparse dimensions.");
 }
 

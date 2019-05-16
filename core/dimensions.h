@@ -51,7 +51,7 @@ public:
     return !(*this == other);
   }
 
-  constexpr bool empty() const noexcept { return m_ndim == 0 && !isSparse(); }
+  constexpr bool empty() const noexcept { return m_ndim == 0 && !sparse(); }
 
   /// Return the volume of the space defined by *this. If there is a sparse
   /// dimension the volume of the dense subspace is returned.
@@ -63,7 +63,7 @@ public:
   }
 
   /// Return true if there is a sparse dimension.
-  constexpr bool isSparse() const noexcept {
+  constexpr bool sparse() const noexcept {
     return m_dims[m_ndim] != Dim::Invalid;
   }
 
@@ -81,7 +81,7 @@ public:
   /// Return the labels of the space defined by *this, including the label of a
   /// potential sparse dimension.
   constexpr scipp::span<const Dim> labels() const &noexcept {
-    if (!isSparse())
+    if (!sparse())
       return {m_dims, m_dims + m_ndim};
     else
       return {m_dims, m_dims + m_ndim + 1};
@@ -100,7 +100,7 @@ public:
 
   /// Return true if `dim` is one of the labels in *this.
   constexpr bool contains(const Dim dim) const noexcept {
-    return denseContains(dim) || (isSparse() && sparseDim() == dim);
+    return denseContains(dim) || (sparse() && sparseDim() == dim);
   }
 
   /// Return true if `dim` is one of the dense labels in *this.

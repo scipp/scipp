@@ -53,7 +53,7 @@ bool Dimensions::contains(const Dimensions &other) const noexcept {
   for (const auto dim : other.denseLabels())
     if (dim == sparseDim() || other[dim] != operator[](dim))
       return false;
-  if (other.isSparse() && other.sparseDim() != sparseDim())
+  if (other.sparse() && other.sparseDim() != sparseDim())
     return false;
   return true;
 }
@@ -115,7 +115,7 @@ void Dimensions::resize(const scipp::index i, const scipp::index size) {
 }
 
 void Dimensions::erase(const Dim label) {
-  if (isSparse() && sparseDim() == label) {
+  if (sparse() && sparseDim() == label) {
     m_dims[m_ndim] = Dim::Invalid;
     return;
   }
@@ -173,7 +173,7 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
 
 /// Return the innermost dimension. Throws if *this is empty.
 Dim Dimensions::inner() const {
-  if (isSparse())
+  if (sparse())
     return sparseDim();
   if (m_ndim == 0)
     throw except::DimensionError(

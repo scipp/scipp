@@ -126,14 +126,14 @@ TEST(DimensionsTest, isContiguousIn) {
   EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}}).isContiguousIn(parent));
 }
 
-TEST(DimensionsTest, isSparse) {
+TEST(DimensionsTest, sparse) {
   Dimensions denseXY({Dim::X, Dim::Y}, {2, 3});
   Dimensions denseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
   Dimensions sparseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse});
 
-  EXPECT_FALSE(denseXY.isSparse());
-  EXPECT_FALSE(denseXYZ.isSparse());
-  EXPECT_TRUE(sparseXYZ.isSparse());
+  EXPECT_FALSE(denseXY.sparse());
+  EXPECT_FALSE(denseXYZ.sparse());
+  EXPECT_TRUE(sparseXYZ.sparse());
 }
 
 TEST(DimensionsTest, index_access) {

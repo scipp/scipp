@@ -274,7 +274,7 @@ public:
   const Dimensions &dims() const & { return m_object->dims(); }
   void setDims(const Dimensions &dimensions);
 
-  DType dtype() const noexcept { return data().dtype(dims().isSparse()); }
+  DType dtype() const noexcept { return data().dtype(dims().sparse()); }
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
@@ -372,7 +372,7 @@ private:
 };
 
 template <class T> Variable makeVariable(const Dimensions &dimensions) {
-  if (dimensions.isSparse())
+  if (dimensions.sparse())
     if constexpr (std::is_same_v<T, double>) {
       return Variable(
           units::dimensionless, std::move(dimensions),

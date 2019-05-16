@@ -1932,7 +1932,7 @@ TEST(SparseDataset, concatenate_along_sparse_dimension) {
   auto d = concatenate(d1, d2, Dim::X);
 
   const auto var = d(Data::Value);
-  EXPECT_TRUE(var.isSparse());
+  EXPECT_TRUE(var.sparse());
   EXPECT_EQ(var.sparseDim(), Dim::X);
   EXPECT_EQ(var.size(), 2);
   auto data = var.sparseSpan<double>();
