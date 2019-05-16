@@ -18,7 +18,7 @@ The intention is to provide a generic core library (**scipp-core**), and more sp
 Documentation
 -------------
 
-** Getting started **
+**Getting started**
 
 The documentation of **scipp** is under construction.
 
@@ -32,6 +32,13 @@ For the time being, please refer to the (slightly outdated, we are in the proces
 Navigate to ``localhost:8888`` in your browser.
 The relevant demo notebooks can be found in the ``demo/`` folder.
 
-** Reference **
+**Reference**
 
 * :doc:`api`
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Reference
+
+   api
