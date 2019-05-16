@@ -10,7 +10,7 @@ Variable makeRandom(const Dimensions &dims) {
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx, const scipp::index ly,
                                    const scipp::index lz)
     : lx(lx), ly(ly), lz(lz) {
-  base.setCoord(Dim::Time, makeVariable<double>({}, rand(1)));
+  base.setCoord(Dim::Time, makeVariable<double>(rand(1).front()));
   base.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, rand(lx)));
   base.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, rand(ly)));
   base.setCoord(Dim::Z,
@@ -22,7 +22,7 @@ DatasetFactory3D::DatasetFactory3D(const scipp::index lx, const scipp::index ly,
                                                    rand(lx * ly)));
   base.setLabels("labels_z", makeVariable<double>({Dim::Z, lz}, rand(lz)));
 
-  base.setAttr("attr_scalar", makeVariable<double>({}, rand(1)));
+  base.setAttr("attr_scalar", makeVariable<double>(rand(1).front()));
   base.setAttr("attr_x", makeVariable<double>({Dim::X, lx}, rand(lx)));
 }
 
@@ -44,7 +44,7 @@ Dataset DatasetFactory3D::make() {
                                   {{Dim::X, lx}, {Dim::Y, ly}, {Dim::Z, lz}},
                                   rand(lx * ly * lz)));
 
-  dataset.setData("data_scalar", makeVariable<double>({}, rand(1)));
+  dataset.setData("data_scalar", makeVariable<double>(rand(1).front()));
 
   return dataset;
 }

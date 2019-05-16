@@ -21,8 +21,9 @@ TEST(DimensionMismatchError, what) {
 TEST(DimensionNotFoundError, what) {
   Dimensions dims{{Dim::X, 1}, {Dim::Y, 2}};
   except::DimensionNotFoundError error(dims, Dim::Z);
-  EXPECT_EQ(error.what(), std::string("Expected dimension to be in {{Dim::X, "
-                                      "1}, {Dim::Y, 2}}, got Dim::Z."));
+  EXPECT_EQ(error.what(),
+            std::string("Expected dimension to be a non-sparse dimension of "
+                        "{{Dim::X, 1}, {Dim::Y, 2}}, got Dim::Z."));
 }
 
 TEST(DimensionLengthError, what) {

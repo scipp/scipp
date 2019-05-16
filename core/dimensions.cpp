@@ -11,45 +11,68 @@
 
 namespace scipp::core {
 
+Dimensions::Dimensions(const std::vector<Dim> &labels,
+                       const std::vector<scipp::index> &shape) {
+  if (labels.size() != shape.size())
+    throw except::DimensionError(
+        "Constructing Dimensions: Number of dimensions "
+        "labels does not match shape.");
+  for (scipp::index i = 0; i < scipp::size(shape); ++i)
+    addInner(labels[i], shape[i]);
+}
+
+/// Return the extent of `dim`. Throws if the space defined by this does not
+/// contain `dim` or if `dim` is a sparse dimension label.
 scipp::index Dimensions::operator[](const Dim dim) const {
-  for (int32_t i = 0; i < 6; ++i)
+  for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
   throw except::DimensionNotFoundError(*this, dim);
 }
 
-scipp::index &Dimensions::operator[](const Dim dim) {
-  for (int32_t i = 0; i < 6; ++i)
+/// Return a mutable reference to the extent of `dim`. Throws if the space
+/// defined by this does not contain `dim` or if `dim` is a sparse dimension
+/// label.
+scipp::index &Dimensions::at(const Dim dim) {
+  for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
   throw except::DimensionNotFoundError(*this, dim);
 }
 
-/// Returns true if all dimensions of other are also contained in *this. Does
-/// not check dimension order.
-bool Dimensions::contains(const Dimensions &other) const {
+/// Return true if all dimensions of other contained in *this, ignoring order.
+///
+/// If a dimension in other is sparse it must also be sparse in *this, otherwise
+/// false is returned.
+bool Dimensions::contains(const Dimensions &other) const noexcept {
   if (*this == other)
     return true;
   for (const auto dim : other.labels())
     if (!contains(dim))
       return false;
-  for (int32_t i = 0; i < other.ndim(); ++i)
-    if (other.shape()[i] != operator[](other.labels()[i]))
+  for (const auto dim : other.denseLabels())
+    if (dim == sparseDim() || other[dim] != operator[](dim))
       return false;
+  if (other.sparse() && other.sparseDim() != sparseDim())
+    return false;
   return true;
 }
 
-/// Returns true if *this forms a contiguous block within parent, i.e.,
-/// dimensions are not transposed, missing dimensions are outer dimensions in
-/// parent, only the outermost dimensions may be shorter than the corresponding
-/// dimension in parent.
+/// Return true if *this forms a contiguous block within parent.
+///
+/// Specifically, dimensions are not transposed, missing dimensions are outer
+/// dimensions in parent, and only the outermost dimensions may be shorter than
+/// the corresponding dimension in parent. Potential sparse dimensions are
+/// ignored since they do not contribute to the shape (note that this is only a
+/// valid assumption as long as sparse data layouts are equivalent to a vector
+/// of vectors).
 bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   if (parent == *this)
     return true;
-  int32_t offset = parent.count() - count();
+  int32_t offset = parent.m_ndim - m_ndim;
   if (offset < 0)
     return false;
-  for (int32_t i = 0; i < count(); ++i) {
+  for (int32_t i = 0; i < m_ndim; ++i) {
     // All shared dimension labels must match.
     if (parent.label(i + offset) != label(i))
       return false;
@@ -82,33 +105,47 @@ scipp::index Dimensions::offset(const Dim label) const {
 }
 
 void Dimensions::resize(const Dim label, const scipp::index size) {
-  if (size < 0)
-    throw std::runtime_error("Dimension size cannot be negative.");
-  operator[](label) = size;
+  expect::validExtent(size);
+  at(label) = size;
 }
 
 void Dimensions::resize(const scipp::index i, const scipp::index size) {
-  if (size < 0)
-    throw std::runtime_error("Dimension size cannot be negative.");
+  expect::validExtent(size);
   m_shape[i] = size;
 }
 
 void Dimensions::erase(const Dim label) {
+  if (sparse() && sparseDim() == label) {
+    m_dims[m_ndim] = Dim::Invalid;
+    return;
+  }
   for (int32_t i = index(label); i < m_ndim - 1; ++i) {
     m_shape[i] = m_shape[i + 1];
     m_dims[i] = m_dims[i + 1];
   }
+  m_dims[m_ndim - 1] = m_dims[m_ndim];
+  m_dims[m_ndim] = Dim::Invalid;
   --m_ndim;
   m_shape[m_ndim] = -1;
-  m_dims[m_ndim] = Dim::Invalid;
+}
+
+void expectUnique(const Dimensions &dims, const Dim label) {
+  if (dims.contains(label))
+    throw except::DimensionError("Duplicate dimension.");
+}
+
+void expectExtendable(const Dimensions &dims) {
+  if (dims.shape().size() == 6)
+    throw except::DimensionError("More than 6 dimensions are not supported.");
 }
 
 /// Add a new dimension, which will be the outermost dimension.
 void Dimensions::add(const Dim label, const scipp::index size) {
-  if (contains(label))
-    throw std::runtime_error("Duplicate dimension.");
-  if (m_ndim == 6)
-    throw std::runtime_error("More than 6 dimensions are not supported.");
+  expect::validDim(label);
+  expectUnique(*this, label);
+  expectExtendable(*this);
+  expect::validExtent(size);
+  m_dims[m_ndim + 1] = m_dims[m_ndim];
   for (int32_t i = m_ndim - 1; i >= 0; --i) {
     m_shape[i + 1] = m_shape[i];
     m_dims[i + 1] = m_dims[i];
@@ -120,21 +157,25 @@ void Dimensions::add(const Dim label, const scipp::index size) {
 
 /// Add a new dimension, which will be the innermost dimension.
 void Dimensions::addInner(const Dim label, const scipp::index size) {
-  if (label == Dim::Invalid)
-    throw std::runtime_error("Dim::Invalid is not a valid dimension.");
-  if (size < 0)
-    throw std::runtime_error("Dimension extent cannot be negative.");
-  if (contains(label))
-    throw std::runtime_error("Duplicate dimension.");
-  if (m_ndim == 6)
-    throw std::runtime_error("More than 6 dimensions are not supported.");
-  m_shape[m_ndim] = size;
-  m_dims[m_ndim] = label;
-  ++m_ndim;
+  expect::validDim(label);
+  expect::notSparse(*this);
+  expectUnique(*this, label);
+  if (size == Dimensions::Sparse) {
+    m_dims[m_ndim] = label;
+  } else {
+    expect::validExtent(size);
+    expectExtendable(*this);
+    m_shape[m_ndim] = size;
+    m_dims[m_ndim] = label;
+    ++m_ndim;
+  }
 }
 
+/// Return the innermost dimension. Throws if *this is empty.
 Dim Dimensions::inner() const {
-  if (ndim() == 0)
+  if (sparse())
+    return sparseDim();
+  if (m_ndim == 0)
     throw except::DimensionError(
         "Expected Dimensions with at least 1 dimension.");
   return m_dims[m_ndim - 1];

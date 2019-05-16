@@ -5,6 +5,7 @@
 #ifndef DIMENSIONS_H
 #define DIMENSIONS_H
 
+#include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -17,27 +18,23 @@ namespace scipp::core {
 
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
-/// We should follow the numpy convention: First dimension is outer dimension,
-/// last dimension is inner dimension, for now we do not.
+/// We follow the numpy convention: First dimension is outer dimension, last
+/// dimension is inner dimension.
 class Dimensions {
 public:
-  Dimensions() noexcept {}
+  static constexpr auto Sparse = std::numeric_limits<scipp::index>::min();
+
+  constexpr Dimensions() noexcept {}
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
   Dimensions(const std::vector<Dim> &labels,
-             const std::vector<scipp::index> &shape) {
-    if (labels.size() != shape.size())
-      throw std::runtime_error("Constructing Dimensions: Number of dimensions "
-                               "labels does not match shape.");
-    for (scipp::index i = labels.size() - 1; i >= 0; --i)
-      add(labels[i], shape[i]);
-  }
+             const std::vector<scipp::index> &shape);
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
     for (const auto[label, size] : dims)
       addInner(label, size);
   }
 
-  bool operator==(const Dimensions &other) const noexcept {
+  constexpr bool operator==(const Dimensions &other) const noexcept {
     if (m_ndim != other.m_ndim)
       return false;
     for (int32_t i = 0; i < 6; ++i) {
@@ -46,49 +43,80 @@ public:
       if (m_dims[i] != other.m_dims[i])
         return false;
     }
+    if (m_dims[6] != other.m_dims[6])
+      return false;
     return true;
   }
-  bool operator!=(const Dimensions &other) const noexcept {
+  constexpr bool operator!=(const Dimensions &other) const noexcept {
     return !(*this == other);
   }
 
-  bool empty() const noexcept { return m_ndim == 0; }
+  constexpr bool empty() const noexcept { return m_ndim == 0 && !sparse(); }
 
-  int32_t ndim() const noexcept { return m_ndim; }
-  // TODO Remove in favor of the new ndim?
-  int32_t count() const noexcept { return m_ndim; }
-
-  scipp::index volume() const {
+  /// Return the volume of the space defined by *this. If there is a sparse
+  /// dimension the volume of the dense subspace is returned.
+  constexpr scipp::index volume() const noexcept {
     scipp::index volume{1};
-    for (int32_t dim = 0; dim < ndim(); ++dim)
+    for (int32_t dim = 0; dim < m_ndim; ++dim)
       volume *= m_shape[dim];
     return volume;
   }
 
+  /// Return true if there is a sparse dimension.
+  constexpr bool sparse() const noexcept {
+    return m_dims[m_ndim] != Dim::Invalid;
+  }
+
+  /// Return the label of a potential sparse dimension, Dim::Invalid otherwise.
+  constexpr Dim sparseDim() const noexcept { return m_dims[m_ndim]; }
+
   scipp::span<const scipp::index> shape() const && = delete;
-  scipp::span<const scipp::index> shape() const &noexcept {
+  /// Return the shape of the space defined by *this. If there is a sparse
+  /// dimension the shape of the dense subspace is returned.
+  constexpr scipp::span<const scipp::index> shape() const &noexcept {
     return {m_shape, m_shape + m_ndim};
   }
 
   scipp::span<const Dim> labels() const && = delete;
-  scipp::span<const Dim> labels() const &noexcept {
+  /// Return the labels of the space defined by *this, including the label of a
+  /// potential sparse dimension.
+  constexpr scipp::span<const Dim> labels() const &noexcept {
+    if (!sparse())
+      return {m_dims, m_dims + m_ndim};
+    else
+      return {m_dims, m_dims + m_ndim + 1};
+  }
+
+  scipp::span<const Dim> denseLabels() const && = delete;
+  /// Return the labels of the space defined by *this, excluding the label of a
+  /// potential sparse dimension.
+  constexpr scipp::span<const Dim> denseLabels() const &noexcept {
     return {m_dims, m_dims + m_ndim};
   }
 
   scipp::index operator[](const Dim dim) const;
-  scipp::index &operator[](const Dim dim);
 
-  bool contains(const Dim dim) const noexcept {
-    for (int32_t i = 0; i < ndim(); ++i)
+  Dim inner() const;
+
+  /// Return true if `dim` is one of the labels in *this.
+  constexpr bool contains(const Dim dim) const noexcept {
+    return denseContains(dim) || (sparse() && sparseDim() == dim);
+  }
+
+  /// Return true if `dim` is one of the dense labels in *this.
+  constexpr bool denseContains(const Dim dim) const noexcept {
+    for (int32_t i = 0; i < m_ndim; ++i)
       if (m_dims[i] == dim)
         return true;
     return false;
   }
 
-  bool contains(const Dimensions &other) const;
+  bool contains(const Dimensions &other) const noexcept;
 
   bool isContiguousIn(const Dimensions &parent) const;
 
+  // TODO Some of the following methods are probably legacy and should be
+  // considered for removal.
   Dim label(const scipp::index i) const;
   void relabel(const scipp::index i, const Dim label) { m_dims[i] = label; }
   scipp::index size(const scipp::index i) const;
@@ -101,18 +129,19 @@ public:
   void add(const Dim label, const scipp::index size);
   void addInner(const Dim label, const scipp::index size);
 
-  Dim inner() const;
-
   int32_t index(const Dim label) const;
 
 private:
+  scipp::index &at(const Dim dim);
   // This is 56 Byte, or would be 40 Byte for small size 1.
   // boost::container::small_vector<std::pair<Dim, scipp::index>, 2> m_dims;
   // Support at most 6 dimensions, should be sufficient?
   // 6*8 Byte = 48 Byte
   scipp::index m_shape[6]{-1, -1, -1, -1, -1, -1};
-  int32_t m_ndim{0};
-  Dim m_dims[6]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
+  int16_t m_ndim{0};
+  /// Dimensions labels. This is exceeding the size of the shape by one for the
+  /// purpose of storing the sparse dimension's label.
+  Dim m_dims[7]{Dim::Invalid, Dim::Invalid, Dim::Invalid, Dim::Invalid,
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
 

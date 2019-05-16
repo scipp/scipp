@@ -33,7 +33,7 @@ public:
         m_targetDimensions(targetDimensions) {
     m_dimensions = other.m_dimensions;
     for (const auto label : m_dimensions.labels())
-      if (!other.m_targetDimensions.contains(label))
+      if (!other.m_targetDimensions.denseContains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
@@ -46,7 +46,7 @@ public:
     if (begin != 0 || dim != Dim::Invalid)
       m_offset += begin * m_dimensions.offset(dim);
     for (const auto label : m_dimensions.labels())
-      if (!other.m_targetDimensions.contains(label))
+      if (!other.m_targetDimensions.denseContains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 

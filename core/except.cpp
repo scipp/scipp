@@ -73,7 +73,7 @@ std::string to_string(const Dimensions &dims, const std::string &separator) {
   if (dims.empty())
     return "{}";
   std::string s = "{{";
-  for (int32_t i = 0; i < dims.ndim(); ++i)
+  for (int32_t i = 0; i < dims.shape().size(); ++i)
     s += to_string(dims.labels()[i], separator) + ", " +
          std::to_string(dims.shape()[i]) + "}, {";
   s.resize(s.size() - 3);
@@ -134,8 +134,8 @@ std::string make_dims_labels(const Variable &variable,
       diminfo += " [bin-edges]";
     diminfo += ", ";
   }
-  if (variable.isSparse()) {
-    diminfo += to_string(variable.sparseDim(), separator);
+  if (variable.dims().sparse()) {
+    diminfo += to_string(variable.dims().sparseDim(), separator);
     diminfo += " [sparse]";
     diminfo += ", ";
   }
@@ -259,8 +259,9 @@ DimensionMismatchError::DimensionMismatchError(const Dimensions &expected,
 
 DimensionNotFoundError::DimensionNotFoundError(const Dimensions &expected,
                                                const Dim actual)
-    : DimensionError("Expected dimension to be in " + to_string(expected) +
-                     ", got " + to_string(actual) + ".") {}
+    : DimensionError("Expected dimension to be a non-sparse dimension of " +
+                     to_string(expected) + ", got " + to_string(actual) + ".") {
+}
 
 DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                                            const Dim actual,
@@ -328,6 +329,23 @@ void coordsAndLabelsAreSuperset(const DataConstProxy &a,
   for (const auto & [ name, labels ] : b.labels())
     if (a.labels()[name] != labels)
       throw except::CoordMismatchError("Expected labels to match.");
+}
+
+void notSparse(const Dimensions &dims) {
+  if (dims.sparse())
+    throw except::DimensionError("Expected non-sparse dimensions.");
+}
+
+void validDim(const Dim dim) {
+  if (dim == Dim::Invalid)
+    throw except::DimensionError("Dim::Invalid is not a valid dimension.");
+}
+
+void validExtent(const scipp::index size) {
+  if (size == Dimensions::Sparse)
+    throw except::DimensionError("Expected non-sparse dimension extent.");
+  if (size < 0)
+    throw except::DimensionError("Dimension size cannot be negative.");
 }
 
 } // namespace expect

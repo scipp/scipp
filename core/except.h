@@ -164,6 +164,9 @@ void validSlice(const Dimensions &dims, const Slice &slice);
 void coordsAndLabelsMatch(const DataConstProxy &a, const DataConstProxy &b);
 void coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                 const DataConstProxy &b);
+void notSparse(const Dimensions &dims);
+void validDim(const Dim dim);
+void validExtent(const scipp::index size);
 
 } // namespace expect
 } // namespace scipp::core
