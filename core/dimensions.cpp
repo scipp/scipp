@@ -135,8 +135,8 @@ void expectUnique(const Dimensions &dims, const Dim label) {
 }
 
 void expectExtendable(const Dimensions &dims) {
-  if (dims.shape().size() == 6)
-    throw except::DimensionError("More than 6 dimensions are not supported.");
+  if (dims.shape().size() == NDIM_MAX)
+    throw except::DimensionError("Maximum number of allowed dimensions exceeded.");
 }
 
 /// Add a new dimension, which will be the outermost dimension.
@@ -182,7 +182,7 @@ Dim Dimensions::inner() const {
 }
 
 int32_t Dimensions::index(const Dim dim) const {
-  for (int32_t i = 0; i < 6; ++i)
+  for (int32_t i = 0; i < NDIM_MAX; ++i)
     if (m_dims[i] == dim)
       return i;
   throw except::DimensionNotFoundError(*this, dim);

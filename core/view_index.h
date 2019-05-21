@@ -14,8 +14,6 @@ public:
   ViewIndex(
       const Dimensions &parentDimensions,
       const Dimensions &subdimensions) {
-    if (parentDimensions.shape().size() > 4)
-      throw std::runtime_error("ViewIndex supports at most 4 dimensions.");
     m_dims = parentDimensions.shape().size();
     for (scipp::index d = 0; d < m_dims; ++d)
       m_extent[d] = parentDimensions.size(m_dims - 1 - d);
@@ -34,13 +32,13 @@ public:
     scipp::index offset{1};
     for (scipp::index d = 0; d < m_dims; ++d) {
       setIndex(offset);
-      m_delta[d] = get();
+      m_delta[d] = m_index;
       if (d > 0) {
         setIndex(offset - 1);
-        m_delta[d] -= get();
+        m_delta[d] -= m_index;
+        for (scipp::index d2 = 0; d2 < d; ++d2)
+          m_delta[d] -= m_delta[d2];
       }
-      for (scipp::index d2 = 0; d2 < d; ++d2)
-        m_delta[d] -= m_delta[d2];
       offset *= m_extent[d];
     }
     setIndex(0);
@@ -49,13 +47,13 @@ public:
   void increment() {
     m_index += m_delta[0];
     ++m_coord[0];
-    // It may seem counter-intuitive, but moving the code for a wrapped index
-    // into a separate method helps with inlining of this *outer* part of the
-    // increment method. Since mostly we do not wrap, inlining `increment()` is
-    // the important part, the function call to `indexWrapped()` is not so
-    // critical.
-    if (m_coord[0] == m_extent[0])
-      indexWrapped();
+    scipp::index d = 0;
+    while ((m_coord[d] == m_extent[d]) && (d < 3)) {
+      m_index += m_delta[d+1];
+      ++m_coord[d+1];
+      m_coord[d] = 0;
+      ++d;
+    }
     ++m_fullIndex;
   }
 
@@ -82,32 +80,16 @@ public:
   }
 
 private:
-  void indexWrapped() {
-    m_index += m_delta[1];
-    m_coord[0] = 0;
-    ++m_coord[1];
-    if (m_coord[1] == m_extent[1]) {
-      m_index += m_delta[2];
-      m_coord[1] = 0;
-      ++m_coord[2];
-      if (m_coord[2] == m_extent[2]) {
-        m_index += m_delta[3];
-        m_coord[2] = 0;
-        ++m_coord[3];
-      }
-    }
-  }
-
   scipp::index m_index{0};
-  alignas(32) scipp::index m_delta[4]{0, 0, 0, 0};
-  alignas(32) scipp::index m_coord[4]{0, 0, 0, 0};
-  alignas(32) scipp::index m_extent[4]{0, 0, 0, 0};
+  scipp::index m_delta[NDIM_MAX] = { 0, 0, 0, 0, 0, 0 };
+  scipp::index m_coord[NDIM_MAX] = { 0, 0, 0, 0, 0, 0 };
+  scipp::index m_extent[NDIM_MAX] = { 0, 0, 0, 0, 0, 0 };
+
   scipp::index m_fullIndex;
   int32_t m_dims;
-  int32_t m_numberOfSubindices;
   int32_t m_subdims;
-  std::array<int32_t, 4> m_offsets;
-  std::array<scipp::index, 4> m_factors;
+  int32_t m_offsets[NDIM_MAX];
+  scipp::index m_factors[NDIM_MAX];
 };
 
 } // namespace scipp::core
