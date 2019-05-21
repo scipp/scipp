@@ -17,17 +17,15 @@ public:
     for (scipp::index d = 0; d < m_dims; ++d)
       m_extent[d] = parentDimensions.size(m_dims - 1 - d);
     scipp::index factor{1};
-    int32_t k = 0;
     for (scipp::index i = subdimensions.shape().size() - 1; i >= 0; --i) {
       const auto dimension = subdimensions.label(i);
       if (parentDimensions.contains(dimension)) {
-        m_offsets[k] = m_dims - 1 - parentDimensions.index(dimension);
-        m_factors[k] = factor;
-        ++k;
+        m_offsets[m_subdims] = m_dims - 1 - parentDimensions.index(dimension);
+        m_factors[m_subdims] = factor;
+        ++m_subdims;
       }
       factor *= subdimensions.size(i);
     }
-    m_subdims = k;
     scipp::index offset{1};
     for (scipp::index d = 0; d < m_dims; ++d) {
       setIndex(offset);
@@ -83,10 +81,9 @@ private:
   scipp::index m_delta[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
   scipp::index m_coord[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
   scipp::index m_extent[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
-
   scipp::index m_fullIndex;
   int32_t m_dims;
-  int32_t m_subdims;
+  int32_t m_subdims = 0;
   int32_t m_offsets[NDIM_MAX];
   scipp::index m_factors[NDIM_MAX];
 };
