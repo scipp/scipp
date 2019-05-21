@@ -141,11 +141,13 @@ private:
   // 6*8 Byte = 48 Byte
   // TODO: can we find a good way to initialise the values automatically when
   // NDIM_MAX is changed?
-  scipp::index m_shape[NDIM_MAX]{ -1, -1, -1, -1, -1, -1};
+  scipp::index m_shape[NDIM_MAX]{-1, -1, -1, -1, -1, -1};
   int16_t m_ndim{0};
   /// Dimensions labels. This is exceeding the size of the shape by one for the
   /// purpose of storing the sparse dimension's label.
-  Dim m_dims[NDIM_MAX + 1]{ Dim::Invalid, Dim::Invalid, Dim::Invalid, Dim::Invalid, Dim::Invalid, Dim::Invalid, Dim::Invalid};
+  Dim m_dims[NDIM_MAX + 1]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
+                           Dim::Invalid, Dim::Invalid, Dim::Invalid,
+                           Dim::Invalid};
 };
 
 } // namespace scipp::core

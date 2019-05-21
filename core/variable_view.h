@@ -10,8 +10,8 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "dimensions.h"
-#include "view_index.h"
 #include "vector.h"
+#include "view_index.h"
 
 namespace scipp::core {
 

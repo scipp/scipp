@@ -11,9 +11,8 @@ namespace scipp::core {
 
 class ViewIndex {
 public:
-  ViewIndex(
-      const Dimensions &parentDimensions,
-      const Dimensions &subdimensions) {
+  ViewIndex(const Dimensions &parentDimensions,
+            const Dimensions &subdimensions) {
     m_dims = parentDimensions.shape().size();
     for (scipp::index d = 0; d < m_dims; ++d)
       m_extent[d] = parentDimensions.size(m_dims - 1 - d);
@@ -49,8 +48,8 @@ public:
     ++m_coord[0];
     scipp::index d = 0;
     while ((m_coord[d] == m_extent[d]) && (d < 3)) {
-      m_index += m_delta[d+1];
-      ++m_coord[d+1];
+      m_index += m_delta[d + 1];
+      ++m_coord[d + 1];
       m_coord[d] = 0;
       ++d;
     }
@@ -81,9 +80,9 @@ public:
 
 private:
   scipp::index m_index{0};
-  scipp::index m_delta[NDIM_MAX] = { 0, 0, 0, 0, 0, 0 };
-  scipp::index m_coord[NDIM_MAX] = { 0, 0, 0, 0, 0, 0 };
-  scipp::index m_extent[NDIM_MAX] = { 0, 0, 0, 0, 0, 0 };
+  scipp::index m_delta[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
+  scipp::index m_coord[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
+  scipp::index m_extent[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
 
   scipp::index m_fullIndex;
   int32_t m_dims;

@@ -136,7 +136,8 @@ void expectUnique(const Dimensions &dims, const Dim label) {
 
 void expectExtendable(const Dimensions &dims) {
   if (dims.shape().size() == NDIM_MAX)
-    throw except::DimensionError("Maximum number of allowed dimensions exceeded.");
+    throw except::DimensionError(
+        "Maximum number of allowed dimensions exceeded.");
 }
 
 /// Add a new dimension, which will be the outermost dimension.
