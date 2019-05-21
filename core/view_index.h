@@ -47,7 +47,7 @@ public:
     m_index += m_delta[0];
     ++m_coord[0];
     scipp::index d = 0;
-    while ((m_coord[d] == m_extent[d]) && (d < 3)) {
+    while ((m_coord[d] == m_extent[d]) && (d < NDIM_MAX - 1)) {
       m_index += m_delta[d + 1];
       ++m_coord[d + 1];
       m_coord[d] = 0;
