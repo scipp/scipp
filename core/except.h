@@ -13,10 +13,6 @@
 #include "index.h"
 #include "scipp/units/unit.h"
 
-namespace scipp::units {
-class Unit;
-}
-
 namespace scipp::core {
 
 class DataConstProxy;

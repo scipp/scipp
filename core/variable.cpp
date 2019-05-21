@@ -1230,7 +1230,13 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
 
 Variable rebin(const Variable &var, const Variable &oldCoord,
                const Variable &newCoord) {
-
+// TODO Disabled since it is using neutron-specific units. Should be moved
+// into scipp-neutron? On the other hand, counts is actually more generic than
+// neutron data, but requiring this unit to be part of all supported unit
+// systems does not make sense either, I think.
+#ifndef SCIPP_UNITS_NEUTRON
+  throw std::runtime_error("rebin is disabled for this set of units");
+#else
   expect::countsOrCountsDensity(var);
   Dim dim = Dim::Invalid;
   for (const auto d : oldCoord.dims().labels())
@@ -1303,6 +1309,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
         counts::toDensity(std::move(rebinnedCounts), dim).erase(Data::Value));
     */
   }
+#endif
 }
 
 Variable permute(const Variable &var, const Dim dim,

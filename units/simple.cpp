@@ -2,10 +2,9 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPP_UNITS_UNIT_H
-#define SCIPP_UNITS_UNIT_H
-
-#include "scipp/units/neutron.h"
 #include "scipp/units/simple.h"
+#include "scipp/units/unit.tcc"
 
-#endif // SCIPP_UNITS_UNIT_H
+namespace scipp::units {
+INSTANTIATE(simple::supported_units);
+} // namespace scipp::units
