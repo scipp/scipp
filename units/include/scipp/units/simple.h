@@ -5,6 +5,7 @@
 #ifndef SCIPP_UNITS_SIMPLE_H
 #define SCIPP_UNITS_SIMPLE_H
 
+#include "scipp/units/dimension.h"
 #include "scipp/units/unit_impl.h"
 
 namespace scipp::units {
@@ -12,11 +13,18 @@ namespace scipp::units {
 inline
 #endif
     namespace simple {
+
 using supported_units = decltype(detail::make_unit(
     std::make_tuple(m), std::make_tuple(dimensionless, dimensionless / m, s,
                                         dimensionless / s, m / s)));
 
 using Unit = Unit_impl<supported_units>;
+
+SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z);
+
+// in cpp
+// SCIPP_UNITS_DEFINE_DIMENSIONS();
+
 } // namespace simple
 } // namespace scipp::units
 

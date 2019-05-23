@@ -120,6 +120,7 @@ namespace scipp::units {
 inline
 #endif
     namespace neutron {
+
 // Additional helper constants beyond the SI base units.
 // Note the factor `dimensionless` in units that otherwise contain only non-SI
 // factors. This is a trick to overcome some subtleties of working with

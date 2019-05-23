@@ -6,5 +6,10 @@
 #include "scipp/units/unit.tcc"
 
 namespace scipp::units {
+
 INSTANTIATE(simple::supported_units);
+namespace simple {
+SCIPP_UNITS_DEFINE_DIMENSIONS();
+}
+
 } // namespace scipp::units
