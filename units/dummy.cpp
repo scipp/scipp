@@ -2,12 +2,12 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/units/simple.h"
+#include "scipp/units/dummy.h"
 #include "scipp/units/unit.tcc"
 
 namespace scipp::units {
 
-INSTANTIATE(simple::supported_units);
-SCIPP_UNITS_DEFINE_DIMENSIONS(simple);
+INSTANTIATE(dummy::supported_units);
+SCIPP_UNITS_DEFINE_DIMENSIONS(dummy);
 
 } // namespace scipp::units
