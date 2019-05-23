@@ -6,6 +6,7 @@
 #ifndef SCIPP_UNITS_NEUTRON_H
 #define SCIPP_UNITS_NEUTRON_H
 
+#include "scipp/units/dimension.h"
 #include "scipp/units/unit_impl.h"
 
 #include <boost/units/base_dimension.hpp>
@@ -149,6 +150,8 @@ using supported_units = decltype(detail::make_unit(
 using Unit = Unit_impl<supported_units>;
 
 bool containsCounts(const Unit &unit);
+
+SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z, Tof, Time, Q, Row, Spectrum);
 
 } // namespace neutron
 } // namespace scipp::units

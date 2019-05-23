@@ -12,7 +12,7 @@ namespace scipp::units {
 #define SCIPP_UNITS_DECLARE_DIMENSIONS(...)                                    \
   enum class Dim : uint16_t { __VA_ARGS__, Invalid };                          \
                                                                                \
-  namespace detail {                                                           \
+  namespace detail2 {                                                          \
   constexpr const char *names = #__VA_ARGS__;                                  \
   constexpr auto ndim = static_cast<size_t>(Dim::Invalid);                     \
   }                                                                            \
@@ -22,7 +22,7 @@ namespace scipp::units {
 #define SCIPP_UNITS_DEFINE_DIMENSIONS(MODULE)                                  \
   namespace MODULE {                                                           \
   namespace {                                                                  \
-  constexpr std::string_view names(detail::names);                             \
+  constexpr std::string_view names(detail2::names);                            \
                                                                                \
   constexpr auto get_pos(const size_t index) {                                 \
     constexpr const char *sep = ", ";                                          \
@@ -43,7 +43,7 @@ namespace scipp::units {
   }                                                                            \
                                                                                \
   constexpr auto dim_names =                                                   \
-      make_dim_names(std::make_index_sequence<detail::ndim>());                \
+      make_dim_names(std::make_index_sequence<detail2::ndim>());               \
   }                                                                            \
                                                                                \
   std::string to_string(const Dim dim) {                                       \

@@ -7,5 +7,8 @@
 
 #include "scipp/units/neutron.h"
 #include "scipp/units/simple.h"
+namespace scipp {
+using scipp::units::Dim;
+}
 
 #endif // SCIPP_UNITS_UNIT_H

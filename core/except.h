@@ -8,7 +8,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "dimension.h"
 #include "dtype.h"
 #include "index.h"
 #include "scipp/units/unit.h"
@@ -24,7 +23,6 @@ class VariableConstProxy;
 struct Slice;
 
 std::string to_string(const DType dtype);
-std::string to_string(const Dim dim, const std::string &separator = "::");
 std::string to_string(const Dimensions &dims,
                       const std::string &separator = "::");
 std::string to_string(const Slice &slice, const std::string &separator = "::");

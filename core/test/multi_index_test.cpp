@@ -6,6 +6,7 @@
 
 #include "multi_index.h"
 
+using namespace scipp;
 using namespace scipp::core;
 
 class MultiIndex2DTest : public ::testing::Test {
