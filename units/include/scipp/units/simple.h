@@ -22,9 +22,6 @@ using Unit = Unit_impl<supported_units>;
 
 SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z);
 
-// in cpp
-// SCIPP_UNITS_DEFINE_DIMENSIONS();
-
 } // namespace simple
 } // namespace scipp::units
 

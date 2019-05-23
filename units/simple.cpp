@@ -8,8 +8,6 @@
 namespace scipp::units {
 
 INSTANTIATE(simple::supported_units);
-namespace simple {
-SCIPP_UNITS_DEFINE_DIMENSIONS();
-}
+SCIPP_UNITS_DEFINE_DIMENSIONS(simple);
 
 } // namespace scipp::units
