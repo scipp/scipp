@@ -126,12 +126,12 @@ TEST(Unit, isCounts) {
   EXPECT_FALSE(Unit(units::dimensionless / units::m).isCounts());
 }
 
-TEST(Unit, isCountFrequency) {
-  EXPECT_FALSE(Unit(units::dimensionless).isCountFrequency());
-  EXPECT_FALSE(Unit(units::counts).isCountFrequency());
-  EXPECT_TRUE(Unit(units::counts / units::us).isCountFrequency());
-  EXPECT_TRUE(Unit(units::counts / units::meV).isCountFrequency());
-  EXPECT_FALSE(Unit(units::dimensionless / units::m).isCountFrequency());
+TEST(Unit, isCountDensity) {
+  EXPECT_FALSE(Unit(units::dimensionless).isCountDensity());
+  EXPECT_FALSE(Unit(units::counts).isCountDensity());
+  EXPECT_TRUE(Unit(units::counts / units::us).isCountDensity());
+  EXPECT_TRUE(Unit(units::counts / units::meV).isCountDensity());
+  EXPECT_FALSE(Unit(units::dimensionless / units::m).isCountDensity());
 }
 
 TEST(DummyUnitsTest, isCounts) {
@@ -139,7 +139,7 @@ TEST(DummyUnitsTest, isCounts) {
   EXPECT_FALSE(dummy::Unit(units::dimensionless / units::m).isCounts());
 }
 
-TEST(DummyUnitsTest, isCountFrequency) {
-  EXPECT_FALSE(dummy::Unit(units::dimensionless).isCountFrequency());
-  EXPECT_TRUE(dummy::Unit(units::dimensionless / units::m).isCountFrequency());
+TEST(DummyUnitsTest, isCountDensity) {
+  EXPECT_FALSE(dummy::Unit(units::dimensionless).isCountDensity());
+  EXPECT_TRUE(dummy::Unit(units::dimensionless / units::m).isCountDensity());
 }

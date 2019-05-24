@@ -8,12 +8,4 @@
 namespace scipp::units {
 INSTANTIATE(neutron::supported_units, neutron::counts_unit);
 SCIPP_UNITS_DEFINE_DIMENSIONS(neutron);
-
-namespace neutron {
-bool containsCounts(const Unit &unit) {
-  if ((unit == counts) || unit == counts / us || unit == counts / meV)
-    return true;
-  return false;
-}
-} // namespace neutron
 } // namespace scipp::units

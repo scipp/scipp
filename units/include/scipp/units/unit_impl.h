@@ -51,7 +51,7 @@ public:
   std::string name() const;
 
   bool isCounts() const;
-  bool isCountFrequency() const;
+  bool isCountDensity() const;
 
   bool operator==(const Unit_impl<T, Counts> &other) const;
   bool operator!=(const Unit_impl<T, Counts> &other) const;

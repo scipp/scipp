@@ -41,7 +41,7 @@ template <class T, class Counts> bool Unit_impl<T, Counts>::isCounts() const {
 }
 
 template <class T, class Counts>
-bool Unit_impl<T, Counts>::isCountFrequency() const {
+bool Unit_impl<T, Counts>::isCountDensity() const {
   if constexpr (std::is_same_v<Counts, decltype(dimensionless)>) {
     // Can we do anything better here? Checking for `dimensionless` in the
     // nominator could be one option, but actually it would not be correct in
