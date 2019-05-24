@@ -9,7 +9,7 @@
 using namespace scipp;
 using namespace scipp::units;
 
-TEST(SimpleUnitsTest, basics) {
+TEST(DummyUnitsTest, basics) {
   // Current neutron::Unit is inlined as Unit, but we can still use others.
   dummy::Unit m{units::m};
   dummy::Unit s{units::s};
@@ -116,4 +116,30 @@ TEST(Unit, sqrt_fail) {
   Unit m{units::m};
   EXPECT_THROW_MSG(sqrt(m), std::runtime_error,
                    "Unsupported unit as result of sqrt: sqrt(m).");
+}
+
+TEST(Unit, isCounts) {
+  EXPECT_FALSE(Unit(units::dimensionless).isCounts());
+  EXPECT_TRUE(Unit(units::counts).isCounts());
+  EXPECT_FALSE(Unit(units::counts / units::us).isCounts());
+  EXPECT_FALSE(Unit(units::counts / units::meV).isCounts());
+  EXPECT_FALSE(Unit(units::dimensionless / units::m).isCounts());
+}
+
+TEST(Unit, isCountFrequency) {
+  EXPECT_FALSE(Unit(units::dimensionless).isCountFrequency());
+  EXPECT_FALSE(Unit(units::counts).isCountFrequency());
+  EXPECT_TRUE(Unit(units::counts / units::us).isCountFrequency());
+  EXPECT_TRUE(Unit(units::counts / units::meV).isCountFrequency());
+  EXPECT_FALSE(Unit(units::dimensionless / units::m).isCountFrequency());
+}
+
+TEST(DummyUnitsTest, isCounts) {
+  EXPECT_TRUE(dummy::Unit(units::dimensionless).isCounts());
+  EXPECT_FALSE(dummy::Unit(units::dimensionless / units::m).isCounts());
+}
+
+TEST(DummyUnitsTest, isCountFrequency) {
+  EXPECT_FALSE(dummy::Unit(units::dimensionless).isCountFrequency());
+  EXPECT_TRUE(dummy::Unit(units::dimensionless / units::m).isCountFrequency());
 }

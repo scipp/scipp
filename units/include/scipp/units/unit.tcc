@@ -9,6 +9,7 @@
 #include <boost/units/cmath.hpp>
 #include <boost/units/io.hpp>
 
+#include "scipp/units/boost_units_util.h"
 #include "scipp/units/unit_impl.h"
 
 namespace scipp::units {
@@ -19,7 +20,8 @@ template <typename T, typename... ALL_T>
 struct isVariantMember<T, std::variant<ALL_T...>>
     : public std::disjunction<std::is_same<T, ALL_T>...> {};
 // Helper to make checking for allowed units more compact
-template <class Units, class Counts, class T> constexpr bool isKnownUnit(const T &) {
+template <class Units, class Counts, class T>
+constexpr bool isKnownUnit(const T &) {
   return isVariantMember<T, typename Unit_impl<Units, Counts>::unit_t>::value;
 }
 
@@ -40,7 +42,17 @@ template <class T, class Counts> bool Unit_impl<T, Counts>::isCounts() const {
 
 template <class T, class Counts>
 bool Unit_impl<T, Counts>::isCountFrequency() const {
-  return false;
+  if constexpr (std::is_same_v<Counts, decltype(dimensionless)>) {
+    // Can we do anything better here? Checking for `dimensionless` in the
+    // nominator could be one option, but actually it would not be correct in
+    // general, e.g., for counts / velocity = s/m.
+    return !isCounts();
+  } else {
+    return !isCounts() &&
+           std::visit(
+               [](auto &&unit) { return getExponent(unit, Counts()) == 1; },
+               m_unit);
+  }
 }
 
 template <class T, class Counts>
