@@ -6,12 +6,12 @@
 #include "scipp/units/unit.tcc"
 
 namespace scipp::units {
-INSTANTIATE(neutron::supported_units);
+INSTANTIATE(neutron::supported_units, neutron::counts_unit);
 SCIPP_UNITS_DEFINE_DIMENSIONS(neutron);
 
 namespace neutron {
 bool containsCounts(const Unit &unit) {
-  if ((unit == counts) || unit == counts / us)
+  if ((unit == counts) || unit == counts / us || unit == counts / meV)
     return true;
   return false;
 }

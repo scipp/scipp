@@ -128,10 +128,10 @@ inline
 // heterogeneous unit systems in boost::units: We are combing SI units with our
 // own, and the two are considered independent unless you convert explicitly.
 // Therefore, in operations like (counts * m) / m, boosts is not cancelling the
-// m as expected
-// --- you get counts * dimensionless. Explicitly putting a factor dimensionless
-// (dimensionless) into all our non-SI units avoids special-case handling in all
-// operations (which would attempt to remove the dimensionless factor manually).
+// m as expected --- you get counts * dimensionless. Explicitly putting a factor
+// dimensionless (dimensionless) into all our non-SI units avoids special-case
+// handling in all operations (which would attempt to remove the dimensionless
+// factor manually).
 static constexpr decltype(detail::tof::counts{} * dimensionless) counts;
 static constexpr decltype(detail::tof::wavelength{} * dimensionless) angstrom;
 static constexpr decltype(detail::tof::energy{} * dimensionless) meV;
@@ -147,7 +147,8 @@ using supported_units = decltype(detail::make_unit(
                     meV / c, dimensionless / c, K, us / angstrom,
                     us / (m * angstrom))));
 
-using Unit = Unit_impl<supported_units>;
+using counts_unit = decltype(counts);
+using Unit = Unit_impl<supported_units, counts_unit>;
 
 bool containsCounts(const Unit &unit);
 

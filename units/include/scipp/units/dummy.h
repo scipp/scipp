@@ -18,7 +18,8 @@ using supported_units = decltype(detail::make_unit(
     std::make_tuple(m), std::make_tuple(dimensionless, dimensionless / m, s,
                                         dimensionless / s, m / s)));
 
-using Unit = Unit_impl<supported_units>;
+using counts_unit = decltype(dimensionless);
+using Unit = Unit_impl<supported_units, counts_unit>;
 
 SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z);
 
