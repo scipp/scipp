@@ -5,8 +5,8 @@
 /// Originally from https://stackoverflow.com/a/38279655
 #ifndef SCIPP_UNITS_BOOST_UNITS_UTIL_H
 #define SCIPP_UNITS_BOOST_UNITS_UTIL_H
-#include <type_traits>
 #include <iostream>
+#include <type_traits>
 
 #include <boost/mpl/at.hpp>
 #include <boost/mpl/find_if.hpp>
@@ -55,17 +55,5 @@ template <typename U, typename V> struct Exponent {
 template <typename U, typename V> constexpr auto getExponent(U &&, V &&) {
   return Exponent<std::decay_t<U>, std::decay_t<V>>::value;
 }
-
-  /*
-  int main(int argc, char **args) {
-    auto q = 1. * si::meter * si::meter / si::second;
-    std::cout << q << std::endl;
-    std::cout << getExponent(q, si::meter) << std::endl;  // Should output 2
-    std::cout << getExponent(q, si::second) << std::endl; // Should output -1
-
-    auto r = 1. * si::radian;
-    std::cout << getExponent(r, si::meter) << std::endl; // Should output 0
-  }
-  */
 
 #endif // SCIPP_UNITS_BOOST_UNITS_UTIL_H
