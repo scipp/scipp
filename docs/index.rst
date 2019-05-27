@@ -35,6 +35,7 @@ The relevant demo notebooks can be found in the ``demo/`` folder.
 **Reference**
 
 * :doc:`api`
+* :doc:`customizing`
 
 .. toctree::
    :maxdepth: 1
@@ -42,3 +43,4 @@ The relevant demo notebooks can be found in the ``demo/`` folder.
    :caption: Reference
 
    api
+   customizing
