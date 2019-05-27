@@ -10,7 +10,7 @@ At this point we support compile-time customization of:
 - Available units and unit combinations
 - Dimension labels
 - The underlying container used for sparse data.
-- Instantiations of ``Variable``-related code for new or custom types.
+- New or custom types that can be stored as elements in a ``Variable``.
 - The built-in types that can be support in operations and by the ``transform`` algorithms.
 
 Some of these are adaptable more readily than others, which require more in-depth changes.
@@ -62,8 +62,8 @@ This is currently defined in the header ``core/include/scipp/core/variable.h`` w
 This has to be set to a vector-like type, such as ``std::vector`` or ``boost::container::small_vector``.
 In the latter case the small-size of the vector can be used to balance performance/locality against memory overhead.
 
-Instantiations for custom types
--------------------------------
+Custom types
+------------
 
 To do.
 See https://github.com/scipp/scipp/issues/265.
