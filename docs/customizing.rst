@@ -20,7 +20,8 @@ Units systems and dimension labels
 
 It is possible to select and existing system or to add a new one.
 
-**Selecting an existing system**
+Selecting an existing system
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``cmake`` flag ``SCIPP_UNITS_SYSTEM`` is used to select the system of units (and dimension labels).
 Currently the following options are available:
@@ -32,7 +33,8 @@ Currently the following options are available:
   The system used in ``scipp-neutron``.
   This contains some SI units as well as a unit for "counts" and some particle-physics-related units like ``meV`` and ``meV/c``.
 
-**Creating a new system**
+Creating a new system
+~~~~~~~~~~~~~~~~~~~~~
 
 1. Create files following the same pattern as ``units/include/scipp/units/dummy.h`` and ``units/dummy.cpp``.
    Adapt the namespace name in both header and source and rename the ``SCIPP_UNITS_DUMMY`` macro.

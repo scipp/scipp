@@ -38,7 +38,7 @@ The relevant demo notebooks can be found in the ``demo/`` folder.
 * :doc:`customizing`
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :hidden:
    :caption: Reference
 
