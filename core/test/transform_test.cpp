@@ -99,17 +99,17 @@ TEST(TransformTest, unary_on_elements_of_sparse_with_variance) {
       dims, {sparse_container<double>(), sparse_container<double>()},
       {sparse_container<double>(), sparse_container<double>()});
   auto vals = a.sparseValues<double>();
-  vals[0] = {1, 4, 9};
+  vals[0] = {1, 2, 3};
   vals[1] = {4};
   auto vars = a.sparseVariances<double>();
-  vars[0] = {1.5, 4.5, 9.5};
-  vars[1] = {4.5};
+  vars[0] = {1.1, 2.2, 3.3};
+  vars[1] = {4.4};
 
-  transform_in_place<double>(a, [](auto &x) { x += 1.0; });
-  EXPECT_TRUE(equals(vals[0], {2, 5, 10}));
-  EXPECT_TRUE(equals(vals[1], {5}));
-  EXPECT_TRUE(equals(vars[0], {2.5, 5.5, 10.5}));
-  EXPECT_TRUE(equals(vars[1], {5.5}));
+  transform_in_place<double>(a, [](auto &x) { x *= 2.0; });
+  EXPECT_TRUE(equals(vals[0], {2, 4, 6}));
+  EXPECT_TRUE(equals(vals[1], {8}));
+  EXPECT_TRUE(equals(vars[0], {4.4, 8.8, 13.2}));
+  EXPECT_TRUE(equals(vars[1], {17.6}));
 }
 
 TEST(TransformTest, unary_on_sparse_container) {
@@ -118,9 +118,28 @@ TEST(TransformTest, unary_on_sparse_container) {
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
-  transform_in_place<sparse_container<double>>(a, [](auto &x) { x.clear(); });
+  transform_in_place<sparse_container<double>>(a, [](auto &&x) { x.clear(); });
   EXPECT_TRUE(a_[0].empty());
   EXPECT_TRUE(a_[1].empty());
+}
+
+TEST(TransformTest, unary_on_sparse_container_with_variance) {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = makeVariable<double>(
+      dims, {sparse_container<double>(), sparse_container<double>()},
+      {sparse_container<double>(), sparse_container<double>()});
+  auto vals = a.sparseValues<double>();
+  vals[0] = {1, 2, 3};
+  vals[1] = {4};
+  auto vars = a.sparseVariances<double>();
+  vars[0] = {1.1, 2.2, 3.3};
+  vars[1] = {4.4};
+
+  transform_in_place<sparse_container<double>>(a, [](auto &&x) { x.clear(); });
+  EXPECT_TRUE(vals[0].empty());
+  EXPECT_TRUE(vals[1].empty());
+  EXPECT_TRUE(vars[0].empty());
+  EXPECT_TRUE(vars[1].empty());
 }
 
 TEST(TransformTest, binary_with_dense) {

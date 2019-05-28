@@ -104,6 +104,30 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
 template <class T>
 ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
 
+template <class T> struct SparseValuesAndVariances {
+  sparse_container<T> &values;
+  sparse_container<T> &variances;
+
+  void clear() {
+    values.clear();
+    variances.clear();
+  }
+};
+
+template <class T>
+SparseValuesAndVariances(sparse_container<T> &val, sparse_container<T> &var)
+    ->SparseValuesAndVariances<T>;
+
+template <class T, class Op>
+void transform_in_place_with_variance_impl(T &&vals, T &&vars, Op op) {
+  for (scipp::index i = 0; i < scipp::size(vals); ++i) {
+    ValueAndVariance _{vals[i], vars[i]};
+    op(_);
+    vals[i] = _.value;
+    vars[i] = _.variance;
+  }
+}
+
 template <class T>
 std::unique_ptr<VariableConceptT<T>>
 makeVariableConceptT(const Dimensions &dims);
@@ -113,11 +137,14 @@ makeVariableConceptT(const Dimensions &dims, Vector<T> data);
 
 template <class Op> struct TransformSparse {
   Op op;
-  // TODO avoid copies... need in place transform (for_each, but with a second
-  // input range).
   template <class T> constexpr void operator()(sparse_container<T> &x) const {
     for (auto &x_ : x)
       op(x_);
+  }
+  template <class T>
+  constexpr void operator()(SparseValuesAndVariances<T> x) const {
+    auto & [ val, var ] = x;
+    transform_in_place_with_variance_impl(val, var, op);
   }
   template <class T1, class T2>
   constexpr void operator()(sparse_container<T1> &a, const T2 b) const {
@@ -155,18 +182,14 @@ template <class T1, class Op> void do_transform(T1 &a, Op op) {
   auto a_val = a.values();
   if (a.hasVariances()) {
     if constexpr (is_sparse_v<typename T1::value_type>) {
-      throw std::runtime_error(
-          "Propagation of uncertainties for sparse data not implemented yet.");
+      auto a_var = a.variances();
+      for (scipp::index i = 0; i < scipp::size(a_val); ++i)
+        op(SparseValuesAndVariances{a_val[i], a_var[i]});
     } else if constexpr (is_eigen_type_v<typename T1::value_type>) {
       throw std::runtime_error("This dtype cannot have a variance.");
     } else {
       auto a_var = a.variances();
-      for (scipp::index i = 0; i < a_val.size(); ++i) {
-        ValueAndVariance a_{a_val[i], a_var[i]};
-        op(a_);
-        a_val[i] = a_.value;
-        a_var[i] = a_.variance;
-      }
+      transform_in_place_with_variance_impl(a_val, a_var, op);
     }
   } else {
     for (auto &a_ : a_val)
