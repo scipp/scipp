@@ -38,7 +38,7 @@ TEST(TransformTest, apply_binary_in_place) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>(3.3);
   transform_in_place<pair_self_t<double>>(
-      b, a, [](const auto x, const auto y) { return x + y; });
+      a, b, [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.values<double>(), {4.4, 5.5}));
 }
 
@@ -46,7 +46,7 @@ TEST(TransformTest, apply_binary_in_place_var_with_view) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>({Dim::Y, 2}, {0.1, 3.3});
   transform_in_place<pair_self_t<double>>(
-      b(Dim::Y, 1), a, [](const auto x, const auto y) { return x + y; });
+      a, b(Dim::Y, 1), [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.values<double>(), {4.4, 5.5}));
 }
 
@@ -54,7 +54,7 @@ TEST(TransformTest, apply_binary_in_place_view_with_var) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>(3.3);
   transform_in_place<pair_self_t<double>>(
-      b, a(Dim::X, 1), [](const auto x, const auto y) { return x + y; });
+      a(Dim::X, 1), b, [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.values<double>(), {1.1, 5.5}));
 }
 
@@ -62,7 +62,7 @@ TEST(TransformTest, apply_binary_in_place_view_with_view) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>({Dim::Y, 2}, {0.1, 3.3});
   transform_in_place<pair_self_t<double>>(
-      b(Dim::Y, 1), a(Dim::X, 1),
+      a(Dim::X, 1), b(Dim::Y, 1),
       [](const auto x, const auto y) { return x + y; });
   EXPECT_TRUE(equals(a.values<double>(), {1.1, 5.5}));
 }
@@ -71,7 +71,7 @@ TEST(TransformTest, transform_combines_uncertainty_propgation) {
   auto a = makeVariable<double>({Dim::X, 1}, {2.0}, {0.1});
   const auto b = makeVariable<double>(3.0, 0.2);
   transform_in_place<pair_self_t<double>>(
-      b, a, [](const auto x, const auto y) { return x * y + y; });
+      a, b, [](const auto x, const auto y) { return x * y + y; });
   EXPECT_TRUE(equals(a.values<double>(), {2.0 * 3.0 + 3.0}));
   EXPECT_TRUE(equals(a.variances<double>(), {0.1 * 3 * 3 + 0.2 * 2 * 2 + 0.2}));
 }
@@ -107,7 +107,7 @@ TEST(TransformTest, binary_with_dense) {
   auto dense = makeVariable<double>({Dim::Y, 2}, {1.5, 0.5});
 
   transform_in_place<pair_self_t<double>>(
-      dense, sparse, [](const auto a, const auto b) { return a * b; });
+      sparse, dense, [](const auto a, const auto b) { return a * b; });
 
   EXPECT_TRUE(equals(sparse_[0], {1.5, 3.0, 4.5}));
   EXPECT_TRUE(equals(sparse_[1], {2.0}));

@@ -281,8 +281,8 @@ void transform_in_place(Var &var, Op op) {
 // This overload is equivalent to std::transform with two input ranges and an
 // output range identical to the secound input range, but avoids potentially
 // costly element copies.
-template <class... Ts, class Var1, class Var, class Op>
-void do_transform_in_place(std::tuple<Ts...> &&, const Var1 &other, Var &&var,
+template <class... Ts, class Var, class Var1, class Op>
+void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
                            Op op) {
   using namespace detail;
   try {
@@ -311,9 +311,10 @@ void do_transform_in_place(std::tuple<Ts...> &&, const Var1 &other, Var &&var,
   }
 }
 
-template <class... TypePairs, class Var1, class Var, class Op>
-void transform_in_place(const Var1 &other, Var &&var, Op op) {
-  do_transform_in_place(std::tuple_cat(TypePairs{}...), other, var, op);
+template <class... TypePairs, class Var, class Var1, class Op>
+void transform_in_place(Var &&var, const Var1 &other, Op op) {
+  do_transform_in_place(std::tuple_cat(TypePairs{}...), std::forward<Var>(var),
+                        other, op);
 }
 
 /// Transform the data elements of a variable and return a new Variable.
