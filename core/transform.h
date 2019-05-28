@@ -67,6 +67,10 @@ constexpr auto operator*(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value * b, a.variance * b * b};
 }
 template <class T1, class T2>
+constexpr auto operator*(const T1 a, const ValueAndVariance<T2> b) noexcept {
+  return ValueAndVariance{a * b.value, a * a * b.variance};
+}
+template <class T1, class T2>
 constexpr auto operator/(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value / b, a.variance / (b * b)};
 }

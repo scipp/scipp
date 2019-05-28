@@ -19,16 +19,16 @@ TEST(TransformTest, apply_unary_in_place) {
 }
 
 TEST(TransformTest, apply_unary_in_place_with_variances) {
-  auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {3.3, 4.4});
-  transform_in_place<double>(var, [](const auto x) { return -x; });
-  EXPECT_TRUE(equals(var.values<double>(), {-1.1, -2.2}));
-  EXPECT_TRUE(equals(var.variances<double>(), {-3.3, -4.4}));
+  auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {1.1, 3.0});
+  transform_in_place<double>(var, [](const auto x) { return 2.0 * x; });
+  EXPECT_TRUE(equals(var.values<double>(), {2.2, 4.4}));
+  EXPECT_TRUE(equals(var.variances<double>(), {4.4, 12.0}));
 }
 
 TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var = makeVariable<float>({Dim::X, 2}, {1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out = transform<double, float>(var, [](const auto x) { return -x; });
+  auto out = transform<double, float>(var, [](const double x) { return -x; });
   EXPECT_TRUE(equals(out.values<double>(), {-1.1f, -2.2f}));
 }
 
