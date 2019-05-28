@@ -208,6 +208,10 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
 
 template <class Op> struct TransformInPlace {
   Op op;
+  /// Transform container with concrete type T with operation `op`.
+  ///
+  /// This is called by `visit` from the top-level `transform` or
+  /// `transform_in_place` functions.
   template <class T> void operator()(T &&handle) const {
     auto view = as_view{*handle, handle->dims()};
     if (handle->isContiguous())
@@ -291,11 +295,20 @@ template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
 /// Transform the data elements of a variable in-place.
-//
-// Note that this is deliberately not named `for_each`: Unlike std::for_each,
-// this function does not promise in-order execution. This overload is
-// equivalent to std::transform with a single input range and an output range
-// identical to the input range, but avoids potentially costly element copies.
+///
+/// Note that this is deliberately not named `for_each`: Unlike std::for_each,
+/// this function does not promise in-order execution. This overload is
+/// equivalent to std::transform with a single input range and an output range
+/// identical to the input range, but avoids potentially costly element copies.
+///
+/// The underlying mechanism is as follows:
+/// 1. `visit` (or `visit_impl`) obtains the concrete underlying data type.
+/// 2. `TransformInPlace` is applied to that concrete container, calling
+///    `do_transform`. `TransformInPlace` essentially builds a callable
+///    accepting a container from a callable accepting and element of the
+///    container.
+/// 3. `do_transform` is essentially a fancy std::transform. It provides
+///    automatic handling of data that has variances in addition to values.
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &var, Op op) {
   using namespace detail;
@@ -318,11 +331,6 @@ void transform_in_place(Var &var, Op op) {
   }
 }
 
-/// Transform the data elements of a variable in-place.
-//
-// This overload is equivalent to std::transform with two input ranges and an
-// output range identical to the secound input range, but avoids potentially
-// costly element copies.
 template <class... Ts, class Var, class Var1, class Op>
 void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
                            Op op) {
@@ -353,6 +361,11 @@ void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
   }
 }
 
+/// Transform the data elements of a variable in-place.
+//
+// This overload is equivalent to std::transform with two input ranges and an
+// output range identical to the secound input range, but avoids potentially
+// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
   do_transform_in_place(std::tuple_cat(TypePairs{}...), std::forward<Var>(var),
