@@ -18,6 +18,16 @@ template <class T> struct ValueAndVariance {
   T variance;
 };
 
+template <class T>
+constexpr auto operator-(const ValueAndVariance<T> a) noexcept {
+  return ValueAndVariance{-a.value, a.variance};
+}
+
+template <class T> constexpr auto sqrt(const ValueAndVariance<T> a) noexcept {
+  using std::sqrt;
+  return ValueAndVariance{sqrt(a.value), 0.25 * (a.variance / a.value)};
+}
+
 template <class T1, class T2>
 constexpr auto operator+(const ValueAndVariance<T1> a,
                          const ValueAndVariance<T2> b) noexcept {
@@ -60,6 +70,12 @@ template <class T1, class T2>
 constexpr auto operator/(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value / b, a.variance / (b * b)};
 }
+template <class T1, class T2>
+constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
+  return ValueAndVariance{a / b.value, b.variance * a * a /
+                                           (b.value * b.value) /
+                                           (b.value * b.value)};
+}
 
 template <class T>
 ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
@@ -79,8 +95,6 @@ template <class Op> struct TransformSparse {
     std::transform(x.begin(), x.end(), x.begin(), op);
     return x;
   }
-  // TODO Would like to use T1 and T2 for a and b, but currently this leads to
-  // selection of the wrong overloads.
   template <class T1, class T2>
   constexpr auto operator()(sparse_container<T1> a, const T2 b) const {
     std::transform(a.begin(), a.end(), a.begin(),
@@ -110,10 +124,6 @@ struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
-template <class T> struct is_sparse : std::false_type {};
-template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
-template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
-
 template <class T> struct as_view {
   using value_type = typename T::value_type;
   bool hasVariances() const { return data.hasVariances(); }
@@ -124,6 +134,30 @@ template <class T> struct as_view {
   const Dimensions &dims;
 };
 template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
+
+template <class T1, class Op> void do_transform(const T1 &a, T1 &out, Op op) {
+  auto a_val = a.values();
+  auto out_val = out.values();
+  if (a.hasVariances()) {
+    if constexpr (is_sparse_v<typename T1::value_type>) {
+      throw std::runtime_error(
+          "Propagation of uncertainties for sparse data not implemented yet.");
+    } else if constexpr (is_eigen_type_v<typename T1::value_type>) {
+      throw std::runtime_error("This dtype cannot have a variance.");
+    } else {
+      auto a_var = a.variances();
+      auto out_var = out.variances();
+      for (scipp::index i = 0; i < a_val.size(); ++i) {
+        const ValueAndVariance a_{a_val[i], a_var[i]};
+        const auto _ = op(a_);
+        out_val[i] = _.value;
+        out_var[i] = _.variance;
+      }
+    }
+  } else {
+    std::transform(a_val.begin(), a_val.end(), out_val.begin(), op);
+  }
+}
 
 template <class T1, class T2, class Op>
 void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
@@ -171,9 +205,13 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
 template <class Op> struct TransformInPlace {
   Op op;
   template <class T> void operator()(T &&handle) const {
-    auto data = handle->values();
-    std::transform(data.begin(), data.end(), data.begin(), op);
+    auto view = as_view{*handle, handle->dims()};
+    if (handle->isContiguous())
+      do_transform(*handle, *handle, op);
+    else
+      do_transform(view, view, op);
   }
+
   template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
     // std::unique_ptr::operator*() is const but returns mutable reference, need
     // to artificially put const to we call the correct overloads of ViewModel.

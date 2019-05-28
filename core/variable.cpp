@@ -787,6 +787,7 @@ INSTANTIATE(Eigen::Vector3d)
 INSTANTIATE(sparse_container<double>)
 INSTANTIATE(sparse_container<float>)
 INSTANTIATE(sparse_container<int64_t>)
+INSTANTIATE(sparse_container<int32_t>)
 INSTANTIATE(sparse_container<Eigen::Vector3d>)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
@@ -1144,7 +1145,8 @@ Variable operator/(const double a, Variable b) {
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
   transform_in_place<double, float>(
       b, overloaded{[a](const double b) { return a / b; },
-                    [a](const float b) { return a / b; }});
+                    [a](const float b) { return a / b; },
+                    [a](const auto b) { return a / b; }});
   return std::move(b);
 }
 

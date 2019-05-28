@@ -14,14 +14,21 @@ using namespace scipp::core;
 
 TEST(TransformTest, apply_unary_in_place) {
   auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
-  transform_in_place<double>(var, [](const double x) { return -x; });
+  transform_in_place<double>(var, [](const auto x) { return -x; });
   EXPECT_TRUE(equals(var.values<double>(), {-1.1, -2.2}));
+}
+
+TEST(TransformTest, apply_unary_in_place_with_variances) {
+  auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {3.3, 4.4});
+  transform_in_place<double>(var, [](const auto x) { return -x; });
+  EXPECT_TRUE(equals(var.values<double>(), {-1.1, -2.2}));
+  EXPECT_TRUE(equals(var.variances<double>(), {-3.3, -4.4}));
 }
 
 TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var = makeVariable<float>({Dim::X, 2}, {1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out = transform<double, float>(var, [](const double x) { return -x; });
+  auto out = transform<double, float>(var, [](const auto x) { return -x; });
   EXPECT_TRUE(equals(out.values<double>(), {-1.1f, -2.2f}));
 }
 
@@ -82,9 +89,28 @@ TEST(TransformTest, unary_on_elements_of_sparse) {
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
-  transform_in_place<double>(a, [](const double x) { return sqrt(x); });
+  transform_in_place<double>(a, [](const auto x) { return sqrt(x); });
   EXPECT_TRUE(equals(a_[0], {1, 2, 3}));
   EXPECT_TRUE(equals(a_[1], {2}));
+}
+
+TEST(TransformTest, unary_on_elements_of_sparse_with_variance) {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = makeVariable<double>(
+      dims, {sparse_container<double>(), sparse_container<double>()},
+      {sparse_container<double>(), sparse_container<double>()});
+  auto vals = a.sparseValues<double>();
+  vals[0] = {1, 4, 9};
+  vals[1] = {4};
+  auto vars = a.sparseVariances<double>();
+  vars[0] = {1.5, 4.5, 9.5};
+  vars[1] = {4.5};
+
+  transform_in_place<double>(a, [](const auto x) { return x + 1.0; });
+  EXPECT_TRUE(equals(vals[0], {2, 5, 10}));
+  EXPECT_TRUE(equals(vals[1], {5}));
+  EXPECT_TRUE(equals(vars[0], {2.5, 5.5, 10.5}));
+  EXPECT_TRUE(equals(vars[1], {5.5}));
 }
 
 TEST(TransformTest, unary_on_sparse_container) {
