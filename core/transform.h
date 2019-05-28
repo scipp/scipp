@@ -16,6 +16,20 @@ namespace detail {
 template <class T> struct ValueAndVariance {
   T value;
   T variance;
+
+  template <class T2>
+  constexpr auto &operator=(const ValueAndVariance<T2> other) noexcept {
+    value = other.value;
+    variance = other.variance;
+    return *this;
+  }
+
+  template <class T2> constexpr auto &operator+=(const T2 other) noexcept {
+    return *this = *this + other;
+  }
+  template <class T2> constexpr auto &operator*=(const T2 other) noexcept {
+    return *this = *this * other;
+  }
 };
 
 template <class T>
@@ -95,9 +109,9 @@ template <class Op> struct TransformSparse {
   Op op;
   // TODO avoid copies... need in place transform (for_each, but with a second
   // input range).
-  template <class T> constexpr auto operator()(sparse_container<T> x) const {
-    std::transform(x.begin(), x.end(), x.begin(), op);
-    return x;
+  template <class T> constexpr void operator()(sparse_container<T> &x) const {
+    for (auto &x_ : x)
+      op(x_);
   }
   template <class T1, class T2>
   constexpr auto operator()(sparse_container<T1> a, const T2 b) const {
@@ -139,9 +153,8 @@ template <class T> struct as_view {
 };
 template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
 
-template <class T1, class Op> void do_transform(const T1 &a, T1 &out, Op op) {
+template <class T1, class Op> void do_transform(T1 &a, Op op) {
   auto a_val = a.values();
-  auto out_val = out.values();
   if (a.hasVariances()) {
     if constexpr (is_sparse_v<typename T1::value_type>) {
       throw std::runtime_error(
@@ -150,16 +163,16 @@ template <class T1, class Op> void do_transform(const T1 &a, T1 &out, Op op) {
       throw std::runtime_error("This dtype cannot have a variance.");
     } else {
       auto a_var = a.variances();
-      auto out_var = out.variances();
       for (scipp::index i = 0; i < a_val.size(); ++i) {
-        const ValueAndVariance a_{a_val[i], a_var[i]};
-        const auto _ = op(a_);
-        out_val[i] = _.value;
-        out_var[i] = _.variance;
+        ValueAndVariance a_{a_val[i], a_var[i]};
+        op(a_);
+        a_val[i] = a_.value;
+        a_var[i] = a_.variance;
       }
     }
   } else {
-    std::transform(a_val.begin(), a_val.end(), out_val.begin(), op);
+    for (auto &a_ : a_val)
+      op(a_);
   }
 }
 
@@ -215,9 +228,9 @@ template <class Op> struct TransformInPlace {
   template <class T> void operator()(T &&handle) const {
     auto view = as_view{*handle, handle->dims()};
     if (handle->isContiguous())
-      do_transform(*handle, *handle, op);
+      do_transform(*handle, op);
     else
-      do_transform(view, view, op);
+      do_transform(view, op);
   }
 
   template <class A, class B> void operator()(A &&a, B &&b_ptr) const {

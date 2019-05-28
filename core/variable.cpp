@@ -1143,10 +1143,9 @@ Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
-  transform_in_place<double, float>(
-      b, overloaded{[a](const double b) { return a / b; },
-                    [a](const float b) { return a / b; },
-                    [a](const auto b) { return a / b; }});
+  transform_in_place<double, float>(b, overloaded{[a](double &b) { b = a / b; },
+                                                  [a](float &b) { b = a / b; },
+                                                  [a](auto &b) { b = a / b; }});
   return std::move(b);
 }
 

@@ -14,13 +14,13 @@ using namespace scipp::core;
 
 TEST(TransformTest, apply_unary_in_place) {
   auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
-  transform_in_place<double>(var, [](const auto x) { return -x; });
+  transform_in_place<double>(var, [](auto &x) { x = -x; });
   EXPECT_TRUE(equals(var.values<double>(), {-1.1, -2.2}));
 }
 
 TEST(TransformTest, apply_unary_in_place_with_variances) {
   auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {1.1, 3.0});
-  transform_in_place<double>(var, [](const auto x) { return 2.0 * x; });
+  transform_in_place<double>(var, [](auto &x) { x *= 2.0; });
   EXPECT_TRUE(equals(var.values<double>(), {2.2, 4.4}));
   EXPECT_TRUE(equals(var.variances<double>(), {4.4, 12.0}));
 }
@@ -89,7 +89,7 @@ TEST(TransformTest, unary_on_elements_of_sparse) {
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
-  transform_in_place<double>(a, [](const auto x) { return sqrt(x); });
+  transform_in_place<double>(a, [](auto &x) { x = sqrt(x); });
   EXPECT_TRUE(equals(a_[0], {1, 2, 3}));
   EXPECT_TRUE(equals(a_[1], {2}));
 }
@@ -106,7 +106,7 @@ TEST(TransformTest, unary_on_elements_of_sparse_with_variance) {
   vars[0] = {1.5, 4.5, 9.5};
   vars[1] = {4.5};
 
-  transform_in_place<double>(a, [](const auto x) { return x + 1.0; });
+  transform_in_place<double>(a, [](auto &x) { x += 1.0; });
   EXPECT_TRUE(equals(vals[0], {2, 5, 10}));
   EXPECT_TRUE(equals(vals[1], {5}));
   EXPECT_TRUE(equals(vars[0], {2.5, 5.5, 10.5}));
@@ -119,8 +119,7 @@ TEST(TransformTest, unary_on_sparse_container) {
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
-  transform_in_place<sparse_container<double>>(
-      a, [](const auto &x) { return decltype(x){}; });
+  transform_in_place<sparse_container<double>>(a, [](auto &x) { x.clear(); });
   EXPECT_TRUE(a_[0].empty());
   EXPECT_TRUE(a_[1].empty());
 }
