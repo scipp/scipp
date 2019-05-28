@@ -243,9 +243,19 @@ template <class... Ts, class Var, class Op>
 void transform_in_place(Var &var, Op op) {
   using namespace detail;
   try {
-    scipp::core::visit_impl<Ts...>::apply(
-        TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
-        var.dataHandle().variant());
+    // If a sparse_container<T> is specified explicitly as a type we assume that
+    // the caller provides a matching overload. Otherwise we assume the provided
+    // operator is for individual elements (regardless of whether they are
+    // elements of dense or sparse data), so we add overloads for sparse data
+    // processing.
+    if constexpr ((is_sparse_v<Ts> || ...)) {
+      scipp::core::visit_impl<Ts...>::apply(TransformInPlace{op},
+                                            var.dataHandle().variant());
+    } else {
+      scipp::core::visit_impl<Ts..., sparse_container<Ts>...>::apply(
+          TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
+          var.dataHandle().variant());
+    }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
