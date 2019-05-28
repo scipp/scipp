@@ -45,10 +45,10 @@ class Variable;
 template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
-using VariableConceptHandle =
-    VariableConceptHandle_impl<double, float, int64_t, Eigen::Vector3d,
-                               sparse_container<double>,
-                               sparse_container<float>>;
+using VariableConceptHandle = VariableConceptHandle_impl<
+    double, float, int64_t, Eigen::Vector3d, sparse_container<double>,
+    sparse_container<float>, sparse_container<int64_t>,
+    sparse_container<Eigen::Vector3d>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called

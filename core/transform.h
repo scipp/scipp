@@ -81,10 +81,25 @@ template <class Op> struct TransformSparse {
   }
   // TODO Would like to use T1 and T2 for a and b, but currently this leads to
   // selection of the wrong overloads.
-  template <class T>
-  constexpr auto operator()(sparse_container<T> a, const T b) const {
+  template <class T1, class T2>
+  constexpr auto operator()(sparse_container<T1> a, const T2 b) const {
     std::transform(a.begin(), a.end(), a.begin(),
-                   [&, b](const T a) { return op(a, b); });
+                   [&, b](const T1 a) { return op(a, b); });
+    return a;
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const T1 a, sparse_container<T2> b) const {
+    std::transform(b.begin(), b.end(), b.begin(),
+                   [&, a](const T2 b) { return op(a, b); });
+    return b;
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(sparse_container<T1> a,
+                            const sparse_container<T2> &b) const {
+    if (scipp::size(a) != scipp::size(b))
+      throw std::runtime_error("Mismatch in extent of sparse dimension.");
+    std::transform(a.begin(), a.end(), b.begin(), a.begin(),
+                   [&](const T1 a, const T2 b) { return op(a, b); });
     return a;
   }
 };
@@ -266,18 +281,39 @@ void transform_in_place(Var &var, Op op) {
 // This overload is equivalent to std::transform with two input ranges and an
 // output range identical to the secound input range, but avoids potentially
 // costly element copies.
-template <class... TypePairs, class Var1, class Var, class Op>
-void transform_in_place(const Var1 &other, Var &&var, Op op) {
+template <class... Ts, class Var1, class Var, class Op>
+void do_transform_in_place(std::tuple<Ts...> &&, const Var1 &other, Var &&var,
+                           Op op) {
   using namespace detail;
   try {
-    scipp::core::visit(std::tuple_cat(TypePairs{}...))
-        .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
-               var.dataHandle().variant(), other.dataHandle().variant());
+    if constexpr (((is_sparse_v<typename Ts::first_type> ||
+                    is_sparse_v<typename Ts::second_type>) ||
+                   ...)) {
+      scipp::core::visit_impl<Ts...>::apply(TransformInPlace{op},
+                                            var.dataHandle().variant(),
+                                            other.dataHandle().variant());
+    } else {
+      // Note that if only one of the inputs is sparse it must be the one being
+      // transformed in-place, so there are only three cases here.
+      scipp::core::visit_impl<
+          Ts...,
+          std::pair<sparse_container<typename Ts::first_type>,
+                    typename Ts::second_type>...,
+          std::pair<sparse_container<typename Ts::first_type>,
+                    sparse_container<typename Ts::second_type>>...>::
+          apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
+                var.dataHandle().variant(), other.dataHandle().variant());
+    }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes " +
                             to_string(var.dtype()) + " and " +
                             to_string(other.dtype()) + '.');
   }
+}
+
+template <class... TypePairs, class Var1, class Var, class Op>
+void transform_in_place(const Var1 &other, Var &&var, Op op) {
+  do_transform_in_place(std::tuple_cat(TypePairs{}...), other, var, op);
 }
 
 /// Transform the data elements of a variable and return a new Variable.

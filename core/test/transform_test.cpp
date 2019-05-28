@@ -76,7 +76,7 @@ TEST(TransformTest, transform_combines_uncertainty_propgation) {
   EXPECT_TRUE(equals(a.variances<double>(), {0.1 * 3 * 3 + 0.2 * 2 * 2 + 0.2}));
 }
 
-TEST(TransformTest, unary) {
+TEST(TransformTest, unary_on_elements_of_sparse) {
   auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   auto a_ = a.sparseSpan<double>();
   a_[0] = {1, 4, 9};
@@ -93,13 +93,6 @@ TEST(TransformTest, unary_on_sparse_container) {
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
-  // TODO This is currently broken: The wrong overload of
-  // TransformSparse::operator() is selected, so the lambda here is not applied
-  // to the whole sparse container (clearing it), but instead to each item of
-  // each sparse container. Is there a way to handle this correctly
-  // automatically, or do we need to manually specify whether we want to
-  // transform items of the variable, or items of the sparse containers that are
-  // items of the variable?
   transform_in_place<sparse_container<double>>(
       a, [](const auto &x) { return decltype(x){}; });
   EXPECT_TRUE(a_[0].empty());
@@ -113,9 +106,8 @@ TEST(TransformTest, binary_with_dense) {
   sparse_[1] = {4};
   auto dense = makeVariable<double>({Dim::Y, 2}, {1.5, 0.5});
 
-  transform_in_place<
-      pair_custom_t<std::pair<sparse_container<double>, double>>>(
-      dense, sparse, [](const double a, const double b) { return a * b; });
+  transform_in_place<pair_self_t<double>>(
+      dense, sparse, [](const auto a, const auto b) { return a * b; });
 
   EXPECT_TRUE(equals(sparse_[0], {1.5, 3.0, 4.5}));
   EXPECT_TRUE(equals(sparse_[1], {2.0}));

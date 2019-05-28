@@ -470,10 +470,15 @@ template std::unique_ptr<VariableConceptT<double>>
 makeVariableConceptT<double>(const Dimensions &);
 template std::unique_ptr<VariableConceptT<float>>
 makeVariableConceptT<float>(const Dimensions &);
+template std::unique_ptr<VariableConceptT<sparse_container<double>>>
+makeVariableConceptT<sparse_container<double>>(const Dimensions &);
 template std::unique_ptr<VariableConceptT<double>>
 makeVariableConceptT<double>(const Dimensions &, Vector<double>);
 template std::unique_ptr<VariableConceptT<float>>
 makeVariableConceptT<float>(const Dimensions &, Vector<float>);
+template std::unique_ptr<VariableConceptT<sparse_container<double>>>
+makeVariableConceptT<sparse_container<double>>(
+    const Dimensions &, Vector<sparse_container<double>>);
 } // namespace detail
 
 /// Implementation of VariableConcept that represents a view onto data.
@@ -772,7 +777,6 @@ INSTANTIATE(scipp::index)
 INSTANTIATE(std::pair<scipp::index, scipp::index>)
 #endif
 INSTANTIATE(boost::container::small_vector<scipp::index, 1>)
-INSTANTIATE(boost::container::small_vector<double, 8>)
 INSTANTIATE(std::vector<double>)
 INSTANTIATE(std::vector<std::string>)
 INSTANTIATE(std::vector<scipp::index>)
@@ -780,6 +784,10 @@ INSTANTIATE(Dataset)
 INSTANTIATE(std::array<double, 3>)
 INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(Eigen::Vector3d)
+INSTANTIATE(sparse_container<double>)
+INSTANTIATE(sparse_container<float>)
+INSTANTIATE(sparse_container<int64_t>)
+INSTANTIATE(sparse_container<Eigen::Vector3d>)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   if (!a || !b)
@@ -813,9 +821,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dims(), other.dims());
   // Note: This will broadcast/transpose the RHS if required. We do not support
   // changing the dimensions of the LHS though!
-  transform_in_place<
-      pair_self_t<double, float, int64_t, Eigen::Vector3d>,
-      pair_custom_t<std::pair<sparse_container<double>, double>>>(
+  transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
       other, variable, [](auto &&a, auto &&b) { return a + b; });
   return variable;
 }
