@@ -27,8 +27,14 @@ template <class T> struct ValueAndVariance {
   template <class T2> constexpr auto &operator+=(const T2 other) noexcept {
     return *this = *this + other;
   }
+  template <class T2> constexpr auto &operator-=(const T2 other) noexcept {
+    return *this = *this - other;
+  }
   template <class T2> constexpr auto &operator*=(const T2 other) noexcept {
     return *this = *this * other;
+  }
+  template <class T2> constexpr auto &operator/=(const T2 other) noexcept {
+    return *this = *this / other;
   }
 };
 
@@ -114,25 +120,17 @@ template <class Op> struct TransformSparse {
       op(x_);
   }
   template <class T1, class T2>
-  constexpr auto operator()(sparse_container<T1> a, const T2 b) const {
-    std::transform(a.begin(), a.end(), a.begin(),
-                   [&, b](const T1 a) { return op(a, b); });
-    return a;
+  constexpr void operator()(sparse_container<T1> &a, const T2 b) const {
+    for (scipp::index i = 0; i < scipp::size(a); ++i)
+      op(a[i], b);
   }
   template <class T1, class T2>
-  constexpr auto operator()(const T1 a, sparse_container<T2> b) const {
-    std::transform(b.begin(), b.end(), b.begin(),
-                   [&, a](const T2 b) { return op(a, b); });
-    return b;
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(sparse_container<T1> a,
+  constexpr void operator()(sparse_container<T1> &a,
                             const sparse_container<T2> &b) const {
     if (scipp::size(a) != scipp::size(b))
       throw std::runtime_error("Mismatch in extent of sparse dimension.");
-    std::transform(a.begin(), a.end(), b.begin(), a.begin(),
-                   [&](const T1 a, const T2 b) { return op(a, b); });
-    return a;
+    for (scipp::index i = 0; i < scipp::size(a); ++i)
+      op(a[i], b[i]);
   }
 };
 
@@ -177,10 +175,9 @@ template <class T1, class Op> void do_transform(T1 &a, Op op) {
 }
 
 template <class T1, class T2, class Op>
-void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
+void do_transform(T1 &a, const T2 &b, Op op) {
   auto a_val = a.values();
   auto b_val = b.values();
-  auto c_val = c.values();
   if (a.hasVariances()) {
     if constexpr (is_sparse_v<typename T1::value_type> ||
                   is_sparse_v<typename T2::value_type>) {
@@ -191,22 +188,21 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
       throw std::runtime_error("This dtype cannot have a variance.");
     } else {
       auto a_var = a.variances();
-      auto c_var = c.variances();
       if (b.hasVariances()) {
         auto b_var = b.variances();
         for (scipp::index i = 0; i < a_val.size(); ++i) {
-          const ValueAndVariance a_{a_val[i], a_var[i]};
+          ValueAndVariance a_{a_val[i], a_var[i]};
           const ValueAndVariance b_{b_val[i], b_var[i]};
-          const auto out = op(a_, b_);
-          c_val[i] = out.value;
-          c_var[i] = out.variance;
+          op(a_, b_);
+          a_val[i] = a_.value;
+          a_var[i] = a_.variance;
         }
       } else {
         for (scipp::index i = 0; i < a_val.size(); ++i) {
-          const ValueAndVariance a_{a_val[i], a_var[i]};
-          const auto out = op(a_, b_val[i]);
-          c_val[i] = out.value;
-          c_var[i] = out.variance;
+          ValueAndVariance a_{a_val[i], a_var[i]};
+          op(a_, b_val[i]);
+          a_val[i] = a_.value;
+          a_var[i] = a_.variance;
         }
       }
     }
@@ -214,8 +210,8 @@ void do_transform(const T1 &a, const T2 &b, T1 &c, Op op) {
     throw std::runtime_error(
         "RHS in operation has variances but LHS does not.");
   } else {
-    std::transform(a_val.begin(), a_val.end(), b_val.begin(), c_val.begin(),
-                   op);
+    for (scipp::index i = 0; i < a_val.size(); ++i)
+      op(a_val[i], b_val[i]);
   }
 }
 
@@ -255,24 +251,24 @@ template <class Op> struct TransformInPlace {
 
       if (a->isContiguous() && dimsA.contains(dimsB)) {
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(*a, b, *a, op);
+          do_transform(*a, b, op);
         } else {
-          do_transform(*a, as_view{b, dimsA}, *a, op);
+          do_transform(*a, as_view{b, dimsA}, op);
         }
       } else if (dimsA.contains(dimsB)) {
         auto a_view = as_view{*a, dimsA};
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(a_view, b, a_view, op);
+          do_transform(a_view, b, op);
         } else {
-          do_transform(a_view, as_view{b, dimsA}, a_view, op);
+          do_transform(a_view, as_view{b, dimsA}, op);
         }
       } else {
         // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
         auto a_view = as_view{*a, dimsB};
         if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(a_view, b, a_view, op);
+          do_transform(a_view, b, op);
         } else {
-          do_transform(a_view, as_view{b, dimsB}, a_view, op);
+          do_transform(a_view, as_view{b, dimsB}, op);
         }
       }
     } catch (const std::bad_cast &) {

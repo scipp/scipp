@@ -823,7 +823,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Note: This will broadcast/transpose the RHS if required. We do not support
   // changing the dimensions of the LHS though!
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      variable, other, [](auto &&a, auto &&b) { return a + b; });
+      variable, other, [](auto &&a, auto &&b) { a += b; });
   return variable;
 }
 
@@ -852,7 +852,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   expect::equals(variable.unit(), other.unit());
   expect::contains(variable.dims(), other.dims());
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      variable, other, [](auto &&a, auto &&b) { return a - b; });
+      variable, other, [](auto &&a, auto &&b) { a -= b; });
   return variable;
 }
 
@@ -872,7 +872,7 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   variable.setUnit(variable.unit() * other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
-      variable, other, [](auto &&a, auto &&b) { return a * b; });
+      variable, other, [](auto &&a, auto &&b) { a *= b; });
   return variable;
 }
 
@@ -894,7 +894,7 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
   variable.setUnit(variable.unit() / other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
-      variable, other, [](auto &&a, auto &&b) { return a / b; });
+      variable, other, [](auto &&a, auto &&b) { a /= b; });
   return variable;
 }
 
@@ -1176,10 +1176,8 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
     // TODO Sanitize transform_in_place implementation so the functor signature
     // is more reasonable.
     transform_in_place<pair_self_t<sparse_container<double>>>(
-        out, a2, [](auto a, const auto &b) {
-          a.insert(a.end(), b.begin(), b.end());
-          return a;
-        });
+        out, a2,
+        [](auto &a, const auto &b) { a.insert(a.end(), b.begin(), b.end()); });
     return out;
   }
 
@@ -1360,7 +1358,7 @@ Variable sum(const Variable &var, const Dim dim) {
   // setDims zeros the data
   summed.setDims(dims);
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      summed, var, [](auto &&a, auto &&b) { return a + b; });
+      summed, var, [](auto &&a, auto &&b) { a += b; });
   return summed;
 }
 
