@@ -6,9 +6,9 @@
 #include <string>
 
 #include "apply.h"
-#include "counts.h"
 #include "dataset.h"
 #include "except.h"
+#include "scipp/core/counts.h"
 #include "transform.h"
 #include "variable.h"
 #include "variable_view.h"

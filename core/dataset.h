@@ -179,6 +179,8 @@ public:
 
   DataProxy operator+=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
+  DataProxy operator*=(const Variable &other) const;
+  DataProxy operator/=(const Variable &other) const;
 
 private:
   Dataset *m_mutableDataset;
