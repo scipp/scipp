@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include "dataset_test_common.h"
 #include "test_macros.h"
 
 #include "dimensions.h"
@@ -154,4 +155,129 @@ TEST(TransformTest, binary_with_dense) {
 
   EXPECT_TRUE(equals(sparse_[0], {1.5, 3.0, 4.5}));
   EXPECT_TRUE(equals(sparse_[1], {2.0}));
+}
+
+auto make_sparse_variable_with_variance() {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  return makeVariable<double>(
+      dims, {sparse_container<double>(), sparse_container<double>()},
+      {sparse_container<double>(), sparse_container<double>()});
+}
+
+auto make_sparse_variable() {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  return makeVariable<double>(dims);
+}
+
+void set_sparse_values(Variable &var,
+                       const std::vector<sparse_container<double>> &data) {
+  auto vals = var.sparseValues<double>();
+  for (scipp::index i = 0; i < scipp::size(data); ++i)
+    vals[i] = data[i];
+}
+
+void set_sparse_variances(Variable &var,
+                          const std::vector<sparse_container<double>> &data) {
+  auto vals = var.sparseVariances<double>();
+  for (scipp::index i = 0; i < scipp::size(data); ++i)
+    vals[i] = data[i];
+}
+
+TEST(TransformInPlaceTest, sparse_val_var_with_sparse_val_var) {
+  auto a = make_sparse_variable_with_variance();
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto b = make_sparse_variable_with_variance();
+  set_sparse_values(b, {{0.1, 0.2, 0.3}, {0.4}});
+  set_sparse_variances(b, {{0.5, 0.6, 0.7}, {0.8}});
+
+  transform_in_place<pair_self_t<double>>(
+      a, b, [](auto &a, const auto b) { a *= b; });
+
+  auto expected = make_sparse_variable();
+  auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
+  auto b0 = makeVariable<double>({Dim::X, 3}, {0.1, 0.2, 0.3}, {0.5, 0.6, 0.7});
+  auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
+  auto b1 = makeVariable<double>({Dim::X, 1}, {0.4}, {0.8});
+  auto expected0 = a0 * b0;
+  auto expected1 = a1 * b1;
+  EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
+  EXPECT_TRUE(equals(a.sparseValues<double>()[1], expected1.values<double>()));
+  EXPECT_TRUE(
+      equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
+  EXPECT_TRUE(
+      equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+}
+
+TEST(TransformInPlaceTest, sparse_val_var_with_sparse_val) {
+  auto a = make_sparse_variable_with_variance();
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto b = make_sparse_variable();
+  set_sparse_values(b, {{0.1, 0.2, 0.3}, {0.4}});
+
+  transform_in_place<pair_self_t<double>>(
+      a, b, [](auto &a, const auto b) { a *= b; });
+
+  auto expected = make_sparse_variable();
+  auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
+  auto b0 = makeVariable<double>({Dim::X, 3}, {0.1, 0.2, 0.3});
+  auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
+  auto b1 = makeVariable<double>({Dim::X, 1}, {0.4});
+  auto expected0 = a0 * b0;
+  auto expected1 = a1 * b1;
+  EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
+  EXPECT_TRUE(equals(a.sparseValues<double>()[1], expected1.values<double>()));
+  EXPECT_TRUE(
+      equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
+  EXPECT_TRUE(
+      equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+}
+
+TEST(TransformInPlaceTest, sparse_val_var_with_val_var) {
+  auto a = make_sparse_variable_with_variance();
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto b = makeVariable<double>({Dim::Y, 2}, {1.5, 1.6}, {1.7, 1.8});
+
+  transform_in_place<pair_self_t<double>>(
+      a, b, [](auto &a, const auto b) { a *= b; });
+
+  auto expected = make_sparse_variable();
+  auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
+  auto b0 = makeVariable<double>({1.5}, {1.7});
+  auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
+  auto b1 = makeVariable<double>({1.6}, {1.8});
+  auto expected0 = a0 * b0;
+  auto expected1 = a1 * b1;
+  EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
+  EXPECT_TRUE(equals(a.sparseValues<double>()[1], expected1.values<double>()));
+  EXPECT_TRUE(
+      equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
+  EXPECT_TRUE(
+      equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+}
+
+TEST(TransformInPlaceTest, sparse_val_var_with_val) {
+  auto a = make_sparse_variable_with_variance();
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto b = makeVariable<double>({Dim::Y, 2}, {1.5, 1.6});
+
+  transform_in_place<pair_self_t<double>>(
+      a, b, [](auto &a, const auto b) { a *= b; });
+
+  auto expected = make_sparse_variable();
+  auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
+  auto b0 = makeVariable<double>({1.5});
+  auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
+  auto b1 = makeVariable<double>({1.6});
+  auto expected0 = a0 * b0;
+  auto expected1 = a1 * b1;
+  EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
+  EXPECT_TRUE(equals(a.sparseValues<double>()[1], expected1.values<double>()));
+  EXPECT_TRUE(
+      equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
+  EXPECT_TRUE(
+      equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
 }
