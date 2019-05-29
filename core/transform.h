@@ -116,23 +116,39 @@ template <class T> struct ValuesAndVariances {
 
 template <class T> ValuesAndVariances(T &val, T &var)->ValuesAndVariances<T>;
 
-template <class T, class Op>
-void transform_in_place_with_variance_impl(T &&vals, T &&vars, Op op) {
+template <class T> struct is_values_and_variances : std::false_type {};
+template <class T>
+struct is_values_and_variances<ValuesAndVariances<T>> : std::true_type {};
+
+template <class T>
+constexpr auto value_and_maybe_variance(const T &range,
+                                        const scipp::index i) noexcept {
+  if constexpr (is_values_and_variances<T>::value)
+    return ValueAndVariance{range.values[i], range.variances[i]};
+  else
+    return range[i];
+  }
+
+template <class Op, class T, class... Ts>
+void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
+                                           Ts &&... other) {
+  auto & [ vals, vars ] = arg;
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
     if constexpr (is_sparse_v<decltype(vals[0])>) {
       op(ValuesAndVariances{vals[i], vars[i]});
     } else {
       ValueAndVariance _{vals[i], vars[i]};
-      op(_);
+      op(_, value_and_maybe_variance(other, i)...);
       vals[i] = _.value;
       vars[i] = _.variance;
     }
   }
 }
 
-template <class T, class Op> void transform_in_place_impl(T &&vals, Op op) {
-  for (auto &val : vals)
-    op(val);
+template <class Op, class T, class... Ts>
+void transform_in_place_impl(Op op, T &&vals, Ts &&... other) {
+  for (scipp::index i = 0; i < scipp::size(vals); ++i)
+    op(vals[i], other[i]...);
 }
 
 template <class T>
@@ -145,11 +161,10 @@ makeVariableConceptT(const Dimensions &dims, Vector<T> data);
 template <class Op> struct TransformSparse {
   Op op;
   template <class T> constexpr void operator()(sparse_container<T> &x) const {
-    transform_in_place_impl(x, op);
+    transform_in_place_impl(op, x);
   }
   template <class T> constexpr void operator()(ValuesAndVariances<T> x) const {
-    auto & [ val, var ] = x;
-    transform_in_place_with_variance_impl(val, var, op);
+    transform_in_place_with_variance_impl(op, x);
   }
   template <class T1, class T2>
   constexpr void operator()(sparse_container<T1> &a, const T2 b) const {
@@ -190,10 +205,11 @@ template <class T1, class Op> void do_transform(T1 &a, Op op) {
       throw std::runtime_error("This dtype cannot have a variance.");
     } else {
       auto a_var = a.variances();
-      transform_in_place_with_variance_impl(a_val, a_var, op);
+      transform_in_place_with_variance_impl(op,
+                                            ValuesAndVariances{a_val, a_var});
     }
   } else {
-    transform_in_place_impl(a_val, op);
+    transform_in_place_impl(op, a_val);
   }
 }
 
@@ -213,28 +229,19 @@ void do_transform(T1 &a, const T2 &b, Op op) {
       auto a_var = a.variances();
       if (b.hasVariances()) {
         auto b_var = b.variances();
-        for (scipp::index i = 0; i < a_val.size(); ++i) {
-          ValueAndVariance a_{a_val[i], a_var[i]};
-          const ValueAndVariance b_{b_val[i], b_var[i]};
-          op(a_, b_);
-          a_val[i] = a_.value;
-          a_var[i] = a_.variance;
-        }
+        transform_in_place_with_variance_impl(op,
+                                              ValuesAndVariances{a_val, a_var},
+                                              ValuesAndVariances{b_val, b_var});
       } else {
-        for (scipp::index i = 0; i < a_val.size(); ++i) {
-          ValueAndVariance a_{a_val[i], a_var[i]};
-          op(a_, b_val[i]);
-          a_val[i] = a_.value;
-          a_var[i] = a_.variance;
-        }
+        transform_in_place_with_variance_impl(
+            op, ValuesAndVariances{a_val, a_var}, b_val);
       }
     }
   } else if (b.hasVariances()) {
     throw std::runtime_error(
         "RHS in operation has variances but LHS does not.");
   } else {
-    for (scipp::index i = 0; i < a_val.size(); ++i)
-      op(a_val[i], b_val[i]);
+    transform_in_place_impl(op, a_val, b_val);
   }
 }
 
@@ -337,10 +344,18 @@ template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 /// 1. `visit` (or `visit_impl`) obtains the concrete underlying data type.
 /// 2. `TransformInPlace` is applied to that concrete container, calling
 ///    `do_transform`. `TransformInPlace` essentially builds a callable
-///    accepting a container from a callable accepting and element of the
+///    accepting a container from a callable accepting an element of the
 ///    container.
 /// 3. `do_transform` is essentially a fancy std::transform. It provides
-///    automatic handling of data that has variances in addition to values.
+///    automatic handling of data that has variances in addition to values,
+///    calling a different transform implementation for each case
+///    (transform_in_place_impl or transform_in_place_with_variance_impl).
+/// 4. The function implementing the transform calls the overloaded operator for
+///    each element. Previously `TransformSparse` has been added to the overload
+///    set of the operator and this will now correctly treat sparse data.
+///    Essentially it causes a (single) recursive call to the transform
+///    implementation (transform_in_place_impl or
+///    transform_in_place_with_variance_impl).
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &var, Op op) {
   using namespace detail;
