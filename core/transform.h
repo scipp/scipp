@@ -121,10 +121,14 @@ SparseValuesAndVariances(sparse_container<T> &val, sparse_container<T> &var)
 template <class T, class Op>
 void transform_in_place_with_variance_impl(T &&vals, T &&vars, Op op) {
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
-    ValueAndVariance _{vals[i], vars[i]};
-    op(_);
-    vals[i] = _.value;
-    vars[i] = _.variance;
+    if constexpr (is_sparse_v<decltype(vals[0])>) {
+      op(SparseValuesAndVariances{vals[i], vars[i]});
+    } else {
+      ValueAndVariance _{vals[i], vars[i]};
+      op(_);
+      vals[i] = _.value;
+      vars[i] = _.variance;
+    }
   }
 }
 
@@ -181,11 +185,7 @@ template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
 template <class T1, class Op> void do_transform(T1 &a, Op op) {
   auto a_val = a.values();
   if (a.hasVariances()) {
-    if constexpr (is_sparse_v<typename T1::value_type>) {
-      auto a_var = a.variances();
-      for (scipp::index i = 0; i < scipp::size(a_val); ++i)
-        op(SparseValuesAndVariances{a_val[i], a_var[i]});
-    } else if constexpr (is_eigen_type_v<typename T1::value_type>) {
+    if constexpr (is_eigen_type_v<typename T1::value_type>) {
       throw std::runtime_error("This dtype cannot have a variance.");
     } else {
       auto a_var = a.variances();
