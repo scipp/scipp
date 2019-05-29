@@ -155,6 +155,9 @@ constexpr auto value_and_maybe_variance(const T &range,
 template <class T> struct is_eigen_type : std::false_type {};
 template <class T, int Rows, int Cols>
 struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
+template <class T, int Rows, int Cols>
+struct is_eigen_type<sparse_container<Eigen::Matrix<T, Rows, Cols>>>
+    : std::true_type {};
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
@@ -164,10 +167,7 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
   auto & [ vals, vars ] = arg;
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
     if constexpr (is_sparse_v<decltype(vals[0])>) {
-      if constexpr (is_eigen_type_v<typename T::value_type::value_type>) {
-        static_cast<void>(op);
-        throw std::runtime_error("This dtype cannot have a variance.");
-      } else if constexpr ((is_values_and_variances_v<Ts> && ...)) {
+      if constexpr ((is_values_and_variances_v<Ts> && ...)) {
         if constexpr ((is_sparse_v<decltype(other.values[0])> && ...)) {
           op(ValuesAndVariances{vals[i], vars[i]},
              ValuesAndVariances{other.values[i], other.variances[i]}...);
