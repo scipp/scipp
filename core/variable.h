@@ -38,6 +38,8 @@ struct is_sparse_container<sparse_container<T>> : std::true_type {};
 template <class T> struct is_sparse : std::false_type {};
 template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
 template <class T> struct is_sparse<sparse_container<T> &> : std::true_type {};
+template <class T>
+struct is_sparse<const sparse_container<T> &> : std::true_type {};
 template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
 
 // std::vector<bool> may have a packed non-thread-safe implementation which we

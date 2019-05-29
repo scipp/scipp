@@ -1177,7 +1177,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
     // is more reasonable.
     transform_in_place<pair_self_t<sparse_container<double>>>(
         out, a2,
-        [](auto &a, const auto &b) { a.insert(a.end(), b.begin(), b.end()); });
+        [](auto &&a, auto &&b) { a.insert(a.end(), b.begin(), b.end()); });
     return out;
   }
 
