@@ -104,9 +104,9 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
 template <class T>
 ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
 
-template <class T> struct SparseValuesAndVariances {
-  sparse_container<T> &values;
-  sparse_container<T> &variances;
+template <class T> struct ValuesAndVariances {
+  T &values;
+  T &variances;
 
   void clear() {
     values.clear();
@@ -114,15 +114,13 @@ template <class T> struct SparseValuesAndVariances {
   }
 };
 
-template <class T>
-SparseValuesAndVariances(sparse_container<T> &val, sparse_container<T> &var)
-    ->SparseValuesAndVariances<T>;
+template <class T> ValuesAndVariances(T &val, T &var)->ValuesAndVariances<T>;
 
 template <class T, class Op>
 void transform_in_place_with_variance_impl(T &&vals, T &&vars, Op op) {
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
     if constexpr (is_sparse_v<decltype(vals[0])>) {
-      op(SparseValuesAndVariances{vals[i], vars[i]});
+      op(ValuesAndVariances{vals[i], vars[i]});
     } else {
       ValueAndVariance _{vals[i], vars[i]};
       op(_);
@@ -130,6 +128,11 @@ void transform_in_place_with_variance_impl(T &&vals, T &&vars, Op op) {
       vars[i] = _.variance;
     }
   }
+}
+
+template <class T, class Op> void transform_in_place_impl(T &&vals, Op op) {
+  for (auto &val : vals)
+    op(val);
 }
 
 template <class T>
@@ -142,11 +145,9 @@ makeVariableConceptT(const Dimensions &dims, Vector<T> data);
 template <class Op> struct TransformSparse {
   Op op;
   template <class T> constexpr void operator()(sparse_container<T> &x) const {
-    for (auto &x_ : x)
-      op(x_);
+    transform_in_place_impl(x, op);
   }
-  template <class T>
-  constexpr void operator()(SparseValuesAndVariances<T> x) const {
+  template <class T> constexpr void operator()(ValuesAndVariances<T> x) const {
     auto & [ val, var ] = x;
     transform_in_place_with_variance_impl(val, var, op);
   }
@@ -192,8 +193,7 @@ template <class T1, class Op> void do_transform(T1 &a, Op op) {
       transform_in_place_with_variance_impl(a_val, a_var, op);
     }
   } else {
-    for (auto &a_ : a_val)
-      op(a_);
+    transform_in_place_impl(a_val, op);
   }
 }
 
