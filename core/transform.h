@@ -146,10 +146,14 @@ inline constexpr bool is_values_and_variances_v =
 template <class T>
 constexpr auto value_and_maybe_variance(const T &range,
                                         const scipp::index i) noexcept {
-  if constexpr (is_values_and_variances_v<T>)
-    return ValueAndVariance{range.values[i], range.variances[i]};
-  else
+  if constexpr (is_values_and_variances_v<T>) {
+    if constexpr (is_sparse_v<decltype(range.values[0])>)
+      return ValuesAndVariances{range.values[i], range.variances[i]};
+    else
+      return ValueAndVariance{range.values[i], range.variances[i]};
+  } else {
     return range[i];
+  }
 }
 
 template <class T> struct is_eigen_type : std::false_type {};
@@ -167,25 +171,8 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
   auto & [ vals, vars ] = arg;
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
     if constexpr (is_sparse_v<decltype(vals[0])>) {
-      if constexpr ((is_values_and_variances_v<Ts> && ...)) {
-        if constexpr ((is_sparse_v<decltype(other.values[0])> && ...)) {
-          op(ValuesAndVariances{vals[i], vars[i]},
-             ValuesAndVariances{other.values[i], other.variances[i]}...);
-        } else {
-          op(ValuesAndVariances{vals[i], vars[i]},
-             value_and_maybe_variance(other, i)...);
-        }
-      } else {
-        if constexpr ((is_sparse_v<decltype(other[0])> && ...)) {
-          static_cast<void>(op);
-          throw std::runtime_error("Transforming sparse data requires "
-                                   "variances on both or neither of the sparse "
-                                   "input arguments.");
-        } else {
-          op(ValuesAndVariances{vals[i], vars[i]},
-             value_and_maybe_variance(other, i)...);
-        }
-      }
+      op(ValuesAndVariances{vals[i], vars[i]},
+         value_and_maybe_variance(other, i)...);
     } else {
       ValueAndVariance _{vals[i], vars[i]};
       op(_, value_and_maybe_variance(other, i)...);
@@ -240,6 +227,13 @@ template <class Op> struct TransformSparse {
     if (scipp::size(a) != scipp::size(b))
       throw std::runtime_error("Mismatch in extent of sparse dimension.");
     transform_in_place_impl(op, a, b);
+  }
+  template <class T1, class T2>
+  constexpr void operator()(ValuesAndVariances<T1> a,
+                            const sparse_container<T2> b) const {
+    if (scipp::size(a) != scipp::size(b))
+      throw std::runtime_error("Mismatch in extent of sparse dimension.");
+    transform_in_place_with_variance_impl(op, a, b);
   }
   template <class T1, class T2>
   constexpr void operator()(ValuesAndVariances<T1> a,
