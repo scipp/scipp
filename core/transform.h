@@ -158,6 +158,16 @@ template <class T>
 std::unique_ptr<VariableConceptT<T>>
 makeVariableConceptT(const Dimensions &dims, Vector<T> data);
 
+/// Broadcast a constant to arbitrary size. Helper for TransformSparse.
+///
+/// This helper allows the use of a common transform implementation when mixing
+/// sparse and non-sparse data.
+template <class T> struct broadcast {
+  constexpr auto operator[](const scipp::index) const noexcept { return value; }
+  T value;
+};
+template <class T> broadcast(T)->broadcast<T>;
+
 template <class Op> struct TransformSparse {
   Op op;
   template <class T> constexpr void operator()(sparse_container<T> &x) const {
@@ -168,16 +178,14 @@ template <class Op> struct TransformSparse {
   }
   template <class T1, class T2>
   constexpr void operator()(sparse_container<T1> &a, const T2 b) const {
-    for (scipp::index i = 0; i < scipp::size(a); ++i)
-      op(a[i], b);
+    transform_in_place_impl(op, a, broadcast{b});
   }
   template <class T1, class T2>
   constexpr void operator()(sparse_container<T1> &a,
                             const sparse_container<T2> &b) const {
     if (scipp::size(a) != scipp::size(b))
       throw std::runtime_error("Mismatch in extent of sparse dimension.");
-    for (scipp::index i = 0; i < scipp::size(a); ++i)
-      op(a[i], b[i]);
+    transform_in_place_impl(op, a, b);
   }
 };
 
