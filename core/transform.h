@@ -1,6 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
-/// @file
+/// @file Various transform functions for variables.
+///
+/// The underlying mechanism of the implementation is as follows:
+/// 1. `visit` (or `visit_impl`) obtains the concrete underlying data type(s).
+/// 2. `TransformInPlace` is applied to that concrete container, calling
+///    `do_transform`. `TransformInPlace` essentially builds a callable
+///    accepting a container from a callable accepting an element of the
+///    container.
+/// 3. `do_transform` is essentially a fancy std::transform. It provides
+///    automatic handling of data that has variances in addition to values,
+///    calling a different transform implementation for each case
+///    (transform_in_place_impl or transform_in_place_with_variance_impl).
+/// 4. The function implementing the transform calls the overloaded operator for
+///    each element. Previously `TransformSparse` has been added to the overload
+///    set of the operator and this will now correctly treat sparse data.
+///    Essentially it causes a (single) recursive call to the transform
+///    implementation (transform_in_place_impl or
+///    transform_in_place_with_variance_impl). In this second call the
+///    client-provided overload will match.
+///
 /// @author Simon Heybrock
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
@@ -13,6 +32,13 @@ namespace scipp::core {
 
 namespace detail {
 
+/// A value/variance pair with operators that propagate uncertainties.
+///
+/// This is intended for small T such as double, float, and int. It is the
+/// central implementation of uncertainty propagation in scipp, for built-in
+/// operations as well as custom operations using one of the transform
+/// functions. Since T is assumed to be small it is copied into the class and
+/// extracted later. See also ValuesAndVariances.
 template <class T> struct ValueAndVariance {
   T value;
   T variance;
@@ -104,6 +130,11 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
 template <class T>
 ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
 
+/// A values/variances pair based on references to sparse data containers.
+///
+/// This is a helper for implementing operations for sparse container such as
+/// `clear`, and for descending into the sparse container itself, using a nested
+/// call to an iteration function.
 template <class T> struct ValuesAndVariances {
   T &values;
   T &variances;
@@ -143,6 +174,8 @@ template <class T>
 inline constexpr bool is_values_and_variances_v =
     is_values_and_variances<T>::value;
 
+/// Helper for the transform implementation to unify iteration of data with and
+/// without variances as well as sparse are dense container.
 template <class T>
 constexpr auto value_and_maybe_variance(const T &range,
                                         const scipp::index i) noexcept {
@@ -170,6 +203,15 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
                                            Ts &&... other) {
   auto & [ vals, vars ] = arg;
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
+    // Two cases are distinguished here:
+    // 1. In the case of sparse data we create ValuesAndVariances, which hold
+    //    references that can be modified.
+    // 2. For dense data we create ValueAndVariance, which performs and element
+    //    copy, so the result has to be updated after the call to `op`.
+    // Note that in the case of sparse data we actually have a recursive call to
+    // this function for the iteration over each individual sparse_container.
+    // This then falls into case 2 and thus the recursion terminates with the
+    // second level.
     if constexpr (is_sparse_v<decltype(vals[0])>) {
       op(ValuesAndVariances{vals[i], vars[i]},
          value_and_maybe_variance(other, i)...);
@@ -188,13 +230,6 @@ void transform_in_place_impl(Op op, T &&vals, Ts &&... other) {
     op(vals[i], other[i]...);
 }
 
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims);
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims, Vector<T> data);
-
 /// Broadcast a constant to arbitrary size. Helper for TransformSparse.
 ///
 /// This helper allows the use of a common transform implementation when mixing
@@ -205,6 +240,13 @@ template <class T> struct broadcast {
 };
 template <class T> broadcast(T)->broadcast<T>;
 
+/// Functor for implementing operations with sparse data.
+///
+/// This is (conditionally) added to an overloaded set of operators provided by
+/// the user. If the data is sparse the overloads by this functor will match in
+/// place of the user-provided ones. We then recursively call the transform
+/// function. In this second call we have descended into the sparse container so
+/// now the user-provided overload will match directly.
 template <class Op> struct TransformSparse {
   Op op;
   template <class T> constexpr void operator()(sparse_container<T> &x) const {
@@ -244,17 +286,8 @@ template <class Op> struct TransformSparse {
   }
 };
 
-template <class T> struct as_view {
-  using value_type = typename T::value_type;
-  bool hasVariances() const { return data.hasVariances(); }
-  auto values() const { return data.valuesView(dims); }
-  auto variances() const { return data.variancesView(dims); }
-
-  T &data;
-  const Dimensions &dims;
-};
-template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
-
+/// Helper for transform implementation, performing branching between output
+/// with and without variances.
 template <class T1, class Op> void do_transform(T1 &a, Op op) {
   auto a_val = a.values();
   if (a.hasVariances()) {
@@ -270,6 +303,9 @@ template <class T1, class Op> void do_transform(T1 &a, Op op) {
   }
 }
 
+/// Helper for transform implementation, performing branching between output
+/// with and without variances as well as handling other operands with and
+/// without variances.
 template <class T1, class T2, class Op>
 void do_transform(T1 &a, const T2 &b, Op op) {
   auto a_val = a.values();
@@ -298,12 +334,31 @@ void do_transform(T1 &a, const T2 &b, Op op) {
   }
 }
 
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims);
+template <class T>
+std::unique_ptr<VariableConceptT<T>>
+makeVariableConceptT(const Dimensions &dims, Vector<T> data);
+
+template <class T> struct as_view {
+  using value_type = typename T::value_type;
+  bool hasVariances() const { return data.hasVariances(); }
+  auto values() const { return data.valuesView(dims); }
+  auto variances() const { return data.variancesView(dims); }
+
+  T &data;
+  const Dimensions &dims;
+};
+template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
+
+/// Functor for in-place transformation, applying `op` to all elements.
+///
+/// This is responsible for converting the client-provided functor `Op` which
+/// operates on elements to a functor for the data container, which is required
+/// by `visit`.
 template <class Op> struct TransformInPlace {
   Op op;
-  /// Transform container with concrete type T with operation `op`.
-  ///
-  /// This is called by `visit` from the top-level `transform` or
-  /// `transform_in_place` functions.
   template <class T> void operator()(T &&handle) const {
     auto view = as_view{*handle, handle->dims()};
     if (handle->isContiguous())
@@ -392,23 +447,6 @@ template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 /// this function does not promise in-order execution. This overload is
 /// equivalent to std::transform with a single input range and an output range
 /// identical to the input range, but avoids potentially costly element copies.
-///
-/// The underlying mechanism is as follows:
-/// 1. `visit` (or `visit_impl`) obtains the concrete underlying data type.
-/// 2. `TransformInPlace` is applied to that concrete container, calling
-///    `do_transform`. `TransformInPlace` essentially builds a callable
-///    accepting a container from a callable accepting an element of the
-///    container.
-/// 3. `do_transform` is essentially a fancy std::transform. It provides
-///    automatic handling of data that has variances in addition to values,
-///    calling a different transform implementation for each case
-///    (transform_in_place_impl or transform_in_place_with_variance_impl).
-/// 4. The function implementing the transform calls the overloaded operator for
-///    each element. Previously `TransformSparse` has been added to the overload
-///    set of the operator and this will now correctly treat sparse data.
-///    Essentially it causes a (single) recursive call to the transform
-///    implementation (transform_in_place_impl or
-///    transform_in_place_with_variance_impl).
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &var, Op op) {
   using namespace detail;
