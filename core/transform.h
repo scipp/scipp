@@ -137,8 +137,7 @@ ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
 /// call to an iteration function.
 template <class T> struct ValuesAndVariances {
   ValuesAndVariances(T &val, T &var) : values(val), variances(var) {
-    if (values.size() != variances.size())
-      throw std::runtime_error("Size mismatch between values and variances.");
+    expect::sizeMatches(values, variances);
   }
   T &values;
   T &variances;
@@ -270,22 +269,19 @@ template <class Op> struct TransformSparse {
   template <class T1, class T2>
   constexpr void operator()(sparse_container<T1> &a,
                             const sparse_container<T2> &b) const {
-    if (scipp::size(a) != scipp::size(b))
-      throw std::runtime_error("Mismatch in extent of sparse dimension.");
+    expect::sizeMatches(a, b);
     transform_in_place_impl(op, a, b);
   }
   template <class T1, class T2>
   constexpr void operator()(ValuesAndVariances<T1> a,
                             const sparse_container<T2> b) const {
-    if (scipp::size(a) != scipp::size(b))
-      throw std::runtime_error("Mismatch in extent of sparse dimension.");
+    expect::sizeMatches(a, b);
     transform_in_place_with_variance_impl(op, a, b);
   }
   template <class T1, class T2>
   constexpr void operator()(ValuesAndVariances<T1> a,
                             const ValuesAndVariances<T2> b) const {
-    if (scipp::size(a) != scipp::size(b))
-      throw std::runtime_error("Mismatch in extent of sparse dimension.");
+    expect::sizeMatches(a, b);
     transform_in_place_with_variance_impl(op, a, b);
   }
 };

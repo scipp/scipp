@@ -115,6 +115,10 @@ struct UnitError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct SizeError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 struct UnitMismatchError : public UnitError {
   UnitMismatchError(const units::Unit &a, const units::Unit &b);
 };
@@ -136,6 +140,12 @@ template <class A, class B> void variablesMatch(const A &a, const B &b) {
 }
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const scipp::index length);
+
+template <class T, class... Ts>
+void sizeMatches(const T &range, const Ts &... other) {
+  if (((scipp::size(range) != scipp::size(other)) || ...))
+    throw except::SizeError("Expected matching sizes.");
+}
 void equals(const units::Unit &a, const units::Unit &b);
 void equals(const Dimensions &a, const Dimensions &b);
 
