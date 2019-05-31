@@ -769,20 +769,11 @@ INSTANTIATE(double)
 INSTANTIATE(float)
 INSTANTIATE(int64_t)
 INSTANTIATE(int32_t)
-INSTANTIATE(char)
 INSTANTIATE(bool)
-INSTANTIATE(std::pair<int64_t, int64_t>)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
 INSTANTIATE(scipp::index)
-INSTANTIATE(std::pair<scipp::index, scipp::index>)
 #endif
-INSTANTIATE(boost::container::small_vector<scipp::index, 1>)
-INSTANTIATE(std::vector<double>)
-INSTANTIATE(std::vector<std::string>)
-INSTANTIATE(std::vector<scipp::index>)
 INSTANTIATE(Dataset)
-INSTANTIATE(std::array<double, 3>)
-INSTANTIATE(std::array<double, 4>)
 INSTANTIATE(Eigen::Vector3d)
 INSTANTIATE(sparse_container<double>)
 INSTANTIATE(sparse_container<float>)
@@ -1047,7 +1038,6 @@ INSTANTIATE_SLICEVIEW(double);
 INSTANTIATE_SLICEVIEW(float);
 INSTANTIATE_SLICEVIEW(int64_t);
 INSTANTIATE_SLICEVIEW(int32_t);
-INSTANTIATE_SLICEVIEW(char);
 INSTANTIATE_SLICEVIEW(bool);
 INSTANTIATE_SLICEVIEW(std::string);
 INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
