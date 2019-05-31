@@ -367,6 +367,7 @@ template <class Op> struct TransformInPlace {
   template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
     // std::unique_ptr::operator*() is const but returns mutable reference, need
     // to artificially put const to we call the correct overloads of ViewModel.
+    // See #278.
     const auto &b = *b_ptr;
     const auto &dimsA = a->dims();
     const auto &dimsB = b.dims();
@@ -413,8 +414,6 @@ template <class Op> struct Transform {
     auto data = handle->values();
     // TODO Should just make empty container here, without init.
     Variable out = makeVariable<decltype(op(*data.begin()))>(handle->dims());
-    // TODO Typo data->values() also compiles, but const-correctness should
-    // forbid this.
     auto outData = out.values<decltype(op(*data.begin()))>();
     std::transform(data.begin(), data.end(), outData.begin(), op);
     return out;
