@@ -7,6 +7,7 @@
 
 namespace scipp::units {
 INSTANTIATE(neutron::supported_units);
+SCIPP_UNITS_DEFINE_DIMENSIONS(neutron);
 
 namespace neutron {
 bool containsCounts(const Unit &unit) {

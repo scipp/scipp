@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "dimension.h"
+#include "scipp/units/unit.h"
 
 namespace scipp::core {
 

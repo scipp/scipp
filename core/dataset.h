@@ -13,7 +13,6 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "dimension.h"
 #include "except.h"
 #include "variable.h"
 

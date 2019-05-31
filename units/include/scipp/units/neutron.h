@@ -6,6 +6,7 @@
 #ifndef SCIPP_UNITS_NEUTRON_H
 #define SCIPP_UNITS_NEUTRON_H
 
+#include "scipp/units/dimension.h"
 #include "scipp/units/unit_impl.h"
 
 #include <boost/units/base_dimension.hpp>
@@ -120,6 +121,7 @@ namespace scipp::units {
 inline
 #endif
     namespace neutron {
+
 // Additional helper constants beyond the SI base units.
 // Note the factor `dimensionless` in units that otherwise contain only non-SI
 // factors. This is a trick to overcome some subtleties of working with
@@ -148,6 +150,8 @@ using supported_units = decltype(detail::make_unit(
 using Unit = Unit_impl<supported_units>;
 
 bool containsCounts(const Unit &unit);
+
+SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z, Tof, Time, Q, Row, Spectrum);
 
 } // namespace neutron
 } // namespace scipp::units

@@ -6,6 +6,7 @@
 
 #include "variable_view.h"
 
+using namespace scipp;
 using namespace scipp::core;
 
 TEST(VariableView, full_volume) {

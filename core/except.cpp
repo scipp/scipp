@@ -11,62 +11,12 @@
 namespace scipp::core {
 
 namespace {
-std::string do_to_string(const Dim dim) {
-  switch (dim) {
-  case Dim::Invalid:
-    return "<invalid>";
-  case Dim::Event:
-    return "Dim::Event";
-  case Dim::Tof:
-    return "Dim::Tof";
-  case Dim::DSpacing:
-    return "Dim::DSpacing";
-  case Dim::Energy:
-    return "Dim::Energy";
-  case Dim::DeltaE:
-    return "Dim::DeltaE";
-  case Dim::Position:
-    return "Dim::Position";
-  case Dim::Spectrum:
-    return "Dim::Spectrum";
-  case Dim::Monitor:
-    return "Dim::Monitor";
-  case Dim::Run:
-    return "Dim::Run";
-  case Dim::Detector:
-    return "Dim::Detector";
-  case Dim::Q:
-    return "Dim::Q";
-  case Dim::X:
-    return "Dim::X";
-  case Dim::Y:
-    return "Dim::Y";
-  case Dim::Z:
-    return "Dim::Z";
-  case Dim::Qx:
-    return "Dim::Qx";
-  case Dim::Qy:
-    return "Dim::Qy";
-  case Dim::Qz:
-    return "Dim::Qz";
-  case Dim::Polarization:
-    return "Dim::Polarization";
-  case Dim::Temperature:
-    return "Dim::Temperature";
-  case Dim::Time:
-    return "Dim::Time";
-  case Dim::DetectorScan:
-    return "Dim::DetectorScan";
-  case Dim::Component:
-    return "Dim::Component";
-  case Dim::Row:
-    return "Dim::Row";
-  default:
-    return "<unknown dimension>";
-  }
-}
 
 std::string do_to_string(const units::Unit &unit) { return unit.name(); }
+
+std::string to_string_with_sep(const Dim dim, const std::string &separator) {
+  return std::regex_replace(to_string(dim), std::regex("::"), separator);
+}
 } // namespace
 
 std::string to_string(const Dimensions &dims, const std::string &separator) {
@@ -74,7 +24,7 @@ std::string to_string(const Dimensions &dims, const std::string &separator) {
     return "{}";
   std::string s = "{{";
   for (int32_t i = 0; i < dims.shape().size(); ++i)
-    s += to_string(dims.labels()[i], separator) + ", " +
+    s += to_string_with_sep(dims.labels()[i], separator) + ", " +
          std::to_string(dims.shape()[i]) + "}, {";
   s.resize(s.size() - 3);
   s += "}";
@@ -110,15 +60,12 @@ std::string to_string(const DType dtype) {
 
 std::string to_string(const Slice &slice, const std::string &separator) {
   std::string end = slice.end >= 0 ? ", " + std::to_string(slice.end) : "";
-  return "Slice(" + to_string(slice.dim, separator) + ", " +
+  return "Slice(" + to_string_with_sep(slice.dim, separator) + ", " +
          std::to_string(slice.begin) + end + ")\n";
 }
 
 std::string to_string(const units::Unit &unit, const std::string &separator) {
   return std::regex_replace(do_to_string(unit), std::regex("::"), separator);
-}
-std::string to_string(const Dim dim, const std::string &separator) {
-  return std::regex_replace(do_to_string(dim), std::regex("::"), separator);
 }
 
 std::string make_dims_labels(const Variable &variable,
@@ -129,13 +76,13 @@ std::string make_dims_labels(const Variable &variable,
     return "()";
   std::string diminfo = "(";
   for (const auto dim : dims.labels()) {
-    diminfo += to_string(dim, separator);
+    diminfo += to_string_with_sep(dim, separator);
     if (datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim]))
       diminfo += " [bin-edges]";
     diminfo += ", ";
   }
   if (variable.dims().sparse()) {
-    diminfo += to_string(variable.dims().sparseDim(), separator);
+    diminfo += to_string_with_sep(variable.dims().sparseDim(), separator);
     diminfo += " [sparse]";
     diminfo += ", ";
   }

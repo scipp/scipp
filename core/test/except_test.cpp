@@ -8,6 +8,7 @@
 #include "dimensions.h"
 #include "except.h"
 
+using namespace scipp;
 using namespace scipp::core;
 
 TEST(DimensionMismatchError, what) {
