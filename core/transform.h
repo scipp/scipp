@@ -436,6 +436,42 @@ template <class Op> struct Transform {
   }
 };
 
+template <class T, class... Known> struct optional_sparse {
+  using type = std::conditional_t<std::disjunction_v<std::is_same<T, Known>...>,
+                                  std::tuple<T>, std::tuple<>>;
+};
+
+/// Augment a tuple of types with the corresponding sparse types, if they exist.
+template <class... Ts, class... Known>
+auto insert_sparse(const std::tuple<Ts...> &,
+                   const VariableConceptHandle_impl<Known...> &) {
+  return std::tuple_cat(
+      std::tuple<Ts...>{},
+      typename optional_sparse<sparse_container<Ts>, Known...>::type{}...);
+}
+
+template <class T1, class T2, class... Known> struct optional_sparse_pair {
+  using type =
+      std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
+                             std::disjunction_v<std::is_same<T2, Known>...>,
+                         std::tuple<std::pair<T1, T2>>, std::tuple<>>;
+};
+
+/// Augment a tuple of type pairs with the corresponding sparse types, if they
+/// exist.
+template <class... Ts, class... Known>
+auto insert_sparse_pairs(const std::tuple<Ts...> &,
+                         const VariableConceptHandle_impl<Known...> &) {
+  return std::tuple_cat(
+      std::tuple<Ts...>{},
+      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
+                                    typename Ts::second_type,
+                                    Known...>::type{}...,
+      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
+                                    sparse_container<typename Ts::second_type>,
+                                    Known...>::type{}...);
+}
+
 } // namespace detail
 
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
@@ -460,9 +496,9 @@ void transform_in_place(Var &var, Op op) {
       scipp::core::visit_impl<Ts...>::apply(TransformInPlace{op},
                                             var.dataHandle().variant());
     } else {
-      scipp::core::visit_impl<Ts..., sparse_container<Ts>...>::apply(
-          TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
-          var.dataHandle().variant());
+      scipp::core::visit(insert_sparse(std::tuple<Ts...>{}, var.dataHandle()))
+          .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
+                 var.dataHandle().variant());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
@@ -483,14 +519,10 @@ void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
     } else {
       // Note that if only one of the inputs is sparse it must be the one being
       // transformed in-place, so there are only three cases here.
-      scipp::core::visit_impl<
-          Ts...,
-          std::pair<sparse_container<typename Ts::first_type>,
-                    typename Ts::second_type>...,
-          std::pair<sparse_container<typename Ts::first_type>,
-                    sparse_container<typename Ts::second_type>>...>::
-          apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
-                var.dataHandle().variant(), other.dataHandle().variant());
+      scipp::core::visit(
+          insert_sparse_pairs(std::tuple<Ts...>{}, var.dataHandle()))
+          .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
+                 var.dataHandle().variant(), other.dataHandle().variant());
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes " +
