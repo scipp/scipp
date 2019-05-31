@@ -461,37 +461,6 @@ public:
   std::optional<T> m_variances;
 };
 
-namespace detail {
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims) {
-  return std::make_unique<DataModel<Vector<T>>>(dims, Vector<T>(dims.volume()));
-}
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims, Vector<T> data) {
-  return std::make_unique<DataModel<Vector<T>>>(dims, std::move(data));
-}
-template std::unique_ptr<VariableConceptT<double>>
-makeVariableConceptT<double>(const Dimensions &);
-template std::unique_ptr<VariableConceptT<float>>
-makeVariableConceptT<float>(const Dimensions &);
-template std::unique_ptr<VariableConceptT<sparse_container<double>>>
-makeVariableConceptT<sparse_container<double>>(const Dimensions &);
-template std::unique_ptr<VariableConceptT<sparse_container<float>>>
-makeVariableConceptT<sparse_container<float>>(const Dimensions &);
-template std::unique_ptr<VariableConceptT<double>>
-makeVariableConceptT<double>(const Dimensions &, Vector<double>);
-template std::unique_ptr<VariableConceptT<float>>
-makeVariableConceptT<float>(const Dimensions &, Vector<float>);
-template std::unique_ptr<VariableConceptT<sparse_container<double>>>
-makeVariableConceptT<sparse_container<double>>(
-    const Dimensions &, Vector<sparse_container<double>>);
-template std::unique_ptr<VariableConceptT<sparse_container<float>>>
-makeVariableConceptT<sparse_container<float>>(const Dimensions &,
-                                              Vector<sparse_container<float>>);
-} // namespace detail
-
 /// Implementation of VariableConcept that represents a view onto data.
 template <class T>
 class ViewModel

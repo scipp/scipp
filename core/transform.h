@@ -338,13 +338,6 @@ void do_transform(T1 &a, const T2 &b, Op op) {
   }
 }
 
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims);
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims, Vector<T> data);
-
 template <class T> struct as_view {
   using value_type = typename T::value_type;
   bool hasVariances() const { return data.hasVariances(); }
@@ -413,19 +406,18 @@ template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
 
 template <class Op> struct Transform {
   Op op;
-  template <class T> VariableConceptHandle operator()(T &&handle) const {
+  template <class T> Variable operator()(T &&handle) const {
     if (handle->hasVariances())
       throw std::runtime_error(
           "Propgation of uncertainties not implemented for this case.");
     auto data = handle->values();
     // TODO Should just make empty container here, without init.
-    auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
-        handle->dims());
+    Variable out = makeVariable<decltype(op(*data.begin()))>(handle->dims());
     // TODO Typo data->values() also compiles, but const-correctness should
     // forbid this.
-    auto outData = out->values();
+    auto outData = out.values<decltype(op(*data.begin()))>();
     std::transform(data.begin(), data.end(), outData.begin(), op);
-    return {std::move(out)};
+    return out;
   }
 };
 
@@ -544,8 +536,8 @@ template <class... Ts, class Var, class Op>
 Variable transform(const Var &var, Op op) {
   using namespace detail;
   try {
-    return Variable(var, scipp::core::visit_impl<Ts...>::apply(
-                             Transform<Op>{op}, var.dataHandle().variant()));
+    return scipp::core::visit_impl<Ts...>::apply(Transform<Op>{op},
+                                                 var.dataHandle().variant());
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
