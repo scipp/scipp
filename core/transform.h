@@ -377,46 +377,40 @@ template <class Op> struct TransformInPlace {
     const auto &b = *b_ptr;
     const auto &dimsA = a->dims();
     const auto &dimsB = b.dims();
-    try {
-      if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
-        if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
-          // If there is an overlap between lhs and rhs we copy the rhs before
-          // applying the operation.
-          const auto &data = b.valuesView(b.dims());
-          using T = typename std::remove_reference_t<decltype(b)>::value_type;
-          const std::unique_ptr<VariableConceptT<T>> copy =
-              detail::makeVariableConceptT<T>(
-                  dimsB, Vector<T>(data.begin(), data.end()));
-          return operator()(a, copy);
-        }
+    if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
+      if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
+        // If there is an overlap between lhs and rhs we copy the rhs before
+        // applying the operation.
+        const auto &data = b.valuesView(b.dims());
+        using T = typename std::remove_reference_t<decltype(b)>::value_type;
+        const std::unique_ptr<VariableConceptT<T>> copy =
+            detail::makeVariableConceptT<T>(
+                dimsB, Vector<T>(data.begin(), data.end()));
+        return operator()(a, copy);
       }
+    }
 
-      if (a->isContiguous() && dimsA.contains(dimsB)) {
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(*a, b, op);
-        } else {
-          do_transform(*a, as_view{b, dimsA}, op);
-        }
-      } else if (dimsA.contains(dimsB)) {
-        auto a_view = as_view{*a, dimsA};
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(a_view, b, op);
-        } else {
-          do_transform(a_view, as_view{b, dimsA}, op);
-        }
+    if (a->isContiguous() && dimsA.contains(dimsB)) {
+      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform(*a, b, op);
       } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        auto a_view = as_view{*a, dimsB};
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(a_view, b, op);
-        } else {
-          do_transform(a_view, as_view{b, dimsB}, op);
-        }
+        do_transform(*a, as_view{b, dimsA}, op);
       }
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error("Cannot apply arithmetic operation to "
-                               "Variables: Underlying data types do not "
-                               "match.");
+    } else if (dimsA.contains(dimsB)) {
+      auto a_view = as_view{*a, dimsA};
+      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform(a_view, b, op);
+      } else {
+        do_transform(a_view, as_view{b, dimsA}, op);
+      }
+    } else {
+      // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+      auto a_view = as_view{*a, dimsB};
+      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform(a_view, b, op);
+      } else {
+        do_transform(a_view, as_view{b, dimsB}, op);
+      }
     }
   }
 };
