@@ -158,6 +158,8 @@ public:
   variancesReshaped(const Dimensions &dims) const = 0;
   virtual VariableView<T> variancesReshaped(const Dimensions &dims) = 0;
 
+  virtual std::unique_ptr<VariableConceptT> copyT() const = 0;
+
   VariableConceptHandle makeView() const override;
 
   VariableConceptHandle makeView() override;

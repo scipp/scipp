@@ -431,6 +431,11 @@ public:
     return makeVariableView(m_variances->data(), 0, dims, dims);
   }
 
+  std::unique_ptr<VariableConceptT<typename T::value_type>>
+  copyT() const override {
+    return std::make_unique<DataModel<T>>(*this);
+  }
+
   VariableConceptHandle clone() const override {
     return std::make_unique<DataModel<T>>(this->dims(), m_values, m_variances);
   }
@@ -667,6 +672,18 @@ public:
     } else {
       return {*m_variances, dims};
     }
+  }
+
+  std::unique_ptr<
+      VariableConceptT<std::remove_const_t<typename T::element_type>>>
+  copyT() const override {
+    using DataT = Vector<std::remove_const_t<typename T::element_type>>;
+    DataT values(m_values.begin(), m_values.end());
+    std::optional<DataT> variances;
+    if (hasVariances())
+      variances = DataT(m_variances->begin(), m_variances->end());
+    return std::make_unique<DataModel<DataT>>(this->dims(), std::move(values),
+                                              std::move(variances));
   }
 
   VariableConceptHandle clone() const override {

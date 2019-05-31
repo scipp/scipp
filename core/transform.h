@@ -381,12 +381,7 @@ template <class Op> struct TransformInPlace {
       if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
         // If there is an overlap between lhs and rhs we copy the rhs before
         // applying the operation.
-        const auto &data = b.valuesView(b.dims());
-        using T = typename std::remove_reference_t<decltype(b)>::value_type;
-        const std::unique_ptr<VariableConceptT<T>> copy =
-            detail::makeVariableConceptT<T>(
-                dimsB, Vector<T>(data.begin(), data.end()));
-        return operator()(a, copy);
+        return operator()(a, b.copyT());
       }
     }
 
