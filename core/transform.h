@@ -136,6 +136,10 @@ ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
 /// `clear`, and for descending into the sparse container itself, using a nested
 /// call to an iteration function.
 template <class T> struct ValuesAndVariances {
+  ValuesAndVariances(T &val, T &var) : values(val), variances(var) {
+    if (values.size() != variances.size())
+      throw std::runtime_error("Size mismatch between values and variances.");
+  }
   T &values;
   T &variances;
 
@@ -165,14 +169,8 @@ template <class T> struct ValuesAndVariances {
         "`end` not implemented for sparse data with variances.");
   }
 
-  auto size() const {
-    if (values.size() != variances.size())
-      throw std::runtime_error("Size mismatch between values and variances.");
-    return values.size();
-  }
+  constexpr auto size() const noexcept { return values.size(); }
 };
-
-template <class T> ValuesAndVariances(T &val, T &var)->ValuesAndVariances<T>;
 
 template <class T> struct is_values_and_variances : std::false_type {};
 template <class T>
@@ -184,8 +182,7 @@ inline constexpr bool is_values_and_variances_v =
 /// Helper for the transform implementation to unify iteration of data with and
 /// without variances as well as sparse are dense container.
 template <class T>
-constexpr auto value_and_maybe_variance(const T &range,
-                                        const scipp::index i) noexcept {
+constexpr auto value_and_maybe_variance(const T &range, const scipp::index i) {
   if constexpr (is_values_and_variances_v<T>) {
     if constexpr (is_sparse_v<decltype(range.values[0])>)
       return ValuesAndVariances{range.values[i], range.variances[i]};

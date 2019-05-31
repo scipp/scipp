@@ -157,6 +157,79 @@ TEST(TransformTest, binary_with_dense) {
   EXPECT_TRUE(equals(sparse_[1], {2.0}));
 }
 
+class SparseVariableFactory {
+public:
+private:
+  Random rand;
+};
+
+TEST(TransformInPlaceTest, sparse_unary_values_variances_size_fail) {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = makeVariable<double>(
+      dims, {sparse_container<double>(2), sparse_container<double>(1)},
+      {sparse_container<double>(2), sparse_container<double>(2)});
+  auto op = [](auto &a) { a *= 2.0; };
+
+  ASSERT_ANY_THROW(transform_in_place<double>(a, op));
+  a.sparseVariances<double>()[1].resize(1);
+  ASSERT_NO_THROW(transform_in_place<double>(a, op));
+}
+
+TEST(TransformInPlaceTest, sparse_binary_size_fail) {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = makeVariable<double>(
+      dims, {sparse_container<double>(2), sparse_container<double>(1)});
+  auto b = makeVariable<double>(
+      dims, {sparse_container<double>(2), sparse_container<double>()});
+  auto op = [](auto &a, const auto b) { a *= b; };
+
+  ASSERT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op));
+  b.sparseValues<double>()[1].resize(1);
+  ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, b, op));
+  b.sparseValues<double>()[1].resize(2);
+  ASSERT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op));
+}
+
+class TransformInPlaceTest_sparse_binary_values_variances_size_fail
+    : public ::testing::Test {
+protected:
+  Dimensions dims{{Dim::Y, Dim::X}, {2, Dimensions::Sparse}};
+  Variable a = makeVariable<double>(
+      dims, {sparse_container<double>(2), sparse_container<double>(2)},
+      {sparse_container<double>(2), sparse_container<double>(2)});
+  Variable b = a;
+  static constexpr auto op = [](auto &a, const auto b) { a *= b; };
+};
+
+TEST_F(TransformInPlaceTest_sparse_binary_values_variances_size_fail,
+       baseline) {
+  ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, b, op));
+};
+
+TEST_F(TransformInPlaceTest_sparse_binary_values_variances_size_fail,
+       a_values_size_bad) {
+  a.sparseValues<double>()[1].resize(1);
+  ASSERT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op));
+};
+
+TEST_F(TransformInPlaceTest_sparse_binary_values_variances_size_fail,
+       a_variances_size_bad) {
+  a.sparseVariances<double>()[1].resize(1);
+  ASSERT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op));
+};
+
+TEST_F(TransformInPlaceTest_sparse_binary_values_variances_size_fail,
+       b_values_size_bad) {
+  b.sparseValues<double>()[1].resize(1);
+  ASSERT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op));
+};
+
+TEST_F(TransformInPlaceTest_sparse_binary_values_variances_size_fail,
+       b_variances_size_bad) {
+  b.sparseVariances<double>()[1].resize(1);
+  ASSERT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op));
+};
+
 auto make_sparse_variable_with_variance() {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   return makeVariable<double>(

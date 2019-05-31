@@ -407,8 +407,14 @@ Variable makeVariable(const std::initializer_list<Dim> &dims,
 template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
-  return Variable(units::dimensionless, std::move(dimensions),
-                  Vector<underlying_type_t<T>>(values.begin(), values.end()));
+  if constexpr (is_sparse_v<T2>) {
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<sparse_container<underlying_type_t<T>>>(
+                        values.begin(), values.end()));
+  } else {
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<underlying_type_t<T>>(values.begin(), values.end()));
+  }
 }
 
 // This overload is required to avoid wrongly selecting the single-value
