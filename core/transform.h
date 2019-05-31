@@ -127,8 +127,12 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
                                            (b.value * b.value)};
 }
 
-template <class T>
-ValueAndVariance(const T &val, const T &var)->ValueAndVariance<T>;
+/// Deduction guide for class ValueAndVariances. Using decltype to deal with
+/// potential mixed-type val and var arguments arising in binary operations
+/// between, e.g., double and float.
+template <class T1, class T2>
+ValueAndVariance(const T1 &val, const T2 &var)
+    ->ValueAndVariance<decltype(T1() + T2())>;
 
 /// A values/variances pair based on references to sparse data containers.
 ///

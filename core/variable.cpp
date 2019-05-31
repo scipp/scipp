@@ -472,6 +472,8 @@ template std::unique_ptr<VariableConceptT<float>>
 makeVariableConceptT<float>(const Dimensions &);
 template std::unique_ptr<VariableConceptT<sparse_container<double>>>
 makeVariableConceptT<sparse_container<double>>(const Dimensions &);
+template std::unique_ptr<VariableConceptT<sparse_container<float>>>
+makeVariableConceptT<sparse_container<float>>(const Dimensions &);
 template std::unique_ptr<VariableConceptT<double>>
 makeVariableConceptT<double>(const Dimensions &, Vector<double>);
 template std::unique_ptr<VariableConceptT<float>>
@@ -479,6 +481,9 @@ makeVariableConceptT<float>(const Dimensions &, Vector<float>);
 template std::unique_ptr<VariableConceptT<sparse_container<double>>>
 makeVariableConceptT<sparse_container<double>>(
     const Dimensions &, Vector<sparse_container<double>>);
+template std::unique_ptr<VariableConceptT<sparse_container<float>>>
+makeVariableConceptT<sparse_container<float>>(const Dimensions &,
+                                              Vector<sparse_container<float>>);
 } // namespace detail
 
 /// Implementation of VariableConcept that represents a view onto data.

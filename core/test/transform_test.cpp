@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "dataset_test_common.h"
 #include "test_macros.h"
 
 #include "dimensions.h"
@@ -157,11 +156,23 @@ TEST(TransformTest, binary_with_dense) {
   EXPECT_TRUE(equals(sparse_[1], {2.0}));
 }
 
-class SparseVariableFactory {
-public:
-private:
-  Random rand;
-};
+TEST(TransformTest, mixed_precision) {
+  auto d = makeVariable<double>(1e-12);
+  auto f = makeVariable<float>(1e-12);
+  auto sum_d = makeVariable<double>(1.0);
+  auto sum_f = makeVariable<float>(1.0);
+  auto op = [](auto &a, const auto b) { a += b; };
+  transform_in_place<pair_custom_t<std::pair<float, double>>>(sum_f, d, op);
+  transform_in_place<pair_custom_t<std::pair<double, double>>>(sum_d, d, op);
+  EXPECT_EQ(sum_f.values<float>()[0], 1.0f);
+  EXPECT_NE(sum_d.values<double>()[0], 1.0);
+  EXPECT_EQ(sum_d.values<double>()[0], 1.0 + 1e-12);
+  transform_in_place<pair_custom_t<std::pair<float, float>>>(sum_f, f, op);
+  transform_in_place<pair_custom_t<std::pair<double, float>>>(sum_d, f, op);
+  EXPECT_EQ(sum_f.values<float>()[0], 1.0f);
+  EXPECT_NE(sum_d.values<double>()[0], 1.0 + 1e-12);
+  EXPECT_EQ(sum_d.values<double>()[0], 1.0 + 1e-12 + 1e-12);
+}
 
 TEST(TransformInPlaceTest, sparse_unary_values_variances_size_fail) {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
