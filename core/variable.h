@@ -103,26 +103,17 @@ private:
   Dimensions m_dimensions;
 };
 
-template <class T> class VariableConceptT;
-
-template <class T, typename Enable = void> struct concept {
-  using type = VariableConcept;
-  using typeT = VariableConceptT<T>;
-};
-
-template <class T> using concept_t = typename concept<T>::type;
-template <class T> using conceptT_t = typename concept<T>::typeT;
-
 /// Partially typed implementation of VariableConcept. This is a common base
 /// class for DataModel<T> and ViewModel<T>. The former holds data in a
 /// contiguous array, whereas the latter is a (potentially non-contiguous) view
 /// into the former. This base class implements functionality that is common to
 /// both, for a specific T.
-template <class T> class VariableConceptT : public concept_t<T> {
+template <class T> class VariableConceptT : public VariableConcept {
 public:
   using value_type = T;
 
-  VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
+  VariableConceptT(const Dimensions &dimensions)
+      : VariableConcept(dimensions) {}
 
   DType dtype(bool sparse = false) const noexcept override {
     if (!sparse)

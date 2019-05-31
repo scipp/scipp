@@ -318,13 +318,14 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
 }
 
 /// Implementation of VariableConcept that holds data.
-template <class T> class DataModel : public conceptT_t<typename T::value_type> {
+template <class T>
+class DataModel : public VariableConceptT<typename T::value_type> {
 public:
   using value_type = std::remove_const_t<typename T::value_type>;
 
   DataModel(const Dimensions &dimensions, T model,
             std::optional<T> variances = std::nullopt)
-      : conceptT_t<typename T::value_type>(std::move(dimensions)),
+      : VariableConceptT<typename T::value_type>(std::move(dimensions)),
         m_values(std::move(model)), m_variances(std::move(variances)) {
     if (this->dims().volume() != scipp::size(m_values))
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -489,7 +490,7 @@ makeVariableConceptT<sparse_container<float>>(const Dimensions &,
 /// Implementation of VariableConcept that represents a view onto data.
 template <class T>
 class ViewModel
-    : public conceptT_t<std::remove_const_t<typename T::element_type>> {
+    : public VariableConceptT<std::remove_const_t<typename T::element_type>> {
   void requireMutable() const {
     if (isConstView())
       throw std::runtime_error(
@@ -506,7 +507,7 @@ public:
 
   ViewModel(const Dimensions &dimensions, T model,
             std::optional<T> variances = std::nullopt)
-      : conceptT_t<value_type>(std::move(dimensions)),
+      : VariableConceptT<value_type>(std::move(dimensions)),
         m_values(std::move(model)), m_variances(std::move(variances)) {
     if (this->dims().volume() != m_values.size())
       throw std::runtime_error("Creating Variable: data size does not match "
