@@ -144,6 +144,13 @@ template <class T> struct ValuesAndVariances {
     variances.clear();
   }
 
+  // TODO Note that methods like insert, begin, and end are required as long as
+  // we support sparse data via a plain container such as std::vector, e.g., for
+  // concatenation using a.insert(a.end(), b.begin(), b.end()). Instead of
+  // adding these methods here (essentially making ValuesAndVariances support a
+  // proxy iterator) it might be easier to wrap the sparse container and give it
+  // some functionality like concatenate. Then we simply need to support this
+  // method here, which is much simpler than having proxy iterators.
   template <class... Ts> void insert(Ts &&...) {
     throw std::runtime_error(
         "`insert` not implemented for sparse data with variances.");
