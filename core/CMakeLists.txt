@@ -13,6 +13,7 @@ set(INC_FILES
     multi_index.h
     span.h
     tag_util.h
+    include/scipp/core/counts.h
     traits.h
     value_with_delta.h
     variable_view.h
@@ -20,7 +21,7 @@ set(INC_FILES
     vector.h)
 
 set(SRC_FILES
-    #counts.cpp
+    counts.cpp
     dataset.cpp
     dimensions.cpp
     #events.cpp
@@ -34,7 +35,8 @@ target_link_libraries(scipp-core
 target_include_directories(
   scipp-core
   PUBLIC $<INSTALL_INTERFACE:.> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/.>
-  )
+  PUBLIC $<INSTALL_INTERFACE:include>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 target_include_directories(scipp-core SYSTEM
                            PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
                            PRIVATE "../range-v3/include")

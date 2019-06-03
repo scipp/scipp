@@ -34,7 +34,7 @@ make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
 }
 } // namespace detail
 
-template <class T> class Unit_impl {
+template <class T, class Counts> class Unit_impl {
 public:
   using unit_t = T;
 
@@ -50,25 +50,31 @@ public:
 
   std::string name() const;
 
-  bool operator==(const Unit_impl<T> &other) const;
-  bool operator!=(const Unit_impl<T> &other) const;
+  bool isCounts() const;
+  bool isCountDensity() const;
+
+  bool operator==(const Unit_impl<T, Counts> &other) const;
+  bool operator!=(const Unit_impl<T, Counts> &other) const;
 
 private:
   unit_t m_unit;
   // TODO need to support scale
 };
 
-template <class T>
-Unit_impl<T> operator+(const Unit_impl<T> &a, const Unit_impl<T> &b);
-template <class T>
-Unit_impl<T> operator-(const Unit_impl<T> &a, const Unit_impl<T> &b);
-template <class T>
-Unit_impl<T> operator*(const Unit_impl<T> &a, const Unit_impl<T> &b);
-template <class T>
-Unit_impl<T> operator/(const Unit_impl<T> &a, const Unit_impl<T> &b);
-template <class T> Unit_impl<T> sqrt(const Unit_impl<T> &a);
-
-template <class T> bool containsCounts(const Unit_impl<T> &unit);
+template <class T, class Counts>
+Unit_impl<T, Counts> operator+(const Unit_impl<T, Counts> &a,
+                               const Unit_impl<T, Counts> &b);
+template <class T, class Counts>
+Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a,
+                               const Unit_impl<T, Counts> &b);
+template <class T, class Counts>
+Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
+                               const Unit_impl<T, Counts> &b);
+template <class T, class Counts>
+Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
+                               const Unit_impl<T, Counts> &b);
+template <class T, class Counts>
+Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a);
 
 } // namespace scipp::units
 

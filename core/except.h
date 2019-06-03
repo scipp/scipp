@@ -149,7 +149,7 @@ template <class T> void unit(const T &object, const units::Unit &unit) {
 }
 
 template <class T> void countsOrCountsDensity(const T &object) {
-  if (!(units::containsCounts(object.unit())))
+  if (!object.unit().isCounts() && !object.unit().isCountDensity())
     throw except::UnitError("Expected counts or counts-density, got " +
                             object.unit().name() + '.');
 }

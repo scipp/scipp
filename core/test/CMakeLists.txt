@@ -2,6 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 add_executable(scipp-core-test
                bool_test.cpp
+               counts_test.cpp
                dataset_test.cpp
                dataset_test_common.cpp
                dataset_operations_test.cpp

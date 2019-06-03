@@ -361,6 +361,18 @@ DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   return *this;
 }
 
+DataProxy DataProxy::operator*=(const Variable &other) const {
+  if (hasData())
+    data() *= other;
+  return *this;
+}
+
+DataProxy DataProxy::operator/=(const Variable &other) const {
+  if (hasData())
+    data() /= other;
+  return *this;
+}
+
 /// Return a const proxy to all coordinates of the dataset slice.
 ///
 /// This proxy includes only "dimension-coordinates". To access

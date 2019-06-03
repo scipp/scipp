@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "counts.h"
+#include "scipp/core/counts.h"
 #include "dataset.h"
 #include "except.h"
 
@@ -13,25 +13,21 @@ namespace counts {
 auto getBinWidths(const Dataset &d, const std::vector<Dim> &dims) {
   std::vector<Variable> binWidths;
   for (const auto dim : dims) {
-    const auto &coord = d(dimensionCoord(dim));
+    const auto &coord = d.coords()[dim];
     if (coord.unit() == units::dimensionless)
       throw std::runtime_error("Dimensionless axis cannot be used for "
                                "conversion from or to density");
-    binWidths.emplace_back(coord(dim, 1, coord.dimensions()[dim]) -
-                           coord(dim, 0, coord.dimensions()[dim] - 1));
+    binWidths.emplace_back(coord(dim, 1, coord.dims()[dim]) -
+                           coord(dim, 0, coord.dims()[dim] - 1));
   }
   return binWidths;
 }
 
-void toDensity(const VariableSlice var,
-               const std::vector<Variable> &binWidths) {
-  if (var.unit() == units::counts) {
+void toDensity(const DataProxy data, const std::vector<Variable> &binWidths) {
+  if (data.unit().isCounts()) {
     for (const auto &binWidth : binWidths)
-      var /= binWidth;
-  } else if (var.unit() == units::counts * units::counts) {
-    for (const auto &binWidth : binWidths)
-      var /= binWidth * binWidth;
-  } else if (units::containsCounts(var.unit())) {
+      data /= binWidth;
+  } else if (data.unit().isCountDensity()) {
     // This error implies that conversion to multi-dimensional densities
     // must be done in one step, e.g., counts -> counts/(m*m*s). We cannot
     // do counts -> counts/m -> counts/(m*m) -> counts/(m*m*s) since the
@@ -52,26 +48,19 @@ Dataset toDensity(Dataset d, const Dim dim) {
 
 Dataset toDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d, dims);
-  for (const auto & [ name, tag, var ] : d) {
+  for (const auto & [ name, data ] : d) {
     static_cast<void>(name);
-    if (tag.isData())
-      toDensity(var, binWidths);
+    toDensity(data, binWidths);
   }
   return std::move(d);
 }
 
-void fromDensity(const VariableSlice var,
-                 const std::vector<Variable> &binWidths) {
-  if (var.unit() == units::counts) {
+void fromDensity(const DataProxy data, const std::vector<Variable> &binWidths) {
+  if (data.unit().isCounts()) {
     // Do nothing, but do not fail either.
-  } else if (units::containsCounts(var.unit())) {
+  } else if (data.unit().isCountDensity()) {
     for (const auto &binWidth : binWidths)
-      var *= binWidth;
-    expect::unit(var, units::counts);
-  } else if (units::containsCountsVariance(var.unit())) {
-    for (const auto &binWidth : binWidths)
-      var *= binWidth * binWidth;
-    expect::unit(var, units::counts * units::counts);
+      data *= binWidth;
   }
 }
 
@@ -81,27 +70,11 @@ Dataset fromDensity(Dataset d, const Dim dim) {
 
 Dataset fromDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d, dims);
-  for (const auto & [ name, tag, var ] : d) {
+  for (const auto & [ name, data ] : d) {
     static_cast<void>(name);
-    if (tag.isData())
-      fromDensity(var, binWidths);
+    fromDensity(data, binWidths);
   }
   return std::move(d);
-}
-
-/// Returns true if the data in the variable is a counts-density.
-//
-// Note that we cannot distiguish between densities for different dimensions,
-// since our unit system does not provide means to distinguish, e.g., meter for
-// dimension X and meter for dimension Y.
-bool isDensity(const Variable &var) {
-  const auto &unit = var.unit();
-  if (units::containsCounts(unit) && unit != units::counts)
-    return true;
-  if (units::containsCountsVariance(unit) &&
-      unit != units::counts * units::counts)
-    return true;
-  return false;
 }
 
 } // namespace counts
