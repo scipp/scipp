@@ -1351,7 +1351,8 @@ Variable mean(const Variable &var, const Dim dim) {
 }
 
 Variable abs(const Variable &var) {
-  return transform<double, float>(var, [](const auto x) { return ::abs(x); });
+  using std::abs;
+  return transform<double, float>(var, [](const auto x) { return abs(x); });
 }
 
 Variable norm(const Variable &var) {
@@ -1359,8 +1360,9 @@ Variable norm(const Variable &var) {
 }
 
 Variable sqrt(const Variable &var) {
+  using std::sqrt;
   Variable result =
-      transform<double, float>(var, [](const auto x) { return std::sqrt(x); });
+      transform<double, float>(var, [](const auto x) { return sqrt(x); });
   result.setUnit(sqrt(var.unit()));
   return result;
 }

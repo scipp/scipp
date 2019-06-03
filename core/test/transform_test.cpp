@@ -28,8 +28,14 @@ TEST(TransformTest, apply_unary_in_place_with_variances) {
 TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var = makeVariable<float>({Dim::X, 2}, {1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out = transform<double, float>(var, [](const double x) { return -x; });
+  auto out = transform<float>(var, [](const auto x) { return -1.0 * x; });
   EXPECT_TRUE(equals(out.values<double>(), {-1.1f, -2.2f}));
+}
+
+TEST(TransformTest, apply_unary_with_variances) {
+  const auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {3.3, 4.4});
+  auto out = transform<double>(var, [](const auto x) { return x + 1; });
+  EXPECT_EQ(out, makeVariable<double>({Dim::X, 2}, {2.1, 3.2}, {3.3, 4.4}));
 }
 
 TEST(TransformTest, apply_unary) {
