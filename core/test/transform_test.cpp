@@ -55,6 +55,14 @@ TEST(TransformTest, apply_binary_in_place) {
   EXPECT_TRUE(equals(a.values<double>(), {4.4, 5.5}));
 }
 
+TEST(TransformTest, apply_binary) {
+  const auto a = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
+  const auto b = makeVariable<float>(3.3);
+  const auto out = transform<pair_custom_t<std::pair<double, float>>>(
+      a, b, [](auto x, const auto y) { return x * y; });
+  EXPECT_EQ(out, makeVariable<double>({Dim::X, 2}, {1.0 * 3.3f, 2.0 * 3.3f}));
+}
+
 TEST(TransformTest, apply_binary_in_place_var_with_view) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>({Dim::Y, 2}, {0.1, 3.3});

@@ -188,4 +188,30 @@ int32_t Dimensions::index(const Dim dim) const {
   throw except::DimensionNotFoundError(*this, dim);
 }
 
+/// Return the direct sum, i.e., the combination of dimensions in a and b.
+///
+/// Throws if there is a mismatching dimension extent.
+Dimensions merge(const Dimensions &a, const Dimensions &b) {
+  auto out(b);
+  if (a.sparse() && b.sparse() && (a.sparseDim() != b.sparseDim()))
+    throw except::DimensionError(
+        "Cannot merge subspaces with mismatching sparse dimension.");
+  if (a.sparse() && !b.sparse())
+    return merge(b, a);
+  for (const auto dim : a.labels()) {
+    if (b.contains(dim)) {
+      if ((dim != b.sparseDim()) && a[dim] != b[dim])
+        throw except::DimensionError(
+            "Cannot merge subspaces with mismatching extent");
+      else if (dim == b.sparseDim() && dim != a.sparseDim())
+        throw except::DimensionError("Cannot merge subspaces with dimension "
+                                     "that is sparse in one argument but dense "
+                                     "in another.");
+    } else {
+      out.add(dim, a[dim]);
+    }
+  }
+  return out;
+}
+
 } // namespace scipp::core

@@ -145,6 +145,8 @@ private:
                 Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
 
+Dimensions merge(const Dimensions &a, const Dimensions &b);
+
 } // namespace scipp::core
 
 #endif // DIMENSIONS_H

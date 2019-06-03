@@ -110,8 +110,16 @@ constexpr auto operator+(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value + b, a.variance};
 }
 template <class T1, class T2>
+constexpr auto operator+(const T2 a, const ValueAndVariance<T1> b) noexcept {
+  return ValueAndVariance{a + b.value, b.variance};
+}
+template <class T1, class T2>
 constexpr auto operator-(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value - b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator-(const T2 a, const ValueAndVariance<T1> b) noexcept {
+  return ValueAndVariance{a - b.value, b.variance};
 }
 template <class T1, class T2>
 constexpr auto operator*(const ValueAndVariance<T1> a, const T2 b) noexcept {
@@ -236,20 +244,17 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
   }
 }
 
-template <class Op, class Out, class T, class... Ts>
+template <class Op, class Out, class... Ts>
 void transform_with_variance_impl(Op op, ValuesAndVariances<Out> out,
-                                  ValuesAndVariances<T> arg, Ts &&... other) {
+                                  Ts &&... other) {
   auto & [ ovals, ovars ] = out;
-  auto & [ vals, vars ] = arg;
   for (scipp::index i = 0; i < scipp::size(ovals); ++i) {
     if constexpr (is_sparse_v<decltype(ovals[0])>) {
-      auto out_i = op(ValuesAndVariances{vals[i], vars[i]},
-                      value_and_maybe_variance(other, i)...);
+      auto out_i = op(value_and_maybe_variance(other, i)...);
       ovals[i] = std::move(out_i.first);
       ovars[i] = std::move(out_i.second);
     } else {
-      auto out_i = op(ValueAndVariance{vals[i], vars[i]},
-                      value_and_maybe_variance(other, i)...);
+      auto out_i = op(value_and_maybe_variance(other, i)...);
       ovals[i] = out_i.value;
       ovars[i] = out_i.variance;
     }
@@ -337,6 +342,109 @@ template <class Op> struct TransformSparse {
     transform_with_variance_impl(op, out, a);
     return std::pair(std::move(vals), std::move(vars));
   }
+  template <class T1, class T2>
+  constexpr auto operator()(const sparse_container<T1> &a, const T2 b) const {
+    sparse_container<decltype(op(a[0], b))> out(a.size());
+    transform_impl(op, out, a, broadcast{b});
+    return out;
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const sparse_container<T1> &a,
+                            const ValueAndVariance<T2> b) const {
+    sparse_container<decltype(op(a[0], b.value))> vals(a.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, a, broadcast{b});
+    return std::pair(std::move(vals), std::move(vars));
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const T1 a, const sparse_container<T2> &b) const {
+    sparse_container<decltype(op(a, b[0]))> out(b.size());
+    transform_impl(op, out, broadcast{a}, b);
+    return out;
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const ValueAndVariance<T1> a,
+                            const sparse_container<T2> &b) const {
+    sparse_container<decltype(op(a.value, b[0]))> vals(b.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, broadcast{a}, b);
+    return std::pair(std::move(vals), std::move(vars));
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const ValuesAndVariances<T1> &a, const T2 b) const {
+    sparse_container<decltype(op(a.values[0], b))> vals(a.values.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, a, broadcast{b});
+    return std::pair(std::move(vals), std::move(vars));
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const ValuesAndVariances<T1> &a,
+                            const ValueAndVariance<T2> b) const {
+    sparse_container<decltype(op(a.values[0], b.value))> vals(a.values.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, a, broadcast{b});
+    return std::pair(std::move(vals), std::move(vars));
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const T1 a, const ValuesAndVariances<T2> &b) const {
+    sparse_container<decltype(op(a, b.values[0]))> vals(b.values.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, broadcast{a}, b);
+    return std::pair(std::move(vals), std::move(vars));
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const ValueAndVariance<T1> a,
+                            const ValuesAndVariances<T2> &b) const {
+    sparse_container<decltype(op(a.value, b.values[0]))> vals(b.values.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, broadcast{a}, b);
+    return std::pair(std::move(vals), std::move(vars));
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const sparse_container<T1> &a,
+                            const sparse_container<T2> &b) const {
+    expect::sizeMatches(a, b);
+    sparse_container<decltype(op(a[0], b[0]))> out(a.size());
+    transform_impl(op, out, a, b);
+    return out;
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const ValuesAndVariances<T1> &a,
+                            const sparse_container<T2> &b) const {
+    expect::sizeMatches(a, b);
+    sparse_container<decltype(op(a.values[0], b[0]))> vals(b.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, a, b);
+    return std::pair(std::move(vals), std::move(vars));
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const sparse_container<T1> &a,
+                            const ValuesAndVariances<T2> &b) const {
+    expect::sizeMatches(a, b);
+    sparse_container<decltype(op(a[0], b.values[0]))> vals(a.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, a, b);
+    return std::pair(std::move(vals), std::move(vars));
+  }
+  template <class T1, class T2>
+  constexpr auto operator()(const ValuesAndVariances<T1> &a,
+                            const ValuesAndVariances<T2> &b) const {
+    expect::sizeMatches(a, b);
+    sparse_container<decltype(op(a.values[0], b.values[0]))> vals(
+        a.values.size());
+    auto vars(vals);
+    ValuesAndVariances out{vals, vars};
+    transform_with_variance_impl(op, out, a, b);
+    return std::pair(std::move(vals), std::move(vars));
+  }
 };
 
 /// Helper for in-place transform implementation, performing branching between
@@ -358,8 +466,8 @@ template <class T1, class Op> void do_transform_in_place(T1 &a, Op op) {
 
 /// Helper for transform implementation, performing branching between output
 /// with and without variances.
-template <class T1, class T2, class Op>
-void do_transform(const T1 &a, T2 &out, Op op) {
+template <class T1, class Out, class Op>
+void do_transform(const T1 &a, Out &out, Op op) {
   auto a_val = a.values();
   auto out_val = out.values();
   if (a.hasVariances()) {
@@ -376,9 +484,9 @@ void do_transform(const T1 &a, T2 &out, Op op) {
   }
 }
 
-/// Helper for transform implementation, performing branching between output
-/// with and without variances as well as handling other operands with and
-/// without variances.
+/// Helper for in-place transform implementation, performing branching between
+/// output with and without variances as well as handling other operands with
+/// and without variances.
 template <class T1, class T2, class Op>
 void do_transform_in_place(T1 &a, const T2 &b, Op op) {
   auto a_val = a.values();
@@ -404,6 +512,41 @@ void do_transform_in_place(T1 &a, const T2 &b, Op op) {
         "RHS in operation has variances but LHS does not.");
   } else {
     transform_in_place_impl(op, a_val, b_val);
+  }
+}
+
+/// Helper for transform implementation, performing branching between output
+/// with and without variances as well as handling other operands with and
+/// without variances.
+template <class T1, class T2, class Out, class Op>
+void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
+  auto a_val = a.values();
+  auto b_val = b.values();
+  auto out_val = out.values();
+  if (a.hasVariances()) {
+    if constexpr (is_eigen_type_v<typename T1::value_type> ||
+                  is_eigen_type_v<typename T2::value_type>) {
+      throw std::runtime_error("This dtype cannot have a variance.");
+    } else {
+      auto a_var = a.variances();
+      auto out_var = out.variances();
+      if (b.hasVariances()) {
+        auto b_var = b.variances();
+        transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
+                                     ValuesAndVariances{a_val, a_var},
+                                     ValuesAndVariances{b_val, b_var});
+      } else {
+        transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
+                                     ValuesAndVariances{a_val, a_var}, b_val);
+      }
+    }
+  } else if (b.hasVariances()) {
+    auto b_var = b.variances();
+    auto out_var = out.variances();
+    transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
+                                 a_val, ValuesAndVariances{b_val, b_var});
+  } else {
+    transform_impl(op, out_val, a_val, b_val);
   }
 }
 
@@ -488,6 +631,27 @@ template <class Op> struct Transform {
     do_transform(as_view{*handle, dims}, outT, op);
     return out;
   }
+
+  template <class A, class B>
+  Variable operator()(A &&a_handle, B &&b_handle) const {
+    const auto &a = *a_handle;
+    const auto &b = *b_handle;
+    const auto &dimsA = a.dims();
+    const auto &dimsB = b.dims();
+    const auto &dims = merge(dimsA, dimsB);
+
+    using Out = decltype(op(a.values()[0], b.values()[0]));
+    Variable out = a.hasVariances() || b.hasVariances()
+                       ? makeVariable(Out(), Out())
+                       : makeVariable(Out());
+    // TODO For optimal performance we should just make container without
+    // element init here.
+    out.setDims(dims);
+    auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
+
+    do_transform(as_view{a, dims}, as_view{b, dims}, outT, op);
+    return out;
+  }
 };
 template <class Op> Transform(Op)->Transform<Op>;
 
@@ -562,8 +726,8 @@ void transform_in_place(Var &var, Op op) {
 }
 
 template <class... Ts, class Var, class Var1, class Op>
-void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
-                           Op op) {
+void transform2_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
+                         Op op) {
   using namespace detail;
   try {
     if constexpr (((is_sparse_v<typename Ts::first_type> ||
@@ -595,8 +759,8 @@ void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
 /// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
-  do_transform_in_place(std::tuple_cat(TypePairs{}...), std::forward<Var>(var),
-                        other, op);
+  transform2_in_place(std::tuple_cat(TypePairs{}...), std::forward<Var>(var),
+                      other, op);
 }
 
 /// Transform the data elements of a variable and return a new Variable.
@@ -620,6 +784,40 @@ Variable transform(const Var &var, Op op) {
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
+}
+
+template <class... Ts, class Var1, class Var2, class Op>
+Variable transform2(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
+                    Op op) {
+  using namespace detail;
+  try {
+    if constexpr (((is_sparse_v<typename Ts::first_type> ||
+                    is_sparse_v<typename Ts::second_type>) ||
+                   ...)) {
+      return scipp::core::visit_impl<Ts...>::apply(Transform{op},
+                                                   var1.dataHandle().variant(),
+                                                   var2.dataHandle().variant());
+    } else {
+      return scipp::core::visit(
+                 insert_sparse_pairs(std::tuple<Ts...>{}, var1.dataHandle()))
+          .apply(Transform{overloaded{op, TransformSparse<Op>{op}}},
+                 var1.dataHandle().variant(), var2.dataHandle().variant());
+    }
+  } catch (const std::bad_variant_access &) {
+    throw except::TypeError("Cannot apply operation to item dtypes " +
+                            to_string(var1.dtype()) + " and " +
+                            to_string(var2.dtype()) + '.');
+  }
+}
+
+/// Transform the data elements of a variable in-place.
+///
+/// This overload is equivalent to std::transform with two input ranges and an
+/// output range identical to the secound input range, but avoids potentially
+/// costly element copies.
+template <class... TypePairs, class Var1, class Var2, class Op>
+Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
+  return transform2(std::tuple_cat(TypePairs{}...), var1, var2, op);
 }
 
 } // namespace scipp::core
