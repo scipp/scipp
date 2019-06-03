@@ -113,6 +113,16 @@ TEST(Variable, operator_plus_equal_custom_type) {
   EXPECT_EQ(a.values<float>()[1], 4.4f);
 }
 
+TEST(Variable, operator_plus) {
+  auto a = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
+  auto b = makeVariable<float>({Dim::Y, 2}, {0.1, 0.2});
+
+  auto sum = a + b;
+  EXPECT_EQ(sum, makeVariable<double>(
+                     {{Dim::X, 2}, {Dim::Y, 2}},
+                     {1.0 + 0.1f, 1.0 + 0.2f, 2.0 + 0.1f, 2.0 + 0.2f}));
+}
+
 TEST(Variable, operator_times_equal) {
   auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
 

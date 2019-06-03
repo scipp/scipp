@@ -703,7 +703,7 @@ private:
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-Variable operator+(Variable a, const Variable &b);
+Variable operator+(const Variable &a, const Variable &b);
 Variable operator-(Variable a, const Variable &b);
 Variable operator*(Variable a, const Variable &b);
 Variable operator/(Variable a, const Variable &b);

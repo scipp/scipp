@@ -810,6 +810,14 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
+template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
+  expect::equals(a.unit(), b.unit());
+  return transform<
+      pair_self_t<double, float, int64_t>,
+      pair_custom_t<std::pair<double, float>, std::pair<float, double>>>(
+      a, b, [](const auto &a, const auto &b) { return a + b; });
+}
+
 Variable Variable::operator-() const {
   // TODO This implementation only works for variables containing doubles and
   // will throw, e.g., for ints.
@@ -1084,10 +1092,7 @@ Variable VariableConstProxy::reshape(const Dimensions &dims) const {
 
 // Note: The std::move here is necessary because RVO does not work for variables
 // that are function parameters.
-Variable operator+(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result += b;
-}
+Variable operator+(const Variable &a, const Variable &b) { return plus(a, b); }
 Variable operator-(Variable a, const Variable &b) {
   auto result = broadcast(std::move(a), b.dims());
   return result -= b;
