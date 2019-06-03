@@ -617,16 +617,20 @@ template <class Op> struct TransformInPlace {
 };
 template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
 
+template <class T> struct element_type { using type = T; };
+template <class T> struct element_type<sparse_container<T>> { using type = T; };
+template <class T> using element_type_t = typename element_type<T>::type;
+
 template <class Op> struct Transform {
   Op op;
   template <class T> Variable operator()(T &&handle) const {
     const auto &dims = handle->dims();
     using Out = decltype(op(handle->values()[0]));
-    Variable out = handle->hasVariances() ? makeVariable(Out(), Out())
-                                          : makeVariable(Out());
     // TODO For optimal performance we should just make container without
     // element init here.
-    out.setDims(dims);
+    Variable out = handle->hasVariances()
+                       ? makeVariableWithVariances<element_type_t<Out>>(dims)
+                       : makeVariable<element_type_t<Out>>(dims);
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
     do_transform(as_view{*handle, dims}, outT, op);
     return out;
@@ -641,12 +645,11 @@ template <class Op> struct Transform {
     const auto &dims = merge(dimsA, dimsB);
 
     using Out = decltype(op(a.values()[0], b.values()[0]));
-    Variable out = a.hasVariances() || b.hasVariances()
-                       ? makeVariable(Out(), Out())
-                       : makeVariable(Out());
     // TODO For optimal performance we should just make container without
     // element init here.
-    out.setDims(dims);
+    Variable out = a.hasVariances() || b.hasVariances()
+                       ? makeVariableWithVariances<element_type_t<Out>>(dims)
+                       : makeVariable<element_type_t<Out>>(dims);
     auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
 
     do_transform(as_view{a, dims}, as_view{b, dims}, outT, op);
@@ -679,10 +682,25 @@ template <class T1, class T2, class... Known> struct optional_sparse_pair {
 /// Augment a tuple of type pairs with the corresponding sparse types, if they
 /// exist.
 template <class... Ts, class... Known>
+auto insert_sparse_in_place_pairs(
+    const std::tuple<Ts...> &, const VariableConceptHandle_impl<Known...> &) {
+  return std::tuple_cat(
+      std::tuple<Ts...>{},
+      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
+                                    typename Ts::second_type,
+                                    Known...>::type{}...,
+      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
+                                    sparse_container<typename Ts::second_type>,
+                                    Known...>::type{}...);
+}
+template <class... Ts, class... Known>
 auto insert_sparse_pairs(const std::tuple<Ts...> &,
                          const VariableConceptHandle_impl<Known...> &) {
   return std::tuple_cat(
       std::tuple<Ts...>{},
+      typename optional_sparse_pair<typename Ts::first_type,
+                                    sparse_container<typename Ts::second_type>,
+                                    Known...>::type{}...,
       typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
                                     typename Ts::second_type,
                                     Known...>::type{}...,
@@ -740,7 +758,7 @@ void transform2_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
       // Note that if only one of the inputs is sparse it must be the one being
       // transformed in-place, so there are only three cases here.
       scipp::core::visit(
-          insert_sparse_pairs(std::tuple<Ts...>{}, var.dataHandle()))
+          insert_sparse_in_place_pairs(std::tuple<Ts...>{}, var.dataHandle()))
           .apply(
               TransformInPlace{overloaded{op, TransformSparseInPlace<Op>{op}}},
               var.dataHandle().variant(), other.dataHandle().variant());
