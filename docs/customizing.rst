@@ -71,7 +71,7 @@ See https://github.com/scipp/scipp/issues/265.
 Built-in types
 --------------
 
-The helper ``VariableConceptHandle`` in the header ``core/include/scipp/core/variable.h`` is used to list all types that can be support in calls to ``transform`` (and its in-place variants) for ``Variable``.
+The helper ``VariableConceptHandle`` in the header ``core/include/scipp/core/variable.h`` is used to list all types that can be supported in calls to ``transform`` (and its in-place variants) for ``Variable``.
 Essentially adding a type here will add another alternative to the variant in ``Variable`` that is used to hold data.
 
 **Note**
