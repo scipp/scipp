@@ -2,23 +2,18 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 add_executable(scipp-core-test
                bool_test.cpp
-               #convert_test.cpp
+               counts_test.cpp
                dataset_test.cpp
                dataset_test_common.cpp
                dataset_operations_test.cpp
                dimensions_test.cpp
-               #EventWorkspace_test.cpp
-               #example_instrument_test.cpp
                except_test.cpp
                #md_zip_view_test.cpp
                multi_index_test.cpp
                transform_test.cpp
-               #Run_test.cpp
-               #TableWorkspace_test.cpp
                variable_test.cpp
                variable_operations_test.cpp
                variable_view_test.cpp
-               #Workspace2D_test.cpp
                #zip_view_test.cpp
                )
 add_sanitizers(scipp-core-test)

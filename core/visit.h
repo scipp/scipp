@@ -62,8 +62,6 @@ decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2, const std::tuple<T1...> &,
 
   if constexpr (!std::is_same_v<void, Ret>) {
     Ret ret;
-    // For now we only support same type in both variants. Eventually this will
-    // be generalized.
     if (!((std::holds_alternative<T1>(v1) && std::holds_alternative<T2>(v2)
                ? (ret = std::invoke(std::forward<F>(f),
                                     std::get<T1>(std::forward<V1>(v1)),

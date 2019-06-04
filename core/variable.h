@@ -35,6 +35,13 @@ template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
 struct is_sparse_container<sparse_container<T>> : std::true_type {};
 
+template <class T> struct is_sparse : std::false_type {};
+template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
+template <class T> struct is_sparse<sparse_container<T> &> : std::true_type {};
+template <class T>
+struct is_sparse<const sparse_container<T> &> : std::true_type {};
+template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+
 // std::vector<bool> may have a packed non-thread-safe implementation which we
 // need to avoid. Therefore we use std::vector<Bool> instead.
 template <class T> struct underlying_type { using type = T; };
@@ -45,9 +52,9 @@ class Variable;
 template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
-using VariableConceptHandle =
-    VariableConceptHandle_impl<double, float, int64_t, Eigen::Vector3d,
-                               sparse_container<double>>;
+using VariableConceptHandle = VariableConceptHandle_impl<
+    double, float, int64_t, Eigen::Vector3d, sparse_container<double>,
+    sparse_container<float>, sparse_container<int64_t>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called
@@ -284,12 +291,20 @@ public:
     return scipp::span(cast<T>(true));
   }
   template <class T> auto variances() { return scipp::span(cast<T>(true)); }
-  template <class T> auto sparseSpan() const {
+  template <class T> auto sparseValues() const {
     return scipp::span(cast<sparse_container<T>>());
   }
-  template <class T> auto sparseSpan() {
+  template <class T> auto sparseValues() {
     return scipp::span(cast<sparse_container<T>>());
   }
+  template <class T> auto sparseVariances() const {
+    return scipp::span(cast<sparse_container<T>>(true));
+  }
+  template <class T> auto sparseVariances() {
+    return scipp::span(cast<sparse_container<T>>(true));
+  }
+  template <class T> auto sparseSpan() const { return sparseValues<T>(); }
+  template <class T> auto sparseSpan() { return sparseValues<T>(); }
 
   // ATTENTION: It is really important to delete any function returning a
   // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
@@ -373,15 +388,9 @@ private:
 
 template <class T> Variable makeVariable(const Dimensions &dimensions) {
   if (dimensions.sparse())
-    if constexpr (std::is_same_v<T, double>) {
-      return Variable(
-          units::dimensionless, std::move(dimensions),
-          Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()));
-    } else {
-      // TODO Just for now, avoiding the need to instantiate Variable methods
-      // for all types also in the sparse case.
-      throw std::runtime_error("Unsupported dtype for sparse data.");
-    }
+    return Variable(
+        units::dimensionless, std::move(dimensions),
+        Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()));
   else
     return Variable(units::dimensionless, std::move(dimensions),
                     Vector<underlying_type_t<T>>(
@@ -398,8 +407,14 @@ Variable makeVariable(const std::initializer_list<Dim> &dims,
 template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T2> values) {
-  return Variable(units::dimensionless, std::move(dimensions),
-                  Vector<underlying_type_t<T>>(values.begin(), values.end()));
+  if constexpr (is_sparse_v<T2>) {
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<sparse_container<underlying_type_t<T>>>(
+                        values.begin(), values.end()));
+  } else {
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<underlying_type_t<T>>(values.begin(), values.end()));
+  }
 }
 
 // This overload is required to avoid wrongly selecting the single-value
@@ -424,10 +439,18 @@ template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T2> values,
                       std::initializer_list<T2> variances) {
-  return Variable(
-      units::dimensionless, std::move(dimensions),
-      Vector<underlying_type_t<T>>(values.begin(), values.end()),
-      Vector<underlying_type_t<T>>(variances.begin(), variances.end()));
+  if constexpr (is_sparse_v<T2>) {
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<sparse_container<underlying_type_t<T>>>(
+                        values.begin(), values.end()),
+                    Vector<sparse_container<underlying_type_t<T>>>(
+                        variances.begin(), variances.end()));
+  } else {
+    return Variable(
+        units::dimensionless, std::move(dimensions),
+        Vector<underlying_type_t<T>>(values.begin(), values.end()),
+        Vector<underlying_type_t<T>>(variances.begin(), variances.end()));
+  }
 }
 
 template <class T, class T2 = T>

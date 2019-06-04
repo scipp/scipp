@@ -37,5 +37,8 @@ template <class T1, class T2>
 bool equals(const T1 &a, const std::initializer_list<T2> &b) {
   return std::equal(a.begin(), a.end(), b.begin(), b.end());
 }
+template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
+  return std::equal(a.begin(), a.end(), b.begin(), b.end());
+}
 
 #endif // TEST_MACROS_H
