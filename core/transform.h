@@ -209,6 +209,14 @@ constexpr auto value_and_maybe_variance(const T &range, const scipp::index i) {
   }
 }
 
+template <class T> struct has_variances : std::false_type {};
+template <class T>
+struct has_variances<ValueAndVariance<T>> : std::true_type {};
+template <class T>
+struct has_variances<ValuesAndVariances<T>> : std::true_type {};
+template <class T>
+inline constexpr bool has_variances_v = has_variances<T>::value;
+
 template <class T> struct is_eigen_type : std::false_type {};
 template <class T, int Rows, int Cols>
 struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
@@ -273,6 +281,38 @@ void transform_impl(Op op, Out &out, T &&vals, Ts &&... other) {
     out[i] = op(vals[i], other[i]...);
 }
 
+template <class T> struct element_type { using type = T; };
+template <class T> struct element_type<sparse_container<T>> { using type = T; };
+template <class T> struct element_type<const sparse_container<T>> {
+  using type = T;
+};
+template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
+template <class T> struct element_type<ValuesAndVariances<T>> {
+  using type = T;
+};
+template <class T>
+struct element_type<ValuesAndVariances<sparse_container<T>>> {
+  using type = T;
+};
+template <class T>
+struct element_type<ValuesAndVariances<const sparse_container<T>>> {
+  using type = T;
+};
+template <class T> using element_type_t = typename element_type<T>::type;
+
+namespace transform_detail {
+template <class T> struct is_sparse : std::false_type {};
+template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
+template <class T>
+struct is_sparse<const sparse_container<T> &> : std::true_type {};
+template <class T>
+struct is_sparse<ValuesAndVariances<sparse_container<T>>> : std::true_type {};
+template <class T>
+struct is_sparse<ValuesAndVariances<const sparse_container<T>>>
+    : std::true_type {};
+template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+} // namespace transform_detail
+
 /// Broadcast a constant to arbitrary size. Helper for TransformSparse.
 ///
 /// This helper allows the use of a common transform implementation when mixing
@@ -282,6 +322,25 @@ template <class T> struct broadcast {
   T value;
 };
 template <class T> broadcast(T)->broadcast<T>;
+
+template <class T> auto maybe_broadcast(T &&value) {
+  if constexpr (transform_detail::is_sparse_v<
+                    std::remove_const_t<std::remove_reference_t<T>>>)
+    return std::forward<T>(value);
+  else
+    return broadcast{value};
+}
+
+template <class T1, class T2>
+auto check_and_get_size(const T1 &a, const T2 &b) {
+  if constexpr (transform_detail::is_sparse_v<T1>) {
+    if constexpr (transform_detail::is_sparse_v<T2>)
+      expect::sizeMatches(a, b);
+    return scipp::size(a);
+  } else {
+    return scipp::size(b);
+  }
+}
 
 /// Functor for implementing operations with sparse data.
 ///
@@ -344,106 +403,75 @@ template <class Op> struct TransformSparse {
   }
   template <class T1, class T2>
   constexpr auto operator()(const sparse_container<T1> &a, const T2 b) const {
-    sparse_container<decltype(op(a[0], b))> out(a.size());
-    transform_impl(op, out, a, broadcast{b});
-    return out;
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const sparse_container<T1> &a,
                             const ValueAndVariance<T2> b) const {
-    sparse_container<decltype(op(a[0], b.value))> vals(a.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, a, broadcast{b});
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const T1 a, const sparse_container<T2> &b) const {
-    sparse_container<decltype(op(a, b[0]))> out(b.size());
-    transform_impl(op, out, broadcast{a}, b);
-    return out;
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const ValueAndVariance<T1> a,
                             const sparse_container<T2> &b) const {
-    sparse_container<decltype(op(a.value, b[0]))> vals(b.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, broadcast{a}, b);
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const ValuesAndVariances<T1> &a, const T2 b) const {
-    sparse_container<decltype(op(a.values[0], b))> vals(a.values.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, a, broadcast{b});
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const ValuesAndVariances<T1> &a,
                             const ValueAndVariance<T2> b) const {
-    sparse_container<decltype(op(a.values[0], b.value))> vals(a.values.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, a, broadcast{b});
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const T1 a, const ValuesAndVariances<T2> &b) const {
-    sparse_container<decltype(op(a, b.values[0]))> vals(b.values.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, broadcast{a}, b);
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const ValueAndVariance<T1> a,
                             const ValuesAndVariances<T2> &b) const {
-    sparse_container<decltype(op(a.value, b.values[0]))> vals(b.values.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, broadcast{a}, b);
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const sparse_container<T1> &a,
                             const sparse_container<T2> &b) const {
-    expect::sizeMatches(a, b);
-    sparse_container<decltype(op(a[0], b[0]))> out(a.size());
-    transform_impl(op, out, a, b);
-    return out;
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const ValuesAndVariances<T1> &a,
                             const sparse_container<T2> &b) const {
-    expect::sizeMatches(a, b);
-    sparse_container<decltype(op(a.values[0], b[0]))> vals(b.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, a, b);
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const sparse_container<T1> &a,
                             const ValuesAndVariances<T2> &b) const {
-    expect::sizeMatches(a, b);
-    sparse_container<decltype(op(a[0], b.values[0]))> vals(a.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, a, b);
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
   }
   template <class T1, class T2>
   constexpr auto operator()(const ValuesAndVariances<T1> &a,
                             const ValuesAndVariances<T2> &b) const {
-    expect::sizeMatches(a, b);
-    sparse_container<decltype(op(a.values[0], b.values[0]))> vals(
-        a.values.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, a, b);
-    return std::pair(std::move(vals), std::move(vars));
+    return apply(a, b);
+  }
+  template <class T1, class T2>
+  constexpr auto apply(const T1 &a, const T2 &b) const {
+    sparse_container<
+        std::invoke_result_t<Op, element_type_t<T1>, element_type_t<T2>>>
+        vals(check_and_get_size(a, b));
+    if constexpr (has_variances_v<T1> || has_variances_v<T2>) {
+      auto vars(vals);
+      ValuesAndVariances out{vals, vars};
+      transform_with_variance_impl(op, out, maybe_broadcast(a),
+                                   maybe_broadcast(b));
+      return std::pair(std::move(vals), std::move(vars));
+    } else {
+      transform_impl(op, vals, maybe_broadcast(a), maybe_broadcast(b));
+      return vals;
+    }
   }
 };
 
@@ -616,10 +644,6 @@ template <class Op> struct TransformInPlace {
   }
 };
 template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
-
-template <class T> struct element_type { using type = T; };
-template <class T> struct element_type<sparse_container<T>> { using type = T; };
-template <class T> using element_type_t = typename element_type<T>::type;
 
 template <class Op> struct Transform {
   Op op;
