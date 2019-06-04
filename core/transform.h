@@ -323,7 +323,7 @@ template <class T> struct broadcast {
 };
 template <class T> broadcast(T)->broadcast<T>;
 
-template <class T> auto maybe_broadcast(T &&value) {
+template <class T> decltype(auto) maybe_broadcast(T &&value) {
   if constexpr (transform_detail::is_sparse_v<
                     std::remove_const_t<std::remove_reference_t<T>>>)
     return std::forward<T>(value);
@@ -355,37 +355,12 @@ auto check_and_get_size(const T1 &a, const T2 &b) {
 /// now the user-provided overload will match directly.
 template <class Op> struct TransformSparseInPlace {
   Op op;
-  template <class T> constexpr void operator()(sparse_container<T> &x) const {
-    transform_in_place_impl(op, x);
-  }
-  template <class T> constexpr void operator()(ValuesAndVariances<T> x) const {
-    transform_in_place_with_variance_impl(op, x);
-  }
-  template <class T1, class T2>
-  constexpr void operator()(sparse_container<T1> &a, const T2 b) const {
-    transform_in_place_impl(op, a, broadcast{b});
-  }
-  template <class T1, class T2>
-  constexpr void operator()(ValuesAndVariances<T1> a, const T2 b) const {
-    transform_in_place_with_variance_impl(op, a, broadcast{b});
-  }
-  template <class T1, class T2>
-  constexpr void operator()(sparse_container<T1> &a,
-                            const sparse_container<T2> &b) const {
-    expect::sizeMatches(a, b);
-    transform_in_place_impl(op, a, b);
-  }
-  template <class T1, class T2>
-  constexpr void operator()(ValuesAndVariances<T1> a,
-                            const sparse_container<T2> b) const {
-    expect::sizeMatches(a, b);
-    transform_in_place_with_variance_impl(op, a, b);
-  }
-  template <class T1, class T2>
-  constexpr void operator()(ValuesAndVariances<T1> a,
-                            const ValuesAndVariances<T2> b) const {
-    expect::sizeMatches(a, b);
-    transform_in_place_with_variance_impl(op, a, b);
+  template <class... Ts> constexpr void operator()(Ts &&... args) const {
+    static_cast<void>(check_and_get_size(args...));
+    if constexpr ((has_variances_v<Ts> || ...))
+      transform_in_place_with_variance_impl(op, maybe_broadcast(args)...);
+    else
+      transform_in_place_impl(op, maybe_broadcast(args)...);
   }
 };
 
@@ -701,9 +676,9 @@ void transform_in_place(Var &var, Op op) {
                                             var.dataHandle().variant());
     } else {
       scipp::core::visit(insert_sparse(std::tuple<Ts...>{}, var.dataHandle()))
-          .apply(
-              TransformInPlace{overloaded{op, TransformSparseInPlace<Op>{op}}},
-              var.dataHandle().variant());
+          .apply(TransformInPlace{detail::overloaded_sparse{
+                     op, TransformSparseInPlace<Op>{op}}},
+                 var.dataHandle().variant());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
@@ -726,9 +701,9 @@ void transform2_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
       // transformed in-place, so there are only three cases here.
       scipp::core::visit(
           insert_sparse_in_place_pairs(std::tuple<Ts...>{}, var.dataHandle()))
-          .apply(
-              TransformInPlace{overloaded{op, TransformSparseInPlace<Op>{op}}},
-              var.dataHandle().variant(), other.dataHandle().variant());
+          .apply(TransformInPlace{detail::overloaded_sparse{
+                     op, TransformSparseInPlace<Op>{op}}},
+                 var.dataHandle().variant(), other.dataHandle().variant());
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes " +
