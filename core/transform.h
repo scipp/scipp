@@ -331,6 +331,10 @@ template <class T> auto maybe_broadcast(T &&value) {
     return broadcast{value};
 }
 
+template <class T> auto check_and_get_size(const T &a) {
+  return scipp::size(a);
+}
+
 template <class T1, class T2>
 auto check_and_get_size(const T1 &a, const T2 &b) {
   if constexpr (transform_detail::is_sparse_v<T1>) {
@@ -387,33 +391,16 @@ template <class Op> struct TransformSparseInPlace {
 
 template <class Op> struct TransformSparse {
   Op op;
-  template <class T>
-  constexpr auto operator()(const sparse_container<T> &a) const {
-    sparse_container<decltype(op(a[0]))> out(a.size());
-    transform_impl(op, out, a);
-    return out;
-  }
-  template <class T>
-  constexpr auto operator()(const ValuesAndVariances<T> &a) const {
-    sparse_container<decltype(op(a.values[0]))> vals(a.values.size());
-    auto vars(vals);
-    ValuesAndVariances out{vals, vars};
-    transform_with_variance_impl(op, out, a);
-    return std::pair(std::move(vals), std::move(vars));
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const T1 &a, const T2 &b) const {
-    sparse_container<
-        std::invoke_result_t<Op, element_type_t<T1>, element_type_t<T2>>>
-        vals(check_and_get_size(a, b));
-    if constexpr (has_variances_v<T1> || has_variances_v<T2>) {
+  template <class... Ts> constexpr auto operator()(const Ts &... args) const {
+    sparse_container<std::invoke_result_t<Op, element_type_t<Ts>...>> vals(
+        check_and_get_size(args...));
+    if constexpr ((has_variances_v<Ts> || ...)) {
       auto vars(vals);
       ValuesAndVariances out{vals, vars};
-      transform_with_variance_impl(op, out, maybe_broadcast(a),
-                                   maybe_broadcast(b));
+      transform_with_variance_impl(op, out, maybe_broadcast(args)...);
       return std::pair(std::move(vals), std::move(vars));
     } else {
-      transform_impl(op, vals, maybe_broadcast(a), maybe_broadcast(b));
+      transform_impl(op, vals, maybe_broadcast(args)...);
       return vals;
     }
   }
@@ -776,8 +763,9 @@ Variable transform(const Var &var, Op op) {
     } else {
       return scipp::core::visit(
                  insert_sparse(std::tuple<Ts...>{}, var.dataHandle()))
-          .apply(Transform{overloaded{op, TransformSparse<Op>{op}}},
-                 var.dataHandle().variant());
+          .apply(
+              Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
+              var.dataHandle().variant());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
