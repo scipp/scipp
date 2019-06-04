@@ -717,17 +717,25 @@ private:
   Variable *m_mutableVariable;
 };
 
+Variable operator+(const Variable &a, const Variable &b);
+Variable operator-(const Variable &a, const Variable &b);
+Variable operator*(const Variable &a, const Variable &b);
+Variable operator/(const Variable &a, const Variable &b);
+Variable operator+(const Variable &a, const VariableConstProxy &b);
+Variable operator-(const Variable &a, const VariableConstProxy &b);
+Variable operator*(const Variable &a, const VariableConstProxy &b);
+Variable operator/(const Variable &a, const VariableConstProxy &b);
+Variable operator+(const VariableConstProxy &a, const Variable &b);
+Variable operator-(const VariableConstProxy &a, const Variable &b);
+Variable operator*(const VariableConstProxy &a, const Variable &b);
+Variable operator/(const VariableConstProxy &a, const Variable &b);
+Variable operator+(const VariableConstProxy &a, const VariableConstProxy &b);
+Variable operator-(const VariableConstProxy &a, const VariableConstProxy &b);
+Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b);
+Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b);
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-Variable operator+(const Variable &a, const Variable &b);
-Variable operator-(Variable a, const Variable &b);
-Variable operator*(Variable a, const Variable &b);
-Variable operator/(Variable a, const Variable &b);
-Variable operator+(Variable a, const VariableConstProxy &b);
-Variable operator-(Variable a, const VariableConstProxy &b);
-Variable operator*(Variable a, const VariableConstProxy &b);
-Variable operator/(Variable a, const VariableConstProxy &b);
 Variable operator+(Variable a, const double b);
 Variable operator-(Variable a, const double b);
 Variable operator*(Variable a, const double b);

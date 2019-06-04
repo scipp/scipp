@@ -810,20 +810,29 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
+using arithmetic_and_matrix_type_pairs =
+    std::tuple<std::pair<double, double>, std::pair<float, float>,
+               std::pair<int64_t, int64_t>,
+               std::pair<Eigen::Vector3d, Eigen::Vector3d>,
+               std::pair<double, float>, std::pair<float, double>>;
+using arithmetic_type_pairs =
+    std::tuple<std::pair<double, double>, std::pair<float, float>,
+               std::pair<int64_t, int64_t>, std::pair<double, float>,
+               std::pair<float, double>>;
+
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   expect::equals(a.unit(), b.unit());
-  return transform<
-      pair_self_t<double, float, int64_t, Eigen::Vector3d>,
-      pair_custom_t<std::pair<double, float>, std::pair<float, double>>>(
-      a, b, [](const auto &a, const auto &b) { return a + b; });
+  auto result = transform<arithmetic_and_matrix_type_pairs>(
+      a, b, [](const auto a, const auto b) { return a + b; });
+  result.setUnit(a.unit());
+  return result;
 }
 
 Variable Variable::operator-() const {
-  // TODO This implementation only works for variables containing doubles and
-  // will throw, e.g., for ints.
-  auto copy(*this);
-  copy *= -1.0;
-  return copy;
+  auto result = transform<double, float, int64_t, Eigen::Vector3d>(
+      *this, [](const auto a) { return -a; });
+  result.setUnit(unit());
+  return result;
 }
 
 Variable &Variable::operator+=(const Variable &other) & {
@@ -847,6 +856,14 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
+template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
+  expect::equals(a.unit(), b.unit());
+  auto result = transform<arithmetic_and_matrix_type_pairs>(
+      a, b, [](const auto a, const auto b) { return a - b; });
+  result.setUnit(a.unit());
+  return result;
+}
+
 Variable &Variable::operator-=(const Variable &other) & {
   return minus_equals(*this, other);
 }
@@ -865,6 +882,13 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       variable, other, [](auto &&a, auto &&b) { a *= b; });
   return variable;
+}
+
+template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
+  auto result = transform<arithmetic_type_pairs>(
+      a, b, [](const auto a, const auto b) { return a * b; });
+  result.setUnit(a.unit() * b.unit());
+  return result;
 }
 
 Variable &Variable::operator*=(const Variable &other) & {
@@ -887,6 +911,13 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       variable, other, [](auto &&a, auto &&b) { a /= b; });
   return variable;
+}
+
+template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
+  auto result = transform<arithmetic_type_pairs>(
+      a, b, [](const auto a, const auto b) { return a / b; });
+  result.setUnit(a.unit() / b.unit());
+  return result;
 }
 
 Variable &Variable::operator/=(const Variable &other) & {
@@ -1090,37 +1121,50 @@ Variable VariableConstProxy::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
+Variable operator+(const Variable &a, const Variable &b) { return plus(a, b); }
+Variable operator-(const Variable &a, const Variable &b) { return minus(a, b); }
+Variable operator*(const Variable &a, const Variable &b) { return times(a, b); }
+Variable operator/(const Variable &a, const Variable &b) {
+  return divide(a, b);
+}
+Variable operator+(const Variable &a, const VariableConstProxy &b) {
+  return plus(a, b);
+}
+Variable operator-(const Variable &a, const VariableConstProxy &b) {
+  return minus(a, b);
+}
+Variable operator*(const Variable &a, const VariableConstProxy &b) {
+  return times(a, b);
+}
+Variable operator/(const Variable &a, const VariableConstProxy &b) {
+  return divide(a, b);
+}
+Variable operator+(const VariableConstProxy &a, const Variable &b) {
+  return plus(a, b);
+}
+Variable operator-(const VariableConstProxy &a, const Variable &b) {
+  return minus(a, b);
+}
+Variable operator*(const VariableConstProxy &a, const Variable &b) {
+  return times(a, b);
+}
+Variable operator/(const VariableConstProxy &a, const Variable &b) {
+  return divide(a, b);
+}
+Variable operator+(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return plus(a, b);
+}
+Variable operator-(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return minus(a, b);
+}
+Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return times(a, b);
+}
+Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return divide(a, b);
+}
 // Note: The std::move here is necessary because RVO does not work for variables
 // that are function parameters.
-Variable operator+(const Variable &a, const Variable &b) { return plus(a, b); }
-Variable operator-(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result -= b;
-}
-Variable operator*(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result *= b;
-}
-Variable operator/(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result /= b;
-}
-Variable operator+(Variable a, const VariableConstProxy &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result += b;
-}
-Variable operator-(Variable a, const VariableConstProxy &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result -= b;
-}
-Variable operator*(Variable a, const VariableConstProxy &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result *= b;
-}
-Variable operator/(Variable a, const VariableConstProxy &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result /= b;
-}
 Variable operator+(Variable a, const double b) { return std::move(a += b); }
 Variable operator-(Variable a, const double b) { return std::move(a -= b); }
 Variable operator*(Variable a, const double b) { return std::move(a *= b); }

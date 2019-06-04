@@ -192,25 +192,27 @@ int32_t Dimensions::index(const Dim dim) const {
 ///
 /// Throws if there is a mismatching dimension extent.
 Dimensions merge(const Dimensions &a, const Dimensions &b) {
-  auto out(b);
+  auto out(a);
   if (a.sparse() && b.sparse() && (a.sparseDim() != b.sparseDim()))
     throw except::DimensionError(
         "Cannot merge subspaces with mismatching sparse dimension.");
-  if (a.sparse() && !b.sparse())
+  if (scipp::size(a.labels()) < scipp::size(b.labels()))
     return merge(b, a);
-  for (const auto dim : a.labels()) {
-    if (b.contains(dim)) {
-      if ((dim != b.sparseDim()) && a[dim] != b[dim])
-        throw except::DimensionError(
-            "Cannot merge subspaces with mismatching extent");
-      else if (dim == b.sparseDim() && dim != a.sparseDim())
+  for (const auto dim : b.denseLabels()) {
+    if (a.contains(dim)) {
+      if (dim == a.sparseDim())
         throw except::DimensionError("Cannot merge subspaces with dimension "
                                      "that is sparse in one argument but dense "
                                      "in another.");
+      if (a[dim] != b[dim])
+        throw except::DimensionError(
+            "Cannot merge subspaces with mismatching extent");
     } else {
-      out.add(dim, a[dim]);
+      out.add(dim, b[dim]);
     }
   }
+  if (b.sparse() && (b.sparseDim() != a.sparseDim()))
+    out.addInner(b.sparseDim(), Dimensions::Sparse);
   return out;
 }
 
