@@ -16,7 +16,7 @@
 
 namespace scipp::core {
 
-#define NDIM_MAX 6
+constexpr int32_t NDIM_MAX = 6;
 
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
