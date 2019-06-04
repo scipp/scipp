@@ -402,63 +402,7 @@ template <class Op> struct TransformSparse {
     return std::pair(std::move(vals), std::move(vars));
   }
   template <class T1, class T2>
-  constexpr auto operator()(const sparse_container<T1> &a, const T2 b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const sparse_container<T1> &a,
-                            const ValueAndVariance<T2> b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const T1 a, const sparse_container<T2> &b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const ValueAndVariance<T1> a,
-                            const sparse_container<T2> &b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const ValuesAndVariances<T1> &a, const T2 b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const ValuesAndVariances<T1> &a,
-                            const ValueAndVariance<T2> b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const T1 a, const ValuesAndVariances<T2> &b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const ValueAndVariance<T1> a,
-                            const ValuesAndVariances<T2> &b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const sparse_container<T1> &a,
-                            const sparse_container<T2> &b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const ValuesAndVariances<T1> &a,
-                            const sparse_container<T2> &b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const sparse_container<T1> &a,
-                            const ValuesAndVariances<T2> &b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto operator()(const ValuesAndVariances<T1> &a,
-                            const ValuesAndVariances<T2> &b) const {
-    return apply(a, b);
-  }
-  template <class T1, class T2>
-  constexpr auto apply(const T1 &a, const T2 &b) const {
+  constexpr auto operator()(const T1 &a, const T2 &b) const {
     sparse_container<
         std::invoke_result_t<Op, element_type_t<T1>, element_type_t<T2>>>
         vals(check_and_get_size(a, b));
@@ -733,6 +677,18 @@ auto insert_sparse_pairs(const std::tuple<Ts...> &,
                                     Known...>::type{}...);
 }
 
+template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
+  template <class... Ts> constexpr auto operator()(Ts &&... args) const {
+    if constexpr ((transform_detail::is_sparse_v<
+                       std::remove_const_t<std::remove_reference_t<Ts>>> ||
+                   ...))
+      return SparseOp::operator()(std::forward<Ts>(args)...);
+    else
+      return Op::operator()(std::forward<Ts>(args)...);
+  }
+};
+template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
+
 } // namespace detail
 
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
@@ -842,8 +798,9 @@ Variable transform2(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
     } else {
       return scipp::core::visit(
                  insert_sparse_pairs(std::tuple<Ts...>{}, var1.dataHandle()))
-          .apply(Transform{overloaded{op, TransformSparse<Op>{op}}},
-                 var1.dataHandle().variant(), var2.dataHandle().variant());
+          .apply(
+              Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
+              var1.dataHandle().variant(), var2.dataHandle().variant());
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes " +
