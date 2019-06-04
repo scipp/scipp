@@ -73,7 +73,7 @@ TEST(TransformTest, apply_binary_in_place_view_with_view) {
   EXPECT_TRUE(equals(a.values<double>(), {1.1, 5.5}));
 }
 
-TEST(TransformTest, transform_combines_uncertainty_propgation) {
+TEST(TransformTest, transform_combines_uncertainty_propagation) {
   auto a = makeVariable<double>({Dim::X, 1}, {2.0}, {0.1});
   const auto b = makeVariable<double>(3.0, 0.2);
   transform_in_place<pair_self_t<double>>(
