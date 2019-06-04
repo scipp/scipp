@@ -188,18 +188,19 @@ template <class T> struct ValuesAndVariances {
   constexpr auto size() const noexcept { return values.size(); }
 };
 
-template <class T> struct is_values_and_variances : std::false_type {};
+template <class T> struct has_variances : std::false_type {};
 template <class T>
-struct is_values_and_variances<ValuesAndVariances<T>> : std::true_type {};
+struct has_variances<ValueAndVariance<T>> : std::true_type {};
 template <class T>
-inline constexpr bool is_values_and_variances_v =
-    is_values_and_variances<T>::value;
+struct has_variances<ValuesAndVariances<T>> : std::true_type {};
+template <class T>
+inline constexpr bool has_variances_v = has_variances<T>::value;
 
 /// Helper for the transform implementation to unify iteration of data with and
 /// without variances as well as sparse are dense container.
 template <class T>
 constexpr auto value_and_maybe_variance(const T &range, const scipp::index i) {
-  if constexpr (is_values_and_variances_v<T>) {
+  if constexpr (has_variances_v<T>) {
     if constexpr (is_sparse_v<decltype(range.values[0])>)
       return ValuesAndVariances{range.values[i], range.variances[i]};
     else
@@ -208,14 +209,6 @@ constexpr auto value_and_maybe_variance(const T &range, const scipp::index i) {
     return range[i];
   }
 }
-
-template <class T> struct has_variances : std::false_type {};
-template <class T>
-struct has_variances<ValueAndVariance<T>> : std::true_type {};
-template <class T>
-struct has_variances<ValuesAndVariances<T>> : std::true_type {};
-template <class T>
-inline constexpr bool has_variances_v = has_variances<T>::value;
 
 template <class T> struct is_eigen_type : std::false_type {};
 template <class T, int Rows, int Cols>
@@ -287,9 +280,6 @@ template <class T> struct element_type<const sparse_container<T>> {
   using type = T;
 };
 template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
-template <class T> struct element_type<ValuesAndVariances<T>> {
-  using type = T;
-};
 template <class T>
 struct element_type<ValuesAndVariances<sparse_container<T>>> {
   using type = T;
@@ -303,8 +293,6 @@ template <class T> using element_type_t = typename element_type<T>::type;
 namespace transform_detail {
 template <class T> struct is_sparse : std::false_type {};
 template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
-template <class T>
-struct is_sparse<const sparse_container<T> &> : std::true_type {};
 template <class T>
 struct is_sparse<ValuesAndVariances<sparse_container<T>>> : std::true_type {};
 template <class T>
@@ -346,7 +334,7 @@ auto check_and_get_size(const T1 &a, const T2 &b) {
   }
 }
 
-/// Functor for implementing operations with sparse data.
+/// Functor for implementing in-place operations with sparse data.
 ///
 /// This is (conditionally) added to an overloaded set of operators provided by
 /// the user. If the data is sparse the overloads by this functor will match in
@@ -364,6 +352,8 @@ template <class Op> struct TransformSparseInPlace {
   }
 };
 
+/// Functor for implementing operations with sparse data, see also
+/// TransformSparseInPlace.
 template <class Op> struct TransformSparse {
   Op op;
   template <class... Ts> constexpr auto operator()(const Ts &... args) const {
@@ -772,11 +762,11 @@ Variable transform2(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
   }
 }
 
-/// Transform the data elements of a variable in-place.
+/// Transform the data elements of two variables and return a new Variable.
 ///
-/// This overload is equivalent to std::transform with two input ranges and an
-/// output range identical to the secound input range, but avoids potentially
-/// costly element copies.
+/// This overload is equivalent to std::transform with two input ranges, but
+/// avoids the need to manually create a new variable for the output and the
+/// need for, e.g., std::back_inserter.
 template <class... TypePairs, class Var1, class Var2, class Op>
 Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
   return transform2(std::tuple_cat(TypePairs{}...), var1, var2, op);
