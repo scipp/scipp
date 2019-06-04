@@ -813,7 +813,7 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   expect::equals(a.unit(), b.unit());
   return transform<
-      pair_self_t<double, float, int64_t>,
+      pair_self_t<double, float, int64_t, Eigen::Vector3d>,
       pair_custom_t<std::pair<double, float>, std::pair<float, double>>>(
       a, b, [](const auto &a, const auto &b) { return a + b; });
 }

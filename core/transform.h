@@ -334,6 +334,17 @@ auto check_and_get_size(const T1 &a, const T2 &b) {
   }
 }
 
+template <class T>
+struct is_eigen_expression
+    : std::is_base_of<Eigen::MatrixBase<std::decay_t<T>>, std::decay_t<T>> {};
+
+template <class T> constexpr auto maybe_eval(T &&_) {
+  if constexpr (is_eigen_expression<T>::value)
+    return _.eval();
+  else
+    return _;
+}
+
 /// Functor for implementing in-place operations with sparse data.
 ///
 /// This is (conditionally) added to an overloaded set of operators provided by
@@ -465,10 +476,14 @@ void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
       }
     }
   } else if (b.hasVariances()) {
-    auto b_var = b.variances();
-    auto out_var = out.variances();
-    transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
-                                 a_val, ValuesAndVariances{b_val, b_var});
+    if constexpr (is_eigen_type_v<typename T2::value_type>) {
+      throw std::runtime_error("This dtype cannot have a variance.");
+    } else {
+      auto b_var = b.variances();
+      auto out_var = out.variances();
+      transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
+                                   a_val, ValuesAndVariances{b_val, b_var});
+    }
   } else {
     transform_impl(op, out_val, a_val, b_val);
   }
@@ -545,7 +560,7 @@ template <class Op> struct Transform {
   Op op;
   template <class T> Variable operator()(T &&handle) const {
     const auto &dims = handle->dims();
-    using Out = decltype(op(handle->values()[0]));
+    using Out = decltype(maybe_eval(op(handle->values()[0])));
     // TODO For optimal performance we should just make container without
     // element init here.
     Variable out = handle->hasVariances()
@@ -564,7 +579,7 @@ template <class Op> struct Transform {
     const auto &dimsB = b.dims();
     const auto &dims = merge(dimsA, dimsB);
 
-    using Out = decltype(op(a.values()[0], b.values()[0]));
+    using Out = decltype(maybe_eval(op(a.values()[0], b.values()[0])));
     // TODO For optimal performance we should just make container without
     // element init here.
     Variable out = a.hasVariances() || b.hasVariances()

@@ -137,6 +137,12 @@ TEST(Variable, operator_plus) {
   EXPECT_EQ(sum, expected);
 }
 
+TEST(Variable, operator_plus_eigen_type) {
+  auto a = makeVariable<Eigen::Vector3d>({Dim::X, 1});
+  auto sum = a + a;
+  EXPECT_EQ(sum.dtype(), dtype<Eigen::Vector3d>);
+}
+
 TEST(Variable, operator_times_equal) {
   auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
 
