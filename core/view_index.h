@@ -77,15 +77,56 @@ public:
   }
 
 private:
+  // NOTE:
+  // We investigated different containers for the m_delta, m_coord & m_extent
+  // arrays, and their impact on peformance when iterating over a variable
+  // view.
+  // Using std::array or C-style arrays give good performance (7.5 Gb/s) as long
+  // as a range based loop is used:
+  //
+  //   for ( const auto x : view ) {
+  //
+  // If a loop which explicitly accesses the begin() and end() of the container
+  // is used, e.g.
+  //
+  //   for ( auto it = view.begin(); it != view.end(); ++it ) {
+  //
+  // then the results differ widely.
+  // - using std::array is 80x slower than above, at ~90 Mb/s
+  // - using C-style arrays is 20x slower than above, at ~330 Mb/s
+  //
+  // We can recover the maximum performance by storing the view.end() in a
+  // variable, e.g.
+  //
+  //   auto iend = view.end();
+  //   for ( auto it = view.begin(); it != iend; ++it ) {
+  //
+  // for both std::array and C-style arrays.
+  //
+  // Finally, when using C-style arrays, we get a compilation warning from L37
+  //
+  //   m_delta[d] -= m_delta[d2];
+  //
+  // with the GCC compiler:
+  //
+  //  warning: array subscript is above array bounds [-Warray-bounds]
+  //
+  // which disappears when switching to std::array. This warning is not given
+  // by the CLANG compiler, and is not fully understood as d2 is always less
+  // than d and should never overflow the array bounds.
+  // We decided to go with std::array as our final choice to avoid the warning,
+  // as the performance is identical to C-style arrays, as long as range based
+  // loops are used.
+
   scipp::index m_index{0};
-  scipp::index m_delta[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
-  scipp::index m_coord[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
-  scipp::index m_extent[NDIM_MAX] = {0, 0, 0, 0, 0, 0};
+  std::array<scipp::index, NDIM_MAX> m_delta = {0, 0, 0, 0, 0, 0};
+  std::array<scipp::index, NDIM_MAX> m_coord = {0, 0, 0, 0, 0, 0};
+  std::array<scipp::index, NDIM_MAX> m_extent = {0, 0, 0, 0, 0, 0};
   scipp::index m_fullIndex;
   int32_t m_dims;
   int32_t m_subdims = 0;
-  int32_t m_offsets[NDIM_MAX];
-  scipp::index m_factors[NDIM_MAX];
+  std::array<int32_t, NDIM_MAX> m_offsets;
+  std::array<scipp::index, NDIM_MAX> m_factors;
 };
 
 } // namespace scipp::core

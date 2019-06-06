@@ -18,6 +18,7 @@ add_executable(scipp-core-test
                variable_test.cpp
                variable_operations_test.cpp
                variable_view_test.cpp
+               view_index_test.cpp
                #Workspace2D_test.cpp
                #zip_view_test.cpp
                )

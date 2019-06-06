@@ -14,18 +14,23 @@ static void BM_ViewIndex(benchmark::State &state) {
   std::vector<double> variable(dims.volume());
   VariableView<double> view(variable.data(), 0, dims, dims);
 
-  const auto count = dims.volume();
-
   for (auto _ : state) {
     double sum = 0.0;
-    for ( const auto x : view ) {
+    // Caution when iterating over a view!
+    // Using a range based loop here is MUCH faster (80x) than using
+    //   for ( auto it = view.begin(); it != view.end(); ++it ) {
+    //     sum += *it;
+    //   }
+    // See view_index.h for more details.
+    for (const auto x : view) {
       sum += x;
     }
     benchmark::DoNotOptimize(sum);
   }
 
-  state.SetItemsProcessed(state.iterations() * count);
+  state.SetItemsProcessed(state.iterations() * view.size());
 }
-BENCHMARK(BM_ViewIndex)->RangeMultiplier(2)->Range(4, 8<<10);;
+BENCHMARK(BM_ViewIndex)->RangeMultiplier(2)->Range(4, 8 << 10);
+;
 
 BENCHMARK_MAIN();
