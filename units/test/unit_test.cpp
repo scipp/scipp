@@ -29,6 +29,11 @@ TEST(units, c) {
 
 TEST(Unit, construct) { ASSERT_NO_THROW(Unit u{units::dimensionless}); }
 
+TEST(Unit, construct_default) {
+  Unit u;
+  ASSERT_EQ(u, units::dimensionsless);
+}
+
 TEST(Unit, compare) {
   Unit u1{units::dimensionless};
   Unit u2{units::m};
