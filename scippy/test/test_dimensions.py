@@ -14,12 +14,25 @@ def test_empty():
 
 def test_dense():
     dims = sp.Dimensions([Dim.X, Dim.Y], [2, 3])
+    assert not dims.sparse
+    assert dims.sparseDim == Dim.Invalid
     assert len(dims.labels) == 2
     assert len(dims.shape) == 2
     assert dims.labels[0] == Dim.X
     assert dims.labels[1] == Dim.Y
     assert dims.shape[0] == 2
     assert dims.shape[1] == 3
+
+
+def test_sparse():
+    dims = sp.Dimensions([Dim.X, Dim.Y], [2, sp.Dimensions.Sparse])
+    assert dims.sparse
+    assert dims.sparseDim == Dim.Y
+    assert len(dims.labels) == 2
+    assert len(dims.shape) == 1
+    assert dims.labels[0] == Dim.X
+    assert dims.labels[1] == Dim.Y
+    assert dims.shape[0] == 2
 
 
 def test_comparison():

@@ -14,7 +14,7 @@ namespace py = pybind11;
 
 void init_units_neutron(py::module &m) {
   py::enum_<Dim> dimension(m, "Dim");
-  for (int32_t i = 0; i < static_cast<int32_t>(Dim::Invalid); ++i) {
+  for (int32_t i = 0; i <= static_cast<int32_t>(Dim::Invalid); ++i) {
     const auto dim = static_cast<Dim>(i);
     dimension.value(to_string(dim).substr(5).c_str(), dim);
   }

@@ -16,6 +16,9 @@ namespace py = pybind11;
 
 void init_dimensions(py::module &m) {
   py::class_<Dimensions>(m, "Dimensions")
+      .def_property_readonly_static(
+          "Sparse", [](py::object /* self */) { return Dimensions::Sparse; },
+          "Dummy label to use when specifying the shape for sparse data.")
       .def(py::init<>())
       .def(py::init([](const std::vector<Dim> &labels,
                        const std::vector<scipp::index> &shape) {
@@ -40,6 +43,11 @@ void init_dimensions(py::module &m) {
           "shape", [](const Dimensions &self) { return self.shape(); },
           "The read-only sizes of each dimension of the "
           "underlying Variable or VariableProxy.")
+      .def_property_readonly("sparse", &Dimensions::sparse,
+                             "Return True if there is a sparse dimension.")
+      .def_property_readonly("sparseDim", &Dimensions::sparseDim,
+                             "Return the label of a potential sparse "
+                             "dimension, Dim.Invalid otherwise.")
       .def("add", &Dimensions::add,
            "Add a new dimension, which will be the outermost dimension.")
       .def(py::self == py::self)
