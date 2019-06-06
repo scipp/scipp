@@ -121,94 +121,90 @@ def test_create_dtype():
     assert var.dtype == sp.dtype.int32
 
 
-#def test_slicing(self):
-#    var = sp.Variable([sp.Dim.X], np.arange(0, 3))
-#    var_slice = var[(sp.Dim.X, slice(0, 2))]
-#    self.assertTrue(isinstance(var_slice, sp.VariableSlice))
-#    self.assertEqual(len(var_slice), 2)
-#    self.assertTrue(np.array_equal(var_slice.numpy, np.array([0, 1])))
-#
-#
-#def test_binary_plus(self):
-#    a, b, a_slice, b_slice, data = make_variables()
-#    c = a + b
-#    self.assertTrue(np.array_equal(c.numpy, data + data))
-#    c = a + 2.0
-#    self.assertTrue(np.array_equal(c.numpy, data + 2.0))
-#    c = a + b_slice
-#    self.assertTrue(np.array_equal(c.numpy, data + data))
-#    c += b
-#    self.assertTrue(np.array_equal(c.numpy, data + data + data))
-#    c += b_slice
-#    self.assertTrue(np.array_equal(c.numpy, data + data + data + data))
-#    c = 3.5 + c
-#    self.assertTrue(np.array_equal(c.numpy, data + data + data + data + 3.5))
-#
-#
-#def test_binary_minus(self):
-#    a, b, a_slice, b_slice, data = make_variables()
-#    c = a - b
-#    self.assertTrue(np.array_equal(c.numpy, data - data))
-#    c = a - 2.0
-#    self.assertTrue(np.array_equal(c.numpy, data - 2.0))
-#    c = a - b_slice
-#    self.assertTrue(np.array_equal(c.numpy, data - data))
-#    c -= b
-#    self.assertTrue(np.array_equal(c.numpy, data - data - data))
-#    c -= b_slice
-#    self.assertTrue(np.array_equal(c.numpy, data - data - data - data))
-#    c = 3.5 - c
-#    self.assertTrue(np.array_equal(c.numpy, 3.5 - data + data + data + data))
-#
-#
-#def test_binary_multiply(self):
-#    a, b, a_slice, b_slice, data = make_variables()
-#    c = a * b
-#    self.assertTrue(np.array_equal(c.numpy, data * data))
-#    c = a * 2.0
-#    self.assertTrue(np.array_equal(c.numpy, data * 2.0))
-#    c = a * b_slice
-#    self.assertTrue(np.array_equal(c.numpy, data * data))
-#    c *= b
-#    self.assertTrue(np.array_equal(c.numpy, data * data * data))
-#    c *= b_slice
-#    self.assertTrue(np.array_equal(c.numpy, data * data * data * data))
-#    c = 3.5 * c
-#    self.assertTrue(np.array_equal(c.numpy, data * data * data * data * 3.5))
-#
-#
-#def test_binary_divide(self):
-#    a, b, a_slice, b_slice, data = make_variables()
-#    c = a / b
-#    self.assertTrue(np.array_equal(c.numpy, data / data))
-#    c = a / 2.0
-#    self.assertTrue(np.array_equal(c.numpy, data / 2.0))
-#    c = a / b_slice
-#    self.assertTrue(np.array_equal(c.numpy, data / data))
-#    c /= b
-#    self.assertTrue(np.array_equal(c.numpy, data / data / data))
-#    c /= b_slice
-#    self.assertTrue(np.array_equal(c.numpy, data / data / data / data))
-#
-#
-#def test_binary_equal(self):
-#    a, b, a_slice, b_slice, data = make_variables()
-#    self.assertEqual(a, b)
-#    self.assertEqual(a, a_slice)
-#    self.assertEqual(a_slice, b_slice)
-#    self.assertEqual(b, a)
-#    self.assertEqual(b_slice, a)
-#    self.assertEqual(b_slice, a_slice)
-#
-#
-#def test_binary_not_equal(self):
-#    a, b, a_slice, b_slice, data = make_variables()
-#    c = a + b
-#    self.assertNotEqual(a, c)
-#    self.assertNotEqual(a_slice, c)
-#    self.assertNotEqual(c, a)
-#    self.assertNotEqual(c, a_slice)
+def test_slicing():
+    var = sp.Variable([sp.Dim.X], values=np.arange(0, 3))
+    var_slice = var[(sp.Dim.X, slice(0, 2))]
+    assert isinstance(var_slice, sp.VariableProxy)
+    assert len(var_slice.values) == 2
+    assert np.array_equal(var_slice.numpy, np.array([0, 1]))
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_binary_plus():
+    a, b, a_slice, b_slice, data = make_variables()
+    c = a + b
+    assert np.array_equal(c.numpy, data + data)
+    c = a + 2.0
+    assert np.array_equal(c.numpy, data + 2.0)
+    c = a + b_slice
+    assert np.array_equal(c.numpy, data + data)
+    c += b
+    assert np.array_equal(c.numpy, data + data + data)
+    c += b_slice
+    assert np.array_equal(c.numpy, data + data + data + data)
+    c = 3.5 + c
+    assert np.array_equal(c.numpy, data + data + data + data + 3.5)
+
+
+def test_binary_minus():
+    a, b, a_slice, b_slice, data = make_variables()
+    c = a - b
+    assert np.array_equal(c.numpy, data - data)
+    c = a - 2.0
+    assert np.array_equal(c.numpy, data - 2.0)
+    c = a - b_slice
+    assert np.array_equal(c.numpy, data - data)
+    c -= b
+    assert np.array_equal(c.numpy, data - data - data)
+    c -= b_slice
+    assert np.array_equal(c.numpy, data - data - data - data)
+    c = 3.5 - c
+    assert np.array_equal(c.numpy, 3.5 - data + data + data + data)
+
+
+def test_binary_multiply():
+    a, b, a_slice, b_slice, data = make_variables()
+    c = a * b
+    assert np.array_equal(c.numpy, data * data)
+    c = a * 2.0
+    assert np.array_equal(c.numpy, data * 2.0)
+    c = a * b_slice
+    assert np.array_equal(c.numpy, data * data)
+    c *= b
+    assert np.array_equal(c.numpy, data * data * data)
+    c *= b_slice
+    assert np.array_equal(c.numpy, data * data * data * data)
+    c = 3.5 * c
+    assert np.array_equal(c.numpy, data * data * data * data * 3.5)
+
+
+def test_binary_divide():
+    a, b, a_slice, b_slice, data = make_variables()
+    c = a / b
+    assert np.array_equal(c.numpy, data / data)
+    c = a / 2.0
+    assert np.array_equal(c.numpy, data / 2.0)
+    c = a / b_slice
+    assert np.array_equal(c.numpy, data / data)
+    c /= b
+    assert np.array_equal(c.numpy, data / data / data)
+    c /= b_slice
+    assert np.array_equal(c.numpy, data / data / data / data)
+
+
+def test_binary_equal():
+    a, b, a_slice, b_slice, data = make_variables()
+    assert a == b
+    assert a == a_slice
+    assert a_slice == b_slice
+    assert b == a
+    assert b_slice == a
+    assert b_slice == a_slice
+
+
+def test_binary_not_equal():
+    a, b, a_slice, b_slice, data = make_variables()
+    c = a + b
+    assert a != c
+    assert a_slice != c
+    assert c != a
+    assert c != a_slice
