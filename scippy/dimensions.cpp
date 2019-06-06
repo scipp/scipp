@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "dimensions.h"
 #include "except.h"
@@ -16,6 +17,11 @@ namespace py = pybind11;
 void init_dimensions(py::module &m) {
   py::class_<Dimensions>(m, "Dimensions")
       .def(py::init<>())
+      .def(py::init([](const std::vector<Dim> &labels,
+                       const std::vector<scipp::index> &shape) {
+             return Dimensions(labels, shape);
+           }),
+           py::arg("labels"), py::arg("shape"))
       .def("__repr__",
            [](const Dimensions &self) {
              std::string out = "Dimensions = " + to_string(self, ".");

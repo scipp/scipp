@@ -31,7 +31,7 @@ TEST(Unit, construct) { ASSERT_NO_THROW(Unit u{units::dimensionless}); }
 
 TEST(Unit, construct_default) {
   Unit u;
-  ASSERT_EQ(u, units::dimensionsless);
+  ASSERT_EQ(u, units::dimensionless);
 }
 
 TEST(Unit, compare) {
