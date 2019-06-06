@@ -2,8 +2,6 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-import unittest
-
 import scippy as sp
 import numpy as np
 

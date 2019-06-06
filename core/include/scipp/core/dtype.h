@@ -15,7 +15,6 @@ namespace scipp::core {
 class Dataset;
 
 enum class DType {
-  Unknown,
   Double,
   Float,
   Int32,
@@ -25,7 +24,8 @@ enum class DType {
   Bool,
   SmallVectorDouble8,
   Dataset,
-  EigenVector3d
+  EigenVector3d,
+  Unknown
 };
 template <class T> constexpr DType dtype = DType::Unknown;
 template <> constexpr DType dtype<double> = DType::Double;

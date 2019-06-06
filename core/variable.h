@@ -11,8 +11,8 @@
 #include <Eigen/Dense>
 
 #include "dimensions.h"
-#include "dtype.h"
 #include "index.h"
+#include "scipp/core/dtype.h"
 #include "scipp/units/unit.h"
 #include "span.h"
 #include "variable_view.h"

@@ -3,6 +3,7 @@
 pybind11_add_module(scippy
                     SHARED
                     dimensions.cpp
+                    dtype.cpp
                     scippy.cpp
                     units_neutron.cpp
                     variable.cpp)

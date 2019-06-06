@@ -8,8 +8,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "dtype.h"
 #include "index.h"
+#include "scipp/core/dtype.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {

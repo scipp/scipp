@@ -7,11 +7,13 @@
 namespace py = pybind11;
 
 void init_dimensions(py::module &);
+void init_dtype(py::module &);
 void init_units_neutron(py::module &);
 void init_variable(py::module &);
 
 PYBIND11_MODULE(scippy, m) {
   init_dimensions(m);
+  init_dtype(m);
   init_units_neutron(m);
   init_variable(m);
 }
