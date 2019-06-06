@@ -19,6 +19,7 @@
 
 using namespace scipp;
 using namespace scipp::core;
+using namespace scipp::units;
 
 namespace py = pybind11;
 
@@ -135,72 +136,86 @@ void declare_VariableView(py::module &m, const std::string &suffix) {
       });
 }
 
-/// Helper to pass "default" dtype.
-struct Empty {
-  char dummy;
-};
-
-DType convertDType(const py::dtype type) {
-  if (type.is(py::dtype::of<double>()))
-    return dtype<double>;
-  if (type.is(py::dtype::of<float>()))
-    return dtype<float>;
-  // See https://github.com/pybind/pybind11/pull/1329, int64_t not matching
-  // numpy.int64 correctly.
-  if (type.is(py::dtype::of<std::int64_t>()) ||
-      (type.kind() == 'i' && type.itemsize() == 8))
-    return dtype<int64_t>;
-  if (type.is(py::dtype::of<int32_t>()))
-    return dtype<int32_t>;
-  if (type.is(py::dtype::of<bool>()))
-    return dtype<bool>;
-  throw std::runtime_error("unsupported dtype");
-}
-
 template <class T> struct MakeVariable {
-  static Variable apply(const std::vector<Dim> &labels, py::array data) {
+  static Variable apply(const std::vector<Dim> &labels, py::array values,
+                        const units::Unit unit) {
     // Pybind11 converts py::array to py::array_t for us, with all sorts of
     // automatic conversions such as integer to double, if required.
-    py::array_t<T> dataT(data);
-    const py::buffer_info info = dataT.request();
+    py::array_t<T> valuesT(values);
+    const py::buffer_info info = valuesT.request();
     Dimensions dims(labels, info.shape);
     auto *ptr = (T *)info.ptr;
-    return makeVariableFromBuffer<T, ssize_t>(dims, info.strides, ptr);
+    auto var = makeVariableFromBuffer<T, ssize_t>(dims, info.strides, ptr);
+    var.setUnit(unit);
+    return var;
   }
 };
 
 template <class T> struct MakeVariableDefaultInit {
   static Variable apply(const std::vector<Dim> &labels,
-                        const py::tuple &shape) {
-    Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-    return scipp::core::makeVariable<T>(dims);
+                        const std::vector<scipp::index> &shape,
+                        const units::Unit unit, const bool variances) {
+    Dimensions dims(labels, shape);
+    auto var = variances ? scipp::core::makeVariableWithVariances<T>(dims)
+                         : scipp::core::makeVariable<T>(dims);
+    var.setUnit(unit);
+    return var;
   }
 };
 
-Variable doMakeVariable(const std::vector<Dim> &labels, py::array &data,
-                        py::dtype type = py::dtype::of<Empty>()) {
-  const py::buffer_info info = data.request();
+namespace scippy {
+using dtype = std::variant<py::dtype, scipp::core::DType>;
+
+scipp::core::DType scipp_dtype(const py::dtype &type) {
+  if (type.is(py::dtype::of<double>()))
+    return scipp::core::dtype<double>;
+  if (type.is(py::dtype::of<float>()))
+    return scipp::core::dtype<float>;
+  // See https://github.com/pybind/pybind11/pull/1329, int64_t not
+  // matching numpy.int64 correctly.
+  if (type.is(py::dtype::of<std::int64_t>()) ||
+      (type.kind() == 'i' && type.itemsize() == 8))
+    return scipp::core::dtype<int64_t>;
+  if (type.is(py::dtype::of<int32_t>()))
+    return scipp::core::dtype<int32_t>;
+  if (type.is(py::dtype::of<bool>()))
+    return scipp::core::dtype<bool>;
+  throw std::runtime_error("Unsupported numpy dtype.");
+}
+
+scipp::core::DType scipp_dtype(const dtype &type) {
+  if (std::holds_alternative<scipp::core::DType>(type))
+    return std::get<scipp::core::DType>(type);
+  return scipp_dtype(std::get<pybind11::dtype>(type));
+}
+} // namespace scippy
+
+Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
+                        std::optional<py::array> &variances,
+                        const units::Unit unit,
+                        scippy::dtype type = DType::Unknown) {
+  if (variances)
+    throw std::runtime_error(
+        "Creating variable with variances is not implemented yet.");
+  const py::buffer_info info = values.request();
   // Use custom dtype, otherwise dtype of data.
-  const auto dtypeTag = type.is(py::dtype::of<Empty>())
-                            ? convertDType(data.dtype())
-                            : convertDType(type);
+  const auto dtypeTag = scippy::scipp_dtype(type) == DType::Unknown
+                            ? scippy::scipp_dtype(values.dtype())
+                            : scippy::scipp_dtype(type);
   return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
-      dtypeTag, labels, data);
+      dtypeTag, labels, values, unit);
 }
 
 Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
-                                 const py::tuple &shape,
-                                 py::dtype type = py::dtype::of<Empty>()) {
-  // TODO Numpy does not support strings, how can we specify std::string as a
-  // dtype? The same goes for other, more complex item types we need for
-  // variables. Do we need an overload with a dtype arg that does not use
-  // py::dtype?
-  const auto dtypeTag =
-      type.is(py::dtype::of<Empty>()) ? dtype<double> : convertDType(type);
+                                 const std::vector<scipp::index> &shape,
+                                 const units::Unit unit, scippy::dtype type,
+                                 const bool variances) {
+  const auto dtypeTag = scippy::scipp_dtype(type);
   return CallDType<double, float, int64_t, int32_t, bool, Dataset,
                    Eigen::Vector3d>::apply<MakeVariableDefaultInit>(dtypeTag,
                                                                     labels,
-                                                                    shape);
+                                                                    shape, unit,
+                                                                    variances);
 }
 
 // Add size factor.
@@ -317,7 +332,37 @@ template <class... Ts> struct as_VariableViewImpl {
   static std::variant<std::conditional_t<
       std::is_same_v<Var, Variable>, scipp::span<underlying_type_t<Ts>>,
       VariableView<underlying_type_t<Ts>>>...>
-  get(Var &view) {
+  values(Var &view) {
+    switch (view.dtype()) {
+    case dtype<double>:
+      return {view.template values<double>()};
+    case dtype<float>:
+      return {view.template values<float>()};
+    case dtype<int64_t>:
+      return {view.template values<int64_t>()};
+    case dtype<int32_t>:
+      return {view.template values<int32_t>()};
+    case dtype<bool>:
+      return {view.template values<bool>()};
+    case dtype<std::string>:
+      return {view.template values<std::string>()};
+    case dtype<boost::container::small_vector<double, 8>>:
+      return {
+          view.template values<boost::container::small_vector<double, 8>>()};
+    case dtype<Dataset>:
+      return {view.template values<Dataset>()};
+    case dtype<Eigen::Vector3d>:
+      return {view.template values<Eigen::Vector3d>()};
+    default:
+      throw std::runtime_error("not implemented for this type.");
+    }
+  }
+
+  template <class Var>
+  static std::variant<std::conditional_t<
+      std::is_same_v<Var, Variable>, scipp::span<underlying_type_t<Ts>>,
+      VariableView<underlying_type_t<Ts>>>...>
+  variances(Var &view) {
     switch (view.dtype()) {
     case dtype<double>:
       return {view.template values<double>()};
@@ -345,23 +390,44 @@ template <class... Ts> struct as_VariableViewImpl {
 
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static py::object scalar(Var &view) {
+  template <class Var> static py::object value(Var &view) {
     expect::equals(Dimensions(), view.dims());
     return std::visit(
         [](const auto &data) {
           return py::cast(data[0], py::return_value_policy::reference);
         },
-        get(view));
+        values(view));
+  }
+  // Return a scalar variance from a variable, implicitly requiring that the
+  // variable is 0-dimensional and thus has only a single item.
+  template <class Var> static py::object variance(Var &view) {
+    expect::equals(Dimensions(), view.dims());
+    return std::visit(
+        [](const auto &data) {
+          return py::cast(data[0], py::return_value_policy::reference);
+        },
+        variances(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static void set_scalar(Var &view, const py::object &o) {
+  template <class Var> static void set_value(Var &view, const py::object &o) {
     expect::equals(Dimensions(), view.dims());
     std::visit(
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
         },
-        get(view));
+        values(view));
+  }
+  // Set a scalar variance in a variable, implicitly requiring that the
+  // variable is 0-dimensional and thus has only a single item.
+  template <class Var>
+  static void set_variance(Var &view, const py::object &o) {
+    expect::equals(Dimensions(), view.dims());
+    std::visit(
+        [&o](const auto &data) {
+          data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
+        },
+        variances(view));
   }
 };
 
@@ -400,11 +466,12 @@ void init_variable(py::module &m) {
   declare_VariableView<Dataset>(m, "Dataset");
   declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
 
-  PYBIND11_NUMPY_DTYPE(Empty, dummy);
-
   py::class_<Variable>(m, "Variable")
-      .def(py::init(&makeVariableDefaultInit), py::arg("labels"),
-           py::arg("shape"), py::arg("dtype") = py::dtype::of<Empty>())
+      .def(py::init(&makeVariableDefaultInit),
+           py::arg("labels") = std::vector<Dim>{},
+           py::arg("shape") = std::vector<scipp::index>{},
+           py::arg("unit") = units::Unit(units::dimensionless),
+           py::arg("dtype") = dtype<double>, py::arg("variances") = false)
       .def(py::init([](const int64_t data, const units::Unit &unit) {
              auto var = makeVariable<int64_t>({}, {data});
              var.setUnit(unit);
@@ -419,8 +486,10 @@ void init_variable(py::module &m) {
            py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
-      .def(py::init(&doMakeVariable), py::arg("labels"), py::arg("data"),
-           py::arg("dtype") = py::dtype::of<Empty>())
+      .def(py::init(&doMakeVariable), py::arg("labels"), py::arg("values"),
+           py::arg("variances") = std::nullopt,
+           py::arg("unit") = units::Unit(units::dimensionless),
+           py::arg("dtype") = DType::Unknown)
       .def(py::init<const VariableProxy &>())
       .def("__getitem__", pySlice<Variable>, py::keep_alive<0, 1>())
       .def("__setitem__",
@@ -441,8 +510,10 @@ void init_variable(py::module &m) {
            [](Variable &self, py::dict) { return Variable(self); })
       .def_property("unit", &Variable::unit, &Variable::setUnit,
                     "Object of type Unit holding the unit of the Variable.")
+      .def_property_readonly("dtype", &Variable::dtype)
+      .def_property_readonly("has_variances", &Variable::hasVariances)
       .def_property_readonly(
-          "dimensions", [](const Variable &self) { return self.dims(); },
+          "dims", [](const Variable &self) { return self.dims(); },
           "A read-only Dimensions object containing the dimensions of the "
           "Variable.")
       .def_property_readonly(
@@ -451,13 +522,19 @@ void init_variable(py::module &m) {
                                  bool>,
           "Returns a read-only numpy array containing the Variable's values.")
       .def_property_readonly(
-          "data", &as_VariableView::get<Variable>,
+          "values", &as_VariableView::values<Variable>,
           "Returns a read-only VariableView onto the Variable's contents.")
-      .def_property("scalar", &as_VariableView::scalar<Variable>,
-                    &as_VariableView::set_scalar<Variable>,
-                    "The only data point for a 0-dimensional "
-                    "variable. Raises an exception if the variable is "
-                    "not 0-dimensional.")
+      .def_property_readonly(
+          "variances", &as_VariableView::variances<Variable>,
+          "Returns a read-only VariableView onto the Variable's contents.")
+      .def_property("value", &as_VariableView::value<Variable>,
+                    &as_VariableView::set_value<Variable>,
+                    "The only value for a 0-dimensional variable. Raises an "
+                    "exception if the variable is not 0-dimensional.")
+      .def_property("variances", &as_VariableView::variances<Variable>,
+                    &as_VariableView::set_variance<Variable>,
+                    "The only data point for a 0-dimensional variable. Raises "
+                    "an exception if the variable is not 0-dimensional.")
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
@@ -509,7 +586,7 @@ void init_variable(py::module &m) {
   py::class_<VariableProxy> view(m, "VariableProxy", py::buffer_protocol());
   view.def_buffer(&make_py_buffer_info);
   view.def_property_readonly(
-          "dimensions", [](const VariableProxy &self) { return self.dims(); },
+          "dims", [](const VariableProxy &self) { return self.dims(); },
           py::return_value_policy::copy,
           "A read-only Dimensions object containing the dimensions of the "
           "Variable.")
@@ -555,10 +632,18 @@ void init_variable(py::module &m) {
           "Returns a read-only numpy array containing the VariableProxy's "
           "values.")
       .def_property_readonly(
-          "data", &as_VariableView::get<VariableProxy>,
+          "values", &as_VariableView::values<VariableProxy>,
           "Returns a read-only VariableView onto the VariableProxy's contents.")
-      .def_property("scalar", &as_VariableView::scalar<VariableProxy>,
-                    &as_VariableView::set_scalar<VariableProxy>,
+      .def_property_readonly(
+          "variances", &as_VariableView::variances<VariableProxy>,
+          "Returns a read-only VariableView onto the VariableProxy's contents.")
+      .def_property("value", &as_VariableView::value<VariableProxy>,
+                    &as_VariableView::set_value<VariableProxy>,
+                    "The only data point for a 0-dimensional "
+                    "variable. Raises an exception of the variable is "
+                    "not 0-dimensional.")
+      .def_property("variances", &as_VariableView::variances<VariableProxy>,
+                    &as_VariableView::set_variance<VariableProxy>,
                     "The only data point for a 0-dimensional "
                     "variable. Raises an exception of the variable is "
                     "not 0-dimensional.")
