@@ -377,14 +377,9 @@ using as_VariableView =
 using small_vector = boost::container::small_vector<double, 8>;
 PYBIND11_MAKE_OPAQUE(small_vector);
 
-PYBIND11_MODULE(scippy, m) {
+void init_variable(py::module &m) {
   py::bind_vector<boost::container::small_vector<double, 8>>(
       m, "SmallVectorDouble8");
-
-  py::enum_<Dim>(m, "Dim")
-      .value("X", Dim::X)
-      .value("Y", Dim::Y)
-      .value("Z", Dim::Z);
 
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
@@ -409,56 +404,6 @@ PYBIND11_MODULE(scippy, m) {
       m, "SmallVectorDouble8");
   declare_VariableView<Dataset>(m, "Dataset");
   declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
-
-  py::class_<units::Unit>(m, "Unit")
-      .def(py::init())
-      .def("__repr__",
-           [](const units::Unit &u) -> std::string { return u.name(); })
-      .def_property_readonly("name", &units::Unit::name,
-                             "A read-only string describing the "
-                             "type of unit.")
-      .def(py::self + py::self)
-      .def(py::self - py::self)
-      .def(py::self * py::self)
-      .def(py::self / py::self)
-      .def(py::self == py::self)
-      .def(py::self != py::self);
-
-  auto units = m.def_submodule("units");
-  units.attr("dimensionless") = units::Unit(units::dimensionless);
-  units.attr("m") = units::Unit(units::m);
-  units.attr("counts") = units::Unit(units::counts);
-  units.attr("s") = units::Unit(units::s);
-  units.attr("kg") = units::Unit(units::kg);
-  units.attr("K") = units::Unit(units::K);
-  units.attr("angstrom") = units::Unit(units::angstrom);
-  units.attr("meV") = units::Unit(units::meV);
-  units.attr("us") = units::Unit(units::us);
-
-  py::class_<Dimensions>(m, "Dimensions")
-      .def(py::init<>())
-      .def("__repr__",
-           [](const Dimensions &self) {
-             std::string out = "Dimensions = " + to_string(self, ".");
-             return out;
-           })
-      .def("__contains__", [](const Dimensions &self,
-                              const Dim dim) { return self.contains(dim); })
-      .def("__getitem__",
-           py::overload_cast<const Dim>(&Dimensions::operator[], py::const_))
-      .def_property_readonly(
-          "labels", [](const Dimensions &self) { return self.labels(); },
-          "The read-only tags labelling"
-          "the different dimensions of the underlying "
-          "Variable or VariableProxy, e.g. [Dim.Y, Dim.X].")
-      .def_property_readonly(
-          "shape", [](const Dimensions &self) { return self.shape(); },
-          "The read-only sizes of each dimension of the "
-          "underlying Variable or VariableProxy.")
-      .def("add", &Dimensions::add,
-           "Add a new dimension, which will be the outermost dimension.")
-      .def(py::self == py::self)
-      .def(py::self != py::self);
 
   PYBIND11_NUMPY_DTYPE(Empty, dummy);
 
