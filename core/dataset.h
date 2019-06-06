@@ -13,7 +13,6 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "dimension.h"
 #include "except.h"
 #include "variable.h"
 
@@ -180,6 +179,8 @@ public:
 
   DataProxy operator+=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
+  DataProxy operator*=(const Variable &other) const;
+  DataProxy operator/=(const Variable &other) const;
 
 private:
   Dataset *m_mutableDataset;

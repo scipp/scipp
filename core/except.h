@@ -8,14 +8,9 @@
 #include <stdexcept>
 #include <string>
 
-#include "dimension.h"
 #include "dtype.h"
 #include "index.h"
 #include "scipp/units/unit.h"
-
-namespace scipp::units {
-class Unit;
-}
 
 namespace scipp::core {
 
@@ -28,7 +23,6 @@ class VariableConstProxy;
 struct Slice;
 
 std::string to_string(const DType dtype);
-std::string to_string(const Dim dim, const std::string &separator = "::");
 std::string to_string(const Dimensions &dims,
                       const std::string &separator = "::");
 std::string to_string(const Slice &slice, const std::string &separator = "::");
@@ -121,6 +115,10 @@ struct UnitError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct SizeError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 struct UnitMismatchError : public UnitError {
   UnitMismatchError(const units::Unit &a, const units::Unit &b);
 };
@@ -142,6 +140,12 @@ template <class A, class B> void variablesMatch(const A &a, const B &b) {
 }
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const scipp::index length);
+
+template <class T, class... Ts>
+void sizeMatches(const T &range, const Ts &... other) {
+  if (((scipp::size(range) != scipp::size(other)) || ...))
+    throw except::SizeError("Expected matching sizes.");
+}
 void equals(const units::Unit &a, const units::Unit &b);
 void equals(const Dimensions &a, const Dimensions &b);
 
@@ -155,7 +159,7 @@ template <class T> void unit(const T &object, const units::Unit &unit) {
 }
 
 template <class T> void countsOrCountsDensity(const T &object) {
-  if (!(units::containsCounts(object.unit())))
+  if (!object.unit().isCounts() && !object.unit().isCountDensity())
     throw except::UnitError("Expected counts or counts-density, got " +
                             object.unit().name() + '.');
 }

@@ -6,10 +6,10 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
-#include "convert.h"
 #include "counts.h"
 #include "dataset.h"
 #include "md_zip_view.h"
+#include "scipp/neutron/convert.h"
 #include "zip_view.h"
 
 namespace scipp::core {

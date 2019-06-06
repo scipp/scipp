@@ -10,8 +10,8 @@
 #include <utility>
 #include <vector>
 
-#include "dimension.h"
 #include "index.h"
+#include "scipp/units/unit.h"
 #include "span.h"
 
 namespace scipp::core {
