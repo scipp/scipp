@@ -4,7 +4,7 @@ pybind11_add_module(scippy
                     SHARED
                     dimensions.cpp
                     scippy.cpp
-                    units-neutron.cpp
+                    units_neutron.cpp
                     variable.cpp)
 target_link_libraries(scippy LINK_PRIVATE scipp-core)
 target_include_directories(scippy SYSTEM PRIVATE "../range-v3/include")
