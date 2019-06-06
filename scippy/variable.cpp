@@ -184,8 +184,8 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &data,
   const auto dtypeTag = type.is(py::dtype::of<Empty>())
                             ? convertDType(data.dtype())
                             : convertDType(type);
-  return CallDType<double, float, int64_t, int32_t, char,
-                   bool>::apply<MakeVariable>(dtypeTag, labels, data);
+  return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
+      dtypeTag, labels, data);
 }
 
 Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
@@ -197,7 +197,7 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
   // py::dtype?
   const auto dtypeTag =
       type.is(py::dtype::of<Empty>()) ? dtype<double> : convertDType(type);
-  return CallDType<double, float, int64_t, int32_t, char, bool, Dataset,
+  return CallDType<double, float, int64_t, int32_t, bool, Dataset,
                    Eigen::Vector3d>::apply<MakeVariableDefaultInit>(dtypeTag,
                                                                     labels,
                                                                     shape);
@@ -251,7 +251,7 @@ void setVariableProxy(VariableProxy &self,
                       const std::tuple<Dim, scipp::index> &index,
                       const py::array &data) {
   auto slice = self(std::get<Dim>(index), std::get<scipp::index>(index));
-  CallDType<double, float, int64_t, int32_t, char, bool>::apply<SetData>(
+  CallDType<double, float, int64_t, int32_t, bool>::apply<SetData>(
       slice.dtype(), slice, data);
 }
 
@@ -259,7 +259,7 @@ void setVariableProxyRange(VariableProxy &self,
                            const std::tuple<Dim, const py::slice> &index,
                            const py::array &data) {
   auto slice = pySlice(self, index);
-  CallDType<double, float, int64_t, int32_t, char, bool>::apply<SetData>(
+  CallDType<double, float, int64_t, int32_t, bool>::apply<SetData>(
       slice.dtype(), slice, data);
 }
 
@@ -280,7 +280,7 @@ template <class T> struct MakePyBufferInfoT {
 };
 
 py::buffer_info make_py_buffer_info(VariableProxy &view) {
-  return CallDType<double, float, int64_t, int32_t, char,
+  return CallDType<double, float, int64_t, int32_t,
                    bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
@@ -305,8 +305,6 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
     return {as_py_array_t<int64_t>(obj, view)};
   case dtype<int32_t>:
     return {as_py_array_t<int32_t>(obj, view)};
-  case dtype<char>:
-    return {as_py_array_t<char>(obj, view)};
   case dtype<bool>:
     return {as_py_array_t<bool>(obj, view)};
   default:
@@ -329,8 +327,6 @@ template <class... Ts> struct as_VariableViewImpl {
       return {view.template values<int64_t>()};
     case dtype<int32_t>:
       return {view.template values<int32_t>()};
-    case dtype<char>:
-      return {view.template values<char>()};
     case dtype<bool>:
       return {view.template values<bool>()};
     case dtype<std::string>:
@@ -370,9 +366,9 @@ template <class... Ts> struct as_VariableViewImpl {
 };
 
 using as_VariableView =
-    as_VariableViewImpl<double, float, int64_t, int32_t, char, bool,
-                        std::string, boost::container::small_vector<double, 8>,
-                        Dataset, Eigen::Vector3d>;
+    as_VariableViewImpl<double, float, int64_t, int32_t, bool, std::string,
+                        boost::container::small_vector<double, 8>, Dataset,
+                        Eigen::Vector3d>;
 
 using small_vector = boost::container::small_vector<double, 8>;
 PYBIND11_MAKE_OPAQUE(small_vector);
@@ -398,7 +394,6 @@ void init_variable(py::module &m) {
   declare_VariableView<int64_t>(m, "int64");
   declare_VariableView<int32_t>(m, "int32");
   declare_VariableView<std::string>(m, "string");
-  declare_VariableView<char>(m, "char");
   declare_VariableView<Bool>(m, "bool");
   declare_VariableView<boost::container::small_vector<double, 8>>(
       m, "SmallVectorDouble8");
@@ -453,7 +448,7 @@ void init_variable(py::module &m) {
       .def_property_readonly(
           "numpy",
           &as_py_array_t_variant<Variable, double, float, int64_t, int32_t,
-                                 char, bool>,
+                                 bool>,
           "Returns a read-only numpy array containing the Variable's values.")
       .def_property_readonly(
           "data", &as_VariableView::get<Variable>,
@@ -556,7 +551,7 @@ void init_variable(py::module &m) {
       .def_property_readonly(
           "numpy",
           &as_py_array_t_variant<VariableProxy, double, float, int64_t, int32_t,
-                                 char, bool>,
+                                 bool>,
           "Returns a read-only numpy array containing the VariableProxy's "
           "values.")
       .def_property_readonly(

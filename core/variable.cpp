@@ -778,6 +778,12 @@ INSTANTIATE(sparse_container<double>)
 INSTANTIATE(sparse_container<float>)
 INSTANTIATE(sparse_container<int64_t>)
 INSTANTIATE(sparse_container<int32_t>)
+// Some sparse instantiations are only needed to avoid linker errors: Some
+// makeVariable overloads have a runtime branch that may instantiate a sparse
+// variable.
+INSTANTIATE(sparse_container<std::string>)
+INSTANTIATE(sparse_container<Bool>)
+INSTANTIATE(sparse_container<Dataset>)
 INSTANTIATE(sparse_container<Eigen::Vector3d>)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
