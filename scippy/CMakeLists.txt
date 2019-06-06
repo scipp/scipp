@@ -2,6 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 pybind11_add_module(scippy
                     SHARED
+                    dataset.cpp
                     dimensions.cpp
                     dtype.cpp
                     scippy.cpp
