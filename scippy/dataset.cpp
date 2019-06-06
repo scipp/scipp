@@ -19,14 +19,27 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
+template <class T, class... Ignored>
+void bind_slice_methods(py::class_<T, Ignored...> &c) {
+  c.def("slice",
+        [](T &self, const Slice slice1) { return self.slice(slice1); });
+  c.def("slice", [](T &self, const Slice slice1, const Slice slice2) {
+    return self.slice(slice1, slice2);
+  });
+  c.def("slice",
+        [](T &self, const Slice slice1, const Slice slice2,
+           const Slice slice3) { return self.slice(slice1, slice2, slice3); });
+}
+
 template <class T, class ConstT>
 void bind_mutable_proxy(py::module &m, const std::string &name) {
   py::class_<ConstT>(m, (name + "ConstProxy").c_str());
-  py::class_<T, ConstT>(m, (name + "Proxy").c_str())
-      .def("__len__", &T::size)
+  py::class_<T, ConstT> proxy(m, (name + "Proxy").c_str());
+  proxy.def("__len__", &T::size)
       .def("__getitem__", &T::operator[])
       .def("__iter__",
            [](T &self) { return py::make_iterator(self.begin(), self.end()); });
+  bind_slice_methods(proxy);
 }
 
 template <class T> void bind_coord_properties(py::class_<T> &c) {
@@ -232,6 +245,8 @@ void init_dataset(py::module &m) {
 
       */
 
+  py::class_<Slice>(m, "Slice");
+
   bind_mutable_proxy<CoordsProxy, CoordsConstProxy>(m, "Coords");
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
@@ -249,9 +264,14 @@ void init_dataset(py::module &m) {
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);
+
   bind_coord_properties(dataset);
   bind_coord_properties(datasetProxy);
   bind_coord_properties(dataProxy);
+
+  bind_slice_methods(dataset);
+  bind_slice_methods(datasetProxy);
+  bind_slice_methods(dataProxy);
 
   /*
   .def_property_readonly(

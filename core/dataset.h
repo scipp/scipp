@@ -373,9 +373,13 @@ public:
   }
 
   ConstProxy slice(const Slice slice1) const {
-    const auto &coord = *m_items.at(slice1.dim).first;
     auto slices = m_slices;
-    slices.emplace_back(slice1, coord.dims()[slice1.dim]);
+    if constexpr (std::is_same_v<Key, Dim>) {
+      const auto &coord = *m_items.at(slice1.dim).first;
+      slices.emplace_back(slice1, coord.dims()[slice1.dim]);
+    } else {
+      throw std::runtime_error("TODO");
+    }
     auto items = m_items;
     return ConstProxy(std::move(items), slices);
   }
