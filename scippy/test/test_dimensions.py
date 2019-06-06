@@ -17,9 +17,12 @@ def test_dense():
     assert not dims.sparse
     assert dims.sparseDim == Dim.Invalid
     assert len(dims.labels) == 2
-    assert len(dims.shape) == 2
     assert dims.labels[0] == Dim.X
     assert dims.labels[1] == Dim.Y
+    assert len(dims.denseLabels) == 2
+    assert dims.denseLabels[0] == Dim.X
+    assert dims.denseLabels[1] == Dim.Y
+    assert len(dims.shape) == 2
     assert dims.shape[0] == 2
     assert dims.shape[1] == 3
 
@@ -29,9 +32,11 @@ def test_sparse():
     assert dims.sparse
     assert dims.sparseDim == Dim.Y
     assert len(dims.labels) == 2
-    assert len(dims.shape) == 1
     assert dims.labels[0] == Dim.X
     assert dims.labels[1] == Dim.Y
+    assert len(dims.denseLabels) == 1
+    assert dims.denseLabels[0] == Dim.X
+    assert len(dims.shape) == 1
     assert dims.shape[0] == 2
 
 
