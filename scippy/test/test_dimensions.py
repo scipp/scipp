@@ -29,3 +29,10 @@ def test_comparison():
     assert a == a
     assert a == a2
     assert a != b
+
+
+def test_lifetime():
+    # pybind11 is keeping the parent object (Dimensions) alive
+    shape = sp.Dimensions(labels=[Dim.X, Dim.Y], shape=[2, 3]).shape
+    assert len(shape) == 2
+    assert shape[1] == 3
