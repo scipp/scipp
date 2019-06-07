@@ -179,6 +179,9 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
+  DataProxy assign(const DataConstProxy &other) const;
+  DataProxy assign(const Variable &other) const;
+  DataProxy assign(const VariableConstProxy &other) const;
   DataProxy operator+=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
   DataProxy operator*=(const Variable &other) const;

@@ -12,6 +12,7 @@
 #include <pybind11/stl_bind.h>
 
 #include "bind_data_access.h"
+#include "bind_math_methods.h"
 #include "bind_slice_methods.h"
 #include "dataset.h"
 #include "except.h"
@@ -258,7 +259,9 @@ void init_dataset(py::module &m) {
   bind_coord_properties(datasetProxy);
   bind_coord_properties(dataProxy);
 
+  bind_slice_methods(dataset);
   bind_slice_methods(dataProxy);
+  bind_math_methods(dataProxy);
   bind_data_properties(dataProxy);
 
   /*

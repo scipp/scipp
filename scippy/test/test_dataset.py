@@ -2,6 +2,8 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import pytest
+
 import scippy as sp
 from scippy import Dim
 import numpy as np
@@ -38,7 +40,7 @@ def test_slice_item():
         [Dim.X], values=np.arange(6, 8))
 
 
-def test_set_item_slice():
+def test_set_item_slice_from_numpy():
     d = sp.Dataset()
     d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
     d['a'] = sp.Variable([Dim.X], values=np.arange(4))
@@ -46,7 +48,7 @@ def test_set_item_slice():
     assert d['a'].data == sp.Variable([Dim.X], values=np.array([0, 1, 0, 1]))
 
 
-def test_set_item_slice_with_variances():
+def test_set_item_slice_with_variances_from_numpy():
     d = sp.Dataset()
     d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
     d['a'] = sp.Variable([Dim.X], values=np.arange(4), variances=np.arange(4))
@@ -54,6 +56,24 @@ def test_set_item_slice_with_variances():
     d['a'][Dim.X, 2:4].variances = np.arange(2, 4)
     assert np.array_equal(d['a'].values, np.array([0.0, 1.0, 0.0, 1.0]))
     assert np.array_equal(d['a'].variances, np.array([0.0, 1.0, 2.0, 3.0]))
+
+
+def test_iadd_slice():
+    d = sp.Dataset()
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
+    d['a'] = sp.Variable([Dim.X], values=np.arange(4))
+    d['a'][Dim.X, 1] += d['a'][Dim.X, 2]
+    assert d['a'].data == sp.Variable([Dim.X], values=np.array([0, 3, 2, 3]))
+
+
+def test_iadd_range():
+    d = sp.Dataset()
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
+    d['a'] = sp.Variable([Dim.X], values=np.arange(4))
+    with pytest.raises(RuntimeError):
+        d['a'][Dim.X, 2:4] += d['a'][Dim.X, 1:3]
+    d['a'][Dim.X, 2:4] += d['a'][Dim.X, 2:4]
+    assert d['a'].data == sp.Variable([Dim.X], values=np.array([0, 1, 4, 6]))
 
 
 #def setUp(self):

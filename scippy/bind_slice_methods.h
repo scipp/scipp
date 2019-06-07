@@ -7,6 +7,7 @@
 
 #include <pybind11/pybind11.h>
 
+#include "dataset.h"
 #include "numpy.h"
 #include "scipp/core/dtype.h"
 #include "tag_util.h"
@@ -16,12 +17,32 @@ namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
 
+// TODO We really need a way to get the dimension labels and extents from
+// Dataset (not using class Dimensions).
+template <class T> auto dim_extent(const T &object, const Dim dim) {
+  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetProxy>) {
+    scipp::index extent = -1;
+    for (const auto & [ key, item ] : object) {
+      static_cast<void>(key);
+      if (item.dims().contains(dim)) {
+        if (extent == -1)
+          extent = item.dims()[dim];
+        else if (item.dims()[dim] == extent - 1)
+          --extent;
+      }
+    }
+    return extent;
+  } else {
+    return object.dims()[dim];
+  }
+}
+
 template <class T>
 auto from_py_slice(const T &source,
                    const std::tuple<Dim, const py::slice> &index) {
   const auto & [ dim, indices ] = index;
   size_t start, stop, step, slicelength;
-  const auto size = source.dims()[dim];
+  const auto size = dim_extent(source, dim);
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
     throw py::error_already_set();
   if (step != 1)
@@ -53,40 +74,56 @@ template <class Proxy> struct SetData {
     }
   };
 };
-template <class Proxy> auto set_data(Proxy &&) { return SetData<Proxy>{}; }
 
 // Helpers wrapped in struct to avoid unresolvable overloads.
 template <class T> struct slicer {
   static auto get(T &self, const std::tuple<Dim, scipp::index> &index) {
     auto[dim, i] = index;
-    auto sz = self.dims()[dim];
+    auto sz = dim_extent(self, dim);
     if (i <= -sz || i >= sz) // index is out of range
       throw std::runtime_error("Dimension size is " +
-                               std::to_string(self.dims()[dim]) +
+                               std::to_string(dim_extent(self, dim)) +
                                ", can't treat " + std::to_string(i));
     if (i < 0)
       i = sz + i;
     return self.slice(Slice(dim, i));
   }
+
   static auto get_range(T &self,
                         const std::tuple<Dim, const py::slice> &index) {
     return self.slice(from_py_slice(self, index));
   }
 
-  static void set(T &self, const std::tuple<Dim, scipp::index> &index,
-                  const py::array &data) {
+  static void set_from_numpy(T &self,
+                             const std::tuple<Dim, scipp::index> &index,
+                             const py::array &data) {
     auto slice = slicer<T>::get(self, index);
     CallDType<double, float, int64_t, int32_t, bool>::apply<
         SetData<decltype(slice)>::template Impl>(slice.data().dtype(), slice,
                                                  data);
   }
 
-  static void set_range(T &self, const std::tuple<Dim, const py::slice> &index,
-                        const py::array &data) {
+  static void
+  set_range_from_numpy(T &self, const std::tuple<Dim, const py::slice> &index,
+                       const py::array &data) {
     auto slice = slicer<T>::get_range(self, index);
     CallDType<double, float, int64_t, int32_t, bool>::apply<
         SetData<decltype(slice)>::template Impl>(slice.data().dtype(), slice,
                                                  data);
+  }
+
+  template <class Other>
+  static void set(T &self, const std::tuple<Dim, scipp::index> &index,
+                  const Other &data) {
+    auto slice = slicer<T>::get(self, index);
+    slice.assign(data);
+  }
+
+  template <class Other>
+  static void set_range(T &self, const std::tuple<Dim, const py::slice> &index,
+                        const Other &data) {
+    auto slice = slicer<T>::get_range(self, index);
+    slice.assign(data);
   }
 };
 
@@ -94,8 +131,19 @@ template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__getitem__", &slicer<T>::get);
   c.def("__getitem__", &slicer<T>::get_range);
-  c.def("__setitem__", &slicer<T>::set);
-  c.def("__setitem__", &slicer<T>::set_range);
+  if constexpr (!std::is_same_v<T, Dataset> &&
+                !std::is_same_v<T, DatasetProxy>) {
+    c.def("__setitem__", &slicer<T>::set_from_numpy);
+    c.def("__setitem__", &slicer<T>::set_range_from_numpy);
+    c.def("__setitem__", &slicer<T>::template set<Variable>);
+    c.def("__setitem__", &slicer<T>::template set<VariableProxy>);
+    c.def("__setitem__", &slicer<T>::template set_range<Variable>);
+    c.def("__setitem__", &slicer<T>::template set_range<VariableProxy>);
+  }
+  if constexpr (std::is_same_v<T, DataProxy>) {
+    c.def("__setitem__", &slicer<T>::template set<DataProxy>);
+    c.def("__setitem__", &slicer<T>::template set_range<DataProxy>);
+  }
 }
 
 #endif // SCIPPY_BIND_SLICE_METHODS_H

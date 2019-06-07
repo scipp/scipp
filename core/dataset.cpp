@@ -356,6 +356,27 @@ AttrsProxy DataProxy::attrs() const noexcept {
       slices());
 }
 
+DataProxy DataProxy::assign(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  // TODO here and below: If other has data, we should either fail, or create
+  // data.
+  if (hasData())
+    data().assign(other.data());
+  return *this;
+}
+
+DataProxy DataProxy::assign(const Variable &other) const {
+  if (hasData())
+    data().assign(other);
+  return *this;
+}
+
+DataProxy DataProxy::assign(const VariableConstProxy &other) const {
+  if (hasData())
+    data().assign(other);
+  return *this;
+}
+
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
   if (hasData())
