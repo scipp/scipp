@@ -12,6 +12,7 @@
 #include <pybind11/stl_bind.h>
 
 #include "bind_data_access.h"
+#include "bind_math_methods.h"
 #include "bind_slice_methods.h"
 #include "dataset.h"
 #include "except.h"
@@ -226,11 +227,9 @@ void init_variable(py::module &m) {
       .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
@@ -280,9 +279,7 @@ void init_variable(py::module &m) {
                                  bool>,
           "Returns a read-only numpy array containing the VariableProxy's "
           "values.")
-      .def(py::self += py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self *= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
@@ -335,6 +332,8 @@ void init_variable(py::module &m) {
 
   bind_slice_methods(variable);
   bind_slice_methods(variableProxy);
+  bind_math_methods(variable);
+  bind_math_methods(variableProxy);
   bind_data_properties(variable);
   bind_data_properties(variableProxy);
 
