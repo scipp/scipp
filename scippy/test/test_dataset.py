@@ -17,8 +17,8 @@ def test_create_empty():
 def test_create():
     x = sp.Variable([Dim.X], values=np.arange(3))
     y = sp.Variable([Dim.Y], values=np.arange(4))
-    xy = sp.Variable([Dim.X, Dim.Y], values=np.arange(12).reshape(3,4))
-    d = sp.Dataset({'xy': xy, 'x':x}, coords={Dim.X:x, Dim.Y:y})
+    xy = sp.Variable([Dim.X, Dim.Y], values=np.arange(12).reshape(3, 4))
+    d = sp.Dataset({'xy': xy, 'x': x}, coords={Dim.X: x, Dim.Y: y})
     assert len(d) == 2
     assert d.coords[Dim.X] == x
     assert d.coords[Dim.Y] == y
@@ -86,7 +86,6 @@ def test_iadd_range():
         d['a'][Dim.X, 2:4] += d['a'][Dim.X, 1:3]
     d['a'][Dim.X, 2:4] += d['a'][Dim.X, 2:4]
     assert d['a'].data == sp.Variable([Dim.X], values=np.array([0, 1, 4, 6]))
-
 
 #def setUp(self):
 #    lx = 2

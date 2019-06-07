@@ -124,19 +124,6 @@ std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
   return strides;
 }
 
-template <class T>
-auto pySlice(T &source, const std::tuple<Dim, const py::slice> &index)
-    -> decltype(source(Dim::Invalid, 0)) {
-  const auto & [ dim, indices ] = index;
-  size_t start, stop, step, slicelength;
-  const auto size = source.dims()[dim];
-  if (!indices.compute(size, &start, &stop, &step, &slicelength))
-    throw py::error_already_set();
-  if (step != 1)
-    throw std::runtime_error("Step must be 1");
-  return source(dim, start, stop);
-}
-
 template <class T> struct MakePyBufferInfoT {
   static py::buffer_info apply(VariableProxy &view) {
     const auto &dims = view.dims();
@@ -219,18 +206,6 @@ void init_variable(py::module &m) {
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = DType::Unknown)
       .def(py::init<const VariableProxy &>())
-      .def("__getitem__", pySlice<Variable>, py::keep_alive<0, 1>())
-      .def("__setitem__",
-           [](Variable &self, const std::tuple<Dim, py::slice> &index,
-              const VariableProxy &other) {
-             pySlice(self, index).assign(other);
-           })
-      .def("__setitem__",
-           [](Variable &self, const std::tuple<Dim, scipp::index> &index,
-              const VariableProxy &other) {
-             const auto & [ dim, i ] = index;
-             self(dim, i).assign(other);
-           })
       .def("copy", [](const Variable &self) { return self; },
            "Make a copy of a Variable.")
       .def("__copy__", [](Variable &self) { return Variable(self); })
@@ -294,17 +269,6 @@ void init_variable(py::module &m) {
                                           py::buffer_protocol());
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy
-      .def("__setitem__",
-           [](VariableProxy &self, const std::tuple<Dim, py::slice> &index,
-              const VariableProxy &other) {
-             pySlice(self, index).assign(other);
-           })
-      .def("__setitem__",
-           [](VariableProxy &self, const std::tuple<Dim, scipp::index> &index,
-              const VariableProxy &other) {
-             const auto & [ dim, i ] = index;
-             self(dim, i).assign(other);
-           })
       .def("copy", [](const VariableProxy &self) { return Variable(self); },
            "Make a copy of a VariableProxy and return it as a Variable.")
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
