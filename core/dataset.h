@@ -149,6 +149,8 @@ public:
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
 
+  void setUnit(const units::Unit unit) const;
+
   /// Return untyped proxy for data (values and optional variances).
   VariableProxy data() const {
     return detail::makeSlice(*m_mutableData->data, slices());

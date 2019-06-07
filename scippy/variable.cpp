@@ -236,14 +236,8 @@ void init_variable(py::module &m) {
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
-      .def_property("unit", &Variable::unit, &Variable::setUnit,
-                    "Object of type Unit holding the unit of the Variable.")
       .def_property_readonly("dtype", &Variable::dtype)
       .def_property_readonly("has_variances", &Variable::hasVariances)
-      .def_property_readonly(
-          "dims", [](const Variable &self) { return self.dims(); },
-          "A read-only Dimensions object containing the dimensions of the "
-          "Variable.")
       .def_property_readonly(
           "numpy",
           &as_py_array_t_variant<Variable, double, float, int64_t, int32_t,
@@ -301,14 +295,6 @@ void init_variable(py::module &m) {
                                           py::buffer_protocol());
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy
-      .def_property_readonly(
-          "dims", [](const VariableProxy &self) { return self.dims(); },
-          py::return_value_policy::copy,
-          "A read-only Dimensions object containing the dimensions of the "
-          "Variable.")
-      .def_property(
-          "unit", &VariableProxy::unit, &VariableProxy::setUnit,
-          "Object of type Unit holding the unit of the VariableProxy.")
       .def("__setitem__",
            [](VariableProxy &self, const std::tuple<Dim, py::slice> &index,
               const VariableProxy &other) {

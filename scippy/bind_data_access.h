@@ -142,23 +142,26 @@ using as_VariableView =
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property(
-      "values", &as_VariableView::values<T>, &as_VariableView::set_values<T>,
-      "Returns a read-only VariableView onto the VariableProxy's contents.");
-  c.def_property(
-      "variances", &as_VariableView::variances<T>,
-      &as_VariableView::set_variances<T>,
-      "Returns a read-only VariableView onto the VariableProxy's contents.");
+  c.def_property_readonly("dims", [](const T &self) { return self.dims(); },
+                          py::return_value_policy::copy,
+                          "The dimensions of the data (read-only).");
+  c.def_property("unit", &T::unit, &T::setUnit,
+                 "The physical unit of the data (writable).");
+
+  c.def_property("values", &as_VariableView::values<T>,
+                 &as_VariableView::set_values<T>,
+                 "The array of values of the data (writable).");
+  c.def_property("variances", &as_VariableView::variances<T>,
+                 &as_VariableView::set_variances<T>,
+                 "The array of variances of the data (writable).");
   c.def_property("value", &as_VariableView::value<T>,
                  &as_VariableView::set_value<T>,
-                 "The only data point for a 0-dimensional "
-                 "variable. Raises an exception of the variable is "
-                 "not 0-dimensional.");
+                 "The only value for 0-dimensional data. Raises an exception "
+                 "of the data is not 0-dimensional.");
   c.def_property("variance", &as_VariableView::variance<T>,
                  &as_VariableView::set_variance<T>,
-                 "The only data point for a 0-dimensional "
-                 "variable. Raises an exception of the variable is "
-                 "not 0-dimensional.");
+                 "The only variance for 0-dimensional data. Raises an "
+                 "exception of the data is not 0-dimensional.");
 }
 
 #endif // SCIPPY_BIND_DATA_ACCESS_H

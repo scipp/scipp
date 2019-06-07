@@ -290,6 +290,15 @@ units::Unit DataConstProxy::unit() const {
   throw std::runtime_error("Data without values, unit is undefined.");
 }
 
+/// Set the unit of the data values.
+///
+/// Throws if there are no data values.
+void DataProxy::setUnit(const units::Unit unit) const {
+  if (hasData())
+    return data().setUnit(unit);
+  throw std::runtime_error("Data without values, cannot set unit.");
+}
+
 /// Return a const proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
