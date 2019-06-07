@@ -6,3 +6,4 @@ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
 sudo apt install libomp-dev
 sudo apt install python3-setuptools
 sudo apt install ipython3
+sudo apt install python3-pytest
