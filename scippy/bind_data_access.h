@@ -19,68 +19,58 @@ namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
 
+struct get_values {
+  template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
+    return proxy.template values<T>();
+  }
+};
+struct get_variances {
+  template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
+    return proxy.template variances<T>();
+  }
+};
+
 template <class... Ts> struct as_VariableViewImpl {
-  template <class Var>
+  template <class Getter, class Var>
   static std::variant<std::conditional_t<
       std::is_same_v<Var, Variable>, scipp::span<underlying_type_t<Ts>>,
       VariableView<underlying_type_t<Ts>>>...>
-  values(Var &view) {
+  get(Var &view) {
     switch (view.data().dtype()) {
     case dtype<double>:
-      return {view.template values<double>()};
+      return {Getter::template get<double>(view)};
     case dtype<float>:
-      return {view.template values<float>()};
+      return {Getter::template get<float>(view)};
     case dtype<int64_t>:
-      return {view.template values<int64_t>()};
+      return {Getter::template get<int64_t>(view)};
     case dtype<int32_t>:
-      return {view.template values<int32_t>()};
+      return {Getter::template get<int32_t>(view)};
     case dtype<bool>:
-      return {view.template values<bool>()};
+      return {Getter::template get<bool>(view)};
     case dtype<std::string>:
-      return {view.template values<std::string>()};
+      return {Getter::template get<std::string>(view)};
     case dtype<boost::container::small_vector<double, 8>>:
-      return {
-          view.template values<boost::container::small_vector<double, 8>>()};
+      return {Getter::template get<boost::container::small_vector<double, 8>>(
+          view)};
     case dtype<Dataset>:
-      return {view.template values<Dataset>()};
+      return {Getter::template get<Dataset>(view)};
     case dtype<Eigen::Vector3d>:
-      return {view.template values<Eigen::Vector3d>()};
+      return {Getter::template get<Eigen::Vector3d>(view)};
     default:
       throw std::runtime_error("not implemented for this type.");
     }
+  }
+  template <class Var>
+  static auto values(Var &view) -> decltype(get<get_values>(view)) {
+    return get<get_values>(view);
+  }
+  template <class Var>
+  static auto variances(Var &view) -> decltype(get<get_variances>(view)) {
+    return get<get_variances>(view);
   }
 
-  template <class Var>
-  static std::variant<std::conditional_t<
-      std::is_same_v<Var, Variable>, scipp::span<underlying_type_t<Ts>>,
-      VariableView<underlying_type_t<Ts>>>...>
-  variances(Var &view) {
-    switch (view.data().dtype()) {
-    case dtype<double>:
-      return {view.template variances<double>()};
-    case dtype<float>:
-      return {view.template variances<float>()};
-    case dtype<int64_t>:
-      return {view.template variances<int64_t>()};
-    case dtype<int32_t>:
-      return {view.template variances<int32_t>()};
-    case dtype<bool>:
-      return {view.template variances<bool>()};
-    case dtype<std::string>:
-      return {view.template variances<std::string>()};
-    case dtype<boost::container::small_vector<double, 8>>:
-      return {
-          view.template variances<boost::container::small_vector<double, 8>>()};
-    case dtype<Dataset>:
-      return {view.template variances<Dataset>()};
-    case dtype<Eigen::Vector3d>:
-      return {view.template variances<Eigen::Vector3d>()};
-    default:
-      throw std::runtime_error("not implemented for this type.");
-    }
-  }
-  template <class Var>
-  static void set_values(Var &view, const py::array &data) {
+  template <class Proxy>
+  static void set(const Proxy &proxy, const py::array &data) {
     std::visit(
         [&data](const auto &proxy) {
           using T =
@@ -91,23 +81,15 @@ template <class... Ts> struct as_VariableViewImpl {
             throw std::runtime_error("Only POD types can be set from numpy.");
           }
         },
-        values(view));
+        proxy);
+  }
+  template <class Var>
+  static void set_values(Var &view, const py::array &data) {
+    set(values(view), data);
   }
   template <class Var>
   static void set_variances(Var &view, const py::array &data) {
-    std::visit(
-        [&data](const auto &proxy) {
-          using T =
-              typename std::remove_reference_t<decltype(proxy)>::value_type;
-          if constexpr (std::is_trivial_v<T>) {
-            copy_flattened<
-                typename std::remove_reference_t<decltype(proxy)>::value_type>(
-                data, proxy);
-          } else {
-            throw std::runtime_error("Only POD types can be set from numpy.");
-          }
-        },
-        variances(view));
+    set(variances(view), data);
   }
 
   // Return a scalar value from a variable, implicitly requiring that the
