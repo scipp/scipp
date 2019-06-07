@@ -11,6 +11,7 @@
 #include <pybind11/pybind11.h>
 
 #include "except.h"
+#include "numpy.h"
 #include "scipp/core/dtype.h"
 #include "variable.h"
 
@@ -80,11 +81,33 @@ template <class... Ts> struct as_VariableViewImpl {
   }
   template <class Var>
   static void set_values(Var &view, const py::array &data) {
-    std::visit([&data](const auto &) {}, values(view));
+    std::visit(
+        [&data](const auto &proxy) {
+          using T =
+              typename std::remove_reference_t<decltype(proxy)>::value_type;
+          if constexpr (std::is_trivial_v<T>) {
+            copy_flattened<T>(data, proxy);
+          } else {
+            throw std::runtime_error("Only POD types can be set from numpy.");
+          }
+        },
+        values(view));
   }
   template <class Var>
   static void set_variances(Var &view, const py::array &data) {
-    std::visit([&data](const auto &) {}, variances(view));
+    std::visit(
+        [&data](const auto &proxy) {
+          using T =
+              typename std::remove_reference_t<decltype(proxy)>::value_type;
+          if constexpr (std::is_trivial_v<T>) {
+            copy_flattened<
+                typename std::remove_reference_t<decltype(proxy)>::value_type>(
+                data, proxy);
+          } else {
+            throw std::runtime_error("Only POD types can be set from numpy.");
+          }
+        },
+        variances(view));
   }
 
   // Return a scalar value from a variable, implicitly requiring that the
@@ -149,7 +172,7 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                  "The only data point for a 0-dimensional "
                  "variable. Raises an exception of the variable is "
                  "not 0-dimensional.");
-  c.def_property("variances", &as_VariableView::variances<T>,
+  c.def_property("variance", &as_VariableView::variance<T>,
                  &as_VariableView::set_variance<T>,
                  "The only data point for a 0-dimensional "
                  "variable. Raises an exception of the variable is "
