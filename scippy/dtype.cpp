@@ -13,6 +13,4 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
-void init_dtype(py::module &m) {
-  bind_enum(m, "dtype", DType::Unknown);
-}
+void init_dtype(py::module &m) { bind_enum(m, "dtype", DType::Unknown); }
