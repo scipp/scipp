@@ -6,6 +6,7 @@ import scippy as sp
 from scippy import Dim
 import numpy as np
 
+
 def test_create_empty():
     d = sp.Dataset()
     assert len(d) == 0
@@ -18,6 +19,7 @@ def test_setitem():
     assert d['a'].data == sp.Variable(1.0)
     assert len(d.coords) == 0
 
+
 def test_set_coord():
     d = sp.Dataset()
     d.set_coord(Dim.X, sp.Variable(1.0))
@@ -28,28 +30,30 @@ def test_set_coord():
 
 def test_slice_item():
     d = sp.Dataset()
-    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4,8)))
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
     d['a'] = sp.Variable([Dim.X], values=np.arange(4))
-    assert d['a'][Dim.X, 2:4].data == sp.Variable([Dim.X], values=np.arange(2,4))
-    assert d['a'][Dim.X, 2:4].coords[Dim.X] == sp.Variable([Dim.X], values=np.arange(6,8))
+    assert d['a'][Dim.X, 2:4].data == sp.Variable(
+        [Dim.X], values=np.arange(2, 4))
+    assert d['a'][Dim.X, 2:4].coords[Dim.X] == sp.Variable(
+        [Dim.X], values=np.arange(6, 8))
 
 
 def test_set_item_slice():
     d = sp.Dataset()
-    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4,8)))
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
     d['a'] = sp.Variable([Dim.X], values=np.arange(4))
     d['a'][Dim.X, 2:4] = np.arange(2)
-    assert d['a'].data == sp.Variable([Dim.X], values=np.array([0,1,0,1]))
+    assert d['a'].data == sp.Variable([Dim.X], values=np.array([0, 1, 0, 1]))
 
 
 def test_set_item_slice_with_variances():
     d = sp.Dataset()
-    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4,8)))
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
     d['a'] = sp.Variable([Dim.X], shape=[4], variances=True)
     d['a'][Dim.X, 2:4].values = np.arange(2)
-    d['a'][Dim.X, 2:4].variances = np.arange(2,4)
-    assert np.array_equal(d['a'].values, np.array([0.0,0.0,0.0,1.0]))
-    assert np.array_equal(d['a'].variances, np.array([0.0,0.0,2.0,3.0]))
+    d['a'][Dim.X, 2:4].variances = np.arange(2, 4)
+    assert np.array_equal(d['a'].values, np.array([0.0, 0.0, 0.0, 1.0]))
+    assert np.array_equal(d['a'].variances, np.array([0.0, 0.0, 2.0, 3.0]))
 
 
 #def setUp(self):

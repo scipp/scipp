@@ -60,6 +60,13 @@ def test_create_from_numpy_1d_bool():
     np.testing.assert_array_equal(var.numpy, np.array([True, False, True]))
 
 
+def test_create_with_variances_from_numpy_1d():
+    var = sp.Variable([sp.Dim.X], values=np.arange(4.0), variances=np.arange(4.0,8.0))
+    assert var.dtype == sp.dtype.double
+    np.testing.assert_array_equal(var.values, np.arange(4))
+    np.testing.assert_array_equal(var.variances, np.arange(4,8))
+
+
 def test_create_scalar():
     var = sp.Variable(1.2)
     assert var.value == 1.2
@@ -124,7 +131,6 @@ def test_create_dtype():
 def test_get_slice():
     var = sp.Variable([Dim.X, Dim.Y], values=np.arange(0, 8).reshape(2,4))
     var_slice = var[Dim.X, 0:2]
-    var_slice = var[{Dim.X: slice(0,2), Dim.Y: slice(0,1)}]
 
 
 def test_slicing():

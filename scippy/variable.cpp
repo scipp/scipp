@@ -43,14 +43,22 @@ auto getItemBySingleIndex(Collection &self,
 
 template <class T> struct MakeVariable {
   static Variable apply(const std::vector<Dim> &labels, py::array values,
+                        const std::optional<py::array> &variances,
                         const units::Unit unit) {
     // Pybind11 converts py::array to py::array_t for us, with all sorts of
     // automatic conversions such as integer to double, if required.
     py::array_t<T> valuesT(values);
     const py::buffer_info info = valuesT.request();
     Dimensions dims(labels, info.shape);
-    auto var = makeVariable<T>(dims);
+    auto var =
+        variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
     copy_flattened<T>(valuesT, var.template values<T>());
+    if (variances) {
+      py::array_t<T> variancesT(*variances);
+      const py::buffer_info info = variancesT.request();
+      expect::equals(dims, Dimensions(labels, info.shape));
+      copy_flattened<T>(variancesT, var.template variances<T>());
+    }
     var.setUnit(unit);
     return var;
   }
@@ -99,16 +107,13 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                         std::optional<py::array> &variances,
                         const units::Unit unit,
                         scippy::dtype type = DType::Unknown) {
-  if (variances)
-    throw std::runtime_error(
-        "Creating variable with variances is not implemented yet.");
   const py::buffer_info info = values.request();
   // Use custom dtype, otherwise dtype of data.
   const auto dtypeTag = scippy::scipp_dtype(type) == DType::Unknown
                             ? scippy::scipp_dtype(values.dtype())
                             : scippy::scipp_dtype(type);
   return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
-      dtypeTag, labels, values, unit);
+      dtypeTag, labels, values, variances, unit);
 }
 
 Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
