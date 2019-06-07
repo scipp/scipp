@@ -87,7 +87,7 @@ def test_iadd_range():
     d['a'][Dim.X, 2:4] += d['a'][Dim.X, 2:4]
     assert d['a'].data == sp.Variable([Dim.X], values=np.array([0, 1, 4, 6]))
 
-#def setUp(self):
+# def setUp(self):
 #    lx = 2
 #    ly = 3
 #    lz = 4
@@ -109,11 +109,11 @@ def test_iadd_range():
 #    self.dataset[sp.Coord.Y] = ([sp.Dim.Y], self.reference_y)
 #    self.dataset[sp.Coord.Z] = ([sp.Dim.Z], self.reference_z)
 #
-#def test_size(self):
+# def test_size(self):
 #    # X, Y, Z, 3 x Data::Value
 #    self.assertEqual(len(self.dataset), 6)
 #
-#def test_contains(self):
+# def test_contains(self):
 #    self.assertTrue(sp.Coord.X in self.dataset)
 #    self.assertTrue(sp.Coord.Y in self.dataset)
 #    self.assertTrue(sp.Coord.Z in self.dataset)
@@ -122,7 +122,7 @@ def test_iadd_range():
 #    self.assertTrue((sp.Data.Value, "data3") in self.dataset)
 #    self.assertFalse((sp.Data.Value, "data4") in self.dataset)
 #
-#def test_view_contains(self):
+# def test_view_contains(self):
 #    view = self.dataset.subset["data2"]
 #    self.assertTrue(sp.Coord.X in view)
 #    self.assertTrue(sp.Coord.Y in view)
@@ -132,7 +132,7 @@ def test_iadd_range():
 #    self.assertFalse((sp.Data.Value, "data3") in view)
 #    self.assertFalse((sp.Data.Value, "data4") in view)
 #
-#def test_delitem(self):
+# def test_delitem(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
 #                                      (1, 2, 3))
@@ -153,14 +153,14 @@ def test_iadd_range():
 #    self.assertFalse(sp.Coord.X in dataset)
 #    self.assertEqual(len(dataset.dimensions), 0)
 #
-#def test_insert_default_init(self):
+# def test_insert_default_init(self):
 #    d = sp.Dataset()
 #    d[sp.Data.Value, "data1"] = ((sp.Dim.Z, sp.Dim.Y, sp.Dim.X), (4, 3, 2))
 #    self.assertEqual(len(d), 1)
 #    np.testing.assert_array_equal(
 #        d[sp.Data.Value, "data1"].numpy, np.zeros(shape=(4, 3, 2)))
 #
-#def test_insert(self):
+# def test_insert(self):
 #    d = sp.Dataset()
 #    d[sp.Data.Value, "data1"] = (
 #        [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], np.arange(24).reshape(4, 3, 2))
@@ -183,7 +183,7 @@ def test_iadd_range():
 #            2,
 #            3)))
 #
-#def test_replace(self):
+# def test_replace(self):
 #    d = sp.Dataset()
 #    d[sp.Data.Value, "data1"] = (
 #        [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], np.zeros(24).reshape(4, 3, 2))
@@ -193,7 +193,7 @@ def test_iadd_range():
 #    np.testing.assert_array_equal(
 #        d[sp.Data.Value, "data1"].numpy, self.reference_data1)
 #
-#def test_insert_Variable(self):
+# def test_insert_Variable(self):
 #    d = sp.Dataset()
 #    d[sp.Data.Value, "data1"] = (
 #        [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], np.arange(24).reshape(4, 3, 2))
@@ -203,7 +203,7 @@ def test_iadd_range():
 #    d[sp.Data.Variance, "data2"] = var
 #    self.assertEqual(len(d), 3)
 #
-#def test_insert_variable_slice(self):
+# def test_insert_variable_slice(self):
 #    d = sp.Dataset()
 #    d[sp.Data.Value, "data1"] = (
 #        [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], np.arange(24).reshape(4, 3, 2))
@@ -212,8 +212,8 @@ def test_iadd_range():
 #    d[sp.Data.Variance, "data2"] = d[sp.Data.Value, "data1"]
 #    self.assertEqual(len(d), 3)
 #
-## This characterises existing broken behaviour. Will need to be fixed.
-#def test_demo_int_to_float_issue(self):
+# This characterises existing broken behaviour. Will need to be fixed.
+# def test_demo_int_to_float_issue(self):
 #    # Demo bug
 #    d = sp.Dataset()
 #    # Variable containing int array data
@@ -228,7 +228,7 @@ def test_iadd_range():
 #        np.arange(0, 10)))  # Variable containing int array data
 #    self.assertEqual(d[sp.Data.Value, "v2"].numpy.dtype, 'int64')
 #
-#def test_set_data(self):
+# def test_set_data(self):
 #    d = sp.Dataset()
 #    d[sp.Data.Value, "data1"] = (
 #        [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], np.arange(24).reshape(4, 3, 2))
@@ -239,12 +239,12 @@ def test_iadd_range():
 #    d[sp.Data.Value, "data1"] = np.arange(24.0).reshape(4, 3, 2)
 #    self.assertEqual(d[sp.Data.Value, "data1"].numpy.dtype, np.int64)
 #
-#def test_nested_0D_empty_item(self):
+# def test_nested_0D_empty_item(self):
 #    d = sp.Dataset()
 #    d[sp.Data.Events] = ([], sp.Dataset())
 #    self.assertEqual(d[sp.Data.Events].data[0], sp.Dataset())
 #
-#def test_set_data_nested(self):
+# def test_set_data_nested(self):
 #    d = sp.Dataset()
 #    table = sp.Dataset()
 #    table[sp.Data.Value, "col1"] = ([sp.Dim.Row], [3.0, 2.0, 1.0, 0.0])
@@ -256,12 +256,12 @@ def test_iadd_range():
 #    self.assertNotEqual(d[sp.Data.Value, "data1"].data[0],
 #                        d[sp.Data.Value, "data1"].data[1])
 #
-#def test_dimensions(self):
+# def test_dimensions(self):
 #    self.assertEqual(self.dataset.dimensions[sp.Dim.X], 2)
 #    self.assertEqual(self.dataset.dimensions[sp.Dim.Y], 3)
 #    self.assertEqual(self.dataset.dimensions[sp.Dim.Z], 4)
 #
-#def test_data(self):
+# def test_data(self):
 #    self.assertEqual(len(self.dataset[sp.Coord.X].data), 2)
 #    self.assertSequenceEqual(self.dataset[sp.Coord.X].data, [0, 1])
 #    # `data` property provides a flat view
@@ -269,7 +269,7 @@ def test_iadd_range():
 #    self.assertSequenceEqual(
 #        self.dataset[sp.Data.Value, "data1"].data, range(24))
 #
-#def test_numpy_data(self):
+# def test_numpy_data(self):
 #    np.testing.assert_array_equal(
 #        self.dataset[sp.Coord.X].numpy, self.reference_x)
 #    np.testing.assert_array_equal(
@@ -283,7 +283,7 @@ def test_iadd_range():
 #    np.testing.assert_array_equal(
 #        self.dataset[sp.Data.Value, "data3"].numpy, self.reference_data3)
 #
-#def test_view_subdata(self):
+# def test_view_subdata(self):
 #    view = self.dataset.subset["data1"]
 #    # TODO Need consistent dimensions() implementation for Dataset and its
 #    # views.
@@ -292,7 +292,7 @@ def test_iadd_range():
 #    self.assertEqual(view.dimensions[sp.Dim.Z], 4)
 #    self.assertEqual(len(view), 4)
 #
-#def test_insert_subdata(self):
+# def test_insert_subdata(self):
 #    d1 = sp.Dataset()
 #    d1[sp.Data.Value, "a"] = ([sp.Dim.X], np.arange(10, dtype="double"))
 #    d1[sp.Data.Variance, "a"] = ([sp.Dim.X], np.arange(10, dtype="double"))
@@ -318,7 +318,7 @@ def test_iadd_range():
 #        d4[sp.Data.Value, "2a"].numpy,
 #        ds_slice[sp.Data.Value, "a"].numpy * 2))
 #
-#def test_insert_subdata_different_variable_types(self):
+# def test_insert_subdata_different_variable_types(self):
 #    a = sp.Dataset()
 #    xcoord = sp.Variable([sp.Dim.X], np.arange(4))
 #    a[sp.Data.Value] = ([sp.Dim.X], np.arange(3))
@@ -333,7 +333,7 @@ def test_iadd_range():
 #    self.assertEqual(len(a), len(b))
 #    self.assertTrue((sp.Attr.ExperimentLog, "b") in b)
 #
-#def test_slice_dataset(self):
+# def test_slice_dataset(self):
 #    for x in range(2):
 #        view = self.dataset[sp.Dim.X, x]
 #        self.assertRaisesRegex(
@@ -448,7 +448,7 @@ def test_iadd_range():
 #                view[sp.Data.Value, "data3"].numpy,
 #                self.reference_data3[z:z + delta, :])
 #
-#def _apply_test_op_rhs_dataset(
+# def _apply_test_op_rhs_dataset(
 #    self,
 #    op,
 #    a,
@@ -462,7 +462,7 @@ def test_iadd_range():
 #    # Desired nan comparisons
 #    np.testing.assert_equal(a[sp.Data.Value, lh_var_name].numpy, data)
 #
-#def _apply_test_op_rhs_Variable(
+# def _apply_test_op_rhs_Variable(
 #    self,
 #    op,
 #    a,
@@ -476,7 +476,7 @@ def test_iadd_range():
 #    # Desired nan comparisons
 #    np.testing.assert_equal(a[sp.Data.Value, lh_var_name].numpy, data)
 #
-#def test_binary_dataset_rhs_operations(self):
+# def test_binary_dataset_rhs_operations(self):
 #    a = sp.Dataset()
 #    a[sp.Coord.X] = ([sp.Dim.X], np.arange(10))
 #    a[sp.Data.Value, "i"] = ([sp.Dim.X], np.arange(10, dtype='float64'))
@@ -521,7 +521,7 @@ def test_iadd_range():
 #    with np.errstate(invalid="ignore"):
 #        self._apply_test_op_rhs_dataset(operator.itruediv, a, b, data)
 #
-#def test_binary_variable_rhs_operations(self):
+# def test_binary_variable_rhs_operations(self):
 #    data = np.ones(10, dtype='float64')
 #
 #    a = sp.Dataset()
@@ -549,7 +549,7 @@ def test_iadd_range():
 #    with np.errstate(invalid="ignore"):
 #        self._apply_test_op_rhs_Variable(operator.itruediv, a, b_var, data)
 #
-#def test_binary_float_operations(self):
+# def test_binary_float_operations(self):
 #    a = sp.Dataset()
 #    a[sp.Coord.X] = ([sp.Dim.X], np.arange(10))
 #    a[sp.Data.Value, "i"] = ([sp.Dim.X], np.arange(10, dtype='float64'))
@@ -582,7 +582,7 @@ def test_iadd_range():
 #    self.assertTrue(np.array_equal(c[sp.Data.Value, "i"].numpy,
 #                                   data * 2.0))
 #
-#def test_equal_not_equal(self):
+# def test_equal_not_equal(self):
 #    a = sp.Dataset()
 #    a[sp.Coord.X] = ([sp.Dim.X], np.arange(10))
 #    a[sp.Data.Value, "i"] = ([sp.Dim.X], np.arange(10, dtype='float64'))
@@ -608,7 +608,7 @@ def test_iadd_range():
 #    self.assertNotEqual(c, a)
 #    self.assertNotEqual(c, a_slice)
 #
-#def test_plus_equals_slice(self):
+# def test_plus_equals_slice(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data1"] = (
 #        [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], self.reference_data1)
@@ -616,7 +616,7 @@ def test_iadd_range():
 #    b = dataset[sp.Dim.X, 1]
 #    a += b
 #
-#def test_numpy_interoperable(self):
+# def test_numpy_interoperable(self):
 #    # TODO: Need also __setitem__ with view.
 #    # self.dataset[sp.Data.Value, 'data2'] =
 #    #     self.dataset[sp.Data.Value, 'data1']
@@ -630,7 +630,7 @@ def test_iadd_range():
 #    np.testing.assert_array_equal(
 #        self.dataset[sp.Data.Value, "data2"].numpy, self.reference_data2)
 #
-#def test_slice_numpy_interoperable(self):
+# def test_slice_numpy_interoperable(self):
 #    # Dataset subset then view single variable
 #    self.dataset.subset['data2'][sp.Data.Value, 'data2'] = np.exp(
 #        self.dataset[sp.Data.Value, 'data1'])
@@ -661,7 +661,7 @@ def test_iadd_range():
 #    np.testing.assert_array_equal(
 #        self.dataset[sp.Data.Value, "data2"].numpy, self.reference_data2)
 #
-#def test_concatenate(self):
+# def test_concatenate(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.arange(4))
 #    dataset[sp.Coord.X] = ([sp.Dim.X], np.array([3, 2, 4, 1]))
@@ -672,7 +672,7 @@ def test_iadd_range():
 #        dataset[sp.Data.Value, "data"].numpy,
 #        np.array([0, 1, 2, 3, 0, 1, 2, 3]))
 #
-#def test_concatenate_with_slice(self):
+# def test_concatenate_with_slice(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.arange(4))
 #    dataset[sp.Coord.X] = ([sp.Dim.X], np.array([3, 2, 4, 1]))
@@ -682,7 +682,7 @@ def test_iadd_range():
 #    np.testing.assert_array_equal(
 #        dataset[sp.Data.Value, "data"].numpy, np.array([0, 1, 2, 3, 0, 1]))
 #
-#def test_rebin(self):
+# def test_rebin(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.array(10 * [1.0]))
 #    dataset[sp.Data.Value, "data"].unit = sp.units.counts
@@ -694,7 +694,7 @@ def test_iadd_range():
 #    np.testing.assert_array_equal(
 #        dataset[sp.Coord.X].numpy, np.arange(0, 11, 2))
 #
-#def test_sort(self):
+# def test_sort(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.arange(4))
 #    dataset[sp.Data.Value, "data2"] = ([sp.Dim.X], np.arange(4))
@@ -710,7 +710,7 @@ def test_iadd_range():
 #    np.testing.assert_array_equal(
 #        dataset[sp.Coord.X].numpy, np.array([3, 2, 4, 1]))
 #
-#def test_filter(self):
+# def test_filter(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.X], np.arange(4))
 #    dataset[sp.Coord.X] = ([sp.Dim.X], np.array([3, 2, 4, 1]))
@@ -722,8 +722,8 @@ def test_iadd_range():
 #                                  np.array([2, 1]))
 #
 #
-#s TestDatasetExamples(unittest.TestCase):
-#def test_table_example(self):
+# s TestDatasetExamples(unittest.TestCase):
+# def test_table_example(self):
 #    table = sp.Dataset()
 #    table[sp.Coord.Row] = ([sp.Dim.Row], ['a', 'bb', 'ccc', 'dddd'])
 #    self.assertSequenceEqual(table[sp.Coord.Row].data, [
@@ -778,7 +778,7 @@ def test_iadd_range():
 #    self.assertSequenceEqual(table[sp.Coord.Row].data, [
 #                             'a', 'bb', 'bb', 'ccc'])
 #
-#def test_table_example_no_assert(self):
+# def test_table_example_no_assert(self):
 #    table = sp.Dataset()
 #
 #    # Add columns
@@ -820,7 +820,7 @@ def test_iadd_range():
 #    # Arithmetics with tables (here: add two tables)
 #    table += table
 #
-#def test_MDHistoWorkspace_example(self):
+# def test_MDHistoWorkspace_example(self):
 #    L = 30
 #    d = sp.Dataset()
 #
@@ -889,7 +889,7 @@ def test_iadd_range():
 #    sliceZ = sp.Dataset(d[sp.Dim.Z, 7])
 #    self.assertEqual(len(sliceZ.dimensions), 2)
 #
-#def test_Workspace2D_example(self):
+# def test_Workspace2D_example(self):
 #    d = sp.Dataset()
 #
 #    d[sp.Coord.SpectrumNumber] = ([sp.Dim.Spectrum], np.arange(1, 101))
@@ -931,7 +931,7 @@ def test_iadd_range():
 #            spec[sp.Data.Value, "sample1"] = np.zeros(1000)
 #            spec[sp.Data.Variance, "sample1"] = np.zeros(1000)
 #
-#def test_monitors_example(self):
+# def test_monitors_example(self):
 #    d = sp.Dataset()
 #
 #    d[sp.Coord.SpectrumNumber] = ([sp.Dim.Spectrum], np.arange(1, 101))
@@ -969,9 +969,9 @@ def test_iadd_range():
 #        [sp.Dim.Energy], np.random.exponential(size=8))
 #    d[sp.Coord.Monitor, "transmission"] = ([], ())
 #
-#@unittest.skip("Tag-derived dtype not available anymore, need to implement \
+# @unittest.skip("Tag-derived dtype not available anymore, need to implement \
 #               way of specifying list type for events.")
-#def test_zip(self):
+# def test_zip(self):
 #    d = sp.Dataset()
 #    d[sp.Coord.SpectrumNumber] = ([sp.Dim.Position], np.arange(1, 6))
 #    d[sp.Data.EventTofs, ""] = ([sp.Dim.Position], (5,))
@@ -992,7 +992,7 @@ def test_iadd_range():
 #        el.append((10, 300))
 #        self.assertEqual(len(el), size + 1)
 #
-#def test_np_array_strides(self):
+# def test_np_array_strides(self):
 #    N = 6
 #    M = 4
 #    d1 = sp.Dataset()
@@ -1011,7 +1011,7 @@ def test_iadd_range():
 #    np.testing.assert_array_equal(arr2, d1[sp.Data.Value, "B"].numpy)
 #    np.testing.assert_array_equal(arr3, d1[sp.Data.Value, "C"].numpy)
 #
-#def test_rebin(self):
+# def test_rebin(self):
 #    N = 6
 #    M = 4
 #    d1 = sp.Dataset()
@@ -1032,7 +1032,7 @@ def test_iadd_range():
 #                                  np.transpose(
 #                                      rd1[sp.Data.Value, "B"].numpy))
 #
-#def test_copy(self):
+# def test_copy(self):
 #    import copy
 #    N = 6
 #    M = 4
@@ -1049,7 +1049,7 @@ def test_iadd_range():
 #    self.assertNotEqual(d1, d2)
 #    self.assertNotEqual(d3, d2)
 #
-#def test_correct_temporaries(self):
+# def test_correct_temporaries(self):
 #    N = 6
 #    M = 4
 #    d1 = sp.Dataset()

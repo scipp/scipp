@@ -13,6 +13,9 @@ def test_dtype():
     assert sp.dtype.int32 != sp.dtype.int64
 
 
-@pytest.mark.skip(reason="Unfortunately the scippy dtype is currently not compatible with the numpy dtype. Scippy supports types such as strings which numpy cannot handle, so we cannot simply use numpy.dtype.")
+@pytest.mark.skip(reason="Unfortunately the scippy dtype is currently not \
+        compatible with the numpy dtype. Scippy supports types such as \
+        strings which numpy cannot handle, so we cannot simply use \
+        numpy.dtype.")
 def test_numpy_comparison():
     assert sp.dtype.int32 == np.dtype(np.int32)
