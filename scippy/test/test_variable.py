@@ -121,6 +121,12 @@ def test_create_dtype():
     assert var.dtype == sp.dtype.int32
 
 
+def test_get_slice():
+    var = sp.Variable([Dim.X, Dim.Y], values=np.arange(0, 8).reshape(2,4))
+    var_slice = var[Dim.X, 0:2]
+    var_slice = var[{Dim.X: slice(0,2), Dim.Y: slice(0,1)}]
+
+
 def test_slicing():
     var = sp.Variable([sp.Dim.X], values=np.arange(0, 3))
     var_slice = var[(sp.Dim.X, slice(0, 2))]

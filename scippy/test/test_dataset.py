@@ -26,6 +26,29 @@ def test_set_coord():
     assert d.coords[Dim.X] == sp.Variable(1.0)
 
 
+def test_slice_item():
+    d = sp.Dataset()
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4,8)))
+    d['a'] = sp.Variable([Dim.X], values=np.arange(4))
+    assert d['a'][Dim.X, 2:4].data == sp.Variable([Dim.X], values=np.arange(2,4))
+    assert d['a'][Dim.X, 2:4].coords[Dim.X] == sp.Variable([Dim.X], values=np.arange(6,8))
+
+
+def test_set_item_slice():
+    d = sp.Dataset()
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4,8)))
+    d['a'] = sp.Variable([Dim.X], values=np.arange(4))
+    d['a'][Dim.X, 2:4] = np.arange(2)
+    assert d['a'].data == sp.Variable([Dim.X], values=np.array([0,1,0,1]))
+
+
+def test_set_item_slice_with_variances():
+    d = sp.Dataset()
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4,8)))
+    d['a'] = sp.Variable([Dim.X], shape=[4], variances=True)
+    d['a'][Dim.X, 2:4].values = np.arange(2)
+    assert d['a'].data == sp.Variable([Dim.X], values=np.array([0,1,0,1]))
+
 
 #def setUp(self):
 #    lx = 2

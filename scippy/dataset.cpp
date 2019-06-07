@@ -11,6 +11,8 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include "bind_data_access.h"
+#include "bind_slice_methods.h"
 #include "dataset.h"
 #include "except.h"
 
@@ -18,18 +20,6 @@ using namespace scipp;
 using namespace scipp::core;
 
 namespace py = pybind11;
-
-template <class T, class... Ignored>
-void bind_slice_methods(py::class_<T, Ignored...> &c) {
-  c.def("slice",
-        [](T &self, const Slice slice1) { return self.slice(slice1); });
-  c.def("slice", [](T &self, const Slice slice1, const Slice slice2) {
-    return self.slice(slice1, slice2);
-  });
-  c.def("slice",
-        [](T &self, const Slice slice1, const Slice slice2,
-           const Slice slice3) { return self.slice(slice1, slice2, slice3); });
-}
 
 template <class T, class ConstT>
 void bind_mutable_proxy(py::module &m, const std::string &name) {
@@ -39,7 +29,6 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
       .def("__getitem__", &T::operator[])
       .def("__iter__",
            [](T &self) { return py::make_iterator(self.begin(), self.end()); });
-  bind_slice_methods(proxy);
 }
 
 template <class T> void bind_coord_properties(py::class_<T> &c) {
@@ -269,9 +258,8 @@ void init_dataset(py::module &m) {
   bind_coord_properties(datasetProxy);
   bind_coord_properties(dataProxy);
 
-  bind_slice_methods(dataset);
-  bind_slice_methods(datasetProxy);
   bind_slice_methods(dataProxy);
+  bind_data_properties(dataProxy);
 
   /*
   .def_property_readonly(

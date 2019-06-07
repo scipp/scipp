@@ -7,7 +7,8 @@ pybind11_add_module(scippy
                     dtype.cpp
                     scippy.cpp
                     units_neutron.cpp
-                    variable.cpp)
+                    variable.cpp
+                    variable_view.cpp)
 target_link_libraries(scippy LINK_PRIVATE scipp-core)
 target_include_directories(scippy SYSTEM PRIVATE "../range-v3/include")
 

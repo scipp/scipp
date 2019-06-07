@@ -11,6 +11,7 @@ void init_dimensions(py::module &);
 void init_dtype(py::module &);
 void init_units_neutron(py::module &);
 void init_variable(py::module &);
+void init_variable_view(py::module &);
 
 PYBIND11_MODULE(scippy, m) {
   init_dataset(m);
@@ -18,4 +19,5 @@ PYBIND11_MODULE(scippy, m) {
   init_dtype(m);
   init_units_neutron(m);
   init_variable(m);
+  init_variable_view(m);
 }
