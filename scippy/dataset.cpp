@@ -249,6 +249,21 @@ void init_dataset(py::module &m) {
 
   py::class_<Dataset> dataset(m, "Dataset");
   dataset.def(py::init<>())
+      .def(py::init([](const std::map<std::string, Variable> &data,
+                       const std::map<Dim, Variable> &coords,
+                       const std::map<std::string, Variable> &labels) {
+             Dataset d;
+             for (const auto & [ name, item ] : data)
+               d.setData(name, item);
+             for (const auto & [ dim, item ] : coords)
+               d.setCoord(dim, item);
+             for (const auto & [ name, item ] : labels)
+               d.setLabels(name, item);
+             return d;
+           }),
+           py::arg("data") = std::map<std::string, Variable>{},
+           py::arg("coords") = std::map<Dim, Variable>{},
+           py::arg("labels") = std::map<std::string, Variable>{})
       .def("__setitem__", &Dataset::setData)
       .def("set_coord", &Dataset::setCoord);
 

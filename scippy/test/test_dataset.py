@@ -14,6 +14,18 @@ def test_create_empty():
     assert len(d) == 0
 
 
+def test_create():
+    x = sp.Variable([Dim.X], values=np.arange(3))
+    y = sp.Variable([Dim.Y], values=np.arange(4))
+    xy = sp.Variable([Dim.X, Dim.Y], values=np.arange(12).reshape(3,4))
+    d = sp.Dataset({'xy': xy, 'x':x}, coords={Dim.X:x, Dim.Y:y})
+    assert len(d) == 2
+    assert d.coords[Dim.X] == x
+    assert d.coords[Dim.Y] == y
+    assert d['xy'].data == xy
+    assert d['x'].data == x
+
+
 def test_setitem():
     d = sp.Dataset()
     d['a'] = sp.Variable(1.0)
