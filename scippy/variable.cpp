@@ -49,8 +49,8 @@ template <class T> struct MakeVariable {
     py::array_t<T> valuesT(values);
     const py::buffer_info info = valuesT.request();
     Dimensions dims(labels, info.shape);
-    auto *ptr = (T *)info.ptr;
-    auto var = makeVariableFromBuffer<T, ssize_t>(dims, info.strides, ptr);
+    auto var = makeVariable<T>(dims);
+    copy_flattened<T>(valuesT, var.template values<T>());
     var.setUnit(unit);
     return var;
   }

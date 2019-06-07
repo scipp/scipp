@@ -7,6 +7,7 @@
 
 #include <pybind11/pybind11.h>
 
+#include "numpy.h"
 #include "scipp/core/dtype.h"
 #include "tag_util.h"
 #include "variable.h"
@@ -48,8 +49,7 @@ template <class Proxy> struct SetData {
             "Shape mismatch when setting data from numpy array.");
 
       auto buf = slice.template values<T>();
-      auto *ptr = (T *)info.ptr;
-      std::copy(ptr, ptr + slice.dims().volume(), buf.begin());
+      copy_flattened<T>(dataT, buf);
     }
   };
 };
