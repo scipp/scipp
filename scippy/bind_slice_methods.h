@@ -31,7 +31,7 @@ auto from_py_slice(const T &source,
 
 template <class Proxy> struct SetData {
   template <class T> struct Impl {
-    static void apply(const Proxy &slice, const py::array &data) {
+    static void apply(Proxy &slice, const py::array &data) {
       if (slice.hasVariances())
         throw std::runtime_error("Data object contains variances, to set data "
                                  "values use the `values` property or provide "
@@ -53,11 +53,19 @@ template <class Proxy> struct SetData {
     }
   };
 };
+template <class Proxy> auto set_data(Proxy &&) { return SetData<Proxy>{}; }
 
 // Helpers wrapped in struct to avoid unresolvable overloads.
 template <class T> struct slicer {
   static auto get(T &self, const std::tuple<Dim, scipp::index> &index) {
-    const auto[dim, i] = index;
+    auto[dim, i] = index;
+    auto sz = self.dims()[dim];
+    if (i <= -sz || i >= sz) // index is out of range
+      throw std::runtime_error("Dimension size is " +
+                               std::to_string(self.dims()[dim]) +
+                               ", can't treat " + std::to_string(i));
+    if (i < 0)
+      i = sz + i;
     return self.slice(Slice(dim, i));
   }
   static auto get_range(T &self,
@@ -68,17 +76,17 @@ template <class T> struct slicer {
   static void set(T &self, const std::tuple<Dim, scipp::index> &index,
                   const py::array &data) {
     auto slice = slicer<T>::get(self, index);
-    CallDType<double, float, int64_t, int32_t,
-              bool>::apply<SetData<T>::template Impl>(slice.data().dtype(),
-                                                      slice, data);
+    CallDType<double, float, int64_t, int32_t, bool>::apply<
+        SetData<decltype(slice)>::template Impl>(slice.data().dtype(), slice,
+                                                 data);
   }
 
   static void set_range(T &self, const std::tuple<Dim, const py::slice> &index,
                         const py::array &data) {
     auto slice = slicer<T>::get_range(self, index);
-    CallDType<double, float, int64_t, int32_t,
-              bool>::apply<SetData<T>::template Impl>(slice.data().dtype(),
-                                                      slice, data);
+    CallDType<double, float, int64_t, int32_t, bool>::apply<
+        SetData<decltype(slice)>::template Impl>(slice.data().dtype(), slice,
+                                                 data);
   }
 };
 

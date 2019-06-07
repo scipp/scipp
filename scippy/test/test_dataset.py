@@ -49,11 +49,11 @@ def test_set_item_slice():
 def test_set_item_slice_with_variances():
     d = sp.Dataset()
     d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
-    d['a'] = sp.Variable([Dim.X], shape=[4], variances=True)
+    d['a'] = sp.Variable([Dim.X], values=np.arange(4), variances=np.arange(4))
     d['a'][Dim.X, 2:4].values = np.arange(2)
     d['a'][Dim.X, 2:4].variances = np.arange(2, 4)
-    assert np.array_equal(d['a'].values, np.array([0.0, 0.0, 0.0, 1.0]))
-    assert np.array_equal(d['a'].variances, np.array([0.0, 0.0, 2.0, 3.0]))
+    assert np.array_equal(d['a'].values, np.array([0.0, 1.0, 0.0, 1.0]))
+    assert np.array_equal(d['a'].variances, np.array([0.0, 1.0, 2.0, 3.0]))
 
 
 #def setUp(self):

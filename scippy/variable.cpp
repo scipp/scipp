@@ -26,21 +26,6 @@ using namespace scipp::units;
 
 namespace py = pybind11;
 
-template <typename Collection>
-auto getItemBySingleIndex(Collection &self,
-                          const std::tuple<Dim, scipp::index> &index) {
-  scipp::index idx{std::get<scipp::index>(index)};
-  auto &dim = std::get<Dim>(index);
-  auto sz = self.dims()[dim];
-  if (idx <= -sz || idx >= sz) // index is out of range
-    throw std::runtime_error("Dimension size is " +
-                             std::to_string(self.dims()[dim]) +
-                             ", can't treat " + std::to_string(idx));
-  if (idx < 0)
-    idx = sz + idx;
-  return self(std::get<Dim>(index), idx);
-}
-
 template <class T> struct MakeVariable {
   static Variable apply(const std::vector<Dim> &labels, py::array values,
                         const std::optional<py::array> &variances,
@@ -324,20 +309,6 @@ void init_variable(py::module &m) {
       .def_property(
           "unit", &VariableProxy::unit, &VariableProxy::setUnit,
           "Object of type Unit holding the unit of the VariableProxy.")
-      .def("__getitem__",
-           [](VariableProxy &self, const std::tuple<Dim, scipp::index> &index) {
-             return getItemBySingleIndex(self, index);
-           },
-           py::keep_alive<0, 1>())
-      .def("__getitem__", &pySlice<VariableProxy>, py::keep_alive<0, 1>())
-      .def("__getitem__",
-           [](VariableProxy &self, const std::map<Dim, const scipp::index> d) {
-             auto slice(self);
-             for (auto item : d)
-               slice = slice(item.first, item.second);
-             return slice;
-           },
-           py::keep_alive<0, 1>())
       .def("__setitem__",
            [](VariableProxy &self, const std::tuple<Dim, py::slice> &index,
               const VariableProxy &other) {
@@ -413,6 +384,8 @@ void init_variable(py::module &m) {
       .def("__repr__",
            [](const VariableProxy &self) { return to_string(self, "."); });
 
+  bind_slice_methods(variable);
+  bind_slice_methods(variableProxy);
   bind_data_properties(variable);
   bind_data_properties(variableProxy);
 
