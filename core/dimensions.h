@@ -16,6 +16,8 @@
 
 namespace scipp::core {
 
+constexpr int32_t NDIM_MAX = 6;
+
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
 /// We follow the numpy convention: First dimension is outer dimension, last
@@ -37,13 +39,13 @@ public:
   constexpr bool operator==(const Dimensions &other) const noexcept {
     if (m_ndim != other.m_ndim)
       return false;
-    for (int32_t i = 0; i < 6; ++i) {
+    for (int32_t i = 0; i < NDIM_MAX; ++i) {
       if (m_shape[i] != other.m_shape[i])
         return false;
       if (m_dims[i] != other.m_dims[i])
         return false;
     }
-    if (m_dims[6] != other.m_dims[6])
+    if (m_dims[NDIM_MAX] != other.m_dims[NDIM_MAX])
       return false;
     return true;
   }
@@ -137,12 +139,15 @@ private:
   // boost::container::small_vector<std::pair<Dim, scipp::index>, 2> m_dims;
   // Support at most 6 dimensions, should be sufficient?
   // 6*8 Byte = 48 Byte
-  scipp::index m_shape[6]{-1, -1, -1, -1, -1, -1};
+  // TODO: can we find a good way to initialise the values automatically when
+  // NDIM_MAX is changed?
+  scipp::index m_shape[NDIM_MAX]{-1, -1, -1, -1, -1, -1};
   int16_t m_ndim{0};
   /// Dimensions labels. This is exceeding the size of the shape by one for the
   /// purpose of storing the sparse dimension's label.
-  Dim m_dims[7]{Dim::Invalid, Dim::Invalid, Dim::Invalid, Dim::Invalid,
-                Dim::Invalid, Dim::Invalid, Dim::Invalid};
+  Dim m_dims[NDIM_MAX + 1]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
+                           Dim::Invalid, Dim::Invalid, Dim::Invalid,
+                           Dim::Invalid};
 };
 
 } // namespace scipp::core

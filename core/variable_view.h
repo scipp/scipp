@@ -10,8 +10,8 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "dimensions.h"
-#include "multi_index.h"
 #include "vector.h"
+#include "view_index.h"
 
 namespace scipp::core {
 
@@ -65,7 +65,7 @@ public:
   public:
     iterator(T *variable, const Dimensions &targetDimensions,
              const Dimensions &dimensions, const scipp::index index)
-        : m_variable(variable), m_index(targetDimensions, {dimensions}) {
+        : m_variable(variable), m_index(targetDimensions, dimensions) {
       m_index.setIndex(index);
     }
 
@@ -74,7 +74,7 @@ public:
 
     bool equal(const iterator &other) const { return m_index == other.m_index; }
     void increment() { m_index.increment(); }
-    auto &dereference() const { return m_variable[m_index.get<0>()]; }
+    auto &dereference() const { return m_variable[m_index.get()]; }
     void decrement() { m_index.setIndex(m_index.index() - 1); }
     void advance(int64_t delta) {
       if (delta == 1)
@@ -88,9 +88,7 @@ public:
     }
 
     T *m_variable;
-    // TODO Should use something simpler (maybe faster) than MultiIndex here.
-    // Also, we can optimize this if data is contiguous by joining dimensions.
-    MultiIndex m_index;
+    ViewIndex m_index;
   };
 
   iterator begin() const {

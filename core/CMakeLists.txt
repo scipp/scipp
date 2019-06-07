@@ -18,7 +18,8 @@ set(INC_FILES
     value_with_delta.h
     variable_view.h
     variable.h
-    vector.h)
+    vector.h
+    view_index.h)
 
 set(SRC_FILES
     counts.cpp
