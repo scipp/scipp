@@ -90,24 +90,25 @@ def test_iadd_range():
 
 def test_contains():
     d = sp.Dataset()
-    assert not 'a' in d
+    assert 'a' not in d
     d['a'] = sp.Variable(1.0)
     assert 'a' in d
-    assert not 'b' in d
+    assert 'b' not in d
     d['b'] = sp.Variable(1.0)
     assert 'a' in d
     assert 'b' in d
 
 
 def test_slice():
-    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)), 'b': sp.Variable(
-        1.0)}, coords={Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
+    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
+                    'b': sp.Variable(1.0)},
+                   coords={
+                       Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
     expected = sp.Dataset({'a': sp.Variable(1.0)})
 
     assert d[Dim.X, 1] == expected
     assert 'a' in d[Dim.X, 1]
-    assert not 'b' in d[Dim.X, 1]
-
+    assert 'b' not in d[Dim.X, 1]
 #
 #
 # def test_view_contains(self):
