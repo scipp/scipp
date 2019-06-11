@@ -9,7 +9,6 @@ set(INC_FILES
     except.h
     index.h
     memory_pool.h
-    multi_index.h
     span.h
     tag_util.h
     include/scipp/core/counts.h

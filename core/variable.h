@@ -397,23 +397,6 @@ Variable makeVariableWithVariances(const Dimensions &dimensions) {
 }
 
 template <class T>
-Variable makeVariableWithVariances(const Dimensions &dimensions) {
-  if (dimensions.sparse())
-    return Variable(
-        units::dimensionless, std::move(dimensions),
-        Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()),
-        Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()));
-  else
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<underlying_type_t<T>>(
-                        dimensions.volume(),
-                        detail::default_init<underlying_type_t<T>>::value()),
-                    Vector<underlying_type_t<T>>(
-                        dimensions.volume(),
-                        detail::default_init<underlying_type_t<T>>::value()));
-}
-
-template <class T>
 Variable makeVariable(const std::initializer_list<Dim> &dims,
                       const std::initializer_list<scipp::index> &shape) {
   return makeVariable<T>(Dimensions(dims, shape));
