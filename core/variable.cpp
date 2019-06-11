@@ -810,15 +810,13 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
-using arithmetic_and_matrix_type_pairs =
-    std::tuple<std::pair<double, double>, std::pair<float, float>,
-               std::pair<int64_t, int64_t>,
-               std::pair<Eigen::Vector3d, Eigen::Vector3d>,
-               std::pair<double, float>, std::pair<float, double>>;
 using arithmetic_type_pairs =
     std::tuple<std::pair<double, double>, std::pair<float, float>,
                std::pair<int64_t, int64_t>, std::pair<double, float>,
                std::pair<float, double>>;
+using arithmetic_and_matrix_type_pairs = decltype(
+    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                   std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   expect::equals(a.unit(), b.unit());
