@@ -4,19 +4,13 @@
 /// @author Simon Heybrock
 #include <variant>
 
-#include <pybind11/eigen.h>
-#include <pybind11/numpy.h>
-#include <pybind11/operators.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/stl_bind.h>
-
 #include "bind_data_access.h"
 #include "bind_math_methods.h"
 #include "bind_slice_methods.h"
 #include "dataset.h"
 #include "except.h"
 #include "numpy.h"
+#include "pybind11.h"
 #include "scipp/units/unit.h"
 #include "tag_util.h"
 #include "variable.h"

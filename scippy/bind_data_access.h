@@ -7,11 +7,9 @@
 
 #include <variant>
 
-#include <pybind11/eigen.h>
-#include <pybind11/pybind11.h>
-
 #include "except.h"
 #include "numpy.h"
+#include "pybind11.h"
 #include "scipp/core/dtype.h"
 #include "variable.h"
 

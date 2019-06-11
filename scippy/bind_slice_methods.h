@@ -5,10 +5,9 @@
 #ifndef SCIPPY_BIND_SLICE_METHODS_H
 #define SCIPPY_BIND_SLICE_METHODS_H
 
-#include <pybind11/pybind11.h>
-
 #include "dataset.h"
 #include "numpy.h"
+#include "pybind11.h"
 #include "scipp/core/dtype.h"
 #include "tag_util.h"
 #include "variable.h"

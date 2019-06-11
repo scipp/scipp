@@ -2,12 +2,9 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <pybind11/operators.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "dimensions.h"
 #include "except.h"
+#include "pybind11.h"
 
 using namespace scipp;
 using namespace scipp::core;

@@ -5,9 +5,7 @@
 #ifndef SCIPPY_NUMPY_H
 #define SCIPPY_NUMPY_H
 
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-
+#include "pybind11.h"
 #include "variable.h"
 
 namespace py = pybind11;

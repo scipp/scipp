@@ -5,7 +5,7 @@
 #ifndef SCIPPY_BIND_ENUM_H
 #define SCIPPY_BIND_ENUM_H
 
-#include <pybind11/pybind11.h>
+#include "pybind11.h"
 
 template <class Enum>
 void bind_enum(pybind11::module &m, const std::string &name, const Enum last,
