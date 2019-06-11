@@ -342,7 +342,7 @@ template <class T> constexpr auto maybe_eval(T &&_) {
   if constexpr (is_eigen_expression<T>::value)
     return _.eval();
   else
-    return _;
+    return std::forward<T>(_);
 }
 
 /// Functor for implementing in-place operations with sparse data.
