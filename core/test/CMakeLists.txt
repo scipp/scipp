@@ -8,7 +8,6 @@ add_executable(scipp-core-test
                dataset_operations_test.cpp
                dimensions_test.cpp
                except_test.cpp
-               #md_zip_view_test.cpp
                multi_index_test.cpp
                transform_test.cpp
                variable_test.cpp
