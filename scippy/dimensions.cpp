@@ -2,8 +2,9 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "dimensions.h"
-#include "except.h"
+#include "scipp/core/dimensions.h"
+#include "scipp/core/except.h"
+
 #include "pybind11.h"
 
 using namespace scipp;

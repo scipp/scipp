@@ -7,7 +7,7 @@
 
 #include <unordered_map>
 
-#include "dataset.h"
+#include "scipp/core/dataset.h"
 
 namespace scipp::core {
 

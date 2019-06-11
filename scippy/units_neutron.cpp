@@ -2,9 +2,10 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/units/unit.h"
+
 #include "bind_enum.h"
 #include "pybind11.h"
-#include "scipp/units/unit.h"
 
 using namespace scipp;
 using namespace scipp::units;

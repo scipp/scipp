@@ -8,7 +8,7 @@
 #include <initializer_list>
 #include <vector>
 
-#include "dimension.h"
+#include "scipp/core/dimension.h"
 
 namespace scipp::core {
 

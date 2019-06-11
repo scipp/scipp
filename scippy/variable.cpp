@@ -7,13 +7,13 @@
 #include "bind_data_access.h"
 #include "bind_math_methods.h"
 #include "bind_slice_methods.h"
-#include "dataset.h"
-#include "except.h"
 #include "numpy.h"
 #include "pybind11.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/except.h"
+#include "scipp/core/tag_util.h"
+#include "scipp/core/variable.h"
 #include "scipp/units/unit.h"
-#include "tag_util.h"
-#include "variable.h"
 
 using namespace scipp;
 using namespace scipp::core;

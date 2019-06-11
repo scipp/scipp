@@ -7,7 +7,7 @@
 
 #include <boost/container/small_vector.hpp>
 
-#include "dimensions.h"
+#include "scipp/core/dimensions.h"
 
 namespace scipp::core {
 

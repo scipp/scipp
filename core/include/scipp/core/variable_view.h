@@ -9,9 +9,9 @@
 
 #include <boost/iterator/iterator_facade.hpp>
 
-#include "dimensions.h"
-#include "vector.h"
-#include "view_index.h"
+#include "scipp/core/dimensions.h"
+#include "scipp/core/vector.h"
+#include "scipp/core/view_index.h"
 
 namespace scipp::core {
 

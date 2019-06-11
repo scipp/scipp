@@ -5,13 +5,13 @@
 #include <cmath>
 #include <string>
 
-#include "apply.h"
-#include "dataset.h"
-#include "except.h"
+#include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
-#include "transform.h"
-#include "variable.h"
-#include "variable_view.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/except.h"
+#include "scipp/core/transform.h"
+#include "scipp/core/variable.h"
+#include "scipp/core/variable_view.h"
 
 namespace scipp::core {
 

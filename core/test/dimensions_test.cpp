@@ -4,8 +4,8 @@
 
 #include <type_traits>
 
-#include "dimensions.h"
-#include "except.h"
+#include "scipp/core/dimensions.h"
+#include "scipp/core/except.h"
 
 using namespace scipp;
 using namespace scipp::core;

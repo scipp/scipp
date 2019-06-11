@@ -4,11 +4,12 @@
 /// @author Simon Heybrock
 #include <variant>
 
+#include "scipp/core/dataset.h"
+#include "scipp/core/except.h"
+
 #include "bind_data_access.h"
 #include "bind_math_methods.h"
 #include "bind_slice_methods.h"
-#include "dataset.h"
-#include "except.h"
 #include "pybind11.h"
 
 using namespace scipp;

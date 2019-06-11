@@ -2,11 +2,12 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "variable_view.h"
-#include "dataset.h"
-#include "except.h"
-#include "pybind11.h"
+#include "scipp/core/variable_view.h"
+#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/except.h"
+
+#include "pybind11.h"
 
 using namespace scipp;
 using namespace scipp::core;

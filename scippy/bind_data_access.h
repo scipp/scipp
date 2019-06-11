@@ -7,11 +7,12 @@
 
 #include <variant>
 
-#include "except.h"
+#include "scipp/core/dtype.h"
+#include "scipp/core/except.h"
+#include "scipp/core/variable.h"
+
 #include "numpy.h"
 #include "pybind11.h"
-#include "scipp/core/dtype.h"
-#include "variable.h"
 
 namespace py = pybind11;
 using namespace scipp;

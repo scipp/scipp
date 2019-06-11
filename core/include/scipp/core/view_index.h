@@ -5,7 +5,7 @@
 #ifndef VIEW_INDEX_H
 #define VIEW_INDEX_H
 
-#include "dimensions.h"
+#include "scipp/core/dimensions.h"
 
 namespace scipp::core {
 

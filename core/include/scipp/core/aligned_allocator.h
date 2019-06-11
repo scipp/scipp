@@ -6,7 +6,7 @@
 // from https://stackoverflow.com/a/12942652/1458281
 #include <cassert>
 
-#include "memory_pool.h"
+#include "scipp/core/memory_pool.h"
 
 namespace scipp::core {
 

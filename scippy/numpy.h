@@ -5,8 +5,9 @@
 #ifndef SCIPPY_NUMPY_H
 #define SCIPPY_NUMPY_H
 
+#include "scipp/core/variable.h"
+
 #include "pybind11.h"
-#include "variable.h"
 
 namespace py = pybind11;
 using namespace scipp;

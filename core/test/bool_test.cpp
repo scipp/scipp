@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "bool.h"
+#include "scipp/core/bool.h"
 
 using namespace scipp::core;
 

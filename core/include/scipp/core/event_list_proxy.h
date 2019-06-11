@@ -7,8 +7,8 @@
 
 #include "range/v3/view/zip.hpp"
 
-#include "dataset.h"
-#include "zip_view.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/zip_view.h"
 
 namespace scipp::core {
 

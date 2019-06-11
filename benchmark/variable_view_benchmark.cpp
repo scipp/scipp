@@ -4,7 +4,7 @@
 /// @author Neil Vaytet
 #include <benchmark/benchmark.h>
 
-#include "variable_view.h"
+#include "scipp/core/variable_view.h"
 
 using namespace scipp::core;
 

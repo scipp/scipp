@@ -4,9 +4,9 @@
 /// @author Simon Heybrock
 #include <regex>
 
-#include "dataset.h"
-#include "dimensions.h"
-#include "except.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/dimensions.h"
+#include "scipp/core/except.h"
 
 namespace scipp::core {
 

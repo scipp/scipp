@@ -9,8 +9,8 @@
 
 #include "test_macros.h"
 
-#include "dataset.h"
-#include "zip_view.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/zip_view.h"
 
 using namespace scipp::core;
 

@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "aligned_allocator.h"
+#include "scipp/core/aligned_allocator.h"
 
 namespace scipp::core {
 

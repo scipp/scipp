@@ -8,7 +8,7 @@
 #include <Eigen/Dense>
 #include <boost/container/small_vector.hpp>
 
-#include "bool.h"
+#include "scipp/core/bool.h"
 
 namespace scipp::core {
 

@@ -13,8 +13,8 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "except.h"
-#include "variable.h"
+#include "scipp/core/except.h"
+#include "scipp/core/variable.h"
 
 namespace scipp::core {
 

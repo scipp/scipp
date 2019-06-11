@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #include <ostream>
 
-#include "dataset.h"
-#include "except.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/except.h"
 
 namespace scipp::core {
 

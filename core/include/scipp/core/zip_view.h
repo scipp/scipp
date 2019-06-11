@@ -7,7 +7,7 @@
 
 #include "range/v3/view/zip.hpp"
 
-#include "dataset.h"
+#include "scipp/core/dataset.h"
 
 namespace scipp::core {
 

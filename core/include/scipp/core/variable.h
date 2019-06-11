@@ -10,13 +10,13 @@
 
 #include <Eigen/Dense>
 
-#include "dimensions.h"
-#include "index.h"
+#include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/index.h"
+#include "scipp/core/span.h"
+#include "scipp/core/variable_view.h"
+#include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
-#include "span.h"
-#include "variable_view.h"
-#include "vector.h"
 
 namespace scipp::core {
 

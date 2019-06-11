@@ -5,9 +5,9 @@
 #ifndef APPLY_H
 #define APPLY_H
 
-#include "except.h"
-#include "variable.h"
-#include "visit.h"
+#include "scipp/core/except.h"
+#include "scipp/core/variable.h"
+#include "scipp/core/visit.h"
 
 namespace scipp::core {
 
