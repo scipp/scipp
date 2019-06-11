@@ -109,18 +109,7 @@ def test_slice():
     assert d[Dim.X, 1] == expected
     assert 'a' in d[Dim.X, 1]
     assert 'b' not in d[Dim.X, 1]
-#
-#
-# def test_view_contains(self):
-#    view = self.dataset.subset["data2"]
-#    self.assertTrue(sp.Coord.X in view)
-#    self.assertTrue(sp.Coord.Y in view)
-#    self.assertTrue(sp.Coord.Z in view)
-#    self.assertFalse((sp.Data.Value, "data1") in view)
-#    self.assertTrue((sp.Data.Value, "data2") in view)
-#    self.assertFalse((sp.Data.Value, "data3") in view)
-#    self.assertFalse((sp.Data.Value, "data4") in view)
-#
+
 # def test_delitem(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
