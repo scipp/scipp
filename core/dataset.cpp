@@ -96,6 +96,10 @@ AttrsProxy Dataset::attrs() noexcept {
   return AttrsProxy(makeProxyItems<std::string_view>(m_attrs));
 }
 
+bool Dataset::contains(const std::string_view name) const noexcept {
+  return m_data.count(name) == 1;
+}
+
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string_view name) const {
   const auto it = m_data.find(name);
@@ -447,6 +451,10 @@ void DatasetConstProxy::expectValidKey(const std::string_view name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
     throw std::out_of_range("Invalid key `" + std::string(name) +
                             "` in Dataset access.");
+}
+
+bool DatasetConstProxy::contains(const std::string_view name) const noexcept {
+  return std::find(m_indices.begin(), m_indices.end(), name) != m_indices.end();
 }
 
 /// Return a const proxy to data and coordinates with given name.

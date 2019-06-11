@@ -193,7 +193,7 @@ std::string to_string(const Dataset &dataset, const std::string &separator) {
 
 std::string to_string(const DatasetConstProxy &dataset,
                       const std::string &separator) {
-  return do_to_string(dataset, "<DatasetSlice>", dimensions(dataset),
+  return do_to_string(dataset, "<DatasetProxy>", dimensions(dataset),
                       separator);
 }
 

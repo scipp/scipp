@@ -13,7 +13,7 @@ void init_units_neutron(py::module &);
 void init_variable(py::module &);
 void init_variable_view(py::module &);
 
-PYBIND11_MODULE(scippy, m) {
+PYBIND11_MODULE(scipp, m) {
   init_dataset(m);
   init_dimensions(m);
   init_dtype(m);

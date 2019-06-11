@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-from .scippy import *
+from .scipp import *
 from .table import table
 try:
     from .plot import plot

@@ -26,13 +26,15 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
            [](T &self) { return py::make_iterator(self.begin(), self.end()); });
 }
 
-template <class T> void bind_coord_properties(py::class_<T> &c) {
+template <class T, class... Ignored>
+void bind_coord_properties(py::class_<T, Ignored...> &c) {
   c.def_property_readonly("coords", [](T &self) { return self.coords(); });
   c.def_property_readonly("labels", [](T &self) { return self.labels(); });
   c.def_property_readonly("attrs", [](T &self) { return self.attrs(); });
 }
 
-template <class T> void bind_dataset_proxy_methods(py::class_<T> &c) {
+template <class T, class... Ignored>
+void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__len__", &T::size);
   c.def("__repr__", [](const T &self) { return to_string(self, "."); });
   c.def("__iter__",
@@ -40,6 +42,11 @@ template <class T> void bind_dataset_proxy_methods(py::class_<T> &c) {
   c.def("__getitem__",
         [](T &self, const std::string &name) { return self[name]; },
         py::keep_alive<0, 1>());
+  c.def("__contains__", &T::contains);
+  c.def("__eq__",
+        [](const T &self, const Dataset &other) { return self == other; });
+  c.def("__eq__",
+        [](const T &self, const DatasetProxy &other) { return self == other; });
 }
 
 void init_dataset(py::module &m) {
@@ -53,7 +60,8 @@ void init_dataset(py::module &m) {
   dataProxy.def_property_readonly("data", &DataProxy::data,
                                   py::keep_alive<0, 1>());
 
-  py::class_<DatasetProxy> datasetProxy(m, "DatasetProxy");
+  py::class_<DatasetConstProxy>(m, "DatasetConstProxy");
+  py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");
 
   py::class_<Dataset> dataset(m, "Dataset");
   dataset.def(py::init<>())

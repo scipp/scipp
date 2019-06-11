@@ -240,6 +240,8 @@ public:
   AttrsConstProxy attrs() const noexcept;
   AttrsProxy attrs() noexcept;
 
+  bool contains(const std::string_view name) const noexcept;
+
   DataConstProxy operator[](const std::string_view name) const;
   DataProxy operator[](const std::string_view name);
 
@@ -482,6 +484,9 @@ public:
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
+
+  bool contains(const std::string_view name) const noexcept;
+
   DataConstProxy operator[](const std::string_view name) const;
 
   auto begin() const && = delete;
@@ -559,6 +564,7 @@ public:
   CoordsProxy coords() const noexcept;
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
+
   DataProxy operator[](const std::string_view name) const;
 
   auto begin() const && = delete;

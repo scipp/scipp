@@ -87,40 +87,28 @@ def test_iadd_range():
     d['a'][Dim.X, 2:4] += d['a'][Dim.X, 2:4]
     assert d['a'].data == sp.Variable([Dim.X], values=np.array([0, 1, 4, 6]))
 
-# def setUp(self):
-#    lx = 2
-#    ly = 3
-#    lz = 4
-#    self.reference_x = np.arange(lx)
-#    self.reference_y = np.arange(ly)
-#    self.reference_z = np.arange(lz)
-#    self.reference_data1 = np.arange(lx * ly * lz).reshape(lz, ly, lx)
-#    self.reference_data2 = np.ones(lx * ly * lz).reshape(lz, ly, lx)
-#    self.reference_data3 = np.arange(lx * lz).reshape(lz, lx)
+
+def test_contains():
+    d = sp.Dataset()
+    assert not 'a' in d
+    d['a'] = sp.Variable(1.0)
+    assert 'a' in d
+    assert not 'b' in d
+    d['b'] = sp.Variable(1.0)
+    assert 'a' in d
+    assert 'b' in d
+
+
+def test_slice():
+    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)), 'b': sp.Variable(
+        1.0)}, coords={Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
+    expected = sp.Dataset({'a': sp.Variable(1.0)})
+
+    assert d[Dim.X, 1] == expected
+    assert 'a' in d[Dim.X, 1]
+    assert not 'b' in d[Dim.X, 1]
+
 #
-#    self.dataset = sp.Dataset()
-#    self.dataset[sp.Data.Value, "data1"] = (
-#        [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], self.reference_data1)
-#    self.dataset[sp.Data.Value, "data2"] = (
-#        [sp.Dim.Z, sp.Dim.Y, sp.Dim.X], self.reference_data2)
-#    self.dataset[sp.Data.Value, "data3"] = (
-#        [sp.Dim.Z, sp.Dim.X], self.reference_data3)
-#    self.dataset[sp.Coord.X] = ([sp.Dim.X], self.reference_x)
-#    self.dataset[sp.Coord.Y] = ([sp.Dim.Y], self.reference_y)
-#    self.dataset[sp.Coord.Z] = ([sp.Dim.Z], self.reference_z)
-#
-# def test_size(self):
-#    # X, Y, Z, 3 x Data::Value
-#    self.assertEqual(len(self.dataset), 6)
-#
-# def test_contains(self):
-#    self.assertTrue(sp.Coord.X in self.dataset)
-#    self.assertTrue(sp.Coord.Y in self.dataset)
-#    self.assertTrue(sp.Coord.Z in self.dataset)
-#    self.assertTrue((sp.Data.Value, "data1") in self.dataset)
-#    self.assertTrue((sp.Data.Value, "data2") in self.dataset)
-#    self.assertTrue((sp.Data.Value, "data3") in self.dataset)
-#    self.assertFalse((sp.Data.Value, "data4") in self.dataset)
 #
 # def test_view_contains(self):
 #    view = self.dataset.subset["data2"]
