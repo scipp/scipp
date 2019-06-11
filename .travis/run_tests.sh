@@ -21,4 +21,4 @@ make -j2 install
 python3 -m pip install -r ../scippy/requirements.txt
 export PYTHONPATH=$PYTHONPATH:../install
 cd ../scippy
-py3.test
+python3 -m pytest
