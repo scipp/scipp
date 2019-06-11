@@ -246,8 +246,8 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
 }
 
 template <class Op, class Out, class... Ts>
-void transform_with_variance_impl(Op op, ValuesAndVariances<Out> out,
-                                  Ts &&... other) {
+void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
+                                      Ts &&... other) {
   auto & [ ovals, ovars ] = out;
   for (scipp::index i = 0; i < scipp::size(ovals); ++i) {
     if constexpr (is_sparse_v<decltype(ovals[0])>) {
@@ -269,7 +269,7 @@ void transform_in_place_impl(Op op, T &&vals, Ts &&... other) {
 }
 
 template <class Op, class Out, class T, class... Ts>
-void transform_impl(Op op, Out &out, T &&vals, Ts &&... other) {
+void transform_elements(Op op, Out &out, T &&vals, Ts &&... other) {
   for (scipp::index i = 0; i < scipp::size(out); ++i)
     out[i] = op(vals[i], other[i]...);
 }
@@ -373,10 +373,10 @@ template <class Op> struct TransformSparse {
     if constexpr ((has_variances_v<Ts> || ...)) {
       auto vars(vals);
       ValuesAndVariances out{vals, vars};
-      transform_with_variance_impl(op, out, maybe_broadcast(args)...);
+      transform_elements_with_variance(op, out, maybe_broadcast(args)...);
       return std::pair(std::move(vals), std::move(vars));
     } else {
-      transform_impl(op, vals, maybe_broadcast(args)...);
+      transform_elements(op, vals, maybe_broadcast(args)...);
       return vals;
     }
   }
@@ -411,11 +411,11 @@ void do_transform(const T1 &a, Out &out, Op op) {
     } else {
       auto a_var = a.variances();
       auto out_var = out.variances();
-      transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
-                                   ValuesAndVariances{a_val, a_var});
+      transform_elements_with_variance(op, ValuesAndVariances{out_val, out_var},
+                                       ValuesAndVariances{a_val, a_var});
     }
   } else {
-    transform_impl(op, out_val, a_val);
+    transform_elements(op, out_val, a_val);
   }
 }
 
@@ -467,12 +467,13 @@ void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
       auto out_var = out.variances();
       if (b.hasVariances()) {
         auto b_var = b.variances();
-        transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
-                                     ValuesAndVariances{a_val, a_var},
-                                     ValuesAndVariances{b_val, b_var});
+        transform_elements_with_variance(
+            op, ValuesAndVariances{out_val, out_var},
+            ValuesAndVariances{a_val, a_var}, ValuesAndVariances{b_val, b_var});
       } else {
-        transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
-                                     ValuesAndVariances{a_val, a_var}, b_val);
+        transform_elements_with_variance(
+            op, ValuesAndVariances{out_val, out_var},
+            ValuesAndVariances{a_val, a_var}, b_val);
       }
     }
   } else if (b.hasVariances()) {
@@ -481,11 +482,11 @@ void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
     } else {
       auto b_var = b.variances();
       auto out_var = out.variances();
-      transform_with_variance_impl(op, ValuesAndVariances{out_val, out_var},
-                                   a_val, ValuesAndVariances{b_val, b_var});
+      transform_elements_with_variance(op, ValuesAndVariances{out_val, out_var},
+                                       a_val, ValuesAndVariances{b_val, b_var});
     }
   } else {
-    transform_impl(op, out_val, a_val, b_val);
+    transform_elements(op, out_val, a_val, b_val);
   }
 }
 
@@ -690,9 +691,10 @@ void transform_in_place(Var &var, Op op) {
   }
 }
 
+namespace detail {
 template <class... Ts, class Var, class Var1, class Op>
-void transform2_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
-                         Op op) {
+void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
+                        Op op) {
   using namespace detail;
   try {
     if constexpr (((is_sparse_v<typename Ts::first_type> ||
@@ -716,6 +718,7 @@ void transform2_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
                             to_string(other.dtype()) + '.');
   }
 }
+} // namespace detail
 
 /// Transform the data elements of a variable in-place.
 ///
@@ -724,8 +727,9 @@ void transform2_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
 /// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
-  transform2_in_place(std::tuple_cat(TypePairs{}...), std::forward<Var>(var),
-                      other, op);
+  // Wrapped implementation to convert multiple tuples into a parameter pack.
+  detail::transform_in_place(std::tuple_cat(TypePairs{}...),
+                             std::forward<Var>(var), other, op);
 }
 
 /// Transform the data elements of a variable and return a new Variable.
@@ -752,9 +756,10 @@ Variable transform(const Var &var, Op op) {
   }
 }
 
+namespace detail {
 template <class... Ts, class Var1, class Var2, class Op>
-Variable transform2(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
-                    Op op) {
+Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
+                   Op op) {
   using namespace detail;
   try {
     if constexpr (((is_sparse_v<typename Ts::first_type> ||
@@ -776,6 +781,7 @@ Variable transform2(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
                             to_string(var2.dtype()) + '.');
   }
 }
+} // namespace detail
 
 /// Transform the data elements of two variables and return a new Variable.
 ///
@@ -784,7 +790,8 @@ Variable transform2(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
 /// need for, e.g., std::back_inserter.
 template <class... TypePairs, class Var1, class Var2, class Op>
 Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
-  return transform2(std::tuple_cat(TypePairs{}...), var1, var2, op);
+  // Wrapped implementation to convert multiple tuples into a parameter pack.
+  return detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
 }
 
 } // namespace scipp::core
