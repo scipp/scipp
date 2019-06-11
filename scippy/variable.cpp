@@ -76,36 +76,45 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
   throw std::runtime_error("Unsupported numpy dtype.");
 }
 
-scipp::core::DType scipp_dtype(const dtype &type) {
-  if (std::holds_alternative<scipp::core::DType>(type))
-    return std::get<scipp::core::DType>(type);
-  return scipp_dtype(std::get<pybind11::dtype>(type));
+scipp::core::DType scipp_dtype(const py::object &type) {
+  // The manual conversion from py::object is solving a number of problems:
+  // 1. On Travis' clang (7.0.0) we get a weird error (ImportError:
+  //    UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe1 in position 2:
+  //    invalid continuation byte) when using the DType enum as a default value
+  //    for py::arg. Importing the module fails.
+  // 2. We want to support both numpy dtype as well as scipp dtype.
+  // 3. In the implementation below, `type.cast<py::dtype>()` always succeeds,
+  //    yielding a unsupported numpy dtype. Therefore we need to try casting to
+  //    `DType` first, which works for some reason.
+  if (type.is_none())
+    return DType::Unknown;
+  try {
+    return type.cast<DType>();
+  } catch (const py::cast_error &) {
+    return scippy::scipp_dtype(type.cast<py::dtype>());
+  }
 }
 } // namespace scippy
 
 Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                         std::optional<py::array> &variances,
-                        const units::Unit unit,
-                        scippy::dtype type = DType::Unknown) {
+                        const units::Unit unit, const py::object &dtype) {
   const py::buffer_info info = values.request();
   // Use custom dtype, otherwise dtype of data.
-  const auto dtypeTag = scippy::scipp_dtype(type) == DType::Unknown
-                            ? scippy::scipp_dtype(values.dtype())
-                            : scippy::scipp_dtype(type);
+  const auto dtypeTag = dtype.is_none() ? scippy::scipp_dtype(values.dtype())
+                                        : scippy::scipp_dtype(dtype);
   return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
       dtypeTag, labels, values, variances, unit);
 }
 
 Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const std::vector<scipp::index> &shape,
-                                 const units::Unit unit, scippy::dtype type,
+                                 const units::Unit unit, py::object &dtype,
                                  const bool variances) {
-  const auto dtypeTag = scippy::scipp_dtype(type);
   return CallDType<double, float, int64_t, int32_t, bool, Dataset,
-                   Eigen::Vector3d>::apply<MakeVariableDefaultInit>(dtypeTag,
-                                                                    labels,
-                                                                    shape, unit,
-                                                                    variances);
+                   Eigen::Vector3d>::
+      apply<MakeVariableDefaultInit>(scippy::scipp_dtype(dtype), labels, shape,
+                                     unit, variances);
 }
 
 // Add size factor.
@@ -181,7 +190,8 @@ void init_variable(py::module &m) {
            py::arg("labels") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
            py::arg("unit") = units::Unit(units::dimensionless),
-           py::arg("dtype") = dtype<double>, py::arg("variances") = false)
+           py::arg("dtype") = py::dtype::of<double>(),
+           py::arg("variances") = false)
       .def(py::init([](const int64_t data, const units::Unit &unit) {
              auto var = makeVariable<int64_t>({}, {data});
              var.setUnit(unit);
@@ -199,7 +209,7 @@ void init_variable(py::module &m) {
       .def(py::init(&doMakeVariable), py::arg("labels"), py::arg("values"),
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
-           py::arg("dtype") = DType::Unknown)
+           py::arg("dtype") = py::none())
       .def(py::init<const VariableProxy &>())
       .def("copy", [](const Variable &self) { return self; },
            "Make a copy of a Variable.")
