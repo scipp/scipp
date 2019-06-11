@@ -17,7 +17,5 @@ set_target_properties(scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 set(PY_FILES __init__.py table.py plot.py)
 
-INSTALL(DIRECTORY "src/scippy" DESTINATION ".")
+install(DIRECTORY "src/scippy" DESTINATION ".")
 install(TARGETS scipp DESTINATION "scippy")
-#install(FILES ${PY_FILES} DESTINATION "scippy")
-#install(FILES "compat/mantid.py" DESTINATION "scippy/compat")

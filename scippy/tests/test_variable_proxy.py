@@ -8,19 +8,18 @@ import numpy as np
 import operator
 
 
-#def setUp():
-#    self._a = sp.Variable([sp.Dim.X], np.arange(1, 10, dtype=float))
-#    self._b = sp.Variable([sp.Dim.X], np.arange(1, 10, dtype=float))
-
 def test_type():
-    variable_slice = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))[Dim.X, :]
+    variable_slice = sp.Variable(
+        [Dim.X], np.arange(1, 10, dtype=float))[Dim.X, :]
     assert type(variable_slice) == sp.VariableProxy
+
 
 def apply_test_op(op, a, b, data):
     op(a, b)
     # Assume numpy operations are correct as comparitor
     op(data, b.numpy)
     assert np.array_equal(a.numpy, data)
+
 
 def test_binary_operations():
     _a = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
@@ -44,6 +43,7 @@ def test_binary_operations():
     apply_test_op(operator.imul, a, b, data)
     apply_test_op(operator.itruediv, a, b, data)
 
+
 def test_binary_float_operations():
     _a = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
     a = _a[Dim.X, :]
@@ -63,6 +63,7 @@ def test_binary_float_operations():
     c = 2.0 * a
     assert np.array_equal(c.numpy, data * 2.0)
 
+
 def test_equal_not_equal():
     _a = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
     _b = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
@@ -73,6 +74,7 @@ def test_equal_not_equal():
     assert b == a
     assert a != c
     assert c != a
+
 
 def test_correct_temporaries():
     v = sp.Variable([Dim.X], values=np.arange(100.0))
