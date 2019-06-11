@@ -2,4 +2,4 @@
 collect_ignore = ["test_datasetslice.py",
                   "test_variableslice.py",
                   "test_plotting.py",
-                  "mantid_test.py"]
+                  "compat/mantid_test.py"]
