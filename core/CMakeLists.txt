@@ -13,7 +13,6 @@ set(INC_FILES
     tag_util.h
     include/scipp/core/counts.h
     traits.h
-    value_with_delta.h
     variable_view.h
     variable.h
     vector.h
