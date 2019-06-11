@@ -318,13 +318,14 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
 }
 
 /// Implementation of VariableConcept that holds data.
-template <class T> class DataModel : public conceptT_t<typename T::value_type> {
+template <class T>
+class DataModel : public VariableConceptT<typename T::value_type> {
 public:
   using value_type = std::remove_const_t<typename T::value_type>;
 
   DataModel(const Dimensions &dimensions, T model,
             std::optional<T> variances = std::nullopt)
-      : conceptT_t<typename T::value_type>(std::move(dimensions)),
+      : VariableConceptT<typename T::value_type>(std::move(dimensions)),
         m_values(std::move(model)), m_variances(std::move(variances)) {
     if (this->dims().volume() != scipp::size(m_values))
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -430,6 +431,11 @@ public:
     return makeVariableView(m_variances->data(), 0, dims, dims);
   }
 
+  std::unique_ptr<VariableConceptT<typename T::value_type>>
+  copyT() const override {
+    return std::make_unique<DataModel<T>>(*this);
+  }
+
   VariableConceptHandle clone() const override {
     return std::make_unique<DataModel<T>>(this->dims(), m_values, m_variances);
   }
@@ -455,41 +461,10 @@ public:
   std::optional<T> m_variances;
 };
 
-namespace detail {
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims) {
-  return std::make_unique<DataModel<Vector<T>>>(dims, Vector<T>(dims.volume()));
-}
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims, Vector<T> data) {
-  return std::make_unique<DataModel<Vector<T>>>(dims, std::move(data));
-}
-template std::unique_ptr<VariableConceptT<double>>
-makeVariableConceptT<double>(const Dimensions &);
-template std::unique_ptr<VariableConceptT<float>>
-makeVariableConceptT<float>(const Dimensions &);
-template std::unique_ptr<VariableConceptT<sparse_container<double>>>
-makeVariableConceptT<sparse_container<double>>(const Dimensions &);
-template std::unique_ptr<VariableConceptT<sparse_container<float>>>
-makeVariableConceptT<sparse_container<float>>(const Dimensions &);
-template std::unique_ptr<VariableConceptT<double>>
-makeVariableConceptT<double>(const Dimensions &, Vector<double>);
-template std::unique_ptr<VariableConceptT<float>>
-makeVariableConceptT<float>(const Dimensions &, Vector<float>);
-template std::unique_ptr<VariableConceptT<sparse_container<double>>>
-makeVariableConceptT<sparse_container<double>>(
-    const Dimensions &, Vector<sparse_container<double>>);
-template std::unique_ptr<VariableConceptT<sparse_container<float>>>
-makeVariableConceptT<sparse_container<float>>(const Dimensions &,
-                                              Vector<sparse_container<float>>);
-} // namespace detail
-
 /// Implementation of VariableConcept that represents a view onto data.
 template <class T>
 class ViewModel
-    : public conceptT_t<std::remove_const_t<typename T::element_type>> {
+    : public VariableConceptT<std::remove_const_t<typename T::element_type>> {
   void requireMutable() const {
     if (isConstView())
       throw std::runtime_error(
@@ -506,7 +481,7 @@ public:
 
   ViewModel(const Dimensions &dimensions, T model,
             std::optional<T> variances = std::nullopt)
-      : conceptT_t<value_type>(std::move(dimensions)),
+      : VariableConceptT<value_type>(std::move(dimensions)),
         m_values(std::move(model)), m_variances(std::move(variances)) {
     if (this->dims().volume() != m_values.size())
       throw std::runtime_error("Creating Variable: data size does not match "
@@ -668,6 +643,18 @@ public:
     }
   }
 
+  std::unique_ptr<
+      VariableConceptT<std::remove_const_t<typename T::element_type>>>
+  copyT() const override {
+    using DataT = Vector<std::remove_const_t<typename T::element_type>>;
+    DataT values(m_values.begin(), m_values.end());
+    std::optional<DataT> variances;
+    if (hasVariances())
+      variances = DataT(m_variances->begin(), m_variances->end());
+    return std::make_unique<DataModel<DataT>>(this->dims(), std::move(values),
+                                              std::move(variances));
+  }
+
   VariableConceptHandle clone() const override {
     return std::make_unique<ViewModel<T>>(this->dims(), m_values, m_variances);
   }
@@ -823,12 +810,27 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
+using arithmetic_type_pairs =
+    std::tuple<std::pair<double, double>, std::pair<float, float>,
+               std::pair<int64_t, int64_t>, std::pair<double, float>,
+               std::pair<float, double>>;
+using arithmetic_and_matrix_type_pairs = decltype(
+    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                   std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
+
+template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
+  expect::equals(a.unit(), b.unit());
+  auto result = transform<arithmetic_and_matrix_type_pairs>(
+      a, b, [](const auto a, const auto b) { return a + b; });
+  result.setUnit(a.unit());
+  return result;
+}
+
 Variable Variable::operator-() const {
-  // TODO This implementation only works for variables containing doubles and
-  // will throw, e.g., for ints.
-  auto copy(*this);
-  copy *= -1.0;
-  return copy;
+  auto result = transform<double, float, int64_t, Eigen::Vector3d>(
+      *this, [](const auto a) { return -a; });
+  result.setUnit(unit());
+  return result;
 }
 
 Variable &Variable::operator+=(const Variable &other) & {
@@ -852,6 +854,14 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   return variable;
 }
 
+template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
+  expect::equals(a.unit(), b.unit());
+  auto result = transform<arithmetic_and_matrix_type_pairs>(
+      a, b, [](const auto a, const auto b) { return a - b; });
+  result.setUnit(a.unit());
+  return result;
+}
+
 Variable &Variable::operator-=(const Variable &other) & {
   return minus_equals(*this, other);
 }
@@ -870,6 +880,13 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       variable, other, [](auto &&a, auto &&b) { a *= b; });
   return variable;
+}
+
+template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
+  auto result = transform<arithmetic_type_pairs>(
+      a, b, [](const auto a, const auto b) { return a * b; });
+  result.setUnit(a.unit() * b.unit());
+  return result;
 }
 
 Variable &Variable::operator*=(const Variable &other) & {
@@ -892,6 +909,13 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       variable, other, [](auto &&a, auto &&b) { a /= b; });
   return variable;
+}
+
+template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
+  auto result = transform<arithmetic_type_pairs>(
+      a, b, [](const auto a, const auto b) { return a / b; });
+  result.setUnit(a.unit() / b.unit());
+  return result;
 }
 
 Variable &Variable::operator/=(const Variable &other) & {
@@ -1095,40 +1119,50 @@ Variable VariableConstProxy::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
+Variable operator+(const Variable &a, const Variable &b) { return plus(a, b); }
+Variable operator-(const Variable &a, const Variable &b) { return minus(a, b); }
+Variable operator*(const Variable &a, const Variable &b) { return times(a, b); }
+Variable operator/(const Variable &a, const Variable &b) {
+  return divide(a, b);
+}
+Variable operator+(const Variable &a, const VariableConstProxy &b) {
+  return plus(a, b);
+}
+Variable operator-(const Variable &a, const VariableConstProxy &b) {
+  return minus(a, b);
+}
+Variable operator*(const Variable &a, const VariableConstProxy &b) {
+  return times(a, b);
+}
+Variable operator/(const Variable &a, const VariableConstProxy &b) {
+  return divide(a, b);
+}
+Variable operator+(const VariableConstProxy &a, const Variable &b) {
+  return plus(a, b);
+}
+Variable operator-(const VariableConstProxy &a, const Variable &b) {
+  return minus(a, b);
+}
+Variable operator*(const VariableConstProxy &a, const Variable &b) {
+  return times(a, b);
+}
+Variable operator/(const VariableConstProxy &a, const Variable &b) {
+  return divide(a, b);
+}
+Variable operator+(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return plus(a, b);
+}
+Variable operator-(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return minus(a, b);
+}
+Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return times(a, b);
+}
+Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b) {
+  return divide(a, b);
+}
 // Note: The std::move here is necessary because RVO does not work for variables
 // that are function parameters.
-Variable operator+(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result += b;
-}
-Variable operator-(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result -= b;
-}
-Variable operator*(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result *= b;
-}
-Variable operator/(Variable a, const Variable &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result /= b;
-}
-Variable operator+(Variable a, const VariableConstProxy &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result += b;
-}
-Variable operator-(Variable a, const VariableConstProxy &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result -= b;
-}
-Variable operator*(Variable a, const VariableConstProxy &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result *= b;
-}
-Variable operator/(Variable a, const VariableConstProxy &b) {
-  auto result = broadcast(std::move(a), b.dims());
-  return result /= b;
-}
 Variable operator+(Variable a, const double b) { return std::move(a += b); }
 Variable operator-(Variable a, const double b) { return std::move(a -= b); }
 Variable operator*(Variable a, const double b) { return std::move(a *= b); }
@@ -1364,7 +1398,8 @@ Variable mean(const Variable &var, const Dim dim) {
 }
 
 Variable abs(const Variable &var) {
-  return transform<double, float>(var, [](const auto x) { return ::abs(x); });
+  using std::abs;
+  return transform<double, float>(var, [](const auto x) { return abs(x); });
 }
 
 Variable norm(const Variable &var) {
@@ -1372,8 +1407,9 @@ Variable norm(const Variable &var) {
 }
 
 Variable sqrt(const Variable &var) {
+  using std::sqrt;
   Variable result =
-      transform<double, float>(var, [](const auto x) { return std::sqrt(x); });
+      transform<double, float>(var, [](const auto x) { return sqrt(x); });
   result.setUnit(sqrt(var.unit()));
   return result;
 }

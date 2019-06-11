@@ -74,6 +74,11 @@ template <class T> constexpr auto sqrt(const ValueAndVariance<T> a) noexcept {
   return ValueAndVariance{sqrt(a.value), 0.25 * (a.variance / a.value)};
 }
 
+template <class T> constexpr auto abs(const ValueAndVariance<T> a) noexcept {
+  using std::abs;
+  return ValueAndVariance{abs(a.value), a.variance};
+}
+
 template <class T1, class T2>
 constexpr auto operator+(const ValueAndVariance<T1> a,
                          const ValueAndVariance<T2> b) noexcept {
@@ -105,8 +110,16 @@ constexpr auto operator+(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value + b, a.variance};
 }
 template <class T1, class T2>
+constexpr auto operator+(const T2 a, const ValueAndVariance<T1> b) noexcept {
+  return ValueAndVariance{a + b.value, b.variance};
+}
+template <class T1, class T2>
 constexpr auto operator-(const ValueAndVariance<T1> a, const T2 b) noexcept {
   return ValueAndVariance{a.value - b, a.variance};
+}
+template <class T1, class T2>
+constexpr auto operator-(const T2 a, const ValueAndVariance<T1> b) noexcept {
+  return ValueAndVariance{a - b.value, b.variance};
 }
 template <class T1, class T2>
 constexpr auto operator*(const ValueAndVariance<T1> a, const T2 b) noexcept {
@@ -175,18 +188,19 @@ template <class T> struct ValuesAndVariances {
   constexpr auto size() const noexcept { return values.size(); }
 };
 
-template <class T> struct is_values_and_variances : std::false_type {};
+template <class T> struct has_variances : std::false_type {};
 template <class T>
-struct is_values_and_variances<ValuesAndVariances<T>> : std::true_type {};
+struct has_variances<ValueAndVariance<T>> : std::true_type {};
 template <class T>
-inline constexpr bool is_values_and_variances_v =
-    is_values_and_variances<T>::value;
+struct has_variances<ValuesAndVariances<T>> : std::true_type {};
+template <class T>
+inline constexpr bool has_variances_v = has_variances<T>::value;
 
 /// Helper for the transform implementation to unify iteration of data with and
 /// without variances as well as sparse are dense container.
 template <class T>
 constexpr auto value_and_maybe_variance(const T &range, const scipp::index i) {
-  if constexpr (is_values_and_variances_v<T>) {
+  if constexpr (has_variances_v<T>) {
     if constexpr (is_sparse_v<decltype(range.values[0])>)
       return ValuesAndVariances{range.values[i], range.variances[i]};
     else
@@ -231,11 +245,61 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
   }
 }
 
+template <class Op, class Out, class... Ts>
+void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
+                                      Ts &&... other) {
+  auto & [ ovals, ovars ] = out;
+  for (scipp::index i = 0; i < scipp::size(ovals); ++i) {
+    if constexpr (is_sparse_v<decltype(ovals[0])>) {
+      auto out_i = op(value_and_maybe_variance(other, i)...);
+      ovals[i] = std::move(out_i.first);
+      ovars[i] = std::move(out_i.second);
+    } else {
+      auto out_i = op(value_and_maybe_variance(other, i)...);
+      ovals[i] = out_i.value;
+      ovars[i] = out_i.variance;
+    }
+  }
+}
+
 template <class Op, class T, class... Ts>
 void transform_in_place_impl(Op op, T &&vals, Ts &&... other) {
   for (scipp::index i = 0; i < scipp::size(vals); ++i)
     op(vals[i], other[i]...);
 }
+
+template <class Op, class Out, class T, class... Ts>
+void transform_elements(Op op, Out &out, T &&vals, Ts &&... other) {
+  for (scipp::index i = 0; i < scipp::size(out); ++i)
+    out[i] = op(vals[i], other[i]...);
+}
+
+template <class T> struct element_type { using type = T; };
+template <class T> struct element_type<sparse_container<T>> { using type = T; };
+template <class T> struct element_type<const sparse_container<T>> {
+  using type = T;
+};
+template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
+template <class T>
+struct element_type<ValuesAndVariances<sparse_container<T>>> {
+  using type = T;
+};
+template <class T>
+struct element_type<ValuesAndVariances<const sparse_container<T>>> {
+  using type = T;
+};
+template <class T> using element_type_t = typename element_type<T>::type;
+
+namespace transform_detail {
+template <class T> struct is_sparse : std::false_type {};
+template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
+template <class T>
+struct is_sparse<ValuesAndVariances<sparse_container<T>>> : std::true_type {};
+template <class T>
+struct is_sparse<ValuesAndVariances<const sparse_container<T>>>
+    : std::true_type {};
+template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+} // namespace transform_detail
 
 /// Broadcast a constant to arbitrary size. Helper for TransformSparse.
 ///
@@ -247,52 +311,80 @@ template <class T> struct broadcast {
 };
 template <class T> broadcast(T)->broadcast<T>;
 
-/// Functor for implementing operations with sparse data.
+template <class T> decltype(auto) maybe_broadcast(T &&value) {
+  if constexpr (transform_detail::is_sparse_v<
+                    std::remove_const_t<std::remove_reference_t<T>>>)
+    return std::forward<T>(value);
+  else
+    return broadcast{value};
+}
+
+template <class T> auto check_and_get_size(const T &a) {
+  return scipp::size(a);
+}
+
+template <class T1, class T2>
+auto check_and_get_size(const T1 &a, const T2 &b) {
+  if constexpr (transform_detail::is_sparse_v<T1>) {
+    if constexpr (transform_detail::is_sparse_v<T2>)
+      expect::sizeMatches(a, b);
+    return scipp::size(a);
+  } else {
+    return scipp::size(b);
+  }
+}
+
+template <class T>
+struct is_eigen_expression
+    : std::is_base_of<Eigen::MatrixBase<std::decay_t<T>>, std::decay_t<T>> {};
+
+template <class T> constexpr auto maybe_eval(T &&_) {
+  if constexpr (is_eigen_expression<T>::value)
+    return _.eval();
+  else
+    return _;
+}
+
+/// Functor for implementing in-place operations with sparse data.
 ///
 /// This is (conditionally) added to an overloaded set of operators provided by
 /// the user. If the data is sparse the overloads by this functor will match in
 /// place of the user-provided ones. We then recursively call the transform
 /// function. In this second call we have descended into the sparse container so
 /// now the user-provided overload will match directly.
-template <class Op> struct TransformSparse {
+template <class Op> struct TransformSparseInPlace {
   Op op;
-  template <class T> constexpr void operator()(sparse_container<T> &x) const {
-    transform_in_place_impl(op, x);
-  }
-  template <class T> constexpr void operator()(ValuesAndVariances<T> x) const {
-    transform_in_place_with_variance_impl(op, x);
-  }
-  template <class T1, class T2>
-  constexpr void operator()(sparse_container<T1> &a, const T2 b) const {
-    transform_in_place_impl(op, a, broadcast{b});
-  }
-  template <class T1, class T2>
-  constexpr void operator()(ValuesAndVariances<T1> a, const T2 b) const {
-    transform_in_place_with_variance_impl(op, a, broadcast{b});
-  }
-  template <class T1, class T2>
-  constexpr void operator()(sparse_container<T1> &a,
-                            const sparse_container<T2> &b) const {
-    expect::sizeMatches(a, b);
-    transform_in_place_impl(op, a, b);
-  }
-  template <class T1, class T2>
-  constexpr void operator()(ValuesAndVariances<T1> a,
-                            const sparse_container<T2> b) const {
-    expect::sizeMatches(a, b);
-    transform_in_place_with_variance_impl(op, a, b);
-  }
-  template <class T1, class T2>
-  constexpr void operator()(ValuesAndVariances<T1> a,
-                            const ValuesAndVariances<T2> b) const {
-    expect::sizeMatches(a, b);
-    transform_in_place_with_variance_impl(op, a, b);
+  template <class... Ts> constexpr void operator()(Ts &&... args) const {
+    static_cast<void>(check_and_get_size(args...));
+    if constexpr ((has_variances_v<Ts> || ...))
+      transform_in_place_with_variance_impl(op, maybe_broadcast(args)...);
+    else
+      transform_in_place_impl(op, maybe_broadcast(args)...);
   }
 };
 
-/// Helper for transform implementation, performing branching between output
-/// with and without variances.
-template <class T1, class Op> void do_transform(T1 &a, Op op) {
+/// Functor for implementing operations with sparse data, see also
+/// TransformSparseInPlace.
+template <class Op> struct TransformSparse {
+  Op op;
+  template <class... Ts> constexpr auto operator()(const Ts &... args) const {
+    sparse_container<std::invoke_result_t<Op, element_type_t<Ts>...>> vals(
+        check_and_get_size(args...));
+    if constexpr ((has_variances_v<Ts> || ...)) {
+      auto vars(vals);
+      ValuesAndVariances out{vals, vars};
+      transform_elements_with_variance(op, out, maybe_broadcast(args)...);
+      return std::pair(std::move(vals), std::move(vars));
+    } else {
+      transform_elements(op, vals, maybe_broadcast(args)...);
+      return vals;
+    }
+  }
+};
+
+/// Helper for in-place transform implementation, performing branching between
+/// output with and without variances.
+template <class T1, class Op> void do_transform_in_place(T1 &a, Op op) {
   auto a_val = a.values();
   if (a.hasVariances()) {
     if constexpr (is_eigen_type_v<typename T1::value_type>) {
@@ -308,10 +400,30 @@ template <class T1, class Op> void do_transform(T1 &a, Op op) {
 }
 
 /// Helper for transform implementation, performing branching between output
-/// with and without variances as well as handling other operands with and
-/// without variances.
+/// with and without variances.
+template <class T1, class Out, class Op>
+void do_transform(const T1 &a, Out &out, Op op) {
+  auto a_val = a.values();
+  auto out_val = out.values();
+  if (a.hasVariances()) {
+    if constexpr (is_eigen_type_v<typename T1::value_type>) {
+      throw std::runtime_error("This dtype cannot have a variance.");
+    } else {
+      auto a_var = a.variances();
+      auto out_var = out.variances();
+      transform_elements_with_variance(op, ValuesAndVariances{out_val, out_var},
+                                       ValuesAndVariances{a_val, a_var});
+    }
+  } else {
+    transform_elements(op, out_val, a_val);
+  }
+}
+
+/// Helper for in-place transform implementation, performing branching between
+/// output with and without variances as well as handling other operands with
+/// and without variances.
 template <class T1, class T2, class Op>
-void do_transform(T1 &a, const T2 &b, Op op) {
+void do_transform_in_place(T1 &a, const T2 &b, Op op) {
   auto a_val = a.values();
   auto b_val = b.values();
   if (a.hasVariances()) {
@@ -338,12 +450,45 @@ void do_transform(T1 &a, const T2 &b, Op op) {
   }
 }
 
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims);
-template <class T>
-std::unique_ptr<VariableConceptT<T>>
-makeVariableConceptT(const Dimensions &dims, Vector<T> data);
+/// Helper for transform implementation, performing branching between output
+/// with and without variances as well as handling other operands with and
+/// without variances.
+template <class T1, class T2, class Out, class Op>
+void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
+  auto a_val = a.values();
+  auto b_val = b.values();
+  auto out_val = out.values();
+  if (a.hasVariances()) {
+    if constexpr (is_eigen_type_v<typename T1::value_type> ||
+                  is_eigen_type_v<typename T2::value_type>) {
+      throw std::runtime_error("This dtype cannot have a variance.");
+    } else {
+      auto a_var = a.variances();
+      auto out_var = out.variances();
+      if (b.hasVariances()) {
+        auto b_var = b.variances();
+        transform_elements_with_variance(
+            op, ValuesAndVariances{out_val, out_var},
+            ValuesAndVariances{a_val, a_var}, ValuesAndVariances{b_val, b_var});
+      } else {
+        transform_elements_with_variance(
+            op, ValuesAndVariances{out_val, out_var},
+            ValuesAndVariances{a_val, a_var}, b_val);
+      }
+    }
+  } else if (b.hasVariances()) {
+    if constexpr (is_eigen_type_v<typename T2::value_type>) {
+      throw std::runtime_error("This dtype cannot have a variance.");
+    } else {
+      auto b_var = b.variances();
+      auto out_var = out.variances();
+      transform_elements_with_variance(op, ValuesAndVariances{out_val, out_var},
+                                       a_val, ValuesAndVariances{b_val, b_var});
+    }
+  } else {
+    transform_elements(op, out_val, a_val, b_val);
+  }
+}
 
 template <class T> struct as_view {
   using value_type = typename T::value_type;
@@ -366,57 +511,47 @@ template <class Op> struct TransformInPlace {
   template <class T> void operator()(T &&handle) const {
     auto view = as_view{*handle, handle->dims()};
     if (handle->isContiguous())
-      do_transform(*handle, op);
+      do_transform_in_place(*handle, op);
     else
-      do_transform(view, op);
+      do_transform_in_place(view, op);
   }
 
   template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
     // std::unique_ptr::operator*() is const but returns mutable reference, need
     // to artificially put const to we call the correct overloads of ViewModel.
+    // See #278.
     const auto &b = *b_ptr;
     const auto &dimsA = a->dims();
     const auto &dimsB = b.dims();
-    try {
-      if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
-        if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
-          // If there is an overlap between lhs and rhs we copy the rhs before
-          // applying the operation.
-          const auto &data = b.valuesView(b.dims());
-          using T = typename std::remove_reference_t<decltype(b)>::value_type;
-          const std::unique_ptr<VariableConceptT<T>> copy =
-              detail::makeVariableConceptT<T>(
-                  dimsB, Vector<T>(data.begin(), data.end()));
-          return operator()(a, copy);
-        }
+    if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
+      if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
+        // If there is an overlap between lhs and rhs we copy the rhs before
+        // applying the operation.
+        return operator()(a, b.copyT());
       }
+    }
 
-      if (a->isContiguous() && dimsA.contains(dimsB)) {
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(*a, b, op);
-        } else {
-          do_transform(*a, as_view{b, dimsA}, op);
-        }
-      } else if (dimsA.contains(dimsB)) {
-        auto a_view = as_view{*a, dimsA};
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(a_view, b, op);
-        } else {
-          do_transform(a_view, as_view{b, dimsA}, op);
-        }
+    if (a->isContiguous() && dimsA.contains(dimsB)) {
+      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(*a, b, op);
       } else {
-        // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
-        auto a_view = as_view{*a, dimsB};
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform(a_view, b, op);
-        } else {
-          do_transform(a_view, as_view{b, dimsB}, op);
-        }
+        do_transform_in_place(*a, as_view{b, dimsA}, op);
       }
-    } catch (const std::bad_cast &) {
-      throw std::runtime_error("Cannot apply arithmetic operation to "
-                               "Variables: Underlying data types do not "
-                               "match.");
+    } else if (dimsA.contains(dimsB)) {
+      auto a_view = as_view{*a, dimsA};
+      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(a_view, b, op);
+      } else {
+        do_transform_in_place(a_view, as_view{b, dimsA}, op);
+      }
+    } else {
+      // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
+      auto a_view = as_view{*a, dimsB};
+      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(a_view, b, op);
+      } else {
+        do_transform_in_place(a_view, as_view{b, dimsB}, op);
+      }
     }
   }
 };
@@ -424,21 +559,40 @@ template <class Op> TransformInPlace(Op)->TransformInPlace<Op>;
 
 template <class Op> struct Transform {
   Op op;
-  template <class T> VariableConceptHandle operator()(T &&handle) const {
-    if (handle->hasVariances())
-      throw std::runtime_error(
-          "Propgation of uncertainties not implemented for this case.");
-    auto data = handle->values();
-    // TODO Should just make empty container here, without init.
-    auto out = detail::makeVariableConceptT<decltype(op(*data.begin()))>(
-        handle->dims());
-    // TODO Typo data->values() also compiles, but const-correctness should
-    // forbid this.
-    auto outData = out->values();
-    std::transform(data.begin(), data.end(), outData.begin(), op);
-    return {std::move(out)};
+  template <class T> Variable operator()(T &&handle) const {
+    const auto &dims = handle->dims();
+    using Out = decltype(maybe_eval(op(handle->values()[0])));
+    // TODO For optimal performance we should just make container without
+    // element init here.
+    Variable out = handle->hasVariances()
+                       ? makeVariableWithVariances<element_type_t<Out>>(dims)
+                       : makeVariable<element_type_t<Out>>(dims);
+    auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
+    do_transform(as_view{*handle, dims}, outT, op);
+    return out;
+  }
+
+  template <class A, class B>
+  Variable operator()(A &&a_handle, B &&b_handle) const {
+    const auto &a = *a_handle;
+    const auto &b = *b_handle;
+    const auto &dimsA = a.dims();
+    const auto &dimsB = b.dims();
+    const auto &dims = merge(dimsA, dimsB);
+
+    using Out = decltype(maybe_eval(op(a.values()[0], b.values()[0])));
+    // TODO For optimal performance we should just make container without
+    // element init here.
+    Variable out = a.hasVariances() || b.hasVariances()
+                       ? makeVariableWithVariances<element_type_t<Out>>(dims)
+                       : makeVariable<element_type_t<Out>>(dims);
+    auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
+
+    do_transform(as_view{a, dims}, as_view{b, dims}, outT, op);
+    return out;
   }
 };
+template <class Op> Transform(Op)->Transform<Op>;
 
 template <class T, class... Known> struct optional_sparse {
   using type = std::conditional_t<std::disjunction_v<std::is_same<T, Known>...>,
@@ -464,8 +618,8 @@ template <class T1, class T2, class... Known> struct optional_sparse_pair {
 /// Augment a tuple of type pairs with the corresponding sparse types, if they
 /// exist.
 template <class... Ts, class... Known>
-auto insert_sparse_pairs(const std::tuple<Ts...> &,
-                         const VariableConceptHandle_impl<Known...> &) {
+auto insert_sparse_in_place_pairs(
+    const std::tuple<Ts...> &, const VariableConceptHandle_impl<Known...> &) {
   return std::tuple_cat(
       std::tuple<Ts...>{},
       typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
@@ -475,6 +629,33 @@ auto insert_sparse_pairs(const std::tuple<Ts...> &,
                                     sparse_container<typename Ts::second_type>,
                                     Known...>::type{}...);
 }
+template <class... Ts, class... Known>
+auto insert_sparse_pairs(const std::tuple<Ts...> &,
+                         const VariableConceptHandle_impl<Known...> &) {
+  return std::tuple_cat(
+      std::tuple<Ts...>{},
+      typename optional_sparse_pair<typename Ts::first_type,
+                                    sparse_container<typename Ts::second_type>,
+                                    Known...>::type{}...,
+      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
+                                    typename Ts::second_type,
+                                    Known...>::type{}...,
+      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
+                                    sparse_container<typename Ts::second_type>,
+                                    Known...>::type{}...);
+}
+
+template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
+  template <class... Ts> constexpr auto operator()(Ts &&... args) const {
+    if constexpr ((transform_detail::is_sparse_v<
+                       std::remove_const_t<std::remove_reference_t<Ts>>> ||
+                   ...))
+      return SparseOp::operator()(std::forward<Ts>(args)...);
+    else
+      return Op::operator()(std::forward<Ts>(args)...);
+  }
+};
+template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 
 } // namespace detail
 
@@ -501,7 +682,8 @@ void transform_in_place(Var &var, Op op) {
                                             var.dataHandle().variant());
     } else {
       scipp::core::visit(insert_sparse(std::tuple<Ts...>{}, var.dataHandle()))
-          .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
+          .apply(TransformInPlace{detail::overloaded_sparse{
+                     op, TransformSparseInPlace<Op>{op}}},
                  var.dataHandle().variant());
     }
   } catch (const std::bad_variant_access &) {
@@ -509,9 +691,10 @@ void transform_in_place(Var &var, Op op) {
   }
 }
 
+namespace detail {
 template <class... Ts, class Var, class Var1, class Op>
-void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
-                           Op op) {
+void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
+                        Op op) {
   using namespace detail;
   try {
     if constexpr (((is_sparse_v<typename Ts::first_type> ||
@@ -524,8 +707,9 @@ void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
       // Note that if only one of the inputs is sparse it must be the one being
       // transformed in-place, so there are only three cases here.
       scipp::core::visit(
-          insert_sparse_pairs(std::tuple<Ts...>{}, var.dataHandle()))
-          .apply(TransformInPlace{overloaded{op, TransformSparse<Op>{op}}},
+          insert_sparse_in_place_pairs(std::tuple<Ts...>{}, var.dataHandle()))
+          .apply(TransformInPlace{detail::overloaded_sparse{
+                     op, TransformSparseInPlace<Op>{op}}},
                  var.dataHandle().variant(), other.dataHandle().variant());
     }
   } catch (const std::bad_variant_access &) {
@@ -534,32 +718,80 @@ void do_transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
                             to_string(other.dtype()) + '.');
   }
 }
+} // namespace detail
 
 /// Transform the data elements of a variable in-place.
-//
-// This overload is equivalent to std::transform with two input ranges and an
-// output range identical to the secound input range, but avoids potentially
-// costly element copies.
+///
+/// This overload is equivalent to std::transform with two input ranges and an
+/// output range identical to the secound input range, but avoids potentially
+/// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
-  do_transform_in_place(std::tuple_cat(TypePairs{}...), std::forward<Var>(var),
-                        other, op);
+  // Wrapped implementation to convert multiple tuples into a parameter pack.
+  detail::transform_in_place(std::tuple_cat(TypePairs{}...),
+                             std::forward<Var>(var), other, op);
 }
 
 /// Transform the data elements of a variable and return a new Variable.
-//
-// This overload is equivalent to std::transform with a single input range, but
-// avoids the need to manually create a new variable for the output and the need
-// for, e.g., std::back_inserter.
+///
+/// This overload is equivalent to std::transform with a single input range, but
+/// avoids the need to manually create a new variable for the output and the
+/// need for, e.g., std::back_inserter.
 template <class... Ts, class Var, class Op>
 Variable transform(const Var &var, Op op) {
   using namespace detail;
   try {
-    return Variable(var, scipp::core::visit_impl<Ts...>::apply(
-                             Transform<Op>{op}, var.dataHandle().variant()));
+    if constexpr ((is_sparse_v<Ts> || ...)) {
+      return scipp::core::visit_impl<Ts...>::apply(Transform{op},
+                                                   var.dataHandle().variant());
+    } else {
+      return scipp::core::visit(
+                 insert_sparse(std::tuple<Ts...>{}, var.dataHandle()))
+          .apply(
+              Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
+              var.dataHandle().variant());
+    }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
+}
+
+namespace detail {
+template <class... Ts, class Var1, class Var2, class Op>
+Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
+                   Op op) {
+  using namespace detail;
+  try {
+    if constexpr (((is_sparse_v<typename Ts::first_type> ||
+                    is_sparse_v<typename Ts::second_type>) ||
+                   ...)) {
+      return scipp::core::visit_impl<Ts...>::apply(Transform{op},
+                                                   var1.dataHandle().variant(),
+                                                   var2.dataHandle().variant());
+    } else {
+      return scipp::core::visit(
+                 insert_sparse_pairs(std::tuple<Ts...>{}, var1.dataHandle()))
+          .apply(
+              Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
+              var1.dataHandle().variant(), var2.dataHandle().variant());
+    }
+  } catch (const std::bad_variant_access &) {
+    throw except::TypeError("Cannot apply operation to item dtypes " +
+                            to_string(var1.dtype()) + " and " +
+                            to_string(var2.dtype()) + '.');
+  }
+}
+} // namespace detail
+
+/// Transform the data elements of two variables and return a new Variable.
+///
+/// This overload is equivalent to std::transform with two input ranges, but
+/// avoids the need to manually create a new variable for the output and the
+/// need for, e.g., std::back_inserter.
+template <class... TypePairs, class Var1, class Var2, class Op>
+Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
+  // Wrapped implementation to convert multiple tuples into a parameter pack.
+  return detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
 }
 
 } // namespace scipp::core

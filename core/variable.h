@@ -103,26 +103,17 @@ private:
   Dimensions m_dimensions;
 };
 
-template <class T> class VariableConceptT;
-
-template <class T, typename Enable = void> struct concept {
-  using type = VariableConcept;
-  using typeT = VariableConceptT<T>;
-};
-
-template <class T> using concept_t = typename concept<T>::type;
-template <class T> using conceptT_t = typename concept<T>::typeT;
-
 /// Partially typed implementation of VariableConcept. This is a common base
 /// class for DataModel<T> and ViewModel<T>. The former holds data in a
 /// contiguous array, whereas the latter is a (potentially non-contiguous) view
 /// into the former. This base class implements functionality that is common to
 /// both, for a specific T.
-template <class T> class VariableConceptT : public concept_t<T> {
+template <class T> class VariableConceptT : public VariableConcept {
 public:
   using value_type = T;
 
-  VariableConceptT(const Dimensions &dimensions) : concept_t<T>(dimensions) {}
+  VariableConceptT(const Dimensions &dimensions)
+      : VariableConcept(dimensions) {}
 
   DType dtype(bool sparse = false) const noexcept override {
     if (!sparse)
@@ -166,6 +157,8 @@ public:
   virtual VariableView<const T>
   variancesReshaped(const Dimensions &dims) const = 0;
   virtual VariableView<T> variancesReshaped(const Dimensions &dims) = 0;
+
+  virtual std::unique_ptr<VariableConceptT> copyT() const = 0;
 
   VariableConceptHandle makeView() const override;
 
@@ -393,6 +386,23 @@ template <class T> Variable makeVariable(const Dimensions &dimensions) {
         Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()));
   else
     return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<underlying_type_t<T>>(
+                        dimensions.volume(),
+                        detail::default_init<underlying_type_t<T>>::value()));
+}
+
+template <class T>
+Variable makeVariableWithVariances(const Dimensions &dimensions) {
+  if (dimensions.sparse())
+    return Variable(
+        units::dimensionless, std::move(dimensions),
+        Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()),
+        Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()));
+  else
+    return Variable(units::dimensionless, std::move(dimensions),
+                    Vector<underlying_type_t<T>>(
+                        dimensions.volume(),
+                        detail::default_init<underlying_type_t<T>>::value()),
                     Vector<underlying_type_t<T>>(
                         dimensions.volume(),
                         detail::default_init<underlying_type_t<T>>::value()));
@@ -707,17 +717,25 @@ private:
   Variable *m_mutableVariable;
 };
 
+Variable operator+(const Variable &a, const Variable &b);
+Variable operator-(const Variable &a, const Variable &b);
+Variable operator*(const Variable &a, const Variable &b);
+Variable operator/(const Variable &a, const Variable &b);
+Variable operator+(const Variable &a, const VariableConstProxy &b);
+Variable operator-(const Variable &a, const VariableConstProxy &b);
+Variable operator*(const Variable &a, const VariableConstProxy &b);
+Variable operator/(const Variable &a, const VariableConstProxy &b);
+Variable operator+(const VariableConstProxy &a, const Variable &b);
+Variable operator-(const VariableConstProxy &a, const Variable &b);
+Variable operator*(const VariableConstProxy &a, const Variable &b);
+Variable operator/(const VariableConstProxy &a, const Variable &b);
+Variable operator+(const VariableConstProxy &a, const VariableConstProxy &b);
+Variable operator-(const VariableConstProxy &a, const VariableConstProxy &b);
+Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b);
+Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b);
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-Variable operator+(Variable a, const Variable &b);
-Variable operator-(Variable a, const Variable &b);
-Variable operator*(Variable a, const Variable &b);
-Variable operator/(Variable a, const Variable &b);
-Variable operator+(Variable a, const VariableConstProxy &b);
-Variable operator-(Variable a, const VariableConstProxy &b);
-Variable operator*(Variable a, const VariableConstProxy &b);
-Variable operator/(Variable a, const VariableConstProxy &b);
 Variable operator+(Variable a, const double b);
 Variable operator-(Variable a, const double b);
 Variable operator*(Variable a, const double b);

@@ -28,8 +28,14 @@ TEST(TransformTest, apply_unary_in_place_with_variances) {
 TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var = makeVariable<float>({Dim::X, 2}, {1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out = transform<double, float>(var, [](const double x) { return -x; });
+  auto out = transform<float>(var, [](const auto x) { return -1.0 * x; });
   EXPECT_TRUE(equals(out.values<double>(), {-1.1f, -2.2f}));
+}
+
+TEST(TransformTest, apply_unary_with_variances) {
+  const auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {3.3, 4.4});
+  auto out = transform<double>(var, [](const auto x) { return x + 1; });
+  EXPECT_EQ(out, makeVariable<double>({Dim::X, 2}, {2.1, 3.2}, {3.3, 4.4}));
 }
 
 TEST(TransformTest, apply_unary) {
@@ -49,12 +55,41 @@ TEST(TransformTest, apply_binary_in_place) {
   EXPECT_TRUE(equals(a.values<double>(), {4.4, 5.5}));
 }
 
+TEST(TransformTest, apply_binary) {
+  const auto a = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
+  const auto b = makeVariable<float>(3.3);
+  const auto out = transform<pair_custom_t<std::pair<double, float>>>(
+      a, b, [](auto x, const auto y) { return x * y; });
+  EXPECT_EQ(out, makeVariable<double>({Dim::X, 2}, {1.0 * 3.3f, 2.0 * 3.3f}));
+}
+
 TEST(TransformTest, apply_binary_in_place_var_with_view) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>({Dim::Y, 2}, {0.1, 3.3});
   transform_in_place<pair_self_t<double>>(
       a, b(Dim::Y, 1), [](auto &x, const auto y) { x += y; });
   EXPECT_TRUE(equals(a.values<double>(), {4.4, 5.5}));
+}
+
+TEST(TransformTest, apply_binary_in_place_self_overlap_without_variance) {
+  auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  Variable slice_copy = a(Dim::X, 1);
+  auto reference = a + slice_copy;
+  transform_in_place<pair_self_t<double>>(
+      a, a(Dim::X, 1), [](auto &x, const auto y) { x += y; });
+  ASSERT_EQ(a, reference);
+}
+
+TEST(TransformTest, apply_binary_in_place_self_overlap_with_variance) {
+  auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {1.0, 2.0});
+  Variable slice_copy = a(Dim::X, 1);
+  auto reference = a + slice_copy;
+  // With self-overlap the implementation needs to make a copy of the rhs. This
+  // is a regression test: An initial implementation was unintentionally
+  // dropping the variances when making that copy.
+  transform_in_place<pair_self_t<double>>(
+      a, a(Dim::X, 1), [](auto &x, const auto y) { x += y; });
+  ASSERT_EQ(a, reference);
 }
 
 TEST(TransformTest, apply_binary_in_place_view_with_var) {

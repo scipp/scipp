@@ -113,6 +113,36 @@ TEST(Variable, operator_plus_equal_custom_type) {
   EXPECT_EQ(a.values<float>()[1], 4.4f);
 }
 
+TEST(Variable, operator_plus) {
+  auto a = makeVariable<double>({Dim::X, 2}, {1.0, 2.0}, {3.0, 4.0});
+  auto b = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto b_ = b.sparseValues<float>();
+  b_[0] = {0.1, 0.2};
+  b_[1] = {0.3};
+
+  auto sum = a + b;
+
+  auto expected = makeVariableWithVariances<double>(
+      {{Dim::X, 2}, {Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto vals = expected.sparseValues<double>();
+  vals[0] = {1.0 + 0.1f, 1.0 + 0.2f};
+  vals[1] = {1.0 + 0.3f};
+  vals[2] = {2.0 + 0.1f, 2.0 + 0.2f};
+  vals[3] = {2.0 + 0.3f};
+  auto vars = expected.sparseVariances<double>();
+  vars[0] = {3.0, 3.0};
+  vars[1] = {3.0};
+  vars[2] = {4.0, 4.0};
+  vars[3] = {4.0};
+  EXPECT_EQ(sum, expected);
+}
+
+TEST(Variable, operator_plus_eigen_type) {
+  auto a = makeVariable<Eigen::Vector3d>({Dim::X, 1});
+  auto sum = a + a;
+  EXPECT_EQ(sum.dtype(), dtype<Eigen::Vector3d>);
+}
+
 TEST(Variable, operator_times_equal) {
   auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
 
