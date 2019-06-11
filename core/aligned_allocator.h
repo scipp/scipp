@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 
 // from https://stackoverflow.com/a/12942652/1458281
+#include <cassert>
+
 #include "memory_pool.h"
 
 namespace scipp::core {
