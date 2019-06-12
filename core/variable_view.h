@@ -22,11 +22,28 @@ public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
 
+  /// Construct a VariableView.
+  ///
+  /// @param variable Pointer to data array.
+  /// @param offset Start offset from beginning of data array.
+  /// @param targetDimensions Dimensions of the constructed VariableView.
+  /// @param dimensions Dimensions of the data array.
+  ///
+  /// The parameter `targetDimensions` can be used to remove, slice, broadcast,
+  /// or transpose dimensions of the input data array.
   VariableView(T *variable, const scipp::index offset,
                const Dimensions &targetDimensions, const Dimensions &dimensions)
       : m_variable(variable), m_offset(offset),
-        m_targetDimensions(targetDimensions), m_dimensions(dimensions) {}
+        m_targetDimensions(targetDimensions), m_dimensions(dimensions) {
+    expectCompatibleTarget();
+  }
 
+  /// Construct a VariableView from another VariableView, with different target
+  /// dimensions.
+  ///
+  /// A good way to think of this is of a non-contiguous underlying data array,
+  /// e.g., since the other view may represent a slice. This also supports
+  /// broadcasting the slice.
   template <class Other>
   VariableView(const Other &other, const Dimensions &targetDimensions)
       : m_variable(other.m_variable), m_offset(other.m_offset),
@@ -35,8 +52,15 @@ public:
     for (const auto label : m_dimensions.labels())
       if (!other.m_targetDimensions.denseContains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
+    expectCompatibleTarget();
   }
 
+  /// Construct a VariableView from another VariableView, with different target
+  /// dimensions and offset derived from `dim` and `begin`.
+  ///
+  /// This is essentially performing a slice of a VariableView, creating a new
+  /// view which may at the same time also perform other manipulations such as
+  /// broadcasting and transposing.
   template <class Other>
   VariableView(const Other &other, const Dimensions &targetDimensions,
                const Dim dim, const scipp::index begin)
@@ -48,6 +72,7 @@ public:
     for (const auto label : m_dimensions.labels())
       if (!other.m_targetDimensions.denseContains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
+    expectCompatibleTarget();
   }
 
   VariableView<std::remove_const_t<T>>
@@ -127,6 +152,15 @@ private:
   scipp::index m_offset{0};
   Dimensions m_targetDimensions;
   Dimensions m_dimensions;
+
+  void expectCompatibleTarget() const {
+    for (const auto dim : m_targetDimensions.denseLabels())
+      if (m_dimensions.denseContains(dim) &&
+          (m_dimensions[dim] < m_targetDimensions[dim]))
+        throw except::DimensionError("Cannot broadcast/slice dimension since "
+                                     "data has mismatching but smaller "
+                                     "dimension extent.");
+  }
 };
 
 template <class T>

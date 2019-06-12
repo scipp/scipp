@@ -7,6 +7,7 @@
 
 #include "test_macros.h"
 
+#include "except.h"
 #include "variable_view.h"
 
 using namespace scipp;
@@ -110,6 +111,13 @@ auto range(const scipp::index end) {
   std::vector<int32_t> data(end);
   std::iota(data.begin(), data.end(), 0);
   return data;
+}
+
+TEST(VariableViewTest, bad_broadcast) {
+  Dimensions dims{Dim::X, 2};
+  Dimensions target({Dim::X}, {3});
+  EXPECT_THROW(VariableView(range(2).data(), 0, target, dims),
+               except::DimensionError);
 }
 
 TEST(VariableViewTest, broadcast_inner) {
@@ -339,4 +347,19 @@ TEST(VariableViewTest, broadcast_transpose_slice_4d) {
   EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
                      {0, 12, 0, 12, 4, 16, 4, 16, 8, 20, 8, 20,
                       1, 13, 1, 13, 5, 17, 5, 17, 9, 21, 9, 21}));
+}
+
+TEST(VariableViewTest, view_of_view_collapse_and_broadcast) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target{{Dim::X, Dim::Z}, {2, 4}};
+  const auto data = range(24);
+  // Base view with collapsed Y
+  VariableView base(data.data(), 0, target, dims);
+  // Derived view with Y dependence. Since the base view had no Y it is
+  // broadcasted is *not* giving the original data. The application of this is
+  // some operation like var += var.slice(Dim.Y, 0), where we first slice and
+  // then broadcast the result for a subsequent operation.
+  EXPECT_TRUE(equals(VariableView<const int32_t>(base, dims),
+                     {0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,
+                      12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15}));
 }
