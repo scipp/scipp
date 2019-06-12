@@ -7,6 +7,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
 if(NOT CMAKE_BUILD_TYPE)
   set(
     CMAKE_BUILD_TYPE "Release"
@@ -16,7 +22,8 @@ if(NOT CMAKE_BUILD_TYPE)
     FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
+    "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake")
 
 find_package(OpenMP 3.1 REQUIRED)
 find_package(Sanitizers REQUIRED)
