@@ -78,7 +78,7 @@ TEST(Variable, dtype) {
 }
 
 TEST(Variable, span_references_Variable) {
-  auto a = makeVariable<double>(Dimensions(Dim::Tof, 2));
+  auto a = makeVariable<double>(Dimensions(Dim::X, 2));
   auto observer = a.values<double>();
   // This line does not compile, const-correctness works:
   // observer[0] = 1.0;
@@ -215,7 +215,6 @@ TEST(VariableTest, copy_and_move) {
 }
 
 TEST(Variable, setSlice) {
-  Dimensions dims(Dim::Tof, 1);
   const auto parent = makeVariable<double>(
       Dimensions({{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}}),
       {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
@@ -243,7 +242,6 @@ TEST(Variable, setSlice) {
 }
 
 TEST(Variable, slice) {
-  Dimensions dims(Dim::Tof, 1);
   const auto parent = makeVariable<double>(
       Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 4}}),
       {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
@@ -284,7 +282,6 @@ TEST(Variable, slice) {
 }
 
 TEST(Variable, slice_range) {
-  Dimensions dims(Dim::Tof, 1);
   const auto parent = makeVariable<double>(
       Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 4}}),
       {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
