@@ -11,20 +11,20 @@ namespace scipp::core {
 
 class ViewIndex {
 public:
-  ViewIndex(const Dimensions &parentDimensions,
-            const Dimensions &subdimensions) {
-    m_dims = parentDimensions.shape().size();
+  ViewIndex(const Dimensions &targetDimensions,
+            const Dimensions &dataDimensions) {
+    m_dims = targetDimensions.shape().size();
     for (scipp::index d = 0; d < m_dims; ++d)
-      m_extent[d] = parentDimensions.size(m_dims - 1 - d);
+      m_extent[d] = targetDimensions.size(m_dims - 1 - d);
     scipp::index factor{1};
-    for (scipp::index i = subdimensions.shape().size() - 1; i >= 0; --i) {
-      const auto dimension = subdimensions.label(i);
-      if (parentDimensions.contains(dimension)) {
-        m_offsets[m_subdims] = m_dims - 1 - parentDimensions.index(dimension);
+    for (scipp::index i = dataDimensions.shape().size() - 1; i >= 0; --i) {
+      const auto dimension = dataDimensions.label(i);
+      if (targetDimensions.contains(dimension)) {
+        m_offsets[m_subdims] = m_dims - 1 - targetDimensions.index(dimension);
         m_factors[m_subdims] = factor;
         ++m_subdims;
       }
-      factor *= subdimensions.size(i);
+      factor *= dataDimensions.size(i);
     }
     scipp::index offset{1};
     for (scipp::index d = 0; d < m_dims; ++d) {
