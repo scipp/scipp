@@ -934,7 +934,7 @@ Variable &Variable::operator/=(const double value) & {
 
 template <class T> VariableProxy VariableProxy::assign(const T &other) const {
   if (unit() != other.unit())
-    throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
+    throw except::UnitError("Cannot assign to slice: Unit mismatch.");
   if (dims() != other.dims())
     throw except::DimensionMismatchError(dims(), other.dims());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
@@ -1010,8 +1010,8 @@ void VariableProxy::setUnit(const units::Unit &unit) const {
   // particular since views onto subsets of dataset do not imply slicing of
   // variables but return slice views.
   if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
-    throw std::runtime_error("Partial view on data of variable cannot be used "
-                             "to change the unit.\n");
+    throw except::UnitError("Partial view on data of variable cannot be used "
+                            "to change the unit.");
   m_mutableVariable->setUnit(unit);
 }
 

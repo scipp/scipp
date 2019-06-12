@@ -214,13 +214,15 @@ TEST(VariableTest, copy_and_move) {
   EXPECT_EQ(moved, reference);
 }
 
-TEST(Variable, setSlice) {
-  const auto parent = makeVariable<double>(
-      Dimensions({{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}}),
-      {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
-       13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
-  const auto empty = makeVariable<double>(
-      Dimensions({{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}}), 24);
+TEST(Variable, assign_slice) {
+  const auto parent =
+      makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}},
+                           {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
+                            13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24},
+                           {25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+                            37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48});
+  const auto empty =
+      makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}});
 
   auto d(empty);
   EXPECT_NE(parent, d);
@@ -241,11 +243,35 @@ TEST(Variable, setSlice) {
   EXPECT_EQ(parent, d);
 }
 
+TEST(Variable, assign_slice_unit_checks) {
+  const auto parent = makeVariable<double>(Dimensions{}, units::m, {1});
+  auto dimensionless = makeVariable<double>({Dim::X, 4});
+  auto m = makeVariable<double>({Dim::X, 4}, units::m);
+
+  EXPECT_THROW(dimensionless.slice({Dim::X, 1}).assign(parent),
+               except::UnitError);
+  EXPECT_NO_THROW(m.slice({Dim::X, 1}).assign(parent));
+}
+
+TEST(Variable, assign_slice_variance_checks) {
+  const auto parent_vals = makeVariable<double>(1.0);
+  const auto parent_vals_vars = makeVariable<double>(1.0, 2.0);
+  auto vals = makeVariable<double>({Dim::X, 4});
+  auto vals_vars = makeVariableWithVariances<double>({Dim::X, 4});
+
+  EXPECT_NO_THROW(vals.slice({Dim::X, 1}).assign(parent_vals));
+  EXPECT_NO_THROW(vals_vars.slice({Dim::X, 1}).assign(parent_vals_vars));
+  EXPECT_THROW(vals.slice({Dim::X, 1}).assign(parent_vals_vars),
+               except::UnitError);
+  EXPECT_THROW(vals_vars.slice({Dim::X, 1}).assign(parent_vals),
+               except::UnitError);
+}
+
 TEST(Variable, slice) {
-  const auto parent = makeVariable<double>(
-      Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 4}}),
-      {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
-       13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
+  const auto parent =
+      makeVariable<double>({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 4}},
+                           {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
+                            13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
 
   for (const scipp::index index : {0, 1, 2, 3}) {
     Variable sliceX = parent.slice({Dim::X, index});
