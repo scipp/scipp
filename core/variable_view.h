@@ -35,7 +35,7 @@ public:
                const Dimensions &targetDimensions, const Dimensions &dimensions)
       : m_variable(variable), m_offset(offset),
         m_targetDimensions(targetDimensions), m_dimensions(dimensions) {
-    expectCompatibleTarget();
+    expectCanBroadcastFromTo(m_dimensions, m_targetDimensions);
   }
 
   /// Construct a VariableView from another VariableView, with different target
@@ -48,11 +48,11 @@ public:
   VariableView(const Other &other, const Dimensions &targetDimensions)
       : m_variable(other.m_variable), m_offset(other.m_offset),
         m_targetDimensions(targetDimensions) {
+    expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
     m_dimensions = other.m_dimensions;
     for (const auto label : m_dimensions.labels())
       if (!other.m_targetDimensions.denseContains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
-    expectCompatibleTarget();
   }
 
   /// Construct a VariableView from another VariableView, with different target
@@ -66,13 +66,13 @@ public:
                const Dim dim, const scipp::index begin)
       : m_variable(other.m_variable), m_offset(other.m_offset),
         m_targetDimensions(targetDimensions) {
+    expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
     m_dimensions = other.m_dimensions;
     if (begin != 0 || dim != Dim::Invalid)
       m_offset += begin * m_dimensions.offset(dim);
     for (const auto label : m_dimensions.labels())
       if (!other.m_targetDimensions.denseContains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
-    expectCompatibleTarget();
   }
 
   VariableView<std::remove_const_t<T>>
@@ -153,10 +153,10 @@ private:
   Dimensions m_targetDimensions;
   Dimensions m_dimensions;
 
-  void expectCompatibleTarget() const {
-    for (const auto dim : m_targetDimensions.denseLabels())
-      if (m_dimensions.denseContains(dim) &&
-          (m_dimensions[dim] < m_targetDimensions[dim]))
+  void expectCanBroadcastFromTo(const Dimensions &source,
+                                const Dimensions &target) const {
+    for (const auto dim : target.denseLabels())
+      if (source.denseContains(dim) && (source[dim] < target[dim]))
         throw except::DimensionError("Cannot broadcast/slice dimension since "
                                      "data has mismatching but smaller "
                                      "dimension extent.");
