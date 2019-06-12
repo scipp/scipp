@@ -709,8 +709,12 @@ template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    T values, T variances)
     : m_unit{unit},
-      m_object(std::make_unique<DataModel<T>>(
-          std::move(dimensions), std::move(values), std::move(variances))) {}
+      m_object(variances.empty()
+                   ? std::make_unique<DataModel<T>>(std::move(dimensions),
+                                                    std::move(values))
+                   : std::make_unique<DataModel<T>>(std::move(dimensions),
+                                                    std::move(values),
+                                                    std::move(variances))) {}
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {

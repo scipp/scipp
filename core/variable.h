@@ -299,7 +299,7 @@ public:
   template <class T> auto sparseSpan() const { return sparseValues<T>(); }
   template <class T> auto sparseSpan() { return sparseValues<T>(); }
 
-  // ATTENTION: It is really important to delete any function returning a
+  // ATTENTION: It is really important to avoid any function returning a
   // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
   VariableConstProxy slice(const Slice slice) const &;
@@ -404,26 +404,6 @@ Variable makeVariable(const std::initializer_list<Dim> &dims,
   return makeVariable<T>(Dimensions(dims, shape));
 }
 
-template <class T, class T2 = T>
-Variable makeVariable(const Dimensions &dimensions,
-                      std::initializer_list<T2> values) {
-  if constexpr (is_sparse_v<T2>) {
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<sparse_container<underlying_type_t<T>>>(
-                        values.begin(), values.end()));
-  } else {
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<underlying_type_t<T>>(values.begin(), values.end()));
-  }
-}
-
-// This overload is required to avoid wrongly selecting the single-value
-// overload with two template arguments.
-// template <class T>
-// Variable makeVariable(const std::pair<Dim, scipp::index> &dims_init) {
-//  return makeVariable<T>(Dimensions(dims_init.first, dims_init.second));
-//}
-
 template <class T> Variable makeVariable(T value) {
   return Variable(units::dimensionless, Dimensions{},
                   Vector<underlying_type_t<T>>(1, value));
@@ -438,7 +418,7 @@ template <class T> Variable makeVariable(T value, T variance) {
 template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T2> values,
-                      std::initializer_list<T2> variances) {
+                      std::initializer_list<T2> variances = {}) {
   if constexpr (is_sparse_v<T2>) {
     return Variable(units::dimensionless, std::move(dimensions),
                     Vector<sparse_container<underlying_type_t<T>>>(
@@ -455,7 +435,7 @@ Variable makeVariable(const Dimensions &dimensions,
 
 template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions, std::vector<T2> values,
-                      std::vector<T2> variances) {
+                      std::vector<T2> variances = {}) {
   return Variable(
       units::dimensionless, std::move(dimensions),
       Vector<underlying_type_t<T>>(values.begin(), values.end()),
@@ -464,15 +444,8 @@ Variable makeVariable(const Dimensions &dimensions, std::vector<T2> values,
 
 template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
-                      std::initializer_list<T2> values) {
-  return Variable(unit, std::move(dimensions),
-                  Vector<underlying_type_t<T>>(values.begin(), values.end()));
-}
-
-template <class T, class T2 = T>
-Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                       std::initializer_list<T2> values,
-                      std::initializer_list<T2> variances) {
+                      std::initializer_list<T2> variances = {}) {
   return Variable(
       unit, std::move(dimensions),
       Vector<underlying_type_t<T>>(values.begin(), values.end()),
