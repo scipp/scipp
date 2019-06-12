@@ -230,3 +230,113 @@ TEST(VariableViewTest, collapse_all) {
   Dimensions target;
   EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims), {0}));
 }
+
+// Note the result of slicing with extent 1 is equivalent to that of collapsing.
+TEST(VariableViewTest, slice_inner) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 3, 1});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 4, 8, 12, 16, 20}));
+  // This is a typical use for the offset parameter.
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 3, target, dims),
+                     {3, 7, 11, 15, 19, 23}));
+}
+
+TEST(VariableViewTest, slice_interior) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 1, 4});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 1, 2, 3, 12, 13, 14, 15}));
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 4, target, dims),
+                     {4, 5, 6, 7, 16, 17, 18, 19}));
+}
+
+TEST(VariableViewTest, slice_outer) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {1, 3, 4});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
+}
+
+TEST(VariableViewTest, slice_inner_and_outer) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {1, 3, 1});
+  EXPECT_TRUE(
+      equals(VariableView(range(24).data(), 0, target, dims), {0, 4, 8}));
+}
+
+TEST(VariableViewTest, slice_inner_two) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 1, 1});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims), {0, 12}));
+}
+
+TEST(VariableViewTest, slice_outer_two) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {1, 1, 4});
+  EXPECT_TRUE(
+      equals(VariableView(range(24).data(), 0, target, dims), {0, 1, 2, 3}));
+}
+
+TEST(VariableViewTest, slice_all) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target{{Dim::X, Dim::Y, Dim::Z}, {1, 1, 1}};
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims), {0}));
+}
+
+TEST(VariableViewTest, slice_range_inner) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 3, 2});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21}));
+}
+
+TEST(VariableViewTest, slice_range_interior) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 2, 4});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 14, 15, 16, 17, 18, 19}));
+}
+
+TEST(VariableViewTest, slice_range_inner_and_outer) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 3, 2});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21}));
+}
+
+TEST(VariableViewTest, slice_range_inner_two) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 2, 2});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 1, 4, 5, 12, 13, 16, 17}));
+}
+
+TEST(VariableViewTest, slice_range_outer_two) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {1, 2, 4});
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 1, 2, 3, 4, 5, 6, 7}));
+}
+
+TEST(VariableViewTest, slice_range_all) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target{{Dim::X, Dim::Y, Dim::Z}, {1, 2, 2}};
+  EXPECT_TRUE(
+      equals(VariableView(range(24).data(), 0, target, dims), {0, 1, 4, 5}));
+}
+
+TEST(VariableViewTest, broadcast_transpose_slice_3d) {
+  Dimensions dims{{Dim::X, Dim::Y}, {2, 3}};
+  Dimensions target{{Dim::Y, Dim::X, Dim::Z}, {2, 2, 4}};
+  EXPECT_TRUE(equals(VariableView(range(6).data(), 0, target, dims),
+                     {0, 0, 0, 0, 3, 3, 3, 3, 1, 1, 1, 1, 4, 4, 4, 4}));
+}
+
+TEST(VariableViewTest, broadcast_transpose_slice_4d) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target{{Dim::Z, Dim::Y, Dim::Time, Dim::X}, {2, 3, 2, 2}};
+  EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims),
+                     {0, 12, 0, 12, 4, 16, 4, 16, 8, 20, 8, 20,
+                      1, 13, 1, 13, 5, 17, 5, 17, 9, 21, 9, 21}));
+}
