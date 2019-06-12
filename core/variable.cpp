@@ -268,6 +268,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
                                const scipp::index offset,
                                const scipp::index otherBegin,
                                const scipp::index otherEnd) {
+  if (this->hasVariances() != other.hasVariances())
+    throw except::VariancesError(
+        "Either both or neither of the operands must have a variances.");
   auto iterDims = this->dims();
   const scipp::index delta = otherEnd - otherBegin;
   if (iterDims.contains(dim))

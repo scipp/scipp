@@ -221,8 +221,8 @@ TEST(Variable, assign_slice) {
                             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24},
                            {25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
                             37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48});
-  const auto empty =
-      makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}});
+  const auto empty = makeVariableWithVariances<double>(
+      {{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}});
 
   auto d(empty);
   EXPECT_NE(parent, d);
@@ -262,49 +262,58 @@ TEST(Variable, assign_slice_variance_checks) {
   EXPECT_NO_THROW(vals.slice({Dim::X, 1}).assign(parent_vals));
   EXPECT_NO_THROW(vals_vars.slice({Dim::X, 1}).assign(parent_vals_vars));
   EXPECT_THROW(vals.slice({Dim::X, 1}).assign(parent_vals_vars),
-               except::UnitError);
+               except::VariancesError);
   EXPECT_THROW(vals_vars.slice({Dim::X, 1}).assign(parent_vals),
-               except::UnitError);
+               except::VariancesError);
 }
 
 TEST(Variable, slice) {
   const auto parent =
-      makeVariable<double>({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 4}},
+      makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}}, units::m,
                            {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-                            13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
+                            13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24},
+                           {25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+                            37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48});
 
-  for (const scipp::index index : {0, 1, 2, 3}) {
-    Variable sliceX = parent.slice({Dim::X, index});
-    ASSERT_EQ(sliceX.dims(), Dimensions({{Dim::Z, 3}, {Dim::Y, 2}}));
-    auto base = static_cast<double>(index);
-    EXPECT_EQ(sliceX.values<double>()[0], base + 1.0);
-    EXPECT_EQ(sliceX.values<double>()[1], base + 5.0);
-    EXPECT_EQ(sliceX.values<double>()[2], base + 9.0);
-    EXPECT_EQ(sliceX.values<double>()[3], base + 13.0);
-    EXPECT_EQ(sliceX.values<double>()[4], base + 17.0);
-    EXPECT_EQ(sliceX.values<double>()[5], base + 21.0);
-  }
+  EXPECT_EQ(parent.slice({Dim::X, 0}),
+            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}}, units::m,
+                                 {1, 2, 3, 4, 5, 6}, {25, 26, 27, 28, 29, 30}));
+  EXPECT_EQ(parent.slice({Dim::X, 1}),
+            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}}, units::m,
+                                 {7, 8, 9, 10, 11, 12},
+                                 {31, 32, 33, 34, 35, 36}));
+  EXPECT_EQ(parent.slice({Dim::X, 2}),
+            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}}, units::m,
+                                 {13, 14, 15, 16, 17, 18},
+                                 {37, 38, 39, 40, 41, 42}));
+  EXPECT_EQ(parent.slice({Dim::X, 3}),
+            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}}, units::m,
+                                 {19, 20, 21, 22, 23, 24},
+                                 {43, 44, 45, 46, 47, 48}));
 
-  for (const scipp::index index : {0, 1}) {
-    Variable sliceY = parent.slice({Dim::Y, index});
-    ASSERT_EQ(sliceY.dims(), Dimensions({{Dim::Z, 3}, {Dim::X, 4}}));
-    const auto &data = sliceY.values<double>();
-    auto base = static_cast<double>(index);
-    for (const scipp::index z : {0, 1, 2}) {
-      EXPECT_EQ(data[4 * z + 0], 4 * base + 8 * static_cast<double>(z) + 1.0);
-      EXPECT_EQ(data[4 * z + 1], 4 * base + 8 * static_cast<double>(z) + 2.0);
-      EXPECT_EQ(data[4 * z + 2], 4 * base + 8 * static_cast<double>(z) + 3.0);
-      EXPECT_EQ(data[4 * z + 3], 4 * base + 8 * static_cast<double>(z) + 4.0);
-    }
-  }
+  EXPECT_EQ(
+      parent.slice({Dim::Y, 0}),
+      makeVariable<double>({{Dim::X, 4}, {Dim::Z, 3}}, units::m,
+                           {1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21},
+                           {25, 26, 27, 31, 32, 33, 37, 38, 39, 43, 44, 45}));
+  EXPECT_EQ(
+      parent.slice({Dim::Y, 1}),
+      makeVariable<double>({{Dim::X, 4}, {Dim::Z, 3}}, units::m,
+                           {4, 5, 6, 10, 11, 12, 16, 17, 18, 22, 23, 24},
+                           {28, 29, 30, 34, 35, 36, 40, 41, 42, 46, 47, 48}));
 
-  for (const scipp::index index : {0, 1, 2}) {
-    Variable sliceZ = parent.slice({Dim::Z, index});
-    ASSERT_EQ(sliceZ.dims(), Dimensions({{Dim::Y, 2}, {Dim::X, 4}}));
-    const auto &data = sliceZ.values<double>();
-    for (scipp::index xy = 0; xy < 8; ++xy)
-      EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
-  }
+  EXPECT_EQ(parent.slice({Dim::Z, 0}),
+            makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}}, units::m,
+                                 {1, 4, 7, 10, 13, 16, 19, 22},
+                                 {25, 28, 31, 34, 37, 40, 43, 46}));
+  EXPECT_EQ(parent.slice({Dim::Z, 1}),
+            makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}}, units::m,
+                                 {2, 5, 8, 11, 14, 17, 20, 23},
+                                 {26, 29, 32, 35, 38, 41, 44, 47}));
+  EXPECT_EQ(parent.slice({Dim::Z, 2}),
+            makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}}, units::m,
+                                 {3, 6, 9, 12, 15, 18, 21, 24},
+                                 {27, 30, 33, 36, 39, 42, 45, 48}));
 }
 
 TEST(Variable, slice_range) {
