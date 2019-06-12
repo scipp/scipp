@@ -28,7 +28,8 @@ set(SRC_FILES
     #events.cpp
     except.cpp
     #md_zip_view.cpp
-    variable.cpp)
+    variable.cpp
+    view_index.cpp)
 
 add_library(scipp-core STATIC ${INC_FILES} ${SRC_FILES})
 target_link_libraries(scipp-core
