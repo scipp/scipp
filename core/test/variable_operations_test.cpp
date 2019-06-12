@@ -23,7 +23,7 @@ TEST(Variable, operator_unary_minus) {
 
 TEST(VariableProxy, unary_minus) {
   const auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
-  auto b = -a(Dim::X, 1);
+  auto b = -a.slice({Dim::X, 1});
   EXPECT_EQ(a.values<double>()[0], 1.1);
   EXPECT_EQ(a.values<double>()[1], 2.2);
   EXPECT_EQ(b.values<double>()[0], -2.2);
@@ -377,7 +377,7 @@ TEST(VariableProxy, minus_equals_failures) {
   auto var =
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}}, {1.0, 2.0, 3.0, 4.0});
 
-  EXPECT_THROW_MSG(var -= var(Dim::X, 0, 1), std::runtime_error,
+  EXPECT_THROW_MSG(var -= var.slice({Dim::X, 0, 1}), std::runtime_error,
                    "Expected {{Dim::X, 2}, {Dim::Y, 2}} to contain {{Dim::X, "
                    "1}, {Dim::Y, 2}}.");
 }
@@ -386,7 +386,7 @@ TEST(VariableProxy, self_overlapping_view_operation) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
-  var -= var(Dim::Y, 0);
+  var -= var.slice({Dim::Y, 0});
   const auto data = var.values<double>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
@@ -402,13 +402,13 @@ TEST(VariableProxy, minus_equals_slice_const_outer) {
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   const auto copy(var);
 
-  var -= copy(Dim::Y, 0);
+  var -= copy.slice({Dim::Y, 0});
   const auto data = var.values<double>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
   EXPECT_EQ(data[3], 2.0);
-  var -= copy(Dim::Y, 1);
+  var -= copy.slice({Dim::Y, 1});
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -4.0);
   EXPECT_EQ(data[2], -1.0);
@@ -420,13 +420,13 @@ TEST(VariableProxy, minus_equals_slice_outer) {
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   auto copy(var);
 
-  var -= copy(Dim::Y, 0);
+  var -= copy.slice({Dim::Y, 0});
   const auto data = var.values<double>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
   EXPECT_EQ(data[3], 2.0);
-  var -= copy(Dim::Y, 1);
+  var -= copy.slice({Dim::Y, 1});
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -4.0);
   EXPECT_EQ(data[2], -1.0);
@@ -438,13 +438,13 @@ TEST(VariableProxy, minus_equals_slice_inner) {
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   auto copy(var);
 
-  var -= copy(Dim::X, 0);
+  var -= copy.slice({Dim::X, 0});
   const auto data = var.values<double>();
   EXPECT_EQ(data[0], 0.0);
   EXPECT_EQ(data[1], 1.0);
   EXPECT_EQ(data[2], 0.0);
   EXPECT_EQ(data[3], 1.0);
-  var -= copy(Dim::X, 1);
+  var -= copy.slice({Dim::X, 1});
   EXPECT_EQ(data[0], -2.0);
   EXPECT_EQ(data[1], -1.0);
   EXPECT_EQ(data[2], -4.0);
@@ -456,7 +456,7 @@ TEST(VariableProxy, minus_equals_slice_of_slice) {
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
   auto copy(var);
 
-  var -= copy(Dim::X, 1)(Dim::Y, 1);
+  var -= copy.slice({Dim::X, 1}).slice({Dim::Y, 1});
   const auto data = var.values<double>();
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -2.0);
@@ -470,7 +470,7 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
       {11.0, 12.0, 13.0, 21.0, 22.0, 23.0, 31.0, 32.0, 33.0});
   {
     auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
-    target -= source(Dim::X, 0, 2)(Dim::Y, 0, 2);
+    target -= source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -11.0);
     EXPECT_EQ(data[1], -12.0);
@@ -479,7 +479,7 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
   }
   {
     auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
-    target -= source(Dim::X, 1, 3)(Dim::Y, 0, 2);
+    target -= source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -12.0);
     EXPECT_EQ(data[1], -13.0);
@@ -488,7 +488,7 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
   }
   {
     auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
-    target -= source(Dim::X, 0, 2)(Dim::Y, 1, 3);
+    target -= source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -21.0);
     EXPECT_EQ(data[1], -22.0);
@@ -497,7 +497,7 @@ TEST(VariableProxy, minus_equals_nontrivial_slices) {
   }
   {
     auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
-    target -= source(Dim::X, 1, 3)(Dim::Y, 1, 3);
+    target -= source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -22.0);
     EXPECT_EQ(data[1], -23.0);
@@ -510,7 +510,7 @@ TEST(VariableProxy, slice_inner_minus_equals) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
-  var(Dim::X, 0) -= var(Dim::X, 1);
+  var.slice({Dim::X, 0}) -= var.slice({Dim::X, 1});
   const auto data = var.values<double>();
   EXPECT_EQ(data[0], -1.0);
   EXPECT_EQ(data[1], 2.0);
@@ -522,7 +522,7 @@ TEST(VariableProxy, slice_outer_minus_equals) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
 
-  var(Dim::Y, 0) -= var(Dim::Y, 1);
+  var.slice({Dim::Y, 0}) -= var.slice({Dim::Y, 1});
   const auto data = var.values<double>();
   EXPECT_EQ(data[0], -2.0);
   EXPECT_EQ(data[1], -2.0);
@@ -535,7 +535,7 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
                                        {11.0, 12.0, 21.0, 22.0});
-    target(Dim::X, 0, 2)(Dim::Y, 0, 2) -= source;
+    target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}) -= source;
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -11.0);
     EXPECT_EQ(data[1], -12.0);
@@ -551,7 +551,7 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
                                        {11.0, 12.0, 21.0, 22.0});
-    target(Dim::X, 1, 3)(Dim::Y, 0, 2) -= source;
+    target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}) -= source;
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], -11.0);
@@ -567,7 +567,7 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
                                        {11.0, 12.0, 21.0, 22.0});
-    target(Dim::X, 0, 2)(Dim::Y, 1, 3) -= source;
+    target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}) -= source;
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], 0.0);
@@ -583,7 +583,7 @@ TEST(VariableProxy, nontrivial_slice_minus_equals) {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
                                        {11.0, 12.0, 21.0, 22.0});
-    target(Dim::X, 1, 3)(Dim::Y, 1, 3) -= source;
+    target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}) -= source;
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], 0.0);
@@ -602,7 +602,8 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
                                        {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
-    target(Dim::X, 0, 2)(Dim::Y, 0, 2) -= source(Dim::X, 1, 3);
+    target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}) -=
+        source.slice({Dim::X, 1, 3});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], -11.0);
     EXPECT_EQ(data[1], -12.0);
@@ -618,7 +619,8 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
                                        {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
-    target(Dim::X, 1, 3)(Dim::Y, 0, 2) -= source(Dim::X, 1, 3);
+    target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}) -=
+        source.slice({Dim::X, 1, 3});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], -11.0);
@@ -634,7 +636,8 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
                                        {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
-    target(Dim::X, 0, 2)(Dim::Y, 1, 3) -= source(Dim::X, 1, 3);
+    target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}) -=
+        source.slice({Dim::X, 1, 3});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], 0.0);
@@ -650,7 +653,8 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
     auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
                                        {666.0, 11.0, 12.0, 666.0, 21.0, 22.0});
-    target(Dim::X, 1, 3)(Dim::Y, 1, 3) -= source(Dim::X, 1, 3);
+    target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}) -=
+        source.slice({Dim::X, 1, 3});
     const auto data = target.values<double>();
     EXPECT_EQ(data[0], 0.0);
     EXPECT_EQ(data[1], 0.0);
@@ -667,10 +671,10 @@ TEST(VariableProxy, nontrivial_slice_minus_equals_slice) {
 TEST(VariableProxy, slice_minus_lower_dimensional) {
   auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
   auto source = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
-  EXPECT_EQ(target(Dim::Y, 1, 2).dims(),
+  EXPECT_EQ(target.slice({Dim::Y, 1, 2}).dims(),
             (Dimensions{{Dim::Y, 1}, {Dim::X, 2}}));
 
-  target(Dim::Y, 1, 2) -= source;
+  target.slice({Dim::Y, 1, 2}) -= source;
 
   const auto data = target.values<double>();
   EXPECT_EQ(data[0], 0.0);
@@ -685,10 +689,10 @@ TEST(VariableProxy, slice_binary_operations) {
   // operators that convert the second argument to Variable (it should not), or
   // keep it as a view. See variable_benchmark.cpp for an attempt to verify
   // this.
-  auto sum = v(Dim::X, 0) + v(Dim::X, 1);
-  auto difference = v(Dim::X, 0) - v(Dim::X, 1);
-  auto product = v(Dim::X, 0) * v(Dim::X, 1);
-  auto ratio = v(Dim::X, 0) / v(Dim::X, 1);
+  auto sum = v.slice({Dim::X, 0}) + v.slice({Dim::X, 1});
+  auto difference = v.slice({Dim::X, 0}) - v.slice({Dim::X, 1});
+  auto product = v.slice({Dim::X, 0}) * v.slice({Dim::X, 1});
+  auto ratio = v.slice({Dim::X, 0}) / v.slice({Dim::X, 1});
   EXPECT_TRUE(equals(sum.values<double>(), {3, 7}));
   EXPECT_TRUE(equals(difference.values<double>(), {-1, -1}));
   EXPECT_TRUE(equals(product.values<double>(), {2, 12}));
@@ -735,17 +739,17 @@ TEST(VariableProxy, scalar_operations) {
   auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}},
                                   {11, 12, 13, 21, 22, 23});
 
-  var(Dim::X, 0) += 1;
+  var.slice({Dim::X, 0}) += 1;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 22, 22, 23}));
-  var(Dim::Y, 1) += 1;
+  var.slice({Dim::Y, 1}) += 1;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 13, 23, 23, 24}));
-  var(Dim::X, 1, 3) += 1;
+  var.slice({Dim::X, 1, 3}) += 1;
   EXPECT_TRUE(equals(var.values<double>(), {12, 13, 14, 23, 24, 25}));
-  var(Dim::X, 1) -= 1;
+  var.slice({Dim::X, 1}) -= 1;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 14, 23, 23, 25}));
-  var(Dim::X, 2) *= 0;
+  var.slice({Dim::X, 2}) *= 0;
   EXPECT_TRUE(equals(var.values<double>(), {12, 12, 0, 23, 23, 0}));
-  var(Dim::Y, 0) /= 2;
+  var.slice({Dim::Y, 0}) /= 2;
   EXPECT_TRUE(equals(var.values<double>(), {6, 6, 0, 23, 23, 0}));
 }
 

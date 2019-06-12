@@ -62,7 +62,7 @@ auto makeSlice(Var &var,
   for (const auto[params, extent] : slices) {
     const auto[dim, begin, end] = params;
     if (slice.dims().contains(dim))
-      slice = slice(dim, begin, end + slice.dims()[dim] - extent);
+      slice = slice.slice(Slice{dim, begin, end + slice.dims()[dim] - extent});
   }
   return slice;
 }

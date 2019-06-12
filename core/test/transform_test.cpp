@@ -67,28 +67,28 @@ TEST(TransformTest, apply_binary_in_place_var_with_view) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>({Dim::Y, 2}, {0.1, 3.3});
   transform_in_place<pair_self_t<double>>(
-      a, b(Dim::Y, 1), [](auto &x, const auto y) { x += y; });
+      a, b.slice({Dim::Y, 1}), [](auto &x, const auto y) { x += y; });
   EXPECT_TRUE(equals(a.values<double>(), {4.4, 5.5}));
 }
 
 TEST(TransformTest, apply_binary_in_place_self_overlap_without_variance) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
-  Variable slice_copy = a(Dim::X, 1);
+  Variable slice_copy = a.slice({Dim::X, 1});
   auto reference = a + slice_copy;
   transform_in_place<pair_self_t<double>>(
-      a, a(Dim::X, 1), [](auto &x, const auto y) { x += y; });
+      a, a.slice({Dim::X, 1}), [](auto &x, const auto y) { x += y; });
   ASSERT_EQ(a, reference);
 }
 
 TEST(TransformTest, apply_binary_in_place_self_overlap_with_variance) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {1.0, 2.0});
-  Variable slice_copy = a(Dim::X, 1);
+  Variable slice_copy = a.slice({Dim::X, 1});
   auto reference = a + slice_copy;
   // With self-overlap the implementation needs to make a copy of the rhs. This
   // is a regression test: An initial implementation was unintentionally
   // dropping the variances when making that copy.
   transform_in_place<pair_self_t<double>>(
-      a, a(Dim::X, 1), [](auto &x, const auto y) { x += y; });
+      a, a.slice({Dim::X, 1}), [](auto &x, const auto y) { x += y; });
   ASSERT_EQ(a, reference);
 }
 
@@ -96,7 +96,7 @@ TEST(TransformTest, apply_binary_in_place_view_with_var) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>(3.3);
   transform_in_place<pair_self_t<double>>(
-      a(Dim::X, 1), b, [](auto &x, const auto y) { x += y; });
+      a.slice({Dim::X, 1}), b, [](auto &x, const auto y) { x += y; });
   EXPECT_TRUE(equals(a.values<double>(), {1.1, 5.5}));
 }
 
@@ -104,7 +104,8 @@ TEST(TransformTest, apply_binary_in_place_view_with_view) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<double>({Dim::Y, 2}, {0.1, 3.3});
   transform_in_place<pair_self_t<double>>(
-      a(Dim::X, 1), b(Dim::Y, 1), [](auto &x, const auto y) { x += y; });
+      a.slice({Dim::X, 1}), b.slice({Dim::Y, 1}),
+      [](auto &x, const auto y) { x += y; });
   EXPECT_TRUE(equals(a.values<double>(), {1.1, 5.5}));
 }
 

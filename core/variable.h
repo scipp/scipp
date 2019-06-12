@@ -307,16 +307,6 @@ public:
   VariableProxy slice(const Slice slice) &;
   Variable slice(const Slice slice) &&;
 
-  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
-                                const scipp::index end = -1) const &;
-  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
-                                const scipp::index end = -1) const && = delete;
-
-  VariableProxy operator()(const Dim dim, const scipp::index begin,
-                           const scipp::index end = -1) &;
-  VariableProxy operator()(const Dim dim, const scipp::index begin,
-                           const scipp::index end = -1) && = delete;
-
   VariableConstProxy reshape(const Dimensions &dims) const &;
   VariableProxy reshape(const Dimensions &dims) &;
   // Note: Do we have to delete the `const &&` version? Consider
@@ -541,11 +531,6 @@ public:
     return VariableConstProxy(*this, slice.dim, slice.begin, slice.end);
   }
 
-  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
-                                const scipp::index end = -1) const {
-    return slice({dim, begin, end});
-  }
-
   // Note the return type. Reshaping a non-contiguous slice cannot return a
   // slice in general so we must return a copy of the data.
   Variable reshape(const Dimensions &dims) const;
@@ -647,11 +632,6 @@ public:
 
   VariableProxy slice(const Slice slice) const {
     return VariableProxy(*this, slice.dim, slice.begin, slice.end);
-  }
-
-  VariableProxy operator()(const Dim dim, const scipp::index begin,
-                           const scipp::index end = -1) const {
-    return slice({dim, begin, end});
   }
 
   using VariableConstProxy::data;

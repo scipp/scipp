@@ -229,19 +229,19 @@ TEST(Variable, setSlice) {
   auto d(empty);
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1, 2, 3})
-    d(Dim::X, index).assign(parent(Dim::X, index));
+    d.slice({Dim::X, index}).assign(parent.slice({Dim::X, index}));
   EXPECT_EQ(parent, d);
 
   d = empty;
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1})
-    d(Dim::Y, index).assign(parent(Dim::Y, index));
+    d.slice({Dim::Y, index}).assign(parent.slice({Dim::Y, index}));
   EXPECT_EQ(parent, d);
 
   d = empty;
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1, 2})
-    d(Dim::Z, index).assign(parent(Dim::Z, index));
+    d.slice({Dim::Z, index}).assign(parent.slice({Dim::Z, index}));
   EXPECT_EQ(parent, d);
 }
 
@@ -253,7 +253,7 @@ TEST(Variable, slice) {
        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
   for (const scipp::index index : {0, 1, 2, 3}) {
-    Variable sliceX = parent(Dim::X, index);
+    Variable sliceX = parent.slice({Dim::X, index});
     ASSERT_EQ(sliceX.dims(), Dimensions({{Dim::Z, 3}, {Dim::Y, 2}}));
     auto base = static_cast<double>(index);
     EXPECT_EQ(sliceX.values<double>()[0], base + 1.0);
@@ -265,7 +265,7 @@ TEST(Variable, slice) {
   }
 
   for (const scipp::index index : {0, 1}) {
-    Variable sliceY = parent(Dim::Y, index);
+    Variable sliceY = parent.slice({Dim::Y, index});
     ASSERT_EQ(sliceY.dims(), Dimensions({{Dim::Z, 3}, {Dim::X, 4}}));
     const auto &data = sliceY.values<double>();
     auto base = static_cast<double>(index);
@@ -278,7 +278,7 @@ TEST(Variable, slice) {
   }
 
   for (const scipp::index index : {0, 1, 2}) {
-    Variable sliceZ = parent(Dim::Z, index);
+    Variable sliceZ = parent.slice({Dim::Z, index});
     ASSERT_EQ(sliceZ.dims(), Dimensions({{Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.values<double>();
     for (scipp::index xy = 0; xy < 8; ++xy)
@@ -294,7 +294,7 @@ TEST(Variable, slice_range) {
        13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
 
   for (const scipp::index index : {0, 1, 2, 3}) {
-    Variable sliceX = parent(Dim::X, index, index + 1);
+    Variable sliceX = parent.slice({Dim::X, index, index + 1});
     ASSERT_EQ(sliceX.dims(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}));
     EXPECT_EQ(sliceX.values<double>()[0], index + 1.0);
@@ -306,7 +306,7 @@ TEST(Variable, slice_range) {
   }
 
   for (const scipp::index index : {0, 1, 2}) {
-    Variable sliceX = parent(Dim::X, index, index + 2);
+    Variable sliceX = parent.slice({Dim::X, index, index + 2});
     ASSERT_EQ(sliceX.dims(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}}));
     EXPECT_EQ(sliceX.values<double>()[0], index + 1.0);
@@ -324,7 +324,7 @@ TEST(Variable, slice_range) {
   }
 
   for (const scipp::index index : {0, 1}) {
-    Variable sliceY = parent(Dim::Y, index, index + 1);
+    Variable sliceY = parent.slice({Dim::Y, index, index + 1});
     ASSERT_EQ(sliceY.dims(),
               Dimensions({{Dim::Z, 3}, {Dim::Y, 1}, {Dim::X, 4}}));
     const auto &data = sliceY.values<double>();
@@ -337,12 +337,12 @@ TEST(Variable, slice_range) {
   }
 
   for (const scipp::index index : {0}) {
-    Variable sliceY = parent(Dim::Y, index, index + 2);
+    Variable sliceY = parent.slice({Dim::Y, index, index + 2});
     EXPECT_EQ(sliceY, parent);
   }
 
   for (const scipp::index index : {0, 1, 2}) {
-    Variable sliceZ = parent(Dim::Z, index, index + 1);
+    Variable sliceZ = parent.slice({Dim::Z, index, index + 1});
     ASSERT_EQ(sliceZ.dims(),
               Dimensions({{Dim::Z, 1}, {Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.values<double>();
@@ -351,7 +351,7 @@ TEST(Variable, slice_range) {
   }
 
   for (const scipp::index index : {0, 1}) {
-    Variable sliceZ = parent(Dim::Z, index, index + 2);
+    Variable sliceZ = parent.slice({Dim::Z, index, index + 2});
     ASSERT_EQ(sliceZ.dims(),
               Dimensions({{Dim::Z, 2}, {Dim::Y, 2}, {Dim::X, 4}}));
     const auto &data = sliceZ.values<double>();
@@ -401,56 +401,64 @@ TEST(VariableProxy, full_mutable_view) {
 
 TEST(VariableProxy, strides) {
   auto var = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-  EXPECT_EQ(var(Dim::X, 0).strides(), (std::vector<scipp::index>{3}));
-  EXPECT_EQ(var(Dim::X, 1).strides(), (std::vector<scipp::index>{3}));
-  EXPECT_EQ(var(Dim::Y, 0).strides(), (std::vector<scipp::index>{1}));
-  EXPECT_EQ(var(Dim::Y, 1).strides(), (std::vector<scipp::index>{1}));
-  EXPECT_EQ(var(Dim::X, 0, 1).strides(), (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var(Dim::X, 1, 2).strides(), (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var(Dim::Y, 0, 1).strides(), (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var(Dim::Y, 1, 2).strides(), (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var(Dim::X, 0, 2).strides(), (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var(Dim::X, 1, 3).strides(), (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var(Dim::Y, 0, 2).strides(), (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var(Dim::Y, 1, 3).strides(), (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var.slice({Dim::X, 0}).strides(), (std::vector<scipp::index>{3}));
+  EXPECT_EQ(var.slice({Dim::X, 1}).strides(), (std::vector<scipp::index>{3}));
+  EXPECT_EQ(var.slice({Dim::Y, 0}).strides(), (std::vector<scipp::index>{1}));
+  EXPECT_EQ(var.slice({Dim::Y, 1}).strides(), (std::vector<scipp::index>{1}));
+  EXPECT_EQ(var.slice({Dim::X, 0, 1}).strides(),
+            (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var.slice({Dim::X, 1, 2}).strides(),
+            (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var.slice({Dim::Y, 0, 1}).strides(),
+            (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var.slice({Dim::Y, 1, 2}).strides(),
+            (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var.slice({Dim::X, 0, 2}).strides(),
+            (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var.slice({Dim::X, 1, 3}).strides(),
+            (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var.slice({Dim::Y, 0, 2}).strides(),
+            (std::vector<scipp::index>{3, 1}));
+  EXPECT_EQ(var.slice({Dim::Y, 1, 3}).strides(),
+            (std::vector<scipp::index>{3, 1}));
 
-  EXPECT_EQ(var(Dim::X, 0, 1)(Dim::Y, 0, 1).strides(),
+  EXPECT_EQ(var.slice({Dim::X, 0, 1}).slice({Dim::Y, 0, 1}).strides(),
             (std::vector<scipp::index>{3, 1}));
 
   auto var3D = makeVariable<double>({{Dim::Z, 4}, {Dim::Y, 3}, {Dim::X, 2}});
-  EXPECT_EQ(var3D(Dim::X, 0, 1)(Dim::Z, 0, 1).strides(),
+  EXPECT_EQ(var3D.slice({Dim::X, 0, 1}).slice({Dim::Z, 0, 1}).strides(),
             (std::vector<scipp::index>{6, 2, 1}));
 }
 
 TEST(VariableProxy, get) {
   const auto var = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  EXPECT_EQ(var(Dim::X, 1, 2).values<double>()[0], 2.0);
+  EXPECT_EQ(var.slice({Dim::X, 1, 2}).values<double>()[0], 2.0);
 }
 
 TEST(VariableProxy, slicing_does_not_transpose) {
   auto var = makeVariable<double>({{Dim::X, 3}, {Dim::Y, 3}});
   Dimensions expected{{Dim::X, 1}, {Dim::Y, 1}};
-  EXPECT_EQ(var(Dim::X, 1, 2)(Dim::Y, 1, 2).dims(), expected);
-  EXPECT_EQ(var(Dim::Y, 1, 2)(Dim::X, 1, 2).dims(), expected);
+  EXPECT_EQ(var.slice({Dim::X, 1, 2}).slice({Dim::Y, 1, 2}).dims(), expected);
+  EXPECT_EQ(var.slice({Dim::Y, 1, 2}).slice({Dim::X, 1, 2}).dims(), expected);
 }
 
 TEST(VariableProxy, variable_copy_from_slice) {
   const auto source = makeVariable<double>(
       {{Dim::Y, 3}, {Dim::X, 3}}, {11, 12, 13, 21, 22, 23, 31, 32, 33});
 
-  Variable target1(source(Dim::X, 0, 2)(Dim::Y, 0, 2));
+  Variable target1(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}));
   EXPECT_EQ(target1.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
   EXPECT_TRUE(equals(target1.values<double>(), {11, 12, 21, 22}));
 
-  Variable target2(source(Dim::X, 1, 3)(Dim::Y, 0, 2));
+  Variable target2(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}));
   EXPECT_EQ(target2.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
   EXPECT_TRUE(equals(target2.values<double>(), {12, 13, 22, 23}));
 
-  Variable target3(source(Dim::X, 0, 2)(Dim::Y, 1, 3));
+  Variable target3(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}));
   EXPECT_EQ(target3.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
   EXPECT_TRUE(equals(target3.values<double>(), {21, 22, 31, 32}));
 
-  Variable target4(source(Dim::X, 1, 3)(Dim::Y, 1, 3));
+  Variable target4(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}));
   EXPECT_EQ(target4.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
   EXPECT_TRUE(equals(target4.values<double>(), {22, 23, 32, 33}));
 }
@@ -460,19 +468,19 @@ TEST(VariableProxy, variable_assign_from_slice) {
   const auto source = makeVariable<double>(
       {{Dim::Y, 3}, {Dim::X, 3}}, {11, 12, 13, 21, 22, 23, 31, 32, 33});
 
-  target = source(Dim::X, 0, 2)(Dim::Y, 0, 2);
+  target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
   EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
   EXPECT_TRUE(equals(target.values<double>(), {11, 12, 21, 22}));
 
-  target = source(Dim::X, 1, 3)(Dim::Y, 0, 2);
+  target = source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2});
   EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
   EXPECT_TRUE(equals(target.values<double>(), {12, 13, 22, 23}));
 
-  target = source(Dim::X, 0, 2)(Dim::Y, 1, 3);
+  target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3});
   EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
   EXPECT_TRUE(equals(target.values<double>(), {21, 22, 31, 32}));
 
-  target = source(Dim::X, 1, 3)(Dim::Y, 1, 3);
+  target = source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
   EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
   EXPECT_TRUE(equals(target.values<double>(), {22, 23, 32, 33}));
 }
@@ -481,7 +489,7 @@ TEST(VariableProxy, variable_self_assign_via_slice) {
   auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}},
                                      {11, 12, 13, 21, 22, 23, 31, 32, 33});
 
-  target = target(Dim::X, 1, 3)(Dim::Y, 1, 3);
+  target = target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
   // Note: This test does not actually fail if self-assignment is broken. Had to
   // run address sanitizer to see that it is reading from free'ed memory.
   EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
@@ -496,28 +504,28 @@ TEST(VariableProxy, slice_assign_from_variable) {
   // should!?) assign the view contents, not the data.
   {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    target(Dim::X, 0, 2)(Dim::Y, 0, 2).assign(source);
+    target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}).assign(source);
     EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
     EXPECT_TRUE(
         equals(target.values<double>(), {11, 12, 0, 21, 22, 0, 0, 0, 0}));
   }
   {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    target(Dim::X, 1, 3)(Dim::Y, 0, 2).assign(source);
+    target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}).assign(source);
     EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
     EXPECT_TRUE(
         equals(target.values<double>(), {0, 11, 12, 0, 21, 22, 0, 0, 0}));
   }
   {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    target(Dim::X, 0, 2)(Dim::Y, 1, 3).assign(source);
+    target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}).assign(source);
     EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
     EXPECT_TRUE(
         equals(target.values<double>(), {0, 0, 0, 11, 12, 0, 21, 22, 0}));
   }
   {
     auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    target(Dim::X, 1, 3)(Dim::Y, 1, 3).assign(source);
+    target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}).assign(source);
     EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
     EXPECT_TRUE(
         equals(target.values<double>(), {0, 0, 0, 0, 11, 12, 0, 21, 22}));
@@ -571,14 +579,16 @@ TEST(VariableTest, reshape_and_slice) {
       makeVariable<double>({Dim::Spectrum, 16}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                                                  11, 12, 13, 14, 15, 16});
 
-  auto slice =
-      var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3);
+  auto slice = var.reshape({{Dim::X, 4}, {Dim::Y, 4}})
+                   .slice({Dim::X, 1, 3})
+                   .slice({Dim::Y, 1, 3});
   ASSERT_EQ(slice,
             makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}}, {6, 7, 10, 11}));
 
-  Variable center =
-      var.reshape({{Dim::X, 4}, {Dim::Y, 4}})(Dim::X, 1, 3)(Dim::Y, 1, 3)
-          .reshape({Dim::Spectrum, 4});
+  Variable center = var.reshape({{Dim::X, 4}, {Dim::Y, 4}})
+                        .slice({Dim::X, 1, 3})
+                        .slice({Dim::Y, 1, 3})
+                        .reshape({Dim::Spectrum, 4});
 
   ASSERT_EQ(center, makeVariable<double>({Dim::Spectrum, 4}, {6, 7, 10, 11}));
 }
@@ -766,7 +776,7 @@ TEST(SparseVariable, slice) {
   data[1] = {1, 2};
   data[2] = {1};
   data[3] = {};
-  auto slice = var(Dim::Y, 1, 3);
+  auto slice = var.slice({Dim::Y, 1, 3});
   EXPECT_TRUE(slice.dims().sparse());
   EXPECT_EQ(slice.dims().sparseDim(), Dim::X);
   EXPECT_EQ(slice.dims().volume(), 2);

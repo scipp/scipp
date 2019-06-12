@@ -114,7 +114,7 @@ template <typename T> struct RebinGeneralHelper {
         delta -= xo_low > xn_low ? xo_low : xn_low;
 
         auto owidth = xo_high - xo_low;
-        newT(dim, inew) += oldT(dim, iold) * delta / owidth;
+        newT.slice({dim, inew}) += oldT.slice({dim, iold}) * delta / owidth;
         if (xn_high > xo_high) {
           iold++;
         } else {
@@ -1087,16 +1087,6 @@ VariableProxy Variable::slice(const Slice slice) & {
 
 Variable Variable::slice(const Slice slice) && { return {this->slice(slice)}; }
 
-VariableConstProxy Variable::operator()(const Dim dim, const scipp::index begin,
-                                        const scipp::index end) const & {
-  return slice({dim, begin, end});
-}
-
-VariableProxy Variable::operator()(const Dim dim, const scipp::index begin,
-                                   const scipp::index end) & {
-  return slice({dim, begin, end});
-}
-
 VariableConstProxy Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
 }
@@ -1185,10 +1175,10 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   if (indices.empty())
     return {var};
   std::vector<Variable> vars;
-  vars.emplace_back(var(dim, 0, indices.front()));
+  vars.emplace_back(var.slice({dim, 0, indices.front()}));
   for (scipp::index i = 0; i < scipp::size(indices) - 1; ++i)
-    vars.emplace_back(var(dim, indices[i], indices[i + 1]));
-  vars.emplace_back(var(dim, indices.back(), var.dims()[dim]));
+    vars.emplace_back(var.slice({dim, indices[i], indices[i + 1]}));
+  vars.emplace_back(var.slice({dim, indices.back(), var.dims()[dim]}));
   return vars;
 }
 
@@ -1435,9 +1425,9 @@ Variable broadcast(Variable var, const Dimensions &dims) {
 
 void swap(Variable &var, const Dim dim, const scipp::index a,
           const scipp::index b) {
-  const Variable tmp = var(dim, a);
-  var(dim, a).assign(var(dim, b));
-  var(dim, b).assign(tmp);
+  const Variable tmp = var.slice({dim, a});
+  var.slice({dim, a}).assign(var.slice({dim, b}));
+  var.slice({dim, b}).assign(tmp);
 }
 
 Variable reverse(Variable var, const Dim dim) {
