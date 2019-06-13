@@ -388,6 +388,13 @@ DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   return *this;
 }
 
+DataProxy DataProxy::operator-=(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  if (hasData())
+    data() -= other.data();
+  return *this;
+}
+
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
   if (hasData())
@@ -549,6 +556,7 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
 }
 
 constexpr static auto plus_equals = [](auto &&a, auto &b) { return a += b; };
+constexpr static auto minus_equals = [](auto &&a, auto &b) { return a -= b; };
 constexpr static auto times_equals = [](auto &&a, auto &b) { return a *= b; };
 
 template <class Op, class A, class B>
@@ -581,12 +589,20 @@ Dataset &Dataset::operator+=(const DataConstProxy &other) {
   return apply_with_delay(plus_equals, *this, other);
 }
 
+Dataset &Dataset::operator-=(const DataConstProxy &other) {
+  return apply_with_delay(minus_equals, *this, other);
+}
+
 Dataset &Dataset::operator*=(const DataConstProxy &other) {
   return apply_with_delay(times_equals, *this, other);
 }
 
 Dataset &Dataset::operator+=(const DatasetConstProxy &other) {
   return apply(plus_equals, *this, other);
+}
+
+Dataset &Dataset::operator-=(const DatasetConstProxy &other) {
+  return apply(minus_equals, *this, other);
 }
 
 Dataset &Dataset::operator*=(const DatasetConstProxy &other) {
@@ -597,12 +613,20 @@ Dataset &Dataset::operator+=(const Dataset &other) {
   return apply(plus_equals, *this, other);
 }
 
+Dataset &Dataset::operator-=(const Dataset &other) {
+  return apply(minus_equals, *this, other);
+}
+
 Dataset &Dataset::operator*=(const Dataset &other) {
   return apply(times_equals, *this, other);
 }
 
 DatasetProxy DatasetProxy::operator+=(const DataConstProxy &other) const {
   return apply_with_delay(plus_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator-=(const DataConstProxy &other) const {
+  return apply_with_delay(minus_equals, *this, other);
 }
 
 DatasetProxy DatasetProxy::operator*=(const DataConstProxy &other) const {
@@ -613,12 +637,20 @@ DatasetProxy DatasetProxy::operator+=(const DatasetConstProxy &other) const {
   return apply(plus_equals, *this, other);
 }
 
+DatasetProxy DatasetProxy::operator-=(const DatasetConstProxy &other) const {
+  return apply(minus_equals, *this, other);
+}
+
 DatasetProxy DatasetProxy::operator*=(const DatasetConstProxy &other) const {
   return apply(times_equals, *this, other);
 }
 
 DatasetProxy DatasetProxy::operator+=(const Dataset &other) const {
   return apply(plus_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator-=(const Dataset &other) const {
+  return apply(minus_equals, *this, other);
 }
 
 DatasetProxy DatasetProxy::operator*=(const Dataset &other) const {

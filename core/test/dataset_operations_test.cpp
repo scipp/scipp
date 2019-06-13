@@ -60,6 +60,30 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_lhs_without_variance) {
   }
 }
 
+TEST_P(DataProxyBinaryOpEqualsTest, minus_lhs_with_variance) {
+  const auto &item = GetParam().second;
+  auto dataset = datasetFactory.make();
+  const auto target = dataset["data_zyx"];
+  auto reference = target.data() - item.data();
+
+  ASSERT_NO_THROW(target -= item);
+  EXPECT_EQ(target.data(), reference);
+}
+
+TEST_P(DataProxyBinaryOpEqualsTest, minus_lhs_without_variance) {
+  const auto &item = GetParam().second;
+  auto dataset = datasetFactory.make();
+  const auto target = dataset["data_xyz"];
+  if (item.hasVariances()) {
+    ASSERT_ANY_THROW(target -= item);
+  } else {
+    auto reference = target.data() - item.data();
+    ASSERT_NO_THROW(target -= item);
+    EXPECT_EQ(target.data(), reference);
+    EXPECT_FALSE(target.hasVariances());
+  }
+}
+
 TEST_P(DataProxyBinaryOpEqualsTest, times_lhs_with_variance) {
   const auto &item = GetParam().second;
   auto dataset = datasetFactory.make();
