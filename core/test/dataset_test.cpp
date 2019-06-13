@@ -518,6 +518,23 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   expect_eq(a, b);
 }
 
+TEST_F(Dataset_comparison_operators, with_sparse_dimension_data) {
+  // a and b same, c different number of sparse values
+  auto a = make_empty();
+  auto data = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  const std::string var_name = "test_var";
+  data.sparseValues<double>()[0] = {1, 2, 3};
+  a.setData(var_name, data);
+  auto b = make_empty();
+  b.setData(var_name, data);
+  expect_eq(a, b);
+  data.sparseValues<double>()[0] = {2, 3, 4};
+  auto c = make_empty();
+  c.setData(var_name, data);
+  expect_ne(a, c);
+  expect_ne(b, c);
+}
+
 class Dataset3DTest : public ::testing::Test {
 protected:
   Dataset3DTest() : dataset(factory.make()) {}
