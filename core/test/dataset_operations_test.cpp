@@ -275,8 +275,8 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
                except::CoordMismatchError);
 }
 
-Dataset make_sparse(std::initializer_list<double> values,
-                    std::string key = "sparse") {
+Dataset make_simple_sparse(std::initializer_list<double> values,
+                           std::string key = "sparse") {
   Dataset ds;
   auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
   var.sparseValues<double>()[0] = values;
@@ -284,13 +284,55 @@ Dataset make_sparse(std::initializer_list<double> values,
   return ds;
 }
 
-TYPED_TEST(DatasetBinaryOpTest, sparse_dimensions) {
-  Dataset a = make_sparse({1.1, 2.2});
-  Dataset b = make_sparse({3.3, 4.4});
+Dataset make_sparse_2d(std::initializer_list<double> values,
+                       std::string key = "sparse") {
+  Dataset ds;
+  auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
+  var.sparseValues<double>()[0] = values;
+  var.sparseValues<double>()[1] = values;
+  ds.setData(key, var);
+  return ds;
+}
+
+TYPED_TEST(DatasetBinaryOpTest,
+           with_single_var_with_single_sparse_dimensions_sized_same) {
+  Dataset a = make_simple_sparse({1.1, 2.2});
+  Dataset b = make_simple_sparse({3.3, 4.4});
   Dataset c = TestFixture::op(a, b);
   auto c_data = c["sparse"].data().sparseSpan<double>()[0];
   ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, with_single_var_dense_and_sparse_dimension) {
+  Dataset a = make_sparse_2d({1.1, 2.2});
+  Dataset b = make_sparse_2d({3.3, 4.4});
+  Dataset c = TestFixture::op(a, b);
+  ASSERT_EQ(c["sparse"].data().sparseSpan<double>().size(), 2);
+  auto c_data = c["sparse"].data().sparseSpan<double>()[0];
+  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
+  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, with_multiple_variables) {
+  Dataset a = make_simple_sparse({1.1, 2.2});
+  a.setData("sparse2", a["sparse"].data());
+  Dataset b = make_simple_sparse({3.3, 4.4});
+  b.setData("sparse2", b["sparse"].data());
+  Dataset c = TestFixture::op(a, b);
+  ASSERT_EQ(c.size(), 2);
+  auto c_data = c["sparse"].data().sparseSpan<double>()[0];
+  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
+  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
+  c_data = c["sparse2"].data().sparseSpan<double>()[1];
+  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
+  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, with_sparse_dimensions_of_different_sizes) {
+  Dataset a = make_simple_sparse({1.1, 2.2});
+  Dataset b = make_simple_sparse({3.3, 4.4, 5.5});
+  ASSERT_THROW(TestFixture::op(a, b), std::runtime_error);
 }
 
 TYPED_TEST(DatasetProxyBinaryOpTest, return_value) {
