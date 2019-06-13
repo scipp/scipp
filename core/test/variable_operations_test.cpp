@@ -143,6 +143,19 @@ TEST(Variable, operator_plus_eigen_type) {
   EXPECT_EQ(sum.dtype(), dtype<Eigen::Vector3d>);
 }
 
+TEST(SparseVariable, operator_plus) {
+  auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto sparse_ = sparse.sparseValues<double>();
+  sparse_[0] = {1, 2, 3};
+  sparse_[1] = {4};
+  auto dense = makeVariable<double>({Dim::Y, 2}, {1.5, 0.5});
+
+  sparse += dense;
+
+  EXPECT_TRUE(equals(sparse_[0], {2.5, 3.5, 4.5}));
+  EXPECT_TRUE(equals(sparse_[1], {4.5}));
+}
+
 TEST(Variable, operator_times_equal) {
   auto a = makeVariable<double>({Dim::X, 2}, units::m, {2.0, 3.0});
 
@@ -300,6 +313,35 @@ TEST(Variable, concatenate_unit_fail) {
                    "Cannot concatenate Variables: Units do not match.");
   b.setUnit(units::m);
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
+}
+
+TEST(SparseVariable, concatenate) {
+  const auto a = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  const auto b = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {3, Dimensions::Sparse}});
+  auto var = concatenate(a, b, Dim::Y);
+  EXPECT_EQ(var, makeVariableWithVariances<double>(
+                     {{Dim::Y, Dim::X}, {5, Dimensions::Sparse}}));
+}
+
+TEST(SparseVariable, concatenate_along_sparse_dimension) {
+  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a_ = a.sparseValues<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {1, 2};
+  auto b = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto b_ = b.sparseValues<double>();
+  b_[0] = {1, 3};
+  b_[1] = {};
+
+  auto var = concatenate(a, b, Dim::X);
+  EXPECT_TRUE(var.dims().sparse());
+  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
+  EXPECT_EQ(var.dims().volume(), 2);
+  auto data = var.sparseValues<double>();
+  EXPECT_TRUE(equals(data[0], {1, 2, 3, 1, 3}));
+  EXPECT_TRUE(equals(data[1], {1, 2}));
 }
 
 #ifdef SCIPP_UNITS_NEUTRON
