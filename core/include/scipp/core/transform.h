@@ -223,6 +223,8 @@ template <class Op, class T, class... Ts>
 void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
                                            Ts &&... other) {
   auto & [ vals, vars ] = arg;
+  // WARNING: Do not parallelize this loop in all cases! The output may have a
+  // dimension with stride zero so parallelization must be done with care.
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
     // Two cases are distinguished here:
     // 1. In the case of sparse data we create ValuesAndVariances, which hold
@@ -264,6 +266,8 @@ void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
 
 template <class Op, class T, class... Ts>
 void transform_in_place_impl(Op op, T &&vals, Ts &&... other) {
+  // WARNING: Do not parallelize this loop in all cases! The output may have a
+  // dimension with stride zero so parallelization must be done with care.
   for (scipp::index i = 0; i < scipp::size(vals); ++i)
     op(vals[i], other[i]...);
 }

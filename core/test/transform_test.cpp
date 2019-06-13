@@ -417,7 +417,7 @@ void set_sparse_variances(Variable &var,
     vals[i] = data[i];
 }
 
-TEST(TransformInPlaceTest, sparse_val_var_with_sparse_val_var) {
+TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val_var) {
   auto a = make_sparse_variable_with_variance();
   set_sparse_values(a, {{1, 2, 3}, {4}});
   set_sparse_variances(a, {{5, 6, 7}, {8}});
@@ -425,10 +425,11 @@ TEST(TransformInPlaceTest, sparse_val_var_with_sparse_val_var) {
   set_sparse_values(b, {{0.1, 0.2, 0.3}, {0.4}});
   set_sparse_variances(b, {{0.5, 0.6, 0.7}, {0.8}});
 
-  transform_in_place<pair_self_t<double>>(
-      a, b, [](auto &a, const auto b) { a *= b; });
+  const auto ab = transform<pair_self_t<double>>(a, b, op);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto expected = make_sparse_variable();
+  // We rely on correctness of *dense* operations (Variable multiplcation is
+  // also built on transform).
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
   auto b0 = makeVariable<double>({Dim::X, 3}, {0.1, 0.2, 0.3}, {0.5, 0.6, 0.7});
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
@@ -441,19 +442,20 @@ TEST(TransformInPlaceTest, sparse_val_var_with_sparse_val_var) {
       equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
   EXPECT_TRUE(
       equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+
+  EXPECT_EQ(ab, a);
 }
 
-TEST(TransformInPlaceTest, sparse_val_var_with_sparse_val) {
+TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val) {
   auto a = make_sparse_variable_with_variance();
   set_sparse_values(a, {{1, 2, 3}, {4}});
   set_sparse_variances(a, {{5, 6, 7}, {8}});
   auto b = make_sparse_variable();
   set_sparse_values(b, {{0.1, 0.2, 0.3}, {0.4}});
 
-  transform_in_place<pair_self_t<double>>(
-      a, b, [](auto &a, const auto b) { a *= b; });
+  const auto ab = transform<pair_self_t<double>>(a, b, op);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto expected = make_sparse_variable();
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
   auto b0 = makeVariable<double>({Dim::X, 3}, {0.1, 0.2, 0.3});
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
@@ -466,18 +468,19 @@ TEST(TransformInPlaceTest, sparse_val_var_with_sparse_val) {
       equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
   EXPECT_TRUE(
       equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+
+  EXPECT_EQ(ab, a);
 }
 
-TEST(TransformInPlaceTest, sparse_val_var_with_val_var) {
+TEST_F(TransformBinaryTest, sparse_val_var_with_val_var) {
   auto a = make_sparse_variable_with_variance();
   set_sparse_values(a, {{1, 2, 3}, {4}});
   set_sparse_variances(a, {{5, 6, 7}, {8}});
   auto b = makeVariable<double>({Dim::Y, 2}, {1.5, 1.6}, {1.7, 1.8});
 
-  transform_in_place<pair_self_t<double>>(
-      a, b, [](auto &a, const auto b) { a *= b; });
+  const auto ab = transform<pair_self_t<double>>(a, b, op);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto expected = make_sparse_variable();
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
   auto b0 = makeVariable<double>({1.5}, {1.7});
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
@@ -490,18 +493,19 @@ TEST(TransformInPlaceTest, sparse_val_var_with_val_var) {
       equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
   EXPECT_TRUE(
       equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+
+  EXPECT_EQ(ab, a);
 }
 
-TEST(TransformInPlaceTest, sparse_val_var_with_val) {
+TEST_F(TransformBinaryTest, sparse_val_var_with_val) {
   auto a = make_sparse_variable_with_variance();
   set_sparse_values(a, {{1, 2, 3}, {4}});
   set_sparse_variances(a, {{5, 6, 7}, {8}});
   auto b = makeVariable<double>({Dim::Y, 2}, {1.5, 1.6});
 
-  transform_in_place<pair_self_t<double>>(
-      a, b, [](auto &a, const auto b) { a *= b; });
+  const auto ab = transform<pair_self_t<double>>(a, b, op);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto expected = make_sparse_variable();
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
   auto b0 = makeVariable<double>({1.5});
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
@@ -514,4 +518,53 @@ TEST(TransformInPlaceTest, sparse_val_var_with_val) {
       equals(a.sparseVariances<double>()[0], expected0.variances<double>()));
   EXPECT_TRUE(
       equals(a.sparseVariances<double>()[1], expected1.variances<double>()));
+
+  EXPECT_EQ(ab, a);
+}
+
+TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
+  auto a = make_sparse_variable_with_variance();
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  const auto b = makeVariable<float>({Dim::Z, 2}, {1.5, 1.6});
+
+  const auto ab = transform<pair_custom_t<std::pair<double, float>>>(a, b, op);
+
+  auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
+  auto b0 = makeVariable<float>({1.5});
+  auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
+  auto b1 = makeVariable<float>({1.6});
+  auto expected00 = a0 * b0;
+  auto expected01 = a0 * b1;
+  auto expected10 = a1 * b0;
+  auto expected11 = a1 * b1;
+  const auto vals = ab.sparseValues<double>();
+  const auto vars = ab.sparseVariances<double>();
+  EXPECT_TRUE(equals(vals[0], expected00.values<double>()));
+  EXPECT_TRUE(equals(vals[1], expected10.values<double>()));
+  EXPECT_TRUE(equals(vals[2], expected01.values<double>()));
+  EXPECT_TRUE(equals(vals[3], expected11.values<double>()));
+  EXPECT_TRUE(equals(vars[0], expected00.variances<double>()));
+  EXPECT_TRUE(equals(vars[1], expected10.variances<double>()));
+  EXPECT_TRUE(equals(vars[2], expected01.variances<double>()));
+  EXPECT_TRUE(equals(vars[3], expected11.variances<double>()));
+
+  EXPECT_EQ(ab.dims(),
+            Dimensions({Dim::Z, Dim::Y, Dim::X}, {2, 2, Dimensions::Sparse}));
+}
+
+// Currently transform_in_place supports outputs with fewer dimensions than the
+// other arguments, effectively applying the same operation multiple times to
+// the same output element. This is useful, e.g., when implementing sums or
+// integrations, but may be unexpected. Should we fail and support this as a
+// separate operation instead?
+TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
+  auto a = make_sparse_variable_with_variance();
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  const auto b = makeVariable<float>({Dim::Z, 2}, {1.5, 1.6});
+
+  EXPECT_THROW((transform_in_place<pair_custom_t<std::pair<double, float>>>(
+                   a, b, op_in_place)),
+               except::SizeError);
 }
