@@ -395,8 +395,10 @@ TEST_F(VariableTest_3d, slice_range) {
 
 TEST(Variable, broadcast) {
   auto reference = makeVariable<double>({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}},
-                                        {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4});
-  auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
+                                        {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4},
+                                        {5, 6, 7, 8, 5, 6, 7, 8, 5, 6, 7, 8});
+  auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4},
+                                  {5, 6, 7, 8});
 
   // No change if dimensions exist.
   EXPECT_EQ(broadcast(var, {Dim::X, 2}), var);
@@ -418,16 +420,17 @@ TEST(Variable, broadcast_fail) {
 }
 
 TEST(VariableProxy, full_const_view) {
-  const auto var = makeVariable<double>({{Dim::X, 3}});
+  const auto var = makeVariableWithVariances<double>({Dim::X, 3});
   VariableConstProxy view(var);
-  EXPECT_EQ(var.values<double>().data(), view.values<double>().data());
+  EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
+  EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
 }
 
 TEST(VariableProxy, full_mutable_view) {
-  auto var = makeVariable<double>({{Dim::X, 3}});
+  auto var = makeVariableWithVariances<double>({Dim::X, 3});
   VariableProxy view(var);
-  EXPECT_EQ(var.values<double>().data(), view.values<double>().data());
-  EXPECT_EQ(var.values<double>().data(), view.values<double>().data());
+  EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
+  EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
 }
 
 TEST(VariableProxy, strides) {
@@ -461,9 +464,13 @@ TEST(VariableProxy, strides) {
             (std::vector<scipp::index>{6, 2, 1}));
 }
 
-TEST(VariableProxy, get) {
-  const auto var = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
-  EXPECT_EQ(var.slice({Dim::X, 1, 2}).values<double>()[0], 2.0);
+TEST(VariableProxy, values_and_variances) {
+  const auto var = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {4, 5, 6});
+  const auto proxy = var.slice({Dim::X, 1, 2});
+  EXPECT_EQ(proxy.values<double>().size(), 1);
+  EXPECT_EQ(proxy.values<double>()[0], 2.0);
+  EXPECT_EQ(proxy.variances<double>().size(), 1);
+  EXPECT_EQ(proxy.variances<double>()[0], 5.0);
 }
 
 TEST(VariableProxy, slicing_does_not_transpose) {
@@ -474,104 +481,145 @@ TEST(VariableProxy, slicing_does_not_transpose) {
 }
 
 TEST(VariableProxy, variable_copy_from_slice) {
-  const auto source = makeVariable<double>(
-      {{Dim::Y, 3}, {Dim::X, 3}}, {11, 12, 13, 21, 22, 23, 31, 32, 33});
+  const auto source =
+      makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}}, units::m,
+                           {11, 12, 13, 21, 22, 23, 31, 32, 33},
+                           {44, 45, 46, 54, 55, 56, 64, 65, 66});
 
-  Variable target1(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}));
-  EXPECT_EQ(target1.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target1.values<double>(), {11, 12, 21, 22}));
+  const Dimensions dims({{Dim::Y, 2}, {Dim::X, 2}});
+  EXPECT_EQ(
+      source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}),
+      makeVariable<double>(dims, units::m, {11, 12, 21, 22}, {44, 45, 54, 55}));
 
-  Variable target2(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}));
-  EXPECT_EQ(target2.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target2.values<double>(), {12, 13, 22, 23}));
+  EXPECT_EQ(
+      source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}),
+      makeVariable<double>(dims, units::m, {12, 13, 22, 23}, {45, 46, 55, 56}));
 
-  Variable target3(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}));
-  EXPECT_EQ(target3.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target3.values<double>(), {21, 22, 31, 32}));
+  EXPECT_EQ(
+      source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}),
+      makeVariable<double>(dims, units::m, {21, 22, 31, 32}, {54, 55, 64, 65}));
 
-  Variable target4(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}));
-  EXPECT_EQ(target4.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target4.values<double>(), {22, 23, 32, 33}));
+  EXPECT_EQ(
+      source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}),
+      makeVariable<double>(dims, units::m, {22, 23, 32, 33}, {55, 56, 65, 66}));
 }
 
 TEST(VariableProxy, variable_assign_from_slice) {
-  auto target = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
-  const auto source = makeVariable<double>(
-      {{Dim::Y, 3}, {Dim::X, 3}}, {11, 12, 13, 21, 22, 23, 31, 32, 33});
+  const Dimensions dims({{Dim::Y, 2}, {Dim::X, 2}});
+  // Unit is dimensionless and no variance
+  auto target = makeVariable<double>(dims, {1, 2, 3, 4});
+  const auto source =
+      makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}}, units::m,
+                           {11, 12, 13, 21, 22, 23, 31, 32, 33},
+                           {44, 45, 46, 54, 55, 56, 64, 65, 66});
 
   target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
-  EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.values<double>(), {11, 12, 21, 22}));
+  EXPECT_EQ(target, makeVariable<double>(dims, units::m, {11, 12, 21, 22},
+                                         {44, 45, 54, 55}));
 
   target = source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2});
-  EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.values<double>(), {12, 13, 22, 23}));
+  EXPECT_EQ(target, makeVariable<double>(dims, units::m, {12, 13, 22, 23},
+                                         {45, 46, 55, 56}));
 
   target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3});
-  EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.values<double>(), {21, 22, 31, 32}));
+  EXPECT_EQ(target, makeVariable<double>(dims, units::m, {21, 22, 31, 32},
+                                         {54, 55, 64, 65}));
 
   target = source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
-  EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.values<double>(), {22, 23, 32, 33}));
+  EXPECT_EQ(target, makeVariable<double>(dims, units::m, {22, 23, 32, 33},
+                                         {55, 56, 65, 66}));
+}
+
+TEST(VariableProxy, variable_assign_from_slice_clears_variances) {
+  const Dimensions dims({{Dim::Y, 2}, {Dim::X, 2}});
+  auto target = makeVariable<double>(dims, {1, 2, 3, 4}, {5, 6, 7, 8});
+  const auto source =
+      makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}}, units::m,
+                           {11, 12, 13, 21, 22, 23, 31, 32, 33});
+
+  target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
+  EXPECT_EQ(target, makeVariable<double>(dims, units::m, {11, 12, 21, 22}));
 }
 
 TEST(VariableProxy, variable_self_assign_via_slice) {
   auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}},
-                                     {11, 12, 13, 21, 22, 23, 31, 32, 33});
+                                     {11, 12, 13, 21, 22, 23, 31, 32, 33},
+                                     {44, 45, 46, 54, 55, 56, 64, 65, 66});
 
   target = target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
   // Note: This test does not actually fail if self-assignment is broken. Had to
   // run address sanitizer to see that it is reading from free'ed memory.
-  EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 2}, {Dim::X, 2}}));
-  EXPECT_TRUE(equals(target.values<double>(), {22, 23, 32, 33}));
+  EXPECT_EQ(target, makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
+                                         {22, 23, 32, 33}, {55, 56, 65, 66}));
+}
+
+TEST(VariableProxy, slice_assign_from_variable_unit_fail) {
+  const auto source = makeVariable<double>({Dim::X, 1}, units::m);
+  auto target = makeVariable<double>({Dim::X, 2});
+  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(source), except::UnitError);
+  target = makeVariable<double>({Dim::X, 2}, units::m);
+  EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(source));
+}
+
+TEST(VariableProxy, slice_assign_from_variable_full_slice_can_change_unit) {
+  const auto source = makeVariable<double>({Dim::X, 2}, units::m);
+  auto target = makeVariable<double>({Dim::X, 2});
+  target.slice({Dim::X, 0, 2}).assign(source);
+  EXPECT_NO_THROW(target.slice({Dim::X, 0, 2}).assign(source));
+}
+
+TEST(VariableProxy, slice_assign_from_variable_variance_fail) {
+  const auto vals = makeVariable<double>({Dim::X, 1});
+  const auto vals_vars = makeVariableWithVariances<double>({Dim::X, 1});
+
+  auto target = makeVariable<double>({Dim::X, 2});
+  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(vals_vars),
+               except::VariancesError);
+  EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(vals));
+
+  target = makeVariableWithVariances<double>({Dim::X, 2});
+  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(vals),
+               except::VariancesError);
+  EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(vals_vars));
 }
 
 TEST(VariableProxy, slice_assign_from_variable) {
-  const auto source =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {11, 12, 21, 22});
+  const auto source = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
+                                           {11, 12, 21, 22}, {33, 34, 43, 44});
 
   // We might want to mimick Python's __setitem__, but operator= would (and
   // should!?) assign the view contents, not the data.
-  {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}).assign(source);
-    EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
-    EXPECT_TRUE(
-        equals(target.values<double>(), {11, 12, 0, 21, 22, 0, 0, 0, 0}));
-  }
-  {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}).assign(source);
-    EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
-    EXPECT_TRUE(
-        equals(target.values<double>(), {0, 11, 12, 0, 21, 22, 0, 0, 0}));
-  }
-  {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}).assign(source);
-    EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
-    EXPECT_TRUE(
-        equals(target.values<double>(), {0, 0, 0, 11, 12, 0, 21, 22, 0}));
-  }
-  {
-    auto target = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}});
-    target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}).assign(source);
-    EXPECT_EQ(target.dims(), (Dimensions{{Dim::Y, 3}, {Dim::X, 3}}));
-    EXPECT_TRUE(
-        equals(target.values<double>(), {0, 0, 0, 0, 11, 12, 0, 21, 22}));
-  }
+  const Dimensions dims({{Dim::Y, 3}, {Dim::X, 3}});
+  auto target = makeVariableWithVariances<double>(dims);
+  target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}).assign(source);
+  EXPECT_EQ(target, makeVariable<double>(dims, {11, 12, 0, 21, 22, 0, 0, 0, 0},
+                                         {33, 34, 0, 43, 44, 0, 0, 0, 0}));
+
+  target = makeVariableWithVariances<double>(dims);
+  target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}).assign(source);
+  EXPECT_EQ(target, makeVariable<double>(dims, {0, 11, 12, 0, 21, 22, 0, 0, 0},
+                                         {0, 33, 34, 0, 43, 44, 0, 0, 0}));
+
+  target = makeVariableWithVariances<double>(dims);
+  target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}).assign(source);
+  EXPECT_EQ(target, makeVariable<double>(dims, {0, 0, 0, 11, 12, 0, 21, 22, 0},
+                                         {0, 0, 0, 33, 34, 0, 43, 44, 0}));
+
+  target = makeVariableWithVariances<double>(dims);
+  target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}).assign(source);
+  EXPECT_EQ(target, makeVariable<double>(dims, {0, 0, 0, 0, 11, 12, 0, 21, 22},
+                                         {0, 0, 0, 0, 33, 34, 0, 43, 44}));
 }
 
 TEST(VariableTest, reshape) {
-  const auto var =
-      makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
+  const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, units::m,
+                                        {1, 2, 3, 4, 5, 6});
 
   ASSERT_EQ(var.reshape({Dim::Row, 6}),
-            makeVariable<double>({Dim::Row, 6}, {1, 2, 3, 4, 5, 6}));
-  ASSERT_EQ(
-      var.reshape({{Dim::Row, 3}, {Dim::Z, 2}}),
-      makeVariable<double>({{Dim::Row, 3}, {Dim::Z, 2}}, {1, 2, 3, 4, 5, 6}));
+            makeVariable<double>({Dim::Row, 6}, units::m, {1, 2, 3, 4, 5, 6}));
+  ASSERT_EQ(var.reshape({{Dim::Row, 3}, {Dim::Z, 2}}),
+            makeVariable<double>({{Dim::Row, 3}, {Dim::Z, 2}}, units::m,
+                                 {1, 2, 3, 4, 5, 6}));
 }
 
 TEST(VariableTest, reshape_with_variance) {
@@ -587,11 +635,12 @@ TEST(VariableTest, reshape_with_variance) {
 }
 
 TEST(VariableTest, reshape_temporary) {
-  const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Row, 4}},
-                                        {1, 2, 3, 4, 5, 6, 7, 8});
+  const auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Row, 4}}, units::m,
+                                        {1, 2, 3, 4, 5, 6, 7, 8},
+                                        {9, 10, 11, 12, 13, 14, 15, 16});
   auto reshaped = sum(var, Dim::X).reshape({{Dim::Y, 2}, {Dim::Z, 2}});
-  ASSERT_EQ(reshaped,
-            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 2}}, {6, 8, 10, 12}));
+  ASSERT_EQ(reshaped, makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 2}}, units::m,
+                                           {6, 8, 10, 12}, {22, 24, 26, 28}));
 
   // This is not a temporary, we get a view into `var`.
   EXPECT_EQ(typeid(decltype(std::move(var).reshape({}))),
@@ -606,22 +655,23 @@ TEST(VariableTest, reshape_fail) {
 }
 
 TEST(VariableTest, reshape_and_slice) {
-  auto var =
-      makeVariable<double>({Dim::Spectrum, 16}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-                                                 11, 12, 13, 14, 15, 16});
+  auto var = makeVariable<double>(
+      {Dim::Z, 16}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+      {17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32});
 
   auto slice = var.reshape({{Dim::X, 4}, {Dim::Y, 4}})
                    .slice({Dim::X, 1, 3})
                    .slice({Dim::Y, 1, 3});
-  ASSERT_EQ(slice,
-            makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}}, {6, 7, 10, 11}));
+  ASSERT_EQ(slice, makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}},
+                                        {6, 7, 10, 11}, {22, 23, 26, 27}));
 
   Variable center = var.reshape({{Dim::X, 4}, {Dim::Y, 4}})
                         .slice({Dim::X, 1, 3})
                         .slice({Dim::Y, 1, 3})
-                        .reshape({Dim::Spectrum, 4});
+                        .reshape({Dim::Z, 4});
 
-  ASSERT_EQ(center, makeVariable<double>({Dim::Spectrum, 4}, {6, 7, 10, 11}));
+  ASSERT_EQ(center, makeVariable<double>({Dim::Z, 4}, {6, 7, 10, 11},
+                                         {22, 23, 26, 27}));
 }
 
 TEST(VariableTest, reshape_mutable) {
