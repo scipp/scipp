@@ -5,17 +5,9 @@
 #ifndef SCIPPY_BIND_MATH_METHODS_H
 #define SCIPPY_BIND_MATH_METHODS_H
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/dtype.h"
-#include "scipp/core/tag_util.h"
-#include "scipp/core/variable.h"
-
-#include "numpy.h"
 #include "pybind11.h"
 
 namespace py = pybind11;
-using namespace scipp;
-using namespace scipp::core;
 
 template <class T, class... Ignored>
 void bind_math_methods(pybind11::class_<T, Ignored...> &c) {
