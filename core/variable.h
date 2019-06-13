@@ -434,15 +434,6 @@ Variable makeVariable(const Dimensions &dimensions,
 }
 
 template <class T, class T2 = T>
-Variable makeVariable(const Dimensions &dimensions, std::vector<T2> values,
-                      std::vector<T2> variances = {}) {
-  return Variable(
-      units::dimensionless, std::move(dimensions),
-      Vector<underlying_type_t<T>>(values.begin(), values.end()),
-      Vector<underlying_type_t<T>>(variances.begin(), variances.end()));
-}
-
-template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                       std::initializer_list<T2> values,
                       std::initializer_list<T2> variances = {}) {
@@ -456,6 +447,13 @@ namespace detail {
 template <class... N> struct is_vector : std::false_type {};
 template <class N, class A>
 struct is_vector<std::vector<N, A>> : std::true_type {};
+
+template <int I, class... Ts> decltype(auto) nth(Ts &&... ts) {
+  return std::get<I>(std::forward_as_tuple(ts...));
+}
+
+template <int I, class... Ts>
+using nth_t = decltype(std::get<I>(std::declval<std::tuple<Ts...>>()));
 } // namespace detail
 
 template <class T, class... Args>
@@ -473,6 +471,40 @@ Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
                     Vector<underlying_type_t<T>>(
                         dimensions.volume(),
                         detail::default_init<underlying_type_t<T>>::value()));
+  } else if constexpr (sizeof...(Args) == 2) {
+    if constexpr (std::is_convertible_v<detail::nth_t<0, Args...>,
+                                        std::vector<T>> &&
+                  std::is_convertible_v<detail::nth_t<1, Args...>,
+                                        std::vector<T>>) {
+      return Variable(
+          units::dimensionless, std::move(dimensions),
+          Vector<underlying_type_t<T>>(detail::nth<0>(args...).begin(),
+                                       detail::nth<0>(args...).end()),
+          Vector<underlying_type_t<T>>(detail::nth<1>(args...).begin(),
+                                       detail::nth<1>(args...).end()));
+    } else {
+      return Variable(
+          units::dimensionless, std::move(dimensions),
+          Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
+    }
+  } else if constexpr (sizeof...(Args) == 3) {
+    if constexpr (std::is_convertible_v<detail::nth_t<0, Args...>,
+                                        units::Unit> &&
+                  std::is_convertible_v<detail::nth_t<1, Args...>,
+                                        std::vector<T>> &&
+                  std::is_convertible_v<detail::nth_t<2, Args...>,
+                                        std::vector<T>>) {
+      return Variable(
+          detail::nth<0>(args...), std::move(dimensions),
+          Vector<underlying_type_t<T>>(detail::nth<1>(args...).begin(),
+                                       detail::nth<1>(args...).end()),
+          Vector<underlying_type_t<T>>(detail::nth<2>(args...).begin(),
+                                       detail::nth<2>(args...).end()));
+    } else {
+      return Variable(
+          units::dimensionless, std::move(dimensions),
+          Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
+    }
   } else {
     return Variable(units::dimensionless, std::move(dimensions),
                     Vector<underlying_type_t<T>>(std::forward<Args>(args)...));

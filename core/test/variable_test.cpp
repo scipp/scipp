@@ -267,128 +267,130 @@ TEST(Variable, assign_slice_variance_checks) {
                except::VariancesError);
 }
 
-TEST(Variable, slice) {
-  const auto parent =
+class VariableTest_3d : public ::testing::Test {
+protected:
+  const Variable parent{
       makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}}, units::m,
                            {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
                             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24},
                            {25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-                            37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48});
+                            37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48})};
+  const std::vector<double> vals_x0{1, 2, 3, 4, 5, 6};
+  const std::vector<double> vals_x1{7, 8, 9, 10, 11, 12};
+  const std::vector<double> vals_x2{13, 14, 15, 16, 17, 18};
+  const std::vector<double> vals_x3{19, 20, 21, 22, 23, 24};
+  const std::vector<double> vars_x0{25, 26, 27, 28, 29, 30};
+  const std::vector<double> vars_x1{31, 32, 33, 34, 35, 36};
+  const std::vector<double> vars_x2{37, 38, 39, 40, 41, 42};
+  const std::vector<double> vars_x3{43, 44, 45, 46, 47, 48};
 
+  const std::vector<double> vals_x02{
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+  };
+  const std::vector<double> vals_x13{7,  8,  9,  10, 11, 12,
+                                     13, 14, 15, 16, 17, 18};
+  const std::vector<double> vals_x24{13, 14, 15, 16, 17, 18,
+                                     19, 20, 21, 22, 23, 24};
+  const std::vector<double> vars_x02{25, 26, 27, 28, 29, 30,
+                                     31, 32, 33, 34, 35, 36};
+  const std::vector<double> vars_x13{31, 32, 33, 34, 35, 36,
+                                     37, 38, 39, 40, 41, 42};
+  const std::vector<double> vars_x24{37, 38, 39, 40, 41, 42,
+                                     43, 44, 45, 46, 47, 48};
+
+  const std::vector<double> vals_y0{1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21};
+  const std::vector<double> vals_y1{4,  5,  6,  10, 11, 12,
+                                    16, 17, 18, 22, 23, 24};
+  const std::vector<double> vars_y0{25, 26, 27, 31, 32, 33,
+                                    37, 38, 39, 43, 44, 45};
+  const std::vector<double> vars_y1{28, 29, 30, 34, 35, 36,
+                                    40, 41, 42, 46, 47, 48};
+
+  const std::vector<double> vals_z0{1, 4, 7, 10, 13, 16, 19, 22};
+  const std::vector<double> vals_z1{2, 5, 8, 11, 14, 17, 20, 23};
+  const std::vector<double> vals_z2{3, 6, 9, 12, 15, 18, 21, 24};
+  const std::vector<double> vars_z0{25, 28, 31, 34, 37, 40, 43, 46};
+  const std::vector<double> vars_z1{26, 29, 32, 35, 38, 41, 44, 47};
+  const std::vector<double> vars_z2{27, 30, 33, 36, 39, 42, 45, 48};
+
+  const std::vector<double> vals_z02{1,  2,  4,  5,  7,  8,  10, 11,
+                                     13, 14, 16, 17, 19, 20, 22, 23};
+  const std::vector<double> vals_z13{2,  3,  5,  6,  8,  9,  11, 12,
+                                     14, 15, 17, 18, 20, 21, 23, 24};
+  const std::vector<double> vars_z02{25, 26, 28, 29, 31, 32, 34, 35,
+                                     37, 38, 40, 41, 43, 44, 46, 47};
+  const std::vector<double> vars_z13{26, 27, 29, 30, 32, 33, 35, 36,
+                                     38, 39, 41, 42, 44, 45, 47, 48};
+};
+
+TEST_F(VariableTest_3d, slice_single) {
+  Dimensions dims_no_x{{Dim::Y, 2}, {Dim::Z, 3}};
   EXPECT_EQ(parent.slice({Dim::X, 0}),
-            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}}, units::m,
-                                 {1, 2, 3, 4, 5, 6}, {25, 26, 27, 28, 29, 30}));
+            makeVariable<double>(dims_no_x, units::m, vals_x0, vars_x0));
   EXPECT_EQ(parent.slice({Dim::X, 1}),
-            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}}, units::m,
-                                 {7, 8, 9, 10, 11, 12},
-                                 {31, 32, 33, 34, 35, 36}));
+            makeVariable<double>(dims_no_x, units::m, vals_x1, vars_x1));
   EXPECT_EQ(parent.slice({Dim::X, 2}),
-            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}}, units::m,
-                                 {13, 14, 15, 16, 17, 18},
-                                 {37, 38, 39, 40, 41, 42}));
+            makeVariable<double>(dims_no_x, units::m, vals_x2, vars_x2));
   EXPECT_EQ(parent.slice({Dim::X, 3}),
-            makeVariable<double>({{Dim::Y, 2}, {Dim::Z, 3}}, units::m,
-                                 {19, 20, 21, 22, 23, 24},
-                                 {43, 44, 45, 46, 47, 48}));
+            makeVariable<double>(dims_no_x, units::m, vals_x3, vars_x3));
 
-  EXPECT_EQ(
-      parent.slice({Dim::Y, 0}),
-      makeVariable<double>({{Dim::X, 4}, {Dim::Z, 3}}, units::m,
-                           {1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21},
-                           {25, 26, 27, 31, 32, 33, 37, 38, 39, 43, 44, 45}));
-  EXPECT_EQ(
-      parent.slice({Dim::Y, 1}),
-      makeVariable<double>({{Dim::X, 4}, {Dim::Z, 3}}, units::m,
-                           {4, 5, 6, 10, 11, 12, 16, 17, 18, 22, 23, 24},
-                           {28, 29, 30, 34, 35, 36, 40, 41, 42, 46, 47, 48}));
+  Dimensions dims_no_y{{Dim::X, 4}, {Dim::Z, 3}};
+  EXPECT_EQ(parent.slice({Dim::Y, 0}),
+            makeVariable<double>(dims_no_y, units::m, vals_y0, vars_y0));
+  EXPECT_EQ(parent.slice({Dim::Y, 1}),
+            makeVariable<double>(dims_no_y, units::m, vals_y1, vars_y1));
 
+  Dimensions dims_no_z{{Dim::X, 4}, {Dim::Y, 2}};
   EXPECT_EQ(parent.slice({Dim::Z, 0}),
-            makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}}, units::m,
-                                 {1, 4, 7, 10, 13, 16, 19, 22},
-                                 {25, 28, 31, 34, 37, 40, 43, 46}));
+            makeVariable<double>(dims_no_z, units::m, vals_z0, vars_z0));
   EXPECT_EQ(parent.slice({Dim::Z, 1}),
-            makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}}, units::m,
-                                 {2, 5, 8, 11, 14, 17, 20, 23},
-                                 {26, 29, 32, 35, 38, 41, 44, 47}));
+            makeVariable<double>(dims_no_z, units::m, vals_z1, vars_z1));
   EXPECT_EQ(parent.slice({Dim::Z, 2}),
-            makeVariable<double>({{Dim::X, 4}, {Dim::Y, 2}}, units::m,
-                                 {3, 6, 9, 12, 15, 18, 21, 24},
-                                 {27, 30, 33, 36, 39, 42, 45, 48}));
+            makeVariable<double>(dims_no_z, units::m, vals_z2, vars_z2));
 }
 
-TEST(Variable, slice_range) {
-  const auto parent = makeVariable<double>(
-      Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 4}}),
-      {1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0,  10.0, 11.0, 12.0,
-       13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0});
+TEST_F(VariableTest_3d, slice_range) {
+  // Length 1 slice
+  Dimensions dims_x1{{Dim::X, 1}, {Dim::Y, 2}, {Dim::Z, 3}};
+  EXPECT_EQ(parent.slice({Dim::X, 0, 1}),
+            makeVariable<double>(dims_x1, units::m, vals_x0, vars_x0));
+  EXPECT_EQ(parent.slice({Dim::X, 1, 2}),
+            makeVariable<double>(dims_x1, units::m, vals_x1, vars_x1));
+  EXPECT_EQ(parent.slice({Dim::X, 2, 3}),
+            makeVariable<double>(dims_x1, units::m, vals_x2, vars_x2));
+  EXPECT_EQ(parent.slice({Dim::X, 3, 4}),
+            makeVariable<double>(dims_x1, units::m, vals_x3, vars_x3));
 
-  for (const scipp::index index : {0, 1, 2, 3}) {
-    Variable sliceX = parent.slice({Dim::X, index, index + 1});
-    ASSERT_EQ(sliceX.dims(),
-              Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 1}}));
-    EXPECT_EQ(sliceX.values<double>()[0], index + 1.0);
-    EXPECT_EQ(sliceX.values<double>()[1], index + 5.0);
-    EXPECT_EQ(sliceX.values<double>()[2], index + 9.0);
-    EXPECT_EQ(sliceX.values<double>()[3], index + 13.0);
-    EXPECT_EQ(sliceX.values<double>()[4], index + 17.0);
-    EXPECT_EQ(sliceX.values<double>()[5], index + 21.0);
-  }
+  Dimensions dims_y1{{Dim::X, 4}, {Dim::Y, 1}, {Dim::Z, 3}};
+  EXPECT_EQ(parent.slice({Dim::Y, 0, 1}),
+            makeVariable<double>(dims_y1, units::m, vals_y0, vars_y0));
+  EXPECT_EQ(parent.slice({Dim::Y, 1, 2}),
+            makeVariable<double>(dims_y1, units::m, vals_y1, vars_y1));
 
-  for (const scipp::index index : {0, 1, 2}) {
-    Variable sliceX = parent.slice({Dim::X, index, index + 2});
-    ASSERT_EQ(sliceX.dims(),
-              Dimensions({{Dim::Z, 3}, {Dim::Y, 2}, {Dim::X, 2}}));
-    EXPECT_EQ(sliceX.values<double>()[0], index + 1.0);
-    EXPECT_EQ(sliceX.values<double>()[1], index + 2.0);
-    EXPECT_EQ(sliceX.values<double>()[2], index + 5.0);
-    EXPECT_EQ(sliceX.values<double>()[3], index + 6.0);
-    EXPECT_EQ(sliceX.values<double>()[4], index + 9.0);
-    EXPECT_EQ(sliceX.values<double>()[5], index + 10.0);
-    EXPECT_EQ(sliceX.values<double>()[6], index + 13.0);
-    EXPECT_EQ(sliceX.values<double>()[7], index + 14.0);
-    EXPECT_EQ(sliceX.values<double>()[8], index + 17.0);
-    EXPECT_EQ(sliceX.values<double>()[9], index + 18.0);
-    EXPECT_EQ(sliceX.values<double>()[10], index + 21.0);
-    EXPECT_EQ(sliceX.values<double>()[11], index + 22.0);
-  }
+  Dimensions dims_z1{{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 1}};
+  EXPECT_EQ(parent.slice({Dim::Z, 0, 1}),
+            makeVariable<double>(dims_z1, units::m, vals_z0, vars_z0));
+  EXPECT_EQ(parent.slice({Dim::Z, 1, 2}),
+            makeVariable<double>(dims_z1, units::m, vals_z1, vars_z1));
+  EXPECT_EQ(parent.slice({Dim::Z, 2, 3}),
+            makeVariable<double>(dims_z1, units::m, vals_z2, vars_z2));
 
-  for (const scipp::index index : {0, 1}) {
-    Variable sliceY = parent.slice({Dim::Y, index, index + 1});
-    ASSERT_EQ(sliceY.dims(),
-              Dimensions({{Dim::Z, 3}, {Dim::Y, 1}, {Dim::X, 4}}));
-    const auto &data = sliceY.values<double>();
-    for (const scipp::index z : {0, 1, 2}) {
-      EXPECT_EQ(data[4 * z + 0], 4 * index + 8 * z + 1.0);
-      EXPECT_EQ(data[4 * z + 1], 4 * index + 8 * z + 2.0);
-      EXPECT_EQ(data[4 * z + 2], 4 * index + 8 * z + 3.0);
-      EXPECT_EQ(data[4 * z + 3], 4 * index + 8 * z + 4.0);
-    }
-  }
+  // Length 2 slice
+  Dimensions dims_x2{{Dim::X, 2}, {Dim::Y, 2}, {Dim::Z, 3}};
+  EXPECT_EQ(parent.slice({Dim::X, 0, 2}),
+            makeVariable<double>(dims_x2, units::m, vals_x02, vars_x02));
+  EXPECT_EQ(parent.slice({Dim::X, 1, 3}),
+            makeVariable<double>(dims_x2, units::m, vals_x13, vars_x13));
+  EXPECT_EQ(parent.slice({Dim::X, 2, 4}),
+            makeVariable<double>(dims_x2, units::m, vals_x24, vars_x24));
 
-  for (const scipp::index index : {0}) {
-    Variable sliceY = parent.slice({Dim::Y, index, index + 2});
-    EXPECT_EQ(sliceY, parent);
-  }
+  EXPECT_EQ(parent.slice({Dim::Y, 0, 2}), parent);
 
-  for (const scipp::index index : {0, 1, 2}) {
-    Variable sliceZ = parent.slice({Dim::Z, index, index + 1});
-    ASSERT_EQ(sliceZ.dims(),
-              Dimensions({{Dim::Z, 1}, {Dim::Y, 2}, {Dim::X, 4}}));
-    const auto &data = sliceZ.values<double>();
-    for (scipp::index xy = 0; xy < 8; ++xy)
-      EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
-  }
-
-  for (const scipp::index index : {0, 1}) {
-    Variable sliceZ = parent.slice({Dim::Z, index, index + 2});
-    ASSERT_EQ(sliceZ.dims(),
-              Dimensions({{Dim::Z, 2}, {Dim::Y, 2}, {Dim::X, 4}}));
-    const auto &data = sliceZ.values<double>();
-    for (scipp::index xy = 0; xy < 8; ++xy)
-      EXPECT_EQ(data[xy], 1.0 + xy + 8 * index);
-    for (scipp::index xy = 0; xy < 8; ++xy)
-      EXPECT_EQ(data[8 + xy], 1.0 + 8 + xy + 8 * index);
-  }
+  Dimensions dims_z2{{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 2}};
+  EXPECT_EQ(parent.slice({Dim::Z, 0, 2}),
+            makeVariable<double>(dims_z2, units::m, vals_z02, vars_z02));
+  EXPECT_EQ(parent.slice({Dim::Z, 1, 3}),
+            makeVariable<double>(dims_z2, units::m, vals_z13, vars_z13));
 }
 
 TEST(Variable, broadcast) {
