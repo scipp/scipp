@@ -44,9 +44,11 @@ def test_comparison():
     a = sp.Dimensions(labels=[Dim.X, Dim.Y], shape=[2, 3])
     a2 = sp.Dimensions(labels=[Dim.X, Dim.Y], shape=[2, 3])
     b = sp.Dimensions(labels=[Dim.X, Dim.Y], shape=[2, 4])
+    c = sp.Dimensions(labels=[Dim.Y, Dim.X], shape=[3, 2])
     assert a == a
     assert a == a2
     assert a != b
+    assert a != c
 
 
 def test_lifetime():
