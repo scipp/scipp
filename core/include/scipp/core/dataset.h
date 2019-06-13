@@ -185,6 +185,7 @@ public:
   DataProxy operator+=(const DataConstProxy &other) const;
   DataProxy operator-=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
+  DataProxy operator/=(const DataConstProxy &other) const;
   DataProxy operator*=(const Variable &other) const;
   DataProxy operator/=(const Variable &other) const;
 
@@ -296,12 +297,15 @@ public:
   Dataset &operator+=(const DataConstProxy &other);
   Dataset &operator-=(const DataConstProxy &other);
   Dataset &operator*=(const DataConstProxy &other);
+  Dataset &operator/=(const DataConstProxy &other);
   Dataset &operator+=(const DatasetConstProxy &other);
   Dataset &operator-=(const DatasetConstProxy &other);
   Dataset &operator*=(const DatasetConstProxy &other);
+  Dataset &operator/=(const DatasetConstProxy &other);
   Dataset &operator+=(const Dataset &other);
   Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
+  Dataset &operator/=(const Dataset &other);
 
 private:
   friend class DatasetConstProxy;
@@ -598,12 +602,15 @@ public:
   DatasetProxy operator+=(const DataConstProxy &other) const;
   DatasetProxy operator-=(const DataConstProxy &other) const;
   DatasetProxy operator*=(const DataConstProxy &other) const;
+  DatasetProxy operator/=(const DataConstProxy &other) const;
   DatasetProxy operator+=(const DatasetConstProxy &other) const;
   DatasetProxy operator-=(const DatasetConstProxy &other) const;
   DatasetProxy operator*=(const DatasetConstProxy &other) const;
+  DatasetProxy operator/=(const DatasetConstProxy &other) const;
   DatasetProxy operator+=(const Dataset &other) const;
   DatasetProxy operator-=(const Dataset &other) const;
   DatasetProxy operator*=(const Dataset &other) const;
+  DatasetProxy operator/=(const Dataset &other) const;
 
 private:
   Dataset *m_mutableDataset;
