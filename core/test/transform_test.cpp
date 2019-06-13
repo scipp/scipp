@@ -12,10 +12,43 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(TransformTest, apply_unary_in_place) {
+class TransformInPlaceUnaryTest : public ::testing::Test {
+protected:
+  static constexpr auto op{[](auto &x) { x *= 2.0; }};
+};
+
+TEST_F(TransformInPlaceUnaryTest, dense) {
   auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
-  transform_in_place<double>(var, [](auto &x) { x = -x; });
-  EXPECT_TRUE(equals(var.values<double>(), {-1.1, -2.2}));
+  transform_in_place<double>(var, op);
+  EXPECT_TRUE(equals(var.values<double>(), {1.1 * 2.0, 2.2 * 2.0}));
+}
+
+TEST_F(TransformInPlaceUnaryTest, elements_of_sparse) {
+  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a_ = a.sparseValues<double>();
+  a_[0] = {1, 2, 3};
+  a_[1] = {4};
+
+  transform_in_place<double>(a, op);
+  EXPECT_TRUE(equals(a_[0], {1 * 2.0, 2 * 2.0, 3 * 2.0}));
+  EXPECT_TRUE(equals(a_[1], {4 * 2.0}));
+}
+
+TEST_F(TransformInPlaceUnaryTest, elements_of_sparse_with_variance) {
+  auto a = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto vals = a.sparseValues<double>();
+  vals[0] = {1, 2, 3};
+  vals[1] = {4};
+  auto vars = a.sparseVariances<double>();
+  vars[0] = {1.1, 2.2, 3.3};
+  vars[1] = {4.4};
+
+  transform_in_place<double>(a, op);
+  EXPECT_TRUE(equals(vals[0], {2, 4, 6}));
+  EXPECT_TRUE(equals(vals[1], {8}));
+  EXPECT_TRUE(equals(vars[0], {4.4, 8.8, 13.2}));
+  EXPECT_TRUE(equals(vars[1], {17.6}));
 }
 
 TEST(TransformTest, apply_unary_in_place_with_variances) {
@@ -116,36 +149,6 @@ TEST(TransformTest, transform_combines_uncertainty_propagation) {
       a, b, [](auto &x, const auto y) { x = x * y + y; });
   EXPECT_TRUE(equals(a.values<double>(), {2.0 * 3.0 + 3.0}));
   EXPECT_TRUE(equals(a.variances<double>(), {0.1 * 3 * 3 + 0.2 * 2 * 2 + 0.2}));
-}
-
-TEST(TransformTest, unary_on_elements_of_sparse) {
-  auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a_ = a.sparseValues<double>();
-  a_[0] = {1, 4, 9};
-  a_[1] = {4};
-
-  transform_in_place<double>(a, [](auto &x) { x = sqrt(x); });
-  EXPECT_TRUE(equals(a_[0], {1, 2, 3}));
-  EXPECT_TRUE(equals(a_[1], {2}));
-}
-
-TEST(TransformTest, unary_on_elements_of_sparse_with_variance) {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a = makeVariable<double>(
-      dims, {sparse_container<double>(), sparse_container<double>()},
-      {sparse_container<double>(), sparse_container<double>()});
-  auto vals = a.sparseValues<double>();
-  vals[0] = {1, 2, 3};
-  vals[1] = {4};
-  auto vars = a.sparseVariances<double>();
-  vars[0] = {1.1, 2.2, 3.3};
-  vars[1] = {4.4};
-
-  transform_in_place<double>(a, [](auto &x) { x *= 2.0; });
-  EXPECT_TRUE(equals(vals[0], {2, 4, 6}));
-  EXPECT_TRUE(equals(vals[1], {8}));
-  EXPECT_TRUE(equals(vars[0], {4.4, 8.8, 13.2}));
-  EXPECT_TRUE(equals(vars[1], {17.6}));
 }
 
 TEST(TransformTest, unary_on_sparse_container) {
