@@ -114,7 +114,7 @@ template <typename T> struct RebinGeneralHelper {
         delta -= xo_low > xn_low ? xo_low : xn_low;
 
         auto owidth = xo_high - xo_low;
-        newT(dim, inew) += oldT(dim, iold) * delta / owidth;
+        newT.slice({dim, inew}) += oldT.slice({dim, iold}) * delta / owidth;
         if (xn_high > xo_high) {
           iold++;
         } else {
@@ -268,6 +268,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
                                const scipp::index offset,
                                const scipp::index otherBegin,
                                const scipp::index otherEnd) {
+  if (this->hasVariances() != other.hasVariances())
+    throw except::VariancesError(
+        "Either both or neither of the operands must have a variances.");
   auto iterDims = this->dims();
   const scipp::index delta = otherEnd - otherBegin;
   if (iterDims.contains(dim))
@@ -709,8 +712,12 @@ template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    T values, T variances)
     : m_unit{unit},
-      m_object(std::make_unique<DataModel<T>>(
-          std::move(dimensions), std::move(values), std::move(variances))) {}
+      m_object(variances.empty()
+                   ? std::make_unique<DataModel<T>>(std::move(dimensions),
+                                                    std::move(values))
+                   : std::make_unique<DataModel<T>>(std::move(dimensions),
+                                                    std::move(values),
+                                                    std::move(variances))) {}
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {
@@ -929,8 +936,7 @@ Variable &Variable::operator/=(const double value) & {
 }
 
 template <class T> VariableProxy VariableProxy::assign(const T &other) const {
-  if (unit() != other.unit())
-    throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
+  setUnit(other.unit());
   if (dims() != other.dims())
     throw except::DimensionMismatchError(dims(), other.dims());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
@@ -1002,12 +1008,9 @@ Variable VariableConstProxy::operator-() const {
 }
 
 void VariableProxy::setUnit(const units::Unit &unit) const {
-  // TODO Should we forbid setting the unit altogether? I think it is useful in
-  // particular since views onto subsets of dataset do not imply slicing of
-  // variables but return slice views.
   if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
-    throw std::runtime_error("Partial view on data of variable cannot be used "
-                             "to change the unit.\n");
+    throw except::UnitError("Partial view on data of variable cannot be used "
+                            "to change the unit.");
   m_mutableVariable->setUnit(unit);
 }
 
@@ -1086,16 +1089,6 @@ VariableProxy Variable::slice(const Slice slice) & {
 }
 
 Variable Variable::slice(const Slice slice) && { return {this->slice(slice)}; }
-
-VariableConstProxy Variable::operator()(const Dim dim, const scipp::index begin,
-                                        const scipp::index end) const & {
-  return slice({dim, begin, end});
-}
-
-VariableProxy Variable::operator()(const Dim dim, const scipp::index begin,
-                                   const scipp::index end) & {
-  return slice({dim, begin, end});
-}
 
 VariableConstProxy Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
@@ -1185,10 +1178,10 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   if (indices.empty())
     return {var};
   std::vector<Variable> vars;
-  vars.emplace_back(var(dim, 0, indices.front()));
+  vars.emplace_back(var.slice({dim, 0, indices.front()}));
   for (scipp::index i = 0; i < scipp::size(indices) - 1; ++i)
-    vars.emplace_back(var(dim, indices[i], indices[i + 1]));
-  vars.emplace_back(var(dim, indices.back(), var.dims()[dim]));
+    vars.emplace_back(var.slice({dim, indices[i], indices[i + 1]}));
+  vars.emplace_back(var.slice({dim, indices.back(), var.dims()[dim]}));
   return vars;
 }
 
@@ -1435,9 +1428,9 @@ Variable broadcast(Variable var, const Dimensions &dims) {
 
 void swap(Variable &var, const Dim dim, const scipp::index a,
           const scipp::index b) {
-  const Variable tmp = var(dim, a);
-  var(dim, a).assign(var(dim, b));
-  var(dim, b).assign(tmp);
+  const Variable tmp = var.slice({dim, a});
+  var.slice({dim, a}).assign(var.slice({dim, b}));
+  var.slice({dim, b}).assign(tmp);
 }
 
 Variable reverse(Variable var, const Dim dim) {

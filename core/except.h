@@ -131,6 +131,10 @@ struct CoordMismatchError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct VariancesError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 } // namespace except
 
 namespace expect {

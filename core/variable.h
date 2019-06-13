@@ -296,26 +296,14 @@ public:
   template <class T> auto sparseVariances() {
     return scipp::span(cast<sparse_container<T>>(true));
   }
-  template <class T> auto sparseSpan() const { return sparseValues<T>(); }
-  template <class T> auto sparseSpan() { return sparseValues<T>(); }
 
-  // ATTENTION: It is really important to delete any function returning a
+  // ATTENTION: It is really important to avoid any function returning a
   // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
   VariableConstProxy slice(const Slice slice) const &;
   Variable slice(const Slice slice) const &&;
   VariableProxy slice(const Slice slice) &;
   Variable slice(const Slice slice) &&;
-
-  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
-                                const scipp::index end = -1) const &;
-  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
-                                const scipp::index end = -1) const && = delete;
-
-  VariableProxy operator()(const Dim dim, const scipp::index begin,
-                           const scipp::index end = -1) &;
-  VariableProxy operator()(const Dim dim, const scipp::index begin,
-                           const scipp::index end = -1) && = delete;
 
   VariableConstProxy reshape(const Dimensions &dims) const &;
   VariableProxy reshape(const Dimensions &dims) &;
@@ -414,26 +402,6 @@ Variable makeVariable(const std::initializer_list<Dim> &dims,
   return makeVariable<T>(Dimensions(dims, shape));
 }
 
-template <class T, class T2 = T>
-Variable makeVariable(const Dimensions &dimensions,
-                      std::initializer_list<T2> values) {
-  if constexpr (is_sparse_v<T2>) {
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<sparse_container<underlying_type_t<T>>>(
-                        values.begin(), values.end()));
-  } else {
-    return Variable(units::dimensionless, std::move(dimensions),
-                    Vector<underlying_type_t<T>>(values.begin(), values.end()));
-  }
-}
-
-// This overload is required to avoid wrongly selecting the single-value
-// overload with two template arguments.
-// template <class T>
-// Variable makeVariable(const std::pair<Dim, scipp::index> &dims_init) {
-//  return makeVariable<T>(Dimensions(dims_init.first, dims_init.second));
-//}
-
 template <class T> Variable makeVariable(T value) {
   return Variable(units::dimensionless, Dimensions{},
                   Vector<underlying_type_t<T>>(1, value));
@@ -448,7 +416,7 @@ template <class T> Variable makeVariable(T value, T variance) {
 template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions,
                       std::initializer_list<T2> values,
-                      std::initializer_list<T2> variances) {
+                      std::initializer_list<T2> variances = {}) {
   if constexpr (is_sparse_v<T2>) {
     return Variable(units::dimensionless, std::move(dimensions),
                     Vector<sparse_container<underlying_type_t<T>>>(
@@ -464,25 +432,9 @@ Variable makeVariable(const Dimensions &dimensions,
 }
 
 template <class T, class T2 = T>
-Variable makeVariable(const Dimensions &dimensions, std::vector<T2> values,
-                      std::vector<T2> variances) {
-  return Variable(
-      units::dimensionless, std::move(dimensions),
-      Vector<underlying_type_t<T>>(values.begin(), values.end()),
-      Vector<underlying_type_t<T>>(variances.begin(), variances.end()));
-}
-
-template <class T, class T2 = T>
-Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
-                      std::initializer_list<T2> values) {
-  return Variable(unit, std::move(dimensions),
-                  Vector<underlying_type_t<T>>(values.begin(), values.end()));
-}
-
-template <class T, class T2 = T>
 Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
                       std::initializer_list<T2> values,
-                      std::initializer_list<T2> variances) {
+                      std::initializer_list<T2> variances = {}) {
   return Variable(
       unit, std::move(dimensions),
       Vector<underlying_type_t<T>>(values.begin(), values.end()),
@@ -493,6 +445,13 @@ namespace detail {
 template <class... N> struct is_vector : std::false_type {};
 template <class N, class A>
 struct is_vector<std::vector<N, A>> : std::true_type {};
+
+template <int I, class... Ts> decltype(auto) nth(Ts &&... ts) {
+  return std::get<I>(std::forward_as_tuple(ts...));
+}
+
+template <int I, class... Ts>
+using nth_t = decltype(std::get<I>(std::declval<std::tuple<Ts...>>()));
 } // namespace detail
 
 template <class T, class... Args>
@@ -510,6 +469,40 @@ Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
                     Vector<underlying_type_t<T>>(
                         dimensions.volume(),
                         detail::default_init<underlying_type_t<T>>::value()));
+  } else if constexpr (sizeof...(Args) == 2) {
+    if constexpr (std::is_convertible_v<detail::nth_t<0, Args...>,
+                                        std::vector<T>> &&
+                  std::is_convertible_v<detail::nth_t<1, Args...>,
+                                        std::vector<T>>) {
+      return Variable(
+          units::dimensionless, std::move(dimensions),
+          Vector<underlying_type_t<T>>(detail::nth<0>(args...).begin(),
+                                       detail::nth<0>(args...).end()),
+          Vector<underlying_type_t<T>>(detail::nth<1>(args...).begin(),
+                                       detail::nth<1>(args...).end()));
+    } else {
+      return Variable(
+          units::dimensionless, std::move(dimensions),
+          Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
+    }
+  } else if constexpr (sizeof...(Args) == 3) {
+    if constexpr (std::is_convertible_v<detail::nth_t<0, Args...>,
+                                        units::Unit> &&
+                  std::is_convertible_v<detail::nth_t<1, Args...>,
+                                        std::vector<T>> &&
+                  std::is_convertible_v<detail::nth_t<2, Args...>,
+                                        std::vector<T>>) {
+      return Variable(
+          detail::nth<0>(args...), std::move(dimensions),
+          Vector<underlying_type_t<T>>(detail::nth<1>(args...).begin(),
+                                       detail::nth<1>(args...).end()),
+          Vector<underlying_type_t<T>>(detail::nth<2>(args...).begin(),
+                                       detail::nth<2>(args...).end()));
+    } else {
+      return Variable(
+          units::dimensionless, std::move(dimensions),
+          Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
+    }
   } else {
     return Variable(units::dimensionless, std::move(dimensions),
                     Vector<underlying_type_t<T>>(std::forward<Args>(args)...));
@@ -539,11 +532,6 @@ public:
 
   VariableConstProxy slice(const Slice slice) const {
     return VariableConstProxy(*this, slice.dim, slice.begin, slice.end);
-  }
-
-  VariableConstProxy operator()(const Dim dim, const scipp::index begin,
-                                const scipp::index end = -1) const {
-    return slice({dim, begin, end});
   }
 
   // Note the return type. Reshaping a non-contiguous slice cannot return a
@@ -597,8 +585,11 @@ public:
   // will not be deleted even if *this is a temporary and gets deleted.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto sparseSpan() const {
+  template <class T> auto sparseValues() const {
     return cast<sparse_container<T>>();
+  }
+  template <class T> auto sparseVariances() const {
+    return castVariances<sparse_container<T>>();
   }
 
   bool operator==(const Variable &other) const;
@@ -649,11 +640,6 @@ public:
     return VariableProxy(*this, slice.dim, slice.begin, slice.end);
   }
 
-  VariableProxy operator()(const Dim dim, const scipp::index begin,
-                           const scipp::index end = -1) const {
-    return slice({dim, begin, end});
-  }
-
   using VariableConstProxy::data;
 
   VariableConcept &data() const && = delete;
@@ -673,8 +659,11 @@ public:
   // Note: No need to delete rvalue overloads here, see VariableConstProxy.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto sparseSpan() const {
+  template <class T> auto sparseValues() const {
     return cast<sparse_container<T>>();
+  }
+  template <class T> auto sparseVariances() const {
+    return castVariances<sparse_container<T>>();
   }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
