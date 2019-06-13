@@ -7,8 +7,8 @@
 
 #include "test_macros.h"
 
-#include "except.h"
-#include "variable_view.h"
+#include "scipp/core/except.h"
+#include "scipp/core/variable_view.h"
 
 using namespace scipp;
 using namespace scipp::core;

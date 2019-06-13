@@ -3,8 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/counts.h"
-#include "dataset.h"
-#include "except.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/except.h"
 
 namespace scipp::core {
 

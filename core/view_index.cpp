@@ -2,7 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Neil Vaytet
-#include "view_index.h"
+#include "scipp/core/view_index.h"
 
 namespace scipp::core {
 ViewIndex::ViewIndex(const Dimensions &targetDimensions,

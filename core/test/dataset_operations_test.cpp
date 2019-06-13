@@ -3,8 +3,8 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "dataset.h"
-#include "dimensions.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/dimensions.h"
 
 #include "dataset_test_common.h"
 

@@ -5,9 +5,9 @@
 
 #include "test_macros.h"
 
-#include "dimensions.h"
-#include "except.h"
-#include "variable.h"
+#include "scipp/core/dimensions.h"
+#include "scipp/core/except.h"
+#include "scipp/core/variable.h"
 
 using namespace scipp;
 using namespace scipp::core;

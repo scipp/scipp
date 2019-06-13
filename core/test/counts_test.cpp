@@ -3,8 +3,8 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "dataset.h"
 #include "scipp/core/counts.h"
+#include "scipp/core/dataset.h"
 
 using namespace scipp;
 using namespace scipp::core;

@@ -9,8 +9,8 @@
 #include <algorithm>
 #include <random>
 
-#include "dataset.h"
-#include "dimensions.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/dimensions.h"
 
 using namespace scipp;
 using namespace scipp::core;
