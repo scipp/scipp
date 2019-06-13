@@ -120,7 +120,7 @@ TEST(TransformTest, transform_combines_uncertainty_propagation) {
 
 TEST(TransformTest, unary_on_elements_of_sparse) {
   auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a_ = a.sparseSpan<double>();
+  auto a_ = a.sparseValues<double>();
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
@@ -150,7 +150,7 @@ TEST(TransformTest, unary_on_elements_of_sparse_with_variance) {
 
 TEST(TransformTest, unary_on_sparse_container) {
   auto a = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto a_ = a.sparseSpan<double>();
+  auto a_ = a.sparseValues<double>();
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
@@ -180,7 +180,7 @@ TEST(TransformTest, unary_on_sparse_container_with_variance) {
 
 TEST(TransformTest, binary_with_dense) {
   auto sparse = makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  auto sparse_ = sparse.sparseSpan<double>();
+  auto sparse_ = sparse.sparseValues<double>();
   sparse_[0] = {1, 2, 3};
   sparse_[1] = {4};
   auto dense = makeVariable<double>({Dim::Y, 2}, {1.5, 0.5});

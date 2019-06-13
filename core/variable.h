@@ -296,8 +296,6 @@ public:
   template <class T> auto sparseVariances() {
     return scipp::span(cast<sparse_container<T>>(true));
   }
-  template <class T> auto sparseSpan() const { return sparseValues<T>(); }
-  template <class T> auto sparseSpan() { return sparseValues<T>(); }
 
   // ATTENTION: It is really important to avoid any function returning a
   // (Const)VariableProxy for rvalue Variable. Otherwise the resulting slice
@@ -587,8 +585,11 @@ public:
   // will not be deleted even if *this is a temporary and gets deleted.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto sparseSpan() const {
+  template <class T> auto sparseValues() const {
     return cast<sparse_container<T>>();
+  }
+  template <class T> auto sparseVariances() const {
+    return castVariances<sparse_container<T>>();
   }
 
   bool operator==(const Variable &other) const;
@@ -658,8 +659,11 @@ public:
   // Note: No need to delete rvalue overloads here, see VariableConstProxy.
   template <class T> auto values() const { return cast<T>(); }
   template <class T> auto variances() const { return castVariances<T>(); }
-  template <class T> auto sparseSpan() const {
+  template <class T> auto sparseValues() const {
     return cast<sparse_container<T>>();
+  }
+  template <class T> auto sparseVariances() const {
+    return castVariances<sparse_container<T>>();
   }
 
   // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
