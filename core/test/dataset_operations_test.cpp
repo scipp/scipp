@@ -7,6 +7,7 @@
 #include "dimensions.h"
 
 #include "dataset_test_common.h"
+#include <initializer_list>
 
 using namespace scipp;
 using namespace scipp::core;
@@ -272,6 +273,24 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
                except::CoordMismatchError);
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::Z, 3, 4})),
                except::CoordMismatchError);
+}
+
+Dataset make_sparse(std::initializer_list<double> values,
+                    std::string key = "sparse") {
+  Dataset ds;
+  auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  var.sparseValues<double>()[0] = values;
+  ds.setData(key, var);
+  return ds;
+}
+
+TYPED_TEST(DatasetBinaryOpTest, sparse_dimensions) {
+  Dataset a = make_sparse({1.1, 2.2});
+  Dataset b = make_sparse({3.3, 4.4});
+  Dataset c = TestFixture::op(a, b);
+  auto c_data = c["sparse"].data().sparseSpan<double>()[0];
+  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
+  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
 
 TYPED_TEST(DatasetProxyBinaryOpTest, return_value) {
