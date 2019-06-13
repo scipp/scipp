@@ -738,7 +738,7 @@ void transform_in_place(Var &&var, const Var1 &other, Op op) {
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Var, class Op>
-Variable transform(const Var &var, Op op) {
+[[nodiscard]] Variable transform(const Var &var, Op op) {
   using namespace detail;
   try {
     if constexpr ((is_sparse_v<Ts> || ...)) {
@@ -789,7 +789,7 @@ Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... TypePairs, class Var1, class Var2, class Op>
-Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
+[[nodiscard]] Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   return detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
 }
