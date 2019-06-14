@@ -568,3 +568,22 @@ TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
                    a, b, op_in_place)),
                except::SizeError);
 }
+
+// It is possible to use transform with functors that call non-build-in
+// functions. To do so we have to define that function for the ValueAndVariance
+// helper. If this turns out to be a useful feature we should move
+// ValueAndVariance out of the `detail` namespace and document the mechanism.
+constexpr auto user_op(const double) { return 123.0; }
+constexpr auto user_op(const scipp::core::detail::ValueAndVariance<double>) {
+  return scipp::core::detail::ValueAndVariance<double>{123.0, 456.0};
+}
+TEST(TransformTest, user_op_with_variances) {
+  auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {1.1, 3.0});
+
+  const auto result = transform<double>(var, [](auto x) { return user_op(x); });
+  transform_in_place<double>(var, [](auto &x) { x = user_op(x); });
+
+  EXPECT_TRUE(equals(var.values<double>(), {123, 123}));
+  EXPECT_TRUE(equals(var.variances<double>(), {456, 456}));
+  EXPECT_EQ(result, var);
+}
