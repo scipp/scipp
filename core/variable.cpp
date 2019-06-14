@@ -1201,11 +1201,9 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
 
   if (a1.dims().sparseDim() == dim && a2.dims().sparseDim() == dim) {
     Variable out(a1);
-    // TODO Sanitize transform_in_place implementation so the functor signature
-    // is more reasonable.
     transform_in_place<pair_self_t<sparse_container<double>>>(
         out, a2,
-        [](auto &&a, auto &&b) { a.insert(a.end(), b.begin(), b.end()); });
+        [](auto &a, const auto &b) { a.insert(a.end(), b.begin(), b.end()); });
     return out;
   }
 

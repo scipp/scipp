@@ -180,7 +180,15 @@ template <class T> struct ValuesAndVariances {
     throw std::runtime_error(
         "`begin` not implemented for sparse data with variances.");
   }
+  void *begin() const {
+    throw std::runtime_error(
+        "`begin` not implemented for sparse data with variances.");
+  }
   void *end() {
+    throw std::runtime_error(
+        "`end` not implemented for sparse data with variances.");
+  }
+  void *end() const {
     throw std::runtime_error(
         "`end` not implemented for sparse data with variances.");
   }
@@ -193,6 +201,8 @@ template <class T>
 struct has_variances<ValueAndVariance<T>> : std::true_type {};
 template <class T>
 struct has_variances<ValuesAndVariances<T>> : std::true_type {};
+template <class T>
+struct has_variances<ValuesAndVariances<T> &> : std::true_type {};
 template <class T>
 inline constexpr bool has_variances_v = has_variances<T>::value;
 
@@ -236,8 +246,8 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
     // This then falls into case 2 and thus the recursion terminates with the
     // second level.
     if constexpr (is_sparse_v<decltype(vals[0])>) {
-      op(ValuesAndVariances{vals[i], vars[i]},
-         value_and_maybe_variance(other, i)...);
+      ValuesAndVariances _{vals[i], vars[i]};
+      op(_, value_and_maybe_variance(other, i)...);
     } else {
       ValueAndVariance _{vals[i], vars[i]};
       op(_, value_and_maybe_variance(other, i)...);
@@ -293,6 +303,8 @@ struct element_type<ValuesAndVariances<const sparse_container<T>>> {
   using type = T;
 };
 template <class T> using element_type_t = typename element_type<T>::type;
+template <class T>
+using const_element_type_t = const typename element_type<T>::type;
 
 namespace transform_detail {
 template <class T> struct is_sparse : std::false_type {};
