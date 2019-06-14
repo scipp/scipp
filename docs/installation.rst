@@ -8,7 +8,6 @@ Installation
 Currently there are two installation options:
 
 1. Installation from source, see the `scipp README <See https://github.com/scipp/scipp/blob/master/README.md>`_.
-   Note that compiling **scippy** is currently not possible due to an ongoing API refactor.
 2. Via the docker container.
    Note that this is an outdated build, before the ongoing major API refactor.
 

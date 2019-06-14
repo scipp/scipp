@@ -18,7 +18,7 @@ Some of these are adaptable more readily than others, which require more in-dept
 Units systems and dimension labels
 ----------------------------------
 
-It is possible to select and existing system or to add a new one.
+It is possible to select an existing system or to add a new one.
 
 Selecting an existing system
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

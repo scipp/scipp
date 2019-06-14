@@ -10,35 +10,35 @@ Scipp mainly provides the `Dataset` container, which is inspired by `xarray.Data
 
 ## Build instructions
 
-### Prerequisites
+### Prerequisites (OSX only)
 
-#### OSX
 * You will need to be running High Sierra 10.13. Lower version have incompatible libc++ implementations.
 * You will need to be using [LLVM Clang](https://releases.llvm.org/download.html) version 6 or greater. Current latest XCode 10.1, does not support all language features used. Note that pybind11's use of `std::variant` presents the current issues for `Apple LLVM 10.0.0`. Pybind11 automatically picks up on the CMAKE_CXX_STANDARD 17 applied in the dataset configuration and presumes to use `std::variant`.
 * You will need to `brew install libomp`.
 
-### Getting the code and building
+### Getting the code, building, and installing
+
+To build and install the library:
 
 ```
 git submodule init
 git submodule update
-mkdir build
+mkdir -p build
+mkdir -p install
 cd build
-cmake ..
-make
+cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
+make -j4 install
 ```
 
-## Usage of the Python exports
-
-Setup is as above, but the `install` target needs to be run to setup the Python files:
+To use the `scippy` Python module:
 
 ```
-cmake -DCMAKE_INSTALL_PREFIX=/some/path ..
-make install
+cd ../scippy
+python3 -m pip install -r requirements.txt
+export PYTHONPATH=$PYTHONPATH:../install
 ```
 
-Then, add the install location `/some/path` to `PYTHONPATH`.
-You can now do, e.g.,
+In Python:
 
 ```python
 import scippy as sc
@@ -46,17 +46,21 @@ import scippy as sc
 
 ## Running the unit tests
 
-To run the Python tests, run the following in directory `scippy/`:
+To run the C++ tests, run (in directory `build/`):
+```sh
+./units/test/scipp-units-test
+./core/test/scipp-core-test
+```
+
+Note that simply running `ctest` also works, but currently it seems to have an issue with gathering templated tests, so calling the test binaries manually is recommended (and much faster).
+
+To run the Python tests, run (in directory `scippy/`):
 
 ```sh
-python3 -m unittest discover test
+cd scippy
+python3 -m pip install -r requirements.txt
+python3 -m pytest
 ```
-or via nose
-```
-nosetests3 --where test
-```
-
-Note that the tests bring in additional python dependencies. `python3 -m pip install -r scippy/requirements.txt` to obtain these.
 
 ## Running the demo notebooks
 
