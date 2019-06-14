@@ -208,6 +208,11 @@ inline constexpr bool has_variances_v = has_variances<T>::value;
 
 /// Helper for the transform implementation to unify iteration of data with and
 /// without variances as well as sparse are dense container.
+///
+/// The `const` in the return type is important. It guarantees that when
+/// transform is called with a functor accepting a parameter by `auto &` the
+/// deduced type for `auto` is const. Without this the injected sparse overload
+/// would match, leading to a cryptic error message.
 template <class T>
 constexpr const auto value_and_maybe_variance(const T &range,
                                               const scipp::index i) {
