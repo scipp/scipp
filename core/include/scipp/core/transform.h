@@ -209,7 +209,8 @@ inline constexpr bool has_variances_v = has_variances<T>::value;
 /// Helper for the transform implementation to unify iteration of data with and
 /// without variances as well as sparse are dense container.
 template <class T>
-constexpr auto value_and_maybe_variance(const T &range, const scipp::index i) {
+constexpr const auto value_and_maybe_variance(const T &range,
+                                              const scipp::index i) {
   if constexpr (has_variances_v<T>) {
     if constexpr (is_sparse_v<decltype(range.values[0])>)
       return ValuesAndVariances{range.values[i], range.variances[i]};
