@@ -9,6 +9,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/core/variable.h"
 
 #include "numpy.h"
@@ -17,6 +18,66 @@
 namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
+
+/// Add element size as factor to strides.
+template <class T>
+std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
+  std::vector<scipp::index> strides(s.size());
+  scipp::index elemSize = sizeof(T);
+  for (size_t i = 0; i < strides.size(); ++i) {
+    strides[i] = elemSize * s[i];
+  }
+  return strides;
+}
+
+template <class T> struct MakePyBufferInfoT {
+  static py::buffer_info apply(VariableProxy &view) {
+    const auto &dims = view.dims();
+    return py::buffer_info(
+        view.template values<T>().data(), /* Pointer to buffer */
+        sizeof(T),                        /* Size of one scalar */
+        py::format_descriptor<
+            std::conditional_t<std::is_same_v<T, bool>, bool, T>>::
+            format(),              /* Python struct-style format descriptor */
+        scipp::size(dims.shape()), /* Number of dimensions */
+        dims.shape(),              /* Buffer dimensions */
+        numpy_strides<T>(view.strides()) /* Strides (in bytes) for each index */
+    );
+  }
+};
+
+inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
+  return CallDType<double, float, int64_t, int32_t,
+                   bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
+}
+
+template <class T, class Var>
+auto as_py_array_t_impl(py::object &obj, Var &view) {
+  const auto strides = VariableProxy(view).strides();
+  const auto &dims = view.dims();
+  using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
+  return py::array_t<py_T>{
+      dims.shape(), numpy_strides<T>(strides),
+      reinterpret_cast<py_T *>(view.template values<T>().data()), obj};
+}
+
+template <class Var, class... Ts> py::object as_py_array_t(py::object &obj) {
+  auto &view = obj.cast<Var &>();
+  switch (view.dtype()) {
+  case dtype<double>:
+    return as_py_array_t_impl<double>(obj, view);
+  case dtype<float>:
+    return as_py_array_t_impl<float>(obj, view);
+  case dtype<int64_t>:
+    return as_py_array_t_impl<int64_t>(obj, view);
+  case dtype<int32_t>:
+    return as_py_array_t_impl<int32_t>(obj, view);
+  case dtype<bool>:
+    return as_py_array_t_impl<bool>(obj, view);
+  default:
+    throw std::runtime_error("not implemented for this type.");
+  }
+}
 
 struct get_values {
   template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {

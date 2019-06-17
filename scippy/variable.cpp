@@ -115,67 +115,6 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                      unit, variances);
 }
 
-// Add size factor.
-template <class T>
-std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
-  std::vector<scipp::index> strides(s.size());
-  scipp::index elemSize = sizeof(T);
-  for (size_t i = 0; i < strides.size(); ++i) {
-    strides[i] = elemSize * s[i];
-  }
-  return strides;
-}
-
-template <class T> struct MakePyBufferInfoT {
-  static py::buffer_info apply(VariableProxy &view) {
-    const auto &dims = view.dims();
-    return py::buffer_info(
-        view.template values<T>().data(), /* Pointer to buffer */
-        sizeof(T),                        /* Size of one scalar */
-        py::format_descriptor<
-            std::conditional_t<std::is_same_v<T, bool>, bool, T>>::
-            format(),              /* Python struct-style format descriptor */
-        scipp::size(dims.shape()), /* Number of dimensions */
-        dims.shape(),              /* Buffer dimensions */
-        numpy_strides<T>(view.strides()) /* Strides (in bytes) for each index */
-    );
-  }
-};
-
-py::buffer_info make_py_buffer_info(VariableProxy &view) {
-  return CallDType<double, float, int64_t, int32_t,
-                   bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
-}
-
-template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
-  // TODO Should `Variable` also have a `strides` method?
-  const auto strides = VariableProxy(view).strides();
-  const auto &dims = view.dims();
-  using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
-  return py::array_t<py_T>{
-      dims.shape(), numpy_strides<T>(strides),
-      reinterpret_cast<py_T *>(view.template values<T>().data()), obj};
-}
-
-template <class Var, class... Ts>
-std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
-  auto &view = obj.cast<Var &>();
-  switch (view.dtype()) {
-  case dtype<double>:
-    return {as_py_array_t<double>(obj, view)};
-  case dtype<float>:
-    return {as_py_array_t<float>(obj, view)};
-  case dtype<int64_t>:
-    return {as_py_array_t<int64_t>(obj, view)};
-  case dtype<int32_t>:
-    return {as_py_array_t<int32_t>(obj, view)};
-  case dtype<bool>:
-    return {as_py_array_t<bool>(obj, view)};
-  default:
-    throw std::runtime_error("not implemented for this type.");
-  }
-}
-
 using small_vector = boost::container::small_vector<double, 8>;
 PYBIND11_MAKE_OPAQUE(small_vector)
 
@@ -218,8 +157,7 @@ void init_variable(py::module &m) {
       .def_property_readonly("dtype", &Variable::dtype)
       .def_property_readonly(
           "numpy",
-          &as_py_array_t_variant<Variable, double, float, int64_t, int32_t,
-                                 bool>,
+          &as_py_array_t<Variable, double, float, int64_t, int32_t, bool>,
           "Returns a read-only numpy array containing the Variable's values.")
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
@@ -278,8 +216,7 @@ void init_variable(py::module &m) {
            [](VariableProxy &self, py::dict) { return Variable(self); })
       .def_property_readonly(
           "numpy",
-          &as_py_array_t_variant<VariableProxy, double, float, int64_t, int32_t,
-                                 bool>,
+          &as_py_array_t<VariableProxy, double, float, int64_t, int32_t, bool>,
           "Returns a read-only numpy array containing the VariableProxy's "
           "values.")
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
