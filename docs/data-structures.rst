@@ -1,4 +1,4 @@
-.. _data structures:
+.. _data-structures:
 
 Data Structures
 ===============
@@ -17,6 +17,8 @@ It consists of:
 Note that variables, unlike :py:class:`xarray.DataArray`, do *not* have coordinate arrays.
 
 :py:class:`~scippy.Variable` also supports a single *sparse* dimension.
+
+.. _data-structures-dataset:
 
 Dataset
 -------
