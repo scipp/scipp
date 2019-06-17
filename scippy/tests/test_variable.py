@@ -51,13 +51,13 @@ def test_create_with_variances():
 def test_create_from_numpy_1d():
     var = sp.Variable([sp.Dim.X], np.arange(4.0))
     assert var.dtype == sp.dtype.double
-    np.testing.assert_array_equal(var.numpy, np.arange(4))
+    np.testing.assert_array_equal(var.values, np.arange(4))
 
 
 def test_create_from_numpy_1d_bool():
     var = sp.Variable(labels=[sp.Dim.X], values=np.array([True, False, True]))
     assert var.dtype == sp.dtype.bool
-    np.testing.assert_array_equal(var.numpy, np.array([True, False, True]))
+    np.testing.assert_array_equal(var.values, np.array([True, False, True]))
 
 
 def test_create_with_variances_from_numpy_1d():
@@ -172,69 +172,69 @@ def test_slicing():
     var_slice = var[(sp.Dim.X, slice(0, 2))]
     assert isinstance(var_slice, sp.VariableProxy)
     assert len(var_slice.values) == 2
-    assert np.array_equal(var_slice.numpy, np.array([0, 1]))
+    assert np.array_equal(var_slice.values, np.array([0, 1]))
 
 
 def test_binary_plus():
     a, b, a_slice, b_slice, data = make_variables()
     c = a + b
-    assert np.array_equal(c.numpy, data + data)
+    assert np.array_equal(c.values, data + data)
     c = a + 2.0
-    assert np.array_equal(c.numpy, data + 2.0)
+    assert np.array_equal(c.values, data + 2.0)
     c = a + b_slice
-    assert np.array_equal(c.numpy, data + data)
+    assert np.array_equal(c.values, data + data)
     c += b
-    assert np.array_equal(c.numpy, data + data + data)
+    assert np.array_equal(c.values, data + data + data)
     c += b_slice
-    assert np.array_equal(c.numpy, data + data + data + data)
+    assert np.array_equal(c.values, data + data + data + data)
     c = 3.5 + c
-    assert np.array_equal(c.numpy, data + data + data + data + 3.5)
+    assert np.array_equal(c.values, data + data + data + data + 3.5)
 
 
 def test_binary_minus():
     a, b, a_slice, b_slice, data = make_variables()
     c = a - b
-    assert np.array_equal(c.numpy, data - data)
+    assert np.array_equal(c.values, data - data)
     c = a - 2.0
-    assert np.array_equal(c.numpy, data - 2.0)
+    assert np.array_equal(c.values, data - 2.0)
     c = a - b_slice
-    assert np.array_equal(c.numpy, data - data)
+    assert np.array_equal(c.values, data - data)
     c -= b
-    assert np.array_equal(c.numpy, data - data - data)
+    assert np.array_equal(c.values, data - data - data)
     c -= b_slice
-    assert np.array_equal(c.numpy, data - data - data - data)
+    assert np.array_equal(c.values, data - data - data - data)
     c = 3.5 - c
-    assert np.array_equal(c.numpy, 3.5 - data + data + data + data)
+    assert np.array_equal(c.values, 3.5 - data + data + data + data)
 
 
 def test_binary_multiply():
     a, b, a_slice, b_slice, data = make_variables()
     c = a * b
-    assert np.array_equal(c.numpy, data * data)
+    assert np.array_equal(c.values, data * data)
     c = a * 2.0
-    assert np.array_equal(c.numpy, data * 2.0)
+    assert np.array_equal(c.values, data * 2.0)
     c = a * b_slice
-    assert np.array_equal(c.numpy, data * data)
+    assert np.array_equal(c.values, data * data)
     c *= b
-    assert np.array_equal(c.numpy, data * data * data)
+    assert np.array_equal(c.values, data * data * data)
     c *= b_slice
-    assert np.array_equal(c.numpy, data * data * data * data)
+    assert np.array_equal(c.values, data * data * data * data)
     c = 3.5 * c
-    assert np.array_equal(c.numpy, data * data * data * data * 3.5)
+    assert np.array_equal(c.values, data * data * data * data * 3.5)
 
 
 def test_binary_divide():
     a, b, a_slice, b_slice, data = make_variables()
     c = a / b
-    assert np.array_equal(c.numpy, data / data)
+    assert np.array_equal(c.values, data / data)
     c = a / 2.0
-    assert np.array_equal(c.numpy, data / 2.0)
+    assert np.array_equal(c.values, data / 2.0)
     c = a / b_slice
-    assert np.array_equal(c.numpy, data / data)
+    assert np.array_equal(c.values, data / data)
     c /= b
-    assert np.array_equal(c.numpy, data / data / data)
+    assert np.array_equal(c.values, data / data / data)
     c /= b_slice
-    assert np.array_equal(c.numpy, data / data / data / data)
+    assert np.array_equal(c.values, data / data / data / data)
 
 
 def test_binary_equal():

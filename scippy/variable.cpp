@@ -155,11 +155,6 @@ void init_variable(py::module &m) {
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
       .def_property_readonly("dtype", &Variable::dtype)
-      .def_property_readonly(
-          "numpy",
-          &as_py_array_t<get_values, Variable, double, float, int64_t, int32_t,
-                         bool>,
-          "Returns a read-only numpy array containing the Variable's values.")
       .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
@@ -215,12 +210,6 @@ void init_variable(py::module &m) {
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableProxy &self, py::dict) { return Variable(self); })
-      .def_property_readonly(
-          "numpy",
-          &as_py_array_t<get_values, VariableProxy, double, float, int64_t,
-                         int32_t, bool>,
-          "Returns a read-only numpy array containing the VariableProxy's "
-          "values.")
       .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
