@@ -242,7 +242,7 @@ Variable operator/(const double a, Variable b) {
   transform_in_place<double, float>(b, overloaded{[a](double &b) { b = a / b; },
                                                   [a](float &b) { b = a / b; },
                                                   [a](auto &b) { b = a / b; }});
-  return std::move(b);
+  return b;
 }
 
 } // namespace scipp::core

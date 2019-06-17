@@ -115,8 +115,8 @@ auto range(const scipp::index end) {
 
 TEST(VariableViewTest, bad_broadcast) {
   Dimensions dims{Dim::X, 2};
-  Dimensions target({Dim::X}, {3});
-  EXPECT_THROW(VariableView(range(2).data(), 0, target, dims),
+  Dimensions target(Dim::X, 3);
+  EXPECT_THROW(VariableView<int32_t>(range(2).data(), 0, target, dims),
                except::DimensionError);
 }
 
@@ -215,20 +215,20 @@ TEST(VariableViewTest, collapse_outer) {
 
 TEST(VariableViewTest, collapse_inner_and_outer) {
   Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
-  Dimensions target({Dim::Y}, {3});
+  Dimensions target(Dim::Y, 3);
   EXPECT_TRUE(
       equals(VariableView(range(24).data(), 0, target, dims), {0, 4, 8}));
 }
 
 TEST(VariableViewTest, collapse_inner_two) {
   Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
-  Dimensions target({Dim::X}, {2});
+  Dimensions target(Dim::X, 2);
   EXPECT_TRUE(equals(VariableView(range(24).data(), 0, target, dims), {0, 12}));
 }
 
 TEST(VariableViewTest, collapse_outer_two) {
   Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
-  Dimensions target({Dim::Z}, {4});
+  Dimensions target(Dim::Z, 4);
   EXPECT_TRUE(
       equals(VariableView(range(24).data(), 0, target, dims), {0, 1, 2, 3}));
 }
