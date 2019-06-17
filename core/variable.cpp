@@ -128,7 +128,7 @@ template <typename T> struct RebinGeneralHelper {
 template <class T> class ViewModel;
 
 VariableConcept::VariableConcept(const Dimensions &dimensions)
-    : m_dimensions(dimensions){};
+    : m_dimensions(dimensions) {}
 
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
                            const Dimensions &toMatch) {
@@ -299,14 +299,14 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   }
   // TODO Avoid code duplication for variances.
   if (this->hasVariances()) {
-    auto otherView = otherT.variancesView(iterDims, dim, otherBegin);
+    auto otherVariances = otherT.variancesView(iterDims, dim, otherBegin);
     if (this->isContiguous() && iterDims.isContiguousIn(this->dims())) {
       auto target = variances(dim, offset, offset + delta);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dims())) {
         auto source = otherT.variances(dim, otherBegin, otherEnd);
         std::copy(source.begin(), source.end(), target.begin());
       } else {
-        std::copy(otherView.begin(), otherView.end(), target.begin());
+        std::copy(otherVariances.begin(), otherVariances.end(), target.begin());
       }
     } else {
       auto view = variancesView(iterDims, dim, offset);
@@ -314,7 +314,7 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
         auto source = otherT.variances(dim, otherBegin, otherEnd);
         std::copy(source.begin(), source.end(), view.begin());
       } else {
-        std::copy(otherView.begin(), otherView.end(), view.begin());
+        std::copy(otherVariances.begin(), otherVariances.end(), view.begin());
       }
     }
   }
@@ -710,14 +710,14 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                         std::move(dimensions), std::move(object))) {}
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T values, T variances)
+                   T values_, T variances_)
     : m_unit{unit},
-      m_object(variances.empty()
+      m_object(variances_.empty()
                    ? std::make_unique<DataModel<T>>(std::move(dimensions),
-                                                    std::move(values))
+                                                    std::move(values_))
                    : std::make_unique<DataModel<T>>(std::move(dimensions),
-                                                    std::move(values),
-                                                    std::move(variances))) {}
+                                                    std::move(values_),
+                                                    std::move(variances_))) {}
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {
@@ -729,9 +729,10 @@ void Variable::setDims(const Dimensions &dimensions) {
 }
 
 template <class T>
-const Vector<underlying_type_t<T>> &Variable::cast(const bool variances) const {
+const Vector<underlying_type_t<T>> &
+Variable::cast(const bool variances_) const {
   auto &dm = requireT<const DataModel<Vector<underlying_type_t<T>>>>(*m_object);
-  if (!variances)
+  if (!variances_)
     return dm.m_values;
   else {
     if (!hasVariances())
@@ -741,9 +742,9 @@ const Vector<underlying_type_t<T>> &Variable::cast(const bool variances) const {
 }
 
 template <class T>
-Vector<underlying_type_t<T>> &Variable::cast(const bool variances) {
+Vector<underlying_type_t<T>> &Variable::cast(const bool variances_) {
   auto &dm = requireT<DataModel<Vector<underlying_type_t<T>>>>(*m_object);
-  if (!variances)
+  if (!variances_)
     return dm.m_values;
   else {
     if (!hasVariances())
@@ -896,15 +897,15 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   template VariableView<underlying_type_t<__VA_ARGS__>>                        \
   VariableProxy::castVariances<__VA_ARGS__>() const;
 
-INSTANTIATE_SLICEVIEW(double);
-INSTANTIATE_SLICEVIEW(float);
-INSTANTIATE_SLICEVIEW(int64_t);
-INSTANTIATE_SLICEVIEW(int32_t);
-INSTANTIATE_SLICEVIEW(bool);
-INSTANTIATE_SLICEVIEW(std::string);
-INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
-INSTANTIATE_SLICEVIEW(Dataset);
-INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
+INSTANTIATE_SLICEVIEW(double)
+INSTANTIATE_SLICEVIEW(float)
+INSTANTIATE_SLICEVIEW(int64_t)
+INSTANTIATE_SLICEVIEW(int32_t)
+INSTANTIATE_SLICEVIEW(bool)
+INSTANTIATE_SLICEVIEW(std::string)
+INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>)
+INSTANTIATE_SLICEVIEW(Dataset)
+INSTANTIATE_SLICEVIEW(Eigen::Vector3d)
 
 VariableConstProxy Variable::slice(const Slice slice) const & {
   return {*this, slice.dim, slice.begin, slice.end};
@@ -1041,12 +1042,12 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
       break;
     }
 
-  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord,
-                        auto &&newCoord) {
+  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
+                        auto &&newCoord_) {
     // Dimensions of *this and old are guaranteed to be the same.
     const auto &oldT = *old;
-    const auto &oldCoordT = *oldCoord;
-    const auto &newCoordT = *newCoord;
+    const auto &oldCoordT = *oldCoord_;
+    const auto &newCoordT = *newCoord_;
     auto &outT = *out;
     const auto &dims = outT.dims();
     if (dims.inner() == dim &&

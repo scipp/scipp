@@ -342,12 +342,12 @@ public:
       const auto slice = s.first;
       if (slice.end == -1) {
         for (auto it = m_items.begin(); it != m_items.end();) {
-          auto erase = [slice](const auto it) {
+          auto erase = [slice](const auto it2) {
             if constexpr (std::is_same_v<Key, Dim>)
-              return (it->first == slice.dim);
+              return (it2->first == slice.dim);
             else
-              return !it->second.first->dims().empty() &&
-                     (it->second.first->dims().inner() == slice.dim);
+              return !it2->second.first->dims().empty() &&
+                     (it2->second.first->dims().inner() == slice.dim);
           };
           if (erase(it))
             it = m_items.erase(it);

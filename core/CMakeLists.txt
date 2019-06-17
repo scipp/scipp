@@ -31,6 +31,13 @@ set(SRC_FILES
 add_library(scipp-core STATIC ${INC_FILES} ${SRC_FILES})
 target_link_libraries(scipp-core
                       PUBLIC scipp-units Boost::boost OpenMP::OpenMP_CXX)
+# Include tcb/span as system header to avoid compiler warnings.
+target_include_directories(
+  scipp-core SYSTEM
+  PUBLIC
+    $<INSTALL_INTERFACE:include/scipp/core/span/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/scipp/core/span/include>
+  )
 target_include_directories(
   scipp-core
   PUBLIC $<INSTALL_INTERFACE:include>

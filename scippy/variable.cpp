@@ -28,14 +28,14 @@ template <class T> struct MakeVariable {
     // Pybind11 converts py::array to py::array_t for us, with all sorts of
     // automatic conversions such as integer to double, if required.
     py::array_t<T> valuesT(values);
-    const py::buffer_info info = valuesT.request();
+    py::buffer_info info = valuesT.request();
     Dimensions dims(labels, info.shape);
     auto var =
         variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
     copy_flattened<T>(valuesT, var.template values<T>());
     if (variances) {
       py::array_t<T> variancesT(*variances);
-      const py::buffer_info info = variancesT.request();
+      info = variancesT.request();
       expect::equals(dims, Dimensions(labels, info.shape));
       copy_flattened<T>(variancesT, var.template variances<T>());
     }
@@ -154,8 +154,9 @@ template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
   const auto strides = VariableProxy(view).strides();
   const auto &dims = view.dims();
   using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
-  return py::array_t<py_T>{dims.shape(), numpy_strides<T>(strides),
-                           (py_T *)view.template values<T>().data(), obj};
+  return py::array_t<py_T>{
+      dims.shape(), numpy_strides<T>(strides),
+      reinterpret_cast<py_T *>(view.template values<T>().data()), obj};
 }
 
 template <class Var, class... Ts>
@@ -178,7 +179,7 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
 }
 
 using small_vector = boost::container::small_vector<double, 8>;
-PYBIND11_MAKE_OPAQUE(small_vector);
+PYBIND11_MAKE_OPAQUE(small_vector)
 
 void init_variable(py::module &m) {
   py::bind_vector<boost::container::small_vector<double, 8>>(
