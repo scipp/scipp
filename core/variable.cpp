@@ -128,7 +128,7 @@ template <typename T> struct RebinGeneralHelper {
 template <class T> class ViewModel;
 
 VariableConcept::VariableConcept(const Dimensions &dimensions)
-    : m_dimensions(dimensions){};
+    : m_dimensions(dimensions) {}
 
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
                            const Dimensions &toMatch) {
@@ -897,15 +897,15 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   template VariableView<underlying_type_t<__VA_ARGS__>>                        \
   VariableProxy::castVariances<__VA_ARGS__>() const;
 
-INSTANTIATE_SLICEVIEW(double);
-INSTANTIATE_SLICEVIEW(float);
-INSTANTIATE_SLICEVIEW(int64_t);
-INSTANTIATE_SLICEVIEW(int32_t);
-INSTANTIATE_SLICEVIEW(bool);
-INSTANTIATE_SLICEVIEW(std::string);
-INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
-INSTANTIATE_SLICEVIEW(Dataset);
-INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
+INSTANTIATE_SLICEVIEW(double)
+INSTANTIATE_SLICEVIEW(float)
+INSTANTIATE_SLICEVIEW(int64_t)
+INSTANTIATE_SLICEVIEW(int32_t)
+INSTANTIATE_SLICEVIEW(bool)
+INSTANTIATE_SLICEVIEW(std::string)
+INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>)
+INSTANTIATE_SLICEVIEW(Dataset)
+INSTANTIATE_SLICEVIEW(Eigen::Vector3d)
 
 VariableConstProxy Variable::slice(const Slice slice) const & {
   return {*this, slice.dim, slice.begin, slice.end};

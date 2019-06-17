@@ -65,6 +65,8 @@ add_compile_options(-Wall
                     -Wshadow
                     -Winit-self
                     -Wpointer-arith
+                    -Woverloaded-virtual
+                    -Wold-style-cast
                     -Wcast-qual
                     -Wcast-align)
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>

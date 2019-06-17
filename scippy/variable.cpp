@@ -154,8 +154,9 @@ template <class T, class Var> auto as_py_array_t(py::object &obj, Var &view) {
   const auto strides = VariableProxy(view).strides();
   const auto &dims = view.dims();
   using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
-  return py::array_t<py_T>{dims.shape(), numpy_strides<T>(strides),
-                           (py_T *)view.template values<T>().data(), obj};
+  return py::array_t<py_T>{
+      dims.shape(), numpy_strides<T>(strides),
+      reinterpret_cast<py_T *>(view.template values<T>().data()), obj};
 }
 
 template <class Var, class... Ts>
