@@ -17,6 +17,7 @@ Currently there are two installation options:
       docker run -p 8888:8888 dmscid/dataset
 
    Navigate to ``localhost:8888`` in your browser.
-   The relevant demo notebooks can be found in the ``demo/`` folder.
+   A number of Jupyter demo notebooks can be found in the ``demo/`` folder.
+   These notebooks provide an introduction and basic usage turorial.
 
 We hope to provide proper, working, and up-to-date installation options with an upcoming 0.1 release, within the next couple of months.
