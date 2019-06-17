@@ -66,25 +66,6 @@ auto as_py_array_t_impl(py::object &obj, Var &view) {
       reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
 }
 
-template <class Getter, class Var>
-std::optional<py::object> as_py_array_t(py::object &obj) {
-  auto &view = obj.cast<Var &>();
-  switch (view.data().dtype()) {
-  case dtype<double>:
-    return as_py_array_t_impl<Getter, double>(obj, view);
-  case dtype<float>:
-    return as_py_array_t_impl<Getter, float>(obj, view);
-  case dtype<int64_t>:
-    return as_py_array_t_impl<Getter, int64_t>(obj, view);
-  case dtype<int32_t>:
-    return as_py_array_t_impl<Getter, int32_t>(obj, view);
-  case dtype<bool>:
-    return as_py_array_t_impl<Getter, bool>(obj, view);
-  default:
-    return {};
-  }
-}
-
 struct get_values {
   template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
     return proxy.template values<T>();
@@ -126,19 +107,33 @@ template <class... Ts> struct as_VariableViewImpl {
       throw std::runtime_error("not implemented for this type.");
     }
   }
-  template <class Var> static py::object values(py::object &object) {
-    auto &view = object.cast<Var &>();
-    if (auto arr = as_py_array_t<get_values, Var>(object); arr)
-      return std::move(arr.value());
-    return std::visit([](const auto &data) { return py::cast(data); },
-                      get<get_values>(view));
+
+  template <class Getter, class Var>
+  static py::object get_py_array_t(py::object &obj) {
+    auto &view = obj.cast<Var &>();
+    switch (view.data().dtype()) {
+    case dtype<double>:
+      return as_py_array_t_impl<Getter, double>(obj, view);
+    case dtype<float>:
+      return as_py_array_t_impl<Getter, float>(obj, view);
+    case dtype<int64_t>:
+      return as_py_array_t_impl<Getter, int64_t>(obj, view);
+    case dtype<int32_t>:
+      return as_py_array_t_impl<Getter, int32_t>(obj, view);
+    case dtype<bool>:
+      return as_py_array_t_impl<Getter, bool>(obj, view);
+    default:
+      return std::visit([](const auto &data) { return py::cast(data); },
+                        get<Getter>(view));
+    }
   }
+
+  template <class Var> static py::object values(py::object &object) {
+    return get_py_array_t<get_values, Var>(object);
+  }
+
   template <class Var> static py::object variances(py::object &object) {
-    auto &view = object.cast<Var &>();
-    if (auto arr = as_py_array_t<get_variances, Var>(object); arr)
-      return std::move(arr.value());
-    return std::visit([](const auto &data) { return py::cast(data); },
-                      get<get_variances>(view));
+    return get_py_array_t<get_variances, Var>(object);
   }
 
   template <class Proxy>
