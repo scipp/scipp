@@ -28,14 +28,14 @@ template <class T> struct MakeVariable {
     // Pybind11 converts py::array to py::array_t for us, with all sorts of
     // automatic conversions such as integer to double, if required.
     py::array_t<T> valuesT(values);
-    const py::buffer_info info = valuesT.request();
+    py::buffer_info info = valuesT.request();
     Dimensions dims(labels, info.shape);
     auto var =
         variances ? makeVariableWithVariances<T>(dims) : makeVariable<T>(dims);
     copy_flattened<T>(valuesT, var.template values<T>());
     if (variances) {
       py::array_t<T> variancesT(*variances);
-      const py::buffer_info info = variancesT.request();
+      info = variancesT.request();
       expect::equals(dims, Dimensions(labels, info.shape));
       copy_flattened<T>(variancesT, var.template variances<T>());
     }

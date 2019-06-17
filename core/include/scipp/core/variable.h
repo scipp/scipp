@@ -22,8 +22,8 @@ namespace scipp::core {
 
 /// Helper for passing slicing parameters.
 struct Slice {
-  Slice(const Dim dim, const scipp::index begin, const scipp::index end = -1)
-      : dim(dim), begin(begin), end(end) {}
+  Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_ = -1)
+      : dim(dim_), begin(begin_), end(end_) {}
   Dim dim;
   scipp::index begin;
   scipp::index end;
@@ -261,9 +261,10 @@ public:
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            T variances);
   template <class T>
-  Variable(const Dimensions &dimensions, std::initializer_list<T> values)
+  Variable(const Dimensions &dimensions, std::initializer_list<T> values_)
       : Variable(units::dimensionless, std::move(dimensions),
-                 Vector<underlying_type_t<T>>(values.begin(), values.end())) {}
+                 Vector<underlying_type_t<T>>(values_.begin(), values_.end())) {
+  }
 
   explicit operator bool() const noexcept { return m_object.operator bool(); }
 

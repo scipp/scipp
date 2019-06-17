@@ -7,6 +7,6 @@
 
 #define TCB_SPAN_STD_COMPLIANT_MODE
 #define TCB_SPAN_NAMESPACE_NAME scipp
-#include "span/include/tcb/span.hpp"
+#include "tcb/span.hpp"
 
 #endif // SPAN_H

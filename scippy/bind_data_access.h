@@ -71,11 +71,11 @@ template <class... Ts> struct as_VariableViewImpl {
   template <class Proxy>
   static void set(const Proxy &proxy, const py::array &data) {
     std::visit(
-        [&data](const auto &proxy) {
+        [&data](const auto &proxy_) {
           using T =
-              typename std::remove_reference_t<decltype(proxy)>::value_type;
+              typename std::remove_reference_t<decltype(proxy_)>::value_type;
           if constexpr (std::is_trivial_v<T>) {
-            copy_flattened<T>(data, proxy);
+            copy_flattened<T>(data, proxy_);
           } else {
             throw std::runtime_error("Only POD types can be set from numpy.");
           }

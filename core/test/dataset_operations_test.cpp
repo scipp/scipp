@@ -104,9 +104,9 @@ TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
                       return coord.first == dim ||
                              !coord.second.dims().contains(dim);
                     }) &&
-        std::all_of(labels.begin(), labels.end(), [dim](const auto &labels) {
-          return labels.second.dims().inner() == dim ||
-                 !labels.second.dims().contains(dim);
+        std::all_of(labels.begin(), labels.end(), [dim](const auto &labels_) {
+          return labels_.second.dims().inner() == dim ||
+                 !labels_.second.dims().contains(dim);
         })) {
       ASSERT_NO_THROW(target += item.slice({dim, 2}));
 

@@ -34,7 +34,7 @@ using arithmetic_and_matrix_type_pairs = decltype(
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
   expect::equals(a.unit(), b.unit());
   auto result = transform<arithmetic_and_matrix_type_pairs>(
-      a, b, [](const auto a, const auto b) { return a + b; });
+      a, b, [](const auto a_, const auto b_) { return a_ + b_; });
   result.setUnit(a.unit());
   return result;
 }
@@ -70,7 +70,7 @@ template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
 template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
   expect::equals(a.unit(), b.unit());
   auto result = transform<arithmetic_and_matrix_type_pairs>(
-      a, b, [](const auto a, const auto b) { return a - b; });
+      a, b, [](const auto a_, const auto b_) { return a_ - b_; });
   result.setUnit(a.unit());
   return result;
 }
@@ -97,7 +97,7 @@ template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
 
 template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
   auto result = transform<arithmetic_type_pairs>(
-      a, b, [](const auto a, const auto b) { return a * b; });
+      a, b, [](const auto a_, const auto b_) { return a_ * b_; });
   result.setUnit(a.unit() * b.unit());
   return result;
 }
@@ -126,7 +126,7 @@ template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
 
 template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
   auto result = transform<arithmetic_type_pairs>(
-      a, b, [](const auto a, const auto b) { return a / b; });
+      a, b, [](const auto a_, const auto b_) { return a_ / b_; });
   result.setUnit(a.unit() / b.unit());
   return result;
 }
@@ -239,9 +239,10 @@ Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
-  transform_in_place<double, float>(b, overloaded{[a](double &b) { b = a / b; },
-                                                  [a](float &b) { b = a / b; },
-                                                  [a](auto &b) { b = a / b; }});
+  transform_in_place<double, float>(b,
+                                    overloaded{[a](double &b_) { b_ = a / b_; },
+                                               [a](float &b_) { b_ = a / b_; },
+                                               [a](auto &b_) { b_ = a / b_; }});
   return b;
 }
 
