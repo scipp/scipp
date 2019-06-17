@@ -120,6 +120,8 @@ TEST(DatasetTest, setData_with_and_without_variances) {
   ASSERT_EQ(d.size(), 2);
 }
 
+TEST(DatasetTest, setData_dense_when_dimensions_sparse) {}
+
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
   d.setData("a", makeVariable<double>({Dim::X, 3}));
@@ -247,6 +249,23 @@ TEST(DatasetTest, const_iterators_return_types) {
   const Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(d.begin()->second), DataConstProxy>));
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
+}
+
+TEST(DatasetTest, set_dense_data_with_sparse_coord) {
+
+  auto sparse_variable =
+      makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto dense_variable = makeVariable<double>({Dim::Y, Dim::X}, {2, 2});
+
+  Dataset a;
+  a.setData("sparse_coord_and_val", dense_variable);
+  ASSERT_THROW(a.setSparseCoord("sparse_coord_and_val", sparse_variable),
+               std::runtime_error);
+
+  // Characterise temporal coupling issue below.
+  Dataset b;
+  b.setSparseCoord("sparse_coord_and_val", sparse_variable);
+  b.setData("sparse_coord_and_val", dense_variable);
 }
 
 class Dataset_comparison_operators : public ::testing::Test {
