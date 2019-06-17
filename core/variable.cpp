@@ -1178,7 +1178,7 @@ Variable sqrt(const Variable &var) {
 
 Variable broadcast(Variable var, const Dimensions &dims) {
   if (var.dims().contains(dims))
-    return std::move(var);
+    return var;
   auto newDims = var.dims();
   const auto labels = dims.labels();
   for (auto it = labels.end(); it != labels.begin();) {
@@ -1206,7 +1206,7 @@ Variable reverse(Variable var, const Dim dim) {
   const auto size = var.dims()[dim];
   for (scipp::index i = 0; i < size / 2; ++i)
     swap(var, dim, i, size - i - 1);
-  return std::move(var);
+  return var;
 }
 
 template <>
