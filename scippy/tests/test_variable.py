@@ -99,15 +99,46 @@ def test_0D_scalar_access():
     assert var.value == 0.0
     var.value = 1.2
     assert var.value == 1.2
-    assert var.values[0] == 1.2
+    assert var.values.shape == ()
+    assert var.values == 1.2
 
 
 def test_1D_scalar_access_fail():
-    var = sp.Variable([sp.Dim.X], (1,))
+    var = sp.Variable([Dim.X], (1,))
     with pytest.raises(RuntimeError):
         assert var.value == 0.0
     with pytest.raises(RuntimeError):
         var.value = 1.2
+
+
+def test_1D_access():
+    var = sp.Variable([Dim.X], (2,))
+    assert len(var.values) == 2
+    assert var.values.shape == (2,)
+    var.values[1] = 1.2
+    assert var.values[1] == 1.2
+
+
+def test_2D_access():
+    var = sp.Variable([Dim.X, Dim.Y], (2,3))
+    assert var.values.shape == (2,3)
+    assert len(var.values) == 2
+    assert len(var.values[0]) == 3
+    var.values[1] = 1.2 # numpy assigns to all elements in "slice"
+    var.values[1][2] = 2.2
+    assert var.values[1][0] == 1.2
+    assert var.values[1][1] == 1.2
+    assert var.values[1][2] == 2.2
+
+
+def test_2D_access_variances():
+    var = sp.Variable([Dim.X, Dim.Y], (2,3), variances=True)
+    assert var.values.shape == (2,3)
+    assert var.variances.shape == (2,3)
+    var.values[1] = 1.2
+    assert np.array_equal(var.variances, np.zeros(shape=(2,3)))
+    var.variances = np.ones(shape=(2,3))
+    assert np.array_equal(var.variances, np.ones(shape=(2,3)))
 
 
 def test_create_dtype():

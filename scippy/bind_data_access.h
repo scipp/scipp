@@ -7,6 +7,7 @@
 
 #include <variant>
 
+#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
@@ -51,31 +52,57 @@ inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
                    bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
-template <class T, class Var>
+template <class Getter, class T, class Var>
 auto as_py_array_t_impl(py::object &obj, Var &view) {
-  const auto strides = VariableProxy(view).strides();
+  std::vector<scipp::index> strides;
+  if constexpr (std::is_same_v<Var, DataProxy>)
+    strides = VariableProxy(view.data()).strides();
+  else
+    strides = VariableProxy(view).strides();
   const auto &dims = view.dims();
   using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
   return py::array_t<py_T>{
       dims.shape(), numpy_strides<T>(strides),
-      reinterpret_cast<py_T *>(view.template values<T>().data()), obj};
+      reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
 }
 
-template <class Var, class... Ts> py::object as_py_array_t(py::object &obj) {
+template <class Getter, class Var, class... Ts>
+py::object as_py_array_t(py::object &obj) {
   auto &view = obj.cast<Var &>();
-  switch (view.dtype()) {
+  switch (view.data().dtype()) {
   case dtype<double>:
-    return as_py_array_t_impl<double>(obj, view);
+    return as_py_array_t_impl<Getter, double>(obj, view);
   case dtype<float>:
-    return as_py_array_t_impl<float>(obj, view);
+    return as_py_array_t_impl<Getter, float>(obj, view);
   case dtype<int64_t>:
-    return as_py_array_t_impl<int64_t>(obj, view);
+    return as_py_array_t_impl<Getter, int64_t>(obj, view);
   case dtype<int32_t>:
-    return as_py_array_t_impl<int32_t>(obj, view);
+    return as_py_array_t_impl<Getter, int32_t>(obj, view);
   case dtype<bool>:
-    return as_py_array_t_impl<bool>(obj, view);
+    return as_py_array_t_impl<Getter, bool>(obj, view);
   default:
     throw std::runtime_error("not implemented for this type.");
+  }
+}
+
+template <class Getter, class Var> py::object get_py_array_t(py::object &obj) {
+  return as_py_array_t<Getter, Var, double, float, int64_t, int32_t, bool>(obj);
+}
+
+inline bool is_numpy_dtype(const DType type) {
+  switch (type) {
+  case dtype<double>:
+    return true;
+  case dtype<float>:
+    return true;
+  case dtype<int64_t>:
+    return true;
+  case dtype<int32_t>:
+    return true;
+  case dtype<bool>:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -120,11 +147,17 @@ template <class... Ts> struct as_VariableViewImpl {
       throw std::runtime_error("not implemented for this type.");
     }
   }
-  template <class Var> static py::object values(Var &view) {
+  template <class Var> static py::object values(py::object &object) {
+    auto &view = object.cast<Var &>();
+    if (is_numpy_dtype(view.data().dtype()))
+      return get_py_array_t<get_values, Var>(object);
     return std::visit([](const auto &data) { return py::cast(data); },
                       get<get_values>(view));
   }
-  template <class Var> static py::object variances(Var &view) {
+  template <class Var> static py::object variances(py::object &object) {
+    auto &view = object.cast<Var &>();
+    if (is_numpy_dtype(view.data().dtype()))
+      return get_py_array_t<get_variances, Var>(object);
     return std::visit([](const auto &data) { return py::cast(data); },
                       get<get_variances>(view));
   }
