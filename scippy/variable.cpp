@@ -57,8 +57,6 @@ template <class T> struct MakeVariableDefaultInit {
 };
 
 namespace scippy {
-using dtype = std::variant<py::dtype, scipp::core::DType>;
-
 scipp::core::DType scipp_dtype(const py::dtype &type) {
   if (type.is(py::dtype::of<double>()))
     return scipp::core::dtype<double>;
