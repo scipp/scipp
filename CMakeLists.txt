@@ -60,6 +60,8 @@ endif()
 
 add_compile_options(-Wall
                     -Wextra
+                    -Wpedantic
+                    -Wunused
                     -Wshadow
                     -Winit-self
                     -Wpointer-arith

@@ -178,7 +178,7 @@ std::variant<py::array_t<Ts>...> as_py_array_t_variant(py::object &obj) {
 }
 
 using small_vector = boost::container::small_vector<double, 8>;
-PYBIND11_MAKE_OPAQUE(small_vector);
+PYBIND11_MAKE_OPAQUE(small_vector)
 
 void init_variable(py::module &m) {
   py::bind_vector<boost::container::small_vector<double, 8>>(

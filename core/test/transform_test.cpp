@@ -335,7 +335,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail, baseline) {
   ASSERT_NO_THROW(
       transform_in_place<pair_self_t<double>>(a, val_var, op_in_place));
   ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place));
-};
+}
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        a_values_size_bad) {
@@ -347,7 +347,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
                except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
                except::SizeError);
-};
+}
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        a_variances_size_bad) {
@@ -359,7 +359,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
                except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
                except::SizeError);
-};
+}
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_var_values_size_bad) {
@@ -368,7 +368,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
                except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
-};
+}
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_var_variances_size_bad) {
@@ -377,7 +377,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
                except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
-};
+}
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_values_size_bad) {
@@ -385,7 +385,7 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
   ASSERT_THROW(transform<pair_self_t<double>>(a, val, op), except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
                except::SizeError);
-};
+}
 
 auto make_sparse_variable_with_variance() {
   Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});

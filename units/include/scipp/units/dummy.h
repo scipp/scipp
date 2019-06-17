@@ -21,7 +21,7 @@ using supported_units = decltype(detail::make_unit(
 using counts_unit = decltype(dimensionless);
 using Unit = Unit_impl<supported_units, counts_unit>;
 
-SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z);
+SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z)
 
 } // namespace dummy
 } // namespace scipp::units

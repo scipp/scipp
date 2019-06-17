@@ -303,7 +303,7 @@ protected:
   Variable sparse_variable;
 };
 
-auto make_empty() { return Dataset(); };
+auto make_empty() { return Dataset(); }
 
 template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
