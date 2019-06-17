@@ -59,13 +59,13 @@ template <class... Ts> struct as_VariableViewImpl {
       throw std::runtime_error("not implemented for this type.");
     }
   }
-  template <class Var>
-  static auto values(Var &view) -> decltype(get<get_values>(view)) {
-    return get<get_values>(view);
+  template <class Var> static py::object values(Var &view) {
+    return std::visit([](const auto &data) { return py::cast(data); },
+                      get<get_values>(view));
   }
-  template <class Var>
-  static auto variances(Var &view) -> decltype(get<get_variances>(view)) {
-    return get<get_variances>(view);
+  template <class Var> static py::object variances(Var &view) {
+    return std::visit([](const auto &data) { return py::cast(data); },
+                      get<get_variances>(view));
   }
 
   template <class Proxy>
@@ -84,11 +84,11 @@ template <class... Ts> struct as_VariableViewImpl {
   }
   template <class Var>
   static void set_values(Var &view, const py::array &data) {
-    set(values(view), data);
+    set(get<get_values>(view), data);
   }
   template <class Var>
   static void set_variances(Var &view, const py::array &data) {
-    set(variances(view), data);
+    set(get<get_variances>(view), data);
   }
 
   // Return a scalar value from a variable, implicitly requiring that the
@@ -99,7 +99,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [](const auto &data) {
           return py::cast(data[0], py::return_value_policy::reference);
         },
-        values(view));
+        get<get_values>(view));
   }
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -109,7 +109,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [](const auto &data) {
           return py::cast(data[0], py::return_value_policy::reference);
         },
-        variances(view));
+        get<get_variances>(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -119,7 +119,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
         },
-        values(view));
+        get<get_values>(view));
   }
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -130,7 +130,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
         },
-        variances(view));
+        get<get_variances>(view));
   }
 };
 
@@ -156,11 +156,11 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property("value", &as_VariableView::value<T>,
                  &as_VariableView::set_value<T>,
                  "The only value for 0-dimensional data. Raises an exception "
-                 "of the data is not 0-dimensional.");
+                 "if the data is not 0-dimensional.");
   c.def_property("variance", &as_VariableView::variance<T>,
                  &as_VariableView::set_variance<T>,
                  "The only variance for 0-dimensional data. Raises an "
-                 "exception of the data is not 0-dimensional.");
+                 "exception if the data is not 0-dimensional.");
   c.def_property_readonly("has_variances", &T::hasVariances);
 }
 
