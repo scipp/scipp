@@ -66,8 +66,8 @@ auto as_py_array_t_impl(py::object &obj, Var &view) {
       reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
 }
 
-template <class Getter, class Var, class... Ts>
-py::object as_py_array_t(py::object &obj) {
+template <class Getter, class Var>
+std::optional<py::object> as_py_array_t(py::object &obj) {
   auto &view = obj.cast<Var &>();
   switch (view.data().dtype()) {
   case dtype<double>:
@@ -81,28 +81,7 @@ py::object as_py_array_t(py::object &obj) {
   case dtype<bool>:
     return as_py_array_t_impl<Getter, bool>(obj, view);
   default:
-    throw std::runtime_error("not implemented for this type.");
-  }
-}
-
-template <class Getter, class Var> py::object get_py_array_t(py::object &obj) {
-  return as_py_array_t<Getter, Var, double, float, int64_t, int32_t, bool>(obj);
-}
-
-inline bool is_numpy_dtype(const DType type) {
-  switch (type) {
-  case dtype<double>:
-    return true;
-  case dtype<float>:
-    return true;
-  case dtype<int64_t>:
-    return true;
-  case dtype<int32_t>:
-    return true;
-  case dtype<bool>:
-    return true;
-  default:
-    return false;
+    return {};
   }
 }
 
@@ -149,15 +128,15 @@ template <class... Ts> struct as_VariableViewImpl {
   }
   template <class Var> static py::object values(py::object &object) {
     auto &view = object.cast<Var &>();
-    if (is_numpy_dtype(view.data().dtype()))
-      return get_py_array_t<get_values, Var>(object);
+    if (auto arr = as_py_array_t<get_values, Var>(object); arr)
+      return std::move(arr.value());
     return std::visit([](const auto &data) { return py::cast(data); },
                       get<get_values>(view));
   }
   template <class Var> static py::object variances(py::object &object) {
     auto &view = object.cast<Var &>();
-    if (is_numpy_dtype(view.data().dtype()))
-      return get_py_array_t<get_variances, Var>(object);
+    if (auto arr = as_py_array_t<get_variances, Var>(object); arr)
+      return std::move(arr.value());
     return std::visit([](const auto &data) { return py::cast(data); },
                       get<get_variances>(view));
   }
