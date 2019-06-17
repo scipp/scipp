@@ -180,7 +180,15 @@ template <class T> struct ValuesAndVariances {
     throw std::runtime_error(
         "`begin` not implemented for sparse data with variances.");
   }
+  void *begin() const {
+    throw std::runtime_error(
+        "`begin` not implemented for sparse data with variances.");
+  }
   void *end() {
+    throw std::runtime_error(
+        "`end` not implemented for sparse data with variances.");
+  }
+  void *end() const {
     throw std::runtime_error(
         "`end` not implemented for sparse data with variances.");
   }
@@ -193,6 +201,8 @@ template <class T>
 struct has_variances<ValueAndVariance<T>> : std::true_type {};
 template <class T>
 struct has_variances<ValuesAndVariances<T>> : std::true_type {};
+template <class T>
+struct has_variances<ValuesAndVariances<T> &> : std::true_type {};
 template <class T>
 inline constexpr bool has_variances_v = has_variances<T>::value;
 
@@ -223,6 +233,8 @@ template <class Op, class T, class... Ts>
 void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
                                            Ts &&... other) {
   auto & [ vals, vars ] = arg;
+  // WARNING: Do not parallelize this loop in all cases! The output may have a
+  // dimension with stride zero so parallelization must be done with care.
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
     // Two cases are distinguished here:
     // 1. In the case of sparse data we create ValuesAndVariances, which hold
@@ -234,8 +246,8 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
     // This then falls into case 2 and thus the recursion terminates with the
     // second level.
     if constexpr (is_sparse_v<decltype(vals[0])>) {
-      op(ValuesAndVariances{vals[i], vars[i]},
-         value_and_maybe_variance(other, i)...);
+      ValuesAndVariances _{vals[i], vars[i]};
+      op(_, value_and_maybe_variance(other, i)...);
     } else {
       ValueAndVariance _{vals[i], vars[i]};
       op(_, value_and_maybe_variance(other, i)...);
@@ -264,6 +276,8 @@ void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
 
 template <class Op, class T, class... Ts>
 void transform_in_place_impl(Op op, T &&vals, Ts &&... other) {
+  // WARNING: Do not parallelize this loop in all cases! The output may have a
+  // dimension with stride zero so parallelization must be done with care.
   for (scipp::index i = 0; i < scipp::size(vals); ++i)
     op(vals[i], other[i]...);
 }
@@ -289,6 +303,8 @@ struct element_type<ValuesAndVariances<const sparse_container<T>>> {
   using type = T;
 };
 template <class T> using element_type_t = typename element_type<T>::type;
+template <class T>
+using const_element_type_t = const typename element_type<T>::type;
 
 namespace transform_detail {
 template <class T> struct is_sparse : std::false_type {};
@@ -738,7 +754,7 @@ void transform_in_place(Var &&var, const Var1 &other, Op op) {
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Var, class Op>
-Variable transform(const Var &var, Op op) {
+[[nodiscard]] Variable transform(const Var &var, Op op) {
   using namespace detail;
   try {
     if constexpr ((is_sparse_v<Ts> || ...)) {
@@ -789,7 +805,7 @@ Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... TypePairs, class Var1, class Var2, class Op>
-Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
+[[nodiscard]] Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   return detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
 }

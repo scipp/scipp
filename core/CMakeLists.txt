@@ -25,6 +25,7 @@ set(SRC_FILES
     #events.cpp
     except.cpp
     variable.cpp
+    variable_binary_ops.cpp
     view_index.cpp)
 
 add_library(scipp-core STATIC ${INC_FILES} ${SRC_FILES})
