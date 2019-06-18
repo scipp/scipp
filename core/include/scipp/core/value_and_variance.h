@@ -71,7 +71,7 @@ constexpr auto operator+(const ValueAndVariance<T1> a,
 template <class T1, class T2>
 constexpr auto operator-(const ValueAndVariance<T1> a,
                          const ValueAndVariance<T2> b) noexcept {
-  return ValueAndVariance{a.value - b.value, a.variance - b.variance};
+  return ValueAndVariance{a.value - b.value, a.variance + b.variance};
 }
 template <class T1, class T2>
 constexpr auto operator*(const ValueAndVariance<T1> a,
