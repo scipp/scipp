@@ -744,4 +744,112 @@ std::ostream &operator<<(std::ostream &os, const Dim dim) {
   return os << to_string(dim);
 }
 
+Dataset operator+(const Dataset &lhs, const Dataset &rhs) {
+  Dataset res(lhs);
+  apply(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator+(Dataset &&lhs, const Dataset &rhs) {
+  return apply(plus_equals, lhs, rhs);
+}
+
+Dataset operator+(const Dataset &lhs, Dataset &&rhs) {
+  return apply(plus_equals, rhs, lhs);
+}
+
+Dataset operator+(Dataset &&lhs, Dataset &&rhs) {
+  return apply(plus_equals, lhs, rhs);
+}
+
+Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
+  Dataset res(lhs);
+  apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(Dataset &&lhs, const Dataset &rhs) {
+  return apply(minus_equals, lhs, rhs);
+}
+
+Dataset operator-(Dataset &&lhs, Dataset &&rhs) {
+  return apply(minus_equals, lhs, rhs);
+}
+
+Dataset operator*(const Dataset &lhs, const Dataset &rhs) {
+  Dataset res(lhs);
+  apply(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(Dataset &&lhs, const Dataset &rhs) {
+  return apply(times_equals, lhs, rhs);
+}
+
+Dataset operator*(Dataset &&lhs, Dataset &&rhs) {
+  return apply(times_equals, lhs, rhs);
+}
+
+Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
+  Dataset res(lhs);
+  apply(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(Dataset &&lhs, const Dataset &rhs) {
+  return apply(divide_equals, lhs, rhs);
+}
+
+Dataset operator/(Dataset &&lhs, Dataset &&rhs) {
+  return apply(divide_equals, lhs, rhs);
+}
+
+Dataset operator+(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs);
+  apply(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs);
+  apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs);
+  apply(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs);
+  apply(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator+(const Dataset &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const Dataset &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(const Dataset &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const Dataset &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(divide_equals, res, rhs);
+  return res;
+}
+
 } // namespace scipp::core

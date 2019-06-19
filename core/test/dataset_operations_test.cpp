@@ -21,10 +21,20 @@ struct plus_equals {
     return a += b;
   }
 };
+struct plus {
+  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
+    return std::forward<A>(a) + std::forward<B>(b);
+  }
+};
 struct minus_equals {
   template <class A, class B>
   decltype(auto) operator()(A &&a, const B &b) const {
     return a -= b;
+  }
+};
+struct minus {
+  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
+    return std::forward<A>(a) - std::forward<B>(b);
   }
 };
 struct times_equals {
@@ -33,13 +43,24 @@ struct times_equals {
     return a *= b;
   }
 };
+struct times {
+  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
+    return std::forward<A>(a) * std::forward<B>(b);
+  }
+};
 struct divide_equals {
   template <class A, class B>
   decltype(auto) operator()(A &&a, const B &b) const {
     return a /= b;
   }
 };
+struct divide {
+  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
+    return std::forward<A>(a) / std::forward<B>(b);
+  }
+};
 
+using Binary = ::testing::Types<plus, minus, times, divide>;
 using BinaryEquals =
     ::testing::Types<plus_equals, minus_equals, times_equals, divide_equals>;
 
@@ -71,12 +92,12 @@ TYPED_TEST_SUITE(DatasetProxyBinaryOpTest, BinaryEquals);
 TYPED_TEST(DataProxyBinaryOpTest, other_data_unchanged) {
   const auto dataset_b = datasetFactory.make();
 
-  for (const auto & [ _, item ] : dataset_b) {
+  for (const auto &item : dataset_b) {
     auto dataset_a = datasetFactory.make();
     const auto original_a(dataset_a);
     auto target = dataset_a["data_zyx"];
 
-    ASSERT_NO_THROW(target = TestFixture::op(target, item));
+    ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
 
     for (const auto & [ name, data ] : dataset_a) {
       if (name != "data_zyx") {
@@ -89,14 +110,14 @@ TYPED_TEST(DataProxyBinaryOpTest, other_data_unchanged) {
 TYPED_TEST(DataProxyBinaryOpTest, lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
-  for (const auto & [ _, item ] : dataset_b) {
+  for (const auto &item : dataset_b) {
     auto dataset_a = datasetFactory.make();
     auto target = dataset_a["data_zyx"];
 
     auto reference(target.data());
-    reference = TestFixture::op(target.data(), item.data());
+    reference = TestFixture::op(target.data(), item.second.data());
 
-    ASSERT_NO_THROW(target = TestFixture::op(target, item));
+    ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
     EXPECT_EQ(target.data(), reference);
   }
 }
@@ -104,17 +125,17 @@ TYPED_TEST(DataProxyBinaryOpTest, lhs_with_variance) {
 TYPED_TEST(DataProxyBinaryOpTest, lhs_without_variance) {
   const auto dataset_b = datasetFactory.make();
 
-  for (const auto & [ _, item ] : dataset_b) {
+  for (const auto &item : dataset_b) {
     auto dataset_a = datasetFactory.make();
     auto target = dataset_a["data_xyz"];
 
-    if (item.hasVariances()) {
-      ASSERT_ANY_THROW(TestFixture::op(target, item));
+    if (item.second.hasVariances()) {
+      ASSERT_ANY_THROW(TestFixture::op(target, item.second));
     } else {
       auto reference(target.data());
-      reference = TestFixture::op(target.data(), item.data());
+      reference = TestFixture::op(target.data(), item.second.data());
 
-      ASSERT_NO_THROW(target = TestFixture::op(target, item));
+      ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
       EXPECT_EQ(target.data(), reference);
       EXPECT_FALSE(target.hasVariances());
     }
@@ -124,22 +145,22 @@ TYPED_TEST(DataProxyBinaryOpTest, lhs_without_variance) {
 TYPED_TEST(DataProxyBinaryOpTest, slice_lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
-  for (const auto & [ _, item ] : dataset_b) {
+  for (const auto &item : dataset_b) {
     auto dataset_a = datasetFactory.make();
     auto target = dataset_a["data_zyx"];
-    const auto &dims = item.dims();
+    const auto &dims = item.second.dims();
 
     for (const Dim dim : dims.labels()) {
       auto reference(target.data());
-      reference = TestFixture::op(target.data(), item.data());
+      reference = TestFixture::op(target.data(), item.second.data());
 
       // Fails if any *other* multi-dimensional coord/label also depends on the
       // slicing dimension, since it will have mismatching values. Note that
       // this behavior is intended and important. It is crucial for preventing
       // operations between misaligned data in case a coordinate is
       // multi-dimensional.
-      const auto coords = item.coords();
-      const auto labels = item.labels();
+      const auto coords = item.second.coords();
+      const auto labels = item.second.labels();
       if (std::all_of(coords.begin(), coords.end(),
                       [dim](const auto &coord) {
                         return coord.first == dim ||
@@ -149,11 +170,12 @@ TYPED_TEST(DataProxyBinaryOpTest, slice_lhs_with_variance) {
             return labels_.second.dims().inner() == dim ||
                    !labels_.second.dims().contains(dim);
           })) {
-        ASSERT_NO_THROW(target = TestFixture::op(target, item.slice({dim, 2})));
+        ASSERT_NO_THROW(
+            target = TestFixture::op(target, item.second.slice({dim, 2})));
         EXPECT_EQ(target.data(), reference);
       } else {
-        ASSERT_ANY_THROW(target =
-                             TestFixture::op(target, item.slice({dim, 2})));
+        ASSERT_ANY_THROW(
+            target = TestFixture::op(target, item.second.slice({dim, 2})));
       }
     }
   }
@@ -434,4 +456,71 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
                except::CoordMismatchError);
   ASSERT_THROW(TestFixture::op(proxy, dataset.slice({Dim::Z, 3, 4})),
                except::CoordMismatchError);
+}
+
+template <class Op>
+class DatasetBinaryOpTest2 : public ::testing::Test,
+                             public ::testing::WithParamInterface<Op> {
+protected:
+  Op op;
+};
+
+TYPED_TEST_SUITE(DatasetBinaryOpTest2, Binary);
+
+TYPED_TEST(DatasetBinaryOpTest2,
+           dataset_const_lvalue_lhs_dataset_const_lvalue_rhs) {
+  auto dataset_a = datasetFactory.make();
+  auto dataset_b = datasetFactory.make();
+
+  const auto res = TestFixture::op(dataset_a, dataset_b);
+
+  for (const auto & [ name, item ] : res) {
+    const auto reference =
+        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+    EXPECT_EQ(reference, item.data());
+  }
+}
+
+TYPED_TEST(DatasetBinaryOpTest2, dataset_rvalue_lhs_dataset_const_lvalue_rhs) {
+  const auto dataset_a = datasetFactory.make();
+  auto dataset_b = datasetFactory.make();
+
+  auto dataset_a_copy(dataset_a);
+  const auto res = TestFixture::op(std::move(dataset_a_copy), dataset_b);
+
+  for (const auto & [ name, item ] : res) {
+    const auto reference =
+        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+    EXPECT_EQ(reference, item.data());
+  }
+}
+
+TYPED_TEST(DatasetBinaryOpTest2, dataset_const_lvalue_lhs_dataset_rvalue_rhs) {
+  auto dataset_a = datasetFactory.make();
+  const auto dataset_b = datasetFactory.make();
+
+  auto dataset_b_copy(dataset_b);
+  const auto res = TestFixture::op(dataset_a, std::move(dataset_b_copy));
+
+  for (const auto & [ name, item ] : res) {
+    const auto reference =
+        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+    EXPECT_EQ(reference, item.data());
+  }
+}
+
+TYPED_TEST(DatasetBinaryOpTest2, dataset_rvalue_lhs_dataset_rvalue_rhs) {
+  const auto dataset_a = datasetFactory.make();
+  const auto dataset_b = datasetFactory.make();
+
+  auto dataset_a_copy(dataset_a);
+  auto dataset_b_copy(dataset_b);
+  const auto res =
+      TestFixture::op(std::move(dataset_a_copy), std::move(dataset_b_copy));
+
+  for (const auto & [ name, item ] : res) {
+    const auto reference =
+        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+    EXPECT_EQ(reference, item.data());
+  }
 }

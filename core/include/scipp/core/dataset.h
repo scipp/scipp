@@ -626,6 +626,33 @@ std::ostream &operator<<(std::ostream &os, const VariableProxy &variable);
 std::ostream &operator<<(std::ostream &os, const Variable &variable);
 std::ostream &operator<<(std::ostream &os, const Dim dim);
 
+Dataset operator+(const Dataset &lhs, const Dataset &rhs);
+Dataset operator+(Dataset &&lhs, const Dataset &rhs);
+Dataset operator+(const Dataset &lhs, Dataset &&rhs);
+Dataset operator+(Dataset &&lhs, Dataset &&rhs);
+
+Dataset operator-(const Dataset &lhs, const Dataset &rhs);
+Dataset operator-(Dataset &&lhs, const Dataset &rhs);
+Dataset operator-(Dataset &&lhs, Dataset &&rhs);
+
+Dataset operator*(const Dataset &lhs, const Dataset &rhs);
+Dataset operator*(Dataset &&lhs, const Dataset &rhs);
+Dataset operator*(Dataset &&lhs, Dataset &&rhs);
+
+Dataset operator/(const Dataset &lhs, const Dataset &rhs);
+Dataset operator/(Dataset &&lhs, const Dataset &rhs);
+Dataset operator/(Dataset &&lhs, Dataset &&rhs);
+
+Dataset operator+(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator-(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator*(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator/(const Dataset &lhs, const DatasetConstProxy &rhs);
+
+Dataset operator+(const Dataset &lhs, const DataConstProxy &rhs);
+Dataset operator-(const Dataset &lhs, const DataConstProxy &rhs);
+Dataset operator*(const Dataset &lhs, const DataConstProxy &rhs);
+Dataset operator/(const Dataset &lhs, const DataConstProxy &rhs);
+
 } // namespace scipp::core
 
 #endif // DATASET_NEXT_H
