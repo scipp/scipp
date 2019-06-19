@@ -268,6 +268,22 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
   b.setData("sparse_coord_and_val", dense_variable);
 }
 
+TEST(DatasetTest, simple_sparse_slice) {
+
+  Dataset dataset;
+  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  var.sparseValues<double>()[0] = {4, 5, 6};
+  var.sparseValues<double>()[1] = {7, 8, 9};
+  dataset.setData("data", var);
+  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
+
+  auto sliced = dataset.slice({Dim::Y, 1, 2});
+  auto data = sliced["data"].data().sparseSpan<double>();
+  EXPECT_EQ(data.size(), 1);
+  scipp::core::sparse_container<double> expected = {7, 8, 9};
+  EXPECT_EQ(data[0], expected);
+}
+
 class Dataset_comparison_operators : public ::testing::Test {
 private:
   template <class A, class B>
@@ -608,6 +624,24 @@ TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
       dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
 }
 
+TEST_F(Dataset3DTest, data_check_upon_setting_sparse_coordinates) {
+
+  Dataset sparse;
+  auto data_var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  data_var.sparseValues<double>()[0] = {1, 1, 1};
+  auto coords_var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  coords_var.sparseValues<double>()[0] = {1, 2, 3};
+  sparse.setData("sparse_x", data_var);
+  // The following should be OK. Data is sparse.
+  sparse.setSparseCoord("sparse_x", coords_var);
+
+  // Check with dense data
+  ASSERT_THROW(
+      dataset.setSparseCoord(
+          "data_x", makeVariable<double>({Dim::X, Dimensions::Sparse})),
+      std::runtime_error);
+}
+
 TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
   // We cannot have labels on edges unless the coords are also edges. Note the
   // slight inconsistency though: Labels are typically though of as being for a
@@ -655,6 +689,8 @@ class Dataset3DTest_slice_y : public Dataset3DTest,
                               public ::testing::WithParamInterface<int> {};
 class Dataset3DTest_slice_z : public Dataset3DTest,
                               public ::testing::WithParamInterface<int> {};
+class Dataset3DTest_slice_sparse : public Dataset3DTest,
+                                   public ::testing::WithParamInterface<int> {};
 
 class Dataset3DTest_slice_range_x : public Dataset3DTest,
                                     public ::testing::WithParamInterface<
@@ -740,10 +776,36 @@ INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
                          ::testing::ValuesIn(ranges_y));
 INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
                          ::testing::ValuesIn(ranges_z));
+INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_sparse,
+                         ::testing::Range(0, 2));
 
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
   EXPECT_EQ(dataset.slice({Dim::X, pos}), reference(pos));
+}
+
+TEST_P(Dataset3DTest_slice_sparse, slice) {
+  Dataset dataset;
+  const auto pos = GetParam();
+  auto var = makeVariable<double>(
+      {{Dim::X, Dim::Y, Dim::Z}, {2, 2, Dimensions::Sparse}});
+  var.sparseValues<double>()[0] = {1, 2, 3};
+  var.sparseValues<double>()[1] = {4, 5, 6};
+  var.sparseValues<double>()[2] = {7};
+  var.sparseValues<double>()[3] = {8, 9};
+
+  dataset.setData("xyz_data", var);
+  dataset.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}, {0, 1}));
+  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {0, 1}));
+
+  auto sliced = dataset.slice({Dim::X, pos});
+  auto data = sliced["xyz_data"].data().sparseSpan<double>();
+  EXPECT_EQ(data.size(), 2);
+  scipp::core::sparse_container<double> expected =
+      var.sparseValues<double>()[pos * 2];
+  EXPECT_EQ(data[0], expected);
+  expected = var.sparseValues<double>()[pos * 2 + 1];
+  EXPECT_EQ(data[1], expected);
 }
 
 TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
