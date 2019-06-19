@@ -11,159 +11,7 @@
 using namespace scipp;
 using namespace scipp::core;
 
-class DataProxyBinaryOpEqualsTest
-    : public ::testing::Test,
-      public ::testing::WithParamInterface<Dataset::value_type> {};
-
 DatasetFactory3D datasetFactory;
-auto d = datasetFactory.make();
-
-INSTANTIATE_TEST_SUITE_P(AllItems, DataProxyBinaryOpEqualsTest,
-                         ::testing::ValuesIn(d));
-
-TEST_P(DataProxyBinaryOpEqualsTest, other_data_unchanged) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto original(dataset);
-  const auto target = dataset["data_zyx"];
-
-  ASSERT_NO_THROW(target += item);
-
-  for (const auto & [ name, data ] : dataset) {
-    if (name != "data_zyx") {
-      EXPECT_EQ(data, original[name]);
-    }
-  }
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, plus_lhs_with_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_zyx"];
-  auto reference = target.data() + item.data();
-
-  ASSERT_NO_THROW(target += item);
-  EXPECT_EQ(target.data(), reference);
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, plus_lhs_without_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_xyz"];
-  if (item.hasVariances()) {
-    ASSERT_ANY_THROW(target += item);
-  } else {
-    auto reference = target.data() + item.data();
-    ASSERT_NO_THROW(target += item);
-    EXPECT_EQ(target.data(), reference);
-    EXPECT_FALSE(target.hasVariances());
-  }
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, minus_lhs_with_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_zyx"];
-  auto reference = target.data() - item.data();
-
-  ASSERT_NO_THROW(target -= item);
-  EXPECT_EQ(target.data(), reference);
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, minus_lhs_without_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_xyz"];
-  if (item.hasVariances()) {
-    ASSERT_ANY_THROW(target -= item);
-  } else {
-    auto reference = target.data() - item.data();
-    ASSERT_NO_THROW(target -= item);
-    EXPECT_EQ(target.data(), reference);
-    EXPECT_FALSE(target.hasVariances());
-  }
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, times_lhs_with_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_zyx"];
-  auto reference = target.data() * item.data();
-
-  ASSERT_NO_THROW(target *= item);
-  EXPECT_EQ(target.data(), reference);
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, times_lhs_without_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_xyz"];
-  if (item.hasVariances()) {
-    ASSERT_ANY_THROW(target *= item);
-  } else {
-    auto reference = target.data() * item.data();
-    ASSERT_NO_THROW(target *= item);
-    EXPECT_EQ(target.data(), reference);
-    EXPECT_FALSE(target.hasVariances());
-  }
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, divide_lhs_with_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_zyx"];
-  auto reference = target.data() / item.data();
-
-  ASSERT_NO_THROW(target /= item);
-  EXPECT_EQ(target.data(), reference);
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, divide_lhs_without_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_xyz"];
-  if (item.hasVariances()) {
-    ASSERT_ANY_THROW(target /= item);
-  } else {
-    auto reference = target.data() / item.data();
-    ASSERT_NO_THROW(target /= item);
-    EXPECT_EQ(target.data(), reference);
-    EXPECT_FALSE(target.hasVariances());
-  }
-}
-
-TEST_P(DataProxyBinaryOpEqualsTest, plus_slice_lhs_with_variance) {
-  const auto &item = GetParam().second;
-  auto dataset = datasetFactory.make();
-  const auto target = dataset["data_zyx"];
-  const auto &dims = item.dims();
-  for (const Dim dim : dims.labels()) {
-    auto reference = target.data() + item.data().slice({dim, 2});
-
-    // Fails if any *other* multi-dimensional coord/label also depends on the
-    // slicing dimension, since it will have mismatching values. Note that this
-    // behavior is intended and important. It is crucial for preventing
-    // operations between misaligned data in case a coordinate is
-    // multi-dimensional.
-    const auto coords = item.coords();
-    const auto labels = item.labels();
-    if (std::all_of(coords.begin(), coords.end(),
-                    [dim](const auto &coord) {
-                      return coord.first == dim ||
-                             !coord.second.dims().contains(dim);
-                    }) &&
-        std::all_of(labels.begin(), labels.end(), [dim](const auto &labels_) {
-          return labels_.second.dims().inner() == dim ||
-                 !labels_.second.dims().contains(dim);
-        })) {
-      ASSERT_NO_THROW(target += item.slice({dim, 2}));
-
-      EXPECT_EQ(target.data(), reference);
-    } else {
-      ASSERT_ANY_THROW(target += item.slice({dim, 2}));
-    }
-  }
-}
 
 // We need the decltype(auto) since we are using these operators for both
 // proxies and non-proxies. The former return by reference, the latter by value.
@@ -173,14 +21,34 @@ struct plus_equals {
     return a += b;
   }
 };
+struct minus_equals {
+  template <class A, class B>
+  decltype(auto) operator()(A &&a, const B &b) const {
+    return a -= b;
+  }
+};
 struct times_equals {
   template <class A, class B>
   decltype(auto) operator()(A &&a, const B &b) const {
     return a *= b;
   }
 };
+struct divide_equals {
+  template <class A, class B>
+  decltype(auto) operator()(A &&a, const B &b) const {
+    return a /= b;
+  }
+};
 
-using BinaryEquals = ::testing::Types<plus_equals, times_equals>;
+using BinaryEquals =
+    ::testing::Types<plus_equals, minus_equals, times_equals, divide_equals>;
+
+template <class Op>
+class DataProxyBinaryOpTest : public ::testing::Test,
+                              public ::testing::WithParamInterface<Op> {
+protected:
+  Op op;
+};
 
 template <class Op>
 class DatasetBinaryOpTest : public ::testing::Test,
@@ -196,10 +64,102 @@ protected:
   Op op;
 };
 
+TYPED_TEST_SUITE(DataProxyBinaryOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetBinaryOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetProxyBinaryOpTest, BinaryEquals);
 
-// DataProxyBinaryOpEqualsTest ensures correctness of operations between
+TYPED_TEST(DataProxyBinaryOpTest, other_data_unchanged) {
+  const auto dataset_b = datasetFactory.make();
+
+  for (const auto & [ _, item ] : dataset_b) {
+    auto dataset_a = datasetFactory.make();
+    const auto original_a(dataset_a);
+    auto target = dataset_a["data_zyx"];
+
+    ASSERT_NO_THROW(target = TestFixture::op(target, item));
+
+    for (const auto & [ name, data ] : dataset_a) {
+      if (name != "data_zyx") {
+        EXPECT_EQ(data, original_a[name]);
+      }
+    }
+  }
+}
+
+TYPED_TEST(DataProxyBinaryOpTest, lhs_with_variance) {
+  const auto dataset_b = datasetFactory.make();
+
+  for (const auto & [ _, item ] : dataset_b) {
+    auto dataset_a = datasetFactory.make();
+    auto target = dataset_a["data_zyx"];
+
+    auto reference(target.data());
+    reference = TestFixture::op(target.data(), item.data());
+
+    ASSERT_NO_THROW(target = TestFixture::op(target, item));
+    EXPECT_EQ(target.data(), reference);
+  }
+}
+
+TYPED_TEST(DataProxyBinaryOpTest, lhs_without_variance) {
+  const auto dataset_b = datasetFactory.make();
+
+  for (const auto & [ _, item ] : dataset_b) {
+    auto dataset_a = datasetFactory.make();
+    auto target = dataset_a["data_xyz"];
+
+    if (item.hasVariances()) {
+      ASSERT_ANY_THROW(TestFixture::op(target, item));
+    } else {
+      auto reference(target.data());
+      reference = TestFixture::op(target.data(), item.data());
+
+      ASSERT_NO_THROW(target = TestFixture::op(target, item));
+      EXPECT_EQ(target.data(), reference);
+      EXPECT_FALSE(target.hasVariances());
+    }
+  }
+}
+
+TYPED_TEST(DataProxyBinaryOpTest, slice_lhs_with_variance) {
+  const auto dataset_b = datasetFactory.make();
+
+  for (const auto & [ _, item ] : dataset_b) {
+    auto dataset_a = datasetFactory.make();
+    auto target = dataset_a["data_zyx"];
+    const auto &dims = item.dims();
+
+    for (const Dim dim : dims.labels()) {
+      auto reference(target.data());
+      reference = TestFixture::op(target.data(), item.data());
+
+      // Fails if any *other* multi-dimensional coord/label also depends on the
+      // slicing dimension, since it will have mismatching values. Note that
+      // this behavior is intended and important. It is crucial for preventing
+      // operations between misaligned data in case a coordinate is
+      // multi-dimensional.
+      const auto coords = item.coords();
+      const auto labels = item.labels();
+      if (std::all_of(coords.begin(), coords.end(),
+                      [dim](const auto &coord) {
+                        return coord.first == dim ||
+                               !coord.second.dims().contains(dim);
+                      }) &&
+          std::all_of(labels.begin(), labels.end(), [dim](const auto &labels_) {
+            return labels_.second.dims().inner() == dim ||
+                   !labels_.second.dims().contains(dim);
+          })) {
+        ASSERT_NO_THROW(target = TestFixture::op(target, item.slice({dim, 2})));
+        EXPECT_EQ(target.data(), reference);
+      } else {
+        ASSERT_ANY_THROW(target =
+                             TestFixture::op(target, item.slice({dim, 2})));
+      }
+    }
+  }
+}
+
+// DataProxyBinaryOpTest ensures correctness of operations between
 // DataProxy with itself, so we can rely on that for building the reference.
 TYPED_TEST(DatasetBinaryOpTest, return_value) {
   auto a = datasetFactory.make();
@@ -442,9 +402,9 @@ TYPED_TEST(DatasetProxyBinaryOpTest,
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
 
-  // Same as `rhs_DatasetProxy_self_overlap` above, but reverse slice order. The
-  // second line will see the updated slice 3, and there is no way to detect and
-  // prevent this.
+  // Same as `rhs_DatasetProxy_self_overlap` above, but reverse slice order.
+  // The second line will see the updated slice 3, and there is no way to
+  // detect and prevent this.
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice));
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice));
   for (const auto[name, item] : dataset) {
