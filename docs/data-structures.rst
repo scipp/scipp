@@ -3,6 +3,11 @@
 Data Structures
 ===============
 
+.. figure:: images/dataset_and_its_proxies.png
+   :alt: Dataset and it's proxies
+
+   This diagram gives an overview of the various proxy objects and how they are produced by various operations.
+
 Variable
 --------
 
