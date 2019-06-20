@@ -8,5 +8,11 @@ build:
 requirements:
   run:
     - python
+
 about:
-summary: Multi-dimensional data arrays with labeled dimensions
+  home: https://scipp.readthedocs.io/en/latest/
+  license: GPLv3
+  summary: Multi-dimensional data arrays with labeled dimensions
+  description: Multi-dimensional data arrays with labeled dimensions
+  dev_url: https://github.com/scipp/scipp
+  doc_url: https://scipp.readthedocs.io/en/latest/
