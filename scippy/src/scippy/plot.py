@@ -111,21 +111,22 @@ def plot_auto(input_data, ndim=0, name=None, axes=None, waterfall=None,
     """
 
     if ndim == 1:
-        return plot_1d(input_data, axes=axes, filename=filename, **kwargs)
+        plot_1d(input_data, axes=axes, filename=filename, **kwargs)
     elif ndim == 2:
         if collapse is not None:
-            return plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes,
+            plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes,
                                           plot=False), filename=filename,
                            **kwargs)
         elif waterfall is not None:
-            return plot_waterfall(input_data, name=name, dim=waterfall,
+            plot_waterfall(input_data, name=name, dim=waterfall,
                                   axes=axes, filename=filename, **kwargs)
         else:
-            return plot_image(input_data, name=name, axes=axes,
+            plot_image(input_data, name=name, axes=axes,
                               filename=filename, **kwargs)
     else:
-        return plot_sliceviewer(input_data, name=name, axes=axes,
+        plot_sliceviewer(input_data, name=name, axes=axes,
                                 filename=filename, **kwargs)
+    return
 
 # =============================================================================
 
