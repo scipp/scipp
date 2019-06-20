@@ -223,52 +223,21 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
     calling plot_image from the sliceviewer).
     """
 
-    # values, ndims = check_input(input_data)
     coords = input_data.coords
     ndim = len(coords)
-    print(ndim)
 
     if axes is not None:
         naxes = len(axes)
     else:
         naxes = 0
 
-    # TODO: this currently allows for plot_image to be called with a 3D dataset
-    # and plot=False, which would lead to an error. We should think of a better
-    # way to protect against this.
     if (ndim == 2) or ((not plot) and (naxes > 1)):
-
-        # # Note the order of the axes here: the outermost dimension is the
-        # # fast dimension and is plotted along x, while the inner (slow)
-        # # dimension is plotted along y.
-        # if axes is None:
-        #     # dims = values[0].dimensions
-        #     # labs = dims.labels
-        #     # axes = []
-        #     for c in coords:
-        #         # axes.append(c[0])
-        #         print(type(c[0]))
-        #     axes = [c[0] for c in coords]
-        # else:
-        #     axes = axes[-2:]
-
-        # xcoord = coords[axes[-2]]
-        # ycoord = coords[axes[-1]]
-        # x = xcoord.values
-        # y = ycoord.values
-        # # print(x)
-        # # print(y)
-        # # print(type(x))
-        # # print(type(y))
-        # # return
 
         # Get coordinates axes and dimensions
         coords = input_data.coords
         xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
             process_dimensions(input_data=input_data, coords=coords, axes=axes)
-                               # values=values[0], ndim=ndim)
 
-        print(xcoord.dims)
         if contours:
             plot_type = 'contour'
         else:
@@ -844,20 +813,16 @@ def process_dimensions(input_data, coords, axes):
     """
     # coords = input_data.coords
     if axes is None:
-        for c in coords:
-            # axes.append(c[0])
-            print(type(c[0]))
         axes = [c[0] for c in coords]
     else:
         axes = axes[-2:]
 
+    # Get coordinate arrays
     xcoord = coords[axes[-2]]
     ycoord = coords[axes[-1]]
     x = xcoord.values
     y = ycoord.values
 
-    # xcoord = input_data[axes[1]]
-    # ycoord = input_data[axes[0]]
     # Check for bin edges
     # TODO: find a better way to handle edges. Currently, we convert from
     # edges to centers and then back to edges afterwards inside the plotly
@@ -872,9 +837,6 @@ def process_dimensions(input_data, coords, axes):
     xdims = xcoord.dims # coordinate_dimensions(xcoord)
     xlabs = xdims.labels
     nx = xdims.shape
-    # Get coordinate arrays
-    # x = xcoord.numpy
-    # y = ycoord.numpy
     # Find the dimension in z that corresponds to x and y
     ix = iy = None
     for i in range(len(zlabs)):
