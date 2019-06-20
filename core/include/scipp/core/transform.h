@@ -62,6 +62,11 @@ template <class T> struct ValueAndVariance {
   template <class T2> constexpr auto &operator/=(const T2 other) noexcept {
     return *this = *this / other;
   }
+
+  template <class T2>
+  explicit constexpr operator ValueAndVariance<T2>() const noexcept {
+    return {static_cast<T2>(value), static_cast<T2>(variance)};
+  }
 };
 
 template <class T>
@@ -71,7 +76,8 @@ constexpr auto operator-(const ValueAndVariance<T> a) noexcept {
 
 template <class T> constexpr auto sqrt(const ValueAndVariance<T> a) noexcept {
   using std::sqrt;
-  return ValueAndVariance{sqrt(a.value), 0.25 * (a.variance / a.value)};
+  return ValueAndVariance{sqrt(a.value),
+                          static_cast<T>(0.25 * (a.variance / a.value))};
 }
 
 template <class T> constexpr auto abs(const ValueAndVariance<T> a) noexcept {
