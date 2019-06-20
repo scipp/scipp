@@ -51,13 +51,13 @@ def test_create_with_variances():
 def test_create_from_numpy_1d():
     var = sp.Variable([sp.Dim.X], np.arange(4.0))
     assert var.dtype == sp.dtype.double
-    np.testing.assert_array_equal(var.numpy, np.arange(4))
+    np.testing.assert_array_equal(var.values, np.arange(4))
 
 
 def test_create_from_numpy_1d_bool():
     var = sp.Variable(labels=[sp.Dim.X], values=np.array([True, False, True]))
     assert var.dtype == sp.dtype.bool
-    np.testing.assert_array_equal(var.numpy, np.array([True, False, True]))
+    np.testing.assert_array_equal(var.values, np.array([True, False, True]))
 
 
 def test_create_with_variances_from_numpy_1d():
@@ -99,15 +99,46 @@ def test_0D_scalar_access():
     assert var.value == 0.0
     var.value = 1.2
     assert var.value == 1.2
-    assert var.values[0] == 1.2
+    assert var.values.shape == ()
+    assert var.values == 1.2
 
 
 def test_1D_scalar_access_fail():
-    var = sp.Variable([sp.Dim.X], (1,))
+    var = sp.Variable([Dim.X], (1,))
     with pytest.raises(RuntimeError):
         assert var.value == 0.0
     with pytest.raises(RuntimeError):
         var.value = 1.2
+
+
+def test_1D_access():
+    var = sp.Variable([Dim.X], (2,))
+    assert len(var.values) == 2
+    assert var.values.shape == (2,)
+    var.values[1] = 1.2
+    assert var.values[1] == 1.2
+
+
+def test_2D_access():
+    var = sp.Variable([Dim.X, Dim.Y], (2, 3))
+    assert var.values.shape == (2, 3)
+    assert len(var.values) == 2
+    assert len(var.values[0]) == 3
+    var.values[1] = 1.2  # numpy assigns to all elements in "slice"
+    var.values[1][2] = 2.2
+    assert var.values[1][0] == 1.2
+    assert var.values[1][1] == 1.2
+    assert var.values[1][2] == 2.2
+
+
+def test_2D_access_variances():
+    var = sp.Variable([Dim.X, Dim.Y], (2, 3), variances=True)
+    assert var.values.shape == (2, 3)
+    assert var.variances.shape == (2, 3)
+    var.values[1] = 1.2
+    assert np.array_equal(var.variances, np.zeros(shape=(2, 3)))
+    var.variances = np.ones(shape=(2, 3))
+    assert np.array_equal(var.variances, np.ones(shape=(2, 3)))
 
 
 def test_create_dtype():
@@ -141,69 +172,69 @@ def test_slicing():
     var_slice = var[(sp.Dim.X, slice(0, 2))]
     assert isinstance(var_slice, sp.VariableProxy)
     assert len(var_slice.values) == 2
-    assert np.array_equal(var_slice.numpy, np.array([0, 1]))
+    assert np.array_equal(var_slice.values, np.array([0, 1]))
 
 
 def test_binary_plus():
     a, b, a_slice, b_slice, data = make_variables()
     c = a + b
-    assert np.array_equal(c.numpy, data + data)
+    assert np.array_equal(c.values, data + data)
     c = a + 2.0
-    assert np.array_equal(c.numpy, data + 2.0)
+    assert np.array_equal(c.values, data + 2.0)
     c = a + b_slice
-    assert np.array_equal(c.numpy, data + data)
+    assert np.array_equal(c.values, data + data)
     c += b
-    assert np.array_equal(c.numpy, data + data + data)
+    assert np.array_equal(c.values, data + data + data)
     c += b_slice
-    assert np.array_equal(c.numpy, data + data + data + data)
+    assert np.array_equal(c.values, data + data + data + data)
     c = 3.5 + c
-    assert np.array_equal(c.numpy, data + data + data + data + 3.5)
+    assert np.array_equal(c.values, data + data + data + data + 3.5)
 
 
 def test_binary_minus():
     a, b, a_slice, b_slice, data = make_variables()
     c = a - b
-    assert np.array_equal(c.numpy, data - data)
+    assert np.array_equal(c.values, data - data)
     c = a - 2.0
-    assert np.array_equal(c.numpy, data - 2.0)
+    assert np.array_equal(c.values, data - 2.0)
     c = a - b_slice
-    assert np.array_equal(c.numpy, data - data)
+    assert np.array_equal(c.values, data - data)
     c -= b
-    assert np.array_equal(c.numpy, data - data - data)
+    assert np.array_equal(c.values, data - data - data)
     c -= b_slice
-    assert np.array_equal(c.numpy, data - data - data - data)
+    assert np.array_equal(c.values, data - data - data - data)
     c = 3.5 - c
-    assert np.array_equal(c.numpy, 3.5 - data + data + data + data)
+    assert np.array_equal(c.values, 3.5 - data + data + data + data)
 
 
 def test_binary_multiply():
     a, b, a_slice, b_slice, data = make_variables()
     c = a * b
-    assert np.array_equal(c.numpy, data * data)
+    assert np.array_equal(c.values, data * data)
     c = a * 2.0
-    assert np.array_equal(c.numpy, data * 2.0)
+    assert np.array_equal(c.values, data * 2.0)
     c = a * b_slice
-    assert np.array_equal(c.numpy, data * data)
+    assert np.array_equal(c.values, data * data)
     c *= b
-    assert np.array_equal(c.numpy, data * data * data)
+    assert np.array_equal(c.values, data * data * data)
     c *= b_slice
-    assert np.array_equal(c.numpy, data * data * data * data)
+    assert np.array_equal(c.values, data * data * data * data)
     c = 3.5 * c
-    assert np.array_equal(c.numpy, data * data * data * data * 3.5)
+    assert np.array_equal(c.values, data * data * data * data * 3.5)
 
 
 def test_binary_divide():
     a, b, a_slice, b_slice, data = make_variables()
     c = a / b
-    assert np.array_equal(c.numpy, data / data)
+    assert np.array_equal(c.values, data / data)
     c = a / 2.0
-    assert np.array_equal(c.numpy, data / 2.0)
+    assert np.array_equal(c.values, data / 2.0)
     c = a / b_slice
-    assert np.array_equal(c.numpy, data / data)
+    assert np.array_equal(c.values, data / data)
     c /= b
-    assert np.array_equal(c.numpy, data / data / data)
+    assert np.array_equal(c.values, data / data / data)
     c /= b_slice
-    assert np.array_equal(c.numpy, data / data / data / data)
+    assert np.array_equal(c.values, data / data / data / data)
 
 
 def test_binary_equal():

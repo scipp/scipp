@@ -15,7 +15,6 @@ add_executable(scipp-core-test
                view_index_test.cpp
                #zip_view_test.cpp
                )
-add_sanitizers(scipp-core-test)
 target_link_libraries(scipp-core-test
                       LINK_PRIVATE
                       scipp-core
@@ -25,4 +24,7 @@ target_link_libraries(scipp-core-test
                       ${GMOCK_LIBRARIES})
 target_include_directories(scipp-core-test SYSTEM
                            PRIVATE "../../range-v3/include")
-gtest_discover_tests(scipp-core-test TEST_PREFIX scipp/core/)
+add_sanitizers(scipp-core-test)
+if(${WITH_CTEST})
+  gtest_discover_tests(scipp-core-test TEST_PREFIX scipp/core/)
+endif()

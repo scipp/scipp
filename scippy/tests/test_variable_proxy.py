@@ -17,8 +17,8 @@ def test_type():
 def apply_test_op(op, a, b, data):
     op(a, b)
     # Assume numpy operations are correct as comparitor
-    op(data, b.numpy)
-    assert np.array_equal(a.numpy, data)
+    op(data, b.values)
+    assert np.array_equal(a.values, data)
 
 
 def test_binary_operations():
@@ -27,16 +27,16 @@ def test_binary_operations():
     a = _a[Dim.X, :]
     b = _b[Dim.X, :]
 
-    data = np.copy(a.numpy)
+    data = np.copy(a.values)
     c = a + b
     assert type(c) == sp.Variable
-    assert np.array_equal(c.numpy, data + data)
+    assert np.array_equal(c.values, data + data)
     c = a - b
-    assert np.array_equal(c.numpy, data - data)
+    assert np.array_equal(c.values, data - data)
     c = a * b
-    assert np.array_equal(c.numpy, data * data)
+    assert np.array_equal(c.values, data * data)
     c = a / b
-    assert np.array_equal(c.numpy, data / data)
+    assert np.array_equal(c.values, data / data)
 
     apply_test_op(operator.iadd, a, b, data)
     apply_test_op(operator.isub, a, b, data)
@@ -47,21 +47,21 @@ def test_binary_operations():
 def test_binary_float_operations():
     _a = sp.Variable([Dim.X], np.arange(1, 10, dtype=float))
     a = _a[Dim.X, :]
-    data = np.copy(a.numpy)
+    data = np.copy(a.values)
     c = a + 2.0
-    assert np.array_equal(c.numpy, data + 2.0)
+    assert np.array_equal(c.values, data + 2.0)
     c = a - 2.0
-    assert np.array_equal(c.numpy, data - 2.0)
+    assert np.array_equal(c.values, data - 2.0)
     c = a * 2.0
-    assert np.array_equal(c.numpy, data * 2.0)
+    assert np.array_equal(c.values, data * 2.0)
     c = a / 2.0
-    assert np.array_equal(c.numpy, data / 2.0)
+    assert np.array_equal(c.values, data / 2.0)
     c = 2.0 + a
-    assert np.array_equal(c.numpy, data + 2.0)
+    assert np.array_equal(c.values, data + 2.0)
     c = 2.0 - a
-    assert np.array_equal(c.numpy, 2.0 - data)
+    assert np.array_equal(c.values, 2.0 - data)
     c = 2.0 * a
-    assert np.array_equal(c.numpy, data * 2.0)
+    assert np.array_equal(c.values, data * 2.0)
 
 
 def test_equal_not_equal():

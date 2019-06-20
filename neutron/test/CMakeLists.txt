@@ -16,4 +16,6 @@ target_link_libraries(scipp-neutron-test
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
 add_sanitizers(scipp-neutron-test)
-gtest_discover_tests(scipp-neutron-test TEST_PREFIX scipp/neutron/)
+if(${WITH_CTEST})
+  gtest_discover_tests(scipp-neutron-test TEST_PREFIX scipp/neutron/)
+endif()

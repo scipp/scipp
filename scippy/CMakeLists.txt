@@ -16,6 +16,8 @@ target_include_directories(scipp SYSTEM PRIVATE "../range-v3/include")
 # Set symbol visibility to hidden to reduce binary size, as recommended in pybind11 FAQ.
 set_target_properties(scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
+add_sanitizers(scipp)
+
 set(PY_FILES __init__.py table.py plot.py)
 
 install(DIRECTORY "src/scippy" DESTINATION ".")
