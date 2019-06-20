@@ -82,9 +82,9 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, filename=None,
                 # than one dataset with 1D variables with the same coordinates
                 key = "{}_{}".format(str(id(ds)), lab)
                 if key in tobeplotted.keys():
-                    tobeplotted[key][1].append(ds[name])
+                    tobeplotted[key][1][name] = ds[name]
                 else:
-                    tobeplotted[key] = [ndims, [ds[name]]]
+                    tobeplotted[key] = [ndims, {name: ds[name]}]
             elif ndims > 1:
                 tobeplotted[name] = [ndims, ds[name]]
 
@@ -210,106 +210,130 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 
     # entries now contains a list of Dataset or DatasetSlice
     # We now construct a list of [x,y] pairs
+    # print(input_data)
+    # return
     data = []
     coord_check = None
     color_count = 0
-    for var in input_data:
+    for name, var in input_data.items():
+        # print(name, var)
+        # return
 
-        # values = dict()
-        # variances = dict()
-        # for name, var in item:
-        #     key = name
-        #     if tag == sp.Data.Variance:
-        #         variances[key] = var
-        #     elif tag.is_data:
-        #         values[key] = (name, tag, var)
-        # # Now go through the values and see if they have an associated
-        # # variance. If they do, then use that as error bars.
-        # # Then go through the variances and check if there are some variances
-        # # that do not have an associate value; they are to be plotted as normal
-        # # sp.Data.
-        # tobeplotted = []
-        # for key, val in values.items():
-        #     if key in variances.keys():
-        #         vari = variances[key]
+        # TODO: find a better way of getting x by accessing the dimension of
+        # the coordinate directly instead of iterating over all of them
+        coords = var.coords
+        for c in coords:
+            x = coords[c[0]].values
+            xlab = axis_label(c)
+        y = var.values
+        ylab = name
+        if var.unit != sp.units.dimensionless:
+            ylab  = "{} [{}]".format(ylab, var.unit)
+        # TODO: add variances
+
+        nx = x.shape[0]
+        ny = y.shape[0]
+        histogram = False
+        if nx == ny + 1:
+            x, w = edges_to_centers(x)
+            histogram = True
+
+
+        # # values = dict()
+        # # variances = dict()
+        # # for name, var in item:
+        # #     key = name
+        # #     if tag == sp.Data.Variance:
+        # #         variances[key] = var
+        # #     elif tag.is_data:
+        # #         values[key] = (name, tag, var)
+        # # # Now go through the values and see if they have an associated
+        # # # variance. If they do, then use that as error bars.
+        # # # Then go through the variances and check if there are some variances
+        # # # that do not have an associate value; they are to be plotted as normal
+        # # # sp.Data.
+        # # tobeplotted = []
+        # # for key, val in values.items():
+        # #     if key in variances.keys():
+        # #         vari = variances[key]
+        # #     else:
+        # #         vari = None
+        # #     tobeplotted.append([val, vari])
+        # # for key, val in variances.items():
+        # #     if key not in values.keys():
+        # #         tobeplotted.append([val, None])
+
+        # # # tobeplotted now contains pairs of [value, variance]
+        # # for v in tobeplotted:
+
+        # #     # Reset axes
+        # #     axes_copy = axes
+
+        # #     # Check that data is 1D
+        # #     if len(v[0].dimensions) > 1:
+        # #         raise RuntimeError("Can only plot 1D data with plot_1d. The "
+        # #                            "input Dataset has {} dimensions. For 2D "
+        # #                            "data, use plot_image. For higher "
+        # #                            "dimensions, use plot_sliceviewer."
+        # #                            .format(len(v[0].dimensions)))
+
+        #     # Define y: try to see if array contains numbers
+        #     try:
+        #         y = var.values
+        #     # If .numpy fails, try to extract as an array of strings
+        #     except RuntimeError:
+        #         y = np.array(v[0].data, dtype=np.str)
+        #     name = axis_label(*v[0])
+        #     # TODO: getting the shape of the dimension array is done in two
+        #     # steps here because v.dimensions.shape[0] returns garbage. One of
+        #     # the objects is going out of scope, we need to figure out which
+        #     # one to fix this.
+        #     ydims = v[0].dimensions
+        #     ny = ydims.shape[0]
+
+        #     # Define x
+        #     if axes_copy is None:
+        #         axes_copy = [sp.dimensionCoord(v[0].dimensions.labels[0])]
+        #     coord = item[axes_copy[0]]
+        #     xdims = coordinate_dimensions(coord)
+        #     nx = xdims.shape[0]
+        #     try:
+        #         x = coord.numpy
+        #     except RuntimeError:
+        #         x = np.array(coord.data, dtype=np.str)
+        #     # Check for bin edges
+        #     histogram = False
+        #     if nx == ny + 1:
+        #         x, w = edges_to_centers(x)
+        #         histogram = True
+        #     xlab = axis_label(*coord)
+        #     if (coord_check is not None) and (coord.tag != coord_check):
+        #         raise RuntimeError("All Value fields must have the same "
+        #                            "x-coordinate axis in plot_1d.")
         #     else:
-        #         vari = None
-        #     tobeplotted.append([val, vari])
-        # for key, val in variances.items():
-        #     if key not in values.keys():
-        #         tobeplotted.append([val, None])
+        #         coord_check = coord.tag
 
-        # # tobeplotted now contains pairs of [value, variance]
-        # for v in tobeplotted:
+        # Define trace
+        trace = dict(x=x, y=y, name=ylab)
+        if histogram:
+            trace["type"] = 'bar'
+            trace["marker"] = dict(opacity=0.6, line=dict(width=0))
+            trace["width"] = w
+        else:
+            trace["type"] = 'scatter'
+        if color is not None:
+            if "marker" not in trace.keys():
+                trace["marker"] = dict()
+            trace["marker"]["color"] = color[color_count]
+            color_count += 1
+        # # Include variance if present
+        # if v[1] is not None:
+        #     trace["error_y"] = dict(
+        #         type='data',
+        #         array=sp.sqrt(v[1]).numpy,
+        #         visible=True)
 
-        #     # Reset axes
-        #     axes_copy = axes
-
-        #     # Check that data is 1D
-        #     if len(v[0].dimensions) > 1:
-        #         raise RuntimeError("Can only plot 1D data with plot_1d. The "
-        #                            "input Dataset has {} dimensions. For 2D "
-        #                            "data, use plot_image. For higher "
-        #                            "dimensions, use plot_sliceviewer."
-        #                            .format(len(v[0].dimensions)))
-
-            # Define y: try to see if array contains numbers
-            try:
-                y = var.values
-            # If .numpy fails, try to extract as an array of strings
-            except RuntimeError:
-                y = np.array(v[0].data, dtype=np.str)
-            name = axis_label(*v[0])
-            # TODO: getting the shape of the dimension array is done in two
-            # steps here because v.dimensions.shape[0] returns garbage. One of
-            # the objects is going out of scope, we need to figure out which
-            # one to fix this.
-            ydims = v[0].dimensions
-            ny = ydims.shape[0]
-
-            # Define x
-            if axes_copy is None:
-                axes_copy = [sp.dimensionCoord(v[0].dimensions.labels[0])]
-            coord = item[axes_copy[0]]
-            xdims = coordinate_dimensions(coord)
-            nx = xdims.shape[0]
-            try:
-                x = coord.numpy
-            except RuntimeError:
-                x = np.array(coord.data, dtype=np.str)
-            # Check for bin edges
-            histogram = False
-            if nx == ny + 1:
-                x, w = edges_to_centers(x)
-                histogram = True
-            xlab = axis_label(*coord)
-            if (coord_check is not None) and (coord.tag != coord_check):
-                raise RuntimeError("All Value fields must have the same "
-                                   "x-coordinate axis in plot_1d.")
-            else:
-                coord_check = coord.tag
-
-            # Define trace
-            trace = dict(x=x, y=y, name=name)
-            if histogram:
-                trace["type"] = 'bar'
-                trace["marker"] = dict(opacity=0.6, line=dict(width=0))
-                trace["width"] = w
-            else:
-                trace["type"] = 'scatter'
-            if color is not None:
-                if "marker" not in trace.keys():
-                    trace["marker"] = dict()
-                trace["marker"]["color"] = color[color_count]
-                color_count += 1
-            # Include variance if present
-            if v[1] is not None:
-                trace["error_y"] = dict(
-                    type='data',
-                    array=sp.sqrt(v[1]).numpy,
-                    visible=True)
-
-            data.append(trace)
+        data.append(trace)
 
     layout = dict(
         xaxis=dict(title=xlab),
@@ -900,17 +924,22 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def axis_label(name, tag, var):
+def axis_label(var):
     """
     Make an axis label with "Name [unit]"
     """
-    if tag.is_coord:
-        label = "{}".format(tag)
-        label = label.replace("Coord.", "")
-    else:
-        label = "{}".format(name)
-    if var.unit != sp.units.dimensionless:
-        label += " [{}]".format(var.unit)
+    label = str(var[0])
+    if var[1].unit != sp.units.dimensionless:
+        label += " [{}]".format(var[1].unit)
+
+
+    # if tag.is_coord:
+    #     label = "{}".format(tag)
+    #     label = label.replace("Coord.", "")
+    # else:
+    #     label = "{}".format(name)
+    # if var.unit != sp.units.dimensionless:
+    #     label += " [{}]".format(var.unit)
     return label
 
 
