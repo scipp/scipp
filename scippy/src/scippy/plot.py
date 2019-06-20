@@ -151,7 +151,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         coords = var.coords
         for c in coords:
             x = coords[c[0]].values
-            xlab = axis_label(c)
+            xlab = axis_label(coords[c[0]])
         y = var.values
         ylab = name
         if var.unit != sp.units.dimensionless:
@@ -223,8 +223,10 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
     calling plot_image from the sliceviewer).
     """
 
-    values, ndims = check_input(input_data)
-    ndim = np.amax(ndims)
+    # values, ndims = check_input(input_data)
+    coords = input_data.coords
+    ndim = len(coords)
+    print(ndim)
 
     if axes is not None:
         naxes = len(axes)
@@ -234,23 +236,39 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
     # TODO: this currently allows for plot_image to be called with a 3D dataset
     # and plot=False, which would lead to an error. We should think of a better
     # way to protect against this.
-    if ((ndim > 1) and (ndim < 3)) or ((not plot) and (naxes > 1)):
+    if (ndim == 2) or ((not plot) and (naxes > 1)):
 
-        # Note the order of the axes here: the outermost dimension is the
-        # fast dimension and is plotted along x, while the inner (slow)
-        # dimension is plotted along y.
-        if axes is None:
-            dims = values[0].dimensions
-            labs = dims.labels
-            axes = [sp.dimensionCoord(label) for label in labs]
-        else:
-            axes = axes[-2:]
+        # # Note the order of the axes here: the outermost dimension is the
+        # # fast dimension and is plotted along x, while the inner (slow)
+        # # dimension is plotted along y.
+        # if axes is None:
+        #     # dims = values[0].dimensions
+        #     # labs = dims.labels
+        #     # axes = []
+        #     for c in coords:
+        #         # axes.append(c[0])
+        #         print(type(c[0]))
+        #     axes = [c[0] for c in coords]
+        # else:
+        #     axes = axes[-2:]
+
+        # xcoord = coords[axes[-2]]
+        # ycoord = coords[axes[-1]]
+        # x = xcoord.values
+        # y = ycoord.values
+        # # print(x)
+        # # print(y)
+        # # print(type(x))
+        # # print(type(y))
+        # # return
 
         # Get coordinates axes and dimensions
+        coords = input_data.coords
         xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-            process_dimensions(input_data=input_data, axes=axes,
-                               values=values[0], ndim=ndim)
+            process_dimensions(input_data=input_data, coords=coords, axes=axes)
+                               # values=values[0], ndim=ndim)
 
+        print(xcoord.dims)
         if contours:
             plot_type = 'contour'
         else:
@@ -259,20 +277,21 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
         # Parse colorbar
         cbar = parse_colorbar(cb)
 
-        title = values[0].name
-        if cbar["log"]:
-            title = "log\u2081\u2080(" + title + ")"
-        if values[0].unit != sp.units.dimensionless:
-            title += " [{}]".format(values[0].unit)
+        # title = values[0].name
+        # if cbar["log"]:
+        #     title = "log\u2081\u2080(" + title + ")"
+        # if values[0].unit != sp.units.dimensionless:
+        #     title += " [{}]".format(values[0].unit)
+        title = ""
 
         layout = dict(
-            xaxis=dict(title=axis_label(*xcoord)),
-            yaxis=dict(title=axis_label(*ycoord)),
+            xaxis=dict(title=axis_label(xcoord)),
+            yaxis=dict(title=axis_label(ycoord)),
             height=default["height"]
         )
 
         if plot:
-            z = values[0].numpy
+            z = input_data.values
             # Check if dimensions of arrays agree, if not, plot the transpose
             if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
                 z = z.T
@@ -780,9 +799,10 @@ def axis_label(var):
     """
     Make an axis label with "Name [unit]"
     """
-    label = str(var[0])
-    if var[1].unit != sp.units.dimensionless:
-        label += " [{}]".format(var[1].unit)
+    print(var)
+    label = str(var.dims.labels[0])
+    if var.unit != sp.units.dimensionless:
+        label += " [{}]".format(var.unit)
 
 
     # if tag.is_coord:
@@ -818,28 +838,43 @@ def coordinate_dimensions(coord):
     return dims
 
 
-def process_dimensions(input_data, axes, values, ndim):
+def process_dimensions(input_data, coords, axes):
     """
     Make x and y arrays from dimensions and check for bins edges
     """
-    xcoord = input_data[axes[1]]
-    ycoord = input_data[axes[0]]
+    # coords = input_data.coords
+    if axes is None:
+        for c in coords:
+            # axes.append(c[0])
+            print(type(c[0]))
+        axes = [c[0] for c in coords]
+    else:
+        axes = axes[-2:]
+
+    xcoord = coords[axes[-2]]
+    ycoord = coords[axes[-1]]
+    x = xcoord.values
+    y = ycoord.values
+
+    # xcoord = input_data[axes[1]]
+    # ycoord = input_data[axes[0]]
     # Check for bin edges
     # TODO: find a better way to handle edges. Currently, we convert from
     # edges to centers and then back to edges afterwards inside the plotly
     # object. This is not optimal and could lead to precision loss issues.
-    zdims = values.dimensions
+    zdims = input_data.dims
     zlabs = zdims.labels
     nz = zdims.shape
-    ydims = coordinate_dimensions(ycoord)
+    print(ycoord.dims)
+    ydims = ycoord.dims # coordinate_dimensions(ycoord)
     ylabs = ydims.labels
     ny = ydims.shape
-    xdims = coordinate_dimensions(xcoord)
+    xdims = xcoord.dims # coordinate_dimensions(xcoord)
     xlabs = xdims.labels
     nx = xdims.shape
     # Get coordinate arrays
-    x = xcoord.numpy
-    y = ycoord.numpy
+    # x = xcoord.numpy
+    # y = ycoord.numpy
     # Find the dimension in z that corresponds to x and y
     ix = iy = None
     for i in range(len(zlabs)):
