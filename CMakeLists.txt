@@ -46,17 +46,7 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   endif()
 endif()
 
-option(WITH_ASAN "Enable address sanitizer" OFF)
-if(WITH_ASAN)
-  message(STATUS "Enabling address sanitizer")
-  add_compile_options(-fno-omit-frame-pointer -fno-common -fsanitize=address)
-  set(CMAKE_MODULE_LINKER_FLAGS
-      "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan")
-  set(CMAKE_EXE_LINKER_FLAGS
-      "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan")
-  set(CMAKE_SHARED_LINKER_FLAGS
-      "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan")
-endif()
+option(WITH_CTEST "Enable ctest integration of tests" ON)
 
 add_compile_options(-Wall
                     -Wextra
