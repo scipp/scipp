@@ -7,7 +7,7 @@
 namespace scipp::core {
 ViewIndex::ViewIndex(const Dimensions &targetDimensions,
                      const Dimensions &dataDimensions) {
-  m_dims = targetDimensions.shape().size();
+  m_dims = static_cast<int32_t>(targetDimensions.shape().size());
   for (scipp::index d = 0; d < m_dims; ++d)
     m_extent[d] = targetDimensions.size(m_dims - 1 - d);
   scipp::index factor{1};

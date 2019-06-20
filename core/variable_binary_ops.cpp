@@ -239,10 +239,13 @@ Variable operator-(const double a, Variable b) { return -(b -= a); }
 Variable operator*(const double a, Variable b) { return std::move(b *= a); }
 Variable operator/(const double a, Variable b) {
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
-  transform_in_place<double, float>(b,
-                                    overloaded{[a](double &b_) { b_ = a / b_; },
-                                               [a](float &b_) { b_ = a / b_; },
-                                               [a](auto &b_) { b_ = a / b_; }});
+  transform_in_place<double, float>(
+      b, overloaded{[a](double &b_) { b_ = a / b_; },
+                    [a](float &b_) { b_ = static_cast<float>(a / b_); },
+                    [a](auto &b_) {
+                      b_ = static_cast<std::remove_reference_t<decltype(b_)>>(
+                          a / b_);
+                    }});
   return b;
 }
 
