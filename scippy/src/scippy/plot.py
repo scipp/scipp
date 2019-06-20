@@ -29,21 +29,21 @@ default = {
 # =============================================================================
 
 
-def check_input(input_data, check_multiple_values=True):
+# def check_input(input_data, check_multiple_values=True):
 
-    variables = []
-    ndims = []
-    for name, var in input_data:
-        # if tag.is_data and (tag != sp.Data.Variance):
-        variables.append((name, var))
-        ndims.append(len(var.coords))
+#     variables = []
+#     ndims = []
+#     for name, var in input_data:
+#         # if tag.is_data and (tag != sp.Data.Variance):
+#         variables.append((name, var))
+#         ndims.append(len(var.coords))
 
-    # if check_multiple_values and (len(values) > 1) and (np.amax(ndims) > 1):
-    #     raise RuntimeError("More than one Data.Value found! Please use e.g."
-    #                        " plot(dataset.subset[Data.Value, 'sample'])"
-    #                        " to select only a single Value.")
+#     # if check_multiple_values and (len(values) > 1) and (np.amax(ndims) > 1):
+#     #     raise RuntimeError("More than one Data.Value found! Please use e.g."
+#     #                        " plot(dataset.subset[Data.Value, 'sample'])"
+#     #                        " to select only a single Value.")
 
-    return variables, ndims
+#     return variables, ndims
 
 # =============================================================================
 
@@ -69,8 +69,6 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, filename=None,
     
     tobeplotted = dict()
     for ds in input_data:
-        # ds_id = id(ds)
-        # variables, ndims = check_input(ds)
         for name, var in ds:
             coords = var.coords
             ndims = len(coords)
@@ -100,49 +98,6 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, filename=None,
         else:
             plot_auto(val[1], ndim=val[0], filename=filename)
     return
-        
-    
-
-
-    # # A list of datasets is only supported for 1d
-    # if isinstance(input_data, list):
-    #     return plot_1d(input_data, axes=axes, filename=filename, **kwargs)
-    # # Case of a single dataset
-    # else:
-    #     values, ndims = check_input(input_data, check_multiple_values=False)
-    #     if len(values) > 1:
-    #         tobeplotted = dict()
-    #         for i in range(len(values)):
-    #             if ndims[i] == 1:
-    #                 dims = values[i].dimensions
-    #                 labs = dims.labels
-    #                 key = str(labs[0])
-    #                 if key in tobeplotted.keys():
-    #                     tobeplotted[key][1].append(
-    #                         input_data.subset[values[i].name])
-    #                 else:
-    #                     tobeplotted[key] = [ndims[i], [
-    #                         input_data.subset[values[i].name]]]
-    #             elif ndims[i] > 1:
-    #                 tobeplotted[values[i].name] = [
-    #                     ndims[i], input_data.subset[values[i].name]]
-
-    #         # Plot all the subsets
-    #         color_count = 0
-    #         for key, val in tobeplotted.items():
-    #             if val[0] == 1:
-    #                 color = []
-    #                 for l in val[1]:
-    #                     color.append(DEFAULT_PLOTLY_COLORS[color_count % 10])
-    #                     color_count += 1
-    #                 plot_1d(val[1], color=color, filename=filename)
-    #             else:
-    #                 plot_auto(val[1], ndim=val[0], filename=filename)
-    #         return
-    #     else:
-    #         return plot_auto(input_data, ndim=np.amax(ndims), axes=axes,
-    #                          waterfall=waterfall, collapse=collapse,
-    #                          filename=filename, **kwargs)
 
 # =============================================================================
 
@@ -187,38 +142,10 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     probably via a dictionay of arguments
     """
 
-    # entries = []
-    # # Case of a single dataset
-    # if (isinstance(input_data, sp.Dataset)) or \
-    #    (isinstance(input_data, sp.DataProxy)):
-    #     entries.append(input_data)
-    # # Case of a list of datasets
-    # elif isinstance(input_data, list):
-    #     # Go through the list items:
-    #     for item in input_data:
-    #         if (isinstance(item, sp.Dataset)) or \
-    #            (isinstance(item, sp.DataProxy)):
-    #             entries.append(item)
-    #         else:
-    #             raise RuntimeError("Bad data type in list input of plot_1d. "
-    #                                "Expected either Dataset or DataProxy, "
-    #                                "got " + type(item))
-    # else:
-    #     raise RuntimeError(
-    #         "Bad data type in input of plot_1d. Expected either "
-    #         "Dataset or DataProxy, got " + type(item))
-
-    # entries now contains a list of Dataset or DatasetSlice
-    # We now construct a list of [x,y] pairs
-    # print(input_data)
-    # return
     data = []
     coord_check = None
     color_count = 0
     for name, var in input_data.items():
-        # print(name, var)
-        # return
-
         # TODO: find a better way of getting x by accessing the dimension of
         # the coordinate directly instead of iterating over all of them
         coords = var.coords
@@ -237,81 +164,6 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         if nx == ny + 1:
             x, w = edges_to_centers(x)
             histogram = True
-
-
-        # # values = dict()
-        # # variances = dict()
-        # # for name, var in item:
-        # #     key = name
-        # #     if tag == sp.Data.Variance:
-        # #         variances[key] = var
-        # #     elif tag.is_data:
-        # #         values[key] = (name, tag, var)
-        # # # Now go through the values and see if they have an associated
-        # # # variance. If they do, then use that as error bars.
-        # # # Then go through the variances and check if there are some variances
-        # # # that do not have an associate value; they are to be plotted as normal
-        # # # sp.Data.
-        # # tobeplotted = []
-        # # for key, val in values.items():
-        # #     if key in variances.keys():
-        # #         vari = variances[key]
-        # #     else:
-        # #         vari = None
-        # #     tobeplotted.append([val, vari])
-        # # for key, val in variances.items():
-        # #     if key not in values.keys():
-        # #         tobeplotted.append([val, None])
-
-        # # # tobeplotted now contains pairs of [value, variance]
-        # # for v in tobeplotted:
-
-        # #     # Reset axes
-        # #     axes_copy = axes
-
-        # #     # Check that data is 1D
-        # #     if len(v[0].dimensions) > 1:
-        # #         raise RuntimeError("Can only plot 1D data with plot_1d. The "
-        # #                            "input Dataset has {} dimensions. For 2D "
-        # #                            "data, use plot_image. For higher "
-        # #                            "dimensions, use plot_sliceviewer."
-        # #                            .format(len(v[0].dimensions)))
-
-        #     # Define y: try to see if array contains numbers
-        #     try:
-        #         y = var.values
-        #     # If .numpy fails, try to extract as an array of strings
-        #     except RuntimeError:
-        #         y = np.array(v[0].data, dtype=np.str)
-        #     name = axis_label(*v[0])
-        #     # TODO: getting the shape of the dimension array is done in two
-        #     # steps here because v.dimensions.shape[0] returns garbage. One of
-        #     # the objects is going out of scope, we need to figure out which
-        #     # one to fix this.
-        #     ydims = v[0].dimensions
-        #     ny = ydims.shape[0]
-
-        #     # Define x
-        #     if axes_copy is None:
-        #         axes_copy = [sp.dimensionCoord(v[0].dimensions.labels[0])]
-        #     coord = item[axes_copy[0]]
-        #     xdims = coordinate_dimensions(coord)
-        #     nx = xdims.shape[0]
-        #     try:
-        #         x = coord.numpy
-        #     except RuntimeError:
-        #         x = np.array(coord.data, dtype=np.str)
-        #     # Check for bin edges
-        #     histogram = False
-        #     if nx == ny + 1:
-        #         x, w = edges_to_centers(x)
-        #         histogram = True
-        #     xlab = axis_label(*coord)
-        #     if (coord_check is not None) and (coord.tag != coord_check):
-        #         raise RuntimeError("All Value fields must have the same "
-        #                            "x-coordinate axis in plot_1d.")
-        #     else:
-        #         coord_check = coord.tag
 
         # Define trace
         trace = dict(x=x, y=y, name=ylab)
