@@ -1,0 +1,12 @@
+package:
+  name: scipp
+  version: 0.0.1
+
+build:
+  number: 1
+
+requirements:
+  run:
+    - python
+about:
+summary: Multi-dimensional data arrays with labeled dimensions
