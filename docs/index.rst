@@ -19,43 +19,34 @@ Scipp consists of generic core libraries (current **scipp-units** and **scipp-co
 Documentation
 -------------
 
-**Getting Started**
-
-* :doc:`overview`
-* :doc:`faq`
-* :doc:`installation`
-
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
    :caption: Getting Started
 
    overview
    faq
    installation
 
-**User Guide**
-
-* :doc:`data-structures`
-* :doc:`slicing`
-
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
    :caption: User Guide
 
    data-structures
    slicing
 
-**Reference**
-
-* :doc:`api`
-* :doc:`customizing`
+.. toctree::
+   :maxdepth: 2
+   :caption: Python Reference
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
-   :caption: Reference
+   :caption: C++ Reference
 
    api
    customizing
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Additional Modules
+
+   scipp-neutron
