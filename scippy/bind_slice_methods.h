@@ -129,8 +129,8 @@ template <class T> struct slicer {
 
 template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
-  c.def("__getitem__", &slicer<T>::get);
-  c.def("__getitem__", &slicer<T>::get_range);
+  c.def("__getitem__", &slicer<T>::get, py::keep_alive<0, 1>());
+  c.def("__getitem__", &slicer<T>::get_range, py::keep_alive<0, 1>());
   if constexpr (!std::is_same_v<T, Dataset> &&
                 !std::is_same_v<T, DatasetProxy>) {
     c.def("__setitem__", &slicer<T>::set_from_numpy);

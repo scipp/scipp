@@ -7,8 +7,10 @@
 
 #include <variant>
 
+#include "scipp/core/dataset.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/core/variable.h"
 
 #include "numpy.h"
@@ -17,6 +19,52 @@
 namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
+
+/// Add element size as factor to strides.
+template <class T>
+std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
+  std::vector<scipp::index> strides(s.size());
+  scipp::index elemSize = sizeof(T);
+  for (size_t i = 0; i < strides.size(); ++i) {
+    strides[i] = elemSize * s[i];
+  }
+  return strides;
+}
+
+template <class T> struct MakePyBufferInfoT {
+  static py::buffer_info apply(VariableProxy &view) {
+    const auto &dims = view.dims();
+    return py::buffer_info(
+        view.template values<T>().data(), /* Pointer to buffer */
+        sizeof(T),                        /* Size of one scalar */
+        py::format_descriptor<
+            std::conditional_t<std::is_same_v<T, bool>, bool, T>>::
+            format(),              /* Python struct-style format descriptor */
+        scipp::size(dims.shape()), /* Number of dimensions */
+        dims.shape(),              /* Buffer dimensions */
+        numpy_strides<T>(view.strides()) /* Strides (in bytes) for each index */
+    );
+  }
+};
+
+inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
+  return CallDType<double, float, int64_t, int32_t,
+                   bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
+}
+
+template <class Getter, class T, class Var>
+auto as_py_array_t_impl(py::object &obj, Var &view) {
+  std::vector<scipp::index> strides;
+  if constexpr (std::is_same_v<Var, DataProxy>)
+    strides = VariableProxy(view.data()).strides();
+  else
+    strides = VariableProxy(view).strides();
+  const auto &dims = view.dims();
+  using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
+  return py::array_t<py_T>{
+      dims.shape(), numpy_strides<T>(strides),
+      reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
+}
 
 struct get_values {
   template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
@@ -59,13 +107,33 @@ template <class... Ts> struct as_VariableViewImpl {
       throw std::runtime_error("not implemented for this type.");
     }
   }
-  template <class Var>
-  static auto values(Var &view) -> decltype(get<get_values>(view)) {
-    return get<get_values>(view);
+
+  template <class Getter, class Var>
+  static py::object get_py_array_t(py::object &obj) {
+    auto &view = obj.cast<Var &>();
+    switch (view.data().dtype()) {
+    case dtype<double>:
+      return as_py_array_t_impl<Getter, double>(obj, view);
+    case dtype<float>:
+      return as_py_array_t_impl<Getter, float>(obj, view);
+    case dtype<int64_t>:
+      return as_py_array_t_impl<Getter, int64_t>(obj, view);
+    case dtype<int32_t>:
+      return as_py_array_t_impl<Getter, int32_t>(obj, view);
+    case dtype<bool>:
+      return as_py_array_t_impl<Getter, bool>(obj, view);
+    default:
+      return std::visit([](const auto &data) { return py::cast(data); },
+                        get<Getter>(view));
+    }
   }
-  template <class Var>
-  static auto variances(Var &view) -> decltype(get<get_variances>(view)) {
-    return get<get_variances>(view);
+
+  template <class Var> static py::object values(py::object &object) {
+    return get_py_array_t<get_values, Var>(object);
+  }
+
+  template <class Var> static py::object variances(py::object &object) {
+    return get_py_array_t<get_variances, Var>(object);
   }
 
   template <class Proxy>
@@ -84,11 +152,11 @@ template <class... Ts> struct as_VariableViewImpl {
   }
   template <class Var>
   static void set_values(Var &view, const py::array &data) {
-    set(values(view), data);
+    set(get<get_values>(view), data);
   }
   template <class Var>
   static void set_variances(Var &view, const py::array &data) {
-    set(variances(view), data);
+    set(get<get_variances>(view), data);
   }
 
   // Return a scalar value from a variable, implicitly requiring that the
@@ -99,7 +167,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [](const auto &data) {
           return py::cast(data[0], py::return_value_policy::reference);
         },
-        values(view));
+        get<get_values>(view));
   }
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -109,7 +177,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [](const auto &data) {
           return py::cast(data[0], py::return_value_policy::reference);
         },
-        variances(view));
+        get<get_variances>(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -119,7 +187,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
         },
-        values(view));
+        get<get_values>(view));
   }
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -130,7 +198,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
         },
-        variances(view));
+        get<get_variances>(view));
   }
 };
 
@@ -156,11 +224,11 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property("value", &as_VariableView::value<T>,
                  &as_VariableView::set_value<T>,
                  "The only value for 0-dimensional data. Raises an exception "
-                 "of the data is not 0-dimensional.");
+                 "if the data is not 0-dimensional.");
   c.def_property("variance", &as_VariableView::variance<T>,
                  &as_VariableView::set_variance<T>,
                  "The only variance for 0-dimensional data. Raises an "
-                 "exception of the data is not 0-dimensional.");
+                 "exception if the data is not 0-dimensional.");
   c.def_property_readonly("has_variances", &T::hasVariances);
 }
 
