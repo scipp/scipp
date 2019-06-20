@@ -16,6 +16,8 @@ cd $WORKING_DIR
 mkdir $BUILD
 mkdir $INSTALL
 cd $BUILD
+# We need to disable ctest integration of gtest-based tests since gtest_discover_tests
+# fails due to missing (asan) preload.
 cmake -DWITH_CTEST=Off -DSANITIZE_$SANITIZER=On -DCMAKE_INSTALL_PREFIX=$INSTALL $SOURCE
 make -j12 install
 export ASan_WRAPPER=$SOURCE/CMake/sanitizers-cmake/cmake/asan-wrapper
