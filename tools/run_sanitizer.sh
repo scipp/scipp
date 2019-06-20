@@ -19,7 +19,7 @@ cd $BUILD
 # We need to disable ctest integration of gtest-based tests since gtest_discover_tests
 # fails due to missing (asan) preload.
 cmake -DWITH_CTEST=Off -DSANITIZE_$SANITIZER=On -DCMAKE_INSTALL_PREFIX=$INSTALL $SOURCE
-make -j12 install
+make -j install
 export ASan_WRAPPER=$SOURCE/CMake/sanitizers-cmake/cmake/asan-wrapper
 ${ASan_WRAPPER} ./units/test/scipp-units-test || { exit 1; }
 ${ASan_WRAPPER} ./core/test/scipp-core-test || { exit 1; }
