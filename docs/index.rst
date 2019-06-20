@@ -44,6 +44,7 @@ Documentation
 
    cpp-reference/api
    cpp-reference/customizing
+   cpp-reference/transform
 
 .. toctree::
    :caption: Additional Modules
