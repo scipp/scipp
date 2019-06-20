@@ -91,19 +91,20 @@ def plot(input_data, axes=None, waterfall=None, collapse=None, filename=None,
     for key, val in tobeplotted.items():
         if val[0] == 1:
             color = []
-            for l in val[1]:
+            for l in val[1].keys():
                 color.append(DEFAULT_PLOTLY_COLORS[color_count % 10])
                 color_count += 1
-            plot_1d(val[1], color=color, filename=filename)
+            plot_1d(val[1], color=color, filename=filename, **kwargs)
         else:
-            plot_auto(val[1], ndim=val[0], filename=filename)
+            plot_auto(val[1], ndim=val[0], name=name, axes=axes,
+                      filename=filename, **kwargs)
     return
 
 # =============================================================================
 
 
-def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
-              filename=None, **kwargs):
+def plot_auto(input_data, ndim=0, name=None, axes=None, waterfall=None,
+              collapse=None, filename=None, **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
     plotting function depending on its dimensions
@@ -117,14 +118,14 @@ def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
                                           plot=False), filename=filename,
                            **kwargs)
         elif waterfall is not None:
-            return plot_waterfall(input_data, dim=waterfall, axes=axes,
-                                  filename=filename, **kwargs)
+            return plot_waterfall(input_data, name=name, dim=waterfall,
+                                  axes=axes, filename=filename, **kwargs)
         else:
-            return plot_image(input_data, axes=axes, filename=filename,
-                              **kwargs)
+            return plot_image(input_data, name=name, axes=axes,
+                              filename=filename, **kwargs)
     else:
-        return plot_sliceviewer(input_data, axes=axes, filename=filename,
-                                **kwargs)
+        return plot_sliceviewer(input_data, name=name, axes=axes,
+                                filename=filename, **kwargs)
 
 # =============================================================================
 
@@ -153,9 +154,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             x = coords[c[0]].values
             xlab = axis_label(coords[c[0]])
         y = var.values
-        ylab = name
-        if var.unit != sp.units.dimensionless:
-            ylab  = "{} [{}]".format(ylab, var.unit)
+        ylab = axis_label(var=var, name=name)
         # TODO: add variances
 
         nx = x.shape[0]
@@ -211,7 +210,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 # =============================================================================
 
 
-def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
+def plot_image(input_data, name=None, axes=None, contours=False, cb=None, plot=True,
                resolution=128, filename=None):
     """
     Plot a 2D image.
@@ -246,12 +245,8 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
         # Parse colorbar
         cbar = parse_colorbar(cb)
 
-        # title = values[0].name
-        # if cbar["log"]:
-        #     title = "log\u2081\u2080(" + title + ")"
-        # if values[0].unit != sp.units.dimensionless:
-        #     title += " [{}]".format(values[0].unit)
-        title = ""
+        # Make title
+        title = axis_label(var=input_data, name=name, log=cbar["log"])
 
         layout = dict(
             xaxis=dict(title=axis_label(xcoord)),
@@ -764,12 +759,17 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def axis_label(var):
+def axis_label(var, name=None, log=False):
     """
     Make an axis label with "Name [unit]"
     """
-    print(var)
-    label = str(var.dims.labels[0])
+    if name is not None:
+        label = name
+    else:
+        label = str(var.dims.labels[0]).replace("Dim.", "")
+
+    if log:
+        label = "log\u2081\u2080(" + label + ")"
     if var.unit != sp.units.dimensionless:
         label += " [{}]".format(var.unit)
 
@@ -812,14 +812,18 @@ def process_dimensions(input_data, coords, axes):
     Make x and y arrays from dimensions and check for bins edges
     """
     # coords = input_data.coords
+    zdims = input_data.dims
+    zlabs = zdims.labels
+    nz = zdims.shape
+
     if axes is None:
-        axes = [c[0] for c in coords]
+        axes = [l for l in zlabs]
     else:
         axes = axes[-2:]
 
     # Get coordinate arrays
-    xcoord = coords[axes[-2]]
-    ycoord = coords[axes[-1]]
+    xcoord = coords[axes[-1]]
+    ycoord = coords[axes[-2]]
     x = xcoord.values
     y = ycoord.values
 
@@ -827,14 +831,10 @@ def process_dimensions(input_data, coords, axes):
     # TODO: find a better way to handle edges. Currently, we convert from
     # edges to centers and then back to edges afterwards inside the plotly
     # object. This is not optimal and could lead to precision loss issues.
-    zdims = input_data.dims
-    zlabs = zdims.labels
-    nz = zdims.shape
-    print(ycoord.dims)
-    ydims = ycoord.dims # coordinate_dimensions(ycoord)
+    ydims = ycoord.dims
     ylabs = ydims.labels
     ny = ydims.shape
-    xdims = xcoord.dims # coordinate_dimensions(xcoord)
+    xdims = xcoord.dims
     xlabs = xdims.labels
     nx = xdims.shape
     # Find the dimension in z that corresponds to x and y
