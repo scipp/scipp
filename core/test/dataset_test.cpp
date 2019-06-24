@@ -276,6 +276,26 @@ TEST(DatasetTest, simple_sparse_slice) {
   var.sparseValues<double>()[1] = {7, 8, 9};
   dataset.setData("data", var);
   dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
+  auto sparseCoords = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  sparseCoords.sparseValues<double>()[0] = {1, 2, 3};
+  dataset.setSparseCoord("data", sparseCoords);
+
+  auto sliced = dataset.slice({Dim::Y, 1, 2});
+  auto data = sliced["data"].data().sparseSpan<double>();
+  EXPECT_EQ(data.size(), 1);
+  scipp::core::sparse_container<double> expected = {7, 8, 9};
+  EXPECT_EQ(data[0], expected);
+  // Cannot access sparse coords on slice DataProxy.
+}
+
+TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
+
+  Dataset dataset;
+  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  var.sparseValues<double>()[0] = {4, 5, 6};
+  var.sparseValues<double>()[1] = {7, 8, 9};
+  dataset.setData("data", var);
+  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
 
   auto sliced = dataset.slice({Dim::Y, 1, 2});
   auto data = sliced["data"].data().sparseSpan<double>();
@@ -1007,6 +1027,20 @@ TYPED_TEST(CoordsProxyTest, item_access) {
   const auto coords = TestFixture::access(d).coords();
   ASSERT_EQ(coords[Dim::X], x);
   ASSERT_EQ(coords[Dim::Y], y);
+}
+
+TYPED_TEST(CoordsProxyTest, sparse_coords_values_and_coords) {
+  Dataset d;
+  auto data = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  data.sparseValues<double>()[0] = {1, 2, 3};
+  auto s_coords = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  s_coords.sparseValues<double>()[0] = {4, 5, 6};
+  d.setData("test", data);
+  d.setSparseCoord("test", s_coords);
+  ASSERT_EQ(1, d["test"].coords().size());
+  auto sparseX = d["test"].coords()[Dim::X].sparseSpan<double>()[0];
+  ASSERT_EQ(3, sparseX.size());
+  ASSERT_EQ(scipp::core::sparse_container<double>({4, 5, 6}), sparseX);
 }
 
 TYPED_TEST(CoordsProxyTest, iterators_empty_coords) {
