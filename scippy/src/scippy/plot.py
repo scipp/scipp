@@ -108,13 +108,12 @@ def plot_auto(input_data, ndim=0, name=None, waterfall=None,
     plotting function depending on its dimensions
     """
 
-    if ndim == 1:
+    if collapse is not None:
+        plot_collapse(input_data, dim=collapse, name=name, **kwargs)
+    elif ndim == 1:
         plot_1d(input_data, **kwargs)
     elif ndim == 2:
-        if collapse is not None:
-            plot_1d(plot_waterfall(input_data, dim=collapse, plot=False,
-                                  **kwargs), **kwargs)
-        elif waterfall is not None:
+        if waterfall is not None:
             plot_waterfall(input_data, name=name, dim=waterfall, **kwargs)
         else:
             plot_image(input_data, name=name, **kwargs)
@@ -201,6 +200,42 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     else:
         display(fig)
     return
+
+# =============================================================================
+
+def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
+    """
+    Collapse higher dimensions into a 1D plot
+    """
+
+    dims = input_data.dims
+    labs = dims.labels
+    coords = input_data.coords
+
+    # Gather list of dimensions that are to be collapsed
+    slice_dims = []
+    for l in labs:
+        if l != dim:
+            slice_dims.append(l)
+
+    # Create temporary Dataset
+    ds = sp.Dataset()
+    ds.set_coord(dim, sp.Variable([dim], values=coords[dim].values))
+    # A dictionary to hold the DataProxy objects
+    data = dict()
+
+    # Go through the dims that need to be collapsed
+    for l in slice_dims:
+        for i in range(dims[l]):
+            key = "{}-{}".format(str(l), i)
+            ds[key] = sp.Variable([dim], values=input_data[l, i].values)
+            data[key] = ds[key]
+
+    # Send the newly created dictionary of DataProxy to the plot_1d function
+    plot_1d(data, **kwargs)
+
+    return
+
 
 # =============================================================================
 
@@ -451,8 +486,7 @@ class ImageViewer:
 # =============================================================================
 
 
-def plot_waterfall(input_data, dim=None, name=None, axes=None, plot=True,
-                   filename=None):
+def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
     """
     Make a 3D waterfall plot
     """
@@ -488,70 +522,45 @@ def plot_waterfall(input_data, dim=None, name=None, axes=None, plot=True,
 
     if dim == zlabs[0]:
         for i in range(len(yc)):
-            if plot:
-                idict = pdict.copy()
-                idict["x"] = xc
-                idict["y"] = [yc[i]] * len(xc)
-                idict["z"] = z[i, :]
-                data.append(idict)
-                adict["x"] = 3
-                adict["y"] = 1
-            else:
-                dset = sp.Dataset()
-                dset[axes[1]] = input_data[axes[1]]
-                dims = dset[axes[1]].dimensions
-                labs = dims.labels
-                key = values[0].name + "_{}".format(i)
-                dset[sp.Data.Value, key] = ([labs[0]], z[i, :])
-                if e is not None:
-                    dset[sp.Data.Variance, key] = ([labs[0]], e[i, :])
-                data.append(dset)
+            idict = pdict.copy()
+            idict["x"] = xc
+            idict["y"] = [yc[i]] * len(xc)
+            idict["z"] = z[i, :]
+            data.append(idict)
+            adict["x"] = 3
+            adict["y"] = 1
     elif dim == zlabs[1]:
         for i in range(len(xc)):
-            if plot:
-                idict = pdict.copy()
-                idict["x"] = [xc[i]] * len(yc)
-                idict["y"] = yc
-                idict["z"] = z[:, i]
-                data.append(idict)
-                adict["x"] = 1
-                adict["y"] = 3
-            else:
-                dset = sp.Dataset()
-                dset[axes[0]] = input_data[axes[0]]
-                dims = dset[axes[0]].dimensions
-                labs = dims.labels
-                key = values[0].name + "_{}".format(i)
-                dset[sp.Data.Value, key] = ([labs[0]], z[:, i])
-                if e is not None:
-                    dset[sp.Data.Variance, key] = ([labs[0]], e[:, i])
-                data.append(dset)
+            idict = pdict.copy()
+            idict["x"] = [xc[i]] * len(yc)
+            idict["y"] = yc
+            idict["z"] = z[:, i]
+            data.append(idict)
+            adict["x"] = 1
+            adict["y"] = 3
     else:
         raise RuntimeError("Something went wrong in plot_waterfall. The "
                            "waterfall dimension is not recognised.")
 
-    if plot:
-        layout = dict(
-            scene=dict(
-                xaxis=dict(
-                    title=axis_label(xcoord)),
-                yaxis=dict(
-                    title=axis_label(ycoord)),
-                zaxis=dict(
-                    title=axis_label(var=input_data,
-                                     name=name)),
-                aspectmode='manual',
-                aspectratio=adict),
-            showlegend=False,
-            height=default["height"])
-        fig = FigureWidget(data=data, layout=layout)
-        if filename is not None:
-            write_image(fig=fig, file=filename)
-        else:
-            display(fig)
-        return
+    layout = dict(
+        scene=dict(
+            xaxis=dict(
+                title=axis_label(xcoord)),
+            yaxis=dict(
+                title=axis_label(ycoord)),
+            zaxis=dict(
+                title=axis_label(var=input_data,
+                                 name=name)),
+            aspectmode='manual',
+            aspectratio=adict),
+        showlegend=False,
+        height=default["height"])
+    fig = FigureWidget(data=data, layout=layout)
+    if filename is not None:
+        write_image(fig=fig, file=filename)
     else:
-        return data
+        display(fig)
+    return
 
     # else:
     #     raise RuntimeError(
