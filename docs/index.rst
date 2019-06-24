@@ -1,68 +1,53 @@
-Welcome to Scipp!
-=================
+scipp - Multi-dimensional data arrays with labeled dimensions
+=============================================================
 
-**scipp** is heavily inspired by `xarray <https://xarray.pydata.org>`_.
-While for many applications xarray is certainly more suitable than scipp, there is a number of features missing in other situations.
-If you are missing one or several of the items on the following list in xarray, using scipp may be worth considering:
+**scipp** and its Python-counterpart **scippy** are heavily inspired by `xarray <https://xarray.pydata.org>`_.
+While for many applications xarray is certainly more suitable (and definitely much more matured) than scipp, there is a number of features missing in other situations.
+If your use case requires one or several of the items on the following list, using scipp may be worth considering:
 
-- Fully written in C++ for better performance (for certain applications), in combination with a Python interface (**scippy**).
 - Handling of physical units.
 - Propagation of uncertainties.
-- Support for histograms, i.e., scipp supports bin-edge axes, which are by 1 longer than the data extent.
-- Support for event data, a particular form of sparse data.
+- Support for histograms, i.e., bin-edge axes, which are by 1 longer than the data extent.
+- Support for event data, a particular form of sparse data with 1-D (or N-D) arrays of random-length lists, with very small list entries.
+- Written in C++ for better performance (for certain applications), in combination with Python bindings (**scippy**).
 
 Currently scipp is moving from its prototype phase into a more consolidated set of libraries.
-The intention is to provide a generic core library (**scipp-core**), and more specific libraries (such as **scipp-neutron**).
+
+Scipp consists of generic core libraries (current **scipp-units** and **scipp-core**), and more specific libraries (such as **scipp-neutron** for neutron-scattering data).
 
 
 Documentation
--------------
-
-**Getting Started**
-
-The documentation of **scipp** is under construction.
-
-For the time being, please refer to the (slightly outdated, we are in the process of refactoring the API to eliminate the need for tags) `design document <https://github.com/scipp/scipp/blob/master/doc/design.md>`_, or to the demo Jupyter notebooks in the Docker image:
-
-.. code-block:: sh
-
-   docker pull dmscid/dataset
-   docker run -p 8888:8888 dmscid/dataset
-
-Navigate to ``localhost:8888`` in your browser.
-The relevant demo notebooks can be found in the ``demo/`` folder.
-
-* :doc:`installation`
+=============
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
    :caption: Getting Started
-
-   installation
-
-**User Guide**
-
-* :doc:`data-structures`
-* :doc:`slicing`
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: User Guide
-
-   data-structures
-   slicing
-
-**Reference**
-
-* :doc:`api`
-* :doc:`customizing`
-
-.. toctree::
    :maxdepth: 2
-   :hidden:
-   :caption: Reference
 
-   api
-   customizing
+   getting-started/overview
+   getting-started/faq
+   getting-started/installation
+
+.. toctree::
+   :caption: User Guide
+   :maxdepth: 2
+
+   user-guide/data-structures
+   user-guide/slicing
+
+.. toctree::
+   :caption: Python Reference
+   :maxdepth: 2
+
+.. toctree::
+   :caption: C++ Reference
+   :maxdepth: 2
+
+   cpp-reference/api
+   cpp-reference/customizing
+   cpp-reference/transform
+
+.. toctree::
+   :caption: Additional Modules
+   :maxdepth: 2
+
+   additional-modules/scipp-neutron

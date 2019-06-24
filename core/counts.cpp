@@ -3,8 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/counts.h"
-#include "dataset.h"
-#include "except.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/except.h"
 
 namespace scipp::core {
 
@@ -17,8 +17,8 @@ auto getBinWidths(const Dataset &d, const std::vector<Dim> &dims) {
     if (coord.unit() == units::dimensionless)
       throw std::runtime_error("Dimensionless axis cannot be used for "
                                "conversion from or to density");
-    binWidths.emplace_back(coord(dim, 1, coord.dims()[dim]) -
-                           coord(dim, 0, coord.dims()[dim] - 1));
+    binWidths.emplace_back(coord.slice({dim, 1, coord.dims()[dim]}) -
+                           coord.slice({dim, 0, coord.dims()[dim] - 1}));
   }
   return binWidths;
 }

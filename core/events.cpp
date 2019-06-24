@@ -6,9 +6,9 @@
 
 #include "range/v3/all.hpp"
 
-#include "dataset.h"
-#include "events.h"
-#include "except.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/events.h"
+#include "scipp/core/except.h"
 
 namespace scipp::core {
 

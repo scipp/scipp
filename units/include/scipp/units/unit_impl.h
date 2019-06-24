@@ -57,7 +57,7 @@ public:
   bool operator!=(const Unit_impl<T, Counts> &other) const;
 
 private:
-  unit_t m_unit;
+  unit_t m_unit{units::dimensionless};
   // TODO need to support scale
 };
 

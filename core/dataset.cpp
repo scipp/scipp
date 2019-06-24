@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #include <ostream>
 
-#include "dataset.h"
-#include "except.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/except.h"
 
 namespace scipp::core {
 
@@ -35,10 +35,10 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
     // but they will be sliced out. Maybe a better implementation would be to
     // slice the coords first? That would also eliminate a potential loophole
     // for multi-dimensional coordinates.
-    auto contained = [&dims](const auto item) {
-      const auto &coordDims = item.second.dims();
+    auto contained = [&dims](const auto item2) {
+      const auto &coordDims = item2.second.dims();
       if constexpr (std::is_same_v<Key, Dim>)
-        return coordDims.empty() || dims.contains(item.first);
+        return coordDims.empty() || dims.contains(item2.first);
       else
         return coordDims.empty() || dims.contains(coordDims.inner());
     };
@@ -94,6 +94,10 @@ AttrsConstProxy Dataset::attrs() const noexcept {
 /// Return a proxy to all attributes of the dataset.
 AttrsProxy Dataset::attrs() noexcept {
   return AttrsProxy(makeProxyItems<std::string_view>(m_attrs));
+}
+
+bool Dataset::contains(const std::string_view name) const noexcept {
+  return m_data.count(name) == 1;
 }
 
 /// Return a const proxy to data and coordinates with given name.
@@ -290,6 +294,15 @@ units::Unit DataConstProxy::unit() const {
   throw std::runtime_error("Data without values, unit is undefined.");
 }
 
+/// Set the unit of the data values.
+///
+/// Throws if there are no data values.
+void DataProxy::setUnit(const units::Unit unit) const {
+  if (hasData())
+    return data().setUnit(unit);
+  throw std::runtime_error("Data without values, cannot set unit.");
+}
+
 /// Return a const proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
@@ -345,6 +358,27 @@ AttrsProxy DataProxy::attrs() const noexcept {
   return AttrsProxy(
       makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_attrs),
       slices());
+}
+
+DataProxy DataProxy::assign(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  // TODO here and below: If other has data, we should either fail, or create
+  // data.
+  if (hasData())
+    data().assign(other.data());
+  return *this;
+}
+
+DataProxy DataProxy::assign(const Variable &other) const {
+  if (hasData())
+    data().assign(other);
+  return *this;
+}
+
+DataProxy DataProxy::assign(const VariableConstProxy &other) const {
+  if (hasData())
+    data().assign(other);
+  return *this;
 }
 
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
@@ -417,6 +451,10 @@ void DatasetConstProxy::expectValidKey(const std::string_view name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
     throw std::out_of_range("Invalid key `" + std::string(name) +
                             "` in Dataset access.");
+}
+
+bool DatasetConstProxy::contains(const std::string_view name) const noexcept {
+  return std::find(m_indices.begin(), m_indices.end(), name) != m_indices.end();
 }
 
 /// Return a const proxy to data and coordinates with given name.

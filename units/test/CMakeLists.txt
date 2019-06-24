@@ -9,4 +9,6 @@ target_link_libraries(scipp-units-test
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
 add_sanitizers(scipp-units-test)
-gtest_discover_tests(scipp-units-test TEST_PREFIX scipp/units/)
+if(${WITH_CTEST})
+  gtest_discover_tests(scipp-units-test TEST_PREFIX scipp/units/)
+endif()

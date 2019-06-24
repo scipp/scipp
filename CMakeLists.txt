@@ -7,6 +7,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
 if(NOT CMAKE_BUILD_TYPE)
   set(
     CMAKE_BUILD_TYPE "Release"
@@ -16,7 +22,8 @@ if(NOT CMAKE_BUILD_TYPE)
     FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
+    "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake")
 
 find_package(OpenMP 3.1 REQUIRED)
 find_package(Sanitizers REQUIRED)
@@ -39,22 +46,17 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   endif()
 endif()
 
-option(WITH_ASAN "Enable address sanitizer" OFF)
-if(WITH_ASAN)
-  message(STATUS "Enabling address sanitizer")
-  add_compile_options(-fno-omit-frame-pointer -fno-common -fsanitize=address)
-  set(CMAKE_MODULE_LINKER_FLAGS
-      "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan")
-  set(CMAKE_EXE_LINKER_FLAGS
-      "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan")
-  set(CMAKE_SHARED_LINKER_FLAGS
-      "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address -lasan -static-libasan")
-endif()
+option(WITH_CTEST "Enable ctest integration of tests" ON)
 
 add_compile_options(-Wall
                     -Wextra
+                    -Wpedantic
+                    -Wunused
+                    -Wshadow
                     -Winit-self
                     -Wpointer-arith
+                    -Woverloaded-virtual
+                    -Wold-style-cast
                     -Wcast-qual
                     -Wcast-align)
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>

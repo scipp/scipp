@@ -5,13 +5,13 @@
 #include <cmath>
 #include <string>
 
-#include "apply.h"
-#include "dataset.h"
-#include "except.h"
+#include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
-#include "transform.h"
-#include "variable.h"
-#include "variable_view.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/except.h"
+#include "scipp/core/transform.h"
+#include "scipp/core/variable.h"
+#include "scipp/core/variable_view.h"
 
 namespace scipp::core {
 
@@ -114,7 +114,7 @@ template <typename T> struct RebinGeneralHelper {
         delta -= xo_low > xn_low ? xo_low : xn_low;
 
         auto owidth = xo_high - xo_low;
-        newT(dim, inew) += oldT(dim, iold) * delta / owidth;
+        newT.slice({dim, inew}) += oldT.slice({dim, iold}) * delta / owidth;
         if (xn_high > xo_high) {
           iold++;
         } else {
@@ -128,7 +128,7 @@ template <typename T> struct RebinGeneralHelper {
 template <class T> class ViewModel;
 
 VariableConcept::VariableConcept(const Dimensions &dimensions)
-    : m_dimensions(dimensions){};
+    : m_dimensions(dimensions) {}
 
 bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
                            const Dimensions &toMatch) {
@@ -268,6 +268,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
                                const scipp::index offset,
                                const scipp::index otherBegin,
                                const scipp::index otherEnd) {
+  if (this->hasVariances() != other.hasVariances())
+    throw except::VariancesError(
+        "Either both or neither of the operands must have a variances.");
   auto iterDims = this->dims();
   const scipp::index delta = otherEnd - otherBegin;
   if (iterDims.contains(dim))
@@ -296,14 +299,14 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   }
   // TODO Avoid code duplication for variances.
   if (this->hasVariances()) {
-    auto otherView = otherT.variancesView(iterDims, dim, otherBegin);
+    auto otherVariances = otherT.variancesView(iterDims, dim, otherBegin);
     if (this->isContiguous() && iterDims.isContiguousIn(this->dims())) {
       auto target = variances(dim, offset, offset + delta);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dims())) {
         auto source = otherT.variances(dim, otherBegin, otherEnd);
         std::copy(source.begin(), source.end(), target.begin());
       } else {
-        std::copy(otherView.begin(), otherView.end(), target.begin());
+        std::copy(otherVariances.begin(), otherVariances.end(), target.begin());
       }
     } else {
       auto view = variancesView(iterDims, dim, offset);
@@ -311,7 +314,7 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
         auto source = otherT.variances(dim, otherBegin, otherEnd);
         std::copy(source.begin(), source.end(), view.begin());
       } else {
-        std::copy(otherView.begin(), otherView.end(), view.begin());
+        std::copy(otherVariances.begin(), otherVariances.end(), view.begin());
       }
     }
   }
@@ -707,10 +710,14 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                         std::move(dimensions), std::move(object))) {}
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T values, T variances)
+                   T values_, T variances_)
     : m_unit{unit},
-      m_object(std::make_unique<DataModel<T>>(
-          std::move(dimensions), std::move(values), std::move(variances))) {}
+      m_object(variances_.empty()
+                   ? std::make_unique<DataModel<T>>(std::move(dimensions),
+                                                    std::move(values_))
+                   : std::make_unique<DataModel<T>>(std::move(dimensions),
+                                                    std::move(values_),
+                                                    std::move(variances_))) {}
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {
@@ -722,9 +729,10 @@ void Variable::setDims(const Dimensions &dimensions) {
 }
 
 template <class T>
-const Vector<underlying_type_t<T>> &Variable::cast(const bool variances) const {
+const Vector<underlying_type_t<T>> &
+Variable::cast(const bool variances_) const {
   auto &dm = requireT<const DataModel<Vector<underlying_type_t<T>>>>(*m_object);
-  if (!variances)
+  if (!variances_)
     return dm.m_values;
   else {
     if (!hasVariances())
@@ -734,9 +742,9 @@ const Vector<underlying_type_t<T>> &Variable::cast(const bool variances) const {
 }
 
 template <class T>
-Vector<underlying_type_t<T>> &Variable::cast(const bool variances) {
+Vector<underlying_type_t<T>> &Variable::cast(const bool variances_) {
   auto &dm = requireT<DataModel<Vector<underlying_type_t<T>>>>(*m_object);
-  if (!variances)
+  if (!variances_)
     return dm.m_values;
   else {
     if (!hasVariances())
@@ -771,6 +779,12 @@ INSTANTIATE(sparse_container<double>)
 INSTANTIATE(sparse_container<float>)
 INSTANTIATE(sparse_container<int64_t>)
 INSTANTIATE(sparse_container<int32_t>)
+// Some sparse instantiations are only needed to avoid linker errors: Some
+// makeVariable overloads have a runtime branch that may instantiate a sparse
+// variable.
+INSTANTIATE(sparse_container<std::string>)
+INSTANTIATE(sparse_container<Bool>)
+INSTANTIATE(sparse_container<Dataset>)
 INSTANTIATE(sparse_container<Eigen::Vector3d>)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
@@ -797,140 +811,8 @@ bool Variable::operator!=(const VariableConstProxy &other) const {
   return !(*this == other);
 }
 
-template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
-  // Addition with different Variable type is supported, mismatch of underlying
-  // element types is handled in DataModel::operator+=.
-  // Different name is ok for addition.
-  expect::equals(variable.unit(), other.unit());
-  expect::contains(variable.dims(), other.dims());
-  // Note: This will broadcast/transpose the RHS if required. We do not support
-  // changing the dimensions of the LHS though!
-  transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      variable, other, [](auto &&a, auto &&b) { a += b; });
-  return variable;
-}
-
-using arithmetic_type_pairs =
-    std::tuple<std::pair<double, double>, std::pair<float, float>,
-               std::pair<int64_t, int64_t>, std::pair<double, float>,
-               std::pair<float, double>>;
-using arithmetic_and_matrix_type_pairs = decltype(
-    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
-
-template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
-  expect::equals(a.unit(), b.unit());
-  auto result = transform<arithmetic_and_matrix_type_pairs>(
-      a, b, [](const auto a, const auto b) { return a + b; });
-  result.setUnit(a.unit());
-  return result;
-}
-
-Variable Variable::operator-() const {
-  auto result = transform<double, float, int64_t, Eigen::Vector3d>(
-      *this, [](const auto a) { return -a; });
-  result.setUnit(unit());
-  return result;
-}
-
-Variable &Variable::operator+=(const Variable &other) & {
-  return plus_equals(*this, other);
-}
-Variable &Variable::operator+=(const VariableConstProxy &other) & {
-  return plus_equals(*this, other);
-}
-Variable &Variable::operator+=(const double value) & {
-  // TODO By not setting a unit here this operator is only usable if the
-  // variable is dimensionless. Should we ignore the unit for scalar operations,
-  // i.e., set the same unit as *this.unit()?
-  return plus_equals(*this, makeVariable<double>(value));
-}
-
-template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
-  expect::equals(variable.unit(), other.unit());
-  expect::contains(variable.dims(), other.dims());
-  transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      variable, other, [](auto &&a, auto &&b) { a -= b; });
-  return variable;
-}
-
-template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
-  expect::equals(a.unit(), b.unit());
-  auto result = transform<arithmetic_and_matrix_type_pairs>(
-      a, b, [](const auto a, const auto b) { return a - b; });
-  result.setUnit(a.unit());
-  return result;
-}
-
-Variable &Variable::operator-=(const Variable &other) & {
-  return minus_equals(*this, other);
-}
-Variable &Variable::operator-=(const VariableConstProxy &other) & {
-  return minus_equals(*this, other);
-}
-Variable &Variable::operator-=(const double value) & {
-  return minus_equals(*this, makeVariable<double>(value));
-}
-
-template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  expect::contains(variable.dims(), other.dims());
-  // setUnit is catching bad cases of changing units (if `variable` is a slice).
-  variable.setUnit(variable.unit() * other.unit());
-  transform_in_place<pair_self_t<double, float, int64_t>,
-                     pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
-      variable, other, [](auto &&a, auto &&b) { a *= b; });
-  return variable;
-}
-
-template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
-  auto result = transform<arithmetic_type_pairs>(
-      a, b, [](const auto a, const auto b) { return a * b; });
-  result.setUnit(a.unit() * b.unit());
-  return result;
-}
-
-Variable &Variable::operator*=(const Variable &other) & {
-  return times_equals(*this, other);
-}
-Variable &Variable::operator*=(const VariableConstProxy &other) & {
-  return times_equals(*this, other);
-}
-Variable &Variable::operator*=(const double value) & {
-  auto other = makeVariable<double>(value);
-  other.setUnit(units::dimensionless);
-  return times_equals(*this, other);
-}
-
-template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
-  expect::contains(variable.dims(), other.dims());
-  // setUnit is catching bad cases of changing units (if `variable` is a slice).
-  variable.setUnit(variable.unit() / other.unit());
-  transform_in_place<pair_self_t<double, float, int64_t>,
-                     pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
-      variable, other, [](auto &&a, auto &&b) { a /= b; });
-  return variable;
-}
-
-template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
-  auto result = transform<arithmetic_type_pairs>(
-      a, b, [](const auto a, const auto b) { return a / b; });
-  result.setUnit(a.unit() / b.unit());
-  return result;
-}
-
-Variable &Variable::operator/=(const Variable &other) & {
-  return divide_equals(*this, other);
-}
-Variable &Variable::operator/=(const VariableConstProxy &other) & {
-  return divide_equals(*this, other);
-}
-Variable &Variable::operator/=(const double value) & {
-  return divide_equals(*this, makeVariable<double>(value));
-}
-
 template <class T> VariableProxy VariableProxy::assign(const T &other) const {
-  if (unit() != other.unit())
-    throw std::runtime_error("Cannot assign to slice: Unit mismatch.");
+  setUnit(other.unit());
   if (dims() != other.dims())
     throw except::DimensionMismatchError(dims(), other.dims());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
@@ -939,46 +821,6 @@ template <class T> VariableProxy VariableProxy::assign(const T &other) const {
 
 template VariableProxy VariableProxy::assign(const Variable &) const;
 template VariableProxy VariableProxy::assign(const VariableConstProxy &) const;
-
-VariableProxy VariableProxy::operator+=(const Variable &other) const {
-  return plus_equals(*this, other);
-}
-VariableProxy VariableProxy::operator+=(const VariableConstProxy &other) const {
-  return plus_equals(*this, other);
-}
-VariableProxy VariableProxy::operator+=(const double value) const {
-  return plus_equals(*this, makeVariable<double>(value));
-}
-
-VariableProxy VariableProxy::operator-=(const Variable &other) const {
-  return minus_equals(*this, other);
-}
-VariableProxy VariableProxy::operator-=(const VariableConstProxy &other) const {
-  return minus_equals(*this, other);
-}
-VariableProxy VariableProxy::operator-=(const double value) const {
-  return minus_equals(*this, makeVariable<double>(value));
-}
-
-VariableProxy VariableProxy::operator*=(const Variable &other) const {
-  return times_equals(*this, other);
-}
-VariableProxy VariableProxy::operator*=(const VariableConstProxy &other) const {
-  return times_equals(*this, other);
-}
-VariableProxy VariableProxy::operator*=(const double value) const {
-  return times_equals(*this, makeVariable<double>(value));
-}
-
-VariableProxy VariableProxy::operator/=(const Variable &other) const {
-  return divide_equals(*this, other);
-}
-VariableProxy VariableProxy::operator/=(const VariableConstProxy &other) const {
-  return divide_equals(*this, other);
-}
-VariableProxy VariableProxy::operator/=(const double value) const {
-  return divide_equals(*this, makeVariable<double>(value));
-}
 
 bool VariableConstProxy::operator==(const Variable &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we
@@ -996,18 +838,10 @@ bool VariableConstProxy::operator!=(const VariableConstProxy &other) const {
   return !(*this == other);
 }
 
-Variable VariableConstProxy::operator-() const {
-  Variable copy(*this);
-  return -copy;
-}
-
 void VariableProxy::setUnit(const units::Unit &unit) const {
-  // TODO Should we forbid setting the unit altogether? I think it is useful in
-  // particular since views onto subsets of dataset do not imply slicing of
-  // variables but return slice views.
   if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
-    throw std::runtime_error("Partial view on data of variable cannot be used "
-                             "to change the unit.\n");
+    throw except::UnitError("Partial view on data of variable cannot be used "
+                            "to change the unit.");
   m_mutableVariable->setUnit(unit);
 }
 
@@ -1063,15 +897,15 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   template VariableView<underlying_type_t<__VA_ARGS__>>                        \
   VariableProxy::castVariances<__VA_ARGS__>() const;
 
-INSTANTIATE_SLICEVIEW(double);
-INSTANTIATE_SLICEVIEW(float);
-INSTANTIATE_SLICEVIEW(int64_t);
-INSTANTIATE_SLICEVIEW(int32_t);
-INSTANTIATE_SLICEVIEW(bool);
-INSTANTIATE_SLICEVIEW(std::string);
-INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>);
-INSTANTIATE_SLICEVIEW(Dataset);
-INSTANTIATE_SLICEVIEW(Eigen::Vector3d);
+INSTANTIATE_SLICEVIEW(double)
+INSTANTIATE_SLICEVIEW(float)
+INSTANTIATE_SLICEVIEW(int64_t)
+INSTANTIATE_SLICEVIEW(int32_t)
+INSTANTIATE_SLICEVIEW(bool)
+INSTANTIATE_SLICEVIEW(std::string)
+INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>)
+INSTANTIATE_SLICEVIEW(Dataset)
+INSTANTIATE_SLICEVIEW(Eigen::Vector3d)
 
 VariableConstProxy Variable::slice(const Slice slice) const & {
   return {*this, slice.dim, slice.begin, slice.end};
@@ -1086,16 +920,6 @@ VariableProxy Variable::slice(const Slice slice) & {
 }
 
 Variable Variable::slice(const Slice slice) && { return {this->slice(slice)}; }
-
-VariableConstProxy Variable::operator()(const Dim dim, const scipp::index begin,
-                                        const scipp::index end) const & {
-  return slice({dim, begin, end});
-}
-
-VariableProxy Variable::operator()(const Dim dim, const scipp::index begin,
-                                   const scipp::index end) & {
-  return slice({dim, begin, end});
-}
 
 VariableConstProxy Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
@@ -1119,65 +943,6 @@ Variable VariableConstProxy::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
-Variable operator+(const Variable &a, const Variable &b) { return plus(a, b); }
-Variable operator-(const Variable &a, const Variable &b) { return minus(a, b); }
-Variable operator*(const Variable &a, const Variable &b) { return times(a, b); }
-Variable operator/(const Variable &a, const Variable &b) {
-  return divide(a, b);
-}
-Variable operator+(const Variable &a, const VariableConstProxy &b) {
-  return plus(a, b);
-}
-Variable operator-(const Variable &a, const VariableConstProxy &b) {
-  return minus(a, b);
-}
-Variable operator*(const Variable &a, const VariableConstProxy &b) {
-  return times(a, b);
-}
-Variable operator/(const Variable &a, const VariableConstProxy &b) {
-  return divide(a, b);
-}
-Variable operator+(const VariableConstProxy &a, const Variable &b) {
-  return plus(a, b);
-}
-Variable operator-(const VariableConstProxy &a, const Variable &b) {
-  return minus(a, b);
-}
-Variable operator*(const VariableConstProxy &a, const Variable &b) {
-  return times(a, b);
-}
-Variable operator/(const VariableConstProxy &a, const Variable &b) {
-  return divide(a, b);
-}
-Variable operator+(const VariableConstProxy &a, const VariableConstProxy &b) {
-  return plus(a, b);
-}
-Variable operator-(const VariableConstProxy &a, const VariableConstProxy &b) {
-  return minus(a, b);
-}
-Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b) {
-  return times(a, b);
-}
-Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b) {
-  return divide(a, b);
-}
-// Note: The std::move here is necessary because RVO does not work for variables
-// that are function parameters.
-Variable operator+(Variable a, const double b) { return std::move(a += b); }
-Variable operator-(Variable a, const double b) { return std::move(a -= b); }
-Variable operator*(Variable a, const double b) { return std::move(a *= b); }
-Variable operator/(Variable a, const double b) { return std::move(a /= b); }
-Variable operator+(const double a, Variable b) { return std::move(b += a); }
-Variable operator-(const double a, Variable b) { return -(b -= a); }
-Variable operator*(const double a, Variable b) { return std::move(b *= a); }
-Variable operator/(const double a, Variable b) {
-  b.setUnit(units::Unit(units::dimensionless) / b.unit());
-  transform_in_place<double, float>(b, overloaded{[a](double &b) { b = a / b; },
-                                                  [a](float &b) { b = a / b; },
-                                                  [a](auto &b) { b = a / b; }});
-  return std::move(b);
-}
-
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
 std::vector<Variable> split(const Variable &var, const Dim dim,
@@ -1185,10 +950,10 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   if (indices.empty())
     return {var};
   std::vector<Variable> vars;
-  vars.emplace_back(var(dim, 0, indices.front()));
+  vars.emplace_back(var.slice({dim, 0, indices.front()}));
   for (scipp::index i = 0; i < scipp::size(indices) - 1; ++i)
-    vars.emplace_back(var(dim, indices[i], indices[i + 1]));
-  vars.emplace_back(var(dim, indices.back(), var.dims()[dim]));
+    vars.emplace_back(var.slice({dim, indices[i], indices[i + 1]}));
+  vars.emplace_back(var.slice({dim, indices.back(), var.dims()[dim]}));
   return vars;
 }
 
@@ -1202,11 +967,9 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
 
   if (a1.dims().sparseDim() == dim && a2.dims().sparseDim() == dim) {
     Variable out(a1);
-    // TODO Sanitize transform_in_place implementation so the functor signature
-    // is more reasonable.
     transform_in_place<pair_self_t<sparse_container<double>>>(
         out, a2,
-        [](auto &&a, auto &&b) { a.insert(a.end(), b.begin(), b.end()); });
+        [](auto &a, const auto &b) { a.insert(a.end(), b.begin(), b.end()); });
     return out;
   }
 
@@ -1279,12 +1042,12 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
       break;
     }
 
-  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord,
-                        auto &&newCoord) {
+  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
+                        auto &&newCoord_) {
     // Dimensions of *this and old are guaranteed to be the same.
     const auto &oldT = *old;
-    const auto &oldCoordT = *oldCoord;
-    const auto &newCoordT = *newCoord;
+    const auto &oldCoordT = *oldCoord_;
+    const auto &newCoordT = *newCoord_;
     auto &outT = *out;
     const auto &dims = outT.dims();
     if (dims.inner() == dim &&
@@ -1416,7 +1179,7 @@ Variable sqrt(const Variable &var) {
 
 Variable broadcast(Variable var, const Dimensions &dims) {
   if (var.dims().contains(dims))
-    return std::move(var);
+    return var;
   auto newDims = var.dims();
   const auto labels = dims.labels();
   for (auto it = labels.end(); it != labels.begin();) {
@@ -1435,16 +1198,16 @@ Variable broadcast(Variable var, const Dimensions &dims) {
 
 void swap(Variable &var, const Dim dim, const scipp::index a,
           const scipp::index b) {
-  const Variable tmp = var(dim, a);
-  var(dim, a).assign(var(dim, b));
-  var(dim, b).assign(tmp);
+  const Variable tmp = var.slice({dim, a});
+  var.slice({dim, a}).assign(var.slice({dim, b}));
+  var.slice({dim, b}).assign(tmp);
 }
 
 Variable reverse(Variable var, const Dim dim) {
   const auto size = var.dims()[dim];
   for (scipp::index i = 0; i < size / 2; ++i)
     swap(var, dim, i, size - i - 1);
-  return std::move(var);
+  return var;
 }
 
 template <>

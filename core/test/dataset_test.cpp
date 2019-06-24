@@ -5,8 +5,8 @@
 
 #include <numeric>
 
-#include "dataset.h"
-#include "dimensions.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/dimensions.h"
 
 #include "dataset_test_common.h"
 
@@ -281,7 +281,7 @@ TEST(DatasetTest, simple_sparse_slice) {
   dataset.setSparseCoord("data", sparseCoords);
 
   auto sliced = dataset.slice({Dim::Y, 1, 2});
-  auto data = sliced["data"].data().sparseSpan<double>();
+  auto data = sliced["data"].data().sparseValues<double>();
   EXPECT_EQ(data.size(), 1);
   scipp::core::sparse_container<double> expected = {7, 8, 9};
   EXPECT_EQ(data[0], expected);
@@ -298,7 +298,7 @@ TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
   dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
 
   auto sliced = dataset.slice({Dim::Y, 1, 2});
-  auto data = sliced["data"].data().sparseSpan<double>();
+  auto data = sliced["data"].data().sparseValues<double>();
   EXPECT_EQ(data.size(), 1);
   scipp::core::sparse_container<double> expected = {7, 8, 9};
   EXPECT_EQ(data[0], expected);
@@ -358,7 +358,7 @@ protected:
   Variable sparse_variable;
 };
 
-auto make_empty() { return Dataset(); };
+auto make_empty() { return Dataset(); }
 
 template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
@@ -805,7 +805,7 @@ TEST_P(Dataset3DTest_slice_x, slice) {
 }
 
 TEST_P(Dataset3DTest_slice_sparse, slice) {
-  Dataset dataset;
+  Dataset ds;
   const auto pos = GetParam();
   auto var = makeVariable<double>(
       {{Dim::X, Dim::Y, Dim::Z}, {2, 2, Dimensions::Sparse}});
@@ -814,12 +814,12 @@ TEST_P(Dataset3DTest_slice_sparse, slice) {
   var.sparseValues<double>()[2] = {7};
   var.sparseValues<double>()[3] = {8, 9};
 
-  dataset.setData("xyz_data", var);
-  dataset.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}, {0, 1}));
-  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {0, 1}));
+  ds.setData("xyz_data", var);
+  ds.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}, {0, 1}));
+  ds.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {0, 1}));
 
-  auto sliced = dataset.slice({Dim::X, pos});
-  auto data = sliced["xyz_data"].data().sparseSpan<double>();
+  auto sliced = ds.slice({Dim::X, pos});
+  auto data = sliced["xyz_data"].data().sparseValues<double>();
   EXPECT_EQ(data.size(), 2);
   scipp::core::sparse_container<double> expected =
       var.sparseValues<double>()[pos * 2];
@@ -1038,7 +1038,7 @@ TYPED_TEST(CoordsProxyTest, sparse_coords_values_and_coords) {
   d.setData("test", data);
   d.setSparseCoord("test", s_coords);
   ASSERT_EQ(1, d["test"].coords().size());
-  auto sparseX = d["test"].coords()[Dim::X].sparseSpan<double>()[0];
+  auto sparseX = d["test"].coords()[Dim::X].sparseValues<double>()[0];
   ASSERT_EQ(3, sparseX.size());
   ASSERT_EQ(scipp::core::sparse_container<double>({4, 5, 6}), sparseX);
 }

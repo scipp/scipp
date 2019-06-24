@@ -4,7 +4,7 @@
 
 #include "test_macros.h"
 
-#include "view_index.h"
+#include "scipp/core/view_index.h"
 
 using namespace scipp;
 using namespace scipp::core;
