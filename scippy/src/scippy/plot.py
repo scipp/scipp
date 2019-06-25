@@ -29,25 +29,6 @@ default = {
 # =============================================================================
 
 
-# def check_input(input_data, check_multiple_values=True):
-
-#     variables = []
-#     ndims = []
-#     for name, var in input_data:
-#         # if tag.is_data and (tag != sp.Data.Variance):
-#         variables.append((name, var))
-#         ndims.append(len(var.coords))
-
-#     # if check_multiple_values and (len(values) > 1) and (np.amax(ndims) > 1):
-#     #     raise RuntimeError("More than one Data.Value found! Please use e.g."
-#     #                        " plot(dataset.subset[Data.Value, 'sample'])"
-#     #                        " to select only a single Value.")
-
-#     return variables, ndims
-
-# =============================================================================
-
-
 def plot(input_data, **kwargs):
     """
     Wrapper function to plot any kind of dataset
@@ -203,6 +184,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 
 # =============================================================================
 
+
 def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     """
     Collapse higher dimensions into a 1D plot.
@@ -298,76 +280,63 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None, plot=T
     else:
         naxes = 0
 
-    if (ndim == 2) or ((not plot) and (naxes > 1)):
+    # Get coordinates axes and dimensions
+    coords = input_data.coords
+    xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
+        process_dimensions(input_data=input_data, coords=coords, axes=axes)
 
-        # Get coordinates axes and dimensions
-        coords = input_data.coords
-        xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-            process_dimensions(input_data=input_data, coords=coords, axes=axes)
-
-        if contours:
-            plot_type = 'contour'
-        else:
-            plot_type = 'heatmap'
-
-        # Parse colorbar
-        cbar = parse_colorbar(cb)
-
-        # Make title
-        title = axis_label(var=input_data, name=name, log=cbar["log"])
-
-        layout = dict(
-            xaxis=dict(title=axis_label(xcoord)),
-            yaxis=dict(title=axis_label(ycoord)),
-            height=default["height"]
-        )
-
-        if plot:
-            z = input_data.values
-            # Check if dimensions of arrays agree, if not, plot the transpose
-            if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-                z = z.T
-            # Apply colorbar parameters
-            if cbar["log"]:
-                with np.errstate(invalid="ignore", divide="ignore"):
-                    z = np.log10(z)
-            if cbar["min"] is None:
-                cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
-            if cbar["max"] is None:
-                cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
-            imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar,
-                                 plot_type, title, contours)
-            for key, val in layout.items():
-                imview.fig.layout[key] = val
-            if filename is not None:
-                write_image(fig=imview.fig, file=filename)
-            else:
-                display(imview.fig)
-            return
-        else:
-            data = [dict(
-                x=xe,
-                y=ye,
-                z=[0.0],
-                type=plot_type,
-                colorscale=cbar["name"],
-                colorbar=dict(
-                    title=title,
-                    titleside='right',
-                )
-            )]
-            return data, layout, xlabs, ylabs, cbar
-
+    if contours:
+        plot_type = 'contour'
     else:
-        raise RuntimeError(
-            "Unsupported number of dimensions in plot_image. "
-            "Expected at least 2 dimensions, got {}. To plot 1D "
-            "data, use plot_1d, and for 3 dimensions and higher,"
-            " use plot_sliceviewer. One can also call plot_image"
-            "for a Dataset with more than 2 dimensions, but one "
-            "must then use plot=False to collect the data and "
-            "layout dicts for plotly, as well as a transpose "
-            "flag, instead of plotting an image.".format(ndim))
+        plot_type = 'heatmap'
+
+    # Parse colorbar
+    cbar = parse_colorbar(cb)
+
+    # Make title
+    title = axis_label(var=input_data, name=name, log=cbar["log"])
+
+    layout = dict(
+        xaxis=dict(title=axis_label(xcoord)),
+        yaxis=dict(title=axis_label(ycoord)),
+        height=default["height"]
+    )
+
+    if plot:
+        z = input_data.values
+        # Check if dimensions of arrays agree, if not, plot the transpose
+        if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
+            z = z.T
+        # Apply colorbar parameters
+        if cbar["log"]:
+            with np.errstate(invalid="ignore", divide="ignore"):
+                z = np.log10(z)
+        if cbar["min"] is None:
+            cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
+        if cbar["max"] is None:
+            cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
+        imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar,
+                             plot_type, title, contours)
+        for key, val in layout.items():
+            imview.fig.layout[key] = val
+        if filename is not None:
+            write_image(fig=imview.fig, file=filename)
+        else:
+            display(imview.fig)
+        return
+    else:
+        data = [dict(
+            x=xe,
+            y=ye,
+            z=[0.0],
+            type=plot_type,
+            colorscale=cbar["name"],
+            colorbar=dict(
+                title=title,
+                titleside='right',
+            )
+        )]
+        return data, layout, xlabs, ylabs, cbar
 
 # =============================================================================
 
@@ -600,53 +569,36 @@ def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
         display(fig)
     return
 
-    # else:
-    #     raise RuntimeError(
-    #         "Unsupported number of dimensions in plot_waterfall."
-    #         " Expected at least 2 dimensions, got {}." .format(ndim))
-
 # =============================================================================
 
 
 def plot_sliceviewer(input_data, axes=None, contours=False, cb=None,
-                     filename=None):
+                     filename=None, name=None):
     """
     Plot a 2D slice through a 3D dataset with a slider to adjust the position
     of the slice in the third dimension.
     """
 
-    # Check input dataset
-    value_list, ndims = check_input(input_data)
-    ndim = np.amax(ndims)
+    if axes is None:
+        dims = input_data.dims
+        labs = dims.labels
+        axes = [l for l in labs]
 
-    if ndim > 2:
+    # Use the machinery in plot_image to make the layout
+    data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
+                                                  contours=contours, cb=cb,
+                                                  name=name, plot=False)
 
-        if axes is None:
-            dims = value_list[0].dimensions
-            labs = dims.labels
-            axes = [sp.dimensionCoord(label) for label in labs]
+    # Create a SliceViewer object
+    sv = SliceViewer(plotly_data=data, plotly_layout=layout,
+                     input_data=input_data, axes=axes,
+                     value_name=name, cb=cbar)
 
-        # Use the machinery in plot_image to make the layout
-        data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
-                                                      contours=contours, cb=cb,
-                                                      plot=False)
-
-        # Create a SliceViewer object
-        sv = SliceViewer(plotly_data=data, plotly_layout=layout,
-                         input_data=input_data, axes=axes,
-                         value_name=value_list[0].name, cb=cbar)
-
-        if filename is not None:
-            write_image(fig=sv.fig, file=filename)
-        else:
-            display(sv.vbox)
-        return
-
+    if filename is not None:
+        write_image(fig=sv.fig, file=filename)
     else:
-        raise RuntimeError("Unsupported number of dimensions in "
-                           "plot_sliceviewer. Expected at least 3 dimensions, "
-                           "got {}. For 2D data, use plot_image, for 1D data, "
-                           "use plot_1d.".format(ndim))
+        display(sv.vbox)
+    return
 
 # =============================================================================
 
@@ -656,20 +608,21 @@ class SliceViewer:
     def __init__(self, plotly_data, plotly_layout, input_data, axes,
                  value_name, cb):
 
-        # Make a copy of the input data
-        self.input_data = input_data.copy()
+        # Make a copy of the input data - Needed?
+        self.input_data = input_data #.copy()
 
         # Get the dimensions of the image to be displayed
         naxes = len(axes)
-        self.xcoord = self.input_data[axes[naxes - 1]]
-        self.ycoord = self.input_data[axes[naxes - 2]]
-        self.ydims = self.ycoord.dimensions
-        self.ylabs = self.ydims.labels
-        self.xdims = self.xcoord.dimensions
+        self.coords = self.input_data.coords
+        self.xcoord = self.coords[axes[naxes - 1]]
+        self.ycoord = self.coords[axes[naxes - 2]]
+        self.xdims = self.xcoord.dims
         self.xlabs = self.xdims.labels
+        self.ydims = self.ycoord.dims
+        self.ylabs = self.ydims.labels
 
         # Need these to avoid things running out of scope
-        self.dims = self.input_data.dimensions
+        self.dims = self.input_data.dims
         self.labels = self.dims.labels
         self.shapes = self.dims.shape
 
@@ -677,25 +630,12 @@ class SliceViewer:
         self.slider_nx = []
         # Save dimensions tags for sliders, e.g. Dim.X
         self.slider_dims = []
-        # Coordinate variables for sliders, e.g. d[Coord.X]
-        self.slider_coords = []
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = []
         for ax in axes[:-2]:
-            coord = self.input_data[ax]
-            self.slider_coords.append(self.input_data[ax])
-            dims = coord.dimensions
-            labs = dims.labels
-            # TODO: This loop is necessary; Ideally we would like to do
-            # self.slider_nx.append(self.input_data[ax].dimensions.shape[0])
-            # self.slider_dims.append(self.input_data[ax].dimensions.labels[0])
-            # self.slider_x.append(self.input_data[ax].numpy)
-            # but we are running into scope problems.
-            for j in range(len(self.labels)):
-                if self.labels[j] == labs[0]:
-                    self.slider_nx.append(self.shapes[j])
-                    self.slider_dims.append(self.labels[j])
-                    self.slider_x.append(self.input_data[ax].numpy)
+            self.slider_dims.append(ax)
+            self.slider_nx.append(self.shapes[ax])
+            self.slider_x.append(self.coords[ax].values)
         self.nslices = len(self.slider_dims)
 
         # Initialise Figure and VBox objects
@@ -728,7 +668,7 @@ class SliceViewer:
             # Add an observer to the slider
             self.slider[i].observe(self.update_slice, names="value")
             # Add coordinate name and unit
-            title = Label(value=axis_label(*self.slider_coords[i]))
+            title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
             self.vbox += (HBox([title, self.slider[i], self.lab[i]]),)
 
         # Call update_slice once to make the initial image
@@ -743,18 +683,17 @@ class SliceViewer:
         # The dimensions to be sliced have been saved in slider_dims
         # Slice with first element to avoid modifying underlying dataset
         self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-        zarray = self.input_data[self.slider_dims[0], self.slider[0].value]
+        vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
         # Then slice additional dimensions if needed
         for idim in range(1, self.nslices):
             self.lab[idim].value = str(
                 self.slider_x[idim][self.slider[idim].value])
-            zarray = zarray[self.slider_dims[idim], self.slider[idim].value]
+            vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
 
-        vslice = zarray[sp.Data.Value, self.value_name]
-        z = vslice.numpy
+        z = vslice.values
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        zdims = vslice.dimensions
+        zdims = vslice.dims
         zlabs = zdims.labels
         if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
             z = z.T
@@ -805,15 +744,6 @@ def axis_label(var, name=None, log=False):
         label = "log\u2081\u2080(" + label + ")"
     if var.unit != sp.units.dimensionless:
         label += " [{}]".format(var.unit)
-
-
-    # if tag.is_coord:
-    #     label = "{}".format(tag)
-    #     label = label.replace("Coord.", "")
-    # else:
-    #     label = "{}".format(name)
-    # if var.unit != sp.units.dimensionless:
-    #     label += " [{}]".format(var.unit)
     return label
 
 
@@ -826,18 +756,6 @@ def parse_colorbar(cb):
         for key, val in cb.items():
             cbar[key] = val
     return cbar
-
-
-def coordinate_dimensions(coord):
-    dims = coord.dimensions
-    ndim = len(dims)
-    if ndim != 1:
-        raise RuntimeError("Found {} dimensions, expected 1. Only coordinates "
-                           "with a single dimension are currently supported. "
-                           "If you wish to plot data with a 2D coordinate, "
-                           "please use rebin to re-sample the data onto a "
-                           "common axis.")
-    return dims
 
 
 def process_dimensions(input_data, coords, axes):
