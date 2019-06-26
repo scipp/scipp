@@ -119,7 +119,6 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     """
 
     data = []
-    coord_check = None
     color_count = 0
     for name, var in input_data.items():
         # TODO: find a better way of getting x by accessing the dimension of
@@ -196,10 +195,10 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     # Gather list of dimensions that are to be collapsed
     slice_dims = []
     volume = 1
-    for l in labs:
-        if l != dim:
-            slice_dims.append(l)
-            volume *= dims[l]
+    for lab in labs:
+        if lab != dim:
+            slice_dims.append(lab)
+            volume *= dims[lab]
 
     # Create temporary Dataset
     ds = sp.Dataset()
@@ -213,7 +212,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
     dim_list = []
     for l in slice_dims:
-         dim_list.append(np.arange(dims[l], dtype=np.int32))
+        dim_list.append(np.arange(dims[l], dtype=np.int32))
     # Next create a grid of indices
     # grid will contain
     # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
@@ -224,21 +223,28 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     #   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] ]
     res = np.reshape(grid, (len(slice_dims), volume))
     # Now make a master array which also includes the dimension labels, i.e.
-    # [ [Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y],
-    #   [    0,     1,     2,     3,     4,     0,     1,     2,     3,     4,     0,     1,     2,     3,     4],
-    #   [Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z],
-    #   [    0,     0,     0,     0,     0,     1,     1,     1,     1,     1,     2,     2,     2,     2,     2] ]
+    # [ [Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y,
+    #    Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y],
+    #   [    0,     1,     2,     3,     4,     0,     1,     2,     3,     4,
+    #        0,     1,     2,     3,     4],
+    #   [Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z,
+    #    Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z],
+    #   [    0,     0,     0,     0,     0,     1,     1,     1,     1,     1,
+    #        2,     2,     2,     2,     2] ]
     slice_list = []
     for i, l in enumerate(slice_dims):
         slice_list.append([l] * volume)
         slice_list.append(res[i])
     # Finally reshape the master array to look like
-    # [ [[Dim.Y, 0], [Dim.Z, 0]], [[Dim.Y, 1], [Dim.Z, 0]], [[Dim.Y, 2], [Dim.Z, 0]],
-    #   [[Dim.Y, 3], [Dim.Z, 0]], [[Dim.Y, 4], [Dim.Z, 0]], [[Dim.Y, 0], [Dim.Z, 1]],
-    #   [[Dim.Y, 1], [Dim.Z, 1]], [[Dim.Y, 2], [Dim.Z, 1]], [[Dim.Y, 3], [Dim.Z, 1]],
+    # [ [[Dim.Y, 0], [Dim.Z, 0]], [[Dim.Y, 1], [Dim.Z, 0]],
+    #   [[Dim.Y, 2], [Dim.Z, 0]], [[Dim.Y, 3], [Dim.Z, 0]],
+    #   [[Dim.Y, 4], [Dim.Z, 0]], [[Dim.Y, 0], [Dim.Z, 1]],
+    #   [[Dim.Y, 1], [Dim.Z, 1]], [[Dim.Y, 2], [Dim.Z, 1]],
+    #   [[Dim.Y, 3], [Dim.Z, 1]],
     # ...
     # ]
-    slice_list = np.reshape(np.transpose(slice_list), (volume, len(slice_dims), 2))
+    slice_list = np.reshape(
+        np.transpose(slice_list), (volume, len(slice_dims), 2))
 
     # Extract each entry from the slice_list, make temperary dataset and add to
     # input dictionary for plot_1d
@@ -252,7 +258,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
         variances = None
         if ds_temp.has_variances:
             variances = ds_temp.variances
-        ds[key] = sp.Variable([dim], values=ds_temp.values, variances=variances)
+        ds[key] = sp.Variable([dim], values=ds_temp.values,
+                              variances=variances)
         data[key] = ds[key]
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
@@ -263,8 +270,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 # =============================================================================
 
 
-def plot_image(input_data, name=None, axes=None, contours=False, cb=None, plot=True,
-               resolution=128, filename=None):
+def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
+               plot=True, resolution=128, filename=None):
     """
     Plot a 2D image.
 
@@ -276,7 +283,6 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None, plot=T
     """
 
     coords = input_data.coords
-    ndim = len(coords)
 
     # Get coordinates axes and dimensions
     coords = input_data.coords
@@ -596,7 +602,7 @@ class SliceViewer:
                  value_name, cb):
 
         # Make a copy of the input data - Needed?
-        self.input_data = input_data #.copy()
+        self.input_data = input_data
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
