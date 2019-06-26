@@ -275,11 +275,6 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None, plot=T
     coords = input_data.coords
     ndim = len(coords)
 
-    if axes is not None:
-        naxes = len(axes)
-    else:
-        naxes = 0
-
     # Get coordinates axes and dimensions
     coords = input_data.coords
     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
@@ -612,10 +607,9 @@ class SliceViewer:
         self.input_data = input_data #.copy()
 
         # Get the dimensions of the image to be displayed
-        naxes = len(axes)
         self.coords = self.input_data.coords
-        self.xcoord = self.coords[axes[naxes - 1]]
-        self.ycoord = self.coords[axes[naxes - 2]]
+        self.xcoord = self.coords[axes[-1]]
+        self.ycoord = self.coords[axes[-2]]
         self.xdims = self.xcoord.dims
         self.xlabs = self.xdims.labels
         self.ydims = self.ycoord.dims
