@@ -152,12 +152,12 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
                 trace["marker"] = dict()
             trace["marker"]["color"] = color[color_count]
             color_count += 1
-        # # Include variance if present
-        # if v[1] is not None:
-        #     trace["error_y"] = dict(
-        #         type='data',
-        #         array=sp.sqrt(v[1]).numpy,
-        #         visible=True)
+        # Include variance if present
+        if var.has_variances:
+            trace["error_y"] = dict(
+                type='data',
+                array=sp.sqrt(var.variances),
+                visible=True)
 
         data.append(trace)
 
