@@ -110,7 +110,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     """
     Plot a 1D spectrum.
 
-    Inputs can be either a Dataset(Slice) or a list of Dataset(Slice)s.
+    Input is a dictionary containing a list of DataProxy.
     If the coordinate of the x-axis contains bin edges, then a bar plot is
     made.
 
@@ -130,7 +130,6 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             xlab = axis_label(coords[c[0]])
         y = var.values
         ylab = axis_label(var=var, name=name)
-        # TODO: add variances
 
         nx = x.shape[0]
         ny = y.shape[0]
@@ -156,7 +155,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         if var.has_variances:
             trace["error_y"] = dict(
                 type='data',
-                array=sp.sqrt(var.variances),
+                array=np.sqrt(var.variances),
                 visible=True)
 
         data.append(trace)
@@ -249,7 +248,11 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
         for s in line:
             ds_temp = ds_temp[s[0], s[1]]
             key += "{}-{}-".format(str(s[0]), s[1])
-        ds[key] = sp.Variable([dim], values=ds_temp.values)
+        # Add variances
+        variances = None
+        if ds_temp.has_variances:
+            variances = ds_temp.variances
+        ds[key] = sp.Variable([dim], values=ds_temp.values, variances=variances)
         data[key] = ds[key]
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
@@ -501,20 +504,9 @@ def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
     data = []
     z = input_data.values
 
-    # TODO: add variances
-    e = None
-    # # Check if we need to add variances to dataset list for collapse plot
-    # if not plot:
-    #     for name, tag, var in input_data:
-    #         if (tag == sp.Data.Variance) and \
-    #            (name == values[0].name):
-    #             e = var.numpy
-
     if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
         z = z.T
         zlabs = [ylabs[0], xlabs[0]]
-        if e is not None:
-            e = e.T
 
     pdict = dict(type='scatter3d', mode='lines', line=dict(width=5))
     adict = dict(z=1)
