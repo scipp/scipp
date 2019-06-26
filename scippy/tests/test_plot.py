@@ -6,6 +6,7 @@ import scippy as sp
 import numpy as np
 import io
 from contextlib import redirect_stdout
+import pytest
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -107,31 +108,31 @@ def test_plot_2d_image():
     do_plot(d1)
 
 
-# # This test fails from time to time because objects are running out of scope
-# # so we disable it for now.
-# # Specifically, in plot.py L306:
-# #   if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-# # xlabs and ylabs sometimes contains the same thing, when they should be
-# # different
-#
-# def test_plot_2d_image_with_axes():
-#     N = 100
-#     M = 50
-#     xx = np.arange(N, dtype=np.float64)
-#     yy = np.arange(M, dtype=np.float64)
-#     x, y = np.meshgrid(xx, yy)
-#     b = N/20.0
-#     c = M/2.0
-#     r = np.sqrt(((x-c)/b)**2 + ((y-c)/b)**2)
-#     a = np.sin(r)
-#     d1 = sp.Dataset()
-#     d1.set_coord(sp.Dim.X, sp.Variable([sp.Dim.X], values=xx,
-#                  unit=sp.units.m))
-#     d1.set_coord(sp.Dim.Y, sp.Variable([sp.Dim.Y], values=yy,
-#                  unit=sp.units.m))
-#     d1["Sample"] = sp.Variable([sp.Dim.Y, sp.Dim.X], values=a,
-#         unit=sp.units.counts)
-#     do_plot(d1, axes=[sp.Dim.X, sp.Dim.Y])
+@pytest.mark.skip(reason="This test fails from time to time because objects "
+                         "are running out of scope, so we disable it for now. "
+                         "More specifically, in plot.py L306:\n"
+                         "  if (zlabs[0] == xlabs[0]) and "
+                         "(zlabs[1] == ylabs[0]):\n"
+                         "xlabs and ylabs sometimes contains the same thing, "
+                         "when they should in fact be different")
+def test_plot_2d_image_with_axes():
+    N = 100
+    M = 50
+    xx = np.arange(N, dtype=np.float64)
+    yy = np.arange(M, dtype=np.float64)
+    x, y = np.meshgrid(xx, yy)
+    b = N/20.0
+    c = M/2.0
+    r = np.sqrt(((x-c)/b)**2 + ((y-c)/b)**2)
+    a = np.sin(r)
+    d1 = sp.Dataset()
+    d1.set_coord(sp.Dim.X, sp.Variable([sp.Dim.X], values=xx,
+                 unit=sp.units.m))
+    d1.set_coord(sp.Dim.Y, sp.Variable([sp.Dim.Y], values=yy,
+                 unit=sp.units.m))
+    d1["Sample"] = sp.Variable([sp.Dim.Y, sp.Dim.X], values=a,
+        unit=sp.units.counts)
+    do_plot(d1, axes=[sp.Dim.X, sp.Dim.Y])
 
 
 def test_plot_waterfall():
