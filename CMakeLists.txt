@@ -58,7 +58,8 @@ add_compile_options(-Wall
                     -Woverloaded-virtual
                     -Wold-style-cast
                     -Wcast-qual
-                    -Wcast-align)
+                    -Wcast-align
+                    -Werror)
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
                     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
 # This is currently causing to many warnings, reenable when appropriate.
