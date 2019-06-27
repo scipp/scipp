@@ -5,6 +5,7 @@
 
 # Import numpy
 import numpy as np
+from collections import namedtuple
 
 # Import scippy
 import scippy as sp
@@ -21,7 +22,8 @@ from plotly.graph_objs import FigureWidget
 # Some global configuration
 default = {
     # The colorbar properties
-    "cb": {"name": "Viridis", "log": False, "min": None, "max": None},
+    "cb": {"name": "Viridis", "log": False, "min": None, "max": None,
+           "min_var": None, "max_var": None},
     # The default image height (in pixels)
     "height": 600
 }
@@ -307,26 +309,51 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
     )
 
     if plot:
-        z = input_data.values
+        values = input_data.values
         # Check if dimensions of arrays agree, if not, plot the transpose
         if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-            z = z.T
+            values = values.T
         # Apply colorbar parameters
         if cbar["log"]:
             with np.errstate(invalid="ignore", divide="ignore"):
-                z = np.log10(z)
+                values = np.log10(values)
         if cbar["min"] is None:
-            cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
+            cbar["min"] = np.amin(values[np.where(np.isfinite(values))])
         if cbar["max"] is None:
-            cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
-        imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar,
-                             plot_type, title, contours)
-        for key, val in layout.items():
-            imview.fig.layout[key] = val
-        if filename is not None:
-            write_image(fig=imview.fig, file=filename)
+            cbar["max"] = np.amax(values[np.where(np.isfinite(values))])
+
+        # Treat variances if any
+        if input_data.has_variances:
+            variances = input_data.variances
+            # Check if dimensions of arrays agree, if not, plot the transpose
+            if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
+                variances = variances.T
+            # Apply colorbar parameters
+            if cbar["log"]:
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    variances = np.log10(variances)
+            if cbar["min_var"] is None:
+                cbar["min_var"] = np.amin(variances[np.where(np.isfinite(variances))])
+            if cbar["max_var"] is None:
+                cbar["max_var"] = np.amax(variances[np.where(np.isfinite(variances))])
         else:
-            display(imview.fig)
+            variances = None
+
+        imview = ImageViewer(xe, xc, ye, yc, values, variances, resolution,
+                             cbar, plot_type, title, contours)
+
+        for key, val in layout.items():
+            imview.fig_val.layout[key] = val
+            if variances is not None:
+                imview.fig_var.layout[key] = val
+
+        if filename is not None:
+            write_image(fig=imview.fig_val, file=filename)
+        else:
+            if variances is not None:
+                display(imview.vbox)
+            else:
+                display(imview.fig_val)
         return
     else:
         data = [dict(
@@ -347,14 +374,15 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
 
 class ImageViewer:
 
-    def __init__(self, xe, xc, ye, yc, z, resolution, cb, plot_type, title,
-                 contours):
+    def __init__(self, xe, xc, ye, yc, values, variances, resolution, cb,
+                 plot_type, title, contours):
 
         self.xe = xe
         self.xc = xc
         self.ye = ye
         self.yc = yc
-        self.z = z
+        self.values = values
+        self.variances = variances
         self.resolution = resolution
         self.cb = cb
         self.plot_type = plot_type
@@ -362,137 +390,308 @@ class ImageViewer:
         self.contours = contours
         self.nx = len(self.xe)
         self.ny = len(self.ye)
+        self.val_range = np.zeros([4], dtype=np.float64)
+        self.var_range = np.zeros([4], dtype=np.float64)
 
-        self.fig = FigureWidget()
+        self.fig_val = FigureWidget()
+        if self.variances is not None:
+            self.fig_var = FigureWidget()
+            self.vbox = VBox([self.fig_val, self.fig_var])
+        else:
+            self.fig_var = None
+            self.vbox = None
 
         # Make an initial low-resolution sampling of the image for plotting
-        self.resample_image(layout=None, x_range=[self.xe[0], self.xe[-1]],
-                            y_range=[self.ye[0], self.ye[-1]])
+        self.update_values(layout=None, x_range=[self.xe[0], self.xe[-1]],
+                           y_range=[self.ye[0], self.ye[-1]])
 
         # Add a callback to update the view area
-        self.fig.layout.on_change(
-            self.resample_image,
+        self.fig_val.layout.on_change(
+            self.update_values,
             'xaxis.range',
             'yaxis.range')
+        if self.variances is not None:
+            self.fig_var.layout.on_change(
+                self.update_variances,
+                'xaxis.range',
+                'yaxis.range')
 
         return
 
-    def resample_image(self, layout, x_range, y_range):
+    def update_values(self, layout, x_range, y_range, origin=None, res=None):
+
+        print("VALUES:")
+        print(origin)
+        print(self.val_range)
+        # print([x_range[0], x_range[1], y_range[0], y_range[1]])
+        ranges = np.array([x_range[0], x_range[1], y_range[0], y_range[1]], copy=True, dtype=np.float64)
+        print(ranges)
+
+        if not np.array_equal(self.val_range, ranges):
+
+            print("inside values")
+
+            self.val_range[:] = ranges[:]
+
+            if res is None:
+                res = self.resample_image(x_range, y_range, self.title)
+
+            # Optimize if no re-sampling is required
+            if (res.nx_view < self.resolution) and (res.ny_view < self.resolution):
+                values1 = self.values[res.ymin:res.ymax, res.xmin:res.xmax]
+            else:
+                xg, yg = np.meshgrid(self.xc[res.xmin:res.xmax], self.yc[res.ymin:res.ymax])
+                xv = np.ravel(xg)
+                yv = np.ravel(yg)
+                # zv = np.ravel(self.z[ymin:ymax, xmin:xmax])
+                # Histogram the data to make a low-resolution image
+                # Using weights in the second histogram allows us to then do z1/z0
+                # to obtain the averaged data inside the coarse pixels
+                values0, yedges1, xedges1 = np.histogram2d(
+                    yv, xv, bins=(res.ye_loc, res.xe_loc))
+                values1, yedges1, xedges1 = np.histogram2d(
+                    yv, xv, bins=(res.ye_loc, res.xe_loc), weights=np.ravel(self.values[res.ymin:res.ymax, res.xmin:res.xmax]))
+                values1 /= values0
+
+            # The local values array
+            values_loc = np.zeros([res.nye - 1, res.nxe - 1])
+            values_loc[res.jmin:res.nye - res.jmax - 1, res.imin:res.nxe - res.imax - 1] = values1
+            res.datadict["z"] = values_loc
+
+            # Update the figure
+            updatedict = {'data': [res.datadict]}
+            if origin is not None:
+                layoutdict = self.fig_val.layout
+                layoutdict["xaxis"]["range"] = x_range
+                layoutdict["yaxis"]["range"] = y_range
+                updatedict["layout"] = layoutdict
+            self.fig_val.update(updatedict)
+            if origin is None:
+               self.update_variances(layout, x_range, y_range, 'values', res)
+        return
+
+
+    def update_variances(self, layout, x_range, y_range, origin=None, res=None):
+
+        print("VARIANCES:")
+        print(origin)
+        print(self.var_range)
+        # print([x_range[0], x_range[1], y_range[0], y_range[1]])
+        ranges = np.array([x_range[0], x_range[1], y_range[0], y_range[1]], copy=True, dtype=np.float64)
+        print(ranges)
+
+
+        if not np.array_equal(self.var_range, ranges):
+
+            print("inside variances")
+
+            self.var_range[:] = ranges[:]
+
+            if res is None:
+                res = self.resample_image(x_range, y_range, "variances")
+
+            # Optimize if no re-sampling is required
+            if (res.nx_view < self.resolution) and (res.ny_view < self.resolution):
+                variances1 = self.variances[res.ymin:res.ymax, res.xmin:res.xmax]
+            else:
+                xg, yg = np.meshgrid(self.xc[res.xmin:res.xmax], self.yc[res.ymin:res.ymax])
+                xv = np.ravel(xg)
+                yv = np.ravel(yg)
+                # zv = np.ravel(self.z[ymin:ymax, xmin:xmax])
+                # Histogram the data to make a low-resolution image
+                # Using weights in the second histogram allows us to then do z1/z0
+                # to obtain the averaged data inside the coarse pixels
+                variances0, yedges1, xedges1 = np.histogram2d(
+                    yv, xv, bins=(res.ye_loc, res.xe_loc))
+                variances1, yedges1, xedges1 = np.histogram2d(
+                    yv, xv, bins=(res.ye_loc, res.xe_loc), weights=np.ravel(self.variances[res.ymin:res.ymax, res.xmin:res.xmax]))
+                variances1 /= variances0
+
+            # The local variances array
+            variances_loc = np.zeros([res.nye - 1, res.nxe - 1])
+            variances_loc[res.jmin:res.nye - res.jmax - 1, res.imin:res.nxe - res.imax - 1] = variances1
+            res.datadict["z"] = variances_loc
+
+            # Update the figure
+            updatedict = {'data': [res.datadict]}
+            if origin is not None:
+                layoutdict = self.fig_var.layout
+                layoutdict["xaxis"]["range"] = x_range
+                layoutdict["yaxis"]["range"] = y_range
+                updatedict["layout"] = layoutdict
+            self.fig_var.update(updatedict)
+            if origin is None:
+               self.update_values(layout, x_range, y_range, 'variances', res)
+
+        return
+
+    def resample_image(self, x_range, y_range, title):
 
         # Find indices of xe and ye that are shown in current range
-        x_in_range = np.where(
-            np.logical_and(
-                self.xe >= x_range[0],
-                self.xe <= x_range[1]))
-        y_in_range = np.where(
-            np.logical_and(
-                self.ye >= y_range[0],
-                self.ye <= y_range[1]))
+        if (x_range is not None) and (y_range is not None):
+            x_in_range = np.where(
+                np.logical_and(
+                    self.xe >= x_range[0],
+                    self.xe <= x_range[1]))
+            y_in_range = np.where(
+                np.logical_and(
+                    self.ye >= y_range[0],
+                    self.ye <= y_range[1]))
 
-        # xmin, xmax... here are array indices, not float coordinates
-        xmin = x_in_range[0][0]
-        xmax = x_in_range[0][-1]
-        ymin = y_in_range[0][0]
-        ymax = y_in_range[0][-1]
-        # here we perform a trick so that the edges of the displayed image is
-        # not greyed out if the zoom area slices a pixel in half, only the
-        # pixel inside the view area will be shown and the outer edge between
-        # that last pixel edge and the edge of the view frame area will be
-        # empty. So we extend the selected area with an additional pixel, if
-        # the selected area is inside the global limits of the full resolution
-        # array.
-        xmin -= int(xmin > 0)
-        xmax += int(xmax < self.nx - 1)
-        ymin -= int(ymin > 0)
-        ymax += int(ymax < self.ny - 1)
+            # xmin, xmax... here are array indices, not float coordinates
+            xmin = x_in_range[0][0]
+            xmax = x_in_range[0][-1]
+            ymin = y_in_range[0][0]
+            ymax = y_in_range[0][-1]
+            # here we perform a trick so that the edges of the displayed image is
+            # not greyed out if the zoom area slices a pixel in half, only the
+            # pixel inside the view area will be shown and the outer edge between
+            # that last pixel edge and the edge of the view frame area will be
+            # empty. So we extend the selected area with an additional pixel, if
+            # the selected area is inside the global limits of the full resolution
+            # array.
+            xmin -= int(xmin > 0)
+            xmax += int(xmax < self.nx - 1)
+            ymin -= int(ymin > 0)
+            ymax += int(ymax < self.ny - 1)
 
-        # Par of the global coordinate arrays that are inside the viewing area
-        xview = self.xe[xmin:xmax + 1]
-        yview = self.ye[ymin:ymax + 1]
+            # Par of the global coordinate arrays that are inside the viewing area
+            xview = self.xe[xmin:xmax + 1]
+            yview = self.ye[ymin:ymax + 1]
 
-        # Count the number of pixels in the current view
-        nx_view = xmax - xmin
-        ny_view = ymax - ymin
+            # Count the number of pixels in the current view
+            nx_view = xmax - xmin
+            ny_view = ymax - ymin
 
-        # Define x and y edges for histogramming
-        # If the number of pixels in the view area is larger than the maximum
-        # allowed resolution we create some custom pixels
-        if nx_view > self.resolution:
-            xe_loc = np.linspace(xview[0], xview[-1], self.resolution)
-        else:
-            xe_loc = xview
-        if ny_view > self.resolution:
-            ye_loc = np.linspace(yview[0], yview[-1], self.resolution)
-        else:
-            ye_loc = yview
+            # Define x and y edges for histogramming
+            # If the number of pixels in the view area is larger than the maximum
+            # allowed resolution we create some custom pixels
+            if nx_view > self.resolution:
+                xe_loc = np.linspace(xview[0], xview[-1], self.resolution)
+            else:
+                xe_loc = xview
+            if ny_view > self.resolution:
+                ye_loc = np.linspace(yview[0], yview[-1], self.resolution)
+            else:
+                ye_loc = yview
 
-        # Optimize if no re-sampling is required
-        if (nx_view < self.resolution) and (ny_view < self.resolution):
-            z1 = self.z[ymin:ymax, xmin:xmax]
-        else:
-            xg, yg = np.meshgrid(self.xc[xmin:xmax], self.yc[ymin:ymax])
-            xv = np.ravel(xg)
-            yv = np.ravel(yg)
-            zv = np.ravel(self.z[ymin:ymax, xmin:xmax])
-            # Histogram the data to make a low-resolution image
-            # Using weights in the second histogram allows us to then do z1/z0
-            # to obtain the averaged data inside the coarse pixels
-            z0, yedges1, xedges1 = np.histogram2d(
-                yv, xv, bins=(ye_loc, xe_loc))
-            z1, yedges1, xedges1 = np.histogram2d(
-                yv, xv, bins=(ye_loc, xe_loc), weights=zv)
-            z1 /= z0
+            # # Optimize if no re-sampling is required
+            # if (nx_view < self.resolution) and (ny_view < self.resolution):
+            #     values1 = self.values[ymin:ymax, xmin:xmax]
+            #     if self.variances is not None:
+            #         variances1 = self.variances[ymin:ymax, xmin:xmax]
+            # else:
+            #     xg, yg = np.meshgrid(self.xc[xmin:xmax], self.yc[ymin:ymax])
+            #     xv = np.ravel(xg)
+            #     yv = np.ravel(yg)
+            #     # zv = np.ravel(self.z[ymin:ymax, xmin:xmax])
+            #     # Histogram the data to make a low-resolution image
+            #     # Using weights in the second histogram allows us to then do z1/z0
+            #     # to obtain the averaged data inside the coarse pixels
+            #     values0, yedges1, xedges1 = np.histogram2d(
+            #         yv, xv, bins=(ye_loc, xe_loc))
+            #     values1, yedges1, xedges1 = np.histogram2d(
+            #         yv, xv, bins=(ye_loc, xe_loc), weights=np.ravel(self.values[ymin:ymax, xmin:xmax]))
+            #     values1 /= values0
+            #     if self.variances is not None:
+            #         variances0, yedges1, xedges1 = np.histogram2d(
+            #             yv, xv, bins=(ye_loc, xe_loc))
+            #         variances1, yedges1, xedges1 = np.histogram2d(
+            #             yv, xv, bins=(ye_loc, xe_loc), weights=np.ravel(self.variances[ymin:ymax, xmin:xmax]))
+            #         variances1 /= variances0
 
-        # Here we perform another trick. If we plot simply the local arrays in
-        # plotly, the reset axes or home functionality will be lost because
-        # plotly will now think that the data that exists is only the small
-        # window shown after a zoom. So we add a one-pixel padding area to the
-        # local z array. The size of that padding extends from the edges of the
-        # initial full resolution array (e.g. x=0, y=0) up to the edge of the
-        # view area. These large (and probably elongated) pixels add very
-        # little data and will not show in the view area but allow plotly to
-        # recover the full axes limits if we double-click on the plot
-        xc_loc = edges_to_centers(xe_loc)[0]
-        yc_loc = edges_to_centers(ye_loc)[0]
-        if xmin > 0:
-            xe_loc = np.concatenate([self.xe[0:1], xe_loc])
-            xc_loc = np.concatenate([self.xc[0:1], xc_loc])
-        if xmax < self.nx - 1:
-            xe_loc = np.concatenate([xe_loc, self.xe[-1:]])
-            xc_loc = np.concatenate([xc_loc, self.xc[-1:]])
-        if ymin > 0:
-            ye_loc = np.concatenate([self.ye[0:1], ye_loc])
-            yc_loc = np.concatenate([self.yc[0:1], yc_loc])
-        if ymax < self.ny - 1:
-            ye_loc = np.concatenate([ye_loc, self.ye[-1:]])
-            yc_loc = np.concatenate([yc_loc, self.yc[-1:]])
-        imin = int(xmin > 0)
-        imax = int(xmax < self.nx - 1)
-        jmin = int(ymin > 0)
-        jmax = int(ymax < self.ny - 1)
-        nxe = len(xe_loc)
-        nye = len(ye_loc)
+            # Here we perform another trick. If we plot simply the local arrays in
+            # plotly, the reset axes or home functionality will be lost because
+            # plotly will now think that the data that exists is only the small
+            # window shown after a zoom. So we add a one-pixel padding area to the
+            # local z array. The size of that padding extends from the edges of the
+            # initial full resolution array (e.g. x=0, y=0) up to the edge of the
+            # view area. These large (and probably elongated) pixels add very
+            # little data and will not show in the view area but allow plotly to
+            # recover the full axes limits if we double-click on the plot
+            xc_loc = edges_to_centers(xe_loc)[0]
+            yc_loc = edges_to_centers(ye_loc)[0]
+            if xmin > 0:
+                xe_loc = np.concatenate([self.xe[0:1], xe_loc])
+                xc_loc = np.concatenate([self.xc[0:1], xc_loc])
+            if xmax < self.nx - 1:
+                xe_loc = np.concatenate([xe_loc, self.xe[-1:]])
+                xc_loc = np.concatenate([xc_loc, self.xc[-1:]])
+            if ymin > 0:
+                ye_loc = np.concatenate([self.ye[0:1], ye_loc])
+                yc_loc = np.concatenate([self.yc[0:1], yc_loc])
+            if ymax < self.ny - 1:
+                ye_loc = np.concatenate([ye_loc, self.ye[-1:]])
+                yc_loc = np.concatenate([yc_loc, self.yc[-1:]])
+            imin = int(xmin > 0)
+            imax = int(xmax < self.nx - 1)
+            jmin = int(ymin > 0)
+            jmax = int(ymax < self.ny - 1)
+            nxe = len(xe_loc)
+            nye = len(ye_loc)
 
-        # The local z array
-        z_loc = np.zeros([nye - 1, nxe - 1])
-        z_loc[jmin:nye - jmax - 1, imin:nxe - imax - 1] = z1
+            # # The local values array
+            # values_loc = np.zeros([nye - 1, nxe - 1])
+            # values_loc[jmin:nye - jmax - 1, imin:nxe - imax - 1] = values1
 
-        # The 'data' dictionary
-        datadict = dict(type=self.plot_type, zmin=self.cb["min"],
-                        zmax=self.cb["max"], colorscale=self.cb["name"],
-                        colorbar={"title": self.title}, z=z_loc)
+            # The 'data' dictionary
+            datadict = dict(type=self.plot_type, zmin=self.cb["min"],
+                            zmax=self.cb["max"], colorscale=self.cb["name"],
+                            colorbar={"title": title})#, z=values_loc)
 
-        if self.contours:
-            datadict["x"] = xc_loc
-            datadict["y"] = yc_loc
-        else:
-            datadict["x"] = xe_loc
-            datadict["y"] = ye_loc
+            if self.contours:
+                datadict["x"] = xc_loc
+                datadict["y"] = yc_loc
+            else:
+                datadict["x"] = xe_loc
+                datadict["y"] = ye_loc
 
-        # Update the figure
-        self.fig.update({'data': [datadict]})
+            # # Update the figure
+            # self.fig_val.update({'data': [valuesdict]})
 
-        return
+            # # Update variances if any
+            # if self.variances is not None:
+            #     variances_loc = np.zeros([nye - 1, nxe - 1])
+            #     variances_loc[jmin:nye - jmax - 1, imin:nxe - imax - 1] = variances1
+            #     # The 'data' dictionary
+            #     variancesdict = dict(type=self.plot_type, zmin=self.cb["min_var"],
+            #                     zmax=self.cb["max_var"], colorscale=self.cb["name"],
+            #                     colorbar={"title": "variances"}, z=variances_loc)
+
+            #     if self.contours:
+            #         variancesdict["x"] = xc_loc
+            #         variancesdict["y"] = yc_loc
+            #     else:
+            #         variancesdict["x"] = xe_loc
+            #         variancesdict["y"] = ye_loc
+
+            #     varlayoutdict = self.fig_var.layout
+            #     varlayoutdict["xaxis"]["range"] = x_range
+            #     varlayoutdict["yaxis"]["range"] = y_range
+
+            #     # Update the figure
+            #     self.fig_var.update({'data': [variancesdict], "layout": varlayoutdict})
+
+        resample_output = namedtuple('resample_output',
+            ['nx_view', 'ny_view', 'xmin', 'xmax', 'ymin', 'ymax', 'xe_loc', 'ye_loc', 'nxe', 'nye', 'imin', 'imax', 'jmin', 'jmax', 'datadict'])
+
+        resample_output.nx_view = nx_view
+        resample_output.ny_view = ny_view
+        resample_output.xmin = xmin
+        resample_output.xmax = xmax
+        resample_output.ymin = ymin
+        resample_output.ymax = ymax
+        resample_output.xe_loc = xe_loc
+        resample_output.ye_loc = ye_loc
+        resample_output.nxe = nxe
+        resample_output.nye = nye
+        resample_output.imin = imin
+        resample_output.imax = imax
+        resample_output.jmin = jmin
+        resample_output.jmax = jmax
+        resample_output.datadict = datadict
+
+        return resample_output
 
 # =============================================================================
 
