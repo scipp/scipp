@@ -120,8 +120,6 @@ TEST(DatasetTest, setData_with_and_without_variances) {
   ASSERT_EQ(d.size(), 2);
 }
 
-TEST(DatasetTest, setData_dense_when_dimensions_sparse) {}
-
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
   d.setData("a", makeVariable<double>({Dim::X, 3}));
@@ -269,7 +267,21 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 }
 
 TEST(DatasetTest, simple_sparse_slice) {
+  Dataset dataset;
+  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  var.sparseValues<double>()[0] = {4, 5, 6};
+  var.sparseValues<double>()[1] = {7, 8, 9};
+  dataset.setData("data", var);
+  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
 
+  auto sliced = dataset.slice({Dim::Y, 1, 2});
+  auto data = sliced["data"].data().sparseValues<double>();
+  EXPECT_EQ(data.size(), 1);
+  scipp::core::sparse_container<double> expected = {7, 8, 9};
+  EXPECT_EQ(data[0], expected);
+}
+
+TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
   Dataset dataset;
   auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
   var.sparseValues<double>()[0] = {4, 5, 6};
@@ -286,22 +298,7 @@ TEST(DatasetTest, simple_sparse_slice) {
   scipp::core::sparse_container<double> expected = {7, 8, 9};
   EXPECT_EQ(data[0], expected);
   // Cannot access sparse coords on slice DataProxy.
-}
-
-TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
-
-  Dataset dataset;
-  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
-  var.sparseValues<double>()[0] = {4, 5, 6};
-  var.sparseValues<double>()[1] = {7, 8, 9};
-  dataset.setData("data", var);
-  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
-
-  auto sliced = dataset.slice({Dim::Y, 1, 2});
-  auto data = sliced["data"].data().sparseValues<double>();
-  EXPECT_EQ(data.size(), 1);
-  scipp::core::sparse_container<double> expected = {7, 8, 9};
-  EXPECT_EQ(data[0], expected);
+  // TODO sliced["data"].coords()["Dim::Z"]; // currently not working
 }
 
 class Dataset_comparison_operators : public ::testing::Test {
