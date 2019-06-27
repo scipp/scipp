@@ -48,6 +48,17 @@ void copy_flattened_3d(const py::array_t<T> &data, Proxy &&proxy) {
 }
 
 template <class T, class Proxy>
+void copy_flattened_4d(const py::array_t<T> &data, Proxy &&proxy) {
+  auto r = data.unchecked();
+  auto it = proxy.begin();
+  for (ssize_t i = 0; i < r.shape(0); ++i)
+    for (ssize_t j = 0; j < r.shape(1); ++j)
+      for (ssize_t k = 0; k < r.shape(2); ++k)
+        for (ssize_t l = 0; l < r.shape(3); ++l, ++it)
+          *it = r(i, j, k, l);
+}
+
+template <class T, class Proxy>
 void copy_flattened(const py::array_t<T> &data, Proxy &&proxy) {
   if (proxy.size() != data.size())
     throw std::runtime_error(
@@ -61,6 +72,8 @@ void copy_flattened(const py::array_t<T> &data, Proxy &&proxy) {
     return copy_flattened_2d(data, proxy);
   case 3:
     return copy_flattened_3d(data, proxy);
+  case 4:
+    return copy_flattened_4d(data, proxy);
   default:
     throw std::runtime_error("Numpy array has more dimensions than supported "
                              "in the current implementation.");

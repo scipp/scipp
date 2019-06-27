@@ -29,105 +29,78 @@ default = {
 # =============================================================================
 
 
-def check_input(input_data, check_multiple_values=True):
-
-    values = []
-    ndims = []
-    for name, tag, var in input_data:
-        if tag.is_data and (tag != sp.Data.Variance):
-            values.append((name, tag, var))
-            ndims.append(len(var.dimensions))
-
-    if check_multiple_values and (len(values) > 1) and (np.amax(ndims) > 1):
-        raise RuntimeError("More than one Data.Value found! Please use e.g."
-                           " plot(dataset.subset[Data.Value, 'sample'])"
-                           " to select only a single Value.")
-
-    return values, ndims
-
-# =============================================================================
-
-
-def plot(input_data, axes=None, waterfall=None, collapse=None, filename=None,
-         **kwargs):
+def plot(input_data, **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
 
-    # A list of datasets is only supported for 1d
-    if isinstance(input_data, list):
-        return plot_1d(input_data, axes=axes, filename=filename, **kwargs)
-    # Case of a single dataset
-    else:
-        values, ndims = check_input(input_data, check_multiple_values=False)
-        if len(values) > 1:
-            # Search through the variables and group the 1D datasets that have
-            # the same coordinate axis.
-            # tobeplotted is a dict that holds pairs of
-            # [number_of_dimensions, DatasetSlice], or
-            # [number_of_dimensions, [List of DatasetSlices]] in the case of
-            # 1d sp.Data.
-            # TODO: 0D data is currently ignored -> find a nice way of
-            # displaying it?
-            tobeplotted = dict()
-            for i in range(len(values)):
-                if ndims[i] == 1:
-                    dims = values[i].dimensions
-                    labs = dims.labels
-                    key = str(labs[0])
-                    if key in tobeplotted.keys():
-                        tobeplotted[key][1].append(
-                            input_data.subset[values[i].name])
-                    else:
-                        tobeplotted[key] = [ndims[i], [
-                            input_data.subset[values[i].name]]]
-                elif ndims[i] > 1:
-                    tobeplotted[values[i].name] = [
-                        ndims[i], input_data.subset[values[i].name]]
+    # Create a list of variables which will then be dispatched to the plot_auto
+    # function.
+    # Search through the variables and group the 1D datasets that have
+    # the same coordinate axis.
+    # tobeplotted is a dict that holds pairs of
+    # [number_of_dimensions, DatasetSlice], or
+    # [number_of_dimensions, [List of DatasetSlices]] in the case of
+    # 1d sp.Data.
+    # TODO: 0D data is currently ignored -> find a nice way of
+    # displaying it?
+    if not isinstance(input_data, list):
+        input_data = [input_data]
 
-            # Plot all the subsets
-            color_count = 0
-            for key, val in tobeplotted.items():
-                if val[0] == 1:
-                    color = []
-                    for l in val[1]:
-                        color.append(DEFAULT_PLOTLY_COLORS[color_count % 10])
-                        color_count += 1
-                    plot_1d(val[1], color=color, filename=filename)
+    tobeplotted = dict()
+    for ds in input_data:
+        for name, var in ds:
+            coords = var.coords
+            ndims = len(coords)
+            if ndims == 1:
+                # TODO: change this to lab = coords[0] by adding a getitem
+                for c in coords:
+                    lab = c[0]
+                # Make a unique key from the dataset id in case there are more
+                # than one dataset with 1D variables with the same coordinates
+                key = "{}_{}".format(str(id(ds)), lab)
+                if key in tobeplotted.keys():
+                    tobeplotted[key][1][name] = ds[name]
                 else:
-                    plot_auto(val[1], ndim=val[0], filename=filename)
-            return
+                    tobeplotted[key] = [ndims, {name: ds[name]}]
+            elif ndims > 1:
+                tobeplotted[name] = [ndims, ds[name]]
+
+    # Plot all the subsets
+    color_count = 0
+    for key, val in tobeplotted.items():
+        if val[0] == 1:
+            color = []
+            for l in val[1].keys():
+                color.append(DEFAULT_PLOTLY_COLORS[color_count % 10])
+                color_count += 1
+            plot_1d(val[1], color=color, **kwargs)
         else:
-            return plot_auto(input_data, ndim=np.amax(ndims), axes=axes,
-                             waterfall=waterfall, collapse=collapse,
-                             filename=filename, **kwargs)
+            plot_auto(val[1], ndim=val[0], name=key, **kwargs)
+    return
 
 # =============================================================================
 
 
-def plot_auto(input_data, ndim=0, axes=None, waterfall=None, collapse=None,
-              filename=None, **kwargs):
+def plot_auto(input_data, ndim=0, name=None, waterfall=None,
+              collapse=None, **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
     plotting function depending on its dimensions
     """
 
-    if ndim == 1:
-        return plot_1d(input_data, axes=axes, filename=filename, **kwargs)
+    if collapse is not None:
+        plot_collapse(input_data, dim=collapse, name=name, **kwargs)
+    elif ndim == 1:
+        plot_1d(input_data, **kwargs)
     elif ndim == 2:
-        if collapse is not None:
-            return plot_1d(plot_waterfall(input_data, dim=collapse, axes=axes,
-                                          plot=False), filename=filename,
-                           **kwargs)
-        elif waterfall is not None:
-            return plot_waterfall(input_data, dim=waterfall, axes=axes,
-                                  filename=filename, **kwargs)
+        if waterfall is not None:
+            plot_waterfall(input_data, name=name, dim=waterfall, **kwargs)
         else:
-            return plot_image(input_data, axes=axes, filename=filename,
-                              **kwargs)
+            plot_image(input_data, name=name, **kwargs)
     else:
-        return plot_sliceviewer(input_data, axes=axes, filename=filename,
-                                **kwargs)
+        plot_sliceviewer(input_data, name=name, **kwargs)
+    return
 
 # =============================================================================
 
@@ -137,7 +110,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     """
     Plot a 1D spectrum.
 
-    Inputs can be either a Dataset(Slice) or a list of Dataset(Slice)s.
+    Input is a dictionary containing a list of DataProxy.
     If the coordinate of the x-axis contains bin edges, then a bar plot is
     made.
 
@@ -145,129 +118,46 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     probably via a dictionay of arguments
     """
 
-    entries = []
-    # Case of a single dataset
-    if (isinstance(input_data, sp.Dataset)) or \
-       (isinstance(input_data, sp.DatasetSlice)):
-        entries.append(input_data)
-    # Case of a list of datasets
-    elif isinstance(input_data, list):
-        # Go through the list items:
-        for item in input_data:
-            if (isinstance(item, sp.Dataset)) or \
-               (isinstance(item, sp.DatasetSlice)):
-                entries.append(item)
-            else:
-                raise RuntimeError("Bad data type in list input of plot_1d. "
-                                   "Expected either Dataset or DatasetSlice, "
-                                   "got " + type(item))
-    else:
-        raise RuntimeError(
-            "Bad data type in input of plot_1d. Expected either "
-            "Dataset or DatasetSlice, got " + type(item))
-
-    # entries now contains a list of Dataset or DatasetSlice
-    # We now construct a list of [x,y] pairs
     data = []
-    coord_check = None
     color_count = 0
-    for item in entries:
-        # Scan the datasets
-        values = dict()
-        variances = dict()
-        for name, tag, var in item:
-            key = name
-            if tag == sp.Data.Variance:
-                variances[key] = var
-            elif tag.is_data:
-                values[key] = (name, tag, var)
-        # Now go through the values and see if they have an associated
-        # variance. If they do, then use that as error bars.
-        # Then go through the variances and check if there are some variances
-        # that do not have an associate value; they are to be plotted as normal
-        # sp.Data.
-        tobeplotted = []
-        for key, val in values.items():
-            if key in variances.keys():
-                vari = variances[key]
-            else:
-                vari = None
-            tobeplotted.append([val, vari])
-        for key, val in variances.items():
-            if key not in values.keys():
-                tobeplotted.append([val, None])
+    for name, var in input_data.items():
+        # TODO: find a better way of getting x by accessing the dimension of
+        # the coordinate directly instead of iterating over all of them
+        coords = var.coords
+        for c in coords:
+            x = coords[c[0]].values
+            xlab = axis_label(coords[c[0]])
+        y = var.values
+        ylab = axis_label(var=var, name=name)
 
-        # tobeplotted now contains pairs of [value, variance]
-        for v in tobeplotted:
+        nx = x.shape[0]
+        ny = y.shape[0]
+        histogram = False
+        if nx == ny + 1:
+            x, w = edges_to_centers(x)
+            histogram = True
 
-            # Reset axes
-            axes_copy = axes
+        # Define trace
+        trace = dict(x=x, y=y, name=ylab)
+        if histogram:
+            trace["type"] = 'bar'
+            trace["marker"] = dict(opacity=0.6, line=dict(width=0))
+            trace["width"] = w
+        else:
+            trace["type"] = 'scatter'
+        if color is not None:
+            if "marker" not in trace.keys():
+                trace["marker"] = dict()
+            trace["marker"]["color"] = color[color_count]
+            color_count += 1
+        # Include variance if present
+        if var.has_variances:
+            trace["error_y"] = dict(
+                type='data',
+                array=np.sqrt(var.variances),
+                visible=True)
 
-            # Check that data is 1D
-            if len(v[0].dimensions) > 1:
-                raise RuntimeError("Can only plot 1D data with plot_1d. The "
-                                   "input Dataset has {} dimensions. For 2D "
-                                   "data, use plot_image. For higher "
-                                   "dimensions, use plot_sliceviewer."
-                                   .format(len(v[0].dimensions)))
-
-            # Define y: try to see if array contains numbers
-            try:
-                y = v[0].numpy
-            # If .numpy fails, try to extract as an array of strings
-            except RuntimeError:
-                y = np.array(v[0].data, dtype=np.str)
-            name = axis_label(*v[0])
-            # TODO: getting the shape of the dimension array is done in two
-            # steps here because v.dimensions.shape[0] returns garbage. One of
-            # the objects is going out of scope, we need to figure out which
-            # one to fix this.
-            ydims = v[0].dimensions
-            ny = ydims.shape[0]
-
-            # Define x
-            if axes_copy is None:
-                axes_copy = [sp.dimensionCoord(v[0].dimensions.labels[0])]
-            coord = item[axes_copy[0]]
-            xdims = coordinate_dimensions(coord)
-            nx = xdims.shape[0]
-            try:
-                x = coord.numpy
-            except RuntimeError:
-                x = np.array(coord.data, dtype=np.str)
-            # Check for bin edges
-            histogram = False
-            if nx == ny + 1:
-                x, w = edges_to_centers(x)
-                histogram = True
-            xlab = axis_label(*coord)
-            if (coord_check is not None) and (coord.tag != coord_check):
-                raise RuntimeError("All Value fields must have the same "
-                                   "x-coordinate axis in plot_1d.")
-            else:
-                coord_check = coord.tag
-
-            # Define trace
-            trace = dict(x=x, y=y, name=name)
-            if histogram:
-                trace["type"] = 'bar'
-                trace["marker"] = dict(opacity=0.6, line=dict(width=0))
-                trace["width"] = w
-            else:
-                trace["type"] = 'scatter'
-            if color is not None:
-                if "marker" not in trace.keys():
-                    trace["marker"] = dict()
-                trace["marker"]["color"] = color[color_count]
-                color_count += 1
-            # Include variance if present
-            if v[1] is not None:
-                trace["error_y"] = dict(
-                    type='data',
-                    array=sp.sqrt(v[1]).numpy,
-                    visible=True)
-
-            data.append(trace)
+        data.append(trace)
 
     layout = dict(
         xaxis=dict(title=xlab),
@@ -293,8 +183,95 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 # =============================================================================
 
 
-def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
-               resolution=128, filename=None):
+def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
+    """
+    Collapse higher dimensions into a 1D plot.
+    """
+
+    dims = input_data.dims
+    labs = dims.labels
+    coords = input_data.coords
+
+    # Gather list of dimensions that are to be collapsed
+    slice_dims = []
+    volume = 1
+    for lab in labs:
+        if lab != dim:
+            slice_dims.append(lab)
+            volume *= dims[lab]
+
+    # Create temporary Dataset
+    ds = sp.Dataset()
+    ds.set_coord(dim, sp.Variable([dim], values=coords[dim].values))
+    # A dictionary to hold the DataProxy objects
+    data = dict()
+
+    # Go through the dims that need to be collapsed, and create an array that
+    # holds the range of indices for each dimension
+    # Say we have [Dim.Y, 5], and [Dim.Z, 3], then dim_list will contain
+    # [[0, 1, 2, 3, 4], [0, 1, 2]]
+    dim_list = []
+    for l in slice_dims:
+        dim_list.append(np.arange(dims[l], dtype=np.int32))
+    # Next create a grid of indices
+    # grid will contain
+    # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
+    #   [[0, 0, 0, 0, 0], [1, 1, 1, 1, 1], [2, 2, 2, 2, 2]] ]
+    grid = np.meshgrid(*[x for x in dim_list])
+    # Reshape the grid to have a 2D array of length volume, i.e.
+    # [ [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4],
+    #   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] ]
+    res = np.reshape(grid, (len(slice_dims), volume))
+    # Now make a master array which also includes the dimension labels, i.e.
+    # [ [Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y,
+    #    Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y],
+    #   [    0,     1,     2,     3,     4,     0,     1,     2,     3,     4,
+    #        0,     1,     2,     3,     4],
+    #   [Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z,
+    #    Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z],
+    #   [    0,     0,     0,     0,     0,     1,     1,     1,     1,     1,
+    #        2,     2,     2,     2,     2] ]
+    slice_list = []
+    for i, l in enumerate(slice_dims):
+        slice_list.append([l] * volume)
+        slice_list.append(res[i])
+    # Finally reshape the master array to look like
+    # [ [[Dim.Y, 0], [Dim.Z, 0]], [[Dim.Y, 1], [Dim.Z, 0]],
+    #   [[Dim.Y, 2], [Dim.Z, 0]], [[Dim.Y, 3], [Dim.Z, 0]],
+    #   [[Dim.Y, 4], [Dim.Z, 0]], [[Dim.Y, 0], [Dim.Z, 1]],
+    #   [[Dim.Y, 1], [Dim.Z, 1]], [[Dim.Y, 2], [Dim.Z, 1]],
+    #   [[Dim.Y, 3], [Dim.Z, 1]],
+    # ...
+    # ]
+    slice_list = np.reshape(
+        np.transpose(slice_list), (volume, len(slice_dims), 2))
+
+    # Extract each entry from the slice_list, make temperary dataset and add to
+    # input dictionary for plot_1d
+    for line in slice_list:
+        ds_temp = input_data
+        key = ""
+        for s in line:
+            ds_temp = ds_temp[s[0], s[1]]
+            key += "{}-{}-".format(str(s[0]), s[1])
+        # Add variances
+        variances = None
+        if ds_temp.has_variances:
+            variances = ds_temp.variances
+        ds[key] = sp.Variable([dim], values=ds_temp.values,
+                              variances=variances)
+        data[key] = ds[key]
+
+    # Send the newly created dictionary of DataProxy to the plot_1d function
+    plot_1d(data, **kwargs)
+
+    return
+
+# =============================================================================
+
+
+def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
+               plot=True, resolution=128, filename=None):
     """
     Plot a 2D image.
 
@@ -305,100 +282,65 @@ def plot_image(input_data, axes=None, contours=False, cb=None, plot=True,
     calling plot_image from the sliceviewer).
     """
 
-    values, ndims = check_input(input_data)
-    ndim = np.amax(ndims)
+    coords = input_data.coords
 
-    if axes is not None:
-        naxes = len(axes)
+    # Get coordinates axes and dimensions
+    coords = input_data.coords
+    xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
+        process_dimensions(input_data=input_data, coords=coords, axes=axes)
+
+    if contours:
+        plot_type = 'contour'
     else:
-        naxes = 0
+        plot_type = 'heatmap'
 
-    # TODO: this currently allows for plot_image to be called with a 3D dataset
-    # and plot=False, which would lead to an error. We should think of a better
-    # way to protect against this.
-    if ((ndim > 1) and (ndim < 3)) or ((not plot) and (naxes > 1)):
+    # Parse colorbar
+    cbar = parse_colorbar(cb)
 
-        # Note the order of the axes here: the outermost dimension is the
-        # fast dimension and is plotted along x, while the inner (slow)
-        # dimension is plotted along y.
-        if axes is None:
-            dims = values[0].dimensions
-            labs = dims.labels
-            axes = [sp.dimensionCoord(label) for label in labs]
-        else:
-            axes = axes[-2:]
+    # Make title
+    title = axis_label(var=input_data, name=name, log=cbar["log"])
 
-        # Get coordinates axes and dimensions
-        xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-            process_dimensions(input_data=input_data, axes=axes,
-                               values=values[0], ndim=ndim)
+    layout = dict(
+        xaxis=dict(title=axis_label(xcoord)),
+        yaxis=dict(title=axis_label(ycoord)),
+        height=default["height"]
+    )
 
-        if contours:
-            plot_type = 'contour'
-        else:
-            plot_type = 'heatmap'
-
-        # Parse colorbar
-        cbar = parse_colorbar(cb)
-
-        title = values[0].name
+    if plot:
+        z = input_data.values
+        # Check if dimensions of arrays agree, if not, plot the transpose
+        if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
+            z = z.T
+        # Apply colorbar parameters
         if cbar["log"]:
-            title = "log\u2081\u2080(" + title + ")"
-        if values[0].unit != sp.units.dimensionless:
-            title += " [{}]".format(values[0].unit)
-
-        layout = dict(
-            xaxis=dict(title=axis_label(*xcoord)),
-            yaxis=dict(title=axis_label(*ycoord)),
-            height=default["height"]
-        )
-
-        if plot:
-            z = values[0].numpy
-            # Check if dimensions of arrays agree, if not, plot the transpose
-            if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-                z = z.T
-            # Apply colorbar parameters
-            if cbar["log"]:
-                with np.errstate(invalid="ignore", divide="ignore"):
-                    z = np.log10(z)
-            if cbar["min"] is None:
-                cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
-            if cbar["max"] is None:
-                cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
-            imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar,
-                                 plot_type, title, contours)
-            for key, val in layout.items():
-                imview.fig.layout[key] = val
-            if filename is not None:
-                write_image(fig=imview.fig, file=filename)
-            else:
-                display(imview.fig)
-            return
+            with np.errstate(invalid="ignore", divide="ignore"):
+                z = np.log10(z)
+        if cbar["min"] is None:
+            cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
+        if cbar["max"] is None:
+            cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
+        imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar,
+                             plot_type, title, contours)
+        for key, val in layout.items():
+            imview.fig.layout[key] = val
+        if filename is not None:
+            write_image(fig=imview.fig, file=filename)
         else:
-            data = [dict(
-                x=xe,
-                y=ye,
-                z=[0.0],
-                type=plot_type,
-                colorscale=cbar["name"],
-                colorbar=dict(
-                    title=title,
-                    titleside='right',
-                )
-            )]
-            return data, layout, xlabs, ylabs, cbar
-
+            display(imview.fig)
+        return
     else:
-        raise RuntimeError(
-            "Unsupported number of dimensions in plot_image. "
-            "Expected at least 2 dimensions, got {}. To plot 1D "
-            "data, use plot_1d, and for 3 dimensions and higher,"
-            " use plot_sliceviewer. One can also call plot_image"
-            "for a Dataset with more than 2 dimensions, but one "
-            "must then use plot=False to collect the data and "
-            "layout dicts for plotly, as well as a transpose "
-            "flag, instead of plotting an image.".format(ndim))
+        data = [dict(
+            x=xe,
+            y=ye,
+            z=[0.0],
+            type=plot_type,
+            colorscale=cbar["name"],
+            colorbar=dict(
+                title=title,
+                titleside='right',
+            )
+        )]
+        return data, layout, xlabs, ylabs, cbar
 
 # =============================================================================
 
@@ -555,164 +497,101 @@ class ImageViewer:
 # =============================================================================
 
 
-def plot_waterfall(input_data, dim=None, axes=None, plot=True, filename=None):
+def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
     """
     Make a 3D waterfall plot
     """
 
-    values, ndims = check_input(input_data)
-    ndim = np.amax(ndims)
+    # Get coordinates axes and dimensions
+    coords = input_data.coords
+    xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
+        process_dimensions(input_data=input_data, coords=coords, axes=axes)
 
-    if (ndim > 1) and (ndim < 3):
+    data = []
+    z = input_data.values
 
-        if axes is None:
-            dims = values[0].dimensions
-            labs = dims.labels
-            axes = [sp.dimensionCoord(label) for label in labs]
+    if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
+        z = z.T
+        zlabs = [ylabs[0], xlabs[0]]
 
-        # Get coordinates axes and dimensions
-        xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-            process_dimensions(input_data=input_data, axes=axes,
-                               values=values[0], ndim=ndim)
+    pdict = dict(type='scatter3d', mode='lines', line=dict(width=5))
+    adict = dict(z=1)
 
-        data = []
-        z = values[0].numpy
+    if dim is None:
+        dim = zlabs[0]
 
-        e = None
-        # Check if we need to add variances to dataset list for collapse plot
-        if not plot:
-            for name, tag, var in input_data:
-                if (tag == sp.Data.Variance) and \
-                   (name == values[0].name):
-                    e = var.numpy
-
-        if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-            z = z.T
-            zlabs = [ylabs[0], xlabs[0]]
-            if e is not None:
-                e = e.T
-
-        pdict = dict(type='scatter3d', mode='lines', line=dict(width=5))
-        adict = dict(z=1)
-
-        if dim is None:
-            dim = zlabs[0]
-
-        if dim == zlabs[0]:
-            for i in range(len(yc)):
-                if plot:
-                    idict = pdict.copy()
-                    idict["x"] = xc
-                    idict["y"] = [yc[i]] * len(xc)
-                    idict["z"] = z[i, :]
-                    data.append(idict)
-                    adict["x"] = 3
-                    adict["y"] = 1
-                else:
-                    dset = sp.Dataset()
-                    dset[axes[1]] = input_data[axes[1]]
-                    dims = dset[axes[1]].dimensions
-                    labs = dims.labels
-                    key = values[0].name + "_{}".format(i)
-                    dset[sp.Data.Value, key] = ([labs[0]], z[i, :])
-                    if e is not None:
-                        dset[sp.Data.Variance, key] = ([labs[0]], e[i, :])
-                    data.append(dset)
-        elif dim == zlabs[1]:
-            for i in range(len(xc)):
-                if plot:
-                    idict = pdict.copy()
-                    idict["x"] = [xc[i]] * len(yc)
-                    idict["y"] = yc
-                    idict["z"] = z[:, i]
-                    data.append(idict)
-                    adict["x"] = 1
-                    adict["y"] = 3
-                else:
-                    dset = sp.Dataset()
-                    dset[axes[0]] = input_data[axes[0]]
-                    dims = dset[axes[0]].dimensions
-                    labs = dims.labels
-                    key = values[0].name + "_{}".format(i)
-                    dset[sp.Data.Value, key] = ([labs[0]], z[:, i])
-                    if e is not None:
-                        dset[sp.Data.Variance, key] = ([labs[0]], e[:, i])
-                    data.append(dset)
-        else:
-            raise RuntimeError("Something went wrong in plot_waterfall. The "
-                               "waterfall dimension is not recognised.")
-
-        if plot:
-            layout = dict(
-                scene=dict(
-                    xaxis=dict(
-                        title=axis_label(*xcoord)),
-                    yaxis=dict(
-                        title=axis_label(*ycoord)),
-                    zaxis=dict(
-                        title="{} [{}]".format(
-                            values[0].name,
-                            values[0].unit)),
-                    aspectmode='manual',
-                    aspectratio=adict),
-                showlegend=False,
-                height=default["height"])
-            fig = FigureWidget(data=data, layout=layout)
-            if filename is not None:
-                write_image(fig=fig, file=filename)
-            else:
-                display(fig)
-            return
-        else:
-            return data
-
+    if dim == zlabs[0]:
+        for i in range(len(yc)):
+            idict = pdict.copy()
+            idict["x"] = xc
+            idict["y"] = [yc[i]] * len(xc)
+            idict["z"] = z[i, :]
+            data.append(idict)
+            adict["x"] = 3
+            adict["y"] = 1
+    elif dim == zlabs[1]:
+        for i in range(len(xc)):
+            idict = pdict.copy()
+            idict["x"] = [xc[i]] * len(yc)
+            idict["y"] = yc
+            idict["z"] = z[:, i]
+            data.append(idict)
+            adict["x"] = 1
+            adict["y"] = 3
     else:
-        raise RuntimeError(
-            "Unsupported number of dimensions in plot_waterfall."
-            " Expected at least 2 dimensions, got {}." .format(ndim))
+        raise RuntimeError("Something went wrong in plot_waterfall. The "
+                           "waterfall dimension is not recognised.")
+
+    layout = dict(
+        scene=dict(
+            xaxis=dict(
+                title=axis_label(xcoord)),
+            yaxis=dict(
+                title=axis_label(ycoord)),
+            zaxis=dict(
+                title=axis_label(var=input_data,
+                                 name=name)),
+            aspectmode='manual',
+            aspectratio=adict),
+        showlegend=False,
+        height=default["height"])
+    fig = FigureWidget(data=data, layout=layout)
+    if filename is not None:
+        write_image(fig=fig, file=filename)
+    else:
+        display(fig)
+    return
 
 # =============================================================================
 
 
 def plot_sliceviewer(input_data, axes=None, contours=False, cb=None,
-                     filename=None):
+                     filename=None, name=None):
     """
     Plot a 2D slice through a 3D dataset with a slider to adjust the position
     of the slice in the third dimension.
     """
 
-    # Check input dataset
-    value_list, ndims = check_input(input_data)
-    ndim = np.amax(ndims)
+    if axes is None:
+        dims = input_data.dims
+        labs = dims.labels
+        axes = [l for l in labs]
 
-    if ndim > 2:
+    # Use the machinery in plot_image to make the layout
+    data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
+                                                  contours=contours, cb=cb,
+                                                  name=name, plot=False)
 
-        if axes is None:
-            dims = value_list[0].dimensions
-            labs = dims.labels
-            axes = [sp.dimensionCoord(label) for label in labs]
+    # Create a SliceViewer object
+    sv = SliceViewer(plotly_data=data, plotly_layout=layout,
+                     input_data=input_data, axes=axes,
+                     value_name=name, cb=cbar)
 
-        # Use the machinery in plot_image to make the layout
-        data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
-                                                      contours=contours, cb=cb,
-                                                      plot=False)
-
-        # Create a SliceViewer object
-        sv = SliceViewer(plotly_data=data, plotly_layout=layout,
-                         input_data=input_data, axes=axes,
-                         value_name=value_list[0].name, cb=cbar)
-
-        if filename is not None:
-            write_image(fig=sv.fig, file=filename)
-        else:
-            display(sv.vbox)
-        return
-
+    if filename is not None:
+        write_image(fig=sv.fig, file=filename)
     else:
-        raise RuntimeError("Unsupported number of dimensions in "
-                           "plot_sliceviewer. Expected at least 3 dimensions, "
-                           "got {}. For 2D data, use plot_image, for 1D data, "
-                           "use plot_1d.".format(ndim))
+        display(sv.vbox)
+    return
 
 # =============================================================================
 
@@ -722,20 +601,20 @@ class SliceViewer:
     def __init__(self, plotly_data, plotly_layout, input_data, axes,
                  value_name, cb):
 
-        # Make a copy of the input data
-        self.input_data = input_data.copy()
+        # Make a copy of the input data - Needed?
+        self.input_data = input_data
 
         # Get the dimensions of the image to be displayed
-        naxes = len(axes)
-        self.xcoord = self.input_data[axes[naxes - 1]]
-        self.ycoord = self.input_data[axes[naxes - 2]]
-        self.ydims = self.ycoord.dimensions
-        self.ylabs = self.ydims.labels
-        self.xdims = self.xcoord.dimensions
+        self.coords = self.input_data.coords
+        self.xcoord = self.coords[axes[-1]]
+        self.ycoord = self.coords[axes[-2]]
+        self.xdims = self.xcoord.dims
         self.xlabs = self.xdims.labels
+        self.ydims = self.ycoord.dims
+        self.ylabs = self.ydims.labels
 
         # Need these to avoid things running out of scope
-        self.dims = self.input_data.dimensions
+        self.dims = self.input_data.dims
         self.labels = self.dims.labels
         self.shapes = self.dims.shape
 
@@ -743,25 +622,12 @@ class SliceViewer:
         self.slider_nx = []
         # Save dimensions tags for sliders, e.g. Dim.X
         self.slider_dims = []
-        # Coordinate variables for sliders, e.g. d[Coord.X]
-        self.slider_coords = []
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = []
         for ax in axes[:-2]:
-            coord = self.input_data[ax]
-            self.slider_coords.append(self.input_data[ax])
-            dims = coord.dimensions
-            labs = dims.labels
-            # TODO: This loop is necessary; Ideally we would like to do
-            # self.slider_nx.append(self.input_data[ax].dimensions.shape[0])
-            # self.slider_dims.append(self.input_data[ax].dimensions.labels[0])
-            # self.slider_x.append(self.input_data[ax].numpy)
-            # but we are running into scope problems.
-            for j in range(len(self.labels)):
-                if self.labels[j] == labs[0]:
-                    self.slider_nx.append(self.shapes[j])
-                    self.slider_dims.append(self.labels[j])
-                    self.slider_x.append(self.input_data[ax].numpy)
+            self.slider_dims.append(ax)
+            self.slider_nx.append(self.shapes[ax])
+            self.slider_x.append(self.coords[ax].values)
         self.nslices = len(self.slider_dims)
 
         # Initialise Figure and VBox objects
@@ -794,7 +660,7 @@ class SliceViewer:
             # Add an observer to the slider
             self.slider[i].observe(self.update_slice, names="value")
             # Add coordinate name and unit
-            title = Label(value=axis_label(*self.slider_coords[i]))
+            title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
             self.vbox += (HBox([title, self.slider[i], self.lab[i]]),)
 
         # Call update_slice once to make the initial image
@@ -809,18 +675,17 @@ class SliceViewer:
         # The dimensions to be sliced have been saved in slider_dims
         # Slice with first element to avoid modifying underlying dataset
         self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
-        zarray = self.input_data[self.slider_dims[0], self.slider[0].value]
+        vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
         # Then slice additional dimensions if needed
         for idim in range(1, self.nslices):
             self.lab[idim].value = str(
                 self.slider_x[idim][self.slider[idim].value])
-            zarray = zarray[self.slider_dims[idim], self.slider[idim].value]
+            vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
 
-        vslice = zarray[sp.Data.Value, self.value_name]
-        z = vslice.numpy
+        z = vslice.values
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        zdims = vslice.dimensions
+        zdims = vslice.dims
         zlabs = zdims.labels
         if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
             z = z.T
@@ -858,15 +723,17 @@ def centers_to_edges(x):
     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def axis_label(name, tag, var):
+def axis_label(var, name=None, log=False):
     """
     Make an axis label with "Name [unit]"
     """
-    if tag.is_coord:
-        label = "{}".format(tag)
-        label = label.replace("Coord.", "")
+    if name is not None:
+        label = name
     else:
-        label = "{}".format(name)
+        label = str(var.dims.labels[0]).replace("Dim.", "")
+
+    if log:
+        label = "log\u2081\u2080(" + label + ")"
     if var.unit != sp.units.dimensionless:
         label += " [{}]".format(var.unit)
     return label
@@ -883,40 +750,36 @@ def parse_colorbar(cb):
     return cbar
 
 
-def coordinate_dimensions(coord):
-    dims = coord.dimensions
-    ndim = len(dims)
-    if ndim != 1:
-        raise RuntimeError("Found {} dimensions, expected 1. Only coordinates "
-                           "with a single dimension are currently supported. "
-                           "If you wish to plot data with a 2D coordinate, "
-                           "please use rebin to re-sample the data onto a "
-                           "common axis.")
-    return dims
-
-
-def process_dimensions(input_data, axes, values, ndim):
+def process_dimensions(input_data, coords, axes):
     """
     Make x and y arrays from dimensions and check for bins edges
     """
-    xcoord = input_data[axes[1]]
-    ycoord = input_data[axes[0]]
+    # coords = input_data.coords
+    zdims = input_data.dims
+    zlabs = zdims.labels
+    nz = zdims.shape
+
+    if axes is None:
+        axes = [l for l in zlabs]
+    else:
+        axes = axes[-2:]
+
+    # Get coordinate arrays
+    xcoord = coords[axes[-1]]
+    ycoord = coords[axes[-2]]
+    x = xcoord.values
+    y = ycoord.values
+
     # Check for bin edges
     # TODO: find a better way to handle edges. Currently, we convert from
     # edges to centers and then back to edges afterwards inside the plotly
     # object. This is not optimal and could lead to precision loss issues.
-    zdims = values.dimensions
-    zlabs = zdims.labels
-    nz = zdims.shape
-    ydims = coordinate_dimensions(ycoord)
+    ydims = ycoord.dims
     ylabs = ydims.labels
     ny = ydims.shape
-    xdims = coordinate_dimensions(xcoord)
+    xdims = xcoord.dims
     xlabs = xdims.labels
     nx = xdims.shape
-    # Get coordinate arrays
-    x = xcoord.numpy
-    y = ycoord.numpy
     # Find the dimension in z that corresponds to x and y
     ix = iy = None
     for i in range(len(zlabs)):
