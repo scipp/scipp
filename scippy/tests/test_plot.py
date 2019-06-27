@@ -131,7 +131,7 @@ def test_plot_2d_image_with_axes():
     d1.set_coord(sp.Dim.Y, sp.Variable([sp.Dim.Y], values=yy,
                  unit=sp.units.m))
     d1["Sample"] = sp.Variable([sp.Dim.Y, sp.Dim.X], values=a,
-        unit=sp.units.counts)
+                               unit=sp.units.counts)
     do_plot(d1, axes=[sp.Dim.X, sp.Dim.Y])
 
 
