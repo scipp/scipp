@@ -260,10 +260,11 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
   ASSERT_THROW(a.setSparseCoord("sparse_coord_and_val", sparse_variable),
                std::runtime_error);
 
-  // Characterise temporal coupling issue below.
+  // Setting coords first yields same response.
   Dataset b;
   b.setSparseCoord("sparse_coord_and_val", sparse_variable);
-  b.setData("sparse_coord_and_val", dense_variable);
+  ASSERT_THROW(b.setData("sparse_coord_and_val", dense_variable),
+               std::runtime_error);
 }
 
 TEST(DatasetTest, simple_sparse_slice) {

@@ -118,30 +118,49 @@ DataProxy Dataset::operator[](const std::string_view name) {
   return DataProxy(*this, it->second);
 }
 
-/// Helper for setDims().
-void Dataset::setExtent(const Dim dim, const scipp::index extent,
-                        const bool isCoord) {
-  const auto it = m_dims.find(dim);
+namespace extents {
+// Internally use negative extent -1 to indicate unknown edge state. The `-1`
+// is required for dimensions with extent 0.
+scipp::index makeUnknownEdgeState(const scipp::index extent) {
+  return -extent - 1;
+}
+scipp::index shrink(const scipp::index extent) { return extent - 1; }
+bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
+bool isSame(const scipp::index extent, const scipp::index reference) {
+  return reference == -extent - 1;
+}
+bool oneLarger(const scipp::index extent, const scipp::index reference) {
+  return extent == -reference - 1 + 1;
+}
+bool oneSmaller(const scipp::index extent, const scipp::index reference) {
+  return extent == -reference - 1 - 1;
+}
+void setExtent(std::map<Dim, scipp::index> &dims, const Dim dim,
+               const scipp::index extent, const bool isCoord) {
+  const auto it = dims.find(dim);
   // Internally use negative extent -1 to indicate unknown edge state. The `-1`
   // is required for dimensions with extent 0.
-  if (it == m_dims.end()) {
-    m_dims[dim] = -extent - 1;
+  if (it == dims.end()) {
+    dims[dim] = extents::makeUnknownEdgeState(extent);
   } else {
-    if (it->second < 0) {
-      if (extent == -it->second - 1) {
-      } else if (extent == (-it->second - 1 + 1) && isCoord) {
-        it->second = extent - 1;
-      } else if (extent == (-it->second - 1 - 1) && !isCoord) {
-        it->second = extent;
+    auto &heldExtent = it->second;
+    if (extents::isUnknownEdgeState(heldExtent)) {
+      if (extents::isSame(extent, heldExtent)) { // Do nothing
+      } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
+        heldExtent = extents::shrink(extent);
+      } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
+        heldExtent = extent;
       } else {
         throw std::runtime_error("Length mismatch on insertion");
       }
     } else {
-      if ((extent != it->second || isCoord) && extent != it->second + 1)
+      // Check for known edge state
+      if ((extent != heldExtent || isCoord) && extent != heldExtent + 1)
         throw std::runtime_error("Length mismatch on insertion");
     }
   }
 }
+} // namespace extents
 
 /// Consistency-enforcing update of the dimensions of the dataset.
 ///
@@ -153,8 +172,10 @@ void Dataset::setExtent(const Dim dim, const scipp::index extent,
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
+  auto tmp = m_dims;
   for (const auto dim : dims.denseLabels())
-    setExtent(dim, dims[dim], dim == coordDim);
+    extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
+  m_dims = tmp;
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
@@ -185,6 +206,31 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, Variable data) {
   setDims(data.dims());
+  const bool sparseData = data.dims().sparse();
+  if (m_data.count(name)) {
+    const auto &dataItem = m_data.at(name);
+    if (dataItem.coord) {
+      const auto &coordsSparse = dataItem.coord->dims().sparse();
+      if (coordsSparse && !sparseData) {
+        throw std::runtime_error(
+            "Cannot set dense values or variances if coordinates sparse");
+      } else if (!coordsSparse && sparseData) {
+        throw std::runtime_error(
+            "Cannot set sparse values or variances if coordinates dense");
+      }
+    }
+    if (!dataItem.labels.empty()) {
+      const auto &labelsSparse =
+          dataItem.labels.begin()->second.dims().sparse();
+      if (labelsSparse && !sparseData) {
+        throw std::runtime_error(
+            "Cannot set dense values or variances if labels sparse");
+      } else if (!labelsSparse && sparseData) {
+        throw std::runtime_error(
+            "Cannot set sparse values or variances if labels dense");
+      }
+    }
+  }
   m_data[name].data = std::move(data);
 }
 
@@ -192,7 +238,6 @@ void Dataset::setData(const std::string &name, Variable data) {
 ///
 /// Sparse coordinates can exist even without corresponding data.
 void Dataset::setSparseCoord(const std::string &name, Variable coord) {
-  setDims(coord.dims());
   if (!coord.dims().sparse())
     throw std::runtime_error("Variable passed to Dataset::setSparseCoord does "
                              "not contain sparse data.");
@@ -206,6 +251,7 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
       throw std::runtime_error("Cannot set sparse coordinate if values or "
                                "variances are not sparse.");
   }
+  setDims(coord.dims());
   m_data[name].coord = std::move(coord);
 }
 
@@ -233,23 +279,27 @@ void Dataset::setSparseLabels(const std::string &name,
   m_data[name].labels.insert_or_assign(labelName, std::move(labels));
 }
 
-/// Return const slice of the dataset along given dimension with given extents.
+/// Return const slice of the dataset along given dimension with given
+/// extents.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of proxy object is
+/// returned.
 DatasetConstProxy Dataset::slice(const Slice slice1) const {
   return DatasetConstProxy(*this).slice(slice1);
 }
 
 /// Return const slice of the dataset, sliced in two dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of proxy object is
+/// returned.
 DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2) const {
   return DatasetConstProxy(*this).slice(slice1, slice2);
 }
 
 /// Return const slice of the dataset, sliced in three dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of proxy object is
+/// returned.
 DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2,
                                  const Slice slice3) const {
   return DatasetConstProxy(*this).slice(slice1, slice2, slice3);
@@ -257,21 +307,24 @@ DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2,
 
 /// Return slice of the dataset along given dimension with given extents.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of proxy object is
+/// returned.
 DatasetProxy Dataset::slice(const Slice slice1) {
   return DatasetProxy(*this).slice(slice1);
 }
 
 /// Return slice of the dataset, sliced in two dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of proxy object is
+/// returned.
 DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2) {
   return DatasetProxy(*this).slice(slice1, slice2);
 }
 
 /// Return slice of the dataset, sliced in three dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is returned.
+/// This does not make a copy of the data. Instead of proxy object is
+/// returned.
 DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
                             const Slice slice3) {
   return DatasetProxy(*this).slice(slice1, slice2, slice3);
@@ -561,11 +614,12 @@ auto &apply(const Op &op, A &a, const B &b) {
 template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // For `b` referencing data in `a` we delay operation. The alternative would
-  // be to make a deep copy of `other` before starting the iteration over items.
+  // be to make a deep copy of `other` before starting the iteration over
+  // items.
   std::optional<std::string_view> delayed;
-  // Note the inefficiency here: We are comparing some or all of the coords and
-  // labels for each item. This could be improved by implementing the operations
-  // for detail::DatasetData instead of DataProxy.
+  // Note the inefficiency here: We are comparing some or all of the coords
+  // and labels for each item. This could be improved by implementing the
+  // operations for detail::DatasetData instead of DataProxy.
   for (const auto & [ name, item ] : a) {
     if (&item.underlying() == &b.underlying())
       delayed = name;
