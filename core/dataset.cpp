@@ -810,8 +810,32 @@ Dataset operator+(const Dataset &lhs, const DatasetConstProxy &rhs) {
   return res;
 }
 
+Dataset operator+(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  Dataset res(lhs.dataset());
+  apply(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator+(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs.dataset());
+  apply(plus_equals, res, rhs);
+  return res;
+}
+
 Dataset operator-(const Dataset &lhs, const DatasetConstProxy &rhs) {
   Dataset res(lhs);
+  apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  Dataset res(lhs.dataset());
+  apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs.dataset());
   apply(minus_equals, res, rhs);
   return res;
 }
@@ -822,8 +846,32 @@ Dataset operator*(const Dataset &lhs, const DatasetConstProxy &rhs) {
   return res;
 }
 
+Dataset operator*(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  Dataset res(lhs.dataset());
+  apply(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs.dataset());
+  apply(times_equals, res, rhs);
+  return res;
+}
+
 Dataset operator/(const Dataset &lhs, const DatasetConstProxy &rhs) {
   Dataset res(lhs);
+  apply(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  Dataset res(lhs.dataset());
+  apply(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs.dataset());
   apply(divide_equals, res, rhs);
   return res;
 }

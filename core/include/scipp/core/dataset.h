@@ -544,6 +544,7 @@ public:
   }
 
   const auto &slices() const noexcept { return m_slices; }
+  const auto &dataset() const noexcept { return *m_dataset; }
 
   bool operator==(const Dataset &other) const;
   bool operator==(const DatasetConstProxy &other) const;
@@ -644,9 +645,20 @@ Dataset operator/(Dataset &&lhs, const Dataset &rhs);
 Dataset operator/(Dataset &&lhs, Dataset &&rhs);
 
 Dataset operator+(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator+(const DatasetConstProxy &lhs, const Dataset &rhs);
+Dataset operator+(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs);
+
 Dataset operator-(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator-(const DatasetConstProxy &lhs, const Dataset &rhs);
+Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs);
+
 Dataset operator*(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator*(const DatasetConstProxy &lhs, const Dataset &rhs);
+Dataset operator*(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs);
+
 Dataset operator/(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator/(const DatasetConstProxy &lhs, const Dataset &rhs);
+Dataset operator/(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs);
 
 Dataset operator+(const Dataset &lhs, const DataConstProxy &rhs);
 Dataset operator-(const Dataset &lhs, const DataConstProxy &rhs);

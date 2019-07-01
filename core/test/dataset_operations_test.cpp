@@ -524,3 +524,50 @@ TYPED_TEST(DatasetBinaryOpTest2, dataset_rvalue_lhs_dataset_rvalue_rhs) {
     EXPECT_EQ(reference, item.data());
   }
 }
+
+TYPED_TEST(DatasetBinaryOpTest2,
+           dataset_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
+  auto dataset_a = datasetFactory.make();
+  auto dataset_b = datasetFactory.make();
+  DatasetConstProxy dataset_b_proxy(dataset_b);
+
+  const auto res = TestFixture::op(dataset_a, dataset_b_proxy);
+
+  for (const auto & [ name, item ] : res) {
+    const auto reference =
+        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+    EXPECT_EQ(reference, item.data());
+  }
+}
+
+TYPED_TEST(DatasetBinaryOpTest2,
+           datasetconstproxy_const_lvalue_lhs_dataset_const_lvalue_rhs) {
+  auto dataset_a = datasetFactory.make();
+  auto dataset_b = datasetFactory.make();
+  DatasetConstProxy dataset_a_proxy(dataset_a);
+
+  const auto res = TestFixture::op(dataset_a_proxy, dataset_b);
+
+  for (const auto & [ name, item ] : res) {
+    const auto reference =
+        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+    EXPECT_EQ(reference, item.data());
+  }
+}
+
+TYPED_TEST(
+    DatasetBinaryOpTest2,
+    datasetconstproxy_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
+  auto dataset_a = datasetFactory.make();
+  auto dataset_b = datasetFactory.make();
+  DatasetConstProxy dataset_a_proxy(dataset_a);
+  DatasetConstProxy dataset_b_proxy(dataset_b);
+
+  const auto res = TestFixture::op(dataset_a_proxy, dataset_b_proxy);
+
+  for (const auto & [ name, item ] : res) {
+    const auto reference =
+        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
+    EXPECT_EQ(reference, item.data());
+  }
+}
