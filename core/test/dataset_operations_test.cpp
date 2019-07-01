@@ -65,31 +65,32 @@ using BinaryEquals =
     ::testing::Types<plus_equals, minus_equals, times_equals, divide_equals>;
 
 template <class Op>
-class DataProxyBinaryOpTest : public ::testing::Test,
-                              public ::testing::WithParamInterface<Op> {
+class DataProxyBinaryEqualsOpTest : public ::testing::Test,
+                                    public ::testing::WithParamInterface<Op> {
 protected:
   Op op;
 };
 
 template <class Op>
-class DatasetBinaryOpTest : public ::testing::Test,
-                            public ::testing::WithParamInterface<Op> {
+class DatasetBinaryEqualsOpTest : public ::testing::Test,
+                                  public ::testing::WithParamInterface<Op> {
 protected:
   Op op;
 };
 
 template <class Op>
-class DatasetProxyBinaryOpTest : public ::testing::Test,
-                                 public ::testing::WithParamInterface<Op> {
+class DatasetProxyBinaryEqualsOpTest
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<Op> {
 protected:
   Op op;
 };
 
-TYPED_TEST_SUITE(DataProxyBinaryOpTest, BinaryEquals);
-TYPED_TEST_SUITE(DatasetBinaryOpTest, BinaryEquals);
-TYPED_TEST_SUITE(DatasetProxyBinaryOpTest, BinaryEquals);
+TYPED_TEST_SUITE(DataProxyBinaryEqualsOpTest, BinaryEquals);
+TYPED_TEST_SUITE(DatasetBinaryEqualsOpTest, BinaryEquals);
+TYPED_TEST_SUITE(DatasetProxyBinaryEqualsOpTest, BinaryEquals);
 
-TYPED_TEST(DataProxyBinaryOpTest, other_data_unchanged) {
+TYPED_TEST(DataProxyBinaryEqualsOpTest, other_data_unchanged) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
@@ -107,7 +108,7 @@ TYPED_TEST(DataProxyBinaryOpTest, other_data_unchanged) {
   }
 }
 
-TYPED_TEST(DataProxyBinaryOpTest, lhs_with_variance) {
+TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
@@ -122,7 +123,7 @@ TYPED_TEST(DataProxyBinaryOpTest, lhs_with_variance) {
   }
 }
 
-TYPED_TEST(DataProxyBinaryOpTest, lhs_without_variance) {
+TYPED_TEST(DataProxyBinaryEqualsOpTest, lhs_without_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
@@ -142,7 +143,7 @@ TYPED_TEST(DataProxyBinaryOpTest, lhs_without_variance) {
   }
 }
 
-TYPED_TEST(DataProxyBinaryOpTest, slice_lhs_with_variance) {
+TYPED_TEST(DataProxyBinaryEqualsOpTest, slice_lhs_with_variance) {
   const auto dataset_b = datasetFactory.make();
 
   for (const auto &item : dataset_b) {
@@ -181,9 +182,9 @@ TYPED_TEST(DataProxyBinaryOpTest, slice_lhs_with_variance) {
   }
 }
 
-// DataProxyBinaryOpTest ensures correctness of operations between
+// DataProxyBinaryEqualsOpTest ensures correctness of operations between
 // DataProxy with itself, so we can rely on that for building the reference.
-TYPED_TEST(DatasetBinaryOpTest, return_value) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
 
@@ -203,7 +204,7 @@ TYPED_TEST(DatasetBinaryOpTest, return_value) {
   ASSERT_EQ(&result3, &a);
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs_DataProxy_self_overlap) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
   auto dataset = datasetFactory.make();
   auto original(dataset);
   auto reference(dataset);
@@ -214,7 +215,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DataProxy_self_overlap) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs_DataProxy_self_overlap_slice) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataProxy_self_overlap_slice) {
   auto dataset = datasetFactory.make();
   auto original(dataset);
   auto reference(dataset);
@@ -227,7 +228,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DataProxy_self_overlap_slice) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
   auto reference(a);
@@ -238,7 +239,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_coord_mismatch) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
   auto a = datasetFactory.make();
   DatasetFactory3D otherCoordsFactory;
   auto b = otherCoordsFactory.make();
@@ -246,7 +247,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_coord_mismatch) {
   ASSERT_THROW(TestFixture::op(a, b), except::CoordMismatchError);
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_missing_items) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
   a.setData("extra", makeVariable<double>({}));
   auto b = datasetFactory.make();
@@ -262,7 +263,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_missing_items) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_extra_items) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
   b.setData("extra", makeVariable<double>({}));
@@ -270,7 +271,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_Dataset_with_extra_items) {
   ASSERT_ANY_THROW(TestFixture::op(a, b));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_self_overlap) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
   auto dataset = datasetFactory.make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
@@ -287,7 +288,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_self_overlap) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_coord_mismatch) {
   auto dataset = datasetFactory.make();
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
@@ -304,7 +305,7 @@ TYPED_TEST(DatasetBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
                except::CoordMismatchError);
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest, return_value) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
   DatasetProxy proxy(a);
@@ -330,7 +331,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, return_value) {
             &a["data_scalar"].template values<double>()[0]);
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DataProxy_self_overlap) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap) {
   auto dataset = datasetFactory.make();
   auto reference(dataset);
   TestFixture::op(reference, dataset["data_scalar"]);
@@ -349,7 +350,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DataProxy_self_overlap) {
     }
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DataProxy_self_overlap_slice) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DataProxy_self_overlap_slice) {
   auto dataset = datasetFactory.make();
   auto reference(dataset);
   TestFixture::op(reference, dataset["values_x"].slice({Dim::X, 1}));
@@ -368,7 +369,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DataProxy_self_overlap_slice) {
     }
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_coord_mismatch) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
   DatasetFactory3D otherCoordsFactory;
   auto a = otherCoordsFactory.make();
   auto b = datasetFactory.make();
@@ -376,7 +377,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_coord_mismatch) {
   ASSERT_THROW(TestFixture::op(DatasetProxy(a), b), except::CoordMismatchError);
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_with_missing_items) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto a = datasetFactory.make();
   a.setData("extra", makeVariable<double>({}));
   auto b = datasetFactory.make();
@@ -392,7 +393,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_with_missing_items) {
   }
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_with_extra_items) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
   b.setData("extra", makeVariable<double>({}));
@@ -400,7 +401,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_Dataset_with_extra_items) {
   ASSERT_ANY_THROW(TestFixture::op(DatasetProxy(a), b));
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DatasetProxy_self_overlap) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DatasetProxy_self_overlap) {
   auto dataset = datasetFactory.make();
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
@@ -418,7 +419,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DatasetProxy_self_overlap) {
   }
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest,
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest,
            rhs_DatasetProxy_self_overlap_undetectable) {
   auto dataset = datasetFactory.make();
   const auto slice = dataset.slice({Dim::Z, 3});
@@ -440,7 +441,7 @@ TYPED_TEST(DatasetProxyBinaryOpTest,
   }
 }
 
-TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
+TYPED_TEST(DatasetProxyBinaryEqualsOpTest, rhs_DatasetProxy_coord_mismatch) {
   auto dataset = datasetFactory.make();
   const DatasetProxy proxy(dataset);
 
@@ -459,15 +460,15 @@ TYPED_TEST(DatasetProxyBinaryOpTest, rhs_DatasetProxy_coord_mismatch) {
 }
 
 template <class Op>
-class DatasetBinaryOpTest2 : public ::testing::Test,
-                             public ::testing::WithParamInterface<Op> {
+class DatasetBinaryOpTest : public ::testing::Test,
+                            public ::testing::WithParamInterface<Op> {
 protected:
   Op op;
 };
 
-TYPED_TEST_SUITE(DatasetBinaryOpTest2, Binary);
+TYPED_TEST_SUITE(DatasetBinaryOpTest, Binary);
 
-TYPED_TEST(DatasetBinaryOpTest2,
+TYPED_TEST(DatasetBinaryOpTest,
            dataset_const_lvalue_lhs_dataset_const_lvalue_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
@@ -481,7 +482,7 @@ TYPED_TEST(DatasetBinaryOpTest2,
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest2, dataset_rvalue_lhs_dataset_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataset_const_lvalue_rhs) {
   const auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
@@ -495,7 +496,7 @@ TYPED_TEST(DatasetBinaryOpTest2, dataset_rvalue_lhs_dataset_const_lvalue_rhs) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest2, dataset_const_lvalue_lhs_dataset_rvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_const_lvalue_lhs_dataset_rvalue_rhs) {
   auto dataset_a = datasetFactory.make();
   const auto dataset_b = datasetFactory.make();
 
@@ -509,7 +510,7 @@ TYPED_TEST(DatasetBinaryOpTest2, dataset_const_lvalue_lhs_dataset_rvalue_rhs) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest2, dataset_rvalue_lhs_dataset_rvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataset_rvalue_rhs) {
   const auto dataset_a = datasetFactory.make();
   const auto dataset_b = datasetFactory.make();
 
@@ -525,7 +526,7 @@ TYPED_TEST(DatasetBinaryOpTest2, dataset_rvalue_lhs_dataset_rvalue_rhs) {
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest2,
+TYPED_TEST(DatasetBinaryOpTest,
            dataset_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
@@ -540,7 +541,7 @@ TYPED_TEST(DatasetBinaryOpTest2,
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest2,
+TYPED_TEST(DatasetBinaryOpTest,
            datasetconstproxy_const_lvalue_lhs_dataset_const_lvalue_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
@@ -556,7 +557,7 @@ TYPED_TEST(DatasetBinaryOpTest2,
 }
 
 TYPED_TEST(
-    DatasetBinaryOpTest2,
+    DatasetBinaryOpTest,
     datasetconstproxy_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
@@ -572,7 +573,7 @@ TYPED_TEST(
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest2,
+TYPED_TEST(DatasetBinaryOpTest,
            dataset_rvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
   const auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
@@ -588,8 +589,7 @@ TYPED_TEST(DatasetBinaryOpTest2,
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest2,
-           dataset_rvalue_lhs_dataproxy_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataproxy_const_lvalue_rhs) {
   const auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
@@ -604,7 +604,7 @@ TYPED_TEST(DatasetBinaryOpTest2,
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest2,
+TYPED_TEST(DatasetBinaryOpTest,
            dataset_const_lvalue_lhs_dataproxy_const_lvalue_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
