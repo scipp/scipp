@@ -562,10 +562,21 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
-constexpr static auto plus_equals = [](auto &&a, auto &b) { return a += b; };
-constexpr static auto minus_equals = [](auto &&a, auto &b) { return a -= b; };
-constexpr static auto times_equals = [](auto &&a, auto &b) { return a *= b; };
-constexpr static auto divide_equals = [](auto &&a, auto &b) { return a /= b; };
+constexpr static auto plus_equals = [](auto &&a, const auto &b) {
+  return a += b;
+};
+
+constexpr static auto minus_equals = [](auto &&a, const auto &b) {
+  return a -= b;
+};
+
+constexpr static auto times_equals = [](auto &&a, const auto &b) {
+  return a *= b;
+};
+
+constexpr static auto divide_equals = [](auto &&a, const auto &b) {
+  return a /= b;
+};
 
 template <class Op, class A, class B>
 auto &apply(const Op &op, A &a, const B &b) {
