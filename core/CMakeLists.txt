@@ -15,6 +15,7 @@ set(INC_FILES
     include/scipp/core/traits.h
     include/scipp/core/variable_view.h
     include/scipp/core/variable.h
+    include/scipp/core/variable.tcc
     include/scipp/core/vector.h
     include/scipp/core/view_index.h)
 

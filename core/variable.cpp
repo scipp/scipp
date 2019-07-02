@@ -11,6 +11,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/variable.tcc"
 #include "scipp/core/variable_view.h"
 
 namespace scipp::core {
@@ -753,39 +754,28 @@ Vector<underlying_type_t<T>> &Variable::cast(const bool variances_) {
   }
 }
 
-#define INSTANTIATE(...)                                                       \
-  template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              Vector<underlying_type_t<__VA_ARGS__>>);         \
-  template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              Vector<underlying_type_t<__VA_ARGS__>>,          \
-                              Vector<underlying_type_t<__VA_ARGS__>>);         \
-  template Vector<underlying_type_t<__VA_ARGS__>>                              \
-      &Variable::cast<__VA_ARGS__>(const bool);                                \
-  template const Vector<underlying_type_t<__VA_ARGS__>>                        \
-      &Variable::cast<__VA_ARGS__>(const bool) const;
-
-INSTANTIATE(std::string)
-INSTANTIATE(double)
-INSTANTIATE(float)
-INSTANTIATE(int64_t)
-INSTANTIATE(int32_t)
-INSTANTIATE(bool)
+INSTANTIATE_VARIABLE(std::string)
+INSTANTIATE_VARIABLE(double)
+INSTANTIATE_VARIABLE(float)
+INSTANTIATE_VARIABLE(int64_t)
+INSTANTIATE_VARIABLE(int32_t)
+INSTANTIATE_VARIABLE(bool)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
-INSTANTIATE(scipp::index)
+INSTANTIATE_VARIABLE(scipp::index)
 #endif
-INSTANTIATE(Dataset)
-INSTANTIATE(Eigen::Vector3d)
-INSTANTIATE(sparse_container<double>)
-INSTANTIATE(sparse_container<float>)
-INSTANTIATE(sparse_container<int64_t>)
-INSTANTIATE(sparse_container<int32_t>)
+INSTANTIATE_VARIABLE(Dataset)
+INSTANTIATE_VARIABLE(Eigen::Vector3d)
+INSTANTIATE_VARIABLE(sparse_container<double>)
+INSTANTIATE_VARIABLE(sparse_container<float>)
+INSTANTIATE_VARIABLE(sparse_container<int64_t>)
+INSTANTIATE_VARIABLE(sparse_container<int32_t>)
 // Some sparse instantiations are only needed to avoid linker errors: Some
 // makeVariable overloads have a runtime branch that may instantiate a sparse
 // variable.
-INSTANTIATE(sparse_container<std::string>)
-INSTANTIATE(sparse_container<Bool>)
-INSTANTIATE(sparse_container<Dataset>)
-INSTANTIATE(sparse_container<Eigen::Vector3d>)
+INSTANTIATE_VARIABLE(sparse_container<std::string>)
+INSTANTIATE_VARIABLE(sparse_container<Bool>)
+INSTANTIATE_VARIABLE(sparse_container<Dataset>)
+INSTANTIATE_VARIABLE(sparse_container<Eigen::Vector3d>)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   if (!a || !b)
@@ -886,16 +876,6 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
     return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
   return requireT<DataModel<Vector<TT>>>(data()).variancesView(dims());
 }
-
-#define INSTANTIATE_SLICEVIEW(...)                                             \
-  template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
-  VariableConstProxy::cast<__VA_ARGS__>() const;                               \
-  template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
-  VariableConstProxy::castVariances<__VA_ARGS__>() const;                      \
-  template VariableView<underlying_type_t<__VA_ARGS__>>                        \
-  VariableProxy::cast<__VA_ARGS__>() const;                                    \
-  template VariableView<underlying_type_t<__VA_ARGS__>>                        \
-  VariableProxy::castVariances<__VA_ARGS__>() const;
 
 INSTANTIATE_SLICEVIEW(double)
 INSTANTIATE_SLICEVIEW(float)
