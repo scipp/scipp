@@ -183,7 +183,9 @@ public:
   DataProxy assign(const Variable &other) const;
   DataProxy assign(const VariableConstProxy &other) const;
   DataProxy operator+=(const DataConstProxy &other) const;
+  DataProxy operator-=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
+  DataProxy operator/=(const DataConstProxy &other) const;
   DataProxy operator*=(const Variable &other) const;
   DataProxy operator/=(const Variable &other) const;
 
@@ -293,11 +295,17 @@ public:
   bool operator!=(const DatasetConstProxy &other) const;
 
   Dataset &operator+=(const DataConstProxy &other);
+  Dataset &operator-=(const DataConstProxy &other);
   Dataset &operator*=(const DataConstProxy &other);
+  Dataset &operator/=(const DataConstProxy &other);
   Dataset &operator+=(const DatasetConstProxy &other);
+  Dataset &operator-=(const DatasetConstProxy &other);
   Dataset &operator*=(const DatasetConstProxy &other);
+  Dataset &operator/=(const DatasetConstProxy &other);
   Dataset &operator+=(const Dataset &other);
+  Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
+  Dataset &operator/=(const Dataset &other);
 
 private:
   friend class DatasetConstProxy;
@@ -536,6 +544,7 @@ public:
   }
 
   const auto &slices() const noexcept { return m_slices; }
+  const auto &dataset() const noexcept { return *m_dataset; }
 
   bool operator==(const Dataset &other) const;
   bool operator==(const DatasetConstProxy &other) const;
@@ -592,11 +601,17 @@ public:
   }
 
   DatasetProxy operator+=(const DataConstProxy &other) const;
+  DatasetProxy operator-=(const DataConstProxy &other) const;
   DatasetProxy operator*=(const DataConstProxy &other) const;
+  DatasetProxy operator/=(const DataConstProxy &other) const;
   DatasetProxy operator+=(const DatasetConstProxy &other) const;
+  DatasetProxy operator-=(const DatasetConstProxy &other) const;
   DatasetProxy operator*=(const DatasetConstProxy &other) const;
+  DatasetProxy operator/=(const DatasetConstProxy &other) const;
   DatasetProxy operator+=(const Dataset &other) const;
+  DatasetProxy operator-=(const Dataset &other) const;
   DatasetProxy operator*=(const Dataset &other) const;
+  DatasetProxy operator/=(const Dataset &other) const;
 
 private:
   Dataset *m_mutableDataset;
@@ -611,6 +626,47 @@ std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable);
 std::ostream &operator<<(std::ostream &os, const VariableProxy &variable);
 std::ostream &operator<<(std::ostream &os, const Variable &variable);
 std::ostream &operator<<(std::ostream &os, const Dim dim);
+
+Dataset operator+(const Dataset &lhs, const Dataset &rhs);
+Dataset operator+(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator+(const Dataset &lhs, const DataConstProxy &rhs);
+Dataset operator+(Dataset &&lhs, const Dataset &rhs);
+Dataset operator+(Dataset &&lhs, const DatasetConstProxy &rhs);
+Dataset operator+(Dataset &&lhs, const DataConstProxy &rhs);
+Dataset operator+(const Dataset &lhs, Dataset &&rhs);
+Dataset operator+(Dataset &&lhs, Dataset &&rhs);
+Dataset operator+(const DatasetConstProxy &lhs, const Dataset &rhs);
+Dataset operator+(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs);
+
+Dataset operator-(const Dataset &lhs, const Dataset &rhs);
+Dataset operator-(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator-(const Dataset &lhs, const DataConstProxy &rhs);
+Dataset operator-(Dataset &&lhs, const Dataset &rhs);
+Dataset operator-(Dataset &&lhs, const DatasetConstProxy &rhs);
+Dataset operator-(Dataset &&lhs, const DataConstProxy &rhs);
+Dataset operator-(Dataset &&lhs, Dataset &&rhs);
+Dataset operator-(const DatasetConstProxy &lhs, const Dataset &rhs);
+Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs);
+
+Dataset operator*(const Dataset &lhs, const Dataset &rhs);
+Dataset operator*(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator*(const Dataset &lhs, const DataConstProxy &rhs);
+Dataset operator*(Dataset &&lhs, const Dataset &rhs);
+Dataset operator*(Dataset &&lhs, const DatasetConstProxy &rhs);
+Dataset operator*(Dataset &&lhs, const DataConstProxy &rhs);
+Dataset operator*(Dataset &&lhs, Dataset &&rhs);
+Dataset operator*(const DatasetConstProxy &lhs, const Dataset &rhs);
+Dataset operator*(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs);
+
+Dataset operator/(const Dataset &lhs, const DatasetConstProxy &rhs);
+Dataset operator/(const Dataset &lhs, const Dataset &rhs);
+Dataset operator/(const Dataset &lhs, const DataConstProxy &rhs);
+Dataset operator/(Dataset &&lhs, const Dataset &rhs);
+Dataset operator/(Dataset &&lhs, const DatasetConstProxy &rhs);
+Dataset operator/(Dataset &&lhs, const DataConstProxy &rhs);
+Dataset operator/(Dataset &&lhs, Dataset &&rhs);
+Dataset operator/(const DatasetConstProxy &lhs, const Dataset &rhs);
+Dataset operator/(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs);
 
 } // namespace scipp::core
 

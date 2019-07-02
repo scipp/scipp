@@ -388,10 +388,24 @@ DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   return *this;
 }
 
+DataProxy DataProxy::operator-=(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  if (hasData())
+    data() -= other.data();
+  return *this;
+}
+
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
   if (hasData())
     data() *= other.data();
+  return *this;
+}
+
+DataProxy DataProxy::operator/=(const DataConstProxy &other) const {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  if (hasData())
+    data() /= other.data();
   return *this;
 }
 
@@ -548,8 +562,21 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
-constexpr static auto plus_equals = [](auto &&a, auto &b) { return a += b; };
-constexpr static auto times_equals = [](auto &&a, auto &b) { return a *= b; };
+constexpr static auto plus_equals = [](auto &&a, const auto &b) {
+  return a += b;
+};
+
+constexpr static auto minus_equals = [](auto &&a, const auto &b) {
+  return a -= b;
+};
+
+constexpr static auto times_equals = [](auto &&a, const auto &b) {
+  return a *= b;
+};
+
+constexpr static auto divide_equals = [](auto &&a, const auto &b) {
+  return a /= b;
+};
 
 template <class Op, class A, class B>
 auto &apply(const Op &op, A &a, const B &b) {
@@ -581,48 +608,96 @@ Dataset &Dataset::operator+=(const DataConstProxy &other) {
   return apply_with_delay(plus_equals, *this, other);
 }
 
+Dataset &Dataset::operator-=(const DataConstProxy &other) {
+  return apply_with_delay(minus_equals, *this, other);
+}
+
 Dataset &Dataset::operator*=(const DataConstProxy &other) {
   return apply_with_delay(times_equals, *this, other);
+}
+
+Dataset &Dataset::operator/=(const DataConstProxy &other) {
+  return apply_with_delay(divide_equals, *this, other);
 }
 
 Dataset &Dataset::operator+=(const DatasetConstProxy &other) {
   return apply(plus_equals, *this, other);
 }
 
+Dataset &Dataset::operator-=(const DatasetConstProxy &other) {
+  return apply(minus_equals, *this, other);
+}
+
 Dataset &Dataset::operator*=(const DatasetConstProxy &other) {
   return apply(times_equals, *this, other);
+}
+
+Dataset &Dataset::operator/=(const DatasetConstProxy &other) {
+  return apply(divide_equals, *this, other);
 }
 
 Dataset &Dataset::operator+=(const Dataset &other) {
   return apply(plus_equals, *this, other);
 }
 
+Dataset &Dataset::operator-=(const Dataset &other) {
+  return apply(minus_equals, *this, other);
+}
+
 Dataset &Dataset::operator*=(const Dataset &other) {
   return apply(times_equals, *this, other);
+}
+
+Dataset &Dataset::operator/=(const Dataset &other) {
+  return apply(divide_equals, *this, other);
 }
 
 DatasetProxy DatasetProxy::operator+=(const DataConstProxy &other) const {
   return apply_with_delay(plus_equals, *this, other);
 }
 
+DatasetProxy DatasetProxy::operator-=(const DataConstProxy &other) const {
+  return apply_with_delay(minus_equals, *this, other);
+}
+
 DatasetProxy DatasetProxy::operator*=(const DataConstProxy &other) const {
   return apply_with_delay(times_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator/=(const DataConstProxy &other) const {
+  return apply_with_delay(divide_equals, *this, other);
 }
 
 DatasetProxy DatasetProxy::operator+=(const DatasetConstProxy &other) const {
   return apply(plus_equals, *this, other);
 }
 
+DatasetProxy DatasetProxy::operator-=(const DatasetConstProxy &other) const {
+  return apply(minus_equals, *this, other);
+}
+
 DatasetProxy DatasetProxy::operator*=(const DatasetConstProxy &other) const {
   return apply(times_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator/=(const DatasetConstProxy &other) const {
+  return apply(divide_equals, *this, other);
 }
 
 DatasetProxy DatasetProxy::operator+=(const Dataset &other) const {
   return apply(plus_equals, *this, other);
 }
 
+DatasetProxy DatasetProxy::operator-=(const Dataset &other) const {
+  return apply(minus_equals, *this, other);
+}
+
 DatasetProxy DatasetProxy::operator*=(const Dataset &other) const {
   return apply(times_equals, *this, other);
+}
+
+DatasetProxy DatasetProxy::operator/=(const Dataset &other) const {
+  return apply(divide_equals, *this, other);
 }
 
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
@@ -678,6 +753,194 @@ std::ostream &operator<<(std::ostream &os, const Variable &variable) {
 
 std::ostream &operator<<(std::ostream &os, const Dim dim) {
   return os << to_string(dim);
+}
+
+Dataset operator+(const Dataset &lhs, const Dataset &rhs) {
+  Dataset res(lhs);
+  apply(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator+(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs);
+  apply(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator+(const Dataset &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator+(Dataset &&lhs, const Dataset &rhs) {
+  return apply(plus_equals, lhs, rhs);
+}
+
+Dataset operator+(Dataset &&lhs, const DatasetConstProxy &rhs) {
+  return apply(plus_equals, lhs, rhs);
+}
+
+Dataset operator+(Dataset &&lhs, const DataConstProxy &rhs) {
+  return apply_with_delay(plus_equals, lhs, rhs);
+}
+
+Dataset operator+(const Dataset &lhs, Dataset &&rhs) {
+  return apply(plus_equals, rhs, lhs);
+}
+
+Dataset operator+(Dataset &&lhs, Dataset &&rhs) {
+  return apply(plus_equals, lhs, rhs);
+}
+
+Dataset operator+(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  Dataset res(lhs.dataset());
+  apply(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator+(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs.dataset());
+  apply(plus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
+  Dataset res(lhs);
+  apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs);
+  apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const Dataset &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(Dataset &&lhs, const Dataset &rhs) {
+  return apply(minus_equals, lhs, rhs);
+}
+
+Dataset operator-(Dataset &&lhs, const DatasetConstProxy &rhs) {
+  return apply(minus_equals, lhs, rhs);
+}
+
+Dataset operator-(Dataset &&lhs, const DataConstProxy &rhs) {
+  return apply_with_delay(minus_equals, lhs, rhs);
+}
+
+Dataset operator-(Dataset &&lhs, Dataset &&rhs) {
+  return apply(minus_equals, lhs, rhs);
+}
+
+Dataset operator-(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  Dataset res(lhs.dataset());
+  apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs.dataset());
+  apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(const Dataset &lhs, const Dataset &rhs) {
+  Dataset res(lhs);
+  apply(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs);
+  apply(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(const Dataset &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(Dataset &&lhs, const Dataset &rhs) {
+  return apply(times_equals, lhs, rhs);
+}
+
+Dataset operator*(Dataset &&lhs, const DatasetConstProxy &rhs) {
+  return apply(times_equals, lhs, rhs);
+}
+
+Dataset operator*(Dataset &&lhs, const DataConstProxy &rhs) {
+  return apply_with_delay(times_equals, lhs, rhs);
+}
+
+Dataset operator*(Dataset &&lhs, Dataset &&rhs) {
+  return apply(times_equals, lhs, rhs);
+}
+
+Dataset operator*(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  Dataset res(lhs.dataset());
+  apply(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator*(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs.dataset());
+  apply(times_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
+  Dataset res(lhs);
+  apply(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs);
+  apply(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const Dataset &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(Dataset &&lhs, const Dataset &rhs) {
+  return apply(divide_equals, lhs, rhs);
+}
+
+Dataset operator/(Dataset &&lhs, const DatasetConstProxy &rhs) {
+  return apply(divide_equals, lhs, rhs);
+}
+
+Dataset operator/(Dataset &&lhs, const DataConstProxy &rhs) {
+  return apply_with_delay(divide_equals, lhs, rhs);
+}
+
+Dataset operator/(Dataset &&lhs, Dataset &&rhs) {
+  return apply(divide_equals, lhs, rhs);
+}
+
+Dataset operator/(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  Dataset res(lhs.dataset());
+  apply(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  Dataset res(lhs.dataset());
+  apply(divide_equals, res, rhs);
+  return res;
 }
 
 } // namespace scipp::core
