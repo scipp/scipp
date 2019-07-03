@@ -325,7 +325,7 @@ Dataset make_sparse_2d(std::initializer_list<double> values,
   return ds;
 }
 
-TYPED_TEST(DatasetBinaryOpTest,
+TYPED_TEST(DatasetBinaryEqualsOpTest,
            with_single_var_with_single_sparse_dimensions_sized_same) {
   Dataset a = make_simple_sparse({1.1, 2.2});
   Dataset b = make_simple_sparse({3.3, 4.4});
@@ -335,7 +335,8 @@ TYPED_TEST(DatasetBinaryOpTest,
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, with_single_var_dense_and_sparse_dimension) {
+TYPED_TEST(DatasetBinaryEqualsOpTest,
+           with_single_var_dense_and_sparse_dimension) {
   Dataset a = make_sparse_2d({1.1, 2.2});
   Dataset b = make_sparse_2d({3.3, 4.4});
   Dataset c = TestFixture::op(a, b);
@@ -345,7 +346,7 @@ TYPED_TEST(DatasetBinaryOpTest, with_single_var_dense_and_sparse_dimension) {
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, with_multiple_variables) {
+TYPED_TEST(DatasetBinaryEqualsOpTest, with_multiple_variables) {
   Dataset a = make_simple_sparse({1.1, 2.2});
   a.setData("sparse2", a["sparse"].data());
   Dataset b = make_simple_sparse({3.3, 4.4});
@@ -360,7 +361,8 @@ TYPED_TEST(DatasetBinaryOpTest, with_multiple_variables) {
   ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
 }
 
-TYPED_TEST(DatasetBinaryOpTest, with_sparse_dimensions_of_different_sizes) {
+TYPED_TEST(DatasetBinaryEqualsOpTest,
+           with_sparse_dimensions_of_different_sizes) {
   Dataset a = make_simple_sparse({1.1, 2.2});
   Dataset b = make_simple_sparse({3.3, 4.4, 5.5});
   ASSERT_THROW(TestFixture::op(a, b), std::runtime_error);
