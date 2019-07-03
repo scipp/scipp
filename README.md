@@ -38,6 +38,8 @@ python3 -m pip install -r requirements.txt
 export PYTHONPATH=$PYTHONPATH:../install
 ```
 
+You should use Python 3.4 or greater
+
 In Python:
 
 ```python
