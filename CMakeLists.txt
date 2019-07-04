@@ -34,8 +34,8 @@ include(pybind11)
 include(GoogleTest)
 include(GoogleBenchmark)
 
-if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS_EQUAL "3.4")
-  message(FATAL_ERROR "Python v3 interpreter must be greater than 3.4. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
+if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.6")
+  message(FATAL_ERROR "Python v3 interpreter must be greater than or equal to 3.6. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
 endif()
 
 find_package(Boost 1.67 REQUIRED)
