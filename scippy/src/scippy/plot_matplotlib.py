@@ -23,7 +23,8 @@ import matplotlib.pyplot as plt
 # Some global configuration
 default = {
     # The colorbar properties
-    "cb": {"name": "viridis", "log": False, "min": None, "max": None},
+    "cb": {"name": "viridis", "log": False, "min": None, "max": None,
+           "var_min": None, "var_max": None},
     # The default image height (in pixels)
     "height": 600
 }
@@ -70,11 +71,13 @@ def plot(input_data, **kwargs):
 
     # Plot all the subsets
     color_count = 0
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
     for key, val in tobeplotted.items():
         if val[0] == 1:
             color = []
             for l in val[1].keys():
-                # color.append(DEFAULT_PLOTLY_COLORS[color_count % 10])
+                color.append(colors[color_count % len(colors)])
                 color_count += 1
             plot_1d(val[1], color=color, **kwargs)
         else:
@@ -108,7 +111,7 @@ def plot_auto(input_data, ndim=0, name=None, waterfall=None,
 
 
 def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
-            color=None, filename=None):
+            color=None, filename=None, title=None):
     """
     Plot a 1D spectrum.
 
@@ -122,6 +125,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    # line_list = []
 
     data = []
     color_count = 0
@@ -135,56 +139,70 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
         y = var.values
         ylab = axis_label(var=var, name=name)
 
-        nx = x.shape[0]
-        ny = y.shape[0]
-        histogram = False
-        if nx == ny + 1:
+        # Check for bin edges
+        if x.shape[0] == y.shape[0] + 1:
+            xe = x.copy()
+            ye = np.concatenate(([0], y))
             x, w = edges_to_centers(x)
-            histogram = True
-
-        # Define trace
-        trace = dict(x=x, y=y, name=ylab)
-        if histogram:
-            trace["type"] = 'bar'
-            trace["marker"] = dict(opacity=0.6, line=dict(width=0))
-            trace["width"] = w
+            if var.has_variances:
+                yerr = np.sqrt(var.variances)
+            else:
+                yerr = None
+            line = ax.bar(x, y, width=w, yerr=yerr, label=ylab, alpha=0.6, color=color[color_count], ecolor=color[color_count])
+            ax.step(xe, ye, color=color[color_count])
+            ax.plot([xe[-1], xe[-1]], [ye[-1], 0], color=color[color_count])
         else:
-            trace["type"] = 'scatter'
-        # if color is not None:
-        #     if "marker" not in trace.keys():
-        #         trace["marker"] = dict()
-        #     trace["marker"]["color"] = color[color_count]
-        #     color_count += 1
-        # Include variance if present
-        if var.has_variances:
-            trace["error_y"] = dict(
-                type='data',
-                array=np.sqrt(var.variances),
-                visible=True)
-        ax.plot(x, y, label=ylab)
+            # Include variance if present
+            if var.has_variances:
+                err = ax.errorbar(x, y, yerr=np.sqrt(var.variances), label=ylab, color=color[color_count], ecolor=color[color_count])
+                # line = err.lines[0]
+            else:
+                line, = ax.plot(x, y, label=ylab, color=color[color_count])
+        # line_list.append(line)
+        color_count += 1
 
-        # data.append(trace)
 
-    # layout = dict(
-    #     xaxis=dict(title=xlab),
-    #     yaxis=dict(),
-    #     showlegend=True,
-    #     legend=dict(x=0.0, y=1.15, orientation="h"),
-    #     height=default["height"]
-    # )
-    # if histogram:
-    #     layout["barmode"] = "overlay"
-    # if logx or logxy:
-    #     layout["xaxis"]["type"] = "log"
-    # if logy or logxy:
-    #     layout["yaxis"]["type"] = "log"
+    ax.set_xlabel(xlab)
+    leg = ax.legend()
+    if title is not None:
+        ax.set_title(title)
+    if filename is not None:
+        fig.savefig(filename, bbox_inches="tight")
+    else:
+        fig.canvas.manager.toolbar.zoom()
 
-    # fig = FigureWidget(data=data, layout=layout)
-    # if filename is not None:
-    #     write_image(fig=fig, file=filename)
-    # else:
-    #     display(fig)
+
+    # # TODO: Connect event picking to hide/show the lines
+    # line_dict = dict()
+    # # for legline, origline in zip(leg.get_lines(), line_list):
+    # for legline, origline in zip(leg.legendHandles, line_list):
+    #     legline.set_picker(5)  # 5 pts tolerance
+    #     line_dict[legline] = origline
+    # fig.canvas.mpl_connect('pick_event', lambda event: toggle_line(event, line_dict, fig) )
+
+
     return
+
+
+# def toggle_line(event, line_dict, fig):
+#     # on the pick event, find the orig line corresponding to the
+#     # legend proxy line, and toggle the visibility
+#     legline = event.artist
+#     origline = line_dict[legline]
+#     # for a in origline.get_children():
+#     #     vis = not a.get_visible()
+#     #     a.set_visible(vis)
+#     vis = not origline.get_visible()
+#     origline.set_visible(vis)
+#     # Change the alpha on the line in the legend so we can see what lines
+#     # have been toggled
+#     if vis:
+#         legline.set_alpha(1.0)
+#     else:
+#         legline.set_alpha(0.2)
+#     fig.canvas.draw()
+#     return
+
 
 # =============================================================================
 
@@ -254,7 +272,10 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 
     # Extract each entry from the slice_list, make temperary dataset and add to
     # input dictionary for plot_1d
-    for line in slice_list:
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    color = []
+    for i, line in enumerate(slice_list):
         ds_temp = input_data
         key = ""
         for s in line:
@@ -267,9 +288,10 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
         ds[key] = sp.Variable([dim], values=ds_temp.values,
                               variances=variances)
         data[key] = ds[key]
+        color.append(colors[i % len(colors)])
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
-    plot_1d(data, **kwargs)
+    plot_1d(data, color=color, **kwargs)
 
     return
 
@@ -277,7 +299,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 
 
 def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
-               plot=True, resolution=128, filename=None):
+               plot=True, resolution=128, filename=None, show_variances=False):
     """
     Plot a 2D image.
 
@@ -303,17 +325,23 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
     # Parse colorbar
     cbar = parse_colorbar(cb)
 
-    # Make title
-    title = axis_label(var=input_data, name=name, log=cbar["log"])
+    # Prepare dictionary for holding key parameters
+    data = {"values": {"cbmin": "min", "cbmax": "max", "name": name}}
 
-    layout = dict(
-        xaxis=dict(title=axis_label(xcoord)),
-        yaxis=dict(title=axis_label(ycoord)),
-        height=default["height"]
-    )
+    if input_data.has_variances and show_variances:
+        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        # Append parameters to data dictionary
+        data["variances"] = {"cbmin": "var_min", "cbmax": "var_max", "name": "variances"}
+    else:
+        fig, ax = plt.subplots(1, 1)
+        ax = [ax]
 
-    if plot:
-        z = input_data.values
+    for i, (key, val) in enumerate(sorted(data.items())):
+
+        ax[i].set_xlabel(axis_label(xcoord))
+        ax[i].set_ylabel(axis_label(ycoord))
+
+        z = getattr(input_data, key)
         # Check if dimensions of arrays agree, if not, plot the transpose
         if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
             z = z.T
@@ -321,32 +349,26 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
         if cbar["log"]:
             with np.errstate(invalid="ignore", divide="ignore"):
                 z = np.log10(z)
-        if cbar["min"] is None:
-            cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
-        if cbar["max"] is None:
-            cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
-        imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar,
-                             plot_type, title, contours)
-        for key, val in layout.items():
-            imview.fig.layout[key] = val
-        if filename is not None:
-            write_image(fig=imview.fig, file=filename)
+        if cbar[val["cbmin"]] is None:
+            cbar[val["cbmin"]] = np.amin(z[np.where(np.isfinite(z))])
+        if cbar[val["cbmax"]] is None:
+            cbar[val["cbmax"]] = np.amax(z[np.where(np.isfinite(z))])
+
+        args = {"vmin": cbar[val["cbmin"]], "vmax": cbar[val["cbmax"]], "cmap": cbar["name"]}
+        if contours:
+            img = ax[i].contourf(xc, yc ,z, **args)
         else:
-            display(imview.fig)
-        return
+            img = ax[i].imshow(z, extent=[xe[0], xe[-1], ye[0], ye[-1]], origin="lower", aspect="auto", **args)
+        cb = plt.colorbar(img, ax=ax[i])
+        cb.ax.set_ylabel(axis_label(var=input_data, name=val["name"], log=cbar["log"]))
+        cb.ax.yaxis.set_label_coords(-1.1,0.5)
+
+    if filename is not None:
+        fig.savefig(filename, bbox_inches="tight")
     else:
-        data = [dict(
-            x=xe,
-            y=ye,
-            z=[0.0],
-            type=plot_type,
-            colorscale=cbar["name"],
-            colorbar=dict(
-                title=title,
-                titleside='right',
-            )
-        )]
-        return data, layout, xlabs, ylabs, cbar
+        fig.canvas.manager.toolbar.zoom()
+
+    return
 
 # =============================================================================
 
