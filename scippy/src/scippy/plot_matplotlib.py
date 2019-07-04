@@ -10,6 +10,7 @@ import numpy as np
 import scippy as sp
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 # # Plotly imports
 # from IPython.display import display
@@ -373,156 +374,156 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
 # =============================================================================
 
 
-class ImageViewer:
+# class ImageViewer:
 
-    def __init__(self, xe, xc, ye, yc, z, resolution, cb, plot_type, title,
-                 contours):
+#     def __init__(self, xe, xc, ye, yc, z, resolution, cb, plot_type, title,
+#                  contours):
 
-        self.xe = xe
-        self.xc = xc
-        self.ye = ye
-        self.yc = yc
-        self.z = z
-        self.resolution = resolution
-        self.cb = cb
-        self.plot_type = plot_type
-        self.title = title
-        self.contours = contours
-        self.nx = len(self.xe)
-        self.ny = len(self.ye)
+#         self.xe = xe
+#         self.xc = xc
+#         self.ye = ye
+#         self.yc = yc
+#         self.z = z
+#         self.resolution = resolution
+#         self.cb = cb
+#         self.plot_type = plot_type
+#         self.title = title
+#         self.contours = contours
+#         self.nx = len(self.xe)
+#         self.ny = len(self.ye)
 
-        self.fig = FigureWidget()
+#         self.fig = FigureWidget()
 
-        # Make an initial low-resolution sampling of the image for plotting
-        self.resample_image(layout=None, x_range=[self.xe[0], self.xe[-1]],
-                            y_range=[self.ye[0], self.ye[-1]])
+#         # Make an initial low-resolution sampling of the image for plotting
+#         self.resample_image(layout=None, x_range=[self.xe[0], self.xe[-1]],
+#                             y_range=[self.ye[0], self.ye[-1]])
 
-        # Add a callback to update the view area
-        self.fig.layout.on_change(
-            self.resample_image,
-            'xaxis.range',
-            'yaxis.range')
+#         # Add a callback to update the view area
+#         self.fig.layout.on_change(
+#             self.resample_image,
+#             'xaxis.range',
+#             'yaxis.range')
 
-        return
+#         return
 
-    def resample_image(self, layout, x_range, y_range):
+#     def resample_image(self, layout, x_range, y_range):
 
-        # Find indices of xe and ye that are shown in current range
-        x_in_range = np.where(
-            np.logical_and(
-                self.xe >= x_range[0],
-                self.xe <= x_range[1]))
-        y_in_range = np.where(
-            np.logical_and(
-                self.ye >= y_range[0],
-                self.ye <= y_range[1]))
+#         # Find indices of xe and ye that are shown in current range
+#         x_in_range = np.where(
+#             np.logical_and(
+#                 self.xe >= x_range[0],
+#                 self.xe <= x_range[1]))
+#         y_in_range = np.where(
+#             np.logical_and(
+#                 self.ye >= y_range[0],
+#                 self.ye <= y_range[1]))
 
-        # xmin, xmax... here are array indices, not float coordinates
-        xmin = x_in_range[0][0]
-        xmax = x_in_range[0][-1]
-        ymin = y_in_range[0][0]
-        ymax = y_in_range[0][-1]
-        # here we perform a trick so that the edges of the displayed image is
-        # not greyed out if the zoom area slices a pixel in half, only the
-        # pixel inside the view area will be shown and the outer edge between
-        # that last pixel edge and the edge of the view frame area will be
-        # empty. So we extend the selected area with an additional pixel, if
-        # the selected area is inside the global limits of the full resolution
-        # array.
-        xmin -= int(xmin > 0)
-        xmax += int(xmax < self.nx - 1)
-        ymin -= int(ymin > 0)
-        ymax += int(ymax < self.ny - 1)
+#         # xmin, xmax... here are array indices, not float coordinates
+#         xmin = x_in_range[0][0]
+#         xmax = x_in_range[0][-1]
+#         ymin = y_in_range[0][0]
+#         ymax = y_in_range[0][-1]
+#         # here we perform a trick so that the edges of the displayed image is
+#         # not greyed out if the zoom area slices a pixel in half, only the
+#         # pixel inside the view area will be shown and the outer edge between
+#         # that last pixel edge and the edge of the view frame area will be
+#         # empty. So we extend the selected area with an additional pixel, if
+#         # the selected area is inside the global limits of the full resolution
+#         # array.
+#         xmin -= int(xmin > 0)
+#         xmax += int(xmax < self.nx - 1)
+#         ymin -= int(ymin > 0)
+#         ymax += int(ymax < self.ny - 1)
 
-        # Par of the global coordinate arrays that are inside the viewing area
-        xview = self.xe[xmin:xmax + 1]
-        yview = self.ye[ymin:ymax + 1]
+#         # Par of the global coordinate arrays that are inside the viewing area
+#         xview = self.xe[xmin:xmax + 1]
+#         yview = self.ye[ymin:ymax + 1]
 
-        # Count the number of pixels in the current view
-        nx_view = xmax - xmin
-        ny_view = ymax - ymin
+#         # Count the number of pixels in the current view
+#         nx_view = xmax - xmin
+#         ny_view = ymax - ymin
 
-        # Define x and y edges for histogramming
-        # If the number of pixels in the view area is larger than the maximum
-        # allowed resolution we create some custom pixels
-        if nx_view > self.resolution:
-            xe_loc = np.linspace(xview[0], xview[-1], self.resolution)
-        else:
-            xe_loc = xview
-        if ny_view > self.resolution:
-            ye_loc = np.linspace(yview[0], yview[-1], self.resolution)
-        else:
-            ye_loc = yview
+#         # Define x and y edges for histogramming
+#         # If the number of pixels in the view area is larger than the maximum
+#         # allowed resolution we create some custom pixels
+#         if nx_view > self.resolution:
+#             xe_loc = np.linspace(xview[0], xview[-1], self.resolution)
+#         else:
+#             xe_loc = xview
+#         if ny_view > self.resolution:
+#             ye_loc = np.linspace(yview[0], yview[-1], self.resolution)
+#         else:
+#             ye_loc = yview
 
-        # Optimize if no re-sampling is required
-        if (nx_view < self.resolution) and (ny_view < self.resolution):
-            z1 = self.z[ymin:ymax, xmin:xmax]
-        else:
-            xg, yg = np.meshgrid(self.xc[xmin:xmax], self.yc[ymin:ymax])
-            xv = np.ravel(xg)
-            yv = np.ravel(yg)
-            zv = np.ravel(self.z[ymin:ymax, xmin:xmax])
-            # Histogram the data to make a low-resolution image
-            # Using weights in the second histogram allows us to then do z1/z0
-            # to obtain the averaged data inside the coarse pixels
-            z0, yedges1, xedges1 = np.histogram2d(
-                yv, xv, bins=(ye_loc, xe_loc))
-            z1, yedges1, xedges1 = np.histogram2d(
-                yv, xv, bins=(ye_loc, xe_loc), weights=zv)
-            z1 /= z0
+#         # Optimize if no re-sampling is required
+#         if (nx_view < self.resolution) and (ny_view < self.resolution):
+#             z1 = self.z[ymin:ymax, xmin:xmax]
+#         else:
+#             xg, yg = np.meshgrid(self.xc[xmin:xmax], self.yc[ymin:ymax])
+#             xv = np.ravel(xg)
+#             yv = np.ravel(yg)
+#             zv = np.ravel(self.z[ymin:ymax, xmin:xmax])
+#             # Histogram the data to make a low-resolution image
+#             # Using weights in the second histogram allows us to then do z1/z0
+#             # to obtain the averaged data inside the coarse pixels
+#             z0, yedges1, xedges1 = np.histogram2d(
+#                 yv, xv, bins=(ye_loc, xe_loc))
+#             z1, yedges1, xedges1 = np.histogram2d(
+#                 yv, xv, bins=(ye_loc, xe_loc), weights=zv)
+#             z1 /= z0
 
-        # Here we perform another trick. If we plot simply the local arrays in
-        # plotly, the reset axes or home functionality will be lost because
-        # plotly will now think that the data that exists is only the small
-        # window shown after a zoom. So we add a one-pixel padding area to the
-        # local z array. The size of that padding extends from the edges of the
-        # initial full resolution array (e.g. x=0, y=0) up to the edge of the
-        # view area. These large (and probably elongated) pixels add very
-        # little data and will not show in the view area but allow plotly to
-        # recover the full axes limits if we double-click on the plot
-        xc_loc = edges_to_centers(xe_loc)[0]
-        yc_loc = edges_to_centers(ye_loc)[0]
-        if xmin > 0:
-            xe_loc = np.concatenate([self.xe[0:1], xe_loc])
-            xc_loc = np.concatenate([self.xc[0:1], xc_loc])
-        if xmax < self.nx - 1:
-            xe_loc = np.concatenate([xe_loc, self.xe[-1:]])
-            xc_loc = np.concatenate([xc_loc, self.xc[-1:]])
-        if ymin > 0:
-            ye_loc = np.concatenate([self.ye[0:1], ye_loc])
-            yc_loc = np.concatenate([self.yc[0:1], yc_loc])
-        if ymax < self.ny - 1:
-            ye_loc = np.concatenate([ye_loc, self.ye[-1:]])
-            yc_loc = np.concatenate([yc_loc, self.yc[-1:]])
-        imin = int(xmin > 0)
-        imax = int(xmax < self.nx - 1)
-        jmin = int(ymin > 0)
-        jmax = int(ymax < self.ny - 1)
-        nxe = len(xe_loc)
-        nye = len(ye_loc)
+#         # Here we perform another trick. If we plot simply the local arrays in
+#         # plotly, the reset axes or home functionality will be lost because
+#         # plotly will now think that the data that exists is only the small
+#         # window shown after a zoom. So we add a one-pixel padding area to the
+#         # local z array. The size of that padding extends from the edges of the
+#         # initial full resolution array (e.g. x=0, y=0) up to the edge of the
+#         # view area. These large (and probably elongated) pixels add very
+#         # little data and will not show in the view area but allow plotly to
+#         # recover the full axes limits if we double-click on the plot
+#         xc_loc = edges_to_centers(xe_loc)[0]
+#         yc_loc = edges_to_centers(ye_loc)[0]
+#         if xmin > 0:
+#             xe_loc = np.concatenate([self.xe[0:1], xe_loc])
+#             xc_loc = np.concatenate([self.xc[0:1], xc_loc])
+#         if xmax < self.nx - 1:
+#             xe_loc = np.concatenate([xe_loc, self.xe[-1:]])
+#             xc_loc = np.concatenate([xc_loc, self.xc[-1:]])
+#         if ymin > 0:
+#             ye_loc = np.concatenate([self.ye[0:1], ye_loc])
+#             yc_loc = np.concatenate([self.yc[0:1], yc_loc])
+#         if ymax < self.ny - 1:
+#             ye_loc = np.concatenate([ye_loc, self.ye[-1:]])
+#             yc_loc = np.concatenate([yc_loc, self.yc[-1:]])
+#         imin = int(xmin > 0)
+#         imax = int(xmax < self.nx - 1)
+#         jmin = int(ymin > 0)
+#         jmax = int(ymax < self.ny - 1)
+#         nxe = len(xe_loc)
+#         nye = len(ye_loc)
 
-        # The local z array
-        z_loc = np.zeros([nye - 1, nxe - 1])
-        z_loc[jmin:nye - jmax - 1, imin:nxe - imax - 1] = z1
+#         # The local z array
+#         z_loc = np.zeros([nye - 1, nxe - 1])
+#         z_loc[jmin:nye - jmax - 1, imin:nxe - imax - 1] = z1
 
-        # The 'data' dictionary
-        datadict = dict(type=self.plot_type, zmin=self.cb["min"],
-                        zmax=self.cb["max"], colorscale=self.cb["name"],
-                        colorbar={"title": self.title}, z=z_loc)
+#         # The 'data' dictionary
+#         datadict = dict(type=self.plot_type, zmin=self.cb["min"],
+#                         zmax=self.cb["max"], colorscale=self.cb["name"],
+#                         colorbar={"title": self.title}, z=z_loc)
 
-        if self.contours:
-            datadict["x"] = xc_loc
-            datadict["y"] = yc_loc
-        else:
-            datadict["x"] = xe_loc
-            datadict["y"] = ye_loc
+#         if self.contours:
+#             datadict["x"] = xc_loc
+#             datadict["y"] = yc_loc
+#         else:
+#             datadict["x"] = xe_loc
+#             datadict["y"] = ye_loc
 
-        # Update the figure
-        self.fig.update({'data': [datadict]})
+#         # Update the figure
+#         self.fig.update({'data': [datadict]})
 
-        return
+#         return
 
-# =============================================================================
+# # =============================================================================
 
 
 def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
@@ -535,59 +536,32 @@ def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
         process_dimensions(input_data=input_data, coords=coords, axes=axes)
 
-    data = []
     z = input_data.values
-
     if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
         z = z.T
         zlabs = [ylabs[0], xlabs[0]]
 
-    pdict = dict(type='scatter3d', mode='lines', line=dict(width=5))
-    adict = dict(z=1)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
     if dim is None:
         dim = zlabs[0]
 
     if dim == zlabs[0]:
         for i in range(len(yc)):
-            idict = pdict.copy()
-            idict["x"] = xc
-            idict["y"] = [yc[i]] * len(xc)
-            idict["z"] = z[i, :]
-            data.append(idict)
-            adict["x"] = 3
-            adict["y"] = 1
+            ax.plot(xc, [yc[i]] * len(xc), z[i, :])
     elif dim == zlabs[1]:
         for i in range(len(xc)):
-            idict = pdict.copy()
-            idict["x"] = [xc[i]] * len(yc)
-            idict["y"] = yc
-            idict["z"] = z[:, i]
-            data.append(idict)
-            adict["x"] = 1
-            adict["y"] = 3
+            ax.plot([xc[i]] * len(yc), yc, z[:, i])
     else:
         raise RuntimeError("Something went wrong in plot_waterfall. The "
                            "waterfall dimension is not recognised.")
 
-    layout = dict(
-        scene=dict(
-            xaxis=dict(
-                title=axis_label(xcoord)),
-            yaxis=dict(
-                title=axis_label(ycoord)),
-            zaxis=dict(
-                title=axis_label(var=input_data,
-                                 name=name)),
-            aspectmode='manual',
-            aspectratio=adict),
-        showlegend=False,
-        height=default["height"])
-    fig = FigureWidget(data=data, layout=layout)
     if filename is not None:
-        write_image(fig=fig, file=filename)
+        fig.savefig(filename, bbox_inches="tight")
     else:
-        display(fig)
+        fig.canvas.manager.toolbar.zoom()
+
     return
 
 # =============================================================================
