@@ -10,24 +10,22 @@ import numpy as np
 import scippy as sp
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-# # Plotly imports
-# from IPython.display import display
-# from plotly.io import write_image
-# from plotly.colors import DEFAULT_PLOTLY_COLORS
-# from ipywidgets import VBox, HBox, IntSlider, Label
-# from plotly.graph_objs import FigureWidget
+import ipyvolume as ipv
 
 # =============================================================================
 
 # Some global configuration
-default = {
+prop_cycle = plt.rcParams['axes.prop_cycle']
+colors = prop_cycle.by_key()['color']
+
+config = {
     # The colorbar properties
     "cb": {"name": "viridis", "log": False, "min": None, "max": None,
            "var_min": None, "var_max": None},
     # The default image height (in pixels)
-    "height": 600
+    "height": 600,
+    "colors": colors,
+    "ncol": len(colors)
 }
 
 # =============================================================================
@@ -72,13 +70,13 @@ def plot(input_data, **kwargs):
 
     # Plot all the subsets
     color_count = 0
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
+    # prop_cycle = plt.rcParams['axes.prop_cycle']
+    # colors = prop_cycle.by_key()['color']
     for key, val in tobeplotted.items():
         if val[0] == 1:
             color = []
             for l in val[1].keys():
-                color.append(colors[color_count % len(colors)])
+                color.append(get_color(color_count))
                 color_count += 1
             plot_1d(val[1], color=color, **kwargs)
         else:
@@ -273,8 +271,6 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 
     # Extract each entry from the slice_list, make temperary dataset and add to
     # input dictionary for plot_1d
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
     color = []
     for i, line in enumerate(slice_list):
         ds_temp = input_data
@@ -289,7 +285,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
         ds[key] = sp.Variable([dim], values=ds_temp.values,
                               variances=variances)
         data[key] = ds[key]
-        color.append(colors[i % len(colors)])
+        color.append(get_color(i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
     plot_1d(data, color=color, **kwargs)
@@ -541,26 +537,25 @@ def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
         z = z.T
         zlabs = [ylabs[0], xlabs[0]]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    fig = ipv.figure()
 
     if dim is None:
         dim = zlabs[0]
 
     if dim == zlabs[0]:
         for i in range(len(yc)):
-            ax.plot(xc, [yc[i]] * len(xc), z[i, :])
+            line = ipv.plot(xc, np.ones_like(xc) * yc[i], z[i, :], color=get_color(i))
     elif dim == zlabs[1]:
         for i in range(len(xc)):
-            ax.plot([xc[i]] * len(yc), yc, z[:, i])
+            line = ipv.plot(np.ones_like(yc) * xc[i], yc, z[:, i], color=get_color(i), width=3)
     else:
         raise RuntimeError("Something went wrong in plot_waterfall. The "
                            "waterfall dimension is not recognised.")
 
     if filename is not None:
-        fig.savefig(filename, bbox_inches="tight")
+        ipv.save(filename)
     else:
-        fig.canvas.manager.toolbar.zoom()
+        ipv.show()
 
     return
 
@@ -745,12 +740,15 @@ def parse_colorbar(cb):
     """
     Construct the colorbar using default and input values
     """
-    cbar = default["cb"].copy()
+    cbar = config["cb"].copy()
     if cb is not None:
         for key, val in cb.items():
             cbar[key] = val
     return cbar
 
+
+def get_color(i):
+    return config["colors"][i % config["ncol"]]
 
 def process_dimensions(input_data, coords, axes):
     """
