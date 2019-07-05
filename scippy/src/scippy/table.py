@@ -30,75 +30,101 @@ def append_with_text(parent, name, text, attrib=style_border_right):
 
 
 def table_ds(dataset):
-    if len(dataset.dimensions) > 1:
-        raise RuntimeError("Only 1-D datasets can be rendered as a table")
+    coords = dataset.coords
+    ndims = len(coords)
+    if ndims > 1:
+        raise RuntimeError("Only 0D & 1D datasets can be rendered as a table")
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
     if isinstance(dataset, sp.Dataset):
         headline.text = 'Dataset:'
     else:
-        headline.text = 'DatasetSlice:'
-    names = list(dict.fromkeys([var.name for var in dataset if var.is_data]))
+        headline.text = 'DataProxy:'
+
+    # # List the names and count the variances
+    # names = dict()
+    # for name, var in dataset:
+    #     names[name] = var.has_variances
+
+
+
+    # names = list(dict.fromkeys([name for name, var in dataset]))
+
+
+
+
     datum1d = defaultdict(list)
     datum0d = defaultdict(list)
-    for name in names:
-        sub = dataset.subset[name]
-        for var in sub:
-            if var.is_data and len(var.dimensions) == 1:
-                datum1d[name].append(var)
-            elif var.is_data:
-                datum0d[name].append(var)
+    # coords0d = defaultdict(list)
+    # coords1d = defaultdict(list)
+    coords1d = None
+    coords0d = None
+    for name, var in dataset:
+    # for name in names:
+    #     var = dataset[name]
+        if len(var.coords) == 1:
+            datum1d[name] = var
+            coords = var.coords
+            for c in coords:
+                coords1d = coords[c[0]]
+        else:
+            datum0d[name] = var
+            coords = var.coords
+            for c in coords:
+                coords0d = coords[c[0]]
+            # coords0d[name].append(var.coords)
 
-    coord_names = list(dict.fromkeys(
-        [var.name for var in dataset if var.is_coord]))
-    coords0d = defaultdict(list)
-    coords1d = defaultdict(list)
-    for name in coord_names:
-        for var in [
-                var for var in dataset if var.is_coord and var.name == name]:
-            if len(var.dimensions) == 1:
-                coords1d[name].append(var)
-            else:
-                coords0d[name].append(var)
+    # coord_names = list(dict.fromkeys(
+    #     [var.name for var in dataset if var.is_coord]))
+    # coords0d = defaultdict(list)
+    # coords1d = defaultdict(list)
+    # for name in coord_names:
+    #     for var in [
+    #             var for var in dataset if var.is_coord and var.name == name]:
+    #         if len(var.dimensions) == 1:
+    #             coords1d[name].append(var)
+    #         else:
+    #             coords0d[name].append(var)
 
-    # 0 - dimensional data
-    if datum0d or coords0d:
-        tab = et.SubElement(body, 'table')
-        cap = et.SubElement(tab, 'caption')
-        cap.text = '0D Variables:'
-        tr_name = et.SubElement(tab, 'tr')
-        tr_tag = et.SubElement(tab, 'tr')
-        tr_unit = et.SubElement(tab, 'tr')
-        tr_val = et.SubElement(tab, 'tr')
+    # # 0 - dimensional data
+    # if datum0d or coords0d:
+    #     tab = et.SubElement(body, 'table')
+    #     cap = et.SubElement(tab, 'caption')
+    #     cap.text = '0D Variables:'
+    #     tr_name = et.SubElement(tab, 'tr')
+    #     tr_tag = et.SubElement(tab, 'tr')
+    #     tr_unit = et.SubElement(tab, 'tr')
+    #     tr_val = et.SubElement(tab, 'tr')
 
-        for key, val in coords0d.items():
-            append_with_text(tr_name, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() |
-                                         style_border_center.items()))
-            for var in val:
-                append_with_text(tr_tag, 'th', str(var.tag))
-                append_with_text(tr_val, 'th', str(var.data[0]))
-                append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
+    #     for key, val in coords0d.items():
+    #         append_with_text(tr_name, 'th', key,
+    #                          attrib=dict({'colspan': str(len(val))}.items() |
+    #                                      style_border_center.items()))
+    #         for var in val:
+    #             append_with_text(tr_tag, 'th', str(var.tag))
+    #             append_with_text(tr_val, 'th', str(var.data[0]))
+    #             append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
 
-        for key, val in datum0d.items():
-            append_with_text(tr_name, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() |
-                                         style_border_center.items()))
-            for var in val:
-                append_with_text(tr_tag, 'th', str(var.tag))
-                append_with_text(tr_val, 'th', str(var.data[0]))
-                append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
+    #     for key, val in datum0d.items():
+    #         append_with_text(tr_name, 'th', key,
+    #                          attrib=dict({'colspan': str(len(val))}.items() |
+    #                                      style_border_center.items()))
+    #         for var in val:
+    #             append_with_text(tr_tag, 'th', str(var.tag))
+    #             append_with_text(tr_val, 'th', str(var.data[0]))
+    #             append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
 
     # 1 - dimensional data
     if datum1d or coords1d:
-        datas = []
-        for key, val in datum1d.items():
-            datas.extend(val)
+        # datas = []
+        # for key, val in datum1d.items():
+        #     datas.extend(val)
+        # print(datas)
 
-        coords = []
-        for key, val in coords1d.items():
-            coords.extend(val)
+        # coords = []
+        # for key, val in coords1d.items():
+        #     coords.extend(val)
 
         itab = et.SubElement(body, 'table')
         tab = et.SubElement(itab, 'tbody', attrib=style_border_center)
@@ -106,19 +132,24 @@ def table_ds(dataset):
         cap.text = '1D Variables:'
         tr = et.SubElement(tab, 'tr')
 
-        # Aligned names
-        for key, val in coords1d.items():
-            append_with_text(tr, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() |
-                                         style_border_center.items()))
+        # Coordinates
+        append_with_text(tr, 'th', axis_label(coords1d),
+                         attrib=dict({'colspan': str(1 + coords1d.has_variances)}.items() |
+                                    style_border_center.items()))
+
+        # # Aligned names
+        # for key, val in coords1d.items():
+        #     append_with_text(tr, 'th', key,
+        #                      attrib=dict({'colspan': str(len(val))}.items() |
+        #                                  style_border_center.items()))
         for key, val in datum1d.items():
             append_with_text(tr, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() |
+                             attrib=dict({'colspan': str(1 + )}.items() |
                                          style_border_center.items()))
 
-        length = min([len(x) for x in datas] + [len(x) for x in coords])
+        length = min([len(x.values) for x in datas] + [len(x.values) for x in coords])
 
-        is_hist = [length != len(x) for x in coords]
+        is_hist = [length != len(x.values) for x in coords]
 
         tr = et.SubElement(tab, 'tr')
 
@@ -188,9 +219,26 @@ def table_var(variable):
 
 def table(some):
     tp = type(some)
-    if tp is sp.Dataset or tp is sp.DatasetSlice:
+    if tp is sp.Dataset or tp is sp.DataProxy:
         table_ds(some)
-    elif tp is sp.Variable or tp is sp.VariableSlice:
+    elif tp is sp.Variable or tp is sp.VariableProxy:
         table_var(some)
     else:
         raise RuntimeError("Type {} is not supported".format(tp))
+
+
+
+def axis_label(var, name=None, log=False):
+    """
+    Make an axis label with "Name [unit]"
+    """
+    if name is not None:
+        label = name
+    else:
+        label = str(var.dims.labels[0]).replace("Dim.", "")
+
+    if log:
+        label = "log\u2081\u2080(" + label + ")"
+    if var.unit != sp.units.dimensionless:
+        label += " [{}]".format(var.unit)
+    return label
