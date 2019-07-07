@@ -177,29 +177,38 @@ def table_ds(dataset):
 
 
 def table_var(variable):
-    if len(variable.dimensions) > 1:
+    dims = variable.dims
+    labs = dims.labels
+    if len(labs) > 1:
         raise RuntimeError("Only 1-D variable can be rendered")
+    nx = dims.shape[0]
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
     if isinstance(variable, sp.Variable):
         headline.text = 'Variable:'
     else:
-        headline.text = 'VariableSlice:'
+        headline.text = 'VariableProxy:'
     tab = et.SubElement(body, 'table')
 
-    tr_tag = et.SubElement(tab, 'tr')
-    tr_unit = et.SubElement(tab, 'tr')
-    append_with_text(tr_tag, 'th', str(variable.tag))
-    append_with_text(tr_unit, 'th', '[{}]'.format(variable.unit))
+    tr = et.SubElement(tab, 'tr')
+    append_with_text(tr, 'th', axis_label(variable, name=str(labs[0])),
+                         attrib=dict({'colspan': str(1 + variable.has_variances)}.items() |
+                                    style_border_center.items()))
 
-    if variable.name:
-        tr_name = et.SubElement(tab, 'tr')
-        append_with_text(tr_name, 'th', variable.name)
     # Aligned data
-    for val in variable.data:
+    tr = et.SubElement(tab, 'tr')
+
+    append_with_text(
+        tr, 'th', "Values", style_border_center)
+    if variable.has_variances:
+        append_with_text(
+            tr, 'th', "Variances", style_border_center)
+    for i in range(nx):
         tr_val = et.SubElement(tab, 'tr')
-        append_with_text(tr_val, 'th', value_to_string(val))
+        append_with_text(tr_val, 'td', value_to_string(variable.values[i]))
+        if variable.has_variances:
+            append_with_text(tr_val, 'td', value_to_string(variable.variances[i]))
 
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
