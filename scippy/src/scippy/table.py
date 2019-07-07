@@ -117,14 +117,6 @@ def table_ds(dataset):
 
     # 1 - dimensional data
     if datum1d or coords1d:
-        # datas = []
-        # for key, val in datum1d.items():
-        #     datas.extend(val)
-        # print(datas)
-
-        # coords = []
-        # for key, val in coords1d.items():
-        #     coords.extend(val)
 
         itab = et.SubElement(body, 'table')
         tab = et.SubElement(itab, 'tbody', attrib=style_border_center)
@@ -137,52 +129,48 @@ def table_ds(dataset):
                          attrib=dict({'colspan': str(1 + coords1d.has_variances)}.items() |
                                     style_border_center.items()))
 
-        # # Aligned names
-        # for key, val in coords1d.items():
-        #     append_with_text(tr, 'th', key,
-        #                      attrib=dict({'colspan': str(len(val))}.items() |
-        #                                  style_border_center.items()))
+        # Data fields
         for key, val in datum1d.items():
-            append_with_text(tr, 'th', key,
-                             attrib=dict({'colspan': str(1 + )}.items() |
+            append_with_text(tr, 'th', axis_label(val, name=key),
+                             attrib=dict({'colspan': str(1 + val.has_variances)}.items() |
                                          style_border_center.items()))
+            dims = val.dims
+            length = dims.shape[0]
 
-        length = min([len(x.values) for x in datas] + [len(x.values) for x in coords])
-
-        is_hist = [length != len(x.values) for x in coords]
-
-        tr = et.SubElement(tab, 'tr')
-
-        for x in coords:
-            append_with_text(
-                tr, 'th', '{}'.format(
-                    x.tag, x.name), style_border_center)
-
-        for x in datas:
-            append_with_text(
-                tr, 'th', '{}'.format(
-                    x.tag, x.name), style_border_center)
+        is_hist = length == (len(coords1d.values) - 1)
 
         tr = et.SubElement(tab, 'tr')
-        for x in coords:
+
+        append_with_text(
+            tr, 'th', "Values", style_border_center)
+        if coords1d.has_variances:
             append_with_text(
-                tr, 'th', '[{}]'.format(
-                    x.unit), style_border_center)
-        for x in datas:
+                tr, 'th', "Variances", style_border_center)
+
+        for key, val in datum1d.items():
             append_with_text(
-                tr, 'th', '[{}]'.format(
-                    x.unit), style_border_center)
+                tr, 'th', "Values", style_border_center)
+            if val.has_variances:
+                append_with_text(
+                    tr, 'th', "Variances", style_border_center)
 
         for i in range(length):
             tr = et.SubElement(tab, 'tr')
-            for x, h in zip(coords, is_hist):
-                text = value_to_string(x.data[i])
-                if h:
+            text = value_to_string(coords1d.values[i])
+            if is_hist:
+                text = '[{}; {}]'.format(
+                    text, value_to_string(coords1d.values[i + 1]))
+            append_with_text(tr, 'td', text)
+            if coords1d.has_variances:
+                text = value_to_string(coords1d.variances[i])
+                if is_hist:
                     text = '[{}; {}]'.format(
-                        text, value_to_string(x.data[i + 1]))
-                append_with_text(tr, 'th', text)
-            for x in datas:
-                append_with_text(tr, 'th', value_to_string(x.data[i]))
+                        text, value_to_string(coords1d.variances[i + 1]))
+                append_with_text(tr, 'td', text)
+            for key, val in datum1d.items():
+                append_with_text(tr, 'td', value_to_string(val.values[i]))
+                if val.has_variances:
+                    append_with_text(tr, 'td', value_to_string(val.variances[i]))
 
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
