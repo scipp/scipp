@@ -633,6 +633,13 @@ auto &apply(const Op &op, A &a, const B &b) {
 }
 
 template <class Op, class A, class B>
+auto apply(const Op &op, A &&a, const B &b) {
+  for (const auto & [ name, item ] : b)
+    op(a[name], item);
+  return std::move(a);
+}
+
+template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // For `b` referencing data in `a` we delay operation. The alternative would
   // be to make a deep copy of `other` before starting the iteration over items.
@@ -802,23 +809,23 @@ Dataset operator+(const Dataset &lhs, const DataConstProxy &rhs) {
 }
 
 Dataset operator+(Dataset &&lhs, const Dataset &rhs) {
-  return apply(plus_equals, lhs, rhs);
+  return apply(plus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator+(Dataset &&lhs, const DatasetConstProxy &rhs) {
-  return apply(plus_equals, lhs, rhs);
+  return apply(plus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator+(Dataset &&lhs, const DataConstProxy &rhs) {
-  return apply_with_delay(plus_equals, lhs, rhs);
+  return apply_with_delay(plus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator+(const Dataset &lhs, Dataset &&rhs) {
-  return apply(plus_equals, rhs, lhs);
+  return apply(plus_equals, std::move(rhs), lhs);
 }
 
 Dataset operator+(Dataset &&lhs, Dataset &&rhs) {
-  return apply(plus_equals, lhs, rhs);
+  return apply(plus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator+(const DatasetConstProxy &lhs, const Dataset &rhs) {
@@ -858,15 +865,15 @@ Dataset operator-(const Dataset &lhs, const DataConstProxy &rhs) {
 }
 
 Dataset operator-(Dataset &&lhs, const Dataset &rhs) {
-  return apply(minus_equals, lhs, rhs);
+  return apply(minus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator-(Dataset &&lhs, const DatasetConstProxy &rhs) {
-  return apply(minus_equals, lhs, rhs);
+  return apply(minus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator-(Dataset &&lhs, const DataConstProxy &rhs) {
-  return apply_with_delay(minus_equals, lhs, rhs);
+  return apply_with_delay(minus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator-(const DatasetConstProxy &lhs, const Dataset &rhs) {
@@ -906,15 +913,15 @@ Dataset operator*(const Dataset &lhs, const DataConstProxy &rhs) {
 }
 
 Dataset operator*(Dataset &&lhs, const Dataset &rhs) {
-  return apply(times_equals, lhs, rhs);
+  return apply(times_equals, std::move(lhs), rhs);
 }
 
 Dataset operator*(Dataset &&lhs, const DatasetConstProxy &rhs) {
-  return apply(times_equals, lhs, rhs);
+  return apply(times_equals, std::move(lhs), rhs);
 }
 
 Dataset operator*(Dataset &&lhs, const DataConstProxy &rhs) {
-  return apply_with_delay(times_equals, lhs, rhs);
+  return apply_with_delay(times_equals, std::move(lhs), rhs);
 }
 
 Dataset operator*(const DatasetConstProxy &lhs, const Dataset &rhs) {
@@ -954,15 +961,15 @@ Dataset operator/(const Dataset &lhs, const DataConstProxy &rhs) {
 }
 
 Dataset operator/(Dataset &&lhs, const Dataset &rhs) {
-  return apply(divide_equals, lhs, rhs);
+  return apply(divide_equals, std::move(lhs), rhs);
 }
 
 Dataset operator/(Dataset &&lhs, const DatasetConstProxy &rhs) {
-  return apply(divide_equals, lhs, rhs);
+  return apply(divide_equals, std::move(lhs), rhs);
 }
 
 Dataset operator/(Dataset &&lhs, const DataConstProxy &rhs) {
-  return apply_with_delay(divide_equals, lhs, rhs);
+  return apply_with_delay(divide_equals, std::move(lhs), rhs);
 }
 
 Dataset operator/(const DatasetConstProxy &lhs, const Dataset &rhs) {
