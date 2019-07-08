@@ -18,7 +18,7 @@ set_target_properties(scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 add_sanitizers(scipp)
 
-set(PY_FILES __init__.py table.py plot.py)
+set(PY_FILES __init__.py table.py plot.py tools.py)
 
 install(DIRECTORY "src/scippy" DESTINATION ".")
 install(TARGETS scipp DESTINATION "scippy")

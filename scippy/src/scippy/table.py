@@ -6,21 +6,22 @@
 import scippy as sp
 from xml.etree import ElementTree as et
 from collections import defaultdict
+from .tools import axis_label
 
 
 style_border_center = {'style': 'border: 1px solid black; text-align:center'}
 style_border_right = {'style': 'border: 1px solid black; text-align:right'}
 
 
-def value_to_string(val):
+def value_to_string(val, precision=3):
     if (not isinstance(val, float)) or (val == 0):
         text = str(val)
-    elif abs(val) >= 1.0e4 or abs(val) <= 1.0e-4:
-        text = "{:.3e}".format(val)
+    elif (abs(val) >= 10.0**(precision+1)) or (abs(val) <= 10.0**(-precision-1)):
+        text = "{val:.{prec}e}".format(val=val, prec=precision)
     else:
         text = "{}".format(val)
-        if len(text) > 5 + (text[0] == '-'):
-            text = "{:.3f}".format(val)
+        if len(text) > precision + 2 + (text[0] == '-'):
+            text = "{val:.{prec}f}".format(val=val, prec=precision)
     return text
 
 
@@ -42,54 +43,17 @@ def table_ds(dataset):
     else:
         headline.text = 'DataProxy:'
 
-    # # List the names and count the variances
-    # names = dict()
-    # for name, var in dataset:
-    #     names[name] = var.has_variances
-
-
-
-    # names = list(dict.fromkeys([name for name, var in dataset]))
-
-
-
-
     datum1d = defaultdict(list)
     datum0d = defaultdict(list)
-    # coords0d = defaultdict(list)
-    # coords1d = defaultdict(list)
     coords1d = None
     coords0d = None
     for name, var in dataset:
-    # for name in names:
-    #     var = dataset[name]
         if len(var.coords) == 1:
             datum1d[name] = var
             coords1d = var.coords[var.dims.labels[0]]
-            # labs = var.dims.labels
-            # coords = var.coords
-            # for c in coords:
-            #     coords1d = coords[c[0]]
 
         else:
             datum0d[name] = var
-            # coords0d = var.coords[var.dims.labels[0]]
-            # coords = var.coords
-            # for c in coords:
-            #     coords0d = coords[c[0]]
-            # coords0d[name].append(var.coords)
-
-    # coord_names = list(dict.fromkeys(
-    #     [var.name for var in dataset if var.is_coord]))
-    # coords0d = defaultdict(list)
-    # coords1d = defaultdict(list)
-    # for name in coord_names:
-    #     for var in [
-    #             var for var in dataset if var.is_coord and var.name == name]:
-    #         if len(var.dimensions) == 1:
-    #             coords1d[name].append(var)
-    #         else:
-    #             coords0d[name].append(var)
 
     # 0 - dimensional data
     if datum0d:
@@ -106,7 +70,6 @@ def table_ds(dataset):
                                          style_border_center.items()))
 
         tr = et.SubElement(tab, 'tr')
-
         # Go through all items in dataset and add headers
         for key, val in datum0d.items():
             append_with_text(
@@ -116,33 +79,11 @@ def table_ds(dataset):
                     tr, 'th', "Variances", style_border_center)
 
         tr = et.SubElement(tab, 'tr')
-
         for key, val in datum0d.items():
             append_with_text(tr, 'td', value_to_string(val.value))
             if val.has_variances:
                 append_with_text(tr, 'td', value_to_string(val.variance))
 
-        # tr_tag = et.SubElement(tab, 'tr')
-        # tr_unit = et.SubElement(tab, 'tr')
-        # tr_val = et.SubElement(tab, 'tr')
-
-        # # for key, val in coords0d.items():
-        # #     append_with_text(tr_name, 'th', key,
-        # #                      attrib=dict({'colspan': str(len(val))}.items() |
-        # #                                  style_border_center.items()))
-        # #     for var in val:
-        # #         append_with_text(tr_tag, 'th', str(var.tag))
-        # #         append_with_text(tr_val, 'th', str(var.data[0]))
-        # #         append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
-
-        # for key, val in datum0d.items():
-        #     append_with_text(tr_name, 'th', key,
-        #                      attrib=dict({'colspan': str(len(val))}.items() |
-        #                                  style_border_center.items()))
-        #     for var in val:
-        #         append_with_text(tr_tag, 'th', str(var.tag))
-        #         append_with_text(tr_val, 'th', str(var.data[0]))
-        #         append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
 
     # 1 - dimensional data
     if datum1d or coords1d:
@@ -256,20 +197,3 @@ def table(some):
         table_var(some)
     else:
         raise RuntimeError("Type {} is not supported".format(tp))
-
-
-
-def axis_label(var, name=None, log=False):
-    """
-    Make an axis label with "Name [unit]"
-    """
-    if name is not None:
-        label = name
-    else:
-        label = str(var.dims.labels[0]).replace("Dim.", "")
-
-    if log:
-        label = "log\u2081\u2080(" + label + ")"
-    if var.unit != sp.units.dimensionless:
-        label += " [{}]".format(var.unit)
-    return label
