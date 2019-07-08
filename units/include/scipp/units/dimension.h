@@ -41,9 +41,8 @@ namespace scipp::units {
 ///    view, which points to the correct subsection of the full string listing
 ///    all labels.
 #define SCIPP_UNITS_DEFINE_DIMENSIONS(MODULE)                                  \
-  namespace MODULE {                                                           \
   namespace {                                                                  \
-  constexpr std::string_view names(detail2::names);                            \
+  constexpr std::string_view names(MODULE::detail2::names);                    \
                                                                                \
   constexpr auto get_pos(const size_t index) {                                 \
     constexpr const char *sep = ", ";                                          \
@@ -65,14 +64,13 @@ namespace scipp::units {
   }                                                                            \
                                                                                \
   constexpr auto dim_names =                                                   \
-      make_dim_names(std::make_index_sequence<detail2::ndim>());               \
+      make_dim_names(std::make_index_sequence<MODULE::detail2::ndim>());       \
   }                                                                            \
                                                                                \
-  std::string to_string(const Dim dim) {                                       \
+  std::string MODULE::to_string(const Dim dim) {                               \
     if (dim == Dim::Invalid)                                                   \
       return std::string("Dim::Invalid");                                      \
     return "Dim::" + std::string(dim_names[static_cast<uint16_t>(dim)]);       \
-  }                                                                            \
   }
 
 } // namespace scipp::units
