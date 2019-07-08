@@ -4,8 +4,8 @@
 # @author Simon Heybrock
 import pytest
 
-import scippy as sp
-from scippy import Dim
+import scipp as sp
+from scipp import Dim
 import numpy as np
 
 
