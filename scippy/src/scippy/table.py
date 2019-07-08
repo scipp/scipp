@@ -65,14 +65,18 @@ def table_ds(dataset):
     #     var = dataset[name]
         if len(var.coords) == 1:
             datum1d[name] = var
-            coords = var.coords
-            for c in coords:
-                coords1d = coords[c[0]]
+            coords1d = var.coords[var.dims.labels[0]]
+            # labs = var.dims.labels
+            # coords = var.coords
+            # for c in coords:
+            #     coords1d = coords[c[0]]
+
         else:
             datum0d[name] = var
-            coords = var.coords
-            for c in coords:
-                coords0d = coords[c[0]]
+            # coords0d = var.coords[var.dims.labels[0]]
+            # coords = var.coords
+            # for c in coords:
+            #     coords0d = coords[c[0]]
             # coords0d[name].append(var.coords)
 
     # coord_names = list(dict.fromkeys(
@@ -87,40 +91,65 @@ def table_ds(dataset):
     #         else:
     #             coords0d[name].append(var)
 
-    # # 0 - dimensional data
-    # if datum0d or coords0d:
-    #     tab = et.SubElement(body, 'table')
-    #     cap = et.SubElement(tab, 'caption')
-    #     cap.text = '0D Variables:'
-    #     tr_name = et.SubElement(tab, 'tr')
-    #     tr_tag = et.SubElement(tab, 'tr')
-    #     tr_unit = et.SubElement(tab, 'tr')
-    #     tr_val = et.SubElement(tab, 'tr')
+    # 0 - dimensional data
+    if datum0d:
+        itab = et.SubElement(body, 'table')
+        tab = et.SubElement(itab, 'tbody', attrib=style_border_center)
+        cap = et.SubElement(tab, 'caption')
+        cap.text = '0D Variables:'
+        tr = et.SubElement(tab, 'tr')
 
-    #     for key, val in coords0d.items():
-    #         append_with_text(tr_name, 'th', key,
-    #                          attrib=dict({'colspan': str(len(val))}.items() |
-    #                                      style_border_center.items()))
-    #         for var in val:
-    #             append_with_text(tr_tag, 'th', str(var.tag))
-    #             append_with_text(tr_val, 'th', str(var.data[0]))
-    #             append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
+        # Data fields
+        for key, val in datum0d.items():
+            append_with_text(tr, 'th', axis_label(val, name=key),
+                             attrib=dict({'colspan': str(1 + val.has_variances)}.items() |
+                                         style_border_center.items()))
 
-    #     for key, val in datum0d.items():
-    #         append_with_text(tr_name, 'th', key,
-    #                          attrib=dict({'colspan': str(len(val))}.items() |
-    #                                      style_border_center.items()))
-    #         for var in val:
-    #             append_with_text(tr_tag, 'th', str(var.tag))
-    #             append_with_text(tr_val, 'th', str(var.data[0]))
-    #             append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
+        tr = et.SubElement(tab, 'tr')
+
+        # Go through all items in dataset and add headers
+        for key, val in datum0d.items():
+            append_with_text(
+                tr, 'th', "Values", style_border_center)
+            if val.has_variances:
+                append_with_text(
+                    tr, 'th', "Variances", style_border_center)
+
+        tr = et.SubElement(tab, 'tr')
+
+        for key, val in datum0d.items():
+            append_with_text(tr, 'td', value_to_string(val.value))
+            if val.has_variances:
+                append_with_text(tr, 'td', value_to_string(val.variance))
+
+        # tr_tag = et.SubElement(tab, 'tr')
+        # tr_unit = et.SubElement(tab, 'tr')
+        # tr_val = et.SubElement(tab, 'tr')
+
+        # # for key, val in coords0d.items():
+        # #     append_with_text(tr_name, 'th', key,
+        # #                      attrib=dict({'colspan': str(len(val))}.items() |
+        # #                                  style_border_center.items()))
+        # #     for var in val:
+        # #         append_with_text(tr_tag, 'th', str(var.tag))
+        # #         append_with_text(tr_val, 'th', str(var.data[0]))
+        # #         append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
+
+        # for key, val in datum0d.items():
+        #     append_with_text(tr_name, 'th', key,
+        #                      attrib=dict({'colspan': str(len(val))}.items() |
+        #                                  style_border_center.items()))
+        #     for var in val:
+        #         append_with_text(tr_tag, 'th', str(var.tag))
+        #         append_with_text(tr_val, 'th', str(var.data[0]))
+        #         append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
 
     # 1 - dimensional data
     if datum1d or coords1d:
 
         itab = et.SubElement(body, 'table')
         tab = et.SubElement(itab, 'tbody', attrib=style_border_center)
-        cap = et.SubElement(tab, 'capltion')
+        cap = et.SubElement(tab, 'caption')
         cap.text = '1D Variables:'
         tr = et.SubElement(tab, 'tr')
 
@@ -137,23 +166,28 @@ def table_ds(dataset):
             dims = val.dims
             length = dims.shape[0]
 
+        # Check if is histogram
+        # TODO: what if the Dataset contains one coordinate with N+1 elements,
+        # one variable with N elements, and another variable with N+1 elements.
+        # How do we render this as a table if we only have one column for the
+        # coordinate?
         is_hist = length == (len(coords1d.values) - 1)
 
+        # Make table row for "Values" and "Variances"
         tr = et.SubElement(tab, 'tr')
-
         append_with_text(
             tr, 'th', "Values", style_border_center)
         if coords1d.has_variances:
             append_with_text(
                 tr, 'th', "Variances", style_border_center)
-
+        # Go through all items in dataset and add headers
         for key, val in datum1d.items():
             append_with_text(
                 tr, 'th', "Values", style_border_center)
             if val.has_variances:
                 append_with_text(
                     tr, 'th', "Variances", style_border_center)
-
+        # Now write all the data row by row
         for i in range(length):
             tr = et.SubElement(tab, 'tr')
             text = value_to_string(coords1d.values[i])
@@ -171,7 +205,7 @@ def table_ds(dataset):
                 append_with_text(tr, 'td', value_to_string(val.values[i]))
                 if val.has_variances:
                     append_with_text(tr, 'td', value_to_string(val.variances[i]))
-
+    # Render the HTML code
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
 
