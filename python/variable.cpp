@@ -115,20 +115,7 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                      unit, variances);
 }
 
-PYBIND11_MAKE_OPAQUE(boost::container::small_vector<double, 8>)
-
 void init_variable(py::module &m) {
-  auto small_vector =
-      py::bind_vector<boost::container::small_vector<double, 8>>(
-          m, "small_vector_double_8", py::buffer_protocol());
-  // pybind11 currently does not find method from the base class, see
-  // https://github.com/pybind/pybind11/pull/1832. We add the method manually
-  // here.
-  small_vector.def("__len__",
-                   [](const boost::container::small_vector<double, 8> &self) {
-                     return self.size();
-                   });
-
   py::class_<Variable> variable(m, "Variable");
   variable
       .def(py::init(&makeVariableDefaultInit),

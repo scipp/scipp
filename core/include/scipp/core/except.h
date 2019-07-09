@@ -43,8 +43,7 @@ template <class T> std::string element_to_string(const T &item) {
     return {'"' + item + "\", "};
   else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
     return {"(Eigen::Vector3d), "};
-  else if constexpr (std::is_same_v<T,
-                                    boost::container::small_vector<double, 8>>)
+  else if constexpr (is_sparse_v<T>)
     return {"(vector), "};
   else
     return to_string(item) + ", ";

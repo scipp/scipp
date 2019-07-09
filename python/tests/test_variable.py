@@ -188,6 +188,12 @@ def test_sparse_setitem_shape_fail():
         var[Dim.X, 0].values = np.ones(shape=(3, 2))
 
 
+def test_sparse_setitem_float():
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse], dtype=sp.dtype.float)
+    var[Dim.X, 0].values = np.arange(4)
+    assert len(var[Dim.X, 0].values) == 4
+
+
 def test_create_dtype():
     var = sp.Variable([Dim.X], values=np.arange(4))
     assert var.dtype == sp.dtype.int64

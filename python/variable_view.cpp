@@ -67,8 +67,9 @@ void init_variable_view(py::module &m) {
   declare_span<const Dim>(m, "Dim_const");
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
-  declare_span<boost::container::small_vector<double, 8>>(m,
-                                                          "SmallVectorDouble8");
+  declare_span<sparse_container<double>>(m, "sparse_double");
+  declare_span<sparse_container<float>>(m, "sparse_float");
+  declare_span<sparse_container<int64_t>>(m, "sparse_int64_t");
 
   declare_VariableView<double>(m, "double");
   declare_VariableView<float>(m, "float");
@@ -76,8 +77,9 @@ void init_variable_view(py::module &m) {
   declare_VariableView<int32_t>(m, "int32");
   declare_VariableView<std::string>(m, "string");
   declare_VariableView<Bool>(m, "bool");
-  declare_VariableView<boost::container::small_vector<double, 8>>(
-      m, "SmallVectorDouble8");
+  declare_VariableView<sparse_container<double>>(m, "sparse_double");
+  declare_VariableView<sparse_container<float>>(m, "sparse_float");
+  declare_VariableView<sparse_container<int64_t>>(m, "sparse_int64_t");
   declare_VariableView<Dataset>(m, "Dataset");
   declare_VariableView<Eigen::Vector3d>(m, "Eigen_Vector3d");
 }

@@ -7,6 +7,7 @@ pybind11_add_module(_scipp
                     dimensions.cpp
                     dtype.cpp
                     scipp.cpp
+                    sparse_container.cpp
                     units_neutron.cpp
                     variable.cpp
                     variable_view.cpp)

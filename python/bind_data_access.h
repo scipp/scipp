@@ -118,9 +118,12 @@ template <class... Ts> struct as_VariableViewImpl {
       return {Getter::template get<bool>(view)};
     case dtype<std::string>:
       return {Getter::template get<std::string>(view)};
-    case dtype<boost::container::small_vector<double, 8>>:
-      return {Getter::template get<boost::container::small_vector<double, 8>>(
-          view)};
+    case dtype<sparse_container<double>>:
+      return {Getter::template get<sparse_container<double>>(view)};
+    case dtype<sparse_container<float>>:
+      return {Getter::template get<sparse_container<float>>(view)};
+    case dtype<sparse_container<int64_t>>:
+      return {Getter::template get<sparse_container<int64_t>>(view)};
     case dtype<Dataset>:
       return {Getter::template get<Dataset>(view)};
     case dtype<Eigen::Vector3d>:
@@ -178,9 +181,8 @@ template <class... Ts> struct as_VariableViewImpl {
               typename std::remove_reference_t<decltype(proxy_)>::value_type;
           if constexpr (std::is_trivial_v<T>) {
             copy_flattened<T>(data, proxy_);
-          } else if constexpr (std::is_same_v<T, boost::container::small_vector<
-                                                     double, 8>>) {
-            py::array_t<double> data_t(data);
+          } else if constexpr (is_sparse_v<T>) {
+            py::array_t<typename T::value_type> data_t(data);
             auto r = data_t.unchecked();
             proxy_[0].clear();
             for (ssize_t i = 0; i < r.shape(0); ++i)
@@ -247,8 +249,8 @@ template <class... Ts> struct as_VariableViewImpl {
 
 using as_VariableView =
     as_VariableViewImpl<double, float, int64_t, int32_t, bool, std::string,
-                        boost::container::small_vector<double, 8>, Dataset,
-                        Eigen::Vector3d>;
+                        sparse_container<double>, sparse_container<float>,
+                        sparse_container<int64_t>, Dataset, Eigen::Vector3d>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
