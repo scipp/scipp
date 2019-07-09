@@ -123,8 +123,20 @@ template <class... Ts> struct as_VariableViewImpl {
     case dtype<bool>:
       return as_py_array_t_impl<Getter, bool>(obj, view);
     default:
-      return std::visit([](const auto &data) { return py::cast(data); },
-                        get<Getter>(view));
+      return std::visit(
+          [&view](const auto &data) {
+            const auto &dims = view.dims();
+            // We return an individual item in two cases:
+            // 1. For 0-D data (consistent with numpy behavior, e.g., when
+            //    slicing a 1-D array).
+            // 2. For 1-D sparse data, where the individual item is then a
+            //    vector-like object.
+            if (dims.shape().size() == 0)
+              return py::cast(data[0]);
+            else
+              return py::cast(data);
+          },
+          get<Getter>(view));
     }
   }
 

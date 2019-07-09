@@ -150,6 +150,14 @@ def test_2D_access_variances():
     assert np.array_equal(var.variances, np.ones(shape=(2, 3)))
 
 
+def test_sparse_slice():
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
+    vals0 = var[Dim.X, 0].values
+    assert len(vals0) == 0
+    vals0.append(1.2)
+    assert len(vals0) == 1
+
+
 def test_create_dtype():
     var = sp.Variable([Dim.X], values=np.arange(4))
     assert var.dtype == sp.dtype.int64
