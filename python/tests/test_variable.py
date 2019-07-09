@@ -48,6 +48,15 @@ def test_create_with_variances():
     assert sp.Variable(labels=[Dim.X], shape=[2], variances=True).has_variances
 
 
+def test_create_sparse():
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
+    assert var.dtype == sp.dtype.double
+    assert var.dims.sparse
+    assert len(var.values) == 4
+    for vals in var.values:
+        assert len(vals) == 0
+
+
 def test_create_from_numpy_1d():
     var = sp.Variable([sp.Dim.X], np.arange(4.0))
     assert var.dtype == sp.dtype.double
