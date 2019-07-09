@@ -128,6 +128,12 @@ def test_1D_access():
     assert var.values[1] == 1.2
 
 
+def test_1D_access_bad_shape_fail():
+    var = sp.Variable([Dim.X], (2,))
+    with pytest.raises(RuntimeError):
+        var.values = np.arange(3)
+
+
 def test_2D_access():
     var = sp.Variable([Dim.X, Dim.Y], (2, 3))
     assert var.values.shape == (2, 3)
@@ -138,6 +144,12 @@ def test_2D_access():
     assert var.values[1][0] == 1.2
     assert var.values[1][1] == 1.2
     assert var.values[1][2] == 2.2
+
+
+def test_2D_access_bad_shape_fail():
+    var = sp.Variable([Dim.X, Dim.Y], (2, 3))
+    with pytest.raises(RuntimeError):
+        var.values = np.ones(shape=(3, 2))
 
 
 def test_2D_access_variances():
@@ -156,6 +168,24 @@ def test_sparse_slice():
     assert len(vals0) == 0
     vals0.append(1.2)
     assert len(vals0) == 1
+
+
+def test_sparse_setitem():
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
+    var[Dim.X, 0].values = np.arange(4)
+    assert len(var[Dim.X, 0].values) == 4
+
+
+def test_sparse_setitem_sparse_fail():
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
+    with pytest.raises(RuntimeError):
+        var.values = np.arange(3)
+
+
+def test_sparse_setitem_shape_fail():
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
+    with pytest.raises(RuntimeError):
+        var[Dim.X, 0].values = np.ones(shape=(3, 2))
 
 
 def test_create_dtype():

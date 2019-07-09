@@ -31,6 +31,28 @@ std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
   return strides;
 }
 
+template <class Var>
+void expect_shape_compatible(const Var &view, const py::array &data) {
+  const auto &dims = view.dims();
+  if (dims.sparse()) {
+    // Sparse data can be set from an array only for a single item.
+    if (dims.shape().size() != 0)
+      throw except::DimensionError("Sparse data cannot be set from a single "
+                                   "array, unless the sparse dimension is the "
+                                   "only dimension.");
+    if (data.ndim() != 1)
+      throw except::DimensionError("Expected 1-D data.");
+  } else {
+    if (dims.shape().size() != data.ndim())
+      throw except::DimensionError(
+          "The shape of the provided data does not match the existing object.");
+    for (int i = 0; i < dims.shape().size(); ++i)
+      if (dims.shape()[i] != data.shape()[i])
+        throw except::DimensionError("The shape of the provided data does not "
+                                     "match the existing object.");
+  }
+}
+
 template <class T> struct MakePyBufferInfoT {
   static py::buffer_info apply(VariableProxy &view) {
     const auto &dims = view.dims();
@@ -156,6 +178,13 @@ template <class... Ts> struct as_VariableViewImpl {
               typename std::remove_reference_t<decltype(proxy_)>::value_type;
           if constexpr (std::is_trivial_v<T>) {
             copy_flattened<T>(data, proxy_);
+          } else if constexpr (std::is_same_v<T, boost::container::small_vector<
+                                                     double, 8>>) {
+            py::array_t<double> data_t(data);
+            auto r = data_t.unchecked();
+            proxy_[0].clear();
+            for (ssize_t i = 0; i < r.shape(0); ++i)
+              proxy_[0].emplace_back(r(i));
           } else {
             throw std::runtime_error("Only POD types can be set from numpy.");
           }
@@ -164,10 +193,12 @@ template <class... Ts> struct as_VariableViewImpl {
   }
   template <class Var>
   static void set_values(Var &view, const py::array &data) {
+    expect_shape_compatible(view, data);
     set(get<get_values>(view), data);
   }
   template <class Var>
   static void set_variances(Var &view, const py::array &data) {
+    expect_shape_compatible(view, data);
     set(get<get_variances>(view), data);
   }
 
