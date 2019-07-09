@@ -3,7 +3,7 @@
 # @file
 # @author Igor Gudich
 
-import scippy as sp
+import scipp as sp
 from xml.etree import ElementTree as et
 from collections import defaultdict
 from .tools import axis_label

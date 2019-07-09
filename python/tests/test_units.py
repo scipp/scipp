@@ -4,7 +4,7 @@
 # @author Simon Heybrock
 import unittest
 
-import scippy as sp
+import scipp as sp
 import numpy as np
 
 

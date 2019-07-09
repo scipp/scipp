@@ -4,7 +4,7 @@
 # @author Neil Vaytet
 
 import numpy as np
-import scippy as sp
+import scipp as sp
 
 def edges_to_centers(x):
     """

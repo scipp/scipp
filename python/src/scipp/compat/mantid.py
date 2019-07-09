@@ -1,4 +1,4 @@
-import scippy as sp
+import scipp as sp
 
 
 def get_pos(pos):

@@ -30,10 +30,10 @@ cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
 make -j4 install
 ```
 
-To use the `scippy` Python module:
+To use the `scipp` Python module:
 
 ```
-cd ../scippy
+cd ../python
 python3 -m pip install -r requirements.txt
 export PYTHONPATH=$PYTHONPATH:../install
 ```
@@ -41,7 +41,7 @@ export PYTHONPATH=$PYTHONPATH:../install
 In Python:
 
 ```python
-import scippy as sc
+import scipp as sc
 ```
 
 ## Running the unit tests
@@ -54,10 +54,10 @@ To run the C++ tests, run (in directory `build/`):
 
 Note that simply running `ctest` also works, but currently it seems to have an issue with gathering templated tests, so calling the test binaries manually is recommended (and much faster).
 
-To run the Python tests, run (in directory `scippy/`):
+To run the Python tests, run (in directory `python/`):
 
 ```sh
-cd scippy
+cd python
 python3 -m pip install -r requirements.txt
 python3 -m pytest
 ```
