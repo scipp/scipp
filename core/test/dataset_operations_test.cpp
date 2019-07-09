@@ -507,6 +507,14 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataset_const_lvalue_rhs) {
         TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
     EXPECT_EQ(reference, item.data());
   }
+
+  /* Ensure that the original operand was moved (in which case it sould be
+   * empty) */
+  EXPECT_TRUE(dataset_a_copy.empty());
+}
+
+template <typename A, typename B> inline bool is_same_type(const B) {
+  return std::is_same<A, B>::value;
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_const_lvalue_lhs_dataset_rvalue_rhs) {
@@ -520,6 +528,13 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_const_lvalue_lhs_dataset_rvalue_rhs) {
     const auto reference =
         TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
     EXPECT_EQ(reference, item.data());
+  }
+
+  /* Ensure that the original operand was moved (in which case it sould be
+   * empty) */
+  /* Only available for plus when RHS is rvalue */
+  if (is_same_type<plus>(TestFixture::op)) {
+    EXPECT_TRUE(dataset_b_copy.empty());
   }
 }
 
@@ -537,6 +552,10 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataset_rvalue_rhs) {
         TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
     EXPECT_EQ(reference, item.data());
   }
+
+  /* Ensure that the original operand was moved (in which case it sould be
+   * empty) */
+  EXPECT_TRUE(dataset_a_copy.empty());
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -598,6 +617,10 @@ TYPED_TEST(DatasetBinaryOpTest,
         TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
     EXPECT_EQ(reference, item.data());
   }
+
+  /* Ensure that the original operand was moved (in which case it sould be
+   * empty) */
+  EXPECT_TRUE(dataset_a_copy.empty());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataproxy_const_lvalue_rhs) {
@@ -613,6 +636,10 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataproxy_const_lvalue_rhs) {
                                            dataset_b["data_scalar"].data());
     EXPECT_EQ(reference, item.data());
   }
+
+  /* Ensure that the original operand was moved (in which case it sould be
+   * empty) */
+  EXPECT_TRUE(dataset_a_copy.empty());
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
