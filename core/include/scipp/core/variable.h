@@ -270,6 +270,7 @@ public:
 
   units::Unit unit() const { return m_unit; }
   void setUnit(const units::Unit &unit) { m_unit = unit; }
+  constexpr void expectCanSetUnit(const units::Unit &) const noexcept {}
 
   Dimensions dims() const && { return m_object->dims(); }
   const Dimensions &dims() const & { return m_object->dims(); }
@@ -696,6 +697,7 @@ public:
   VariableProxy operator/=(const double value) const;
 
   void setUnit(const units::Unit &unit) const;
+  void expectCanSetUnit(const units::Unit &unit) const;
 
 private:
   friend class Variable;

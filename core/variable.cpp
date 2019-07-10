@@ -839,10 +839,14 @@ bool VariableConstProxy::operator!=(const VariableConstProxy &other) const {
 }
 
 void VariableProxy::setUnit(const units::Unit &unit) const {
+  expectCanSetUnit(unit);
+  m_mutableVariable->setUnit(unit);
+}
+
+void VariableProxy::expectCanSetUnit(const units::Unit &unit) const {
   if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
-  m_mutableVariable->setUnit(unit);
 }
 
 template <class T>
