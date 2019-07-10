@@ -9,3 +9,6 @@ div[class^='highlight'] pre {
     white-space: pre;
     white-space: pre-wrap;
 }
+.wy-side-nav-search {
+  background-color: #eee;
+}
