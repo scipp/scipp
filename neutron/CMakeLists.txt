@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(INC_FILES include/scipp/neutron/convert.h)
 
-set(SRC_FILES #convert.cpp
+set(SRC_FILES convert.cpp
   )
 
 add_library(scipp-neutron STATIC ${INC_FILES} ${SRC_FILES})
