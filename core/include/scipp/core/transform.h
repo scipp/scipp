@@ -235,10 +235,46 @@ struct is_eigen_type<sparse_container<Eigen::Matrix<T, Rows, Cols>>>
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
+namespace transform_detail {
+template <class T> struct is_sparse : std::false_type {};
+template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
+template <class T>
+struct is_sparse<ValuesAndVariances<sparse_container<T>>> : std::true_type {};
+template <class T>
+struct is_sparse<ValuesAndVariances<const sparse_container<T>>>
+    : std::true_type {};
+template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
+} // namespace transform_detail
+
+template <class T> auto check_and_get_size(const T &a) {
+  return scipp::size(a);
+}
+
+template <class T1, class T2>
+auto check_and_get_size(const T1 &a, const T2 &b) {
+  if constexpr (transform_detail::is_sparse_v<T1>) {
+    if constexpr (transform_detail::is_sparse_v<T2>)
+      expect::sizeMatches(a, b);
+    return scipp::size(a);
+  } else {
+    return scipp::size(b);
+  }
+}
+
 template <class Op, class T, class... Ts>
 void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
                                            Ts &&... other) {
   auto & [ vals, vars ] = arg;
+  // For sparse data we can fail for any subitem if the sizes to not match. To
+  // avoid partially modifying (and thus corrupting) data in an in-place
+  // operation we need to do the checks before any modification happens.
+  if constexpr (is_sparse_v<decltype(vals[0])>) {
+    for (scipp::index i = 0; i < scipp::size(vals); ++i) {
+      ValuesAndVariances _{vals[i], vars[i]};
+      static_cast<void>(
+          check_and_get_size(_, value_and_maybe_variance(other, i)...));
+    }
+  }
   // WARNING: Do not parallelize this loop in all cases! The output may have a
   // dimension with stride zero so parallelization must be done with care.
   for (scipp::index i = 0; i < scipp::size(vals); ++i) {
@@ -282,6 +318,12 @@ void transform_elements_with_variance(Op op, ValuesAndVariances<Out> out,
 
 template <class Op, class T, class... Ts>
 void transform_in_place_impl(Op op, T &&vals, Ts &&... other) {
+  // For sparse data we can fail for any subitem if the sizes to not match. To
+  // avoid partially modifying (and thus corrupting) data in an in-place
+  // operation we need to do the checks before any modification happens.
+  if constexpr (is_sparse_v<decltype(vals[0])>)
+    for (scipp::index i = 0; i < scipp::size(vals); ++i)
+      static_cast<void>(check_and_get_size(vals[i], other[i]...));
   // WARNING: Do not parallelize this loop in all cases! The output may have a
   // dimension with stride zero so parallelization must be done with care.
   for (scipp::index i = 0; i < scipp::size(vals); ++i)
@@ -312,17 +354,6 @@ template <class T> using element_type_t = typename element_type<T>::type;
 template <class T>
 using const_element_type_t = const typename element_type<T>::type;
 
-namespace transform_detail {
-template <class T> struct is_sparse : std::false_type {};
-template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
-template <class T>
-struct is_sparse<ValuesAndVariances<sparse_container<T>>> : std::true_type {};
-template <class T>
-struct is_sparse<ValuesAndVariances<const sparse_container<T>>>
-    : std::true_type {};
-template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
-} // namespace transform_detail
-
 /// Broadcast a constant to arbitrary size. Helper for TransformSparse.
 ///
 /// This helper allows the use of a common transform implementation when mixing
@@ -339,21 +370,6 @@ template <class T> decltype(auto) maybe_broadcast(T &&value) {
     return std::forward<T>(value);
   else
     return broadcast{value};
-}
-
-template <class T> auto check_and_get_size(const T &a) {
-  return scipp::size(a);
-}
-
-template <class T1, class T2>
-auto check_and_get_size(const T1 &a, const T2 &b) {
-  if constexpr (transform_detail::is_sparse_v<T1>) {
-    if constexpr (transform_detail::is_sparse_v<T2>)
-      expect::sizeMatches(a, b);
-    return scipp::size(a);
-  } else {
-    return scipp::size(b);
-  }
 }
 
 template <class T>
