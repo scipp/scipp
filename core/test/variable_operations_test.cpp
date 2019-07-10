@@ -185,7 +185,7 @@ TEST(Variable, operator_times_equal_unit_fail_integrity) {
   EXPECT_EQ(a, expected);
 }
 
-TEST(Variable, operator_times_equal_data_fail_unit_integrity) {
+TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
   auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
   auto a_ = a.sparseValues<float>();
   auto b(a);
@@ -195,6 +195,8 @@ TEST(Variable, operator_times_equal_data_fail_unit_integrity) {
   auto expected(a);
 
   ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
   EXPECT_EQ(a, expected);
 }
 
