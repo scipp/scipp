@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
-import scippy as sp
+import scipp as sp
 import numpy as np
 import io
 from contextlib import redirect_stdout

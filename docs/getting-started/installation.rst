@@ -3,7 +3,7 @@
 Installation
 ============
 
-``pip`` and ``conda`` packages for **scippy** are unfortunately not available yet.
+``pip`` and ``conda`` packages for **scipp** are unfortunately not available yet.
 
 Currently there are two installation options:
 
