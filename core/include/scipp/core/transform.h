@@ -621,13 +621,24 @@ template <class T, class... Known> struct optional_sparse {
                                   std::tuple<T>, std::tuple<>>;
 };
 
+/*
+ * std::tuple_cat does not work correctly on with clang-7.
+ * Issue with Eigen::Vector3d
+ */
+template <typename T, typename...> struct tuple_cat { using type = T; };
+template <template <typename...> class C, typename... Ts1, typename... Ts2,
+          typename... Ts3>
+struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
+    : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
+
 /// Augment a tuple of types with the corresponding sparse types, if they exist.
 template <class... Ts, class... Known>
 auto insert_sparse(const std::tuple<Ts...> &,
                    const VariableConceptHandle_impl<Known...> &) {
-  return std::tuple_cat(
-      std::tuple<Ts...>{},
-      typename optional_sparse<sparse_container<Ts>, Known...>::type{}...);
+  return
+      typename tuple_cat<std::tuple<Ts...>,
+                         typename optional_sparse<sparse_container<Ts>,
+                                                  Known...>::type...>::type{};
 }
 
 template <class T1, class T2, class... Known> struct optional_sparse_pair {

@@ -131,7 +131,7 @@ void init_variable(py::module &m) {
            py::arg("dtype") = py::dtype::of<double>(),
            py::arg("variances") = false)
       .def(py::init([](const int64_t data, const units::Unit &unit) {
-             auto var = makeVariable<int64_t>({}, {data});
+             auto var = makeVariable<int64_t>(Dimensions{}, {data});
              var.setUnit(unit);
              return var;
            }),
