@@ -609,6 +609,20 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
+constexpr static auto plus = [](const auto &a, const auto &b) { return a + b; };
+
+constexpr static auto minus = [](const auto &a, const auto &b) {
+  return a - b;
+};
+
+constexpr static auto times = [](const auto &a, const auto &b) {
+  return a * b;
+};
+
+constexpr static auto divide = [](const auto &a, const auto &b) {
+  return a / b;
+};
+
 constexpr static auto plus_equals = [](auto &&a, const auto &b) {
   return a += b;
 };
@@ -637,6 +651,37 @@ auto apply(const Op &op, A &&a, const B &b) {
   for (const auto & [ name, item ] : b)
     op(a[name], item);
   return std::move(a);
+}
+
+template <class Op, class A, class B>
+auto apply_with_broadcast(const Op &op, A &a, const B &b) {
+  expect::coordsAndLabelsMatch(a, b);
+
+  Dataset res;
+
+  /* Copy coordinates to result dataset */
+  for (const auto & [ name, value ] : a.coords()) {
+    res.setCoord(name, value);
+  }
+
+  /* Copy labels to result dataset */
+  for (const auto & [ name, value ] : a.labels()) {
+    res.setLabels(static_cast<std::string>(name), value);
+  }
+
+  /* Copy attributes to result dataset */
+  for (const auto & [ name, value ] : a.attrs()) {
+    res.setAttr(static_cast<std::string>(name), value);
+  }
+
+  for (const auto & [ name, item ] : b) {
+    if (a.contains(name)) {
+      res.setData(static_cast<std::string>(name),
+                  op(a[name].data(), item.data()));
+    }
+  }
+
+  return res;
 }
 
 template <class Op, class A, class B>
@@ -791,9 +836,7 @@ std::ostream &operator<<(std::ostream &os, const Dim dim) {
 }
 
 Dataset operator+(const Dataset &lhs, const Dataset &rhs) {
-  Dataset res(lhs);
-  apply(plus_equals, res, rhs);
-  return res;
+  return apply_with_broadcast(plus, lhs, rhs);
 }
 
 Dataset operator+(const Dataset &lhs, const DatasetConstProxy &rhs) {
@@ -808,24 +851,12 @@ Dataset operator+(const Dataset &lhs, const DataConstProxy &rhs) {
   return res;
 }
 
-Dataset operator+(Dataset &&lhs, const Dataset &rhs) {
-  return apply(plus_equals, std::move(lhs), rhs);
-}
-
 Dataset operator+(Dataset &&lhs, const DatasetConstProxy &rhs) {
   return apply(plus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator+(Dataset &&lhs, const DataConstProxy &rhs) {
   return apply_with_delay(plus_equals, std::move(lhs), rhs);
-}
-
-Dataset operator+(const Dataset &lhs, Dataset &&rhs) {
-  return apply(plus_equals, std::move(rhs), lhs);
-}
-
-Dataset operator+(Dataset &&lhs, Dataset &&rhs) {
-  return apply(plus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator+(const DatasetConstProxy &lhs, const Dataset &rhs) {
@@ -847,9 +878,7 @@ Dataset operator+(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
 }
 
 Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
-  Dataset res(lhs);
-  apply(minus_equals, res, rhs);
-  return res;
+  return apply_with_broadcast(minus, lhs, rhs);
 }
 
 Dataset operator-(const Dataset &lhs, const DatasetConstProxy &rhs) {
@@ -862,10 +891,6 @@ Dataset operator-(const Dataset &lhs, const DataConstProxy &rhs) {
   Dataset res(lhs);
   apply_with_delay(minus_equals, res, rhs);
   return res;
-}
-
-Dataset operator-(Dataset &&lhs, const Dataset &rhs) {
-  return apply(minus_equals, std::move(lhs), rhs);
 }
 
 Dataset operator-(Dataset &&lhs, const DatasetConstProxy &rhs) {
@@ -895,9 +920,7 @@ Dataset operator-(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
 }
 
 Dataset operator*(const Dataset &lhs, const Dataset &rhs) {
-  Dataset res(lhs);
-  apply(times_equals, res, rhs);
-  return res;
+  return apply_with_broadcast(times, lhs, rhs);
 }
 
 Dataset operator*(const Dataset &lhs, const DatasetConstProxy &rhs) {
@@ -910,10 +933,6 @@ Dataset operator*(const Dataset &lhs, const DataConstProxy &rhs) {
   Dataset res(lhs);
   apply_with_delay(times_equals, res, rhs);
   return res;
-}
-
-Dataset operator*(Dataset &&lhs, const Dataset &rhs) {
-  return apply(times_equals, std::move(lhs), rhs);
 }
 
 Dataset operator*(Dataset &&lhs, const DatasetConstProxy &rhs) {
@@ -943,9 +962,7 @@ Dataset operator*(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
 }
 
 Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
-  Dataset res(lhs);
-  apply(divide_equals, res, rhs);
-  return res;
+  return apply_with_broadcast(divide, lhs, rhs);
 }
 
 Dataset operator/(const Dataset &lhs, const DatasetConstProxy &rhs) {
@@ -958,10 +975,6 @@ Dataset operator/(const Dataset &lhs, const DataConstProxy &rhs) {
   Dataset res(lhs);
   apply_with_delay(divide_equals, res, rhs);
   return res;
-}
-
-Dataset operator/(Dataset &&lhs, const Dataset &rhs) {
-  return apply(divide_equals, std::move(lhs), rhs);
 }
 
 Dataset operator/(Dataset &&lhs, const DatasetConstProxy &rhs) {

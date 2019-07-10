@@ -169,8 +169,12 @@ template <class T> void countsOrCountsDensity(const T &object) {
 }
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
-void SCIPP_CORE_EXPORT coordsAndLabelsMatch(const DataConstProxy &a,
-                                            const DataConstProxy &b);
+
+template <typename T> void coordsAndLabelsMatch(const T &a, const T &b) {
+  if (a.coords() != b.coords() || a.labels() != b.labels())
+    throw except::CoordMismatchError("Expected coords and labels to match.");
+}
+
 void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                                   const DataConstProxy &b);
 void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);

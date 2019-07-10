@@ -481,81 +481,60 @@ protected:
 
 TYPED_TEST_SUITE(DatasetBinaryOpTest, Binary);
 
+std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
+  constexpr auto lx = 5;
+  constexpr auto ly = 5;
+
+  Random rand;
+
+  const auto coordX = rand(lx);
+  const auto coordY = rand(ly);
+  const auto labelT = makeVariable<double>({Dim::Y, ly}, rand(ly));
+
+  Dataset a;
+  {
+    a.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, coordX));
+    a.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
+
+    a.setLabels("t", labelT);
+
+    a.setData("data_a", makeVariable<double>({Dim::X, lx}, rand(lx)));
+    a.setData("data_b", makeVariable<double>({Dim::Y, ly}, rand(ly)));
+  }
+
+  Dataset b;
+  {
+    b.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, coordX));
+    b.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
+
+    b.setLabels("t", labelT);
+
+    b.setData("data_a", makeVariable<double>({Dim::Y, ly}, rand(ly)));
+  }
+
+  return std::make_tuple(a, b);
+}
+
 TYPED_TEST(DatasetBinaryOpTest,
            dataset_const_lvalue_lhs_dataset_const_lvalue_rhs) {
-  auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+  const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
 
   const auto res = TestFixture::op(dataset_a, dataset_b);
 
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
+  /* Only one variable should be present in result as only one common name
+   * existed between input datasets. */
+  EXPECT_EQ(1, res.size());
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataset_const_lvalue_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+  /* Test that the dataset contains the equivalent of operating on the Variable
+   * directly. */
+  /* Correctness of results is tested via Variable tests. */
+  const auto reference =
+      TestFixture::op(dataset_a["data_a"].data(), dataset_b["data_a"].data());
+  EXPECT_EQ(reference, res["data_a"].data());
 
-  auto dataset_a_copy(dataset_a);
-  const auto res = TestFixture::op(std::move(dataset_a_copy), dataset_b);
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
-
-  /* Ensure that the original operand was moved (in which case it sould be
-   * empty) */
-  EXPECT_TRUE(dataset_a_copy.empty());
-}
-
-template <typename A, typename B> inline bool is_same_type(const B) {
-  return std::is_same<A, B>::value;
-}
-
-TYPED_TEST(DatasetBinaryOpTest, dataset_const_lvalue_lhs_dataset_rvalue_rhs) {
-  auto dataset_a = datasetFactory.make();
-  const auto dataset_b = datasetFactory.make();
-
-  auto dataset_b_copy(dataset_b);
-  const auto res = TestFixture::op(dataset_a, std::move(dataset_b_copy));
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
-
-  /* Ensure that the original operand was moved (in which case it sould be
-   * empty) */
-  /* Only available for plus when RHS is rvalue */
-  if (is_same_type<plus>(TestFixture::op)) {
-    EXPECT_TRUE(dataset_b_copy.empty());
-  }
-}
-
-TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataset_rvalue_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  const auto dataset_b = datasetFactory.make();
-
-  auto dataset_a_copy(dataset_a);
-  auto dataset_b_copy(dataset_b);
-  const auto res =
-      TestFixture::op(std::move(dataset_a_copy), std::move(dataset_b_copy));
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
-
-  /* Ensure that the original operand was moved (in which case it sould be
-   * empty) */
-  EXPECT_TRUE(dataset_a_copy.empty());
+  /* Expect coordinates and labels to be copied to the result dataset */
+  EXPECT_EQ(res.coords(), dataset_a.coords());
+  EXPECT_EQ(res.labels(), dataset_a.labels());
 }
 
 TYPED_TEST(DatasetBinaryOpTest,

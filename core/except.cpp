@@ -288,11 +288,6 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
                              to_string(dims) + ".");
 }
 
-void coordsAndLabelsMatch(const DataConstProxy &a, const DataConstProxy &b) {
-  if (a.coords() != b.coords() || a.labels() != b.labels())
-    throw except::CoordMismatchError("Expected coords and labels to match.");
-}
-
 void coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                 const DataConstProxy &b) {
   for (const auto & [ dim, coord ] : b.coords())
