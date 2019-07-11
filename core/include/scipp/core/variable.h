@@ -29,18 +29,9 @@ struct SCIPP_CORE_EXPORT Slice {
   scipp::index end;
 };
 
-template <class T>
-using sparse_container = boost::container::small_vector<T, 8>;
 template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
 struct is_sparse_container<sparse_container<T>> : std::true_type {};
-
-template <class T> struct is_sparse : std::false_type {};
-template <class T> struct is_sparse<sparse_container<T>> : std::true_type {};
-template <class T> struct is_sparse<sparse_container<T> &> : std::true_type {};
-template <class T>
-struct is_sparse<const sparse_container<T> &> : std::true_type {};
-template <class T> inline constexpr bool is_sparse_v = is_sparse<T>::value;
 
 // std::vector<bool> may have a packed non-thread-safe implementation which we
 // need to avoid. Therefore we use std::vector<Bool> instead.
@@ -270,6 +261,7 @@ public:
 
   units::Unit unit() const { return m_unit; }
   void setUnit(const units::Unit &unit) { m_unit = unit; }
+  constexpr void expectCanSetUnit(const units::Unit &) const noexcept {}
 
   Dimensions dims() const && { return m_object->dims(); }
   const Dimensions &dims() const & { return m_object->dims(); }
@@ -696,6 +688,7 @@ public:
   VariableProxy operator/=(const double value) const;
 
   void setUnit(const units::Unit &unit) const;
+  void expectCanSetUnit(const units::Unit &unit) const;
 
 private:
   friend class Variable;

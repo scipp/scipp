@@ -839,10 +839,14 @@ bool VariableConstProxy::operator!=(const VariableConstProxy &other) const {
 }
 
 void VariableProxy::setUnit(const units::Unit &unit) const {
+  expectCanSetUnit(unit);
+  m_mutableVariable->setUnit(unit);
+}
+
+void VariableProxy::expectCanSetUnit(const units::Unit &unit) const {
   if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
-  m_mutableVariable->setUnit(unit);
 }
 
 template <class T>
@@ -903,7 +907,9 @@ INSTANTIATE_SLICEVIEW(int64_t)
 INSTANTIATE_SLICEVIEW(int32_t)
 INSTANTIATE_SLICEVIEW(bool)
 INSTANTIATE_SLICEVIEW(std::string)
-INSTANTIATE_SLICEVIEW(boost::container::small_vector<double, 8>)
+INSTANTIATE_SLICEVIEW(sparse_container<double>)
+INSTANTIATE_SLICEVIEW(sparse_container<float>)
+INSTANTIATE_SLICEVIEW(sparse_container<int64_t>)
 INSTANTIATE_SLICEVIEW(Dataset)
 INSTANTIATE_SLICEVIEW(Eigen::Vector3d)
 
