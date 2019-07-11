@@ -2,12 +2,21 @@ package:
   name: scipp
   version: 0.0.1
 
-build:
-  number: 1
+source:
+  path: ..
 
 requirements:
+  build:
+    - cmake
+    - gxx_linux-64 >=7.3
+    - git
+    - python {{ python }}
   run:
-    - python
+    - numpy >=1.14
+    - python {{ python }}
+
+build:
+  number: 0
 
 about:
   home: https://scipp.readthedocs.io/en/latest/

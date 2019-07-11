@@ -4,7 +4,8 @@ project(Eigen-download NONE)
 
 include(ExternalProject)
 ExternalProject_Add(Eigen
-  HG_REPOSITORY     https://bitbucket.org/eigen/eigen/
+  URL               https://bitbucket.org/eigen/eigen/get/3.3.7.tar.gz
+  URL_HASH          MD5=f2a417d083fe8ca4b8ed2bc613d20f07
   SOURCE_DIR        "${CMAKE_BINARY_DIR}/Eigen-src"
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
