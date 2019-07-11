@@ -115,13 +115,7 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                      unit, variances);
 }
 
-using small_vector = boost::container::small_vector<double, 8>;
-PYBIND11_MAKE_OPAQUE(small_vector)
-
 void init_variable(py::module &m) {
-  py::bind_vector<boost::container::small_vector<double, 8>>(
-      m, "SmallVectorDouble8");
-
   py::class_<Variable> variable(m, "Variable");
   variable
       .def(py::init(&makeVariableDefaultInit),
