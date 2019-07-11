@@ -6,6 +6,7 @@
 import numpy as np
 import scipp as sp
 
+
 def edges_to_centers(x):
     """
     Convert coordinate edges to centers, and return also the widths
