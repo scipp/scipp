@@ -30,6 +30,7 @@
 
 namespace scipp::core {
 
+#pragma GCC visibility push(hidden)
 namespace detail {
 
 /// A value/variance pair with operators that propagate uncertainties.
@@ -691,6 +692,7 @@ template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
 template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 
 } // namespace detail
+#pragma GCC visibility pop
 
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;

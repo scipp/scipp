@@ -48,6 +48,7 @@ endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
 
+add_compile_options(-fvisibility-inlines-hidden)
 add_compile_options(-Wall
                     -Wextra
                     -Wpedantic
