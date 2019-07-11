@@ -270,12 +270,14 @@ void transform_in_place_with_variance_impl(Op op, ValuesAndVariances<T> arg,
   // For sparse data we can fail for any subitem if the sizes to not match. To
   // avoid partially modifying (and thus corrupting) data in an in-place
   // operation we need to do the checks before any modification happens.
-  if constexpr (is_sparse_v<decltype(vals[0])> &&
-                std::is_base_of_v<SparseFlag, Op>) {
+  if constexpr (is_sparse_v<decltype(vals[0])>) {
     for (scipp::index i = 0; i < scipp::size(vals); ++i) {
       ValuesAndVariances _{vals[i], vars[i]};
-      static_cast<void>(
-          check_and_get_size(_, value_and_maybe_variance(other, i)...));
+      if constexpr (std::is_base_of_v<SparseFlag, Op>)
+        static_cast<void>(
+            check_and_get_size(_, value_and_maybe_variance(other, i)...));
+      else
+        static_cast<void>((value_and_maybe_variance(other, i), ...));
     }
   }
   // WARNING: Do not parallelize this loop in all cases! The output may have a
