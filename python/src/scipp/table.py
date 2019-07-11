@@ -16,7 +16,8 @@ style_border_right = {'style': 'border: 1px solid black; text-align:right'}
 def value_to_string(val, precision=3):
     if (not isinstance(val, float)) or (val == 0):
         text = str(val)
-    elif (abs(val) >= 10.0**(precision+1)) or (abs(val) <= 10.0**(-precision-1)):
+    elif (abs(val) >= 10.0**(precision+1)) or \
+         (abs(val) <= 10.0**(-precision-1)):
         text = "{val:.{prec}e}".format(val=val, prec=precision)
     else:
         text = "{}".format(val)
@@ -46,7 +47,6 @@ def table_ds(dataset):
     datum1d = defaultdict(list)
     datum0d = defaultdict(list)
     coords1d = None
-    coords0d = None
     for name, var in dataset:
         if len(var.coords) == 1:
             datum1d[name] = var
@@ -66,7 +66,8 @@ def table_ds(dataset):
         # Data fields
         for key, val in datum0d.items():
             append_with_text(tr, 'th', axis_label(val, name=key),
-                             attrib=dict({'colspan': str(1 + val.has_variances)}.items() |
+                             attrib=dict({'colspan':
+                                         str(1 + val.has_variances)}.items() |
                                          style_border_center.items()))
 
         tr = et.SubElement(tab, 'tr')
@@ -84,7 +85,6 @@ def table_ds(dataset):
             if val.has_variances:
                 append_with_text(tr, 'td', value_to_string(val.variance))
 
-
     # 1 - dimensional data
     if datum1d or coords1d:
 
@@ -96,13 +96,15 @@ def table_ds(dataset):
 
         # Coordinates
         append_with_text(tr, 'th', axis_label(coords1d),
-                         attrib=dict({'colspan': str(1 + coords1d.has_variances)}.items() |
-                                    style_border_center.items()))
+                         attrib=dict({'colspan':
+                                     str(1 + coords1d.has_variances)}.items() |
+                                     style_border_center.items()))
 
         # Data fields
         for key, val in datum1d.items():
             append_with_text(tr, 'th', axis_label(val, name=key),
-                             attrib=dict({'colspan': str(1 + val.has_variances)}.items() |
+                             attrib=dict({'colspan':
+                                         str(1 + val.has_variances)}.items() |
                                          style_border_center.items()))
             dims = val.dims
             length = dims.shape[0]
@@ -145,7 +147,8 @@ def table_ds(dataset):
             for key, val in datum1d.items():
                 append_with_text(tr, 'td', value_to_string(val.values[i]))
                 if val.has_variances:
-                    append_with_text(tr, 'td', value_to_string(val.variances[i]))
+                    append_with_text(tr, 'td',
+                                     value_to_string(val.variances[i]))
     # Render the HTML code
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
@@ -168,8 +171,9 @@ def table_var(variable):
 
     tr = et.SubElement(tab, 'tr')
     append_with_text(tr, 'th', axis_label(variable, name=str(labs[0])),
-                         attrib=dict({'colspan': str(1 + variable.has_variances)}.items() |
-                                    style_border_center.items()))
+                         attrib=dict({'colspan':
+                                     str(1 + variable.has_variances)}.items() |
+                                     style_border_center.items()))
 
     # Aligned data
     tr = et.SubElement(tab, 'tr')
@@ -183,7 +187,8 @@ def table_var(variable):
         tr_val = et.SubElement(tab, 'tr')
         append_with_text(tr_val, 'td', value_to_string(variable.values[i]))
         if variable.has_variances:
-            append_with_text(tr_val, 'td', value_to_string(variable.variances[i]))
+            append_with_text(tr_val, 'td',
+                             value_to_string(variable.variances[i]))
 
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
