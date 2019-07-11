@@ -144,16 +144,16 @@ template <class A, class B> void variablesMatch(const A &a, const B &b) {
   if (a != b)
     throw except::VariableMismatchError(a, b);
 }
-void dimensionMatches(const Dimensions &dims, const Dim dim,
-                      const scipp::index length);
+SCIPP_CORE_DLL void dimensionMatches(const Dimensions &dims, const Dim dim,
+                                     const scipp::index length);
 
 template <class T, class... Ts>
 void sizeMatches(const T &range, const Ts &... other) {
   if (((scipp::size(range) != scipp::size(other)) || ...))
     throw except::SizeError("Expected matching sizes.");
 }
-void equals(const units::Unit &a, const units::Unit &b);
-void equals(const Dimensions &a, const Dimensions &b);
+SCIPP_CORE_DLL void equals(const units::Unit &a, const units::Unit &b);
+SCIPP_CORE_DLL void equals(const Dimensions &a, const Dimensions &b);
 
 template <class T> void contains(const T &a, const T &b) {
   if (!a.contains(b))
