@@ -12,8 +12,6 @@
 #include <boost/units/systems/si.hpp>
 #include <boost/units/unit.hpp>
 
-#include "scipp/units/dll_config.h"
-
 namespace scipp::units {
 // Helper variables to make the declaration units more succinct.
 static constexpr boost::units::si::dimensionless dimensionless;

@@ -33,6 +33,7 @@ include(Eigen)
 include(pybind11)
 include(GoogleTest)
 include(GoogleBenchmark)
+include(GenerateExportHeader)
 
 find_package(Boost 1.67 REQUIRED)
 
