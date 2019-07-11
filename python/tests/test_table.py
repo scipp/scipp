@@ -4,7 +4,6 @@
 # @author Neil Vaytet
 import scipp as sp
 import numpy as np
-import pytest
 
 
 def test_dataset_with_1d_data():
@@ -14,7 +13,7 @@ def test_dataset_with_1d_data():
                 sp.Variable([sp.Dim.Tof],
                             values=np.arange(N+1).astype(np.float64)))
     d['Counts'] = sp.Variable([sp.Dim.Tof], values=10.0*np.random.rand(N))
-    html = sp.table(d)
+    sp.table(d)
 
 
 def test_dataset_with_1d_data_with_variances():
@@ -25,7 +24,7 @@ def test_dataset_with_1d_data_with_variances():
                             values=np.arange(N+1).astype(np.float64)))
     d['Counts'] = sp.Variable([sp.Dim.Tof], values=10.0*np.random.rand(N),
                               variances=np.random.rand(N))
-    html = sp.table(d)
+    sp.table(d)
 
 
 def test_dataset_with_1d_data_with_coord_variances():
@@ -37,7 +36,7 @@ def test_dataset_with_1d_data_with_coord_variances():
                             variances=0.1*np.random.rand(N+1)))
     d['Counts'] = sp.Variable([sp.Dim.Tof], values=10.0*np.random.rand(N),
                               variances=np.random.rand(N))
-    html = sp.table(d)
+    sp.table(d)
 
 
 def test_dataset_with_1d_data_with_units():
@@ -50,14 +49,13 @@ def test_dataset_with_1d_data_with_units():
                             variances=0.1*np.random.rand(N+1)))
     d['Sample'] = sp.Variable([sp.Dim.Tof], values=10.0*np.random.rand(N),
                               unit=sp.units.m, variances=np.random.rand(N))
-    html = sp.table(d)
+    sp.table(d)
 
 
 def test_dataset_with_0d_data():
     d = sp.Dataset()
-    N = 10
     d['Scalar'] = sp.Variable(1.2)
-    html = sp.table(d)
+    sp.table(d)
 
 
 def test_dataset_with_everything():
@@ -72,7 +70,7 @@ def test_dataset_with_everything():
     d['Sample'] = sp.Variable([sp.Dim.Tof], values=10.0*np.random.rand(N),
                               unit=sp.units.m, variances=np.random.rand(N))
     d['Scalar'] = sp.Variable(1.2)
-    html = sp.table(d)
+    sp.table(d)
 
 
 def test_variable():
