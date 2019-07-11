@@ -36,9 +36,12 @@ include(GoogleBenchmark)
 
 find_package(Boost 1.67 REQUIRED)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_VISIBILITY_PRESET hidden CACHE STRING "")
-endif()
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+
+# Reduces binary size of, e.g., libscipp-core.so by several MB.
+set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fno-omit-frame-pointer")
 
@@ -51,9 +54,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
-
-# Reduces binary size of, e.g., libscipp-core.so by several MB.
-add_compile_options(-fvisibility-inlines-hidden)
 
 add_compile_options(-Wall
                     -Wextra
