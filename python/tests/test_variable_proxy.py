@@ -2,8 +2,8 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-import scippy as sp
-from scippy import Dim
+import scipp as sp
+from scipp import Dim
 import numpy as np
 import operator
 

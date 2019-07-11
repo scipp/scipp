@@ -1,13 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
-# @file
 # @author Neil Vaytet
 
-# Import numpy
 import numpy as np
-
-# Import scippy
-import scippy as sp
+import scipp as sp
 
 # Plotly imports
 from IPython.display import display

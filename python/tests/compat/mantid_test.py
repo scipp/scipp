@@ -2,9 +2,9 @@
 # PYTHONPATH.
 import unittest
 
-import scippy as sp
+import scipp as sp
 import mantid.simpleapi as mantid
-import scippy.compat.mantid as mantidcompat
+import scipp.compat.mantid as mantidcompat
 # import matplotlib.pyplot as plt
 
 
