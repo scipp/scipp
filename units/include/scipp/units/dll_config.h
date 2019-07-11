@@ -7,7 +7,7 @@
 
 #include "scipp/units/visibility.h"
 
-#ifdef IN_SCIPP_UNITS
+#ifdef scipp_units_EXPORTS
 #define SCIPP_UNITS_DLL DLLExport
 #define EXTERN_SCIPP_UNITS
 #else
