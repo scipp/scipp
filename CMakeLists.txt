@@ -52,7 +52,9 @@ endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
 
+# Reduces binary size of, e.g., libscipp-core.so by several MB.
 add_compile_options(-fvisibility-inlines-hidden)
+
 add_compile_options(-Wall
                     -Wextra
                     -Wpedantic
