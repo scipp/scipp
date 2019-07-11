@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "scipp/core/dll_config.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
@@ -16,12 +17,14 @@ class DataProxy;
 class Variable;
 
 namespace counts {
-void toDensity(const DataProxy data, const std::vector<Variable> &binWidths);
-Dataset toDensity(Dataset d, const Dim dim);
-Dataset toDensity(Dataset d, const std::vector<Dim> &dims);
-void fromDensity(const DataProxy data, const std::vector<Variable> &binWidths);
-Dataset fromDensity(Dataset d, const Dim dim);
-Dataset fromDensity(Dataset d, const std::vector<Dim> &dims);
+SCIPP_CORE_DLL void toDensity(const DataProxy data,
+                              const std::vector<Variable> &binWidths);
+SCIPP_CORE_DLL Dataset toDensity(Dataset d, const Dim dim);
+SCIPP_CORE_DLL Dataset toDensity(Dataset d, const std::vector<Dim> &dims);
+SCIPP_CORE_DLL void fromDensity(const DataProxy data,
+                                const std::vector<Variable> &binWidths);
+SCIPP_CORE_DLL Dataset fromDensity(Dataset d, const Dim dim);
+SCIPP_CORE_DLL Dataset fromDensity(Dataset d, const std::vector<Dim> &dims);
 } // namespace counts
 } // namespace scipp::core
 

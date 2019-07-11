@@ -6,10 +6,11 @@
 #define VIEW_INDEX_H
 
 #include "scipp/core/dimensions.h"
+#include "scipp/core/dll_config.h"
 
 namespace scipp::core {
 
-class ViewIndex {
+class SCIPP_CORE_DLL ViewIndex {
 public:
   ViewIndex(const Dimensions &targetDimensions,
             const Dimensions &dataDimensions);

@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "scipp/core/dll_config.h"
 #include "scipp/core/index.h"
 #include "scipp/core/span.h"
 #include "scipp/units/unit.h"
@@ -22,7 +23,7 @@ constexpr int32_t NDIM_MAX = 6;
 /// (64 Byte) cacheline should be advantageous.
 /// We follow the numpy convention: First dimension is outer dimension, last
 /// dimension is inner dimension.
-class Dimensions {
+class SCIPP_CORE_DLL Dimensions {
 public:
   static constexpr auto Sparse = std::numeric_limits<scipp::index>::min();
 
@@ -150,7 +151,7 @@ private:
                            Dim::Invalid};
 };
 
-Dimensions merge(const Dimensions &a, const Dimensions &b);
+SCIPP_CORE_DLL Dimensions merge(const Dimensions &a, const Dimensions &b);
 
 } // namespace scipp::core
 
