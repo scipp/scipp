@@ -9,8 +9,13 @@ from collections import defaultdict
 from .tools import axis_label
 
 
-style_border_center = {'style': 'border: 1px solid black; text-align:center'}
-style_border_right = {'style': 'border: 1px solid black; text-align:right'}
+style_border_center = {'style': 'border: 1px solid black; text-align:center;'}
+style_border_right = {'style': 'border: 1px solid black; text-align:right;'}
+style_coord_odd = style_border_center.copy()
+style_coord_odd["style"] += 'background-color: #ADF3E0;'
+style_coord_even = style_border_center.copy()
+style_coord_even["style"] += 'background-color: #B9FFEC;'
+style_coord = [style_coord_odd, style_coord_even]
 
 
 def value_to_string(val, precision=3):
@@ -94,11 +99,11 @@ def table_ds(dataset):
         cap.text = '1D Variables:'
         tr = et.SubElement(tab, 'tr')
 
-        # Coordinates
-        append_with_text(tr, 'th', axis_label(coords1d),
+        # Coordinate
+        append_with_text(tr, 'th', "Coord: " + axis_label(coords1d),
                          attrib=dict({'colspan':
                                      str(1 + coords1d.has_variances)}.items() |
-                                     style_border_center.items()))
+                                     style_coord[0].items()))
 
         # Data fields
         for key, val in datum1d.items():
@@ -118,11 +123,9 @@ def table_ds(dataset):
 
         # Make table row for "Values" and "Variances"
         tr = et.SubElement(tab, 'tr')
-        append_with_text(
-            tr, 'th', "Values", style_border_center)
+        append_with_text(tr, 'th', "Values", style_coord[1])
         if coords1d.has_variances:
-            append_with_text(
-                tr, 'th', "Variances", style_border_center)
+            append_with_text(tr, 'th', "Variances", style_coord[1])
         # Go through all items in dataset and add headers
         for key, val in datum1d.items():
             append_with_text(
@@ -137,13 +140,13 @@ def table_ds(dataset):
             if is_hist:
                 text = '[{}; {}]'.format(
                     text, value_to_string(coords1d.values[i + 1]))
-            append_with_text(tr, 'td', text)
+            append_with_text(tr, 'td', text, attrib=style_coord[i % 2])
             if coords1d.has_variances:
                 text = value_to_string(coords1d.variances[i])
                 if is_hist:
                     text = '[{}; {}]'.format(
                         text, value_to_string(coords1d.variances[i + 1]))
-                append_with_text(tr, 'td', text)
+                append_with_text(tr, 'td', text, attrib=style_coord[i % 2])
             for key, val in datum1d.items():
                 append_with_text(tr, 'td', value_to_string(val.values[i]))
                 if val.has_variances:
