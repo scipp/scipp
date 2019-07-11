@@ -19,6 +19,7 @@ string(TOUPPER ${SCIPP_UNITS_SYSTEM} SCIPP_UNITS_SYSTEM)
 
 add_library(scipp-units SHARED ${INC_FILES} ${SRC_FILES})
 target_compile_definitions(scipp-units PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM})
+target_compile_definitions(scipp-units PRIVATE IN_SCIPP_UNITS)
 target_link_libraries(scipp-units PUBLIC Boost::boost)
 target_include_directories(
   scipp-units

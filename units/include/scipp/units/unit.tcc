@@ -134,15 +134,16 @@ Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a) {
 }
 
 #define INSTANTIATE(Units, Counts)                                             \
-  template class Unit_impl<Units, Counts>;                                     \
-  template Unit_impl<Units, Counts> operator+(                                 \
+  template class SCIPP_UNITS_DLL Unit_impl<Units, Counts>;                     \
+  template SCIPP_UNITS_DLL Unit_impl<Units, Counts> operator+(                 \
       const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template Unit_impl<Units, Counts> operator-(                                 \
+  template SCIPP_UNITS_DLL Unit_impl<Units, Counts> operator-(                 \
       const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template Unit_impl<Units, Counts> operator*(                                 \
+  template SCIPP_UNITS_DLL Unit_impl<Units, Counts> operator*(                 \
       const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template Unit_impl<Units, Counts> operator/(                                 \
+  template SCIPP_UNITS_DLL Unit_impl<Units, Counts> operator/(                 \
       const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template Unit_impl<Units, Counts> sqrt(const Unit_impl<Units, Counts> &a);
+  template SCIPP_UNITS_DLL Unit_impl<Units, Counts> sqrt(                      \
+      const Unit_impl<Units, Counts> &a);
 
 } // namespace scipp::units

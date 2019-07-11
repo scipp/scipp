@@ -36,6 +36,10 @@ include(GoogleBenchmark)
 
 find_package(Boost 1.67 REQUIRED)
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden CACHE STRING "")
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fno-omit-frame-pointer")
 
 # See https://github.com/pybind/pybind11/issues/1604
