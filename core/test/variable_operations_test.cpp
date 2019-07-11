@@ -176,6 +176,89 @@ TEST(Variable, operator_times_equal_scalar) {
   EXPECT_EQ(a.unit(), units::m);
 }
 
+TEST(Variable, operator_times_equal_unit_fail_integrity) {
+  auto a = makeVariable<double>({Dim::X, 2}, units::m * units::m, {2.0, 3.0});
+  const auto expected(a);
+
+  // This test relies on m^4 being an unsupported unit.
+  ASSERT_THROW(a *= a, std::runtime_error);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
+  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a_ = a.sparseValues<float>();
+  auto b(a);
+  a_[0] = {0.1, 0.2};
+  a_[1] = {0.3};
+  b.setUnit(units::m);
+  auto expected(a);
+
+  ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
+  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a_ = a.sparseValues<float>();
+  a_[0] = {0.1, 0.2};
+  auto b(a);
+  a_[1] = {0.3};
+  b.setUnit(units::m);
+  auto expected(a);
+
+  ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
+  auto a = makeVariableWithVariances<float>(
+      {{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a_ = a.sparseValues<float>();
+  auto a_vars = a.sparseVariances<float>();
+  a_[0] = {0.1, 0.2};
+  a_vars[0] = {0.1, 0.2};
+  auto b(a);
+  a_[1] = {0.3};
+  a_vars[1] = {0.3};
+  b.setUnit(units::m);
+  auto expected(a);
+
+  // Length mismatch of second sparse item
+  ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+
+  b = a;
+  b.setUnit(units::m);
+  a_vars[1].clear();
+  expected = a;
+
+  // Length mismatch between values and variances
+  ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(Variable, operator_times_equal_slice_unit_fail_integrity) {
+  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a_ = a.sparseValues<float>();
+  a_[0] = {0.1, 0.2};
+  a_[1] = {0.3};
+  auto b(a);
+  b.setUnit(units::m);
+  auto expected(a);
+
+  ASSERT_THROW(a.slice({Dim::Y, 0}) *= b.slice({Dim::Y, 0}), except::UnitError);
+  EXPECT_EQ(a, expected);
+}
+
 TEST(Variable, operator_times_can_broadcast) {
   auto a = makeVariable<double>({Dim::X, 2}, {0.5, 1.5});
   auto b = makeVariable<double>({Dim::Y, 2}, {2.0, 3.0});

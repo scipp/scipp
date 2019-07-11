@@ -315,6 +315,72 @@ TEST(TransformTest, unary_on_sparse_container_with_variance) {
   EXPECT_TRUE(vars[1].empty());
 }
 
+TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = makeVariable<double>(
+      dims, {sparse_container<double>(), sparse_container<double>()},
+      {sparse_container<double>(), sparse_container<double>()});
+  auto vals = a.sparseValues<double>();
+  vals[0] = {1, 2, 3};
+  vals[1] = {4};
+  auto vars = a.sparseVariances<double>();
+  vars[0] = {1.1, 2.2, 3.3};
+  vars[1] = {};
+  const auto expected(a);
+
+  // If an exception occures due to a size mismatch between values and variances
+  // we give a strong exception guarantee, i.e., data is untouched. Note that
+  // there is no such guarantee if an exception occurs in the provided lambda.
+  ASSERT_THROW(transform_in_place<sparse_container<double>>(
+                   a, [](auto &x) { x.clear(); }),
+               except::SizeError);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = makeVariable<double>(
+      dims, {sparse_container<double>(), sparse_container<double>()},
+      {sparse_container<double>(), sparse_container<double>()});
+  auto vals = a.sparseValues<double>();
+  vals[0] = {1, 2, 3};
+  vals[1] = {4};
+  auto vars = a.sparseVariances<double>();
+  vars[0] = {1.1, 2.2, 3.3};
+  vars[1] = {};
+  const auto expected(a);
+
+  // If an exception occures due to a size mismatch between values and variances
+  // we give a strong exception guarantee, i.e., data is untouched. Note that
+  // there is no such guarantee if an exception occurs in the provided lambda.
+  ASSERT_THROW(transform_in_place<pair_self_t<sparse_container<double>>>(
+                   a, a, [](auto &x, const auto &) { x.clear(); }),
+               except::SizeError);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(TransformTest,
+     binary_on_sparse_container_with_variance_accepts_size_mismatch) {
+  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
+  auto a = makeVariable<double>(
+      dims, {sparse_container<double>(), sparse_container<double>()},
+      {sparse_container<double>(), sparse_container<double>()});
+  const auto expected(a);
+  auto vals = a.sparseValues<double>();
+  auto vars = a.sparseVariances<double>();
+  vals[0] = {1, 2, 3};
+  vars[0] = {1.1, 2.2, 3.3};
+  const auto b(a);
+  vals[1] = {4};
+  vars[1] = {4.4};
+
+  // Size mismatch between a and b is allowed for a user-defined operation on
+  // the sparse container.
+  ASSERT_NO_THROW(transform_in_place<pair_self_t<sparse_container<double>>>(
+      a, b, [](auto &x, const auto &) { x.clear(); }));
+  EXPECT_EQ(a, expected);
+}
+
 class TransformTest_sparse_binary_values_variances_size_fail
     : public ::testing::Test {
 protected:
