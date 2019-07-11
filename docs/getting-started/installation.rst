@@ -6,11 +6,11 @@ Installation
 Conda
 -----
 
-To create a new ``conda`` environment with ``scipp``:
+The easiest way to install ``scipp`` is using `conda <https://conda.io>`_:
 
 .. code-block:: sh
 
-   conda create -n env_with_scipp -c scipp scipp
+   $ conda install -c scipp scipp
 
 Note that these packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are currently only available on Linux.
 
@@ -18,7 +18,7 @@ Docker
 ------
 
 A docker container is available.
-Note that this is an outdated build, before the ongoing major API refactor.
+Note that this is an outdated build, before the ongoing major API refactor:
 
 .. code-block:: sh
 
