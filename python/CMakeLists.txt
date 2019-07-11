@@ -20,7 +20,7 @@ set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 
 add_sanitizers(_scipp)
 
-set(PY_FILES __init__.py table.py plot.py)
+set(PY_FILES __init__.py table.py plot.py tools.py)
 
 install(DIRECTORY "src/scipp" DESTINATION ".")
 install(TARGETS _scipp DESTINATION "scipp")
