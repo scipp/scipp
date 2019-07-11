@@ -21,7 +21,7 @@
 namespace scipp::core {
 
 /// Helper for passing slicing parameters.
-struct SCIPP_CORE_DLL Slice {
+struct SCIPP_CORE_EXPORT Slice {
   Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_ = -1)
       : dim(dim_), begin(begin_), end(end_) {}
   Dim dim;
@@ -244,7 +244,7 @@ struct default_init<Eigen::Matrix<T, Rows, Cols>> {
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. It has a name, a unit, and a set of named
 /// dimensions.
-class SCIPP_CORE_DLL Variable {
+class SCIPP_CORE_EXPORT Variable {
 public:
   Variable() = default;
   // Having this non-explicit is convenient when passing (potential)
@@ -511,7 +511,7 @@ Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
 }
 
 /// Non-mutable view into (a subset of) a Variable.
-class SCIPP_CORE_DLL VariableConstProxy {
+class SCIPP_CORE_EXPORT VariableConstProxy {
 public:
   explicit VariableConstProxy(const Variable &variable)
       : m_variable(&variable) {}
@@ -615,7 +615,7 @@ protected:
  *
  * By inheriting from VariableConstProxy any code that works for
  * VariableConstProxy will automatically work also for this mutable variant. */
-class SCIPP_CORE_DLL VariableProxy : public VariableConstProxy {
+class SCIPP_CORE_EXPORT VariableProxy : public VariableConstProxy {
 public:
   explicit VariableProxy(Variable &variable)
       : VariableConstProxy(variable), m_mutableVariable(&variable) {}
@@ -707,45 +707,45 @@ private:
   Variable *m_mutableVariable;
 };
 
-SCIPP_CORE_DLL Variable operator+(const Variable &a, const Variable &b);
-SCIPP_CORE_DLL Variable operator-(const Variable &a, const Variable &b);
-SCIPP_CORE_DLL Variable operator*(const Variable &a, const Variable &b);
-SCIPP_CORE_DLL Variable operator/(const Variable &a, const Variable &b);
-SCIPP_CORE_DLL Variable operator+(const Variable &a,
-                                  const VariableConstProxy &b);
-SCIPP_CORE_DLL Variable operator-(const Variable &a,
-                                  const VariableConstProxy &b);
-SCIPP_CORE_DLL Variable operator*(const Variable &a,
-                                  const VariableConstProxy &b);
-SCIPP_CORE_DLL Variable operator/(const Variable &a,
-                                  const VariableConstProxy &b);
-SCIPP_CORE_DLL Variable operator+(const VariableConstProxy &a,
-                                  const Variable &b);
-SCIPP_CORE_DLL Variable operator-(const VariableConstProxy &a,
-                                  const Variable &b);
-SCIPP_CORE_DLL Variable operator*(const VariableConstProxy &a,
-                                  const Variable &b);
-SCIPP_CORE_DLL Variable operator/(const VariableConstProxy &a,
-                                  const Variable &b);
-SCIPP_CORE_DLL Variable operator+(const VariableConstProxy &a,
-                                  const VariableConstProxy &b);
-SCIPP_CORE_DLL Variable operator-(const VariableConstProxy &a,
-                                  const VariableConstProxy &b);
-SCIPP_CORE_DLL Variable operator*(const VariableConstProxy &a,
-                                  const VariableConstProxy &b);
-SCIPP_CORE_DLL Variable operator/(const VariableConstProxy &a,
-                                  const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator+(const Variable &a, const Variable &b);
+SCIPP_CORE_EXPORT Variable operator-(const Variable &a, const Variable &b);
+SCIPP_CORE_EXPORT Variable operator*(const Variable &a, const Variable &b);
+SCIPP_CORE_EXPORT Variable operator/(const Variable &a, const Variable &b);
+SCIPP_CORE_EXPORT Variable operator+(const Variable &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator-(const Variable &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator*(const Variable &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator/(const Variable &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
+                                     const Variable &b);
+SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
+                                     const Variable &b);
+SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
+                                     const Variable &b);
+SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
+                                     const Variable &b);
+SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
+                                     const VariableConstProxy &b);
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-SCIPP_CORE_DLL Variable operator+(Variable a, const double b);
-SCIPP_CORE_DLL Variable operator-(Variable a, const double b);
-SCIPP_CORE_DLL Variable operator*(Variable a, const double b);
-SCIPP_CORE_DLL Variable operator/(Variable a, const double b);
-SCIPP_CORE_DLL Variable operator+(const double a, Variable b);
-SCIPP_CORE_DLL Variable operator-(const double a, Variable b);
-SCIPP_CORE_DLL Variable operator*(const double a, Variable b);
-SCIPP_CORE_DLL Variable operator/(const double a, Variable b);
+SCIPP_CORE_EXPORT Variable operator+(Variable a, const double b);
+SCIPP_CORE_EXPORT Variable operator-(Variable a, const double b);
+SCIPP_CORE_EXPORT Variable operator*(Variable a, const double b);
+SCIPP_CORE_EXPORT Variable operator/(Variable a, const double b);
+SCIPP_CORE_EXPORT Variable operator+(const double a, Variable b);
+SCIPP_CORE_EXPORT Variable operator-(const double a, Variable b);
+SCIPP_CORE_EXPORT Variable operator*(const double a, Variable b);
+SCIPP_CORE_EXPORT Variable operator/(const double a, Variable b);
 template <class T>
 Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a *= quantity);
@@ -755,23 +755,23 @@ Variable operator/(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a /= quantity);
 }
 
-SCIPP_CORE_DLL std::vector<Variable>
+SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);
-SCIPP_CORE_DLL Variable concatenate(const Variable &a1, const Variable &a2,
-                                    const Dim dim);
-SCIPP_CORE_DLL Variable rebin(const Variable &var, const Variable &oldCoord,
-                              const Variable &newCoord);
-SCIPP_CORE_DLL Variable permute(const Variable &var, const Dim dim,
-                                const std::vector<scipp::index> &indices);
-SCIPP_CORE_DLL Variable filter(const Variable &var, const Variable &filter);
-SCIPP_CORE_DLL Variable sum(const Variable &var, const Dim dim);
-SCIPP_CORE_DLL Variable mean(const Variable &var, const Dim dim);
-SCIPP_CORE_DLL Variable abs(const Variable &var);
-SCIPP_CORE_DLL Variable norm(const Variable &var);
-SCIPP_CORE_DLL Variable sqrt(const Variable &var);
-SCIPP_CORE_DLL Variable broadcast(Variable var, const Dimensions &dims);
-SCIPP_CORE_DLL Variable reverse(Variable var, const Dim dim);
+SCIPP_CORE_EXPORT Variable concatenate(const Variable &a1, const Variable &a2,
+                                       const Dim dim);
+SCIPP_CORE_EXPORT Variable rebin(const Variable &var, const Variable &oldCoord,
+                                 const Variable &newCoord);
+SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
+                                   const std::vector<scipp::index> &indices);
+SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
+SCIPP_CORE_EXPORT Variable sum(const Variable &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable mean(const Variable &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable abs(const Variable &var);
+SCIPP_CORE_EXPORT Variable norm(const Variable &var);
+SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
+SCIPP_CORE_EXPORT Variable broadcast(Variable var, const Dimensions &dims);
+SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);

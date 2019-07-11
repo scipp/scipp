@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "scipp/core/dll_config.h"
+#include "scipp-core_export.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/index.h"
 #include "scipp/units/unit.h"
@@ -23,21 +23,21 @@ class Variable;
 class VariableConstProxy;
 struct Slice;
 
-SCIPP_CORE_DLL std::string to_string(const DType dtype);
-SCIPP_CORE_DLL std::string to_string(const Dimensions &dims,
-                                     const std::string &separator = "::");
-SCIPP_CORE_DLL std::string to_string(const Slice &slice,
-                                     const std::string &separator = "::");
-SCIPP_CORE_DLL std::string to_string(const units::Unit &unit,
-                                     const std::string &separator = "::");
-SCIPP_CORE_DLL std::string to_string(const Variable &variable,
-                                     const std::string &separator = "::");
-SCIPP_CORE_DLL std::string to_string(const VariableConstProxy &variable,
-                                     const std::string &separator = "::");
-SCIPP_CORE_DLL std::string to_string(const Dataset &dataset,
-                                     const std::string &separator = "::");
-SCIPP_CORE_DLL std::string to_string(const DatasetConstProxy &dataset,
-                                     const std::string &separator = "::");
+SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
+SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims,
+                                        const std::string &separator = "::");
+SCIPP_CORE_EXPORT std::string to_string(const Slice &slice,
+                                        const std::string &separator = "::");
+SCIPP_CORE_EXPORT std::string to_string(const units::Unit &unit,
+                                        const std::string &separator = "::");
+SCIPP_CORE_EXPORT std::string to_string(const Variable &variable,
+                                        const std::string &separator = "::");
+SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable,
+                                        const std::string &separator = "::");
+SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset,
+                                        const std::string &separator = "::");
+SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset,
+                                        const std::string &separator = "::");
 
 template <class T> std::string element_to_string(const T &item) {
   using std::to_string;
@@ -71,69 +71,69 @@ template <class T> std::string array_to_string(const T &arr) {
 
 namespace except {
 
-struct SCIPP_CORE_DLL TypeError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_DLL DimensionError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT DimensionError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_DLL DimensionMismatchError : public DimensionError {
+struct SCIPP_CORE_EXPORT DimensionMismatchError : public DimensionError {
   DimensionMismatchError(const Dimensions &expected, const Dimensions &actual);
 };
 
-struct SCIPP_CORE_DLL DimensionNotFoundError : public DimensionError {
+struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
   DimensionNotFoundError(const Dimensions &expected, const Dim actual);
 };
 
-struct SCIPP_CORE_DLL DimensionLengthError : public DimensionError {
+struct SCIPP_CORE_EXPORT DimensionLengthError : public DimensionError {
   DimensionLengthError(const Dimensions &expected, const Dim actual,
                        const scipp::index length);
 };
 
-struct SCIPP_CORE_DLL SparseDimensionError : public DimensionError {
+struct SCIPP_CORE_EXPORT SparseDimensionError : public DimensionError {
   SparseDimensionError()
       : DimensionError("Unsupported operation for sparse dimensions.") {}
 };
 
-struct SCIPP_CORE_DLL DatasetError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT DatasetError : public std::runtime_error {
   DatasetError(const Dataset &dataset, const std::string &message);
   DatasetError(const DatasetConstProxy &dataset, const std::string &message);
 };
 
-struct SCIPP_CORE_DLL VariableError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT VariableError : public std::runtime_error {
   VariableError(const Variable &variable, const std::string &message);
   VariableError(const VariableConstProxy &variable, const std::string &message);
 };
 
-struct SCIPP_CORE_DLL VariableMismatchError : public VariableError {
+struct SCIPP_CORE_EXPORT VariableMismatchError : public VariableError {
   template <class A, class B>
   VariableMismatchError(const A &a, const B &b)
       : VariableError(a, "expected to match\n" + to_string(b)) {}
 };
 
-struct SCIPP_CORE_DLL UnitError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT UnitError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_DLL SizeError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT SizeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_DLL UnitMismatchError : public UnitError {
+struct SCIPP_CORE_EXPORT UnitMismatchError : public UnitError {
   UnitMismatchError(const units::Unit &a, const units::Unit &b);
 };
 
-struct SCIPP_CORE_DLL SliceError : public std::out_of_range {
+struct SCIPP_CORE_EXPORT SliceError : public std::out_of_range {
   using std::out_of_range::out_of_range;
 };
 
-struct SCIPP_CORE_DLL CoordMismatchError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT CoordMismatchError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_DLL VariancesError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT VariancesError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
@@ -144,16 +144,16 @@ template <class A, class B> void variablesMatch(const A &a, const B &b) {
   if (a != b)
     throw except::VariableMismatchError(a, b);
 }
-SCIPP_CORE_DLL void dimensionMatches(const Dimensions &dims, const Dim dim,
-                                     const scipp::index length);
+SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
+                                        const scipp::index length);
 
 template <class T, class... Ts>
 void sizeMatches(const T &range, const Ts &... other) {
   if (((scipp::size(range) != scipp::size(other)) || ...))
     throw except::SizeError("Expected matching sizes.");
 }
-SCIPP_CORE_DLL void equals(const units::Unit &a, const units::Unit &b);
-SCIPP_CORE_DLL void equals(const Dimensions &a, const Dimensions &b);
+SCIPP_CORE_EXPORT void equals(const units::Unit &a, const units::Unit &b);
+SCIPP_CORE_EXPORT void equals(const Dimensions &a, const Dimensions &b);
 
 template <class T> void contains(const T &a, const T &b) {
   if (!a.contains(b))
@@ -170,14 +170,14 @@ template <class T> void countsOrCountsDensity(const T &object) {
                             object.unit().name() + '.');
 }
 
-void SCIPP_CORE_DLL validSlice(const Dimensions &dims, const Slice &slice);
-void SCIPP_CORE_DLL coordsAndLabelsMatch(const DataConstProxy &a,
-                                         const DataConstProxy &b);
-void SCIPP_CORE_DLL coordsAndLabelsAreSuperset(const DataConstProxy &a,
-                                               const DataConstProxy &b);
-void SCIPP_CORE_DLL notSparse(const Dimensions &dims);
-void SCIPP_CORE_DLL validDim(const Dim dim);
-void SCIPP_CORE_DLL validExtent(const scipp::index size);
+void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
+void SCIPP_CORE_EXPORT coordsAndLabelsMatch(const DataConstProxy &a,
+                                            const DataConstProxy &b);
+void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
+                                                  const DataConstProxy &b);
+void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
+void SCIPP_CORE_EXPORT validDim(const Dim dim);
+void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
 
 } // namespace expect
 } // namespace scipp::core

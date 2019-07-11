@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "scipp/core/dll_config.h"
+#include "scipp-core_export.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
@@ -17,14 +17,14 @@ class DataProxy;
 class Variable;
 
 namespace counts {
-SCIPP_CORE_DLL void toDensity(const DataProxy data,
-                              const std::vector<Variable> &binWidths);
-SCIPP_CORE_DLL Dataset toDensity(Dataset d, const Dim dim);
-SCIPP_CORE_DLL Dataset toDensity(Dataset d, const std::vector<Dim> &dims);
-SCIPP_CORE_DLL void fromDensity(const DataProxy data,
-                                const std::vector<Variable> &binWidths);
-SCIPP_CORE_DLL Dataset fromDensity(Dataset d, const Dim dim);
-SCIPP_CORE_DLL Dataset fromDensity(Dataset d, const std::vector<Dim> &dims);
+SCIPP_CORE_EXPORT void toDensity(const DataProxy data,
+                                 const std::vector<Variable> &binWidths);
+SCIPP_CORE_EXPORT Dataset toDensity(Dataset d, const Dim dim);
+SCIPP_CORE_EXPORT Dataset toDensity(Dataset d, const std::vector<Dim> &dims);
+SCIPP_CORE_EXPORT void fromDensity(const DataProxy data,
+                                   const std::vector<Variable> &binWidths);
+SCIPP_CORE_EXPORT Dataset fromDensity(Dataset d, const Dim dim);
+SCIPP_CORE_EXPORT Dataset fromDensity(Dataset d, const std::vector<Dim> &dims);
 } // namespace counts
 } // namespace scipp::core
 

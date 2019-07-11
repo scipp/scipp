@@ -5,12 +5,12 @@
 #ifndef VIEW_INDEX_H
 #define VIEW_INDEX_H
 
+#include "scipp-core_export.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/dll_config.h"
 
 namespace scipp::core {
 
-class SCIPP_CORE_DLL ViewIndex {
+class SCIPP_CORE_EXPORT ViewIndex {
 public:
   ViewIndex(const Dimensions &targetDimensions,
             const Dimensions &dataDimensions);

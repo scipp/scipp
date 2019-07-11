@@ -18,7 +18,7 @@ namespace scipp::core {
 
 /// A view into multi-dimensional data, supporting slicing, index reordering,
 /// and broadcasting.
-template <class T> class SCIPP_CORE_DLL VariableView {
+template <class T> class SCIPP_CORE_EXPORT VariableView {
 public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;

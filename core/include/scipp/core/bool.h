@@ -5,11 +5,11 @@
 #ifndef BOOL_H
 #define BOOL_H
 
-#include "scipp/core/dll_config.h"
+#include "scipp-core_export.h"
 
 namespace scipp::core {
 
-class SCIPP_CORE_DLL Bool {
+class SCIPP_CORE_EXPORT Bool {
 public:
   Bool(const bool value = false) : m_value(value) {}
   operator const bool &() const { return m_value; }
