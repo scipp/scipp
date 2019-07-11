@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
@@ -12,8 +11,8 @@
 
 namespace scipp::core {
 /**
-  Support explicit instantionatons for templates
-  */
+  Support explicit instantionatons for templates for generic Variable
+*/
 #define INSTANTIATE_VARIABLE(...)                                              \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               Vector<underlying_type_t<__VA_ARGS__>>);         \
@@ -26,6 +25,9 @@ namespace scipp::core {
       &Variable::cast<__VA_ARGS__>(const bool) const;
 }
 
+/**
+  Support explicit instantionatons for templates for generic VariableView
+*/
 #define INSTANTIATE_SLICEVIEW(...)                                             \
   template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
   VariableConstProxy::cast<__VA_ARGS__>() const;                               \
