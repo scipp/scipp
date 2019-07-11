@@ -13,11 +13,6 @@ To create a new ``conda`` environment with ``scipp``:
    conda create -n env_with_scipp -c scipp scipp
 
 Note that these packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are currently only available on Linux.
-There are three installation options:
-
-From source
------------
-See the `scipp README <See https://github.com/scipp/scipp/blob/master/README.md>`_.
 
 Docker
 ------
@@ -33,3 +28,8 @@ Note that this is an outdated build, before the ongoing major API refactor.
 Navigate to ``localhost:8888`` in your browser.
 A number of Jupyter demo notebooks can be found in the ``demo/`` folder.
 These notebooks provide an introduction and basic usage turorial.
+
+From source
+-----------
+
+See the `scipp README <See https://github.com/scipp/scipp/blob/master/README.md>`_.
