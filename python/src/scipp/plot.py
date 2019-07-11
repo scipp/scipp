@@ -12,6 +12,7 @@ from plotly.io import write_image
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 from ipywidgets import VBox, HBox, IntSlider, Label
 from plotly.graph_objs import FigureWidget, Layout
+from plotly.offline import plot as plotlyplot
 
 # =============================================================================
 
@@ -271,7 +272,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 
 
 def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
-               plot=True, resolution=128, filename=None):
+               plot=True, resolution=128, filename=None, show_variances=False,
+               figsize=[default["width"], default["height"]]):
     """
     Plot a 2D image.
 
@@ -303,58 +305,72 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
     layout = dict(
         xaxis=dict(title=axis_label(xcoord)),
         yaxis=dict(title=axis_label(ycoord)),
-        height=default["height"],
-        width=default["width"]
+        height=figsize[1],
+        width=figsize[0]
     )
-    if input_data.has_variances:
+    if input_data.has_variances and show_variances:
         layout["width"] *= 0.5
         layout["height"] = 0.8 * layout["width"]
 
     if plot:
-        values = input_data.values
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-            values = values.T
-        # Apply colorbar parameters
-        if cbar["log"]:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                values = np.log10(values)
-        if cbar["min"] is None:
-            cbar["min"] = np.amin(values[np.where(np.isfinite(values))])
-        if cbar["max"] is None:
-            cbar["max"] = np.amax(values[np.where(np.isfinite(values))])
 
-        # Treat variances if any
-        if input_data.has_variances:
-            variances = input_data.variances
-            # Check if dimensions of arrays agree, if not, plot the transpose
-            if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-                variances = variances.T
-            # Apply colorbar parameters
-            if cbar["log"]:
-                with np.errstate(invalid="ignore", divide="ignore"):
-                    variances = np.log10(variances)
-            if cbar["min_var"] is None:
-                cbar["min_var"] = np.amin(
-                    variances[np.where(np.isfinite(variances))])
-            if cbar["max_var"] is None:
-                cbar["max_var"] = np.amax(
-                    variances[np.where(np.isfinite(variances))])
-        else:
-            variances = None
+        # Prepare dictionaries for holding key parameters
+        data = {"values": None, "variances": None}
+        params = {"values": {"cbmin": "min", "cbmax": "max"},
+                  "variances": None}
+        if input_data.has_variances and show_variances:
+            params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
 
-        imview = ImageViewer(xe, xc, ye, yc, values, variances, resolution,
-                             cbar, plot_type, title, contours)
+        for i, (key, val) in enumerate(sorted(params.items())):
+            if val is not None:
+                arr = getattr(input_data, key)
+                # Check if dimensions of arrays agree, if not, transpose
+                if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
+                    arr = arr.T
+                # Apply colorbar parameters
+                if cbar["log"]:
+                    with np.errstate(invalid="ignore", divide="ignore"):
+                        arr = np.log10(arr)
+                if cbar[val["cbmin"]] is None:
+                    cbar[val["cbmin"]] = np.amin(
+                        arr[np.where(np.isfinite(arr))])
+                if cbar[val["cbmax"]] is None:
+                    cbar[val["cbmax"]] = np.amax(
+                        arr[np.where(np.isfinite(arr))])
+                if key == "variances":
+                    arr = np.sqrt(arr)
+                data[key] = arr
+
+        imview = ImageViewer(xe, xc, ye, yc, data["values"], data["variances"],
+                             resolution, cbar, plot_type, title, contours)
 
         for key, val in layout.items():
             imview.fig_val.layout[key] = val
-            if variances is not None:
+            if params["variances"] is not None:
                 imview.fig_var.layout[key] = val
 
         if filename is not None:
-            write_image(fig=imview.fig_val, file=filename)
+            if type(filename) == str:
+                pos = filename.rfind(".")
+                root = filename[:pos]
+                ext = filename[pos:]
+                val_file = filename
+                var_file = root + "_err" + ext
+            else:
+                val_file = filename[0]
+                var_file = filename[1]
+
+            if val_file.endswith(".html"):
+                plotlyplot(imview.fig_val, filename=val_file, auto_open=False)
+                if (params["variances"] is not None) and show_variances:
+                    plotlyplot(imview.fig_var, filename=var_file,
+                               auto_open=False)
+            else:
+                write_image(fig=imview.fig_val, file=val_file)
+                if (params["variances"] is not None) and show_variances:
+                    write_image(fig=imview.fig_var, file=var_file)
         else:
-            if variances is not None:
+            if (params["variances"] is not None) and show_variances:
                 display(imview.hbox)
             else:
                 display(imview.fig_val)
@@ -475,7 +491,7 @@ class ImageViewer:
 
             # Update figure data dict
             res.datadict["z"] = variances_loc
-            res.datadict["colorbar"] = {"title": {"text": "variances",
+            res.datadict["colorbar"] = {"title": {"text": "std. dev",
                                                   "side": "right"}}
 
             # Update the figure
