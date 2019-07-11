@@ -12,7 +12,7 @@ requirements:
     - git
     - python {{ python }}
   run:
-    - numpy >=1.14
+    - numpy {{ numpy }}
     - python {{ python }}
 
 build:
