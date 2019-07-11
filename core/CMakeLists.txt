@@ -28,7 +28,7 @@ set(SRC_FILES
     variable_binary_ops.cpp
     view_index.cpp)
 
-add_library(scipp-core STATIC ${INC_FILES} ${SRC_FILES})
+add_library(scipp-core SHARED ${INC_FILES} ${SRC_FILES})
 target_link_libraries(scipp-core
                       PUBLIC scipp-units Boost::boost OpenMP::OpenMP_CXX)
 # Include tcb/span as system header to avoid compiler warnings.
@@ -46,5 +46,6 @@ target_include_directories(scipp-core SYSTEM
                            PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
                            PRIVATE "../range-v3/include")
 set_target_properties(scipp-core PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+install(TARGETS scipp-core LIBRARY DESTINATION lib)
 
 add_subdirectory(test)

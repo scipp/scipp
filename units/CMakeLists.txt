@@ -17,7 +17,7 @@ if(NOT SCIPP_UNITS_SYSTEM)
 endif()
 string(TOUPPER ${SCIPP_UNITS_SYSTEM} SCIPP_UNITS_SYSTEM)
 
-add_library(scipp-units STATIC ${INC_FILES} ${SRC_FILES})
+add_library(scipp-units SHARED ${INC_FILES} ${SRC_FILES})
 target_compile_definitions(scipp-units PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM})
 target_link_libraries(scipp-units PUBLIC Boost::boost)
 target_include_directories(
@@ -25,5 +25,6 @@ target_include_directories(
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 set_target_properties(scipp-units PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+install(TARGETS scipp-units LIBRARY DESTINATION lib)
 
 add_subdirectory(test)

@@ -15,6 +15,7 @@ target_include_directories(_scipp SYSTEM PRIVATE "../range-v3/include")
 
 # Set symbol visibility to hidden to reduce binary size, as recommended in pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
+set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 
 add_sanitizers(_scipp)
 
