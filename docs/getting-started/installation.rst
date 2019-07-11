@@ -6,7 +6,14 @@ Installation
 Conda
 -----
 
-The easiest way to install ``scipp`` is using `conda <https://conda.io>`_:
+The easiest way to install ``scipp`` is using `conda <https://conda.io>`_.
+To create a new conda environment with scipp:
+
+.. code-block:: sh
+
+   $ conda create -n env_with_scipp -c scipp scipp
+   
+To add scipp to an existing conda environment:
 
 .. code-block:: sh
 
