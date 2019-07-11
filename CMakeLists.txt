@@ -37,13 +37,6 @@ include(GenerateExportHeader)
 
 find_package(Boost 1.67 REQUIRED)
 
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-
-# Reduces binary size of, e.g., libscipp-core.so by several MB.
-set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
-
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
 
 # See https://github.com/pybind/pybind11/issues/1604
@@ -52,6 +45,13 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   if(APPLE)
     add_compile_definitions(_APPLE_CLANG_)
   endif()
+else()
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+
+  # Reduces binary size of, e.g., libscipp-core.so by several MB.
+  set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
