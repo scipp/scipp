@@ -142,7 +142,7 @@ using supported_units = decltype(detail::make_unit(
     std::make_tuple(m, dimensionless / m),
     std::make_tuple(dimensionless, counts, s, kg, angstrom, meV, us,
                     dimensionless / us, dimensionless / s, counts / us,
-                    counts / meV, m *m *m *m, meV *us *us / (m * m),
+                    counts / meV, m *m *m, meV *us *us / (m * m),
                     meV *us *us *dimensionless, kg *m / s, m / s, c, c *m,
                     meV / c, dimensionless / c, K, us / angstrom,
                     us / (m * angstrom))));

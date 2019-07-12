@@ -18,7 +18,7 @@ make -j2 install
 #./neutron/test/scipp-neutron-test
 
 # Python tests
-python3 -m pip install -r ../scippy/requirements.txt
+python3 -m pip install -r ../python/requirements.txt
 export PYTHONPATH=$PYTHONPATH:../install
-cd ../scippy
+cd ../python
 python3 -m pytest

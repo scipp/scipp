@@ -1,0 +1,27 @@
+package:
+  name: scipp
+  version: 0.0.1
+
+source:
+  path: ..
+
+requirements:
+  build:
+    - cmake
+    - gxx_linux-64 >=7.3
+    - git
+    - python {{ python }}
+  run:
+    - numpy >=1.14
+    - python {{ python }}
+
+build:
+  number: 0
+
+about:
+  home: https://scipp.readthedocs.io/en/latest/
+  license: GPLv3
+  summary: Multi-dimensional data arrays with labeled dimensions
+  description: Multi-dimensional data arrays with labeled dimensions
+  dev_url: https://github.com/scipp/scipp
+  doc_url: https://scipp.readthedocs.io/en/latest/
