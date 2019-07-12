@@ -8,7 +8,9 @@ if [[ $TRAVIS == 'true' ]] && [[ ! $TRAVIS_BRANCH == 'master' ]]; then
 fi
 echo 'Performing conda build and publish'
 
-# Build
-conda-build ./conda
-
-# TODO
+# Build and upload
+conda-build \
+  --user 'scipp' \
+  --token "$ANACONDA_TOKEN" \
+  --label 'dev' \
+  ./conda
