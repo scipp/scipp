@@ -8,6 +8,9 @@ if [[ $TRAVIS == 'true' ]] && [[ ! $TRAVIS_BRANCH == 'master' ]]; then
 fi
 echo 'Performing conda build and publish'
 
+# Show this for debugging only
+git describe --tags
+
 # Build and upload
 conda-build \
   --user 'scipp' \

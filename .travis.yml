@@ -31,6 +31,8 @@ jobs:
       script: sh .travis/run_tests.sh
     - stage: "Deploy"
       name: "conda"
+      git:
+        depth: false
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
       install: sh .travis/install_conda.sh
