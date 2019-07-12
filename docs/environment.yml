@@ -5,3 +5,4 @@ channels:
 
 dependencies:
   - scipp
+  - ipython=7.2.0
