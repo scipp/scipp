@@ -32,20 +32,20 @@ def test_create_default_dtype():
 
 
 def test_create_with_dtype():
-    var = sp.Variable(labels=[Dim.X], shape=[2], dtype=sp.dtype.float)
+    var = sp.Variable(dims=[Dim.X], shape=[2], dtype=sp.dtype.float)
     assert var.dtype == sp.dtype.float
 
 
 def test_create_with_numpy_dtype():
-    var = sp.Variable(labels=[Dim.X], shape=[2], dtype=np.dtype(np.float32))
+    var = sp.Variable(dims=[Dim.X], shape=[2], dtype=np.dtype(np.float32))
     assert var.dtype == sp.dtype.float
 
 
 def test_create_with_variances():
-    assert not sp.Variable(labels=[Dim.X], shape=[2]).has_variances
-    assert not sp.Variable(labels=[Dim.X], shape=[
+    assert not sp.Variable(dims=[Dim.X], shape=[2]).has_variances
+    assert not sp.Variable(dims=[Dim.X], shape=[
                            2], variances=False).has_variances
-    assert sp.Variable(labels=[Dim.X], shape=[2], variances=True).has_variances
+    assert sp.Variable(dims=[Dim.X], shape=[2], variances=True).has_variances
 
 
 def test_create_sparse():
@@ -64,7 +64,7 @@ def test_create_from_numpy_1d():
 
 
 def test_create_from_numpy_1d_bool():
-    var = sp.Variable(labels=[sp.Dim.X], values=np.array([True, False, True]))
+    var = sp.Variable(dims=[sp.Dim.X], values=np.array([True, False, True]))
     assert var.dtype == sp.dtype.bool
     np.testing.assert_array_equal(var.values, np.array([True, False, True]))
 
