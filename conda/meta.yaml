@@ -8,11 +8,13 @@ source:
 requirements:
   build:
     - cmake
-    - gxx_linux-64 >=7.3
+    - gxx_linux-64 7.3.*
     - git
     - python {{ python }}
   run:
-    - numpy >=1.14
+    - ipywidgets 7.*
+    - numpy {{ numpy }}
+    - plotly 3.*
     - python {{ python }}
 
 build:
