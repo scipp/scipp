@@ -33,6 +33,7 @@ include(Eigen)
 include(pybind11)
 include(GoogleTest)
 include(GoogleBenchmark)
+include(GenerateExportHeader)
 
 if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
   message(FATAL_ERROR "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
@@ -48,6 +49,13 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   if(APPLE)
     add_compile_definitions(_APPLE_CLANG_)
   endif()
+else()
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+
+  # Reduces binary size of, e.g., libscipp-core.so by several MB.
+  set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
