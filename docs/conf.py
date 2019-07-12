@@ -119,10 +119,10 @@ else:
 # documentation.
 #
 html_theme_options = {
-    'logo_only': True,
+    'logo_only': True
 }
 
-html_logo = "_static/logo-large.png"
+html_logo = "_static/logo-large-v2.png"
 # html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
