@@ -81,7 +81,7 @@ std::string make_dims_labels(const Variable &variable,
   if (dims.empty())
     return "()";
   std::string diminfo = "(";
-  for (const auto dim : dims.labels()) {
+  for (const auto dim : dims.denseLabels()) {
     diminfo += to_string_with_sep(dim, separator);
     if (datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim]))
       diminfo += " [bin-edges]";
@@ -146,7 +146,7 @@ void format_line(std::stringstream &s,
 
 std::string to_string(const Variable &variable, const std::string &separator) {
   std::stringstream s;
-  s << "<Variable>";
+  s << "<scipp.Variable>";
   format_line(s, to_string_components(variable, separator));
   return s.str();
 }
@@ -154,7 +154,7 @@ std::string to_string(const Variable &variable, const std::string &separator) {
 std::string to_string(const VariableConstProxy &variable,
                       const std::string &separator) {
   std::stringstream s;
-  s << "<VariableProxy>";
+  s << "<scipp.VariableProxy>";
   format_line(s, to_string_components(variable, separator));
   return s.str();
 }
@@ -194,12 +194,13 @@ template <class T> Dimensions dimensions(const T &dataset) {
 }
 
 std::string to_string(const Dataset &dataset, const std::string &separator) {
-  return do_to_string(dataset, "<Dataset>", dimensions(dataset), separator);
+  return do_to_string(dataset, "<scipp.Dataset>", dimensions(dataset),
+                      separator);
 }
 
 std::string to_string(const DatasetConstProxy &dataset,
                       const std::string &separator) {
-  return do_to_string(dataset, "<DatasetProxy>", dimensions(dataset),
+  return do_to_string(dataset, "<scipp.DatasetProxy>", dimensions(dataset),
                       separator);
 }
 
