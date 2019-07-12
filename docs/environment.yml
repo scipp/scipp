@@ -1,0 +1,7 @@
+name: scipp-docs
+
+channels:
+  - scipp
+
+dependencies:
+  - scipp
