@@ -93,7 +93,11 @@ void init_dataset(py::module &m) {
              else
                throw std::runtime_error("Not implemented yet");
            })
-      .def("set_coord", &Dataset::setCoord);
+      .def("set_sparse_coord", &Dataset::setSparseCoord)
+      .def("set_sparse_labels", &Dataset::setSparseLabels)
+      .def("set_coord", &Dataset::setCoord)
+      .def("set_labels", &Dataset::setLabels)
+      .def("set_attr", &Dataset::setAttr);
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);

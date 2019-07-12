@@ -3,6 +3,23 @@
 Data Structures
 ===============
 
+Dimension labels
+----------------
+
+Scipp uses hard-coded labels for dimension naming.
+Arbitrary string-based labels are deliberately avoided, for two reasons:
+
+- Matching between coordinates and dimensions based on string-matching is error-prone and could lead to non-obvious bugs and data corruption.
+  For example, an operation between two datasets with a mismatching x-coordinate might erroneously succeed if the coordinates of the respective datasets are named ``"x"`` and ``"X"``.
+- Potential performance issues in the underlying C++ libraries.
+
+Instead, scipp uses labels such as ``Dim.X``, ``Dim.Y``, or ``Dim.Temperature``.
+It is obviously impossible to support an exhaustive list of possible dimension labels.
+The intention is to provide different library builds for different science applications, which typically *do* have a well defined set of relevant dimensions.
+See :ref:`customizing` on how to do this.
+
+To keep this documentation generic we typically use ``Dim.X`` or ``Dim.Y``, but this should *not* be seen as a recommendation to use these labels for anything but actual positions or offsets in space.
+
 Variable
 --------
 
@@ -53,8 +70,10 @@ Instead we create it by specifying a shape:
                       variances=True,
                       unit=sc.units.kg)
     var
-    var.values
-    var.variances
+    var.shape # The sparse dimension is not part of the shape
+    len(var.values[0]) # Initially the extent in the sparse dimension is 0
+
+For more details see :ref:`sparse-data`.
 
 A 0-dimensional variable contains a single value (and an optional variance).
 For convenience, singular versions of the ``values`` and ``variances`` properties are provided:

@@ -34,6 +34,7 @@ Documentation
    user-guide/data-structures
    user-guide/slicing
    user-guide/operations
+   user-guide/sparse-data
 
 .. toctree::
    :caption: Python Reference
