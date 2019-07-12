@@ -3,6 +3,12 @@
 Data Structures
 ===============
 
+.. ipython:: python
+
+    import numpy as np
+    import scipp as sc
+    dir(sc)
+
 Variable
 --------
 
