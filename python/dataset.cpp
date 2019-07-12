@@ -48,6 +48,10 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         [](const T &self, const Dataset &other) { return self == other; });
   c.def("__eq__",
         [](const T &self, const DatasetProxy &other) { return self == other; });
+  c.def("__ne__",
+        [](const T &self, const Dataset &other) { return self == other; });
+  c.def("__ne__",
+        [](const T &self, const DatasetProxy &other) { return self == other; });
 }
 
 void init_dataset(py::module &m) {
@@ -82,6 +86,13 @@ void init_dataset(py::module &m) {
            py::arg("coords") = std::map<Dim, Variable>{},
            py::arg("labels") = std::map<std::string, Variable>{})
       .def("__setitem__", &Dataset::setData)
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name, const DataProxy &data) {
+             if (self.contains(name))
+               self[name].assign(data);
+             else
+               throw std::runtime_error("Not implemented yet");
+           })
       .def("set_coord", &Dataset::setCoord);
 
   bind_dataset_proxy_methods(dataset);

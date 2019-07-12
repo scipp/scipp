@@ -149,7 +149,6 @@ void init_variable(py::module &m) {
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
       .def_property_readonly("dtype", &Variable::dtype)
-      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
@@ -159,13 +158,9 @@ void init_variable(py::module &m) {
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
       .def("__eq__", [](Variable &a, VariableProxy &b) { return a == b; },
            py::is_operator())
       .def("__ne__", [](Variable &a, VariableProxy &b) { return a != b; },
@@ -204,14 +199,10 @@ void init_variable(py::module &m) {
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableProxy &self, py::dict) { return Variable(self); })
-      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())

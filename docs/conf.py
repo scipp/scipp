@@ -38,6 +38,7 @@ extensions = [
 ]
 
 intersphinx_mapping = {
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
 

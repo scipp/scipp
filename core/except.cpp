@@ -115,7 +115,10 @@ auto to_string_components(const Key &key, const Var &variable,
                           const std::string &separator,
                           const Dimensions &datasetDims = Dimensions()) {
   std::array<std::string, 4> out;
-  out[0] = to_string(key);
+  if constexpr (std::is_same_v<Key, Dim>)
+    out[0] = to_string_with_sep(key, separator);
+  else
+    out[0] = to_string(key);
   out[1] = to_string(variable.dtype());
   out[2] = '[' + variable.unit().name() + ']';
   out[3] = make_dims_labels(variable, separator, datasetDims);
@@ -168,6 +171,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
   s << "Coordinates:\n";
   for (const auto & [ dim, var ] : dataset.coords())
     format_line(s, to_string_components(dim, var, separator, dims));
+  s << "Labels:\n";
   for (const auto & [ name, var ] : dataset.labels())
     format_line(s, to_string_components(name, var, separator, dims));
   s << "Data:\n";

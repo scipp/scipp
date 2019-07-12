@@ -33,6 +33,7 @@ Documentation
 
    user-guide/data-structures
    user-guide/slicing
+   user-guide/operations
 
 .. toctree::
    :caption: Python Reference
