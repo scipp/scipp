@@ -157,7 +157,7 @@ template <class... Ts> struct as_VariableViewImpl {
             // 2. For 1-D sparse data, where the individual item is then a
             //    vector-like object.
             if (dims.shape().size() == 0)
-              return py::cast(data[0]);
+              return py::cast(data[0], py::return_value_policy::reference);
             else
               return py::cast(data);
           },

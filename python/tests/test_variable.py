@@ -167,7 +167,7 @@ def test_sparse_slice():
     vals0 = var[Dim.X, 0].values
     assert len(vals0) == 0
     vals0.append(1.2)
-    assert len(vals0) == 1
+    assert len(var[Dim.X, 0].values) == 1
 
 
 def test_sparse_setitem():
