@@ -20,7 +20,7 @@ def make_variables():
 
 def test_create_default():
     var = sp.Variable()
-    assert var.dims == sp.Dimensions()
+    assert var.dims == []
     assert var.dtype == sp.dtype.double
     assert var.unit == sp.units.dimensionless
     assert var.value == 0.0
@@ -51,7 +51,7 @@ def test_create_with_variances():
 def test_create_sparse():
     var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
     assert var.dtype == sp.dtype.double
-    assert var.dims.sparse
+    assert var.sparse
     assert len(var.values) == 4
     for vals in var.values:
         assert len(vals) == 0
@@ -80,7 +80,7 @@ def test_create_with_variances_from_numpy_1d():
 def test_create_scalar():
     var = sp.Variable(1.2)
     assert var.value == 1.2
-    assert var.dims == sp.Dimensions()
+    assert var.dims == []
     assert var.dtype == sp.dtype.double
     assert var.unit == sp.units.dimensionless
 
@@ -88,7 +88,7 @@ def test_create_scalar():
 def test_create_scalar_quantity():
     var = sp.Variable(1.2, unit=sp.units.m)
     assert var.value == 1.2
-    assert var.dims == sp.Dimensions()
+    assert var.dims == []
     assert var.dtype == sp.dtype.double
     assert var.unit == sp.units.m
 

@@ -29,7 +29,7 @@ def axis_label(var, name=None, log=False):
     if name is not None:
         label = name
     else:
-        label = str(var.dims.labels[0]).replace("Dim.", "")
+        label = str(var.dims[0]).replace("Dim.", "")
 
     if log:
         label = "log\u2081\u2080(" + label + ")"
