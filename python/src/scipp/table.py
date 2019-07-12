@@ -6,21 +6,28 @@
 import scipp as sp
 from xml.etree import ElementTree as et
 from collections import defaultdict
+from .tools import axis_label
 
 
-style_border_center = {'style': 'border: 1px solid black; text-align:center'}
-style_border_right = {'style': 'border: 1px solid black; text-align:right'}
+style_border_center = {'style': 'border: 1px solid black; text-align:center;'}
+style_border_right = {'style': 'border: 1px solid black; text-align:right;'}
+style_coord_odd = style_border_center.copy()
+style_coord_odd["style"] += 'background-color: #ADF3E0;'
+style_coord_even = style_border_center.copy()
+style_coord_even["style"] += 'background-color: #B9FFEC;'
+style_coord = [style_coord_odd, style_coord_even]
 
 
-def value_to_string(val):
+def value_to_string(val, precision=3):
     if (not isinstance(val, float)) or (val == 0):
         text = str(val)
-    elif abs(val) >= 1.0e4 or abs(val) <= 1.0e-4:
-        text = "{:.3e}".format(val)
+    elif (abs(val) >= 10.0**(precision+1)) or \
+         (abs(val) <= 10.0**(-precision-1)):
+        text = "{val:.{prec}e}".format(val=val, prec=precision)
     else:
         text = "{}".format(val)
-        if len(text) > 5 + (text[0] == '-'):
-            text = "{:.3f}".format(val)
+        if len(text) > precision + 2 + (text[0] == '-'):
+            text = "{val:.{prec}f}".format(val=val, prec=precision)
     return text
 
 
@@ -30,157 +37,161 @@ def append_with_text(parent, name, text, attrib=style_border_right):
 
 
 def table_ds(dataset):
-    if len(dataset.dimensions) > 1:
-        raise RuntimeError("Only 1-D datasets can be rendered as a table")
+    coords = dataset.coords
+    ndims = len(coords)
+    if ndims > 1:
+        raise RuntimeError("Only 0D & 1D datasets can be rendered as a table")
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
     if isinstance(dataset, sp.Dataset):
         headline.text = 'Dataset:'
     else:
-        headline.text = 'DatasetSlice:'
-    names = list(dict.fromkeys([var.name for var in dataset if var.is_data]))
+        headline.text = 'DataProxy:'
+
     datum1d = defaultdict(list)
     datum0d = defaultdict(list)
-    for name in names:
-        sub = dataset.subset[name]
-        for var in sub:
-            if var.is_data and len(var.dimensions) == 1:
-                datum1d[name].append(var)
-            elif var.is_data:
-                datum0d[name].append(var)
+    coords1d = None
+    for name, var in dataset:
+        if len(var.coords) == 1:
+            datum1d[name] = var
+            coords1d = var.coords[var.dims.labels[0]]
 
-    coord_names = list(dict.fromkeys(
-        [var.name for var in dataset if var.is_coord]))
-    coords0d = defaultdict(list)
-    coords1d = defaultdict(list)
-    for name in coord_names:
-        for var in [
-                var for var in dataset if var.is_coord and var.name == name]:
-            if len(var.dimensions) == 1:
-                coords1d[name].append(var)
-            else:
-                coords0d[name].append(var)
+        else:
+            datum0d[name] = var
 
     # 0 - dimensional data
-    if datum0d or coords0d:
-        tab = et.SubElement(body, 'table')
+    if datum0d:
+        itab = et.SubElement(body, 'table')
+        tab = et.SubElement(itab, 'tbody', attrib=style_border_center)
         cap = et.SubElement(tab, 'caption')
         cap.text = '0D Variables:'
-        tr_name = et.SubElement(tab, 'tr')
-        tr_tag = et.SubElement(tab, 'tr')
-        tr_unit = et.SubElement(tab, 'tr')
-        tr_val = et.SubElement(tab, 'tr')
+        tr = et.SubElement(tab, 'tr')
 
-        for key, val in coords0d.items():
-            append_with_text(tr_name, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() |
-                                         style_border_center.items()))
-            for var in val:
-                append_with_text(tr_tag, 'th', str(var.tag))
-                append_with_text(tr_val, 'th', str(var.data[0]))
-                append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
-
+        # Data fields
         for key, val in datum0d.items():
-            append_with_text(tr_name, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() |
+            append_with_text(tr, 'th', axis_label(val, name=key),
+                             attrib=dict({'colspan':
+                                         str(1 + val.has_variances)}.items() |
                                          style_border_center.items()))
-            for var in val:
-                append_with_text(tr_tag, 'th', str(var.tag))
-                append_with_text(tr_val, 'th', str(var.data[0]))
-                append_with_text(tr_unit, 'th', '[{}]'.format(var.unit))
+
+        tr = et.SubElement(tab, 'tr')
+        # Go through all items in dataset and add headers
+        for key, val in datum0d.items():
+            append_with_text(
+                tr, 'th', "Values", style_border_center)
+            if val.has_variances:
+                append_with_text(
+                    tr, 'th', "Variances", style_border_center)
+
+        tr = et.SubElement(tab, 'tr')
+        for key, val in datum0d.items():
+            append_with_text(tr, 'td', value_to_string(val.value))
+            if val.has_variances:
+                append_with_text(tr, 'td', value_to_string(val.variance))
 
     # 1 - dimensional data
     if datum1d or coords1d:
-        datas = []
-        for key, val in datum1d.items():
-            datas.extend(val)
-
-        coords = []
-        for key, val in coords1d.items():
-            coords.extend(val)
 
         itab = et.SubElement(body, 'table')
         tab = et.SubElement(itab, 'tbody', attrib=style_border_center)
-        cap = et.SubElement(tab, 'capltion')
+        cap = et.SubElement(tab, 'caption')
         cap.text = '1D Variables:'
         tr = et.SubElement(tab, 'tr')
 
-        # Aligned names
-        for key, val in coords1d.items():
-            append_with_text(tr, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() |
-                                         style_border_center.items()))
+        # Coordinate
+        append_with_text(tr, 'th', "Coord: " + axis_label(coords1d),
+                         attrib=dict({'colspan':
+                                     str(1 + coords1d.has_variances)}.items() |
+                                     style_coord[0].items()))
+
+        # Data fields
         for key, val in datum1d.items():
-            append_with_text(tr, 'th', key,
-                             attrib=dict({'colspan': str(len(val))}.items() |
+            append_with_text(tr, 'th', axis_label(val, name=key),
+                             attrib=dict({'colspan':
+                                         str(1 + val.has_variances)}.items() |
                                          style_border_center.items()))
+            dims = val.dims
+            length = dims.shape[0]
 
-        length = min([len(x) for x in datas] + [len(x) for x in coords])
+        # Check if is histogram
+        # TODO: what if the Dataset contains one coordinate with N+1 elements,
+        # one variable with N elements, and another variable with N+1 elements.
+        # How do we render this as a table if we only have one column for the
+        # coordinate?
+        is_hist = length == (len(coords1d.values) - 1)
 
-        is_hist = [length != len(x) for x in coords]
-
+        # Make table row for "Values" and "Variances"
         tr = et.SubElement(tab, 'tr')
-
-        for x in coords:
+        append_with_text(tr, 'th', "Values", style_coord[1])
+        if coords1d.has_variances:
+            append_with_text(tr, 'th', "Variances", style_coord[1])
+        # Go through all items in dataset and add headers
+        for key, val in datum1d.items():
             append_with_text(
-                tr, 'th', '{}'.format(
-                    x.tag, x.name), style_border_center)
-
-        for x in datas:
-            append_with_text(
-                tr, 'th', '{}'.format(
-                    x.tag, x.name), style_border_center)
-
-        tr = et.SubElement(tab, 'tr')
-        for x in coords:
-            append_with_text(
-                tr, 'th', '[{}]'.format(
-                    x.unit), style_border_center)
-        for x in datas:
-            append_with_text(
-                tr, 'th', '[{}]'.format(
-                    x.unit), style_border_center)
-
+                tr, 'th', "Values", style_border_center)
+            if val.has_variances:
+                append_with_text(
+                    tr, 'th', "Variances", style_border_center)
+        # Now write all the data row by row
         for i in range(length):
             tr = et.SubElement(tab, 'tr')
-            for x, h in zip(coords, is_hist):
-                text = value_to_string(x.data[i])
-                if h:
+            text = value_to_string(coords1d.values[i])
+            if is_hist:
+                text = '[{}; {}]'.format(
+                    text, value_to_string(coords1d.values[i + 1]))
+            append_with_text(tr, 'td', text, attrib=style_coord[i % 2])
+            if coords1d.has_variances:
+                text = value_to_string(coords1d.variances[i])
+                if is_hist:
                     text = '[{}; {}]'.format(
-                        text, value_to_string(x.data[i + 1]))
-                append_with_text(tr, 'th', text)
-            for x in datas:
-                append_with_text(tr, 'th', value_to_string(x.data[i]))
-
+                        text, value_to_string(coords1d.variances[i + 1]))
+                append_with_text(tr, 'td', text, attrib=style_coord[i % 2])
+            for key, val in datum1d.items():
+                append_with_text(tr, 'td', value_to_string(val.values[i]))
+                if val.has_variances:
+                    append_with_text(tr, 'td',
+                                     value_to_string(val.variances[i]))
+    # Render the HTML code
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
 
 
 def table_var(variable):
-    if len(variable.dimensions) > 1:
+    dims = variable.dims
+    labs = dims.labels
+    if len(labs) > 1:
         raise RuntimeError("Only 1-D variable can be rendered")
+    nx = dims.shape[0]
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
     if isinstance(variable, sp.Variable):
         headline.text = 'Variable:'
     else:
-        headline.text = 'VariableSlice:'
+        headline.text = 'VariableProxy:'
     tab = et.SubElement(body, 'table')
 
-    tr_tag = et.SubElement(tab, 'tr')
-    tr_unit = et.SubElement(tab, 'tr')
-    append_with_text(tr_tag, 'th', str(variable.tag))
-    append_with_text(tr_unit, 'th', '[{}]'.format(variable.unit))
+    tr = et.SubElement(tab, 'tr')
+    append_with_text(tr, 'th', axis_label(variable, name=str(labs[0])),
+                         attrib=dict({'colspan':
+                                     str(1 + variable.has_variances)}.items() |
+                                     style_border_center.items()))
 
-    if variable.name:
-        tr_name = et.SubElement(tab, 'tr')
-        append_with_text(tr_name, 'th', variable.name)
     # Aligned data
-    for val in variable.data:
+    tr = et.SubElement(tab, 'tr')
+
+    append_with_text(
+        tr, 'th', "Values", style_border_center)
+    if variable.has_variances:
+        append_with_text(
+            tr, 'th', "Variances", style_border_center)
+    for i in range(nx):
         tr_val = et.SubElement(tab, 'tr')
-        append_with_text(tr_val, 'th', value_to_string(val))
+        append_with_text(tr_val, 'td', value_to_string(variable.values[i]))
+        if variable.has_variances:
+            append_with_text(tr_val, 'td',
+                             value_to_string(variable.variances[i]))
 
     from IPython.display import display, HTML
     display(HTML(et.tostring(body).decode('UTF-8')))
@@ -188,9 +199,9 @@ def table_var(variable):
 
 def table(some):
     tp = type(some)
-    if tp is sp.Dataset or tp is sp.DatasetSlice:
+    if tp is sp.Dataset or tp is sp.DataProxy:
         table_ds(some)
-    elif tp is sp.Variable or tp is sp.VariableSlice:
+    elif tp is sp.Variable or tp is sp.VariableProxy:
         table_var(some)
     else:
         raise RuntimeError("Type {} is not supported".format(tp))

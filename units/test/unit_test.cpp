@@ -66,9 +66,9 @@ TEST(Unit, multiply) {
   EXPECT_EQ(a * c, c);
   EXPECT_EQ(c * a, c);
   EXPECT_EQ(b * b, c);
-  EXPECT_ANY_THROW(b * c);
-  EXPECT_ANY_THROW(c * b);
-  EXPECT_EQ(c * c, units::m * units::m * units::m * units::m);
+  EXPECT_EQ(b * c, units::m * units::m * units::m);
+  EXPECT_EQ(c * b, units::m * units::m * units::m);
+  EXPECT_ANY_THROW(c * c);
 }
 
 TEST(Unit, multiply_counts) {

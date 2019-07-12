@@ -7,6 +7,7 @@ pybind11_add_module(_scipp
                     dimensions.cpp
                     dtype.cpp
                     scipp.cpp
+                    sparse_container.cpp
                     units_neutron.cpp
                     variable.cpp
                     variable_view.cpp)
@@ -18,7 +19,7 @@ set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 add_sanitizers(_scipp)
 
-set(PY_FILES __init__.py table.py plot.py)
+set(PY_FILES __init__.py table.py plot.py tools.py)
 
 install(DIRECTORY "src/scipp" DESTINATION ".")
 install(TARGETS _scipp DESTINATION "scipp")

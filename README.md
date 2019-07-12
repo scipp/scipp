@@ -1,6 +1,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 [![Build Status](https://www.travis-ci.org/scipp/scipp.svg?branch=master)](https://www.travis-ci.org/scipp/scipp)
 [![Documentation Status](https://readthedocs.org/projects/scipp/badge/?version=latest)](https://scipp.readthedocs.io/en/latest/?badge=latest)
+[![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp)
 
 # Scipp
 
@@ -37,6 +38,8 @@ cd ../python
 python3 -m pip install -r requirements.txt
 export PYTHONPATH=$PYTHONPATH:../install
 ```
+
+You should use Python 3.5 or greater
 
 In Python:
 
