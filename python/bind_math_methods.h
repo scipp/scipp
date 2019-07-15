@@ -11,8 +11,12 @@ namespace py = pybind11;
 
 template <class T, class... Ignored>
 void bind_math_methods(pybind11::class_<T, Ignored...> &c) {
+  c.def(py::self == py::self, py::call_guard<py::gil_scoped_release>());
+  c.def(py::self != py::self, py::call_guard<py::gil_scoped_release>());
   c.def(py::self += py::self, py::call_guard<py::gil_scoped_release>());
+  c.def(py::self -= py::self, py::call_guard<py::gil_scoped_release>());
   c.def(py::self *= py::self, py::call_guard<py::gil_scoped_release>());
+  c.def(py::self /= py::self, py::call_guard<py::gil_scoped_release>());
 }
 
 #endif // SCIPPY_BIND_MATH_METHODS_H

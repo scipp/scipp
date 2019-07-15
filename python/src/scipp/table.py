@@ -55,7 +55,7 @@ def table_ds(dataset):
     for name, var in dataset:
         if len(var.coords) == 1:
             datum1d[name] = var
-            coords1d = var.coords[var.dims.labels[0]]
+            coords1d = var.coords[var.dims[0]]
 
         else:
             datum0d[name] = var
@@ -111,8 +111,7 @@ def table_ds(dataset):
                              attrib=dict({'colspan':
                                          str(1 + val.has_variances)}.items() |
                                          style_border_center.items()))
-            dims = val.dims
-            length = dims.shape[0]
+            length = val.shape[0]
 
         # Check if is histogram
         # TODO: what if the Dataset contains one coordinate with N+1 elements,
@@ -159,10 +158,9 @@ def table_ds(dataset):
 
 def table_var(variable):
     dims = variable.dims
-    labs = dims.labels
-    if len(labs) > 1:
+    if len(dims) > 1:
         raise RuntimeError("Only 1-D variable can be rendered")
-    nx = dims.shape[0]
+    nx = variable.shape[0]
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
@@ -173,7 +171,7 @@ def table_var(variable):
     tab = et.SubElement(body, 'table')
 
     tr = et.SubElement(tab, 'tr')
-    append_with_text(tr, 'th', axis_label(variable, name=str(labs[0])),
+    append_with_text(tr, 'th', axis_label(variable, name=str(dims[0])),
                          attrib=dict({'colspan':
                                      str(1 + variable.has_variances)}.items() |
                                      style_border_center.items()))

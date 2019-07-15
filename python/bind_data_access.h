@@ -157,7 +157,7 @@ template <class... Ts> struct as_VariableViewImpl {
             // 2. For 1-D sparse data, where the individual item is then a
             //    vector-like object.
             if (dims.shape().size() == 0)
-              return py::cast(data[0]);
+              return py::cast(data[0], py::return_value_policy::reference);
             else
               return py::cast(data);
           },
@@ -254,9 +254,28 @@ using as_VariableView =
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property_readonly("dims", [](const T &self) { return self.dims(); },
-                          py::return_value_policy::copy,
-                          "The dimensions of the data (read-only).");
+  c.def_property_readonly("dims",
+                          [](const T &self) {
+                            const auto &dims = self.dims();
+                            return std::vector<Dim>(dims.labels().begin(),
+                                                    dims.labels().end());
+                          },
+                          "Dimension labels of the data (read-only).");
+  c.def_property_readonly("shape",
+                          [](const T &self) {
+                            const auto &dims = self.dims();
+                            return std::vector<scipp::index>(
+                                dims.shape().begin(), dims.shape().end());
+                          },
+                          "Shape of the data (read-only).");
+  c.def_property_readonly("sparse",
+                          [](const T &self) { return self.dims().sparse(); },
+                          "Return True if there is a sparse dimension.");
+  c.def_property_readonly("sparse_dim",
+                          [](const T &self) { return self.dims().sparseDim(); },
+                          "Return the label of a potential sparse dimension, "
+                          "Dim.Invalid otherwise.");
+
   c.def_property("unit", &T::unit, &T::setUnit,
                  "The physical unit of the data (writable).");
 

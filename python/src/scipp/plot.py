@@ -191,16 +191,18 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     """
 
     dims = input_data.dims
-    labs = dims.labels
+    shape = input_data.shape
     coords = input_data.coords
 
     # Gather list of dimensions that are to be collapsed
     slice_dims = []
     volume = 1
-    for lab in labs:
-        if lab != dim:
-            slice_dims.append(lab)
-            volume *= dims[lab]
+    slice_shape = dict()
+    for d, size in zip(dims, shape):
+        if d != dim:
+            slice_dims.append(d)
+            slice_shape[d] = size
+            volume *= size
 
     # Create temporary Dataset
     ds = sp.Dataset()
@@ -214,7 +216,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
     dim_list = []
     for l in slice_dims:
-        dim_list.append(np.arange(dims[l], dtype=np.int32))
+        dim_list.append(np.arange(slice_shape[l], dtype=np.int32))
     # Next create a grid of indices
     # grid will contain
     # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
@@ -707,9 +709,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None,
     """
 
     if axes is None:
-        dims = input_data.dims
-        labs = dims.labels
-        axes = [l for l in labs]
+        axes = input_data.dims
 
     # Use the machinery in plot_image to make the layout
     data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
@@ -742,15 +742,11 @@ class SliceViewer:
         self.coords = self.input_data.coords
         self.xcoord = self.coords[axes[-1]]
         self.ycoord = self.coords[axes[-2]]
-        self.xdims = self.xcoord.dims
-        self.xlabs = self.xdims.labels
-        self.ydims = self.ycoord.dims
-        self.ylabs = self.ydims.labels
+        self.xlabs = self.xcoord.dims
+        self.ylabs = self.ycoord.dims
 
-        # Need these to avoid things running out of scope
-        self.dims = self.input_data.dims
-        self.labels = self.dims.labels
-        self.shapes = self.dims.shape
+        self.labels = self.input_data.dims
+        self.shapes = dict(zip(self.labels, self.input_data.shape))
 
         # Size of the slider coordinate arrays
         self.slider_nx = []
@@ -819,8 +815,7 @@ class SliceViewer:
         z = vslice.values
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        zdims = vslice.dims
-        zlabs = zdims.labels
+        zlabs = vslice.dims
         if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
             z = z.T
         # Apply colorbar parameters
@@ -860,9 +855,8 @@ def process_dimensions(input_data, coords, axes):
     Make x and y arrays from dimensions and check for bins edges
     """
     # coords = input_data.coords
-    zdims = input_data.dims
-    zlabs = zdims.labels
-    nz = zdims.shape
+    zlabs = input_data.dims
+    nz = input_data.shape
 
     if axes is None:
         axes = [l for l in zlabs]
@@ -879,12 +873,10 @@ def process_dimensions(input_data, coords, axes):
     # TODO: find a better way to handle edges. Currently, we convert from
     # edges to centers and then back to edges afterwards inside the plotly
     # object. This is not optimal and could lead to precision loss issues.
-    ydims = ycoord.dims
-    ylabs = ydims.labels
-    ny = ydims.shape
-    xdims = xcoord.dims
-    xlabs = xdims.labels
-    nx = xdims.shape
+    ylabs = ycoord.dims
+    ny = ycoord.shape
+    xlabs = xcoord.dims
+    nx = xcoord.shape
     # Find the dimension in z that corresponds to x and y
     ix = iy = None
     for i in range(len(zlabs)):
@@ -896,7 +888,7 @@ def process_dimensions(input_data, coords, axes):
         raise RuntimeError(
             "Dimension of either x ({}) or y ({}) array was not "
             "found in z ({}) array.".format(
-                xdims, ydims, zdims))
+                xlabs, ylabs, zlabs))
     if nx[0] == nz[ix]:
         xe = centers_to_edges(x)
         xc = x

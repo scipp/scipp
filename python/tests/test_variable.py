@@ -20,7 +20,7 @@ def make_variables():
 
 def test_create_default():
     var = sp.Variable()
-    assert var.dims == sp.Dimensions()
+    assert var.dims == []
     assert var.dtype == sp.dtype.double
     assert var.unit == sp.units.dimensionless
     assert var.value == 0.0
@@ -32,26 +32,26 @@ def test_create_default_dtype():
 
 
 def test_create_with_dtype():
-    var = sp.Variable(labels=[Dim.X], shape=[2], dtype=sp.dtype.float)
+    var = sp.Variable(dims=[Dim.X], shape=[2], dtype=sp.dtype.float)
     assert var.dtype == sp.dtype.float
 
 
 def test_create_with_numpy_dtype():
-    var = sp.Variable(labels=[Dim.X], shape=[2], dtype=np.dtype(np.float32))
+    var = sp.Variable(dims=[Dim.X], shape=[2], dtype=np.dtype(np.float32))
     assert var.dtype == sp.dtype.float
 
 
 def test_create_with_variances():
-    assert not sp.Variable(labels=[Dim.X], shape=[2]).has_variances
-    assert not sp.Variable(labels=[Dim.X], shape=[
+    assert not sp.Variable(dims=[Dim.X], shape=[2]).has_variances
+    assert not sp.Variable(dims=[Dim.X], shape=[
                            2], variances=False).has_variances
-    assert sp.Variable(labels=[Dim.X], shape=[2], variances=True).has_variances
+    assert sp.Variable(dims=[Dim.X], shape=[2], variances=True).has_variances
 
 
 def test_create_sparse():
     var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
     assert var.dtype == sp.dtype.double
-    assert var.dims.sparse
+    assert var.sparse
     assert len(var.values) == 4
     for vals in var.values:
         assert len(vals) == 0
@@ -64,7 +64,7 @@ def test_create_from_numpy_1d():
 
 
 def test_create_from_numpy_1d_bool():
-    var = sp.Variable(labels=[sp.Dim.X], values=np.array([True, False, True]))
+    var = sp.Variable(dims=[sp.Dim.X], values=np.array([True, False, True]))
     assert var.dtype == sp.dtype.bool
     np.testing.assert_array_equal(var.values, np.array([True, False, True]))
 
@@ -80,7 +80,7 @@ def test_create_with_variances_from_numpy_1d():
 def test_create_scalar():
     var = sp.Variable(1.2)
     assert var.value == 1.2
-    assert var.dims == sp.Dimensions()
+    assert var.dims == []
     assert var.dtype == sp.dtype.double
     assert var.unit == sp.units.dimensionless
 
@@ -88,7 +88,7 @@ def test_create_scalar():
 def test_create_scalar_quantity():
     var = sp.Variable(1.2, unit=sp.units.m)
     assert var.value == 1.2
-    assert var.dims == sp.Dimensions()
+    assert var.dims == []
     assert var.dtype == sp.dtype.double
     assert var.unit == sp.units.m
 
@@ -167,7 +167,7 @@ def test_sparse_slice():
     vals0 = var[Dim.X, 0].values
     assert len(vals0) == 0
     vals0.append(1.2)
-    assert len(vals0) == 1
+    assert len(var[Dim.X, 0].values) == 1
 
 
 def test_sparse_setitem():

@@ -13,7 +13,7 @@ For a more detailed explanation we refer to the :ref:`documentation of Dataset <
 
 Scipp labels dimensions and their associated coordinates using pre-defined dimension labels such as ``Dim.X``, ``Dim.Temperature``, or ``Dim.Wavelength``.
 
-Operations with dataset "align" data items based on their names, dimension labels, and coordinate values.
+Operations with datasets "align" data items based on their names, dimension labels, and coordinate values.
 Missing dimensions in the operands are automatically broadcast.
 If names or coordinates do not match, operations fail.
 In general scipp does not support automatic re-alignment of data.

@@ -119,7 +119,7 @@ void init_variable(py::module &m) {
   py::class_<Variable> variable(m, "Variable");
   variable
       .def(py::init(&makeVariableDefaultInit),
-           py::arg("labels") = std::vector<Dim>{},
+           py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::dtype::of<double>(),
@@ -138,7 +138,7 @@ void init_variable(py::module &m) {
            py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
-      .def(py::init(&doMakeVariable), py::arg("labels"), py::arg("values"),
+      .def(py::init(&doMakeVariable), py::arg("dims"), py::arg("values"),
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::none())
@@ -149,7 +149,6 @@ void init_variable(py::module &m) {
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
       .def_property_readonly("dtype", &Variable::dtype)
-      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
@@ -159,13 +158,9 @@ void init_variable(py::module &m) {
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
       .def("__eq__", [](Variable &a, VariableProxy &b) { return a == b; },
            py::is_operator())
       .def("__ne__", [](Variable &a, VariableProxy &b) { return a != b; },
@@ -204,14 +199,10 @@ void init_variable(py::module &m) {
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableProxy &self, py::dict) { return Variable(self); })
-      .def(py::self -= py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self /= py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self == py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self != py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
