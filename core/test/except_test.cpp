@@ -46,3 +46,10 @@ TEST(StringFormattingTest, to_string_Dataset) {
   // string representations should be the same
   EXPECT_EQ(to_string(a), to_string(b));
 }
+
+TEST(StringFormattingTest, to_string_sparse_Dataset) {
+  Dataset a;
+  a.setSparseCoord(
+      "a", makeVariable<double>({Dim::Y, Dim::X}, {4, Dimensions::Sparse}));
+  ASSERT_NO_THROW(to_string(a));
+}

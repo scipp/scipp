@@ -24,8 +24,10 @@ std::string to_string(const Dimensions &dims, const std::string &separator) {
     return "{}";
   std::string s = "{{";
   for (int32_t i = 0; i < dims.shape().size(); ++i)
-    s += to_string_with_sep(dims.labels()[i], separator) + ", " +
+    s += to_string_with_sep(dims.denseLabels()[i], separator) + ", " +
          std::to_string(dims.shape()[i]) + "}, {";
+  if (dims.sparse())
+    s += to_string_with_sep(dims.sparseDim(), separator) + ", [sparse]}, {";
   s.resize(s.size() - 3);
   s += "}";
   return s;
@@ -176,7 +178,19 @@ std::string do_to_string(const D &dataset, const std::string &id,
     format_line(s, to_string_components(name, var, separator, dims));
   s << "Data:\n";
   for (const auto & [ name, var ] : dataset) {
-    format_line(s, to_string_components(name, var.data(), separator, dims));
+    for (const auto & [ dim, coord ] : var.coords())
+      if (coord.dims().sparse())
+        format_line(s, to_string_components(
+                           std::string(name) + ".coords[" +
+                               to_string_with_sep(dim, separator) + "]",
+                           coord, separator, dims));
+    for (const auto & [ label_name, labels ] : var.labels())
+      if (labels.dims().sparse())
+        format_line(s, to_string_components(std::string(name) + ".labels[" +
+                                                std::string(label_name) + "]",
+                                            labels, separator, dims));
+    if (var.hasData())
+      format_line(s, to_string_components(name, var.data(), separator, dims));
   }
   s << "Attributes:\n";
   for (const auto & [ name, var ] : dataset.attrs())
@@ -187,13 +201,21 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
 template <class T> Dimensions dimensions(const T &dataset) {
   Dimensions datasetDims;
+  Dim sparse = Dim::Invalid;
   // TODO Should probably include dimensions of coordinates and labels?
   for (const auto &item : dataset) {
     const auto &dims = item.second.dims();
-    for (const auto dim : dims.labels())
-      if (!datasetDims.contains(dim))
-        datasetDims.add(dim, dims[dim]);
+    for (const auto dim : dims.labels()) {
+      if (!datasetDims.contains(dim)) {
+        if (dim == dims.sparseDim())
+          sparse = dim;
+        else
+          datasetDims.add(dim, dims[dim]);
+      }
+    }
   }
+  if (sparse != Dim::Invalid && !datasetDims.contains(sparse))
+    datasetDims.addInner(sparse, Dimensions::Sparse);
   return datasetDims;
 }
 
