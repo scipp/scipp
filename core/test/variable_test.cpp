@@ -8,6 +8,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/variable.h"
+#include "scipp/core/variable.tcc"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -89,6 +90,12 @@ TEST(Variable, span_references_Variable) {
   span[0] = 1.0;
   EXPECT_EQ(observer[0], 1.0);
 }
+
+// Instantiate Variable template. Test template instantiation with custom type
+// argument.
+INSTANTIATE_VARIABLE(int16_t)
+// INSTANTIATE_SLICEVIEW(int16_t)
+TEST(Variable, instantiate_template) {}
 
 class Variable_comparison_operators : public ::testing::Test {
 private:
