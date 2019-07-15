@@ -2,9 +2,10 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/except.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/except.h"
+#include "scipp/core/tag_util.h"
 
 namespace scipp::core {
 
@@ -30,8 +31,6 @@ std::string to_string(const DType dtype) {
     return "string";
   case DType::Bool:
     return "bool";
-  case DType::Char:
-    return "char";
   case DType::Dataset:
     return "Dataset";
   case DType::Float:
@@ -91,25 +90,75 @@ auto &to_string(const std::string &s) { return s; }
 auto to_string(const std::string_view s) { return s; }
 auto to_string(const char *s) { return std::string(s); }
 
+template <class T> struct ValuesToString {
+  static auto apply(const VariableConstProxy &var) {
+    return array_to_string(var.template values<T>());
+  }
+};
+template <class T> struct VariancesToString {
+  static auto apply(const VariableConstProxy &var) {
+    return array_to_string(var.template variances<T>());
+  }
+};
+
 template <class Key, class Var>
-auto make_string(const Key &key, const Var &variable,
-                 const Dimensions &datasetDims = Dimensions()) {
+auto format_variable(const Key &key, const Var &variable,
+                     const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << to_string(key);
   s << colSep << std::setw(8) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
+  s << colSep
+    << apply<ValuesToString>(variable.data().dtype(),
+                             VariableConstProxy(variable));
+  if (variable.hasVariances())
+    s << colSep
+      << apply<VariancesToString>(variable.data().dtype(),
+                                  VariableConstProxy(variable));
   s << '\n';
   return s.str();
 }
 
+template <class Key>
+auto format_data_proxy(const Key &name, const DataConstProxy &data,
+                       const Dimensions &datasetDims = Dimensions()) {
+  std::stringstream s;
+  if (data.hasData())
+    s << format_variable(name, data.data(), datasetDims);
+  else
+    s << tab << name << '\n';
+  for (const auto & [ dim, coord ] : data.coords())
+    if (coord.dims().sparse()) {
+      s << tab << tab << "Sparse coordinate:\n";
+      s << format_variable(std::string(tab) + std::string(tab) + to_string(dim),
+                           coord, datasetDims);
+    }
+  bool sparseLabels = false;
+  for (const auto & [ label_name, labels ] : data.labels())
+    if (labels.dims().sparse()) {
+      if (!sparseLabels) {
+        s << tab << tab << "Sparse labels:\n";
+        sparseLabels = true;
+      }
+      s << format_variable(std::string(tab) + std::string(tab) +
+                               std::string(label_name),
+                           labels, datasetDims);
+    }
+  return s.str();
+}
+
 std::string to_string(const Variable &variable) {
-  return make_string("<scipp.Variable>", variable);
+  return format_variable("<scipp.Variable>", variable);
 }
 
 std::string to_string(const VariableConstProxy &variable) {
-  return make_string("<scipp.VariableProxy>", variable);
+  return format_variable("<scipp.VariableProxy>", variable);
+}
+
+std::string to_string(const DataConstProxy &data) {
+  return format_data_proxy("<scipp.DataProxy>", data);
 }
 
 template <class D>
@@ -120,37 +169,16 @@ std::string do_to_string(const D &dataset, const std::string &id,
   s << "Dimensions: " << to_string(dims) << '\n';
   s << "Coordinates:\n";
   for (const auto & [ dim, var ] : dataset.coords())
-    s << make_string(dim, var, dims);
+    s << format_variable(dim, var, dims);
   s << "Labels:\n";
   for (const auto & [ name, var ] : dataset.labels())
-    s << make_string(name, var, dims);
+    s << format_variable(name, var, dims);
   s << "Data:\n";
-  for (const auto & [ name, var ] : dataset) {
-    if (var.hasData())
-      s << make_string(name, var.data(), dims);
-    else
-      s << tab << name << '\n';
-    for (const auto & [ dim, coord ] : var.coords())
-      if (coord.dims().sparse()) {
-        s << tab << tab << "Sparse coordinate:\n";
-        s << make_string(std::string(tab) + std::string(tab) + to_string(dim),
-                         coord, dims);
-      }
-    bool sparseLabels = false;
-    for (const auto & [ label_name, labels ] : var.labels())
-      if (labels.dims().sparse()) {
-        if (!sparseLabels) {
-          s << tab << tab << "Sparse labels:\n";
-          sparseLabels = true;
-        }
-        s << make_string(std::string(tab) + std::string(tab) +
-                             std::string(label_name),
-                         labels, dims);
-      }
-  }
+  for (const auto & [ name, item ] : dataset)
+    s << format_data_proxy(name, item, dims);
   s << "Attributes:\n";
   for (const auto & [ name, var ] : dataset.attrs())
-    s << make_string(name, var, dims);
+    s << format_variable(name, var, dims);
   s << '\n';
   return s.str();
 }
