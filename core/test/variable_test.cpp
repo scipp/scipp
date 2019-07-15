@@ -91,11 +91,13 @@ TEST(Variable, span_references_Variable) {
   EXPECT_EQ(observer[0], 1.0);
 }
 
-// Instantiate Variable template. Test template instantiation with custom type
+using OnDemandType = int16_t; // Not instanitated in cpp.
+// Instantiate Variable type. Test template instantiation with custom type
 // argument.
-INSTANTIATE_VARIABLE(int16_t)
-// INSTANTIATE_SLICEVIEW(int16_t)
-TEST(Variable, instantiate_template) {}
+INSTANTIATE_VARIABLE(OnDemandType)
+// Instantiate VariableConstProxy type. Test template instantiation with
+// custom type argument.
+INSTANTIATE_SLICEVIEW(OnDemandType)
 
 class Variable_comparison_operators : public ::testing::Test {
 private:

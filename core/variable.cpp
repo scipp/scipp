@@ -141,48 +141,6 @@ void VariableProxy::expectCanSetUnit(const units::Unit &unit) const {
                             "to change the unit.");
 }
 
-template <class T>
-const VariableView<const underlying_type_t<T>>
-VariableConstProxy::cast() const {
-  using TT = underlying_type_t<T>;
-  if (!m_view)
-    return requireT<const DataModel<Vector<TT>>>(data()).valuesView(dims());
-  if (m_view->isConstView())
-    return requireT<const ViewModel<VariableView<const TT>>>(data()).m_values;
-  // Make a const view from the mutable one.
-  return {requireT<const ViewModel<VariableView<TT>>>(data()).m_values, dims()};
-}
-
-template <class T>
-const VariableView<const underlying_type_t<T>>
-VariableConstProxy::castVariances() const {
-  using TT = underlying_type_t<T>;
-  if (!m_view)
-    return requireT<const DataModel<Vector<TT>>>(data()).variancesView(dims());
-  if (m_view->isConstView())
-    return *requireT<const ViewModel<VariableView<const TT>>>(data())
-                .m_variances;
-  // Make a const view from the mutable one.
-  return {*requireT<const ViewModel<VariableView<TT>>>(data()).m_variances,
-          dims()};
-}
-
-template <class T>
-VariableView<underlying_type_t<T>> VariableProxy::cast() const {
-  using TT = underlying_type_t<T>;
-  if (m_view)
-    return requireT<const ViewModel<VariableView<TT>>>(data()).m_values;
-  return requireT<DataModel<Vector<TT>>>(data()).valuesView(dims());
-}
-
-template <class T>
-VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
-  using TT = underlying_type_t<T>;
-  if (m_view)
-    return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
-  return requireT<DataModel<Vector<TT>>>(data()).variancesView(dims());
-}
-
 INSTANTIATE_SLICEVIEW(double)
 INSTANTIATE_SLICEVIEW(float)
 INSTANTIATE_SLICEVIEW(int64_t)
