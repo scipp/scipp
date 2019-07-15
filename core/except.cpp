@@ -87,18 +87,9 @@ std::string make_dims_labels(const Variable &variable,
   return diminfo;
 }
 
-template <class Var>
-auto to_string_components(const Var &variable,
-                          const Dimensions &datasetDims = Dimensions()) {
-  std::array<std::string, 3> out;
-  out[0] = to_string(variable.dtype());
-  out[1] = '[' + variable.unit().name() + ']';
-  out[2] = make_dims_labels(variable, datasetDims);
-  return out;
-}
-
 auto &to_string(const std::string &s) { return s; }
 auto to_string(const std::string_view s) { return s; }
+auto to_string(const char *s) { return std::string(s); }
 
 template <class Key, class Var>
 auto to_string_components(const Key &key, const Var &variable,
@@ -126,27 +117,15 @@ void format_line(std::stringstream &s,
   s << '\n';
 }
 
-void format_line(std::stringstream &s,
-                 const std::array<std::string, 3> &columns) {
-  const auto & [ dtype, unit, dims ] = columns;
-  const std::string colSep("  ");
-  s << colSep << std::setw(8) << dtype;
-  s << colSep << std::setw(15) << unit;
-  s << colSep << dims;
-  s << '\n';
-}
-
 std::string to_string(const Variable &variable) {
   std::stringstream s;
-  s << "<scipp.Variable>";
-  format_line(s, to_string_components(variable));
+  format_line(s, to_string_components("<scipp.Variable>", variable));
   return s.str();
 }
 
 std::string to_string(const VariableConstProxy &variable) {
   std::stringstream s;
-  s << "<scipp.VariableProxy>";
-  format_line(s, to_string_components(variable));
+  format_line(s, to_string_components("<scipp.VariableProxy>", variable));
   return s.str();
 }
 
