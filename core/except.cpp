@@ -92,8 +92,8 @@ auto to_string(const std::string_view s) { return s; }
 auto to_string(const char *s) { return std::string(s); }
 
 template <class Key, class Var>
-auto to_string_components(const Key &key, const Var &variable,
-                          const Dimensions &datasetDims = Dimensions()) {
+auto make_string(const Key &key, const Var &variable,
+                 const Dimensions &datasetDims = Dimensions()) {
   std::array<std::string, 4> out;
   if constexpr (std::is_same_v<Key, Dim>)
     out[0] = to_string(key);
@@ -102,12 +102,9 @@ auto to_string_components(const Key &key, const Var &variable,
   out[1] = to_string(variable.dtype());
   out[2] = '[' + variable.unit().name() + ']';
   out[3] = make_dims_labels(variable, datasetDims);
-  return out;
-}
 
-void format_line(std::stringstream &s,
-                 const std::array<std::string, 4> &columns) {
-  const auto & [ name, dtype, unit, dims ] = columns;
+  std::stringstream s;
+  const auto & [ name, dtype, unit, dims ] = out;
   const std::string tab("    ");
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << name;
@@ -115,18 +112,15 @@ void format_line(std::stringstream &s,
   s << colSep << std::setw(15) << unit;
   s << colSep << dims;
   s << '\n';
+  return s.str();
 }
 
 std::string to_string(const Variable &variable) {
-  std::stringstream s;
-  format_line(s, to_string_components("<scipp.Variable>", variable));
-  return s.str();
+  return make_string("<scipp.Variable>", variable);
 }
 
 std::string to_string(const VariableConstProxy &variable) {
-  std::stringstream s;
-  format_line(s, to_string_components("<scipp.VariableProxy>", variable));
-  return s.str();
+  return make_string("<scipp.VariableProxy>", variable);
 }
 
 template <class D>
@@ -137,28 +131,27 @@ std::string do_to_string(const D &dataset, const std::string &id,
   s << "Dimensions: " << to_string(dims) << '\n';
   s << "Coordinates:\n";
   for (const auto & [ dim, var ] : dataset.coords())
-    format_line(s, to_string_components(dim, var, dims));
+    s << make_string(dim, var, dims);
   s << "Labels:\n";
   for (const auto & [ name, var ] : dataset.labels())
-    format_line(s, to_string_components(name, var, dims));
+    s << make_string(name, var, dims);
   s << "Data:\n";
   for (const auto & [ name, var ] : dataset) {
     for (const auto & [ dim, coord ] : var.coords())
       if (coord.dims().sparse())
-        format_line(s, to_string_components(std::string(name) + ".coords[" +
-                                                to_string(dim) + "]",
-                                            coord, dims));
+        s << make_string(std::string(name) + ".coords[" + to_string(dim) + "]",
+                         coord, dims);
     for (const auto & [ label_name, labels ] : var.labels())
       if (labels.dims().sparse())
-        format_line(s, to_string_components(std::string(name) + ".labels[" +
-                                                std::string(label_name) + "]",
-                                            labels, dims));
+        s << make_string(std::string(name) + ".labels[" +
+                             std::string(label_name) + "]",
+                         labels, dims);
     if (var.hasData())
-      format_line(s, to_string_components(name, var.data(), dims));
+      s << make_string(name, var.data(), dims);
   }
   s << "Attributes:\n";
   for (const auto & [ name, var ] : dataset.attrs())
-    format_line(s, to_string_components(name, var, dims));
+    s << make_string(name, var, dims);
   s << '\n';
   return s.str();
 }
