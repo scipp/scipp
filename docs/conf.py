@@ -43,9 +43,10 @@ intersphinx_mapping = {
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
 
-# Currently we are using autodoc, autosummary may be more suitable in the long run when the API grows.
+# autodocs includes everything, even irrelevant API internals. autosummary looks
+# more suitable in the long run when the API grows.
 # For a nice example see how xarray handles its API documentation.
-#autosummary_generate = True
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

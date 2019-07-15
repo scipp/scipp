@@ -4,18 +4,27 @@
 API Reference
 #############
 
-.. autoclass:: scipp.Dim
-   :members:
-   :special-members:
+Classes
+=======
 
-.. autoclass:: scipp.Dataset
-   :members:
-   :special-members:
+.. autosummary::
+   :toctree: ../generated
 
-.. autoclass:: scipp.DataProxy
-   :members:
-   :special-members:
+   Dim
+   Variable
+   DataProxy
+   Dataset
 
-.. autoclass:: scipp.Variable
-   :members:
-   :special-members:
+Free functions
+==============
+
+.. autosummary::
+   :toctree: ../generated
+
+   concatenate
+   filter
+   mean
+   norm
+   rebin
+   sqrt
+   sum
