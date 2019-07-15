@@ -99,6 +99,15 @@ INSTANTIATE_VARIABLE(OnDemandType)
 // custom type argument.
 INSTANTIATE_SLICEVIEW(OnDemandType)
 
+TEST(Variable, use_custom_templates) {
+  auto input_values = std::initializer_list<OnDemandType>{1, 2};
+  auto var = Variable{{Dim::X, 2}, input_values};
+  // Check for bad cast or other built-in implicit type assumptions
+  EXPECT_NO_THROW(var.values<OnDemandType>());
+  VariableConstProxy slice = var.slice(Slice(Dim::X, 0));
+  EXPECT_NO_THROW(slice.values<OnDemandType>());
+}
+
 class Variable_comparison_operators : public ::testing::Test {
 private:
   template <class A, class B>
@@ -476,8 +485,8 @@ TEST(Variable, broadcast) {
   EXPECT_EQ(broadcast(var, {Dim::Y, 2}), var);
   EXPECT_EQ(broadcast(var, {{Dim::Y, 2}, {Dim::X, 2}}), var);
 
-  // No transpose done, should this fail? Failing is not really necessary since
-  // we have labeled dimensions.
+  // No transpose done, should this fail? Failing is not really necessary
+  // since we have labeled dimensions.
   EXPECT_EQ(broadcast(var, {{Dim::X, 2}, {Dim::Y, 2}}), var);
 
   EXPECT_EQ(broadcast(var, {Dim::Z, 3}), reference);
@@ -618,8 +627,8 @@ TEST(VariableProxy, variable_self_assign_via_slice) {
                                      {44, 45, 46, 54, 55, 56, 64, 65, 66});
 
   target = target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
-  // Note: This test does not actually fail if self-assignment is broken. Had to
-  // run address sanitizer to see that it is reading from free'ed memory.
+  // Note: This test does not actually fail if self-assignment is broken. Had
+  // to run address sanitizer to see that it is reading from free'ed memory.
   EXPECT_EQ(target, makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
                                          {22, 23, 32, 33}, {55, 56, 65, 66}));
 }
@@ -780,8 +789,8 @@ TEST(Variable, access_typed_view) {
 }
 
 TEST(Variable, access_typed_view_edges) {
-  // If a variable contains bin edges we want to "skip" the last edge. Say bins
-  // is in direction Y:
+  // If a variable contains bin edges we want to "skip" the last edge. Say
+  // bins is in direction Y:
   auto var =
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
   const auto values =
@@ -803,8 +812,8 @@ TEST(SparseVariable, create) {
       makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   EXPECT_TRUE(var.dims().sparse());
   EXPECT_EQ(var.dims().sparseDim(), Dim::X);
-  // Should we return the full volume here, i.e., accumulate the extents of all
-  // the sparse subdata?
+  // Should we return the full volume here, i.e., accumulate the extents of
+  // all the sparse subdata?
   EXPECT_EQ(var.dims().volume(), 2);
 }
 
