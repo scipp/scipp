@@ -33,6 +33,8 @@ jobs:
       name: "apple clang"
       osx_image: xcode10.2
       before_install: sh .travis/before_install_osx.sh
+      install: sh .travis/install_osx.sh
+      script: sh .travis/run_tests_osx.sh
     - stage: "Deploy"
       name: "conda"
       git:
