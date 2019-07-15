@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef DATASET_NEXT_H
-#define DATASET_NEXT_H
+#ifndef SCIPP_DATASET_H
+#define SCIPP_DATASET_H
 
 #include <functional>
 #include <iosfwd>
@@ -698,4 +698,4 @@ SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
 
 } // namespace scipp::core
 
-#endif // DATASET_NEXT_H
+#endif // SCIPP_DATASET_H

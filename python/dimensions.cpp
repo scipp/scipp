@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/dimensions.h"
-#include "scipp/core/except.h"
+#include "to_string.h"
 
 #include "pybind11.h"
 
@@ -25,7 +25,7 @@ void init_dimensions(py::module &m) {
            py::arg("labels"), py::arg("shape"))
       .def("__repr__",
            [](const Dimensions &self) {
-             std::string out = "Dimensions = " + to_string(self, ".");
+             std::string out = "Dimensions = " + scipp::python::to_string(self);
              return out;
            })
       .def("__contains__",

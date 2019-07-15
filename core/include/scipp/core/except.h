@@ -24,20 +24,13 @@ class VariableConstProxy;
 struct Slice;
 
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
-SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims,
-                                        const std::string &separator = "::");
-SCIPP_CORE_EXPORT std::string to_string(const Slice &slice,
-                                        const std::string &separator = "::");
-SCIPP_CORE_EXPORT std::string to_string(const units::Unit &unit,
-                                        const std::string &separator = "::");
-SCIPP_CORE_EXPORT std::string to_string(const Variable &variable,
-                                        const std::string &separator = "::");
-SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable,
-                                        const std::string &separator = "::");
-SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset,
-                                        const std::string &separator = "::");
-SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset,
-                                        const std::string &separator = "::");
+SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
+SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
+SCIPP_CORE_EXPORT std::string to_string(const units::Unit &unit);
+SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
+SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable);
+SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
+SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
 
 template <class T> std::string element_to_string(const T &item) {
   using std::to_string;

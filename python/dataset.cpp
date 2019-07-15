@@ -11,6 +11,7 @@
 #include "bind_math_methods.h"
 #include "bind_slice_methods.h"
 #include "pybind11.h"
+#include "to_string.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -37,7 +38,8 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
 template <class T, class... Ignored>
 void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__len__", &T::size);
-  c.def("__repr__", [](const T &self) { return to_string(self, "."); });
+  c.def("__repr__",
+        [](const T &self) { return scipp::python::to_string(self); });
   c.def("__iter__",
         [](T &self) { return py::make_iterator(self.begin(), self.end()); });
   c.def("__getitem__",
