@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # C++17
-which python
-which python3
+echo `which python`
+echo `which python3`
 #sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 #sudo apt-get update -qq
 #pyenv global system 3.7
