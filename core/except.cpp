@@ -186,7 +186,6 @@ std::string do_to_string(const D &dataset, const std::string &id,
 template <class T> Dimensions dimensions(const T &dataset) {
   Dimensions datasetDims;
   Dim sparse = Dim::Invalid;
-  // TODO Should probably include dimensions of coordinates and labels?
   for (const auto &item : dataset) {
     const auto &dims = item.second.dims();
     for (const auto dim : dims.labels()) {
@@ -197,6 +196,18 @@ template <class T> Dimensions dimensions(const T &dataset) {
           datasetDims.add(dim, dims[dim]);
       }
     }
+  }
+  for (const auto &coord : dataset.coords()) {
+    const auto &dims = coord.second.dims();
+    for (const auto dim : dims.labels())
+      if (!datasetDims.contains(dim))
+        datasetDims.add(dim, dims[dim]);
+  }
+  for (const auto &labels : dataset.labels()) {
+    const auto &dims = labels.second.dims();
+    for (const auto dim : dims.labels())
+      if (!datasetDims.contains(dim))
+        datasetDims.add(dim, dims[dim]);
   }
   if (sparse != Dim::Invalid && !datasetDims.contains(sparse))
     datasetDims.addInner(sparse, Dimensions::Sparse);
