@@ -745,8 +745,8 @@ class SliceViewer:
         self.xlabs = self.xcoord.dims
         self.ylabs = self.ycoord.dims
 
-        self.labels = self.dims
-        self.shapes = self.shape
+        self.labels = self.input_data.dims
+        self.shapes = dict(zip(self.labels, self.input_data.shape))
 
         # Size of the slider coordinate arrays
         self.slider_nx = []
