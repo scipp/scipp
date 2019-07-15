@@ -8,7 +8,7 @@
 
 namespace scipp::core {
 
-constexpr const char *separator = "::";
+constexpr const char *tab = "    ";
 
 std::string to_string(const Dimensions &dims) {
   if (dims.empty())
@@ -94,23 +94,12 @@ auto to_string(const char *s) { return std::string(s); }
 template <class Key, class Var>
 auto make_string(const Key &key, const Var &variable,
                  const Dimensions &datasetDims = Dimensions()) {
-  std::array<std::string, 4> out;
-  if constexpr (std::is_same_v<Key, Dim>)
-    out[0] = to_string(key);
-  else
-    out[0] = to_string(key);
-  out[1] = to_string(variable.dtype());
-  out[2] = '[' + variable.unit().name() + ']';
-  out[3] = make_dims_labels(variable, datasetDims);
-
   std::stringstream s;
-  const auto & [ name, dtype, unit, dims ] = out;
-  const std::string tab("    ");
   const std::string colSep("  ");
-  s << tab << std::left << std::setw(24) << name;
-  s << colSep << std::setw(8) << dtype;
-  s << colSep << std::setw(15) << unit;
-  s << colSep << dims;
+  s << tab << std::left << std::setw(24) << to_string(key);
+  s << colSep << std::setw(8) << to_string(variable.dtype());
+  s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
+  s << colSep << make_dims_labels(variable, datasetDims);
   s << '\n';
   return s.str();
 }
@@ -137,17 +126,27 @@ std::string do_to_string(const D &dataset, const std::string &id,
     s << make_string(name, var, dims);
   s << "Data:\n";
   for (const auto & [ name, var ] : dataset) {
-    for (const auto & [ dim, coord ] : var.coords())
-      if (coord.dims().sparse())
-        s << make_string(std::string(name) + ".coords[" + to_string(dim) + "]",
-                         coord, dims);
-    for (const auto & [ label_name, labels ] : var.labels())
-      if (labels.dims().sparse())
-        s << make_string(std::string(name) + ".labels[" +
-                             std::string(label_name) + "]",
-                         labels, dims);
     if (var.hasData())
       s << make_string(name, var.data(), dims);
+    else
+      s << tab << name << '\n';
+    for (const auto & [ dim, coord ] : var.coords())
+      if (coord.dims().sparse()) {
+        s << tab << tab << "Sparse coordinate:\n";
+        s << make_string(std::string(tab) + std::string(tab) + to_string(dim),
+                         coord, dims);
+      }
+    bool sparseLabels = false;
+    for (const auto & [ label_name, labels ] : var.labels())
+      if (labels.dims().sparse()) {
+        if (!sparseLabels) {
+          s << tab << tab << "Sparse labels:\n";
+          sparseLabels = true;
+        }
+        s << make_string(std::string(tab) + std::string(tab) +
+                             std::string(label_name),
+                         labels, dims);
+      }
   }
   s << "Attributes:\n";
   for (const auto & [ name, var ] : dataset.attrs())

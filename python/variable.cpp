@@ -16,7 +16,6 @@
 #include "bind_slice_methods.h"
 #include "numpy.h"
 #include "pybind11.h"
-#include "to_string.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -190,8 +189,7 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__rmul__", [](Variable &a, double &b) { return a * b; },
            py::is_operator())
-      .def("__repr__",
-           [](const Variable &self) { return scipp::python::to_string(self); });
+      .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   py::class_<VariableProxy> variableProxy(m, "VariableProxy",
                                           py::buffer_protocol());
@@ -246,9 +244,8 @@ void init_variable(py::module &m) {
              Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
              return self.reshape(dims);
            })
-      .def("__repr__", [](const VariableProxy &self) {
-        return scipp::python::to_string(self);
-      });
+      .def("__repr__",
+           [](const VariableProxy &self) { return to_string(self); });
 
   bind_slice_methods(variable);
   bind_slice_methods(variableProxy);
