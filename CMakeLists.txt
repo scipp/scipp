@@ -25,7 +25,6 @@ endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
     "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake")
 
-find_package(OpenMP 3.1 REQUIRED)
 find_package(Sanitizers REQUIRED)
 
 include(boost)
