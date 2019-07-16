@@ -538,6 +538,25 @@ TYPED_TEST(DatasetBinaryOpTest,
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
+           dataset_sparse_const_lvalue_lhs_dataset_sparse_const_lvalue_rhs) {
+  const auto dataset_a = make_simple_sparse({1.1, 2.2});
+  const auto dataset_b = make_simple_sparse({3.3, 4.4});
+
+  const auto res = TestFixture::op(dataset_a, dataset_b);
+
+  /* Only one variable should be present in result as only one common name
+   * existed between input datasets. */
+  EXPECT_EQ(1, res.size());
+
+  /* Test that the dataset contains the equivalent of operating on the Variable
+   * directly. */
+  /* Correctness of results is tested via Variable tests. */
+  const auto reference =
+      TestFixture::op(dataset_a["sparse"].data(), dataset_b["sparse"].data());
+  EXPECT_EQ(reference, res["sparse"].data());
+}
+
+TYPED_TEST(DatasetBinaryOpTest,
            dataset_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
