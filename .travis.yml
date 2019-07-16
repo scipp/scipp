@@ -32,10 +32,6 @@ jobs:
     - os: osx
       name: "apple clang"
       osx_image: xcode10.2
-      before_install:
-              - brew update
-              - brew install ccache 
-      #install: brew install libomp 
       script: sh .travis/run_tests_osx.sh
     - stage: "Deploy"
       name: "conda"
