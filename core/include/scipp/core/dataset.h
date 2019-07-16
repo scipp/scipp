@@ -224,6 +224,9 @@ class SCIPP_CORE_EXPORT Dataset {
 public:
   using value_type = std::pair<std::string_view, DataConstProxy>;
 
+  Dataset() = default;
+  explicit Dataset(const DatasetConstProxy &proxy);
+
   /// Return the number of data items in the dataset.
   ///
   /// This does not include coordinates or attributes, but only all named
@@ -280,14 +283,18 @@ public:
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
 
-  DatasetConstProxy slice(const Slice slice1) const;
-  DatasetConstProxy slice(const Slice slice1, const Slice slice2) const;
+  DatasetConstProxy slice(const Slice slice1) const &;
+  DatasetConstProxy slice(const Slice slice1, const Slice slice2) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2,
-                          const Slice slice3) const;
-  DatasetProxy slice(const Slice slice1);
-  DatasetProxy slice(const Slice slice1, const Slice slice2);
+                          const Slice slice3) const &;
+  DatasetProxy slice(const Slice slice1) &;
+  DatasetProxy slice(const Slice slice1, const Slice slice2) &;
   DatasetProxy slice(const Slice slice1, const Slice slice2,
-                     const Slice slice3);
+                     const Slice slice3) &;
+  Dataset slice(const Slice slice1) const &&;
+  Dataset slice(const Slice slice1, const Slice slice2) const &&;
+  Dataset slice(const Slice slice1, const Slice slice2,
+                const Slice slice3) const &&;
 
   bool operator==(const Dataset &other) const;
   bool operator==(const DatasetConstProxy &other) const;
@@ -650,6 +657,8 @@ SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
+                                    const DataConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
@@ -665,6 +674,8 @@ SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
+                                    const DataConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
@@ -680,6 +691,8 @@ SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
+                                    const DataConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
                                     const DatasetConstProxy &rhs);
@@ -695,6 +708,8 @@ SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
+                                    const DataConstProxy &rhs);
 
 } // namespace scipp::core
 

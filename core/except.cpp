@@ -48,7 +48,7 @@ std::string to_string(const DType dtype) {
   case DType::SparseInt64:
     return "sparse_int64";
   case DType::EigenVector3d:
-    return "Eigen::Vector3d";
+    return "vector_3_double";
   case DType::Unknown:
     return "unknown";
   default:
