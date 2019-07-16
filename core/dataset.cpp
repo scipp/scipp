@@ -833,6 +833,12 @@ Dataset operator+(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
   return res;
 }
 
+Dataset operator+(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(plus_equals, res, rhs);
+  return res;
+}
+
 Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
   Dataset res(lhs);
   apply(minus_equals, res, rhs);
@@ -876,6 +882,12 @@ Dataset operator-(const DatasetConstProxy &lhs, const Dataset &rhs) {
 Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
   Dataset res(lhs);
   apply(minus_equals, res, rhs);
+  return res;
+}
+
+Dataset operator-(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(minus_equals, res, rhs);
   return res;
 }
 
@@ -925,6 +937,12 @@ Dataset operator*(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
   return res;
 }
 
+Dataset operator*(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(times_equals, res, rhs);
+  return res;
+}
+
 Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
   Dataset res(lhs);
   apply(divide_equals, res, rhs);
@@ -968,6 +986,12 @@ Dataset operator/(const DatasetConstProxy &lhs, const Dataset &rhs) {
 Dataset operator/(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
   Dataset res(lhs);
   apply(divide_equals, res, rhs);
+  return res;
+}
+
+Dataset operator/(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  Dataset res(lhs);
+  apply_with_delay(divide_equals, res, rhs);
   return res;
 }
 
