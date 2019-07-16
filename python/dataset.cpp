@@ -8,7 +8,7 @@
 #include "scipp/core/except.h"
 
 #include "bind_data_access.h"
-#include "bind_math_methods.h"
+#include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "pybind11.h"
 
@@ -110,7 +110,28 @@ void init_dataset(py::module &m) {
 
   bind_slice_methods(dataset);
   bind_slice_methods(dataProxy);
-  bind_math_methods(dataProxy);
+
+  bind_comparison<Dataset>(dataset);
+  bind_comparison<DatasetProxy>(dataset);
+  bind_comparison<Dataset>(datasetProxy);
+  bind_comparison<DatasetProxy>(datasetProxy);
+  bind_comparison<DataProxy>(dataProxy);
+
+  bind_in_place_binary<Dataset>(dataset);
+  bind_in_place_binary<DatasetProxy>(dataset);
+  bind_in_place_binary<DataProxy>(dataset);
+  bind_in_place_binary<Dataset>(datasetProxy);
+  bind_in_place_binary<DatasetProxy>(datasetProxy);
+  bind_in_place_binary<DataProxy>(datasetProxy);
+  bind_in_place_binary<DataProxy>(dataProxy);
+
+  bind_binary<Dataset>(dataset);
+  bind_binary<DatasetProxy>(dataset);
+  bind_binary<DataProxy>(dataset);
+  bind_binary<Dataset>(datasetProxy);
+  bind_binary<DatasetProxy>(datasetProxy);
+  bind_binary<DataProxy>(datasetProxy);
+
   bind_data_properties(dataProxy);
 
   // Implicit conversion DatasetProxy -> Dataset. Reduces need for

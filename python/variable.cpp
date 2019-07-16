@@ -12,7 +12,7 @@
 #include "scipp/core/variable.h"
 
 #include "bind_data_access.h"
-#include "bind_math_methods.h"
+#include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "numpy.h"
 #include "pybind11.h"
@@ -151,38 +151,14 @@ void init_variable(py::module &m) {
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
       .def_property_readonly("dtype", &Variable::dtype)
-      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self + double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
-      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self /= double(), py::call_guard<py::gil_scoped_release>())
-      .def("__eq__", [](Variable &a, VariableProxy &b) { return a == b; },
-           py::is_operator())
-      .def("__ne__", [](Variable &a, VariableProxy &b) { return a != b; },
-           py::is_operator())
-      .def("__add__", [](Variable &a, VariableProxy &b) { return a + b; },
-           py::is_operator())
-      .def("__sub__", [](Variable &a, VariableProxy &b) { return a - b; },
-           py::is_operator())
-      .def("__mul__", [](Variable &a, VariableProxy &b) { return a * b; },
-           py::is_operator())
-      .def("__truediv__", [](Variable &a, VariableProxy &b) { return a / b; },
-           py::is_operator())
-      .def("__iadd__", [](Variable &a, VariableProxy &b) { return a += b; },
-           py::is_operator())
-      .def("__isub__", [](Variable &a, VariableProxy &b) { return a -= b; },
-           py::is_operator())
-      .def("__imul__", [](Variable &a, VariableProxy &b) { return a *= b; },
-           py::is_operator())
-      .def("__itruediv__", [](Variable &a, VariableProxy &b) { return a /= b; },
-           py::is_operator())
       .def("__radd__", [](Variable &a, double &b) { return a + b; },
            py::is_operator())
       .def("__rsub__", [](Variable &a, double &b) { return b - a; },
@@ -200,10 +176,6 @@ void init_variable(py::module &m) {
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableProxy &self, py::dict) { return Variable(self); })
-      .def(py::self + py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self - py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self * py::self, py::call_guard<py::gil_scoped_release>())
-      .def(py::self / py::self, py::call_guard<py::gil_scoped_release>())
       .def(py::self += double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self -= double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self *= double(), py::call_guard<py::gil_scoped_release>())
@@ -212,26 +184,6 @@ void init_variable(py::module &m) {
       .def(py::self - double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self * double(), py::call_guard<py::gil_scoped_release>())
       .def(py::self / double(), py::call_guard<py::gil_scoped_release>())
-      .def("__eq__", [](VariableProxy &a, Variable &b) { return a == b; },
-           py::is_operator())
-      .def("__ne__", [](VariableProxy &a, Variable &b) { return a != b; },
-           py::is_operator())
-      .def("__add__", [](VariableProxy &a, Variable &b) { return a + b; },
-           py::is_operator())
-      .def("__sub__", [](VariableProxy &a, Variable &b) { return a - b; },
-           py::is_operator())
-      .def("__mul__", [](VariableProxy &a, Variable &b) { return a * b; },
-           py::is_operator())
-      .def("__truediv__", [](VariableProxy &a, Variable &b) { return a / b; },
-           py::is_operator())
-      .def("__iadd__", [](VariableProxy &a, Variable &b) { return a += b; },
-           py::is_operator())
-      .def("__isub__", [](VariableProxy &a, Variable &b) { return a -= b; },
-           py::is_operator())
-      .def("__imul__", [](VariableProxy &a, Variable &b) { return a *= b; },
-           py::is_operator())
-      .def("__itruediv__", [](VariableProxy &a, Variable &b) { return a /= b; },
-           py::is_operator())
       .def("__radd__", [](VariableProxy &a, double &b) { return a + b; },
            py::is_operator())
       .def("__rsub__", [](VariableProxy &a, double &b) { return b - a; },
@@ -249,8 +201,22 @@ void init_variable(py::module &m) {
 
   bind_slice_methods(variable);
   bind_slice_methods(variableProxy);
-  bind_math_methods(variable);
-  bind_math_methods(variableProxy);
+
+  bind_comparison<Variable>(variable);
+  bind_comparison<VariableProxy>(variable);
+  bind_comparison<Variable>(variableProxy);
+  bind_comparison<VariableProxy>(variableProxy);
+
+  bind_in_place_binary<Variable>(variable);
+  bind_in_place_binary<VariableProxy>(variable);
+  bind_in_place_binary<Variable>(variableProxy);
+  bind_in_place_binary<VariableProxy>(variableProxy);
+
+  bind_binary<Variable>(variable);
+  bind_binary<VariableProxy>(variable);
+  bind_binary<Variable>(variableProxy);
+  bind_binary<VariableProxy>(variableProxy);
+
   bind_data_properties(variable);
   bind_data_properties(variableProxy);
 
