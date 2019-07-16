@@ -29,3 +29,12 @@ jobs:
       before_install: sh .travis/before_install.sh
       install: sh .travis/install.sh
       script: sh .travis/run_tests.sh
+    - stage: "Deploy"
+      name: "conda"
+      if: branch = master AND NOT type = pull_request
+      git:
+        depth: false
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+      install: sh .travis/install_conda.sh
+      script: sh .travis/conda_build_and_deploy.sh
