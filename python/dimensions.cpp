@@ -25,7 +25,7 @@ void init_dimensions(py::module &m) {
            py::arg("labels"), py::arg("shape"))
       .def("__repr__",
            [](const Dimensions &self) {
-             std::string out = "Dimensions = " + to_string(self, ".");
+             std::string out = "Dimensions = " + to_string(self);
              return out;
            })
       .def("__contains__",

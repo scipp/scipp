@@ -701,10 +701,7 @@ DatasetProxy DatasetProxy::operator/=(const Dataset &other) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const DataConstProxy &data) {
-  // TODO sparse
-  if (data.hasData())
-    os << data.data();
-  return os;
+  return os << to_string(data);
 }
 
 std::ostream &operator<<(std::ostream &os, const DataProxy &data) {
@@ -712,19 +709,7 @@ std::ostream &operator<<(std::ostream &os, const DataProxy &data) {
 }
 
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
-  os << "Coordinates:\n";
-  for (const auto & [ name, coord ] : dataset.coords())
-    os << to_string(name) << " " << coord;
-  os << "Labels:\n";
-  for (const auto & [ name, labels ] : dataset.labels())
-    os << name << " " << labels;
-  os << "Attributes:\n";
-  for (const auto & [ name, attr ] : dataset.attrs())
-    os << name << " " << attr;
-  os << "Data:\n";
-  for (const auto & [ name, data ] : dataset)
-    os << name << " " << data;
-  return os;
+  return os << to_string(dataset);
 }
 
 std::ostream &operator<<(std::ostream &os, const DatasetProxy &dataset) {
@@ -736,11 +721,7 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
 }
 
 std::ostream &operator<<(std::ostream &os, const VariableConstProxy &variable) {
-  os << to_string(variable) << " "
-     << array_to_string(variable.values<double>());
-  if (variable.hasVariances())
-    os << " " << array_to_string(variable.variances<double>());
-  return os << std::endl;
+  return os << to_string(variable);
 }
 
 std::ostream &operator<<(std::ostream &os, const VariableProxy &variable) {

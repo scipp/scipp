@@ -23,11 +23,12 @@ Then the remaining values (for a particluar "X" in this case) are a dense array 
     var = sc.Variable(dims=[Dim.X, Dim.Y],
                       shape=[4, sc.Dimensions.Sparse])
 
-    var[Dim.X, 0]
+    var
     var[Dim.X, 0].values = np.arange(3)
     var[Dim.X, 0].values.append(42)
     var[Dim.X, 0].values.extend(np.ones(3))
     var[Dim.X, 1].values = np.ones(6)
+    var
     var[Dim.X, 0].values
     var[Dim.X, 1].values
     var[Dim.X, 2].values
@@ -62,6 +63,7 @@ The sparse coord shadows the global coordinate when accessed via the ``coords`` 
                  Dim.X: sc.Variable([Dim.X], values=np.arange(2.0)),
                  Dim.Y: sc.Variable([Dim.Y], values=np.arange(3.0))})
     d.set_sparse_coord('a', sc.Variable(dims=[Dim.X, Dim.Y], shape=[2, sc.Dimensions.Sparse]))
+    d
     d.coords[Dim.Y]
     d['a'].coords[Dim.Y]
     try:

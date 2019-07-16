@@ -69,8 +69,8 @@
                                                                                \
   std::string MODULE::to_string(const Dim dim) {                               \
     if (dim == Dim::Invalid)                                                   \
-      return std::string("Dim::Invalid");                                      \
-    return "Dim::" + std::string(dim_names[static_cast<uint16_t>(dim)]);       \
+      return std::string("Dim.Invalid");                                       \
+    return "Dim." + std::string(dim_names[static_cast<uint16_t>(dim)]);        \
   }
 
 #endif // SCIPP_UNITS_DIMENSION_H
