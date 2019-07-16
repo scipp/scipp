@@ -64,6 +64,8 @@ void init_dataset(py::module &m) {
   py::class_<DataProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly("data", &DataProxy::data,
                                   py::keep_alive<0, 1>());
+  dataProxy.def("__repr__",
+                [](const DataProxy &self) { return to_string(self); });
 
   py::class_<DatasetConstProxy>(m, "DatasetConstProxy");
   py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");
