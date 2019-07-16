@@ -71,7 +71,8 @@ def test_set_item_slice_with_variances_from_numpy():
 
 
 def test_sparse_setitem():
-    d = sp.Dataset({'a': sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])})
+    d = sp.Dataset(
+        {'a': sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])})
     d['a'][Dim.X, 0].values = np.arange(4)
     assert len(d['a'][Dim.X, 0].values) == 4
 
