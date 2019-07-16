@@ -8,7 +8,6 @@ using namespace scipp;
 using namespace scipp::core;
 
 struct CustomType {
-public:
   CustomType() {}
   CustomType(const int &) {}
   bool operator==(const CustomType &) const { return true; }
