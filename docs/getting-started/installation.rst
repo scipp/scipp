@@ -11,14 +11,15 @@ To create a new conda environment with scipp:
 
 .. code-block:: sh
 
-   $ conda create -n env_with_scipp -c scipp scipp
+   $ conda create -n env_with_scipp -c scipp/label/dev scipp
    
 To add scipp to an existing conda environment:
 
 .. code-block:: sh
 
-   $ conda install -c scipp scipp
+   $ conda install -c scipp/label/dev scipp
 
+We are currently recommending the `scipp/label/dev` channel instead of just `scipp` since the latter is not useful until we have had our first proper release.
 Note that these packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are currently only available on Linux.
 
 Docker
