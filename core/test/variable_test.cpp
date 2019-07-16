@@ -467,8 +467,8 @@ TEST(Variable, broadcast) {
   EXPECT_EQ(broadcast(var, {Dim::Y, 2}), var);
   EXPECT_EQ(broadcast(var, {{Dim::Y, 2}, {Dim::X, 2}}), var);
 
-  // No transpose done, should this fail? Failing is not really necessary
-  // since we have labeled dimensions.
+  // No transpose done, should this fail? Failing is not really necessary since
+  // we have labeled dimensions.
   EXPECT_EQ(broadcast(var, {{Dim::X, 2}, {Dim::Y, 2}}), var);
 
   EXPECT_EQ(broadcast(var, {Dim::Z, 3}), reference);
