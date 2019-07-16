@@ -1,4 +1,4 @@
 #!/bin/sh
 
 # C++17
-brew install libomp
+brew install ccache
