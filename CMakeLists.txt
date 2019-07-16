@@ -25,7 +25,6 @@ endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
     "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake")
 
-find_package(OpenMP 3.1 REQUIRED)
 find_package(Sanitizers REQUIRED)
 
 include(boost)
@@ -84,3 +83,4 @@ add_subdirectory(core)
 add_subdirectory(neutron)
 add_subdirectory(python)
 add_subdirectory(test)
+#include "scipp/core/variable.tcc"

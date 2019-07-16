@@ -31,7 +31,7 @@ set(SRC_FILES
 add_library(scipp-core STATIC ${INC_FILES} ${SRC_FILES})
 generate_export_header(scipp-core)
 target_link_libraries(scipp-core
-                      PUBLIC scipp-units Boost::boost OpenMP::OpenMP_CXX)
+                      PUBLIC scipp-units Boost::boost)
 # Include tcb/span as system header to avoid compiler warnings.
 target_include_directories(
   scipp-core SYSTEM
