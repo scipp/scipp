@@ -280,14 +280,18 @@ public:
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
 
-  DatasetConstProxy slice(const Slice slice1) const;
-  DatasetConstProxy slice(const Slice slice1, const Slice slice2) const;
+  DatasetConstProxy slice(const Slice slice1) const &;
+  DatasetConstProxy slice(const Slice slice1, const Slice slice2) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2,
-                          const Slice slice3) const;
-  DatasetProxy slice(const Slice slice1);
-  DatasetProxy slice(const Slice slice1, const Slice slice2);
+                          const Slice slice3) const &;
+  DatasetProxy slice(const Slice slice1) &;
+  DatasetProxy slice(const Slice slice1, const Slice slice2) &;
   DatasetProxy slice(const Slice slice1, const Slice slice2,
-                     const Slice slice3);
+                     const Slice slice3) &;
+  Dataset slice(const Slice slice1) const &&;
+  Dataset slice(const Slice slice1, const Slice slice2) const &&;
+  Dataset slice(const Slice slice1, const Slice slice2,
+                const Slice slice3) const &&;
 
   bool operator==(const Dataset &other) const;
   bool operator==(const DatasetConstProxy &other) const;

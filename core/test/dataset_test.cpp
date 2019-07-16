@@ -587,6 +587,12 @@ TEST_F(Dataset_comparison_operators, with_sparse_dimension_data) {
   expect_ne(b, c);
 }
 
+TEST(DatasetTest, slice_temporary) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make().slice({Dim::X, 1});
+  ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
+}
+
 class Dataset3DTest : public ::testing::Test {
 protected:
   Dataset3DTest() : dataset(factory.make()) {}

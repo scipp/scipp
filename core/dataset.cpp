@@ -236,14 +236,15 @@ void Dataset::setSparseLabels(const std::string &name,
 /// Return const slice of the dataset along given dimension with given extents.
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
-DatasetConstProxy Dataset::slice(const Slice slice1) const {
+DatasetConstProxy Dataset::slice(const Slice slice1) const & {
   return DatasetConstProxy(*this).slice(slice1);
 }
 
 /// Return const slice of the dataset, sliced in two dimensions.
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
-DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2) const {
+DatasetConstProxy Dataset::slice(const Slice slice1,
+                                 const Slice slice2) const & {
   return DatasetConstProxy(*this).slice(slice1, slice2);
 }
 
@@ -251,21 +252,21 @@ DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2) const {
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2,
-                                 const Slice slice3) const {
+                                 const Slice slice3) const & {
   return DatasetConstProxy(*this).slice(slice1, slice2, slice3);
 }
 
 /// Return slice of the dataset along given dimension with given extents.
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
-DatasetProxy Dataset::slice(const Slice slice1) {
+DatasetProxy Dataset::slice(const Slice slice1) & {
   return DatasetProxy(*this).slice(slice1);
 }
 
 /// Return slice of the dataset, sliced in two dimensions.
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
-DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2) {
+DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2) & {
   return DatasetProxy(*this).slice(slice1, slice2);
 }
 
@@ -273,8 +274,36 @@ DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2) {
 ///
 /// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
-                            const Slice slice3) {
+                            const Slice slice3) & {
   return DatasetProxy(*this).slice(slice1, slice2, slice3);
+}
+
+/// Return const slice of the dataset along given dimension with given extents.
+///
+/// This overload for rvalue reference *this avoids returning a proxy
+/// referencing data that is about to go out of scope and returns a new dataset
+/// instead.
+Dataset Dataset::slice(const Slice slice1) const && {
+  return Dataset{DatasetConstProxy(*this).slice(slice1)};
+}
+
+/// Return const slice of the dataset, sliced in two dimensions.
+///
+/// This overload for rvalue reference *this avoids returning a proxy
+/// referencing data that is about to go out of scope and returns a new dataset
+/// instead.
+Dataset Dataset::slice(const Slice slice1, const Slice slice2) const && {
+  return Dataset{DatasetConstProxy(*this).slice(slice1, slice2)};
+}
+
+/// Return const slice of the dataset, sliced in three dimensions.
+///
+/// This overload for rvalue reference *this avoids returning a proxy
+/// referencing data that is about to go out of scope and returns a new dataset
+/// instead.
+Dataset Dataset::slice(const Slice slice1, const Slice slice2,
+                       const Slice slice3) const && {
+  return Dataset{DatasetConstProxy(*this).slice(slice1, slice2, slice3)};
 }
 
 /// Return an ordered mapping of dimension labels to extents, excluding a
