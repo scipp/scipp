@@ -28,3 +28,11 @@ Free functions
    rebin
    sqrt
    sum
+
+Data types
+==========
+
+.. autosummary::
+   :toctree: ../generated
+
+   dtype
