@@ -40,6 +40,8 @@ Documentation
    :caption: Python Reference
    :maxdepth: 2
 
+   python-reference/api
+
 .. toctree::
    :caption: C++ Reference
    :maxdepth: 2
