@@ -224,6 +224,9 @@ class SCIPP_CORE_EXPORT Dataset {
 public:
   using value_type = std::pair<std::string_view, DataConstProxy>;
 
+  Dataset() = default;
+  explicit Dataset(const DatasetConstProxy &proxy);
+
   /// Return the number of data items in the dataset.
   ///
   /// This does not include coordinates or attributes, but only all named

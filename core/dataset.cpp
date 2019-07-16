@@ -60,6 +60,24 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   return items;
 }
 
+Dataset::Dataset(const DatasetConstProxy &proxy) {
+  for (const auto & [ dim, coord ] : proxy.coords())
+    setCoord(dim, coord);
+  for (const auto & [ name, labels ] : proxy.labels())
+    setLabels(std::string(name), labels);
+  for (const auto & [ name, attr ] : proxy.attrs())
+    setAttr(std::string(name), attr);
+  for (const auto & [ name, item ] : proxy) {
+    for (const auto &coord : item.coords())
+      if (coord.second.dims().sparse())
+        setSparseCoord(std::string(name), coord.second);
+    for (const auto & [ label_name, labels ] : item.labels())
+      if (labels.dims().sparse())
+        setSparseLabels(std::string(name), std::string(label_name), labels);
+    setData(std::string(name), item.data());
+  }
+}
+
 /// Return a const proxy to all coordinates of the dataset.
 ///
 /// This proxy includes only "dimension-coordinates". To access
@@ -804,13 +822,13 @@ Dataset operator+(Dataset &&lhs, Dataset &&rhs) {
 }
 
 Dataset operator+(const DatasetConstProxy &lhs, const Dataset &rhs) {
-  Dataset res(lhs.dataset());
+  Dataset res(lhs);
   apply(plus_equals, res, rhs);
   return res;
 }
 
 Dataset operator+(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
-  Dataset res(lhs.dataset());
+  Dataset res(lhs);
   apply(plus_equals, res, rhs);
   return res;
 }
@@ -850,13 +868,13 @@ Dataset operator-(Dataset &&lhs, Dataset &&rhs) {
 }
 
 Dataset operator-(const DatasetConstProxy &lhs, const Dataset &rhs) {
-  Dataset res(lhs.dataset());
+  Dataset res(lhs);
   apply(minus_equals, res, rhs);
   return res;
 }
 
 Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
-  Dataset res(lhs.dataset());
+  Dataset res(lhs);
   apply(minus_equals, res, rhs);
   return res;
 }
@@ -896,13 +914,13 @@ Dataset operator*(Dataset &&lhs, Dataset &&rhs) {
 }
 
 Dataset operator*(const DatasetConstProxy &lhs, const Dataset &rhs) {
-  Dataset res(lhs.dataset());
+  Dataset res(lhs);
   apply(times_equals, res, rhs);
   return res;
 }
 
 Dataset operator*(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
-  Dataset res(lhs.dataset());
+  Dataset res(lhs);
   apply(times_equals, res, rhs);
   return res;
 }
@@ -942,13 +960,13 @@ Dataset operator/(Dataset &&lhs, Dataset &&rhs) {
 }
 
 Dataset operator/(const DatasetConstProxy &lhs, const Dataset &rhs) {
-  Dataset res(lhs.dataset());
+  Dataset res(lhs);
   apply(divide_equals, res, rhs);
   return res;
 }
 
 Dataset operator/(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
-  Dataset res(lhs.dataset());
+  Dataset res(lhs);
   apply(divide_equals, res, rhs);
   return res;
 }
