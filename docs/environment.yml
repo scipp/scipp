@@ -1,7 +1,7 @@
 name: scipp-docs
 
 channels:
-  - scipp
+  - scipp/label/dev
 
 dependencies:
   - scipp

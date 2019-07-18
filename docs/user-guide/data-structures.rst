@@ -86,6 +86,7 @@ For convenience, singular versions of the ``values`` and ``variances`` propertie
     var_0d.variance
 
 An exception is raised from the ``value`` and ``variance`` properties if the variable is not 0-dimensional.
+Note that a variable with one or more dimension extent(s) of 1 contains just a single value as well, but the ``value`` property will nevertheless raise an exception.
 
 .. _data-structures-dataset:
 
@@ -120,7 +121,9 @@ All three are internally a :py:class:`~scipp.Variable`, i.e., they have a physic
                  'aux': sc.Variable([Dim.Y], values=np.random.rand(3))})
     d
     d.coords[Dim.X].values
+    d['a']
     d['a'].values
+    d['a'].has_variances
 
 All variables in a dataset must have consistent dimensions.
 Thanks to labeled dimensions transposed data is supported:
@@ -129,3 +132,12 @@ Thanks to labeled dimensions transposed data is supported:
 
     d['c'] = sc.Variable(dims=[Dim.Y, Dim.X], values=np.random.rand(3, 2))
     d
+
+The name of a data item serves as a dict key and the usual methods are available:
+
+.. ipython:: python
+
+    for name, data in d:
+        print(name)
+    'a' in d
+    'x' in d

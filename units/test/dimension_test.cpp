@@ -10,8 +10,8 @@ using namespace scipp;
 using namespace scipp::units;
 
 TEST(DimensionTest, basics) {
-  EXPECT_EQ(to_string(dummy::Dim::Invalid), "Dim::Invalid");
-  EXPECT_EQ(to_string(dummy::Dim::X), "Dim::X");
-  EXPECT_EQ(to_string(dummy::Dim::Y), "Dim::Y");
-  EXPECT_EQ(to_string(dummy::Dim::Z), "Dim::Z");
+  EXPECT_EQ(to_string(dummy::Dim::Invalid), "Dim.Invalid");
+  EXPECT_EQ(to_string(dummy::Dim::X), "Dim.X");
+  EXPECT_EQ(to_string(dummy::Dim::Y), "Dim.Y");
+  EXPECT_EQ(to_string(dummy::Dim::Z), "Dim.Z");
 }

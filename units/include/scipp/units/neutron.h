@@ -150,7 +150,9 @@ using supported_units = decltype(detail::make_unit(
 using counts_unit = decltype(counts);
 using Unit = Unit_impl<supported_units, counts_unit>;
 
-SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z, Tof, Time, Q, Row, Spectrum)
+SCIPP_UNITS_DECLARE_DIMENSIONS(DSpacing, Energy, EnergyTransfer, Position, Q,
+                               Qx, Qy, Qz, Row, Spectrum, Time, Tof, Wavelength,
+                               X, Y, Z)
 
 } // namespace neutron
 } // namespace scipp::units
