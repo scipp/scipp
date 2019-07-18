@@ -170,6 +170,11 @@ def test_sparse_slice():
     assert len(var[Dim.X, 0].values) == 1
 
 
+def test_sparse_3D():
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y, sp.Dim.Z], [2, 3, sp.Dimensions.Sparse])
+    assert var.values.shape == (2, 3)
+
+
 def test_sparse_setitem():
     var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
     var[Dim.X, 0].values = np.arange(4)

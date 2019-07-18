@@ -13,6 +13,8 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/core/variable.h"
 
+#include "shaped_view.h"
+
 #include "numpy.h"
 #include "pybind11.h"
 
@@ -169,7 +171,7 @@ template <class... Ts> struct as_VariableViewImpl {
             if (dims.shape().size() == 0)
               return py::cast(data[0], py::return_value_policy::reference);
             else
-              return py::cast(data);
+              return py::cast(python::ShapedView(data, dims.shape()));
           },
           get<Getter>(proxy));
     }
