@@ -50,34 +50,33 @@ template <class T> struct ValuesAndVariances {
     variances.clear();
   }
 
-  // TODO Note that methods like insert, begin, and end are required as long as
-  // we support sparse data via a plain container such as std::vector, e.g., for
-  // concatenation using a.insert(a.end(), b.begin(), b.end()). Instead of
-  // adding these methods here (essentially making ValuesAndVariances support a
-  // proxy iterator) it might be easier to wrap the sparse container and give it
-  // some functionality like concatenate. Then we simply need to support this
-  // method here, which is much simpler than having proxy iterators.
-  template <class... Ts> void insert(Ts &&...) {
+  // Note that methods like insert, begin, and end are required as long as we
+  // support sparse data via a plain container such as std::vector, e.g., for
+  // concatenation using a.insert(a.end(), b.begin(), b.end()). We are
+  // supporting this here by simply working with pairs of iterators. This
+  // approach is not an actual proxy iterator and will not compile if client
+  // code attempts to increment the iterators. We could support `next` and
+  // `advance` easily, so client code can simply use something like:
+  //   using std::next;
+  //   next(it);
+  // instead of `++it`. Algorithms like `std::sort` would probably still not
+  // work though.
+  template <class OutputIt, class InputIt>
+  auto insert(std::pair<OutputIt, OutputIt> pos,
+              std::pair<InputIt, InputIt> first,
+              std::pair<InputIt, InputIt> last) {
+    values.insert(pos.first, first.first, last.first);
+    variances.insert(pos.second, first.second, last.second);
+  }
+  template <class... Ts> void insert(const Ts &...) {
     throw std::runtime_error(
-        "`insert` not implemented for sparse data with variances.");
+        "Cannot insert data with variances into data without, or vice versa.");
   }
 
-  void *begin() {
-    throw std::runtime_error(
-        "`begin` not implemented for sparse data with variances.");
-  }
-  void *begin() const {
-    throw std::runtime_error(
-        "`begin` not implemented for sparse data with variances.");
-  }
-  void *end() {
-    throw std::runtime_error(
-        "`end` not implemented for sparse data with variances.");
-  }
-  void *end() const {
-    throw std::runtime_error(
-        "`end` not implemented for sparse data with variances.");
-  }
+  auto begin() { return std::pair(values.begin(), variances.begin()); }
+  auto begin() const { return std::pair(values.begin(), variances.begin()); }
+  auto end() { return std::pair(values.end(), variances.end()); }
+  auto end() const { return std::pair(values.end(), variances.end()); }
 
   constexpr auto size() const noexcept { return values.size(); }
 };

@@ -427,6 +427,36 @@ TEST(SparseVariable, concatenate_along_sparse_dimension) {
   EXPECT_TRUE(equals(data[1], {1, 2}));
 }
 
+TEST(SparseVariable, concatenate_along_sparse_dimension_with_variances) {
+  auto a = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto a_vals = a.sparseValues<double>();
+  a_vals[0] = {1, 2, 3};
+  a_vals[1] = {1, 2};
+  auto a_vars = a.sparseVariances<double>();
+  a_vars[0] = {4, 5, 6};
+  a_vars[1] = {4, 5};
+  auto b = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto b_vals = b.sparseValues<double>();
+  b_vals[0] = {1, 3};
+  b_vals[1] = {};
+  auto b_vars = b.sparseVariances<double>();
+  b_vars[0] = {7, 8};
+  b_vars[1] = {};
+
+  auto var = concatenate(a, b, Dim::X);
+  EXPECT_TRUE(var.dims().sparse());
+  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
+  EXPECT_EQ(var.dims().volume(), 2);
+  auto vals = var.sparseValues<double>();
+  EXPECT_TRUE(equals(vals[0], {1, 2, 3, 1, 3}));
+  EXPECT_TRUE(equals(vals[1], {1, 2}));
+  auto vars = var.sparseVariances<double>();
+  EXPECT_TRUE(equals(vars[0], {4, 5, 6, 7, 8}));
+  EXPECT_TRUE(equals(vars[1], {4, 5}));
+}
+
 #ifdef SCIPP_UNITS_NEUTRON
 TEST(Variable, rebin) {
   auto var = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
