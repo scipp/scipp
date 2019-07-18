@@ -751,9 +751,10 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   return requireT<DataModel<Vector<TT>>>(data()).variancesView(dims());
 }
 /**
-  Support explicit instantionatons for templates for generic Variable
+  Support explicit instantiations for templates for generic Variable and
+  VariableConstProxy
 */
-#define INSTANTIATE_VARIABLE(...)                                              \
+#define INSTANTIATE_VARIABLE_AND_SLICE(...)                                    \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               Vector<underlying_type_t<__VA_ARGS__>>);         \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
@@ -762,12 +763,7 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   template Vector<underlying_type_t<__VA_ARGS__>>                              \
       &Variable::cast<__VA_ARGS__>(const bool);                                \
   template const Vector<underlying_type_t<__VA_ARGS__>>                        \
-      &Variable::cast<__VA_ARGS__>(const bool) const;
-
-/**
-  Support explicit instantionatons for templates for generic VariableView
-*/
-#define INSTANTIATE_SLICEVIEW(...)                                             \
+      &Variable::cast<__VA_ARGS__>(const bool) const;                          \
   template const VariableView<const underlying_type_t<__VA_ARGS__>>            \
   VariableConstProxy::cast<__VA_ARGS__>() const;                               \
   template const VariableView<const underlying_type_t<__VA_ARGS__>>            \

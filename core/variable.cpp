@@ -56,28 +56,28 @@ void Variable::setDims(const Dimensions &dimensions) {
   }
   m_object = m_object->clone(dimensions);
 }
-INSTANTIATE_VARIABLE(std::string)
-INSTANTIATE_VARIABLE(double)
-INSTANTIATE_VARIABLE(float)
-INSTANTIATE_VARIABLE(int64_t)
-INSTANTIATE_VARIABLE(int32_t)
-INSTANTIATE_VARIABLE(bool)
+INSTANTIATE_VARIABLE_AND_SLICE(std::string)
+INSTANTIATE_VARIABLE_AND_SLICE(double)
+INSTANTIATE_VARIABLE_AND_SLICE(float)
+INSTANTIATE_VARIABLE_AND_SLICE(int64_t)
+INSTANTIATE_VARIABLE_AND_SLICE(int32_t)
+INSTANTIATE_VARIABLE_AND_SLICE(bool)
 #if defined(_WIN32) || defined(__clang__) && defined(__APPLE__)
-INSTANTIATE_VARIABLE(scipp::index)
+INSTANTIATE_VARIABLE_AND_SLICE(scipp::index)
 #endif
-INSTANTIATE_VARIABLE(Dataset)
-INSTANTIATE_VARIABLE(Eigen::Vector3d)
-INSTANTIATE_VARIABLE(sparse_container<double>)
-INSTANTIATE_VARIABLE(sparse_container<float>)
-INSTANTIATE_VARIABLE(sparse_container<int64_t>)
-INSTANTIATE_VARIABLE(sparse_container<int32_t>)
+INSTANTIATE_VARIABLE_AND_SLICE(Dataset)
+INSTANTIATE_VARIABLE_AND_SLICE(Eigen::Vector3d)
+INSTANTIATE_VARIABLE_AND_SLICE(sparse_container<double>)
+INSTANTIATE_VARIABLE_AND_SLICE(sparse_container<float>)
+INSTANTIATE_VARIABLE_AND_SLICE(sparse_container<int64_t>)
+INSTANTIATE_VARIABLE_AND_SLICE(sparse_container<int32_t>)
 // Some sparse instantiations are only needed to avoid linker errors: Some
 // makeVariable overloads have a runtime branch that may instantiate a sparse
 // variable.
-INSTANTIATE_VARIABLE(sparse_container<std::string>)
-INSTANTIATE_VARIABLE(sparse_container<Bool>)
-INSTANTIATE_VARIABLE(sparse_container<Dataset>)
-INSTANTIATE_VARIABLE(sparse_container<Eigen::Vector3d>)
+INSTANTIATE_VARIABLE_AND_SLICE(sparse_container<std::string>)
+INSTANTIATE_VARIABLE_AND_SLICE(sparse_container<Bool>)
+INSTANTIATE_VARIABLE_AND_SLICE(sparse_container<Dataset>)
+INSTANTIATE_VARIABLE_AND_SLICE(sparse_container<Eigen::Vector3d>)
 
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   if (!a || !b)
@@ -140,18 +140,6 @@ void VariableProxy::expectCanSetUnit(const units::Unit &unit) const {
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
-
-INSTANTIATE_SLICEVIEW(double)
-INSTANTIATE_SLICEVIEW(float)
-INSTANTIATE_SLICEVIEW(int64_t)
-INSTANTIATE_SLICEVIEW(int32_t)
-INSTANTIATE_SLICEVIEW(bool)
-INSTANTIATE_SLICEVIEW(std::string)
-INSTANTIATE_SLICEVIEW(sparse_container<double>)
-INSTANTIATE_SLICEVIEW(sparse_container<float>)
-INSTANTIATE_SLICEVIEW(sparse_container<int64_t>)
-INSTANTIATE_SLICEVIEW(Dataset)
-INSTANTIATE_SLICEVIEW(Eigen::Vector3d)
 
 VariableConstProxy Variable::slice(const Slice slice) const & {
   return {*this, slice.dim, slice.begin, slice.end};
