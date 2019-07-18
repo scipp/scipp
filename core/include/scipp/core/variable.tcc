@@ -754,7 +754,7 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   Support explicit instantiations for templates for generic Variable and
   VariableConstProxy
 */
-#define INSTANTIATE_VARIABLE_AND_SLICE(...)                                    \
+#define INSTANTIATE_VARIABLE(...)                                              \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               Vector<underlying_type_t<__VA_ARGS__>>);         \
   template Variable::Variable(const units::Unit, const Dimensions &,           \

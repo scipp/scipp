@@ -15,7 +15,7 @@ struct CustomType {
 
 // Instantiate Variable type. Test template instantiation with custom type
 // argument.
-INSTANTIATE_VARIABLE_AND_SLICE(CustomType)
+INSTANTIATE_VARIABLE(CustomType)
 
 TEST(VariableCustomType, use_custom_templates) {
   auto input_values = std::initializer_list<CustomType>{1, 2};
