@@ -615,10 +615,6 @@ TYPED_TEST(DatasetBinaryOpTest,
         TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
     EXPECT_EQ(reference, item.data());
   }
-
-  /* Ensure that the original operand was moved (in which case it sould be
-   * empty) */
-  EXPECT_TRUE(dataset_a_copy.empty());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataproxy_const_lvalue_rhs) {
@@ -634,10 +630,6 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataproxy_const_lvalue_rhs) {
                                            dataset_b["data_scalar"].data());
     EXPECT_EQ(reference, item.data());
   }
-
-  /* Ensure that the original operand was moved (in which case it sould be
-   * empty) */
-  EXPECT_TRUE(dataset_a_copy.empty());
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
