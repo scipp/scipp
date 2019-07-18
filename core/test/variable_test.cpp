@@ -771,8 +771,8 @@ TEST(Variable, access_typed_view) {
 }
 
 TEST(Variable, access_typed_view_edges) {
-  // If a variable contains bin edges we want to "skip" the last edge. Say
-  // bins is in direction Y:
+  // If a variable contains bin edges we want to "skip" the last edge. Say bins
+  // is in direction Y:
   auto var =
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, {1, 2, 3, 4, 5, 6});
   const auto values =
@@ -794,8 +794,8 @@ TEST(SparseVariable, create) {
       makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
   EXPECT_TRUE(var.dims().sparse());
   EXPECT_EQ(var.dims().sparseDim(), Dim::X);
-  // Should we return the full volume here, i.e., accumulate the extents of
-  // all the sparse subdata?
+  // Should we return the full volume here, i.e., accumulate the extents of all
+  // the sparse subdata?
   EXPECT_EQ(var.dims().volume(), 2);
 }
 
