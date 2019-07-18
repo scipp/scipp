@@ -609,8 +609,8 @@ TEST(VariableProxy, variable_self_assign_via_slice) {
                                      {44, 45, 46, 54, 55, 56, 64, 65, 66});
 
   target = target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
-  // Note: This test does not actually fail if self-assignment is broken. Had
-  // to run address sanitizer to see that it is reading from free'ed memory.
+  // Note: This test does not actually fail if self-assignment is broken. Had to
+  // run address sanitizer to see that it is reading from free'ed memory.
   EXPECT_EQ(target, makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
                                          {22, 23, 32, 33}, {55, 56, 65, 66}));
 }
