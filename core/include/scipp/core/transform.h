@@ -61,6 +61,7 @@ template <class T> struct ValuesAndVariances {
   //   next(it);
   // instead of `++it`. Algorithms like `std::sort` would probably still not
   // work though.
+  // The function arguments are iterator pairs as created by `begin` and `end`.
   template <class OutputIt, class InputIt>
   auto insert(std::pair<OutputIt, OutputIt> pos,
               std::pair<InputIt, InputIt> first,
@@ -69,8 +70,8 @@ template <class T> struct ValuesAndVariances {
     variances.insert(pos.second, first.second, last.second);
   }
   template <class... Ts> void insert(const Ts &...) {
-    throw std::runtime_error(
-        "Cannot insert data with variances into data without, or vice versa.");
+    throw std::runtime_error("Cannot insert data with variances into data "
+                             "without variances, or vice versa.");
   }
 
   auto begin() { return std::pair(values.begin(), variances.begin()); }
