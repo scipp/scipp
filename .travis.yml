@@ -32,7 +32,7 @@ jobs:
     - os: osx
       name: "apple clang"
       osx_image: xcode10.2
-      before_install: brew install ccache 
+      #before_install: brew install ccache 
       script: sh .travis/run_tests.sh
     - stage: "Deploy"
       name: "conda"
