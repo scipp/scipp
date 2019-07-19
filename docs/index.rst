@@ -37,6 +37,7 @@ Documentation
    user-guide/sparse-data
    user-guide/units
    user-guide/dtype
+   user-guide/error-propagation
 
 .. toctree::
    :caption: Python Reference
