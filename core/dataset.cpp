@@ -659,18 +659,31 @@ auto apply_with_broadcast(const Op &op, A &a, const B &b) {
 
   /* Copy labels to result dataset */
   for (const auto & [ name, value ] : a.labels()) {
-    res.setLabels(static_cast<std::string>(name), value);
+    res.setLabels(std::string(name), value);
   }
 
   /* Copy attributes to result dataset */
   for (const auto & [ name, value ] : a.attrs()) {
-    res.setAttr(static_cast<std::string>(name), value);
+    res.setAttr(std::string(name), value);
   }
 
   for (const auto & [ name, item ] : b) {
     if (a.contains(name)) {
       res.setData(static_cast<std::string>(name),
                   op(a[name].data(), item.data()));
+
+      for (const auto &coord : a[name].coords()) {
+        if (coord.second.dims().sparse()) {
+          res.setSparseCoord(std::string(name), coord.second);
+        }
+      }
+
+      for (const auto & [ label_name, labels ] : a[name].labels()) {
+        if (labels.dims().sparse()) {
+          res.setSparseLabels(std::string(name), std::string(label_name),
+                              labels);
+        }
+      }
     }
   }
 

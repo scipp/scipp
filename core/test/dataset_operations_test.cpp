@@ -265,6 +265,33 @@ Dataset make_simple_sparse(std::initializer_list<double> values,
   return ds;
 }
 
+Dataset make_sparse_with_coords_and_labels(
+    std::initializer_list<double> values,
+    std::initializer_list<double> coords_and_labels,
+    std::string key = "sparse") {
+  Dataset ds;
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = values;
+    ds.setData(key, var);
+  }
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = coords_and_labels;
+    ds.setSparseCoord(key, var);
+  }
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = coords_and_labels;
+    ds.setSparseLabels(key, "l", var);
+  }
+
+  return ds;
+}
+
 Dataset make_sparse_2d(std::initializer_list<double> values,
                        std::string key = "sparse") {
   Dataset ds;
@@ -539,8 +566,10 @@ TYPED_TEST(DatasetBinaryOpTest,
 
 TYPED_TEST(DatasetBinaryOpTest,
            dataset_sparse_const_lvalue_lhs_dataset_sparse_const_lvalue_rhs) {
-  const auto dataset_a = make_simple_sparse({1.1, 2.2});
-  const auto dataset_b = make_simple_sparse({3.3, 4.4});
+  const auto dataset_a =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+  const auto dataset_b =
+      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
 
   const auto res = TestFixture::op(dataset_a, dataset_b);
 
@@ -554,6 +583,52 @@ TYPED_TEST(DatasetBinaryOpTest,
   const auto reference =
       TestFixture::op(dataset_a["sparse"].data(), dataset_b["sparse"].data());
   EXPECT_EQ(reference, res["sparse"].data());
+
+  EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
+}
+
+TYPED_TEST(
+    DatasetBinaryOpTest,
+    dataset_sparse_const_lvalue_lhs_dataset_sparse_const_lvalue_rhs_fail_when_coords_mismatch) {
+  auto dataset_a = make_simple_sparse({1.1, 2.2});
+  auto dataset_b = make_simple_sparse({3.3, 4.4});
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = {0.5, 1.0};
+    dataset_a.setSparseCoord("sparse", var);
+  }
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = {0.5, 1.5};
+    dataset_b.setSparseCoord("sparse", var);
+  }
+
+  EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
+               except::CoordMismatchError);
+}
+
+TYPED_TEST(
+    DatasetBinaryOpTest,
+    dataset_sparse_const_lvalue_lhs_dataset_sparse_const_lvalue_rhs_fail_when_labels_mismatch) {
+  auto dataset_a = make_simple_sparse({1.1, 2.2});
+  auto dataset_b = make_simple_sparse({3.3, 4.4});
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = {0.5, 1.0};
+    dataset_a.setSparseLabels("sparse", "l", var);
+  }
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = {0.5, 1.5};
+    dataset_b.setSparseLabels("sparse", "l", var);
+  }
+
+  EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
+               except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
