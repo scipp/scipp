@@ -19,6 +19,27 @@ def do_plot(d, **kwargs):
     return
 
 
+def make_2d_dataset(variances=False):
+    N = 100
+    M = 50
+    xx = np.arange(N, dtype=np.float64)
+    yy = np.arange(M, dtype=np.float64)
+    x, y = np.meshgrid(xx, yy)
+    b = N/20.0
+    c = M/2.0
+    r = np.sqrt(((x-c)/b)**2 + ((y-c)/b)**2)
+    a = np.sin(r)
+    d1 = sp.Dataset()
+    d1.set_coord(sp.Dim.X, sp.Variable([sp.Dim.X], values=xx, unit=sp.units.m))
+    d1.set_coord(sp.Dim.Y, sp.Variable([sp.Dim.Y], values=yy, unit=sp.units.m))
+    params = {"values": a}
+    if variances:
+        params["variances"] = np.random.rand(M, N) + (x == y)
+    d1["Sample"] = sp.Variable([sp.Dim.Y, sp.Dim.X], unit=sp.units.counts,
+                               **params)
+    return d1
+
+
 def test_plot_1d():
     d1 = sp.Dataset()
     N = 100
@@ -91,20 +112,7 @@ def test_plot_1d_list_of_datasets():
 
 
 def test_plot_2d_image():
-    N = 100
-    M = 50
-    xx = np.arange(N, dtype=np.float64)
-    yy = np.arange(M, dtype=np.float64)
-    x, y = np.meshgrid(xx, yy)
-    b = N/20.0
-    c = M/2.0
-    r = np.sqrt(((x-c)/b)**2 + ((y-c)/b)**2)
-    a = np.sin(r)
-    d1 = sp.Dataset()
-    d1.set_coord(sp.Dim.X, sp.Variable([sp.Dim.X], values=xx, unit=sp.units.m))
-    d1.set_coord(sp.Dim.Y, sp.Variable([sp.Dim.Y], values=yy, unit=sp.units.m))
-    d1["Sample"] = sp.Variable([sp.Dim.Y, sp.Dim.X], values=a,
-                               unit=sp.units.counts)
+    d1 = make_2d_dataset()
     do_plot(d1)
 
 
@@ -116,23 +124,23 @@ def test_plot_2d_image():
                          "xlabs and ylabs sometimes contains the same thing, "
                          "when they should in fact be different")
 def test_plot_2d_image_with_axes():
-    N = 100
-    M = 50
-    xx = np.arange(N, dtype=np.float64)
-    yy = np.arange(M, dtype=np.float64)
-    x, y = np.meshgrid(xx, yy)
-    b = N/20.0
-    c = M/2.0
-    r = np.sqrt(((x-c)/b)**2 + ((y-c)/b)**2)
-    a = np.sin(r)
-    d1 = sp.Dataset()
-    d1.set_coord(sp.Dim.X, sp.Variable([sp.Dim.X], values=xx,
-                 unit=sp.units.m))
-    d1.set_coord(sp.Dim.Y, sp.Variable([sp.Dim.Y], values=yy,
-                 unit=sp.units.m))
-    d1["Sample"] = sp.Variable([sp.Dim.Y, sp.Dim.X], values=a,
-                               unit=sp.units.counts)
+    d1 = make_2d_dataset()
     do_plot(d1, axes=[sp.Dim.X, sp.Dim.Y])
+
+
+def test_plot_2d_image_with_variances():
+    d1 = make_2d_dataset(variances=True)
+    do_plot(d1)
+
+
+def test_plot_2d_image_with_filename():
+    d1 = make_2d_dataset()
+    do_plot(d1, filename="test.html")
+
+
+def test_plot_2d_image_with_variances_with_filename():
+    d1 = make_2d_dataset(variances=True)
+    do_plot(d1, filename=["values.html", "errors.html"])
 
 
 def test_plot_waterfall():

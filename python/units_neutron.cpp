@@ -13,7 +13,7 @@ using namespace scipp::units;
 namespace py = pybind11;
 
 void init_units_neutron(py::module &m) {
-  bind_enum(m, "Dim", Dim::Invalid, 5);
+  bind_enum(m, "Dim", Dim::Invalid, 4);
 
   py::class_<units::Unit>(m, "Unit")
       .def(py::init())

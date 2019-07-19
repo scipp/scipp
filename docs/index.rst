@@ -33,10 +33,16 @@ Documentation
 
    user-guide/data-structures
    user-guide/slicing
+   user-guide/operations
+   user-guide/sparse-data
+   user-guide/units
+   user-guide/dtype
 
 .. toctree::
    :caption: Python Reference
    :maxdepth: 2
+
+   python-reference/api
 
 .. toctree::
    :caption: C++ Reference

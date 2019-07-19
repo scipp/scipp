@@ -8,7 +8,7 @@
 #include "scipp/core/except.h"
 
 #include "bind_data_access.h"
-#include "bind_math_methods.h"
+#include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "pybind11.h"
 
@@ -37,7 +37,7 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
 template <class T, class... Ignored>
 void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__len__", &T::size);
-  c.def("__repr__", [](const T &self) { return to_string(self, "."); });
+  c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("__iter__",
         [](T &self) { return py::make_iterator(self.begin(), self.end()); });
   c.def("__getitem__",
@@ -47,6 +47,10 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__eq__",
         [](const T &self, const Dataset &other) { return self == other; });
   c.def("__eq__",
+        [](const T &self, const DatasetProxy &other) { return self == other; });
+  c.def("__ne__",
+        [](const T &self, const Dataset &other) { return self == other; });
+  c.def("__ne__",
         [](const T &self, const DatasetProxy &other) { return self == other; });
 }
 
@@ -60,6 +64,8 @@ void init_dataset(py::module &m) {
   py::class_<DataProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly("data", &DataProxy::data,
                                   py::keep_alive<0, 1>());
+  dataProxy.def("__repr__",
+                [](const DataProxy &self) { return to_string(self); });
 
   py::class_<DatasetConstProxy>(m, "DatasetConstProxy");
   py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");
@@ -82,7 +88,18 @@ void init_dataset(py::module &m) {
            py::arg("coords") = std::map<Dim, Variable>{},
            py::arg("labels") = std::map<std::string, Variable>{})
       .def("__setitem__", &Dataset::setData)
-      .def("set_coord", &Dataset::setCoord);
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name, const DataProxy &data) {
+             if (self.contains(name))
+               self[name].assign(data);
+             else
+               throw std::runtime_error("Not implemented yet");
+           })
+      .def("set_sparse_coord", &Dataset::setSparseCoord)
+      .def("set_sparse_labels", &Dataset::setSparseLabels)
+      .def("set_coord", &Dataset::setCoord)
+      .def("set_labels", &Dataset::setLabels)
+      .def("set_attr", &Dataset::setAttr);
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);
@@ -93,7 +110,28 @@ void init_dataset(py::module &m) {
 
   bind_slice_methods(dataset);
   bind_slice_methods(dataProxy);
-  bind_math_methods(dataProxy);
+
+  bind_comparison<Dataset>(dataset);
+  bind_comparison<DatasetProxy>(dataset);
+  bind_comparison<Dataset>(datasetProxy);
+  bind_comparison<DatasetProxy>(datasetProxy);
+  bind_comparison<DataProxy>(dataProxy);
+
+  bind_in_place_binary<Dataset>(dataset);
+  bind_in_place_binary<DatasetProxy>(dataset);
+  bind_in_place_binary<DataProxy>(dataset);
+  bind_in_place_binary<Dataset>(datasetProxy);
+  bind_in_place_binary<DatasetProxy>(datasetProxy);
+  bind_in_place_binary<DataProxy>(datasetProxy);
+  bind_in_place_binary<DataProxy>(dataProxy);
+
+  bind_binary<Dataset>(dataset);
+  bind_binary<DatasetProxy>(dataset);
+  bind_binary<DataProxy>(dataset);
+  bind_binary<Dataset>(datasetProxy);
+  bind_binary<DatasetProxy>(datasetProxy);
+  bind_binary<DataProxy>(datasetProxy);
+
   bind_data_properties(dataProxy);
 
   // Implicit conversion DatasetProxy -> Dataset. Reduces need for

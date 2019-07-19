@@ -23,7 +23,7 @@ struct plus_equals {
   }
 };
 struct plus {
-  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
+  template <class A, class B> auto operator()(A &&a, B &&b) const {
     return std::forward<A>(a) + std::forward<B>(b);
   }
 };
@@ -34,7 +34,7 @@ struct minus_equals {
   }
 };
 struct minus {
-  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
+  template <class A, class B> auto operator()(A &&a, B &&b) const {
     return std::forward<A>(a) - std::forward<B>(b);
   }
 };
@@ -45,7 +45,7 @@ struct times_equals {
   }
 };
 struct times {
-  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
+  template <class A, class B> auto operator()(A &&a, B &&b) const {
     return std::forward<A>(a) * std::forward<B>(b);
   }
 };
@@ -56,7 +56,7 @@ struct divide_equals {
   }
 };
 struct divide {
-  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
+  template <class A, class B> auto operator()(A &&a, B &&b) const {
     return std::forward<A>(a) / std::forward<B>(b);
   }
 };
@@ -606,17 +606,15 @@ TYPED_TEST(DatasetBinaryOpTest,
 
 TYPED_TEST(DatasetBinaryOpTest,
            datasetconstproxy_const_lvalue_lhs_dataset_const_lvalue_rhs) {
-  auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+  const auto dataset_a = datasetFactory.make();
+  const auto dataset_b = datasetFactory.make().slice({Dim::X, 1});
 
-  DatasetConstProxy dataset_a_proxy(dataset_a);
+  DatasetConstProxy dataset_a_proxy = dataset_a.slice({Dim::X, 1});
   const auto res = TestFixture::op(dataset_a_proxy, dataset_b);
 
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
+  Dataset dataset_a_slice(dataset_a_proxy);
+  const auto reference = TestFixture::op(dataset_a_slice, dataset_b);
+  EXPECT_EQ(res, reference);
 }
 
 TYPED_TEST(

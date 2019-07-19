@@ -16,7 +16,7 @@ TEST(DimensionMismatchError, what) {
   except::DimensionMismatchError error(dims, Dimensions{});
   EXPECT_EQ(
       error.what(),
-      std::string("Expected dimensions {{Dim::X, 1}, {Dim::Y, 2}}, got {}."));
+      std::string("Expected dimensions {{Dim.X, 1}, {Dim.Y, 2}}, got {}."));
 }
 
 TEST(DimensionNotFoundError, what) {
@@ -24,15 +24,15 @@ TEST(DimensionNotFoundError, what) {
   except::DimensionNotFoundError error(dims, Dim::Z);
   EXPECT_EQ(error.what(),
             std::string("Expected dimension to be a non-sparse dimension of "
-                        "{{Dim::X, 1}, {Dim::Y, 2}}, got Dim::Z."));
+                        "{{Dim.X, 1}, {Dim.Y, 2}}, got Dim.Z."));
 }
 
 TEST(DimensionLengthError, what) {
   Dimensions dims{{Dim::X, 1}, {Dim::Y, 2}};
   except::DimensionLengthError error(dims, Dim::Y, 3);
   EXPECT_EQ(error.what(),
-            std::string("Expected dimension to be in {{Dim::X, 1}, {Dim::Y, "
-                        "2}}, got Dim::Y with mismatching length 3."));
+            std::string("Expected dimension to be in {{Dim.X, 1}, {Dim.Y, "
+                        "2}}, got Dim.Y with mismatching length 3."));
 }
 
 TEST(StringFormattingTest, to_string_Dataset) {
@@ -45,4 +45,11 @@ TEST(StringFormattingTest, to_string_Dataset) {
   b.setData("a", makeVariable<double>({}));
   // string representations should be the same
   EXPECT_EQ(to_string(a), to_string(b));
+}
+
+TEST(StringFormattingTest, to_string_sparse_Dataset) {
+  Dataset a;
+  a.setSparseCoord(
+      "a", makeVariable<double>({Dim::Y, Dim::X}, {4, Dimensions::Sparse}));
+  ASSERT_NO_THROW(to_string(a));
 }

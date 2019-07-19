@@ -18,12 +18,14 @@ endif()
 string(TOUPPER ${SCIPP_UNITS_SYSTEM} SCIPP_UNITS_SYSTEM)
 
 add_library(scipp-units STATIC ${INC_FILES} ${SRC_FILES})
+generate_export_header(scipp-units)
 target_compile_definitions(scipp-units PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM})
 target_link_libraries(scipp-units PUBLIC Boost::boost)
 target_include_directories(
   scipp-units
   PUBLIC $<INSTALL_INTERFACE:include>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         ${CMAKE_CURRENT_BINARY_DIR})
 set_target_properties(scipp-units PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(test)

@@ -25,7 +25,6 @@ endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
     "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake")
 
-find_package(OpenMP 3.1 REQUIRED)
 find_package(Sanitizers REQUIRED)
 
 include(boost)
@@ -33,10 +32,15 @@ include(Eigen)
 include(pybind11)
 include(GoogleTest)
 include(GoogleBenchmark)
+include(GenerateExportHeader)
+
+if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
+  message(FATAL_ERROR "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
+endif()
 
 find_package(Boost 1.67 REQUIRED)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
 
 # See https://github.com/pybind/pybind11/issues/1604
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
@@ -44,6 +48,13 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
   if(APPLE)
     add_compile_definitions(_APPLE_CLANG_)
   endif()
+else()
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+
+  # Reduces binary size of, e.g., libscipp-core.so by several MB.
+  set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)

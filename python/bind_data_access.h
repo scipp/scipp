@@ -100,68 +100,78 @@ struct get_variances {
 };
 
 template <class... Ts> struct as_VariableViewImpl {
-  template <class Getter, class Var>
+  template <class Getter, class Proxy>
   static std::variant<std::conditional_t<
-      std::is_same_v<Var, Variable>, scipp::span<underlying_type_t<Ts>>,
+      std::is_same_v<Proxy, Variable>, scipp::span<underlying_type_t<Ts>>,
       VariableView<underlying_type_t<Ts>>>...>
-  get(Var &view) {
-    switch (view.data().dtype()) {
+  get(Proxy &proxy) {
+    DType type = proxy.data().dtype();
+    if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
+      const auto &view = proxy.data();
+      type = view.data().dtype();
+    }
+    switch (type) {
     case dtype<double>:
-      return {Getter::template get<double>(view)};
+      return {Getter::template get<double>(proxy)};
     case dtype<float>:
-      return {Getter::template get<float>(view)};
+      return {Getter::template get<float>(proxy)};
     case dtype<int64_t>:
-      return {Getter::template get<int64_t>(view)};
+      return {Getter::template get<int64_t>(proxy)};
     case dtype<int32_t>:
-      return {Getter::template get<int32_t>(view)};
+      return {Getter::template get<int32_t>(proxy)};
     case dtype<bool>:
-      return {Getter::template get<bool>(view)};
+      return {Getter::template get<bool>(proxy)};
     case dtype<std::string>:
-      return {Getter::template get<std::string>(view)};
+      return {Getter::template get<std::string>(proxy)};
     case dtype<sparse_container<double>>:
-      return {Getter::template get<sparse_container<double>>(view)};
+      return {Getter::template get<sparse_container<double>>(proxy)};
     case dtype<sparse_container<float>>:
-      return {Getter::template get<sparse_container<float>>(view)};
+      return {Getter::template get<sparse_container<float>>(proxy)};
     case dtype<sparse_container<int64_t>>:
-      return {Getter::template get<sparse_container<int64_t>>(view)};
+      return {Getter::template get<sparse_container<int64_t>>(proxy)};
     case dtype<Dataset>:
-      return {Getter::template get<Dataset>(view)};
+      return {Getter::template get<Dataset>(proxy)};
     case dtype<Eigen::Vector3d>:
-      return {Getter::template get<Eigen::Vector3d>(view)};
+      return {Getter::template get<Eigen::Vector3d>(proxy)};
     default:
       throw std::runtime_error("not implemented for this type.");
     }
   }
 
-  template <class Getter, class Var>
+  template <class Getter, class Proxy>
   static py::object get_py_array_t(py::object &obj) {
-    auto &view = obj.cast<Var &>();
-    switch (view.data().dtype()) {
+    auto &proxy = obj.cast<Proxy &>();
+    DType type = proxy.data().dtype();
+    if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
+      const auto &view = proxy.data();
+      type = view.data().dtype();
+    }
+    switch (type) {
     case dtype<double>:
-      return as_py_array_t_impl<Getter, double>(obj, view);
+      return as_py_array_t_impl<Getter, double>(obj, proxy);
     case dtype<float>:
-      return as_py_array_t_impl<Getter, float>(obj, view);
+      return as_py_array_t_impl<Getter, float>(obj, proxy);
     case dtype<int64_t>:
-      return as_py_array_t_impl<Getter, int64_t>(obj, view);
+      return as_py_array_t_impl<Getter, int64_t>(obj, proxy);
     case dtype<int32_t>:
-      return as_py_array_t_impl<Getter, int32_t>(obj, view);
+      return as_py_array_t_impl<Getter, int32_t>(obj, proxy);
     case dtype<bool>:
-      return as_py_array_t_impl<Getter, bool>(obj, view);
+      return as_py_array_t_impl<Getter, bool>(obj, proxy);
     default:
       return std::visit(
-          [&view](const auto &data) {
-            const auto &dims = view.dims();
+          [&proxy](const auto &data) {
+            const auto &dims = proxy.dims();
             // We return an individual item in two cases:
             // 1. For 0-D data (consistent with numpy behavior, e.g., when
             //    slicing a 1-D array).
             // 2. For 1-D sparse data, where the individual item is then a
             //    vector-like object.
             if (dims.shape().size() == 0)
-              return py::cast(data[0]);
+              return py::cast(data[0], py::return_value_policy::reference);
             else
               return py::cast(data);
           },
-          get<Getter>(view));
+          get<Getter>(proxy));
     }
   }
 
@@ -254,9 +264,28 @@ using as_VariableView =
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property_readonly("dims", [](const T &self) { return self.dims(); },
-                          py::return_value_policy::copy,
-                          "The dimensions of the data (read-only).");
+  c.def_property_readonly("dims",
+                          [](const T &self) {
+                            const auto &dims = self.dims();
+                            return std::vector<Dim>(dims.labels().begin(),
+                                                    dims.labels().end());
+                          },
+                          "Dimension labels of the data (read-only).");
+  c.def_property_readonly("shape",
+                          [](const T &self) {
+                            const auto &dims = self.dims();
+                            return std::vector<scipp::index>(
+                                dims.shape().begin(), dims.shape().end());
+                          },
+                          "Shape of the data (read-only).");
+  c.def_property_readonly("sparse",
+                          [](const T &self) { return self.dims().sparse(); },
+                          "Return True if there is a sparse dimension.");
+  c.def_property_readonly("sparse_dim",
+                          [](const T &self) { return self.dims().sparseDim(); },
+                          "Return the label of a potential sparse dimension, "
+                          "Dim.Invalid otherwise.");
+
   c.def_property("unit", &T::unit, &T::setUnit,
                  "The physical unit of the data (writable).");
 

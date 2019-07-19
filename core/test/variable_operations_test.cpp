@@ -67,7 +67,7 @@ TEST(Variable, operator_plus_equal_different_dimensions) {
 
   auto different_dimensions = makeVariable<double>({Dim::Y, 2}, {1.1, 2.2});
   EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
-                   "Expected {{Dim::X, 2}} to contain {{Dim::Y, 2}}.");
+                   "Expected {{Dim.X, 2}} to contain {{Dim.Y, 2}}.");
 }
 
 TEST(Variable, operator_plus_equal_different_unit) {
@@ -503,8 +503,8 @@ TEST(VariableProxy, minus_equals_failures) {
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}}, {1.0, 2.0, 3.0, 4.0});
 
   EXPECT_THROW_MSG(var -= var.slice({Dim::X, 0, 1}), std::runtime_error,
-                   "Expected {{Dim::X, 2}, {Dim::Y, 2}} to contain {{Dim::X, "
-                   "1}, {Dim::Y, 2}}.");
+                   "Expected {{Dim.X, 2}, {Dim.Y, 2}} to contain {{Dim.X, "
+                   "1}, {Dim.Y, 2}}.");
 }
 
 TEST(VariableProxy, self_overlapping_view_operation) {

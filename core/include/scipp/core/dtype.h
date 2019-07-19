@@ -30,7 +30,6 @@ enum class DType {
   Int32,
   Int64,
   String,
-  Char,
   Bool,
   SparseDouble,
   SparseFloat,
@@ -45,7 +44,6 @@ template <> constexpr DType dtype<float> = DType::Float;
 template <> constexpr DType dtype<int32_t> = DType::Int32;
 template <> constexpr DType dtype<int64_t> = DType::Int64;
 template <> constexpr DType dtype<std::string> = DType::String;
-template <> constexpr DType dtype<char> = DType::Char;
 template <> constexpr DType dtype<bool> = DType::Bool;
 template <> constexpr DType dtype<Bool> = DType::Bool;
 template <>

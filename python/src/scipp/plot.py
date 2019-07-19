@@ -3,23 +3,29 @@
 # @author Neil Vaytet
 
 import numpy as np
+from collections import namedtuple
 import scipp as sp
+from .tools import edges_to_centers, centers_to_edges, axis_label
 
 # Plotly imports
 from IPython.display import display
 from plotly.io import write_image
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 from ipywidgets import VBox, HBox, IntSlider, Label
-from plotly.graph_objs import FigureWidget
+from plotly.graph_objs import FigureWidget, Layout
+from plotly.offline import plot as plotlyplot
 
 # =============================================================================
 
 # Some global configuration
 default = {
     # The colorbar properties
-    "cb": {"name": "Viridis", "log": False, "min": None, "max": None},
+    "cb": {"name": "Viridis", "log": False, "min": None, "max": None,
+           "min_var": None, "max_var": None},
     # The default image height (in pixels)
-    "height": 600
+    "height": 600,
+    # The default image width (in pixels)
+    "width": 950
 }
 
 # =============================================================================
@@ -185,16 +191,18 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     """
 
     dims = input_data.dims
-    labs = dims.labels
+    shape = input_data.shape
     coords = input_data.coords
 
     # Gather list of dimensions that are to be collapsed
     slice_dims = []
     volume = 1
-    for lab in labs:
-        if lab != dim:
-            slice_dims.append(lab)
-            volume *= dims[lab]
+    slice_shape = dict()
+    for d, size in zip(dims, shape):
+        if d != dim:
+            slice_dims.append(d)
+            slice_shape[d] = size
+            volume *= size
 
     # Create temporary Dataset
     ds = sp.Dataset()
@@ -208,7 +216,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
     dim_list = []
     for l in slice_dims:
-        dim_list.append(np.arange(dims[l], dtype=np.int32))
+        dim_list.append(np.arange(slice_shape[l], dtype=np.int32))
     # Next create a grid of indices
     # grid will contain
     # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
@@ -267,7 +275,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 
 
 def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
-               plot=True, resolution=128, filename=None):
+               plot=True, resolution=128, filename=None, show_variances=False,
+               figsize=[default["width"], default["height"]]):
     """
     Plot a 2D image.
 
@@ -299,30 +308,75 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
     layout = dict(
         xaxis=dict(title=axis_label(xcoord)),
         yaxis=dict(title=axis_label(ycoord)),
-        height=default["height"]
+        height=figsize[1],
+        width=figsize[0]
     )
+    if input_data.has_variances and show_variances:
+        layout["width"] *= 0.5
+        layout["height"] = 0.8 * layout["width"]
 
     if plot:
-        z = input_data.values
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-            z = z.T
-        # Apply colorbar parameters
-        if cbar["log"]:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                z = np.log10(z)
-        if cbar["min"] is None:
-            cbar["min"] = np.amin(z[np.where(np.isfinite(z))])
-        if cbar["max"] is None:
-            cbar["max"] = np.amax(z[np.where(np.isfinite(z))])
-        imview = ImageViewer(xe, xc, ye, yc, z, resolution, cbar,
-                             plot_type, title, contours)
+
+        # Prepare dictionaries for holding key parameters
+        data = {"values": None, "variances": None}
+        params = {"values": {"cbmin": "min", "cbmax": "max"},
+                  "variances": None}
+        if input_data.has_variances and show_variances:
+            params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
+
+        for i, (key, val) in enumerate(sorted(params.items())):
+            if val is not None:
+                arr = getattr(input_data, key)
+                # Check if dimensions of arrays agree, if not, transpose
+                if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
+                    arr = arr.T
+                # Apply colorbar parameters
+                if cbar["log"]:
+                    with np.errstate(invalid="ignore", divide="ignore"):
+                        arr = np.log10(arr)
+                if cbar[val["cbmin"]] is None:
+                    cbar[val["cbmin"]] = np.amin(
+                        arr[np.where(np.isfinite(arr))])
+                if cbar[val["cbmax"]] is None:
+                    cbar[val["cbmax"]] = np.amax(
+                        arr[np.where(np.isfinite(arr))])
+                if key == "variances":
+                    arr = np.sqrt(arr)
+                data[key] = arr
+
+        imview = ImageViewer(xe, xc, ye, yc, data["values"], data["variances"],
+                             resolution, cbar, plot_type, title, contours)
+
         for key, val in layout.items():
-            imview.fig.layout[key] = val
+            imview.fig_val.layout[key] = val
+            if params["variances"] is not None:
+                imview.fig_var.layout[key] = val
+
         if filename is not None:
-            write_image(fig=imview.fig, file=filename)
+            if type(filename) == str:
+                pos = filename.rfind(".")
+                root = filename[:pos]
+                ext = filename[pos:]
+                val_file = filename
+                var_file = root + "_err" + ext
+            else:
+                val_file = filename[0]
+                var_file = filename[1]
+
+            if val_file.endswith(".html"):
+                plotlyplot(imview.fig_val, filename=val_file, auto_open=False)
+                if (params["variances"] is not None) and show_variances:
+                    plotlyplot(imview.fig_var, filename=var_file,
+                               auto_open=False)
+            else:
+                write_image(fig=imview.fig_val, file=val_file)
+                if (params["variances"] is not None) and show_variances:
+                    write_image(fig=imview.fig_var, file=var_file)
         else:
-            display(imview.fig)
+            if (params["variances"] is not None) and show_variances:
+                display(imview.hbox)
+            else:
+                display(imview.fig_val)
         return
     else:
         data = [dict(
@@ -343,14 +397,15 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
 
 class ImageViewer:
 
-    def __init__(self, xe, xc, ye, yc, z, resolution, cb, plot_type, title,
-                 contours):
+    def __init__(self, xe, xc, ye, yc, values, variances, resolution, cb,
+                 plot_type, title, contours):
 
         self.xe = xe
         self.xc = xc
         self.ye = ye
         self.yc = yc
-        self.z = z
+        self.values = values
+        self.variances = variances
         self.resolution = resolution
         self.cb = cb
         self.plot_type = plot_type
@@ -358,22 +413,108 @@ class ImageViewer:
         self.contours = contours
         self.nx = len(self.xe)
         self.ny = len(self.ye)
+        self.val_range = np.zeros([4], dtype=np.float64)
+        self.var_range = np.zeros([4], dtype=np.float64)
 
-        self.fig = FigureWidget()
+        self.fig_val = FigureWidget()
+        if self.variances is not None:
+            self.fig_var = FigureWidget()
+            self.hbox = HBox([self.fig_val, self.fig_var])
+        else:
+            self.fig_var = None
+            self.hbox = None
 
         # Make an initial low-resolution sampling of the image for plotting
-        self.resample_image(layout=None, x_range=[self.xe[0], self.xe[-1]],
-                            y_range=[self.ye[0], self.ye[-1]])
+        self.update_values(layout=None, x_range=[self.xe[0], self.xe[-1]],
+                           y_range=[self.ye[0], self.ye[-1]])
 
         # Add a callback to update the view area
-        self.fig.layout.on_change(
-            self.resample_image,
+        self.fig_val.layout.on_change(
+            self.update_values,
             'xaxis.range',
             'yaxis.range')
+        if self.variances is not None:
+            self.fig_var.layout.on_change(
+                self.update_variances,
+                'xaxis.range',
+                'yaxis.range')
 
         return
 
-    def resample_image(self, layout, x_range, y_range):
+    def update_values(self, layout, x_range, y_range, origin=None, res=None):
+
+        ranges = np.array([x_range[0], x_range[1], y_range[0], y_range[1]],
+                          copy=True)
+
+        if not np.array_equal(self.val_range, ranges):
+
+            self.val_range = ranges.copy()
+            if res is None:
+                res = self.resample_image(x_range, y_range)
+
+            # The local values array
+            values_loc = np.zeros([res.nye - 1, res.nxe - 1])
+            values_loc[res.jmin:res.nye - res.jmax - 1,
+                       res.imin:res.nxe - res.imax - 1] = \
+                self.resample_arrays(self.values, res)
+
+            # Update figure data dict
+            res.datadict["z"] = values_loc
+            res.datadict["colorbar"] = {"title": {"text": self.title,
+                                                  "side": "right"}}
+
+            # Update the figure
+            updatedict = {'data': [res.datadict]}
+            if origin is not None:
+                # Make a copy of the layout to update it all at once
+                layoutdict = Layout(self.fig_var.layout)
+                updatedict["layout"] = layoutdict
+            self.fig_val.update(updatedict)
+            if (origin is None) and (self.variances is not None):
+                self.update_variances(layout, x_range, y_range, 'values', res)
+        return
+
+    def update_variances(self, layout, x_range, y_range, origin=None,
+                         res=None):
+
+        ranges = np.array([x_range[0], x_range[1], y_range[0], y_range[1]],
+                          copy=True)
+
+        if not np.array_equal(self.var_range, ranges):
+
+            self.var_range = ranges.copy()
+            if res is None:
+                res = self.resample_image(x_range, y_range)
+
+            # The local variances array
+            variances_loc = np.zeros([res.nye - 1, res.nxe - 1])
+            variances_loc[res.jmin:res.nye - res.jmax - 1,
+                          res.imin:res.nxe - res.imax - 1] = \
+                self.resample_arrays(self.variances, res)
+
+            # Update figure data dict
+            res.datadict["z"] = variances_loc
+            res.datadict["colorbar"] = {"title": {"text": "std. dev",
+                                                  "side": "right"}}
+
+            # Update the figure
+            updatedict = {'data': [res.datadict]}
+            if origin is not None:
+                # Make a copy of the layout to update it all at once
+                layoutdict = Layout(self.fig_val.layout)
+                updatedict["layout"] = layoutdict
+            self.fig_var.update(updatedict)
+            if origin is None:
+                self.update_values(layout, x_range, y_range, "variances", res)
+
+        return
+
+    def resample_image(self, x_range, y_range):
+
+        # Create a namedtuple to hold the results
+        out = namedtuple("out", ['nx_view', 'ny_view', 'xmin', 'xmax', 'ymin',
+                                 'ymax', 'xe_loc', 'ye_loc', 'nxe', 'nye',
+                                 'imin', 'imax', 'jmin', 'jmax', 'datadict'])
 
         # Find indices of xe and ye that are shown in current range
         x_in_range = np.where(
@@ -386,109 +527,108 @@ class ImageViewer:
                 self.ye <= y_range[1]))
 
         # xmin, xmax... here are array indices, not float coordinates
-        xmin = x_in_range[0][0]
-        xmax = x_in_range[0][-1]
-        ymin = y_in_range[0][0]
-        ymax = y_in_range[0][-1]
-        # here we perform a trick so that the edges of the displayed image is
-        # not greyed out if the zoom area slices a pixel in half, only the
-        # pixel inside the view area will be shown and the outer edge between
-        # that last pixel edge and the edge of the view frame area will be
-        # empty. So we extend the selected area with an additional pixel, if
-        # the selected area is inside the global limits of the full resolution
-        # array.
-        xmin -= int(xmin > 0)
-        xmax += int(xmax < self.nx - 1)
-        ymin -= int(ymin > 0)
-        ymax += int(ymax < self.ny - 1)
+        out.xmin = x_in_range[0][0]
+        out.xmax = x_in_range[0][-1]
+        out.ymin = y_in_range[0][0]
+        out.ymax = y_in_range[0][-1]
+        # here we perform a trick so that the edges of the displayed image
+        # is not greyed out if the zoom area slices a pixel in half, only
+        # the pixel inside the view area will be shown and the outer edge
+        # between that last pixel edge and the edge of the view frame area
+        # will be empty. So we extend the selected area with an additional
+        # pixel, if the selected area is inside the global limits of the
+        # full resolution array.
+        out.xmin -= int(out.xmin > 0)
+        out.xmax += int(out.xmax < self.nx - 1)
+        out.ymin -= int(out.ymin > 0)
+        out.ymax += int(out.ymax < self.ny - 1)
 
-        # Par of the global coordinate arrays that are inside the viewing area
-        xview = self.xe[xmin:xmax + 1]
-        yview = self.ye[ymin:ymax + 1]
+        # Part of the global coordinate arrays that are inside the viewing
+        # area
+        xview = self.xe[out.xmin:out.xmax + 1]
+        yview = self.ye[out.ymin:out.ymax + 1]
 
         # Count the number of pixels in the current view
-        nx_view = xmax - xmin
-        ny_view = ymax - ymin
+        out.nx_view = out.xmax - out.xmin
+        out.ny_view = out.ymax - out.ymin
 
         # Define x and y edges for histogramming
-        # If the number of pixels in the view area is larger than the maximum
-        # allowed resolution we create some custom pixels
-        if nx_view > self.resolution:
-            xe_loc = np.linspace(xview[0], xview[-1], self.resolution)
+        # If the number of pixels in the view area is larger than the
+        # maximum allowed resolution we create some custom pixels
+        if out.nx_view > self.resolution:
+            out.xe_loc = np.linspace(xview[0], xview[-1], self.resolution + 1)
         else:
-            xe_loc = xview
-        if ny_view > self.resolution:
-            ye_loc = np.linspace(yview[0], yview[-1], self.resolution)
+            out.xe_loc = xview
+        if out.ny_view > self.resolution:
+            out.ye_loc = np.linspace(yview[0], yview[-1], self.resolution + 1)
         else:
-            ye_loc = yview
+            out.ye_loc = yview
 
-        # Optimize if no re-sampling is required
-        if (nx_view < self.resolution) and (ny_view < self.resolution):
-            z1 = self.z[ymin:ymax, xmin:xmax]
-        else:
-            xg, yg = np.meshgrid(self.xc[xmin:xmax], self.yc[ymin:ymax])
-            xv = np.ravel(xg)
-            yv = np.ravel(yg)
-            zv = np.ravel(self.z[ymin:ymax, xmin:xmax])
-            # Histogram the data to make a low-resolution image
-            # Using weights in the second histogram allows us to then do z1/z0
-            # to obtain the averaged data inside the coarse pixels
-            z0, yedges1, xedges1 = np.histogram2d(
-                yv, xv, bins=(ye_loc, xe_loc))
-            z1, yedges1, xedges1 = np.histogram2d(
-                yv, xv, bins=(ye_loc, xe_loc), weights=zv)
-            z1 /= z0
-
-        # Here we perform another trick. If we plot simply the local arrays in
-        # plotly, the reset axes or home functionality will be lost because
-        # plotly will now think that the data that exists is only the small
-        # window shown after a zoom. So we add a one-pixel padding area to the
-        # local z array. The size of that padding extends from the edges of the
-        # initial full resolution array (e.g. x=0, y=0) up to the edge of the
-        # view area. These large (and probably elongated) pixels add very
-        # little data and will not show in the view area but allow plotly to
-        # recover the full axes limits if we double-click on the plot
-        xc_loc = edges_to_centers(xe_loc)[0]
-        yc_loc = edges_to_centers(ye_loc)[0]
-        if xmin > 0:
-            xe_loc = np.concatenate([self.xe[0:1], xe_loc])
+        # Here we perform another trick. If we plot simply the local arrays
+        # in plotly, the reset axes or home functionality will be lost
+        # because plotly will now think that the data that exists is only
+        # the small window shown after a zoom. So we add a one-pixel
+        # padding area to the local z array. The size of that padding
+        # extends from the edges of the initial full resolution array
+        # (e.g. x=0, y=0) up to the edge of the view area. These large
+        # (and probably elongated) pixels add very little data and will not
+        # show in the view area but allow plotly to recover the full axes
+        # limits if we double-click on the plot
+        xc_loc = edges_to_centers(out.xe_loc)[0]
+        yc_loc = edges_to_centers(out.ye_loc)[0]
+        if out.xmin > 0:
+            out.xe_loc = np.concatenate([self.xe[0:1], out.xe_loc])
             xc_loc = np.concatenate([self.xc[0:1], xc_loc])
-        if xmax < self.nx - 1:
-            xe_loc = np.concatenate([xe_loc, self.xe[-1:]])
+        if out.xmax < self.nx - 1:
+            out.xe_loc = np.concatenate([out.xe_loc, self.xe[-1:]])
             xc_loc = np.concatenate([xc_loc, self.xc[-1:]])
-        if ymin > 0:
-            ye_loc = np.concatenate([self.ye[0:1], ye_loc])
+        if out.ymin > 0:
+            out.ye_loc = np.concatenate([self.ye[0:1], out.ye_loc])
             yc_loc = np.concatenate([self.yc[0:1], yc_loc])
-        if ymax < self.ny - 1:
-            ye_loc = np.concatenate([ye_loc, self.ye[-1:]])
+        if out.ymax < self.ny - 1:
+            out.ye_loc = np.concatenate([out.ye_loc, self.ye[-1:]])
             yc_loc = np.concatenate([yc_loc, self.yc[-1:]])
-        imin = int(xmin > 0)
-        imax = int(xmax < self.nx - 1)
-        jmin = int(ymin > 0)
-        jmax = int(ymax < self.ny - 1)
-        nxe = len(xe_loc)
-        nye = len(ye_loc)
-
-        # The local z array
-        z_loc = np.zeros([nye - 1, nxe - 1])
-        z_loc[jmin:nye - jmax - 1, imin:nxe - imax - 1] = z1
+        out.imin = int(out.xmin > 0)
+        out.imax = int(out.xmax < self.nx - 1)
+        out.jmin = int(out.ymin > 0)
+        out.jmax = int(out.ymax < self.ny - 1)
+        out.nxe = len(out.xe_loc)
+        out.nye = len(out.ye_loc)
 
         # The 'data' dictionary
-        datadict = dict(type=self.plot_type, zmin=self.cb["min"],
-                        zmax=self.cb["max"], colorscale=self.cb["name"],
-                        colorbar={"title": self.title}, z=z_loc)
-
+        out.datadict = dict(type=self.plot_type, zmin=self.cb["min"],
+                            zmax=self.cb["max"], colorscale=self.cb["name"])
         if self.contours:
-            datadict["x"] = xc_loc
-            datadict["y"] = yc_loc
+            out.datadict["x"] = xc_loc
+            out.datadict["y"] = yc_loc
         else:
-            datadict["x"] = xe_loc
-            datadict["y"] = ye_loc
+            out.datadict["x"] = out.xe_loc
+            out.datadict["y"] = out.ye_loc
 
-        # Update the figure
-        self.fig.update({'data': [datadict]})
+        return out
 
-        return
+    def resample_arrays(self, array, res):
+
+        # Optimize if no re-sampling is required
+        if (res.nx_view < self.resolution) and \
+           (res.ny_view < self.resolution):
+            return array[res.ymin:res.ymax, res.xmin:res.xmax]
+        else:
+            xg, yg = np.meshgrid(self.xc[res.xmin:res.xmax],
+                                 self.yc[res.ymin:res.ymax])
+            xv = np.ravel(xg)
+            yv = np.ravel(yg)
+            # Histogram the data to make a low-resolution image
+            # Using weights in the second histogram allows us to then do
+            # z1/z0 to obtain the averaged data inside the coarse pixels
+            array0, yedges, xedges = np.histogram2d(
+                yv, xv, bins=(res.ye_loc[res.jmin:res.nye - res.jmax],
+                              res.xe_loc[res.imin:res.nxe - res.imax]))
+            array1, yedges, xedges = np.histogram2d(
+                yv, xv, bins=(res.ye_loc[res.jmin:res.nye - res.jmax],
+                              res.xe_loc[res.imin:res.nxe - res.imax]),
+                weights=np.ravel(array[res.ymin:res.ymax, res.xmin:res.xmax]))
+            return array1 / array0
 
 # =============================================================================
 
@@ -569,9 +709,7 @@ def plot_sliceviewer(input_data, axes=None, contours=False, cb=None,
     """
 
     if axes is None:
-        dims = input_data.dims
-        labs = dims.labels
-        axes = [l for l in labs]
+        axes = input_data.dims
 
     # Use the machinery in plot_image to make the layout
     data, layout, xlabs, ylabs, cbar = plot_image(input_data, axes=axes,
@@ -604,15 +742,11 @@ class SliceViewer:
         self.coords = self.input_data.coords
         self.xcoord = self.coords[axes[-1]]
         self.ycoord = self.coords[axes[-2]]
-        self.xdims = self.xcoord.dims
-        self.xlabs = self.xdims.labels
-        self.ydims = self.ycoord.dims
-        self.ylabs = self.ydims.labels
+        self.xlabs = self.xcoord.dims
+        self.ylabs = self.ycoord.dims
 
-        # Need these to avoid things running out of scope
-        self.dims = self.input_data.dims
-        self.labels = self.dims.labels
-        self.shapes = self.dims.shape
+        self.labels = self.input_data.dims
+        self.shapes = dict(zip(self.labels, self.input_data.shape))
 
         # Size of the slider coordinate arrays
         self.slider_nx = []
@@ -681,8 +815,7 @@ class SliceViewer:
         z = vslice.values
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        zdims = vslice.dims
-        zlabs = zdims.labels
+        zlabs = vslice.dims
         if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
             z = z.T
         # Apply colorbar parameters
@@ -702,37 +835,8 @@ class SliceViewer:
         return
 
 # =============================================================================
-
-
-def edges_to_centers(x):
-    """
-    Convert coordinate edges to centers, and return also the widths
-    """
-    return 0.5 * (x[1:] + x[:-1]), np.ediff1d(x)
-
-
-def centers_to_edges(x):
-    """
-    Convert coordinate centers to edges
-    """
-    e = edges_to_centers(x)[0]
-    return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
-
-
-def axis_label(var, name=None, log=False):
-    """
-    Make an axis label with "Name [unit]"
-    """
-    if name is not None:
-        label = name
-    else:
-        label = str(var.dims.labels[0]).replace("Dim.", "")
-
-    if log:
-        label = "log\u2081\u2080(" + label + ")"
-    if var.unit != sp.units.dimensionless:
-        label += " [{}]".format(var.unit)
-    return label
+# Utilities
+# =============================================================================
 
 
 def parse_colorbar(cb):
@@ -751,9 +855,8 @@ def process_dimensions(input_data, coords, axes):
     Make x and y arrays from dimensions and check for bins edges
     """
     # coords = input_data.coords
-    zdims = input_data.dims
-    zlabs = zdims.labels
-    nz = zdims.shape
+    zlabs = input_data.dims
+    nz = input_data.shape
 
     if axes is None:
         axes = [l for l in zlabs]
@@ -770,12 +873,10 @@ def process_dimensions(input_data, coords, axes):
     # TODO: find a better way to handle edges. Currently, we convert from
     # edges to centers and then back to edges afterwards inside the plotly
     # object. This is not optimal and could lead to precision loss issues.
-    ydims = ycoord.dims
-    ylabs = ydims.labels
-    ny = ydims.shape
-    xdims = xcoord.dims
-    xlabs = xdims.labels
-    nx = xdims.shape
+    ylabs = ycoord.dims
+    ny = ycoord.shape
+    xlabs = xcoord.dims
+    nx = xcoord.shape
     # Find the dimension in z that corresponds to x and y
     ix = iy = None
     for i in range(len(zlabs)):
@@ -787,7 +888,7 @@ def process_dimensions(input_data, coords, axes):
         raise RuntimeError(
             "Dimension of either x ({}) or y ({}) array was not "
             "found in z ({}) array.".format(
-                xdims, ydims, zdims))
+                xlabs, ylabs, zlabs))
     if nx[0] == nz[ix]:
         xe = centers_to_edges(x)
         xc = x
