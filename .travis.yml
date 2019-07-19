@@ -38,11 +38,22 @@ jobs:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
       script: sh .travis/run_tests.sh
     - stage: "Deploy"
-      name: "conda"
+      name: "conda linux"
       if: branch = master AND NOT type = pull_request
       git:
         depth: false
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
       install: sh .travis/install_conda.sh
+      script: sh .travis/conda_build_and_deploy.sh
+    - stage: "Deploy OSX"
+      os: osx
+      osx_image: xcode10.2
+      name: "conda osx"
+      if: branch = master AND NOT type = pull_request
+      git:
+        depth: false
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+      install: sh .travis/install_conda_osx.sh
       script: sh .travis/conda_build_and_deploy.sh
