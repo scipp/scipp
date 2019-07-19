@@ -503,10 +503,11 @@ TEST(Variable, abs_of_scalar) {
 
 TEST(Variable, norm_of_vector) {
   auto reference =
-      makeVariable<double>({Dim::X, 3}, {sqrt(2.0), sqrt(2.0), 2.0});
-  auto var = makeVariable<Eigen::Vector3d>(
-      {Dim::X, 3}, {Eigen::Vector3d{1, 0, -1}, Eigen::Vector3d{1, 1, 0},
-                    Eigen::Vector3d{0, 0, -2}});
+      makeVariable<double>({Dim::X, 3}, units::m, {sqrt(2.0), sqrt(2.0), 2.0});
+  auto var = makeVariable<Eigen::Vector3d>({Dim::X, 3}, units::m,
+                                           {Eigen::Vector3d{1, 0, -1},
+                                            Eigen::Vector3d{1, 1, 0},
+                                            Eigen::Vector3d{0, 0, -2}});
   EXPECT_EQ(norm(var), reference);
 }
 

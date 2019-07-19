@@ -400,7 +400,10 @@ Variable abs(const Variable &var) {
 }
 
 Variable norm(const Variable &var) {
-  return transform<Eigen::Vector3d>(var, [](auto &&x) { return x.norm(); });
+  Variable result =
+      transform<Eigen::Vector3d>(var, [](auto &&x) { return x.norm(); });
+  result.setUnit(var.unit());
+  return result;
 }
 
 Variable sqrt(const Variable &var) {
