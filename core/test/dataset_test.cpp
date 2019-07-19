@@ -588,6 +588,28 @@ TEST_F(Dataset_comparison_operators, with_sparse_dimension_data) {
   expect_ne(b, c);
 }
 
+TEST(DatasetTest, construct_from_proxy) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const DatasetConstProxy proxy(dataset);
+  Dataset from_proxy(proxy);
+  ASSERT_EQ(from_proxy, dataset);
+}
+
+TEST(DatasetTest, construct_from_slice) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const auto slice = dataset.slice({Dim::X, 1});
+  Dataset from_slice(slice);
+  ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
+}
+
+TEST(DatasetTest, slice_temporary) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make().slice({Dim::X, 1});
+  ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
+}
+
 class Dataset3DTest : public ::testing::Test {
 protected:
   Dataset3DTest() : dataset(factory.make()) {}

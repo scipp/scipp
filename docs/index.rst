@@ -1,7 +1,7 @@
 scipp - Multi-dimensional data arrays with labeled dimensions
 =============================================================
 
-**scipp** and its Python-counterpart **scippy** are heavily inspired by `xarray <https://xarray.pydata.org>`_.
+**scipp** is heavily inspired by `xarray <https://xarray.pydata.org>`_.
 While for many applications xarray is certainly more suitable (and definitely much more matured) than scipp, there is a number of features missing in other situations.
 If your use case requires one or several of the items on the following list, using scipp may be worth considering:
 
@@ -9,7 +9,7 @@ If your use case requires one or several of the items on the following list, usi
 - Propagation of uncertainties.
 - Support for histograms, i.e., bin-edge axes, which are by 1 longer than the data extent.
 - Support for event data, a particular form of sparse data with 1-D (or N-D) arrays of random-length lists, with very small list entries.
-- Written in C++ for better performance (for certain applications), in combination with Python bindings (**scippy**).
+- Written in C++ for better performance (for certain applications), in combination with Python bindings.
 
 Currently scipp is moving from its prototype phase into a more consolidated set of libraries.
 
@@ -33,10 +33,16 @@ Documentation
 
    user-guide/data-structures
    user-guide/slicing
+   user-guide/operations
+   user-guide/sparse-data
+   user-guide/units
+   user-guide/dtype
 
 .. toctree::
    :caption: Python Reference
    :maxdepth: 2
+
+   python-reference/api
 
 .. toctree::
    :caption: C++ Reference

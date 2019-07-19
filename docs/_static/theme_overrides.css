@@ -9,3 +9,16 @@ div[class^='highlight'] pre {
     white-space: pre;
     white-space: pre-wrap;
 }
+
+.wy-side-nav-search>a img.logo,
+.wy-side-nav-search .wy-dropdown>a img.logo {
+  width: 16rem
+}
+
+.wy-side-nav-search {
+  background-color: #eee;
+}
+
+.wy-side-nav-search>div.version {
+  display: none;
+}
