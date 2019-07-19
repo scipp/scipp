@@ -34,7 +34,7 @@ jobs:
       osx_image: xcode10.2
       #before_install: brew install ccache 
       env:
-        - PATH="/usr/bin/local:$PATH"
+        - PATH="/usr/local/bin:$PATH"
       script: sh .travis/run_tests.sh
     - stage: "Deploy"
       name: "conda"
