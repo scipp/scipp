@@ -21,11 +21,15 @@ jobs:
     - stage: "Unit tests"
       compiler: gcc
       name: "gcc"
+      env:
+        - PYTHON_INTERP="/usr/bin/python3"
       before_install: sh .travis/before_install.sh
       install: sh .travis/install.sh
       script: sh .travis/run_tests.sh
     - compiler: clang
       name: "clang"
+      env:
+        - PYTHON_INTERP="/usr/bin/python3"
       before_install: sh .travis/before_install.sh
       install: sh .travis/install.sh
       script: sh .travis/run_tests.sh
@@ -34,7 +38,7 @@ jobs:
       osx_image: xcode10.2
       #before_install: brew install ccache 
       env:
-        - PATH="/usr/local/bin:$PATH"
+        - PYTHON_INTERP="/usr/local/bin/python3"
       script: sh .travis/run_tests.sh
     - stage: "Deploy"
       name: "conda"
