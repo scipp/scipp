@@ -4,6 +4,7 @@ pybind11_add_module(_scipp
                     SHARED
                     SYSTEM
                     dataset.cpp
+                    dimensions.cpp
                     dtype.cpp
                     scipp.cpp
                     sparse_container.cpp
