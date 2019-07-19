@@ -7,5 +7,5 @@ git describe --tags
 conda-build \
   --user 'scipp' \
   --token "$ANACONDA_TOKEN" \
-  --label 'dev osx' \
+  --label 'dev' \
   ./conda

@@ -46,8 +46,7 @@ jobs:
         - PATH="$HOME/miniconda/bin:$PATH"
       install: sh .travis/install_conda.sh
       script: sh .travis/conda_build_and_deploy.sh
-    - stage: "Deploy OSX"
-      os: osx
+    - os: osx
       osx_image: xcode10.2
       name: "conda osx"
       if: branch = master AND NOT type = pull_request
