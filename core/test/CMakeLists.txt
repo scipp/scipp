@@ -10,6 +10,7 @@ add_executable(scipp-core-test
                except_test.cpp
                transform_test.cpp
                variable_test.cpp
+               variable_custom_type_test.cpp
                variable_operations_test.cpp
                variable_view_test.cpp
                view_index_test.cpp
