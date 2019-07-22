@@ -3,43 +3,114 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
-#include "counts.h"
-#include "dataset.h"
-#include "dimensions.h"
+#include "scipp/core/counts.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/dimensions.h"
 #include "scipp/neutron/convert.h"
 
 using namespace scipp;
 using namespace scipp::core;
+using namespace scipp::neutron;
 
 Dataset makeTofDataForUnitConversion() {
   Dataset tof;
 
-  tof.insert(Coord::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
-                                              {1000, 2000, 3000, 4000}));
+  tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
+                                              {4000, 5000, 6000, 7000}));
 
   Dataset components;
   // Source and sample
-  components.insert(Coord::Position, makeVariable<Eigen::Vector3d>(
-                                         {Dim::Component, 2}, units::m,
-                                         {Eigen::Vector3d{0.0, 0.0, -10.0},
-                                          Eigen::Vector3d{0.0, 0.0, 0.0}}));
-  tof.insert(Coord::ComponentInfo, {}, {components});
-  tof.insert(Coord::Position,
-             makeVariable<Eigen::Vector3d>({Dim::Spectrum, 2}, units::m,
-                                           {Eigen::Vector3d{0.0, 0.0, 1.0},
-                                            Eigen::Vector3d{0.1, 0.0, 1.0}}));
+  components.setData("position", makeVariable<Eigen::Vector3d>(
+                                     {Dim::Row, 2}, units::m,
+                                     {Eigen::Vector3d{0.0, 0.0, -10.0},
+                                      Eigen::Vector3d{0.0, 0.0, 0.0}}));
+  tof.setLabels("component_info", makeVariable<Dataset>(components));
+  tof.setCoord(Dim::Position,
+               makeVariable<Eigen::Vector3d>({Dim::Position, 2}, units::m,
+                                             {Eigen::Vector3d{1.0, 0.0, 0.0},
+                                              Eigen::Vector3d{0.1, 0.0, 1.0}}));
 
-  tof.insert(Data::Value, "counts", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
-             {1, 2, 3, 4, 5, 6});
-  tof(Data::Value, "counts").setUnit(units::counts);
+  tof.setData("counts",
+              makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
+                                   {1, 2, 3, 4, 5, 6}));
+  tof["counts"].data().setUnit(units::counts);
 
-  tof.insert(Data::Value, "counts/us", {{Dim::Spectrum, 2}, {Dim::Tof, 3}},
-             {1, 2, 3, 4, 5, 6});
-  tof(Data::Value, "counts/us").setUnit(units::counts / units::us);
+  /*
+  tof.setData("counts/us",
+             makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
+                                  {1, 2, 3, 4, 5, 6}));
+  tof["counts/us"].data().setUnit(units::counts / units::us);
+  */
 
   return tof;
 }
 
+TEST(Convert, Tof_to_DSpacing) {
+  Dataset tof = makeTofDataForUnitConversion();
+
+  auto dspacing = convert(tof, Dim::Tof, Dim::DSpacing);
+
+  EXPECT_EQ(dspacing["counts"].dims(),
+            Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 3}}));
+
+  ASSERT_THROW(dspacing.coords()[Dim::Tof], std::out_of_range);
+  ASSERT_NO_THROW(dspacing.coords()[Dim::DSpacing]);
+
+  const auto &coord = dspacing.coords()[Dim::DSpacing];
+  // Due to conversion, the coordinate now also depends on Dim::Spectrum.
+  ASSERT_EQ(coord.dims(), Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 4}}));
+  EXPECT_EQ(coord.unit(), units::angstrom);
+
+  const auto values = coord.values<double>();
+  // Rule of thumb (https://www.psi.ch/niag/neutron-physics):
+  // v [m/s] = 3956 / \lambda [ Angstrom ]
+  Variable tof_in_seconds = tof.coords()[Dim::Tof] * 1e-6;
+  const auto tofs = tof_in_seconds.values<double>();
+  // Spectrum 0 is 11 m from source
+  // 2d sin(theta) = n \lambda
+  // theta = 45 deg => d = lambda / (2 * 1 / sqrt(2))
+  EXPECT_NEAR(values[0], 3956.0 / (11.0 / tofs[0]) / sqrt(2.0),
+              values[0] * 1e-3);
+  EXPECT_NEAR(values[1], 3956.0 / (11.0 / tofs[1]) / sqrt(2.0),
+              values[1] * 1e-3);
+  EXPECT_NEAR(values[2], 3956.0 / (11.0 / tofs[2]) / sqrt(2.0),
+              values[2] * 1e-3);
+  EXPECT_NEAR(values[3], 3956.0 / (11.0 / tofs[3]) / sqrt(2.0),
+              values[3] * 1e-3);
+  // Spectrum 1
+  // sin(2 theta) = 0.1/(L-10)
+  const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
+  const double lambda_to_d = 1.0 / (2.0 * sin(0.5 * asin(0.1 / (L - 10.0))));
+  EXPECT_NEAR(values[4], 3956.0 / (L / tofs[0]) * lambda_to_d,
+              values[4] * 1e-3);
+  EXPECT_NEAR(values[5], 3956.0 / (L / tofs[1]) * lambda_to_d,
+              values[5] * 1e-3);
+  EXPECT_NEAR(values[6], 3956.0 / (L / tofs[2]) * lambda_to_d,
+              values[6] * 1e-3);
+  EXPECT_NEAR(values[7], 3956.0 / (L / tofs[3]) * lambda_to_d,
+              values[7] * 1e-3);
+
+  ASSERT_TRUE(dspacing.contains("counts"));
+  const auto &data = dspacing["counts"];
+  ASSERT_EQ(data.dims(), Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 3}}));
+  EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
+  EXPECT_EQ(data.unit(), units::counts);
+
+  /*
+  ASSERT_TRUE(dspacing.contains(Data::Value, "counts/us"));
+  const auto &density = dspacing(Data::Value, "counts/us");
+  ASSERT_EQ(density.dimensions(),
+            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
+  EXPECT_FALSE(equals(density.span<double>(), {1, 2, 3, 4, 5, 6}));
+  EXPECT_EQ(density.unit(), units::counts / units::meV);
+  */
+
+  ASSERT_EQ(dspacing.coords()[Dim::Position], tof.coords()[Dim::Position]);
+  ASSERT_EQ(dspacing.labels()["component_info"],
+            tof.labels()["component_info"]);
+}
+
+/*
 TEST(Dataset, convert) {
   Dataset tof = makeTofDataForUnitConversion();
 
@@ -237,22 +308,4 @@ TEST(Dataset, convert_direct_inelastic_multi_Ei) {
   ASSERT_TRUE(energy.contains(Coord::ComponentInfo));
   ASSERT_TRUE(energy.contains(Coord::Ei));
 }
-
-TEST(Dataset, convert_direct_inelastic_multi_Ei_to_QxQyQz) {
-  const auto tof = makeMultiEiTofData();
-  auto energy = convert(tof, Dim::Tof, Dim::DeltaE);
-
-  Dataset qCoords;
-  qCoords.insert(Coord::Qx,
-                 makeVariable<double>({Dim::Qx, 4}, units::meV / units::c,
-                                      {0.0, 1.0, 2.0, 3.0}));
-  qCoords.insert(Coord::Qy, makeVariable<double>(
-                                {Dim::Qy, 2}, units::meV / units::c, {0, 1}));
-  qCoords.insert(Coord::Qz,
-                 makeVariable<double>({Dim::Qz, 4}, units::meV / units::c,
-                                      {8, 9, 10, 11}));
-  qCoords.insert(Coord::DeltaE, makeVariable<double>({Dim::DeltaE, 3},
-                                                     units::meV, {9, 10, 11}));
-
-  EXPECT_NO_THROW(convert(energy, {Dim::DeltaE, Dim::Position}, qCoords));
-}
+*/

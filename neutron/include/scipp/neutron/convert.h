@@ -2,21 +2,21 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef CONVERT_H
-#define CONVERT_H
+#ifndef SCIPP_NEUTRON_CONVERT_H
+#define SCIPP_NEUTRON_CONVERT_H
 
 #include <vector>
 
-#include "dimension.h"
+#include "scipp/units/dimension.h"
 
 namespace scipp::core {
-
 class Dataset;
+}
 
-Dataset convert(const Dataset &d, const Dim from, const Dim to);
-Dataset convert(const Dataset &d, const std::vector<Dim> &from,
-                const Dataset &toCoords);
+namespace scipp::neutron {
 
-} // namespace scipp::core
+core::Dataset convert(core::Dataset d, const Dim from, const Dim to);
 
-#endif // CONVERT_H
+} // namespace scipp::neutron
+
+#endif // SCIPP_NEUTRON_CONVERT_H

@@ -16,4 +16,4 @@ target_include_directories(scipp-neutron SYSTEM
                            PRIVATE "../range-v3/include")
 set_target_properties(scipp-neutron PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-#add_subdirectory(test)
+add_subdirectory(test)
