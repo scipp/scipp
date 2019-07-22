@@ -9,8 +9,8 @@ source:
 requirements:
   build:
     - cmake
-    - gxx_linux-64 7.3.*
-    - clangxx_osx-64 4.0.*
+    - gxx_linux-64 7.3.* [linux64]
+    - clangxx_osx-62 4.0.* [osx]
     - git
     - python {{ python }}
   run:
