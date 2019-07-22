@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Download Miniconda installer
-wget 'https://repo.continuum.io/miniconda/$1' -O 'miniconda.sh'
+wget "https://repo.continuum.io/miniconda/$1" -O 'miniconda.sh'
 
 # Install Miniconda
 bash 'miniconda.sh' -b -p "$HOME/miniconda"
