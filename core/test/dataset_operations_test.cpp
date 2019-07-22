@@ -542,8 +542,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   return std::make_tuple(a, b);
 }
 
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_const_lvalue_lhs_dataset_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
 
   const auto res = TestFixture::op(dataset_a, dataset_b);
@@ -564,8 +563,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   EXPECT_EQ(res.labels(), dataset_a.labels());
 }
 
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_sparse_const_lvalue_lhs_dataset_sparse_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
   const auto dataset_b =
@@ -587,9 +585,8 @@ TYPED_TEST(DatasetBinaryOpTest,
   EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
 }
 
-TYPED_TEST(
-    DatasetBinaryOpTest,
-    dataset_sparse_const_lvalue_lhs_dataset_sparse_const_lvalue_rhs_fail_when_coords_mismatch) {
+TYPED_TEST(DatasetBinaryOpTest,
+           dataset_sparse_lhs_dataset_sparse_rhs_fail_when_coords_mismatch) {
   auto dataset_a = make_simple_sparse({1.1, 2.2});
   auto dataset_b = make_simple_sparse({3.3, 4.4});
 
@@ -609,9 +606,8 @@ TYPED_TEST(
                except::CoordMismatchError);
 }
 
-TYPED_TEST(
-    DatasetBinaryOpTest,
-    dataset_sparse_const_lvalue_lhs_dataset_sparse_const_lvalue_rhs_fail_when_labels_mismatch) {
+TYPED_TEST(DatasetBinaryOpTest,
+           dataset_sparse_lhs_dataset_sparse_rhs_fail_when_labels_mismatch) {
   auto dataset_a = make_simple_sparse({1.1, 2.2});
   auto dataset_b = make_simple_sparse({3.3, 4.4});
 
@@ -631,8 +627,7 @@ TYPED_TEST(
                except::CoordMismatchError);
 }
 
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
@@ -646,8 +641,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest,
-           datasetconstproxy_const_lvalue_lhs_dataset_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_dataset_rhs) {
   const auto dataset_a = datasetFactory.make();
   const auto dataset_b = datasetFactory.make().slice({Dim::X, 1});
 
@@ -659,9 +653,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   EXPECT_EQ(res, reference);
 }
 
-TYPED_TEST(
-    DatasetBinaryOpTest,
-    datasetconstproxy_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_datasetconstproxy_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
@@ -676,39 +668,7 @@ TYPED_TEST(
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_rvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
-
-  auto dataset_a_copy(dataset_a);
-  DatasetConstProxy dataset_b_proxy(dataset_b);
-  const auto res = TestFixture::op(std::move(dataset_a_copy), dataset_b_proxy);
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
-
-TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataproxy_const_lvalue_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
-
-  auto dataset_a_copy(dataset_a);
-  const auto res =
-      TestFixture::op(std::move(dataset_a_copy), dataset_b["data_scalar"]);
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference = TestFixture::op(dataset_a[name].data(),
-                                           dataset_b["data_scalar"].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
-
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_const_lvalue_lhs_dataproxy_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataproxy_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
