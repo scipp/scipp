@@ -170,7 +170,8 @@ template <class T> void countsOrCountsDensity(const T &object) {
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 
-template <typename T> void coordsAndLabelsMatch(const T &a, const T &b) {
+template <typename A, typename B>
+void coordsAndLabelsMatch(const A &a, const B &b) {
   if (a.coords() != b.coords() || a.labels() != b.labels())
     throw except::CoordMismatchError("Expected coords and labels to match.");
 
