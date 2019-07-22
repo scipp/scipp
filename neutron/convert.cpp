@@ -62,11 +62,9 @@ Dataset tofToDSpacing(Dataset &&d) {
     static_cast<void>(name);
     if (data.coords()[Dim::Tof].dims().sparse()) {
       data.coords()[Dim::Tof] /= conversionFactor;
-    } else {
-      if (data.unit().isCountDensity()) {
-        throw std::runtime_error(
-            "Converting density data to DSpacing not implemented yet.");
-      }
+    } else if (data.unit().isCountDensity()) {
+      // Tof to DSpacing is just a scale factor, so density transform is simple:
+      data *= conversionFactor;
     }
   }
 

@@ -16,7 +16,7 @@ Dataset makeTofDataForUnitConversion() {
   Dataset tof;
 
   tof.setCoord(Dim::Tof, makeVariable<double>({Dim::Tof, 4}, units::us,
-                                              {4000, 5000, 6000, 7000}));
+                                              {4000, 5000, 6100, 7300}));
 
   Dataset components;
   // Source and sample
@@ -43,12 +43,10 @@ Dataset makeTofDataForUnitConversion() {
   eventLists[1] = {5000, 6000, 3000};
   tof.setSparseCoord("events", std::move(events));
 
-  /*
-  tof.setData("counts/us",
-             makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
-                                  {1, 2, 3, 4, 5, 6}));
-  tof["counts/us"].data().setUnit(units::counts / units::us);
-  */
+  tof.setData("density",
+              makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
+                                   {1, 2, 3, 4, 5, 6}));
+  tof["density"].data().setUnit(units::counts / units::us);
 
   return tof;
 }
@@ -125,14 +123,21 @@ TEST(Convert, Tof_to_DSpacing) {
   EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]) * lambda_to_d,
               d1[2] * 1e-3);
 
-  /*
-  ASSERT_TRUE(dspacing.contains(Data::Value, "counts/us"));
-  const auto &density = dspacing(Data::Value, "counts/us");
-  ASSERT_EQ(density.dimensions(),
-            Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
-  EXPECT_FALSE(equals(density.span<double>(), {1, 2, 3, 4, 5, 6}));
-  EXPECT_EQ(density.unit(), units::counts / units::meV);
-  */
+  ASSERT_TRUE(dspacing.contains("density"));
+  const auto &density = dspacing["density"];
+  ASSERT_EQ(density.dims(),
+            Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 3}}));
+  EXPECT_EQ(density.unit(), units::counts / units::angstrom);
+  const auto vals = density.values<double>();
+  EXPECT_FALSE(equals(vals, {1, 2, 3, 4, 5, 6}));
+  // Spectrum 0
+  EXPECT_DOUBLE_EQ(vals[0], 1.0 * 1000 / (values[1] - values[0]));
+  EXPECT_DOUBLE_EQ(vals[1], 2.0 * 1100 / (values[2] - values[1]));
+  EXPECT_DOUBLE_EQ(vals[2], 3.0 * 1200 / (values[3] - values[2]));
+  // Spectrum 1
+  EXPECT_DOUBLE_EQ(vals[3], 4.0 * 1000 / (values[5] - values[4]));
+  EXPECT_DOUBLE_EQ(vals[4], 5.0 * 1100 / (values[6] - values[5]));
+  EXPECT_DOUBLE_EQ(vals[5], 6.0 * 1200 / (values[7] - values[6]));
 
   ASSERT_EQ(dspacing.coords()[Dim::Position], tof.coords()[Dim::Position]);
   ASSERT_EQ(dspacing.labels()["component_info"],
