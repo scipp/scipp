@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "scipp/units/dimension.h"
+#include "scipp/units/unit.h"
 
 namespace scipp::core {
 class Dataset;
