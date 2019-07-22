@@ -35,6 +35,14 @@ Dataset makeTofDataForUnitConversion() {
                                    {1, 2, 3, 4, 5, 6}));
   tof["counts"].data().setUnit(units::counts);
 
+  auto events =
+      makeVariable<double>({Dim::Position, Dim::Tof}, {2, Dimensions::Sparse});
+  events.setUnit(units::us);
+  auto eventLists = events.sparseValues<double>();
+  eventLists[0] = {1000, 3000, 2000, 4000};
+  eventLists[1] = {5000, 6000, 3000};
+  tof.setSparseCoord("events", std::move(events));
+
   /*
   tof.setData("counts/us",
              makeVariable<double>({{Dim::Position, 2}, {Dim::Tof, 3}},
@@ -95,6 +103,27 @@ TEST(Convert, Tof_to_DSpacing) {
   ASSERT_EQ(data.dims(), Dimensions({{Dim::Position, 2}, {Dim::DSpacing, 3}}));
   EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
   EXPECT_EQ(data.unit(), units::counts);
+
+  ASSERT_TRUE(dspacing.contains("events"));
+  const auto &events = dspacing["events"];
+  ASSERT_EQ(events.dims(), Dimensions({Dim::Position, Dim::DSpacing},
+                                      {2, Dimensions::Sparse}));
+  const auto &tof0 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[0];
+  const auto &d0 = events.coords()[Dim::DSpacing].sparseValues<double>()[0];
+  ASSERT_EQ(scipp::size(d0), 4);
+  EXPECT_NEAR(d0[0], 3956.0 / (1e6 * 11.0 / tof0[0]) / sqrt(2.0), d0[0] * 1e-3);
+  EXPECT_NEAR(d0[1], 3956.0 / (1e6 * 11.0 / tof0[1]) / sqrt(2.0), d0[1] * 1e-3);
+  EXPECT_NEAR(d0[2], 3956.0 / (1e6 * 11.0 / tof0[2]) / sqrt(2.0), d0[2] * 1e-3);
+  EXPECT_NEAR(d0[3], 3956.0 / (1e6 * 11.0 / tof0[3]) / sqrt(2.0), d0[3] * 1e-3);
+  const auto &tof1 = tof["events"].coords()[Dim::Tof].sparseValues<double>()[1];
+  const auto &d1 = events.coords()[Dim::DSpacing].sparseValues<double>()[1];
+  ASSERT_EQ(scipp::size(d1), 3);
+  EXPECT_NEAR(d1[0], 3956.0 / (1e6 * 11.0 / tof1[0]) * lambda_to_d,
+              d1[0] * 1e-3);
+  EXPECT_NEAR(d1[1], 3956.0 / (1e6 * 11.0 / tof1[1]) * lambda_to_d,
+              d1[1] * 1e-3);
+  EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]) * lambda_to_d,
+              d1[2] * 1e-3);
 
   /*
   ASSERT_TRUE(dspacing.contains(Data::Value, "counts/us"));
