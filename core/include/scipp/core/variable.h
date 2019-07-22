@@ -307,6 +307,7 @@ public:
   // will not go out of scope, so that is ok (unless someone changes var and
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
+  void rename(const Dim from, const Dim to);
 
   bool operator==(const Variable &other) const;
   bool operator==(const VariableConstProxy &other) const;

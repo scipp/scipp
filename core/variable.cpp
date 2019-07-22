@@ -177,6 +177,11 @@ Variable VariableConstProxy::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
+void Variable::rename(const Dim from, const Dim to) {
+  if (dims().contains(from))
+    data().m_dimensions.relabel(dims().index(from), to);
+}
+
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
 std::vector<Variable> split(const Variable &var, const Dim dim,

@@ -296,6 +296,8 @@ public:
   Dataset slice(const Slice slice1, const Slice slice2,
                 const Slice slice3) const &&;
 
+  void rename(const Dim from, const Dim to);
+
   bool operator==(const Dataset &other) const;
   bool operator==(const DatasetConstProxy &other) const;
   bool operator!=(const Dataset &other) const;
