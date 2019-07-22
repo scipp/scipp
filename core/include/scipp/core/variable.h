@@ -763,6 +763,7 @@ SCIPP_CORE_EXPORT Variable mean(const Variable &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable abs(const Variable &var);
 SCIPP_CORE_EXPORT Variable norm(const Variable &var);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
+SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable broadcast(Variable var, const Dimensions &dims);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 

@@ -414,6 +414,13 @@ Variable sqrt(const Variable &var) {
   return result;
 }
 
+Variable dot(const Variable &a, const Variable &b) {
+  auto result = transform<pair_self_t<Eigen::Vector3d>>(
+      a, b, [](const auto &a_, const auto &b_) { return a_.dot(b_); });
+  result.setUnit(a.unit() * b.unit());
+  return result;
+}
+
 Variable broadcast(Variable var, const Dimensions &dims) {
   if (var.dims().contains(dims))
     return var;
