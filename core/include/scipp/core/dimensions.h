@@ -121,7 +121,7 @@ public:
   // TODO Some of the following methods are probably legacy and should be
   // considered for removal.
   Dim label(const scipp::index i) const;
-  void relabel(const scipp::index i, const Dim label) { m_dims[i] = label; }
+  void relabel(const scipp::index i, const Dim label);
   scipp::index size(const scipp::index i) const;
   scipp::index offset(const Dim label) const;
   void resize(const Dim label, const scipp::index size);

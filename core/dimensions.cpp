@@ -11,6 +11,17 @@
 
 namespace scipp::core {
 
+void expectUnique(const Dimensions &dims, const Dim label) {
+  if (dims.contains(label))
+    throw except::DimensionError("Duplicate dimension.");
+}
+
+void expectExtendable(const Dimensions &dims) {
+  if (dims.shape().size() == NDIM_MAX)
+    throw except::DimensionError(
+        "Maximum number of allowed dimensions exceeded.");
+}
+
 Dimensions::Dimensions(const std::vector<Dim> &labels,
                        const std::vector<scipp::index> &shape) {
   if (labels.size() != shape.size())
@@ -90,6 +101,12 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
 
 Dim Dimensions::label(const scipp::index i) const { return m_dims[i]; }
 
+void Dimensions::relabel(const scipp::index i, const Dim label) {
+  if (label != Dim::Invalid)
+    expectUnique(*this, label);
+  m_dims[i] = label;
+}
+
 scipp::index Dimensions::size(const scipp::index i) const { return m_shape[i]; }
 
 /// Return the offset of elements along this dimension in a multi-dimensional
@@ -127,17 +144,6 @@ void Dimensions::erase(const Dim label) {
   m_dims[m_ndim] = Dim::Invalid;
   --m_ndim;
   m_shape[m_ndim] = -1;
-}
-
-void expectUnique(const Dimensions &dims, const Dim label) {
-  if (dims.contains(label))
-    throw except::DimensionError("Duplicate dimension.");
-}
-
-void expectExtendable(const Dimensions &dims) {
-  if (dims.shape().size() == NDIM_MAX)
-    throw except::DimensionError(
-        "Maximum number of allowed dimensions exceeded.");
 }
 
 /// Add a new dimension, which will be the outermost dimension.
