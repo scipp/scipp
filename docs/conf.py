@@ -20,6 +20,12 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# -- Doxygen build configuration
+
+import subprocess
+subprocess.call('cd ..; doxygen docs/Doxyfile', shell=True)
+
+html_extra_path = ['./doxygen']
 
 # -- General configuration ------------------------------------------------
 
