@@ -41,4 +41,9 @@ template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   return std::equal(a.begin(), a.end(), b.begin(), b.end());
 }
 
+/* Helper macros to avoid warnings when testing [[nodiscard]] qualified
+ * functions */
+#define ASSERT_NO_THROW_NODISCARD(expr) ASSERT_NO_THROW((void)expr)
+#define ASSERT_THROW_NODISCARD(expr, type) ASSERT_THROW((void)expr, type)
+
 #endif // TEST_MACROS_H

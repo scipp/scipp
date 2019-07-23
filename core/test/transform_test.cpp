@@ -80,10 +80,10 @@ TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
       dims, {sparse_container<double>(2), sparse_container<double>(1)},
       {sparse_container<double>(2), sparse_container<double>(2)});
 
-  ASSERT_THROW(transform<double>(a, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<double>(a, op), except::SizeError);
   ASSERT_THROW(transform_in_place<double>(a, op_in_place), except::SizeError);
   a.sparseVariances<double>()[1].resize(1);
-  ASSERT_NO_THROW(transform<double>(a, op));
+  ASSERT_NO_THROW_NODISCARD(transform<double>(a, op));
   ASSERT_NO_THROW(transform_in_place<double>(a, op_in_place));
 }
 
@@ -211,14 +211,16 @@ TEST_F(TransformBinaryTest, sparse_size_fail) {
   auto b = makeVariable<double>(
       dims, {sparse_container<double>(2), sparse_container<double>()});
 
-  ASSERT_THROW(transform<pair_self_t<double>>(a, b, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
                except::SizeError);
   b.sparseValues<double>()[1].resize(1);
-  ASSERT_NO_THROW(transform<pair_self_t<double>>(a, b, op));
+  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op));
   ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place));
   b.sparseValues<double>()[1].resize(2);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, b, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
                except::SizeError);
 }
@@ -411,8 +413,8 @@ protected:
 };
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail, baseline) {
-  ASSERT_NO_THROW(transform<pair_self_t<double>>(a, val_var, op));
-  ASSERT_NO_THROW(transform<pair_self_t<double>>(a, val, op));
+  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op));
+  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op));
   ASSERT_NO_THROW(
       transform_in_place<pair_self_t<double>>(a, val_var, op_in_place));
   ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place));
@@ -421,9 +423,10 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail, baseline) {
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        a_values_size_bad) {
   a.sparseValues<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val_var, op),
-               except::SizeError);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                         except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
@@ -433,9 +436,10 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        a_variances_size_bad) {
   a.sparseVariances<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val_var, op),
-               except::SizeError);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                         except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
@@ -445,8 +449,8 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_var_values_size_bad) {
   val_var.sparseValues<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val_var, op),
-               except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
 }
@@ -454,8 +458,8 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_var_variances_size_bad) {
   val_var.sparseVariances<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val_var, op),
-               except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
 }
@@ -463,7 +467,8 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_values_size_bad) {
   val.sparseValues<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
                except::SizeError);
 }
