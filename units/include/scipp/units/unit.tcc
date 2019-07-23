@@ -101,7 +101,7 @@ constexpr auto make_times_lut(std::variant<Ts...>) {
 template <class T, class... Ts>
 constexpr auto make_divide_inner(std::variant<Ts...>) {
   using V = std::variant<Ts...>;
-  constexpr auto times_ = [](auto x, auto y) -> int64_t {
+  constexpr auto divide_ = [](auto x, auto y) -> int64_t {
     // It is done here to have the si::dimensionless then the units are
     // the same, but is the si::dimensionless valid for non si types? TODO
     if constexpr (std::is_same_v<decltype(x), decltype(y)>)
@@ -111,7 +111,7 @@ constexpr auto make_divide_inner(std::variant<Ts...>) {
       return V(resultT{}).index();
     return -1;
   };
-  return std::array{times_(T{}, Ts{})...};
+  return std::array{divide_(T{}, Ts{})...};
 }
 
 template <class... Ts>
