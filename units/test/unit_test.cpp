@@ -78,6 +78,18 @@ TEST(Unit, multiply_counts) {
   EXPECT_EQ(none * counts, counts);
 }
 
+TEST(Unit, divide) {
+  Unit one{units::dimensionless};
+  Unit l{units::m};
+  Unit t{units::s};
+  Unit v{units::m / units::s};
+  EXPECT_EQ(l / one, l);
+  EXPECT_EQ(t / one, t);
+  EXPECT_EQ(l / l, one);
+  EXPECT_EQ(l / t, v);
+  EXPECT_ANY_THROW(one / v);
+}
+
 TEST(Unit, conversion_factors) {
   boost::units::quantity<detail::tof::wavelength> a(2.0 * angstrom);
   boost::units::quantity<boost::units::si::length> b(3.0 * angstrom);
