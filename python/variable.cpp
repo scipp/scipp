@@ -167,8 +167,6 @@ void init_variable(py::module &m) {
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::dtype::of<double>(),
            py::arg("variances") = false)
-      // TODO Need to add overload for std::vector<std::string>, etc., see
-      // Dataset.__setitem__
       .def(py::init(&doMakeVariable), py::arg("dims"), py::arg("values"),
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
