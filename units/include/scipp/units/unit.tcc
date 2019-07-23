@@ -81,12 +81,6 @@ Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a,
                            ".");
 }
 
-template <class... Ts>
-constexpr auto make_lut(std::variant<Ts...>) {
-  using T = std::variant<Ts...>;
-  return std::array{T(Ts{})...};
-}
-
 template <class T, class... Ts>
 constexpr auto make_times_inner(std::variant<Ts...>) {
   using V = std::variant<Ts...>;
@@ -147,8 +141,7 @@ Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
   if (resultIndex < 0)
     throw std::runtime_error("Unsupported unit as result of multiplication: (" +
                              a.name() + ") * (" + b.name() + ')');
-  static constexpr auto units = make_lut(T{});
-  return Unit_impl<T, Counts>(units[resultIndex]);
+  return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 
 template <class T, class Counts>
@@ -159,8 +152,7 @@ Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
   if (resultIndex < 0)
     throw std::runtime_error("Unsupported unit as result of division: (" +
                              a.name() + ") / (" + b.name() + ')');
-  static constexpr auto units = make_lut(T{});
-  return Unit_impl<T, Counts>(units[resultIndex]);
+  return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 
 template <class T, class Counts>
@@ -170,8 +162,7 @@ Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a) {
   if (resultIndex < 0)
     throw std::runtime_error("Unsupported unit as result of sqrt: sqrt(" +
                              a.name() + ").");
-  static constexpr auto units = make_lut(T{});
-  return Unit_impl<T, Counts>(units[resultIndex]);
+  return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 
 #define INSTANTIATE(Units, Counts)                                             \
