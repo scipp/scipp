@@ -8,7 +8,7 @@ mkdir -p 'build' && cd 'build'
 cmake \
   -DPYTHON_EXECUTABLE="$CONDA_PREFIX/bin/python" \
   -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
-  -DCMAKE_OSX_SYSROOT="${CONDA_BUILD_SYSROOT}"\
+  -DCMAKE_OSX_SYSROOT="/opt/MacOSX10.9.sdk"\
   -DWITH_CTEST=OFF \
   ..
 
