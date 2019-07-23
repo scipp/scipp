@@ -559,9 +559,9 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val_var) {
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
-  auto b0 = makeVariable<double>({1.5}, {1.7});
+  auto b0 = makeVariable<double>(1.5, 1.7);
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
-  auto b1 = makeVariable<double>({1.6}, {1.8});
+  auto b1 = makeVariable<double>(1.6, 1.8);
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
   EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
@@ -584,9 +584,9 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val) {
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
-  auto b0 = makeVariable<double>({1.5});
+  auto b0 = makeVariable<double>(1.5);
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
-  auto b1 = makeVariable<double>({1.6});
+  auto b1 = makeVariable<double>(1.6);
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
   EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
@@ -608,9 +608,9 @@ TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
   const auto ab = transform<pair_custom_t<std::pair<double, float>>>(a, b, op);
 
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
-  auto b0 = makeVariable<float>({1.5});
+  auto b0 = makeVariable<float>(1.5);
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
-  auto b1 = makeVariable<float>({1.6});
+  auto b1 = makeVariable<float>(1.6);
   auto expected00 = a0 * b0;
   auto expected01 = a0 * b1;
   auto expected10 = a1 * b0;
