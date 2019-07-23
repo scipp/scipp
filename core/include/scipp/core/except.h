@@ -170,6 +170,9 @@ template <class T> void countsOrCountsDensity(const T &object) {
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 
+void SCIPP_CORE_EXPORT sparseCoordsAndLabelsMatch(const DataConstProxy &a,
+                                                  const DataConstProxy &b);
+
 template <typename A, typename B>
 void coordsAndLabelsMatch(const A &a, const B &b) {
   if (a.coords() != b.coords() || a.labels() != b.labels())
@@ -177,35 +180,7 @@ void coordsAndLabelsMatch(const A &a, const B &b) {
 
   for (const auto & [ name, item ] : b) {
     if (a.contains(name)) {
-      if (item.dims().sparse()) {
-        const auto sparseDim = item.dims().sparseDim();
-
-        const auto coords_a = a[name].coords();
-        const auto coords_b = item.coords();
-
-        /* Fail if: */
-        /* - presence of a sparse dimension is not identical in both items */
-        /* - both items have a sparse dimension but it's coordinates differ */
-        if ((coords_a.contains(sparseDim) != coords_b.contains(sparseDim)) ||
-            (coords_a.contains(sparseDim) &&
-             coords_a[sparseDim] != coords_b[sparseDim])) {
-          throw except::CoordMismatchError("Expected sparse coords to match.");
-        }
-
-        /* Check that a and b have identical sparse labels */
-        const auto labels_a = a[name].labels();
-        for (const auto & [ label_name, label_b ] : item.labels()) {
-          if (!labels_a.contains(label_name)) {
-            throw except::CoordMismatchError(
-                "Expected sparse labels to match.");
-          }
-
-          if (labels_a[label_name] != label_b) {
-            throw except::CoordMismatchError(
-                "Expected sparse labels to match.");
-          }
-        }
-      }
+      sparseCoordsAndLabelsMatch(a[name], item);
     }
   }
 }

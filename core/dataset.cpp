@@ -665,47 +665,51 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   return std::forward<A>(a);
 }
 
+template <class T> void copy_metadata(Dataset &dest, const T &src) {
+  /* Dense coordinates */
+  for (const auto & [ name, value ] : src.coords()) {
+    dest.setCoord(name, value);
+  }
+
+  /* Dense labels */
+  for (const auto & [ name, value ] : src.labels()) {
+    dest.setLabels(std::string(name), value);
+  }
+
+  /* Attributes */
+  for (const auto & [ name, value ] : src.attrs()) {
+    dest.setAttr(std::string(name), value);
+  }
+}
+
+void copy_metadata(Dataset &dest, const std::string &name,
+                   const DataConstProxy &src) {
+  /* Sparse coordinates */
+  for (const auto &coord : src.coords()) {
+    if (coord.second.dims().sparse()) {
+      dest.setSparseCoord(name, coord.second);
+    }
+  }
+
+  /* Sparse labels */
+  for (const auto & [ label_name, labels ] : src.labels()) {
+    if (labels.dims().sparse()) {
+      dest.setSparseLabels(name, std::string(label_name), labels);
+    }
+  }
+}
+
 template <class Op, class A, class B>
 auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
   expect::coordsAndLabelsMatch(a, b);
 
   Dataset res;
-
-  /* Copy coordinates to result dataset */
-  for (const auto & [ name, value ] : a.coords()) {
-    res.setCoord(name, value);
-  }
-
-  /* Copy labels to result dataset */
-  for (const auto & [ name, value ] : a.labels()) {
-    res.setLabels(std::string(name), value);
-  }
-
-  /* Copy attributes to result dataset */
-  for (const auto & [ name, value ] : a.attrs()) {
-    res.setAttr(std::string(name), value);
-  }
+  copy_metadata(res, a);
 
   for (const auto & [ name, item ] : b) {
     if (a.contains(name)) {
-      /* Operate on data and insert into result dataset */
-      res.setData(static_cast<std::string>(name),
-                  op(a[name].data(), item.data()));
-
-      /* Copy sparse coordinates to result dataset */
-      for (const auto &coord : a[name].coords()) {
-        if (coord.second.dims().sparse()) {
-          res.setSparseCoord(std::string(name), coord.second);
-        }
-      }
-
-      /* Copy sparse labels to result dataset */
-      for (const auto & [ label_name, labels ] : a[name].labels()) {
-        if (labels.dims().sparse()) {
-          res.setSparseLabels(std::string(name), std::string(label_name),
-                              labels);
-        }
-      }
+      res.setData(std::string(name), op(a[name].data(), item.data()));
+      copy_metadata(res, std::string(name), a[name]);
     }
   }
 
