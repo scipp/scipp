@@ -20,8 +20,7 @@ template <typename T, typename... ALL_T>
 struct isVariantMember<T, std::variant<ALL_T...>>
     : public std::disjunction<std::is_same<T, ALL_T>...> {};
 // Helper to make checking for allowed units more compact
-template <class Units, class T>
-constexpr bool isKnownUnit(const T &) {
+template <class Units, class T> constexpr bool isKnownUnit(const T &) {
   return isVariantMember<T, Units>::value;
 }
 
@@ -85,7 +84,7 @@ template <class T, class... Ts>
 constexpr auto make_times_inner(std::variant<Ts...>) {
   using V = std::variant<Ts...>;
   constexpr auto times_ = [](auto x, auto y) -> int64_t {
-    using resultT = typename decltype(x*y)::unit_type;
+    using resultT = typename decltype(x * y)::unit_type;
     if constexpr (isKnownUnit<V>(resultT{}))
       return V(resultT{}).index();
     return -1;
@@ -93,8 +92,7 @@ constexpr auto make_times_inner(std::variant<Ts...>) {
   return std::array{times_(T{}, Ts{})...};
 }
 
-template <class... Ts>
-constexpr auto make_times_lut(std::variant<Ts...>) {
+template <class... Ts> constexpr auto make_times_lut(std::variant<Ts...>) {
   return std::array{make_times_inner<Ts>(std::variant<Ts...>{})...};
 }
 
@@ -106,7 +104,7 @@ constexpr auto make_divide_inner(std::variant<Ts...>) {
     // the same, but is the si::dimensionless valid for non si types? TODO
     if constexpr (std::is_same_v<decltype(x), decltype(y)>)
       return V(dimensionless).index();
-    using resultT = typename decltype(x/y)::unit_type;
+    using resultT = typename decltype(x / y)::unit_type;
     if constexpr (isKnownUnit<V>(resultT{}))
       return V(resultT{}).index();
     return -1;
@@ -114,13 +112,11 @@ constexpr auto make_divide_inner(std::variant<Ts...>) {
   return std::array{divide_(T{}, Ts{})...};
 }
 
-template <class... Ts>
-constexpr auto make_divide_lut(std::variant<Ts...>) {
+template <class... Ts> constexpr auto make_divide_lut(std::variant<Ts...>) {
   return std::array{make_divide_inner<Ts>(std::variant<Ts...>{})...};
 }
 
-template <class... Ts>
-constexpr auto make_sqrt_lut(std::variant<Ts...>) {
+template <class... Ts> constexpr auto make_sqrt_lut(std::variant<Ts...>) {
   using T = std::variant<Ts...>;
   constexpr auto sqrt_ = [](auto x) -> int64_t {
     using resultT = typename decltype(sqrt(1.0 * x))::unit_type;
