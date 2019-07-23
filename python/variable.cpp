@@ -132,6 +132,24 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
         py::arg("unit") = units::Unit(units::dimensionless));
 }
 
+template <class T> void bind_init_1D(py::class_<Variable> &c) {
+  c.def(
+      py::init([](const std::vector<Dim> &labels, const std::vector<T> &values,
+                  const std::optional<std::vector<T>> &variances,
+                  const units::Unit &unit) {
+        Variable var;
+        Dimensions dims(labels, {scipp::size(values)});
+        if (variances)
+          var = makeVariable<T>(dims, values, *variances);
+        else
+          var = makeVariable<T>(dims, values);
+        var.setUnit(unit);
+        return var;
+      }),
+      py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
+      py::arg("unit") = units::Unit(units::dimensionless));
+}
+
 void init_variable(py::module &m) {
   py::class_<Variable> variable(m, "Variable");
   bind_init_0D<Dataset>(variable);
@@ -140,6 +158,8 @@ void init_variable(py::module &m) {
   bind_init_0D<double>(variable);
   bind_init_0D<float>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
+  bind_init_1D<std::string>(variable);
+  bind_init_1D<Eigen::Vector3d>(variable);
   variable
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
