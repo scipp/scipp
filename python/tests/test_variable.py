@@ -85,11 +85,41 @@ def test_create_scalar():
     assert var.unit == sp.units.dimensionless
 
 
+def test_create_scalar_Dataset():
+    dataset = sp.Dataset({'a': sp.Variable([sp.Dim.X], np.arange(4.0))})
+    var = sp.Variable(dataset)
+    assert var.value == dataset
+    assert var.dims == []
+    assert var.dtype == sp.dtype.Dataset
+    assert var.unit == sp.units.dimensionless
+
+
 def test_create_scalar_quantity():
     var = sp.Variable(1.2, unit=sp.units.m)
     assert var.value == 1.2
     assert var.dims == []
     assert var.dtype == sp.dtype.double
+    assert var.unit == sp.units.m
+
+
+def test_create_1D_string():
+    var = sp.Variable(dims=[Dim.Row], values=['a', 'bb'], unit=sp.units.m)
+    assert len(var.values) == 2
+    assert var.values[0] == 'a'
+    assert var.values[1] == 'bb'
+    assert var.dims == [Dim.Row]
+    assert var.dtype == sp.dtype.string
+    assert var.unit == sp.units.m
+
+
+def test_create_1D_vector_3_double():
+    var = sp.Variable(dims=[Dim.X], values=[
+                      [1, 2, 3], [4, 5, 6]], unit=sp.units.m)
+    assert len(var.values) == 2
+    np.testing.assert_array_equal(var.values[0], [1, 2, 3])
+    np.testing.assert_array_equal(var.values[1], [4, 5, 6])
+    assert var.dims == [Dim.X]
+    assert var.dtype == sp.dtype.vector_3_double
     assert var.unit == sp.units.m
 
 
