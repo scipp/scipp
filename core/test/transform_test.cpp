@@ -223,6 +223,21 @@ TEST_F(TransformBinaryTest, sparse_size_fail) {
                except::SizeError);
 }
 
+TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
+  const auto var = makeVariable<Eigen::Vector3d>(
+      {Dim::X, 2},
+      {Eigen::Vector3d{1.1, 2.2, 3.3}, Eigen::Vector3d{0.1, 0.2, 0.3}});
+  const auto expected =
+      makeVariable<Eigen::Vector3d>({}, {Eigen::Vector3d{1.0, 2.0, 3.0}});
+  // Passing Eigen types by value often causes issues, ensure that it works.
+  auto op = [](const auto x, const auto y) { return x - y; };
+
+  const auto result = transform<pair_self_t<Eigen::Vector3d>>(
+      var.slice({Dim::X, 0}), var.slice({Dim::X, 1}), op);
+
+  EXPECT_EQ(result, expected);
+}
+
 TEST(TransformTest, mixed_precision) {
   auto d = makeVariable<double>(1e-12);
   auto f = makeVariable<float>(1e-12);
@@ -631,7 +646,7 @@ TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
                except::SizeError);
 }
 
-// It is possible to use transform with functors that call non-build-in
+// It is possible to use transform with functors that call non-built-in
 // functions. To do so we have to define that function for the ValueAndVariance
 // helper. If this turns out to be a useful feature we should move
 // ValueAndVariance out of the `detail` namespace and document the mechanism.

@@ -581,14 +581,27 @@ auto insert_sparse_pairs(const std::tuple<Ts...> &,
                                     Known...>::type{}...);
 }
 
+template <class T> struct remove_cvref {
+  using type = std::remove_cv_t<std::remove_reference_t<T>>;
+};
+template <class T> using remove_cvref_t = typename remove_cvref<T>::type;
+
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_sparse_v<
                        std::remove_const_t<std::remove_reference_t<Ts>>> ||
                    ...))
       return SparseOp::operator()(std::forward<Ts>(args)...);
+    else if constexpr ((is_eigen_type_v<remove_cvref_t<Ts>> || ...))
+      // WARNING! The explicit specification of the template arguments of
+      // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
+      // passed BY REFERENCE and NOT BY VALUE. Passing by value leads to
+      // construction of expressions of values on the stack, which are then
+      // returned from the operator. One way to identify this is using
+      // address-sanitizer, which find a `stack-use-after-scope`.
+      return Op::template operator()<Ts...>(std::forward<Ts>(args)...);
     else
-      return Op::operator()(std::forward<Ts>(args)...);
+      return Op::template operator()(std::forward<Ts>(args)...);
   }
 };
 template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;

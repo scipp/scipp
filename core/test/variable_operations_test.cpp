@@ -138,9 +138,15 @@ TEST(Variable, operator_plus) {
 }
 
 TEST(Variable, operator_plus_eigen_type) {
-  auto a = makeVariable<Eigen::Vector3d>({Dim::X, 1});
-  auto sum = a + a;
-  EXPECT_EQ(sum.dtype(), dtype<Eigen::Vector3d>);
+  const auto var = makeVariable<Eigen::Vector3d>(
+      {Dim::X, 2},
+      {Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d{0.1, 0.2, 0.3}});
+  const auto expected =
+      makeVariable<Eigen::Vector3d>({}, {Eigen::Vector3d{1.1, 2.2, 3.3}});
+
+  const auto result = var.slice({Dim::X, 0}) + var.slice({Dim::X, 1});
+
+  EXPECT_EQ(result, expected);
 }
 
 TEST(SparseVariable, operator_plus) {
@@ -503,10 +509,11 @@ TEST(Variable, abs_of_scalar) {
 
 TEST(Variable, norm_of_vector) {
   auto reference =
-      makeVariable<double>({Dim::X, 3}, {sqrt(2.0), sqrt(2.0), 2.0});
-  auto var = makeVariable<Eigen::Vector3d>(
-      {Dim::X, 3}, {Eigen::Vector3d{1, 0, -1}, Eigen::Vector3d{1, 1, 0},
-                    Eigen::Vector3d{0, 0, -2}});
+      makeVariable<double>({Dim::X, 3}, units::m, {sqrt(2.0), sqrt(2.0), 2.0});
+  auto var = makeVariable<Eigen::Vector3d>({Dim::X, 3}, units::m,
+                                           {Eigen::Vector3d{1, 0, -1},
+                                            Eigen::Vector3d{1, 1, 0},
+                                            Eigen::Vector3d{0, 0, -2}});
   EXPECT_EQ(norm(var), reference);
 }
 

@@ -307,6 +307,7 @@ public:
   // will not go out of scope, so that is ok (unless someone changes var and
   // expects the reshaped view to be still valid).
   Variable reshape(const Dimensions &dims) &&;
+  void rename(const Dim from, const Dim to);
 
   bool operator==(const Variable &other) const;
   bool operator==(const VariableConstProxy &other) const;
@@ -763,6 +764,7 @@ SCIPP_CORE_EXPORT Variable mean(const Variable &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable abs(const Variable &var);
 SCIPP_CORE_EXPORT Variable norm(const Variable &var);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
+SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable broadcast(Variable var, const Dimensions &dims);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 

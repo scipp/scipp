@@ -177,6 +177,11 @@ Variable VariableConstProxy::reshape(const Dimensions &dims) const {
   return reshaped;
 }
 
+void Variable::rename(const Dim from, const Dim to) {
+  if (dims().contains(from))
+    data().m_dimensions.relabel(dims().index(from), to);
+}
+
 // Example of a "derived" operation: Implementation does not require adding a
 // virtual function to VariableConcept.
 std::vector<Variable> split(const Variable &var, const Dim dim,
@@ -400,7 +405,10 @@ Variable abs(const Variable &var) {
 }
 
 Variable norm(const Variable &var) {
-  return transform<Eigen::Vector3d>(var, [](auto &&x) { return x.norm(); });
+  Variable result =
+      transform<Eigen::Vector3d>(var, [](auto &&x) { return x.norm(); });
+  result.setUnit(var.unit());
+  return result;
 }
 
 Variable sqrt(const Variable &var) {
@@ -408,6 +416,13 @@ Variable sqrt(const Variable &var) {
   Variable result =
       transform<double, float>(var, [](const auto x) { return sqrt(x); });
   result.setUnit(sqrt(var.unit()));
+  return result;
+}
+
+Variable dot(const Variable &a, const Variable &b) {
+  auto result = transform<pair_self_t<Eigen::Vector3d>>(
+      a, b, [](const auto &a_, const auto &b_) { return a_.dot(b_); });
+  result.setUnit(a.unit() * b.unit());
   return result;
 }
 

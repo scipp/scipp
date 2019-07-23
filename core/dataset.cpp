@@ -324,6 +324,37 @@ Dataset Dataset::slice(const Slice slice1, const Slice slice2,
   return Dataset{DatasetConstProxy(*this).slice(slice1, slice2, slice3)};
 }
 
+/// Rename dimension `from` to `to`.
+void Dataset::rename(const Dim from, const Dim to) {
+  if (m_dims.count(to) != 0)
+    throw except::DimensionError("Duplicate dimension.");
+  if (m_dims.count(from) != 1)
+    return;
+
+  const auto relabel = [from, to](auto &map) {
+    auto node = map.extract(from);
+    node.key() = to;
+    map.insert(std::move(node));
+  };
+  relabel(m_dims);
+  relabel(m_coords);
+  for (auto &item : m_coords)
+    item.second.rename(from, to);
+  for (auto &item : m_labels)
+    item.second.rename(from, to);
+  for (auto &item : m_attrs)
+    item.second.rename(from, to);
+  for (auto &item : m_data) {
+    auto &value = item.second;
+    if (value.data)
+      value.data->rename(from, to);
+    if (value.coord)
+      value.coord->rename(from, to);
+    for (auto labels : value.labels)
+      labels.second.rename(from, to);
+  }
+}
+
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
