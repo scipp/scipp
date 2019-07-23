@@ -85,6 +85,15 @@ def test_create_scalar():
     assert var.unit == sp.units.dimensionless
 
 
+def test_create_scalar_Dataset():
+    dataset = sp.Dataset({'a': sp.Variable([sp.Dim.X], np.arange(4.0))})
+    var = sp.Variable(dataset)
+    assert var.value == dataset
+    assert var.dims == []
+    assert var.dtype == sp.dtype.Dataset
+    assert var.unit == sp.units.dimensionless
+
+
 def test_create_scalar_quantity():
     var = sp.Variable(1.2, unit=sp.units.m)
     assert var.value == 1.2

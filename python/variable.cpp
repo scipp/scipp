@@ -117,8 +117,29 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                      unit, variances);
 }
 
+template <class T> void bind_init_0D(py::class_<Variable> &c) {
+  c.def(py::init([](const T &value, const std::optional<T> &variance,
+                    const units::Unit &unit) {
+          Variable var;
+          if (variance)
+            var = makeVariable<T>(value, *variance);
+          else
+            var = makeVariable<T>(value);
+          var.setUnit(unit);
+          return var;
+        }),
+        py::arg("value"), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless));
+}
+
 void init_variable(py::module &m) {
   py::class_<Variable> variable(m, "Variable");
+  bind_init_0D<Dataset>(variable);
+  bind_init_0D<int64_t>(variable);
+  bind_init_0D<int32_t>(variable);
+  bind_init_0D<double>(variable);
+  bind_init_0D<float>(variable);
+  bind_init_0D<Eigen::Vector3d>(variable);
   variable
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
@@ -126,18 +147,6 @@ void init_variable(py::module &m) {
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::dtype::of<double>(),
            py::arg("variances") = false)
-      .def(py::init([](const int64_t data, const units::Unit &unit) {
-             auto var = makeVariable<int64_t>(Dimensions{}, {data});
-             var.setUnit(unit);
-             return var;
-           }),
-           py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
-      .def(py::init([](const double data, const units::Unit &unit) {
-             Variable var({}, {data});
-             var.setUnit(unit);
-             return var;
-           }),
-           py::arg("data"), py::arg("unit") = units::Unit(units::dimensionless))
       // TODO Need to add overload for std::vector<std::string>, etc., see
       // Dataset.__setitem__
       .def(py::init(&doMakeVariable), py::arg("dims"), py::arg("values"),
