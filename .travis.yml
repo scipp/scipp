@@ -1,7 +1,6 @@
 branches:
   only:
     - master
-
 language: cpp
 dist: xenial
 cache: ccache
@@ -53,7 +52,7 @@ jobs:
       git:
         depth: false
       env:
-        - CONDA_BUILD_SYSROOT=/opt/MacOSX10.9.sdk
+        - CONDA_BUILD_SYSROOT=/opt/MacOSX10.13.sdk
         - PATH="$HOME/miniconda/bin:$PATH"
       install: 
         - sh .travis/install_sdk.sh 
