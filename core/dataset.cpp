@@ -840,6 +840,21 @@ auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
   return res;
 }
 
+template <class Op, class B>
+auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
+  Dataset res;
+  copy_metadata(res, b);
+
+  for (const auto & [ name, item ] : b) {
+    expect::matchingDataPresence(a, item);
+    if (item.hasData())
+      res.setData(std::string(name), op(a.data(), item.data()));
+    copy_metadata(res, std::string(name), item);
+  }
+
+  return res;
+}
+
 Dataset &Dataset::operator+=(const DataConstProxy &other) {
   return apply_with_delay(plus_equals, *this, other);
 }
@@ -996,6 +1011,14 @@ Dataset operator+(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
+Dataset operator+(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(plus, lhs, rhs);
+}
+
+Dataset operator+(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
+  return apply_with_broadcast(plus, lhs, rhs);
+}
+
 Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
@@ -1017,6 +1040,14 @@ Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
 }
 
 Dataset operator-(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  return apply_with_broadcast(minus, lhs, rhs);
+}
+
+Dataset operator-(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(minus, lhs, rhs);
+}
+
+Dataset operator-(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
@@ -1044,6 +1075,14 @@ Dataset operator*(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
+Dataset operator*(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(times, lhs, rhs);
+}
+
+Dataset operator*(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
+  return apply_with_broadcast(times, lhs, rhs);
+}
+
 Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
@@ -1065,6 +1104,14 @@ Dataset operator/(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
 }
 
 Dataset operator/(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  return apply_with_broadcast(divide, lhs, rhs);
+}
+
+Dataset operator/(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(divide, lhs, rhs);
+}
+
+Dataset operator/(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
@@ -1123,4 +1170,5 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   auto bins = dataset.coords()[dim];
   return histogram(dataset, bins);
 }
+
 } // namespace scipp::core
