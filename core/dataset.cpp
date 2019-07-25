@@ -314,8 +314,7 @@ DatasetConstProxy Dataset::slice(const Slice slice1,
 
 /// Return const slice of the dataset, sliced in three dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is
-/// returned.
+/// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetConstProxy Dataset::slice(const Slice slice1, const Slice slice2,
                                  const Slice slice3) const & {
   return DatasetConstProxy(*this).slice(slice1, slice2, slice3);
@@ -337,8 +336,7 @@ DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2) & {
 
 /// Return slice of the dataset, sliced in three dimensions.
 ///
-/// This does not make a copy of the data. Instead of proxy object is
-/// returned.
+/// This does not make a copy of the data. Instead of proxy object is returned.
 DatasetProxy Dataset::slice(const Slice slice1, const Slice slice2,
                             const Slice slice3) & {
   return DatasetProxy(*this).slice(slice1, slice2, slice3);
@@ -683,12 +681,11 @@ auto &apply(const Op &op, A &a, const B &b) {
 template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // For `b` referencing data in `a` we delay operation. The alternative would
-  // be to make a deep copy of `other` before starting the iteration over
-  // items.
+  // be to make a deep copy of `other` before starting the iteration over items.
   std::optional<std::string_view> delayed;
-  // Note the inefficiency here: We are comparing some or all of the coords
-  // and labels for each item. This could be improved by implementing the
-  // operations for detail::DatasetData instead of DataProxy.
+  // Note the inefficiency here: We are comparing some or all of the coords and
+  // labels for each item. This could be improved by implementing the operations
+  // for detail::DatasetData instead of DataProxy.
   for (const auto & [ name, item ] : a) {
     if (&item.underlying() == &b.underlying())
       delayed = name;
