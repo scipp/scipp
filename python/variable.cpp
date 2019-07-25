@@ -253,38 +253,76 @@ void init_variable(py::module &m) {
   // operator overload definitions
   py::implicitly_convertible<VariableProxy, Variable>();
 
-  m.def("split",
-        py::overload_cast<const Variable &, const Dim,
-                          const std::vector<scipp::index> &>(&split),
-        py::call_guard<py::gil_scoped_release>(),
-        "Split a Variable along a given Dimension.");
+  m.def("abs", [](const Variable &self) { return abs(self); },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        The element-wise absolute value.
+
+        :raises: If the dtype has no absolute value, e.g., if it is a string
+        :seealso: :py:class:`scipp.norm` for vector-like dtype
+        :return: Copy of the input with values replaced by the absolute values
+        :rtype: Variable)");
+  m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        The element-wise dot-product.
+
+        :raises: If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double`
+        :return: New variable with scalar elements based on the two inputs.
+        :rtype: Variable)");
   m.def("concatenate",
         py::overload_cast<const Variable &, const Variable &, const Dim>(
             &concatenate),
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable containing a concatenation "
-        "of two Variables along a given Dimension.");
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Concatenate input variables along the given dimension.
+
+        Concatenation can happen in two ways:
+        - Along an existing dimension, yielding a new dimension extent given by the sum of the input's extents.
+        - Along a new dimension that is not contained in either of the inputs, yielding an output with one extra dimensions.
+
+        :raises: If the dtype or unit does not match, or if the dimensions and shapes are incompatible.
+        :return: New variable containing all elements of the input variables.
+        :rtype: Variable)");
+  m.def("filter",
+        py::overload_cast<const Variable &, const Variable &>(&filter),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        The element-wise mean over the specified dimension.
+
+        :raises: If the dtype cannot be summed, e.g., if it is a string
+        :seealso: :py:class:`scipp.sum`
+        :return: New variable containing the mean.
+        :rtype: Variable)");
+  m.def("norm", py::overload_cast<const Variable &>(&norm),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        The element-wise norm.
+
+        :raises: If the dtype does not norm, i.e., if it is not a vector
+        :seealso: :py:class:`scipp.abs` for scalar dtype
+        :return: New variable with scalar elements computed as the norm values if the input elements.
+        :rtype: Variable)");
   m.def("rebin",
         py::overload_cast<const Variable &, const Variable &, const Variable &>(
             &rebin),
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Variable whose data is rebinned with new bin edges.");
-  m.def("filter",
-        py::overload_cast<const Variable &, const Variable &>(&filter),
-        py::call_guard<py::gil_scoped_release>());
-  m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
+  m.def("split",
+        py::overload_cast<const Variable &, const Dim,
+                          const std::vector<scipp::index> &>(&split),
         py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable containing the sum of the data along the "
-        "specified dimension.");
-  m.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable containing the mean of the data along the "
-        "specified dimension.");
-  m.def("norm", py::overload_cast<const Variable &>(&norm),
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable containing the norm of the data.");
-  // find out why py::overload_cast is not working correctly here
+        "Split a Variable along a given Dimension.");
   m.def("sqrt", [](const Variable &self) { return sqrt(self); },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable containing the square root of the data.");
+        py::call_guard<py::gil_scoped_release>(), R"(
+        The element-wise square-root.
+
+        :raises: If the dtype has no square-root, e.g., if it is a string
+        :return: Copy of the input with values replaced by the square-root.
+        :rtype: Variable)");
+  m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        The element-wise sum over the specified dimension.
+
+        :raises: If the dtype cannot be summed, e.g., if it is a string
+        :seealso: :py:class:`scipp.mean`
+        :return: New variable containing the sum.
+        :rtype: Variable)");
 }
