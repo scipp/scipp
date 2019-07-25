@@ -135,6 +135,10 @@ struct SCIPP_CORE_EXPORT VariancesError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct SCIPP_CORE_EXPORT SparseDataError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 } // namespace except
 
 namespace expect {
@@ -187,6 +191,8 @@ void coordsAndLabelsMatch(const A &a, const B &b) {
 
 void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                                   const DataConstProxy &b);
+void SCIPP_CORE_EXPORT matchingDataPresence(const DataConstProxy &a,
+                                            const DataConstProxy &b);
 void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);

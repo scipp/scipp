@@ -815,7 +815,9 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
 
   for (const auto & [ name, item ] : b) {
     if (a.contains(name)) {
-      res.setData(std::string(name), op(a[name].data(), item.data()));
+      expect::matchingDataPresence(a[name], item);
+      if (item.hasData())
+        res.setData(std::string(name), op(a[name].data(), item.data()));
       copy_metadata(res, std::string(name), a[name]);
     }
   }
@@ -829,8 +831,10 @@ auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
   copy_metadata(res, a);
 
   for (const auto & [ name, item ] : a) {
-    res.setData(std::string(name), op(item.data(), b.data()));
-    copy_metadata(res, std::string(name), a[name]);
+    expect::matchingDataPresence(item, b);
+    if (item.hasData())
+      res.setData(std::string(name), op(item.data(), b.data()));
+    copy_metadata(res, std::string(name), item);
   }
 
   return res;

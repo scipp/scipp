@@ -325,6 +325,13 @@ void coordsAndLabelsAreSuperset(const DataConstProxy &a,
       throw except::CoordMismatchError("Expected labels to match.");
 }
 
+void matchingDataPresence(const DataConstProxy &a, const DataConstProxy &b) {
+  if (a.hasData() != b.hasData())
+    throw except::SparseDataError(
+        "Either both or neither of the operands in "
+        "a operation with sparse data must have data values.");
+}
+
 void notSparse(const Dimensions &dims) {
   if (dims.sparse())
     throw except::DimensionError("Expected non-sparse dimensions.");

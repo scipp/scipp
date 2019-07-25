@@ -586,6 +586,17 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
 }
 
+TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
+  Dataset a;
+  a.setSparseCoord("sparse",
+                   makeVariable<double>({Dim::X, Dimensions::Sparse}));
+  auto b(a);
+  a.setData("sparse", makeVariable<double>({Dim::X, Dimensions::Sparse}));
+
+  EXPECT_THROW(TestFixture::op(a, b), except::SparseDataError);
+  EXPECT_THROW(TestFixture::op(a, b["sparse"]), except::SparseDataError);
+}
+
 TYPED_TEST(DatasetBinaryOpTest,
            dataset_sparse_lhs_dataset_sparse_rhs_fail_when_coords_mismatch) {
   auto dataset_a = make_simple_sparse({1.1, 2.2});
