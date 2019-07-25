@@ -38,7 +38,7 @@ Data items in a dataset as well as coordinates support optional variances in add
 The variances are accessed using the ``variances`` property and have the same shape and dtype as the ``values`` array.
 All operations take the variances into account:
 
-- Operations fail if the variances of coordinates do not match.
+- Operations fail if the variances of coordinates are not identical, element by element.
   For the future, we are considering supporting inexact matching based on variances of coordinates but currently this is not implemented.
 - Operations such as addition or multiplication propagate the errors to the output.
   An overview of the method can be found in `Wikipedia: Propagation of uncertainty <https://en.wikipedia.org/wiki/Propagation_of_uncertainty>`_.
@@ -66,7 +66,7 @@ Scipp handles such sparse data by supporting data-item-specific *sparse coordina
   It represents the time-stamps at which event occurred and is thus essentially an array of lists.
 - If the coordinate is sparse, the corresponding data is also sparse and must have matching list lengths.
 - The values and variances for sparse data correspond to the event weight and its uncertainty.
-  For unweighted events, scipp supports items without a values array.
+  For cases where by definition events all have the *same* weight, scipp supports items without a values array.
   In this case each sparse coordinate entry corresponds to a single event count.
 
 Sparse items in a dataset can be seen as a case of unaligned data, with misalignment not just between different items, but also between slices within an item.
