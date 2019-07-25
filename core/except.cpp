@@ -288,9 +288,31 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
                              to_string(dims) + ".");
 }
 
-void coordsAndLabelsMatch(const DataConstProxy &a, const DataConstProxy &b) {
-  if (a.coords() != b.coords() || a.labels() != b.labels())
-    throw except::CoordMismatchError("Expected coords and labels to match.");
+void sparseCoordsAndLabelsMatch(const DataConstProxy &a,
+                                const DataConstProxy &b) {
+  if (b.dims().sparse()) {
+    const auto sparseDim = b.dims().sparseDim();
+
+    /* Fail if: */
+    /* - presence of a sparse dimension is not identical in both items */
+    /* - both items have a sparse dimension but it's coordinates differ */
+    if ((a.coords().contains(sparseDim) != b.coords().contains(sparseDim)) ||
+        (a.coords().contains(sparseDim) &&
+         a.coords()[sparseDim] != b.coords()[sparseDim])) {
+      throw except::CoordMismatchError("Expected sparse coords to match.");
+    }
+
+    /* Check that a and b have identical sparse labels */
+    for (const auto & [ name, label ] : b.labels()) {
+      if (!a.labels().contains(name)) {
+        throw except::CoordMismatchError("Expected sparse labels to match.");
+      }
+
+      if (a.labels()[name] != label) {
+        throw except::CoordMismatchError("Expected sparse labels to match.");
+      }
+    }
+  }
 }
 
 void coordsAndLabelsAreSuperset(const DataConstProxy &a,
