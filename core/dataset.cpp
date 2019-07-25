@@ -225,30 +225,10 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 void Dataset::setData(const std::string &name, Variable data) {
   setDims(data.dims());
   const bool sparseData = data.dims().sparse();
-  if (m_data.count(name)) {
-    const auto &dataItem = m_data.at(name);
-    if (dataItem.coord) {
-      const auto &coordsSparse = dataItem.coord->dims().sparse();
-      if (coordsSparse && !sparseData) {
-        throw except::DimensionError(
-            "Cannot set dense values or variances if coordinates sparse");
-      } else if (!coordsSparse && sparseData) {
-        throw except::DimensionError(
-            "Cannot set sparse values or variances if coordinates dense");
-      }
-    }
-    if (!dataItem.labels.empty()) {
-      const auto &labelsSparse =
-          dataItem.labels.begin()->second.dims().sparse();
-      if (labelsSparse && !sparseData) {
-        throw except::DimensionError(
-            "Cannot set dense values or variances if labels sparse");
-      } else if (!labelsSparse && sparseData) {
-        throw except::DimensionError(
-            "Cannot set sparse values or variances if labels dense");
-      }
-    }
-  }
+
+  if (contains(name) && operator[](name).dims().sparse() != sparseData)
+    throw except::DimensionError("Cannot set dense values or variances if "
+                                 "coordinates sparse or vice versa");
   m_data[name].data = std::move(data);
 }
 
