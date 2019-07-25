@@ -43,8 +43,8 @@ def test_create_with_numpy_dtype():
 
 def test_create_with_variances():
     assert not sp.Variable(dims=[Dim.X], shape=[2]).has_variances
-    assert not sp.Variable(dims=[Dim.X], shape=[
-                           2], variances=False).has_variances
+    assert not sp.Variable(dims=[Dim.X], shape=[2],
+                           variances=False).has_variances
     assert sp.Variable(dims=[Dim.X], shape=[2], variances=True).has_variances
 
 
@@ -70,7 +70,8 @@ def test_create_from_numpy_1d_bool():
 
 
 def test_create_with_variances_from_numpy_1d():
-    var = sp.Variable([sp.Dim.X], values=np.arange(4.0),
+    var = sp.Variable([sp.Dim.X],
+                      values=np.arange(4.0),
                       variances=np.arange(4.0, 8.0))
     assert var.dtype == sp.dtype.double
     np.testing.assert_array_equal(var.values, np.arange(4))
@@ -113,8 +114,9 @@ def test_create_1D_string():
 
 
 def test_create_1D_vector_3_double():
-    var = sp.Variable(dims=[Dim.X], values=[
-                      [1, 2, 3], [4, 5, 6]], unit=sp.units.m)
+    var = sp.Variable(dims=[Dim.X],
+                      values=[[1, 2, 3], [4, 5, 6]],
+                      unit=sp.units.m)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
@@ -123,9 +125,20 @@ def test_create_1D_vector_3_double():
     assert var.unit == sp.units.m
 
 
+def test_create_2D_inner_size_3():
+    var = sp.Variable(dims=[Dim.X, Dim.Y],
+                      values=np.arange(6.0).reshape(2, 3),
+                      unit=sp.units.m)
+    assert var.shape == [2, 3]
+    np.testing.assert_array_equal(var.values[0], [0, 1, 2])
+    np.testing.assert_array_equal(var.values[1], [3, 4, 5])
+    assert var.dims == [Dim.X, Dim.Y]
+    assert var.dtype == sp.dtype.double
+    assert var.unit == sp.units.m
+
+
 def test_operation_with_scalar_quantity():
-    reference = sp.Variable([sp.Dim.X],
-                            np.arange(4.0) * 1.5)
+    reference = sp.Variable([sp.Dim.X], np.arange(4.0) * 1.5)
     reference.unit = sp.units.kg
 
     var = sp.Variable([sp.Dim.X], np.arange(4.0))
@@ -143,7 +156,7 @@ def test_0D_scalar_access():
 
 
 def test_1D_scalar_access_fail():
-    var = sp.Variable([Dim.X], (1,))
+    var = sp.Variable([Dim.X], (1, ))
     with pytest.raises(RuntimeError):
         assert var.value == 0.0
     with pytest.raises(RuntimeError):
@@ -151,15 +164,15 @@ def test_1D_scalar_access_fail():
 
 
 def test_1D_access():
-    var = sp.Variable([Dim.X], (2,))
+    var = sp.Variable([Dim.X], (2, ))
     assert len(var.values) == 2
-    assert var.values.shape == (2,)
+    assert var.values.shape == (2, )
     var.values[1] = 1.2
     assert var.values[1] == 1.2
 
 
 def test_1D_access_bad_shape_fail():
-    var = sp.Variable([Dim.X], (2,))
+    var = sp.Variable([Dim.X], (2, ))
     with pytest.raises(RuntimeError):
         var.values = np.arange(3)
 
@@ -219,15 +232,15 @@ def test_sparse_setitem_shape_fail():
 
 
 def test_sparse_setitem_float():
-    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [
-                      4, sp.Dimensions.Sparse], dtype=sp.dtype.float)
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse],
+                      dtype=sp.dtype.float)
     var[Dim.X, 0].values = np.arange(4)
     assert len(var[Dim.X, 0].values) == 4
 
 
 def test_sparse_setitem_int64_t():
-    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [
-                      4, sp.Dimensions.Sparse], dtype=sp.dtype.int64)
+    var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse],
+                      dtype=sp.dtype.int64)
     var[Dim.X, 0].values = np.arange(4)
     assert len(var[Dim.X, 0].values) == 4
 
@@ -241,21 +254,21 @@ def test_create_dtype():
     assert var.dtype == sp.dtype.double
     var = sp.Variable([Dim.X], values=np.arange(4).astype(np.float32))
     assert var.dtype == sp.dtype.float
-    var = sp.Variable([Dim.X], (4,), dtype=np.dtype(np.float64))
+    var = sp.Variable([Dim.X], (4, ), dtype=np.dtype(np.float64))
     assert var.dtype == sp.dtype.double
-    var = sp.Variable([Dim.X], (4,), dtype=np.dtype(np.float32))
+    var = sp.Variable([Dim.X], (4, ), dtype=np.dtype(np.float32))
     assert var.dtype == sp.dtype.float
-    var = sp.Variable([Dim.X], (4,), dtype=np.dtype(np.int64))
+    var = sp.Variable([Dim.X], (4, ), dtype=np.dtype(np.int64))
     assert var.dtype == sp.dtype.int64
-    var = sp.Variable([Dim.X], (4,), dtype=np.dtype(np.int32))
+    var = sp.Variable([Dim.X], (4, ), dtype=np.dtype(np.int32))
     assert var.dtype == sp.dtype.int32
 
 
 def test_get_slice():
     var = sp.Variable([Dim.X, Dim.Y], values=np.arange(0, 8).reshape(2, 4))
     var_slice = var[Dim.X, 1:2]
-    assert var_slice == sp.Variable(
-        [Dim.X, Dim.Y], values=np.arange(4, 8).reshape(1, 4))
+    assert var_slice == sp.Variable([Dim.X, Dim.Y],
+                                    values=np.arange(4, 8).reshape(1, 4))
 
 
 def test_slicing():
@@ -345,3 +358,70 @@ def test_binary_not_equal():
     assert a_slice != c
     assert c != a
     assert c != a_slice
+
+
+def test_abs():
+    var = sp.Variable([Dim.X], values=np.array([0.1, -0.2]), unit=sp.units.m)
+    expected = sp.Variable([Dim.X],
+                           values=np.array([0.1, 0.2]),
+                           unit=sp.units.m)
+    assert sp.abs(var) == expected
+
+
+def test_dot():
+    a = sp.Variable(dims=[Dim.X],
+                    values=[[1, 0, 0], [0, 1, 0]],
+                    unit=sp.units.m)
+    b = sp.Variable(dims=[Dim.X],
+                    values=[[1, 0, 0], [1, 0, 0]],
+                    unit=sp.units.m)
+    expected = sp.Variable([Dim.X],
+                           values=np.array([1.0, 0.0]),
+                           unit=sp.units.m**2)
+    assert sp.dot(a, b) == expected
+
+
+def test_concatenate():
+    var = sp.Variable([Dim.X], values=np.array([0.1, 0.2]), unit=sp.units.m)
+    expected = sp.Variable([sp.Dim.X],
+                           values=np.array([0.1, 0.2, 0.1, 0.2]),
+                           unit=sp.units.m)
+    assert sp.concatenate(var, var, Dim.X) == expected
+
+
+def test_mean():
+    var = sp.Variable([Dim.X, Dim.Y],
+                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
+                      unit=sp.units.m)
+    expected = sp.Variable([Dim.X],
+                           values=np.array([0.2, 0.4]),
+                           unit=sp.units.m)
+    assert sp.mean(var, Dim.Y) == expected
+
+
+def test_norm():
+    var = sp.Variable(dims=[Dim.X],
+                      values=[[1, 0, 0], [3, 4, 0]],
+                      unit=sp.units.m)
+    expected = sp.Variable([Dim.X],
+                           values=np.array([1.0, 5.0]),
+                           unit=sp.units.m)
+    assert sp.norm(var) == expected
+
+
+def test_sqrt():
+    var = sp.Variable([Dim.X], values=np.array([4.0, 9.0]), unit=sp.units.m**2)
+    expected = sp.Variable([Dim.X],
+                           values=np.array([2.0, 3.0]),
+                           unit=sp.units.m)
+    assert sp.sqrt(var) == expected
+
+
+def test_sum():
+    var = sp.Variable([Dim.X, Dim.Y],
+                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
+                      unit=sp.units.m)
+    expected = sp.Variable([Dim.X],
+                           values=np.array([0.4, 0.8]),
+                           unit=sp.units.m)
+    assert sp.sum(var, Dim.Y) == expected

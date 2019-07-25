@@ -401,7 +401,10 @@ Variable mean(const Variable &var, const Dim dim) {
 
 Variable abs(const Variable &var) {
   using std::abs;
-  return transform<double, float>(var, [](const auto x) { return abs(x); });
+  Variable result =
+      transform<double, float>(var, [](const auto x) { return abs(x); });
+  result.setUnit(var.unit());
+  return result;
 }
 
 Variable norm(const Variable &var) {

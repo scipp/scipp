@@ -22,6 +22,10 @@ To add scipp to an existing conda environment:
 We are currently recommending the `scipp/label/dev` channel instead of just `scipp` since the latter is not useful until we have had our first proper release.
 Note that these packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are currently only available on Linux.
 
+After installation the module ``scipp`` can be imported in Python.
+
+To update or remove ``scipp`` use `conda update <https://docs.conda.io/projects/conda/en/latest/commands/update.html>`_ and `conda remove <https://docs.conda.io/projects/conda/en/latest/commands/remove.html>`_.
+
 Docker
 ------
 
@@ -40,4 +44,4 @@ These notebooks provide an introduction and basic usage turorial.
 From source
 -----------
 
-See the `scipp README <See https://github.com/scipp/scipp/blob/master/README.md>`_.
+See the `scipp README <https://github.com/scipp/scipp/blob/master/README.md>`_.
