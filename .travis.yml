@@ -38,7 +38,7 @@ jobs:
       script: sh .travis/run_tests.sh
     - stage: "Deploy"
       name: "conda linux"
-      #if: branch = master AND NOT type = pull_request
+      if: branch = master AND NOT type = pull_request
       git:
         depth: false
       env:
