@@ -60,7 +60,7 @@ Variances must have the same shape as values, and units are specified using the 
     var.variances
 
 :py:class:`~scipp.Variable` also supports a single *sparse* dimension.
-In this case it is currently not possible to set data directly in the cosntructor.
+In this case it is currently not possible to set data directly in the constructor.
 Instead we create it by specifying a shape:
 
 .. ipython:: python
