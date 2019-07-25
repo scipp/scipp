@@ -230,10 +230,10 @@ void Dataset::setData(const std::string &name, Variable data) {
     if (dataItem.coord) {
       const auto &coordsSparse = dataItem.coord->dims().sparse();
       if (coordsSparse && !sparseData) {
-        throw std::runtime_error(
+        throw except::DimensionError(
             "Cannot set dense values or variances if coordinates sparse");
       } else if (!coordsSparse && sparseData) {
-        throw std::runtime_error(
+        throw except::DimensionError(
             "Cannot set sparse values or variances if coordinates dense");
       }
     }
@@ -241,10 +241,10 @@ void Dataset::setData(const std::string &name, Variable data) {
       const auto &labelsSparse =
           dataItem.labels.begin()->second.dims().sparse();
       if (labelsSparse && !sparseData) {
-        throw std::runtime_error(
+        throw except::DimensionError(
             "Cannot set dense values or variances if labels sparse");
       } else if (!labelsSparse && sparseData) {
-        throw std::runtime_error(
+        throw except::DimensionError(
             "Cannot set sparse values or variances if labels dense");
       }
     }
@@ -257,8 +257,9 @@ void Dataset::setData(const std::string &name, Variable data) {
 /// Sparse coordinates can exist even without corresponding data.
 void Dataset::setSparseCoord(const std::string &name, Variable coord) {
   if (!coord.dims().sparse())
-    throw std::runtime_error("Variable passed to Dataset::setSparseCoord does "
-                             "not contain sparse data.");
+    throw except::DimensionError(
+        "Variable passed to Dataset::setSparseCoord does "
+        "not contain sparse data.");
   if (m_data.count(name)) {
     const auto &data = m_data.at(name);
     if ((data.data &&
@@ -266,8 +267,8 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
         (!data.labels.empty() &&
          (data.labels.begin()->second.dims().sparseDim() !=
           coord.dims().sparseDim())))
-      throw std::runtime_error("Cannot set sparse coordinate if values or "
-                               "variances are not sparse.");
+      throw except::DimensionError("Cannot set sparse coordinate if values or "
+                                   "variances are not sparse.");
   }
   setDims(coord.dims());
   m_data[name].coord = std::move(coord);

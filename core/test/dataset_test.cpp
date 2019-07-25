@@ -258,13 +258,13 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
   Dataset a;
   a.setData("sparse_coord_and_val", dense_variable);
   ASSERT_THROW(a.setSparseCoord("sparse_coord_and_val", sparse_variable),
-               std::runtime_error);
+               except::DimensionError);
 
   // Setting coords first yields same response.
   Dataset b;
   b.setSparseCoord("sparse_coord_and_val", sparse_variable);
   ASSERT_THROW(b.setData("sparse_coord_and_val", dense_variable),
-               std::runtime_error);
+               except::DimensionError);
 }
 
 TEST(DatasetTest, simple_sparse_slice) {
