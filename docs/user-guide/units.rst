@@ -23,7 +23,7 @@ This can be used to create units that do not have a pref-defined identifier:
     speed = length / sc.units.s
     speed
 
-Due to a restriction in scipp's units implementation the set of supported units is unfortunately limited a compile-time of the underlying C++ library:
+Due to a restriction in scipp's units implementation the set of supported units is unfortunately limited at compile-time of the underlying C++ library:
 
 .. ipython:: python
     :okexcept:
