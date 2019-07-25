@@ -499,11 +499,11 @@ TEST(Variable, mean) {
   EXPECT_TRUE(equals(meanY.values<double>(), {2.0, 3.0}));
 }
 
-TEST(Variable, abs_of_scalar) {
+TEST(Variable, abs) {
   auto reference =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, -2.0, -3.0, 4.0});
+      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m, {1, 2, 3, 4});
+  auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                                  {1.0, -2.0, -3.0, 4.0});
   EXPECT_EQ(abs(var), reference);
 }
 
