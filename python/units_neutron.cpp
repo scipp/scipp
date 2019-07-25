@@ -8,8 +8,6 @@
 #include "pybind11.h"
 
 using namespace scipp;
-using namespace scipp::units;
-
 namespace py = pybind11;
 
 void init_units_neutron(py::module &m) {

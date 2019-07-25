@@ -19,7 +19,6 @@
 
 using namespace scipp;
 using namespace scipp::core;
-using namespace scipp::units;
 
 namespace py = pybind11;
 
