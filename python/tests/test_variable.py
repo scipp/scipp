@@ -139,6 +139,7 @@ def test_create_2D_inner_size_3():
     assert var.dtype == sp.dtype.double
     assert var.unit == sp.units.m
 
+
 def test_operation_with_scalar_quantity():
     reference = sp.Variable([sp.Dim.X],
                             np.arange(4.0) * 1.5)
