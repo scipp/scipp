@@ -995,4 +995,33 @@ Dataset operator/(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return res;
 }
 
+// For now this implementation is only for the simplest case of 2 dims (inner
+// stands for sparse)
+Variable histogram(const DataConstProxy &sparse,
+                   const VariableConstProxy &binEdges) {
+  auto dim = binEdges.dims().inner();
+  auto coord = sparse.coords()[dim];
+  auto edgesSpan = binEdges.values<double>();
+  auto resDims{sparse.dims()};
+  auto len = binEdges.dims()[dim] - 1;
+  resDims.resize(1, len);
+  Variable result = makeVariableWithVariances<double>(resDims, units::counts);
+  for (scipp::index i = 0; i < sparse.dims().size(0); ++i) {
+    const auto &coord_i = coord.sparseValues<double>()[i];
+    auto curRes = result.values<double>().begin() + i * len;
+    for (const auto &c : coord_i) {
+      auto it = std::upper_bound(edgesSpan.begin(), edgesSpan.end(), c);
+      if (it != edgesSpan.end() && it != edgesSpan.begin())
+        ++(*(curRes + (--it - edgesSpan.begin())));
+    }
+  }
+  std::copy(result.values<double>().begin(), result.values<double>().end(),
+            result.variances<double>().begin());
+  return result;
+}
+
+Variable histogram(const DataConstProxy &sparse, const Variable &binEdges) {
+  return histogram(sparse, VariableConstProxy(binEdges));
+}
+
 } // namespace scipp::core
