@@ -832,6 +832,7 @@ auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
 
   for (const auto & [ name, item ] : a) {
     expect::matchingDataPresence(item, b);
+    expect::coordsAndLabelsAreSuperset(item, b);
     if (item.hasData())
       res.setData(std::string(name), op(item.data(), b.data()));
     copy_metadata(res, std::string(name), item);
@@ -847,6 +848,7 @@ auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
 
   for (const auto & [ name, item ] : b) {
     expect::matchingDataPresence(a, item);
+    expect::coordsAndLabelsAreSuperset(a, item);
     if (item.hasData())
       res.setData(std::string(name), op(a.data(), item.data()));
     copy_metadata(res, std::string(name), item);

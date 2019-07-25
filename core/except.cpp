@@ -303,15 +303,9 @@ void sparseCoordsAndLabelsMatch(const DataConstProxy &a,
     }
 
     /* Check that a and b have identical sparse labels */
-    for (const auto & [ name, label ] : b.labels()) {
-      if (!a.labels().contains(name)) {
+    for (const auto & [ name, label ] : b.labels())
+      if (!a.labels().contains(name) || a.labels()[name] != label)
         throw except::CoordMismatchError("Expected sparse labels to match.");
-      }
-
-      if (a.labels()[name] != label) {
-        throw except::CoordMismatchError("Expected sparse labels to match.");
-      }
-    }
   }
 }
 
