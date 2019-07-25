@@ -28,7 +28,7 @@ All operations take the unit into account:
 
 - Operations fail if the units of coordinates do not match.
 - Operations such as addition fail if the units of the data items do not match.
-- Operations such as multiplication produce an output dataset with a new unit for each data item, e.g., ``m^2`` results from multiplication of two data items with unit ``m``.
+- Operations such as multiplication produce an output dataset with a new unit for each data item, e.g., :math:`m^{2}` results from multiplication of two data items with unit :math:`m`.
 
 
 Variances and propagation of uncertainties
