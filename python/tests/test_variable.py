@@ -123,6 +123,22 @@ def test_create_1D_vector_3_double():
     assert var.unit == sp.units.m
 
 
+def test_create_2D_inner_size_3():
+    var = sp.Variable(
+        dims=[
+            Dim.X,
+            Dim.Y],
+        values=np.arange(6.0).reshape(
+            2,
+            3),
+        unit=sp.units.m)
+    assert var.shape == [2, 3]
+    np.testing.assert_array_equal(var.values[0], [0, 1, 2])
+    np.testing.assert_array_equal(var.values[1], [3, 4, 5])
+    assert var.dims == [Dim.X, Dim.Y]
+    assert var.dtype == sp.dtype.double
+    assert var.unit == sp.units.m
+
 def test_operation_with_scalar_quantity():
     reference = sp.Variable([sp.Dim.X],
                             np.arange(4.0) * 1.5)

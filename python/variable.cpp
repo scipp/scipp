@@ -133,11 +133,14 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
 
 template <class T> void bind_init_1D(py::class_<Variable> &c) {
   c.def(
-      py::init([](const std::vector<Dim> &labels, const std::vector<T> &values,
+      // Using fixed-size-1 array for the labels. This avoids the
+      // `T=Eigen::Vector3d` overload wrongly matching to an 2d (or higher)
+      // array with inner dimension 3 as `values`.
+      py::init([](const std::array<Dim, 1> &label, const std::vector<T> &values,
                   const std::optional<std::vector<T>> &variances,
                   const units::Unit &unit) {
         Variable var;
-        Dimensions dims(labels, {scipp::size(values)});
+        Dimensions dims({label[0]}, {scipp::size(values)});
         if (variances)
           var = makeVariable<T>(dims, values, *variances);
         else
