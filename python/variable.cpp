@@ -117,23 +117,23 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                      unit, variances);
 }
 
-template <class T> void bind_init_0D(py::class_<Variable> &cls) {
-  cls.def(py::init([](const T &value, const std::optional<T> &variance,
-                      const units::Unit &unit) {
-            Variable var;
-            if (variance)
-              var = makeVariable<T>(value, *variance);
-            else
-              var = makeVariable<T>(value);
-            var.setUnit(unit);
-            return var;
-          }),
-          py::arg("value"), py::arg("variance") = std::nullopt,
-          py::arg("unit") = units::Unit(units::dimensionless));
+template <class T> void bind_init_0D(py::class_<Variable> &c) {
+  c.def(py::init([](const T &value, const std::optional<T> &variance,
+                    const units::Unit &unit) {
+          Variable var;
+          if (variance)
+            var = makeVariable<T>(value, *variance);
+          else
+            var = makeVariable<T>(value);
+          var.setUnit(unit);
+          return var;
+        }),
+        py::arg("value"), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::Unit(units::dimensionless));
 }
 
-template <class T> void bind_init_1D(py::class_<Variable> &cls) {
-  cls.def(
+template <class T> void bind_init_1D(py::class_<Variable> &c) {
+  c.def(
       py::init([](const std::vector<Dim> &labels, const std::vector<T> &values,
                   const std::optional<std::vector<T>> &variances,
                   const units::Unit &unit) {
@@ -150,8 +150,8 @@ template <class T> void bind_init_1D(py::class_<Variable> &cls) {
       py::arg("unit") = units::Unit(units::dimensionless));
 }
 
-void init_variable(py::module &mod) {
-  py::class_<Variable> variable(mod, "Variable");
+void init_variable(py::module &m) {
+  py::class_<Variable> variable(m, "Variable");
   bind_init_0D<Dataset>(variable);
   bind_init_0D<int64_t>(variable);
   bind_init_0D<int32_t>(variable);
@@ -194,7 +194,7 @@ void init_variable(py::module &mod) {
            py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
-  py::class_<VariableProxy> variableProxy(mod, "VariableProxy",
+  py::class_<VariableProxy> variableProxy(m, "VariableProxy",
                                           py::buffer_protocol());
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy
@@ -251,39 +251,38 @@ void init_variable(py::module &mod) {
   // operator overload definitions
   py::implicitly_convertible<VariableProxy, Variable>();
 
-  mod.def("split",
-          py::overload_cast<const Variable &, const Dim,
-                            const std::vector<scipp::index> &>(&split),
-          py::call_guard<py::gil_scoped_release>(),
-          "Split a Variable along a given Dimension.");
-  mod.def("concatenate",
-          py::overload_cast<const Variable &, const Variable &, const Dim>(
-              &concatenate),
-          py::call_guard<py::gil_scoped_release>(),
-          "Returns a new Variable containing a concatenation "
-          "of two Variables along a given Dimension.");
-  mod.def(
-      "rebin",
-      py::overload_cast<const Variable &, const Variable &, const Variable &>(
-          &rebin),
-      py::call_guard<py::gil_scoped_release>(),
-      "Returns a new Variable whose data is rebinned with new bin edges.");
-  mod.def("filter",
-          py::overload_cast<const Variable &, const Variable &>(&filter),
-          py::call_guard<py::gil_scoped_release>());
-  mod.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
-          py::call_guard<py::gil_scoped_release>(),
-          "Returns a new Variable containing the sum of the data along the "
-          "specified dimension.");
-  mod.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
-          py::call_guard<py::gil_scoped_release>(),
-          "Returns a new Variable containing the mean of the data along the "
-          "specified dimension.");
-  mod.def("norm", py::overload_cast<const Variable &>(&norm),
-          py::call_guard<py::gil_scoped_release>(),
-          "Returns a new Variable containing the norm of the data.");
+  m.def("split",
+        py::overload_cast<const Variable &, const Dim,
+                          const std::vector<scipp::index> &>(&split),
+        py::call_guard<py::gil_scoped_release>(),
+        "Split a Variable along a given Dimension.");
+  m.def("concatenate",
+        py::overload_cast<const Variable &, const Variable &, const Dim>(
+            &concatenate),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing a concatenation "
+        "of two Variables along a given Dimension.");
+  m.def("rebin",
+        py::overload_cast<const Variable &, const Variable &, const Variable &>(
+            &rebin),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable whose data is rebinned with new bin edges.");
+  m.def("filter",
+        py::overload_cast<const Variable &, const Variable &>(&filter),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the sum of the data along the "
+        "specified dimension.");
+  m.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the mean of the data along the "
+        "specified dimension.");
+  m.def("norm", py::overload_cast<const Variable &>(&norm),
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the norm of the data.");
   // find out why py::overload_cast is not working correctly here
-  mod.def("sqrt", [](const Variable &self) { return sqrt(self); },
-          py::call_guard<py::gil_scoped_release>(),
-          "Returns a new Variable containing the square root of the data.");
+  m.def("sqrt", [](const Variable &self) { return sqrt(self); },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable containing the square root of the data.");
 }

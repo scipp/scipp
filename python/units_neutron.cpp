@@ -12,10 +12,10 @@ using namespace scipp::units;
 
 namespace py = pybind11;
 
-void init_units_neutron(py::module &mod) {
-  bind_enum(mod, "Dim", Dim::Invalid, 4);
+void init_units_neutron(py::module &m) {
+  bind_enum(m, "Dim", Dim::Invalid, 4);
 
-  py::class_<units::Unit>(mod, "Unit")
+  py::class_<units::Unit>(m, "Unit")
       .def(py::init())
       .def("__repr__",
            [](const units::Unit &u) -> std::string { return u.name(); })
@@ -29,7 +29,7 @@ void init_units_neutron(py::module &mod) {
       .def(py::self == py::self)
       .def(py::self != py::self);
 
-  auto units = mod.def_submodule("units");
+  auto units = m.def_submodule("units");
   units.attr("dimensionless") = units::Unit(units::dimensionless);
   units.attr("m") = units::Unit(units::m);
   units.attr("counts") = units::Unit(units::counts);
