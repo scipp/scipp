@@ -408,8 +408,8 @@ protected:
   Variable val_var = a;
   Variable val = makeVariable<double>(
       dims, {sparse_container<double>(2), sparse_container<double>(2)});
-  static constexpr auto op = [](const auto a, const auto b) { return a * b; };
-  static constexpr auto op_in_place = [](auto &a, const auto b) { a *= b; };
+  static constexpr auto op = [](const auto i, const auto j) { return i * j; };
+  static constexpr auto op_in_place = [](auto &i, const auto j) { i *= j; };
 };
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail, baseline) {
