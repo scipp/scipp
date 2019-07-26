@@ -24,6 +24,7 @@ build:
   script_env:
     - CC
     - CXX
+    - OSX_VERSION
 about:
   home: https://scipp.readthedocs.io/en/latest/
   license: GPLv3
