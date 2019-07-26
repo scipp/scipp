@@ -7,6 +7,7 @@ mkdir -p 'build' && cd 'build'
 cmake \
   -DPYTHON_EXECUTABLE="$CONDA_PREFIX/bin/python" \
   -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
+  -DCMAKE_OSX_SYSROOT='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk' \
   -DWITH_CTEST=OFF \
   ..
 

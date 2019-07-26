@@ -53,8 +53,8 @@ jobs:
         depth: false
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
-        - CC=/Applications/Xcode-10.2.1.app/Contents/Developer/usr/bin/gcc
-        - CXX=/Applications/Xcode-10.2.1.app/Contents/Developer/usr/bin/g++ 
+        - CC=/usr/bin/clang
+        - CXX=/usr/bin/clang++ 
       install: 
         - sh .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: sh .travis/conda_build_and_deploy.sh
