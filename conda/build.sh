@@ -9,6 +9,7 @@ cmake \
   -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
   -DCMAKE_CXX_COMPILER="${CXX}" \
   -DCMAKE_C_COMPILER="${CC}" \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 \
   -DCMAKE_OSX_SYSROOT='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk' \
   -DWITH_CTEST=OFF \
   ..
