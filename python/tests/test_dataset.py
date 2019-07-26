@@ -126,8 +126,11 @@ def test_variable_histogram():
     var[Dim.X, 1].values = np.ones(6)
     ds = sp.Dataset()
     ds.set_sparse_coord("sparse", var)
-    hist = sp.histogram(ds["sparse"], sp.Variable(values=np.arange(5, dtype=np.float64), dims=[Dim.Y]))
-    assert np.array_equal(hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
+    hist = sp.histogram(ds["sparse"],
+                        sp.Variable(values=np.arange(5, dtype=np.float64),
+                                    dims=[Dim.Y]))
+    assert np.array_equal(hist.values, np.array([[1.0, 4.0, 1.0, 0.0],
+                                                 [0.0, 6.0, 0.0, 0.0]]))
 
 
 def test_dataset_histogram():
@@ -137,11 +140,14 @@ def test_dataset_histogram():
     var[Dim.X, 0].values.extend(np.ones(3))
     var[Dim.X, 1].values = np.ones(6)
     ds = sp.Dataset()
-    ds.set_sparse_coord("sparse", var)
-    ds.set_sparse_coord("sparse1", var*5)
-    hist = sp.histogram(ds, sp.Variable(values=np.arange(5, dtype=np.float64), dims=[Dim.Y]))
-    assert np.array_equal(hist["sparse"].values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
-    assert np.array_equal(hist["sparse1"].values, np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]))
+    ds.set_sparse_coord("s", var)
+    ds.set_sparse_coord("s1", var*5)
+    h = sp.histogram(ds, sp.Variable(values=np.arange(5, dtype=np.float64),
+                                     dims=[Dim.Y]))
+    assert np.array_equal(h["s"].values, np.array([[1.0, 4.0, 1.0, 0.0],
+                                                   [0.0, 6.0, 0.0, 0.0]]))
+    assert np.array_equal(h["s1"].values, np.array([[1.0, 0.0, 0.0, 0.0],
+                                                    [0.0, 0.0, 0.0, 0.0]]))
 
 # def test_delitem(self):
 #    dataset = sp.Dataset()
