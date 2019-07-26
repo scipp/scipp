@@ -61,7 +61,7 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
-  py::class_<DataConstProxy> (m, "DataConstProxy");
+  py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly("data", &DataProxy::data,
                                   py::keep_alive<0, 1>());
