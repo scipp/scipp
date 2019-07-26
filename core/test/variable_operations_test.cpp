@@ -138,9 +138,15 @@ TEST(Variable, operator_plus) {
 }
 
 TEST(Variable, operator_plus_eigen_type) {
-  auto a = makeVariable<Eigen::Vector3d>({Dim::X, 1});
-  auto sum = a + a;
-  EXPECT_EQ(sum.dtype(), dtype<Eigen::Vector3d>);
+  const auto var = makeVariable<Eigen::Vector3d>(
+      {Dim::X, 2},
+      {Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d{0.1, 0.2, 0.3}});
+  const auto expected =
+      makeVariable<Eigen::Vector3d>({}, {Eigen::Vector3d{1.1, 2.2, 3.3}});
+
+  const auto result = var.slice({Dim::X, 0}) + var.slice({Dim::X, 1});
+
+  EXPECT_EQ(result, expected);
 }
 
 TEST(SparseVariable, operator_plus) {
@@ -427,6 +433,36 @@ TEST(SparseVariable, concatenate_along_sparse_dimension) {
   EXPECT_TRUE(equals(data[1], {1, 2}));
 }
 
+TEST(SparseVariable, concatenate_along_sparse_dimension_with_variances) {
+  auto a = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto a_vals = a.sparseValues<double>();
+  a_vals[0] = {1, 2, 3};
+  a_vals[1] = {1, 2};
+  auto a_vars = a.sparseVariances<double>();
+  a_vars[0] = {4, 5, 6};
+  a_vars[1] = {4, 5};
+  auto b = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto b_vals = b.sparseValues<double>();
+  b_vals[0] = {1, 3};
+  b_vals[1] = {};
+  auto b_vars = b.sparseVariances<double>();
+  b_vars[0] = {7, 8};
+  b_vars[1] = {};
+
+  auto var = concatenate(a, b, Dim::X);
+  EXPECT_TRUE(var.dims().sparse());
+  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
+  EXPECT_EQ(var.dims().volume(), 2);
+  auto vals = var.sparseValues<double>();
+  EXPECT_TRUE(equals(vals[0], {1, 2, 3, 1, 3}));
+  EXPECT_TRUE(equals(vals[1], {1, 2}));
+  auto vars = var.sparseVariances<double>();
+  EXPECT_TRUE(equals(vars[0], {4, 5, 6, 7, 8}));
+  EXPECT_TRUE(equals(vars[1], {4, 5}));
+}
+
 #ifdef SCIPP_UNITS_NEUTRON
 TEST(Variable, rebin) {
   auto var = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
@@ -463,20 +499,21 @@ TEST(Variable, mean) {
   EXPECT_TRUE(equals(meanY.values<double>(), {2.0, 3.0}));
 }
 
-TEST(Variable, abs_of_scalar) {
+TEST(Variable, abs) {
   auto reference =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, -2.0, -3.0, 4.0});
+      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m, {1, 2, 3, 4});
+  auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                                  {1.0, -2.0, -3.0, 4.0});
   EXPECT_EQ(abs(var), reference);
 }
 
 TEST(Variable, norm_of_vector) {
   auto reference =
-      makeVariable<double>({Dim::X, 3}, {sqrt(2.0), sqrt(2.0), 2.0});
-  auto var = makeVariable<Eigen::Vector3d>(
-      {Dim::X, 3}, {Eigen::Vector3d{1, 0, -1}, Eigen::Vector3d{1, 1, 0},
-                    Eigen::Vector3d{0, 0, -2}});
+      makeVariable<double>({Dim::X, 3}, units::m, {sqrt(2.0), sqrt(2.0), 2.0});
+  auto var = makeVariable<Eigen::Vector3d>({Dim::X, 3}, units::m,
+                                           {Eigen::Vector3d{1, 0, -1},
+                                            Eigen::Vector3d{1, 1, 0},
+                                            Eigen::Vector3d{0, 0, -2}});
   EXPECT_EQ(norm(var), reference);
 }
 

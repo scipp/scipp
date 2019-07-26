@@ -50,34 +50,34 @@ template <class T> struct ValuesAndVariances {
     variances.clear();
   }
 
-  // TODO Note that methods like insert, begin, and end are required as long as
-  // we support sparse data via a plain container such as std::vector, e.g., for
-  // concatenation using a.insert(a.end(), b.begin(), b.end()). Instead of
-  // adding these methods here (essentially making ValuesAndVariances support a
-  // proxy iterator) it might be easier to wrap the sparse container and give it
-  // some functionality like concatenate. Then we simply need to support this
-  // method here, which is much simpler than having proxy iterators.
-  template <class... Ts> void insert(Ts &&...) {
-    throw std::runtime_error(
-        "`insert` not implemented for sparse data with variances.");
+  // Note that methods like insert, begin, and end are required as long as we
+  // support sparse data via a plain container such as std::vector, e.g., for
+  // concatenation using a.insert(a.end(), b.begin(), b.end()). We are
+  // supporting this here by simply working with pairs of iterators. This
+  // approach is not an actual proxy iterator and will not compile if client
+  // code attempts to increment the iterators. We could support `next` and
+  // `advance` easily, so client code can simply use something like:
+  //   using std::next;
+  //   next(it);
+  // instead of `++it`. Algorithms like `std::sort` would probably still not
+  // work though.
+  // The function arguments are iterator pairs as created by `begin` and `end`.
+  template <class OutputIt, class InputIt>
+  auto insert(std::pair<OutputIt, OutputIt> pos,
+              std::pair<InputIt, InputIt> first,
+              std::pair<InputIt, InputIt> last) {
+    values.insert(pos.first, first.first, last.first);
+    variances.insert(pos.second, first.second, last.second);
+  }
+  template <class... Ts> void insert(const Ts &...) {
+    throw std::runtime_error("Cannot insert data with variances into data "
+                             "without variances, or vice versa.");
   }
 
-  void *begin() {
-    throw std::runtime_error(
-        "`begin` not implemented for sparse data with variances.");
-  }
-  void *begin() const {
-    throw std::runtime_error(
-        "`begin` not implemented for sparse data with variances.");
-  }
-  void *end() {
-    throw std::runtime_error(
-        "`end` not implemented for sparse data with variances.");
-  }
-  void *end() const {
-    throw std::runtime_error(
-        "`end` not implemented for sparse data with variances.");
-  }
+  auto begin() { return std::pair(values.begin(), variances.begin()); }
+  auto begin() const { return std::pair(values.begin(), variances.begin()); }
+  auto end() { return std::pair(values.end(), variances.end()); }
+  auto end() const { return std::pair(values.end(), variances.end()); }
 
   constexpr auto size() const noexcept { return values.size(); }
 };
@@ -581,14 +581,27 @@ auto insert_sparse_pairs(const std::tuple<Ts...> &,
                                     Known...>::type{}...);
 }
 
+template <class T> struct remove_cvref {
+  using type = std::remove_cv_t<std::remove_reference_t<T>>;
+};
+template <class T> using remove_cvref_t = typename remove_cvref<T>::type;
+
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_sparse_v<
                        std::remove_const_t<std::remove_reference_t<Ts>>> ||
                    ...))
       return SparseOp::operator()(std::forward<Ts>(args)...);
+    else if constexpr ((is_eigen_type_v<remove_cvref_t<Ts>> || ...))
+      // WARNING! The explicit specification of the template arguments of
+      // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
+      // passed BY REFERENCE and NOT BY VALUE. Passing by value leads to
+      // construction of expressions of values on the stack, which are then
+      // returned from the operator. One way to identify this is using
+      // address-sanitizer, which find a `stack-use-after-scope`.
+      return Op::template operator()<Ts...>(std::forward<Ts>(args)...);
     else
-      return Op::operator()(std::forward<Ts>(args)...);
+      return Op::template operator()(std::forward<Ts>(args)...);
   }
 };
 template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;

@@ -8,8 +8,6 @@
 #include "pybind11.h"
 
 using namespace scipp;
-using namespace scipp::units;
-
 namespace py = pybind11;
 
 void init_units_neutron(py::module &m) {
@@ -26,6 +24,27 @@ void init_units_neutron(py::module &m) {
       .def(py::self - py::self)
       .def(py::self * py::self)
       .def(py::self / py::self)
+      .def("__pow__",
+           [](const units::Unit &self, int power) -> units::Unit {
+             switch (power) {
+             case 0:
+               return units::dimensionless;
+             case 1:
+               return self;
+             case 2:
+               return self * self;
+             case 3:
+               return self * self * self;
+             case -1:
+               return units::Unit() / (self);
+             case -2:
+               return units::Unit() / (self * self);
+             case -3:
+               return units::Unit() / (self * self * self);
+             default:
+               throw std::runtime_error("Unsupported power of unit.");
+             }
+           })
       .def(py::self == py::self)
       .def(py::self != py::self);
 

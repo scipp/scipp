@@ -52,7 +52,7 @@ Dataset toDensity(Dataset d, const std::vector<Dim> &dims) {
     static_cast<void>(name);
     toDensity(data, binWidths);
   }
-  return std::move(d);
+  return d;
 }
 
 void fromDensity(const DataProxy data, const std::vector<Variable> &binWidths) {
@@ -74,7 +74,7 @@ Dataset fromDensity(Dataset d, const std::vector<Dim> &dims) {
     static_cast<void>(name);
     fromDensity(data, binWidths);
   }
-  return std::move(d);
+  return d;
 }
 
 } // namespace counts

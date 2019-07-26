@@ -16,7 +16,7 @@ In most cases the ``dtype`` is derived from the data, e.g., when passing a :py:c
     var = sc.Variable(dims=[sc.Dim.X], values=np.arange(4))
     var.dtype    
 
-The ``dtype`` may also be scecified using a keyword argument, both :py:class:`numpy.dtype` and :py:class:`scipp.dtype` are supported:
+The ``dtype`` may also be specified using a keyword argument, both :py:class:`numpy.dtype` and :py:class:`scipp.dtype` are supported:
 
 .. ipython:: python
 

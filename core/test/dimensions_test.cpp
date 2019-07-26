@@ -169,9 +169,9 @@ TEST(DimensionsTest, duplicate) {
 }
 
 TEST(DimensionsTest, contains_with_sparse_data) {
-  Dimensions denseX({Dim::X}, {2});
+  Dimensions denseX(Dim::X, 2);
   Dimensions denseXY({Dim::X, Dim::Y}, {2, 3});
-  Dimensions sparseY({Dim::Y}, {Dimensions::Sparse});
+  Dimensions sparseY(Dim::Y, Dimensions::Sparse);
   Dimensions sparseXY({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
   Dimensions sparseXZ({Dim::X, Dim::Z}, {2, Dimensions::Sparse});
 
@@ -217,9 +217,9 @@ TEST_F(DimensionsTest_comparison_operators, dense_0d) {
 
 TEST_F(DimensionsTest_comparison_operators, dense_1d) {
   Dimensions empty;
-  Dimensions x2({Dim::X}, {2});
-  Dimensions x3({Dim::X}, {3});
-  Dimensions y2({Dim::Y}, {2});
+  Dimensions x2(Dim::X, 2);
+  Dimensions x3(Dim::X, 3);
+  Dimensions y2(Dim::Y, 2);
 
   expect_eq(x2, x2);
   expect_ne(x2, empty);
@@ -228,7 +228,7 @@ TEST_F(DimensionsTest_comparison_operators, dense_1d) {
 }
 
 TEST_F(DimensionsTest_comparison_operators, dense_2d) {
-  Dimensions x2({Dim::X}, {2});
+  Dimensions x2(Dim::X, 2);
   Dimensions x2y3({Dim::X, Dim::Y}, {2, 3});
   Dimensions y3x2({Dim::Y, Dim::X}, {3, 2});
   Dimensions x3y2({Dim::X, Dim::Y}, {3, 2});
@@ -280,7 +280,7 @@ TEST(DimensionsTest, merge_self) {
 }
 
 TEST(DimensionsTest, merge_dense) {
-  Dimensions a({Dim::X}, {2});
+  Dimensions a(Dim::X, 2);
   Dimensions b({Dim::Y, Dim::Z}, {3, 4});
   EXPECT_EQ(merge(a, b), Dimensions({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}));
 }
@@ -301,13 +301,13 @@ TEST(DimensionsTest, merge_dense_different_order) {
 }
 
 TEST(DimensionsTest, merge_size_fail) {
-  Dimensions a({Dim::X}, {2});
+  Dimensions a(Dim::X, 2);
   Dimensions b({Dim::Y, Dim::X}, {3, 4});
   EXPECT_THROW(merge(a, b), except::DimensionError);
 }
 
 TEST(DimensionsTest, merge_sparse_dense_fail) {
-  Dimensions a({Dim::X}, {2});
+  Dimensions a(Dim::X, 2);
   Dimensions b({Dim::Y, Dim::X}, {3, Dimensions::Sparse});
   EXPECT_THROW(merge(a, b), except::DimensionError);
 }
@@ -319,7 +319,7 @@ TEST(DimensionsTest, merge_different_sparse_fail) {
 }
 
 TEST(DimensionsTest, merge_sparse) {
-  Dimensions a({Dim::X}, {2});
+  Dimensions a(Dim::X, 2);
   Dimensions b({Dim::Y, Dim::Z}, {3, Dimensions::Sparse});
   EXPECT_EQ(merge(a, b),
             Dimensions({Dim::X, Dim::Y, Dim::Z}, {2, 3, Dimensions::Sparse}));

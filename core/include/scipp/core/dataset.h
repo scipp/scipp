@@ -296,6 +296,8 @@ public:
   Dataset slice(const Slice slice1, const Slice slice2,
                 const Slice slice3) const &&;
 
+  void rename(const Dim from, const Dim to);
+
   bool operator==(const Dataset &other) const;
   bool operator==(const DatasetConstProxy &other) const;
   bool operator!=(const Dataset &other) const;
@@ -377,6 +379,11 @@ public:
   index size() const noexcept { return scipp::size(m_items); }
   /// Return true if there are 0 coordinates in the proxy.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+
+  /// Returns whether a given key is present in the proxy.
+  bool contains(const Key &k) const {
+    return m_items.find(k) != m_items.cend();
+  }
 
   /// Return a const proxy to the coordinate for given dimension.
   VariableConstProxy operator[](const Key key) const {
@@ -655,12 +662,6 @@ SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
                                     const DataConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(Dataset &&lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(Dataset &&lhs,
-                                    const DatasetConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(Dataset &&lhs, const DataConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs, Dataset &&rhs);
-SCIPP_CORE_EXPORT Dataset operator+(Dataset &&lhs, Dataset &&rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
@@ -673,11 +674,6 @@ SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
                                     const DataConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(Dataset &&lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(Dataset &&lhs,
-                                    const DatasetConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(Dataset &&lhs, const DataConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator-(Dataset &&lhs, Dataset &&rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
@@ -690,11 +686,6 @@ SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
                                     const DataConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(Dataset &&lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(Dataset &&lhs,
-                                    const DatasetConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(Dataset &&lhs, const DataConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator*(Dataset &&lhs, Dataset &&rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
@@ -707,11 +698,6 @@ SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
                                     const DataConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(Dataset &&lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(Dataset &&lhs,
-                                    const DatasetConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(Dataset &&lhs, const DataConstProxy &rhs);
-SCIPP_CORE_EXPORT Dataset operator/(Dataset &&lhs, Dataset &&rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,

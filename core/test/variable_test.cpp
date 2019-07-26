@@ -751,6 +751,15 @@ TEST(VariableTest, reshape_mutable) {
   ASSERT_EQ(var, modified_original);
 }
 
+TEST(VariableTest, rename) {
+  auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}},
+                                  {1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12});
+  const Variable expected = var.reshape({{Dim::X, 2}, {Dim::Z, 3}});
+
+  var.rename(Dim::Y, Dim::Z);
+  ASSERT_EQ(var, expected);
+}
+
 TEST(Variable, access_typed_view) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 3}}, {1, 2, 3, 4, 5, 6});

@@ -80,10 +80,10 @@ TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
       dims, {sparse_container<double>(2), sparse_container<double>(1)},
       {sparse_container<double>(2), sparse_container<double>(2)});
 
-  ASSERT_THROW(transform<double>(a, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<double>(a, op), except::SizeError);
   ASSERT_THROW(transform_in_place<double>(a, op_in_place), except::SizeError);
   a.sparseVariances<double>()[1].resize(1);
-  ASSERT_NO_THROW(transform<double>(a, op));
+  ASSERT_NO_THROW_NODISCARD(transform<double>(a, op));
   ASSERT_NO_THROW(transform_in_place<double>(a, op_in_place));
 }
 
@@ -211,16 +211,33 @@ TEST_F(TransformBinaryTest, sparse_size_fail) {
   auto b = makeVariable<double>(
       dims, {sparse_container<double>(2), sparse_container<double>()});
 
-  ASSERT_THROW(transform<pair_self_t<double>>(a, b, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
                except::SizeError);
   b.sparseValues<double>()[1].resize(1);
-  ASSERT_NO_THROW(transform<pair_self_t<double>>(a, b, op));
+  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op));
   ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place));
   b.sparseValues<double>()[1].resize(2);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, b, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
                except::SizeError);
+}
+
+TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
+  const auto var = makeVariable<Eigen::Vector3d>(
+      {Dim::X, 2},
+      {Eigen::Vector3d{1.1, 2.2, 3.3}, Eigen::Vector3d{0.1, 0.2, 0.3}});
+  const auto expected =
+      makeVariable<Eigen::Vector3d>({}, {Eigen::Vector3d{1.0, 2.0, 3.0}});
+  // Passing Eigen types by value often causes issues, ensure that it works.
+  auto op = [](const auto x, const auto y) { return x - y; };
+
+  const auto result = transform<pair_self_t<Eigen::Vector3d>>(
+      var.slice({Dim::X, 0}), var.slice({Dim::X, 1}), op);
+
+  EXPECT_EQ(result, expected);
 }
 
 TEST(TransformTest, mixed_precision) {
@@ -391,13 +408,13 @@ protected:
   Variable val_var = a;
   Variable val = makeVariable<double>(
       dims, {sparse_container<double>(2), sparse_container<double>(2)});
-  static constexpr auto op = [](const auto a, const auto b) { return a * b; };
-  static constexpr auto op_in_place = [](auto &a, const auto b) { a *= b; };
+  static constexpr auto op = [](const auto i, const auto j) { return i * j; };
+  static constexpr auto op_in_place = [](auto &i, const auto j) { i *= j; };
 };
 
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail, baseline) {
-  ASSERT_NO_THROW(transform<pair_self_t<double>>(a, val_var, op));
-  ASSERT_NO_THROW(transform<pair_self_t<double>>(a, val, op));
+  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op));
+  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op));
   ASSERT_NO_THROW(
       transform_in_place<pair_self_t<double>>(a, val_var, op_in_place));
   ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place));
@@ -406,9 +423,10 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail, baseline) {
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        a_values_size_bad) {
   a.sparseValues<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val_var, op),
-               except::SizeError);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                         except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
@@ -418,9 +436,10 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        a_variances_size_bad) {
   a.sparseVariances<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val_var, op),
-               except::SizeError);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                         except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
@@ -430,8 +449,8 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_var_values_size_bad) {
   val_var.sparseValues<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val_var, op),
-               except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
 }
@@ -439,8 +458,8 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_var_variances_size_bad) {
   val_var.sparseVariances<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val_var, op),
-               except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::SizeError);
 }
@@ -448,7 +467,8 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
 TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
        val_values_size_bad) {
   val.sparseValues<double>()[1].resize(1);
-  ASSERT_THROW(transform<pair_self_t<double>>(a, val, op), except::SizeError);
+  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
+                         except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
                except::SizeError);
 }
@@ -544,9 +564,9 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val_var) {
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
-  auto b0 = makeVariable<double>({1.5}, {1.7});
+  auto b0 = makeVariable<double>(1.5, 1.7);
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
-  auto b1 = makeVariable<double>({1.6}, {1.8});
+  auto b1 = makeVariable<double>(1.6, 1.8);
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
   EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
@@ -569,9 +589,9 @@ TEST_F(TransformBinaryTest, sparse_val_var_with_val) {
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
-  auto b0 = makeVariable<double>({1.5});
+  auto b0 = makeVariable<double>(1.5);
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
-  auto b1 = makeVariable<double>({1.6});
+  auto b1 = makeVariable<double>(1.6);
   auto expected0 = a0 * b0;
   auto expected1 = a1 * b1;
   EXPECT_TRUE(equals(a.sparseValues<double>()[0], expected0.values<double>()));
@@ -593,9 +613,9 @@ TEST_F(TransformBinaryTest, broadcast_sparse_val_var_with_val) {
   const auto ab = transform<pair_custom_t<std::pair<double, float>>>(a, b, op);
 
   auto a0 = makeVariable<double>({Dim::X, 3}, {1, 2, 3}, {5, 6, 7});
-  auto b0 = makeVariable<float>({1.5});
+  auto b0 = makeVariable<float>(1.5);
   auto a1 = makeVariable<double>({Dim::X, 1}, {4}, {8});
-  auto b1 = makeVariable<float>({1.6});
+  auto b1 = makeVariable<float>(1.6);
   auto expected00 = a0 * b0;
   auto expected01 = a0 * b1;
   auto expected10 = a1 * b0;
@@ -631,7 +651,7 @@ TEST_F(TransformBinaryTest, DISABLED_broadcast_sparse_val_var_with_val) {
                except::SizeError);
 }
 
-// It is possible to use transform with functors that call non-build-in
+// It is possible to use transform with functors that call non-built-in
 // functions. To do so we have to define that function for the ValueAndVariance
 // helper. If this turns out to be a useful feature we should move
 // ValueAndVariance out of the `detail` namespace and document the mechanism.

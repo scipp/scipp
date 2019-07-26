@@ -6,7 +6,7 @@ add_executable(scipp-neutron-test
                #Run_test.cpp
                #TableWorkspace_test.cpp
                #Workspace2D_test.cpp
-               #convert_test.cpp
+               convert_test.cpp
                )
 target_link_libraries(scipp-neutron-test
                       LINK_PRIVATE
