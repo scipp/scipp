@@ -766,10 +766,6 @@ SCIPP_CORE_EXPORT Variable norm(const Variable &var);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
 SCIPP_CORE_EXPORT Variable broadcast(Variable var, const Dimensions &dims);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
-SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
-                                     const VariableConstProxy &binEdges);
-SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
-                                     const Variable &binEdges);
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);
 

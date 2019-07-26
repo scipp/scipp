@@ -487,10 +487,18 @@ public:
 
 /// Const proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstProxy {
+  explicit DatasetConstProxy() : m_dataset(nullptr) {}
+
 public:
   explicit DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
     for (const auto &item : dataset.m_data)
       m_indices.emplace_back(item.first);
+  }
+
+  static DatasetConstProxy makeShallowProxy(const Dataset &dataset) {
+    auto res = DatasetConstProxy();
+    res.m_dataset = &dataset;
+    return res;
   }
 
   index size() const noexcept { return m_indices.size(); }
@@ -710,6 +718,16 @@ SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+
+SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
+                                     const Variable &binEdges);
+SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
+                                     const VariableConstProxy &binEdges);
+SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
+                                    const VariableConstProxy &bins);
+SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
+                                    const Variable &bins);
+SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 
 } // namespace scipp::core
 

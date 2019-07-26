@@ -80,6 +80,9 @@ public:
     return {m_shape, m_shape + m_ndim};
   }
 
+  /// Return number of non-sparse dims
+  constexpr uint16_t ndims() const noexcept { return m_ndim; }
+
   scipp::span<const Dim> labels() const && = delete;
   /// Return the labels of the space defined by *this, including the label of a
   /// potential sparse dimension.

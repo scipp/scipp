@@ -999,6 +999,12 @@ Dataset operator/(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
 // stands for sparse)
 Variable histogram(const DataConstProxy &sparse,
                    const VariableConstProxy &binEdges) {
+  if (sparse.dims().ndims() != 1)
+    throw std::logic_error("Only the simple case histograms may be constructed "
+                           "for now: 2 dims including sparse.");
+  if (binEdges.dtype() != DType::Double ||
+      sparse.coords()[binEdges.dims().inner()].dtype() != DType::Double)
+    throw std::logic_error("Histogram is only available for double type.");
   auto dim = binEdges.dims().inner();
   auto coord = sparse.coords()[dim];
   auto edgesSpan = binEdges.values<double>();
@@ -1024,4 +1030,22 @@ Variable histogram(const DataConstProxy &sparse, const Variable &binEdges) {
   return histogram(sparse, VariableConstProxy(binEdges));
 }
 
+Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
+  auto out(Dataset(DatasetConstProxy::makeShallowProxy(dataset)));
+  out.setCoord(bins.dims().inner(), bins);
+  for (const auto & [ name, item ] : dataset) {
+    if (item.dims().sparse())
+      out.setData(std::string(name), histogram(item, bins));
+  }
+  return out;
+}
+
+Dataset histogram(const Dataset &dataset, const Variable &bins) {
+  return histogram(dataset, VariableConstProxy(bins));
+}
+
+Dataset histogram(const Dataset &dataset, const Dim &dim) {
+  auto bins = dataset.coords()[dim];
+  return histogram(dataset, bins);
+}
 } // namespace scipp::core
