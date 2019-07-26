@@ -35,7 +35,7 @@ Note that this is an outdated build, before the ongoing major API refactor:
 .. code-block:: sh
 
    docker pull dmscid/dataset
-   docker run -p 8888:8888 dmscid/dataset
+   docker run --rm -p 127.0.0.1:8888:8888 dmscid/dataset
 
 Navigate to ``localhost:8888`` in your browser.
 A number of Jupyter demo notebooks can be found in the ``demo/`` folder.
