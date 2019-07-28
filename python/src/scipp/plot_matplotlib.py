@@ -3,12 +3,9 @@
 # @file
 # @author Neil Vaytet
 
-# Import numpy
 import numpy as np
-
-# Import scippy
-import scippy as sp
-
+import scipp as sp
+from .tools import edges_to_centers, centers_to_edges, axis_label
 import matplotlib.pyplot as plt
 import ipyvolume as ipv
 
@@ -212,16 +209,23 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     """
 
     dims = input_data.dims
-    labs = dims.labels
+    # labs = dims.labels
+    shape = input_data.shape
     coords = input_data.coords
 
     # Gather list of dimensions that are to be collapsed
     slice_dims = []
     volume = 1
-    for lab in labs:
-        if lab != dim:
-            slice_dims.append(lab)
-            volume *= dims[lab]
+    # for lab in labs:
+    #     if lab != dim:
+    #         slice_dims.append(lab)
+    #         volume *= dims[lab]
+    slice_shape = dict()
+    for d, size in zip(dims, shape):
+        if d != dim:
+            slice_dims.append(d)
+            slice_shape[d] = size
+            volume *= size
 
     # Create temporary Dataset
     ds = sp.Dataset()
@@ -235,7 +239,8 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
     dim_list = []
     for l in slice_dims:
-        dim_list.append(np.arange(dims[l], dtype=np.int32))
+        # dim_list.append(np.arange(dims[l], dtype=np.int32))
+        dim_list.append(np.arange(slice_shape[l], dtype=np.int32))
     # Next create a grid of indices
     # grid will contain
     # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
@@ -705,35 +710,35 @@ class SliceViewer:
 # =============================================================================
 
 
-def edges_to_centers(x):
-    """
-    Convert coordinate edges to centers, and return also the widths
-    """
-    return 0.5 * (x[1:] + x[:-1]), np.ediff1d(x)
+# def edges_to_centers(x):
+#     """
+#     Convert coordinate edges to centers, and return also the widths
+#     """
+#     return 0.5 * (x[1:] + x[:-1]), np.ediff1d(x)
 
 
-def centers_to_edges(x):
-    """
-    Convert coordinate centers to edges
-    """
-    e = edges_to_centers(x)[0]
-    return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
+# def centers_to_edges(x):
+#     """
+#     Convert coordinate centers to edges
+#     """
+#     e = edges_to_centers(x)[0]
+#     return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
-def axis_label(var, name=None, log=False):
-    """
-    Make an axis label with "Name [unit]"
-    """
-    if name is not None:
-        label = name
-    else:
-        label = str(var.dims.labels[0]).replace("Dim.", "")
+# def axis_label(var, name=None, log=False):
+#     """
+#     Make an axis label with "Name [unit]"
+#     """
+#     if name is not None:
+#         label = name
+#     else:
+#         label = str(var.dims.labels[0]).replace("Dim.", "")
 
-    if log:
-        label = "log\u2081\u2080(" + label + ")"
-    if var.unit != sp.units.dimensionless:
-        label += " [{}]".format(var.unit)
-    return label
+#     if log:
+#         label = "log\u2081\u2080(" + label + ")"
+#     if var.unit != sp.units.dimensionless:
+#         label += " [{}]".format(var.unit)
+#     return label
 
 
 def parse_colorbar(cb):
@@ -755,9 +760,9 @@ def process_dimensions(input_data, coords, axes):
     Make x and y arrays from dimensions and check for bins edges
     """
     # coords = input_data.coords
-    zdims = input_data.dims
-    zlabs = zdims.labels
-    nz = zdims.shape
+    # zdims = input_data.dims
+    zlabs = input_data.dims
+    nz = input_data.shape
 
     if axes is None:
         axes = [l for l in zlabs]
@@ -774,12 +779,12 @@ def process_dimensions(input_data, coords, axes):
     # TODO: find a better way to handle edges. Currently, we convert from
     # edges to centers and then back to edges afterwards inside the plotly
     # object. This is not optimal and could lead to precision loss issues.
-    ydims = ycoord.dims
-    ylabs = ydims.labels
-    ny = ydims.shape
-    xdims = xcoord.dims
-    xlabs = xdims.labels
-    nx = xdims.shape
+    # ydims = ycoord.dims
+    ylabs = ycoord.dims
+    ny = ycoord.shape
+    # xdims = xcoord.dims
+    xlabs = xcoord.dims
+    nx = xcoord.shape
     # Find the dimension in z that corresponds to x and y
     ix = iy = None
     for i in range(len(zlabs)):
