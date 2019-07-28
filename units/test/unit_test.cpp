@@ -7,14 +7,14 @@
 #include "scipp/units/unit.h"
 
 using namespace scipp;
-using namespace scipp::units;
+using scipp::units::Unit;
 
 TEST(DummyUnitsTest, basics) {
   // Current neutron::Unit is inlined as Unit, but we can still use others.
-  dummy::Unit m{units::m};
-  dummy::Unit s{units::s};
+  units::dummy::Unit m{units::m};
+  units::dummy::Unit s{units::s};
   ASSERT_NE(m, s);
-  dummy::Unit expected{units::m / units::s};
+  units::dummy::Unit expected{units::m / units::s};
   auto result = m / s;
   EXPECT_EQ(result, expected);
 }
@@ -66,9 +66,9 @@ TEST(Unit, multiply) {
   EXPECT_EQ(a * c, c);
   EXPECT_EQ(c * a, c);
   EXPECT_EQ(b * b, c);
-  EXPECT_ANY_THROW(b * c);
-  EXPECT_ANY_THROW(c * b);
-  EXPECT_EQ(c * c, units::m * units::m * units::m * units::m);
+  EXPECT_EQ(b * c, units::m * units::m * units::m);
+  EXPECT_EQ(c * b, units::m * units::m * units::m);
+  EXPECT_ANY_THROW(c * c);
 }
 
 TEST(Unit, multiply_counts) {
@@ -78,17 +78,31 @@ TEST(Unit, multiply_counts) {
   EXPECT_EQ(none * counts, counts);
 }
 
+TEST(Unit, divide) {
+  Unit one{units::dimensionless};
+  Unit l{units::m};
+  Unit t{units::s};
+  Unit v{units::m / units::s};
+  EXPECT_EQ(l / one, l);
+  EXPECT_EQ(t / one, t);
+  EXPECT_EQ(l / l, one);
+  EXPECT_EQ(l / t, v);
+  EXPECT_ANY_THROW(one / v);
+}
+
 TEST(Unit, conversion_factors) {
-  boost::units::quantity<detail::tof::wavelength> a(2.0 * angstrom);
-  boost::units::quantity<boost::units::si::length> b(3.0 * angstrom);
-  boost::units::quantity<detail::tof::wavelength> c(4.0 *
-                                                    boost::units::si::meters);
+  boost::units::quantity<units::detail::tof::wavelength> a(2.0 *
+                                                           units::angstrom);
+  boost::units::quantity<boost::units::si::length> b(3.0 * units::angstrom);
+  boost::units::quantity<units::detail::tof::wavelength> c(
+      4.0 * boost::units::si::meters);
   boost::units::quantity<boost::units::si::area> d(
-      5.0 * boost::units::si::meters * angstrom);
-  boost::units::quantity<detail::tof::energy> e = 6.0 * meV;
-  boost::units::quantity<boost::units::si::energy> f(7.0 * meV);
-  boost::units::quantity<boost::units::si::time> g(8.0 * us);
-  boost::units::quantity<detail::tof::tof> h(9.0 * boost::units::si::seconds);
+      5.0 * boost::units::si::meters * units::angstrom);
+  boost::units::quantity<units::detail::tof::energy> e = 6.0 * units::meV;
+  boost::units::quantity<boost::units::si::energy> f(7.0 * units::meV);
+  boost::units::quantity<boost::units::si::time> g(8.0 * units::us);
+  boost::units::quantity<units::detail::tof::tof> h(9.0 *
+                                                    boost::units::si::seconds);
   EXPECT_DOUBLE_EQ(a.value(), 2.0);
   EXPECT_DOUBLE_EQ(b.value(), 3.0e-10);
   EXPECT_DOUBLE_EQ(c.value(), 4.0e10);
@@ -140,11 +154,12 @@ TEST(Unit, isCountDensity) {
 }
 
 TEST(DummyUnitsTest, isCounts) {
-  EXPECT_TRUE(dummy::Unit(units::dimensionless).isCounts());
-  EXPECT_FALSE(dummy::Unit(units::dimensionless / units::m).isCounts());
+  EXPECT_TRUE(units::dummy::Unit(units::dimensionless).isCounts());
+  EXPECT_FALSE(units::dummy::Unit(units::dimensionless / units::m).isCounts());
 }
 
 TEST(DummyUnitsTest, isCountDensity) {
-  EXPECT_FALSE(dummy::Unit(units::dimensionless).isCountDensity());
-  EXPECT_TRUE(dummy::Unit(units::dimensionless / units::m).isCountDensity());
+  EXPECT_FALSE(units::dummy::Unit(units::dimensionless).isCountDensity());
+  EXPECT_TRUE(
+      units::dummy::Unit(units::dimensionless / units::m).isCountDensity());
 }

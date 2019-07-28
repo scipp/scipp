@@ -4,7 +4,7 @@
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_INSTALL_PREFIX=../install ..
+cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} -DCMAKE_INSTALL_PREFIX=../install ..
 make -j2 install
 
 # Units tests
@@ -14,11 +14,10 @@ make -j2 install
 ./core/test/scipp-core-test
 
 # Neutron tests
-# There are none so the executable cannot be built
-#./neutron/test/scipp-neutron-test
+./neutron/test/scipp-neutron-test
 
 # Python tests
-python3 -m pip install -r ../scippy/requirements.txt
+python3 -m pip install -r ../python/requirements.txt
 export PYTHONPATH=$PYTHONPATH:../install
-cd ../scippy
+cd ../python
 python3 -m pytest

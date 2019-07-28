@@ -477,8 +477,8 @@ TEST(Variable, broadcast) {
 TEST(Variable, broadcast_fail) {
   auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
   EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}), except::DimensionLengthError,
-                   "Expected dimension to be in {{Dim::Y, 2}, {Dim::X, 2}}, "
-                   "got Dim::X with mismatching length 3.");
+                   "Expected dimension to be in {{Dim.Y, 2}, {Dim.X, 2}}, "
+                   "got Dim.X with mismatching length 3.");
 }
 
 TEST(VariableProxy, full_const_view) {
@@ -749,6 +749,15 @@ TEST(VariableTest, reshape_mutable) {
 
   ASSERT_EQ(view, reference);
   ASSERT_EQ(var, modified_original);
+}
+
+TEST(VariableTest, rename) {
+  auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}},
+                                  {1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12});
+  const Variable expected = var.reshape({{Dim::X, 2}, {Dim::Z, 3}});
+
+  var.rename(Dim::Y, Dim::Z);
+  ASSERT_EQ(var, expected);
 }
 
 TEST(Variable, access_typed_view) {

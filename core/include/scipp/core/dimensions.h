@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "scipp-core_export.h"
 #include "scipp/core/index.h"
 #include "scipp/core/span.h"
 #include "scipp/units/unit.h"
@@ -22,7 +23,7 @@ constexpr int32_t NDIM_MAX = 6;
 /// (64 Byte) cacheline should be advantageous.
 /// We follow the numpy convention: First dimension is outer dimension, last
 /// dimension is inner dimension.
-class Dimensions {
+class SCIPP_CORE_EXPORT Dimensions {
 public:
   static constexpr auto Sparse = std::numeric_limits<scipp::index>::min();
 
@@ -120,7 +121,7 @@ public:
   // TODO Some of the following methods are probably legacy and should be
   // considered for removal.
   Dim label(const scipp::index i) const;
-  void relabel(const scipp::index i, const Dim label) { m_dims[i] = label; }
+  void relabel(const scipp::index i, const Dim label);
   scipp::index size(const scipp::index i) const;
   scipp::index offset(const Dim label) const;
   void resize(const Dim label, const scipp::index size);
@@ -150,7 +151,7 @@ private:
                            Dim::Invalid};
 };
 
-Dimensions merge(const Dimensions &a, const Dimensions &b);
+SCIPP_CORE_EXPORT Dimensions merge(const Dimensions &a, const Dimensions &b);
 
 } // namespace scipp::core
 

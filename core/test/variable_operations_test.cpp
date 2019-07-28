@@ -67,7 +67,7 @@ TEST(Variable, operator_plus_equal_different_dimensions) {
 
   auto different_dimensions = makeVariable<double>({Dim::Y, 2}, {1.1, 2.2});
   EXPECT_THROW_MSG(a += different_dimensions, std::runtime_error,
-                   "Expected {{Dim::X, 2}} to contain {{Dim::Y, 2}}.");
+                   "Expected {{Dim.X, 2}} to contain {{Dim.Y, 2}}.");
 }
 
 TEST(Variable, operator_plus_equal_different_unit) {
@@ -138,9 +138,15 @@ TEST(Variable, operator_plus) {
 }
 
 TEST(Variable, operator_plus_eigen_type) {
-  auto a = makeVariable<Eigen::Vector3d>({Dim::X, 1});
-  auto sum = a + a;
-  EXPECT_EQ(sum.dtype(), dtype<Eigen::Vector3d>);
+  const auto var = makeVariable<Eigen::Vector3d>(
+      {Dim::X, 2},
+      {Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d{0.1, 0.2, 0.3}});
+  const auto expected =
+      makeVariable<Eigen::Vector3d>({}, {Eigen::Vector3d{1.1, 2.2, 3.3}});
+
+  const auto result = var.slice({Dim::X, 0}) + var.slice({Dim::X, 1});
+
+  EXPECT_EQ(result, expected);
 }
 
 TEST(SparseVariable, operator_plus) {
@@ -174,6 +180,89 @@ TEST(Variable, operator_times_equal_scalar) {
   EXPECT_EQ(a.values<double>()[0], 4.0);
   EXPECT_EQ(a.values<double>()[1], 6.0);
   EXPECT_EQ(a.unit(), units::m);
+}
+
+TEST(Variable, operator_times_equal_unit_fail_integrity) {
+  auto a = makeVariable<double>({Dim::X, 2}, units::m * units::m, {2.0, 3.0});
+  const auto expected(a);
+
+  // This test relies on m^4 being an unsupported unit.
+  ASSERT_THROW(a *= a, std::runtime_error);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
+  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a_ = a.sparseValues<float>();
+  auto b(a);
+  a_[0] = {0.1, 0.2};
+  a_[1] = {0.3};
+  b.setUnit(units::m);
+  auto expected(a);
+
+  ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
+  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a_ = a.sparseValues<float>();
+  a_[0] = {0.1, 0.2};
+  auto b(a);
+  a_[1] = {0.3};
+  b.setUnit(units::m);
+  auto expected(a);
+
+  ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
+  auto a = makeVariableWithVariances<float>(
+      {{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a_ = a.sparseValues<float>();
+  auto a_vars = a.sparseVariances<float>();
+  a_[0] = {0.1, 0.2};
+  a_vars[0] = {0.1, 0.2};
+  auto b(a);
+  a_[1] = {0.3};
+  a_vars[1] = {0.3};
+  b.setUnit(units::m);
+  auto expected(a);
+
+  // Length mismatch of second sparse item
+  ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+
+  b = a;
+  b.setUnit(units::m);
+  a_vars[1].clear();
+  expected = a;
+
+  // Length mismatch between values and variances
+  ASSERT_THROW(a *= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+  ASSERT_THROW(a /= b, except::SizeError);
+  EXPECT_EQ(a, expected);
+}
+
+TEST(Variable, operator_times_equal_slice_unit_fail_integrity) {
+  auto a = makeVariable<float>({{Dim::Y, 2}, {Dim::Z, Dimensions::Sparse}});
+  auto a_ = a.sparseValues<float>();
+  a_[0] = {0.1, 0.2};
+  a_[1] = {0.3};
+  auto b(a);
+  b.setUnit(units::m);
+  auto expected(a);
+
+  ASSERT_THROW(a.slice({Dim::Y, 0}) *= b.slice({Dim::Y, 0}), except::UnitError);
+  EXPECT_EQ(a, expected);
 }
 
 TEST(Variable, operator_times_can_broadcast) {
@@ -344,6 +433,36 @@ TEST(SparseVariable, concatenate_along_sparse_dimension) {
   EXPECT_TRUE(equals(data[1], {1, 2}));
 }
 
+TEST(SparseVariable, concatenate_along_sparse_dimension_with_variances) {
+  auto a = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto a_vals = a.sparseValues<double>();
+  a_vals[0] = {1, 2, 3};
+  a_vals[1] = {1, 2};
+  auto a_vars = a.sparseVariances<double>();
+  a_vars[0] = {4, 5, 6};
+  a_vars[1] = {4, 5};
+  auto b = makeVariableWithVariances<double>(
+      {{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  auto b_vals = b.sparseValues<double>();
+  b_vals[0] = {1, 3};
+  b_vals[1] = {};
+  auto b_vars = b.sparseVariances<double>();
+  b_vars[0] = {7, 8};
+  b_vars[1] = {};
+
+  auto var = concatenate(a, b, Dim::X);
+  EXPECT_TRUE(var.dims().sparse());
+  EXPECT_EQ(var.dims().sparseDim(), Dim::X);
+  EXPECT_EQ(var.dims().volume(), 2);
+  auto vals = var.sparseValues<double>();
+  EXPECT_TRUE(equals(vals[0], {1, 2, 3, 1, 3}));
+  EXPECT_TRUE(equals(vals[1], {1, 2}));
+  auto vars = var.sparseVariances<double>();
+  EXPECT_TRUE(equals(vars[0], {4, 5, 6, 7, 8}));
+  EXPECT_TRUE(equals(vars[1], {4, 5}));
+}
+
 #ifdef SCIPP_UNITS_NEUTRON
 TEST(Variable, rebin) {
   auto var = makeVariable<double>({Dim::X, 2}, {1.0, 2.0});
@@ -380,20 +499,21 @@ TEST(Variable, mean) {
   EXPECT_TRUE(equals(meanY.values<double>(), {2.0, 3.0}));
 }
 
-TEST(Variable, abs_of_scalar) {
+TEST(Variable, abs) {
   auto reference =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1, 2, 3, 4});
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, -2.0, -3.0, 4.0});
+      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m, {1, 2, 3, 4});
+  auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                                  {1.0, -2.0, -3.0, 4.0});
   EXPECT_EQ(abs(var), reference);
 }
 
 TEST(Variable, norm_of_vector) {
   auto reference =
-      makeVariable<double>({Dim::X, 3}, {sqrt(2.0), sqrt(2.0), 2.0});
-  auto var = makeVariable<Eigen::Vector3d>(
-      {Dim::X, 3}, {Eigen::Vector3d{1, 0, -1}, Eigen::Vector3d{1, 1, 0},
-                    Eigen::Vector3d{0, 0, -2}});
+      makeVariable<double>({Dim::X, 3}, units::m, {sqrt(2.0), sqrt(2.0), 2.0});
+  auto var = makeVariable<Eigen::Vector3d>({Dim::X, 3}, units::m,
+                                           {Eigen::Vector3d{1, 0, -1},
+                                            Eigen::Vector3d{1, 1, 0},
+                                            Eigen::Vector3d{0, 0, -2}});
   EXPECT_EQ(norm(var), reference);
 }
 
@@ -420,8 +540,8 @@ TEST(VariableProxy, minus_equals_failures) {
       makeVariable<double>({{Dim::X, 2}, {Dim::Y, 2}}, {1.0, 2.0, 3.0, 4.0});
 
   EXPECT_THROW_MSG(var -= var.slice({Dim::X, 0, 1}), std::runtime_error,
-                   "Expected {{Dim::X, 2}, {Dim::Y, 2}} to contain {{Dim::X, "
-                   "1}, {Dim::Y, 2}}.");
+                   "Expected {{Dim.X, 2}, {Dim.Y, 2}} to contain {{Dim.X, "
+                   "1}, {Dim.Y, 2}}.");
 }
 
 TEST(VariableProxy, self_overlapping_view_operation) {

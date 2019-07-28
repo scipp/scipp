@@ -1,68 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include "test_macros.h"
+#include "test_operations.h"
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 
 #include "dataset_test_common.h"
+#include <initializer_list>
 
 using namespace scipp;
 using namespace scipp::core;
 
 DatasetFactory3D datasetFactory;
-
-// We need the decltype(auto) since we are using these operators for both
-// proxies and non-proxies. The former return by reference, the latter by value.
-struct plus_equals {
-  template <class A, class B>
-  decltype(auto) operator()(A &&a, const B &b) const {
-    return a += b;
-  }
-};
-struct plus {
-  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
-    return std::forward<A>(a) + std::forward<B>(b);
-  }
-};
-struct minus_equals {
-  template <class A, class B>
-  decltype(auto) operator()(A &&a, const B &b) const {
-    return a -= b;
-  }
-};
-struct minus {
-  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
-    return std::forward<A>(a) - std::forward<B>(b);
-  }
-};
-struct times_equals {
-  template <class A, class B>
-  decltype(auto) operator()(A &&a, const B &b) const {
-    return a *= b;
-  }
-};
-struct times {
-  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
-    return std::forward<A>(a) * std::forward<B>(b);
-  }
-};
-struct divide_equals {
-  template <class A, class B>
-  decltype(auto) operator()(A &&a, const B &b) const {
-    return a /= b;
-  }
-};
-struct divide {
-  template <class A, class B> decltype(auto) operator()(A &&a, B &&b) const {
-    return std::forward<A>(a) / std::forward<B>(b);
-  }
-};
-
-using Binary = ::testing::Types<plus, minus, times, divide>;
-using BinaryEquals =
-    ::testing::Types<plus_equals, minus_equals, times_equals, divide_equals>;
 
 template <class Op>
 class DataProxyBinaryEqualsOpTest : public ::testing::Test,
@@ -305,6 +256,95 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetProxy_coord_mismatch) {
                except::CoordMismatchError);
 }
 
+Dataset make_simple_sparse(std::initializer_list<double> values,
+                           std::string key = "sparse") {
+  Dataset ds;
+  auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+  var.sparseValues<double>()[0] = values;
+  ds.setData(key, var);
+  return ds;
+}
+
+Dataset make_sparse_with_coords_and_labels(
+    std::initializer_list<double> values,
+    std::initializer_list<double> coords_and_labels,
+    std::string key = "sparse") {
+  Dataset ds;
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = values;
+    ds.setData(key, var);
+  }
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = coords_and_labels;
+    ds.setSparseCoord(key, var);
+  }
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = coords_and_labels;
+    ds.setSparseLabels(key, "l", var);
+  }
+
+  return ds;
+}
+
+Dataset make_sparse_2d(std::initializer_list<double> values,
+                       std::string key = "sparse") {
+  Dataset ds;
+  auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
+  var.sparseValues<double>()[0] = values;
+  var.sparseValues<double>()[1] = values;
+  ds.setData(key, var);
+  return ds;
+}
+
+TYPED_TEST(DatasetBinaryEqualsOpTest,
+           with_single_var_with_single_sparse_dimensions_sized_same) {
+  Dataset a = make_simple_sparse({1.1, 2.2});
+  Dataset b = make_simple_sparse({3.3, 4.4});
+  Dataset c = TestFixture::op(a, b);
+  auto c_data = c["sparse"].data().sparseValues<double>()[0];
+  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
+  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
+}
+
+TYPED_TEST(DatasetBinaryEqualsOpTest,
+           with_single_var_dense_and_sparse_dimension) {
+  Dataset a = make_sparse_2d({1.1, 2.2});
+  Dataset b = make_sparse_2d({3.3, 4.4});
+  Dataset c = TestFixture::op(a, b);
+  ASSERT_EQ(c["sparse"].data().sparseValues<double>().size(), 2);
+  auto c_data = c["sparse"].data().sparseValues<double>()[0];
+  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
+  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
+}
+
+TYPED_TEST(DatasetBinaryEqualsOpTest, with_multiple_variables) {
+  Dataset a = make_simple_sparse({1.1, 2.2});
+  a.setData("sparse2", a["sparse"].data());
+  Dataset b = make_simple_sparse({3.3, 4.4});
+  b.setData("sparse2", b["sparse"].data());
+  Dataset c = TestFixture::op(a, b);
+  ASSERT_EQ(c.size(), 2);
+  auto c_data = c["sparse"].data().sparseValues<double>()[0];
+  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
+  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
+  c_data = c["sparse2"].data().sparseValues<double>()[1];
+  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
+  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
+}
+
+TYPED_TEST(DatasetBinaryEqualsOpTest,
+           with_sparse_dimensions_of_different_sizes) {
+  Dataset a = make_simple_sparse({1.1, 2.2});
+  Dataset b = make_simple_sparse({3.3, 4.4, 5.5});
+  ASSERT_THROW(TestFixture::op(a, b), std::runtime_error);
+}
+
 TYPED_TEST(DatasetProxyBinaryEqualsOpTest, return_value) {
   auto a = datasetFactory.make();
   auto b = datasetFactory.make();
@@ -468,66 +508,126 @@ protected:
 
 TYPED_TEST_SUITE(DatasetBinaryOpTest, Binary);
 
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_const_lvalue_lhs_dataset_const_lvalue_rhs) {
-  auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
+  constexpr auto lx = 5;
+  constexpr auto ly = 5;
+
+  Random rand;
+
+  const auto coordX = rand(lx);
+  const auto coordY = rand(ly);
+  const auto labelT = makeVariable<double>({Dim::Y, ly}, rand(ly));
+
+  Dataset a;
+  {
+    a.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, coordX));
+    a.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
+
+    a.setLabels("t", labelT);
+
+    a.setData("data_a", makeVariable<double>({Dim::X, lx}, rand(lx)));
+    a.setData("data_b", makeVariable<double>({Dim::Y, ly}, rand(ly)));
+  }
+
+  Dataset b;
+  {
+    b.setCoord(Dim::X, makeVariable<double>({Dim::X, lx}, coordX));
+    b.setCoord(Dim::Y, makeVariable<double>({Dim::Y, ly}, coordY));
+
+    b.setLabels("t", labelT);
+
+    b.setData("data_a", makeVariable<double>({Dim::Y, ly}, rand(ly)));
+  }
+
+  return std::make_tuple(a, b);
+}
+
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
+  const auto[dataset_a, dataset_b] = generateBinaryOpTestCase();
 
   const auto res = TestFixture::op(dataset_a, dataset_b);
 
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
+  /* Only one variable should be present in result as only one common name
+   * existed between input datasets. */
+  EXPECT_EQ(1, res.size());
+
+  /* Test that the dataset contains the equivalent of operating on the Variable
+   * directly. */
+  /* Correctness of results is tested via Variable tests. */
+  const auto reference =
+      TestFixture::op(dataset_a["data_a"].data(), dataset_b["data_a"].data());
+  EXPECT_EQ(reference, res["data_a"].data());
+
+  /* Expect coordinates and labels to be copied to the result dataset */
+  EXPECT_EQ(res.coords(), dataset_a.coords());
+  EXPECT_EQ(res.labels(), dataset_a.labels());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataset_const_lvalue_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
+  const auto dataset_a =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+  const auto dataset_b =
+      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
 
-  auto dataset_a_copy(dataset_a);
-  const auto res = TestFixture::op(std::move(dataset_a_copy), dataset_b);
+  const auto res = TestFixture::op(dataset_a, dataset_b);
 
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
+  /* Only one variable should be present in result as only one common name
+   * existed between input datasets. */
+  EXPECT_EQ(1, res.size());
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_const_lvalue_lhs_dataset_rvalue_rhs) {
-  auto dataset_a = datasetFactory.make();
-  const auto dataset_b = datasetFactory.make();
+  /* Test that the dataset contains the equivalent of operating on the Variable
+   * directly. */
+  /* Correctness of results is tested via Variable tests. */
+  const auto reference =
+      TestFixture::op(dataset_a["sparse"].data(), dataset_b["sparse"].data());
+  EXPECT_EQ(reference, res["sparse"].data());
 
-  auto dataset_b_copy(dataset_b);
-  const auto res = TestFixture::op(dataset_a, std::move(dataset_b_copy));
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
-
-TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataset_rvalue_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  const auto dataset_b = datasetFactory.make();
-
-  auto dataset_a_copy(dataset_a);
-  auto dataset_b_copy(dataset_b);
-  const auto res =
-      TestFixture::op(std::move(dataset_a_copy), std::move(dataset_b_copy));
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
+  EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
-           dataset_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
+           dataset_sparse_lhs_dataset_sparse_rhs_fail_when_coords_mismatch) {
+  auto dataset_a = make_simple_sparse({1.1, 2.2});
+  auto dataset_b = make_simple_sparse({3.3, 4.4});
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = {0.5, 1.0};
+    dataset_a.setSparseCoord("sparse", var);
+  }
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = {0.5, 1.5};
+    dataset_b.setSparseCoord("sparse", var);
+  }
+
+  EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
+               except::CoordMismatchError);
+}
+
+TYPED_TEST(DatasetBinaryOpTest,
+           dataset_sparse_lhs_dataset_sparse_rhs_fail_when_labels_mismatch) {
+  auto dataset_a = make_simple_sparse({1.1, 2.2});
+  auto dataset_b = make_simple_sparse({3.3, 4.4});
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = {0.5, 1.0};
+    dataset_a.setSparseLabels("sparse", "l", var);
+  }
+
+  {
+    auto var = makeVariable<double>({Dim::X, Dimensions::Sparse});
+    var.sparseValues<double>()[0] = {0.5, 1.5};
+    dataset_b.setSparseLabels("sparse", "l", var);
+  }
+
+  EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
+               except::CoordMismatchError);
+}
+
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
@@ -541,24 +641,19 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest,
-           datasetconstproxy_const_lvalue_lhs_dataset_const_lvalue_rhs) {
-  auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
+TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_dataset_rhs) {
+  const auto dataset_a = datasetFactory.make();
+  const auto dataset_b = datasetFactory.make().slice({Dim::X, 1});
 
-  DatasetConstProxy dataset_a_proxy(dataset_a);
+  DatasetConstProxy dataset_a_proxy = dataset_a.slice({Dim::X, 1});
   const auto res = TestFixture::op(dataset_a_proxy, dataset_b);
 
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
+  Dataset dataset_a_slice(dataset_a_proxy);
+  const auto reference = TestFixture::op(dataset_a_slice, dataset_b);
+  EXPECT_EQ(res, reference);
 }
 
-TYPED_TEST(
-    DatasetBinaryOpTest,
-    datasetconstproxy_const_lvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, datasetconstproxy_lhs_datasetconstproxy_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 
@@ -573,39 +668,7 @@ TYPED_TEST(
   }
 }
 
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_rvalue_lhs_datasetconstproxy_const_lvalue_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
-
-  auto dataset_a_copy(dataset_a);
-  DatasetConstProxy dataset_b_proxy(dataset_b);
-  const auto res = TestFixture::op(std::move(dataset_a_copy), dataset_b_proxy);
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference =
-        TestFixture::op(dataset_a[name].data(), dataset_b[name].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
-
-TYPED_TEST(DatasetBinaryOpTest, dataset_rvalue_lhs_dataproxy_const_lvalue_rhs) {
-  const auto dataset_a = datasetFactory.make();
-  auto dataset_b = datasetFactory.make();
-
-  auto dataset_a_copy(dataset_a);
-  const auto res =
-      TestFixture::op(std::move(dataset_a_copy), dataset_b["data_scalar"]);
-
-  for (const auto & [ name, item ] : res) {
-    const auto reference = TestFixture::op(dataset_a[name].data(),
-                                           dataset_b["data_scalar"].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
-
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_const_lvalue_lhs_dataproxy_const_lvalue_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataproxy_rhs) {
   auto dataset_a = datasetFactory.make();
   auto dataset_b = datasetFactory.make();
 

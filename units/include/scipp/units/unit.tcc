@@ -20,9 +20,8 @@ template <typename T, typename... ALL_T>
 struct isVariantMember<T, std::variant<ALL_T...>>
     : public std::disjunction<std::is_same<T, ALL_T>...> {};
 // Helper to make checking for allowed units more compact
-template <class Units, class Counts, class T>
-constexpr bool isKnownUnit(const T &) {
-  return isVariantMember<T, typename Unit_impl<Units, Counts>::unit_t>::value;
+template <class Units, class T> constexpr bool isKnownUnit(const T &) {
+  return isVariantMember<T, Units>::value;
 }
 
 namespace units {
@@ -81,68 +80,98 @@ Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a,
                            ".");
 }
 
+template <class T, class... Ts>
+constexpr auto make_times_inner(std::variant<Ts...>) {
+  using V = std::variant<Ts...>;
+  constexpr auto times_ = [](auto x, auto y) -> int64_t {
+    using resultT = typename decltype(x * y)::unit_type;
+    if constexpr (isKnownUnit<V>(resultT{}))
+      return V(resultT{}).index();
+    return -1;
+  };
+  return std::array{times_(T{}, Ts{})...};
+}
+
+template <class... Ts> constexpr auto make_times_lut(std::variant<Ts...>) {
+  return std::array{make_times_inner<Ts>(std::variant<Ts...>{})...};
+}
+
+template <class T, class... Ts>
+constexpr auto make_divide_inner(std::variant<Ts...>) {
+  using V = std::variant<Ts...>;
+  constexpr auto divide_ = [](auto x, auto y) -> int64_t {
+    // It is done here to have the si::dimensionless then the units are
+    // the same, but is the si::dimensionless valid for non si types? TODO
+    if constexpr (std::is_same_v<decltype(x), decltype(y)>)
+      return V(dimensionless).index();
+    using resultT = typename decltype(x / y)::unit_type;
+    if constexpr (isKnownUnit<V>(resultT{}))
+      return V(resultT{}).index();
+    return -1;
+  };
+  return std::array{divide_(T{}, Ts{})...};
+}
+
+template <class... Ts> constexpr auto make_divide_lut(std::variant<Ts...>) {
+  return std::array{make_divide_inner<Ts>(std::variant<Ts...>{})...};
+}
+
+template <class... Ts> constexpr auto make_sqrt_lut(std::variant<Ts...>) {
+  using T = std::variant<Ts...>;
+  constexpr auto sqrt_ = [](auto x) -> int64_t {
+    using resultT = typename decltype(sqrt(1.0 * x))::unit_type;
+    if constexpr (isKnownUnit<T>(resultT{}))
+      return T(resultT{}).index();
+    return -1;
+  };
+  return std::array{sqrt_(Ts{})...};
+}
+
 // Mutliplying two units together using std::visit to run through the contents
 // of the std::variant
 template <class T, class Counts>
 Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b) {
-  return Unit_impl<T, Counts>(std::visit(
-      [](auto x, auto y) -> typename Unit_impl<T, Counts>::unit_t {
-        // Creation of z needed here because putting x*y inside the call to
-        // isKnownUnit(x*y) leads to error: temporary of non-literal type in a
-        // constant expression
-        auto z{x * y};
-        if constexpr (isKnownUnit<T, Counts>(z))
-          return z;
-        throw std::runtime_error(
-            "Unsupported unit as result of multiplication: (" +
-            units::to_string(x) + ") * (" + units::to_string(y) + ')');
-      },
-      a(), b()));
+  static constexpr auto lut = make_times_lut(T{});
+  auto resultIndex = lut[a().index()][b().index()];
+  if (resultIndex < 0)
+    throw std::runtime_error("Unsupported unit as result of multiplication: (" +
+                             a.name() + ") * (" + b.name() + ')');
+  return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 
 template <class T, class Counts>
 Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b) {
-  return Unit_impl<T, Counts>(std::visit(
-      [](auto x, auto y) -> typename Unit_impl<T, Counts>::unit_t {
-        // It is done here to have the si::dimensionless then the units are
-        // the same, but is the si::dimensionless valid for non si types? TODO
-        if constexpr (std::is_same_v<decltype(x), decltype(y)>)
-          return dimensionless;
-        auto z{x / y};
-        if constexpr (isKnownUnit<T, Counts>(z))
-          return z;
-        throw std::runtime_error("Unsupported unit as result of division: (" +
-                                 units::to_string(x) + ") / (" +
-                                 units::to_string(y) + ')');
-      },
-      a(), b()));
+  static constexpr auto lut = make_divide_lut(T{});
+  auto resultIndex = lut[a().index()][b().index()];
+  if (resultIndex < 0)
+    throw std::runtime_error("Unsupported unit as result of division: (" +
+                             a.name() + ") / (" + b.name() + ')');
+  return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 
 template <class T, class Counts>
 Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a) {
-  return Unit_impl<T, Counts>(std::visit(
-      [](auto x) -> typename Unit_impl<T, Counts>::unit_t {
-        typename decltype(sqrt(1.0 * x))::unit_type sqrt_x;
-        if constexpr (isKnownUnit<T, Counts>(sqrt_x))
-          return sqrt_x;
-        throw std::runtime_error("Unsupported unit as result of sqrt: sqrt(" +
-                                 units::to_string(x) + ").");
-      },
-      a()));
+  static constexpr auto lut = make_sqrt_lut(T{});
+  auto resultIndex = lut[a().index()];
+  if (resultIndex < 0)
+    throw std::runtime_error("Unsupported unit as result of sqrt: sqrt(" +
+                             a.name() + ").");
+  return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 
 #define INSTANTIATE(Units, Counts)                                             \
-  template class Unit_impl<Units, Counts>;                                     \
-  template Unit_impl<Units, Counts> operator+(                                 \
+  template class SCIPP_UNITS_EXPORT Unit_impl<Units, Counts>;                  \
+  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator+(              \
       const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template Unit_impl<Units, Counts> operator-(                                 \
+  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator-(              \
       const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template Unit_impl<Units, Counts> operator*(                                 \
+  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator*(              \
       const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template Unit_impl<Units, Counts> operator/(                                 \
+  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator/(              \
       const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template Unit_impl<Units, Counts> sqrt(const Unit_impl<Units, Counts> &a);
+  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> sqrt(                   \
+      const Unit_impl<Units, Counts> &a);
 
 } // namespace scipp::units

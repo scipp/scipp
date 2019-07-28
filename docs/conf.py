@@ -20,6 +20,12 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# -- Doxygen build configuration
+
+import subprocess
+subprocess.call('cd ..; doxygen docs/Doxyfile', shell=True)
+
+html_extra_path = ['./doxygen']
 
 # -- General configuration ------------------------------------------------
 
@@ -32,12 +38,24 @@
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.intersphinx'
+    'sphinx.ext.autosummary',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.imgmath',
+    'IPython.sphinxext.ipython_directive',
+    'IPython.sphinxext.ipython_console_highlighting',
+    'nbsphinx',
+    'sphinx.ext.mathjax'
 ]
 
 intersphinx_mapping = {
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
+
+# autodocs includes everything, even irrelevant API internals. autosummary looks
+# more suitable in the long run when the API grows.
+# For a nice example see how xarray handles its API documentation.
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -75,7 +93,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -116,7 +134,12 @@ else:
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    'logo_only': True
+}
+
+html_logo = "_static/logo-large-v2.png"
+# html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

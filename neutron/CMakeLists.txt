@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 set(INC_FILES include/scipp/neutron/convert.h)
 
-set(SRC_FILES #convert.cpp
+set(SRC_FILES convert.cpp
   )
 
 add_library(scipp-neutron STATIC ${INC_FILES} ${SRC_FILES})
@@ -16,4 +16,4 @@ target_include_directories(scipp-neutron SYSTEM
                            PRIVATE "../range-v3/include")
 set_target_properties(scipp-neutron PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-#add_subdirectory(test)
+add_subdirectory(test)

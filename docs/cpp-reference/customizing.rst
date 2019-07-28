@@ -1,3 +1,5 @@
+.. _customizing:
+
 Customizing Scipp
 =================
 

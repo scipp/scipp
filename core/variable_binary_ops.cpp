@@ -88,10 +88,11 @@ Variable &Variable::operator-=(const double value) & {
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dims(), other.dims());
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
-  variable.setUnit(variable.unit() * other.unit());
+  variable.expectCanSetUnit(variable.unit() * other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       variable, other, [](auto &&a, auto &&b) { a *= b; });
+  variable.setUnit(variable.unit() * other.unit());
   return variable;
 }
 
@@ -117,10 +118,11 @@ Variable &Variable::operator*=(const double value) & {
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
   expect::contains(variable.dims(), other.dims());
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
-  variable.setUnit(variable.unit() / other.unit());
+  variable.expectCanSetUnit(variable.unit() / other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       variable, other, [](auto &&a, auto &&b) { a /= b; });
+  variable.setUnit(variable.unit() / other.unit());
   return variable;
 }
 
