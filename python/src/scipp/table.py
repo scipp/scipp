@@ -36,29 +36,68 @@ def append_with_text(parent, name, text, attrib=style_border_right):
     el.text = text
 
 
-def table_ds(dataset):
-    coords = dataset.coords
-    ndims = len(coords)
-    if ndims > 1:
-        raise RuntimeError("Only 0D & 1D datasets can be rendered as a table")
+def variable_column(var, container):
+    container
+
+
+
+def table(dataset):
+
+    data = dict()
+    for name, var in dataset:
+        vals = []
+        v = var.values
+        for i in range(len(var.values)):
+            vals.append(value_to_string(v[i]))
+        data[name] = ["<b>Values</b>"] + vals
+
+    html = "<table style='border: 1px solid black;'><tr><th>" + "</th><th>".join(data.keys()) + "</th></tr>"
+    for row in zip(*data.values()):
+        html += '<tr><td>' + '</td><td>'.join(row) + '</td></tr>'
+    html += '</table>'
+
+    # Render the HTML code
+    from IPython.display import display, HTML
+    display(HTML(html))
+
+
+def ds_table(dataset):
+
+    # try:
+    #     coords = dataset.coords
+    # except AttributeError:
+    #     coords = None
+
+    # if coords is not None:
+    #     ndims = len(coords)
+    #     if ndims > 1:
+    #         raise RuntimeError("Only 0D & 1D datasets can be rendered as a table")
+
+    tabledict = {"v": {},
+                 "0D Variables": {},
+                 "1D Variables": {}}
+
+    # datum1d = defaultdict(dict)
+    # datum0d = defaultdict(list)
+    # datum1d = dict()
+    # datum0d = dict()
+    # coords1d = None
+    tp = type(dataset)
+    if tp is sp.Dataset or tp is sp.DatasetProxy or tp is sp.DataProxy:
+        for name, var in dataset:
+            if len(var.coords) == 1:
+                tabledict["vars_1d"][var.dims[0]] [name] = var
+                # coords1d = var.coords[var.dims[0]]
+            else:
+                datum0d[name] = var
+    # else:
+
+
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
-    if isinstance(dataset, sp.Dataset):
-        headline.text = 'Dataset:'
-    else:
-        headline.text = 'DataProxy:'
-
-    datum1d = defaultdict(list)
-    datum0d = defaultdict(list)
-    coords1d = None
-    for name, var in dataset:
-        if len(var.coords) == 1:
-            datum1d[name] = var
-            coords1d = var.coords[var.dims[0]]
-
-        else:
-            datum0d[name] = var
+    headline.text = str(type(dataset)).replace("<class 'scipp._scipp.",
+                                               "").replace("'>", "")
 
     # 0 - dimensional data
     if datum0d:
@@ -151,55 +190,75 @@ def table_ds(dataset):
                 if val.has_variances:
                     append_with_text(tr, 'td',
                                      value_to_string(val.variances[i]))
+
+    # html = """<html><table border="1">
+    # <tr><th>Object</th><th>Good</th><th>Bad</th><th>Ugly</th></tr>"""
+    # for fruit in d:
+    #     html += "<tr><td>{}</td>".format(fruit)
+    #     for state in "good", "bad", "ugly":
+    #         html += "<td>{}</td>".format('<br>'.join(f for f in d[fruit] if ".{}.".format(state) in f))
+    #     html += "</tr>"
+    # html += "</table></html>"
+
+    data = dict()
+    for name, var in dataset:
+        data[name] = ["Values"] + var.values
+
+    html = '<table><tr><th>' + '</th><th>'.join(data.keys()) + '</th></tr>'
+    for row in zip(*data.values()):
+        html += '<tr><td>' + '</td><td>'.join(row) + '</td></tr>'
+    html += '</table>'
+
     # Render the HTML code
     from IPython.display import display, HTML
-    display(HTML(et.tostring(body).decode('UTF-8')))
+    display(HTML(html))
 
 
-def table_var(variable):
-    dims = variable.dims
-    if len(dims) > 1:
-        raise RuntimeError("Only 1-D variable can be rendered")
-    nx = variable.shape[0]
+# def table_var(variable):
+#     dims = variable.dims
+#     if len(dims) > 1:
+#         raise RuntimeError("Only 0D & 1D variables can be rendered as a table")
+#     nx = variable.shape[0]
 
-    body = et.Element('body')
-    headline = et.SubElement(body, 'h3')
-    if isinstance(variable, sp.Variable):
-        headline.text = 'Variable:'
-    else:
-        headline.text = 'VariableProxy:'
-    tab = et.SubElement(body, 'table')
+#     body = et.Element('body')
+#     headline = et.SubElement(body, 'h3')
+#     if isinstance(variable, sp.Variable):
+#         headline.text = 'Variable:'
+#     else:
+#         headline.text = 'VariableProxy:'
+#     tab = et.SubElement(body, 'table')
 
-    tr = et.SubElement(tab, 'tr')
-    append_with_text(tr, 'th', axis_label(variable, name=str(dims[0])),
-                         attrib=dict({'colspan':
-                                     str(1 + variable.has_variances)}.items() |
-                                     style_border_center.items()))
+#     tr = et.SubElement(tab, 'tr')
+#     append_with_text(tr, 'th', axis_label(variable, name=str(dims[0])),
+#                          attrib=dict({'colspan':
+#                                      str(1 + variable.has_variances)}.items() |
+#                                      style_border_center.items()))
 
-    # Aligned data
-    tr = et.SubElement(tab, 'tr')
+#     # Aligned data
+#     tr = et.SubElement(tab, 'tr')
 
-    append_with_text(
-        tr, 'th', "Values", style_border_center)
-    if variable.has_variances:
-        append_with_text(
-            tr, 'th', "Variances", style_border_center)
-    for i in range(nx):
-        tr_val = et.SubElement(tab, 'tr')
-        append_with_text(tr_val, 'td', value_to_string(variable.values[i]))
-        if variable.has_variances:
-            append_with_text(tr_val, 'td',
-                             value_to_string(variable.variances[i]))
+#     append_with_text(
+#         tr, 'th', "Values", style_border_center)
+#     if variable.has_variances:
+#         append_with_text(
+#             tr, 'th', "Variances", style_border_center)
+#     for i in range(nx):
+#         tr_val = et.SubElement(tab, 'tr')
+#         append_with_text(tr_val, 'td', value_to_string(variable.values[i]))
+#         if variable.has_variances:
+#             append_with_text(tr_val, 'td',
+#                              value_to_string(variable.variances[i]))
 
-    from IPython.display import display, HTML
-    display(HTML(et.tostring(body).decode('UTF-8')))
+#     from IPython.display import display, HTML
+#     display(HTML(et.tostring(body).decode('UTF-8')))
 
 
-def table(some):
-    tp = type(some)
-    if tp is sp.Dataset or tp is sp.DataProxy:
-        table_ds(some)
-    elif tp is sp.Variable or tp is sp.VariableProxy:
-        table_var(some)
-    else:
-        raise RuntimeError("Type {} is not supported".format(tp))
+# def table(some):
+#     tp = type(some)
+#     if tp is sp.Dataset or tp is sp.DatasetProxy or tp is sp.DataProxy:
+#         table_ds(some)
+#     elif tp is sp.Variable or tp is sp.VariableProxy:
+#         table_var(some)
+#     else:
+#         raise RuntimeError("Type {} is not supported by table "
+#                            "output".format(tp))

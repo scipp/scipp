@@ -87,14 +87,20 @@ void init_dataset(py::module &m) {
            py::arg("data") = std::map<std::string, Variable>{},
            py::arg("coords") = std::map<Dim, Variable>{},
            py::arg("labels") = std::map<std::string, Variable>{})
-      .def("__setitem__", &Dataset::setData)
       .def("__setitem__",
-           [](Dataset &self, const std::string &name, const DataProxy &data) {
-             if (self.contains(name))
-               self[name].assign(data);
-             else
-               throw std::runtime_error("Not implemented yet");
-           })
+           [](Dataset &self, const std::string &name, Variable &data) {
+            self.setData(name, data); })
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name, const DataProxy &other) {
+            if (self.contains(name))
+              self[name].assign(other);
+            else
+              self.setData(name, other); })
+      .def("__setitem__",
+           [](Dataset &self, const std::tuple<Dim, scipp::index> &index, DatasetProxy &other) {
+            auto[dim, i] = index;
+            for (const auto[name, item] : self.slice(Slice(dim, i)))
+              item.assign(other[name]); })
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
       .def("set_coord", &Dataset::setCoord)

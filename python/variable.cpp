@@ -196,6 +196,12 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
+  // For some reason, pybind11 does not convert python lists to py::array,
+  // so we need to bind the lists manually.
+  // TODO: maybe there is a better way to do this?
+  bind_init_1D<int32_t>(variable);
+  bind_init_1D<double>(variable);
+
   py::class_<VariableProxy> variableProxy(m, "VariableProxy",
                                           py::buffer_protocol());
   variableProxy.def_buffer(&make_py_buffer_info);

@@ -206,6 +206,11 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
+/// Set (insert or replace) data from a DataProxy.
+void Dataset::setData(const std::string &name, const DataConstProxy other) {
+  setData(name, other.data());
+}
+
 /// Set (insert or replace) the sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
