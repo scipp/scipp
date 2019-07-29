@@ -165,7 +165,9 @@ class VariableDrawer():
 
     def make_svg(self):
         return self._set_colors('<svg viewBox="0 0 {} {}">{}</svg>'.format(
-            *self.size(), self.draw(color=_colors['data'])))
+            max(12,
+                self.size()[0]),
+            self.size()[1], self.draw(color=_colors['data'])))
 
 
 class DatasetDrawer():
@@ -207,7 +209,7 @@ class DatasetDrawer():
             height += size[1]
 
         return '<svg viewBox="0 0 {} {}">{}</svg>'.format(
-            max(16, width), height, content)
+            max(12, width), height, content)
 
 
 def show(container):
