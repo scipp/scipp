@@ -4,9 +4,10 @@
 # @author Igor Gudich
 
 import scipp as sp
-from xml.etree import ElementTree as et
-from collections import defaultdict
+# from xml.etree import ElementTree as et
+# from collections import defaultdict
 from .tools import axis_label
+from IPython.display import display, HTML
 
 
 style_border_center = {'style': 'border: 1px solid black; text-align:center;'}
@@ -36,32 +37,75 @@ def append_with_text(parent, name, text, attrib=style_border_right):
     el.text = text
 
 
-def variable_column(var, container):
-    container
+def table_from_dataset(dataset, coord_dim=None):
+    # Declare table
+    html = "<table style='border: 1px solid black;'><tr>"
+    # Table headers
+    if coord_dim is not None:
+        coord = dataset.coords[coord_dim]
+        html += "<th colspan='{}'>Coord: {}</th>".format(1 + coord.has_variances, coord_dim)
+    for key, val in dataset:
+        size = val.shape[0]
+        html += "<th colspan='{}'>{}</th>".format(1 + val.has_variances, key)
+    html += "</tr><tr>"
+    if coord_dim is not None:
+        html += "<th>Values</th>"
+        if coord.has_variances:
+            html += "<th>Variances</th>"
+    for key, val in dataset:
+        html += "<th>Values</th>"
+        if val.has_variances:
+            html += "<th>Variances</th>"
+    html += "</tr>"
+    for i in range(size):
+        html += "<tr>"
+        if coord_dim is not None:
+            html += "<td>{}</td>".format(value_to_string(coord.values[i]))
+            if coord.has_variances:
+                html += "<td>{}</td>".format(value_to_string(coord.variances[i]))
+            # if is_hist:
+            #     text = '[{}; {}]'.format(
+            #         text, value_to_string(coords1d.values[i + 1]))
+        for key, val in dataset:
+            html += "<td>{}</td>".format(value_to_string(val.values[i]))
+            if val.has_variances:
+                html += "<td>{}</td>".format(value_to_string(val.variances[i]))
+        html += "</tr>"
+    html += "</table>"
+    display(HTML(html))
 
+
+
+
+
+# def variable_column(var, container):
+#     container
+
+
+
+# def table(dataset):
+
+#     data = dict()
+#     for name, var in dataset:
+#         vals = []
+#         v = var.values
+#         for i in range(len(var.values)):
+#             vals.append(value_to_string(v[i]))
+#         data[name] = ["<b>Values</b>"] + vals
+
+#     html = "<table style='border: 1px solid black;'><tr><th>" + "</th><th>".join(data.keys()) + "</th></tr>"
+#     for row in zip(*data.values()):
+#         html += '<tr><td>' + '</td><td>'.join(row) + '</td></tr>'
+#     html += '</table>'
+
+#     # Render the HTML code
+#     from IPython.display import display, HTML
+#     display(HTML(html))
 
 
 def table(dataset):
 
-    data = dict()
-    for name, var in dataset:
-        vals = []
-        v = var.values
-        for i in range(len(var.values)):
-            vals.append(value_to_string(v[i]))
-        data[name] = ["<b>Values</b>"] + vals
-
-    html = "<table style='border: 1px solid black;'><tr><th>" + "</th><th>".join(data.keys()) + "</th></tr>"
-    for row in zip(*data.values()):
-        html += '<tr><td>' + '</td><td>'.join(row) + '</td></tr>'
-    html += '</table>'
-
-    # Render the HTML code
-    from IPython.display import display, HTML
-    display(HTML(html))
-
-
-def ds_table(dataset):
+    return table_from_dataset(dataset)
 
     # try:
     #     coords = dataset.coords
@@ -73,7 +117,7 @@ def ds_table(dataset):
     #     if ndims > 1:
     #         raise RuntimeError("Only 0D & 1D datasets can be rendered as a table")
 
-    tabledict = {"v": {},
+    tabledict = {"default": [],
                  "0D Variables": {},
                  "1D Variables": {}}
 
@@ -86,18 +130,23 @@ def ds_table(dataset):
     if tp is sp.Dataset or tp is sp.DatasetProxy or tp is sp.DataProxy:
         for name, var in dataset:
             if len(var.coords) == 1:
-                tabledict["vars_1d"][var.dims[0]] [name] = var
+                if var.dims[0] not in tabledict["1D Variables"].keys():
+                    tabledict["1D Variables"][var.dims[0]] = {name: var}
+                else:
+                    tabledict["1D Variables"][var.dims[0]][name] = var
                 # coords1d = var.coords[var.dims[0]]
             else:
-                datum0d[name] = var
-    # else:
-
-
+                tabledict["0D Variables"][name] = var
+    else:
+        tabledict["default"].append(var)
 
     body = et.Element('body')
     headline = et.SubElement(body, 'h3')
     headline.text = str(type(dataset)).replace("<class 'scipp._scipp.",
                                                "").replace("'>", "")
+
+    # for key, val in tabledict.items():
+
 
     # 0 - dimensional data
     if datum0d:
