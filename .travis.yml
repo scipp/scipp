@@ -48,7 +48,7 @@ jobs:
     - os: osx
       osx_image: xcode10.2
       name: "conda osx"
-      #if: branch = master AND NOT type = pull_request
+      if: branch = master AND NOT type = pull_request
       git:
         depth: false
       env:
