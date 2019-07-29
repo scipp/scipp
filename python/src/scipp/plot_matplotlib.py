@@ -84,7 +84,7 @@ def plot(input_data, **kwargs):
 
 
 def plot_auto(input_data, ndim=0, name=None, waterfall=None,
-              collapse=None, **kwargs):
+              collapse=None, view="2d", **kwargs):
     """
     Function to automatically dispatch the input dataset to the appropriate
     plotting function depending on its dimensions
@@ -94,13 +94,16 @@ def plot_auto(input_data, ndim=0, name=None, waterfall=None,
         plot_collapse(input_data, dim=collapse, name=name, **kwargs)
     elif ndim == 1:
         plot_1d(input_data, **kwargs)
-    elif ndim == 2:
-        if waterfall is not None:
-            plot_waterfall(input_data, name=name, dim=waterfall, **kwargs)
-        else:
-            plot_image(input_data, name=name, **kwargs)
+    elif view.lower() == "2d":
+        # if waterfall is not None:
+        #     plot_waterfall(input_data, name=name, dim=waterfall, **kwargs)
+        # else:
+        plot_2d(input_data, name=name, **kwargs)
+    elif view.lower() == "3d":
+        plot_3d(input_data, name=name, **kwargs)
     else:
-        plot_sliceviewer(input_data, name=name, **kwargs)
+        raise RuntimeError("Unknown view type: {}. ".format(view)
+                           "This must be either 2d or 3d.")
     return
 
 # =============================================================================
@@ -274,7 +277,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
     slice_list = np.reshape(
         np.transpose(slice_list), (volume, len(slice_dims), 2))
 
-    # Extract each entry from the slice_list, make temperary dataset and add to
+    # Extract each entry from the slice_list, make temporary dataset and add to
     # input dictionary for plot_1d
     color = []
     for i, line in enumerate(slice_list):
@@ -300,7 +303,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 # =============================================================================
 
 
-def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
+def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
                plot=True, resolution=128, filename=None, show_variances=False):
     """
     Plot a 2D image.
@@ -373,6 +376,117 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
     return
 
 # =============================================================================
+
+
+class View2D:
+
+    def __init__(self, plotly_data, plotly_layout, input_data, axes,
+                 value_name, cb):
+
+        # Make a copy of the input data - Needed?
+        self.input_data = input_data
+
+        # Get the dimensions of the image to be displayed
+        self.coords = self.input_data.coords
+        self.xcoord = self.coords[axes[-1]]
+        self.ycoord = self.coords[axes[-2]]
+        self.xdims = self.xcoord.dims
+        self.xlabs = self.xdims.labels
+        self.ydims = self.ycoord.dims
+        self.ylabs = self.ydims.labels
+
+        # Need these to avoid things running out of scope
+        self.dims = self.input_data.dims
+        self.labels = self.dims.labels
+        self.shapes = self.dims.shape
+
+        # Size of the slider coordinate arrays
+        self.slider_nx = []
+        # Save dimensions tags for sliders, e.g. Dim.X
+        self.slider_dims = []
+        # Store coordinates of dimensions that will be in sliders
+        self.slider_x = []
+        for ax in axes[:-2]:
+            self.slider_dims.append(ax)
+            self.slider_nx.append(self.shapes[ax])
+            self.slider_x.append(self.coords[ax].values)
+        self.nslices = len(self.slider_dims)
+
+        # Initialise Figure and VBox objects
+        self.fig = FigureWidget(data=plotly_data, layout=plotly_layout)
+        self.vbox = self.fig,
+
+        # Initialise slider and label containers
+        self.lab = []
+        self.slider = []
+        # Collect the remaining arguments
+        self.value_name = value_name
+        self.cb = cb
+        # Default starting index for slider
+        indx = 0
+
+        # Now begin loop to construct sliders
+        for i in range(len(self.slider_nx)):
+            # Add a label widget to display the value of the z coordinate
+            self.lab.append(Label(value=str(self.slider_x[i][indx])))
+            # Add an IntSlider to slide along the z dimension of the array
+            self.slider.append(IntSlider(
+                value=indx,
+                min=0,
+                max=self.slider_nx[i] - 1,
+                step=1,
+                description="",
+                continuous_update=True,
+                readout=False
+            ))
+            # Add an observer to the slider
+            self.slider[i].observe(self.update_slice, names="value")
+            # Add coordinate name and unit
+            title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
+            self.vbox += (HBox([title, self.slider[i], self.lab[i]]),)
+
+        # Call update_slice once to make the initial image
+        self.update_slice(0)
+        self.vbox = VBox(self.vbox)
+        self.vbox.layout.align_items = 'center'
+
+        return
+
+    # Define function to update slices
+    def update_slice(self, change):
+        # The dimensions to be sliced have been saved in slider_dims
+        # Slice with first element to avoid modifying underlying dataset
+        self.lab[0].value = str(self.slider_x[0][self.slider[0].value])
+        vslice = self.input_data[self.slider_dims[0], self.slider[0].value]
+        # Then slice additional dimensions if needed
+        for idim in range(1, self.nslices):
+            self.lab[idim].value = str(
+                self.slider_x[idim][self.slider[idim].value])
+            vslice = vslice[self.slider_dims[idim], self.slider[idim].value]
+
+        z = vslice.values
+
+        # Check if dimensions of arrays agree, if not, plot the transpose
+        zdims = vslice.dims
+        zlabs = zdims.labels
+        if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
+            z = z.T
+        # Apply colorbar parameters
+        if self.cb["log"]:
+            with np.errstate(invalid="ignore", divide="ignore"):
+                z = np.log10(z)
+        if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
+            if self.cb["min"] is not None:
+                self.fig.data[0].zmin = self.cb["min"]
+            else:
+                self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
+            if self.cb["max"] is not None:
+                self.fig.data[0].zmax = self.cb["max"]
+            else:
+                self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
+        self.fig.data[0].z = z
+        return
+
 
 
 # class ImageViewer:
@@ -527,42 +641,42 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
 # # =============================================================================
 
 
-def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
-    """
-    Make a 3D waterfall plot
-    """
+# def plot_waterfall(input_data, dim=None, name=None, axes=None, filename=None):
+#     """
+#     Make a 3D waterfall plot
+#     """
 
-    # Get coordinates axes and dimensions
-    coords = input_data.coords
-    xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-        process_dimensions(input_data=input_data, coords=coords, axes=axes)
+#     # Get coordinates axes and dimensions
+#     coords = input_data.coords
+#     xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
+#         process_dimensions(input_data=input_data, coords=coords, axes=axes)
 
-    z = input_data.values
-    if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-        z = z.T
-        zlabs = [ylabs[0], xlabs[0]]
+#     z = input_data.values
+#     if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
+#         z = z.T
+#         zlabs = [ylabs[0], xlabs[0]]
 
-    fig = ipv.figure()
+#     fig = ipv.figure()
 
-    if dim is None:
-        dim = zlabs[0]
+#     if dim is None:
+#         dim = zlabs[0]
 
-    if dim == zlabs[0]:
-        for i in range(len(yc)):
-            line = ipv.plot(xc, np.ones_like(xc) * yc[i], z[i, :], color=get_color(i))
-    elif dim == zlabs[1]:
-        for i in range(len(xc)):
-            line = ipv.plot(np.ones_like(yc) * xc[i], yc, z[:, i], color=get_color(i), width=3)
-    else:
-        raise RuntimeError("Something went wrong in plot_waterfall. The "
-                           "waterfall dimension is not recognised.")
+#     if dim == zlabs[0]:
+#         for i in range(len(yc)):
+#             line = ipv.plot(xc, np.ones_like(xc) * yc[i], z[i, :], color=get_color(i))
+#     elif dim == zlabs[1]:
+#         for i in range(len(xc)):
+#             line = ipv.plot(np.ones_like(yc) * xc[i], yc, z[:, i], color=get_color(i), width=3)
+#     else:
+#         raise RuntimeError("Something went wrong in plot_waterfall. The "
+#                            "waterfall dimension is not recognised.")
 
-    if filename is not None:
-        ipv.save(filename)
-    else:
-        ipv.show()
+#     if filename is not None:
+#         ipv.save(filename)
+#     else:
+#         ipv.show()
 
-    return
+#     return
 
 # =============================================================================
 
@@ -765,7 +879,7 @@ def process_dimensions(input_data, coords, axes):
     nz = input_data.shape
 
     if axes is None:
-        axes = [l for l in zlabs]
+        axes = input_data.dims # [l for l in zlabs]
     else:
         axes = axes[-2:]
 
