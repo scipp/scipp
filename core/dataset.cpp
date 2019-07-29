@@ -995,7 +995,7 @@ Variable histogram(const DataConstProxy &sparse,
   if (sparse.dims().ndims() != 1)
     throw std::logic_error("Only the simple case histograms may be constructed "
                            "for now: 2 dims including sparse.");
-  if (binEdges.dtype() != DType::Double ||
+  if (binEdges.dtype() != dtype<double> ||
       sparse.coords()[binEdges.dims().inner()].dtype() != DType::Double)
     throw std::logic_error("Histogram is only available for double type.");
   auto dim = binEdges.dims().inner();
@@ -1026,7 +1026,7 @@ Variable histogram(const DataConstProxy &sparse, const Variable &binEdges) {
 }
 
 Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
-  auto out(Dataset(DatasetConstProxy::makeShallowProxy(dataset)));
+  auto out(Dataset(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)));
   out.setCoord(bins.dims().inner(), bins);
   for (const auto & [ name, item ] : dataset) {
     if (item.dims().sparse())

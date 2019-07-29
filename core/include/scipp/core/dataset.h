@@ -495,14 +495,13 @@ public:
 /// Const proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstProxy {
   explicit DatasetConstProxy() : m_dataset(nullptr) {}
-
 public:
   explicit DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
     for (const auto &item : dataset.m_data)
       m_indices.emplace_back(item.first);
   }
 
-  static DatasetConstProxy makeShallowProxy(const Dataset &dataset) {
+  static DatasetConstProxy makeProxyWithEmptyIndexes(const Dataset &dataset) {
     auto res = DatasetConstProxy();
     res.m_dataset = &dataset;
     return res;

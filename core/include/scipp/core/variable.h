@@ -378,7 +378,7 @@ Variable makeVariableWithVariances(const Dimensions &dimensions,
                                    units::Unit unit = units::dimensionless) {
   if (dimensions.sparse())
     return Variable(
-        units::dimensionless, std::move(dimensions),
+        unit, std::move(dimensions),
         Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()),
         Vector<sparse_container<underlying_type_t<T>>>(dimensions.volume()));
   else
