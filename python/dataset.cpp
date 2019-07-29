@@ -150,14 +150,14 @@ void init_dataset(py::module &m) {
         "Returns a new Variabble with values in bins for sparse dims");
 
   m.def("histogram",
-        [](const Dataset &ds, const Variable &bins) {
+        [](const Dataset &ds, const VariableConstProxy &bins) {
           return core::histogram(ds, bins);
         },
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Dataset with histograms for sparse dims");
 
   m.def("histogram",
-        [](const Dataset &ds, const VariableConstProxy &bins) {
+        [](const Dataset &ds, const Variable &bins) {
           return core::histogram(ds, bins);
         },
         py::call_guard<py::gil_scoped_release>(),
