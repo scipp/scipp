@@ -2,7 +2,6 @@
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-import numpy as np
 import scipp as sc
 
 
@@ -55,21 +54,29 @@ def _draw_variable(variable):
                         y + margin + 0.3 * z)
     else:
         svg = '<svg viewBox="0 0 {} {}">'.format(shape[0] + 2 * margin, 3)
+
     if len(shape) > 0:
-        svg += '<text x="{}" y="{}" text-anchor="middle" fill="#333333" style="font-size:0.2px">{}</text>'.format(
+        svg += '<text x="{}" y="{}" text-anchor="middle" fill="dim-color" \
+                style="font-size:0.2px">{}</text>'.format(
             margin + 0.5 * shape[-1], view_height - margin + 0.1,
             variable.dims[-1])
     if len(shape) > 1:
-        svg += '<text x="x_pos" y="y_pos" text-anchor="middle" fill="#333333" style="font-size:0.2px" transform="rotate(-90, x_pos, y_pos)">{}</text>'.replace(
+        svg += '<text x="x_pos" y="y_pos" text-anchor="middle" \
+                fill="dim-color" style="font-size:0.2px" \
+                transform="rotate(-90, x_pos, y_pos)">{}</text>'.replace(
             'x_pos', str(margin - 0.2)).replace(
                 'y_pos', str(view_height - margin - 0.2 -
                              0.5 * shape[-2])).format(variable.dims[-2])
     if len(shape) > 2:
-        svg += '<text x="x_pos" y="y_pos" text-anchor="middle" fill="#333333" style="font-size:0.2px" transform="rotate(-45, x_pos, y_pos)">{}</text>'.replace(
+        svg += '<text x="x_pos" y="y_pos" text-anchor="middle" \
+                fill="dim-color" style="font-size:0.2px" \
+                transform="rotate(-45, x_pos, y_pos)">{}</text>'.replace(
             'x_pos', str(margin + 0.3 * 0.5 * shape[-3] - 0.1)).replace(
                 'y_pos', str(margin + 0.3 * 0.5 * shape[-3] - 0.4)).format(
                     variable.dims[-3])
     svg += '</svg>'
+    dim_color = '#444444'
+    svg = svg.replace('dim-color', dim_color)
     return svg
 
 
