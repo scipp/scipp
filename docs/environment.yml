@@ -1,8 +1,16 @@
 name: scipp-docs
 
 channels:
+  - conda-forge
   - scipp/label/dev
 
 dependencies:
-  - scipp
+  - python>=3
   - ipython=7.2.0
+  - sphinx>=1.6
+  - pandoc
+  - nbconvert!=5.4
+  - ipykernel
+  - pip:
+    - nbsphinx
+  - scipp

@@ -20,6 +20,12 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# -- Doxygen build configuration
+
+import subprocess
+subprocess.call('cd ..; doxygen docs/Doxyfile', shell=True)
+
+html_extra_path = ['./doxygen']
 
 # -- General configuration ------------------------------------------------
 
@@ -34,8 +40,11 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.imgmath',
     'IPython.sphinxext.ipython_directive',
-    'IPython.sphinxext.ipython_console_highlighting'
+    'IPython.sphinxext.ipython_console_highlighting',
+    'nbsphinx',
+    'sphinx.ext.mathjax'
 ]
 
 intersphinx_mapping = {
@@ -84,7 +93,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'

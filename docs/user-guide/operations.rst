@@ -21,7 +21,7 @@ Operations "align" data items based on their dimension labels:
                     unit=sc.units.s)
     a/b
 
-Note how operations with variables correctly propagate uncertainties (variances), in contrast to a naive implementation using numpy:
+Note how operations with variables correctly propagate uncertainties (the variances), in contrast to a naive implementation using numpy:
 
 .. ipython:: python
 
@@ -32,6 +32,7 @@ Note how operations with variables correctly propagate uncertainties (variances)
     a.variances/np.transpose(b.variances)
 
 The implementation assumes uncorrelated data and is otherwise based on, e.g., `Wikipedia: Propagation of uncertainty <https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Example_formulae>`_.
+See also :ref:`propagation_of_uncertainties` for the concrete equations used for error propagation.
 
 Missing dimensions in the operands are automatically broadcast:
 

@@ -25,133 +25,13 @@
 #define TRANSFORM_H
 
 #include "scipp/core/except.h"
+#include "scipp/core/value_and_variance.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/visit.h"
 
 namespace scipp::core {
 
 namespace detail {
-
-/// A value/variance pair with operators that propagate uncertainties.
-///
-/// This is intended for small T such as double, float, and int. It is the
-/// central implementation of uncertainty propagation in scipp, for built-in
-/// operations as well as custom operations using one of the transform
-/// functions. Since T is assumed to be small it is copied into the class and
-/// extracted later. See also ValuesAndVariances.
-template <class T> struct ValueAndVariance {
-  T value;
-  T variance;
-
-  template <class T2>
-  constexpr auto &operator=(const ValueAndVariance<T2> other) noexcept {
-    value = other.value;
-    variance = other.variance;
-    return *this;
-  }
-
-  template <class T2> constexpr auto &operator+=(const T2 other) noexcept {
-    return *this = *this + other;
-  }
-  template <class T2> constexpr auto &operator-=(const T2 other) noexcept {
-    return *this = *this - other;
-  }
-  template <class T2> constexpr auto &operator*=(const T2 other) noexcept {
-    return *this = *this * other;
-  }
-  template <class T2> constexpr auto &operator/=(const T2 other) noexcept {
-    return *this = *this / other;
-  }
-
-  template <class T2>
-  explicit constexpr operator ValueAndVariance<T2>() const noexcept {
-    return {static_cast<T2>(value), static_cast<T2>(variance)};
-  }
-};
-
-template <class T>
-constexpr auto operator-(const ValueAndVariance<T> a) noexcept {
-  return ValueAndVariance{-a.value, a.variance};
-}
-
-template <class T> constexpr auto sqrt(const ValueAndVariance<T> a) noexcept {
-  using std::sqrt;
-  return ValueAndVariance{sqrt(a.value),
-                          static_cast<T>(0.25 * (a.variance / a.value))};
-}
-
-template <class T> constexpr auto abs(const ValueAndVariance<T> a) noexcept {
-  using std::abs;
-  return ValueAndVariance{abs(a.value), a.variance};
-}
-
-template <class T1, class T2>
-constexpr auto operator+(const ValueAndVariance<T1> a,
-                         const ValueAndVariance<T2> b) noexcept {
-  return ValueAndVariance{a.value + b.value, a.variance + b.variance};
-}
-template <class T1, class T2>
-constexpr auto operator-(const ValueAndVariance<T1> a,
-                         const ValueAndVariance<T2> b) noexcept {
-  return ValueAndVariance{a.value - b.value, a.variance - b.variance};
-}
-template <class T1, class T2>
-constexpr auto operator*(const ValueAndVariance<T1> a,
-                         const ValueAndVariance<T2> b) noexcept {
-  return ValueAndVariance{a.value * b.value,
-                          a.variance * b.value * b.value +
-                              b.variance * a.value * a.value};
-}
-template <class T1, class T2>
-constexpr auto operator/(const ValueAndVariance<T1> a,
-                         const ValueAndVariance<T2> b) noexcept {
-  return ValueAndVariance{
-      a.value / b.value,
-      (a.variance + b.variance * (a.value * a.value) / (b.value * b.value)) /
-          (b.value * b.value)};
-}
-
-template <class T1, class T2>
-constexpr auto operator+(const ValueAndVariance<T1> a, const T2 b) noexcept {
-  return ValueAndVariance{a.value + b, a.variance};
-}
-template <class T1, class T2>
-constexpr auto operator+(const T2 a, const ValueAndVariance<T1> b) noexcept {
-  return ValueAndVariance{a + b.value, b.variance};
-}
-template <class T1, class T2>
-constexpr auto operator-(const ValueAndVariance<T1> a, const T2 b) noexcept {
-  return ValueAndVariance{a.value - b, a.variance};
-}
-template <class T1, class T2>
-constexpr auto operator-(const T2 a, const ValueAndVariance<T1> b) noexcept {
-  return ValueAndVariance{a - b.value, b.variance};
-}
-template <class T1, class T2>
-constexpr auto operator*(const ValueAndVariance<T1> a, const T2 b) noexcept {
-  return ValueAndVariance{a.value * b, a.variance * b * b};
-}
-template <class T1, class T2>
-constexpr auto operator*(const T1 a, const ValueAndVariance<T2> b) noexcept {
-  return ValueAndVariance{a * b.value, a * a * b.variance};
-}
-template <class T1, class T2>
-constexpr auto operator/(const ValueAndVariance<T1> a, const T2 b) noexcept {
-  return ValueAndVariance{a.value / b, a.variance / (b * b)};
-}
-template <class T1, class T2>
-constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
-  return ValueAndVariance{a / b.value, b.variance * a * a /
-                                           (b.value * b.value) /
-                                           (b.value * b.value)};
-}
-
-/// Deduction guide for class ValueAndVariances. Using decltype to deal with
-/// potential mixed-type val and var arguments arising in binary operations
-/// between, e.g., double and float.
-template <class T1, class T2>
-ValueAndVariance(const T1 &val, const T2 &var)
-    ->ValueAndVariance<decltype(T1() + T2())>;
 
 /// A values/variances pair based on references to sparse data containers.
 ///
@@ -170,34 +50,34 @@ template <class T> struct ValuesAndVariances {
     variances.clear();
   }
 
-  // TODO Note that methods like insert, begin, and end are required as long as
-  // we support sparse data via a plain container such as std::vector, e.g., for
-  // concatenation using a.insert(a.end(), b.begin(), b.end()). Instead of
-  // adding these methods here (essentially making ValuesAndVariances support a
-  // proxy iterator) it might be easier to wrap the sparse container and give it
-  // some functionality like concatenate. Then we simply need to support this
-  // method here, which is much simpler than having proxy iterators.
-  template <class... Ts> void insert(Ts &&...) {
-    throw std::runtime_error(
-        "`insert` not implemented for sparse data with variances.");
+  // Note that methods like insert, begin, and end are required as long as we
+  // support sparse data via a plain container such as std::vector, e.g., for
+  // concatenation using a.insert(a.end(), b.begin(), b.end()). We are
+  // supporting this here by simply working with pairs of iterators. This
+  // approach is not an actual proxy iterator and will not compile if client
+  // code attempts to increment the iterators. We could support `next` and
+  // `advance` easily, so client code can simply use something like:
+  //   using std::next;
+  //   next(it);
+  // instead of `++it`. Algorithms like `std::sort` would probably still not
+  // work though.
+  // The function arguments are iterator pairs as created by `begin` and `end`.
+  template <class OutputIt, class InputIt>
+  auto insert(std::pair<OutputIt, OutputIt> pos,
+              std::pair<InputIt, InputIt> first,
+              std::pair<InputIt, InputIt> last) {
+    values.insert(pos.first, first.first, last.first);
+    variances.insert(pos.second, first.second, last.second);
+  }
+  template <class... Ts> void insert(const Ts &...) {
+    throw std::runtime_error("Cannot insert data with variances into data "
+                             "without variances, or vice versa.");
   }
 
-  void *begin() {
-    throw std::runtime_error(
-        "`begin` not implemented for sparse data with variances.");
-  }
-  void *begin() const {
-    throw std::runtime_error(
-        "`begin` not implemented for sparse data with variances.");
-  }
-  void *end() {
-    throw std::runtime_error(
-        "`end` not implemented for sparse data with variances.");
-  }
-  void *end() const {
-    throw std::runtime_error(
-        "`end` not implemented for sparse data with variances.");
-  }
+  auto begin() { return std::pair(values.begin(), variances.begin()); }
+  auto begin() const { return std::pair(values.begin(), variances.begin()); }
+  auto end() { return std::pair(values.end(), variances.end()); }
+  auto end() const { return std::pair(values.end(), variances.end()); }
 
   constexpr auto size() const noexcept { return values.size(); }
 };
@@ -701,14 +581,27 @@ auto insert_sparse_pairs(const std::tuple<Ts...> &,
                                     Known...>::type{}...);
 }
 
+template <class T> struct remove_cvref {
+  using type = std::remove_cv_t<std::remove_reference_t<T>>;
+};
+template <class T> using remove_cvref_t = typename remove_cvref<T>::type;
+
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_sparse_v<
                        std::remove_const_t<std::remove_reference_t<Ts>>> ||
                    ...))
       return SparseOp::operator()(std::forward<Ts>(args)...);
+    else if constexpr ((is_eigen_type_v<remove_cvref_t<Ts>> || ...))
+      // WARNING! The explicit specification of the template arguments of
+      // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
+      // passed BY REFERENCE and NOT BY VALUE. Passing by value leads to
+      // construction of expressions of values on the stack, which are then
+      // returned from the operator. One way to identify this is using
+      // address-sanitizer, which find a `stack-use-after-scope`.
+      return Op::template operator()<Ts...>(std::forward<Ts>(args)...);
     else
-      return Op::operator()(std::forward<Ts>(args)...);
+      return Op::template operator()(std::forward<Ts>(args)...);
   }
 };
 template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;

@@ -6,12 +6,13 @@ pybind11_add_module(_scipp
                     dataset.cpp
                     dimensions.cpp
                     dtype.cpp
+                    neutron.cpp
                     scipp.cpp
                     sparse_container.cpp
                     units_neutron.cpp
                     variable.cpp
                     variable_view.cpp)
-target_link_libraries(_scipp LINK_PRIVATE scipp-core)
+target_link_libraries(_scipp LINK_PRIVATE scipp-core scipp-neutron)
 target_include_directories(_scipp SYSTEM PRIVATE "../range-v3/include")
 
 # Set symbol visibility to hidden to reduce binary size, as recommended in pybind11 FAQ.

@@ -14,8 +14,7 @@ make -j2 install
 ./core/test/scipp-core-test
 
 # Neutron tests
-# There are none so the executable cannot be built
-#./neutron/test/scipp-neutron-test
+./neutron/test/scipp-neutron-test
 
 # Python tests
 python3 -m pip install -r ../python/requirements.txt

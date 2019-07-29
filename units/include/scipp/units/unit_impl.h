@@ -32,6 +32,11 @@ std::variant<Ts...,
 make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
   return {};
 }
+
+template <class... Ts> constexpr auto make_lut(std::variant<Ts...>) {
+  return std::array{std::variant<Ts...>(Ts{})...};
+}
+
 } // namespace detail
 
 template <class T, class Counts> class Unit_impl {
@@ -43,6 +48,9 @@ public:
   template <class Dim, class System, class Enable>
   Unit_impl(boost::units::unit<Dim, System, Enable> unit) : m_unit(unit) {}
   explicit Unit_impl(const unit_t &unit) : m_unit(unit) {}
+  static constexpr Unit_impl fromIndex(const int64_t index) {
+    return Unit_impl(m_lut[index]);
+  }
 
   constexpr const Unit_impl::unit_t &operator()() const noexcept {
     return m_unit;
@@ -58,6 +66,7 @@ public:
 
 private:
   unit_t m_unit{units::dimensionless};
+  static constexpr auto m_lut{detail::make_lut(T{})};
   // TODO need to support scale
 };
 

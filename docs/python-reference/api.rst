@@ -21,7 +21,9 @@ Free functions
 .. autosummary::
    :toctree: ../generated
 
+   abs
    concatenate
+   dot
    filter
    mean
    norm

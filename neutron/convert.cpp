@@ -1,4 +1,3 @@
-/*
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
@@ -7,65 +6,44 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
-#include "counts.h"
-#include "dataset.h"
-#include "md_zip_view.h"
+#include "scipp/core/counts.h"
+#include "scipp/core/dataset.h"
 #include "scipp/neutron/convert.h"
-#include "zip_view.h"
 
-namespace scipp::core {
+using namespace scipp::core;
 
-Variable getSpecPos(const Dataset &d) {
-  // TODO There should be a better way to extract the actual spectrum positions
-  // as a variable.
-  if (d.contains(Coord::Position))
-    return d(Coord::Position);
-  auto specPosView = zipMD(d, MDRead(Coord::Position));
-  auto specPos =
-      makeVariable<double>(d(Coord::DetectorGrouping).dimensions(), units::m);
-  std::transform(specPosView.begin(), specPosView.end(),
-                 specPos.span<Eigen::Vector3d>().begin(),
-                 [](const auto &item) { return item.get(Coord::Position); });
-  return specPos;
-}
+namespace scipp::neutron {
 
 const auto tof_to_s =
     boost::units::quantity<boost::units::si::time>(1.0 * units::us) / units::us;
-const auto J_to_meV =
-    units::meV /
-    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV);
+//const auto J_to_meV =
+//    units::meV /
+//    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV); // unused
 const auto m_to_angstrom =
     boost::units::quantity<boost::units::si::length>(1.0 * units::angstrom) /
     units::angstrom;
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
-const auto tofToEnergyPhysicalConstants =
-    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
-    (tof_to_s * tof_to_s);
+//const auto tofToEnergyPhysicalConstants =
+//    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
+//    (tof_to_s * tof_to_s); // unused
 const auto tofToDSpacingPhysicalConstants =
     2.0 * boost::units::si::constants::codata::m_n * m_to_angstrom /
     (boost::units::si::constants::codata::h * tof_to_s);
 
-namespace neutron {
-namespace tof {
-Dataset tofToDSpacing(const Dataset &d) {
-  if (d.contains(Coord::Ei) || d.contains(Coord::Ef))
-    throw std::runtime_error(
-        "Dataset contains Coord::Ei or Coord::Ef. "
-        "However, conversion to Dim::DSpacing is currently "
-        "only supported for elastic scattering.");
-
+Dataset tofToDSpacing(Dataset &&d) {
   // 1. Compute conversion factor
-  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
+  // TODO Is this a good way to store component information?
+  const auto &compPos =
+      d.labels()["component_info"].values<Dataset>()[0]["position"].data();
   // TODO Need a better mechanism to identify source and sample.
-  const auto &sourcePos = compPos(Dim::Component, 0);
-  const auto &samplePos = compPos(Dim::Component, 1);
+  const auto &sourcePos = compPos.slice({Dim::Row, 0});
+  const auto &samplePos = compPos.slice({Dim::Row, 1});
 
   auto beam = samplePos - sourcePos;
   const auto l1 = norm(beam);
   beam /= l1;
-  const auto specPos = getSpecPos(d);
-  auto scattered = specPos - samplePos;
+  auto scattered = d.coords()[Dim::Position] - samplePos;
   const auto l2 = norm(scattered);
   scattered /= l2;
 
@@ -73,58 +51,28 @@ Dataset tofToDSpacing(const Dataset &d) {
   auto conversionFactor(l1 + l2);
 
   conversionFactor *= tofToDSpacingPhysicalConstants;
-
-  // sin(scattering_angle)
-  // TODO Need `dot` for `Variable`. The following block should just be
-  // conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)))
-  std::vector<double> sinThetaData(scattered.size());
-  const auto &beamVec = beam.span<Eigen::Vector3d>()[0];
-  const auto scatteredVec = scattered.span<Eigen::Vector3d>();
-  // Using
-  //   cos(2 theta) = 1 - 2 sin^2(theta)
-  // and
-  //   v1 dot v2 = norm(v1) norm(v2) cos(alpha).
-  std::transform(scatteredVec.begin(), scatteredVec.end(), sinThetaData.begin(),
-                 [&](const Eigen::Vector3d &scattered) {
-                   return std::sqrt(0.5 * (1.0 - beamVec.dot(scattered)));
-                 });
-  const auto sinTheta =
-      makeVariable<double>(scattered.dimensions(), sinThetaData);
-  conversionFactor *= sinTheta;
+  conversionFactor *= sqrt(0.5 * (1.0 - dot(beam, scattered)));
 
   // 2. Transform coordinate
-  Dataset converted;
-  const auto &coord = d(Coord::Tof);
-  auto coordDims = coord.dimensions();
-  coordDims.relabel(coordDims.index(Dim::Tof), Dim::DSpacing);
-  // The reshape is to remap the dimension label.
-  converted.insert(Coord::DSpacing,
-                   coord.reshape(coordDims) / conversionFactor);
+  // Cannot use /= since often a broadcast into Dim::Position is required.
+  d.setCoord(Dim::Tof, d.coords()[Dim::Tof] / conversionFactor);
 
   // 3. Transform variables
-  for (const auto & [ name, tag, var ] : d) {
-    auto varDims = var.dimensions();
-    if (varDims.contains(Dim::Tof))
-      varDims.relabel(varDims.index(Dim::Tof), Dim::DSpacing);
-    if (tag == Coord::Tof) {
-      // Done already.
-    } else if (tag == Data::Events) {
-      throw std::runtime_error(
-          "TODO Converting units of event data not implemented yet.");
-    } else {
-      // Changing Dim::Tof to Dim::DSpacing.
-      if (counts::isDensity(var)) {
-        throw std::runtime_error(
-            "TODO Converting density data to DSpacing not implemented yet.");
-      } else {
-        converted.insert(tag, name, var.reshape(varDims));
-      }
+  for (const auto & [ name, data ] : d) {
+    static_cast<void>(name);
+    if (data.coords()[Dim::Tof].dims().sparse()) {
+      data.coords()[Dim::Tof] /= conversionFactor;
+    } else if (data.unit().isCountDensity()) {
+      // Tof to DSpacing is just a scale factor, so density transform is simple:
+      data *= conversionFactor;
     }
   }
 
-  return converted;
+  d.rename(Dim::Tof, Dim::DSpacing);
+  return std::move(d);
 }
 
+/*
 Dataset tofToEnergy(const Dataset &d) {
   // TODO Could in principle also support inelastic. Note that the conversion in
   // Mantid is wrong since it handles inelastic data as if it were elastic.
@@ -265,126 +213,17 @@ Dataset tofToDeltaE(const Dataset &d) {
   // reversed.
   return reverse(converted, Dim::DeltaE);
 }
+*/
 
-scipp::index continuousToIndex(const double val,
-                               const scipp::span<const double> axis) {
-  const auto lower = std::lower_bound(axis.begin(), axis.end(), val);
-  const auto upper = std::upper_bound(axis.begin(), axis.end(), val);
-  if (upper == axis.end() || upper == axis.begin())
-    return -1;
-  if (upper != lower)
-    return std::distance(axis.begin(), lower);
-  return std::distance(axis.begin(), lower) - 1;
-}
-
-Dataset continuousToIndex(const Variable &values, const Dataset &coords) {
-  expect::equals(values.unit(), coords(Coord::Qx).unit());
-  expect::equals(values.unit(), coords(Coord::Qy).unit());
-  expect::equals(values.unit(), coords(Coord::Qz).unit());
-  const auto &vals = values.span<Eigen::Vector3d>();
-  const auto &qx = coords.get(Coord::Qx);
-  const auto &qy = coords.get(Coord::Qy);
-  const auto &qz = coords.get(Coord::Qz);
-  std::vector<scipp::index> ix;
-  std::vector<scipp::index> iy;
-  std::vector<scipp::index> iz;
-  for (const auto &val : vals) {
-    ix.push_back(continuousToIndex(val[0], qx));
-    iy.push_back(continuousToIndex(val[1], qy));
-    iz.push_back(continuousToIndex(val[2], qz));
-  }
-  Dataset index;
-  index.insert<scipp::index>(Coord::Qx, values.dimensions(), ix);
-  index.insert<scipp::index>(Coord::Qy, values.dimensions(), iy);
-  index.insert<scipp::index>(Coord::Qz, values.dimensions(), iz);
-  return index;
-}
-
-Dataset positionToQ(const Dataset &d, const Dataset &qCoords) {
-  const auto &compPos = d.get(Coord::ComponentInfo)[0](Coord::Position);
-  const auto &sourcePos = compPos(Dim::Component, 0);
-  const auto &samplePos = compPos(Dim::Component, 1);
-  const auto l1 = norm(sourcePos - samplePos);
-  const auto specPos = getSpecPos(d);
-
-  auto ki = samplePos - sourcePos;
-  ki /= norm(ki);
-  ki /= 1.0 * units::c;
-  ki = ki * d(Coord::Ei);
-
-  auto kf = specPos - samplePos;
-  kf /= norm(kf);
-  kf /= 1.0 * units::c;
-  kf = kf * (d(Coord::Ei) + d(Coord::DeltaE)); // TODO sign?
-
-  // Coord::Ei could have Dim::Ei, or Dim::Position, in the former case,
-  // ki has {Dim::Ei},
-  // kf has {Dim::Ei, Dim::DeltaE, Dim::Position},
-  // thus qIndex also has {Dim::Ei, Dim::DeltaE, Dim::Position}.
-  // In the latter case we do not have Dim::Ei, the other dimensions are the
-  // same.
-  const auto Q = kf - ki;
-  const auto qIndex = continuousToIndex(Q, qCoords);
-
-  Dataset converted(qCoords);
-  converted.erase(Coord::DeltaE);
-  for (const auto & [ name, tag, var ] : d) {
-    if (tag == Data::Events || tag == Data::EventTofs) {
-      throw std::runtime_error(
-          "TODO Converting units of event data not implemented yet.");
-    } else if (var.dimensions().contains(Dim::Position) &&
-               var.dimensions().contains(Dim::DeltaE)) {
-      // Position axis is converted into 3 Q axes.
-      auto dims = var.dimensions();
-      // TODO Make sure that Dim::Position is outer, otherwise insert
-      // Q-dimensions correctly elsewhere.
-      dims.erase(Dim::Position);
-      dims.add(Dim::Qx, qCoords.dimensions()[Dim::Qx] - 1);
-      dims.add(Dim::Qy, qCoords.dimensions()[Dim::Qy] - 1);
-      dims.add(Dim::Qz, qCoords.dimensions()[Dim::Qz] - 1);
-
-      Variable tmp(var, dims);
-
-      for (scipp::index deltaE = 0; deltaE < var.dimensions()[Dim::DeltaE];
-           ++deltaE) {
-        const auto in = var(Dim::DeltaE, deltaE);
-        const auto out = tmp(Dim::DeltaE, deltaE);
-        const Dataset indices = qIndex(Dim::DeltaE, deltaE);
-        const auto q = zip(indices, Access::Key<scipp::index>{Coord::Qx},
-                           Access::Key<scipp::index>{Coord::Qy},
-                           Access::Key<scipp::index>{Coord::Qz});
-        if (in.dimensions()[Dim::Position] != q.size())
-          throw std::runtime_error("Broken implementation of convert.");
-        for (scipp::index i = 0; i < q.size(); ++i) {
-          const auto[qx, qy, qz] = q[i];
-          // Drop out-of-range values
-          if (qx < 0 || qy < 0 || qz < 0)
-            continue;
-          // Really inefficient accumulation of volume histogram
-          out(Dim::Qx, qx)(Dim::Qy, qy)(Dim::Qz, qz) += in(Dim::Position, i);
-        }
-      }
-      converted.insert(tag, name, std::move(tmp));
-    } else if (var.dimensions().contains(Dim::Position)) {
-      // TODO Drop?
-    } else {
-      converted.insert(tag, name, var);
-    }
-  }
-
-  return converted;
-}
-
-} // namespace tof
-} // namespace neutron
-
-Dataset convert(const Dataset &d, const Dim from, const Dim to) {
+Dataset convert(Dataset d, const Dim from, const Dim to) {
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
-    return neutron::tof::tofToDSpacing(d);
+    return tofToDSpacing(std::move(d));
+  /*
   if ((from == Dim::Tof) && (to == Dim::Energy))
-    return neutron::tof::tofToEnergy(d);
+   return nofToEnergy(d);
   if ((from == Dim::Tof) && (to == Dim::DeltaE))
-    return neutron::tof::tofToDeltaE(d);
+   return tofToDeltaE(d);
+   */
   throw std::runtime_error(
       "Conversion between requested dimensions not implemented yet.");
   // How to convert? There are several cases:
@@ -410,32 +249,4 @@ Dataset convert(const Dataset &d, const Dim from, const Dim to) {
   // MDZipView<const Coord::TwoTheta>(dataset);
 }
 
-bool contains(const std::vector<Dim> &dims, const Dim dim) {
-  return std::find(dims.begin(), dims.end(), dim) != dims.end();
-}
-
-Dataset convert(const Dataset &d, const std::vector<Dim> &from,
-                const Dataset &toCoords) {
-  if (from.size() == 2 && contains(from, Dim::Position) &&
-      contains(from, Dim::DeltaE)) {
-    // Converting from position space
-    if (toCoords.size() == 4 && toCoords.contains(Coord::DeltaE) &&
-        toCoords.contains(Coord::Qx) && toCoords.contains(Coord::Qy) &&
-        toCoords.contains(Coord::Qz)) {
-      // Converting to momentum transfer
-      if (d(Coord::DeltaE) != toCoords(Coord::DeltaE)) {
-        // TODO Do we lose precision by rebinning before having computed Q?
-        // Should we map to the output DeltaE only in the main conversion step?
-        auto converted = rebin(d, toCoords(Coord::DeltaE));
-        return neutron::tof::positionToQ(converted, toCoords);
-      } else {
-        return neutron::tof::positionToQ(d, toCoords);
-      }
-    }
-  }
-  throw std::runtime_error(
-      "Conversion between requested dimensions not implemented yet.");
-}
-
-} // namespace scipp::core
-*/
+} // namespace scipp::neutron
