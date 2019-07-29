@@ -61,7 +61,8 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
-  py::class_<DataProxy> dataProxy(m, "DataProxy");
+  py::class_<DataConstProxy>(m, "DataConstProxy");
+  py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly("data", &DataProxy::data,
                                   py::keep_alive<0, 1>());
   dataProxy.def("__repr__",
@@ -134,6 +135,33 @@ void init_dataset(py::module &m) {
 
   bind_data_properties(dataProxy);
 
+  m.def("histogram",
+        [](const DataConstProxy &ds, const Variable &bins) {
+          return core::histogram(ds, bins);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variable with values in bins for for sparse dims");
+
+  m.def("histogram",
+        [](const DataConstProxy &ds, const VariableConstProxy &bins) {
+          return core::histogram(ds, bins);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Variabble with values in bins for sparse dims");
+
+  m.def("histogram",
+        [](const Dataset &ds, const VariableConstProxy &bins) {
+          return core::histogram(ds, bins);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Dataset with histograms for sparse dims");
+
+  m.def("histogram",
+        [](const Dataset &ds, const Variable &bins) {
+          return core::histogram(ds, bins);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns a new Dataset with histograms for sparse dims");
   // Implicit conversion DatasetProxy -> Dataset. Reduces need for
   // excessive operator overload definitions
   py::implicitly_convertible<DatasetProxy, Dataset>();

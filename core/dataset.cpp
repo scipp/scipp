@@ -1015,4 +1015,59 @@ Dataset operator/(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
+// For now this implementation is only for the simplest case of 2 dims (inner
+// stands for sparse)
+Variable histogram(const DataConstProxy &sparse,
+                   const VariableConstProxy &binEdges) {
+  if (sparse.dims().ndims() != 1)
+    throw std::logic_error("Only the simple case histograms may be constructed "
+                           "for now: 2 dims including sparse.");
+  if (binEdges.dtype() != dtype<double> ||
+      sparse.coords()[binEdges.dims().inner()].dtype() != DType::Double)
+    throw std::logic_error("Histogram is only available for double type.");
+  auto dim = binEdges.dims().inner();
+  auto coord = sparse.coords()[dim];
+  auto edgesSpan = binEdges.values<double>();
+  if (!std::is_sorted(edgesSpan.begin(), edgesSpan.end()))
+    throw std::logic_error("Bin edges should be sorted to make the histogram.");
+  auto resDims{sparse.dims()};
+  auto len = binEdges.dims()[dim] - 1;
+  resDims.resize(1, len);
+  Variable result = makeVariableWithVariances<double>(resDims, units::counts);
+  for (scipp::index i = 0; i < sparse.dims().size(0); ++i) {
+    const auto &coord_i = coord.sparseValues<double>()[i];
+    auto curRes = result.values<double>().begin() + i * len;
+    for (const auto &c : coord_i) {
+      auto it = std::upper_bound(edgesSpan.begin(), edgesSpan.end(), c);
+      if (it != edgesSpan.end() && it != edgesSpan.begin())
+        ++(*(curRes + (--it - edgesSpan.begin())));
+    }
+  }
+  std::copy(result.values<double>().begin(), result.values<double>().end(),
+            result.variances<double>().begin());
+  return result;
+}
+
+Variable histogram(const DataConstProxy &sparse, const Variable &binEdges) {
+  return histogram(sparse, VariableConstProxy(binEdges));
+}
+
+Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
+  auto out(Dataset(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)));
+  out.setCoord(bins.dims().inner(), bins);
+  for (const auto & [ name, item ] : dataset) {
+    if (item.dims().sparse())
+      out.setData(std::string(name), histogram(item, bins));
+  }
+  return out;
+}
+
+Dataset histogram(const Dataset &dataset, const Variable &bins) {
+  return histogram(dataset, VariableConstProxy(bins));
+}
+
+Dataset histogram(const Dataset &dataset, const Dim &dim) {
+  auto bins = dataset.coords()[dim];
+  return histogram(dataset, bins);
+}
 } // namespace scipp::core

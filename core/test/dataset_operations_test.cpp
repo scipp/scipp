@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 #include "test_macros.h"
 #include "test_operations.h"
+#include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
 #include "scipp/core/dataset.h"
@@ -679,4 +680,34 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataproxy_rhs) {
                                            dataset_b["data_scalar"].data());
     EXPECT_EQ(reference, item.data());
   }
+}
+
+Dataset non_trivial_2d_sparse() {
+  Dataset sparse;
+  auto var = makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
+  var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
+  var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
+  sparse.setSparseCoord(std::string("sparse"), var);
+  return sparse;
+}
+
+TEST(DatasetHistogram, simple_variabe_histogram) {
+  auto sparse = non_trivial_2d_sparse();
+  auto hist = core::histogram(
+      sparse["sparse"], makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6}));
+  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
+  std::vector<double> res{hist.values<double>().begin(),
+                          hist.values<double>().end()};
+  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
+    EXPECT_EQ(ref[i], res[i]);
+}
+
+TEST(DatasetHistogram, simple_dataset_histogram) {
+  auto sparse = non_trivial_2d_sparse();
+  sparse.setSparseCoord(
+      "sparse1",
+      sparse["sparse"].coords()[sparse["sparse"].dims().sparseDim()]);
+  auto hist = core::histogram(
+      sparse, makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6}));
 }
