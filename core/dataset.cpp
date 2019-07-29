@@ -1001,6 +1001,8 @@ Variable histogram(const DataConstProxy &sparse,
   auto dim = binEdges.dims().inner();
   auto coord = sparse.coords()[dim];
   auto edgesSpan = binEdges.values<double>();
+  if (!std::is_sorted(edgesSpan.begin(), edgesSpan.end()))
+    throw std::logic_error("Bin edges should be sorted to make the histogram.");
   auto resDims{sparse.dims()};
   auto len = binEdges.dims()[dim] - 1;
   resDims.resize(1, len);
