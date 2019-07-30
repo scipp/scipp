@@ -108,9 +108,11 @@ TEST(DatasetTest, setData_with_and_without_variances) {
 
   ASSERT_NO_THROW(d.setData("a", var));
   ASSERT_EQ(d.size(), 1);
+  ASSERT_EQ(d["a"].name(), "a");
 
   ASSERT_NO_THROW(d.setData("b", var));
   ASSERT_EQ(d.size(), 2);
+  ASSERT_EQ(d["b"].name(), "b");
 
   ASSERT_NO_THROW(d.setData("a", var));
   ASSERT_EQ(d.size(), 2);

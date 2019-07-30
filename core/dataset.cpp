@@ -203,11 +203,14 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, Variable data) {
   setDims(data.dims());
+  data.setName(name);
   m_data[name].data = std::move(data);
 }
 
 /// Set (insert or replace) data from a DataProxy.
-void Dataset::setData(const std::string &name, const DataConstProxy other) {
+// void Dataset::setData(const std::string &name, DataConstProxy other) {
+void Dataset::setData(const std::string &name, DataProxy other) {
+  other.data().setName(name);
   setData(name, other.data());
 }
 
@@ -375,6 +378,15 @@ units::Unit DataConstProxy::unit() const {
   if (hasData())
     return data().unit();
   throw std::runtime_error("Data without values, unit is undefined.");
+}
+
+/// Return the name of the data field.
+///
+/// Throws if there are no data values.
+std::string DataConstProxy::name() const {
+  if (hasData())
+    return data().name();
+  throw std::runtime_error("Data without values, name is undefined.");
 }
 
 /// Set the unit of the data values.

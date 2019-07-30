@@ -77,6 +77,7 @@ public:
 
   Dimensions dims() const noexcept;
   units::Unit unit() const;
+  std::string name() const;
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
@@ -279,7 +280,8 @@ public:
   void setLabels(const std::string &labelName, Variable labels);
   void setAttr(const std::string &attrName, Variable attr);
   void setData(const std::string &name, Variable data);
-  void setData(const std::string &name, const DataConstProxy other);
+  // void setData(const std::string &name, DataConstProxy other);
+  void setData(const std::string &name, DataProxy other);
   void setSparseCoord(const std::string &name, Variable coord);
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
