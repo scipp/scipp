@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <ostream>
+#include <iostream>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
@@ -215,8 +216,9 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset, const DataConstProxy 
     if (auto iter = dsItems.find(d); iter == dsItems.end()) {
       return false;
     } else {
-      if (iter->second.first != v.first)
+      if (*iter->second.first != *v.first) {
         return false;
+      }
     }
   }
   return true;
