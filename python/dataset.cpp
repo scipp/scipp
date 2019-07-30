@@ -52,6 +52,9 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         [](const T &self, const Dataset &other) { return self == other; });
   c.def("__ne__",
         [](const T &self, const DatasetProxy &other) { return self == other; });
+  c.def("copy",
+        [](const T &self) { return Dataset(self); },
+        "Make a copy of a Dataset or DatasetProxy and return it as a Dataset.");
 }
 
 void init_dataset(py::module &m) {
