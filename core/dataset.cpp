@@ -206,6 +206,32 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
+bool checkCorrespondingDenseCoords(const Dataset &dataset, const DataConstProxy &other) {
+  const auto dsCoords{dataset.coords()};
+  const auto otCoords{other.coords()};
+  const auto& dsItems = dsCoords.items();
+  const auto& otItems = otCoords.items();
+  for (const auto &[d, v]: dsItems)
+    if (auto iter = otItems.find(d); iter != otItems.end())
+      if (iter->second.first != v.first)
+        return false;
+  return true;
+}
+
+void Dataset::setData(const std::string &name, const DataConstProxy& data) {
+  if (!checkCorrespondingDenseCoords(*this, data))
+    throw std::logic_error("The corresponding dense coordinates should match.");
+
+  if(data.hasData()) {
+    setData(name, Variable(data.data()));
+  }
+
+  auto dim = data.dims().sparseDim();
+  if (dim != Dim::Invalid) {
+    setSparseCoord(name, data.coords()[dim]);
+  }
+}
+
 /// Set (insert or replace) the sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
