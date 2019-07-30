@@ -211,13 +211,22 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset, const DataConstProxy 
   const auto otCoords{other.coords()};
   const auto& dsItems = dsCoords.items();
   const auto& otItems = otCoords.items();
-  for (const auto &[d, v]: dsItems)
-    if (auto iter = otItems.find(d); iter != otItems.end())
+  for (const auto &[d, v]: otItems) {
+    if (auto iter = dsItems.find(d); iter == dsItems.end()) {
+      return false;
+    } else {
       if (iter->second.first != v.first)
         return false;
+    }
+  }
   return true;
 }
 
+/// Set (insert or replace) data (values, optional variances, sparse coordinates)
+/// with given name.
+///
+/// Throws if the provided values bring the dataset into an inconsistent state
+/// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy& data) {
   if (!checkCorrespondingDenseCoords(*this, data))
     throw std::logic_error("The corresponding dense coordinates should match.");
