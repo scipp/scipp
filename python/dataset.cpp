@@ -88,14 +88,11 @@ void init_dataset(py::module &m) {
            py::arg("data") = std::map<std::string, Variable>{},
            py::arg("coords") = std::map<Dim, Variable>{},
            py::arg("labels") = std::map<std::string, Variable>{})
+      .def("__setitem__", [](Dataset &self, const std::string &name,
+                             Variable data) { self.setData(name, data); })
       .def("__setitem__",
-           [](Dataset &self, const std::string &name, Variable data) {
-             self.setData(name, data);
-           })
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, const DataConstProxy& data) {
-             self.setData(name, data);
-           })
+           [](Dataset &self, const std::string &name,
+              const DataConstProxy &data) { self.setData(name, data); })
       .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataProxy &data) {
              if (self.contains(name))
