@@ -46,10 +46,10 @@ def test_slice_item():
     d = sp.Dataset()
     d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
     d['a'] = sp.Variable([Dim.X], values=np.arange(4))
-    assert d['a'][Dim.X, 2:4].data == sp.Variable(
-        [Dim.X], values=np.arange(2, 4))
-    assert d['a'][Dim.X, 2:4].coords[Dim.X] == sp.Variable(
-        [Dim.X], values=np.arange(6, 8))
+    assert d['a'][Dim.X, 2:4].data == sp.Variable([Dim.X],
+        values=np.arange(2, 4))
+    assert d['a'][Dim.X, 2:4].coords[Dim.X] == sp.Variable([Dim.X],
+        values=np.arange(6, 8))
 
 
 def test_set_item_slice_from_numpy():
@@ -108,14 +108,24 @@ def test_contains():
 
 def test_slice():
     d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
-                    'b': sp.Variable(1.0)},
-                   coords={
-                       Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
+                    'b': sp.Variable(1.0)}, coords={
+        Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
     expected = sp.Dataset({'a': sp.Variable(1.0)})
 
     assert d[Dim.X, 1] == expected
     assert 'a' in d[Dim.X, 1]
     assert 'b' not in d[Dim.X, 1]
+
+
+def test_coords_proxy_comparison_operators():
+    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
+                    'b': sp.Variable(1.0)}, coords={
+        Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
+
+    d1 = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
+                    'b': sp.Variable(1.0)}, coords={
+        Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
+    assert d1['a'].coords == d['a'].coords
 
 # def test_delitem(self):
 #    dataset = sp.Dataset()
