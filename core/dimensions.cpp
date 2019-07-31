@@ -123,12 +123,13 @@ scipp::index Dimensions::offset(const Dim label) const {
 
 void Dimensions::resize(const Dim label, const scipp::index size) {
   expect::validExtent(size);
+  if (sparse() && sparseDim() == label)
+    ++m_ndim;
   at(label) = size;
 }
 
 void Dimensions::resize(const scipp::index i, const scipp::index size) {
-  expect::validExtent(size);
-  m_shape[i] = size;
+  resize(label(i), size);
 }
 
 void Dimensions::erase(const Dim label) {
