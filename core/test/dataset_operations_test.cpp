@@ -682,18 +682,23 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataproxy_rhs) {
   }
 }
 
-Dataset non_trivial_2d_sparse() {
+Dataset non_trivial_2d_sparse(std::string_view name) {
   Dataset sparse;
   auto var = makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
   var.sparseValues<double>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
   var.sparseValues<double>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
   var.sparseValues<double>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
-  sparse.setSparseCoord(std::string("sparse"), var);
+  auto dvar = makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
+  dvar.sparseValues<double>()[0] = {1, 2, 3, 4, 5};
+  dvar.sparseValues<double>()[1] = {3, 4, 5, 6, 7};
+  dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  sparse.setData(std::string(name), dvar);
+  sparse.setSparseCoord(std::string(name), var);
   return sparse;
 }
 
 TEST(DatasetHistogram, simple_variabe_histogram) {
-  auto sparse = non_trivial_2d_sparse();
+  auto sparse = non_trivial_2d_sparse("sparse");
   auto hist = core::histogram(
       sparse["sparse"], makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6}));
   std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
@@ -704,10 +709,43 @@ TEST(DatasetHistogram, simple_variabe_histogram) {
 }
 
 TEST(DatasetHistogram, simple_dataset_histogram) {
-  auto sparse = non_trivial_2d_sparse();
+  auto sparse = non_trivial_2d_sparse("sparse");
   sparse.setSparseCoord(
       "sparse1",
       sparse["sparse"].coords()[sparse["sparse"].dims().sparseDim()]);
   auto hist = core::histogram(
       sparse, makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6}));
+  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
+  std::vector<double> res{hist["sparse"].values<double>().begin(),
+                          hist["sparse"].values<double>().end()};
+  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
+    EXPECT_EQ(ref[i], res[i]);
+  std::vector<double> res1{hist["sparse1"].values<double>().begin(),
+                           hist["sparse1"].values<double>().end()};
+  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
+    EXPECT_EQ(ref[i], res1[i]);
+}
+
+TEST(DatasetSetData, sparse_to_sparse) {
+  auto base = non_trivial_2d_sparse("base");
+  auto other = non_trivial_2d_sparse("other");
+  other["other"] *= makeVariable<double>(2);
+  base.setData("other", other["other"]);
+  EXPECT_EQ(other["other"], base["other"]);
+}
+
+TEST(DatasetSetData, sparse_to_dense) {
+  auto base = non_trivial_2d_sparse("base");
+  auto dense = datasetFactory.make();
+  dense.setData("sparse", base["base"]);
+  EXPECT_EQ(base["base"].data(), dense["sparse"].data());
+}
+
+TEST(DatasetSetData, dense_to_dense) {
+  auto dense = datasetFactory.make();
+  auto d = Dataset(dense.slice({Dim::X, 0, 2}));
+  dense.setData("data_x_1", dense["data_x"]);
+  EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
+
+  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
 }
