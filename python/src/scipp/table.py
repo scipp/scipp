@@ -58,7 +58,8 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False):
         for key, val in dataset:
             html += "<td {}>{}</td>".format(bstyle, value_to_string(val.value))
             if val.has_variances:
-                html += "<td {}>{}</td>".format(bstyle, value_to_string(val.variance))
+                html += "<td {}>{}</td>".format(bstyle,
+                                                value_to_string(val.variance))
         html += "</tr>"
     else:
         for i in range(size):
@@ -76,9 +77,11 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False):
                             text, value_to_string(coord.variances[i + 1]))
                     html += "< {}td>{}</td>".format(cstyle[i % 2], text)
             for key, val in dataset:
-                html += "<td {}>{}</td>".format(bstyle, value_to_string(val.values[i]))
+                html += "<td {}>{}</td>".format(bstyle,
+                                                value_to_string(val.values[i]))
                 if val.has_variances:
-                    html += "<td {}>{}</td>".format(bstyle, value_to_string(val.variances[i]))
+                    html += "<td {}>{}</td>".format(
+                        bstyle, value_to_string(val.variances[i]))
             html += "</tr>"
     html += "</table>"
     return html
@@ -88,7 +91,6 @@ def table(dataset):
 
     title = "<h3>{}</h3>".format(str(type(dataset)).replace(
         "<class 'scipp._scipp.", "").replace("'>", ""))
-
 
     tabledict = {"default": sc.Dataset(),
                  "0D Variables": sc.Dataset(),
@@ -104,10 +106,12 @@ def table(dataset):
             if len(var.dims) == 1:
                 key = str(var.dims[0])
                 if key not in tabledict["1D Variables"].keys():
-                    tabledict["1D Variables"][key] = sc.Dataset(name, dataset[name])
+                    tabledict["1D Variables"][key] = sc.Dataset(name,
+                                                                dataset[name])
                     if len(var.coords) > 0:
                         coord_1d[key] = var.dims[0]
-                        if len(var.coords[var.dims[0]].values) == len(var.values) + 1:
+                        if len(var.coords[var.dims[0]].values) == \
+                           len(var.values) + 1:
                             is_histogram[key] = True
                         else:
                             is_histogram[key] = False
@@ -128,14 +132,15 @@ def table(dataset):
             if len(dataset.coords) > 0:
                 coord_def = dataset.dims[0]
 
+    subtitle = "<h6 style='font-weight: normal; color: grey'>"
     output = ""
     if len(tabledict["default"]) > 0:
         output += table_from_dataset(tabledict["default"], coord_dim=coord_def)
     if len(tabledict["0D Variables"]) > 0:
-        output += "<h6 style='font-weight: normal; color: grey'>0D Variables</h6>"
+        output += subtitle + "0D Variables</h6>"
         output += table_from_dataset(tabledict["0D Variables"])
     if len(tabledict["1D Variables"].keys()) > 0:
-        output += "<h6 style='font-weight: normal; color: grey'>1D Variables</h6>"
+        output += subtitle + "1D Variables</h6>"
         for key, val in sorted(tabledict["1D Variables"].items()):
             output += table_from_dataset(val, coord_dim=coord_1d[key],
                                          is_hist=is_histogram[key])

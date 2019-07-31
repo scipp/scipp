@@ -95,4 +95,4 @@ def show(container):
         print(_draw_dataset(container))
 
 
-# setattr(sc.Variable, '_repr_html_', _draw_variable)
+setattr(sc.Variable, '_repr_html_', _draw_variable)

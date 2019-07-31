@@ -234,7 +234,6 @@ void Dataset::setData(const std::string &name, Variable data) {
 }
 
 /// Set (insert or replace) data from a DataProxy.
-// void Dataset::setData(const std::string &name, DataConstProxy other) {
 void Dataset::setData(const std::string &name, DataProxy other) {
   other.data().setName(name);
   setData(name, other.data());
