@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <ostream>
 #include <iostream>
+#include <ostream>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
@@ -207,12 +207,15 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
-bool checkCorrespondingDenseCoords(const Dataset &dataset, const DataConstProxy &other) {
+bool checkCorrespondingDenseCoords(const Dataset &dataset,
+                                   const DataConstProxy &other) {
+  if (other.dims().sparse())
+    return true;
   const auto dsCoords{dataset.coords()};
   const auto otCoords{other.coords()};
-  const auto& dsItems = dsCoords.items();
-  const auto& otItems = otCoords.items();
-  for (const auto &[d, v]: otItems) {
+  const auto &dsItems = dsCoords.items();
+  const auto &otItems = otCoords.items();
+  for (const auto & [ d, v ] : otItems) {
     if (auto iter = dsItems.find(d); iter == dsItems.end()) {
       return false;
     } else {
@@ -224,16 +227,16 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset, const DataConstProxy 
   return true;
 }
 
-/// Set (insert or replace) data (values, optional variances, sparse coordinates)
-/// with given name.
+/// Set (insert or replace) data (values, optional variances, sparse
+/// coordinates) with given name.
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state
 /// (mismatching dtype, unit, or dimensions).
-void Dataset::setData(const std::string &name, const DataConstProxy& data) {
+void Dataset::setData(const std::string &name, const DataConstProxy &data) {
   if (!checkCorrespondingDenseCoords(*this, data))
     throw std::logic_error("The corresponding dense coordinates should match.");
 
-  if(data.hasData()) {
+  if (data.hasData()) {
     setData(name, Variable(data.data()));
   }
 
