@@ -46,10 +46,11 @@ def test_slice_item():
     d = sp.Dataset()
     d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
     d['a'] = sp.Variable([Dim.X], values=np.arange(4))
-    assert d['a'][Dim.X, 2:4].data == sp.Variable(
-        [Dim.X], values=np.arange(2, 4))
-    assert d['a'][Dim.X, 2:4].coords[Dim.X] == sp.Variable(
-        [Dim.X], values=np.arange(6, 8))
+    assert d['a'][Dim.X, 2:4].data == sp.Variable([Dim.X],
+                                                  values=np.arange(2, 4))
+    assert d['a'][Dim.X, 2:4].coords[Dim.X] == sp.Variable([Dim.X],
+                                                           values=np.arange(6,
+                                                                            8))
 
 
 def test_set_item_slice_from_numpy():
@@ -108,9 +109,8 @@ def test_contains():
 
 def test_slice():
     d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
-                    'b': sp.Variable(1.0)},
-                   coords={
-                       Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
+                    'b': sp.Variable(1.0)}, coords={
+        Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
     expected = sp.Dataset({'a': sp.Variable(1.0)})
 
     assert d[Dim.X, 1] == expected
@@ -136,6 +136,17 @@ def test_chained_slicing():
     assert d[Dim.X, 1][Dim.Z, 5] == expected
 
 
+def test_coords_proxy_comparison_operators():
+    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
+                    'b': sp.Variable(1.0)}, coords={
+        Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
+
+    d1 = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
+                     'b': sp.Variable(1.0)}, coords={
+        Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
+    assert d1['a'].coords == d['a'].coords
+
+
 def test_variable_histogram():
     var = sp.Variable(dims=[Dim.X, Dim.Y], shape=[2, sp.Dimensions.Sparse])
     var[Dim.X, 0].values = np.arange(3)
@@ -147,8 +158,8 @@ def test_variable_histogram():
     hist = sp.histogram(ds["sparse"],
                         sp.Variable(values=np.arange(5, dtype=np.float64),
                                     dims=[Dim.Y]))
-    assert np.array_equal(hist.values, np.array([[1.0, 4.0, 1.0, 0.0],
-                                                 [0.0, 6.0, 0.0, 0.0]]))
+    assert np.array_equal(hist.values, np.array(
+        [[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
 
 
 def test_dataset_histogram():
@@ -159,13 +170,43 @@ def test_dataset_histogram():
     var[Dim.X, 1].values = np.ones(6)
     ds = sp.Dataset()
     ds.set_sparse_coord("s", var)
-    ds.set_sparse_coord("s1", var*5)
+    ds.set_sparse_coord("s1", var * 5)
     h = sp.histogram(ds, sp.Variable(values=np.arange(5, dtype=np.float64),
                                      dims=[Dim.Y]))
-    assert np.array_equal(h["s"].values, np.array([[1.0, 4.0, 1.0, 0.0],
-                                                   [0.0, 6.0, 0.0, 0.0]]))
-    assert np.array_equal(h["s1"].values, np.array([[1.0, 0.0, 0.0, 0.0],
-                                                    [0.0, 0.0, 0.0, 0.0]]))
+    assert np.array_equal(h["s"].values, np.array(
+        [[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
+    assert np.array_equal(h["s1"].values, np.array(
+        [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]))
+
+
+def test_dataset_set_data():
+    d1 = sp.Dataset(
+        {'a': sp.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
+         'b': sp.Variable(1.0)}, coords={
+            Dim.X: sp.Variable([Dim.X], values=np.arange(2.0),
+                               unit=sp.units.m),
+            Dim.Y: sp.Variable([Dim.Y], values=np.arange(3.0),
+                               unit=sp.units.m)},
+        labels={'aux': sp.Variable([Dim.Y], values=np.random.rand(3))})
+
+    d2 = sp.Dataset(
+        {'a': sp.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
+         'b': sp.Variable(1.0)}, coords={
+            Dim.X: sp.Variable([Dim.X], values=np.arange(2.0),
+                               unit=sp.units.m),
+            Dim.Y: sp.Variable([Dim.Y], values=np.arange(3.0),
+                               unit=sp.units.m)}, labels={
+            'aux': sp.Variable([Dim.Y], values=np.random.rand(
+                3))})
+
+    d3 = sp.Dataset()
+    d3['b'] = d1['a']
+    assert d3["b"].data == d1['a'].data
+    assert d3["b"].coords == d1['a'].coords
+    d1['a'] = d2['a']
+    d1['c'] = d2['a']
+    assert d2['a'].data == d1['a'].data
+    assert d2['a'].data == d1['c'].data
 
 # def test_delitem(self):
 #    dataset = sp.Dataset()

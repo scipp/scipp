@@ -25,6 +25,7 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
       .def("__getitem__", &T::operator[])
       .def("__iter__",
            [](T &self) { return py::make_iterator(self.begin(), self.end()); });
+  bind_comparison<T>(proxy);
 }
 
 template <class T, class... Ignored>
@@ -102,11 +103,15 @@ void init_dataset(py::module &m) {
         return d;
       }))
       .def("__setitem__", [](Dataset &self, const std::string &name,
-                             Variable &data) { self.setData(name, data); })
+                             Variable data) { self.setData(name, data); })
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name,
+              const DataConstProxy &data) { self.setData(name, data); })
       // TODO: nvaytet: I do not understand why this is not covered by the
-      // py::implicitly_convertible<DatasetProxy, Dataset>();
-      // statement below, but this is needed if a VariableProxy is used instead
-      // of a Variable
+      // py::implicitly_convertible<VariableProxy, Variable>();
+      // statement in variable.cpp, but this is needed if a VariableProxy is
+      // used instead of a Variable.
+      // Maybe it's because it's in a different file?
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const VariableProxy &data) { self.setData(name, data); })

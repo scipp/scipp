@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <ostream>
+#include <iostream>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/except.h"
@@ -232,9 +233,56 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
-/// Set (insert or replace) data from a DataProxy.
-void Dataset::setData(const std::string &name, DataProxy other) {
-  setData(name, other.data());
+// This only checks the coordinates, not labels, not attributes
+bool checkCorrespondingDenseCoords(const Dataset &dataset,
+                                   const DataConstProxy &other) {
+  if (other.dims().sparse())
+    return true;
+  const auto dsCoords{dataset.coords()};
+  const auto otCoords{other.coords()};
+  const auto &dsItems = dsCoords.items();
+  const auto &otItems = otCoords.items();
+  for (const auto & [ d, v ] : otItems) {
+    if (auto iter = dsItems.find(d); iter == dsItems.end()) {
+      std::cout << "here 1" << std::endl;
+      return false;
+    } else {
+      if (*iter->second.first != *v.first) {
+        std::cout << "here 2" << std::endl;
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/// Set (insert or replace) data (values, optional variances, sparse
+/// coordinates) with given name. If the Dataset is empty - coordinates and data
+/// are copied.
+///
+/// Throws if the provided values bring the dataset into an inconsistent state
+/// (mismatching dtype, unit, or dimensions).
+void Dataset::setData(const std::string &name, const DataConstProxy &data) {
+  if (empty()) {
+    if (!data.dims().sparse()) {
+      for (const auto & [ d, v ] : data.coords()) {
+        setCoord(d, Variable(v));
+      }
+    }
+  } else {
+    if (!checkCorrespondingDenseCoords(*this, data))
+      throw std::logic_error(
+          "The corresponding dense coordinates should match.");
+  }
+
+  if (data.hasData()) {
+    setData(name, Variable(data.data()));
+  }
+
+  auto dim = data.dims().sparseDim();
+  if (dim != Dim::Invalid) {
+    setSparseCoord(name, data.coords()[dim]);
+  }
 }
 
 /// Set (insert or replace) the sparse coordinate with given name.
