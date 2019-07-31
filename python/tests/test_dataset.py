@@ -47,9 +47,10 @@ def test_slice_item():
     d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
     d['a'] = sp.Variable([Dim.X], values=np.arange(4))
     assert d['a'][Dim.X, 2:4].data == sp.Variable([Dim.X],
-        values=np.arange(2, 4))
+                                                  values=np.arange(2, 4))
     assert d['a'][Dim.X, 2:4].coords[Dim.X] == sp.Variable([Dim.X],
-        values=np.arange(6, 8))
+                                                           values=np.arange(6,
+                                                                            8))
 
 
 def test_set_item_slice_from_numpy():
@@ -123,7 +124,7 @@ def test_coords_proxy_comparison_operators():
         Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
 
     d1 = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
-                    'b': sp.Variable(1.0)}, coords={
+                     'b': sp.Variable(1.0)}, coords={
         Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
     assert d1['a'].coords == d['a'].coords
 
@@ -139,8 +140,8 @@ def test_variable_histogram():
     hist = sp.histogram(ds["sparse"],
                         sp.Variable(values=np.arange(5, dtype=np.float64),
                                     dims=[Dim.Y]))
-    assert np.array_equal(hist.values, np.array([[1.0, 4.0, 1.0, 0.0],
-                                                 [0.0, 6.0, 0.0, 0.0]]))
+    assert np.array_equal(hist.values, np.array(
+        [[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
 
 
 def test_dataset_histogram():
@@ -151,14 +152,13 @@ def test_dataset_histogram():
     var[Dim.X, 1].values = np.ones(6)
     ds = sp.Dataset()
     ds.set_sparse_coord("s", var)
-    ds.set_sparse_coord("s1", var*5)
+    ds.set_sparse_coord("s1", var * 5)
     h = sp.histogram(ds, sp.Variable(values=np.arange(5, dtype=np.float64),
                                      dims=[Dim.Y]))
-    assert np.array_equal(h["s"].values, np.array([[1.0, 4.0, 1.0, 0.0],
-                                                   [0.0, 6.0, 0.0, 0.0]]))
-    assert np.array_equal(h["s1"].values, np.array([[1.0, 0.0, 0.0, 0.0],
-                                                    [0.0, 0.0, 0.0, 0.0]]))
-
+    assert np.array_equal(h["s"].values, np.array(
+        [[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
+    assert np.array_equal(h["s1"].values, np.array(
+        [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]))
 
 # def test_delitem(self):
 #    dataset = sp.Dataset()
