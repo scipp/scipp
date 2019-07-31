@@ -269,6 +269,7 @@ public:
     return boost::make_transform_iterator(m_data.end(),
                                           detail::make_item{this});
   }
+
   /// Return iterator to the end of all data items.
   auto end() & noexcept {
     return boost::make_transform_iterator(m_data.end(),
@@ -279,6 +280,7 @@ public:
   void setLabels(const std::string &labelName, Variable labels);
   void setAttr(const std::string &attrName, Variable attr);
   void setData(const std::string &name, Variable data);
+  void setData(const std::string &name, const DataConstProxy &data);
   void setSparseCoord(const std::string &name, Variable coord);
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
