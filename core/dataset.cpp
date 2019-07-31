@@ -2,7 +2,6 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <iostream>
 #include <ostream>
 
 #include "scipp/core/dataset.h"
@@ -255,7 +254,7 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset,
 }
 
 /// Set (insert or replace) data (values, optional variances, sparse
-/// coordinates) with given name. If the Dataset is enpty - coordinates and data
+/// coordinates) with given name. If the Dataset is empty - coordinates and data
 /// are copied.
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state

@@ -160,6 +160,36 @@ def test_dataset_histogram():
     assert np.array_equal(h["s1"].values, np.array(
         [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]))
 
+
+def test_dataset_set_data():
+    d1 = sp.Dataset(
+        {'a': sp.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
+         'b': sp.Variable(1.0)}, coords={
+            Dim.X: sp.Variable([Dim.X], values=np.arange(2.0),
+                               unit=sp.units.m),
+            Dim.Y: sp.Variable([Dim.Y], values=np.arange(3.0),
+                               unit=sp.units.m)},
+        labels={'aux': sp.Variable([Dim.Y], values=np.random.rand(3))})
+
+    d2 = sp.Dataset(
+        {'a': sp.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
+         'b': sp.Variable(1.0)}, coords={
+            Dim.X: sp.Variable([Dim.X], values=np.arange(2.0),
+                               unit=sp.units.m),
+            Dim.Y: sp.Variable([Dim.Y], values=np.arange(3.0),
+                               unit=sp.units.m)}, labels={
+            'aux': sp.Variable([Dim.Y], values=np.random.rand(
+                3))})
+
+    d3 = sp.Dataset()
+    d3['b'] = d1['a']
+    assert d3["b"].data == d1['a'].data
+    assert d3["b"].coords == d1['a'].coords
+    d1['a'] = d2['a']
+    d1['c'] = d2['a']
+    assert d2['a'].data == d1['a'].data
+    assert d2['a'].data == d1['c'].data
+
 # def test_delitem(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
