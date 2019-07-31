@@ -207,6 +207,7 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
+// This only checks the coordinates, not labels, not attributes
 bool checkCorrespondingDenseCoords(const Dataset &dataset,
                                    const DataConstProxy &other) {
   if (other.dims().sparse())
@@ -228,13 +229,23 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset,
 }
 
 /// Set (insert or replace) data (values, optional variances, sparse
-/// coordinates) with given name.
+/// coordinates) with given name. If the Dataset is enpty - coordinates and data
+/// are copied.
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
-  if (!checkCorrespondingDenseCoords(*this, data))
-    throw std::logic_error("The corresponding dense coordinates should match.");
+  if (empty()) {
+    if (!data.dims().sparse()) {
+      for (const auto & [ d, v ] : data.coords()) {
+        setCoord(d, Variable(v));
+      }
+    }
+  } else {
+    if (!checkCorrespondingDenseCoords(*this, data))
+      throw std::logic_error(
+          "The corresponding dense coordinates should match.");
+  }
 
   if (data.hasData()) {
     setData(name, Variable(data.data()));
