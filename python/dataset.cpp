@@ -136,6 +136,7 @@ void init_dataset(py::module &m) {
   bind_coord_properties(dataProxy);
 
   bind_slice_methods(dataset);
+  bind_slice_methods(datasetProxy);
   bind_slice_methods(dataProxy);
 
   bind_comparison<Dataset>(dataset);

@@ -117,6 +117,25 @@ def test_slice():
     assert 'a' in d[Dim.X, 1]
     assert 'b' not in d[Dim.X, 1]
 
+
+def test_chained_slicing():
+    d = sp.Dataset()
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(11.0)))
+    d.set_coord(Dim.Y, sp.Variable([Dim.Y], values=np.arange(11.0)))
+    d.set_coord(Dim.Z, sp.Variable([Dim.Z], values=np.arange(11.0)))
+    d["a"] = sp.Variable([Dim.Z, Dim.Y, Dim.X],
+                         values=np.arange(1000.0).reshape(10, 10, 10))
+    d["b"] = sp.Variable([Dim.X, Dim.Z],
+                         values=np.arange(0.0, 10.0, 0.1).reshape(10, 10))
+
+    expected = sp.Dataset()
+    expected.set_coord(Dim.Y, sp.Variable([Dim.Y], values=np.arange(11.0)))
+    expected["a"] = sp.Variable([Dim.Y], values=np.arange(501.0, 600.0, 10.0))
+    expected["b"] = sp.Variable(1.5)
+
+    assert d[Dim.X, 1][Dim.Z, 5] == expected
+
+
 # def test_delitem(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
