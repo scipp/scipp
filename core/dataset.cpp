@@ -124,7 +124,7 @@ DataConstProxy Dataset::operator[](const std::string_view name) const {
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
                             std::string(name) + ".");
-  return DataConstProxy(*this, it->second);
+  return DataConstProxy(*this, it->second, std::string(name));
 }
 
 /// Return a proxy to data and coordinates with given name.
@@ -133,7 +133,7 @@ DataProxy Dataset::operator[](const std::string_view name) {
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
                             std::string(name) + ".");
-  return DataProxy(*this, it->second);
+  return DataProxy(*this, it->second, std::string(name));
 }
 
 namespace extents {
@@ -224,7 +224,6 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, Variable data) {
   setDims(data.dims());
-  data.setName(name);
   const bool sparseData = data.dims().sparse();
 
   if (contains(name) && operator[](name).dims().sparse() != sparseData)
@@ -235,7 +234,6 @@ void Dataset::setData(const std::string &name, Variable data) {
 
 /// Set (insert or replace) data from a DataProxy.
 void Dataset::setData(const std::string &name, DataProxy other) {
-  other.data().setName(name);
   setData(name, other.data());
 }
 
@@ -406,14 +404,9 @@ units::Unit DataConstProxy::unit() const {
   throw std::runtime_error("Data without values, unit is undefined.");
 }
 
-/// Return the name of the data field.
-///
-/// Throws if there are no data values.
-std::string DataConstProxy::name() const {
-  if (hasData())
-    return data().name();
-  throw std::runtime_error("Data without values, name is undefined.");
-}
+/// Return the name of the data proxy under which it is labeled inside the
+/// parent Dataset.
+std::string DataConstProxy::name() const { return m_name; }
 
 /// Set the unit of the data values.
 ///
@@ -596,14 +589,15 @@ bool DatasetConstProxy::contains(const std::string_view name) const noexcept {
 DataConstProxy DatasetConstProxy::
 operator[](const std::string_view name) const {
   expectValidKey(name);
-  return {*m_dataset, (*m_dataset).m_data.find(name)->second, slices()};
+  return {*m_dataset, (*m_dataset).m_data.find(name)->second, std::string(name),
+          slices()};
 }
 
 /// Return a proxy to data and coordinates with given name.
 DataProxy DatasetProxy::operator[](const std::string_view name) const {
   expectValidKey(name);
   return {*m_mutableDataset, (*m_mutableDataset).m_data.find(name)->second,
-          slices()};
+          std::string(name), slices()};
 }
 
 /// Return true if the dataset proxies have identical content.

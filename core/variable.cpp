@@ -135,10 +135,6 @@ void VariableProxy::setUnit(const units::Unit &unit) const {
   m_mutableVariable->setUnit(unit);
 }
 
-void VariableProxy::setName(const std::string name) const {
-  m_mutableVariable->setName(name);
-}
-
 void VariableProxy::expectCanSetUnit(const units::Unit &unit) const {
   if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
     throw except::UnitError("Partial view on data of variable cannot be used "

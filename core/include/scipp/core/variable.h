@@ -267,9 +267,6 @@ public:
   const Dimensions &dims() const & { return m_object->dims(); }
   void setDims(const Dimensions &dimensions);
 
-  std::string name() const { return m_name; }
-  void setName(const std::string name) { m_name = name; }
-
   DType dtype() const noexcept { return data().dtype(dims().sparse()); }
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
@@ -361,7 +358,6 @@ private:
   Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
   units::Unit m_unit;
-  std::string m_name;
   VariableConceptHandle m_object;
 };
 
@@ -538,7 +534,6 @@ public:
   Variable reshape(const Dimensions &dims) const;
 
   units::Unit unit() const { return m_variable->unit(); }
-  std::string name() const { return m_variable->name(); }
 
   // Note: Returning by value to avoid issues with referencing a temporary
   // (VariableProxy is returned by-value from DatasetSlice).
@@ -695,7 +690,6 @@ public:
   VariableProxy operator/=(const double value) const;
 
   void setUnit(const units::Unit &unit) const;
-  void setName(const std::string name) const;
   void expectCanSetUnit(const units::Unit &unit) const;
 
 private:

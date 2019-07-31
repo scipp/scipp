@@ -72,8 +72,9 @@ auto makeSlice(Var &var,
 class SCIPP_CORE_EXPORT DataConstProxy {
 public:
   DataConstProxy(const Dataset &dataset, const detail::DatasetData &data,
+                 const std::string name = std::string(),
                  const std::vector<std::pair<Slice, scipp::index>> &slices = {})
-      : m_dataset(&dataset), m_data(&data), m_slices(slices) {}
+      : m_dataset(&dataset), m_data(&data), m_name(name), m_slices(slices) {}
 
   Dimensions dims() const noexcept;
   units::Unit unit() const;
@@ -106,7 +107,7 @@ public:
     expect::validSlice(dims(), slice1);
     auto tmp(m_slices);
     tmp.emplace_back(slice1, dims()[slice1.dim]);
-    return {*m_dataset, *m_data, std::move(tmp)};
+    return {*m_dataset, *m_data, m_name, std::move(tmp)};
   }
 
   DataConstProxy slice(const Slice slice1, const Slice slice2) const {
@@ -135,6 +136,7 @@ private:
 
   const Dataset *m_dataset;
   const detail::DatasetData *m_data;
+  std::string m_name;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
@@ -142,8 +144,9 @@ private:
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
   DataProxy(Dataset &dataset, detail::DatasetData &data,
+            const std::string name = std::string(),
             const std::vector<std::pair<Slice, scipp::index>> &slices = {})
-      : DataConstProxy(dataset, data, slices), m_mutableDataset(&dataset),
+      : DataConstProxy(dataset, data, name, slices), m_mutableDataset(&dataset),
         m_mutableData(&data) {}
 
   CoordsProxy coords() const noexcept;
@@ -168,7 +171,7 @@ public:
     expect::validSlice(dims(), slice1);
     auto tmp(slices());
     tmp.emplace_back(slice1, dims()[slice1.dim]);
-    return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
+    return {*m_mutableDataset, *m_mutableData, name(), std::move(tmp)};
   }
 
   DataProxy slice(const Slice slice1, const Slice slice2) const {

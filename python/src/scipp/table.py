@@ -5,6 +5,7 @@
 
 import scipp as sc
 from .tools import axis_label
+from IPython.display import display, HTML
 
 
 def value_to_string(val, precision=3):
@@ -122,11 +123,11 @@ def table(dataset):
             else:
                 tabledict["0D Variables"][name] = var
     else:
-        if len(dataset.name) == 0:
+        try:
+            key = dataset.name
+        except AttributeError:
             count += 1
             key = "Unnamed variable {}".format(count)
-        else:
-            key = dataset.name
         tabledict["default"][key] = dataset
         if (tp is sc.DataProxy) and (len(dataset.dims) > 0):
             if len(dataset.coords) > 0:
@@ -145,7 +146,6 @@ def table(dataset):
             output += table_from_dataset(val, coord_dim=coord_1d[key],
                                          is_hist=is_histogram[key])
 
-    from IPython.display import display, HTML
     display(HTML(title + output))
 
     return
