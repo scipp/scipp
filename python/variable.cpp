@@ -196,8 +196,9 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
-  py::class_<VariableProxy> variableProxy(m, "VariableProxy",
-                                          py::buffer_protocol());
+  py::class_<VariableConstProxy>(m, "VariableConstProxy");
+  py::class_<VariableProxy, VariableConstProxy> variableProxy(
+      m, "VariableProxy", py::buffer_protocol());
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy
       .def("copy", [](const VariableProxy &self) { return Variable(self); },

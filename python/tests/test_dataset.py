@@ -127,6 +127,39 @@ def test_coords_proxy_comparison_operators():
         Dim.X: sp.Variable([Dim.X], values=np.arange(10.0))})
     assert d1['a'].coords == d['a'].coords
 
+
+def test_variable_histogram():
+    var = sp.Variable(dims=[Dim.X, Dim.Y], shape=[2, sp.Dimensions.Sparse])
+    var[Dim.X, 0].values = np.arange(3)
+    var[Dim.X, 0].values.append(42)
+    var[Dim.X, 0].values.extend(np.ones(3))
+    var[Dim.X, 1].values = np.ones(6)
+    ds = sp.Dataset()
+    ds.set_sparse_coord("sparse", var)
+    hist = sp.histogram(ds["sparse"],
+                        sp.Variable(values=np.arange(5, dtype=np.float64),
+                                    dims=[Dim.Y]))
+    assert np.array_equal(hist.values, np.array([[1.0, 4.0, 1.0, 0.0],
+                                                 [0.0, 6.0, 0.0, 0.0]]))
+
+
+def test_dataset_histogram():
+    var = sp.Variable(dims=[Dim.X, Dim.Y], shape=[2, sp.Dimensions.Sparse])
+    var[Dim.X, 0].values = np.arange(3)
+    var[Dim.X, 0].values.append(42)
+    var[Dim.X, 0].values.extend(np.ones(3))
+    var[Dim.X, 1].values = np.ones(6)
+    ds = sp.Dataset()
+    ds.set_sparse_coord("s", var)
+    ds.set_sparse_coord("s1", var*5)
+    h = sp.histogram(ds, sp.Variable(values=np.arange(5, dtype=np.float64),
+                                     dims=[Dim.Y]))
+    assert np.array_equal(h["s"].values, np.array([[1.0, 4.0, 1.0, 0.0],
+                                                   [0.0, 6.0, 0.0, 0.0]]))
+    assert np.array_equal(h["s1"].values, np.array([[1.0, 0.0, 0.0, 0.0],
+                                                    [0.0, 0.0, 0.0, 0.0]]))
+
+
 # def test_delitem(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],

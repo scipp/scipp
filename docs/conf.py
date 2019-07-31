@@ -111,24 +111,24 @@ todo_include_todos = False
 import os
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-#if not on_rtd:  # only import and set the theme if we're building docs locally
-#    import sphinx_rtd_theme
-#    html_theme = 'sphinx_rtd_theme'
-#    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-#
-#    html_context = {
-#        'css_files': [
-#            '_static/theme_overrides.css'
-#        ]
-#    }
-#else:
-#    html_context = {
-#        'css_files': [
-#            '//media.readthedocs.org/css/sphinx_rtd_theme.css',
-#            '//media.readthedocs.org/css/readthedocs-doc-embed.css',
-#            '_static/theme_overrides.css'
-#        ]
-#    }
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+    html_context = {
+        'css_files': [
+            '_static/theme_overrides.css'
+        ]
+    }
+else:
+    html_context = {
+        'css_files': [
+            '//media.readthedocs.org/css/sphinx_rtd_theme.css',
+            '//media.readthedocs.org/css/readthedocs-doc-embed.css',
+            '_static/theme_overrides.css'
+        ]
+    }
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

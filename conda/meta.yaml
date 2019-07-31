@@ -9,7 +9,7 @@ source:
 requirements:
   build:
     - cmake
-    - gxx_linux-64 7.3.*
+    - gxx_linux-64 7.3.* [linux64]
     - git
     - python {{ python }}
   run:
@@ -21,7 +21,10 @@ requirements:
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
-
+  script_env:
+    - CC
+    - CXX
+    - OSX_VERSION
 about:
   home: https://scipp.readthedocs.io/en/latest/
   license: GPLv3

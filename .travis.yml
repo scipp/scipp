@@ -1,7 +1,6 @@
 branches:
   only:
     - master
-
 language: cpp
 dist: xenial
 cache: ccache
@@ -38,11 +37,25 @@ jobs:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
       script: sh .travis/run_tests.sh
     - stage: "Deploy"
-      name: "conda"
+      name: "conda linux"
       if: branch = master AND NOT type = pull_request
       git:
         depth: false
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
-      install: sh .travis/install_conda.sh
+      install: sh .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      script: sh .travis/conda_build_and_deploy.sh
+    - os: osx
+      osx_image: xcode10.2
+      name: "conda osx"
+      if: branch = master AND NOT type = pull_request
+      git:
+        depth: false
+      env:
+        - PATH="$HOME/miniconda/bin:$PATH"
+        - CC=/usr/bin/clang
+        - CXX=/usr/bin/clang++ 
+        - OSX_VERSION=10.14
+      install: 
+        - sh .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: sh .travis/conda_build_and_deploy.sh
