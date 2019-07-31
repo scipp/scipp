@@ -285,8 +285,7 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                           [](const T &self) { return self.dims().sparseDim(); },
                           "Return the label of a potential sparse dimension, "
                           "Dim.Invalid otherwise.");
-  c.def_property_readonly("name",
-                          [](const T &self) { return self.name(); },
+  c.def_property_readonly("name", [](const T &self) { return self.name(); },
                           "The name of the data under which it is registered "
                           "in the Dataset (read-only).");
 

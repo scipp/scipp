@@ -20,7 +20,7 @@ def value_to_string(val, precision=3):
     return text
 
 
-def table_from_dataset(dataset, coord_dim=None):
+def table_from_dataset(dataset, coord_dim=None, is_hist=False):
     # border style
     bstyle = "style='border: 1px solid black;"
     cstyle = [bstyle + "background-color: #ADF3E0;'",
@@ -64,12 +64,17 @@ def table_from_dataset(dataset, coord_dim=None):
         for i in range(size):
             html += "<tr>"
             if coord_dim is not None:
-                html += "<td {}>{}</td>".format(cstyle[i % 2], value_to_string(coord.values[i]))
+                text = value_to_string(coord.values[i])
+                if is_hist:
+                    text = '[{}; {}]'.format(
+                        text, value_to_string(coord.values[i + 1]))
+                html += "<td {}>{}</td>".format(cstyle[i % 2], text)
                 if coord.has_variances:
-                    html += "< {}td>{}</td>".format(cstyle[i % 2], value_to_string(coord.variances[i]))
-                # if is_hist:
-                #     text = '[{}; {}]'.format(
-                #         text, value_to_string(coords1d.values[i + 1]))
+                    text = value_to_string(coord.variances[i])
+                    if is_hist:
+                        text = '[{}; {}]'.format(
+                            text, value_to_string(coord.variances[i + 1]))
+                    html += "< {}td>{}</td>".format(cstyle[i % 2], text)
             for key, val in dataset:
                 html += "<td {}>{}</td>".format(bstyle, value_to_string(val.values[i]))
                 if val.has_variances:
@@ -89,6 +94,7 @@ def table(dataset):
                  "0D Variables": sc.Dataset(),
                  "1D Variables": {}}
     coord_1d = {}
+    is_histogram = {}
     coord_def = None
 
     tp = type(dataset)
@@ -101,6 +107,10 @@ def table(dataset):
                     tabledict["1D Variables"][key] = sc.Dataset(name, dataset[name])
                     if len(var.coords) > 0:
                         coord_1d[key] = var.dims[0]
+                        if len(var.coords[var.dims[0]].values) == len(var.values) + 1:
+                            is_histogram[key] = True
+                        else:
+                            is_histogram[key] = False
                     else:
                         coord_1d[key] = None
                 else:
@@ -127,7 +137,8 @@ def table(dataset):
     if len(tabledict["1D Variables"].keys()) > 0:
         output += "<h6 style='font-weight: normal; color: grey'>1D Variables</h6>"
         for key, val in sorted(tabledict["1D Variables"].items()):
-            output += table_from_dataset(val, coord_dim=coord_1d[key])
+            output += table_from_dataset(val, coord_dim=coord_1d[key],
+                                         is_hist=is_histogram[key])
 
     from IPython.display import display, HTML
     display(HTML(title + output))

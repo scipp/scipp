@@ -52,8 +52,7 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         [](const T &self, const Dataset &other) { return self == other; });
   c.def("__ne__",
         [](const T &self, const DatasetProxy &other) { return self == other; });
-  c.def("copy",
-        [](const T &self) { return Dataset(self); },
+  c.def("copy", [](const T &self) { return Dataset(self); },
         "Make a copy of a Dataset or DatasetProxy and return it as a Dataset.");
 }
 
@@ -90,37 +89,39 @@ void init_dataset(py::module &m) {
            py::arg("data") = std::map<std::string, Variable>{},
            py::arg("coords") = std::map<Dim, Variable>{},
            py::arg("labels") = std::map<std::string, Variable>{})
-      .def(py::init([](const DatasetProxy &other) {
-             return Dataset{other}; }))
+      .def(py::init([](const DatasetProxy &other) { return Dataset{other}; }))
       .def(py::init([](const std::string &name, const DataProxy &other) {
-             Dataset d;
-             for (const auto & [ dim, item ] : other.coords())
-               d.setCoord(dim, item);
-             d.setData(name, other);
-             return d; }))
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, Variable &data) {
-            self.setData(name, data); })
+        Dataset d;
+        for (const auto & [ dim, item ] : other.coords())
+          d.setCoord(dim, item);
+        d.setData(name, other);
+        return d;
+      }))
+      .def("__setitem__", [](Dataset &self, const std::string &name,
+                             Variable &data) { self.setData(name, data); })
       // TODO: nvaytet: I do not understand why this is not covered by the
       // py::implicitly_convertible<DatasetProxy, Dataset>();
       // statement below, but this is needed if a VariableProxy is used instead
       // of a Variable
       .def("__setitem__",
-           [](Dataset &self, const std::string &name, const VariableProxy &data) {
-            self.setData(name, data); })
+           [](Dataset &self, const std::string &name,
+              const VariableProxy &data) { self.setData(name, data); })
       .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataProxy &other) {
-            for (const auto & [ dim, item ] : other.coords())
+             for (const auto & [ dim, item ] : other.coords())
                self.setCoord(dim, item);
-            if (self.contains(name))
-              self[name].assign(other);
-            else
-              self.setData(name, other); })
+             if (self.contains(name))
+               self[name].assign(other);
+             else
+               self.setData(name, other);
+           })
       .def("__setitem__",
-           [](Dataset &self, const std::tuple<Dim, scipp::index> &index, DatasetProxy &other) {
-            auto[dim, i] = index;
-            for (const auto[name, item] : self.slice(Slice(dim, i)))
-              item.assign(other[name]); })
+           [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
+              DatasetProxy &other) {
+             auto[dim, i] = index;
+             for (const auto[name, item] : self.slice(Slice(dim, i)))
+               item.assign(other[name]);
+           })
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
       .def("set_coord", &Dataset::setCoord)
