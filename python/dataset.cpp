@@ -25,6 +25,7 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
       .def("__getitem__", &T::operator[])
       .def("__iter__",
            [](T &self) { return py::make_iterator(self.begin(), self.end()); });
+  bind_comparison<T>(proxy);
 }
 
 template <class T, class... Ignored>
