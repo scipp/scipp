@@ -749,3 +749,11 @@ TEST(DatasetSetData, dense_to_dense) {
 
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
 }
+
+TEST(DatasetSetData, dense_to_empty) {
+  auto ds = Dataset();
+  auto dense = datasetFactory.make();
+  ds.setData("data_x", dense["data_x"]);
+  EXPECT_EQ(dense["data_x"].coords(), ds["data_x"].coords());
+  EXPECT_EQ(dense["data_x"].data(), ds["data_x"].data());
+}
