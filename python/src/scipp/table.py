@@ -107,11 +107,11 @@ def table(dataset):
             if len(var.dims) == 1:
                 key = str(var.dims[0])
                 if key not in tabledict["1D Variables"].keys():
-                    # tabledict["1D Variables"][key] = sc.Dataset({name: dataset[name].data}, coords={)
                     temp_dict = {"data": {name: dataset[name].data}}
                     if len(var.coords) > 0:
                         coord_1d[key] = var.dims[0]
-                        temp_dict["coords"] = {var.dims[0]: var.coords[var.dims[0]]}
+                        temp_dict["coords"] = {var.dims[0]:
+                                               var.coords[var.dims[0]]}
                         if len(var.coords[var.dims[0]].values) == \
                            len(var.values) + 1:
                             is_histogram[key] = True
