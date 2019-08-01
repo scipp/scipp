@@ -7,7 +7,10 @@ import numpy as np
 import scipp as sp
 from .tools import edges_to_centers, centers_to_edges, axis_label
 import matplotlib.pyplot as plt
+from ipywidgets import VBox, HBox, IntSlider, Label, RadioButtons
 import ipyvolume as ipv
+from IPython.display import display
+
 
 # =============================================================================
 
@@ -105,8 +108,8 @@ def plot_auto(input_data, ndim=0, name=None, waterfall=None,
     elif view.lower() == "3d":
         plot_3d(input_data, name=name, **kwargs)
     else:
-        raise RuntimeError("Unknown view type: {}. ".format(view)
-                           "This must be either 2d or 3d.")
+        raise RuntimeError("Unknown view type: {}. "
+                           "This must be either 2d or 3d.".format(view))
     return
 
 # =============================================================================
@@ -318,63 +321,16 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
     calling plot_image from the sliceviewer).
     """
 
-    coords = input_data.coords
+    view = View2D(input_data, axes=axes, name=name, contours=contours,
+                 cb=cb, show_variances=show_variances)
 
-    # Get coordinates axes and dimensions
-    coords = input_data.coords
-    xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs = \
-        process_dimensions(input_data=input_data, coords=coords, axes=axes)
+    display(view.vbox)
 
-    if contours:
-        plot_type = 'contour'
-    else:
-        plot_type = 'heatmap'
 
-    # Parse colorbar
-    cbar = parse_colorbar(cb)
-
-    # Prepare dictionary for holding key parameters
-    data = {"values": {"cbmin": "min", "cbmax": "max", "name": name}}
-
-    if input_data.has_variances and show_variances:
-        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        # Append parameters to data dictionary
-        data["variances"] = {"cbmin": "var_min", "cbmax": "var_max", "name": "variances"}
-    else:
-        fig, ax = plt.subplots(1, 1)
-        ax = [ax]
-
-    for i, (key, val) in enumerate(sorted(data.items())):
-
-        ax[i].set_xlabel(axis_label(xcoord))
-        ax[i].set_ylabel(axis_label(ycoord))
-
-        z = getattr(input_data, key)
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        if (zlabs[0] == xlabs[0]) and (zlabs[1] == ylabs[0]):
-            z = z.T
-        # Apply colorbar parameters
-        if cbar["log"]:
-            with np.errstate(invalid="ignore", divide="ignore"):
-                z = np.log10(z)
-        if cbar[val["cbmin"]] is None:
-            cbar[val["cbmin"]] = np.amin(z[np.where(np.isfinite(z))])
-        if cbar[val["cbmax"]] is None:
-            cbar[val["cbmax"]] = np.amax(z[np.where(np.isfinite(z))])
-
-        args = {"vmin": cbar[val["cbmin"]], "vmax": cbar[val["cbmax"]], "cmap": cbar["name"]}
-        if contours:
-            img = ax[i].contourf(xc, yc ,z, **args)
-        else:
-            img = ax[i].imshow(z, extent=[xe[0], xe[-1], ye[0], ye[-1]], origin="lower", aspect="auto", **args)
-        cb = plt.colorbar(img, ax=ax[i])
-        cb.ax.set_ylabel(axis_label(var=input_data, name=val["name"], log=cbar["log"]))
-        cb.ax.yaxis.set_label_coords(-1.1,0.5)
-
-    if filename is not None:
-        fig.savefig(filename, bbox_inches="tight")
-    else:
-        fig.canvas.manager.toolbar.zoom()
+    # if filename is not None:
+    #     fig.savefig(filename, bbox_inches="tight")
+    # else:
+    #     fig.canvas.manager.toolbar.zoom()
 
     return
 
@@ -383,25 +339,46 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
 
 class View2D:
 
-    def __init__(self, plotly_data, plotly_layout, input_data, axes,
-                 value_name, cb):
+    def __init__(self, input_data, axes=None, name=None, contours=False,
+                 cb=None, show_variances=False):
 
         # Make a copy of the input data - Needed?
         self.input_data = input_data
+
+        if axes is None:
+            axes = self.input_data.dims
+
+        # Get coordinates axes and dimensions
+        self.coords = self.input_data.coords
+        self.xcoord, self.ycoord, self.xe, self.ye, self.xc, self.yc, \
+        self.xlabs, self.ylabs, self.zlabs = \
+            process_dimensions(input_data=self.input_data,
+                               coords=self.coords,
+                               axes=axes)
+
+        if contours:
+            plot_type = 'contour'
+        else:
+            plot_type = 'heatmap'
+
+        # Parse colorbar
+        self.cbar = parse_colorbar(cb)
+
+        # self.fig, self.ax = plt.subplots(1, 1)
 
         # Get the dimensions of the image to be displayed
         self.coords = self.input_data.coords
         self.xcoord = self.coords[axes[-1]]
         self.ycoord = self.coords[axes[-2]]
-        self.xdims = self.xcoord.dims
-        self.xlabs = self.xdims.labels
-        self.ydims = self.ycoord.dims
-        self.ylabs = self.ydims.labels
+        # self.xdims = self.xcoord.dims
+        self.xlabs = self.xcoord.dims
+        # self.ydims = self.ycoord.dims
+        self.ylabs = self.ycoord.dims
 
-        # Need these to avoid things running out of scope
-        self.dims = self.input_data.dims
-        self.labels = self.dims.labels
-        self.shapes = self.dims.shape
+        # # Need these to avoid things running out of scope
+        # self.dims = self.input_data.dims
+        # self.labels = self.dims.labels
+        self.shapes = self.input_data.shape
 
         # Size of the slider coordinate arrays
         self.slider_nx = []
@@ -409,22 +386,26 @@ class View2D:
         self.slider_dims = []
         # Store coordinates of dimensions that will be in sliders
         self.slider_x = []
-        for ax in axes[:-2]:
+        for ax in axes:
+            print(ax)
             self.slider_dims.append(ax)
-            self.slider_nx.append(self.shapes[ax])
+            for i, s in enumerate(self.input_data.dims):
+                if s == ax:
+                    self.slider_nx.append(self.shapes[i])
+                    break
             self.slider_x.append(self.coords[ax].values)
         self.nslices = len(self.slider_dims)
 
         # Initialise Figure and VBox objects
-        self.fig = FigureWidget(data=plotly_data, layout=plotly_layout)
-        self.vbox = self.fig,
+        # self.fig = FigureWidget(data=plotly_data, layout=plotly_layout)
+        self.vbox = Label(),
 
         # Initialise slider and label containers
         self.lab = []
         self.slider = []
         # Collect the remaining arguments
-        self.value_name = value_name
-        self.cb = cb
+        # self.value_name = value_name
+        # self.cb = cb
         # Default starting index for slider
         indx = 0
 
@@ -443,15 +424,72 @@ class View2D:
                 readout=False
             ))
             # Add an observer to the slider
-            self.slider[i].observe(self.update_slice, names="value")
+            # self.slider[i].observe(self.update_slice, names="value")
             # Add coordinate name and unit
             title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
             self.vbox += (HBox([title, self.slider[i], self.lab[i]]),)
 
+        # print(self.vbox)
+
+        # Prepare dictionary for holding key parameters
+        data = {"values": {"cbmin": "min", "cbmax": "max", "name": name}}
+
+        if input_data.has_variances and show_variances:
+            self.fig, self.ax = plt.subplots(1, 2, sharex=True, sharey=True)
+            # Append parameters to data dictionary
+            data["variances"] = {"cbmin": "var_min", "cbmax": "var_max", "name": "variances"}
+        else:
+            self.fig, self.ax = plt.subplots(1, 1)
+            self.ax = [self.ax]
+
+        for i, (key, val) in enumerate(sorted(data.items())):
+
+            self.ax[i].set_xlabel(axis_label(self.xcoord))
+            self.ax[i].set_ylabel(axis_label(self.ycoord))
+
+            z = getattr(self.input_data, key)
+            # Check if dimensions of arrays agree, if not, plot the transpose
+            if (self.zlabs[0] == self.xlabs[0]) and (self.zlabs[1] == self.ylabs[0]):
+                z = z.T
+            # Apply colorbar parameters
+            if self.cbar["log"]:
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    z = np.log10(z)
+            if self.cbar[val["cbmin"]] is None:
+                self.cbar[val["cbmin"]] = np.amin(z[np.where(np.isfinite(z))])
+            if self.cbar[val["cbmax"]] is None:
+                self.cbar[val["cbmax"]] = np.amax(z[np.where(np.isfinite(z))])
+
+            # args = {"vmin": self.cbar[val["cbmin"]], "vmax": self.cbar[val["cbmax"]], "cmap": self.cbar["name"]}
+            # if contours:
+            #     self.img = self.ax[i].contourf(self.xc, self.yc ,z, **args)
+            # else:
+            #     self.img = self.ax[i].imshow(z, extent=[self.xe[0], self.xe[-1], self.ye[0], self.ye[-1]], origin="lower", aspect="auto", **args)
+            # cb = plt.colorbar(self.img, ax=self.ax[i])
+            # cb.ax.set_ylabel(axis_label(var=self.input_data, name=val["name"], log=self.cbar["log"]))
+            # cb.ax.yaxis.set_label_coords(-1.1,0.5)
+
+
+
         # Call update_slice once to make the initial image
-        self.update_slice(0)
+        # self.update_slice(0)
+        options = [ str(dim) for dim in axes ]
+        rad_x = RadioButtons(options=options, description="", disabled=False)
+        rad_y = RadioButtons(options=options, description="", disabled=False,
+                             value=options[1])
+        x_select = VBox((Label(value="x axis"), rad_x))
+        y_select = VBox((Label(value="y axis"), rad_y))
+
+        for i, dim in enumerate(axes):
+            if (str(dim) != rad_x.value) and (str(dim) != rad_y.value):
+                self.slider[i].disabled = True
+
+
+
         self.vbox = VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
+        self.vbox = HBox((self.vbox, x_select, y_select))
+
 
         return
 
@@ -871,6 +909,7 @@ def parse_colorbar(cb):
 
 def get_color(i):
     return config["colors"][i % config["ncol"]]
+
 
 def process_dimensions(input_data, coords, axes):
     """
