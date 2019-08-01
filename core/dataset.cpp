@@ -240,12 +240,11 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset,
   const auto dsCoords{dataset.coords()};
   const auto otCoords{other.coords()};
   const auto &dsItems = dsCoords.items();
-  const auto &otItems = otCoords.items();
-  for (const auto & [ d, v ] : otItems) {
+  for (const auto & [ d, v ] : otCoords) {
     if (auto iter = dsItems.find(d); iter == dsItems.end()) {
       return false;
     } else {
-      if (*iter->second.first != *v.first) {
+      if (*iter->second.first != v) {
         return false;
       }
     }

@@ -163,6 +163,7 @@ void init_variable(py::module &m) {
   bind_init_1D<std::string>(variable);
   bind_init_1D<Eigen::Vector3d>(variable);
   variable
+      .def(py::init<const VariableProxy &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
@@ -173,7 +174,6 @@ void init_variable(py::module &m) {
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::none())
-      .def(py::init<const VariableProxy &>())
       .def("copy", [](const Variable &self) { return self; },
            "Make a copy of a Variable.")
       .def("__copy__", [](Variable &self) { return Variable(self); })

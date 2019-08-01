@@ -219,7 +219,7 @@ def test_dataset_set_data():
 #    self.assertEqual(len(dataset.dimensions), 0)
 #
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
-#                                      (1, 2, 3)p)
+#                                      (1, 2, 3))
 #    dataset[sp.Coord.X] = ([sp.Dim.X], np.arange(3))
 #    del dataset[sp.Data.Value, "data"]
 #    self.assertFalse((sp.Data.Value, "data") in dataset)
