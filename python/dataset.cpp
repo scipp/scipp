@@ -95,13 +95,6 @@ void init_dataset(py::module &m) {
            py::arg("coords") = std::map<Dim, Variable>{},
            py::arg("labels") = std::map<std::string, Variable>{})
       .def(py::init([](const DatasetProxy &other) { return Dataset{other}; }))
-      .def(py::init([](const std::string &name, const DataProxy &other) {
-        Dataset d;
-        for (const auto & [ dim, item ] : other.coords())
-          d.setCoord(dim, item);
-        d.setData(name, other);
-        return d;
-      }))
       .def("__setitem__", [](Dataset &self, const std::string &name,
                              Variable data) { self.setData(name, data); })
       .def("__setitem__",
