@@ -190,6 +190,23 @@ def test_dataset_set_data():
     assert d2['a'].data == d1['a'].data
     assert d2['a'].data == d1['c'].data
 
+    d = sp.Dataset()
+    d.set_coord(sp.Dim.Row, sp.Variable([sp.Dim.Row], values=np.arange(10.0)))
+    d["a"] = sp.Variable([sp.Dim.Row], values=np.arange(10.0),
+                         variances=np.arange(10.0))
+    d["b"] = sp.Variable([sp.Dim.Row], values=np.arange(10.0, 20.0))
+    d1 = d[sp.Dim.Row, 0:1]
+    d2 = sp.Dataset({'a': d1["a"].data},
+                    coords={sp.Dim.Row: d1["a"].coords[sp.Dim.Row]})
+    d2["b"] = d1["b"]
+    expected = sp.Dataset()
+    expected.set_coord(sp.Dim.Row, sp.Variable([sp.Dim.Row],
+                                               values=np.arange(1.0)))
+    expected["a"] = sp.Variable([sp.Dim.Row], values=np.arange(1.0),
+                                variances=np.arange(1.0))
+    expected["b"] = sp.Variable([sp.Dim.Row], values=np.arange(10.0, 11.0))
+    assert d2 == expected
+
 # def test_delitem(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
@@ -202,7 +219,7 @@ def test_dataset_set_data():
 #    self.assertEqual(len(dataset.dimensions), 0)
 #
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],
-#                                      (1, 2, 3))
+#                                      (1, 2, 3)p)
 #    dataset[sp.Coord.X] = ([sp.Dim.X], np.arange(3))
 #    del dataset[sp.Data.Value, "data"]
 #    self.assertFalse((sp.Data.Value, "data") in dataset)
