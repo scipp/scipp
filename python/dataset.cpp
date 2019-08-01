@@ -109,15 +109,6 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name,
               const VariableProxy &data) { self.setData(name, data); })
       .def("__setitem__",
-           [](Dataset &self, const std::string &name, const DataProxy &other) {
-             for (const auto & [ dim, item ] : other.coords())
-               self.setCoord(dim, item);
-             if (self.contains(name))
-               self[name].assign(other);
-             else
-               self.setData(name, other);
-           })
-      .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
               DatasetProxy &other) {
              auto[dim, i] = index;
