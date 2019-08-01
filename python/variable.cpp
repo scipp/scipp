@@ -162,8 +162,7 @@ void init_variable(py::module &m) {
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_1D<std::string>(variable);
   bind_init_1D<Eigen::Vector3d>(variable);
-  variable
-      .def(py::init<const VariableProxy &>())
+  variable.def(py::init<const VariableProxy &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
