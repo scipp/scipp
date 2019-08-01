@@ -136,30 +136,49 @@ DataProxy Dataset::operator[](const std::string_view name) {
   return DataProxy(*this, it->second);
 }
 
-/// Helper for setDims().
-void Dataset::setExtent(const Dim dim, const scipp::index extent,
-                        const bool isCoord) {
-  const auto it = m_dims.find(dim);
+namespace extents {
+// Internally use negative extent -1 to indicate unknown edge state. The `-1`
+// is required for dimensions with extent 0.
+scipp::index makeUnknownEdgeState(const scipp::index extent) {
+  return -extent - 1;
+}
+scipp::index shrink(const scipp::index extent) { return extent - 1; }
+bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
+bool isSame(const scipp::index extent, const scipp::index reference) {
+  return reference == -extent - 1;
+}
+bool oneLarger(const scipp::index extent, const scipp::index reference) {
+  return extent == -reference - 1 + 1;
+}
+bool oneSmaller(const scipp::index extent, const scipp::index reference) {
+  return extent == -reference - 1 - 1;
+}
+void setExtent(std::map<Dim, scipp::index> &dims, const Dim dim,
+               const scipp::index extent, const bool isCoord) {
+  const auto it = dims.find(dim);
   // Internally use negative extent -1 to indicate unknown edge state. The `-1`
   // is required for dimensions with extent 0.
-  if (it == m_dims.end()) {
-    m_dims[dim] = -extent - 1;
+  if (it == dims.end()) {
+    dims[dim] = extents::makeUnknownEdgeState(extent);
   } else {
-    if (it->second < 0) {
-      if (extent == -it->second - 1) {
-      } else if (extent == (-it->second - 1 + 1) && isCoord) {
-        it->second = extent - 1;
-      } else if (extent == (-it->second - 1 - 1) && !isCoord) {
-        it->second = extent;
+    auto &heldExtent = it->second;
+    if (extents::isUnknownEdgeState(heldExtent)) {
+      if (extents::isSame(extent, heldExtent)) { // Do nothing
+      } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
+        heldExtent = extents::shrink(extent);
+      } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
+        heldExtent = extent;
       } else {
         throw std::runtime_error("Length mismatch on insertion");
       }
     } else {
-      if ((extent != it->second || isCoord) && extent != it->second + 1)
+      // Check for known edge state
+      if ((extent != heldExtent || isCoord) && extent != heldExtent + 1)
         throw std::runtime_error("Length mismatch on insertion");
     }
   }
 }
+} // namespace extents
 
 /// Consistency-enforcing update of the dimensions of the dataset.
 ///
@@ -171,8 +190,10 @@ void Dataset::setExtent(const Dim dim, const scipp::index extent,
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
+  auto tmp = m_dims;
   for (const auto dim : dims.denseLabels())
-    setExtent(dim, dims[dim], dim == coordDim);
+    extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
+  m_dims = tmp;
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
@@ -203,17 +224,71 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, Variable data) {
   setDims(data.dims());
+  const bool sparseData = data.dims().sparse();
+
+  if (contains(name) && operator[](name).dims().sparse() != sparseData)
+    throw except::DimensionError("Cannot set dense values or variances if "
+                                 "coordinates sparse or vice versa");
   m_data[name].data = std::move(data);
+}
+
+// This only checks the coordinates, not labels, not attributes
+bool checkCorrespondingDenseCoords(const Dataset &dataset,
+                                   const DataConstProxy &other) {
+  if (other.dims().sparse())
+    return true;
+  const auto dsCoords{dataset.coords()};
+  const auto otCoords{other.coords()};
+  const auto &dsItems = dsCoords.items();
+  for (const auto & [ d, v ] : otCoords) {
+    if (auto iter = dsItems.find(d); iter == dsItems.end()) {
+      return false;
+    } else {
+      if (*iter->second.first != v) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/// Set (insert or replace) data (values, optional variances, sparse
+/// coordinates) with given name. If the Dataset is empty - coordinates and data
+/// are copied.
+///
+/// Throws if the provided values bring the dataset into an inconsistent state
+/// (mismatching dtype, unit, or dimensions).
+void Dataset::setData(const std::string &name, const DataConstProxy &data) {
+  if (empty()) {
+    if (!data.dims().sparse()) {
+      for (const auto & [ d, v ] : data.coords()) {
+        setCoord(d, Variable(v));
+      }
+    }
+  } else {
+    if (!checkCorrespondingDenseCoords(*this, data))
+      throw std::logic_error(
+          "The corresponding dense coordinates should match.");
+  }
+
+  if (data.hasData()) {
+    setData(name, Variable(data.data()));
+  }
+
+  auto dim = data.dims().sparseDim();
+  if (dim != Dim::Invalid) {
+    setSparseCoord(name, data.coords()[dim]);
+  }
 }
 
 /// Set (insert or replace) the sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
 void Dataset::setSparseCoord(const std::string &name, Variable coord) {
-  setDims(coord.dims());
   if (!coord.dims().sparse())
-    throw std::runtime_error("Variable passed to Dataset::setSparseCoord does "
-                             "not contain sparse data.");
+    throw except::DimensionError(
+        "Variable passed to Dataset::setSparseCoord does "
+        "not contain sparse data.");
   if (m_data.count(name)) {
     const auto &data = m_data.at(name);
     if ((data.data &&
@@ -221,9 +296,10 @@ void Dataset::setSparseCoord(const std::string &name, Variable coord) {
         (!data.labels.empty() &&
          (data.labels.begin()->second.dims().sparseDim() !=
           coord.dims().sparseDim())))
-      throw std::runtime_error("Cannot set sparse coordinate if values or "
-                               "variances are not sparse.");
+      throw except::DimensionError("Cannot set sparse coordinate if values or "
+                                   "variances are not sparse.");
   }
+  setDims(coord.dims());
   m_data[name].coord = std::move(coord);
 }
 
@@ -988,4 +1064,59 @@ Dataset operator/(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
+// For now this implementation is only for the simplest case of 2 dims (inner
+// stands for sparse)
+Variable histogram(const DataConstProxy &sparse,
+                   const VariableConstProxy &binEdges) {
+  if (sparse.dims().ndims() != 1)
+    throw std::logic_error("Only the simple case histograms may be constructed "
+                           "for now: 2 dims including sparse.");
+  if (binEdges.dtype() != dtype<double> ||
+      sparse.coords()[binEdges.dims().inner()].dtype() != DType::Double)
+    throw std::logic_error("Histogram is only available for double type.");
+  auto dim = binEdges.dims().inner();
+  auto coord = sparse.coords()[dim];
+  auto edgesSpan = binEdges.values<double>();
+  if (!std::is_sorted(edgesSpan.begin(), edgesSpan.end()))
+    throw std::logic_error("Bin edges should be sorted to make the histogram.");
+  auto resDims{sparse.dims()};
+  auto len = binEdges.dims()[dim] - 1;
+  resDims.resize(1, len);
+  Variable result = makeVariableWithVariances<double>(resDims, units::counts);
+  for (scipp::index i = 0; i < sparse.dims().size(0); ++i) {
+    const auto &coord_i = coord.sparseValues<double>()[i];
+    auto curRes = result.values<double>().begin() + i * len;
+    for (const auto &c : coord_i) {
+      auto it = std::upper_bound(edgesSpan.begin(), edgesSpan.end(), c);
+      if (it != edgesSpan.end() && it != edgesSpan.begin())
+        ++(*(curRes + (--it - edgesSpan.begin())));
+    }
+  }
+  std::copy(result.values<double>().begin(), result.values<double>().end(),
+            result.variances<double>().begin());
+  return result;
+}
+
+Variable histogram(const DataConstProxy &sparse, const Variable &binEdges) {
+  return histogram(sparse, VariableConstProxy(binEdges));
+}
+
+Dataset histogram(const Dataset &dataset, const VariableConstProxy &bins) {
+  auto out(Dataset(DatasetConstProxy::makeProxyWithEmptyIndexes(dataset)));
+  out.setCoord(bins.dims().inner(), bins);
+  for (const auto & [ name, item ] : dataset) {
+    if (item.dims().sparse())
+      out.setData(std::string(name), histogram(item, bins));
+  }
+  return out;
+}
+
+Dataset histogram(const Dataset &dataset, const Variable &bins) {
+  return histogram(dataset, VariableConstProxy(bins));
+}
+
+Dataset histogram(const Dataset &dataset, const Dim &dim) {
+  auto bins = dataset.coords()[dim];
+  return histogram(dataset, bins);
+}
 } // namespace scipp::core

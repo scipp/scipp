@@ -162,7 +162,7 @@ void init_variable(py::module &m) {
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_1D<std::string>(variable);
   bind_init_1D<Eigen::Vector3d>(variable);
-  variable
+  variable.def(py::init<const VariableProxy &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
@@ -173,7 +173,6 @@ void init_variable(py::module &m) {
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::none())
-      .def(py::init<const VariableProxy &>())
       .def("copy", [](const Variable &self) { return self; },
            "Make a copy of a Variable.")
       .def("__copy__", [](Variable &self) { return Variable(self); })
@@ -196,8 +195,9 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
-  py::class_<VariableProxy> variableProxy(m, "VariableProxy",
-                                          py::buffer_protocol());
+  py::class_<VariableConstProxy>(m, "VariableConstProxy");
+  py::class_<VariableProxy, VariableConstProxy> variableProxy(
+      m, "VariableProxy", py::buffer_protocol());
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy
       .def("copy", [](const VariableProxy &self) { return Variable(self); },

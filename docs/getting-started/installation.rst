@@ -12,7 +12,7 @@ To create a new conda environment with scipp:
 .. code-block:: sh
 
    $ conda create -n env_with_scipp -c scipp/label/dev scipp
-   
+
 To add scipp to an existing conda environment:
 
 .. code-block:: sh
@@ -35,11 +35,35 @@ Note that this is an outdated build, before the ongoing major API refactor:
 .. code-block:: sh
 
    docker pull dmscid/dataset
-   docker run -p 8888:8888 dmscid/dataset
+   docker run --rm -p 127.0.0.1:8888:8888 dmscid/dataset
 
 Navigate to ``localhost:8888`` in your browser.
 A number of Jupyter demo notebooks can be found in the ``demo/`` folder.
 These notebooks provide an introduction and basic usage turorial.
+
+Getting Started with Docker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Follow the instructions `here <https://docs.docker.com/install/>`_ to install Docker CE on your system.
+
+Linux
+#####
+
+If this is the first time using Docker there are additional setup steps:
+
+  1. Add your use to the ``docker`` group (this avoids having to use ``sudo`` with Docker commands): ``sudo usermod -aG docker $(whoami)``
+  2. Ensure that the Docker daemon is set to automatically start and is currently running: ``sudo systemctl enable docker && sudo systemctl start docker``
+
+Start a container using the command: ``docker run --rm -p 127.0.0.1:8888:8888 dmscid/dataset``.
+
+Access the container in a browser using the address: ``http://127.0.0.1:8888``.
+
+Windows & MacOS
+###############
+
+Start a container using the command: ``docker run --rm -p $(docker-machine ip $(docker-machine active)):8888:8888 dmscid/dataset``.
+
+Access the container in a browser using the address: ``http://<ip>:8888``, where ``<ip>`` is determined using the command ``docker-machine ip $(docker-machine active)``.
 
 From source
 -----------
