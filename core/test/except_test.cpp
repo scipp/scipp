@@ -53,3 +53,19 @@ TEST(StringFormattingTest, to_string_sparse_Dataset) {
       "a", makeVariable<double>({Dim::Y, Dim::X}, {4, Dimensions::Sparse}));
   ASSERT_NO_THROW(to_string(a));
 }
+
+TEST(ValidSliceTest, test_slice_range) {
+  Dimensions dims{Dim::X, 3};
+  EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 0)));
+  EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 2)));
+  EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 0, 3)));
+  EXPECT_THROW(expect::validSlice(dims, Slice(Dim::X, 3)), except::SliceError);
+  EXPECT_THROW(expect::validSlice(dims, Slice(Dim::X, -1)), except::SliceError);
+  EXPECT_THROW(expect::validSlice(dims, Slice(Dim::X, 0, 4)),
+               except::SliceError);
+}
+TEST(ValidSliceTest, test_dimension_contained) {
+  Dimensions dims{{Dim::X, 3}, {Dim::Z, 3}};
+  EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 0)));
+  EXPECT_THROW(expect::validSlice(dims, Slice(Dim::Y, 0)), except::SliceError);
+}
