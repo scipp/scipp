@@ -107,6 +107,13 @@ def test_contains():
     assert 'b' in d
 
 
+def test_dataproxy_name():
+    d = sp.Dataset()
+    d.set_coord(Dim.X, values=np.arange(4, 8))
+    d["a"] = sp.Variable([Dim.X], values=np.arange(4))
+    assert d["a"].name == "a"
+
+
 def test_slice():
     d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10.0)),
                     'b': sp.Variable(1.0)}, coords={
