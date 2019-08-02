@@ -16,12 +16,12 @@ void init_variable(py::module &);
 void init_variable_view(py::module &);
 
 PYBIND11_MODULE(_scipp, m) {
+  init_units_neutron(m);
   init_dataset(m);
   init_dimensions(m);
   init_dtype(m);
   init_neutron(m);
   init_sparse_container(m);
-  init_units_neutron(m);
   init_variable(m);
   init_variable_view(m);
 }

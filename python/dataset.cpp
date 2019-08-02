@@ -10,6 +10,7 @@
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
+#include "make_variable.h"
 #include "pybind11.h"
 
 using namespace scipp;
@@ -118,6 +119,17 @@ void init_dataset(py::module &m) {
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
       .def("set_coord", &Dataset::setCoord)
+      .def("set_coord",
+           [](Dataset &self, const Dim &label, py::array &values,
+              std::optional<py::array> &variances, const units::Unit unit,
+              const py::object &dtype) {
+             self.setCoord(label, doMakeVariable({label}, values, variances,
+                                                 unit, dtype));
+           },
+           py::arg("dims"), py::arg("values"),
+           py::arg("variances") = std::nullopt,
+           py::arg("unit") = units::Unit(units::dimensionless),
+           py::arg("dtype") = py::none())
       .def("set_labels", &Dataset::setLabels)
       .def("set_attr", &Dataset::setAttr);
 
