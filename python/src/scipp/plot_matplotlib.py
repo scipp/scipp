@@ -7,9 +7,10 @@ import numpy as np
 import scipp as sp
 from .tools import edges_to_centers, centers_to_edges, axis_label
 import matplotlib.pyplot as plt
-from ipywidgets import VBox, HBox, IntSlider, Label, RadioButtons
+# from ipywidgets import VBox, HBox, IntSlider, Label, RadioButtons
+from matplotlib.widgets import Slider, Button, RadioButtons
 import ipyvolume as ipv
-from IPython.display import display
+# from IPython.display import display
 
 
 # =============================================================================
@@ -324,7 +325,7 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
     view = View2D(input_data, axes=axes, name=name, contours=contours,
                  cb=cb, show_variances=show_variances)
 
-    display(view.vbox)
+    # display(view.vbox)
 
 
     # if filename is not None:
@@ -398,7 +399,7 @@ class View2D:
 
         # Initialise Figure and VBox objects
         # self.fig = FigureWidget(data=plotly_data, layout=plotly_layout)
-        self.vbox = Label(),
+        # self.vbox = Label(),
 
         # Initialise slider and label containers
         self.lab = []
@@ -409,25 +410,29 @@ class View2D:
         # Default starting index for slider
         indx = 0
 
-        # Now begin loop to construct sliders
-        for i in range(len(self.slider_nx)):
-            # Add a label widget to display the value of the z coordinate
-            self.lab.append(Label(value=str(self.slider_x[i][indx])))
-            # Add an IntSlider to slide along the z dimension of the array
-            self.slider.append(IntSlider(
-                value=indx,
-                min=0,
-                max=self.slider_nx[i] - 1,
-                step=1,
-                description="",
-                continuous_update=True,
-                readout=False
-            ))
-            # Add an observer to the slider
-            # self.slider[i].observe(self.update_slice, names="value")
-            # Add coordinate name and unit
-            title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
-            self.vbox += (HBox([title, self.slider[i], self.lab[i]]),)
+        # # Now begin loop to construct sliders
+        # self.slider_ax = []
+        # for i in range(len(self.slider_nx)):
+        #     self.slider_ax.append(self.fig.add_axes([0.1, 0.1*i, 0.5, 0.03]))
+        #     self.slider.append(Slider(self.slider_ax[-1], axis_label(self.coords[self.slider_dims[i]]), slider_x[0], slider_x[-1])) #, valinit=f0, valstep=delta_f)
+
+            # # Add a label widget to display the value of the z coordinate
+            # self.lab.append(Label(value=str(self.slider_x[i][indx])))
+            # # Add an IntSlider to slide along the z dimension of the array
+            # self.slider.append(IntSlider(
+            #     value=indx,
+            #     min=0,
+            #     max=self.slider_nx[i] - 1,
+            #     step=1,
+            #     description="",
+            #     continuous_update=True,
+            #     readout=False
+            # ))
+            # # Add an observer to the slider
+            # # self.slider[i].observe(self.update_slice, names="value")
+            # # Add coordinate name and unit
+            # title = Label(value=axis_label(self.coords[self.slider_dims[i]]))
+            # self.vbox += (HBox([title, self.slider[i], self.lab[i]]),)
 
         # print(self.vbox)
 
@@ -470,25 +475,37 @@ class View2D:
             # cb.ax.yaxis.set_label_coords(-1.1,0.5)
 
 
+        # Now begin loop to construct sliders
+        self.slider_ax = []
+        for i in range(len(self.slider_nx)):
+            self.slider_ax.append(self.fig.add_axes([0.1, 0.1*i, 0.5, 0.03]))
+            self.slider.append(Slider(self.slider_ax[-1], axis_label(self.coords[self.slider_dims[i]]), self.slider_x[i][0], self.slider_x[i][-1], valinit=self.slider_x[i][0]))#, valstep=delta_f)
 
         # Call update_slice once to make the initial image
         # self.update_slice(0)
         options = [ str(dim) for dim in axes ]
-        rad_x = RadioButtons(options=options, description="", disabled=False)
-        rad_y = RadioButtons(options=options, description="", disabled=False,
-                             value=options[1])
-        x_select = VBox((Label(value="x axis"), rad_x))
-        y_select = VBox((Label(value="y axis"), rad_y))
 
-        for i, dim in enumerate(axes):
-            if (str(dim) != rad_x.value) and (str(dim) != rad_y.value):
-                self.slider[i].disabled = True
+        rax_x = self.fig.add_axes([0.55, 0.0, 0.15, 0.15])
+        rax_y = self.fig.add_axes([0.75, 0.0, 0.15, 0.15])
+        self.rad_x = RadioButtons(rax_x, options, active=0)
+        self.rad_y = RadioButtons(rax_y, options, active=1)
 
 
+        # rad_x = RadioButtons(options=options, description="", disabled=False)
+        # rad_y = RadioButtons(options=options, description="", disabled=False,
+        #                      value=options[1])
+        # x_select = VBox((Label(value="x axis"), rad_x))
+        # y_select = VBox((Label(value="y axis"), rad_y))
 
-        self.vbox = VBox(self.vbox)
-        self.vbox.layout.align_items = 'center'
-        self.vbox = HBox((self.vbox, x_select, y_select))
+        # for i, dim in enumerate(axes):
+        #     if (str(dim) == rad_x.value) or (str(dim) == rad_y.value):
+        #         self.slider[i].disabled = True
+
+
+
+        # self.vbox = VBox(self.vbox)
+        # self.vbox.layout.align_items = 'center'
+        # self.vbox = HBox((self.vbox, x_select, y_select))
 
 
         return
@@ -508,23 +525,23 @@ class View2D:
         z = vslice.values
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        zdims = vslice.dims
-        zlabs = zdims.labels
+        # zdims = vslice.dims
+        zlabs = zdims.dims
         if (zlabs[0] == self.xlabs[0]) and (zlabs[1] == self.ylabs[0]):
             z = z.T
         # Apply colorbar parameters
         if self.cb["log"]:
             with np.errstate(invalid="ignore", divide="ignore"):
                 z = np.log10(z)
-        if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
-            if self.cb["min"] is not None:
-                self.fig.data[0].zmin = self.cb["min"]
-            else:
-                self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
-            if self.cb["max"] is not None:
-                self.fig.data[0].zmax = self.cb["max"]
-            else:
-                self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
+        # if (self.cb["min"] is not None) + (self.cb["max"] is not None) == 1:
+        #     if self.cb["min"] is not None:
+        #         self.fig.data[0].zmin = self.cb["min"]
+        #     else:
+        #         self.fig.data[0].zmin = np.amin(z[np.where(np.isfinite(z))])
+        #     if self.cb["max"] is not None:
+        #         self.fig.data[0].zmax = self.cb["max"]
+        #     else:
+        #         self.fig.data[0].zmax = np.amax(z[np.where(np.isfinite(z))])
         self.fig.data[0].z = z
         return
 
