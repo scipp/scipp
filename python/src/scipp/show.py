@@ -20,7 +20,9 @@ class VariableDrawer():
     def __init__(self, variable, margin=1.0, target_dims=None):
         self._margin = margin
         self._variable = variable
-        self._target_dims = target_dims if target_dims is not None else self._variable.dims
+        self._target_dims = target_dims
+        if self._target_dims is None:
+            self._target_dims = self._variable.dims
 
     def _draw_box(self, origin_x, origin_y, color):
         return """
@@ -94,7 +96,6 @@ class VariableDrawer():
     def _draw_labels(self, offset):
         dims = self._variable.dims
         shape = self._variable.shape
-        d = dict()
         view_height = self.size()[1]
         svg = ''
         dx = offset[0]
@@ -135,7 +136,8 @@ class VariableDrawer():
             self._variable.dims, self._variable.shape,
             str(self._variable.unit), self._variable.has_variances)
         if title is not None:
-            svg = '<text x="{}" y="{}" style="font-size:0.4px">{}</text>'.format(
+            svg = '<text x="{}" y="{}" \
+                    style="font-size:0.4px">{}</text>'.format(
                 offset[0] + 0, offset[1] + 0.6, title)
             svg += '<title>{}</title>'.format(details)
         else:
@@ -151,11 +153,10 @@ class VariableDrawer():
         if self._variable.has_variances:
             svg += self._draw_array(color=color,
                                     offset=offset +
-                                    [self._variance_offset(), 0])
-            svg += self._draw_labels(offset=offset)
+                                    np.array([self._variance_offset(), 0]))
             svg += self._draw_array(color=color,
                                     offset=offset +
-                                    [0, self._variance_offset()])
+                                    np.array([0, self._variance_offset()]))
             svg += self._draw_labels(offset=offset)
         else:
             svg += self._draw_array(color=color, offset=offset)
@@ -179,7 +180,10 @@ class DatasetDrawer():
         self._dataset = dataset
 
     def _dims(self):
-        # The dimension-order in a dataset is not defined. However, here we need one for the practical purpose of drawing variables with consistent ordering. We simply use that of the item with highest dimension count.
+        # The dimension-order in a dataset is not defined. However, here we
+        # need one for the practical purpose of drawing variables with
+        # consistent ordering. We simply use that of the item with highest
+        # dimension count.
         count = -1
         for name, item in self._dataset:
             if len(item.dims) > count:
@@ -194,16 +198,15 @@ class DatasetDrawer():
         margin = 0.8
         dims = self._dims()
         # TODO bin edges (offset by 0.5)
-        # TODO item names, category (coords, labels) indicators (names, frames)
-        # TODO multiple items per line, if there is space
         # TODO font scaling and other scaling issues
         # TODO sparse variables
-        # TODO limit number of drawn cubes if shape exceeds certain limit (draw just a single cube with correct edge proportions?)
+        # TODO limit number of drawn cubes if shape exceeds certain limit
+        #      (draw just a single cube with correct edge proportions?)
         items = []
         for name, data in dataset:
             if data.dims != dims:
                 items.append((name, data))
-        # Render highest-dimension items last so coords optically align with them
+        # Render highest-dimension items last so coords are optically aligned
         for name, data in dataset:
             if data.dims == dims:
                 items.append((name, data))
@@ -221,7 +224,10 @@ class DatasetDrawer():
         coord_2_x = width
         coord_2_y = height
 
-        # It might be better to draw coords on the top and left instead of bottom and right, but this way is easier for offset computation, so we do it here for now.
+        # It might be better to draw coords on the top and left instead of
+        # bottom and right, but this way is easier for offset computation.
+        # Maybe just use an svg offset transform to accomplish this in a
+        # nice way?
         for dim, coord in dataset.coords:
             drawer = VariableDrawer(coord, margin, target_dims=dims)
             size = drawer.size()
