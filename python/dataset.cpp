@@ -137,6 +137,8 @@ void init_dataset(py::module &m) {
   bind_binary<Dataset>(datasetProxy);
   bind_binary<DatasetProxy>(datasetProxy);
   bind_binary<DataProxy>(datasetProxy);
+  bind_binary<Dataset>(dataProxy);
+  bind_binary<DatasetProxy>(dataProxy);
 
   bind_data_properties(dataProxy);
 
