@@ -17,9 +17,10 @@ _colors = {
 
 
 class VariableDrawer():
-    def __init__(self, variable, margin=1.0):
+    def __init__(self, variable, margin=1.0, target_dims=None):
         self._margin = margin
         self._variable = variable
+        self._target_dims = target_dims if target_dims is not None else self._variable.dims
 
     def _draw_box(self, origin_x, origin_y, color):
         return """
@@ -46,24 +47,22 @@ class VariableDrawer():
             depth = shape[-3] + 1
         return 0.3 * depth
 
-    def _extents(self, target_dims):
+    def _extents(self):
         shape = self._variable.shape
         dims = self._variable.dims
         d = dict(zip(dims, shape))
         e = []
-        if target_dims is None:
-            target_dims = dims
-        for dim in target_dims:
+        for dim in self._target_dims:
             if dim in d:
                 e.append(d[dim])
             else:
                 e.append(1)
         return [1] * (3 - len(e)) + e
 
-    def size(self, dims=None):
+    def size(self):
         width = 2 * self._margin
         height = 2 * self._margin
-        shape = self._extents(dims)
+        shape = self._extents()
 
         width += shape[-1]
         height += shape[-2]
@@ -75,14 +74,14 @@ class VariableDrawer():
         height += 0.3 * depth
         return [width, height]
 
-    def _draw_array(self, dims, color, offset=[0, 0]):
+    def _draw_array(self, color, offset=[0, 0]):
         shape = self._variable.shape
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
         svg = ''
 
         if len(shape) <= 3:
-            lz, ly, lx = self._extents(dims)
+            lz, ly, lx = self._extents()
             for z in range(lz):
                 for y in reversed(range(ly)):
                     for x in range(lx):
@@ -95,33 +94,40 @@ class VariableDrawer():
     def _draw_labels(self, offset):
         dims = self._variable.dims
         shape = self._variable.shape
+        d = dict()
         view_height = self.size()[1]
         svg = ''
         dx = offset[0]
         dy = offset[1]
-        if len(shape) > 0:
-            svg += '<text x="{}" y="{}" text-anchor="middle" fill="dim-color" \
-                    style="font-size:0.2px">{}</text>'.format(
-                dx + self._margin + 0.5 * shape[-1],
-                dy + view_height - self._margin + 0.3, dims[-1])
-        if len(shape) > 1:
-            svg += '<text x="x_pos" y="y_pos" text-anchor="middle" \
+
+        def make_label(dim, extent, axis):
+            if axis == 2:
+                return '<text x="{}" y="{}" text-anchor="middle" fill="dim-color" \
+                        style="font-size:0.2px">{}</text>'.format(
+                    dx + self._margin + 0.5 * extent,
+                    dy + view_height - self._margin + 0.3, dim)
+            if axis == 1:
+                return '<text x="x_pos" y="y_pos" text-anchor="middle" \
                     fill="dim-color" style="font-size:0.2px" \
                     transform="rotate(-90, x_pos, y_pos)">{}</text>'.replace(
-                'x_pos', str(dx + self._margin - 0.2)).replace(
-                    'y_pos',
-                    str(dy + view_height - self._margin - 0.2 -
-                        0.5 * shape[-2])).format(dims[-2])
-        if len(shape) > 2:
-            svg += '<text x="x_pos" y="y_pos" text-anchor="middle" \
+                    'x_pos', str(dx + self._margin - 0.2)).replace(
+                        'y_pos',
+                        str(dy + view_height - self._margin - 0.2 -
+                            0.5 * extent)).format(dim)
+            if axis == 0:
+                return '<text x="x_pos" y="y_pos" text-anchor="middle" \
                     dominant-baseline="central" \
                     fill="dim-color" style="font-size:0.2px" \
                     transform="rotate(-45, x_pos, y_pos)">{}</text>'.replace(
-                'x_pos',
-                str(dx + self._margin + 0.3 * 0.5 * shape[-3] - 0.2)).replace(
-                    'y_pos',
-                    str(dy + view_height - self._margin - shape[-2] -
-                        0.3 * 0.5 * shape[-3] - 0.2)).format(dims[-3])
+                    'x_pos',
+                    str(dx + self._margin + 0.3 * 0.5 * extent - 0.2)).replace(
+                        'y_pos',
+                        str(dy + view_height - self._margin -
+                            self._extents()[-2] - 0.3 * 0.5 * extent -
+                            0.2)).format(dim)
+
+        for dim, extent in zip(dims, shape):
+            svg += make_label(dim, extent, self._target_dims.index(dim))
         return svg
 
     def _draw_info(self, offset):
@@ -133,26 +139,20 @@ class VariableDrawer():
                                 str(self._variable.unit),
                                 self._variable.has_variances)
 
-    def draw(self, color, offset=np.zeros(2), labels=True, dims=None):
-        if labels:
-            svg = self._draw_info(offset)
-        else:
-            svg = ''
+    def draw(self, color, offset=np.zeros(2)):
+        svg = self._draw_info(offset)
         if self._variable.has_variances:
             svg += self._draw_array(color=color,
                                     offset=offset +
-                                    [self._variance_offset(), 0], dims=dims)
-            if labels:
-                svg += self._draw_labels(offset=offset)
+                                    [self._variance_offset(), 0])
+            svg += self._draw_labels(offset=offset)
             svg += self._draw_array(color=color,
                                     offset=offset +
-                                    [0, self._variance_offset()], dims=dims)
-            if labels:
-                svg += self._draw_labels(offset=offset)
+                                    [0, self._variance_offset()])
+            svg += self._draw_labels(offset=offset)
         else:
-            svg += self._draw_array(color=color, offset=offset, dims=dims)
-            if labels:
-                svg += self._draw_labels(offset=offset)
+            svg += self._draw_array(color=color, offset=offset)
+            svg += self._draw_labels(offset=offset)
         return svg
 
     def _set_colors(self, svg):
@@ -183,7 +183,7 @@ class DatasetDrawer():
         content = ''
         width = 0
         height = 0
-        margin = 0.4
+        margin = 1
         dims = self._dims()
         # TODO bin edges (offset by 0.5)
         # TODO item names, category (coords, labels) indicators (names, frames)
@@ -201,39 +201,43 @@ class DatasetDrawer():
                 items.append((name, data))
 
         for name, data in items:
-            drawer = VariableDrawer(data, margin)
-            content += drawer.draw(color=_colors['data'], offset=[0, height], labels=False, dims=dims)
-            size = drawer.size(dims)
+            drawer = VariableDrawer(data, margin, target_dims=dims)
+            content += drawer.draw(color=_colors['data'], offset=[0, height])
+            size = drawer.size()
             width = max(width, size[0])
             old_height = height
             height += size[1]
         # It might be better to draw coords on the top and left instead of bottom and right, but this way is easier for offset computation, so we do it here for now.
         for dim, coord in dataset.coords:
-            drawer = VariableDrawer(coord, margin)
-            size = drawer.size(dims)
+            drawer = VariableDrawer(coord, margin, target_dims=dims)
+            size = drawer.size()
             if dim == dims[-1]:
-                content += drawer.draw(color=_colors['coord'], offset=[0, height], labels=False, dims=dims)
+                content += drawer.draw(color=_colors['coord'],
+                                       offset=[0, height])
                 width = max(width, size[0])
                 height += size[1]
             else:
-                content += drawer.draw(color=_colors['coord'], offset=[width, old_height], labels=False, dims=dims)
+                content += drawer.draw(color=_colors['coord'],
+                                       offset=[width, old_height])
                 width += size[0]
 
         for name, labels in dataset.labels:
-            drawer = VariableDrawer(labels, margin)
-            size = drawer.size(dims)
+            drawer = VariableDrawer(labels, margin, target_dims=dims)
+            size = drawer.size()
             if labels.dims[-1] == dims[-1]:
-                content += drawer.draw(color=_colors['labels'], offset=[0, height], labels=False, dims=dims)
+                content += drawer.draw(color=_colors['labels'],
+                                       offset=[0, height])
                 width = max(width, size[0])
                 height += size[1]
             else:
-                content += drawer.draw(color=_colors['labels'], offset=[width, old_height], labels=False, dims=dims)
+                content += drawer.draw(color=_colors['labels'],
+                                       offset=[width, old_height])
                 width += size[0]
 
         for name, attr in dataset.attrs:
-            drawer = VariableDrawer(attr, margin)
-            content += drawer.draw(color=_colors['attr'], offset=[0, height], labels=False, dims=dims)
-            size = drawer.size(dims)
+            drawer = VariableDrawer(attr, margin, target_dims=dims)
+            content += drawer.draw(color=_colors['attr'], offset=[0, height])
+            size = drawer.size()
             width = max(width, size[0])
             height += size[1]
 
