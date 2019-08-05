@@ -58,6 +58,8 @@ else()
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
+option(DISABLE_LTO "Disable LTO for faster linking" OFF)
+option(DYNAMIC_LIB "Build shared libraries" OFF)
 
 add_compile_options(-Wall
                     -Wextra

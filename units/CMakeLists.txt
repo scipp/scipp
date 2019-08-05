@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+set(TARGET_NAME "scipp-units")
 set(INC_FILES
     include/scipp/units/dummy.h
     include/scipp/units/unit.h
@@ -17,15 +18,25 @@ if(NOT SCIPP_UNITS_SYSTEM)
 endif()
 string(TOUPPER ${SCIPP_UNITS_SYSTEM} SCIPP_UNITS_SYSTEM)
 
-add_library(scipp-units STATIC ${INC_FILES} ${SRC_FILES})
-generate_export_header(scipp-units)
-target_compile_definitions(scipp-units PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM})
-target_link_libraries(scipp-units PUBLIC Boost::boost)
+set(LINK_TYPE "STATIC")
+if(DYNAMIC_LIB)
+  set(LINK_TYPE "SHARED")
+endif(DYNAMIC_LIB)
+
+add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
+generate_export_header(${TARGET_NAME})
+target_compile_definitions(${TARGET_NAME} PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM})
+target_link_libraries(${TARGET_NAME} PUBLIC Boost::boost)
 target_include_directories(
-  scipp-units
+  ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          ${CMAKE_CURRENT_BINARY_DIR})
-set_target_properties(scipp-units PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+if(DISABLE_LTO)
+  set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+endif(DISABLE_LTO)
+
+set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(test)
