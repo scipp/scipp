@@ -120,11 +120,11 @@ class VariableDrawer():
                     fill="dim-color" style="font-size:0.2px" \
                     transform="rotate(-45, x_pos, y_pos)">{}</text>'.replace(
                     'x_pos',
-                    str(dx + self._margin + 0.3 * 0.5 * extent - 0.2)).replace(
+                    str(dx + self._margin + 0.3 * 0.5 * extent - 0.1)).replace(
                         'y_pos',
                         str(dy + view_height - self._margin -
                             self._extents()[-2] - 0.3 * 0.5 * extent -
-                            0.2)).format(dim)
+                            0.1)).format(dim)
 
         for dim, extent in zip(dims, shape):
             svg += make_label(dim, extent, self._target_dims.index(dim))
@@ -169,7 +169,7 @@ class VariableDrawer():
 
     def make_svg(self):
         return self._set_colors('<svg viewBox="0 0 {} {}">{}</svg>'.format(
-            max(12,
+            max(16,
                 self.size()[0]),
             self.size()[1], self.draw(color=_colors['data'])))
 
@@ -191,7 +191,7 @@ class DatasetDrawer():
         content = ''
         width = 0
         height = 0
-        margin = 1
+        margin = 0.8
         dims = self._dims()
         # TODO bin edges (offset by 0.5)
         # TODO item names, category (coords, labels) indicators (names, frames)
@@ -215,8 +215,11 @@ class DatasetDrawer():
                                    title=name)
             size = drawer.size()
             width = max(width, size[0])
-            old_height = height
+            coord_1_y = height
             height += size[1]
+
+        coord_2_x = width
+        coord_2_y = height
 
         # It might be better to draw coords on the top and left instead of bottom and right, but this way is easier for offset computation, so we do it here for now.
         for dim, coord in dataset.coords:
@@ -228,11 +231,16 @@ class DatasetDrawer():
                                        title=dim)
                 width = max(width, size[0])
                 height += size[1]
-            else:
+            elif dim == dims[-2]:
                 content += drawer.draw(color=_colors['coord'],
-                                       offset=[width, old_height],
+                                       offset=[width, coord_1_y],
                                        title=dim)
                 width += size[0]
+            else:
+                content += drawer.draw(color=_colors['coord'],
+                                       offset=[coord_2_x, coord_2_y],
+                                       title=dim)
+                coord_2_x += size[0]
 
         for name, labels in dataset.labels:
             drawer = VariableDrawer(labels, margin, target_dims=dims)
@@ -243,11 +251,16 @@ class DatasetDrawer():
                                        title=name)
                 width = max(width, size[0])
                 height += size[1]
-            else:
+            elif labels.dims[-1] == dims[-2]:
                 content += drawer.draw(color=_colors['labels'],
-                                       offset=[width, old_height],
+                                       offset=[width, coord_1_y],
                                        title=name)
                 width += size[0]
+            else:
+                content += drawer.draw(color=_colors['labels'],
+                                       offset=[coord_2_x, coord_2_y],
+                                       title=name)
+                coord_2_x += size[0]
 
         for name, attr in dataset.attrs:
             drawer = VariableDrawer(attr, margin, target_dims=dims)
@@ -259,7 +272,7 @@ class DatasetDrawer():
             height += size[1]
 
         return '<svg viewBox="0 0 {} {}">{}</svg>'.format(
-            max(20, width), height, content)
+            max(16, width), height, content)
 
 
 def show(container):
