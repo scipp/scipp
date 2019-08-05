@@ -736,9 +736,14 @@ TEST(DatasetSetData, sparse_to_sparse) {
 
 TEST(DatasetSetData, sparse_to_dense) {
   auto base = non_trivial_2d_sparse("base");
+  auto var = makeVariable<double>({Dim::Y}, {Dimensions::Sparse});
+  var.sparseValues<double>()[0] = {1, 2, 3};
+  base.setSparseLabels("base", "l", var);
+
   auto dense = datasetFactory.make();
   dense.setData("sparse", base["base"]);
   EXPECT_EQ(base["base"].data(), dense["sparse"].data());
+  EXPECT_EQ(base["base"].labels().items().count("l"), 1);
 }
 
 TEST(DatasetSetData, dense_to_dense) {
@@ -756,4 +761,15 @@ TEST(DatasetSetData, dense_to_empty) {
   ds.setData("data_x", dense["data_x"]);
   EXPECT_EQ(dense["data_x"].coords(), ds["data_x"].coords());
   EXPECT_EQ(dense["data_x"].data(), ds["data_x"].data());
+}
+
+TEST(DatasetSetData, labels) {
+  auto dense = datasetFactory.make();
+  dense.setLabels("l", makeVariable<double>({Dim::X}, {dense.coords()[Dim::X].values<double>().size()}));
+  auto d = Dataset(dense.slice({Dim::Y, 0}));
+  dense.setData("data_x_1", dense["data_x"]);
+  EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
+
+  d.setLabels("l1", makeVariable<double>({Dim::X}, {d.coords()[Dim::X].values<double>().size()}));
+  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
 }
