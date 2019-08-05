@@ -839,11 +839,15 @@ TEST(DatasetSetData, dense_to_empty) {
 
 TEST(DatasetSetData, labels) {
   auto dense = datasetFactory.make();
-  dense.setLabels("l", makeVariable<double>({Dim::X}, {dense.coords()[Dim::X].values<double>().size()}));
+  dense.setLabels(
+      "l", makeVariable<double>(
+               {Dim::X}, {dense.coords()[Dim::X].values<double>().size()}));
   auto d = Dataset(dense.slice({Dim::Y, 0}));
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
-  d.setLabels("l1", makeVariable<double>({Dim::X}, {d.coords()[Dim::X].values<double>().size()}));
+  d.setLabels(
+      "l1", makeVariable<double>({Dim::X},
+                                 {d.coords()[Dim::X].values<double>().size()}));
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
 }
