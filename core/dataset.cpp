@@ -249,6 +249,20 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset,
       }
     }
   }
+
+  const auto dsLabels{dataset.labels()};
+  const auto otLabels{other.labels()};
+  const auto dsLItems{dsLabels.items()};
+  for (const auto & [ nm, v ] : otLabels) {
+    if (auto iter = dsLItems.find(nm); iter == dsLItems.end()) {
+      return false;
+    } else {
+      if (*iter->second.first != v) {
+        return false;
+      }
+    }
+
+  }
   return true;
 }
 
@@ -278,6 +292,12 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
   auto dim = data.dims().sparseDim();
   if (dim != Dim::Invalid) {
     setSparseCoord(name, data.coords()[dim]);
+  }
+
+  for (const auto & [nm, v] : data.labels()) {
+    if(v.dims().sparse()) {
+      setSparseLabels(name, name, v);
+    }
   }
 }
 
