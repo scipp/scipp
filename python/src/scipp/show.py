@@ -46,25 +46,28 @@ class VariableDrawer():
             depth = shape[-3] + 1
         return 0.3 * depth
 
-    def size(self):
+    def _extents(self, target_dims):
+        shape = self._variable.shape
+        dims = self._variable.dims
+        d = dict(zip(dims, shape))
+        e = []
+        if target_dims is None:
+            target_dims = dims
+        for dim in target_dims:
+            if dim in d:
+                e.append(d[dim])
+            else:
+                e.append(1)
+        return [1] * (3 - len(e)) + e
+
+    def size(self, dims=None):
         width = 2 * self._margin
         height = 2 * self._margin
-        shape = self._variable.shape
+        shape = self._extents(dims)
 
-        if len(shape) > 0:
-            width += self._variable.shape[-1]
-        else:
-            width += 1
-
-        if len(shape) > 1:
-            height += self._variable.shape[-2]
-        else:
-            height += 1
-
-        if len(shape) <= 2:
-            depth = 1
-        else:
-            depth = self._variable.shape[-3]
+        width += shape[-1]
+        height += shape[-2]
+        depth = shape[-3]
 
         if self._variable.has_variances:
             depth += depth + 1
@@ -77,22 +80,9 @@ class VariableDrawer():
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
         svg = ''
-        def extents(var, target_dims):
-            shape = var.shape
-            dims = var.dims
-            d = dict(zip(dims, shape))
-            e = []
-            if target_dims is None:
-                target_dims = dims
-            for dim in target_dims:
-                if dim in d:
-                    e.append(d[dim])
-                else:
-                    e.append(1)
-            return [1] * (3 - len(e)) + e
 
         if len(shape) <= 3:
-            lz, ly, lx = extents(self._variable, dims)
+            lz, ly, lx = self._extents(dims)
             for z in range(lz):
                 for y in reversed(range(ly)):
                     for x in range(lx):
@@ -144,7 +134,10 @@ class VariableDrawer():
                                 self._variable.has_variances)
 
     def draw(self, color, offset=np.zeros(2), labels=True, dims=None):
-        svg = self._draw_info(offset)
+        if labels:
+            svg = self._draw_info(offset)
+        else:
+            svg = ''
         if self._variable.has_variances:
             svg += self._draw_array(color=color,
                                     offset=offset +
@@ -191,35 +184,43 @@ class DatasetDrawer():
         width = 0
         height = 0
         dims = self._dims()
-        # TODO use common axes given by dataset, not independently for variables
         # TODO bin edges (offset by 0.5)
         # TODO item names, category (coords, labels) indicators (names, frames)
         # TODO multiple items per line, if there is space
         # TODO font scaling and other scaling issues
         # TODO sparse variables
         # TODO limit number of drawn cubes if shape exceeds certain limit (draw just a single cube with correct edge proportions?)
-        for name, coord in dataset.coords:
-            drawer = VariableDrawer(coord)
-            content += drawer.draw(color=_colors['coord'], offset=[0, height], labels=False, dims=dims)
-            size = drawer.size()
-            width = max(width, size[0])
-            height += size[1]
-        for name, labels in dataset.labels:
-            drawer = VariableDrawer(labels)
-            content += drawer.draw(color=_colors['labels'], offset=[0, height], labels=False, dims=dims)
-            size = drawer.size()
-            width = max(width, size[0])
-            height += size[1]
-        for name, attr in dataset.attrs:
-            drawer = VariableDrawer(attr)
-            content += drawer.draw(color=_colors['attr'], offset=[0, height], labels=False, dims=dims)
-            size = drawer.size()
-            width = max(width, size[0])
-            height += size[1]
         for name, data in dataset:
             drawer = VariableDrawer(data)
             content += drawer.draw(color=_colors['data'], offset=[0, height], labels=False, dims=dims)
-            size = drawer.size()
+            size = drawer.size(dims)
+            width = max(width, size[0])
+            old_height = height
+            height += size[1]
+        for dim, coord in dataset.coords:
+            drawer = VariableDrawer(coord)
+            size = drawer.size(dims)
+            if dim == dims[-1]:
+                content += drawer.draw(color=_colors['coord'], offset=[0, height], labels=False, dims=dims)
+                width = max(width, size[0])
+                height += size[1]
+            else:
+                content += drawer.draw(color=_colors['coord'], offset=[width, old_height], labels=False, dims=dims)
+                width += size[0]
+        for name, labels in dataset.labels:
+            drawer = VariableDrawer(labels)
+            size = drawer.size(dims)
+            if labels.dims[-1] == dims[-1]:
+                content += drawer.draw(color=_colors['labels'], offset=[0, height], labels=False, dims=dims)
+                width = max(width, size[0])
+                height += size[1]
+            else:
+                content += drawer.draw(color=_colors['labels'], offset=[width, old_height], labels=False, dims=dims)
+                width += size[0]
+        for name, attr in dataset.attrs:
+            drawer = VariableDrawer(attr)
+            content += drawer.draw(color=_colors['attr'], offset=[0, height], labels=False, dims=dims)
+            size = drawer.size(dims)
             width = max(width, size[0])
             height += size[1]
 
