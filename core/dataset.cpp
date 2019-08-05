@@ -789,8 +789,8 @@ template <class T> void copy_metadata(Dataset &dest, const T &src) {
   }
 }
 
-void copy_metadata(Dataset &dest, const std::string &name,
-                   const DataConstProxy &src) {
+void copy_sparse_metadata(Dataset &dest, const std::string &name,
+                          const DataConstProxy &src) {
   /* Sparse coordinates */
   for (const auto &coord : src.coords()) {
     if (coord.second.dims().sparse()) {
@@ -818,7 +818,10 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
       expect::matchingDataPresence(a[name], item);
       if (item.hasData())
         res.setData(std::string(name), op(a[name].data(), item.data()));
-      copy_metadata(res, std::string(name), a[name]);
+      if (item.dims().sparse())
+        copy_sparse_metadata(res, std::string(name), item);
+      else
+        copy_sparse_metadata(res, std::string(name), a[name]);
     }
   }
 
@@ -835,7 +838,10 @@ auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
     expect::coordsAndLabelsAreSuperset(item, b);
     if (item.hasData())
       res.setData(std::string(name), op(item.data(), b.data()));
-    copy_metadata(res, std::string(name), item);
+    if (item.dims().sparse())
+      copy_sparse_metadata(res, std::string(name), item);
+    else
+      copy_sparse_metadata(res, std::string(name), b);
   }
 
   return res;
@@ -851,7 +857,10 @@ auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
     expect::coordsAndLabelsAreSuperset(a, item);
     if (item.hasData())
       res.setData(std::string(name), op(a.data(), item.data()));
-    copy_metadata(res, std::string(name), item);
+    if (item.dims().sparse())
+      copy_sparse_metadata(res, std::string(name), item);
+    else
+      copy_sparse_metadata(res, std::string(name), a);
   }
 
   return res;

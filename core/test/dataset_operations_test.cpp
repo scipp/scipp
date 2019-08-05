@@ -597,6 +597,34 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataconstproxy_sparse_rhs) {
   EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
 }
 
+TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
+  Dataset dense;
+  dense.setData("a", makeVariable<double>(2.0));
+  const auto sparse =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
+
+  const auto res = TestFixture::op(sparse, dense);
+
+  EXPECT_EQ(res.size(), 1);
+  EXPECT_TRUE(res.contains("a"));
+  EXPECT_EQ(res["a"].data(),
+            TestFixture::op(sparse["a"].data(), dense["a"].data()));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, dense_with_sparse) {
+  Dataset dense;
+  dense.setData("a", makeVariable<double>(2.0));
+  const auto sparse =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
+
+  const auto res = TestFixture::op(dense, sparse);
+
+  EXPECT_EQ(res.size(), 1);
+  EXPECT_TRUE(res.contains("a"));
+  EXPECT_EQ(res["a"].data(),
+            TestFixture::op(dense["a"].data(), sparse["a"].data()));
+}
+
 TYPED_TEST(DatasetBinaryOpTest, dataconstproxy_sparse_lhs_dataset_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
