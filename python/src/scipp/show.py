@@ -130,17 +130,24 @@ class VariableDrawer():
             svg += make_label(dim, extent, self._target_dims.index(dim))
         return svg
 
-    def _draw_info(self, offset):
-        return '<text x="{}" y="{}" \
-                style="font-size:0.2px">\
-                dims={}, shape={}, unit={}, variances={}\
-                </text>'.format(offset[0] + 0, offset[1] + 0.6,
-                                self._variable.dims, self._variable.shape,
-                                str(self._variable.unit),
-                                self._variable.has_variances)
+    def _draw_info(self, offset, title):
+        details = 'dims={}, shape={}, unit={}, variances={}'.format(
+            self._variable.dims, self._variable.shape,
+            str(self._variable.unit), self._variable.has_variances)
+        if title is not None:
+            svg = '<text x="{}" y="{}" style="font-size:0.4px">{}</text>'.format(
+                offset[0] + 0, offset[1] + 0.6, title)
+            svg += '<title>{}</title>'.format(details)
+        else:
+            svg = '<text x="{}" y="{}" \
+                    style="font-size:0.2px">\
+                    {}\
+                    </text>'.format(offset[0] + 0, offset[1] + 0.6, details)
+        return svg
 
-    def draw(self, color, offset=np.zeros(2)):
-        svg = self._draw_info(offset)
+    def draw(self, color, offset=np.zeros(2), title=None):
+        svg = '<g>'
+        svg += self._draw_info(offset, title)
         if self._variable.has_variances:
             svg += self._draw_array(color=color,
                                     offset=offset +
@@ -153,6 +160,7 @@ class VariableDrawer():
         else:
             svg += self._draw_array(color=color, offset=offset)
             svg += self._draw_labels(offset=offset)
+        svg += '</g>'
         return svg
 
     def _set_colors(self, svg):
@@ -202,23 +210,28 @@ class DatasetDrawer():
 
         for name, data in items:
             drawer = VariableDrawer(data, margin, target_dims=dims)
-            content += drawer.draw(color=_colors['data'], offset=[0, height])
+            content += drawer.draw(color=_colors['data'],
+                                   offset=[0, height],
+                                   title=name)
             size = drawer.size()
             width = max(width, size[0])
             old_height = height
             height += size[1]
+
         # It might be better to draw coords on the top and left instead of bottom and right, but this way is easier for offset computation, so we do it here for now.
         for dim, coord in dataset.coords:
             drawer = VariableDrawer(coord, margin, target_dims=dims)
             size = drawer.size()
             if dim == dims[-1]:
                 content += drawer.draw(color=_colors['coord'],
-                                       offset=[0, height])
+                                       offset=[0, height],
+                                       title=dim)
                 width = max(width, size[0])
                 height += size[1]
             else:
                 content += drawer.draw(color=_colors['coord'],
-                                       offset=[width, old_height])
+                                       offset=[width, old_height],
+                                       title=dim)
                 width += size[0]
 
         for name, labels in dataset.labels:
@@ -226,17 +239,21 @@ class DatasetDrawer():
             size = drawer.size()
             if labels.dims[-1] == dims[-1]:
                 content += drawer.draw(color=_colors['labels'],
-                                       offset=[0, height])
+                                       offset=[0, height],
+                                       title=name)
                 width = max(width, size[0])
                 height += size[1]
             else:
                 content += drawer.draw(color=_colors['labels'],
-                                       offset=[width, old_height])
+                                       offset=[width, old_height],
+                                       title=name)
                 width += size[0]
 
         for name, attr in dataset.attrs:
             drawer = VariableDrawer(attr, margin, target_dims=dims)
-            content += drawer.draw(color=_colors['attr'], offset=[0, height])
+            content += drawer.draw(color=_colors['attr'],
+                                   offset=[0, height],
+                                   title=name)
             size = drawer.size()
             width = max(width, size[0])
             height += size[1]
