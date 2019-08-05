@@ -679,8 +679,6 @@ TYPED_TEST(DatasetBinaryOpTest,
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
                except::CoordMismatchError);
-  EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
