@@ -128,7 +128,9 @@ class VariableDrawer():
                             0.1)).format(dim)
 
         for dim, extent in zip(dims, shape):
-            svg += make_label(dim, extent, self._target_dims.index(dim))
+            svg += make_label(
+                dim, extent,
+                self._target_dims.index(dim) + (3 - len(self._target_dims)))
         return svg
 
     def _draw_info(self, offset, title):
