@@ -537,6 +537,7 @@ public:
   /// The returned proxy will not contain references to data items that do not
   /// depend on the sliced dimension.
   DatasetConstProxy slice(const Slice slice1) const {
+    expect::validSlice(coords(), slice1.dim, slice1);
     DatasetConstProxy sliced(*this);
     auto &indices = sliced.m_indices;
     sliced.m_indices.erase(

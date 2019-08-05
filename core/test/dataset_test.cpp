@@ -267,6 +267,28 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
                except::DimensionError);
 }
 
+template <typename T> void do_test_slice_validation(const T &container) {
+  EXPECT_THROW(container.slice(Slice{Dim::Y, 0, 1}), except::SliceError);
+  EXPECT_THROW(container.slice(Slice{Dim::X, 0, 3}), except::SliceError);
+  EXPECT_THROW(container.slice(Slice{Dim::X, -1, 0}), except::SliceError);
+  EXPECT_NO_THROW(container.slice(Slice{Dim::X, 0, 1}));
+}
+
+TEST(DatasetTest, slice_validation) {
+  Dataset dataset;
+  auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
+  dataset.setCoord(Dim::X, var);
+  do_test_slice_validation(dataset);
+
+  // Make sure correct via const proxies
+  DatasetConstProxy constproxy(dataset);
+  do_test_slice_validation(constproxy);
+
+  // Make sure correct via proxies
+  DatasetProxy proxy(dataset);
+  do_test_slice_validation(proxy);
+}
+
 TEST(DatasetTest, simple_sparse_slice) {
   Dataset dataset;
   auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
@@ -788,9 +810,9 @@ protected:
 template <int max> constexpr auto valid_ranges() {
   using scipp::index;
   const auto size = max + 1;
-  std::array<std::pair<index, index>, (size * size + size) / 2> pairs;
+  std::array<std::pair<index, index>, ((size * size + size) / 2) - 1> pairs;
   index i = 0;
-  for (index first = 0; first <= max; ++first)
+  for (index first = 0; first < max; ++first)
     for (index second = first + 0; second <= max; ++second) {
       pairs[i].first = first;
       pairs[i].second = second;
