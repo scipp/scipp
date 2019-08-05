@@ -261,7 +261,6 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset,
         return false;
       }
     }
-
   }
   return true;
 }
@@ -294,8 +293,8 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
     setSparseCoord(name, data.coords()[dim]);
   }
 
-  for (const auto & [nm, v] : data.labels()) {
-    if(v.dims().sparse()) {
+  for (const auto & [ nm, v ] : data.labels()) {
+    if (v.dims().sparse()) {
       setSparseLabels(name, name, v);
     }
   }
