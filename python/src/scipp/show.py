@@ -72,34 +72,34 @@ class VariableDrawer():
         height += 0.3 * depth
         return [width, height]
 
-    def _draw_array(self, color, offset=[0, 0]):
+    def _draw_array(self, dims, color, offset=[0, 0]):
         shape = self._variable.shape
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
-        if len(shape) == 0:
-            return self._draw_box(dx + self._margin, dy + self._margin, color)
-        elif len(shape) == 1:
-            svg = ''
-            for i in range(shape[0]):
-                svg += self._draw_box(dx + i + self._margin, dy + self._margin,
-                                      color)
-        elif len(shape) == 2:
-            svg = ''
-            for y in reversed(range(shape[0])):
-                for x in range(shape[1]):
-                    svg += self._draw_box(dx + x + self._margin,
-                                          dy + y + self._margin, color)
-        elif len(shape) == 3:
-            svg = ''
-            for z in range(shape[0]):
-                for y in reversed(range(shape[1])):
-                    for x in range(shape[2]):
+        svg = ''
+        def extents(var, target_dims):
+            shape = var.shape
+            dims = var.dims
+            d = dict(zip(dims, shape))
+            e = []
+            if target_dims is None:
+                target_dims = dims
+            for dim in target_dims:
+                if dim in d:
+                    e.append(d[dim])
+                else:
+                    e.append(1)
+            return [1] * (3 - len(e)) + e
+
+        if len(shape) <= 3:
+            lz, ly, lx = extents(self._variable, dims)
+            for z in range(lz):
+                for y in reversed(range(ly)):
+                    for x in range(lx):
                         svg += self._draw_box(
                             dx + x + self._margin + 0.3 *
-                            (shape[0] - z - self._margin),
+                            (lz - z - self._margin),
                             dy + y + self._margin + 0.3 * z, color)
-        else:
-            return ''
         return svg
 
     def _draw_labels(self, offset):
@@ -143,20 +143,23 @@ class VariableDrawer():
                                 str(self._variable.unit),
                                 self._variable.has_variances)
 
-    def draw(self, color, offset=np.zeros(2)):
+    def draw(self, color, offset=np.zeros(2), labels=True, dims=None):
         svg = self._draw_info(offset)
         if self._variable.has_variances:
             svg += self._draw_array(color=color,
                                     offset=offset +
-                                    [self._variance_offset(), 0])
-            svg += self._draw_labels(offset=offset)
+                                    [self._variance_offset(), 0], dims=dims)
+            if labels:
+                svg += self._draw_labels(offset=offset)
             svg += self._draw_array(color=color,
                                     offset=offset +
-                                    [0, self._variance_offset()])
-            svg += self._draw_labels(offset=offset)
+                                    [0, self._variance_offset()], dims=dims)
+            if labels:
+                svg += self._draw_labels(offset=offset)
         else:
-            svg += self._draw_array(color=color, offset=offset)
-            svg += self._draw_labels(offset=offset)
+            svg += self._draw_array(color=color, offset=offset, dims=dims)
+            if labels:
+                svg += self._draw_labels(offset=offset)
         return svg
 
     def _set_colors(self, svg):
@@ -174,36 +177,48 @@ class DatasetDrawer():
     def __init__(self, dataset):
         self._dataset = dataset
 
+    def _dims(self):
+        # The dimension-order in a dataset is not defined. However, here we need one for the practical purpose of drawing variables with consistent ordering. We simply use that of the item with highest dimension count.
+        count = -1
+        for name, item in self._dataset:
+            if len(item.dims) > count:
+                count = len(item.dims)
+                dims = item.dims
+        return dims
+
     def make_svg(self, dataset):
         content = ''
         width = 0
         height = 0
+        dims = self._dims()
         # TODO use common axes given by dataset, not independently for variables
         # TODO bin edges (offset by 0.5)
         # TODO item names, category (coords, labels) indicators (names, frames)
         # TODO multiple items per line, if there is space
         # TODO font scaling and other scaling issues
+        # TODO sparse variables
+        # TODO limit number of drawn cubes if shape exceeds certain limit (draw just a single cube with correct edge proportions?)
         for name, coord in dataset.coords:
             drawer = VariableDrawer(coord)
-            content += drawer.draw(color=_colors['coord'], offset=[0, height])
+            content += drawer.draw(color=_colors['coord'], offset=[0, height], labels=False, dims=dims)
             size = drawer.size()
             width = max(width, size[0])
             height += size[1]
         for name, labels in dataset.labels:
             drawer = VariableDrawer(labels)
-            content += drawer.draw(color=_colors['labels'], offset=[0, height])
+            content += drawer.draw(color=_colors['labels'], offset=[0, height], labels=False, dims=dims)
             size = drawer.size()
             width = max(width, size[0])
             height += size[1]
         for name, attr in dataset.attrs:
             drawer = VariableDrawer(attr)
-            content += drawer.draw(color=_colors['attr'], offset=[0, height])
+            content += drawer.draw(color=_colors['attr'], offset=[0, height], labels=False, dims=dims)
             size = drawer.size()
             width = max(width, size[0])
             height += size[1]
         for name, data in dataset:
             drawer = VariableDrawer(data)
-            content += drawer.draw(color=_colors['data'], offset=[0, height])
+            content += drawer.draw(color=_colors['data'], offset=[0, height], labels=False, dims=dims)
             size = drawer.size()
             width = max(width, size[0])
             height += size[1]
