@@ -295,7 +295,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
 
   for (const auto & [ nm, v ] : data.labels()) {
     if (v.dims().sparse()) {
-      setSparseLabels(name, name, v);
+      setSparseLabels(name, std::string(nm), v);
     }
   }
 }

@@ -743,7 +743,7 @@ TEST(DatasetSetData, sparse_to_dense) {
   auto dense = datasetFactory.make();
   dense.setData("sparse", base["base"]);
   EXPECT_EQ(base["base"].data(), dense["sparse"].data());
-  EXPECT_EQ(base["base"].labels().items().count("l"), 1);
+  EXPECT_EQ(dense["sparse"].labels().items().count("l"), 1);
 }
 
 TEST(DatasetSetData, dense_to_dense) {
