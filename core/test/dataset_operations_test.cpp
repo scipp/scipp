@@ -586,6 +586,80 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
 }
 
+TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataconstproxy_sparse_rhs) {
+  const auto dataset_a =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+  const auto dataset_b =
+      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
+
+  const auto res = TestFixture::op(dataset_a, dataset_b["sparse"]);
+
+  EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
+  Dataset dense;
+  dense.setData("a", makeVariable<double>(2.0));
+  const auto sparse =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
+
+  const auto res = TestFixture::op(sparse, dense);
+
+  EXPECT_EQ(res.size(), 1);
+  EXPECT_TRUE(res.contains("a"));
+  EXPECT_EQ(res["a"].data(),
+            TestFixture::op(sparse["a"].data(), dense["a"].data()));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, dense_with_sparse) {
+  Dataset dense;
+  dense.setData("a", makeVariable<double>(2.0));
+  const auto sparse =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
+
+  const auto res = TestFixture::op(dense, sparse);
+
+  EXPECT_EQ(res.size(), 1);
+  EXPECT_TRUE(res.contains("a"));
+  EXPECT_EQ(res["a"].data(),
+            TestFixture::op(dense["a"].data(), sparse["a"].data()));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, dataconstproxy_sparse_lhs_dataset_sparse_rhs) {
+  const auto dataset_a =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+  const auto dataset_b =
+      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
+
+  const auto res = TestFixture::op(dataset_a["sparse"], dataset_b);
+
+  EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, sparse_dataconstproxy_coord_mismatch) {
+  const auto dataset_a =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+  const auto dataset_b =
+      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
+
+  ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["sparse"]),
+               except::CoordMismatchError);
+  ASSERT_THROW(TestFixture::op(dataset_a["sparse"], dataset_b),
+               except::CoordMismatchError);
+}
+
+TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
+  Dataset a;
+  a.setSparseCoord("sparse",
+                   makeVariable<double>({Dim::X, Dimensions::Sparse}));
+  auto b(a);
+  a.setData("sparse", makeVariable<double>({Dim::X, Dimensions::Sparse}));
+
+  EXPECT_THROW(TestFixture::op(a, b), except::SparseDataError);
+  EXPECT_THROW(TestFixture::op(a, b["sparse"]), except::SparseDataError);
+  EXPECT_THROW(TestFixture::op(a["sparse"], b), except::SparseDataError);
+}
+
 TYPED_TEST(DatasetBinaryOpTest,
            dataset_sparse_lhs_dataset_sparse_rhs_fail_when_coords_mismatch) {
   auto dataset_a = make_simple_sparse({1.1, 2.2});

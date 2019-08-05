@@ -789,8 +789,8 @@ template <class T> void copy_metadata(Dataset &dest, const T &src) {
   }
 }
 
-void copy_metadata(Dataset &dest, const std::string &name,
-                   const DataConstProxy &src) {
+void copy_sparse_metadata(Dataset &dest, const std::string &name,
+                          const DataConstProxy &src) {
   /* Sparse coordinates */
   for (const auto &coord : src.coords()) {
     if (coord.second.dims().sparse()) {
@@ -815,8 +815,13 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
 
   for (const auto & [ name, item ] : b) {
     if (a.contains(name)) {
-      res.setData(std::string(name), op(a[name].data(), item.data()));
-      copy_metadata(res, std::string(name), a[name]);
+      expect::matchingDataPresence(a[name], item);
+      if (item.hasData())
+        res.setData(std::string(name), op(a[name].data(), item.data()));
+      if (item.dims().sparse())
+        copy_sparse_metadata(res, std::string(name), item);
+      else
+        copy_sparse_metadata(res, std::string(name), a[name]);
     }
   }
 
@@ -829,8 +834,33 @@ auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
   copy_metadata(res, a);
 
   for (const auto & [ name, item ] : a) {
-    res.setData(std::string(name), op(item.data(), b.data()));
-    copy_metadata(res, std::string(name), a[name]);
+    expect::matchingDataPresence(item, b);
+    expect::coordsAndLabelsAreSuperset(item, b);
+    if (item.hasData())
+      res.setData(std::string(name), op(item.data(), b.data()));
+    if (item.dims().sparse())
+      copy_sparse_metadata(res, std::string(name), item);
+    else
+      copy_sparse_metadata(res, std::string(name), b);
+  }
+
+  return res;
+}
+
+template <class Op, class B>
+auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
+  Dataset res;
+  copy_metadata(res, b);
+
+  for (const auto & [ name, item ] : b) {
+    expect::matchingDataPresence(a, item);
+    expect::coordsAndLabelsAreSuperset(a, item);
+    if (item.hasData())
+      res.setData(std::string(name), op(a.data(), item.data()));
+    if (item.dims().sparse())
+      copy_sparse_metadata(res, std::string(name), item);
+    else
+      copy_sparse_metadata(res, std::string(name), a);
   }
 
   return res;
@@ -992,6 +1022,14 @@ Dataset operator+(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
+Dataset operator+(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(plus, lhs, rhs);
+}
+
+Dataset operator+(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
+  return apply_with_broadcast(plus, lhs, rhs);
+}
+
 Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
@@ -1013,6 +1051,14 @@ Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
 }
 
 Dataset operator-(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  return apply_with_broadcast(minus, lhs, rhs);
+}
+
+Dataset operator-(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(minus, lhs, rhs);
+}
+
+Dataset operator-(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
@@ -1040,6 +1086,14 @@ Dataset operator*(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
+Dataset operator*(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(times, lhs, rhs);
+}
+
+Dataset operator*(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
+  return apply_with_broadcast(times, lhs, rhs);
+}
+
 Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
@@ -1061,6 +1115,14 @@ Dataset operator/(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
 }
 
 Dataset operator/(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  return apply_with_broadcast(divide, lhs, rhs);
+}
+
+Dataset operator/(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(divide, lhs, rhs);
+}
+
+Dataset operator/(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
@@ -1119,4 +1181,5 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   auto bins = dataset.coords()[dim];
   return histogram(dataset, bins);
 }
+
 } // namespace scipp::core

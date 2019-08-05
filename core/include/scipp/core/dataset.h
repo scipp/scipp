@@ -670,6 +670,10 @@ SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const DataConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const DataConstProxy &lhs,
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
@@ -682,6 +686,10 @@ SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const DataConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const DataConstProxy &lhs,
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
@@ -694,6 +702,10 @@ SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const DataConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const DataConstProxy &lhs,
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
                                     const DatasetConstProxy &rhs);
@@ -706,6 +718,10 @@ SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
                                      const Variable &binEdges);

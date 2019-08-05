@@ -290,28 +290,22 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
 
 void sparseCoordsAndLabelsMatch(const DataConstProxy &a,
                                 const DataConstProxy &b) {
-  if (b.dims().sparse()) {
-    const auto sparseDim = b.dims().sparseDim();
-
-    /* Fail if: */
-    /* - presence of a sparse dimension is not identical in both items */
-    /* - both items have a sparse dimension but it's coordinates differ */
-    if ((a.coords().contains(sparseDim) != b.coords().contains(sparseDim)) ||
-        (a.coords().contains(sparseDim) &&
-         a.coords()[sparseDim] != b.coords()[sparseDim])) {
+  if (a.dims().sparse() && b.dims().sparse()) {
+    if (a.dims().sparseDim() != b.dims().sparseDim())
+      throw except::DimensionError(
+          "Sparse dimension of operands expected to match.");
+    const auto sparseDim = a.dims().sparseDim();
+    if (a.coords().contains(sparseDim) && b.coords().contains(sparseDim) &&
+        (a.coords()[sparseDim] != b.coords()[sparseDim]))
       throw except::CoordMismatchError("Expected sparse coords to match.");
-    }
-
-    /* Check that a and b have identical sparse labels */
-    for (const auto & [ name, label ] : b.labels()) {
-      if (!a.labels().contains(name)) {
+    for (const auto & [ name, label ] : b.labels())
+      if (!a.labels().contains(name) || a.labels()[name] != label)
         throw except::CoordMismatchError("Expected sparse labels to match.");
-      }
-
-      if (a.labels()[name] != label) {
-        throw except::CoordMismatchError("Expected sparse labels to match.");
-      }
-    }
+  } else if (a.dims().sparse() || b.dims().sparse()) {
+    if (a.coords().contains(b.dims().sparseDim()) ||
+        b.coords().contains(a.dims().sparseDim()))
+      throw except::DimensionError(
+          "Dimension is sparse in one operand but dense in the other operand.");
   }
 }
 
@@ -323,6 +317,13 @@ void coordsAndLabelsAreSuperset(const DataConstProxy &a,
   for (const auto & [ name, labels ] : b.labels())
     if (a.labels()[name] != labels)
       throw except::CoordMismatchError("Expected labels to match.");
+}
+
+void matchingDataPresence(const DataConstProxy &a, const DataConstProxy &b) {
+  if (a.hasData() != b.hasData())
+    throw except::SparseDataError(
+        "Either both or neither of the operands in "
+        "a operation with sparse data must have data values.");
 }
 
 void notSparse(const Dimensions &dims) {
