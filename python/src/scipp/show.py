@@ -85,6 +85,9 @@ class VariableDrawer():
             for z in range(lz):
                 for y in reversed(range(ly)):
                     for x in range(lx):
+                        # Do not draw hidden boxes
+                        if z != lz - 1 and y != 0 and x != lx - 1:
+                            continue
                         svg += self._draw_box(
                             dx + x + self._margin + 0.3 *
                             (lz - z - self._margin),
