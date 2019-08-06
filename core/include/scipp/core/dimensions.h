@@ -154,8 +154,7 @@ private:
                            Dim::Invalid};
 };
 
-SCIPP_CORE_EXPORT Dimensions merge(const Dimensions &a, const Dimensions &b,
-                                   bool ignoreExtents = false);
+SCIPP_CORE_EXPORT Dimensions merge(const Dimensions &a, const Dimensions &b);
 
 } // namespace scipp::core
 
