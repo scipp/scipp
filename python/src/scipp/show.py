@@ -187,10 +187,14 @@ class DatasetDrawer():
         # consistent ordering. We simply use that of the item with highest
         # dimension count.
         count = -1
-        for name, item in self._dataset:
-            if len(item.dims) > count:
-                count = len(item.dims)
-                dims = item.dims
+        if isinstance(self._dataset, sc.Dataset):
+            for name, item in self._dataset:
+                if len(item.dims) > count:
+                    dims = item.dims
+                    count = len(dims)
+        else:
+            dims = self._dataset.dims
+            count = len(dims)
         return dims
 
     def make_svg(self, dataset):
@@ -204,20 +208,30 @@ class DatasetDrawer():
         # TODO sparse variables
         # TODO limit number of drawn cubes if shape exceeds certain limit
         #      (draw just a single cube with correct edge proportions?)
-        items = []
-        for name, data in dataset:
-            if data.dims != dims:
-                items.append((name, data))
-        # Render highest-dimension items last so coords are optically aligned
-        for name, data in dataset:
-            if data.dims == dims:
-                items.append((name, data))
+        if isinstance(self._dataset, sc.Dataset):
+            items = []
+            for name, data in dataset:
+                if data.dims != dims:
+                    items.append((name, data))
+            # Render highest-dimension items last so coords are optically aligned
+            for name, data in dataset:
+                if data.dims == dims:
+                    items.append((name, data))
 
-        for name, data in items:
-            drawer = VariableDrawer(data, margin, target_dims=dims)
+            for name, data in items:
+                drawer = VariableDrawer(data, margin, target_dims=dims)
+                content += drawer.draw(color=_colors['data'],
+                                       offset=[0, height],
+                                       title=name)
+                size = drawer.size()
+                width = max(width, size[0])
+                coord_1_y = height
+                height += size[1]
+        else:
+            drawer = VariableDrawer(self._dataset, margin, target_dims=dims)
             content += drawer.draw(color=_colors['data'],
                                    offset=[0, height],
-                                   title=name)
+                                   title='')
             size = drawer.size()
             width = max(width, size[0])
             coord_1_y = height
