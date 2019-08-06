@@ -170,16 +170,8 @@ template <class T> void countsOrCountsDensity(const T &object) {
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 
-template <typename T> void info(T t);
-
-template <typename T>
-void SCIPP_CORE_EXPORT validSlice(const T &coords, Dim key,
-                                  const Slice &slice) {
-  if (!coords.contains(key)) {
-    throw except::SliceError("Unknown slice dimension");
-  }
-  validSlice(coords[key].dims(), slice);
-}
+void SCIPP_CORE_EXPORT validSlice(const DatasetConstProxy &dataset, Dim key,
+                                  const Slice &slice);
 
 void SCIPP_CORE_EXPORT sparseCoordsAndLabelsMatch(const DataConstProxy &a,
                                                   const DataConstProxy &b);
