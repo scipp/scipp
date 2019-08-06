@@ -12,11 +12,13 @@ if(DYNAMIC_LIB)
 endif(DYNAMIC_LIB)
 
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
-target_link_libraries(scipp-neutron PUBLIC scipp-core)
+generate_export_header(${TARGET_NAME})
+target_link_libraries(${TARGET_NAME} PUBLIC scipp-core)
 target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${TARGET_NAME} SYSTEM
                            PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
                            PRIVATE "../range-v3/include")
@@ -28,3 +30,7 @@ endif(DISABLE_LTO)
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(test)
+
+if(DYNAMIC_LIB)
+    install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+endif(DYNAMIC_LIB)

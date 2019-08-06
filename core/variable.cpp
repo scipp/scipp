@@ -111,8 +111,9 @@ template <class T> VariableProxy VariableProxy::assign(const T &other) const {
   return *this;
 }
 
-template VariableProxy VariableProxy::assign(const Variable &) const;
-template VariableProxy VariableProxy::assign(const VariableConstProxy &) const;
+template SCIPP_CORE_EXPORT VariableProxy VariableProxy::assign(const Variable &) const;
+template SCIPP_CORE_EXPORT VariableProxy VariableProxy::assign(const VariableConstProxy &) const;
+template SCIPP_CORE_EXPORT VariableProxy VariableProxy::assign(const VariableProxy &) const;
 
 bool VariableConstProxy::operator==(const Variable &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we
