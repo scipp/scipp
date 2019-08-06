@@ -317,6 +317,7 @@ public:
   Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
   Dataset &operator/=(const Dataset &other);
+  Dimensions dimensions() const;
 
 private:
   friend class DatasetConstProxy;
@@ -418,7 +419,6 @@ public:
   ConstProxy slice(const Slice slice1, const Slice slice2) const {
     return slice(slice1).slice(slice2);
   }
-
   ConstProxy slice(const Slice slice1, const Slice slice2,
                    const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
@@ -537,7 +537,7 @@ public:
   /// The returned proxy will not contain references to data items that do not
   /// depend on the sliced dimension.
   DatasetConstProxy slice(const Slice slice1) const {
-    expect::validSlice(*this, slice1.dim, slice1);
+    expect::validSlice(dimensions(), slice1);
     DatasetConstProxy sliced(*this);
     auto &indices = sliced.m_indices;
     sliced.m_indices.erase(
@@ -578,6 +578,7 @@ public:
   bool operator==(const DatasetConstProxy &other) const;
   bool operator!=(const Dataset &other) const;
   bool operator!=(const DatasetConstProxy &other) const;
+  Dimensions dimensions() const;
 
 private:
   const Dataset *m_dataset;

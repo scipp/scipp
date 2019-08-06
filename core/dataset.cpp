@@ -144,6 +144,11 @@ scipp::index makeUnknownEdgeState(const scipp::index extent) {
 }
 scipp::index shrink(const scipp::index extent) { return extent - 1; }
 bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
+scipp::index decodeExtent(const scipp::index extent) {
+  if (isUnknownEdgeState(extent))
+    return -extent - 1;
+  return extent;
+}
 bool isSame(const scipp::index extent, const scipp::index reference) {
   return reference == -extent - 1;
 }
@@ -716,6 +721,10 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
+Dimensions DatasetConstProxy::dimensions() const {
+  return m_dataset->dimensions();
+}
+
 constexpr static auto plus = [](const auto &a, const auto &b) { return a + b; };
 
 constexpr static auto minus = [](const auto &a, const auto &b) {
@@ -882,6 +891,15 @@ Dataset &Dataset::operator*=(const Dataset &other) {
 
 Dataset &Dataset::operator/=(const Dataset &other) {
   return apply(divide_equals, *this, other);
+}
+
+Dimensions Dataset::dimensions() const {
+  Dimensions all;
+  for (const auto &dim : this->m_dims) {
+    auto extent = extents::decodeExtent(dim.second);
+    all.add(dim.first, extent); // TODO this is add outer rather than inner.
+  }
+  return all;
 }
 
 DatasetProxy DatasetProxy::operator+=(const DataConstProxy &other) const {

@@ -288,18 +288,6 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
                              to_string(dims) + ".");
 }
 
-void validSlice(const DatasetConstProxy &dataset, Dim key, const Slice &slice) {
-
-  Dimensions union_of;
-  if (dataset.coords().contains(key)) {
-    union_of = merge(union_of, dataset.coords()[key].dims(), true);
-  }
-  for (const auto &item : dataset) {
-    union_of = merge(union_of, item.second.dims(), true);
-  }
-  validSlice(union_of, slice);
-}
-
 void sparseCoordsAndLabelsMatch(const DataConstProxy &a,
                                 const DataConstProxy &b) {
   if (b.dims().sparse()) {

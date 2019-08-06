@@ -170,9 +170,6 @@ template <class T> void countsOrCountsDensity(const T &object) {
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 
-void SCIPP_CORE_EXPORT validSlice(const DatasetConstProxy &dataset, Dim key,
-                                  const Slice &slice);
-
 void SCIPP_CORE_EXPORT sparseCoordsAndLabelsMatch(const DataConstProxy &a,
                                                   const DataConstProxy &b);
 
