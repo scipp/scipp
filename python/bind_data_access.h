@@ -270,21 +270,25 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                             return std::vector<Dim>(dims.labels().begin(),
                                                     dims.labels().end());
                           },
-                          "Dimension labels of the data (read-only).");
+                          "Dimension labels of the data (read-only).",
+                          py::return_value_policy::move);
   c.def_property_readonly("shape",
                           [](const T &self) {
                             const auto &dims = self.dims();
                             return std::vector<scipp::index>(
                                 dims.shape().begin(), dims.shape().end());
                           },
-                          "Shape of the data (read-only).");
+                          "Shape of the data (read-only).",
+                          py::return_value_policy::move);
   c.def_property_readonly("sparse",
                           [](const T &self) { return self.dims().sparse(); },
-                          "Return True if there is a sparse dimension.");
+                          "Return True if there is a sparse dimension.",
+                          py::return_value_policy::copy);
   c.def_property_readonly("sparse_dim",
                           [](const T &self) { return self.dims().sparseDim(); },
                           "Return the label of a potential sparse dimension, "
-                          "Dim.Invalid otherwise.");
+                          "Dim.Invalid otherwise.",
+                          py::return_value_policy::copy);
 
   c.def_property("unit", &T::unit, &T::setUnit,
                  "The physical unit of the data (writable).");
@@ -304,11 +308,10 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                  "The only variance for 0-dimensional data. Raises an "
                  "exception if the data is not 0-dimensional.");
   c.def_property_readonly(
-      "has_variances",
-      [](T &v) {
-        return v.hasVariances();
-      }); // Cannot bind to member directly, see
-          // https://github.com/pybind/pybind11/issues/580#issuecomment-269836784
+      "has_variances", [](T &v) { return v.hasVariances(); },
+      py::return_value_policy::
+          copy); // Cannot bind to member directly, see
+                 // https://github.com/pybind/pybind11/issues/580#issuecomment-269836784
 }
 
 #endif // SCIPPY_BIND_DATA_ACCESS_H
