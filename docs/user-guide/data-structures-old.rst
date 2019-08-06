@@ -1,7 +1,7 @@
 .. _data-structures:
 
-Data Structures
-===============
+Data Structures (old)
+=====================
 
 Dimension labels
 ----------------
