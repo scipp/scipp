@@ -53,7 +53,7 @@ using VariableConceptHandle = VariableConceptHandle_impl<
 ///
 /// This is the most generic representation for a multi-dimensional array of
 /// data. More operations are supportd by the partially-typed VariableConceptT.
-class VariableConcept {
+class SCIPP_CORE_EXPORT VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;

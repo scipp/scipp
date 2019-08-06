@@ -40,3 +40,8 @@ endif(DISABLE_LTO)
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(test)
+
+
+if(DYNAMIC_LIB)
+  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+endif(DYNAMIC_LIB)
