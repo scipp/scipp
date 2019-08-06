@@ -220,31 +220,26 @@ class DatasetDrawer():
         # TODO sparse variables
         # TODO limit number of drawn cubes if shape exceeds certain limit
         #      (draw just a single cube with correct edge proportions?)
+        area_x = []
+        area_y = []
+        area_xy = []
+        area_0d = []
         if isinstance(self._dataset, sc.Dataset):
-            items = []
-            for name, data in dataset:
-                if data.dims != dims:
-                    items.append((name, data))
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in dataset:
-                if data.dims == dims:
-                    items.append((name, data))
-
-            for name, data in items:
-                drawer = VariableDrawer(data, margin, target_dims=dims)
-                content += drawer.draw(color=_colors['data'],
-                                       offset=[0, height],
-                                       title=name)
-                size = drawer.size()
-                width = max(width, size[0])
-                coord_1_y = height
-                height += size[1]
+                if data.dims != dims:
+                    area_xy[-1:-1] = [(name, data)]
+                else:
+                    area_xy.append((name, data))
         else:
-            drawer = VariableDrawer(self._dataset, margin, target_dims=dims)
+            area_xy.append(('', self._dataset))
+
+        for name, data in area_xy:
+            drawer = VariableDrawer(data, margin, target_dims=dims)
             content += drawer.draw(color=_colors['data'],
                                    offset=[0, height],
-                                   title='')
+                                   title=name)
             size = drawer.size()
             width = max(width, size[0])
             coord_1_y = height
