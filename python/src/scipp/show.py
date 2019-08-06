@@ -229,10 +229,18 @@ class DatasetDrawer():
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in dataset:
+                item = (name, data, _colors['data'])
                 if data.dims != dims:
-                    area_xy[-1:-1] = [(name, data, _colors['data'])]
+                    if len(data.dims) != 1:
+                        area_xy[-1:-1] = [item]
+                    elif data.dims[0] == dims[-1]:
+                        area_x.append(item)
+                    elif data.dims[0] == dims[-2]:
+                        area_y.append(item)
+                    else:
+                        area_z.append(item)
                 else:
-                    area_xy.append((name, data, _colors['data']))
+                    area_xy.append(item)
         else:
             area_xy.append(('', self._dataset, _colors['data']))
 
@@ -269,6 +277,15 @@ class DatasetDrawer():
                 area_y.append((name, labels, _colors['labels']))
             else:
                 area_z.append((name, labels, _colors['labels']))
+
+        for name, attr in dataset.attrs:
+            dim = attr.dims[-1]
+            if dim == dims[-1]:
+                area_x.append((name, attr, _colors['attr']))
+            elif dim == dims[-2]:
+                area_y.append((name, attr, _colors['attr']))
+            else:
+                area_z.append((name, attr, _colors['attr']))
 
         for name, data, color in area_x:
             drawer = VariableDrawer(data, margin, target_dims=dims)
