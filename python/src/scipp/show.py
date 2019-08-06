@@ -25,20 +25,18 @@ class VariableDrawer():
             self._target_dims = self._variable.dims
 
     def _draw_box(self, origin_x, origin_y, color):
-        return """
-      <rect
-         style="fill:#{};fill-opacity:1;stroke:#000000;stroke-width:0.05;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1"
-         id="rect"
-         width="1" height="1" x="origin_x" y="origin_y" />
-      <path
-         style="fill:#{};fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.05;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1"
-         d="m origin_x origin_y l 0.3 -0.3 h 1 l -0.3 0.3 z"
-         id="path1" />
-      <path
-         style="fill:#{};fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.05;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1"
-         d="m origin_x origin_y m 1 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"
-         id="path2" />
-         """.format(*color).replace("origin_x", str(origin_x)).replace(
+        return " ".join([
+            '<rect',
+            'style="fill:#{};fill-opacity:1;stroke:#000;stroke-width:0.05"',
+            'id="rect"', 'width="1" height="1" x="origin_x" y="origin_y"/>',
+            '<path',
+            'style="fill:#{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',
+            'd="m origin_x origin_y l 0.3 -0.3 h 1 l -0.3 0.3 z"',
+            'id="path1" />', '<path',
+            'style="fill:#{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',
+            'd="m origin_x origin_y m 1 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
+            'id="path2" />'
+        ]).format(*color).replace("origin_x", str(origin_x)).replace(
             "origin_y", str(origin_y))
 
     def _variance_offset(self):
