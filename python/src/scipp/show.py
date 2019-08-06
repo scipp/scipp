@@ -213,7 +213,8 @@ class DatasetDrawer():
             for name, data in dataset:
                 if data.dims != dims:
                     items.append((name, data))
-            # Render highest-dimension items last so coords are optically aligned
+            # Render highest-dimension items last so coords are optically
+            # aligned
             for name, data in dataset:
                 if data.dims == dims:
                     items.append((name, data))
