@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#include "scipp/units/unit.h"
 #include "scipp-neutron_export.h"
+#include "scipp/units/unit.h"
 
 namespace scipp::core {
 class Dataset;
@@ -16,7 +16,8 @@ class Dataset;
 
 namespace scipp::neutron {
 
-SCIPP_NEUTRON_EXPORT core::Dataset convert(core::Dataset d, const Dim from, const Dim to);
+SCIPP_NEUTRON_EXPORT core::Dataset convert(core::Dataset d, const Dim from,
+                                           const Dim to);
 
 } // namespace scipp::neutron
 
