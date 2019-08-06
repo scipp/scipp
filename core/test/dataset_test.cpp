@@ -249,6 +249,21 @@ TEST(DatasetTest, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
 }
 
+TEST(DatasetTest, find) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+
+  EXPECT_EQ(d.end(), d.find("not a thing"));
+
+  EXPECT_EQ(d.begin(), d.find("a"));
+
+  auto it = d.begin();
+  ++it;
+  EXPECT_EQ(it, d.find("b"));
+}
+
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 
   auto sparse_variable =
@@ -1693,4 +1708,21 @@ TYPED_TEST(DataProxy3DTest, slice_with_edges) {
       }
     }
   }
+}
+
+TEST(DatasetProxyTest, find) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+
+  DatasetProxy dp(d);
+
+  EXPECT_EQ(dp.end(), dp.find("not a thing"));
+
+  EXPECT_EQ(dp.begin(), dp.find("a"));
+
+  auto it = dp.begin();
+  ++it;
+  EXPECT_EQ(it, dp.find("b"));
 }
