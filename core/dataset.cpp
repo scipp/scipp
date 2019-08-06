@@ -232,7 +232,7 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
-// This only checks the coordinates, not labels, not attributes
+// This only checks the coordinates and labels, not attributes
 bool checkCorrespondingDenseCoords(const Dataset &dataset,
                                    const DataConstProxy &other) {
   if (other.dims().sparse())
