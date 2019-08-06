@@ -151,15 +151,26 @@ class VariableDrawer():
         svg = '<g>'
         svg += self._draw_info(offset, title)
         if self._variable.has_variances:
+            svg += '<g>'
+            svg += '<title>variances</title>'
             svg += self._draw_array(color=color,
                                     offset=offset +
                                     np.array([self._variance_offset(), 0]))
+            svg += '</g>'
+            svg += '<g>'
+            if title is None:
+                svg += '<title>values</title>'
             svg += self._draw_array(color=color,
                                     offset=offset +
                                     np.array([0, self._variance_offset()]))
+            svg += '</g>'
             svg += self._draw_labels(offset=offset)
         else:
+            svg += '<g>'
+            if title is None:
+                svg += '<title>values</title>'
             svg += self._draw_array(color=color, offset=offset)
+            svg += '</g>'
             svg += self._draw_labels(offset=offset)
         svg += '</g>'
         return svg
