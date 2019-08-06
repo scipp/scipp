@@ -222,6 +222,7 @@ class DatasetDrawer():
         #      (draw just a single cube with correct edge proportions?)
         area_x = []
         area_y = []
+        area_z = []
         area_xy = []
         area_0d = []
         if isinstance(self._dataset, sc.Dataset):
@@ -229,15 +230,15 @@ class DatasetDrawer():
             # aligned
             for name, data in dataset:
                 if data.dims != dims:
-                    area_xy[-1:-1] = [(name, data)]
+                    area_xy[-1:-1] = [(name, data, _colors['data'])]
                 else:
-                    area_xy.append((name, data))
+                    area_xy.append((name, data, _colors['data']))
         else:
-            area_xy.append(('', self._dataset))
+            area_xy.append(('', self._dataset, _colors['data']))
 
-        for name, data in area_xy:
+        for name, data, color in area_xy:
             drawer = VariableDrawer(data, margin, target_dims=dims)
-            content += drawer.draw(color=_colors['data'],
+            content += drawer.draw(color=color,
                                    offset=[0, height],
                                    title=name)
             size = drawer.size()
@@ -253,53 +254,54 @@ class DatasetDrawer():
         # Maybe just use an svg offset transform to accomplish this in a
         # nice way?
         for dim, coord in dataset.coords:
-            drawer = VariableDrawer(coord, margin, target_dims=dims)
-            size = drawer.size()
             if dim == dims[-1]:
-                content += drawer.draw(color=_colors['coord'],
-                                       offset=[0, height],
-                                       title=dim)
-                width = max(width, size[0])
-                height += size[1]
+                area_x.append((dim, coord, _colors['coord']))
             elif dim == dims[-2]:
-                content += drawer.draw(color=_colors['coord'],
-                                       offset=[width, coord_1_y],
-                                       title=dim)
-                width += size[0]
+                area_y.append((dim, coord, _colors['coord']))
             else:
-                content += drawer.draw(color=_colors['coord'],
-                                       offset=[coord_2_x, coord_2_y],
-                                       title=dim)
-                coord_2_x += size[0]
+                area_z.append((dim, coord, _colors['coord']))
 
         for name, labels in dataset.labels:
-            drawer = VariableDrawer(labels, margin, target_dims=dims)
-            size = drawer.size()
-            if labels.dims[-1] == dims[-1]:
-                content += drawer.draw(color=_colors['labels'],
-                                       offset=[0, height],
-                                       title=name)
-                width = max(width, size[0])
-                height += size[1]
-            elif labels.dims[-1] == dims[-2]:
-                content += drawer.draw(color=_colors['labels'],
-                                       offset=[width, coord_1_y],
-                                       title=name)
-                width += size[0]
+            dim = labels.dims[-1]
+            if dim == dims[-1]:
+                area_x.append((name, labels, _colors['labels']))
+            elif dim == dims[-2]:
+                area_y.append((name, labels, _colors['labels']))
             else:
-                content += drawer.draw(color=_colors['labels'],
-                                       offset=[coord_2_x, coord_2_y],
-                                       title=name)
-                coord_2_x += size[0]
+                area_z.append((name, labels, _colors['labels']))
 
-        for name, attr in dataset.attrs:
-            drawer = VariableDrawer(attr, margin, target_dims=dims)
-            content += drawer.draw(color=_colors['attr'],
+        for name, data, color in area_x:
+            drawer = VariableDrawer(data, margin, target_dims=dims)
+            content += drawer.draw(color=color,
                                    offset=[0, height],
                                    title=name)
             size = drawer.size()
             width = max(width, size[0])
             height += size[1]
+
+        area_y_width = 0
+        area_y_height = 0
+        for name, data, color in area_y:
+            drawer = VariableDrawer(data, margin, target_dims=dims)
+            content += drawer.draw(color=color,
+                                   offset=[area_y_width, height],
+                                   title=name)
+            size = drawer.size()
+            area_y_width += size[0]
+            area_y_height = size[1]
+        height += area_y_height
+
+        area_z_width = 0
+        area_z_height = 0
+        for name, data, color in area_z:
+            drawer = VariableDrawer(data, margin, target_dims=dims)
+            content += drawer.draw(color=color,
+                                   offset=[area_z_width, height],
+                                   title=name)
+            size = drawer.size()
+            area_z_width += size[0]
+            area_z_height = size[1]
+        height += area_z_height
 
         return '<svg viewBox="0 0 {} {}">{}</svg>'.format(
             max(16, width), height, content)
