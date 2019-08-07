@@ -362,15 +362,15 @@ class DatasetDrawer():
             width, height - h, c)
         width += w
 
-        c, w, h = draw_area(area_y, 'x', reverse=True)
+        c, w_y, h = draw_area(area_y, 'x', reverse=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
-            -w, height - h, c)
-        width += w
-        left -= w
+            -w_y, height - h, c)
 
-        c, w, h = draw_area(area_0d, 'x', reverse=True)
+        c, w_0d, h = draw_area(area_0d, 'x', reverse=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
-            -w, height, c)
+            -w_0d, height, c)
+        width += max(w_y, w_0d)
+        left -= max(w_y, w_0d)
 
         c, w, h = draw_area(area_x, 'y')
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
