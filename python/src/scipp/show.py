@@ -293,6 +293,8 @@ class DatasetDrawer():
                     area_xy.append(item)
 
         for dim, coord in dataset.coords:
+            if coord.sparse:
+                continue
             item = (dim, coord, _colors['coord'])
             if dim == dims[-1]:
                 area_x.append(item)
@@ -302,6 +304,8 @@ class DatasetDrawer():
                 area_z.append(item)
 
         for name, labels in dataset.labels:
+            if labels.sparse:
+                continue
             dim = labels.dims[-1]
             item = (name, labels, _colors['labels'])
             if dim == dims[-1]:
@@ -312,6 +316,8 @@ class DatasetDrawer():
                 area_z.append(item)
 
         for name, attr in dataset.attrs:
+            if attr.sparse:
+                continue
             dim = attr.dims[-1]
             item = (name, attr, _colors['attr'])
             if dim == dims[-1]:
