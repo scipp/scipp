@@ -119,8 +119,9 @@ class VariableDrawer():
                         sparse = True
                     for x in range(true_lx):
                         # Do not draw hidden boxes
-                        if z != lz - 1 and y != 0 and x != lx - 1 and not sparse:
-                            continue
+                        if not sparse:
+                            if z != lz - 1 and y != 0 and x != lx - 1:
+                                continue
                         svg += self._draw_box(
                             dx + x * x_scale + self._margin + 0.3 *
                             (lz - z - self._margin),
@@ -170,7 +171,7 @@ class VariableDrawer():
     def _draw_info(self, offset, title):
         try:
             unit = str(self._variable.unit)
-        except:
+        except Exception:
             unit = '(undefined)'
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
             self._variable.dims, self._variable.shape, unit,
@@ -197,7 +198,7 @@ class VariableDrawer():
             # temporary hack until `has_data` or `has_values` is available
             self._variable.unit
             items.append(('values', self._variable.values, color))
-        except:
+        except Exception:
             pass
         if isinstance(self._variable, sc.DataConstProxy):
             if self._variable.sparse:
