@@ -232,7 +232,7 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
-// This only checks the coordinates, not labels, not attributes
+// This only checks the coordinates and labels, not attributes
 bool checkCorrespondingDenseCoords(const Dataset &dataset,
                                    const DataConstProxy &other) {
   if (other.dims().sparse())
@@ -242,6 +242,19 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset,
   const auto &dsItems = dsCoords.items();
   for (const auto & [ d, v ] : otCoords) {
     if (auto iter = dsItems.find(d); iter == dsItems.end()) {
+      return false;
+    } else {
+      if (*iter->second.first != v) {
+        return false;
+      }
+    }
+  }
+
+  const auto dsLabels{dataset.labels()};
+  const auto otLabels{other.labels()};
+  const auto dsLItems{dsLabels.items()};
+  for (const auto & [ nm, v ] : otLabels) {
+    if (auto iter = dsLItems.find(nm); iter == dsLItems.end()) {
       return false;
     } else {
       if (*iter->second.first != v) {
@@ -278,6 +291,12 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
   auto dim = data.dims().sparseDim();
   if (dim != Dim::Invalid) {
     setSparseCoord(name, data.coords()[dim]);
+  }
+
+  for (const auto & [ nm, v ] : data.labels()) {
+    if (v.dims().sparse()) {
+      setSparseLabels(name, std::string(nm), v);
+    }
   }
 }
 

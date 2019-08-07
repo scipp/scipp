@@ -169,7 +169,7 @@ def test_dataset_set_data():
                                unit=sp.units.m),
             Dim.Y: sp.Variable([Dim.Y], values=np.arange(3.0),
                                unit=sp.units.m)},
-        labels={'aux': sp.Variable([Dim.Y], values=np.random.rand(3))})
+        labels={'aux': sp.Variable([Dim.Y], values=np.arange(3))})
 
     d2 = sp.Dataset(
         {'a': sp.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
@@ -177,9 +177,8 @@ def test_dataset_set_data():
             Dim.X: sp.Variable([Dim.X], values=np.arange(2.0),
                                unit=sp.units.m),
             Dim.Y: sp.Variable([Dim.Y], values=np.arange(3.0),
-                               unit=sp.units.m)}, labels={
-            'aux': sp.Variable([Dim.Y], values=np.random.rand(
-                3))})
+                               unit=sp.units.m)},
+        labels={'aux': sp.Variable([Dim.Y], values=np.arange(3))})
 
     d3 = sp.Dataset()
     d3['b'] = d1['a']
