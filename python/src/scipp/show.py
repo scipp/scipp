@@ -247,30 +247,33 @@ class DatasetDrawer():
             area_xy.append(('', self._dataset, _colors['data']))
 
         for dim, coord in dataset.coords:
+            item = (dim, coord, _colors['coord'])
             if dim == dims[-1]:
-                area_x.append((dim, coord, _colors['coord']))
+                area_x.append(item)
             elif dim == dims[-2]:
-                area_y.append((dim, coord, _colors['coord']))
+                area_y.append(item)
             else:
-                area_z.append((dim, coord, _colors['coord']))
+                area_z.append(item)
 
         for name, labels in dataset.labels:
             dim = labels.dims[-1]
+            item = (name, labels, _colors['labels'])
             if dim == dims[-1]:
-                area_x.append((name, labels, _colors['labels']))
+                area_x.append(item)
             elif dim == dims[-2]:
-                area_y.append((name, labels, _colors['labels']))
+                area_y.append(item)
             else:
-                area_z.append((name, labels, _colors['labels']))
+                area_z.append(item)
 
         for name, attr in dataset.attrs:
             dim = attr.dims[-1]
+            item = (name, attr, _colors['attr'])
             if dim == dims[-1]:
-                area_x.append((name, attr, _colors['attr']))
+                area_x.append(item)
             elif dim == dims[-2]:
-                area_y.append((name, attr, _colors['attr']))
+                area_y.append(item)
             else:
-                area_z.append((name, attr, _colors['attr']))
+                area_z.append(item)
 
         def draw_area(area, layout_direction):
             content = ''
