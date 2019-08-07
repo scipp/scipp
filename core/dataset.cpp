@@ -114,6 +114,14 @@ bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.count(name) == 1;
 }
 
+/// Removes a data item from the Dataset
+///
+/// Coordinates, labels and attributes are not modified.
+/// This operation invalidates any proxy objects creeated from this dataset.
+size_t Dataset::erase(const std::string_view name) {
+  return m_data.erase(std::string(name));
+}
+
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);

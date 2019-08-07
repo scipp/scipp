@@ -33,6 +33,13 @@ TEST(DatasetTest, clear) {
   ASSERT_FALSE(dataset.attrs().empty());
 }
 
+TEST(DatasetTest, erase_single) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+  ASSERT_EQ(1, dataset.erase("data_xyz"));
+  ASSERT_FALSE(dataset.contains("data_xyz"));
+}
+
 TEST(DatasetTest, setCoord) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});

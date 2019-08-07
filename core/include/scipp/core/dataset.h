@@ -268,6 +268,8 @@ public:
 
   bool contains(const std::string &name) const noexcept;
 
+  size_t erase(const std::string_view name);
+
   auto find() const && = delete;
   auto find() && = delete;
   auto find(const std::string &name) & noexcept {
