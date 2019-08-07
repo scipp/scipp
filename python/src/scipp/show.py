@@ -201,14 +201,14 @@ class DatasetDrawer():
         # consistent ordering. We simply use that of the item with highest
         # dimension count.
         count = -1
-        if isinstance(self._dataset, sc.Dataset):
+        if isinstance(self._dataset, sc.DataConstProxy):
+            dims = self._dataset.dims
+            count = len(dims)
+        else:
             for name, item in self._dataset:
                 if len(item.dims) > count:
                     dims = item.dims
                     count = len(dims)
-        else:
-            dims = self._dataset.dims
-            count = len(dims)
         return dims
 
     def make_svg(self, dataset):
@@ -227,7 +227,9 @@ class DatasetDrawer():
         area_z = []
         area_xy = []
         area_0d = []
-        if isinstance(self._dataset, sc.Dataset):
+        if isinstance(self._dataset, sc.DataConstProxy):
+            area_xy.append(('', self._dataset, _colors['data']))
+        else:
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in dataset:
@@ -245,8 +247,6 @@ class DatasetDrawer():
                         area_z.append(item)
                 else:
                     area_xy.append(item)
-        else:
-            area_xy.append(('', self._dataset, _colors['data']))
 
         for dim, coord in dataset.coords:
             item = (dim, coord, _colors['coord'])
