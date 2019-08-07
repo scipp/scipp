@@ -480,6 +480,12 @@ public:
     return detail::makeSlice(*Base::items().at(key).second, Base::slices());
   }
 
+  template <class T> auto find(const T k) const && = delete;
+  template <class T> auto find(const T k) const &noexcept {
+    return boost::make_transform_iterator(Base::items().find(k),
+                                          make_item{this});
+  }
+
   auto begin() const && = delete;
   /// Return iterator to the beginning of all items.
   auto begin() const &noexcept {
