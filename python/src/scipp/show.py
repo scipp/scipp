@@ -68,7 +68,14 @@ class VariableDrawer():
 
     def _sparse_extent(self):
         extent = 0
-        for vals in self._variable.values:
+        if isinstance(self._variable, sc.DataConstProxy):
+            # Sparse items in a dataset should always have a coord,
+            # but may have not data
+            coord = self._variable.coords[self._variable.dims[-1]]
+            data = coord.values
+        else:
+            data = self._variable.values
+        for vals in data:
             extent = max(extent, len(vals))
         return extent
 
@@ -161,9 +168,13 @@ class VariableDrawer():
         return svg
 
     def _draw_info(self, offset, title):
+        try:
+            unit = str(self._variable.unit)
+        except:
+            unit = '(undefined)'
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
-            self._variable.dims, self._variable.shape,
-            str(self._variable.unit), self._variable.has_variances)
+            self._variable.dims, self._variable.shape, unit,
+            self._variable.has_variances)
         if title is not None:
             svg = '<text x="{}" y="{}" \
                     style="font-size:0.4px">{}</text>'.format(
@@ -182,7 +193,12 @@ class VariableDrawer():
         items = []
         if self._variable.has_variances:
             items.append(('variances', self._variable.variances, color))
-        items.append(('values', self._variable.values, color))
+        try:
+            # temporary hack until `has_data` or `has_values` is available
+            self._variable.unit
+            items.append(('values', self._variable.values, color))
+        except:
+            pass
         if isinstance(self._variable, sc.DataConstProxy):
             if self._variable.sparse:
                 for name, label in self._variable.labels:
