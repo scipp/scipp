@@ -23,10 +23,6 @@ target_include_directories(${TARGET_NAME} SYSTEM
                            PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
                            PRIVATE "../range-v3/include")
 
-if(NOT ENABLE_LTO)
-    set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
-endif(NOT ENABLE_LTO)
-
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 add_subdirectory(test)
