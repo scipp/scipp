@@ -1726,3 +1726,46 @@ TEST(DatasetProxyTest, find) {
   ++it;
   EXPECT_EQ(it, dp.find("b"));
 }
+
+TEST(DatasetProxyTest, find_in_slice) {
+  Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
+  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
+  d.setData("a", makeVariable<double>({Dim::X, 2}));
+  d.setData("b", makeVariable<float>({Dim::Y, 2}));
+
+  DatasetProxy slice = d.slice({Dim::X, 1});
+
+  EXPECT_EQ(slice.begin(), slice.find("a"));
+  EXPECT_EQ(slice.end(), slice.find("b"));
+}
+
+TEST(DatasetConstProxyTest, find) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+
+  DatasetConstProxy dp(d);
+
+  EXPECT_EQ(dp.end(), dp.find("not a thing"));
+
+  EXPECT_EQ(dp.begin(), dp.find("a"));
+
+  auto it = dp.begin();
+  ++it;
+  EXPECT_EQ(it, dp.find("b"));
+}
+
+TEST(DatasetConstProxyTest, find_in_slice) {
+  Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
+  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
+  d.setData("a", makeVariable<double>({Dim::X, 2}));
+  d.setData("b", makeVariable<float>({Dim::Y, 2}));
+
+  const DatasetConstProxy slice = d.slice({Dim::X, 1});
+
+  EXPECT_EQ(slice.begin(), slice.find("a"));
+  EXPECT_EQ(slice.end(), slice.find("b"));
+}
