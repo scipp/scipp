@@ -264,6 +264,34 @@ TEST(DatasetTest, find) {
   EXPECT_EQ(it, d.find("b"));
 }
 
+TEST(DatasetTest, find_coords_const) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const CoordsConstProxy coords = dataset.coords();
+
+  EXPECT_EQ(coords.end(), coords.find(Dim::Q));
+
+  EXPECT_EQ(coords.begin(), coords.find(Dim::Time));
+
+  auto it = coords.begin();
+  ++it;
+  EXPECT_EQ(it, coords.find(Dim::X));
+}
+
+TEST(DatasetTest, find_coords_mutable) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+  CoordsProxy coords = dataset.coords();
+
+  EXPECT_EQ(coords.end(), coords.find(Dim::Q));
+
+  EXPECT_EQ(coords.begin(), coords.find(Dim::Time));
+
+  auto it = coords.begin();
+  ++it;
+  EXPECT_EQ(it, coords.find(Dim::X));
+}
+
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 
   auto sparse_variable =
