@@ -23,23 +23,26 @@ class VariableDrawer():
         self._target_dims = target_dims
         if self._target_dims is None:
             self._target_dims = self._variable.dims
+        # special extent value indicating sparse dimension
+        self._sparse_flag = -1
+        self._sparse_box_scale = 0.3
 
-    def _draw_box(self, origin_x, origin_y, color):
+    def _draw_box(self, origin_x, origin_y, color, xlen=1):
         return " ".join([
             '<rect',
             'style="fill:#{};fill-opacity:1;stroke:#000;stroke-width:0.05"',
             'id="rect"',
-            'width="1" height="1" x="origin_x" y="origin_y"/>',
+            'width="xlen" height="1" x="origin_x" y="origin_y"/>',
             '<path',
             'style="fill:#{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
-            'd="m origin_x origin_y l 0.3 -0.3 h 1 l -0.3 0.3 z"',
+            'd="m origin_x origin_y l 0.3 -0.3 h xlen l -0.3 0.3 z"',
             'id="path1" />',
             '<path',
             'style="fill:#{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
-            'd="m origin_x origin_y m 1 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
+            'd="m origin_x origin_y m xlen 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
             'id="path2" />'
         ]).format(*color).replace("origin_x", str(origin_x)).replace(
-            "origin_y", str(origin_y))
+            "origin_y", str(origin_y)).replace("xlen", str(xlen))
 
     def _variance_offset(self):
         shape = self._variable.shape
@@ -57,15 +60,25 @@ class VariableDrawer():
         for dim in self._target_dims:
             if dim in d:
                 e.append(d[dim])
+            elif dim in dims:
+                e.append(self._sparse_flag)
             else:
                 e.append(1)
         return [1] * (3 - len(e)) + e
+
+    def _sparse_extent(self):
+        extent = 0
+        for vals in self._variable.values:
+            extent = max(extent, len(vals))
+        return extent
 
     def size(self):
         width = 2 * self._margin
         height = 2 * self._margin
         shape = self._extents()
 
+        if shape[-1] == self._sparse_flag:
+            shape[-1] = self._sparse_box_scale * self._sparse_extent()
         width += shape[-1]
         height += shape[-2]
         depth = shape[-3]
@@ -76,7 +89,7 @@ class VariableDrawer():
         height += 0.3 * depth
         return [width, height]
 
-    def _draw_array(self, color, offset=[0, 0]):
+    def _draw_array(self, color, offset=[0, 0], variances=False):
         shape = self._variable.shape
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
@@ -86,14 +99,28 @@ class VariableDrawer():
             lz, ly, lx = self._extents()
             for z in range(lz):
                 for y in reversed(range(ly)):
-                    for x in range(lx):
+                    true_lx = lx
+                    x_scale = 1
+                    sparse = False
+                    if lx == self._sparse_flag:
+                        # TODO This works only for 2D and no transpose
+                        if variances:
+                            true_lx = len(self._variable.variances[ly - y - 1])
+                        else:
+                            true_lx = len(self._variable.values[ly - y - 1])
+                        if true_lx == 0:
+                            true_lx = 1
+                            x_scale *= 0
+                        x_scale *= self._sparse_box_scale
+                        sparse = True
+                    for x in range(true_lx):
                         # Do not draw hidden boxes
-                        if z != lz - 1 and y != 0 and x != lx - 1:
+                        if z != lz - 1 and y != 0 and x != lx - 1 and not sparse:
                             continue
                         svg += self._draw_box(
-                            dx + x + self._margin + 0.3 *
+                            dx + x * x_scale + self._margin + 0.3 *
                             (lz - z - self._margin),
-                            dy + y + self._margin + 0.3 * z, color)
+                            dy + y + self._margin + 0.3 * z, color, x_scale)
         return svg
 
     def _draw_labels(self, offset):
@@ -160,7 +187,8 @@ class VariableDrawer():
             svg += '<title>variances</title>'
             svg += self._draw_array(color=color,
                                     offset=offset +
-                                    np.array([self._variance_offset(), 0]))
+                                    np.array([self._variance_offset(), 0]),
+                                    variances=True)
             svg += '</g>'
             svg += '<g>'
             if title is None:
