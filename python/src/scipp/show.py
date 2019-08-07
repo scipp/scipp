@@ -306,24 +306,27 @@ class DatasetDrawer():
         height += h
         width += w
 
+        c, w, h = draw_area(area_z, 'x')
+        content += '<g transform="translate({},{})">{}</g>'.format(
+            width, height - h, c)
+        width += w
+
         c, w, h = draw_area(area_y, 'x', reverse=True)
-        content += '<g transform="translate({},{})">{}</g>'.format(-w, height-h, c)
+        content += '<g transform="translate({},{})">{}</g>'.format(
+            -w, height - h, c)
         width += w
         left -= w
 
         c, w, h = draw_area(area_0d, 'x', reverse=True)
-        content += '<g transform="translate({},{})">{}</g>'.format(-w, height, c)
+        content += '<g transform="translate({},{})">{}</g>'.format(
+            -w, height, c)
 
         c, w, h = draw_area(area_x, 'y')
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
         height += h
 
-        c, w, h = draw_area(area_z, 'x')
-        content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
-        height += h
-
-        return '<svg viewBox="{} {} {} {}">{}</svg>'.format(left, top,
-            max(16, width), height, content)
+        return '<svg viewBox="{} {} {} {}">{}</svg>'.format(
+            left, top, max(16, width), height, content)
 
 
 def show(container):
