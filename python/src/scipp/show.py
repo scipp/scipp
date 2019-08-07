@@ -89,7 +89,7 @@ class VariableDrawer():
         height += 0.3 * depth
         return [width, height]
 
-    def _draw_array(self, color, offset=[0, 0], variances=False):
+    def _draw_array(self, color, data, offset=[0, 0]):
         shape = self._variable.shape
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
@@ -104,10 +104,7 @@ class VariableDrawer():
                     sparse = False
                     if lx == self._sparse_flag:
                         # TODO This works only for 2D and no transpose
-                        if variances:
-                            true_lx = len(self._variable.variances[ly - y - 1])
-                        else:
-                            true_lx = len(self._variable.values[ly - y - 1])
+                        true_lx = len(data[ly - y - 1])
                         if true_lx == 0:
                             true_lx = 1
                             x_scale *= 0
@@ -182,29 +179,32 @@ class VariableDrawer():
     def draw(self, color, offset=np.zeros(2), title=None):
         svg = '<g>'
         svg += self._draw_info(offset, title)
+        items = []
         if self._variable.has_variances:
+            items.append(('variances', self._variable.variances, color))
+        items.append(('values', self._variable.values, color))
+        if isinstance(self._variable, sc.DataConstProxy):
+            if self._variable.sparse:
+                for name, label in self._variable.labels:
+                    if label.sparse:
+                        items.append((name, label.values, _colors['labels']))
+                sparse_dim = self._variable.sparse_dim
+                for dim, coord in self._variable.coords:
+                    if dim == sparse_dim:
+                        items.append((str(sparse_dim),
+                                      self._variable.coords[sparse_dim].values,
+                                      _colors['coord']))
+
+        for i, (name, data, color) in enumerate(items):
             svg += '<g>'
-            svg += '<title>variances</title>'
-            svg += self._draw_array(color=color,
-                                    offset=offset +
-                                    np.array([self._variance_offset(), 0]),
-                                    variances=True)
+            svg += '<title>{}</title>'.format(name)
+            svg += self._draw_array(
+                color=color,
+                offset=offset +
+                np.array([(len(items) - i - 1) * self._variance_offset(),
+                          i * self._variance_offset()]),
+                data=data)
             svg += '</g>'
-            svg += '<g>'
-            if title is None:
-                svg += '<title>values</title>'
-            svg += self._draw_array(color=color,
-                                    offset=offset +
-                                    np.array([0, self._variance_offset()]))
-            svg += '</g>'
-            svg += self._draw_labels(offset=offset)
-        else:
-            svg += '<g>'
-            if title is None:
-                svg += '<title>values</title>'
-            svg += self._draw_array(color=color, offset=offset)
-            svg += '</g>'
-            svg += self._draw_labels(offset=offset)
         svg += '</g>'
         return svg
 
