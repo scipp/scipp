@@ -233,7 +233,9 @@ class DatasetDrawer():
             for name, data in dataset:
                 item = (name, data, _colors['data'])
                 if data.dims != dims:
-                    if len(data.dims) != 1:
+                    if len(data.dims) == 0:
+                        area_0d.append(item)
+                    elif len(data.dims) != 1:
                         area_xy[-1:-1] = [item]
                     elif data.dims[0] == dims[-1]:
                         area_x.append(item)
@@ -275,11 +277,13 @@ class DatasetDrawer():
             else:
                 area_z.append(item)
 
-        def draw_area(area, layout_direction):
+        def draw_area(area, layout_direction, reverse=False):
             content = ''
             width = 0
             height = 0
             offset = [0, 0]
+            if reverse:
+                area = reversed(area)
             for name, data, color in area:
                 drawer = VariableDrawer(data, margin, target_dims=dims)
                 content += drawer.draw(color=color, offset=offset, title=name)
@@ -294,21 +298,31 @@ class DatasetDrawer():
                     offset = [0, height]
             return content, width, height
 
+        top = 0
+        left = 0
+
         c, w, h = draw_area(area_xy, 'y')
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
         height += h
         width += w
+
+        c, w, h = draw_area(area_y, 'x', reverse=True)
+        content += '<g transform="translate({},{})">{}</g>'.format(-w, height-h, c)
+        width += w
+        left -= w
+
+        c, w, h = draw_area(area_0d, 'x', reverse=True)
+        content += '<g transform="translate({},{})">{}</g>'.format(-w, height, c)
+
         c, w, h = draw_area(area_x, 'y')
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
         height += h
-        c, w, h = draw_area(area_y, 'x')
-        content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
-        height += h
+
         c, w, h = draw_area(area_z, 'x')
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
         height += h
 
-        return '<svg viewBox="0 0 {} {}">{}</svg>'.format(
+        return '<svg viewBox="{} {} {} {}">{}</svg>'.format(left, top,
             max(16, width), height, content)
 
 
