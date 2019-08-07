@@ -251,6 +251,12 @@ public:
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
+  /// Removes all data items from the Dataset.
+  ///
+  /// Coordinates, labels and attributes are not modified.
+  /// This operation invalidates any proxy objects creeated from this dataset.
+  void clear() noexcept { m_data.clear(); }
+
   CoordsConstProxy coords() const noexcept;
   CoordsProxy coords() noexcept;
 

@@ -19,6 +19,20 @@ using namespace scipp::core;
 
 TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
+TEST(DatasetTest, clear) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+  ASSERT_FALSE(dataset.empty());
+  ASSERT_FALSE(dataset.coords().empty());
+  ASSERT_FALSE(dataset.labels().empty());
+  ASSERT_FALSE(dataset.attrs().empty());
+  ASSERT_NO_THROW(dataset.clear());
+  ASSERT_TRUE(dataset.empty());
+  ASSERT_FALSE(dataset.coords().empty());
+  ASSERT_FALSE(dataset.labels().empty());
+  ASSERT_FALSE(dataset.attrs().empty());
+}
+
 TEST(DatasetTest, setCoord) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
