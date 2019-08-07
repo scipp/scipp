@@ -80,3 +80,9 @@ jupyter nbextensions_configurator enable --user
 ```
 
 Use `pip3`, depending on your environment.
+
+## Additional build options
+
+1. `-DDYNAMIC_LIB` forces the shared libraries building, that also decreases link time.
+
+For development purposes `-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF -DDYNAMIC_LIB=ON` is recommended.

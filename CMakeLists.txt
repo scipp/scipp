@@ -53,11 +53,21 @@ else()
 
   # Reduces binary size of, e.g., libscipp-core.so by several MB.
   set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
-
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
+option(DYNAMIC_LIB "Build shared libraries" OFF)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT result OUTPUT output)
+if (result)
+  if (NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+  endif (NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+else ()
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+  message(WARNING "IPO is not supported: ${output}")
+endif (result)
 
 add_compile_options(-Wall
                     -Wextra
