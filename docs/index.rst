@@ -32,7 +32,6 @@ Documentation
    :maxdepth: 2
 
    user-guide/data-structures
-   user-guide/data-structures-old
    user-guide/slicing
    user-guide/operations
    user-guide/sparse-data
