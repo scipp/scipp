@@ -83,7 +83,7 @@ Use `pip3`, depending on your environment.
 
 ## Additional build options
 
-1. `-DDISABLE_LTO` disables LTO for libraries for faster linking.
+1. `-DENABLE_LTO` enables LTO for libraries for faster linking.
 2. `-DDYNAMIC_LIB` forces the shared libraries building, that also decreases link time.
 
-For development purposes `-DDISABLE_LTO=ON -DDYNAMIC_LIB=ON` is recommended.
+For development purposes `-DENABLE_LTO=OFF -DDYNAMIC_LIB=ON` is recommended.
