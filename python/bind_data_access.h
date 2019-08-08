@@ -86,9 +86,8 @@ py::object as_py_array_t_impl(py::object &obj, Var &view) {
   auto variant = Getter::template get<T>(view);
   if (!variant)
     return py::none();
-  return py::array_t<py_T>{
-      dims.shape(), numpy_strides<T>(strides),
-      reinterpret_cast<py_T *>(variant->data()), obj};
+  return py::array_t<py_T>{dims.shape(), numpy_strides<T>(strides),
+                           reinterpret_cast<py_T *>(variant->data()), obj};
 }
 
 struct get_values {
