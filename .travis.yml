@@ -32,10 +32,12 @@ jobs:
     - os: osx
       name: "apple clang"
       osx_image: xcode10.2
-      before_install: brew install ccache 
+      before_install: 
+                   - brew install ccache 
+                   - brew install ninja 
       env:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
-      script: sh .travis/run_tests.sh
+      script: sh .travis/run_tests_osx.sh
     - stage: "Deploy"
       name: "conda linux"
       if: branch = master AND NOT type = pull_request
