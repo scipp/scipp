@@ -28,7 +28,8 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
              return py::make_iterator(self.begin(), self.end(),
                                       py::return_value_policy::move);
            },
-           py::keep_alive<0, 1>());
+           py::keep_alive<0, 1>())
+      .def("__contains__", &T::contains);
   bind_comparison<T>(proxy);
 }
 
