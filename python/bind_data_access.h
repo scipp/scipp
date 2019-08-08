@@ -293,20 +293,28 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property("unit", &T::unit, &T::setUnit,
                  "The physical unit of the data (writable).");
 
-  c.def_property("values", &as_VariableView::values<T>,
-                 &as_VariableView::set_values<T>,
-                 "The array of values of the data (writable).");
-  c.def_property("variances", &as_VariableView::variances<T>,
-                 &as_VariableView::set_variances<T>,
-                 "The array of variances of the data (writable).");
-  c.def_property("value", &as_VariableView::value<T>,
-                 &as_VariableView::set_value<T>,
-                 "The only value for 0-dimensional data. Raises an exception "
-                 "if the data is not 0-dimensional.");
-  c.def_property("variance", &as_VariableView::variance<T>,
-                 &as_VariableView::set_variance<T>,
-                 "The only variance for 0-dimensional data. Raises an "
-                 "exception if the data is not 0-dimensional.");
+  c.def_property(
+      "values",
+      py::cpp_function(&as_VariableView::values<T>, py::keep_alive<0, 1>()),
+      &as_VariableView::set_values<T>,
+      "The array of values of the data (writable).");
+  c.def_property(
+      "variances",
+      py::cpp_function(&as_VariableView::variances<T>, py::keep_alive<0, 1>()),
+      &as_VariableView::set_variances<T>,
+      "The array of variances of the data (writable).");
+  c.def_property(
+      "value",
+      py::cpp_function(&as_VariableView::value<T>, py::keep_alive<0, 1>()),
+      &as_VariableView::set_value<T>,
+      "The only value for 0-dimensional data. Raises an exception if the data "
+      "is not 0-dimensional.");
+  c.def_property(
+      "variance",
+      py::cpp_function(&as_VariableView::variance<T>, py::keep_alive<0, 1>()),
+      &as_VariableView::set_variance<T>,
+      "The only variance for 0-dimensional data. Raises an exception if the "
+      "data is not 0-dimensional.");
   c.def_property_readonly(
       "has_variances", [](T &v) { return v.hasVariances(); },
       py::return_value_policy::
