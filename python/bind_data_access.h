@@ -85,25 +85,27 @@ auto as_py_array_t_impl(py::object &obj, Var &view) {
   using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
   return py::array_t<py_T>{
       dims.shape(), numpy_strides<T>(strides),
-      reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
+      reinterpret_cast<py_T *>(Getter::template get<T>(view)->data()), obj};
 }
 
 struct get_values {
   template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
-    return proxy.template values<T>();
+    return std::make_optional(proxy.template values<T>());
   }
 };
 struct get_variances {
   template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
-    return proxy.template variances<T>();
+    return proxy.hasVariances()
+               ? std::make_optional(proxy.template variances<T>())
+               : std::nullopt;
   }
 };
 
 template <class... Ts> struct as_VariableViewImpl {
   template <class Getter, class Proxy>
-  static std::variant<std::conditional_t<
+  static std::optional<std::variant<std::conditional_t<
       std::is_same_v<Proxy, Variable>, scipp::span<underlying_type_t<Ts>>,
-      VariableView<underlying_type_t<Ts>>>...>
+      VariableView<underlying_type_t<Ts>>>...>>
   get(Proxy &proxy) {
     DType type = proxy.data().dtype();
     if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
@@ -158,20 +160,23 @@ template <class... Ts> struct as_VariableViewImpl {
     case dtype<bool>:
       return as_py_array_t_impl<Getter, bool>(obj, proxy);
     default:
-      return std::visit(
-          [&proxy](const auto &data) {
-            const auto &dims = proxy.dims();
-            // We return an individual item in two cases:
-            // 1. For 0-D data (consistent with numpy behavior, e.g., when
-            //    slicing a 1-D array).
-            // 2. For 1-D sparse data, where the individual item is then a
-            //    vector-like object.
-            if (dims.shape().size() == 0)
-              return py::cast(data[0], py::return_value_policy::reference);
-            else
-              return py::cast(data);
-          },
-          get<Getter>(proxy));
+      if (auto variant = get<Getter>(proxy); !variant)
+        return py::none();
+      else
+        return std::visit(
+            [&variant, &proxy](const auto &data) {
+              const auto &dims = proxy.dims();
+              // We return an individual item in two cases:
+              // 1. For 0-D data (consistent with numpy behavior, e.g., when
+              //    slicing a 1-D array).
+              // 2. For 1-D sparse data, where the individual item is then a
+              //    vector-like object.
+              if (dims.shape().size() == 0)
+                return py::cast(data[0], py::return_value_policy::reference);
+              else
+                return py::cast(data);
+            },
+            *variant);
     }
   }
 
@@ -206,12 +211,12 @@ template <class... Ts> struct as_VariableViewImpl {
   template <class Var>
   static void set_values(Var &view, const py::array &data) {
     expect_shape_compatible(view, data);
-    set(get<get_values>(view), data);
+    set(*get<get_values>(view), data);
   }
   template <class Var>
   static void set_variances(Var &view, const py::array &data) {
     expect_shape_compatible(view, data);
-    set(get<get_variances>(view), data);
+    set(*get<get_variances>(view), data);
   }
 
   // Return a scalar value from a variable, implicitly requiring that the
@@ -222,17 +227,19 @@ template <class... Ts> struct as_VariableViewImpl {
         [](const auto &data) {
           return py::cast(data[0], py::return_value_policy::reference);
         },
-        get<get_values>(view));
+        *get<get_values>(view));
   }
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object variance(Var &view) {
+    if (!view.hasVariances())
+      return py::none();
     expect::equals(Dimensions(), view.dims());
     return std::visit(
         [](const auto &data) {
           return py::cast(data[0], py::return_value_policy::reference);
         },
-        get<get_variances>(view));
+        *get<get_variances>(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -242,7 +249,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
         },
-        get<get_values>(view));
+        *get<get_values>(view));
   }
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -253,7 +260,7 @@ template <class... Ts> struct as_VariableViewImpl {
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
         },
-        get<get_variances>(view));
+        *get<get_variances>(view));
   }
 };
 
