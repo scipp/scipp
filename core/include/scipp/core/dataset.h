@@ -251,11 +251,7 @@ public:
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
-  /// Removes all data items from the Dataset.
-  ///
-  /// Coordinates, labels and attributes are not modified.
-  /// This operation invalidates any proxy objects creeated from this dataset.
-  void clear() noexcept { m_data.clear(); }
+  void clear();
 
   CoordsConstProxy coords() const noexcept;
   CoordsProxy coords() noexcept;
@@ -360,6 +356,7 @@ private:
 
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
+  void rebuildDims();
 
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;

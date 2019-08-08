@@ -74,6 +74,15 @@ Dataset::Dataset(const DatasetConstProxy &proxy) {
 Dataset::operator DatasetConstProxy() const { return DatasetConstProxy(*this); }
 Dataset::operator DatasetProxy() { return DatasetProxy(*this); }
 
+/// Removes all data items from the Dataset.
+///
+/// Coordinates, labels and attributes are not modified.
+/// This operation invalidates any proxy objects creeated from this dataset.
+void Dataset::clear() {
+  m_data.clear();
+  rebuildDims();
+}
+
 /// Return a const proxy to all coordinates of the dataset.
 ///
 /// This proxy includes only "dimension-coordinates". To access
@@ -119,7 +128,9 @@ bool Dataset::contains(const std::string &name) const noexcept {
 /// Coordinates, labels and attributes are not modified.
 /// This operation invalidates any proxy objects creeated from this dataset.
 size_t Dataset::erase(const std::string_view name) {
-  return m_data.erase(std::string(name));
+  const auto result = m_data.erase(std::string(name));
+  rebuildDims();
+  return result;
 }
 
 /// Return a const proxy to data and coordinates with given name.
@@ -198,6 +209,24 @@ void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   for (const auto dim : dims.denseLabels())
     extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
   m_dims = tmp;
+}
+
+void Dataset::rebuildDims() {
+  /* Clear old extents */
+  m_dims.clear();
+
+  for (const auto &d : *this) {
+    setDims(d.second.dims());
+  }
+  for (const auto &c : m_coords) {
+    setDims(c.second.dims(), c.first);
+  }
+  for (const auto &l : m_labels) {
+    setDims(l.second.dims());
+  }
+  for (const auto &a : m_attrs) {
+    setDims(a.second.dims());
+  }
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.

@@ -22,11 +22,14 @@ TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 TEST(DatasetTest, clear) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
+
   ASSERT_FALSE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
   ASSERT_FALSE(dataset.labels().empty());
   ASSERT_FALSE(dataset.attrs().empty());
+
   ASSERT_NO_THROW(dataset.clear());
+
   ASSERT_TRUE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
   ASSERT_FALSE(dataset.labels().empty());
@@ -38,6 +41,19 @@ TEST(DatasetTest, erase_single) {
   auto dataset = factory.make();
   ASSERT_EQ(1, dataset.erase("data_xyz"));
   ASSERT_FALSE(dataset.contains("data_xyz"));
+}
+
+TEST(DatasetTest, erase_extents_rebuild) {
+  Dataset d;
+
+  d.setData("a", makeVariable<double>({Dim::X, 10}));
+  ASSERT_TRUE(d.contains("a"));
+
+  ASSERT_EQ(1, d.erase("a"));
+  ASSERT_FALSE(d.contains("a"));
+
+  ASSERT_NO_THROW(d.setData("a", makeVariable<double>({Dim::X, 15})));
+  ASSERT_TRUE(d.contains("a"));
 }
 
 TEST(DatasetTest, setCoord) {
