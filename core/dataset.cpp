@@ -461,9 +461,7 @@ Dimensions DataConstProxy::dims() const noexcept {
 /// Return the unit of the data values.
 ///
 /// Throws if there are no data values.
-units::Unit DataConstProxy::unit() const {
-  return data().unit();
-}
+units::Unit DataConstProxy::unit() const { return data().unit(); }
 
 /// Set the unit of the data values.
 ///

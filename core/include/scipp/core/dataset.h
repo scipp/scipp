@@ -96,9 +96,7 @@ public:
     return detail::makeSlice(*m_data->data, slices());
   }
   /// Return typed const proxy for data values.
-  template <class T> auto values() const {
-    return data().template values<T>();
-  }
+  template <class T> auto values() const { return data().template values<T>(); }
 
   /// Return typed const proxy for data variances.
   template <class T> auto variances() const {
