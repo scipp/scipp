@@ -24,8 +24,9 @@ _cubes_in_full_width = 24
 # We are effectively rescaling our svg by setting an explicit viewport size.
 # Here we compute relative font sizes, based on a cube width of "1" (px).
 _svg_em = _cubes_in_full_width / _svg_width
-_normal_font = '{}px'.format(round(_svg_em, 2))
-_small_font = '{}px'.format(round(0.8 * _svg_em, 2))
+_normal_font = round(_svg_em, 2)
+_small_font = round(0.8 * _svg_em, 2)
+_smaller_font = round(0.6 * _svg_em, 2)
 
 
 class VariableDrawer():
@@ -93,7 +94,7 @@ class VariableDrawer():
 
     def size(self):
         width = 2 * self._margin
-        height = 2 * self._margin
+        height = 3 * self._margin  # double margin on top for title space
         shape = self._extents()
 
         if shape[-1] == self._sparse_flag:
@@ -136,8 +137,8 @@ class VariableDrawer():
                                 continue
                         svg += self._draw_box(
                             dx + x * x_scale + self._margin + 0.3 *
-                            (lz - z - self._margin),
-                            dy + y + self._margin + 0.3 * z, color, x_scale)
+                            (lz - z - 1), dy + y + 2 * self._margin + 0.3 * z,
+                            color, x_scale)
         return svg
 
     def _draw_labels(self, offset):
@@ -151,28 +152,29 @@ class VariableDrawer():
         def make_label(dim, extent, axis):
             if axis == 2:
                 return '<text x="{}" y="{}" text-anchor="middle" fill="dim-color" \
-                        style="font-size:#small-font">{}</text>'.format(
+                        style="font-size:#smaller-font">{}</text>'.format(
                     dx + self._margin + 0.5 * extent,
-                    dy + view_height - self._margin + 0.3, dim)
+                    dy + view_height - self._margin + _smaller_font, dim)
             if axis == 1:
                 return '<text x="x_pos" y="y_pos" text-anchor="middle" \
-                    fill="dim-color" style="font-size:#small-font" \
+                    fill="dim-color" style="font-size:#smaller-font" \
                     transform="rotate(-90, x_pos, y_pos)">{}</text>'.replace(
-                    'x_pos', str(dx + self._margin - 0.2)).replace(
+                    'x_pos',
+                    str(dx + self._margin - 0.3 * _smaller_font)).replace(
                         'y_pos',
-                        str(dy + view_height - self._margin - 0.2 -
+                        str(dy + view_height - self._margin -
                             0.5 * extent)).format(dim)
             if axis == 0:
                 return '<text x="x_pos" y="y_pos" text-anchor="middle" \
-                    dominant-baseline="central" \
-                    fill="dim-color" style="font-size:#small-font" \
+                    fill="dim-color" style="font-size:#smaller-font" \
                     transform="rotate(-45, x_pos, y_pos)">{}</text>'.replace(
                     'x_pos',
-                    str(dx + self._margin + 0.3 * 0.5 * extent - 0.1)).replace(
-                        'y_pos',
-                        str(dy + view_height - self._margin -
-                            self._extents()[-2] - 0.3 * 0.5 * extent -
-                            0.1)).format(dim)
+                    str(dx + self._margin + 0.3 * 0.5 * extent -
+                        0.2 * _smaller_font)).replace(
+                            'y_pos',
+                            str(dy + view_height - self._margin -
+                                self._extents()[-2] - 0.3 * 0.5 * extent -
+                                0.2 * _smaller_font)).format(dim)
 
         for dim, extent in zip(dims, shape):
             svg += make_label(
@@ -234,9 +236,14 @@ class VariableDrawer():
                           i * self._variance_offset()]),
                 data=data)
             svg += '</g>'
+            svg += self._draw_labels(offset=offset)
         svg += '</g>'
         return svg.replace('#normal-font',
-                           normal_font).replace('#small-font', small_font)
+                           '{}px'.format(_normal_font)).replace(
+                               '#small-font',
+                               '{}px'.format(_small_font)).replace(
+                                   '#smaller-font',
+                                   '{}px'.format(_smaller_font))
 
     def _set_colors(self, svg):
         dim_color = '#444444'
@@ -274,7 +281,7 @@ class DatasetDrawer():
         content = ''
         width = 0
         height = 0
-        margin = 0.8
+        margin = 0.5
         dims = self._dims()
         # TODO bin edges (offset by 0.5)
         # TODO font scaling and other scaling issues
