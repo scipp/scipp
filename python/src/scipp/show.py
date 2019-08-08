@@ -66,6 +66,7 @@ class VariableDrawer():
         return 0.3 * depth
 
     def _extents(self):
+        """Compute 3D extent, remapping dimension order to target dim order"""
         shape = self._variable.shape
         dims = self._variable.dims
         d = dict(zip(dims, shape))
@@ -93,6 +94,7 @@ class VariableDrawer():
         return extent
 
     def size(self):
+        """Return the size (width and height) of the rendered output"""
         width = 2 * self._margin
         height = 3 * self._margin  # double margin on top for title space
         shape = self._extents()
@@ -103,13 +105,31 @@ class VariableDrawer():
         height += shape[-2]
         depth = shape[-3]
 
+        extra_item_count = 0
         if self._variable.has_variances:
-            depth += depth + 1
+            extra_item_count += 1
+        if isinstance(self._variable, sc.DataConstProxy):
+            if self._variable.sparse:
+                for name, label in self._variable.labels:
+                    if label.sparse:
+                        extra_item_count += 1
+                sparse_dim = self._variable.sparse_dim
+                for dim, coord in self._variable.coords:
+                    if dim == sparse_dim:
+                        extra_item_count += 1
+        try:
+            # temporary hack until `has_data` or `has_values` is available
+            self._variable.unit
+        except Exception:
+            # No data
+            extra_item_count -= 1
+        depth += extra_item_count*(depth + 1)
         width += 0.3 * depth
         height += 0.3 * depth
         return [width, height]
 
     def _draw_array(self, color, data, offset=[0, 0]):
+        """Draw the array of boxes"""
         shape = self._variable.shape
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
@@ -284,10 +304,26 @@ class DatasetDrawer():
         margin = 0.5
         dims = self._dims()
         # TODO bin edges (offset by 0.5)
-        # TODO font scaling and other scaling issues
-        # TODO sparse variables
         # TODO limit number of drawn cubes if shape exceeds certain limit
         #      (draw just a single cube with correct edge proportions?)
+
+        # We are drawing in several areas:
+        #
+        # (y-coords) | (data > 1d) | (z-coords)
+        # -------------------------------------
+        # (0d)       | (x-coords)  |
+        #
+        # X and Y coords are thus aligning optically with the data, and are
+        # where normal axes are expected. Data that depends only on X or only
+        # on Y is also drawn in the respective areas, this makes it clear
+        # that the respective other coords do not apply: It avoids
+        # intersection with imaginary grid lines drawn from the X coord up or
+        # from the Y coord towards the right.
+        # For the same reason, 0d variables are drawn in the bottom left, not
+        # intersecting any of the imaginary grid lines.
+        # If there is more than one data item in the center area they are
+        # stacked. Unfortunately this breaks the optical alignment with the Y
+        # coordinates, but in a static picture there is probably no other way.
         area_x = []
         area_y = []
         area_z = []
