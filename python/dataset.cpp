@@ -146,6 +146,7 @@ void init_dataset(py::module &m) {
              for (const auto[name, item] : self.slice(Slice(dim, i)))
                item.assign(other[name]);
            })
+      .def("__delitem__", &Dataset::erase)
       .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);

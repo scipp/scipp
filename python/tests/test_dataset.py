@@ -34,6 +34,14 @@ def test_setitem():
     assert len(d.coords) == 0
 
 
+def test_del_item():
+    d = sc.Dataset()
+    d['a'] = sc.Variable(1.0)
+    assert 'a' in d
+    del d['a']
+    assert 'a' not in d
+
+
 def test_set_coord():
     d = sc.Dataset()
     d.set_coord(Dim.X, sc.Variable(1.0))
