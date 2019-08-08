@@ -75,7 +75,9 @@ inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
 }
 
 template <class Getter, class T, class Var>
-auto as_py_array_t_impl(py::object &obj, Var &view) {
+py::object as_py_array_t_impl(py::object &obj, Var &view) {
+  if (!view.hasVariances())
+    return py::none();
   std::vector<scipp::index> strides;
   if constexpr (std::is_same_v<Var, DataProxy>)
     strides = VariableProxy(view.data()).strides();
