@@ -15,6 +15,18 @@ _colors = {
     'inactive': ['cccccc', '888888', '444444']
 }
 
+# Unit is `em`. This particular value is chosen to avoid a horizontal scroll
+# bar with the readthedocs theme.
+_svg_width = 40
+
+_cubes_in_full_width = 24
+
+# We are effectively rescaling our svg by setting an explicit viewport size.
+# Here we compute relative font sizes, based on a cube width of "1" (px).
+_svg_em = _cubes_in_full_width / _svg_width
+_normal_font = '{}px'.format(round(_svg_em, 2))
+_small_font = '{}px'.format(round(0.8 * _svg_em, 2))
+
 
 class VariableDrawer():
     def __init__(self, variable, margin=1.0, target_dims=None):
@@ -139,12 +151,12 @@ class VariableDrawer():
         def make_label(dim, extent, axis):
             if axis == 2:
                 return '<text x="{}" y="{}" text-anchor="middle" fill="dim-color" \
-                        style="font-size:0.2px">{}</text>'.format(
+                        style="font-size:#small-font">{}</text>'.format(
                     dx + self._margin + 0.5 * extent,
                     dy + view_height - self._margin + 0.3, dim)
             if axis == 1:
                 return '<text x="x_pos" y="y_pos" text-anchor="middle" \
-                    fill="dim-color" style="font-size:0.2px" \
+                    fill="dim-color" style="font-size:#small-font" \
                     transform="rotate(-90, x_pos, y_pos)">{}</text>'.replace(
                     'x_pos', str(dx + self._margin - 0.2)).replace(
                         'y_pos',
@@ -153,7 +165,7 @@ class VariableDrawer():
             if axis == 0:
                 return '<text x="x_pos" y="y_pos" text-anchor="middle" \
                     dominant-baseline="central" \
-                    fill="dim-color" style="font-size:0.2px" \
+                    fill="dim-color" style="font-size:#small-font" \
                     transform="rotate(-45, x_pos, y_pos)">{}</text>'.replace(
                     'x_pos',
                     str(dx + self._margin + 0.3 * 0.5 * extent - 0.1)).replace(
@@ -178,12 +190,12 @@ class VariableDrawer():
             self._variable.has_variances)
         if title is not None:
             svg = '<text x="{}" y="{}" \
-                    style="font-size:0.4px">{}</text>'.format(
+                    style="font-size:#normal-font">{}</text>'.format(
                 offset[0] + 0, offset[1] + 0.6, title)
             svg += '<title>{}</title>'.format(details)
         else:
             svg = '<text x="{}" y="{}" \
-                    style="font-size:0.2px">\
+                    style="font-size:#small-font">\
                     {}\
                     </text>'.format(offset[0] + 0, offset[1] + 0.6, details)
         return svg
@@ -223,17 +235,19 @@ class VariableDrawer():
                 data=data)
             svg += '</g>'
         svg += '</g>'
-        return svg
+        return svg.replace('#normal-font',
+                           normal_font).replace('#small-font', small_font)
 
     def _set_colors(self, svg):
         dim_color = '#444444'
         return svg.replace('dim-color', dim_color)
 
     def make_svg(self):
-        return self._set_colors('<svg viewBox="0 0 {} {}">{}</svg>'.format(
-            max(16,
-                self.size()[0]),
-            self.size()[1], self.draw(color=_colors['data'])))
+        return self._set_colors(
+            '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
+                _svg_width, max(_cubes_in_full_width,
+                                self.size()[0]),
+                self.size()[1], self.draw(color=_colors['data'])))
 
 
 class DatasetDrawer():
@@ -376,8 +390,9 @@ class DatasetDrawer():
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
         height += h
 
-        return '<svg viewBox="{} {} {} {}">{}</svg>'.format(
-            left, top, max(16, width), height, content)
+        return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
+            _svg_width, left, top, max(_cubes_in_full_width, width), height,
+            content)
 
 
 def show(container):
