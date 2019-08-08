@@ -1694,3 +1694,14 @@ TYPED_TEST(DataProxy3DTest, slice_with_edges) {
     }
   }
 }
+
+TEST(DataProxyTest, only_sparse_coords_but_no_data) {
+  Dataset ds;
+  auto var = makeVariable<double>({Dim::X}, {Dimensions::Sparse});
+  ds.setSparseCoord("sparse", var);
+  ds.setCoord({Dim::X}, makeVariable<double>({Dim::X, 3}));
+  ds.setCoord({Dim::Y}, makeVariable<double>({Dim::Y, 3}));
+  const Dataset& dl{ds};
+  EXPECT_ANY_THROW(dl["sparse"].data());
+  EXPECT_ANY_THROW(ds["sparse"].data());
+}
