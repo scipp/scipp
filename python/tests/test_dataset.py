@@ -42,6 +42,43 @@ def test_set_coord():
     assert d.coords[Dim.X] == sp.Variable(1.0)
 
 
+def test_contains_coord():
+    d = sp.Dataset()
+    assert Dim.X not in d.coords
+    d.set_coord(Dim.X, sp.Variable(1.0))
+    assert Dim.X in d.coords
+
+
+def test_set_labels():
+    d = sp.Dataset()
+    d.set_labels("a", sp.Variable(1.0))
+    assert len(d) == 0
+    assert len(d.labels) == 1
+    assert d.labels["a"] == sp.Variable(1.0)
+
+
+def test_contains_labels():
+    d = sp.Dataset()
+    assert "a" not in d.labels
+    d.set_labels("a", sp.Variable(1.0))
+    assert "a" in d.labels
+
+
+def test_set_attrs():
+    d = sp.Dataset()
+    d.set_attr("b", sp.Variable(1.0))
+    assert len(d) == 0
+    assert len(d.attrs) == 1
+    assert d.attrs["b"] == sp.Variable(1.0)
+
+
+def test_contains_attrs():
+    d = sp.Dataset()
+    assert "b" not in d.attrs
+    d.set_attr("b", sp.Variable(1.0))
+    assert "b" in d.attrs
+
+
 def test_slice_item():
     d = sp.Dataset()
     d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4, 8)))
