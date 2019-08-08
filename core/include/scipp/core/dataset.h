@@ -155,6 +155,8 @@ public:
 
   /// Return untyped proxy for data (values and optional variances).
   VariableProxy data() const {
+    if (!hasData())
+      throw std::logic_error("No data available for this object.");
     return detail::makeSlice(*m_mutableData->data, slices());
   }
   /// Return typed proxy for data values.
