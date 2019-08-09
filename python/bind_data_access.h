@@ -77,12 +77,13 @@ inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
 template <class Getter, class T, class Var>
 py::object as_py_array_t_impl(py::object &obj, Var &view) {
   std::vector<scipp::index> strides;
-  if constexpr (std::is_same_v<Var, DataProxy>) {
+  if constexpr (!std::is_same_v<Var, DataProxy>) {
+    strides = VariableProxy(view).strides();
+  } else {
     if (!view.hasData())
       return py::none();
     strides = VariableProxy(view.data()).strides();
-  } else
-    strides = VariableProxy(view).strides();
+  }
   const auto &dims = view.dims();
   using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
   auto variant = Getter::template get<T>(view);
@@ -97,6 +98,7 @@ struct get_values {
     return std::make_optional(proxy.template values<T>());
   }
 };
+
 struct get_variances {
   template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
     return proxy.hasVariances()
@@ -106,19 +108,22 @@ struct get_variances {
 };
 
 template <class... Ts> struct as_VariableViewImpl {
+  template <class Proxy>
+  using outVariant_t =
+      std::variant<std::conditional_t<std::is_same_v<Proxy, Variable>,
+                                      scipp::span<underlying_type_t<Ts>>,
+                                      VariableView<underlying_type_t<Ts>>>...>;
+
   template <class Getter, class Proxy>
-  static std::optional<std::variant<std::conditional_t<
-      std::is_same_v<Proxy, Variable>, scipp::span<underlying_type_t<Ts>>,
-      VariableView<underlying_type_t<Ts>>>...>>
-  get(Proxy &proxy) {
+  static std::optional<outVariant_t<Proxy>> get(Proxy &proxy) {
     DType type;
-    if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
+    if constexpr (!std::is_base_of_v<DataConstProxy, Proxy>) {
+      type = proxy.data().dtype();
+    } else {
       if (!proxy.hasData())
         return std::nullopt;
       const auto &view = proxy.data();
       type = view.data().dtype();
-    } else {
-      type = proxy.data().dtype();
     }
     switch (type) {
     case dtype<double>:
