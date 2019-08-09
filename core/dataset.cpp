@@ -232,39 +232,6 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
-// This only checks the coordinates and labels, not attributes
-bool checkCorrespondingDenseCoords(const Dataset &dataset,
-                                   const DataConstProxy &other) {
-  if (other.dims().sparse())
-    return true;
-  const auto dsCoords{dataset.coords()};
-  const auto otCoords{other.coords()};
-  const auto &dsItems = dsCoords.items();
-  for (const auto & [ d, v ] : otCoords) {
-    if (auto iter = dsItems.find(d); iter == dsItems.end()) {
-      return false;
-    } else {
-      if (*iter->second.first != v) {
-        return false;
-      }
-    }
-  }
-
-  const auto dsLabels{dataset.labels()};
-  const auto otLabels{other.labels()};
-  const auto dsLItems{dsLabels.items()};
-  for (const auto & [ nm, v ] : otLabels) {
-    if (auto iter = dsLItems.find(nm); iter == dsLItems.end()) {
-      return false;
-    } else {
-      if (*iter->second.first != v) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 /// Set (insert or replace) data (values, optional variances, sparse
 /// coordinates) with given name. If the Dataset is empty - coordinates and data
 /// are copied.
@@ -272,32 +239,29 @@ bool checkCorrespondingDenseCoords(const Dataset &dataset,
 /// Throws if the provided values bring the dataset into an inconsistent state
 /// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
-  if (empty()) {
-    if (!data.dims().sparse()) {
-      for (const auto & [ d, v ] : data.coords()) {
-        setCoord(d, Variable(v));
-      }
-    }
-  } else {
-    if (!checkCorrespondingDenseCoords(*this, data))
-      throw std::logic_error(
-          "The corresponding dense coordinates should match.");
-  }
-
-  if (data.hasData()) {
-    setData(name, Variable(data.data()));
-  }
-
-  auto dim = data.dims().sparseDim();
-  if (dim != Dim::Invalid) {
-    setSparseCoord(name, data.coords()[dim]);
-  }
-
-  for (const auto & [ nm, v ] : data.labels()) {
-    if (v.dims().sparse()) {
-      setSparseLabels(name, std::string(nm), v);
+  for (const auto & [ dim, coord ] : data.coords()) {
+    if (coord.dims().sparse()) {
+      setSparseCoord(name, coord);
+    } else {
+      if (const auto it = m_coords.find(dim); it != m_coords.end())
+        expect::variablesMatch(coord, it->second);
+      else
+        setCoord(dim, coord);
     }
   }
+  for (const auto & [ nm, labs ] : data.labels()) {
+    if (labs.dims().sparse()) {
+      setSparseLabels(name, std::string(nm), labs);
+    } else {
+      if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
+        expect::variablesMatch(labs, it->second);
+      else
+        setLabels(std::string(nm), labs);
+    }
+  }
+
+  if (data.hasData())
+    setData(name, data.data());
 }
 
 void Dataset::setData(const std::string &name, const DataArray &data) {
