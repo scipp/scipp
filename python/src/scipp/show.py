@@ -15,6 +15,19 @@ _colors = {
     'inactive': ['cccccc', '888888', '444444']
 }
 
+# Unit is `em`. This particular value is chosen to avoid a horizontal scroll
+# bar with the readthedocs theme.
+_svg_width = 40
+
+_cubes_in_full_width = 24
+
+# We are effectively rescaling our svg by setting an explicit viewport size.
+# Here we compute relative font sizes, based on a cube width of "1" (px).
+_svg_em = _cubes_in_full_width / _svg_width
+_normal_font = round(_svg_em, 2)
+_small_font = round(0.8 * _svg_em, 2)
+_smaller_font = round(0.6 * _svg_em, 2)
+
 
 class VariableDrawer():
     def __init__(self, variable, margin=1.0, target_dims=None):
@@ -53,6 +66,7 @@ class VariableDrawer():
         return 0.3 * depth
 
     def _extents(self):
+        """Compute 3D extent, remapping dimension order to target dim order"""
         shape = self._variable.shape
         dims = self._variable.dims
         d = dict(zip(dims, shape))
@@ -80,8 +94,9 @@ class VariableDrawer():
         return extent
 
     def size(self):
+        """Return the size (width and height) of the rendered output"""
         width = 2 * self._margin
-        height = 2 * self._margin
+        height = 3 * self._margin  # double margin on top for title space
         shape = self._extents()
 
         if shape[-1] == self._sparse_flag:
@@ -90,13 +105,31 @@ class VariableDrawer():
         height += shape[-2]
         depth = shape[-3]
 
+        extra_item_count = 0
         if self._variable.has_variances:
-            depth += depth + 1
+            extra_item_count += 1
+        if isinstance(self._variable, sc.DataConstProxy):
+            if self._variable.sparse:
+                for name, label in self._variable.labels:
+                    if label.sparse:
+                        extra_item_count += 1
+                sparse_dim = self._variable.sparse_dim
+                for dim, coord in self._variable.coords:
+                    if dim == sparse_dim:
+                        extra_item_count += 1
+        try:
+            # temporary hack until `has_data` or `has_values` is available
+            self._variable.unit
+        except Exception:
+            # No data
+            extra_item_count -= 1
+        depth += extra_item_count*(depth + 1)
         width += 0.3 * depth
         height += 0.3 * depth
         return [width, height]
 
     def _draw_array(self, color, data, offset=[0, 0]):
+        """Draw the array of boxes"""
         shape = self._variable.shape
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
@@ -124,8 +157,8 @@ class VariableDrawer():
                                 continue
                         svg += self._draw_box(
                             dx + x * x_scale + self._margin + 0.3 *
-                            (lz - z - self._margin),
-                            dy + y + self._margin + 0.3 * z, color, x_scale)
+                            (lz - z - 1), dy + y + 2 * self._margin + 0.3 * z,
+                            color, x_scale)
         return svg
 
     def _draw_labels(self, offset):
@@ -139,28 +172,29 @@ class VariableDrawer():
         def make_label(dim, extent, axis):
             if axis == 2:
                 return '<text x="{}" y="{}" text-anchor="middle" fill="dim-color" \
-                        style="font-size:0.2px">{}</text>'.format(
+                        style="font-size:#smaller-font">{}</text>'.format(
                     dx + self._margin + 0.5 * extent,
-                    dy + view_height - self._margin + 0.3, dim)
+                    dy + view_height - self._margin + _smaller_font, dim)
             if axis == 1:
                 return '<text x="x_pos" y="y_pos" text-anchor="middle" \
-                    fill="dim-color" style="font-size:0.2px" \
+                    fill="dim-color" style="font-size:#smaller-font" \
                     transform="rotate(-90, x_pos, y_pos)">{}</text>'.replace(
-                    'x_pos', str(dx + self._margin - 0.2)).replace(
+                    'x_pos',
+                    str(dx + self._margin - 0.3 * _smaller_font)).replace(
                         'y_pos',
-                        str(dy + view_height - self._margin - 0.2 -
+                        str(dy + view_height - self._margin -
                             0.5 * extent)).format(dim)
             if axis == 0:
                 return '<text x="x_pos" y="y_pos" text-anchor="middle" \
-                    dominant-baseline="central" \
-                    fill="dim-color" style="font-size:0.2px" \
+                    fill="dim-color" style="font-size:#smaller-font" \
                     transform="rotate(-45, x_pos, y_pos)">{}</text>'.replace(
                     'x_pos',
-                    str(dx + self._margin + 0.3 * 0.5 * extent - 0.1)).replace(
-                        'y_pos',
-                        str(dy + view_height - self._margin -
-                            self._extents()[-2] - 0.3 * 0.5 * extent -
-                            0.1)).format(dim)
+                    str(dx + self._margin + 0.3 * 0.5 * extent -
+                        0.2 * _smaller_font)).replace(
+                            'y_pos',
+                            str(dy + view_height - self._margin -
+                                self._extents()[-2] - 0.3 * 0.5 * extent -
+                                0.2 * _smaller_font)).format(dim)
 
         for dim, extent in zip(dims, shape):
             svg += make_label(
@@ -178,12 +212,12 @@ class VariableDrawer():
             self._variable.has_variances)
         if title is not None:
             svg = '<text x="{}" y="{}" \
-                    style="font-size:0.4px">{}</text>'.format(
+                    style="font-size:#normal-font">{}</text>'.format(
                 offset[0] + 0, offset[1] + 0.6, title)
             svg += '<title>{}</title>'.format(details)
         else:
             svg = '<text x="{}" y="{}" \
-                    style="font-size:0.2px">\
+                    style="font-size:#small-font">\
                     {}\
                     </text>'.format(offset[0] + 0, offset[1] + 0.6, details)
         return svg
@@ -222,18 +256,25 @@ class VariableDrawer():
                           i * self._variance_offset()]),
                 data=data)
             svg += '</g>'
+            svg += self._draw_labels(offset=offset)
         svg += '</g>'
-        return svg
+        return svg.replace('#normal-font',
+                           '{}px'.format(_normal_font)).replace(
+                               '#small-font',
+                               '{}px'.format(_small_font)).replace(
+                                   '#smaller-font',
+                                   '{}px'.format(_smaller_font))
 
     def _set_colors(self, svg):
         dim_color = '#444444'
         return svg.replace('dim-color', dim_color)
 
     def make_svg(self):
-        return self._set_colors('<svg viewBox="0 0 {} {}">{}</svg>'.format(
-            max(16,
-                self.size()[0]),
-            self.size()[1], self.draw(color=_colors['data'])))
+        return self._set_colors(
+            '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
+                _svg_width, max(_cubes_in_full_width,
+                                self.size()[0]),
+                self.size()[1], self.draw(color=_colors['data'])))
 
 
 class DatasetDrawer():
@@ -260,13 +301,29 @@ class DatasetDrawer():
         content = ''
         width = 0
         height = 0
-        margin = 0.8
+        margin = 0.5
         dims = self._dims()
         # TODO bin edges (offset by 0.5)
-        # TODO font scaling and other scaling issues
-        # TODO sparse variables
         # TODO limit number of drawn cubes if shape exceeds certain limit
         #      (draw just a single cube with correct edge proportions?)
+
+        # We are drawing in several areas:
+        #
+        # (y-coords) | (data > 1d) | (z-coords)
+        # -------------------------------------
+        # (0d)       | (x-coords)  |
+        #
+        # X and Y coords are thus aligning optically with the data, and are
+        # where normal axes are expected. Data that depends only on X or only
+        # on Y is also drawn in the respective areas, this makes it clear
+        # that the respective other coords do not apply: It avoids
+        # intersection with imaginary grid lines drawn from the X coord up or
+        # from the Y coord towards the right.
+        # For the same reason, 0d variables are drawn in the bottom left, not
+        # intersecting any of the imaginary grid lines.
+        # If there is more than one data item in the center area they are
+        # stacked. Unfortunately this breaks the optical alignment with the Y
+        # coordinates, but in a static picture there is probably no other way.
         area_x = []
         area_y = []
         area_z = []
@@ -362,22 +419,23 @@ class DatasetDrawer():
             width, height - h, c)
         width += w
 
-        c, w, h = draw_area(area_y, 'x', reverse=True)
+        c, w_y, h = draw_area(area_y, 'x', reverse=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
-            -w, height - h, c)
-        width += w
-        left -= w
+            -w_y, height - h, c)
 
-        c, w, h = draw_area(area_0d, 'x', reverse=True)
+        c, w_0d, h = draw_area(area_0d, 'x', reverse=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
-            -w, height, c)
+            -w_0d, height, c)
+        width += max(w_y, w_0d)
+        left -= max(w_y, w_0d)
 
         c, w, h = draw_area(area_x, 'y')
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
         height += h
 
-        return '<svg viewBox="{} {} {} {}">{}</svg>'.format(
-            left, top, max(16, width), height, content)
+        return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
+            _svg_width, left, top, max(_cubes_in_full_width, width), height,
+            content)
 
 
 def show(container):

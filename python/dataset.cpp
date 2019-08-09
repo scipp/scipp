@@ -22,24 +22,34 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
   py::class_<ConstT>(m, (name + "ConstProxy").c_str());
   py::class_<T, ConstT> proxy(m, (name + "Proxy").c_str());
   proxy.def("__len__", &T::size)
-      .def("__getitem__", &T::operator[], py::keep_alive<0, 1>())
+      .def("__getitem__", &T::operator[], py::return_value_policy::move,
+           py::keep_alive<0, 1>())
       .def("__iter__",
            [](T &self) {
              return py::make_iterator(self.begin(), self.end(),
                                       py::return_value_policy::move);
            },
-           py::keep_alive<0, 1>());
+           py::keep_alive<0, 1>())
+      .def("__contains__", &T::contains);
   bind_comparison<T>(proxy);
 }
 
 template <class T, class... Ignored>
 void bind_coord_properties(py::class_<T, Ignored...> &c) {
-  c.def_property_readonly("coords", [](T &self) { return self.coords(); },
-                          py::return_value_policy::move);
-  c.def_property_readonly("labels", [](T &self) { return self.labels(); },
-                          py::return_value_policy::move);
-  c.def_property_readonly("attrs", [](T &self) { return self.attrs(); },
-                          py::return_value_policy::move);
+  // For some reason the return value policy and/or keep-alive policy do not
+  // work unless we wrap things in py::cpp_function.
+  c.def_property_readonly(
+      "coords",
+      py::cpp_function([](T &self) { return self.coords(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()));
+  c.def_property_readonly(
+      "labels",
+      py::cpp_function([](T &self) { return self.labels(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()));
+  c.def_property_readonly("attrs",
+                          py::cpp_function([](T &self) { return self.attrs(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()));
 }
 
 template <class T, class... Ignored>
@@ -51,7 +61,7 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
           return py::make_iterator(self.begin(), self.end(),
                                    py::return_value_policy::move);
         },
-        py::keep_alive<0, 1>());
+        py::return_value_policy::move, py::keep_alive<0, 1>());
   c.def("__getitem__",
         [](T &self, const std::string &name) { return self[name]; },
         py::keep_alive<0, 1>());
