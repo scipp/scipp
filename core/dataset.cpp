@@ -227,10 +227,10 @@ void Dataset::setData(const std::string &name, Variable data) {
 
 /// Set (insert or replace) data item with given name.
 ///
-/// Coordinated, labels, and attributes of the data array are added to the
-/// dataset. Throws if there are existing but mismatching coords or labels.
-/// Throws if the provided data brings the dataset into an inconsistent state
-/// (mismatching dtype, unit, or dimensions).
+/// Coordinated and labels of the data array are added to the dataset. Throws if
+/// there are existing but mismatching coords or labels. Throws if the provided
+/// data brings the dataset into an inconsistent state (mismatching dtype, unit,
+/// or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
   for (const auto & [ dim, coord ] : data.coords()) {
     if (coord.dims().sparse()) {
@@ -259,10 +259,10 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
 
 /// Set (insert or replace) data item with given name.
 ///
-/// Coordinated, labels, and attributes of the data array are added to the
-/// dataset. Throws if there are existing but mismatching coords or labels.
-/// Throws if the provided data brings the dataset into an inconsistent state
-/// (mismatching dtype, unit, or dimensions).
+/// Coordinated and labels of the data array are added to the dataset. Throws if
+/// there are existing but mismatching coords or labels. Throws if the provided
+/// data brings the dataset into an inconsistent state (mismatching dtype, unit,
+/// or dimensions).
 void Dataset::setData(const std::string &name, const DataArray &data) {
   setData(name, DataConstProxy(data));
 }
