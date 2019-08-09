@@ -564,6 +564,22 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   EXPECT_EQ(res.labels(), dataset_a.labels());
 }
 
+TYPED_TEST(DatasetBinaryOpTest, broadcast) {
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
+  const auto c = makeVariable<double>(2.0);
+  Dataset a;
+  Dataset b;
+  a.setCoord(Dim::X, x);
+  a.setData("data1", x);
+  a.setData("data2", x);
+  b.setData("data1", c);
+  b.setData("data2", c + c);
+  const auto res = TestFixture::op(a, b);
+  EXPECT_EQ(res["data1"].data(), TestFixture::op(x, c));
+  EXPECT_EQ(res["data2"].data(), TestFixture::op(x, c + c));
+}
+
 TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
