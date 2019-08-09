@@ -4,7 +4,6 @@
 # @author Simon Heybrock
 import pytest
 
-import scipp as sc
 import scipp as sp
 from scipp import Dim
 import numpy as np
@@ -260,65 +259,6 @@ def test_dataset_set_data():
                                 variances=np.arange(1.0))
     expected["b"] = sp.Variable([sp.Dim.Row], values=np.arange(10.0, 11.0))
     assert d2 == expected
-
-
-def test_lifetime_values_of_py_array_t_item():
-    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10))})
-    vals = (d + d)['a'].values
-    d2 = d + d  # do something allocating memory to trigger potential segfault
-    assert vals[-1] == 2 * 9
-
-
-def test_lifetime_values_of_py_array_t_item_of_temporary():
-    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10))})
-    assert d['a'].values[-1] == 9
-
-
-def test_lifetime_values_of_item():
-    d = sp.Dataset({'a': sp.Variable([Dim.X], values=["aa", "bb", "cc"])})
-    assert d['a'].values[2] == "cc"
-
-
-def test_lifetime_values_of_item_of_temporary():
-    d = sp.Dataset(
-        coords={Dim.X: sp.Variable([Dim.X], values=["aa", "bb", "cc"])})
-    vals = (d + d).coords[Dim.X].values
-    d2 = d + d  # do something allocating memory to trigger potential segfault
-    assert vals[2] == "cc"
-
-
-def test_lifetime_coords_of_temporary():
-    var = sp.Variable(dims=[Dim.X], values=np.arange(10))
-    d = sp.Dataset({'a': var}, coords={Dim.X: var}, labels={'aux': var})
-    assert d.coords[Dim.X].values[-1] == 9
-    assert d['a'].coords[Dim.X].values[-1] == 9
-    assert d[Dim.X, 1:]['a'].coords[Dim.X].values[-1] == 9
-    assert (d + d).coords[Dim.X].values[-1] == 9
-    assert (d + d).labels['aux'].values[-1] == 9
-
-
-def test_lifetime_iter():
-    var = sp.Variable(dims=[Dim.X], values=np.arange(10))
-    d = sp.Dataset({'a': var}, coords={Dim.X: var}, labels={'aux': var})
-    for name, item in d + d:
-        assert item.data == var + var
-    for dim, coord in (d + d).coords:
-        assert coord == var
-    for name, item in d[Dim.X, 1:5]:
-        assert item.data == var[Dim.X, 1:5]
-    for dim, coord in d[Dim.X, 1:5].coords:
-        assert coord == var[Dim.X, 1:5]
-    for name, item in (d + d)[Dim.X, 1:5]:
-        assert item.data == (var + var)[Dim.X, 1:5]
-    for dim, coord in (d + d)[Dim.X, 1:5].coords:
-        assert coord == var[Dim.X, 1:5]
-
-
-def test_lifetime_single_value():
-    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10))})
-    var = sp.Variable(d)
-    assert var.value['a'].values[-1] == 9
-    assert var.copy().values['a'].values[-1] == 9
 
 
 # def test_delitem(self):
