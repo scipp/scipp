@@ -65,3 +65,11 @@ def test_lifetime_single_value():
     var = sc.Variable(d)
     assert var.value['a'].values[-1] == 9
     assert var.copy().values['a'].values[-1] == 9
+
+
+def test_lifetime_coord_values():
+    var = sc.Variable([Dim.X], values=np.arange(10))
+    d = sc.Dataset(coords={Dim.X: var})
+    values = d.coords[Dim.X].values
+    d += d
+    assert np.array_equal(values, var.values)
