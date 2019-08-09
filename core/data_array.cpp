@@ -2,10 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <ostream>
-
 #include "scipp/core/dataset.h"
-#include "scipp/core/except.h"
 
 namespace scipp::core {
 
@@ -22,6 +19,26 @@ DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
       m_holder.setSparseLabels("", name, std::move(l));
     else
       m_holder.setLabels(name, std::move(l));
+}
+
+DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
+  return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
+                   union_(a.labels(), b.labels()));
+}
+
+DataArray operator-(const DataConstProxy &a, const DataConstProxy &b) {
+  return {a.data() - b.data(), union_(a.coords(), b.coords()),
+          union_(a.labels(), b.labels())};
+}
+
+DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
+  return {a.data() * b.data(), union_(a.coords(), b.coords()),
+          union_(a.labels(), b.labels())};
+}
+
+DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
+  return {a.data() / b.data(), union_(a.coords(), b.coords()),
+          union_(a.labels(), b.labels())};
 }
 
 } // namespace scipp::core

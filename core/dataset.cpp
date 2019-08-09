@@ -555,26 +555,6 @@ DataProxy DataProxy::operator/=(const Variable &other) const {
   return *this;
 }
 
-DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
-  return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
-                   union_(a.labels(), b.labels()));
-}
-
-DataArray operator-(const DataConstProxy &a, const DataConstProxy &b) {
-  return {a.data() - b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels())};
-}
-
-DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
-  return {a.data() * b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels())};
-}
-
-DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
-  return {a.data() / b.data(), union_(a.coords(), b.coords()),
-          union_(a.labels(), b.labels())};
-}
-
 /// Return a const proxy to all coordinates of the dataset slice.
 ///
 /// This proxy includes only "dimension-coordinates". To access
