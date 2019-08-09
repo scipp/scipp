@@ -620,6 +620,15 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataconstproxy_sparse_rhs) {
   EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
 }
 
+TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_fail) {
+  Dataset dense;
+  dense.setData("a", makeVariable<double>({Dim::X, 2}, {1, 2}));
+  Dataset sparse;
+  sparse.setData("a", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+
+  ASSERT_THROW(TestFixture::op(sparse, dense), except::DimensionError);
+}
+
 TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
   Dataset dense;
   dense.setData("a", makeVariable<double>(2.0));
