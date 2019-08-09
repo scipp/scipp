@@ -233,7 +233,7 @@ template <class... Ts> struct as_VariableViewImpl {
     auto &view = obj.cast<Var &>();
     expect::equals(Dimensions(), view.dims());
     return std::visit(
-        [](const auto &data) {
+        [&obj](const auto &data) {
           // Passing `obj` as parent so py::keep_alive works.
           return py::cast(data[0], py::return_value_policy::reference_internal,
                           obj);
