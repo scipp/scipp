@@ -77,9 +77,11 @@ inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
 template <class Getter, class T, class Var>
 py::object as_py_array_t_impl(py::object &obj, Var &view) {
   std::vector<scipp::index> strides;
-  if constexpr (std::is_same_v<Var, DataProxy>)
+  if constexpr (std::is_same_v<Var, DataProxy>) {
+    if (!view.hasData())
+      return py::none();
     strides = VariableProxy(view.data()).strides();
-  else
+  } else
     strides = VariableProxy(view).strides();
   const auto &dims = view.dims();
   using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
@@ -109,10 +111,14 @@ template <class... Ts> struct as_VariableViewImpl {
       std::is_same_v<Proxy, Variable>, scipp::span<underlying_type_t<Ts>>,
       VariableView<underlying_type_t<Ts>>>...>>
   get(Proxy &proxy) {
-    DType type = proxy.data().dtype();
+    DType type;
     if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
+      if (!proxy.hasData())
+        return std::nullopt;
       const auto &view = proxy.data();
       type = view.data().dtype();
+    } else {
+      type = proxy.data().dtype();
     }
     switch (type) {
     case dtype<double>:
@@ -145,10 +151,14 @@ template <class... Ts> struct as_VariableViewImpl {
   template <class Getter, class Proxy>
   static py::object get_py_array_t(py::object &obj) {
     auto &proxy = obj.cast<Proxy &>();
-    DType type = proxy.data().dtype();
+    DType type;
     if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
+      if (!proxy.hasData())
+        return py::none();
       const auto &view = proxy.data();
       type = view.data().dtype();
+    } else {
+      type = proxy.data().dtype();
     }
     switch (type) {
     case dtype<double>:
