@@ -92,10 +92,20 @@ struct get_values {
   template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
     return proxy.template values<T>();
   }
+  template <class Proxy> static bool valid(py::object &obj) {
+    auto &proxy = obj.cast<Proxy &>();
+    if constexpr (std::is_base_of_v<DataConstProxy, Proxy>)
+      return proxy.hasData() && bool(proxy.data());
+    else
+      return bool(proxy);
+  }
 };
 struct get_variances {
   template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
     return proxy.template variances<T>();
+  }
+  template <class Proxy> static bool valid(py::object &obj) {
+    return obj.cast<Proxy &>().hasVariances();
   }
 };
 
@@ -176,10 +186,14 @@ template <class... Ts> struct as_VariableViewImpl {
   }
 
   template <class Var> static py::object values(py::object &object) {
+    if (!get_values::valid<Var>(object))
+      return py::none();
     return get_py_array_t<get_values, Var>(object);
   }
 
   template <class Var> static py::object variances(py::object &object) {
+    if (!get_variances::valid<Var>(object))
+      return py::none();
     return get_py_array_t<get_variances, Var>(object);
   }
 
@@ -217,6 +231,8 @@ template <class... Ts> struct as_VariableViewImpl {
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object value(py::object &obj) {
+    if (!get_values::valid<Var>(obj))
+      return py::none();
     auto &view = obj.cast<Var &>();
     expect::equals(Dimensions(), view.dims());
     return std::visit(
@@ -230,6 +246,8 @@ template <class... Ts> struct as_VariableViewImpl {
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object variance(py::object &obj) {
+    if (!get_variances::valid<Var>(obj))
+      return py::none();
     auto &view = obj.cast<Var &>();
     expect::equals(Dimensions(), view.dims());
     return std::visit(
