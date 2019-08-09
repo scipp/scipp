@@ -122,7 +122,7 @@ void init_dataset(py::module &m) {
               const DataConstProxy &data) { self.setData(name, data); })
       .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataProxy &data) {
-               self.setData(name, data);
+             self.setData(name, data);
            })
       .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataArray &data) {
