@@ -552,41 +552,35 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
 
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasData())
-    data() += other.data();
+  data() += other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator-=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasData())
-    data() -= other.data();
+  data() -= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasData())
-    data() *= other.data();
+  data() *= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator/=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasData())
-    data() /= other.data();
+  data() /= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const Variable &other) const {
-  if (hasData())
-    data() *= other;
+  data() *= other;
   return *this;
 }
 
 DataProxy DataProxy::operator/=(const Variable &other) const {
-  if (hasData())
-    data() /= other;
+  data() /= other;
   return *this;
 }
 

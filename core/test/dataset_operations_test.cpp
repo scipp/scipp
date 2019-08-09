@@ -303,6 +303,13 @@ Dataset make_sparse_2d(std::initializer_list<double> values,
   return ds;
 }
 
+TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
+  auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
+  Dataset d;
+  d.setSparseCoord("a", var);
+  ASSERT_THROW(TestFixture::op(d, d), except::SparseDataError);
+}
+
 TYPED_TEST(DatasetBinaryEqualsOpTest,
            with_single_var_with_single_sparse_dimensions_sized_same) {
   Dataset a = make_simple_sparse({1.1, 2.2});

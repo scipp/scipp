@@ -92,7 +92,7 @@ public:
   /// Return untyped const proxy for data (values and optional variances).
   VariableConstProxy data() const {
     if (!hasData())
-      throw std::logic_error("No data available for this object.");
+      throw except::SparseDataError("No data in item.");
     return detail::makeSlice(*m_data->data, slices());
   }
   /// Return typed const proxy for data values.
@@ -156,7 +156,7 @@ public:
   /// Return untyped proxy for data (values and optional variances).
   VariableProxy data() const {
     if (!hasData())
-      throw std::logic_error("No data available for this object.");
+      throw except::SparseDataError("No data in item.");
     return detail::makeSlice(*m_mutableData->data, slices());
   }
   /// Return typed proxy for data values.
