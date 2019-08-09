@@ -67,15 +67,8 @@ Dataset::Dataset(const DatasetConstProxy &proxy) {
     setLabels(std::string(name), labels);
   for (const auto & [ name, attr ] : proxy.attrs())
     setAttr(std::string(name), attr);
-  for (const auto & [ name, item ] : proxy) {
-    for (const auto &coord : item.coords())
-      if (coord.second.dims().sparse())
-        setSparseCoord(std::string(name), coord.second);
-    for (const auto & [ label_name, labels ] : item.labels())
-      if (labels.dims().sparse())
-        setSparseLabels(std::string(name), std::string(label_name), labels);
-    setData(std::string(name), item.data());
-  }
+  for (const auto & [ name, item ] : proxy)
+    setData(std::string(name), item);
 }
 
 /// Return a const proxy to all coordinates of the dataset.
