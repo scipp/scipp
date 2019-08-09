@@ -83,6 +83,7 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
+  py::class_<DataArray>(m, "DataArray");
   py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly(
@@ -121,10 +122,11 @@ void init_dataset(py::module &m) {
               const DataConstProxy &data) { self.setData(name, data); })
       .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataProxy &data) {
-             if (self.contains(name))
-               self[name].assign(data);
-             else
-               throw std::runtime_error("Not implemented yet");
+               self.setData(name, data);
+           })
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name, const DataArray &data) {
+             self.setData(name, data);
            })
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
@@ -164,6 +166,7 @@ void init_dataset(py::module &m) {
   bind_binary<DataProxy>(datasetProxy);
   bind_binary<Dataset>(dataProxy);
   bind_binary<DatasetProxy>(dataProxy);
+  bind_binary<DataProxy>(dataProxy);
 
   bind_data_properties(dataProxy);
 

@@ -278,6 +278,16 @@ def test_binary_with_broadcast():
     assert d == d2
 
 
+def test_add_sum_of_columns():
+    d = sc.Dataset({
+        'a': sc.Variable([Dim.X], values=np.arange(10.0)),
+        'b': sc.Variable([Dim.X], values=np.ones(10))
+    })
+    d['sum'] = d['a'] + d['b']
+    d['a'] += d['b']
+    assert d['sum'] == d['a']
+
+
 # def test_delitem(self):
 #    dataset = sc.Dataset()
 #    dataset[sc.Data.Value, "data"] = ([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
