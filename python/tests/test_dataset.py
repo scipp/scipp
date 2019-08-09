@@ -289,9 +289,7 @@ def test_lifetime_values_of_item_of_temporary():
 
 def test_lifetime_coords_of_temporary():
     var = sp.Variable(dims=[Dim.X], values=np.arange(10))
-    d = sp.Dataset({'a': var},
-                   coords={Dim.X: var},
-                   labels={'aux': var})
+    d = sp.Dataset({'a': var}, coords={Dim.X: var}, labels={'aux': var})
     assert d.coords[Dim.X].values[-1] == 9
     assert d['a'].coords[Dim.X].values[-1] == 9
     assert d[Dim.X, 1:]['a'].coords[Dim.X].values[-1] == 9
@@ -301,17 +299,26 @@ def test_lifetime_coords_of_temporary():
 
 def test_lifetime_iter():
     var = sp.Variable(dims=[Dim.X], values=np.arange(10))
-    d = sp.Dataset({'a': var},
-                   coords={Dim.X: var},
-                   labels={'aux': var})
-    for name, item in d+d:
+    d = sp.Dataset({'a': var}, coords={Dim.X: var}, labels={'aux': var})
+    for name, item in d + d:
         assert item.data == var + var
-    for dim, coord in (d+d).coords:
+    for dim, coord in (d + d).coords:
         assert coord == var
     for name, item in d[Dim.X, 1:5]:
         assert item.data == var[Dim.X, 1:5]
     for dim, coord in d[Dim.X, 1:5].coords:
         assert coord == var[Dim.X, 1:5]
+    for name, item in (d + d)[Dim.X, 1:5]:
+        assert item.data == (var + var)[Dim.X, 1:5]
+    for dim, coord in (d + d)[Dim.X, 1:5].coords:
+        assert coord == var[Dim.X, 1:5]
+
+
+def test_lifetime_single_value():
+    d = sp.Dataset({'a': sp.Variable([Dim.X], values=np.arange(10))})
+    var = sp.Variable(d)
+    assert var.value['a'].values[-1] == 9
+    assert var.copy().values['a'].values[-1] == 9
 
 
 # def test_delitem(self):

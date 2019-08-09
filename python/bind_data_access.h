@@ -216,21 +216,27 @@ template <class... Ts> struct as_VariableViewImpl {
 
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static py::object value(Var &view) {
+  template <class Var> static py::object value(py::object &obj) {
+    auto &view = obj.cast<Var &>();
     expect::equals(Dimensions(), view.dims());
     return std::visit(
-        [](const auto &data) {
-          return py::cast(data[0], py::return_value_policy::reference);
+        [&obj](const auto &data) {
+          // Passing `obj` as parent so py::keep_alive works.
+          return py::cast(data[0], py::return_value_policy::reference_internal,
+                          obj);
         },
         get<get_values>(view));
   }
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static py::object variance(Var &view) {
+  template <class Var> static py::object variance(py::object &obj) {
+    auto &view = obj.cast<Var &>();
     expect::equals(Dimensions(), view.dims());
     return std::visit(
         [](const auto &data) {
-          return py::cast(data[0], py::return_value_policy::reference);
+          // Passing `obj` as parent so py::keep_alive works.
+          return py::cast(data[0], py::return_value_policy::reference_internal,
+                          obj);
         },
         get<get_variances>(view));
   }
@@ -304,14 +310,11 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       &as_VariableView::set_variances<T>,
       "The array of variances of the data (writable).");
   c.def_property(
-      "value",
-      py::cpp_function(&as_VariableView::value<T>, py::keep_alive<0, 1>()),
-      &as_VariableView::set_value<T>,
+      "value", &as_VariableView::value<T>, &as_VariableView::set_value<T>,
       "The only value for 0-dimensional data. Raises an exception if the data "
       "is not 0-dimensional.");
   c.def_property(
-      "variance",
-      py::cpp_function(&as_VariableView::variance<T>, py::keep_alive<0, 1>()),
+      "variance", &as_VariableView::variance<T>,
       &as_VariableView::set_variance<T>,
       "The only variance for 0-dimensional data. Raises an exception if the "
       "data is not 0-dimensional.");
