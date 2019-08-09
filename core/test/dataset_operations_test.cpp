@@ -666,9 +666,9 @@ TYPED_TEST(DatasetBinaryOpTest, sparse_dataconstproxy_coord_mismatch) {
       make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
 
   ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["sparse"]),
-               except::CoordMismatchError);
+               except::VariableMismatchError);
   ASSERT_THROW(TestFixture::op(dataset_a["sparse"], dataset_b),
-               except::CoordMismatchError);
+               except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
@@ -701,7 +701,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::CoordMismatchError);
+               except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -722,7 +722,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::CoordMismatchError);
+               except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {

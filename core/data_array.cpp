@@ -13,9 +13,15 @@ DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
                      std::map<std::string, Variable> labels) {
   m_holder.setData("", std::move(data));
   for (auto & [ dim, c ] : coords)
-    m_holder.setCoord(dim, std::move(c));
+    if (c.dims().sparse())
+      m_holder.setSparseCoord("", std::move(c));
+    else
+      m_holder.setCoord(dim, std::move(c));
   for (auto & [ name, l ] : labels)
-    m_holder.setLabels(name, std::move(l));
+    if (l.dims().sparse())
+      m_holder.setSparseLabels("", name, std::move(l));
+    else
+      m_holder.setLabels(name, std::move(l));
 }
 
 } // namespace scipp::core
