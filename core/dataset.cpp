@@ -264,6 +264,12 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
     setData(name, data.data());
 }
 
+/// Set (insert or replace) data array with given name.
+///
+/// Coordinated, labels, and attributes of the data array are added to the
+/// dataset. Throws if there are existing but mismatching coords or labels.
+/// Throws if the provided data brings the dataset into an inconsistent state
+/// (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataArray &data) {
   setData(name, DataConstProxy(data));
 }

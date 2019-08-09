@@ -736,19 +736,16 @@ public:
 
   /// Return untyped const proxy for data (values and optional variances).
   VariableConstProxy data() const { return get().data(); }
-
-  /// Return typed const proxy for data values.
-  template <class T> auto values() const { return get().values<T>(); }
-
-  /// Return typed const proxy for data variances.
-  template <class T> auto variances() const { return get().variances<T>(); }
-
   /// Return untyped proxy for data (values and optional variances).
   VariableProxy data() { return get().data(); }
 
+  /// Return typed const proxy for data values.
+  template <class T> auto values() const { return get().values<T>(); }
   /// Return typed proxy for data values.
   template <class T> auto values() { return get().values<T>(); }
 
+  /// Return typed const proxy for data variances.
+  template <class T> auto variances() const { return get().variances<T>(); }
   /// Return typed proxy for data variances.
   template <class T> auto variances() { return get().variances<T>(); }
 
