@@ -300,6 +300,10 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
   }
 }
 
+void Dataset::setData(const std::string &name, const DataArray &data) {
+  setData(name, DataConstProxy(data));
+}
+
 /// Set (insert or replace) the sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
@@ -450,6 +454,9 @@ void Dataset::rename(const Dim from, const Dim to) {
   }
 }
 
+DataConstProxy::DataConstProxy(const DataArray &dataArray)
+    : DataConstProxy(dataArray.get()) {}
+
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
@@ -582,6 +589,26 @@ DataProxy DataProxy::operator*=(const Variable &other) const {
 DataProxy DataProxy::operator/=(const Variable &other) const {
   data() /= other;
   return *this;
+}
+
+DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
+  return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
+                   union_(a.labels(), b.labels()));
+}
+
+DataArray operator-(const DataConstProxy &a, const DataConstProxy &b) {
+  return {a.data() - b.data(), union_(a.coords(), b.coords()),
+          union_(a.labels(), b.labels())};
+}
+
+DataArray operator*(const DataConstProxy &a, const DataConstProxy &b) {
+  return {a.data() * b.data(), union_(a.coords(), b.coords()),
+          union_(a.labels(), b.labels())};
+}
+
+DataArray operator/(const DataConstProxy &a, const DataConstProxy &b) {
+  return {a.data() / b.data(), union_(a.coords(), b.coords()),
+          union_(a.labels(), b.labels())};
 }
 
 /// Return a const proxy to all coordinates of the dataset slice.
@@ -781,97 +808,28 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   return std::forward<A>(a);
 }
 
-template <class T> void copy_metadata(Dataset &dest, const T &src) {
-  /* Dense coordinates */
-  for (const auto & [ name, value ] : src.coords()) {
-    dest.setCoord(name, value);
-  }
-
-  /* Dense labels */
-  for (const auto & [ name, value ] : src.labels()) {
-    dest.setLabels(std::string(name), value);
-  }
-
-  /* Attributes */
-  for (const auto & [ name, value ] : src.attrs()) {
-    dest.setAttr(std::string(name), value);
-  }
-}
-
-void copy_sparse_metadata(Dataset &dest, const std::string &name,
-                          const DataConstProxy &src) {
-  /* Sparse coordinates */
-  for (const auto &coord : src.coords()) {
-    if (coord.second.dims().sparse()) {
-      dest.setSparseCoord(name, coord.second);
-    }
-  }
-
-  /* Sparse labels */
-  for (const auto & [ label_name, labels ] : src.labels()) {
-    if (labels.dims().sparse()) {
-      dest.setSparseLabels(name, std::string(label_name), labels);
-    }
-  }
-}
-
 template <class Op, class A, class B>
 auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
-  expect::coordsAndLabelsMatch(a, b);
-
   Dataset res;
-  copy_metadata(res, a);
-
-  for (const auto & [ name, item ] : b) {
-    if (a.contains(name)) {
-      expect::matchingDataPresence(a[name], item);
-      if (item.hasData())
-        res.setData(std::string(name), op(a[name].data(), item.data()));
-      if (item.dims().sparse())
-        copy_sparse_metadata(res, std::string(name), item);
-      else
-        copy_sparse_metadata(res, std::string(name), a[name]);
-    }
-  }
-
+  for (const auto & [ name, item ] : b)
+    if (const auto it = a.find(name); it != a.end())
+      res.setData(std::string(name), op(it->second, item));
   return res;
 }
 
 template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
   Dataset res;
-  copy_metadata(res, a);
-
-  for (const auto & [ name, item ] : a) {
-    expect::matchingDataPresence(item, b);
-    expect::coordsAndLabelsAreSuperset(item, b);
-    if (item.hasData())
-      res.setData(std::string(name), op(item.data(), b.data()));
-    if (item.dims().sparse())
-      copy_sparse_metadata(res, std::string(name), item);
-    else
-      copy_sparse_metadata(res, std::string(name), b);
-  }
-
+  for (const auto & [ name, item ] : a)
+    res.setData(std::string(name), op(item, b));
   return res;
 }
 
 template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
   Dataset res;
-  copy_metadata(res, b);
-
-  for (const auto & [ name, item ] : b) {
-    expect::matchingDataPresence(a, item);
-    expect::coordsAndLabelsAreSuperset(a, item);
-    if (item.hasData())
-      res.setData(std::string(name), op(a.data(), item.data()));
-    if (item.dims().sparse())
-      copy_sparse_metadata(res, std::string(name), item);
-    else
-      copy_sparse_metadata(res, std::string(name), a);
-  }
-
+  for (const auto & [ name, item ] : b)
+    res.setData(std::string(name), op(a, item));
   return res;
 }
 

@@ -18,6 +18,7 @@
 
 namespace scipp::core {
 
+class DataArray;
 class Dataset;
 class DatasetConstProxy;
 class DatasetProxy;
@@ -71,6 +72,7 @@ auto makeSlice(Var &var,
 /// Const proxy for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataConstProxy {
 public:
+  explicit DataConstProxy(const DataArray &dataArray);
   DataConstProxy(const Dataset &dataset, const detail::DatasetData &data,
                  const std::vector<std::pair<Slice, scipp::index>> &slices = {})
       : m_dataset(&dataset), m_data(&data), m_slices(slices) {}
@@ -257,6 +259,10 @@ public:
     return boost::make_transform_iterator(m_data.find(name),
                                           detail::make_item{this});
   }
+  auto find(const std::string_view name) const &noexcept {
+    return boost::make_transform_iterator(m_data.find(name),
+                                          detail::make_item{this});
+  }
 
   DataConstProxy operator[](const std::string_view name) const;
   DataProxy operator[](const std::string_view name);
@@ -292,6 +298,7 @@ public:
   void setAttr(const std::string &attrName, Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
+  void setData(const std::string &name, const DataArray &data);
   void setSparseCoord(const std::string &name, Variable coord);
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
@@ -516,6 +523,30 @@ public:
   }
 };
 
+namespace detail {
+constexpr Dim key(const Dim dim) { return dim; }
+inline std::string key(const std::string_view &name) {
+  return std::string{name};
+}
+} // namespace detail
+
+template <class Id, class Key>
+auto union_(const ConstProxy<Id, Key> &a, const ConstProxy<Id, Key> &b) {
+  std::map<std::conditional_t<std::is_same_v<Key, Dim>, Dim, std::string>,
+           Variable>
+      out;
+
+  for (const auto & [ key, item ] : a)
+    out[detail::key(key)] = item;
+  for (const auto & [ key, item ] : b) {
+    if (const auto it = a.find(key); it != a.end())
+      expect::variablesMatch(item, it->second);
+    else
+      out[detail::key(key)] = item;
+  }
+  return out;
+}
+
 /// Const proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstProxy {
   explicit DatasetConstProxy() : m_dataset(nullptr) {}
@@ -675,6 +706,59 @@ public:
 
 private:
   Dataset *m_mutableDataset;
+};
+
+/// Data array, a variable with coordinates, labels, and attributes.
+class SCIPP_CORE_EXPORT DataArray {
+public:
+  DataArray(Variable data, std::map<Dim, Variable> coords,
+            std::map<std::string, Variable> labels);
+  explicit DataArray(const DataConstProxy &proxy);
+
+  CoordsConstProxy coords() const noexcept { return get().coords(); }
+  CoordsProxy coords() noexcept { return get().coords(); }
+
+  LabelsConstProxy labels() const noexcept { return get().labels(); }
+  LabelsProxy labels() noexcept { return get().labels(); }
+
+  AttrsConstProxy attrs() const noexcept { return get().attrs(); }
+  AttrsProxy attrs() noexcept { return get().attrs(); }
+
+  Dimensions dims() const noexcept { return get().dims(); }
+  units::Unit unit() const { return get().unit(); }
+
+  void setUnit(const units::Unit unit) { get().setUnit(unit); }
+
+  /// Return true if the data array contains data values.
+  bool hasData() const noexcept { return get().hasData(); }
+  /// Return true if the data array contains data variances.
+  bool hasVariances() const noexcept { return get().hasVariances(); }
+
+  /// Return untyped const proxy for data (values and optional variances).
+  VariableConstProxy data() const { return get().data(); }
+
+  /// Return typed const proxy for data values.
+  template <class T> auto values() const { return get().values<T>(); }
+
+  /// Return typed const proxy for data variances.
+  template <class T> auto variances() const { return get().variances<T>(); }
+
+  /// Return untyped proxy for data (values and optional variances).
+  VariableProxy data() { return get().data(); }
+
+  /// Return typed proxy for data values.
+  template <class T> auto values() { return get().values<T>(); }
+
+  /// Return typed proxy for data variances.
+  template <class T> auto variances() { return get().variances<T>(); }
+
+  friend class DataConstProxy;
+
+private:
+  DataConstProxy get() const { return m_holder[""]; }
+  DataProxy get() { return m_holder[""]; }
+
+  Dataset m_holder;
 };
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
