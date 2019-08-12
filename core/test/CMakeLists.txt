@@ -10,6 +10,7 @@ add_executable(${TARGET_NAME}
                dataset_operations_test.cpp
                dimensions_test.cpp
                except_test.cpp
+               histogram_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
                variable_test.cpp
