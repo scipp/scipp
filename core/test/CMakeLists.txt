@@ -7,6 +7,7 @@ add_executable(${TARGET_NAME}
                counts_test.cpp
                data_array_comparison_test.cpp
                data_array_test.cpp
+               data_proxy_test.cpp
                dataset_comparison_test.cpp
                dataset_operations_test.cpp
                dataset_test_common.cpp
