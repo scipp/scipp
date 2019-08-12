@@ -715,6 +715,10 @@ public:
 
   operator DataConstProxy() const;
 
+  const std::string_view &name() const noexcept {
+    return m_holder.begin()->first;
+  }
+
   CoordsConstProxy coords() const noexcept { return get().coords(); }
   CoordsProxy coords() noexcept { return get().coords(); }
 
@@ -750,8 +754,8 @@ public:
   template <class T> auto variances() { return get().variances<T>(); }
 
 private:
-  DataConstProxy get() const { return m_holder[""]; }
-  DataProxy get() { return m_holder[""]; }
+  DataConstProxy get() const noexcept { return m_holder.begin()->second; }
+  DataProxy get() noexcept { return m_holder.begin()->second; }
 
   Dataset m_holder;
 };
