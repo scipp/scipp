@@ -74,37 +74,63 @@ inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
                    bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
-template <class Getter, class T, class Var>
-auto as_py_array_t_impl(py::object &obj, Var &view) {
-  std::vector<scipp::index> strides;
-  if constexpr (std::is_same_v<Var, DataProxy>)
-    strides = VariableProxy(view.data()).strides();
-  else
-    strides = VariableProxy(view).strides();
-  const auto &dims = view.dims();
-  using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
-  return py::array_t<py_T>{
-      dims.shape(), numpy_strides<T>(strides),
-      reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
-}
+template <class... Ts> struct as_VariableViewImpl;
 
-struct get_values {
-  template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
-    return proxy.template values<T>();
+class DataAccessHelper {
+  template <class... Ts> friend struct as_VariableViewImpl;
+
+  template <class Getter, class T, class Var>
+  static py::object as_py_array_t_impl(py::object &obj, Var &view) {
+    std::vector<scipp::index> strides;
+    if constexpr (!std::is_same_v<Var, DataProxy>) {
+      strides = VariableProxy(view).strides();
+    } else {
+      strides = VariableProxy(view.data()).strides();
+    }
+    const auto &dims = view.dims();
+    using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
+    return py::array_t<py_T>{
+        dims.shape(), numpy_strides<T>(strides),
+        reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
   }
-};
-struct get_variances {
-  template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
-    return proxy.template variances<T>();
-  }
+
+  struct get_values {
+    template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
+      return proxy.template values<T>();
+    }
+
+    template <class Proxy> static bool valid(py::object &obj) {
+      auto &proxy = obj.cast<Proxy &>();
+      if constexpr (std::is_base_of_v<DataConstProxy, Proxy>)
+        return proxy.hasData() && bool(proxy.data());
+      else
+        return bool(proxy);
+    }
+  };
+
+  struct get_variances {
+    template <class T, class Proxy> static constexpr auto get(Proxy &proxy) {
+      return proxy.template variances<T>();
+    }
+
+    template <class Proxy> static bool valid(py::object &obj) {
+      return obj.cast<Proxy &>().hasVariances();
+    }
+  };
 };
 
-template <class... Ts> struct as_VariableViewImpl {
+template <class... Ts> class as_VariableViewImpl {
+  using get_values = DataAccessHelper::get_values;
+  using get_variances = DataAccessHelper::get_variances;
+
+  template <class Proxy>
+  using outVariant_t =
+      std::variant<std::conditional_t<std::is_same_v<Proxy, Variable>,
+                                      scipp::span<underlying_type_t<Ts>>,
+                                      VariableView<underlying_type_t<Ts>>>...>;
+
   template <class Getter, class Proxy>
-  static std::variant<std::conditional_t<
-      std::is_same_v<Proxy, Variable>, scipp::span<underlying_type_t<Ts>>,
-      VariableView<underlying_type_t<Ts>>>...>
-  get(Proxy &proxy) {
+  static outVariant_t<Proxy> get(Proxy &proxy) {
     DType type = proxy.data().dtype();
     if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
       const auto &view = proxy.data();
@@ -138,51 +164,6 @@ template <class... Ts> struct as_VariableViewImpl {
     }
   }
 
-  template <class Getter, class Proxy>
-  static py::object get_py_array_t(py::object &obj) {
-    auto &proxy = obj.cast<Proxy &>();
-    DType type = proxy.data().dtype();
-    if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
-      const auto &view = proxy.data();
-      type = view.data().dtype();
-    }
-    switch (type) {
-    case dtype<double>:
-      return as_py_array_t_impl<Getter, double>(obj, proxy);
-    case dtype<float>:
-      return as_py_array_t_impl<Getter, float>(obj, proxy);
-    case dtype<int64_t>:
-      return as_py_array_t_impl<Getter, int64_t>(obj, proxy);
-    case dtype<int32_t>:
-      return as_py_array_t_impl<Getter, int32_t>(obj, proxy);
-    case dtype<bool>:
-      return as_py_array_t_impl<Getter, bool>(obj, proxy);
-    default:
-      return std::visit(
-          [&proxy](const auto &data) {
-            const auto &dims = proxy.dims();
-            // We return an individual item in two cases:
-            // 1. For 0-D data (consistent with numpy behavior, e.g., when
-            //    slicing a 1-D array).
-            // 2. For 1-D sparse data, where the individual item is then a
-            //    vector-like object.
-            if (dims.shape().size() == 0)
-              return py::cast(data[0], py::return_value_policy::reference);
-            else
-              return py::cast(data);
-          },
-          get<Getter>(proxy));
-    }
-  }
-
-  template <class Var> static py::object values(py::object &object) {
-    return get_py_array_t<get_values, Var>(object);
-  }
-
-  template <class Var> static py::object variances(py::object &object) {
-    return get_py_array_t<get_variances, Var>(object);
-  }
-
   template <class Proxy>
   static void set(const Proxy &proxy, const py::array &data) {
     std::visit(
@@ -203,6 +184,57 @@ template <class... Ts> struct as_VariableViewImpl {
         },
         proxy);
   }
+
+  template <class Getter, class Proxy>
+  static py::object get_py_array_t(py::object &obj) {
+    auto &proxy = obj.cast<Proxy &>();
+    DType type = proxy.data().dtype();
+    if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
+      const auto &view = proxy.data();
+      type = view.data().dtype();
+    }
+    switch (type) {
+    case dtype<double>:
+      return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, proxy);
+    case dtype<float>:
+      return DataAccessHelper::as_py_array_t_impl<Getter, float>(obj, proxy);
+    case dtype<int64_t>:
+      return DataAccessHelper::as_py_array_t_impl<Getter, int64_t>(obj, proxy);
+    case dtype<int32_t>:
+      return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(obj, proxy);
+    case dtype<bool>:
+      return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, proxy);
+    default:
+      return std::visit(
+          [&proxy](const auto &data) {
+            const auto &dims = proxy.dims();
+            // We return an individual item in two cases:
+            // 1. For 0-D data (consistent with numpy behavior, e.g., when
+            //    slicing a 1-D array).
+            // 2. For 1-D sparse data, where the individual item is then a
+            //    vector-like object.
+            if (dims.shape().size() == 0)
+              return py::cast(data[0], py::return_value_policy::reference);
+            else
+              return py::cast(data);
+          },
+          get<Getter>(proxy));
+    }
+  }
+
+public:
+  template <class Var> static py::object values(py::object &object) {
+    if (!get_values::valid<Var>(object))
+      return py::none();
+    return get_py_array_t<get_values, Var>(object);
+  }
+
+  template <class Var> static py::object variances(py::object &object) {
+    if (!get_variances::valid<Var>(object))
+      return py::none();
+    return get_py_array_t<get_variances, Var>(object);
+  }
+
   template <class Var>
   static void set_values(Var &view, const py::array &data) {
     expect_shape_compatible(view, data);
@@ -217,6 +249,8 @@ template <class... Ts> struct as_VariableViewImpl {
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object value(py::object &obj) {
+    if (!get_values::valid<Var>(obj))
+      return py::none();
     auto &view = obj.cast<Var &>();
     expect::equals(Dimensions(), view.dims());
     return std::visit(
@@ -230,6 +264,8 @@ template <class... Ts> struct as_VariableViewImpl {
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object variance(py::object &obj) {
+    if (!get_variances::valid<Var>(obj))
+      return py::none();
     auto &view = obj.cast<Var &>();
     expect::equals(Dimensions(), view.dims());
     return std::visit(
