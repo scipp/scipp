@@ -3,6 +3,7 @@
 set(TARGET_NAME "scipp-core-test")
 add_executable(${TARGET_NAME}
                bool_test.cpp
+               coords_proxy_test.cpp
                counts_test.cpp
                data_array_test.cpp
                dataset_test.cpp
