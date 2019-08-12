@@ -9,7 +9,7 @@ add_executable(${TARGET_NAME}
                data_array_test.cpp
                data_proxy_test.cpp
                dataset_comparison_test.cpp
-               dataset_operations_test.cpp
+               dataset_binary_arithmetic_test.cpp
                dataset_test_common.cpp
                dataset_test.cpp
                dimensions_test.cpp

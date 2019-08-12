@@ -249,15 +249,16 @@ TEST(DatasetTest, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
 }
 
-TEST(DatasetTest, find) {
+TEST(DatasetTest, find_and_contains) {
   Dataset d;
   d.setData("a", makeVariable<double>({}));
   d.setData("b", makeVariable<float>({}));
   d.setData("c", makeVariable<int64_t>({}));
 
   EXPECT_EQ(d.end(), d.find("not a thing"));
-
   EXPECT_EQ(d.begin(), d.find("a"));
+  EXPECT_FALSE(d.contains("not a thing"));
+  EXPECT_TRUE(d.contains("a"));
 
   auto it = d.begin();
   ++it;
