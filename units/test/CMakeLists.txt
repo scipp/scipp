@@ -9,7 +9,7 @@ target_link_libraries(${TARGET_NAME}
                       scipp_test_helpers
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
-set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})
   gtest_discover_tests(${TARGET_NAME} TEST_PREFIX scipp/units/)

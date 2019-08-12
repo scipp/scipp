@@ -27,7 +27,7 @@ target_link_libraries(${TARGET_NAME}
                       ${GMOCK_LIBRARIES})
 target_include_directories(${TARGET_NAME} SYSTEM
                            PRIVATE "../../range-v3/include")
-set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})
   gtest_discover_tests(${TARGET_NAME} TEST_PREFIX scipp/core/)
