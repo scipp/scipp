@@ -121,10 +121,6 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
       .def("__setitem__",
-           [](Dataset &self, const std::string &name, const DataProxy &data) {
-             self.setData(name, data);
-           })
-      .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);
            })
@@ -197,7 +193,6 @@ void init_dataset(py::module &m) {
         },
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Dataset with histograms for sparse dims");
-  // Implicit conversion DatasetProxy -> Dataset. Reduces need for
-  // excessive operator overload definitions
-  py::implicitly_convertible<DatasetProxy, Dataset>();
+
+  py::implicitly_convertible<DataArray, DataConstProxy>();
 }
