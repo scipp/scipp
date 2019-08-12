@@ -108,11 +108,9 @@ TEST(DatasetTest, setData_with_and_without_variances) {
 
   ASSERT_NO_THROW(d.setData("a", var));
   ASSERT_EQ(d.size(), 1);
-  ASSERT_EQ(d["a"].name(), "a");
 
   ASSERT_NO_THROW(d.setData("b", var));
   ASSERT_EQ(d.size(), 2);
-  ASSERT_EQ(d["b"].name(), "b");
 
   ASSERT_NO_THROW(d.setData("a", var));
   ASSERT_EQ(d.size(), 2);
@@ -120,6 +118,22 @@ TEST(DatasetTest, setData_with_and_without_variances) {
   ASSERT_NO_THROW(
       d.setData("a", makeVariable<double>({Dim::X, 3}, {1, 1, 1}, {0, 0, 0})));
   ASSERT_EQ(d.size(), 2);
+}
+
+TEST(DatasetTest, check_DataProxy_name) {
+  Dataset d;
+  const auto a = makeVariable<double>({Dim::X, 3});
+  const auto b = makeVariable<double>({Dim::Y, 5});
+
+  d.setData("a", a);
+  ASSERT_EQ(std::string(d["a"].name()), "a");
+  ASSERT_EQ(d["a"].name_as_string(), "a");
+  d.setData("someRandomLongName", b);
+  ASSERT_EQ(std::string(d["someRandomLongName"].name()), "someRandomLongName");
+  ASSERT_EQ(d["someRandomLongName"].name_as_string(), "someRandomLongName");
+  auto da = d["a"];
+  ASSERT_EQ(std::string(da.name()), "a");
+  ASSERT_EQ(da.name_as_string(), "a");
 }
 
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {

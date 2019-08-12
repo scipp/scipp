@@ -124,7 +124,7 @@ DataConstProxy Dataset::operator[](const std::string_view name) const {
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
                             std::string(name) + ".");
-  return DataConstProxy(*this, it->second, std::string(name));
+  return DataConstProxy(*this, it->second, name);
 }
 
 /// Return a proxy to data and coordinates with given name.
@@ -133,7 +133,7 @@ DataProxy Dataset::operator[](const std::string_view name) {
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
                             std::string(name) + ".");
-  return DataProxy(*this, it->second, std::string(name));
+  return DataProxy(*this, it->second, name);
 }
 
 namespace extents {
@@ -450,7 +450,12 @@ units::Unit DataConstProxy::unit() const {
 
 /// Return the name of the data proxy under which it is labeled inside the
 /// parent Dataset.
-std::string DataConstProxy::name() const { return m_name; }
+const std::string_view DataConstProxy::name() const { return m_name; }
+
+/// Return the name of the data proxy under which it is labeled inside the
+/// parent Dataset as a std::string. This is used for the python bindings, as
+/// it proved difficult to use the std::string_view with pybind11.
+//const std::string DataConstProxy::name_as_string() const { return std::string(m_name); }
 
 /// Set the unit of the data values.
 ///
@@ -633,7 +638,7 @@ bool DatasetConstProxy::contains(const std::string_view name) const noexcept {
 DataConstProxy DatasetConstProxy::
 operator[](const std::string_view name) const {
   expectValidKey(name);
-  return {*m_dataset, (*m_dataset).m_data.find(name)->second, std::string(name),
+  return {*m_dataset, (*m_dataset).m_data.find(name)->second, name,
           slices()};
 }
 
@@ -641,7 +646,7 @@ operator[](const std::string_view name) const {
 DataProxy DatasetProxy::operator[](const std::string_view name) const {
   expectValidKey(name);
   return {*m_mutableDataset, (*m_mutableDataset).m_data.find(name)->second,
-          std::string(name), slices()};
+          name, slices()};
 }
 
 /// Return true if the dataset proxies have identical content.

@@ -42,6 +42,9 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("__iter__",
         [](T &self) { return py::make_iterator(self.begin(), self.end()); });
+  // c.def("__getitem__",
+  //       py::cpp_function([](T &self, const std::string &name) { return self[name]; },
+  //       py::return_value_policy::move, py::keep_alive<0, 1>()));
   c.def("__getitem__",
         [](T &self, const std::string &name) { return self[name]; },
         py::keep_alive<0, 1>());
@@ -71,9 +74,35 @@ void init_dataset(py::module &m) {
                                   py::keep_alive<0, 1>());
   dataProxy.def("__repr__",
                 [](const DataProxy &self) { return to_string(self); });
-  dataProxy.def_property_readonly("name", &DataProxy::name,
+  // dataProxy.def_property_readonly("name", &DataProxy::name,
+  //                                 "The name of the data under which it is "
+  //                                 "registered in the Dataset (read-only).");
+  // dataProxy.def_property_readonly("name",
+  //                                 [](const DataProxy &self) { return self.name_as_string(); },
+  //                                 "The name of the data under which it is "
+  //                                 "registered in the Dataset (read-only).");
+  // dataProxy.def_property_readonly("name",
+  //                                 py::cpp_function([](const DataProxy &self) { return self.name_as_string(); }, py::return_value_policy::move),
+  //                                 "The name of the data under which it is "
+  //                                 "registered in the Dataset (read-only).");
+
+  dataProxy.def_property_readonly("name",
+                                  py::cpp_function([](const DataProxy &self) -> std::string { return std::string(self.name()); }, py::return_value_policy::copy),
                                   "The name of the data under which it is "
                                   "registered in the Dataset (read-only).");
+  // dataProxy.def_property_readonly("name",
+  //                                 py::cpp_function([](const DataProxy &self) { return self.name(); }, py::return_value_policy::copy),
+  //                                 "The name of the data under which it is "
+  //                                 "registered in the Dataset (read-only).");
+  // dataProxy.def_property_readonly("name",
+  //                                 [](const DataProxy &self) { return std::string(self.name()); },
+  //                                 "The name of the data under which it is "
+  //                                 "registered in the Dataset (read-only).");
+  // dataProxy.def("name", [](const DataProxy &self) { return std::string("x"); });
+  // dataProxy.def("name",
+  //               py::cpp_function([](const DataProxy &self) -> std::string { return std::string(self.name()); }, py::return_value_policy::move),
+  //               "The name of the data under which it is "
+  //               "registered in the Dataset (read-only).");
 
   py::class_<DatasetConstProxy>(m, "DatasetConstProxy");
   py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");

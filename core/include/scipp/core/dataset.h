@@ -72,13 +72,13 @@ auto makeSlice(Var &var,
 class SCIPP_CORE_EXPORT DataConstProxy {
 public:
   DataConstProxy(const Dataset &dataset, const detail::DatasetData &data,
-                 const std::string name = std::string(),
+                 const std::string_view name,
                  const std::vector<std::pair<Slice, scipp::index>> &slices = {})
       : m_dataset(&dataset), m_data(&data), m_name(name), m_slices(slices) {}
 
   Dimensions dims() const noexcept;
   units::Unit unit() const;
-  std::string name() const;
+  const std::string_view name() const;
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
@@ -136,7 +136,7 @@ private:
 
   const Dataset *m_dataset;
   const detail::DatasetData *m_data;
-  std::string m_name;
+  std::string_view m_name;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
@@ -144,7 +144,7 @@ private:
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
   DataProxy(Dataset &dataset, detail::DatasetData &data,
-            const std::string name = std::string(),
+            const std::string_view name,
             const std::vector<std::pair<Slice, scipp::index>> &slices = {})
       : DataConstProxy(dataset, data, name, slices), m_mutableDataset(&dataset),
         m_mutableData(&data) {}
@@ -211,7 +211,7 @@ template <class D> struct make_item {
   using P = std::conditional_t<is_const<D>::value, DataConstProxy, DataProxy>;
   template <class T> std::pair<std::string_view, P> operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
-      return {item.first, P(*dataset, item.second)};
+      return {item.first, P(*dataset, item.second, item.first)};
     else
       // TODO Using operator[] is quite inefficient, revert the logic.
       return {item, dataset->operator[](item)};
