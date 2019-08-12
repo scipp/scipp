@@ -264,34 +264,6 @@ TEST(DatasetTest, find) {
   EXPECT_EQ(it, d.find("b"));
 }
 
-TEST(DatasetTest, find_coords_const) {
-  DatasetFactory3D factory;
-  const auto dataset = factory.make();
-  const CoordsConstProxy coords = dataset.coords();
-
-  EXPECT_EQ(coords.end(), coords.find(Dim::Q));
-
-  EXPECT_EQ(coords.begin(), coords.find(Dim::Time));
-
-  auto it = coords.begin();
-  ++it;
-  EXPECT_EQ(it, coords.find(Dim::X));
-}
-
-TEST(DatasetTest, find_coords_mutable) {
-  DatasetFactory3D factory;
-  auto dataset = factory.make();
-  CoordsProxy coords = dataset.coords();
-
-  EXPECT_EQ(coords.end(), coords.find(Dim::Q));
-
-  EXPECT_EQ(coords.begin(), coords.find(Dim::Time));
-
-  auto it = coords.begin();
-  ++it;
-  EXPECT_EQ(it, coords.find(Dim::X));
-}
-
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
   auto sparse_variable =
       makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
@@ -875,6 +847,21 @@ TYPED_TEST(CoordsProxyTest, slice) {
   const auto sliceDY = coords.slice({Dim::Y, 1, 2});
   EXPECT_EQ(sliceDY[Dim::X], x);
   EXPECT_EQ(sliceDY[Dim::Y], y.slice({Dim::Y, 1, 2}));
+}
+
+TYPED_TEST(CoordsProxyTest, find_and_contains) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+  const auto coords = TestFixture::access(dataset).coords();
+
+  EXPECT_EQ(coords.end(), coords.find(Dim::Q));
+  EXPECT_EQ(coords.begin(), coords.find(Dim::Time));
+  EXPECT_FALSE(coords.contains(Dim::Q));
+  EXPECT_TRUE(coords.contains(Dim::Time));
+
+  auto it = coords.begin();
+  ++it;
+  EXPECT_EQ(it, coords.find(Dim::X));
 }
 
 auto make_dataset_2d_coord_x_1d_coord_y() {
