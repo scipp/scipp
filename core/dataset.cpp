@@ -877,6 +877,10 @@ std::ostream &operator<<(std::ostream &os, const DataProxy &data) {
   return os << DataConstProxy(data);
 }
 
+std::ostream &operator<<(std::ostream &os, const DataArray &data) {
+  return os << DataConstProxy(data);
+}
+
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
   return os << to_string(dataset);
 }
