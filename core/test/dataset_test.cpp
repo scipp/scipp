@@ -871,7 +871,7 @@ TYPED_TEST(DataProxyTest, unit_access_fails_without_values) {
   typename TestFixture::dataset_type &d_ref(d);
   d.setSparseCoord("sparse",
                    makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
-  EXPECT_ANY_THROW(d_ref["sparse"].unit());
+  EXPECT_THROW(d_ref["sparse"].unit(), except::SparseDataError);
 }
 
 TYPED_TEST(DataProxyTest, coords) {
