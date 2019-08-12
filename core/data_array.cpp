@@ -6,6 +6,10 @@
 
 namespace scipp::core {
 
+DataArray::DataArray(const DataConstProxy &proxy) {
+  m_holder.setData("", proxy);
+}
+
 DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
                      std::map<std::string, Variable> labels) {
   m_holder.setData("", std::move(data));
@@ -20,6 +24,8 @@ DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
     else
       m_holder.setLabels(name, std::move(l));
 }
+
+DataArray::operator DataConstProxy() const { return get(); }
 
 DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
   return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),

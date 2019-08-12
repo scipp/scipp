@@ -72,7 +72,6 @@ auto makeSlice(Var &var,
 /// Const proxy for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataConstProxy {
 public:
-  explicit DataConstProxy(const DataArray &dataArray);
   DataConstProxy(const Dataset &dataset, const detail::DatasetData &data,
                  const std::vector<std::pair<Slice, scipp::index>> &slices = {})
       : m_dataset(&dataset), m_data(&data), m_slices(slices) {}
@@ -121,11 +120,6 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  bool operator==(const DataConstProxy &other) const;
-  bool operator!=(const DataConstProxy &other) const {
-    return !operator==(other);
-  }
-
   const std::vector<std::pair<Slice, scipp::index>> &slices() const noexcept {
     return m_slices;
   }
@@ -140,6 +134,11 @@ private:
   const detail::DatasetData *m_data;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
+
+SCIPP_CORE_EXPORT bool operator==(const DataConstProxy &a,
+                                  const DataConstProxy &b);
+SCIPP_CORE_EXPORT bool operator!=(const DataConstProxy &a,
+                                  const DataConstProxy &b);
 
 /// Proxy for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
@@ -298,7 +297,6 @@ public:
   void setAttr(const std::string &attrName, Variable attr);
   void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataConstProxy &data);
-  void setData(const std::string &name, const DataArray &data);
   void setSparseCoord(const std::string &name, Variable coord);
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
@@ -711,9 +709,11 @@ private:
 /// Data array, a variable with coordinates, labels, and attributes.
 class SCIPP_CORE_EXPORT DataArray {
 public:
+  explicit DataArray(const DataConstProxy &proxy);
   DataArray(Variable data, std::map<Dim, Variable> coords,
             std::map<std::string, Variable> labels);
-  explicit DataArray(const DataConstProxy &proxy);
+
+  operator DataConstProxy() const;
 
   CoordsConstProxy coords() const noexcept { return get().coords(); }
   CoordsProxy coords() noexcept { return get().coords(); }
@@ -748,8 +748,6 @@ public:
   template <class T> auto variances() const { return get().variances<T>(); }
   /// Return typed proxy for data variances.
   template <class T> auto variances() { return get().variances<T>(); }
-
-  friend class DataConstProxy;
 
 private:
   DataConstProxy get() const { return m_holder[""]; }

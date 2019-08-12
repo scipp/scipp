@@ -257,16 +257,6 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
     setData(name, data.data());
 }
 
-/// Set (insert or replace) data item with given name.
-///
-/// Coordinated and labels of the data array are added to the dataset. Throws if
-/// there are existing but mismatching coords or labels. Throws if the provided
-/// data brings the dataset into an inconsistent state (mismatching dtype, unit,
-/// or dimensions).
-void Dataset::setData(const std::string &name, const DataArray &data) {
-  setData(name, DataConstProxy(data));
-}
-
 /// Set (insert or replace) the sparse coordinate with given name.
 ///
 /// Sparse coordinates can exist even without corresponding data.
@@ -416,9 +406,6 @@ void Dataset::rename(const Dim from, const Dim to) {
       labels.second.rename(from, to);
   }
 }
-
-DataConstProxy::DataConstProxy(const DataArray &dataArray)
-    : DataConstProxy(dataArray.get()) {}
 
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
@@ -619,20 +606,24 @@ DataProxy DatasetProxy::operator[](const std::string_view name) const {
 }
 
 /// Return true if the dataset proxies have identical content.
-bool DataConstProxy::operator==(const DataConstProxy &other) const {
-  if (hasData() != other.hasData())
+bool operator==(const DataConstProxy &a, const DataConstProxy &b) {
+  if (a.hasData() != b.hasData())
     return false;
-  if (hasVariances() != other.hasVariances())
+  if (a.hasVariances() != b.hasVariances())
     return false;
-  if (coords() != other.coords())
+  if (a.coords() != b.coords())
     return false;
-  if (labels() != other.labels())
+  if (a.labels() != b.labels())
     return false;
-  if (attrs() != other.attrs())
+  if (a.attrs() != b.attrs())
     return false;
-  if (hasData() && data() != other.data())
+  if (a.hasData() && a.data() != b.data())
     return false;
   return true;
+}
+
+bool operator!=(const DataConstProxy &a, const DataConstProxy &b) {
+  return !operator==(a, b);
 }
 
 template <class A, class B> bool dataset_equals(const A &a, const B &b) {
