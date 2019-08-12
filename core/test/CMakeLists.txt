@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
-add_executable(scipp-core-test
+set(TARGET_NAME "scipp-core-test")
+add_executable(${TARGET_NAME}
                bool_test.cpp
                counts_test.cpp
                dataset_test.cpp
@@ -17,16 +18,17 @@ add_executable(scipp-core-test
                view_index_test.cpp
                #zip_view_test.cpp
                )
-target_link_libraries(scipp-core-test
+target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
                       scipp-core
                       GTest::Main
                       scipp_test_helpers
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
-target_include_directories(scipp-core-test SYSTEM
+target_include_directories(${TARGET_NAME} SYSTEM
                            PRIVATE "../../range-v3/include")
-add_sanitizers(scipp-core-test)
+set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})
+add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})
-  gtest_discover_tests(scipp-core-test TEST_PREFIX scipp/core/)
+  gtest_discover_tests(${TARGET_NAME} TEST_PREFIX scipp/core/)
 endif()

@@ -265,6 +265,49 @@ TEST(DatasetTest, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
 }
 
+TEST(DatasetTest, find) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+
+  EXPECT_EQ(d.end(), d.find("not a thing"));
+
+  EXPECT_EQ(d.begin(), d.find("a"));
+
+  auto it = d.begin();
+  ++it;
+  EXPECT_EQ(it, d.find("b"));
+}
+
+TEST(DatasetTest, find_coords_const) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const CoordsConstProxy coords = dataset.coords();
+
+  EXPECT_EQ(coords.end(), coords.find(Dim::Q));
+
+  EXPECT_EQ(coords.begin(), coords.find(Dim::Time));
+
+  auto it = coords.begin();
+  ++it;
+  EXPECT_EQ(it, coords.find(Dim::X));
+}
+
+TEST(DatasetTest, find_coords_mutable) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+  CoordsProxy coords = dataset.coords();
+
+  EXPECT_EQ(coords.end(), coords.find(Dim::Q));
+
+  EXPECT_EQ(coords.begin(), coords.find(Dim::Time));
+
+  auto it = coords.begin();
+  ++it;
+  EXPECT_EQ(it, coords.find(Dim::X));
+}
+
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
 
   auto sparse_variable =
@@ -1709,4 +1752,75 @@ TYPED_TEST(DataProxy3DTest, slice_with_edges) {
       }
     }
   }
+}
+
+TEST(DatasetProxyTest, find) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+
+  DatasetProxy dp(d);
+
+  EXPECT_EQ(dp.end(), dp.find("not a thing"));
+
+  EXPECT_EQ(dp.begin(), dp.find("a"));
+
+  auto it = dp.begin();
+  ++it;
+  EXPECT_EQ(it, dp.find("b"));
+}
+
+TEST(DatasetProxyTest, find_in_slice) {
+  Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
+  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
+  d.setData("a", makeVariable<double>({Dim::X, 2}));
+  d.setData("b", makeVariable<float>({Dim::Y, 2}));
+
+  DatasetProxy slice = d.slice({Dim::X, 1});
+
+  EXPECT_EQ(slice.begin(), slice.find("a"));
+  EXPECT_EQ(slice.end(), slice.find("b"));
+}
+
+TEST(DatasetConstProxyTest, find) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+
+  DatasetConstProxy dp(d);
+
+  EXPECT_EQ(dp.end(), dp.find("not a thing"));
+
+  EXPECT_EQ(dp.begin(), dp.find("a"));
+
+  auto it = dp.begin();
+  ++it;
+  EXPECT_EQ(it, dp.find("b"));
+}
+
+TEST(DatasetConstProxyTest, find_in_slice) {
+  Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
+  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
+  d.setData("a", makeVariable<double>({Dim::X, 2}));
+  d.setData("b", makeVariable<float>({Dim::Y, 2}));
+
+  const DatasetConstProxy slice = d.slice({Dim::X, 1});
+
+  EXPECT_EQ(slice.begin(), slice.find("a"));
+  EXPECT_EQ(slice.end(), slice.find("b"));
+}
+
+TEST(DataProxyTest, only_sparse_coords_but_no_data) {
+  Dataset ds;
+  auto var = makeVariable<double>({Dim::X}, {Dimensions::Sparse});
+  ds.setSparseCoord("sparse", var);
+  ds.setCoord({Dim::X}, makeVariable<double>({Dim::X, 3}));
+  ds.setCoord({Dim::Y}, makeVariable<double>({Dim::Y, 3}));
+  const Dataset &dl{ds};
+  EXPECT_ANY_THROW(dl["sparse"].data());
+  EXPECT_ANY_THROW(ds["sparse"].data());
 }

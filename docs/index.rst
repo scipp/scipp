@@ -38,7 +38,6 @@ Documentation
    user-guide/units
    user-guide/dtype
    user-guide/error-propagation
-   user-guide/test
 
 .. toctree::
    :caption: Python Reference

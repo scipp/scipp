@@ -23,17 +23,34 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
   py::class_<ConstT>(m, (name + "ConstProxy").c_str());
   py::class_<T, ConstT> proxy(m, (name + "Proxy").c_str());
   proxy.def("__len__", &T::size)
-      .def("__getitem__", &T::operator[])
+      .def("__getitem__", &T::operator[], py::return_value_policy::move,
+           py::keep_alive<0, 1>())
       .def("__iter__",
-           [](T &self) { return py::make_iterator(self.begin(), self.end()); });
+           [](T &self) {
+             return py::make_iterator(self.begin(), self.end(),
+                                      py::return_value_policy::move);
+           },
+           py::keep_alive<0, 1>())
+      .def("__contains__", &T::contains);
   bind_comparison<T>(proxy);
 }
 
 template <class T, class... Ignored>
 void bind_coord_properties(py::class_<T, Ignored...> &c) {
-  c.def_property_readonly("coords", [](T &self) { return self.coords(); });
-  c.def_property_readonly("labels", [](T &self) { return self.labels(); });
-  c.def_property_readonly("attrs", [](T &self) { return self.attrs(); });
+  // For some reason the return value policy and/or keep-alive policy do not
+  // work unless we wrap things in py::cpp_function.
+  c.def_property_readonly(
+      "coords",
+      py::cpp_function([](T &self) { return self.coords(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()));
+  c.def_property_readonly(
+      "labels",
+      py::cpp_function([](T &self) { return self.labels(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()));
+  c.def_property_readonly("attrs",
+                          py::cpp_function([](T &self) { return self.attrs(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()));
 }
 
 template <class T, class... Ignored>
@@ -41,10 +58,11 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__len__", &T::size);
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("__iter__",
-        [](T &self) { return py::make_iterator(self.begin(), self.end()); });
-  // c.def("__getitem__",
-  //       py::cpp_function([](T &self, const std::string &name) { return self[name]; },
-  //       py::return_value_policy::move, py::keep_alive<0, 1>()));
+        [](T &self) {
+          return py::make_iterator(self.begin(), self.end(),
+                                   py::return_value_policy::move);
+        },
+        py::return_value_policy::move, py::keep_alive<0, 1>());
   c.def("__getitem__",
         [](T &self, const std::string &name) { return self[name]; },
         py::keep_alive<0, 1>());
@@ -70,8 +88,12 @@ void init_dataset(py::module &m) {
 
   py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
-  dataProxy.def_property_readonly("data", &DataProxy::data,
-                                  py::keep_alive<0, 1>());
+  dataProxy.def_property_readonly(
+      "data", py::cpp_function(
+                  [](const DataProxy &self) {
+                    return self.hasData() ? py::cast(self.data()) : py::none();
+                  },
+                  py::return_value_policy::move, py::keep_alive<0, 1>()));
   dataProxy.def("__repr__",
                 [](const DataProxy &self) { return to_string(self); });
   // dataProxy.def_property_readonly("name", &DataProxy::name,
@@ -193,6 +215,8 @@ void init_dataset(py::module &m) {
   bind_binary<Dataset>(datasetProxy);
   bind_binary<DatasetProxy>(datasetProxy);
   bind_binary<DataProxy>(datasetProxy);
+  bind_binary<Dataset>(dataProxy);
+  bind_binary<DatasetProxy>(dataProxy);
 
   bind_data_properties(dataProxy);
 

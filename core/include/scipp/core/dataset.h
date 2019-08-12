@@ -93,6 +93,8 @@ public:
 
   /// Return untyped const proxy for data (values and optional variances).
   VariableConstProxy data() const {
+    if (!hasData())
+      throw std::logic_error("No data available for this object.");
     return detail::makeSlice(*m_data->data, slices());
   }
   /// Return typed const proxy for data values.
@@ -157,6 +159,8 @@ public:
 
   /// Return untyped proxy for data (values and optional variances).
   VariableProxy data() const {
+    if (!hasData())
+      throw std::logic_error("No data available for this object.");
     return detail::makeSlice(*m_mutableData->data, slices());
   }
   /// Return typed proxy for data values.
@@ -250,6 +254,13 @@ public:
   AttrsProxy attrs() noexcept;
 
   bool contains(const std::string_view name) const noexcept;
+
+  auto find() const && = delete;
+  auto find() && = delete;
+  auto find(const std::string_view name) & noexcept {
+    return boost::make_transform_iterator(m_data.find(name),
+                                          detail::make_item{this});
+  }
 
   DataConstProxy operator[](const std::string_view name) const;
   DataProxy operator[](const std::string_view name);
@@ -396,6 +407,11 @@ public:
     return detail::makeSlice(*m_items.at(key).first, m_slices);
   }
 
+  auto find(const Key k) const && = delete;
+  auto find(const Key k) const &noexcept {
+    return boost::make_transform_iterator(m_items.find(k), make_item{this});
+  }
+
   auto begin() const && = delete;
   /// Return const iterator to the beginning of all items.
   auto begin() const &noexcept {
@@ -472,6 +488,12 @@ public:
     return detail::makeSlice(*Base::items().at(key).second, Base::slices());
   }
 
+  template <class T> auto find(const T k) const && = delete;
+  template <class T> auto find(const T k) const &noexcept {
+    return boost::make_transform_iterator(Base::items().find(k),
+                                          make_item{this});
+  }
+
   auto begin() const && = delete;
   /// Return iterator to the beginning of all items.
   auto begin() const &noexcept {
@@ -524,6 +546,13 @@ public:
   bool contains(const std::string_view name) const noexcept;
 
   DataConstProxy operator[](const std::string_view name) const;
+
+  auto find(const std::string_view name) const && = delete;
+  auto find(const std::string_view name) const &noexcept {
+    return boost::make_transform_iterator(
+        std::find(std::begin(m_indices), std::end(m_indices), name),
+        detail::make_item{this});
+  }
 
   auto begin() const && = delete;
   auto begin() const &noexcept {
@@ -604,6 +633,13 @@ public:
 
   DataProxy operator[](const std::string_view name) const;
 
+  auto find(const std::string_view name) const && = delete;
+  auto find(const std::string_view name) const &noexcept {
+    return boost::make_transform_iterator(
+        std::find(std::begin(m_indices), std::end(m_indices), name),
+        detail::make_item{this});
+  }
+
   auto begin() const && = delete;
   auto begin() const &noexcept {
     return boost::make_transform_iterator(m_indices.begin(),
@@ -674,6 +710,10 @@ SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const DataConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator+(const DataConstProxy &lhs,
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const Dataset &lhs,
@@ -686,6 +726,10 @@ SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator-(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const DataConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator-(const DataConstProxy &lhs,
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const Dataset &lhs,
@@ -698,6 +742,10 @@ SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator*(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const DataConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator*(const DataConstProxy &lhs,
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Dataset operator/(const Dataset &lhs,
                                     const DatasetConstProxy &rhs);
@@ -710,6 +758,10 @@ SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset operator/(const DatasetConstProxy &lhs,
                                     const DataConstProxy &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
+                                    const Dataset &rhs);
+SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
+                                    const DatasetConstProxy &rhs);
 
 SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
                                      const Variable &binEdges);

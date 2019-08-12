@@ -425,3 +425,9 @@ def test_sum():
                            values=np.array([0.4, 0.8]),
                            unit=sp.units.m)
     assert sp.sum(var, Dim.Y) == expected
+
+
+def test_variance_acess():
+    v = sp.Variable()
+    assert v.variance is None
+    assert v.variances is None
