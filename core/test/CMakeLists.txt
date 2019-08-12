@@ -15,6 +15,7 @@ add_executable(${TARGET_NAME}
                dimensions_test.cpp
                except_test.cpp
                histogram_test.cpp
+               slice_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp
                variable_custom_type_test.cpp
