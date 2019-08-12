@@ -338,6 +338,66 @@ TEST(DatasetTest, slice_temporary) {
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
 
+TEST(DatasetProxyTest, find) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+
+  DatasetProxy dp(d);
+
+  EXPECT_EQ(dp.end(), dp.find("not a thing"));
+
+  EXPECT_EQ(dp.begin(), dp.find("a"));
+
+  auto it = dp.begin();
+  ++it;
+  EXPECT_EQ(it, dp.find("b"));
+}
+
+TEST(DatasetProxyTest, find_in_slice) {
+  Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
+  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
+  d.setData("a", makeVariable<double>({Dim::X, 2}));
+  d.setData("b", makeVariable<float>({Dim::Y, 2}));
+
+  DatasetProxy slice = d.slice({Dim::X, 1});
+
+  EXPECT_EQ(slice.begin(), slice.find("a"));
+  EXPECT_EQ(slice.end(), slice.find("b"));
+}
+
+TEST(DatasetConstProxyTest, find) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+
+  DatasetConstProxy dp(d);
+
+  EXPECT_EQ(dp.end(), dp.find("not a thing"));
+
+  EXPECT_EQ(dp.begin(), dp.find("a"));
+
+  auto it = dp.begin();
+  ++it;
+  EXPECT_EQ(it, dp.find("b"));
+}
+
+TEST(DatasetConstProxyTest, find_in_slice) {
+  Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
+  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
+  d.setData("a", makeVariable<double>({Dim::X, 2}));
+  d.setData("b", makeVariable<float>({Dim::Y, 2}));
+
+  const DatasetConstProxy slice = d.slice({Dim::X, 1});
+
+  EXPECT_EQ(slice.begin(), slice.find("a"));
+  EXPECT_EQ(slice.end(), slice.find("b"));
+}
+
 class Dataset3DTest : public ::testing::Test {
 protected:
   Dataset3DTest() : dataset(factory.make()) {}
@@ -965,6 +1025,16 @@ TYPED_TEST(DataProxyTest, values_variances) {
   ASSERT_ANY_THROW(d_ref["a"].template variances<float>());
 }
 
+TYPED_TEST(DataProxyTest, sparse_with_no_data) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+  d.setSparseCoord("a", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+
+  EXPECT_ANY_THROW(d_ref["a"].data());
+  ASSERT_FALSE(d_ref["a"].hasData());
+  ASSERT_FALSE(d_ref["a"].hasVariances());
+}
+
 template <typename T> class DataProxy3DTest : public Dataset3DTest {
 protected:
   using dataset_type =
@@ -1175,75 +1245,4 @@ TYPED_TEST(DataProxy3DTest, slice_with_edges) {
       }
     }
   }
-}
-
-TEST(DatasetProxyTest, find) {
-  Dataset d;
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<float>({}));
-  d.setData("c", makeVariable<int64_t>({}));
-
-  DatasetProxy dp(d);
-
-  EXPECT_EQ(dp.end(), dp.find("not a thing"));
-
-  EXPECT_EQ(dp.begin(), dp.find("a"));
-
-  auto it = dp.begin();
-  ++it;
-  EXPECT_EQ(it, dp.find("b"));
-}
-
-TEST(DatasetProxyTest, find_in_slice) {
-  Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
-  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
-  d.setData("a", makeVariable<double>({Dim::X, 2}));
-  d.setData("b", makeVariable<float>({Dim::Y, 2}));
-
-  DatasetProxy slice = d.slice({Dim::X, 1});
-
-  EXPECT_EQ(slice.begin(), slice.find("a"));
-  EXPECT_EQ(slice.end(), slice.find("b"));
-}
-
-TEST(DatasetConstProxyTest, find) {
-  Dataset d;
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<float>({}));
-  d.setData("c", makeVariable<int64_t>({}));
-
-  DatasetConstProxy dp(d);
-
-  EXPECT_EQ(dp.end(), dp.find("not a thing"));
-
-  EXPECT_EQ(dp.begin(), dp.find("a"));
-
-  auto it = dp.begin();
-  ++it;
-  EXPECT_EQ(it, dp.find("b"));
-}
-
-TEST(DatasetConstProxyTest, find_in_slice) {
-  Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
-  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
-  d.setData("a", makeVariable<double>({Dim::X, 2}));
-  d.setData("b", makeVariable<float>({Dim::Y, 2}));
-
-  const DatasetConstProxy slice = d.slice({Dim::X, 1});
-
-  EXPECT_EQ(slice.begin(), slice.find("a"));
-  EXPECT_EQ(slice.end(), slice.find("b"));
-}
-
-TEST(DataProxyTest, only_sparse_coords_but_no_data) {
-  Dataset ds;
-  auto var = makeVariable<double>({Dim::X}, {Dimensions::Sparse});
-  ds.setSparseCoord("sparse", var);
-  ds.setCoord({Dim::X}, makeVariable<double>({Dim::X, 3}));
-  ds.setCoord({Dim::Y}, makeVariable<double>({Dim::Y, 3}));
-  const Dataset &dl{ds};
-  EXPECT_ANY_THROW(dl["sparse"].data());
-  EXPECT_ANY_THROW(ds["sparse"].data());
 }
