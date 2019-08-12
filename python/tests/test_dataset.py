@@ -265,7 +265,7 @@ def test_dataset_data_access():
     var = sp.Variable(dims=[Dim.X, Dim.Y], shape=[2, sp.Dimensions.Sparse])
     ds = sp.Dataset()
     ds.set_sparse_coord("sparse", var)
-    assert (ds + ds)["sparse"].values is None
+    assert ds["sparse"].values is None
 
 # def test_delitem(self):
 #    dataset = sp.Dataset()

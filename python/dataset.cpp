@@ -87,7 +87,7 @@ void init_dataset(py::module &m) {
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly(
       "data", py::cpp_function(
-                  [](const DataProxy &self) -> py::object {
+                  [](const DataProxy &self) {
                     return self.hasData() ? py::cast(self.data()) : py::none();
                   },
                   py::return_value_policy::move, py::keep_alive<0, 1>()));
