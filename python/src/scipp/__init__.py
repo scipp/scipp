@@ -3,6 +3,7 @@
 # @file
 # @author Simon Heybrock
 from ._scipp import *
+from ._scipp import __version__
 from .show import show
 from .table import table
 try:

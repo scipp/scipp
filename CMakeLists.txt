@@ -56,7 +56,6 @@ else ()
   message(WARNING "IPO is not supported: ${output}")
 endif (result)
 
-
 # See https://github.com/pybind/pybind11/issues/1604
 set(INTERPROCEDURAL_OPTIMIZATION_TESTS FALSE)
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
@@ -72,6 +71,19 @@ else()
   set(CMAKE_CXX_VISIBILITY_PRESET hidden)
   # Reduces binary size of, e.g., libscipp-core.so by several MB.
   set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+endif()
+
+# Get version from git-describe
+execute_process(
+  COMMAND git describe --tag
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  RESULT_VARIABLE HAVE_GIT_VERSION_INFO
+  OUTPUT_VARIABLE GIT_VERSION_INFO
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
+  message("Got version from Git: ${GIT_VERSION_INFO}")
+  add_definitions(-DSCIPP_VERSION="${GIT_VERSION_INFO}")
 endif()
 
 add_compile_options(-Wall
