@@ -538,7 +538,8 @@ public:
   /// The returned proxy will not contain references to data items that do not
   /// depend on the sliced dimension.
   DatasetConstProxy slice(const Slice slice1) const {
-    expect::validSlice(dimensions(m_slices), slice1);
+    const auto currentDims = dimensions(m_slices);
+    expect::validSlice(currentDims, slice1);
     DatasetConstProxy sliced(*this);
     auto &indices = sliced.m_indices;
     sliced.m_indices.erase(
@@ -549,7 +550,7 @@ public:
         indices.end());
     // The dimension extent is either given by the coordinate, or by data, which
     // can be 1 shorter in case of a bin-edge coordinate.
-    scipp::index extent = dimensions(m_slices)[slice1.dim];
+    scipp::index extent = currentDims.at(slice1.dim);
     for (const auto item : *this)
       if (item.second.dims().contains(slice1.dim) &&
           item.second.dims()[slice1.dim] == extent - 1) {
