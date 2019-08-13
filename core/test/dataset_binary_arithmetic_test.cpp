@@ -50,7 +50,7 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, other_data_unchanged) {
     const auto original_a(dataset_a);
     auto target = dataset_a["data_zyx"];
 
-    ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
+    ASSERT_NO_THROW(TestFixture::op(target, item.second));
 
     for (const auto & [ name, data ] : dataset_a) {
       if (name != "data_zyx") {
@@ -797,39 +797,10 @@ Dataset non_trivial_2d_sparse(std::string_view name) {
   auto dvar = makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
   dvar.sparseValues<double>()[0] = {1, 2, 3, 4, 5};
   dvar.sparseValues<double>()[1] = {3, 4, 5, 6, 7};
-  dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
   sparse.setData(std::string(name), dvar);
   sparse.setSparseCoord(std::string(name), var);
   return sparse;
-}
-
-TEST(DatasetHistogram, simple_variabe_histogram) {
-  auto sparse = non_trivial_2d_sparse("sparse");
-  auto hist = core::histogram(
-      sparse["sparse"], makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6}));
-  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
-  std::vector<double> res{hist.values<double>().begin(),
-                          hist.values<double>().end()};
-  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
-    EXPECT_EQ(ref[i], res[i]);
-}
-
-TEST(DatasetHistogram, simple_dataset_histogram) {
-  auto sparse = non_trivial_2d_sparse("sparse");
-  sparse.setSparseCoord(
-      "sparse1",
-      sparse["sparse"].coords()[sparse["sparse"].dims().sparseDim()]);
-  auto hist = core::histogram(
-      sparse, makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6}));
-  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
-  std::vector<double> res{hist["sparse"].values<double>().begin(),
-                          hist["sparse"].values<double>().end()};
-  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
-    EXPECT_EQ(ref[i], res[i]);
-  std::vector<double> res1{hist["sparse1"].values<double>().begin(),
-                           hist["sparse1"].values<double>().end()};
-  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
-    EXPECT_EQ(ref[i], res1[i]);
 }
 
 TEST(DatasetSetData, sparse_to_sparse) {

@@ -18,7 +18,7 @@ std::pair<const Variable *, Variable *> makeProxyItem(T *variable) {
 }
 
 template <class Key, class T1> auto makeProxyItems(T1 &coords) {
-  std::map<Key, std::pair<const Variable *, Variable *>> items;
+  std::unordered_map<Key, std::pair<const Variable *, Variable *>> items;
   for (auto &item : coords)
     items.emplace(item.first, makeProxyItem(&item.second));
   return items;
@@ -27,7 +27,7 @@ template <class Key, class T1> auto makeProxyItems(T1 &coords) {
 template <class Key, class T1, class T2 = void>
 auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   const Dim sparseDim = dims.sparseDim();
-  std::map<Key, std::pair<const Variable *, Variable *>> items;
+  std::unordered_map<Key, std::pair<const Variable *, Variable *>> items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
     // provided parent dimensions. Note the use of std::any_of (not
@@ -71,6 +71,9 @@ Dataset::Dataset(const DatasetConstProxy &proxy) {
     setData(std::string(name), item);
 }
 
+Dataset::operator DatasetConstProxy() const { return DatasetConstProxy(*this); }
+Dataset::operator DatasetProxy() { return DatasetProxy(*this); }
+
 /// Return a const proxy to all coordinates of the dataset.
 ///
 /// This proxy includes only "dimension-coordinates". To access
@@ -107,12 +110,12 @@ AttrsProxy Dataset::attrs() noexcept {
   return AttrsProxy(makeProxyItems<std::string_view>(m_attrs));
 }
 
-bool Dataset::contains(const std::string_view name) const noexcept {
+bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.count(name) == 1;
 }
 
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy Dataset::operator[](const std::string_view name) const {
+DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
@@ -121,7 +124,7 @@ DataConstProxy Dataset::operator[](const std::string_view name) const {
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy Dataset::operator[](const std::string_view name) {
+DataProxy Dataset::operator[](const std::string &name) {
   const auto it = m_data.find(name);
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
@@ -146,7 +149,7 @@ bool oneLarger(const scipp::index extent, const scipp::index reference) {
 bool oneSmaller(const scipp::index extent, const scipp::index reference) {
   return extent == -reference - 1 - 1;
 }
-void setExtent(std::map<Dim, scipp::index> &dims, const Dim dim,
+void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
                const scipp::index extent, const bool isCoord) {
   const auto it = dims.find(dim);
   // Internally use negative extent -1 to indicate unknown edge state. The `-1`
@@ -587,25 +590,24 @@ AttrsProxy DatasetProxy::attrs() const noexcept {
                     slices());
 }
 
-void DatasetConstProxy::expectValidKey(const std::string_view name) const {
+void DatasetConstProxy::expectValidKey(const std::string &name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
     throw std::out_of_range("Invalid key `" + std::string(name) +
                             "` in Dataset access.");
 }
 
-bool DatasetConstProxy::contains(const std::string_view name) const noexcept {
+bool DatasetConstProxy::contains(const std::string &name) const noexcept {
   return std::find(m_indices.begin(), m_indices.end(), name) != m_indices.end();
 }
 
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy DatasetConstProxy::
-operator[](const std::string_view name) const {
+DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
   expectValidKey(name);
   return {*m_dataset, (*m_dataset).m_data.find(name)->second, slices()};
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy DatasetProxy::operator[](const std::string_view name) const {
+DataProxy DatasetProxy::operator[](const std::string &name) const {
   expectValidKey(name);
   return {*m_mutableDataset, (*m_mutableDataset).m_data.find(name)->second,
           slices()};
@@ -733,18 +735,19 @@ template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // For `b` referencing data in `a` we delay operation. The alternative would
   // be to make a deep copy of `other` before starting the iteration over items.
-  std::optional<std::string_view> delayed;
+  std::optional<DataProxy> delayed;
   // Note the inefficiency here: We are comparing some or all of the coords and
   // labels for each item. This could be improved by implementing the operations
   // for detail::DatasetData instead of DataProxy.
   for (const auto & [ name, item ] : a) {
+    static_cast<void>(name);
     if (&item.underlying() == &b.underlying())
-      delayed = name;
+      delayed = item;
     else
       op(item, b);
   }
   if (delayed)
-    op(a[*delayed], b);
+    op(*delayed, b);
   return std::forward<A>(a);
 }
 
@@ -1041,22 +1044,25 @@ Dataset operator/(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
 // stands for sparse)
 Variable histogram(const DataConstProxy &sparse,
                    const VariableConstProxy &binEdges) {
-  if (sparse.dims().ndims() != 1)
+  if (sparse.hasData())
+    throw except::SparseDataError(
+        "`histogram` is not implemented for sparse data with values yet.");
+  if (sparse.dims().ndims() > 1)
     throw std::logic_error("Only the simple case histograms may be constructed "
                            "for now: 2 dims including sparse.");
-  if (binEdges.dtype() != dtype<double> ||
-      sparse.coords()[binEdges.dims().inner()].dtype() != DType::Double)
-    throw std::logic_error("Histogram is only available for double type.");
   auto dim = binEdges.dims().inner();
+  if (binEdges.dtype() != dtype<double> ||
+      sparse.coords()[dim].dtype() != DType::Double)
+    throw std::logic_error("Histogram is only available for double type.");
   auto coord = sparse.coords()[dim];
   auto edgesSpan = binEdges.values<double>();
   if (!std::is_sorted(edgesSpan.begin(), edgesSpan.end()))
     throw std::logic_error("Bin edges should be sorted to make the histogram.");
   auto resDims{sparse.dims()};
   auto len = binEdges.dims()[dim] - 1;
-  resDims.resize(1, len);
+  resDims.resize(resDims.index(dim), len);
   Variable result = makeVariableWithVariances<double>(resDims, units::counts);
-  for (scipp::index i = 0; i < sparse.dims().size(0); ++i) {
+  for (scipp::index i = 0; i < sparse.dims().volume(); ++i) {
     const auto &coord_i = coord.sparseValues<double>()[i];
     auto curRes = result.values<double>().begin() + i * len;
     for (const auto &c : coord_i) {
