@@ -16,6 +16,8 @@ TEST(DataArrayTest, construct) {
 
   DataArray array(dataset["data_xyz"]);
   EXPECT_EQ(array, dataset["data_xyz"]);
+  // Comparison ignores the name, so this is tested separately.
+  EXPECT_EQ(array.name(), "data_xyz");
 }
 
 TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {

@@ -416,6 +416,14 @@ void Dataset::rename(const Dim from, const Dim to) {
   }
 }
 
+/// Return the name of the proxy.
+///
+/// The name of the proxy is equal to the name of the item in a Dataset, or the
+/// name of a DataArray. Note that comparison operations igore the name.
+const std::string &DataConstProxy::name() const noexcept {
+  return m_data->first;
+}
+
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
