@@ -296,17 +296,11 @@ TEST(DatasetTest, slice_temporary) {
 
 template <typename T> class DatasetProxyTest : public ::testing::Test {
 protected:
-  template <class D>
-  std::conditional_t<std::is_same_v<T, Dataset>, Dataset,
-                     std::conditional_t<std::is_same_v<T, DatasetProxy>,
-                                        DatasetProxy, DatasetConstProxy>>
-  access(D &dataset) {
-    return dataset;
-  }
+  template <class D> T access(D &dataset) { return dataset; }
 };
 
-using DatasetProxyTypes =
-    ::testing::Types<Dataset, DatasetProxy, DatasetConstProxy>;
+using DatasetProxyTypes = ::testing::Types<Dataset &, const Dataset &,
+                                           DatasetProxy, DatasetConstProxy>;
 TYPED_TEST_SUITE(DatasetProxyTest, DatasetProxyTypes);
 
 TYPED_TEST(DatasetProxyTest, find_and_contains) {
@@ -314,7 +308,7 @@ TYPED_TEST(DatasetProxyTest, find_and_contains) {
   d.setData("a", makeVariable<double>({}));
   d.setData("b", makeVariable<float>({}));
   d.setData("c", makeVariable<int64_t>({}));
-  auto proxy = TestFixture::access(d);
+  auto &&proxy = TestFixture::access(d);
 
   EXPECT_EQ(proxy.find("not a thing"), proxy.end());
   EXPECT_EQ(proxy.find("a")->first, "a");
@@ -332,7 +326,7 @@ TYPED_TEST(DatasetProxyTest, find_in_slice) {
   d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
   d.setData("a", makeVariable<double>({Dim::X, 2}));
   d.setData("b", makeVariable<float>({Dim::Y, 2}));
-  auto proxy = TestFixture::access(d);
+  auto &&proxy = TestFixture::access(d);
 
   const auto slice = proxy.slice({Dim::X, 1});
 
