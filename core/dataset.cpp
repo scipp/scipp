@@ -96,27 +96,27 @@ CoordsConstProxy Dataset::coords() const noexcept {
 /// This proxy includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsProxy Dataset::coords() noexcept {
-  return CoordsProxy(makeProxyItems<Dim>(m_coords));
+  return CoordsProxy(this, makeProxyItems<Dim>(m_coords));
 }
 
 /// Return a const proxy to all labels of the dataset.
 LabelsConstProxy Dataset::labels() const noexcept {
-  return LabelsConstProxy(makeProxyItems<std::string_view>(m_labels));
+  return LabelsConstProxy(makeProxyItems<std::string>(m_labels));
 }
 
 /// Return a proxy to all labels of the dataset.
 LabelsProxy Dataset::labels() noexcept {
-  return LabelsProxy(makeProxyItems<std::string_view>(m_labels));
+  return LabelsProxy(this, makeProxyItems<std::string>(m_labels));
 }
 
 /// Return a const proxy to all attributes of the dataset.
 AttrsConstProxy Dataset::attrs() const noexcept {
-  return AttrsConstProxy(makeProxyItems<std::string_view>(m_attrs));
+  return AttrsConstProxy(makeProxyItems<std::string>(m_attrs));
 }
 
 /// Return a proxy to all attributes of the dataset.
 AttrsProxy Dataset::attrs() noexcept {
-  return AttrsProxy(makeProxyItems<std::string_view>(m_attrs));
+  return AttrsProxy(this, makeProxyItems<std::string>(m_attrs));
 }
 
 bool Dataset::contains(const std::string &name) const noexcept {
@@ -502,16 +502,16 @@ CoordsConstProxy DataConstProxy::coords() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsConstProxy DataConstProxy::labels() const noexcept {
-  return LabelsConstProxy(
-      makeProxyItems<std::string_view>(dims(), m_dataset->m_labels,
-                                       &m_data->second.labels),
-      slices());
+  return LabelsConstProxy(makeProxyItems<std::string>(dims(),
+                                                      m_dataset->m_labels,
+                                                      &m_data->second.labels),
+                          slices());
 }
 
 /// Return a const proxy to all attributes of the data proxy.
 AttrsConstProxy DataConstProxy::attrs() const noexcept {
   return AttrsConstProxy(
-      makeProxyItems<std::string_view>(dims(), m_dataset->m_attrs), slices());
+      makeProxyItems<std::string>(dims(), m_dataset->m_attrs), slices());
 }
 
 /// Return a proxy to all coordinates of the data proxy.
@@ -519,7 +519,8 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsProxy DataProxy::coords() const noexcept {
-  return CoordsProxy(makeProxyItems<Dim>(dims(), m_mutableDataset->m_coords,
+  return CoordsProxy(m_mutableDataset,
+                     makeProxyItems<Dim>(dims(), m_mutableDataset->m_coords,
                                          m_mutableData->second.coord
                                              ? &*m_mutableData->second.coord
                                              : nullptr),
@@ -531,17 +532,18 @@ CoordsProxy DataProxy::coords() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsProxy DataProxy::labels() const noexcept {
-  return LabelsProxy(
-      makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_labels,
-                                       &m_mutableData->second.labels),
-      slices());
+  return LabelsProxy(m_mutableDataset,
+                     makeProxyItems<std::string>(dims(),
+                                                 m_mutableDataset->m_labels,
+                                                 &m_mutableData->second.labels),
+                     slices());
 }
 
 /// Return a const proxy to all attributes of the data proxy.
 AttrsProxy DataProxy::attrs() const noexcept {
   return AttrsProxy(
-      makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_attrs),
-      slices());
+      m_mutableDataset,
+      makeProxyItems<std::string>(dims(), m_mutableDataset->m_attrs), slices());
 }
 
 DataProxy DataProxy::assign(const DataConstProxy &other) const {
@@ -612,30 +614,33 @@ CoordsConstProxy DatasetConstProxy::coords() const noexcept {
 /// This proxy includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsProxy DatasetProxy::coords() const noexcept {
-  return CoordsProxy(makeProxyItems<Dim>(m_mutableDataset->m_coords), slices());
+  return CoordsProxy(m_mutableDataset,
+                     makeProxyItems<Dim>(m_mutableDataset->m_coords), slices());
 }
 
 /// Return a const proxy to all labels of the dataset slice.
 LabelsConstProxy DatasetConstProxy::labels() const noexcept {
-  return LabelsConstProxy(makeProxyItems<std::string_view>(m_dataset->m_labels),
+  return LabelsConstProxy(makeProxyItems<std::string>(m_dataset->m_labels),
                           slices());
 }
 
 /// Return a proxy to all labels of the dataset slice.
 LabelsProxy DatasetProxy::labels() const noexcept {
-  return LabelsProxy(
-      makeProxyItems<std::string_view>(m_mutableDataset->m_labels), slices());
+  return LabelsProxy(m_mutableDataset,
+                     makeProxyItems<std::string>(m_mutableDataset->m_labels),
+                     slices());
 }
 
 /// Return a const proxy to all attributes of the dataset slice.
 AttrsConstProxy DatasetConstProxy::attrs() const noexcept {
-  return AttrsConstProxy(makeProxyItems<std::string_view>(m_dataset->m_attrs),
+  return AttrsConstProxy(makeProxyItems<std::string>(m_dataset->m_attrs),
                          slices());
 }
 
 /// Return a proxy to all attributes of the dataset slice.
 AttrsProxy DatasetProxy::attrs() const noexcept {
-  return AttrsProxy(makeProxyItems<std::string_view>(m_mutableDataset->m_attrs),
+  return AttrsProxy(m_mutableDataset,
+                    makeProxyItems<std::string>(m_mutableDataset->m_attrs),
                     slices());
 }
 

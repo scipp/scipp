@@ -9,7 +9,6 @@
 #include <iosfwd>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 
 #include <boost/iterator/transform_iterator.hpp>
@@ -37,11 +36,11 @@ using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
 /// Proxy for accessing coordinates of Dataset and DataProxy.
 using CoordsProxy = MutableProxy<CoordsConstProxy>;
 /// Proxy for accessing labels of const Dataset and DataConstProxy.
-using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string_view>;
+using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string>;
 /// Proxy for accessing labels of Dataset and DataProxy.
 using LabelsProxy = MutableProxy<LabelsConstProxy>;
 /// Proxy for accessing attributes of const Dataset and DataConstProxy.
-using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string_view>;
+using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string>;
 /// Proxy for accessing attributes of Dataset and DataProxy.
 using AttrsProxy = MutableProxy<AttrsConstProxy>;
 
@@ -495,10 +494,18 @@ private:
     }
   };
 
-  explicit MutableProxy(Base &&base) : Base(std::move(base)) {}
+  MutableProxy(Dataset *parent, Base &&base)
+      : Base(std::move(base)), m_parent(parent) {}
+
+  Dataset *m_parent;
 
 public:
-  using Base::Base;
+  MutableProxy(
+      Dataset *parent,
+      std::unordered_map<typename Base::key_type,
+                         std::pair<const Variable *, Variable *>> &&items,
+      const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      : Base(std::move(items), slices), m_parent(parent) {}
 
   /// Return a proxy to the coordinate for given dimension.
   VariableProxy operator[](const typename Base::key_type key) const {
@@ -524,7 +531,7 @@ public:
   }
 
   MutableProxy slice(const Slice slice1) const {
-    return MutableProxy(Base::slice(slice1));
+    return MutableProxy(m_parent, Base::slice(slice1));
   }
 
   MutableProxy slice(const Slice slice1, const Slice slice2) const {
@@ -535,14 +542,9 @@ public:
                      const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
-};
 
-namespace detail {
-constexpr Dim key(const Dim dim) { return dim; }
-inline std::string key(const std::string_view &name) {
-  return std::string{name};
-}
-} // namespace detail
+  Dataset &parent() const noexcept { return *m_parent; }
+};
 
 template <class Id, class Key>
 auto union_(const ConstProxy<Id, Key> &a, const ConstProxy<Id, Key> &b) {
@@ -551,12 +553,12 @@ auto union_(const ConstProxy<Id, Key> &a, const ConstProxy<Id, Key> &b) {
       out;
 
   for (const auto & [ key, item ] : a)
-    out[detail::key(key)] = item;
+    out[key] = item;
   for (const auto & [ key, item ] : b) {
     if (const auto it = a.find(key); it != a.end())
       expect::variablesMatch(item, it->second);
     else
-      out[detail::key(key)] = item;
+      out[key] = item;
   }
   return out;
 }
