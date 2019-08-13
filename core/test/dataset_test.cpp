@@ -16,33 +16,6 @@ using namespace scipp::core;
 
 TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
-TEST(DatasetTest, empty) {
-  Dataset d;
-  ASSERT_TRUE(d.empty());
-  ASSERT_EQ(d.size(), 0);
-}
-
-TEST(DatasetTest, coords) {
-  Dataset d;
-  ASSERT_NO_THROW(d.coords());
-}
-
-TEST(DatasetTest, labels) {
-  Dataset d;
-  ASSERT_NO_THROW(d.labels());
-}
-
-TEST(DatasetTest, attrs) {
-  Dataset d;
-  ASSERT_NO_THROW(d.attrs());
-}
-
-TEST(DatasetTest, bad_item_access) {
-  Dataset d;
-  ASSERT_ANY_THROW(d[""]);
-  ASSERT_ANY_THROW(d["abc"]);
-}
-
 TEST(DatasetTest, setCoord) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
@@ -241,6 +214,38 @@ protected:
 using DatasetProxyTypes = ::testing::Types<Dataset &, const Dataset &,
                                            DatasetProxy, DatasetConstProxy>;
 TYPED_TEST_SUITE(DatasetProxyTest, DatasetProxyTypes);
+
+TYPED_TEST(DatasetProxyTest, empty) {
+  Dataset d;
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_TRUE(proxy.empty());
+  ASSERT_EQ(proxy.size(), 0);
+}
+
+TYPED_TEST(DatasetProxyTest, coords) {
+  Dataset d;
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_NO_THROW(proxy.coords());
+}
+
+TYPED_TEST(DatasetProxyTest, labels) {
+  Dataset d;
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_NO_THROW(proxy.labels());
+}
+
+TYPED_TEST(DatasetProxyTest, attrs) {
+  Dataset d;
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_NO_THROW(proxy.attrs());
+}
+
+TYPED_TEST(DatasetProxyTest, bad_item_access) {
+  Dataset d;
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_ANY_THROW(proxy[""]);
+  ASSERT_ANY_THROW(proxy["abc"]);
+}
 
 TYPED_TEST(DatasetProxyTest, find_and_contains) {
   Dataset d;
