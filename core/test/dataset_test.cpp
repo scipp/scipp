@@ -127,13 +127,10 @@ TEST(DatasetTest, check_DataProxy_name) {
 
   d.setData("a", a);
   ASSERT_EQ(std::string(d["a"].name()), "a");
-  ASSERT_EQ(d["a"].name_as_string(), "a");
   d.setData("someRandomLongName", b);
   ASSERT_EQ(std::string(d["someRandomLongName"].name()), "someRandomLongName");
-  ASSERT_EQ(d["someRandomLongName"].name_as_string(), "someRandomLongName");
   auto da = d["a"];
   ASSERT_EQ(std::string(da.name()), "a");
-  ASSERT_EQ(da.name_as_string(), "a");
 }
 
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {

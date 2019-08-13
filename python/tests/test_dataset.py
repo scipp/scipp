@@ -146,15 +146,25 @@ def test_contains():
 
 def test_dataproxy_name():
     d = sp.Dataset()
-    d.set_coord(Dim.X, values=np.arange(4))
-    d["aSampleName"] = sp.Variable([Dim.X], values=np.arange(4))
-    # d["someLongString"] = sp.Variable([Dim.X], values=np.arange(4))
-    assert d["aSampleName"].name.decode("utf8") == "aSampleName"
-    # da = d["aSampleName"]
-    # assert da.name == "aSampleName"
-    # aname = da.name
-    # assert aname == "a"
-    # # assert d["someLongString"].name == "someLongString"
+    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4)))
+    d["a"] = sp.Variable([Dim.X], values=np.arange(4))
+    d["someLongString"] = sp.Variable([Dim.X], values=np.arange(4))
+    assert d["a"].name == "a"
+    assert d["someLongString"].name == "someLongString"
+
+
+def test_shorthand_set_coord():
+    v = sp.Variable([Dim.X], values=np.arange(4))
+
+    a = sp.Dataset()
+    a.set_coord(Dim.X, values=np.arange(4))
+    a["a"] = v
+
+    b = sp.Dataset()
+    b.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4)))
+    b["a"] = v
+
+    assert a == b
 
 
 def test_slice():
