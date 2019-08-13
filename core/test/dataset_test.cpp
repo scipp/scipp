@@ -255,22 +255,6 @@ TEST(DatasetTest, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(d.end()->second), DataConstProxy>));
 }
 
-TEST(DatasetTest, find_and_contains) {
-  Dataset d;
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<float>({}));
-  d.setData("c", makeVariable<int64_t>({}));
-
-  EXPECT_EQ(d.find("not a thing"), d.end());
-  EXPECT_EQ(d.find("a")->first, "a");
-  EXPECT_EQ(d.find("a")->second, d["a"]);
-  EXPECT_FALSE(d.contains("not a thing"));
-  EXPECT_TRUE(d.contains("a"));
-
-  EXPECT_EQ(d.find("b")->first, "b");
-  EXPECT_EQ(d.find("b")->second, d["b"]);
-}
-
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
   auto sparse_variable =
       makeVariable<double>({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
@@ -310,66 +294,47 @@ TEST(DatasetTest, slice_temporary) {
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
 
-TEST(DatasetProxyTest, find_and_contains) {
+template <typename T> class DatasetProxyTest : public ::testing::Test {
+protected:
+  template <class D>
+  std::conditional_t<std::is_same_v<T, Dataset>, Dataset,
+                     std::conditional_t<std::is_same_v<T, DatasetProxy>,
+                                        DatasetProxy, DatasetConstProxy>>
+  access(D &dataset) {
+    return dataset;
+  }
+};
+
+using DatasetProxyTypes =
+    ::testing::Types<Dataset, DatasetProxy, DatasetConstProxy>;
+TYPED_TEST_SUITE(DatasetProxyTest, DatasetProxyTypes);
+
+TYPED_TEST(DatasetProxyTest, find_and_contains) {
   Dataset d;
   d.setData("a", makeVariable<double>({}));
   d.setData("b", makeVariable<float>({}));
   d.setData("c", makeVariable<int64_t>({}));
+  auto proxy = TestFixture::access(d);
 
-  DatasetProxy dp(d);
+  EXPECT_EQ(proxy.find("not a thing"), proxy.end());
+  EXPECT_EQ(proxy.find("a")->first, "a");
+  EXPECT_EQ(proxy.find("a")->second, proxy["a"]);
+  EXPECT_FALSE(proxy.contains("not a thing"));
+  EXPECT_TRUE(proxy.contains("a"));
 
-  EXPECT_EQ(dp.find("not a thing"), dp.end());
-  EXPECT_EQ(dp.find("a")->first, "a");
-  EXPECT_EQ(dp.find("a")->second, dp["a"]);
-  EXPECT_FALSE(dp.contains("not a thing"));
-  EXPECT_TRUE(dp.contains("a"));
-
-  EXPECT_EQ(dp.find("b")->first, "b");
-  EXPECT_EQ(dp.find("b")->second, dp["b"]);
+  EXPECT_EQ(proxy.find("b")->first, "b");
+  EXPECT_EQ(proxy.find("b")->second, proxy["b"]);
 }
 
-TEST(DatasetProxyTest, find_in_slice) {
+TYPED_TEST(DatasetProxyTest, find_in_slice) {
   Dataset d;
   d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
   d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
   d.setData("a", makeVariable<double>({Dim::X, 2}));
   d.setData("b", makeVariable<float>({Dim::Y, 2}));
+  auto proxy = TestFixture::access(d);
 
-  DatasetProxy slice = d.slice({Dim::X, 1});
-
-  EXPECT_EQ(slice.find("a")->first, "a");
-  EXPECT_EQ(slice.find("a")->second, slice["a"]);
-  EXPECT_EQ(slice.find("b"), slice.end());
-  EXPECT_TRUE(slice.contains("a"));
-  EXPECT_FALSE(slice.contains("b"));
-}
-
-TEST(DatasetConstProxyTest, find_and_contains) {
-  Dataset d;
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<float>({}));
-  d.setData("c", makeVariable<int64_t>({}));
-
-  DatasetConstProxy dp(d);
-
-  EXPECT_EQ(dp.find("not a thing"), dp.end());
-  EXPECT_EQ(dp.find("a")->first, "a");
-  EXPECT_EQ(dp.find("a")->second, dp["a"]);
-  EXPECT_FALSE(dp.contains("not a thing"));
-  EXPECT_TRUE(dp.contains("a"));
-
-  EXPECT_EQ(dp.find("b")->first, "b");
-  EXPECT_EQ(dp.find("b")->second, dp["b"]);
-}
-
-TEST(DatasetConstProxyTest, find_in_slice) {
-  Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>({Dim::X, 2}));
-  d.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}));
-  d.setData("a", makeVariable<double>({Dim::X, 2}));
-  d.setData("b", makeVariable<float>({Dim::Y, 2}));
-
-  const DatasetConstProxy slice = d.slice({Dim::X, 1});
+  const auto slice = proxy.slice({Dim::X, 1});
 
   EXPECT_EQ(slice.find("a")->first, "a");
   EXPECT_EQ(slice.find("a")->second, slice["a"]);

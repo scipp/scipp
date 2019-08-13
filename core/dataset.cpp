@@ -71,6 +71,9 @@ Dataset::Dataset(const DatasetConstProxy &proxy) {
     setData(std::string(name), item);
 }
 
+Dataset::operator DatasetConstProxy() const { return DatasetConstProxy(*this); }
+Dataset::operator DatasetProxy() { return DatasetProxy(*this); }
+
 /// Return a const proxy to all coordinates of the dataset.
 ///
 /// This proxy includes only "dimension-coordinates". To access

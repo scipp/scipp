@@ -234,6 +234,9 @@ public:
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
 
+  operator DatasetConstProxy() const;
+  operator DatasetProxy();
+
   /// Return the number of data items in the dataset.
   ///
   /// This does not include coordinates or attributes, but only all named
