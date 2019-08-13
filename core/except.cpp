@@ -287,6 +287,16 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
                              to_string(dims) + ".");
 }
+void validSlice(const std::map<Dim, scipp::index> &dims, const Slice &slice) {
+  if (dims.find(slice.dim) == dims.end() || slice.begin < 0 ||
+      slice.begin >=
+          std::min(slice.end >= 0 ? slice.end + 1 : dims.at(slice.dim),
+                   dims.at(slice.dim)) ||
+      slice.end > dims.at(slice.dim))
+    throw except::SliceError(
+        "Expected " + to_string(slice) +
+        " to be in dimensions."); // TODO to_string for map needed
+}
 
 void sparseCoordsAndLabelsMatch(const DataConstProxy &a,
                                 const DataConstProxy &b) {

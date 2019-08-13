@@ -5,6 +5,7 @@
 #ifndef EXCEPT_H
 #define EXCEPT_H
 
+#include <map>
 #include <stdexcept>
 #include <string>
 
@@ -169,6 +170,8 @@ template <class T> void countsOrCountsDensity(const T &object) {
 }
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
+void SCIPP_CORE_EXPORT validSlice(const std::map<Dim, scipp::index> &dims,
+                                  const Slice &slice);
 
 void SCIPP_CORE_EXPORT sparseCoordsAndLabelsMatch(const DataConstProxy &a,
                                                   const DataConstProxy &b);

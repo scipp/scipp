@@ -317,7 +317,7 @@ public:
   Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
   Dataset &operator/=(const Dataset &other);
-  Dimensions dimensions() const;
+  std::map<Dim, scipp::index> dimensions() const;
 
 private:
   friend class DatasetConstProxy;
@@ -360,7 +360,8 @@ public:
     // attributes.
     for (const auto &s : m_slices) {
       const auto slice = s.first;
-      if (slice.end == -1) {
+      if (slice.end ==
+          -1) { // The slice represents a point not a range. Dimension removed.
         for (auto it = m_items.begin(); it != m_items.end();) {
           auto erase = [slice](const auto it2) {
             if constexpr (std::is_same_v<Key, Dim>)
@@ -537,7 +538,7 @@ public:
   /// The returned proxy will not contain references to data items that do not
   /// depend on the sliced dimension.
   DatasetConstProxy slice(const Slice slice1) const {
-    expect::validSlice(dimensions(), slice1);
+    expect::validSlice(dimensions(m_slices), slice1);
     DatasetConstProxy sliced(*this);
     auto &indices = sliced.m_indices;
     sliced.m_indices.erase(
@@ -578,7 +579,8 @@ public:
   bool operator==(const DatasetConstProxy &other) const;
   bool operator!=(const Dataset &other) const;
   bool operator!=(const DatasetConstProxy &other) const;
-  Dimensions dimensions() const;
+  std::map<Dim, scipp::index> dimensions(
+      const std::vector<std::pair<Slice, scipp::index>> &currentSlice) const;
 
 private:
   const Dataset *m_dataset;

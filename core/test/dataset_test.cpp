@@ -289,6 +289,21 @@ TEST(DatasetTest, slice_validation) {
   do_test_slice_validation(proxy);
 }
 
+TEST(DatasetTest, dataset_proxy_nested_slice) {
+
+  Dataset ds;
+  auto var1 = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
+  ds.setCoord(Dim::X, var1);
+  auto var2 = makeVariable<double>({Dim::Y, 4}, {1, 2, 3, 4});
+  ds.setCoord(Dim::Y, var2);
+
+  // Slice arguments applied in order.
+  EXPECT_NO_THROW(ds.slice(Slice{Dim::X, 0, 3}, Slice{Dim::X, 1, 2}));
+  // Reverse order. Invalid slice creation should be caught up front.
+  EXPECT_THROW(ds.slice(Slice{Dim::X, 1, 2}, Slice{Dim::X, 0, 3}),
+               except::SliceError);
+}
+
 TEST(DatasetTest, simple_sparse_slice) {
   Dataset dataset;
   auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});

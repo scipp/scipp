@@ -20,8 +20,16 @@
 
 namespace scipp::core {
 
-/// Helper for passing slicing parameters.
+/// Describes a slice to make over a dimension either as a single index (begin_
+/// only) or as a range
 struct SCIPP_CORE_EXPORT Slice {
+
+  /// Constructor
+  /// \param dim_ Slice Dimension
+  /// \param begin_ start index or single index of the slice
+  /// \param end_ end index for the range. Note that -1 indicates a point slice,
+  /// not before-end.
+  ///
   Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_ = -1)
       : dim(dim_), begin(begin_), end(end_) {}
   Dim dim;

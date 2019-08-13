@@ -721,8 +721,25 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
-Dimensions DatasetConstProxy::dimensions() const {
-  return m_dataset->dimensions();
+std::map<Dim, scipp::index> DatasetConstProxy::dimensions(
+    const std::vector<std::pair<Slice, scipp::index>> &currentSlices) const {
+
+  auto base_dims = m_dataset->dimensions();
+  // Note current slices are ordered, but NOT unique
+  for (const auto & [ slice, extent ] : currentSlices) {
+    auto it = base_dims.find(slice.dim);
+    if (it != base_dims.end()) {
+      if (slice.end == -1) { // For non-range. Erase dimension
+        base_dims.erase(it);
+      } else {
+        it->second =
+            slice.end -
+            slice.begin; // Take extent from slice. This is the effect that
+                         // the successful slice range will have
+      }
+    }
+  }
+  return base_dims;
 }
 
 constexpr static auto plus = [](const auto &a, const auto &b) { return a + b; };
@@ -893,11 +910,10 @@ Dataset &Dataset::operator/=(const Dataset &other) {
   return apply(divide_equals, *this, other);
 }
 
-Dimensions Dataset::dimensions() const {
-  Dimensions all;
+std::map<Dim, scipp::index> Dataset::dimensions() const {
+  std::map<Dim, scipp::index> all;
   for (const auto &dim : this->m_dims) {
-    auto extent = extents::decodeExtent(dim.second);
-    all.add(dim.first, extent); // TODO this is add outer rather than inner.
+    all[dim.first] = extents::decodeExtent(dim.second);
   }
   return all;
 }
