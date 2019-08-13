@@ -24,6 +24,21 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
   proxy.def("__len__", &T::size)
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](T &self, const typename T::key_type &key, const Variable &var) {
+             if (!self.slices().empty())
+               throw std::runtime_error(
+                   "Cannot add coord/labels/attr field to a slice.");
+             // TODO prevent if parent is a DataProxy
+             // TODO can we handle sparse? Throw?
+             // TODO how to prevent abuse of parent pointer?
+             if constexpr (std::is_same_v<T, CoordsProxy>)
+               self.parent().setCoord(key, var);
+             if constexpr (std::is_same_v<T, LabelsProxy>)
+               self.parent().setLabels(key, var);
+             if constexpr (std::is_same_v<T, AttrsProxy>)
+               self.parent().setAttr(key, var);
+           })
       .def("__iter__",
            [](T &self) {
              return py::make_iterator(self.begin(), self.end(),

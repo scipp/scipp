@@ -64,6 +64,14 @@ def test_set_coord():
     assert d.coords[Dim.X] == sc.Variable(1.0)
 
 
+def test_coord_setitem():
+    d = sc.Dataset()
+    d.coords[Dim.X] = sc.Variable(1.0)
+    assert len(d) == 0
+    assert len(d.coords) == 1
+    assert d.coords[Dim.X] == sc.Variable(1.0)
+
+
 def test_contains_coord():
     d = sc.Dataset()
     assert Dim.X not in d.coords
@@ -79,6 +87,14 @@ def test_set_labels():
     assert d.labels["a"] == sc.Variable(1.0)
 
 
+def test_labels_setitem():
+    d = sc.Dataset()
+    d.labels["a"] = sc.Variable(1.0)
+    assert len(d) == 0
+    assert len(d.labels) == 1
+    assert d.labels["a"] == sc.Variable(1.0)
+
+
 def test_contains_labels():
     d = sc.Dataset()
     assert "a" not in d.labels
@@ -89,6 +105,14 @@ def test_contains_labels():
 def test_set_attrs():
     d = sc.Dataset()
     d.set_attr("b", sc.Variable(1.0))
+    assert len(d) == 0
+    assert len(d.attrs) == 1
+    assert d.attrs["b"] == sc.Variable(1.0)
+
+
+def test_attrs_setitem():
+    d = sc.Dataset()
+    d.attrs["b"] = sc.Variable(1.0)
     assert len(d) == 0
     assert len(d.attrs) == 1
     assert d.attrs["b"] == sc.Variable(1.0)
