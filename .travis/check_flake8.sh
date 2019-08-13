@@ -12,13 +12,13 @@ else
 fi
 
 # Check formatting (exclude the examples directory)
-DIRTY=$(find python -type f -name '*.py' -not -path "python/examples/*" -not -path "python/src/scipp/__init__.py" | xargs ${FLAKE8_EXE} -q);
+DIRTY=$(find python -type f -name '*.py' -not -path "python/examples/*" -not -path "python/src/scipp/__init__.py" | xargs ${FLAKE8_EXE});
 
 if [ -z "${DIRTY}" ]; then
   echo "Flake8 [ OK ]";
   exit 0;
 else
-  echo "Flake8 FAILED on the following files:";
+  echo "Flake8 FAILED with the following errors:";
   echo "${DIRTY}" | tr ' ' '\n';
   exit 1;
 fi
