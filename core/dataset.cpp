@@ -120,7 +120,7 @@ DataConstProxy Dataset::operator[](const std::string &name) const {
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
                             std::string(name) + ".");
-  return DataConstProxy(*this, it->second);
+  return DataConstProxy(*this, *it);
 }
 
 /// Return a proxy to data and coordinates with given name.
@@ -129,7 +129,7 @@ DataProxy Dataset::operator[](const std::string &name) {
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
                             std::string(name) + ".");
-  return DataProxy(*this, it->second);
+  return DataProxy(*this, *it);
 }
 
 namespace extents {
@@ -421,7 +421,7 @@ void Dataset::rename(const Dim from, const Dim to) {
 Dimensions DataConstProxy::dims() const noexcept {
   if (hasData())
     return data().dims();
-  return detail::makeSlice(*m_data->coord, slices()).dims();
+  return detail::makeSlice(*m_data->second.coord, slices()).dims();
 }
 
 /// Return the unit of the data values.
@@ -443,10 +443,11 @@ void DataProxy::setUnit(const units::Unit unit) const {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstProxy DataConstProxy::coords() const noexcept {
-  return CoordsConstProxy(
-      makeProxyItems<Dim>(dims(), m_dataset->m_coords,
-                          m_data->coord ? &*m_data->coord : nullptr),
-      slices());
+  return CoordsConstProxy(makeProxyItems<Dim>(dims(), m_dataset->m_coords,
+                                              m_data->second.coord
+                                                  ? &*m_data->second.coord
+                                                  : nullptr),
+                          slices());
 }
 
 /// Return a const proxy to all labels of the data proxy.
@@ -454,9 +455,10 @@ CoordsConstProxy DataConstProxy::coords() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsConstProxy DataConstProxy::labels() const noexcept {
-  return LabelsConstProxy(makeProxyItems<std::string_view>(
-                              dims(), m_dataset->m_labels, &m_data->labels),
-                          slices());
+  return LabelsConstProxy(
+      makeProxyItems<std::string_view>(dims(), m_dataset->m_labels,
+                                       &m_data->second.labels),
+      slices());
 }
 
 /// Return a const proxy to all attributes of the data proxy.
@@ -471,8 +473,8 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsProxy DataProxy::coords() const noexcept {
   return CoordsProxy(makeProxyItems<Dim>(dims(), m_mutableDataset->m_coords,
-                                         m_mutableData->coord
-                                             ? &*m_mutableData->coord
+                                         m_mutableData->second.coord
+                                             ? &*m_mutableData->second.coord
                                              : nullptr),
                      slices());
 }
@@ -484,7 +486,7 @@ CoordsProxy DataProxy::coords() const noexcept {
 LabelsProxy DataProxy::labels() const noexcept {
   return LabelsProxy(
       makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_labels,
-                                       &m_mutableData->labels),
+                                       &m_mutableData->second.labels),
       slices());
 }
 
@@ -603,14 +605,13 @@ bool DatasetConstProxy::contains(const std::string &name) const noexcept {
 /// Return a const proxy to data and coordinates with given name.
 DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
   expectValidKey(name);
-  return {*m_dataset, (*m_dataset).m_data.find(name)->second, slices()};
+  return {*m_dataset, *(*m_dataset).m_data.find(name), slices()};
 }
 
 /// Return a proxy to data and coordinates with given name.
 DataProxy DatasetProxy::operator[](const std::string &name) const {
   expectValidKey(name);
-  return {*m_mutableDataset, (*m_mutableDataset).m_data.find(name)->second,
-          slices()};
+  return {*m_mutableDataset, *(*m_mutableDataset).m_data.find(name), slices()};
 }
 
 /// Return true if the dataset proxies have identical content.
