@@ -549,10 +549,7 @@ public:
         indices.end());
     // The dimension extent is either given by the coordinate, or by data, which
     // can be 1 shorter in case of a bin-edge coordinate.
-    scipp::index extent =
-        coords()[slice1.dim].dims()[slice1.dim]; // TODO this is a bug. Cannot
-                                                 // rely on getting extents via
-                                                 // coords
+    scipp::index extent = dimensions(m_slices)[slice1.dim];
     for (const auto item : *this)
       if (item.second.dims().contains(slice1.dim) &&
           item.second.dims()[slice1.dim] == extent - 1) {

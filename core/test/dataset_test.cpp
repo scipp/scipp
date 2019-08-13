@@ -274,7 +274,7 @@ template <typename T> void do_test_slice_validation(const T &container) {
   EXPECT_NO_THROW(container.slice(Slice{Dim::X, 0, 1}));
 }
 
-TEST(DatasetTest, slice_validation) {
+TEST(DatasetTest, slice_validation_simple) {
   Dataset dataset;
   auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
   dataset.setCoord(Dim::X, var);
@@ -289,7 +289,17 @@ TEST(DatasetTest, slice_validation) {
   do_test_slice_validation(proxy);
 }
 
-TEST(DatasetTest, dataset_proxy_nested_slice) {
+TEST(DatasetTest, slice_with_no_coords) {
+  Dataset ds;
+  auto var = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
+  ds.setData("a", var);
+  // No dataset coords. slicing should still work.
+  auto slice = ds.slice(Slice{Dim::X, 0, 2});
+  auto extents = slice["a"].data().dims()[Dim::X];
+  EXPECT_EQ(extents, 2);
+}
+
+TEST(DatasetTest, slice_validation_complex) {
 
   Dataset ds;
   auto var1 = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
