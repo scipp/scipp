@@ -76,6 +76,11 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         [](const T &self, const DatasetProxy &other) { return self == other; });
 }
 
+template <class T, class... Ignored>
+void bind_data_array_properties(py::class_<T, Ignored...> &c) {
+  c.def_property_readonly("name", &T::name);
+}
+
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
 
@@ -83,7 +88,7 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
-  py::class_<DataArray>(m, "DataArray");
+  py::class_<DataArray> dataArray(m, "DataArray");
   py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly(
@@ -94,6 +99,9 @@ void init_dataset(py::module &m) {
                   py::return_value_policy::move, py::keep_alive<0, 1>()));
   dataProxy.def("__repr__",
                 [](const DataProxy &self) { return to_string(self); });
+
+  bind_data_array_properties(dataArray);
+  bind_data_array_properties(dataProxy);
 
   py::class_<DatasetConstProxy>(m, "DatasetConstProxy");
   py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");

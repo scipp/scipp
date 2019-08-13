@@ -51,6 +51,19 @@ TYPED_TEST(DatasetProxyTest, bad_item_access) {
   ASSERT_ANY_THROW(proxy["abc"]);
 }
 
+TYPED_TEST(DatasetProxyTest, name) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+  auto &&proxy = TestFixture::access(d);
+
+  for (const auto &name : {"a", "b", "c"})
+    EXPECT_EQ(d[name].name(), name);
+  for (const auto &name : {"a", "b", "c"})
+    EXPECT_EQ(d.find(name)->second.name(), name);
+}
+
 TYPED_TEST(DatasetProxyTest, find_and_contains) {
   Dataset d;
   d.setData("a", makeVariable<double>({}));
