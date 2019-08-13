@@ -4,9 +4,9 @@
 /// @author Simon Heybrock
 #include <set>
 
-#include "scipp/core/except.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
 
 namespace scipp::core {
