@@ -127,10 +127,12 @@ bool Dataset::contains(const std::string &name) const noexcept {
 ///
 /// Coordinates, labels and attributes are not modified.
 /// This operation invalidates any proxy objects creeated from this dataset.
-size_t Dataset::erase(const std::string_view name) {
-  const auto result = m_data.erase(std::string(name));
+void Dataset::erase(const std::string_view name) {
+  if (m_data.erase(std::string(name)) == 0) {
+    throw except::DatasetError(*this, "Could not find data with name " +
+                                          std::string(name) + ".");
+  }
   rebuildDims();
-  return result;
 }
 
 /// Return a const proxy to data and coordinates with given name.

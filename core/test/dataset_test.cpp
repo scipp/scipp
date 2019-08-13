@@ -36,10 +36,15 @@ TEST(DatasetTest, clear) {
   ASSERT_FALSE(dataset.attrs().empty());
 }
 
+TEST(DatasetTest, erase_single_non_existant) {
+  Dataset d;
+  ASSERT_THROW(d.erase("not an item"), except::DatasetError);
+}
+
 TEST(DatasetTest, erase_single) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
-  ASSERT_EQ(1, dataset.erase("data_xyz"));
+  ASSERT_NO_THROW(dataset.erase("data_xyz"));
   ASSERT_FALSE(dataset.contains("data_xyz"));
 }
 
@@ -49,7 +54,7 @@ TEST(DatasetTest, erase_extents_rebuild) {
   d.setData("a", makeVariable<double>({Dim::X, 10}));
   ASSERT_TRUE(d.contains("a"));
 
-  ASSERT_EQ(1, d.erase("a"));
+  ASSERT_NO_THROW(d.erase("a"));
   ASSERT_FALSE(d.contains("a"));
 
   ASSERT_NO_THROW(d.setData("a", makeVariable<double>({Dim::X, 15})));

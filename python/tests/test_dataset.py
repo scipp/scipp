@@ -42,6 +42,12 @@ def test_del_item():
     assert 'a' not in d
 
 
+def test_del_item_missing():
+    d = sc.Dataset()
+    with pytest.raises(RuntimeError):
+        del d['not an item']
+
+
 def test_set_coord():
     d = sc.Dataset()
     d.set_coord(Dim.X, sc.Variable(1.0))
