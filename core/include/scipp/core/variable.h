@@ -33,8 +33,8 @@ struct SCIPP_CORE_EXPORT Slice {
   Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_ = -1)
       : dim(dim_), begin(begin_), end(end_) {}
   Dim dim;
-  const scipp::index begin;
-  const scipp::index end;
+  scipp::index begin;
+  scipp::index end;
 };
 
 template <class T> struct is_sparse_container : std::false_type {};
