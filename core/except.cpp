@@ -292,7 +292,8 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
                              to_string(dims) + ".");
 }
-void validSlice(const std::map<Dim, scipp::index> &dims, const Slice &slice) {
+void validSlice(const std::unordered_map<Dim, scipp::index> &dims,
+                const Slice &slice) {
   if (dims.find(slice.dim) == dims.end() || slice.begin < 0 ||
       slice.begin >=
           std::min(slice.end >= 0 ? slice.end + 1 : dims.at(slice.dim),

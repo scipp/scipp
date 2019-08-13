@@ -708,7 +708,7 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
-std::map<Dim, scipp::index> DatasetConstProxy::dimensions(
+std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions(
     const std::vector<std::pair<Slice, scipp::index>> &currentSlices) const {
 
   auto base_dims = m_dataset->dimensions();
@@ -859,8 +859,8 @@ Dataset &Dataset::operator/=(const Dataset &other) {
   return apply(divide_equals, *this, other);
 }
 
-std::map<Dim, scipp::index> Dataset::dimensions() const {
-  std::map<Dim, scipp::index> all;
+std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
+  std::unordered_map<Dim, scipp::index> all;
   for (const auto &dim : this->m_dims) {
     all[dim.first] = extents::decodeExtent(dim.second);
   }

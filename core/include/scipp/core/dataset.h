@@ -343,7 +343,7 @@ public:
   Dataset &operator-=(const Dataset &other);
   Dataset &operator*=(const Dataset &other);
   Dataset &operator/=(const Dataset &other);
-  std::map<Dim, scipp::index> dimensions() const;
+  std::unordered_map<Dim, scipp::index> dimensions() const;
 
 private:
   friend class DatasetConstProxy;
@@ -646,7 +646,7 @@ public:
   bool operator==(const DatasetConstProxy &other) const;
   bool operator!=(const Dataset &other) const;
   bool operator!=(const DatasetConstProxy &other) const;
-  std::map<Dim, scipp::index> dimensions(
+  std::unordered_map<Dim, scipp::index> dimensions(
       const std::vector<std::pair<Slice, scipp::index>> &currentSlice) const;
 
 private:

@@ -5,9 +5,9 @@
 #ifndef EXCEPT_H
 #define EXCEPT_H
 
-#include <map>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 #include "scipp-core_export.h"
 #include "scipp/core/dtype.h"
@@ -174,8 +174,8 @@ template <class T> void countsOrCountsDensity(const T &object) {
 }
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
-void SCIPP_CORE_EXPORT validSlice(const std::map<Dim, scipp::index> &dims,
-                                  const Slice &slice);
+void SCIPP_CORE_EXPORT validSlice(
+    const std::unordered_map<Dim, scipp::index> &dims, const Slice &slice);
 
 void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                                   const DataConstProxy &b);
