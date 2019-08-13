@@ -151,6 +151,7 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);
            })
+      .def("clear", &Dataset::clear)
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
       .def("set_coord", &Dataset::setCoord)

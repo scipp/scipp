@@ -26,6 +26,14 @@ def test_create():
     assert d['x'].data == x
 
 
+def test_clear():
+    d = sc.Dataset()
+    d['a'] = sc.Variable([Dim.X], values=np.arange(3))
+    assert 'a' in d
+    d.clear()
+    assert len(d) == 0
+
+
 def test_setitem():
     d = sc.Dataset()
     d['a'] = sc.Variable(1.0)
