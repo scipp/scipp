@@ -27,6 +27,7 @@ def test_lifetime_values_of_item():
 
 def test_lifetime_values_of_item_of_temporary():
     d = sc.Dataset(
+        {'a': sc.Variable([Dim.X], values=np.arange(3))},
         coords={Dim.X: sc.Variable([Dim.X], values=["aa", "bb", "cc"])})
     vals = (d + d).coords[Dim.X].values
     d + d  # do something allocating memory to trigger potential segfault
