@@ -222,7 +222,7 @@ template <int max> constexpr auto valid_ranges() {
   const auto size = max + 1;
   std::array<std::pair<index, index>, (size * size + size) / 2> pairs;
   index i = 0;
-  for (index first = 0; first <= max; ++first)
+  for (index first = 0; first < max; ++first)
     for (index second = first + 0; second <= max; ++second) {
       pairs[i].first = first;
       pairs[i].second = second;
