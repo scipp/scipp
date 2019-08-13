@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <numeric>
+#include <set>
 
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
@@ -221,17 +222,22 @@ TEST(DatasetTest, iterators) {
   ASSERT_NO_THROW(d.begin());
   ASSERT_NO_THROW(d.end());
 
+  std::set<std::string> found;
+  std::set<std::string> expected{"a", "b", "c"};
+
   auto it = d.begin();
   ASSERT_NE(it, d.end());
-  EXPECT_EQ(it->first, "a");
+  found.insert(it->first);
 
   ASSERT_NO_THROW(++it);
   ASSERT_NE(it, d.end());
-  EXPECT_EQ(it->first, "b");
+  found.insert(it->first);
 
   ASSERT_NO_THROW(++it);
   ASSERT_NE(it, d.end());
-  EXPECT_EQ(it->first, "c");
+  found.insert(it->first);
+
+  EXPECT_EQ(found, expected);
 
   ASSERT_NO_THROW(++it);
   ASSERT_EQ(it, d.end());
@@ -255,14 +261,14 @@ TEST(DatasetTest, find_and_contains) {
   d.setData("b", makeVariable<float>({}));
   d.setData("c", makeVariable<int64_t>({}));
 
-  EXPECT_EQ(d.end(), d.find("not a thing"));
-  EXPECT_EQ(d.begin(), d.find("a"));
+  EXPECT_EQ(d.find("not a thing"), d.end());
+  EXPECT_EQ(d.find("a")->first, "a");
+  EXPECT_EQ(d.find("a")->second, d["a"]);
   EXPECT_FALSE(d.contains("not a thing"));
   EXPECT_TRUE(d.contains("a"));
 
-  auto it = d.begin();
-  ++it;
-  EXPECT_EQ(it, d.find("b"));
+  EXPECT_EQ(d.find("b")->first, "b");
+  EXPECT_EQ(d.find("b")->second, d["b"]);
 }
 
 TEST(DatasetTest, set_dense_data_with_sparse_coord) {
@@ -339,7 +345,7 @@ TEST(DatasetTest, slice_temporary) {
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
 
-TEST(DatasetProxyTest, find) {
+TEST(DatasetProxyTest, find_and_contains) {
   Dataset d;
   d.setData("a", makeVariable<double>({}));
   d.setData("b", makeVariable<float>({}));
@@ -347,13 +353,14 @@ TEST(DatasetProxyTest, find) {
 
   DatasetProxy dp(d);
 
-  EXPECT_EQ(dp.end(), dp.find("not a thing"));
+  EXPECT_EQ(dp.find("not a thing"), dp.end());
+  EXPECT_EQ(dp.find("a")->first, "a");
+  EXPECT_EQ(dp.find("a")->second, dp["a"]);
+  EXPECT_FALSE(dp.contains("not a thing"));
+  EXPECT_TRUE(dp.contains("a"));
 
-  EXPECT_EQ(dp.begin(), dp.find("a"));
-
-  auto it = dp.begin();
-  ++it;
-  EXPECT_EQ(it, dp.find("b"));
+  EXPECT_EQ(dp.find("b")->first, "b");
+  EXPECT_EQ(dp.find("b")->second, dp["b"]);
 }
 
 TEST(DatasetProxyTest, find_in_slice) {
@@ -365,11 +372,14 @@ TEST(DatasetProxyTest, find_in_slice) {
 
   DatasetProxy slice = d.slice({Dim::X, 1});
 
-  EXPECT_EQ(slice.begin(), slice.find("a"));
-  EXPECT_EQ(slice.end(), slice.find("b"));
+  EXPECT_EQ(slice.find("a")->first, "a");
+  EXPECT_EQ(slice.find("a")->second, slice["a"]);
+  EXPECT_EQ(slice.find("b"), slice.end());
+  EXPECT_TRUE(slice.contains("a"));
+  EXPECT_FALSE(slice.contains("b"));
 }
 
-TEST(DatasetConstProxyTest, find) {
+TEST(DatasetConstProxyTest, find_and_contains) {
   Dataset d;
   d.setData("a", makeVariable<double>({}));
   d.setData("b", makeVariable<float>({}));
@@ -377,13 +387,14 @@ TEST(DatasetConstProxyTest, find) {
 
   DatasetConstProxy dp(d);
 
-  EXPECT_EQ(dp.end(), dp.find("not a thing"));
+  EXPECT_EQ(dp.find("not a thing"), dp.end());
+  EXPECT_EQ(dp.find("a")->first, "a");
+  EXPECT_EQ(dp.find("a")->second, dp["a"]);
+  EXPECT_FALSE(dp.contains("not a thing"));
+  EXPECT_TRUE(dp.contains("a"));
 
-  EXPECT_EQ(dp.begin(), dp.find("a"));
-
-  auto it = dp.begin();
-  ++it;
-  EXPECT_EQ(it, dp.find("b"));
+  EXPECT_EQ(dp.find("b")->first, "b");
+  EXPECT_EQ(dp.find("b")->second, dp["b"]);
 }
 
 TEST(DatasetConstProxyTest, find_in_slice) {
@@ -395,6 +406,9 @@ TEST(DatasetConstProxyTest, find_in_slice) {
 
   const DatasetConstProxy slice = d.slice({Dim::X, 1});
 
-  EXPECT_EQ(slice.begin(), slice.find("a"));
-  EXPECT_EQ(slice.end(), slice.find("b"));
+  EXPECT_EQ(slice.find("a")->first, "a");
+  EXPECT_EQ(slice.find("a")->second, slice["a"]);
+  EXPECT_EQ(slice.find("b"), slice.end());
+  EXPECT_TRUE(slice.contains("a"));
+  EXPECT_FALSE(slice.contains("b"));
 }
