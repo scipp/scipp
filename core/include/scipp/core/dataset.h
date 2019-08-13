@@ -56,6 +56,8 @@ struct DatasetData {
   std::unordered_map<std::string, Variable> labels;
 };
 
+using dataset_item_map = std::unordered_map<std::string, DatasetData>;
+
 template <class Var>
 auto makeSlice(Var &var,
                const std::vector<std::pair<Slice, scipp::index>> &slices) {
@@ -73,31 +75,32 @@ auto makeSlice(Var &var,
 /// Const proxy for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataConstProxy {
 public:
-  DataConstProxy(const Dataset &dataset, const detail::DatasetData &data,
-                 const std::string_view name,
+  DataConstProxy(const Dataset &dataset,
+                 const detail::dataset_item_map::value_type &data,
                  const std::vector<std::pair<Slice, scipp::index>> &slices = {})
-      : m_dataset(&dataset), m_data(&data), m_name(name), m_slices(slices) {}
+      : m_dataset(&dataset), m_data(&data), m_slices(slices) {}
+
+  const std::string &name() const noexcept;
 
   Dimensions dims() const noexcept;
   units::Unit unit() const;
-  const std::string_view name() const;
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
 
   /// Return true if the proxy contains data values.
-  bool hasData() const noexcept { return m_data->data.has_value(); }
+  bool hasData() const noexcept { return m_data->second.data.has_value(); }
   /// Return true if the proxy contains data variances.
   bool hasVariances() const noexcept {
-    return hasData() && m_data->data->hasVariances();
+    return hasData() && m_data->second.data->hasVariances();
   }
 
   /// Return untyped const proxy for data (values and optional variances).
   VariableConstProxy data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return detail::makeSlice(*m_data->data, slices());
+    return detail::makeSlice(*m_data->second.data, slices());
   }
   /// Return typed const proxy for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -111,7 +114,7 @@ public:
     expect::validSlice(dims(), slice1);
     auto tmp(m_slices);
     tmp.emplace_back(slice1, dims()[slice1.dim]);
-    return {*m_dataset, *m_data, m_name, std::move(tmp)};
+    return {*m_dataset, *m_data, std::move(tmp)};
   }
 
   DataConstProxy slice(const Slice slice1, const Slice slice2) const {
@@ -127,15 +130,14 @@ public:
     return m_slices;
   }
 
-  auto &underlying() const { return *m_data; }
+  auto &underlying() const { return m_data->second; }
 
 private:
   friend class DatasetConstProxy;
   friend class DatasetProxy;
 
   const Dataset *m_dataset;
-  const detail::DatasetData *m_data;
-  std::string_view m_name;
+  const detail::dataset_item_map::value_type *m_data;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 
@@ -147,10 +149,9 @@ SCIPP_CORE_EXPORT bool operator!=(const DataConstProxy &a,
 /// Proxy for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
 public:
-  DataProxy(Dataset &dataset, detail::DatasetData &data,
-            const std::string_view name,
+  DataProxy(Dataset &dataset, detail::dataset_item_map::value_type &data,
             const std::vector<std::pair<Slice, scipp::index>> &slices = {})
-      : DataConstProxy(dataset, data, name, slices), m_mutableDataset(&dataset),
+      : DataConstProxy(dataset, data, slices), m_mutableDataset(&dataset),
         m_mutableData(&data) {}
 
   CoordsProxy coords() const noexcept;
@@ -163,7 +164,7 @@ public:
   VariableProxy data() const {
     if (!hasData())
       throw except::SparseDataError("No data in item.");
-    return detail::makeSlice(*m_mutableData->data, slices());
+    return detail::makeSlice(*m_mutableData->second.data, slices());
   }
   /// Return typed proxy for data values.
   template <class T> auto values() const { return data().template values<T>(); }
@@ -177,7 +178,7 @@ public:
     expect::validSlice(dims(), slice1);
     auto tmp(slices());
     tmp.emplace_back(slice1, dims()[slice1.dim]);
-    return {*m_mutableDataset, *m_mutableData, name(), std::move(tmp)};
+    return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
   }
 
   DataProxy slice(const Slice slice1, const Slice slice2) const {
@@ -201,7 +202,7 @@ public:
 
 private:
   Dataset *m_mutableDataset;
-  detail::DatasetData *m_mutableData;
+  detail::dataset_item_map::value_type *m_mutableData;
 };
 
 namespace detail {
@@ -218,7 +219,7 @@ template <class D> struct make_item {
   template <class T>
   std::pair<const std::string &, P> operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
-      return {item.first, P(*dataset, item.second, item.first)};
+      return {item.first, P(*dataset, item)};
     else
       // TODO Using operator[] is quite inefficient, revert the logic.
       return {item, dataset->operator[](item)};
@@ -356,7 +357,7 @@ private:
   std::unordered_map<Dim, Variable> m_coords;
   std::unordered_map<std::string, Variable> m_labels;
   std::unordered_map<std::string, Variable> m_attrs;
-  std::unordered_map<std::string, detail::DatasetData> m_data;
+  detail::dataset_item_map m_data;
 };
 
 /// Common functionality for other const-proxy classes.

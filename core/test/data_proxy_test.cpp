@@ -23,6 +23,15 @@ protected:
 using DataProxyTypes = ::testing::Types<DataProxy, DataConstProxy>;
 TYPED_TEST_SUITE(DataProxyTest, DataProxyTypes);
 
+TYPED_TEST(DataProxyTest, name_ignored_in_comparison) {
+  const auto var = makeVariable<double>(1.0);
+  Dataset d;
+  d.setData("a", var);
+  d.setData("b", var);
+  typename TestFixture::dataset_type &d_ref(d);
+  EXPECT_EQ(d_ref["a"], d_ref["b"]);
+}
+
 TYPED_TEST(DataProxyTest, sparse_sparseDim) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);

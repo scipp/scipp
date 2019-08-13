@@ -7,7 +7,7 @@
 namespace scipp::core {
 
 DataArray::DataArray(const DataConstProxy &proxy) {
-  m_holder.setData("", proxy);
+  m_holder.setData(proxy.name(), proxy);
 }
 
 DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,

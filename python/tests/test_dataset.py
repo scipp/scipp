@@ -329,6 +329,21 @@ def test_add_sum_of_columns():
     assert d['sum'] == d['a']
 
 
+def test_name():
+    d = sc.Dataset(
+        {
+            'a': sc.Variable([Dim.X], values=np.arange(10.0)),
+            'b': sc.Variable([Dim.X], values=np.ones(10))
+        },
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10))})
+    assert d['a'].name == 'a'
+    assert d['b'].name == 'b'
+    assert d[Dim.X, 2]['b'].name == 'b'
+    assert d['b'][Dim.X, 2].name == 'b'
+    array = d['a'] + d['b']
+    assert array.name == ''
+
+
 # def test_delitem(self):
 #    dataset = sc.Dataset()
 #    dataset[sc.Data.Value, "data"] = ([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
