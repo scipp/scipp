@@ -16,6 +16,12 @@ void init_variable(py::module &);
 void init_variable_view(py::module &);
 
 PYBIND11_MODULE(_scipp, m) {
+#ifdef SCIPP_VERSION
+  m.attr("__version__") = py::str(SCIPP_VERSION);
+#else
+  m.attr("__version__") = py::str("unknown version");
+#endif
+
   init_dataset(m);
   init_dimensions(m);
   init_dtype(m);
