@@ -182,67 +182,6 @@ TEST(DatasetTest, setSparseLabels) {
   ASSERT_EQ(d["a"].labels().size(), 1);
 }
 
-TEST(DatasetTest, iterators_empty_dataset) {
-  Dataset d;
-  ASSERT_NO_THROW(d.begin());
-  ASSERT_NO_THROW(d.end());
-  EXPECT_EQ(d.begin(), d.end());
-}
-
-TEST(DatasetTest, iterators_only_coords) {
-  Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>({}));
-  ASSERT_NO_THROW(d.begin());
-  ASSERT_NO_THROW(d.end());
-  EXPECT_EQ(d.begin(), d.end());
-}
-
-TEST(DatasetTest, iterators_only_labels) {
-  Dataset d;
-  d.setLabels("a", makeVariable<double>({}));
-  ASSERT_NO_THROW(d.begin());
-  ASSERT_NO_THROW(d.end());
-  EXPECT_EQ(d.begin(), d.end());
-}
-
-TEST(DatasetTest, iterators_only_attrs) {
-  Dataset d;
-  d.setAttr("a", makeVariable<double>({}));
-  ASSERT_NO_THROW(d.begin());
-  ASSERT_NO_THROW(d.end());
-  EXPECT_EQ(d.begin(), d.end());
-}
-
-TEST(DatasetTest, iterators) {
-  Dataset d;
-  d.setData("a", makeVariable<double>({}));
-  d.setData("b", makeVariable<float>({}));
-  d.setData("c", makeVariable<int64_t>({}));
-
-  ASSERT_NO_THROW(d.begin());
-  ASSERT_NO_THROW(d.end());
-
-  std::set<std::string> found;
-  std::set<std::string> expected{"a", "b", "c"};
-
-  auto it = d.begin();
-  ASSERT_NE(it, d.end());
-  found.insert(it->first);
-
-  ASSERT_NO_THROW(++it);
-  ASSERT_NE(it, d.end());
-  found.insert(it->first);
-
-  ASSERT_NO_THROW(++it);
-  ASSERT_NE(it, d.end());
-  found.insert(it->first);
-
-  EXPECT_EQ(found, expected);
-
-  ASSERT_NO_THROW(++it);
-  ASSERT_EQ(it, d.end());
-}
-
 TEST(DatasetTest, iterators_return_types) {
   Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(d.begin()->second), DataProxy>));
@@ -335,4 +274,70 @@ TYPED_TEST(DatasetProxyTest, find_in_slice) {
   EXPECT_EQ(slice.find("b"), slice.end());
   EXPECT_TRUE(slice.contains("a"));
   EXPECT_FALSE(slice.contains("b"));
+}
+
+TYPED_TEST(DatasetProxyTest, iterators_empty_dataset) {
+  Dataset d;
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_NO_THROW(proxy.begin());
+  ASSERT_NO_THROW(proxy.end());
+  EXPECT_EQ(proxy.begin(), proxy.end());
+}
+
+TYPED_TEST(DatasetProxyTest, iterators_only_coords) {
+  Dataset d;
+  d.setCoord(Dim::X, makeVariable<double>({}));
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_NO_THROW(proxy.begin());
+  ASSERT_NO_THROW(proxy.end());
+  EXPECT_EQ(proxy.begin(), proxy.end());
+}
+
+TYPED_TEST(DatasetProxyTest, iterators_only_labels) {
+  Dataset d;
+  d.setLabels("a", makeVariable<double>({}));
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_NO_THROW(proxy.begin());
+  ASSERT_NO_THROW(proxy.end());
+  EXPECT_EQ(proxy.begin(), proxy.end());
+}
+
+TYPED_TEST(DatasetProxyTest, iterators_only_attrs) {
+  Dataset d;
+  d.setAttr("a", makeVariable<double>({}));
+  auto &&proxy = TestFixture::access(d);
+  ASSERT_NO_THROW(proxy.begin());
+  ASSERT_NO_THROW(proxy.end());
+  EXPECT_EQ(proxy.begin(), proxy.end());
+}
+
+TYPED_TEST(DatasetProxyTest, iterators) {
+  Dataset d;
+  d.setData("a", makeVariable<double>({}));
+  d.setData("b", makeVariable<float>({}));
+  d.setData("c", makeVariable<int64_t>({}));
+  auto &&proxy = TestFixture::access(d);
+
+  ASSERT_NO_THROW(proxy.begin());
+  ASSERT_NO_THROW(proxy.end());
+
+  std::set<std::string> found;
+  std::set<std::string> expected{"a", "b", "c"};
+
+  auto it = proxy.begin();
+  ASSERT_NE(it, proxy.end());
+  found.insert(it->first);
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_NE(it, proxy.end());
+  found.insert(it->first);
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_NE(it, proxy.end());
+  found.insert(it->first);
+
+  EXPECT_EQ(found, expected);
+
+  ASSERT_NO_THROW(++it);
+  ASSERT_EQ(it, proxy.end());
 }
