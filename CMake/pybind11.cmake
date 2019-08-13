@@ -8,5 +8,6 @@ execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
 execute_process(COMMAND ${CMAKE_COMMAND} --build .
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/pybind11-download )
 
+set(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 add_subdirectory(${CMAKE_BINARY_DIR}/pybind11-src
                  ${CMAKE_BINARY_DIR}/pybind11-src)

@@ -30,16 +30,14 @@ Docker
 ------
 
 A docker container is available.
-Note that this is an outdated build, before the ongoing major API refactor:
 
 .. code-block:: sh
 
-   docker pull dmscid/dataset
-   docker run --rm -p 127.0.0.1:8888:8888 dmscid/dataset
+   docker pull scipp/scipp-jupyter-demo
 
-Navigate to ``localhost:8888`` in your browser.
 A number of Jupyter demo notebooks can be found in the ``demo/`` folder.
 These notebooks provide an introduction and basic usage turorial.
+Note that the demo notebooks are being rewritten and may not work as expected until the first release.
 
 Getting Started with Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,14 +52,14 @@ If this is the first time using Docker there are additional setup steps:
   1. Add your use to the ``docker`` group (this avoids having to use ``sudo`` with Docker commands): ``sudo usermod -aG docker $(whoami)``
   2. Ensure that the Docker daemon is set to automatically start and is currently running: ``sudo systemctl enable docker && sudo systemctl start docker``
 
-Start a container using the command: ``docker run --rm -p 127.0.0.1:8888:8888 dmscid/dataset``.
+Start a container using the command: ``docker run --rm -p 127.0.0.1:8888:8888 scipp/scipp-jupyter-demo``.
 
 Access the container in a browser using the address: ``http://127.0.0.1:8888``.
 
 Windows & MacOS
 ###############
 
-Start a container using the command: ``docker run --rm -p $(docker-machine ip $(docker-machine active)):8888:8888 dmscid/dataset``.
+Start a container using the command: ``docker run --rm -p $(docker-machine ip $(docker-machine active)):8888:8888 scipp/scipp-jupyter-demo``.
 
 Access the container in a browser using the address: ``http://<ip>:8888``, where ``<ip>`` is determined using the command ``docker-machine ip $(docker-machine active)``.
 

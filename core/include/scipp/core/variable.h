@@ -61,7 +61,7 @@ using VariableConceptHandle = VariableConceptHandle_impl<
 ///
 /// This is the most generic representation for a multi-dimensional array of
 /// data. More operations are supportd by the partially-typed VariableConceptT.
-class VariableConcept {
+class SCIPP_CORE_EXPORT VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
@@ -179,6 +179,26 @@ public:
             const scipp::index otherEnd) override;
 };
 
+// Forward declaration for friend functions.
+template <class... Ts, class Var, class Op>
+[[nodiscard]] Variable transform(const Var &var, Op op);
+
+template <class... Ts, class Var, class Op>
+void transform_in_place(Var &var, Op op);
+
+template <class... Ts, class Op, class Var, class... Vars>
+void apply_in_place(Op op, Var &&var, const Vars &... vars);
+
+namespace detail {
+template <class... Ts, class Var1, class Var2, class Op>
+Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
+                   Op op);
+
+template <class... Ts, class Var, class Var1, class Op>
+void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
+                        Op op);
+} // namespace detail
+
 template <class... Known> class VariableConceptHandle_impl {
 public:
   VariableConceptHandle_impl()
@@ -214,6 +234,28 @@ public:
         m_object);
   }
 
+  // Due to provide a kind of const correctness for variant() function, which
+  // exposes the Variant of non const types. The idea is, at least not to expose
+  // this function to the API, the alternative includes writing the  overloads
+  // for Variant<const Type>.
+  template <class... Ts, class Var, class Op>
+  friend Variable transform(const Var &var, Op op);
+
+  template <class... Ts, class Var, class Op>
+  friend void transform_in_place(Var &var, Op op);
+
+  template <class... Ts, class Var, class Var1, class Op>
+  friend void detail::transform_in_place(std::tuple<Ts...> &&, Var &&var,
+                                         const Var1 &other, Op op);
+
+  template <class... Ts, class Var1, class Var2, class Op>
+  friend Variable detail::transform(std::tuple<Ts...> &&, const Var1 &var1,
+                                    const Var2 &var2, Op op);
+
+  template <class... Ts, class Op, class Var, class... Vars>
+  friend void apply_in_place(Op op, Var &&var, const Vars &... vars);
+
+private:
   const auto &variant() const noexcept { return m_object; }
 
 private:

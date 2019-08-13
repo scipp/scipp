@@ -40,11 +40,10 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.imgmath',
+    'sphinx.ext.mathjax',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
-    'nbsphinx',
-    'sphinx.ext.mathjax'
+    'nbsphinx'
 ]
 
 intersphinx_mapping = {

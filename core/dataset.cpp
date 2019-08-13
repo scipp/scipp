@@ -18,7 +18,7 @@ std::pair<const Variable *, Variable *> makeProxyItem(T *variable) {
 }
 
 template <class Key, class T1> auto makeProxyItems(T1 &coords) {
-  std::map<Key, std::pair<const Variable *, Variable *>> items;
+  std::unordered_map<Key, std::pair<const Variable *, Variable *>> items;
   for (auto &item : coords)
     items.emplace(item.first, makeProxyItem(&item.second));
   return items;
@@ -27,7 +27,7 @@ template <class Key, class T1> auto makeProxyItems(T1 &coords) {
 template <class Key, class T1, class T2 = void>
 auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   const Dim sparseDim = dims.sparseDim();
-  std::map<Key, std::pair<const Variable *, Variable *>> items;
+  std::unordered_map<Key, std::pair<const Variable *, Variable *>> items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
     // provided parent dimensions. Note the use of std::any_of (not
@@ -67,16 +67,12 @@ Dataset::Dataset(const DatasetConstProxy &proxy) {
     setLabels(std::string(name), labels);
   for (const auto & [ name, attr ] : proxy.attrs())
     setAttr(std::string(name), attr);
-  for (const auto & [ name, item ] : proxy) {
-    for (const auto &coord : item.coords())
-      if (coord.second.dims().sparse())
-        setSparseCoord(std::string(name), coord.second);
-    for (const auto & [ label_name, labels ] : item.labels())
-      if (labels.dims().sparse())
-        setSparseLabels(std::string(name), std::string(label_name), labels);
-    setData(std::string(name), item.data());
-  }
+  for (const auto & [ name, item ] : proxy)
+    setData(std::string(name), item);
 }
+
+Dataset::operator DatasetConstProxy() const { return DatasetConstProxy(*this); }
+Dataset::operator DatasetProxy() { return DatasetProxy(*this); }
 
 /// Return a const proxy to all coordinates of the dataset.
 ///
@@ -114,26 +110,26 @@ AttrsProxy Dataset::attrs() noexcept {
   return AttrsProxy(makeProxyItems<std::string_view>(m_attrs));
 }
 
-bool Dataset::contains(const std::string_view name) const noexcept {
+bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.count(name) == 1;
 }
 
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy Dataset::operator[](const std::string_view name) const {
+DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
                             std::string(name) + ".");
-  return DataConstProxy(*this, it->second);
+  return DataConstProxy(*this, *it);
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy Dataset::operator[](const std::string_view name) {
+DataProxy Dataset::operator[](const std::string &name) {
   const auto it = m_data.find(name);
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
                             std::string(name) + ".");
-  return DataProxy(*this, it->second);
+  return DataProxy(*this, *it);
 }
 
 namespace extents {
@@ -158,7 +154,7 @@ bool oneLarger(const scipp::index extent, const scipp::index reference) {
 bool oneSmaller(const scipp::index extent, const scipp::index reference) {
   return extent == -reference - 1 - 1;
 }
-void setExtent(std::map<Dim, scipp::index> &dims, const Dim dim,
+void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
                const scipp::index extent, const bool isCoord) {
   const auto it = dims.find(dim);
   // Internally use negative extent -1 to indicate unknown edge state. The `-1`
@@ -237,53 +233,42 @@ void Dataset::setData(const std::string &name, Variable data) {
   m_data[name].data = std::move(data);
 }
 
-// This only checks the coordinates, not labels, not attributes
-bool checkCorrespondingDenseCoords(const Dataset &dataset,
-                                   const DataConstProxy &other) {
-  if (other.dims().sparse())
-    return true;
-  const auto dsCoords{dataset.coords()};
-  const auto otCoords{other.coords()};
-  const auto &dsItems = dsCoords.items();
-  for (const auto & [ d, v ] : otCoords) {
-    if (auto iter = dsItems.find(d); iter == dsItems.end()) {
-      return false;
-    } else {
-      if (*iter->second.first != v) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-/// Set (insert or replace) data (values, optional variances, sparse
-/// coordinates) with given name. If the Dataset is empty - coordinates and data
-/// are copied.
+/// Set (insert or replace) data item with given name.
 ///
-/// Throws if the provided values bring the dataset into an inconsistent state
-/// (mismatching dtype, unit, or dimensions).
+/// Coordinates, labels, and attributes of the data array are added to the
+/// dataset. Throws if there are existing but mismatching coords, labels, or
+/// attributes. Throws if the provided data brings the dataset into an
+/// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataConstProxy &data) {
-  if (empty()) {
-    if (!data.dims().sparse()) {
-      for (const auto & [ d, v ] : data.coords()) {
-        setCoord(d, Variable(v));
-      }
+  for (const auto & [ dim, coord ] : data.coords()) {
+    if (coord.dims().sparse()) {
+      setSparseCoord(name, coord);
+    } else {
+      if (const auto it = m_coords.find(dim); it != m_coords.end())
+        expect::variablesMatch(coord, it->second);
+      else
+        setCoord(dim, coord);
     }
-  } else {
-    if (!checkCorrespondingDenseCoords(*this, data))
-      throw std::logic_error(
-          "The corresponding dense coordinates should match.");
+  }
+  for (const auto & [ nm, labs ] : data.labels()) {
+    if (labs.dims().sparse()) {
+      setSparseLabels(name, std::string(nm), labs);
+    } else {
+      if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
+        expect::variablesMatch(labs, it->second);
+      else
+        setLabels(std::string(nm), labs);
+    }
+  }
+  for (const auto & [ nm, attr ] : data.attrs()) {
+    if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
+      expect::variablesMatch(attr, it->second);
+    else
+      setAttr(std::string(nm), attr);
   }
 
-  if (data.hasData()) {
-    setData(name, Variable(data.data()));
-  }
-
-  auto dim = data.dims().sparseDim();
-  if (dim != Dim::Invalid) {
-    setSparseCoord(name, data.coords()[dim]);
-  }
+  if (data.hasData())
+    setData(name, data.data());
 }
 
 /// Set (insert or replace) the sparse coordinate with given name.
@@ -436,22 +421,26 @@ void Dataset::rename(const Dim from, const Dim to) {
   }
 }
 
+/// Return the name of the proxy.
+///
+/// The name of the proxy is equal to the name of the item in a Dataset, or the
+/// name of a DataArray. Note that comparison operations igore the name.
+const std::string &DataConstProxy::name() const noexcept {
+  return m_data->first;
+}
+
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
   if (hasData())
     return data().dims();
-  return detail::makeSlice(*m_data->coord, slices()).dims();
+  return detail::makeSlice(*m_data->second.coord, slices()).dims();
 }
 
 /// Return the unit of the data values.
 ///
 /// Throws if there are no data values.
-units::Unit DataConstProxy::unit() const {
-  if (hasData())
-    return data().unit();
-  throw std::runtime_error("Data without values, unit is undefined.");
-}
+units::Unit DataConstProxy::unit() const { return data().unit(); }
 
 /// Set the unit of the data values.
 ///
@@ -467,10 +456,11 @@ void DataProxy::setUnit(const units::Unit unit) const {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsConstProxy DataConstProxy::coords() const noexcept {
-  return CoordsConstProxy(
-      makeProxyItems<Dim>(dims(), m_dataset->m_coords,
-                          m_data->coord ? &*m_data->coord : nullptr),
-      slices());
+  return CoordsConstProxy(makeProxyItems<Dim>(dims(), m_dataset->m_coords,
+                                              m_data->second.coord
+                                                  ? &*m_data->second.coord
+                                                  : nullptr),
+                          slices());
 }
 
 /// Return a const proxy to all labels of the data proxy.
@@ -478,9 +468,10 @@ CoordsConstProxy DataConstProxy::coords() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsConstProxy DataConstProxy::labels() const noexcept {
-  return LabelsConstProxy(makeProxyItems<std::string_view>(
-                              dims(), m_dataset->m_labels, &m_data->labels),
-                          slices());
+  return LabelsConstProxy(
+      makeProxyItems<std::string_view>(dims(), m_dataset->m_labels,
+                                       &m_data->second.labels),
+      slices());
 }
 
 /// Return a const proxy to all attributes of the data proxy.
@@ -495,8 +486,8 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsProxy DataProxy::coords() const noexcept {
   return CoordsProxy(makeProxyItems<Dim>(dims(), m_mutableDataset->m_coords,
-                                         m_mutableData->coord
-                                             ? &*m_mutableData->coord
+                                         m_mutableData->second.coord
+                                             ? &*m_mutableData->second.coord
                                              : nullptr),
                      slices());
 }
@@ -508,7 +499,7 @@ CoordsProxy DataProxy::coords() const noexcept {
 LabelsProxy DataProxy::labels() const noexcept {
   return LabelsProxy(
       makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_labels,
-                                       &m_mutableData->labels),
+                                       &m_mutableData->second.labels),
       slices());
 }
 
@@ -542,41 +533,35 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
 
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasData())
-    data() += other.data();
+  data() += other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator-=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasData())
-    data() -= other.data();
+  data() -= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasData())
-    data() *= other.data();
+  data() *= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator/=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
-  if (hasData())
-    data() /= other.data();
+  data() /= other.data();
   return *this;
 }
 
 DataProxy DataProxy::operator*=(const Variable &other) const {
-  if (hasData())
-    data() *= other;
+  data() *= other;
   return *this;
 }
 
 DataProxy DataProxy::operator/=(const Variable &other) const {
-  if (hasData())
-    data() /= other;
+  data() /= other;
   return *this;
 }
 
@@ -620,45 +605,47 @@ AttrsProxy DatasetProxy::attrs() const noexcept {
                     slices());
 }
 
-void DatasetConstProxy::expectValidKey(const std::string_view name) const {
+void DatasetConstProxy::expectValidKey(const std::string &name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
     throw std::out_of_range("Invalid key `" + std::string(name) +
                             "` in Dataset access.");
 }
 
-bool DatasetConstProxy::contains(const std::string_view name) const noexcept {
+bool DatasetConstProxy::contains(const std::string &name) const noexcept {
   return std::find(m_indices.begin(), m_indices.end(), name) != m_indices.end();
 }
 
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy DatasetConstProxy::
-operator[](const std::string_view name) const {
+DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
   expectValidKey(name);
-  return {*m_dataset, (*m_dataset).m_data.find(name)->second, slices()};
+  return {*m_dataset, *(*m_dataset).m_data.find(name), slices()};
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy DatasetProxy::operator[](const std::string_view name) const {
+DataProxy DatasetProxy::operator[](const std::string &name) const {
   expectValidKey(name);
-  return {*m_mutableDataset, (*m_mutableDataset).m_data.find(name)->second,
-          slices()};
+  return {*m_mutableDataset, *(*m_mutableDataset).m_data.find(name), slices()};
 }
 
 /// Return true if the dataset proxies have identical content.
-bool DataConstProxy::operator==(const DataConstProxy &other) const {
-  if (hasData() != other.hasData())
+bool operator==(const DataConstProxy &a, const DataConstProxy &b) {
+  if (a.hasData() != b.hasData())
     return false;
-  if (hasVariances() != other.hasVariances())
+  if (a.hasVariances() != b.hasVariances())
     return false;
-  if (coords() != other.coords())
+  if (a.coords() != b.coords())
     return false;
-  if (labels() != other.labels())
+  if (a.labels() != b.labels())
     return false;
-  if (attrs() != other.attrs())
+  if (a.attrs() != b.attrs())
     return false;
-  if (hasData() && data() != other.data())
+  if (a.hasData() && a.data() != b.data())
     return false;
   return true;
+}
+
+bool operator!=(const DataConstProxy &a, const DataConstProxy &b) {
+  return !operator==(a, b);
 }
 
 template <class A, class B> bool dataset_equals(const A &a, const B &b) {
@@ -783,82 +770,44 @@ template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // For `b` referencing data in `a` we delay operation. The alternative would
   // be to make a deep copy of `other` before starting the iteration over items.
-  std::optional<std::string_view> delayed;
+  std::optional<DataProxy> delayed;
   // Note the inefficiency here: We are comparing some or all of the coords and
   // labels for each item. This could be improved by implementing the operations
   // for detail::DatasetData instead of DataProxy.
   for (const auto & [ name, item ] : a) {
+    static_cast<void>(name);
     if (&item.underlying() == &b.underlying())
-      delayed = name;
+      delayed = item;
     else
       op(item, b);
   }
   if (delayed)
-    op(a[*delayed], b);
+    op(*delayed, b);
   return std::forward<A>(a);
-}
-
-template <class T> void copy_metadata(Dataset &dest, const T &src) {
-  /* Dense coordinates */
-  for (const auto & [ name, value ] : src.coords()) {
-    dest.setCoord(name, value);
-  }
-
-  /* Dense labels */
-  for (const auto & [ name, value ] : src.labels()) {
-    dest.setLabels(std::string(name), value);
-  }
-
-  /* Attributes */
-  for (const auto & [ name, value ] : src.attrs()) {
-    dest.setAttr(std::string(name), value);
-  }
-}
-
-void copy_metadata(Dataset &dest, const std::string &name,
-                   const DataConstProxy &src) {
-  /* Sparse coordinates */
-  for (const auto &coord : src.coords()) {
-    if (coord.second.dims().sparse()) {
-      dest.setSparseCoord(name, coord.second);
-    }
-  }
-
-  /* Sparse labels */
-  for (const auto & [ label_name, labels ] : src.labels()) {
-    if (labels.dims().sparse()) {
-      dest.setSparseLabels(name, std::string(label_name), labels);
-    }
-  }
 }
 
 template <class Op, class A, class B>
 auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
-  expect::coordsAndLabelsMatch(a, b);
-
   Dataset res;
-  copy_metadata(res, a);
-
-  for (const auto & [ name, item ] : b) {
-    if (a.contains(name)) {
-      res.setData(std::string(name), op(a[name].data(), item.data()));
-      copy_metadata(res, std::string(name), a[name]);
-    }
-  }
-
+  for (const auto & [ name, item ] : b)
+    if (const auto it = a.find(name); it != a.end())
+      res.setData(std::string(name), op(it->second, item));
   return res;
 }
 
 template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a, const DataConstProxy &b) {
   Dataset res;
-  copy_metadata(res, a);
+  for (const auto & [ name, item ] : a)
+    res.setData(std::string(name), op(item, b));
+  return res;
+}
 
-  for (const auto & [ name, item ] : a) {
-    res.setData(std::string(name), op(item.data(), b.data()));
-    copy_metadata(res, std::string(name), a[name]);
-  }
-
+template <class Op, class B>
+auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
+  Dataset res;
+  for (const auto & [ name, item ] : b)
+    res.setData(std::string(name), op(a, item));
   return res;
 }
 
@@ -974,6 +923,10 @@ std::ostream &operator<<(std::ostream &os, const DataProxy &data) {
   return os << DataConstProxy(data);
 }
 
+std::ostream &operator<<(std::ostream &os, const DataArray &data) {
+  return os << DataConstProxy(data);
+}
+
 std::ostream &operator<<(std::ostream &os, const DatasetConstProxy &dataset) {
   return os << to_string(dataset);
 }
@@ -1026,6 +979,14 @@ Dataset operator+(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
+Dataset operator+(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(plus, lhs, rhs);
+}
+
+Dataset operator+(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
+  return apply_with_broadcast(plus, lhs, rhs);
+}
+
 Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
@@ -1047,6 +1008,14 @@ Dataset operator-(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
 }
 
 Dataset operator-(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
+  return apply_with_broadcast(minus, lhs, rhs);
+}
+
+Dataset operator-(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(minus, lhs, rhs);
+}
+
+Dataset operator-(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
@@ -1074,6 +1043,14 @@ Dataset operator*(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
+Dataset operator*(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(times, lhs, rhs);
+}
+
+Dataset operator*(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
+  return apply_with_broadcast(times, lhs, rhs);
+}
+
 Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
@@ -1098,26 +1075,37 @@ Dataset operator/(const DatasetConstProxy &lhs, const DataConstProxy &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
+Dataset operator/(const DataConstProxy &lhs, const Dataset &rhs) {
+  return apply_with_broadcast(divide, lhs, rhs);
+}
+
+Dataset operator/(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
+  return apply_with_broadcast(divide, lhs, rhs);
+}
+
 // For now this implementation is only for the simplest case of 2 dims (inner
 // stands for sparse)
 Variable histogram(const DataConstProxy &sparse,
                    const VariableConstProxy &binEdges) {
-  if (sparse.dims().ndims() != 1)
+  if (sparse.hasData())
+    throw except::SparseDataError(
+        "`histogram` is not implemented for sparse data with values yet.");
+  if (sparse.dims().ndims() > 1)
     throw std::logic_error("Only the simple case histograms may be constructed "
                            "for now: 2 dims including sparse.");
-  if (binEdges.dtype() != dtype<double> ||
-      sparse.coords()[binEdges.dims().inner()].dtype() != DType::Double)
-    throw std::logic_error("Histogram is only available for double type.");
   auto dim = binEdges.dims().inner();
+  if (binEdges.dtype() != dtype<double> ||
+      sparse.coords()[dim].dtype() != DType::Double)
+    throw std::logic_error("Histogram is only available for double type.");
   auto coord = sparse.coords()[dim];
   auto edgesSpan = binEdges.values<double>();
   if (!std::is_sorted(edgesSpan.begin(), edgesSpan.end()))
     throw std::logic_error("Bin edges should be sorted to make the histogram.");
   auto resDims{sparse.dims()};
   auto len = binEdges.dims()[dim] - 1;
-  resDims.resize(1, len);
+  resDims.resize(resDims.index(dim), len);
   Variable result = makeVariableWithVariances<double>(resDims, units::counts);
-  for (scipp::index i = 0; i < sparse.dims().size(0); ++i) {
+  for (scipp::index i = 0; i < sparse.dims().volume(); ++i) {
     const auto &coord_i = coord.sparseValues<double>()[i];
     auto curRes = result.values<double>().begin() + i * len;
     for (const auto &c : coord_i) {
@@ -1153,4 +1141,5 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   auto bins = dataset.coords()[dim];
   return histogram(dataset, bins);
 }
+
 } // namespace scipp::core

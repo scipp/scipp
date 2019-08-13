@@ -22,17 +22,34 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
   py::class_<ConstT>(m, (name + "ConstProxy").c_str());
   py::class_<T, ConstT> proxy(m, (name + "Proxy").c_str());
   proxy.def("__len__", &T::size)
-      .def("__getitem__", &T::operator[])
+      .def("__getitem__", &T::operator[], py::return_value_policy::move,
+           py::keep_alive<0, 1>())
       .def("__iter__",
-           [](T &self) { return py::make_iterator(self.begin(), self.end()); });
+           [](T &self) {
+             return py::make_iterator(self.begin(), self.end(),
+                                      py::return_value_policy::move);
+           },
+           py::keep_alive<0, 1>())
+      .def("__contains__", &T::contains);
   bind_comparison<T>(proxy);
 }
 
 template <class T, class... Ignored>
 void bind_coord_properties(py::class_<T, Ignored...> &c) {
-  c.def_property_readonly("coords", [](T &self) { return self.coords(); });
-  c.def_property_readonly("labels", [](T &self) { return self.labels(); });
-  c.def_property_readonly("attrs", [](T &self) { return self.attrs(); });
+  // For some reason the return value policy and/or keep-alive policy do not
+  // work unless we wrap things in py::cpp_function.
+  c.def_property_readonly(
+      "coords",
+      py::cpp_function([](T &self) { return self.coords(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()));
+  c.def_property_readonly(
+      "labels",
+      py::cpp_function([](T &self) { return self.labels(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()));
+  c.def_property_readonly("attrs",
+                          py::cpp_function([](T &self) { return self.attrs(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()));
 }
 
 template <class T, class... Ignored>
@@ -40,7 +57,11 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__len__", &T::size);
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("__iter__",
-        [](T &self) { return py::make_iterator(self.begin(), self.end()); });
+        [](T &self) {
+          return py::make_iterator(self.begin(), self.end(),
+                                   py::return_value_policy::move);
+        },
+        py::return_value_policy::move, py::keep_alive<0, 1>());
   c.def("__getitem__",
         [](T &self, const std::string &name) { return self[name]; },
         py::keep_alive<0, 1>());
@@ -55,6 +76,11 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         [](const T &self, const DatasetProxy &other) { return self == other; });
 }
 
+template <class T, class... Ignored>
+void bind_data_array_properties(py::class_<T, Ignored...> &c) {
+  c.def_property_readonly("name", &T::name);
+}
+
 void init_dataset(py::module &m) {
   py::class_<Slice>(m, "Slice");
 
@@ -62,12 +88,20 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
+  py::class_<DataArray> dataArray(m, "DataArray");
   py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
-  dataProxy.def_property_readonly("data", &DataProxy::data,
-                                  py::keep_alive<0, 1>());
+  dataProxy.def_property_readonly(
+      "data", py::cpp_function(
+                  [](const DataProxy &self) {
+                    return self.hasData() ? py::cast(self.data()) : py::none();
+                  },
+                  py::return_value_policy::move, py::keep_alive<0, 1>()));
   dataProxy.def("__repr__",
                 [](const DataProxy &self) { return to_string(self); });
+
+  bind_data_array_properties(dataArray);
+  bind_data_array_properties(dataProxy);
 
   py::class_<DatasetConstProxy>(m, "DatasetConstProxy");
   py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");
@@ -95,11 +129,8 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
       .def("__setitem__",
-           [](Dataset &self, const std::string &name, const DataProxy &data) {
-             if (self.contains(name))
-               self[name].assign(data);
-             else
-               throw std::runtime_error("Not implemented yet");
+           [](Dataset &self, const std::string &name, const DataArray &data) {
+             self.setData(name, data);
            })
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
@@ -137,6 +168,9 @@ void init_dataset(py::module &m) {
   bind_binary<Dataset>(datasetProxy);
   bind_binary<DatasetProxy>(datasetProxy);
   bind_binary<DataProxy>(datasetProxy);
+  bind_binary<Dataset>(dataProxy);
+  bind_binary<DatasetProxy>(dataProxy);
+  bind_binary<DataProxy>(dataProxy);
 
   bind_data_properties(dataProxy);
 
@@ -167,7 +201,6 @@ void init_dataset(py::module &m) {
         },
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Dataset with histograms for sparse dims");
-  // Implicit conversion DatasetProxy -> Dataset. Reduces need for
-  // excessive operator overload definitions
-  py::implicitly_convertible<DatasetProxy, Dataset>();
+
+  py::implicitly_convertible<DataArray, DataConstProxy>();
 }

@@ -16,15 +16,16 @@ namespace scipp::neutron {
 
 const auto tof_to_s =
     boost::units::quantity<boost::units::si::time>(1.0 * units::us) / units::us;
-//const auto J_to_meV =
+// const auto J_to_meV =
 //    units::meV /
-//    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV); // unused
+//    boost::units::quantity<boost::units::si::energy>(1.0 * units::meV); //
+//    unused
 const auto m_to_angstrom =
     boost::units::quantity<boost::units::si::length>(1.0 * units::angstrom) /
     units::angstrom;
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
-//const auto tofToEnergyPhysicalConstants =
+// const auto tofToEnergyPhysicalConstants =
 //    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
 //    (tof_to_s * tof_to_s); // unused
 const auto tofToDSpacingPhysicalConstants =

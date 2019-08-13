@@ -2,6 +2,7 @@
 [![Build Status](https://www.travis-ci.org/scipp/scipp.svg?branch=master)](https://www.travis-ci.org/scipp/scipp)
 [![Documentation Status](https://readthedocs.org/projects/scipp/badge/?version=latest)](https://scipp.readthedocs.io/en/latest/?badge=latest)
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp/label/dev)
+[![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/scipp/scipp-jupyter-demo)](https://hub.docker.com/r/scipp/scipp-jupyter-demo)
 
 # Scipp
 
@@ -13,10 +14,10 @@ Scipp mainly provides the `Dataset` container, which is inspired by `xarray.Data
 
 ### Prerequisites (OSX only)
 
-### XCode
+#### XCode
 XCode 10.2 or greater provides a `clang++` implementation with sufficient language support for `scipp`.
 
-### LLVM Clang
+#### LLVM Clang
 You will need to be using [LLVM Clang](https://releases.llvm.org/download.html) version 7 or greater. 
 
 ### Getting the code, building, and installing
@@ -80,3 +81,9 @@ jupyter nbextensions_configurator enable --user
 ```
 
 Use `pip3`, depending on your environment.
+
+## Additional build options
+
+1. `-DDYNAMIC_LIB` forces the shared libraries building, that also decreases link time.
+
+For development purposes `-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF -DDYNAMIC_LIB=ON` is recommended.
