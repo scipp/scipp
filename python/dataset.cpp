@@ -86,6 +86,7 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
+  py::class_<DataArray>(m, "DataArray");
   py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly(
@@ -166,6 +167,9 @@ void init_dataset(py::module &m) {
              auto[dim, i] = index;
              for (const auto[name, item] : self.slice(Slice(dim, i)))
                item.assign(other[name]);
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name, const DataArray &data) {
+             self.setData(name, data);
            })
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
@@ -217,6 +221,7 @@ void init_dataset(py::module &m) {
   bind_binary<DataProxy>(datasetProxy);
   bind_binary<Dataset>(dataProxy);
   bind_binary<DatasetProxy>(dataProxy);
+  bind_binary<DataProxy>(dataProxy);
 
   bind_data_properties(dataProxy);
 
@@ -247,7 +252,6 @@ void init_dataset(py::module &m) {
         },
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Dataset with histograms for sparse dims");
-  // Implicit conversion DatasetProxy -> Dataset. Reduces need for
-  // excessive operator overload definitions
-  py::implicitly_convertible<DatasetProxy, Dataset>();
+
+  py::implicitly_convertible<DataArray, DataConstProxy>();
 }

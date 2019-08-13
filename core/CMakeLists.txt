@@ -22,6 +22,7 @@ set(INC_FILES
 
 set(SRC_FILES
     counts.cpp
+    data_array.cpp
     dataset.cpp
     dimensions.cpp
     #events.cpp

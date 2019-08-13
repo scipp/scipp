@@ -18,6 +18,7 @@
 
 namespace scipp::core {
 
+class DataArray;
 class Dataset;
 class DatasetConstProxy;
 class DatasetProxy;
@@ -94,7 +95,7 @@ public:
   /// Return untyped const proxy for data (values and optional variances).
   VariableConstProxy data() const {
     if (!hasData())
-      throw std::logic_error("No data available for this object.");
+      throw except::SparseDataError("No data in item.");
     return detail::makeSlice(*m_data->data, slices());
   }
   /// Return typed const proxy for data values.
@@ -121,11 +122,6 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  bool operator==(const DataConstProxy &other) const;
-  bool operator!=(const DataConstProxy &other) const {
-    return !operator==(other);
-  }
-
   const std::vector<std::pair<Slice, scipp::index>> &slices() const noexcept {
     return m_slices;
   }
@@ -141,6 +137,11 @@ private:
   std::string_view m_name;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
+
+SCIPP_CORE_EXPORT bool operator==(const DataConstProxy &a,
+                                  const DataConstProxy &b);
+SCIPP_CORE_EXPORT bool operator!=(const DataConstProxy &a,
+                                  const DataConstProxy &b);
 
 /// Proxy for a data item and related coordinates of Dataset.
 class SCIPP_CORE_EXPORT DataProxy : public DataConstProxy {
@@ -160,7 +161,7 @@ public:
   /// Return untyped proxy for data (values and optional variances).
   VariableProxy data() const {
     if (!hasData())
-      throw std::logic_error("No data available for this object.");
+      throw except::SparseDataError("No data in item.");
     return detail::makeSlice(*m_mutableData->data, slices());
   }
   /// Return typed proxy for data values.
@@ -258,6 +259,10 @@ public:
   auto find() const && = delete;
   auto find() && = delete;
   auto find(const std::string_view name) & noexcept {
+    return boost::make_transform_iterator(m_data.find(name),
+                                          detail::make_item{this});
+  }
+  auto find(const std::string_view name) const &noexcept {
     return boost::make_transform_iterator(m_data.find(name),
                                           detail::make_item{this});
   }
@@ -520,6 +525,30 @@ public:
   }
 };
 
+namespace detail {
+constexpr Dim key(const Dim dim) { return dim; }
+inline std::string key(const std::string_view &name) {
+  return std::string{name};
+}
+} // namespace detail
+
+template <class Id, class Key>
+auto union_(const ConstProxy<Id, Key> &a, const ConstProxy<Id, Key> &b) {
+  std::map<std::conditional_t<std::is_same_v<Key, Dim>, Dim, std::string>,
+           Variable>
+      out;
+
+  for (const auto & [ key, item ] : a)
+    out[detail::key(key)] = item;
+  for (const auto & [ key, item ] : b) {
+    if (const auto it = a.find(key); it != a.end())
+      expect::variablesMatch(item, it->second);
+    else
+      out[detail::key(key)] = item;
+  }
+  return out;
+}
+
 /// Const proxy for Dataset, implementing slicing and item selection.
 class SCIPP_CORE_EXPORT DatasetConstProxy {
   explicit DatasetConstProxy() : m_dataset(nullptr) {}
@@ -681,10 +710,62 @@ private:
   Dataset *m_mutableDataset;
 };
 
+/// Data array, a variable with coordinates, labels, and attributes.
+class SCIPP_CORE_EXPORT DataArray {
+public:
+  explicit DataArray(const DataConstProxy &proxy);
+  DataArray(Variable data, std::map<Dim, Variable> coords,
+            std::map<std::string, Variable> labels);
+
+  operator DataConstProxy() const;
+
+  CoordsConstProxy coords() const noexcept { return get().coords(); }
+  CoordsProxy coords() noexcept { return get().coords(); }
+
+  LabelsConstProxy labels() const noexcept { return get().labels(); }
+  LabelsProxy labels() noexcept { return get().labels(); }
+
+  AttrsConstProxy attrs() const noexcept { return get().attrs(); }
+  AttrsProxy attrs() noexcept { return get().attrs(); }
+
+  Dimensions dims() const noexcept { return get().dims(); }
+  units::Unit unit() const { return get().unit(); }
+
+  void setUnit(const units::Unit unit) { get().setUnit(unit); }
+
+  /// Return true if the data array contains data values.
+  bool hasData() const noexcept { return get().hasData(); }
+  /// Return true if the data array contains data variances.
+  bool hasVariances() const noexcept { return get().hasVariances(); }
+
+  /// Return untyped const proxy for data (values and optional variances).
+  VariableConstProxy data() const { return get().data(); }
+  /// Return untyped proxy for data (values and optional variances).
+  VariableProxy data() { return get().data(); }
+
+  /// Return typed const proxy for data values.
+  template <class T> auto values() const { return get().values<T>(); }
+  /// Return typed proxy for data values.
+  template <class T> auto values() { return get().values<T>(); }
+
+  /// Return typed const proxy for data variances.
+  template <class T> auto variances() const { return get().variances<T>(); }
+  /// Return typed proxy for data variances.
+  template <class T> auto variances() { return get().variances<T>(); }
+
+private:
+  DataConstProxy get() const { return m_holder[""]; }
+  DataProxy get() { return m_holder[""]; }
+
+  Dataset m_holder;
+};
+
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DataConstProxy &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DataProxy &data);
+SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
+                                           const DataArray &data);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DatasetConstProxy &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
@@ -698,6 +779,15 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Variable &variable);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
+
+SCIPP_CORE_EXPORT DataArray operator+(const DataConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator-(const DataConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator*(const DataConstProxy &a,
+                                      const DataConstProxy &b);
+SCIPP_CORE_EXPORT DataArray operator/(const DataConstProxy &a,
+                                      const DataConstProxy &b);
 
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
 SCIPP_CORE_EXPORT Dataset operator+(const Dataset &lhs,
