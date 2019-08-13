@@ -288,41 +288,6 @@ TEST(DatasetTest, set_dense_data_with_sparse_coord) {
                except::DimensionError);
 }
 
-TEST(DatasetTest, simple_sparse_slice) {
-  Dataset dataset;
-  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
-  var.sparseValues<double>()[0] = {4, 5, 6};
-  var.sparseValues<double>()[1] = {7, 8, 9};
-  dataset.setData("data", var);
-  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
-
-  auto sliced = dataset.slice({Dim::Y, 1, 2});
-  auto data = sliced["data"].data().sparseValues<double>();
-  EXPECT_EQ(data.size(), 1);
-  scipp::core::sparse_container<double> expected = {7, 8, 9};
-  EXPECT_EQ(data[0], expected);
-}
-
-TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
-  Dataset dataset;
-  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
-  var.sparseValues<double>()[0] = {4, 5, 6};
-  var.sparseValues<double>()[1] = {7, 8, 9};
-  dataset.setData("data", var);
-  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
-  auto sparseCoords = makeVariable<double>({Dim::X, Dimensions::Sparse});
-  sparseCoords.sparseValues<double>()[0] = {1, 2, 3};
-  dataset.setSparseCoord("data", sparseCoords);
-
-  auto sliced = dataset.slice({Dim::Y, 1, 2});
-  auto data = sliced["data"].data().sparseValues<double>();
-  EXPECT_EQ(data.size(), 1);
-  scipp::core::sparse_container<double> expected = {7, 8, 9};
-  EXPECT_EQ(data[0], expected);
-  // Cannot access sparse coords on slice DataProxy.
-  // TODO sliced["data"].coords()["Dim::Z"]; // currently not working
-}
-
 TEST(DatasetTest, construct_from_proxy) {
   DatasetFactory3D factory;
   const auto dataset = factory.make();

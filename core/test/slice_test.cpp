@@ -13,6 +13,36 @@
 using namespace scipp;
 using namespace scipp::core;
 
+TEST(DatasetTest, simple_sparse_slice) {
+  Dataset dataset;
+  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  var.sparseValues<double>()[0] = {4, 5, 6};
+  var.sparseValues<double>()[1] = {7, 8, 9};
+  dataset.setData("data", var);
+  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
+
+  auto sliced = dataset.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
+}
+
+TEST(DatasetTest, simple_sparse_slice_and_sparse_coords) {
+  Dataset dataset;
+  auto var = makeVariable<double>({{Dim::Y, Dim::X}, {2, Dimensions::Sparse}});
+  var.sparseValues<double>()[0] = {4, 5, 6};
+  var.sparseValues<double>()[1] = {7, 8, 9};
+  dataset.setData("data", var);
+  dataset.setCoord(Dim::Y, makeVariable<double>({Dim::Y, 2}, {1, 2}));
+  auto sparseCoord =
+      makeVariable<double>({{Dim::Y, 2}, {Dim::X, Dimensions::Sparse}});
+  sparseCoord.sparseValues<double>()[0] = {1, 2, 3};
+  sparseCoord.sparseValues<double>()[1] = {4, 5, 6};
+  dataset.setSparseCoord("data", sparseCoord);
+
+  auto sliced = dataset.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(sliced["data"].data(), var.slice({Dim::Y, 1, 2}));
+  EXPECT_EQ(sliced["data"].coords()[Dim::X], sparseCoord.slice({Dim::Y, 1, 2}));
+}
+
 class Dataset3DTest : public ::testing::Test {
 protected:
   Dataset3DTest() : dataset(factory.make()) {}
