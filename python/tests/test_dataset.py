@@ -145,23 +145,23 @@ def test_contains():
 
 
 def test_dataproxy_name():
-    d = sp.Dataset()
-    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4)))
-    d["a"] = sp.Variable([Dim.X], values=np.arange(4))
-    d["someLongString"] = sp.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset()
+    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4)))
+    d["a"] = sc.Variable([Dim.X], values=np.arange(4))
+    d["someLongString"] = sc.Variable([Dim.X], values=np.arange(4))
     assert d["a"].name == "a"
     assert d["someLongString"].name == "someLongString"
 
 
 def test_shorthand_set_coord():
-    v = sp.Variable([Dim.X], values=np.arange(4))
+    v = sc.Variable([Dim.X], values=np.arange(4))
 
-    a = sp.Dataset()
+    a = sc.Dataset()
     a.set_coord(Dim.X, values=np.arange(4))
     a["a"] = v
 
-    b = sp.Dataset()
-    b.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(4)))
+    b = sc.Dataset()
+    b.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4)))
     b["a"] = v
 
     assert a == b
@@ -182,19 +182,19 @@ def test_slice():
 
 
 def test_chained_slicing():
-    d = sp.Dataset()
-    d.set_coord(Dim.X, sp.Variable([Dim.X], values=np.arange(11.0)))
-    d.set_coord(Dim.Y, sp.Variable([Dim.Y], values=np.arange(11.0)))
-    d.set_coord(Dim.Z, sp.Variable([Dim.Z], values=np.arange(11.0)))
-    d["a"] = sp.Variable([Dim.Z, Dim.Y, Dim.X],
+    d = sc.Dataset()
+    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(11.0)))
+    d.set_coord(Dim.Y, sc.Variable([Dim.Y], values=np.arange(11.0)))
+    d.set_coord(Dim.Z, sc.Variable([Dim.Z], values=np.arange(11.0)))
+    d["a"] = sc.Variable([Dim.Z, Dim.Y, Dim.X],
                          values=np.arange(1000.0).reshape(10, 10, 10))
-    d["b"] = sp.Variable([Dim.X, Dim.Z],
+    d["b"] = sc.Variable([Dim.X, Dim.Z],
                          values=np.arange(0.0, 10.0, 0.1).reshape(10, 10))
 
-    expected = sp.Dataset()
-    expected.set_coord(Dim.Y, sp.Variable([Dim.Y], values=np.arange(11.0)))
-    expected["a"] = sp.Variable([Dim.Y], values=np.arange(501.0, 600.0, 10.0))
-    expected["b"] = sp.Variable(1.5)
+    expected = sc.Dataset()
+    expected.set_coord(Dim.Y, sc.Variable([Dim.Y], values=np.arange(11.0)))
+    expected["a"] = sc.Variable([Dim.Y], values=np.arange(501.0, 600.0, 10.0))
+    expected["b"] = sc.Variable(1.5)
 
     assert d[Dim.X, 1][Dim.Z, 5] == expected
 

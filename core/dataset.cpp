@@ -433,7 +433,8 @@ const std::string_view DataConstProxy::name() const { return m_name; }
 /// Return the name of the data proxy under which it is labeled inside the
 /// parent Dataset as a std::string. This is used for the python bindings, as
 /// it proved difficult to use the std::string_view with pybind11.
-//const std::string DataConstProxy::name_as_string() const { return std::string(m_name); }
+// const std::string DataConstProxy::name_as_string() const { return
+// std::string(m_name); }
 
 /// Set the unit of the data values.
 ///
@@ -610,8 +611,7 @@ bool DatasetConstProxy::contains(const std::string_view name) const noexcept {
 DataConstProxy DatasetConstProxy::
 operator[](const std::string_view name) const {
   expectValidKey(name);
-  return {*m_dataset, (*m_dataset).m_data.find(name)->second, name,
-          slices()};
+  return {*m_dataset, (*m_dataset).m_data.find(name)->second, name, slices()};
 }
 
 /// Return a proxy to data and coordinates with given name.
