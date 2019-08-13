@@ -144,15 +144,6 @@ def test_contains():
     assert 'b' in d
 
 
-def test_dataproxy_name():
-    d = sc.Dataset()
-    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4)))
-    d["a"] = sc.Variable([Dim.X], values=np.arange(4))
-    d["someLongString"] = sc.Variable([Dim.X], values=np.arange(4))
-    assert d["a"].name == "a"
-    assert d["someLongString"].name == "someLongString"
-
-
 def test_shorthand_set_coord():
     v = sc.Variable([Dim.X], values=np.arange(4))
 

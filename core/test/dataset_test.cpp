@@ -97,19 +97,6 @@ TEST(DatasetTest, setData_with_and_without_variances) {
   ASSERT_EQ(d.size(), 2);
 }
 
-TEST(DatasetTest, check_DataProxy_name) {
-  Dataset d;
-  const auto a = makeVariable<double>({Dim::X, 3});
-  const auto b = makeVariable<double>({Dim::Y, 5});
-
-  d.setData("a", a);
-  ASSERT_EQ(std::string(d["a"].name()), "a");
-  d.setData("someRandomLongName", b);
-  ASSERT_EQ(std::string(d["someRandomLongName"].name()), "someRandomLongName");
-  auto da = d["a"];
-  ASSERT_EQ(std::string(da.name()), "a");
-}
-
 TEST(DatasetTest, setLabels_with_name_matching_data_name) {
   Dataset d;
   d.setData("a", makeVariable<double>({Dim::X, 3}));
