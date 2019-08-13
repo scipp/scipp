@@ -53,7 +53,7 @@ struct DatasetData {
   /// Dimension coord for the sparse dimension (there can be only 1).
   std::optional<Variable> coord;
   /// Potential labels for the sparse dimension.
-  std::map<std::string, Variable> labels;
+  std::unordered_map<std::string, Variable> labels;
 };
 
 template <class Var>
@@ -345,10 +345,10 @@ private:
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
 
-  std::map<Dim, scipp::index> m_dims;
-  std::map<Dim, Variable> m_coords;
-  std::map<std::string, Variable> m_labels;
-  std::map<std::string, Variable> m_attrs;
+  std::unordered_map<Dim, scipp::index> m_dims;
+  std::unordered_map<Dim, Variable> m_coords;
+  std::unordered_map<std::string, Variable> m_labels;
+  std::unordered_map<std::string, Variable> m_attrs;
   std::unordered_map<std::string, detail::DatasetData> m_data;
 };
 
@@ -366,8 +366,9 @@ private:
 public:
   using key_type = Key;
 
-  ConstProxy(std::map<Key, std::pair<const Variable *, Variable *>> &&items,
-             const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+  ConstProxy(
+      std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
+      const std::vector<std::pair<Slice, scipp::index>> &slices = {})
       : m_items(std::move(items)), m_slices(slices) {
     // TODO This is very similar to the code in makeProxyItems(), provided that
     // we can give a good definion of the `dims` argument (roughly the space
@@ -466,7 +467,7 @@ public:
   const auto &slices() const noexcept { return m_slices; }
 
 protected:
-  std::map<Key, std::pair<const Variable *, Variable *>> m_items;
+  std::unordered_map<Key, std::pair<const Variable *, Variable *>> m_items;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
 

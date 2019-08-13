@@ -18,7 +18,7 @@ std::pair<const Variable *, Variable *> makeProxyItem(T *variable) {
 }
 
 template <class Key, class T1> auto makeProxyItems(T1 &coords) {
-  std::map<Key, std::pair<const Variable *, Variable *>> items;
+  std::unordered_map<Key, std::pair<const Variable *, Variable *>> items;
   for (auto &item : coords)
     items.emplace(item.first, makeProxyItem(&item.second));
   return items;
@@ -27,7 +27,7 @@ template <class Key, class T1> auto makeProxyItems(T1 &coords) {
 template <class Key, class T1, class T2 = void>
 auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   const Dim sparseDim = dims.sparseDim();
-  std::map<Key, std::pair<const Variable *, Variable *>> items;
+  std::unordered_map<Key, std::pair<const Variable *, Variable *>> items;
   for (auto &item : coords) {
     // We preserve only items that are part of the space spanned by the
     // provided parent dimensions. Note the use of std::any_of (not
@@ -146,7 +146,7 @@ bool oneLarger(const scipp::index extent, const scipp::index reference) {
 bool oneSmaller(const scipp::index extent, const scipp::index reference) {
   return extent == -reference - 1 - 1;
 }
-void setExtent(std::map<Dim, scipp::index> &dims, const Dim dim,
+void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
                const scipp::index extent, const bool isCoord) {
   const auto it = dims.find(dim);
   // Internally use negative extent -1 to indicate unknown edge state. The `-1`

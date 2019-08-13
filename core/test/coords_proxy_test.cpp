@@ -128,14 +128,14 @@ TYPED_TEST(CoordsProxyTest, find_and_contains) {
   auto dataset = factory.make();
   const auto coords = TestFixture::access(dataset).coords();
 
-  EXPECT_EQ(coords.end(), coords.find(Dim::Q));
-  EXPECT_EQ(coords.begin(), coords.find(Dim::Time));
+  EXPECT_EQ(coords.find(Dim::Q), coords.end());
+  EXPECT_EQ(coords.find(Dim::Time)->first, Dim::Time);
+  EXPECT_EQ(coords.find(Dim::Time)->second, coords[Dim::Time]);
   EXPECT_FALSE(coords.contains(Dim::Q));
   EXPECT_TRUE(coords.contains(Dim::Time));
 
-  auto it = coords.begin();
-  ++it;
-  EXPECT_EQ(it, coords.find(Dim::X));
+  EXPECT_EQ(coords.find(Dim::X)->first, Dim::X);
+  EXPECT_EQ(coords.find(Dim::X)->second, coords[Dim::X]);
 }
 
 auto make_dataset_2d_coord_x_1d_coord_y() {
