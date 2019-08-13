@@ -107,12 +107,12 @@ AttrsProxy Dataset::attrs() noexcept {
   return AttrsProxy(makeProxyItems<std::string_view>(m_attrs));
 }
 
-bool Dataset::contains(const std::string_view name) const noexcept {
+bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.count(name) == 1;
 }
 
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy Dataset::operator[](const std::string_view name) const {
+DataConstProxy Dataset::operator[](const std::string &name) const {
   const auto it = m_data.find(name);
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
@@ -121,7 +121,7 @@ DataConstProxy Dataset::operator[](const std::string_view name) const {
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy Dataset::operator[](const std::string_view name) {
+DataProxy Dataset::operator[](const std::string &name) {
   const auto it = m_data.find(name);
   if (it == m_data.end())
     throw std::out_of_range("Could not find data with name " +
@@ -587,25 +587,24 @@ AttrsProxy DatasetProxy::attrs() const noexcept {
                     slices());
 }
 
-void DatasetConstProxy::expectValidKey(const std::string_view name) const {
+void DatasetConstProxy::expectValidKey(const std::string &name) const {
   if (std::find(m_indices.begin(), m_indices.end(), name) == m_indices.end())
     throw std::out_of_range("Invalid key `" + std::string(name) +
                             "` in Dataset access.");
 }
 
-bool DatasetConstProxy::contains(const std::string_view name) const noexcept {
+bool DatasetConstProxy::contains(const std::string &name) const noexcept {
   return std::find(m_indices.begin(), m_indices.end(), name) != m_indices.end();
 }
 
 /// Return a const proxy to data and coordinates with given name.
-DataConstProxy DatasetConstProxy::
-operator[](const std::string_view name) const {
+DataConstProxy DatasetConstProxy::operator[](const std::string &name) const {
   expectValidKey(name);
   return {*m_dataset, (*m_dataset).m_data.find(name)->second, slices()};
 }
 
 /// Return a proxy to data and coordinates with given name.
-DataProxy DatasetProxy::operator[](const std::string_view name) const {
+DataProxy DatasetProxy::operator[](const std::string &name) const {
   expectValidKey(name);
   return {*m_mutableDataset, (*m_mutableDataset).m_data.find(name)->second,
           slices()};
@@ -733,18 +732,19 @@ template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
   // For `b` referencing data in `a` we delay operation. The alternative would
   // be to make a deep copy of `other` before starting the iteration over items.
-  std::optional<std::string_view> delayed;
+  std::optional<DataProxy> delayed;
   // Note the inefficiency here: We are comparing some or all of the coords and
   // labels for each item. This could be improved by implementing the operations
   // for detail::DatasetData instead of DataProxy.
   for (const auto & [ name, item ] : a) {
+    static_cast<void>(name);
     if (&item.underlying() == &b.underlying())
-      delayed = name;
+      delayed = item;
     else
       op(item, b);
   }
   if (delayed)
-    op(a[*delayed], b);
+    op(*delayed, b);
   return std::forward<A>(a);
 }
 

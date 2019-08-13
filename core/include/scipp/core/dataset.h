@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include <boost/iterator/transform_iterator.hpp>
 
@@ -210,7 +211,8 @@ template <> struct is_const<const DatasetConstProxy> : std::true_type {};
 template <class D> struct make_item {
   D *dataset;
   using P = std::conditional_t<is_const<D>::value, DataConstProxy, DataProxy>;
-  template <class T> std::pair<std::string_view, P> operator()(T &item) const {
+  template <class T>
+  std::pair<const std::string &, P> operator()(T &item) const {
     if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
       return {item.first, P(*dataset, item.second)};
     else
@@ -227,7 +229,7 @@ class DatasetProxy;
 /// Collection of data arrays.
 class SCIPP_CORE_EXPORT Dataset {
 public:
-  using value_type = std::pair<std::string_view, DataConstProxy>;
+  using value_type = std::pair<const std::string &, DataConstProxy>;
 
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
@@ -250,21 +252,21 @@ public:
   AttrsConstProxy attrs() const noexcept;
   AttrsProxy attrs() noexcept;
 
-  bool contains(const std::string_view name) const noexcept;
+  bool contains(const std::string &name) const noexcept;
 
   auto find() const && = delete;
   auto find() && = delete;
-  auto find(const std::string_view name) & noexcept {
+  auto find(const std::string &name) & noexcept {
     return boost::make_transform_iterator(m_data.find(name),
                                           detail::make_item{this});
   }
-  auto find(const std::string_view name) const &noexcept {
+  auto find(const std::string &name) const &noexcept {
     return boost::make_transform_iterator(m_data.find(name),
                                           detail::make_item{this});
   }
 
-  DataConstProxy operator[](const std::string_view name) const;
-  DataProxy operator[](const std::string_view name);
+  DataConstProxy operator[](const std::string &name) const;
+  DataProxy operator[](const std::string &name);
 
   auto begin() const && = delete;
   auto begin() && = delete;
@@ -347,7 +349,7 @@ private:
   std::map<Dim, Variable> m_coords;
   std::map<std::string, Variable> m_labels;
   std::map<std::string, Variable> m_attrs;
-  std::map<std::string, detail::DatasetData, std::less<>> m_data;
+  std::unordered_map<std::string, detail::DatasetData> m_data;
 };
 
 /// Common functionality for other const-proxy classes.
@@ -568,12 +570,12 @@ public:
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
 
-  bool contains(const std::string_view name) const noexcept;
+  bool contains(const std::string &name) const noexcept;
 
-  DataConstProxy operator[](const std::string_view name) const;
+  DataConstProxy operator[](const std::string &name) const;
 
-  auto find(const std::string_view name) const && = delete;
-  auto find(const std::string_view name) const &noexcept {
+  auto find(const std::string &name) const && = delete;
+  auto find(const std::string &name) const &noexcept {
     return boost::make_transform_iterator(
         std::find(std::begin(m_indices), std::end(m_indices), name),
         detail::make_item{this});
@@ -637,7 +639,7 @@ private:
   const Dataset *m_dataset;
 
 protected:
-  void expectValidKey(const std::string_view name) const;
+  void expectValidKey(const std::string &name) const;
   std::vector<std::string> m_indices;
   std::vector<std::pair<Slice, scipp::index>> m_slices;
 };
@@ -656,10 +658,10 @@ public:
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
 
-  DataProxy operator[](const std::string_view name) const;
+  DataProxy operator[](const std::string &name) const;
 
-  auto find(const std::string_view name) const && = delete;
-  auto find(const std::string_view name) const &noexcept {
+  auto find(const std::string &name) const && = delete;
+  auto find(const std::string &name) const &noexcept {
     return boost::make_transform_iterator(
         std::find(std::begin(m_indices), std::end(m_indices), name),
         detail::make_item{this});
@@ -715,9 +717,7 @@ public:
 
   operator DataConstProxy() const;
 
-  const std::string_view &name() const noexcept {
-    return m_holder.begin()->first;
-  }
+  const std::string &name() const noexcept { return m_holder.begin()->first; }
 
   CoordsConstProxy coords() const noexcept { return get().coords(); }
   CoordsProxy coords() noexcept { return get().coords(); }
