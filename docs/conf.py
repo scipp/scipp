@@ -214,6 +214,3 @@ texinfo_documents = [
      author, 'scipp', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-

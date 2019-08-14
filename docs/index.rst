@@ -40,6 +40,13 @@ Documentation
    user-guide/error-propagation
 
 .. toctree::
+   :caption: Jupyter Tutorials
+   :maxdepth: 2
+
+   jupyter/introduction
+   jupyter/multi-d-datasets
+
+.. toctree::
    :caption: Python Reference
    :maxdepth: 2
 

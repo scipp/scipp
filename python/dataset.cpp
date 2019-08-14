@@ -74,6 +74,8 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         [](const T &self, const Dataset &other) { return self == other; });
   c.def("__ne__",
         [](const T &self, const DatasetProxy &other) { return self == other; });
+  c.def("copy", [](const T &self) { return Dataset(self); },
+        "Make a copy of a Dataset or DatasetProxy and return it as a Dataset.");
 }
 
 template <class T, class... Ignored>
@@ -123,11 +125,27 @@ void init_dataset(py::module &m) {
            py::arg("data") = std::map<std::string, Variable>{},
            py::arg("coords") = std::map<Dim, Variable>{},
            py::arg("labels") = std::map<std::string, Variable>{})
+      .def(py::init([](const DatasetProxy &other) { return Dataset{other}; }))
       .def("__setitem__", [](Dataset &self, const std::string &name,
                              Variable data) { self.setData(name, data); })
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
+      // TODO: nvaytet: I do not understand why this is not covered by the
+      // py::implicitly_convertible<VariableProxy, Variable>();
+      // statement in variable.cpp, but this is needed if a VariableProxy is
+      // used instead of a Variable.
+      // Maybe it's because it's in a different file?
+      .def("__setitem__",
+           [](Dataset &self, const std::string &name,
+              const VariableProxy &data) { self.setData(name, data); })
+      .def("__setitem__",
+           [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
+              DatasetProxy &other) {
+             auto[dim, i] = index;
+             for (const auto[name, item] : self.slice(Slice(dim, i)))
+               item.assign(other[name]);
+           })
       .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);
@@ -146,6 +164,7 @@ void init_dataset(py::module &m) {
   bind_coord_properties(dataProxy);
 
   bind_slice_methods(dataset);
+  bind_slice_methods(datasetProxy);
   bind_slice_methods(dataProxy);
 
   bind_comparison<Dataset>(dataset);
