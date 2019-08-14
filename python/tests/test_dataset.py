@@ -56,14 +56,6 @@ def test_del_item_missing():
         del d['not an item']
 
 
-def test_set_coord():
-    d = sc.Dataset()
-    d.set_coord(Dim.X, sc.Variable(1.0))
-    assert len(d) == 0
-    assert len(d.coords) == 1
-    assert d.coords[Dim.X] == sc.Variable(1.0)
-
-
 def test_coord_setitem():
     var = sc.Variable([Dim.X], values=np.arange(4))
     d = sc.Dataset({'a': var}, coords={Dim.X: var})
@@ -114,16 +106,8 @@ def test_create_sparse_via_DataArray():
 def test_contains_coord():
     d = sc.Dataset()
     assert Dim.X not in d.coords
-    d.set_coord(Dim.X, sc.Variable(1.0))
+    d.coords[Dim.X] = sc.Variable(1.0)
     assert Dim.X in d.coords
-
-
-def test_set_labels():
-    d = sc.Dataset()
-    d.set_labels("a", sc.Variable(1.0))
-    assert len(d) == 0
-    assert len(d.labels) == 1
-    assert d.labels["a"] == sc.Variable(1.0)
 
 
 def test_labels_setitem():
@@ -153,16 +137,8 @@ def test_labels_setitem_sparse():
 def test_contains_labels():
     d = sc.Dataset()
     assert "a" not in d.labels
-    d.set_labels("a", sc.Variable(1.0))
+    d.labels["a"] = sc.Variable(1.0)
     assert "a" in d.labels
-
-
-def test_set_attrs():
-    d = sc.Dataset()
-    d.set_attr("b", sc.Variable(1.0))
-    assert len(d) == 0
-    assert len(d.attrs) == 1
-    assert d.attrs["b"] == sc.Variable(1.0)
 
 
 def test_attrs_setitem():
@@ -194,13 +170,13 @@ def test_attrs_setitem_sparse():
 def test_contains_attrs():
     d = sc.Dataset()
     assert "b" not in d.attrs
-    d.set_attr("b", sc.Variable(1.0))
+    d.attrs["b"] = sc.Variable(1.0)
     assert "b" in d.attrs
 
 
 def test_slice_item():
-    d = sc.Dataset()
-    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4, 8)))
+    d = sc.Dataset(
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(4, 8))})
     d['a'] = sc.Variable([Dim.X], values=np.arange(4))
     assert d['a'][Dim.X, 2:4].data == sc.Variable([Dim.X],
                                                   values=np.arange(2, 4))
@@ -210,16 +186,16 @@ def test_slice_item():
 
 
 def test_set_item_slice_from_numpy():
-    d = sc.Dataset()
-    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4, 8)))
+    d = sc.Dataset(
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(4, 8))})
     d['a'] = sc.Variable([Dim.X], values=np.arange(4))
     d['a'][Dim.X, 2:4] = np.arange(2)
     assert d['a'].data == sc.Variable([Dim.X], values=np.array([0, 1, 0, 1]))
 
 
 def test_set_item_slice_with_variances_from_numpy():
-    d = sc.Dataset()
-    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4, 8)))
+    d = sc.Dataset(
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(4, 8))})
     d['a'] = sc.Variable([Dim.X], values=np.arange(4), variances=np.arange(4))
     d['a'][Dim.X, 2:4].values = np.arange(2)
     d['a'][Dim.X, 2:4].variances = np.arange(2, 4)
@@ -235,16 +211,16 @@ def test_sparse_setitem():
 
 
 def test_iadd_slice():
-    d = sc.Dataset()
-    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4, 8)))
+    d = sc.Dataset(
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(4, 8))})
     d['a'] = sc.Variable([Dim.X], values=np.arange(4))
     d['a'][Dim.X, 1] += d['a'][Dim.X, 2]
     assert d['a'].data == sc.Variable([Dim.X], values=np.array([0, 3, 2, 3]))
 
 
 def test_iadd_range():
-    d = sc.Dataset()
-    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4, 8)))
+    d = sc.Dataset(
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(4, 8))})
     d['a'] = sc.Variable([Dim.X], values=np.arange(4))
     with pytest.raises(RuntimeError):
         d['a'][Dim.X, 2:4] += d['a'][Dim.X, 1:3]
@@ -319,7 +295,7 @@ def test_variable_histogram():
     var[Dim.X, 0].values.extend(np.ones(3))
     var[Dim.X, 1].values = np.ones(6)
     ds = sc.Dataset()
-    ds.set_sparse_coord("sparse", var)
+    ds["sparse"] = sc.DataArray(coords={Dim.Y: var})
     hist = sc.histogram(
         ds["sparse"],
         sc.Variable(values=np.arange(5, dtype=np.float64), dims=[Dim.Y]))
@@ -334,8 +310,8 @@ def test_dataset_histogram():
     var[Dim.X, 0].values.extend(np.ones(3))
     var[Dim.X, 1].values = np.ones(6)
     ds = sc.Dataset()
-    ds.set_sparse_coord("s", var)
-    ds.set_sparse_coord("s1", var * 5)
+    ds["s"] = sc.DataArray(coords={Dim.Y: var})
+    ds["s1"] = sc.DataArray(coords={Dim.Y: var * 5})
     h = sc.histogram(
         ds, sc.Variable(values=np.arange(5, dtype=np.float64), dims=[Dim.Y]))
     assert np.array_equal(
@@ -391,7 +367,7 @@ def test_dataset_set_data():
     assert d2['a'].data == d1['c'].data
 
     d = sc.Dataset()
-    d.set_coord(sc.Dim.Row, sc.Variable([sc.Dim.Row], values=np.arange(10.0)))
+    d.coords[Dim.Row] = sc.Variable([sc.Dim.Row], values=np.arange(10.0))
     d["a"] = sc.Variable([sc.Dim.Row],
                          values=np.arange(10.0),
                          variances=np.arange(10.0))
@@ -401,8 +377,7 @@ def test_dataset_set_data():
                     coords={sc.Dim.Row: d1["a"].coords[sc.Dim.Row]})
     d2["b"] = d1["b"]
     expected = sc.Dataset()
-    expected.set_coord(sc.Dim.Row,
-                       sc.Variable([sc.Dim.Row], values=np.arange(1.0)))
+    expected.coords[Dim.Row] = sc.Variable([sc.Dim.Row], values=np.arange(1.0))
     expected["a"] = sc.Variable([sc.Dim.Row],
                                 values=np.arange(1.0),
                                 variances=np.arange(1.0))
@@ -413,7 +388,7 @@ def test_dataset_set_data():
 def test_dataset_data_access():
     var = sc.Variable(dims=[Dim.X, Dim.Y], shape=[2, sc.Dimensions.Sparse])
     ds = sc.Dataset()
-    ds.set_sparse_coord("sparse", var)
+    ds["sparse"] = sc.DataArray(coords={Dim.Y: var})
     assert ds["sparse"].values is None
 
 
