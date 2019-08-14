@@ -614,7 +614,7 @@ public:
   /// The returned proxy will not contain references to data items that do not
   /// depend on the sliced dimension.
   DatasetConstProxy slice(const Slice slice1) const {
-    const auto currentDims = dimensions(m_slices);
+    const auto currentDims = dimensions();
     expect::validSlice(currentDims, slice1);
     DatasetConstProxy sliced(*this);
     auto &indices = sliced.m_indices;
@@ -653,8 +653,7 @@ public:
   bool operator==(const DatasetConstProxy &other) const;
   bool operator!=(const Dataset &other) const;
   bool operator!=(const DatasetConstProxy &other) const;
-  std::unordered_map<Dim, scipp::index> dimensions(
-      const std::vector<std::pair<Slice, scipp::index>> &currentSlice) const;
+  std::unordered_map<Dim, scipp::index> dimensions() const;
 
 private:
   const Dataset *m_dataset;

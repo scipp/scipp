@@ -688,7 +688,7 @@ bool DatasetConstProxy::operator==(const DatasetConstProxy &other) const {
   return dataset_equals(*this, other);
 }
 
-/// Return true if the datasets have mismatching content.
+/// Return true if the datasets have mismatching content./
 bool Dataset::operator!=(const Dataset &other) const {
   return !dataset_equals(*this, other);
 }
@@ -708,12 +708,11 @@ bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
 }
 
-std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions(
-    const std::vector<std::pair<Slice, scipp::index>> &currentSlices) const {
+std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions() const {
 
   auto base_dims = m_dataset->dimensions();
   // Note current slices are ordered, but NOT unique
-  for (const auto & [ slice, extents ] : currentSlices) {
+  for (const auto & [ slice, extents ] : m_slices) {
     (void)extents;
     auto it = base_dims.find(slice.dim());
     if (it != base_dims.end()) {
