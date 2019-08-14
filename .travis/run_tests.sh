@@ -1,11 +1,11 @@
 #!/bin/sh
 
-# Build scipp
+# Build scipp (exit early if either the configure or build step fails)
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} -DCMAKE_INSTALL_PREFIX=../install ..
-make -j2 install
+cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} -DCMAKE_INSTALL_PREFIX=../install .. || exit 1
+make -j2 install || exit 1
 
 # Units tests
 ./units/test/scipp-units-test
