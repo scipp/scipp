@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# Show this for debugging only
-git describe --tags
-
 # Build and upload
 conda-build \
   --user 'scipp' \
