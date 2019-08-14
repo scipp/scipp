@@ -1,12 +1,11 @@
-branches:
-  only:
-    - master
 language: cpp
 dist: xenial
 cache: ccache
+
 env:
   global:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
+
 jobs:
   include:
       # Check clang format and flake8 in the first stage
@@ -32,7 +31,7 @@ jobs:
     - os: osx
       name: "apple clang"
       osx_image: xcode10.2
-      before_install: brew install ccache 
+      before_install: brew install ccache
       env:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
       script: .travis/run_tests.sh
@@ -56,8 +55,8 @@ jobs:
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
         - CC=/usr/bin/clang
-        - CXX=/usr/bin/clang++ 
+        - CXX=/usr/bin/clang++
         - OSX_VERSION=10.14
-      install: 
+      install:
         - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
       script: .travis/conda_build_and_deploy.sh
