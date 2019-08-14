@@ -20,6 +20,16 @@
 
 namespace scipp::core {
 
+template <class T, class C> auto &requireT(C &concept) {
+  try {
+    return dynamic_cast<T &>(concept);
+  } catch (const std::bad_cast &) {
+    throw except::TypeError("Expected item dtype " +
+                            to_string(T::static_dtype()) + ", got " +
+                            to_string(concept.dtype()) + '.');
+  }
+}
+
 /// Helper for passing slicing parameters.
 struct SCIPP_CORE_EXPORT Slice {
   Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_ = -1)
@@ -59,7 +69,6 @@ public:
   virtual ~VariableConcept() = default;
 
   virtual DType dtype(bool sparse = false) const noexcept = 0;
-
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle clone(const Dimensions &dims) const = 0;
   virtual VariableConceptHandle makeView() const = 0;
@@ -114,6 +123,8 @@ public:
     std::terminate();
   }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
+
+  virtual void setVariances(Vector<T> &&v) = 0;
 
   virtual scipp::span<T> values() = 0;
   virtual scipp::span<T> values(const Dim dim, const scipp::index begin,
@@ -223,6 +234,16 @@ public:
   VariableConcept *operator->() const {
     return std::visit(
         [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
+        m_object);
+  }
+
+  template <class T> void setVariances(Vector<T> &&v) {
+    using TT = underlying_type_t<T>;
+    return std::visit(
+        [&](auto &&arg) {
+          return requireT<VariableConceptT<TT>>(*arg).setVariances(
+              std::move(v));
+        },
         m_object);
   }
 
@@ -388,6 +409,10 @@ public:
   const VariableConceptHandle &dataHandle() const & { return m_object; }
 
   template <class... Tags> friend class ZipView;
+
+  template <class T> void setVariances(Vector<T> &&v) {
+    m_object.setVariances(std::move(v));
+  }
 
 private:
   template <class T>
@@ -730,6 +755,15 @@ public:
   VariableProxy operator/=(const Variable &other) const;
   VariableProxy operator/=(const VariableConstProxy &other) const;
   VariableProxy operator/=(const double value) const;
+
+  template <class T> void setVariances(Vector<T> &&v) {
+    if (dims() != m_mutableVariable->dims())
+      throw except::VariancesError(
+          "Can set variances only to the whole variable.");
+    m_mutableVariable->setVariances(std::move(v));
+    if (m_view)
+      m_view = m_mutableVariable->data().reshape(dims());
+  }
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;

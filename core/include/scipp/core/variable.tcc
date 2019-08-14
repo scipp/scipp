@@ -11,16 +11,6 @@
 
 namespace scipp::core {
 
-template <class T, class C> auto &requireT(C &concept) {
-  try {
-    return dynamic_cast<T &>(concept);
-  } catch (const std::bad_cast &) {
-    throw except::TypeError("Expected item dtype " +
-                            to_string(T::static_dtype()) + ", got " +
-                            to_string(concept.dtype()) + '.');
-  }
-}
-
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
@@ -305,9 +295,36 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   }
 }
 
+template <class T, class... Args>
+bool checkSize(const T &t, Args &&... args) noexcept {
+  constexpr bool isCollection = sizeof...(Args) == 1;
+  constexpr bool isIterators = sizeof...(Args) == 2;
+  static_assert(isCollection || isIterators);
+  auto tp = std::forward_as_tuple(args...);
+  // treat a collecition
+  if constexpr (isCollection) {
+    return t.size() == static_cast<scipp::index>(std::get<0>(tp).size());
+  }
+  // treat two iterators
+  if constexpr (isIterators) {
+    return t.size() == static_cast<scipp::index>(
+                           std::distance(std::get<0>(tp), std::get<1>(tp)));
+  }
+}
+
 /// Implementation of VariableConcept that holds data.
 template <class T>
 class DataModel : public VariableConceptT<typename T::value_type> {
+  template <class... Args> void setVarianceT(Args &&... args) {
+    if (checkSize(*this, std::forward<Args>(args)...)) {
+      if (m_variances)
+        m_variances.reset();
+      m_variances.emplace(std::forward<Args>(args)...);
+    } else {
+      throw except::VariancesError("The size should match to set the variance");
+    }
+  }
+
 public:
   using value_type = std::remove_const_t<typename T::value_type>;
 
@@ -319,6 +336,8 @@ public:
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
+
+  void setVariances(Vector<value_type> &&v) override { setVarianceT(v); }
 
   scipp::span<value_type> values() override {
     return scipp::span(m_values.data(), m_values.data() + size());
@@ -666,6 +685,12 @@ public:
 
   T m_values;
   std::optional<T> m_variances;
+
+private:
+  void setVariances(Vector<value_type> &&) override {
+    throw std::logic_error(std::string("This shouldn't be called: ") +
+                           __PRETTY_FUNCTION__);
+  }
 };
 
 template <class T>
@@ -750,6 +775,7 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
     return *requireT<const ViewModel<VariableView<TT>>>(data()).m_variances;
   return requireT<DataModel<Vector<TT>>>(data()).variancesView(dims());
 }
+
 /**
   Support explicit instantiations for templates for generic Variable and
   VariableConstProxy
