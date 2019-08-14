@@ -65,10 +65,15 @@ auto makeSlice(Var &var,
   std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
   for (const auto[params, extent] : slices) {
-    if (slice.dims().contains(params.dim()))
-      slice = slice.slice(
-          Slice{params.dim(), params.begin(),
-                params.end() + slice.dims()[params.dim()] - extent});
+    if (slice.dims().contains(params.dim())) {
+      const auto new_end = params.end() + slice.dims()[params.dim()] - extent;
+      const auto pointSlice = (new_end == -1);
+      if (pointSlice) {
+        slice = slice.slice(Slice{params.dim(), params.begin()});
+      } else {
+        slice = slice.slice(Slice{params.dim(), params.begin(), new_end});
+      }
+    }
   }
   return slice;
 }

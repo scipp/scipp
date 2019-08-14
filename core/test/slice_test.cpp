@@ -5,13 +5,40 @@
 
 #include <numeric>
 
+#include "dataset_test_common.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-
-#include "dataset_test_common.h"
+#include "scipp/core/except.h"
+#include "scipp/core/slice.h"
 
 using namespace scipp;
 using namespace scipp::core;
+
+TEST(SliceTest, test_equals) {
+  Slice ref{Dim::X, 1, 2};
+
+  EXPECT_EQ(ref, ref);
+  EXPECT_EQ(ref, (Slice{Dim::X, 1, 2}));
+  EXPECT_NE(ref, (Slice{Dim::Y, 1, 2}));
+  EXPECT_NE(ref, (Slice{Dim::X, 0, 2}));
+  EXPECT_NE(ref, (Slice{Dim::X, 1, 3}));
+}
+
+TEST(SliceTest, test_assignment) {
+  Slice a{Dim::X, 1, 2};
+  Slice b{Dim::Y, 2, 3};
+  a = b;
+  EXPECT_EQ(a, b);
+}
+
+TEST(SliceTest, test_begin_valid) {
+  EXPECT_THROW((Slice{Dim::X, -1 /*invalid begin index*/, 1}),
+               except::SliceError);
+}
+
+TEST(SliceTest, test_end_valid) {
+  EXPECT_THROW((Slice{Dim::X, 2, 1 /*invalid end index*/}), except::SliceError);
+}
 
 TEST(DatasetTest, simple_sparse_slice) {
   Dataset dataset;

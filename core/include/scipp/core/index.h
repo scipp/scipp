@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #ifndef INDEX_H
 #define INDEX_H
+#include <cstddef>
 
 namespace scipp {
 /// Type to use for all container/array sizes and indices.

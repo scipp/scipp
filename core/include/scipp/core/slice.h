@@ -17,18 +17,14 @@ namespace core {
 class SCIPP_CORE_EXPORT Slice {
 
 public:
-  /// Constructor
-  /// \param dim_ Slice Dimension
-  /// \param begin_ start index or single index of the slice
-  /// \param end_ end index for the range. Note that -1 indicates a point slice,
-  /// not before-end.
-  ///
-  Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_ = -1)
-      : m_dim(dim_), m_begin(begin_), m_end(end_) {}
+  Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_);
+  Slice(const Dim dim_, const scipp::index begin_);
   Slice &operator=(const Slice &) = default;
-  scipp::index begin() const { return m_begin; }
-  scipp::index end() const { return m_end; }
-  Dim dim() const { return m_dim; }
+  bool operator==(const Slice &other) const;
+  bool operator!=(const Slice &other) const;
+  scipp::index begin() const;
+  scipp::index end() const;
+  Dim dim() const;
 
 private:
   Dim m_dim;
