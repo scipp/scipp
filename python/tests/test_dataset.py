@@ -144,20 +144,6 @@ def test_contains():
     assert 'b' in d
 
 
-def test_shorthand_set_coord():
-    v = sc.Variable([Dim.X], values=np.arange(4))
-
-    a = sc.Dataset()
-    a.set_coord(Dim.X, values=np.arange(4))
-    a["a"] = v
-
-    b = sc.Dataset()
-    b.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(4)))
-    b["a"] = v
-
-    assert a == b
-
-
 def test_slice():
     d = sc.Dataset(
         {

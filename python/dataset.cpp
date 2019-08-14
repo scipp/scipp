@@ -10,7 +10,6 @@
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
-#include "make_variable.h"
 #include "pybind11.h"
 
 using namespace scipp;
@@ -102,46 +101,6 @@ void init_dataset(py::module &m) {
                   py::return_value_policy::move, py::keep_alive<0, 1>()));
   dataProxy.def("__repr__",
                 [](const DataProxy &self) { return to_string(self); });
-  // dataProxy.def_property_readonly("name", &DataProxy::name,
-  //                                 "The name of the data under which it is "
-  //                                 "registered in the Dataset (read-only).");
-  // dataProxy.def_property_readonly("name",
-  //                                 [](const DataProxy &self) { return
-  //                                 self.name_as_string(); }, "The name of the
-  //                                 data under which it is " "registered in the
-  //                                 Dataset (read-only).");
-  // dataProxy.def_property_readonly("name",
-  //                                 py::cpp_function([](const DataProxy &self)
-  //                                 { return self.name_as_string(); },
-  //                                 py::return_value_policy::move), "The name
-  //                                 of the data under which it is " "registered
-  //                                 in the Dataset (read-only).");
-
-  dataProxy.def_property_readonly("name",
-                                  py::cpp_function(
-                                      [](const DataProxy &self) -> std::string {
-                                        return std::string(self.name());
-                                      },
-                                      py::return_value_policy::copy),
-                                  "The name of the data under which it is "
-                                  "registered in the Dataset (read-only).");
-  // dataProxy.def_property_readonly("name",
-  //                                 py::cpp_function([](const DataProxy &self)
-  //                                 { return self.name(); },
-  //                                 py::return_value_policy::copy), "The name
-  //                                 of the data under which it is " "registered
-  //                                 in the Dataset (read-only).");
-  // dataProxy.def_property_readonly("name",
-  //                                 [](const DataProxy &self) { return
-  //                                 std::string(self.name()); }, "The name of
-  //                                 the data under which it is " "registered in
-  //                                 the Dataset (read-only).");
-  // dataProxy.def("name", [](const DataProxy &self) { return std::string("x");
-  // }); dataProxy.def("name",
-  //               py::cpp_function([](const DataProxy &self) -> std::string {
-  //               return std::string(self.name()); },
-  //               py::return_value_policy::move), "The name of the data under
-  //               which it is " "registered in the Dataset (read-only).");
 
   bind_data_array_properties(dataArray);
   bind_data_array_properties(dataProxy);
@@ -194,17 +153,6 @@ void init_dataset(py::module &m) {
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
       .def("set_coord", &Dataset::setCoord)
-      .def("set_coord",
-           [](Dataset &self, const Dim &label, py::array &values,
-              std::optional<py::array> &variances, const units::Unit unit,
-              const py::object &dtype) {
-             self.setCoord(label, doMakeVariable({label}, values, variances,
-                                                 unit, dtype));
-           },
-           py::arg("dims"), py::arg("values"),
-           py::arg("variances") = std::nullopt,
-           py::arg("unit") = units::Unit(units::dimensionless),
-           py::arg("dtype") = py::none())
       .def("set_labels", &Dataset::setLabels)
       .def("set_attr", &Dataset::setAttr);
 
