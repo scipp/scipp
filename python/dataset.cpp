@@ -92,6 +92,28 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray");
+  dataArray.def(py::init([](const std::optional<Variable> &data,
+                            const std::map<Dim, Variable> &coords,
+                            const std::map<std::string, Variable> &labels) {
+                  Dataset d;
+                  const std::string name = "";
+                  if (data)
+                    d.setData(name, *data);
+                  for (const auto & [ dim, item ] : coords)
+                    if (item.dims().sparse())
+                      d.setSparseCoord(name, item);
+                    else
+                      d.setCoord(dim, item);
+                  for (const auto & [ n, item ] : labels)
+                    if (item.dims().sparse())
+                      d.setSparseLabels(name, n, item);
+                    else
+                      d.setLabels(n, item);
+                  return DataArray(d[name]);
+                }),
+                py::arg("data") = std::nullopt,
+                py::arg("coords") = std::map<Dim, Variable>{},
+                py::arg("labels") = std::map<std::string, Variable>{});
   py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly(

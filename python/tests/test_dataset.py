@@ -89,6 +89,26 @@ def test_coord_setitem_sparse():
     # Currently there is no way to set a sparse coord from a sparse variable
     # in this way, since otherwise 'a' would not exist in d.
     d['a'].coords[Dim.X] = sparse
+    assert len(d.coords) == 1
+    assert len(d['a'].coords) == 1
+    assert d['a'].coords[Dim.X] == sparse
+    assert d['a'].coords[Dim.X] != var
+    assert d['a'].coords[Dim.X] != d.coords[Dim.X]
+    # This would not work:
+    with pytest.raises(IndexError):
+        d['b'].coords[Dim.X] = sparse
+
+
+def test_create_sparse_via_DataArray():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset(coords={Dim.X: var})
+    sparse = sc.Variable([sc.Dim.X], [sc.Dimensions.Sparse])
+    d['a'] = sc.DataArray(coords={Dim.X: sparse})
+    assert len(d.coords) == 1
+    assert len(d['a'].coords) == 1
+    assert d['a'].coords[Dim.X] == sparse
+    assert d['a'].coords[Dim.X] != var
+    assert d['a'].coords[Dim.X] != d.coords[Dim.X]
 
 
 def test_contains_coord():
