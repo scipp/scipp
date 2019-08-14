@@ -128,8 +128,10 @@ void init_dataset(py::module &m) {
   bind_data_array_properties(dataArray);
   bind_data_array_properties(dataProxy);
 
-  py::class_<DatasetConstProxy>(m, "DatasetConstProxy");
+  py::class_<DatasetConstProxy>(m, "DatasetConstProxy")
+      .def(py::init<const Dataset &>());
   py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");
+  datasetProxy.def(py::init<Dataset &>());
 
   py::class_<Dataset> dataset(m, "Dataset");
   dataset.def(py::init<>())
@@ -237,27 +239,6 @@ void init_dataset(py::module &m) {
         "Returns a new Dataset with histograms for sparse dims");
 
   m.def("merge",
-        [](const Dataset &lhs, const Dataset &rhs) {
-          return core::merge(lhs, rhs);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns the union (outer merge) of two datasets");
-
-  m.def("merge",
-        [](const DatasetConstProxy &lhs, const Dataset &rhs) {
-          return core::merge(lhs, rhs);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns the union (outer merge) of two datasets");
-
-  m.def("merge",
-        [](const Dataset &lhs, const DatasetConstProxy &rhs) {
-          return core::merge(lhs, rhs);
-        },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns the union (outer merge) of two datasets");
-
-  m.def("merge",
         [](const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
           return core::merge(lhs, rhs);
         },
@@ -265,4 +246,5 @@ void init_dataset(py::module &m) {
         "Returns the union (outer merge) of two datasets");
 
   py::implicitly_convertible<DataArray, DataConstProxy>();
+  py::implicitly_convertible<Dataset, DatasetConstProxy>();
 }

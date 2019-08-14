@@ -252,9 +252,6 @@ public:
       setData(std::string(name), std::move(item));
   }
 
-  operator DatasetConstProxy() const;
-  operator DatasetProxy();
-
   /// Return the number of data items in the dataset.
   ///
   /// This does not include coordinates or attributes, but only all named
@@ -613,7 +610,7 @@ public:
   using key_type = std::string;
   using mapped_type = DataArray;
 
-  explicit DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
+  DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
     for (const auto &item : dataset.m_data)
       m_indices.emplace_back(item.first);
   }
@@ -712,7 +709,7 @@ private:
       : DatasetConstProxy(std::move(base)), m_mutableDataset(dataset) {}
 
 public:
-  explicit DatasetProxy(Dataset &dataset)
+  DatasetProxy(Dataset &dataset)
       : DatasetConstProxy(dataset), m_mutableDataset(&dataset) {}
 
   CoordsProxy coords() const noexcept;
@@ -924,11 +921,6 @@ SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
                                     const Variable &bins);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 
-SCIPP_CORE_EXPORT Dataset merge(const Dataset &lhs, const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &lhs,
-                                const Dataset &rhs);
-SCIPP_CORE_EXPORT Dataset merge(const Dataset &lhs,
-                                const DatasetConstProxy &rhs);
 SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &lhs,
                                 const DatasetConstProxy &rhs);
 

@@ -63,9 +63,6 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
 Dataset::Dataset(const DatasetConstProxy &proxy)
     : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs()) {}
 
-Dataset::operator DatasetConstProxy() const { return DatasetConstProxy(*this); }
-Dataset::operator DatasetProxy() { return DatasetProxy(*this); }
-
 /// Removes all data items from the Dataset.
 ///
 /// Coordinates, labels and attributes are not modified.
@@ -1152,15 +1149,6 @@ template <class A, class B> Dataset merge_datasets(const A &a, const B &b) {
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
-Dataset merge(const Dataset &lhs, const Dataset &rhs) {
-  return merge_datasets(lhs, rhs);
-}
-Dataset merge(const DatasetConstProxy &lhs, const Dataset &rhs) {
-  return merge_datasets(lhs, rhs);
-}
-Dataset merge(const Dataset &lhs, const DatasetConstProxy &rhs) {
-  return merge_datasets(lhs, rhs);
-}
 Dataset merge(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
   return merge_datasets(lhs, rhs);
 }
