@@ -221,5 +221,33 @@ void init_dataset(py::module &m) {
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Dataset with histograms for sparse dims");
 
+  m.def("merge",
+        [](const Dataset &lhs, const Dataset &rhs) {
+          return core::merge(lhs, rhs);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns the union (outer merge) of two datasets");
+
+  m.def("merge",
+        [](const DatasetConstProxy &lhs, const Dataset &rhs) {
+          return core::merge(lhs, rhs);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns the union (outer merge) of two datasets");
+
+  m.def("merge",
+        [](const Dataset &lhs, const DatasetConstProxy &rhs) {
+          return core::merge(lhs, rhs);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns the union (outer merge) of two datasets");
+
+  m.def("merge",
+        [](const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+          return core::merge(lhs, rhs);
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns the union (outer merge) of two datasets");
+
   py::implicitly_convertible<DataArray, DataConstProxy>();
 }

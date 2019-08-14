@@ -1108,4 +1108,79 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   return histogram(dataset, bins);
 }
 
+template <class A, class B>
+void merge_validate_proxies(const A &lhs, const B &rhs) {
+  for (const auto & [ k, v ] : lhs) {
+    /* Throw if an item is present in both proxies but they are not equal */
+    if (rhs.contains(k) && rhs[k] != v) {
+      throw std::runtime_error("Both datasets contain an item with the same "
+                               "key that does not match.");
+    }
+  }
+}
+
+template <class T> void merge_copy_data(Dataset &dest, const T &src) {
+  for (const auto & [ name, data ] : src) {
+    if (!dest.contains(name)) {
+      dest.setData(std::string(name), data);
+    }
+  }
+}
+
+template <class T> void merge_copy_coords(Dataset &dest, const T &src) {
+  for (const auto & [ dim, coord ] : src.coords()) {
+    if (!dest.coords().contains(dim)) {
+      dest.setCoord(dim, coord);
+    }
+  }
+}
+
+template <class T> void merge_copy_labels(Dataset &dest, const T &src) {
+  for (const auto & [ name, label ] : src.labels()) {
+    if (!dest.labels().contains(name)) {
+      dest.setLabels(std::string(name), label);
+    }
+  }
+}
+
+template <class T> void merge_copy_attrs(Dataset &dest, const T &src) {
+  for (const auto & [ name, attr ] : src.attrs()) {
+    if (!dest.attrs().contains(name)) {
+      dest.setAttr(std::string(name), attr);
+    }
+  }
+}
+
+template <class A, class B> Dataset merge_datasets(const A &lhs, const B &rhs) {
+  merge_validate_proxies(lhs.coords(), rhs.coords());
+  merge_validate_proxies(lhs.labels(), rhs.labels());
+  merge_validate_proxies(lhs.attrs(), rhs.attrs());
+  merge_validate_proxies(lhs, rhs);
+
+  Dataset d;
+  merge_copy_data(d, lhs);
+  merge_copy_data(d, rhs);
+  merge_copy_coords(d, lhs);
+  merge_copy_coords(d, rhs);
+  merge_copy_labels(d, lhs);
+  merge_copy_labels(d, rhs);
+  merge_copy_attrs(d, lhs);
+  merge_copy_attrs(d, rhs);
+
+  return d;
+}
+
+Dataset merge(const Dataset &lhs, const Dataset &rhs) {
+  return merge_datasets(lhs, rhs);
+}
+Dataset merge(const DatasetConstProxy &lhs, const Dataset &rhs) {
+  return merge_datasets(lhs, rhs);
+}
+Dataset merge(const Dataset &lhs, const DatasetConstProxy &rhs) {
+  return merge_datasets(lhs, rhs);
+}
+Dataset merge(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
+  return merge_datasets(lhs, rhs);
+}
+
 } // namespace scipp::core

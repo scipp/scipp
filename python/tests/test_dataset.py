@@ -225,6 +225,18 @@ def test_dataset_histogram():
         h["s1"].values, np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]))
 
 
+def test_dataset_merge():
+    a = sc.Dataset({
+        'd1': sc.Variable([Dim.X], values=np.array([1, 2, 3]))
+    })
+    b = sc.Dataset({
+        'd2': sc.Variable([Dim.X], values=np.array([4, 5, 6]))
+    })
+    c = sc.merge(a, b)
+    assert a['d1'] == c['d1']
+    assert b['d2'] == c['d2']
+
+
 def test_dataset_set_data():
     d1 = sc.Dataset(
         {
