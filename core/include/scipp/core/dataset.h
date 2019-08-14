@@ -251,6 +251,8 @@ public:
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
+  void clear();
+
   CoordsConstProxy coords() const noexcept;
   CoordsProxy coords() noexcept;
 
@@ -261,6 +263,8 @@ public:
   AttrsProxy attrs() noexcept;
 
   bool contains(const std::string &name) const noexcept;
+
+  void erase(const std::string_view name);
 
   auto find() const && = delete;
   auto find() && = delete;
@@ -352,6 +356,7 @@ private:
 
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
+  void rebuildDims();
 
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;

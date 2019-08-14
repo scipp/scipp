@@ -26,12 +26,34 @@ def test_create():
     assert d['x'].data == x
 
 
+def test_clear():
+    d = sc.Dataset()
+    d['a'] = sc.Variable([Dim.X], values=np.arange(3))
+    assert 'a' in d
+    d.clear()
+    assert len(d) == 0
+
+
 def test_setitem():
     d = sc.Dataset()
     d['a'] = sc.Variable(1.0)
     assert len(d) == 1
     assert d['a'].data == sc.Variable(1.0)
     assert len(d.coords) == 0
+
+
+def test_del_item():
+    d = sc.Dataset()
+    d['a'] = sc.Variable(1.0)
+    assert 'a' in d
+    del d['a']
+    assert 'a' not in d
+
+
+def test_del_item_missing():
+    d = sc.Dataset()
+    with pytest.raises(RuntimeError):
+        del d['not an item']
 
 
 def test_set_coord():

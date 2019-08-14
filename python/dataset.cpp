@@ -146,10 +146,12 @@ void init_dataset(py::module &m) {
              for (const auto[name, item] : self.slice(Slice(dim, i)))
                item.assign(other[name]);
            })
+      .def("__delitem__", &Dataset::erase)
       .def("__setitem__",
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);
            })
+      .def("clear", &Dataset::clear)
       .def("set_sparse_coord", &Dataset::setSparseCoord)
       .def("set_sparse_labels", &Dataset::setSparseLabels)
       .def("set_coord", &Dataset::setCoord)

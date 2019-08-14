@@ -19,6 +19,48 @@ using namespace scipp::core;
 
 TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
+TEST(DatasetTest, clear) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+
+  ASSERT_FALSE(dataset.empty());
+  ASSERT_FALSE(dataset.coords().empty());
+  ASSERT_FALSE(dataset.labels().empty());
+  ASSERT_FALSE(dataset.attrs().empty());
+
+  ASSERT_NO_THROW(dataset.clear());
+
+  ASSERT_TRUE(dataset.empty());
+  ASSERT_FALSE(dataset.coords().empty());
+  ASSERT_FALSE(dataset.labels().empty());
+  ASSERT_FALSE(dataset.attrs().empty());
+}
+
+TEST(DatasetTest, erase_single_non_existant) {
+  Dataset d;
+  ASSERT_THROW(d.erase("not an item"), except::DatasetError);
+}
+
+TEST(DatasetTest, erase_single) {
+  DatasetFactory3D factory;
+  auto dataset = factory.make();
+  ASSERT_NO_THROW(dataset.erase("data_xyz"));
+  ASSERT_FALSE(dataset.contains("data_xyz"));
+}
+
+TEST(DatasetTest, erase_extents_rebuild) {
+  Dataset d;
+
+  d.setData("a", makeVariable<double>({Dim::X, 10}));
+  ASSERT_TRUE(d.contains("a"));
+
+  ASSERT_NO_THROW(d.erase("a"));
+  ASSERT_FALSE(d.contains("a"));
+
+  ASSERT_NO_THROW(d.setData("a", makeVariable<double>({Dim::X, 15})));
+  ASSERT_TRUE(d.contains("a"));
+}
+
 TEST(DatasetTest, setCoord) {
   Dataset d;
   const auto var = makeVariable<double>({Dim::X, 3});
