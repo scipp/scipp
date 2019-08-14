@@ -236,12 +236,16 @@ public:
   }
 
   template <class Var>
-  static void set_values(Var &view, const py::array &data) {
+  static void set_values(py::object &obj, const py::array &data) {
+    //    if (!get_values::valid<Var>(obj))
+    auto &view = obj.cast<Var &>();
     expect_shape_compatible(view, data);
     set(get<get_values>(view), data);
   }
   template <class Var>
-  static void set_variances(Var &view, const py::array &data) {
+  static void set_variances(py::object &obj, const py::array &data) {
+    //    if (!get_variances::valid<Var>(obj))
+    auto &view = obj.cast<Var &>();
     expect_shape_compatible(view, data);
     set(get<get_variances>(view), data);
   }
@@ -278,7 +282,10 @@ public:
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static void set_value(Var &view, const py::object &o) {
+  template <class Var>
+  static void set_value(py::object &obj, const py::object &o) {
+    //    if (!get_values::valid<Var>(obj))
+    auto &view = obj.cast<Var &>();
     expect::equals(Dimensions(), view.dims());
     std::visit(
         [&o](const auto &data) {
@@ -289,7 +296,10 @@ public:
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var>
-  static void set_variance(Var &view, const py::object &o) {
+  static void set_variance(py::object &obj, const py::object &o) {
+    auto &view = obj.cast<Var &>();
+    //    if (!get_variances::valid<Var>(obj))
+    //      view.set
     expect::equals(Dimensions(), view.dims());
     std::visit(
         [&o](const auto &data) {
