@@ -65,11 +65,30 @@ def test_set_coord():
 
 
 def test_coord_setitem():
-    d = sc.Dataset()
-    d.coords[Dim.X] = sc.Variable(1.0)
-    assert len(d) == 0
-    assert len(d.coords) == 1
-    assert d.coords[Dim.X] == sc.Variable(1.0)
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    with pytest.raises(RuntimeError):
+        d[Dim.X, 2:3].coords[Dim.Y] = sc.Variable(1.0)
+    with pytest.raises(RuntimeError):
+        d['a'].coords[Dim.Y] = sc.Variable(1.0)
+    d.coords[Dim.Y] = sc.Variable(1.0)
+    assert len(d) == 1
+    assert len(d.coords) == 2
+    assert d.coords[Dim.Y] == sc.Variable(1.0)
+
+
+def test_coord_setitem_sparse():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    sparse = sc.Variable([sc.Dim.X], [sc.Dimensions.Sparse])
+    d = sc.Dataset({'a': sparse}, coords={Dim.X: var})
+    with pytest.raises(RuntimeError):
+        d.coords[Dim.X] = sparse
+    with pytest.raises(RuntimeError):
+        d[Dim.X, 2:3].coords[Dim.X] = sparse
+    # This is a slightly weird case with sparse data before coord is set.
+    # Currently there is no way to set a sparse coord from a sparse variable
+    # in this way, since otherwise 'a' would not exist in d.
+    d['a'].coords[Dim.X] = sparse
 
 
 def test_contains_coord():
@@ -88,11 +107,27 @@ def test_set_labels():
 
 
 def test_labels_setitem():
-    d = sc.Dataset()
-    d.labels["a"] = sc.Variable(1.0)
-    assert len(d) == 0
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    with pytest.raises(RuntimeError):
+        d[Dim.X, 2:3].labels['label'] = sc.Variable(1.0)
+    with pytest.raises(RuntimeError):
+        d['a'].labels['label'] = sc.Variable(1.0)
+    d.labels['label'] = sc.Variable(1.0)
+    assert len(d) == 1
     assert len(d.labels) == 1
-    assert d.labels["a"] == sc.Variable(1.0)
+    assert d.labels['label'] == sc.Variable(1.0)
+
+
+def test_labels_setitem_sparse():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    sparse = sc.Variable([sc.Dim.X], [sc.Dimensions.Sparse])
+    d = sc.Dataset({'a': sparse}, coords={Dim.X: var})
+    with pytest.raises(RuntimeError):
+        d.labels['label'] = sparse
+    with pytest.raises(RuntimeError):
+        d[Dim.X, 2:3].labels['label'] = sparse
+    d['a'].labels['label'] = sparse
 
 
 def test_contains_labels():
@@ -111,11 +146,29 @@ def test_set_attrs():
 
 
 def test_attrs_setitem():
-    d = sc.Dataset()
-    d.attrs["b"] = sc.Variable(1.0)
-    assert len(d) == 0
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    d = sc.Dataset({'a': var}, coords={Dim.X: var})
+    with pytest.raises(RuntimeError):
+        d[Dim.X, 2:3].attrs['attr'] = sc.Variable(1.0)
+    with pytest.raises(RuntimeError):
+        d['a'].attrs['attr'] = sc.Variable(1.0)
+    d.attrs['attr'] = sc.Variable(1.0)
+    assert len(d) == 1
     assert len(d.attrs) == 1
-    assert d.attrs["b"] == sc.Variable(1.0)
+    assert d.attrs['attr'] == sc.Variable(1.0)
+
+
+def test_attrs_setitem_sparse():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    sparse = sc.Variable([sc.Dim.X], [sc.Dimensions.Sparse])
+    d = sc.Dataset({'a': sparse}, coords={Dim.X: var})
+    with pytest.raises(RuntimeError):
+        d.attrs['attr'] = sparse
+    with pytest.raises(RuntimeError):
+        d[Dim.X, 2:3].attrs['attr'] = sparse
+    # Attributes cannot be sparse
+    with pytest.raises(RuntimeError):
+        d['a'].attrs['attr'] = sparse
 
 
 def test_contains_attrs():

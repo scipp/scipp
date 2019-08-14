@@ -494,18 +494,19 @@ private:
     }
   };
 
-  MutableProxy(Dataset *parent, Base &&base)
-      : Base(std::move(base)), m_parent(parent) {}
+  MutableProxy(Dataset *parent, const std::string *name, Base &&base)
+      : Base(std::move(base)), m_parent(parent), m_name(name) {}
 
   Dataset *m_parent;
+  const std::string *m_name;
 
 public:
   MutableProxy(
-      Dataset *parent,
+      Dataset *parent, const std::string *name,
       std::unordered_map<typename Base::key_type,
                          std::pair<const Variable *, Variable *>> &&items,
       const std::vector<std::pair<Slice, scipp::index>> &slices = {})
-      : Base(std::move(items), slices), m_parent(parent) {}
+      : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
 
   /// Return a proxy to the coordinate for given dimension.
   VariableProxy operator[](const typename Base::key_type key) const {
@@ -531,7 +532,8 @@ public:
   }
 
   MutableProxy slice(const Slice slice1) const {
-    return MutableProxy(m_parent, Base::slice(slice1));
+    // parent = nullptr since adding coords via slice is not supported.
+    return MutableProxy(nullptr, m_name, Base::slice(slice1));
   }
 
   MutableProxy slice(const Slice slice1, const Slice slice2) const {
@@ -543,7 +545,35 @@ public:
     return slice(slice1, slice2).slice(slice3);
   }
 
-  Dataset &parent() const noexcept { return *m_parent; }
+  void set(const typename Base::key_type key, Variable var) {
+    if (!m_parent || !Base::m_slices.empty())
+      throw std::runtime_error(
+          "Cannot add coord/labels/attr field to a slice.");
+    if (var.dims().sparse()) {
+      if (!m_name)
+        throw std::runtime_error("Sparse coord/labels/attr must be added to "
+                                 "coords of dataset items, not coords of "
+                                 "dataset.");
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->setSparseCoord(*m_name, var);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->setSparseLabels(*m_name, key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        throw std::runtime_error("Attributes cannot be sparse.");
+    } else {
+      if (m_name)
+        throw std::runtime_error(
+            "Dense coord/labels/attr must be added to "
+            "coords of dataset, not coords of dataset items.");
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->setCoord(key, var);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->setLabels(key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        m_parent->setAttr(key, var);
+    }
+    // TODO rebuild *this?!
+  }
 };
 
 template <class Id, class Key>
