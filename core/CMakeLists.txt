@@ -13,6 +13,7 @@ set(INC_FILES
     include/scipp/core/span.h
     include/scipp/core/tag_util.h
     include/scipp/core/counts.h
+    include/scipp/core/slice.h
     include/scipp/core/traits.h
     include/scipp/core/variable_view.h
     include/scipp/core/variable.h
@@ -27,6 +28,7 @@ set(SRC_FILES
     dimensions.cpp
     #events.cpp
     except.cpp
+    slice.cpp
     variable.cpp
     variable_binary_ops.cpp
     view_index.cpp)

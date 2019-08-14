@@ -10,32 +10,17 @@
 
 #include <Eigen/Dense>
 
+#include "scipp-core_export.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/index.h"
+#include "scipp/core/slice.h"
 #include "scipp/core/span.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
-
-/// Describes a slice to make over a dimension either as a single index (begin_
-/// only) or as a range
-struct SCIPP_CORE_EXPORT Slice {
-
-  /// Constructor
-  /// \param dim_ Slice Dimension
-  /// \param begin_ start index or single index of the slice
-  /// \param end_ end index for the range. Note that -1 indicates a point slice,
-  /// not before-end.
-  ///
-  Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_ = -1)
-      : dim(dim_), begin(begin_), end(end_) {}
-  Dim dim;
-  scipp::index begin;
-  scipp::index end;
-};
 
 template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
@@ -576,7 +561,7 @@ public:
   }
 
   VariableConstProxy slice(const Slice slice) const {
-    return VariableConstProxy(*this, slice.dim, slice.begin, slice.end);
+    return VariableConstProxy(*this, slice.dim(), slice.begin(), slice.end());
   }
 
   // Note the return type. Reshaping a non-contiguous slice cannot return a
@@ -682,7 +667,7 @@ public:
   }
 
   VariableProxy slice(const Slice slice) const {
-    return VariableProxy(*this, slice.dim, slice.begin, slice.end);
+    return VariableProxy(*this, slice.dim(), slice.begin(), slice.end());
   }
 
   using VariableConstProxy::data;

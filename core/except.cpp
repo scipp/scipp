@@ -7,6 +7,7 @@
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
+#include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 
 namespace scipp::core {
@@ -59,9 +60,9 @@ std::string to_string(const DType dtype) {
 }
 
 std::string to_string(const Slice &slice) {
-  std::string end = slice.end >= 0 ? ", " + std::to_string(slice.end) : "";
-  return "Slice(" + to_string(slice.dim) + ", " + std::to_string(slice.begin) +
-         end + ")\n";
+  std::string end = slice.end() >= 0 ? ", " + std::to_string(slice.end()) : "";
+  return "Slice(" + to_string(slice.dim()) + ", " +
+         std::to_string(slice.begin()) + end + ")\n";
 }
 
 std::string to_string(const units::Unit &unit) { return unit.name(); }
@@ -285,20 +286,21 @@ void equals(const Dimensions &a, const Dimensions &b) {
 }
 
 void validSlice(const Dimensions &dims, const Slice &slice) {
-  if (!dims.contains(slice.dim) || slice.begin < 0 ||
-      slice.begin >= std::min(slice.end >= 0 ? slice.end + 1 : dims[slice.dim],
-                              dims[slice.dim]) ||
-      slice.end > dims[slice.dim])
+  if (!dims.contains(slice.dim()) || slice.begin() < 0 ||
+      slice.begin() >=
+          std::min(slice.end() >= 0 ? slice.end() + 1 : dims[slice.dim()],
+                   dims[slice.dim()]) ||
+      slice.end() > dims[slice.dim()])
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
                              to_string(dims) + ".");
 }
 void validSlice(const std::unordered_map<Dim, scipp::index> &dims,
                 const Slice &slice) {
-  if (dims.find(slice.dim) == dims.end() || slice.begin < 0 ||
-      slice.begin >=
-          std::min(slice.end >= 0 ? slice.end + 1 : dims.at(slice.dim),
-                   dims.at(slice.dim)) ||
-      slice.end > dims.at(slice.dim))
+  if (dims.find(slice.dim()) == dims.end() || slice.begin() < 0 ||
+      slice.begin() >=
+          std::min(slice.end() >= 0 ? slice.end() + 1 : dims.at(slice.dim()),
+                   dims.at(slice.dim())) ||
+      slice.end() > dims.at(slice.dim()))
     throw except::SliceError(
         "Expected " + to_string(slice) +
         " to be in dimensions."); // TODO to_string for map needed

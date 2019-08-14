@@ -15,6 +15,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/core/except.h"
+#include "scipp/core/slice.h"
 #include "scipp/core/variable.h"
 
 namespace scipp::core {
@@ -64,9 +65,10 @@ auto makeSlice(Var &var,
   std::conditional_t<std::is_const_v<Var>, VariableConstProxy, VariableProxy>
       slice(var);
   for (const auto[params, extent] : slices) {
-    const auto[dim, begin, end] = params;
-    if (slice.dims().contains(dim))
-      slice = slice.slice(Slice{dim, begin, end + slice.dims()[dim] - extent});
+    if (slice.dims().contains(params.dim()))
+      slice = slice.slice(
+          Slice{params.dim(), params.begin(),
+                params.end() + slice.dims()[params.dim()] - extent});
   }
   return slice;
 }
@@ -113,7 +115,7 @@ public:
   DataConstProxy slice(const Slice slice1) const {
     expect::validSlice(dims(), slice1);
     auto tmp(m_slices);
-    tmp.emplace_back(slice1, dims()[slice1.dim]);
+    tmp.emplace_back(slice1, dims()[slice1.dim()]);
     return {*m_dataset, *m_data, std::move(tmp)};
   }
 
@@ -177,7 +179,7 @@ public:
   DataProxy slice(const Slice slice1) const {
     expect::validSlice(dims(), slice1);
     auto tmp(slices());
-    tmp.emplace_back(slice1, dims()[slice1.dim]);
+    tmp.emplace_back(slice1, dims()[slice1.dim()]);
     return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
   }
 
@@ -387,15 +389,15 @@ public:
     // attributes.
     for (const auto &s : m_slices) {
       const auto slice = s.first;
-      if (slice.end ==
+      if (slice.end() ==
           -1) { // The slice represents a point not a range. Dimension removed.
         for (auto it = m_items.begin(); it != m_items.end();) {
           auto erase = [slice](const auto it2) {
             if constexpr (std::is_same_v<Key, Dim>)
-              return (it2->first == slice.dim);
+              return (it2->first == slice.dim());
             else
               return !it2->second.first->dims().empty() &&
-                     (it2->second.first->dims().inner() == slice.dim);
+                     (it2->second.first->dims().inner() == slice.dim());
           };
           if (erase(it))
             it = m_items.erase(it);
@@ -440,8 +442,8 @@ public:
   ConstProxy slice(const Slice slice1) const {
     auto slices = m_slices;
     if constexpr (std::is_same_v<Key, Dim>) {
-      const auto &coord = *m_items.at(slice1.dim).first;
-      slices.emplace_back(slice1, coord.dims()[slice1.dim]);
+      const auto &coord = *m_items.at(slice1.dim()).first;
+      slices.emplace_back(slice1, coord.dims()[slice1.dim()]);
     } else {
       throw std::runtime_error("TODO");
     }
@@ -614,15 +616,15 @@ public:
     sliced.m_indices.erase(
         std::remove_if(indices.begin(), indices.end(),
                        [&slice1, this](const auto &index) {
-                         return !(*this)[index].dims().contains(slice1.dim);
+                         return !(*this)[index].dims().contains(slice1.dim());
                        }),
         indices.end());
     // The dimension extent is either given by the coordinate, or by data, which
     // can be 1 shorter in case of a bin-edge coordinate.
-    scipp::index extent = currentDims.at(slice1.dim);
+    scipp::index extent = currentDims.at(slice1.dim());
     for (const auto item : *this)
-      if (item.second.dims().contains(slice1.dim) &&
-          item.second.dims()[slice1.dim] == extent - 1) {
+      if (item.second.dims().contains(slice1.dim()) &&
+          item.second.dims()[slice1.dim()] == extent - 1) {
         --extent;
         break;
       }

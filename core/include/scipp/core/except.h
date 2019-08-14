@@ -22,7 +22,7 @@ class Dataset;
 class Dimensions;
 class Variable;
 class VariableConstProxy;
-struct Slice;
+class Slice;
 
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);

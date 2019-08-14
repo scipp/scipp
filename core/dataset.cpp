@@ -715,15 +715,15 @@ std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions(
   // Note current slices are ordered, but NOT unique
   for (const auto & [ slice, extents ] : currentSlices) {
     (void)extents;
-    auto it = base_dims.find(slice.dim);
+    auto it = base_dims.find(slice.dim());
     if (it != base_dims.end()) {
-      if (slice.end == -1) { // For non-range. Erase dimension
+      if (slice.end() == -1) { // For non-range. Erase dimension
         base_dims.erase(it);
       } else {
         it->second =
-            slice.end -
-            slice.begin; // Take extent from slice. This is the effect that
-                         // the successful slice range will have
+            slice.end() -
+            slice.begin(); // Take extent from slice. This is the effect that
+                           // the successful slice range will have
       }
     }
   }
