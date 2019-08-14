@@ -63,19 +63,6 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
 Dataset::Dataset(const DatasetConstProxy &proxy)
     : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs()) {}
 
-template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
-Dataset::Dataset(DataMap data, CoordMap coords, LabelsMap labels,
-                 AttrMap attrs) {
-  for (auto && [ dim, coord ] : coords)
-    setCoord(dim, std::move(coord));
-  for (auto && [ name, labs ] : labels)
-    setLabels(std::string(name), std::move(labs));
-  for (auto && [ name, attr ] : attrs)
-    setAttr(std::string(name), std::move(attr));
-  for (auto && [ name, item ] : data)
-    setData(std::string(name), std::move(item));
-}
-
 Dataset::operator DatasetConstProxy() const { return DatasetConstProxy(*this); }
 Dataset::operator DatasetProxy() { return DatasetProxy(*this); }
 

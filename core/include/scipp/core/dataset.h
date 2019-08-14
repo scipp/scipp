@@ -239,8 +239,18 @@ public:
 
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
+
   template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
-  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs);
+  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
+    for (auto && [ dim, coord ] : coords)
+      setCoord(dim, std::move(coord));
+    for (auto && [ name, labs ] : labels)
+      setLabels(std::string(name), std::move(labs));
+    for (auto && [ name, attr ] : attrs)
+      setAttr(std::string(name), std::move(attr));
+    for (auto && [ name, item ] : data)
+      setData(std::string(name), std::move(item));
+  }
 
   operator DatasetConstProxy() const;
   operator DatasetProxy();
