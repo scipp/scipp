@@ -18,6 +18,7 @@ namespace scipp::core {
 class DataConstProxy;
 class DatasetConstProxy;
 class Dataset;
+class DataArray;
 class Dimensions;
 class Variable;
 class VariableConstProxy;
@@ -29,6 +30,7 @@ SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const units::Unit &unit);
 SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
 SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable);
+SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
 SCIPP_CORE_EXPORT std::string to_string(const DataConstProxy &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
@@ -111,6 +113,17 @@ struct SCIPP_CORE_EXPORT VariableMismatchError : public VariableError {
       : VariableError(a, "expected to match\n" + to_string(b)) {}
 };
 
+struct SCIPP_CORE_EXPORT DataArrayError : public std::runtime_error {
+  DataArrayError(const DataArray &data, const std::string &message);
+  DataArrayError(const DataConstProxy &data, const std::string &message);
+};
+
+struct SCIPP_CORE_EXPORT DataArrayMismatchError : public DataArrayError {
+  template <class A, class B>
+  DataArrayMismatchError(const A &a, const B &b)
+      : DataArrayError(a, "expected to match\n" + to_string(b)) {}
+};
+
 struct SCIPP_CORE_EXPORT UnitError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
@@ -143,8 +156,13 @@ struct SCIPP_CORE_EXPORT SparseDataError : public std::runtime_error {
 
 namespace expect {
 template <class A, class B> void variablesMatch(const A &a, const B &b) {
-  if (a != b)
-    throw except::VariableMismatchError(a, b);
+  if (a != b) {
+    if constexpr (std::is_same_v<A, Variable> ||
+                  std::is_same_v<A, VariableConstProxy>)
+      throw except::VariableMismatchError(a, b);
+    else
+      throw except::DataArrayMismatchError(a, b);
+  }
 }
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
                                         const scipp::index length);

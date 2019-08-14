@@ -159,6 +159,10 @@ std::string to_string(const VariableConstProxy &variable) {
   return format_variable("<scipp.VariableProxy>", variable);
 }
 
+std::string to_string(const DataArray &data) {
+  return to_string(DataConstProxy(data));
+}
+
 std::string to_string(const DataConstProxy &data) {
   return format_data_proxy("<scipp.DataProxy>", data);
 }
@@ -260,6 +264,13 @@ VariableError::VariableError(const Variable &variable,
 VariableError::VariableError(const VariableConstProxy &variable,
                              const std::string &message)
     : std::runtime_error(to_string(variable) + message) {}
+
+DataArrayError::DataArrayError(const DataArray &data,
+                               const std::string &message)
+    : std::runtime_error(to_string(data) + message) {}
+DataArrayError::DataArrayError(const DataConstProxy &data,
+                               const std::string &message)
+    : std::runtime_error(to_string(data) + message) {}
 
 UnitMismatchError::UnitMismatchError(const units::Unit &a, const units::Unit &b)
     : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +

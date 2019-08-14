@@ -233,10 +233,14 @@ class DatasetProxy;
 /// Collection of data arrays.
 class SCIPP_CORE_EXPORT Dataset {
 public:
+  using key_type = std::string;
+  using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataConstProxy>;
 
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
+  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
+  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs);
 
   operator DatasetConstProxy() const;
   operator DatasetProxy();
@@ -377,6 +381,7 @@ private:
 
 public:
   using key_type = Key;
+  using mapped_type = Variable;
 
   ConstProxy(
       std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
@@ -576,19 +581,16 @@ public:
   }
 };
 
-template <class Id, class Key>
-auto union_(const ConstProxy<Id, Key> &a, const ConstProxy<Id, Key> &b) {
-  std::map<std::conditional_t<std::is_same_v<Key, Dim>, Dim, std::string>,
-           Variable>
-      out;
+template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
+  std::map<typename T1::key_type, typename T1::mapped_type> out;
 
   for (const auto & [ key, item ] : a)
-    out[key] = item;
+    out.emplace(key, item);
   for (const auto & [ key, item ] : b) {
     if (const auto it = a.find(key); it != a.end())
       expect::variablesMatch(item, it->second);
     else
-      out[key] = item;
+      out.emplace(key, item);
   }
   return out;
 }
@@ -598,6 +600,9 @@ class SCIPP_CORE_EXPORT DatasetConstProxy {
   explicit DatasetConstProxy() : m_dataset(nullptr) {}
 
 public:
+  using key_type = std::string;
+  using mapped_type = DataArray;
+
   explicit DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
     for (const auto &item : dataset.m_data)
       m_indices.emplace_back(item.first);
