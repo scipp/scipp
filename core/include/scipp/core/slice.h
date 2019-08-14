@@ -25,6 +25,7 @@ public:
   scipp::index begin() const;
   scipp::index end() const;
   Dim dim() const;
+  bool isRange() const;
 
 private:
   Dim m_dim;

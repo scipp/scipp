@@ -14,6 +14,20 @@
 using namespace scipp;
 using namespace scipp::core;
 
+TEST(SliceTest, test_construction) {
+  Slice point(Dim::X, 0);
+  EXPECT_EQ(point.dim(), Dim::X);
+  EXPECT_EQ(point.begin(), 0);
+  EXPECT_EQ(point.end(), -1);
+  EXPECT_TRUE(!point.isRange());
+
+  Slice range(Dim::X, 0, 1);
+  EXPECT_EQ(range.dim(), Dim::X);
+  EXPECT_EQ(range.begin(), 0);
+  EXPECT_EQ(range.end(), 1);
+  EXPECT_TRUE(range.isRange());
+}
+
 TEST(SliceTest, test_equals) {
   Slice ref{Dim::X, 1, 2};
 

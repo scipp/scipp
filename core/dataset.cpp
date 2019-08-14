@@ -717,7 +717,7 @@ std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions(
     (void)extents;
     auto it = base_dims.find(slice.dim());
     if (it != base_dims.end()) {
-      if (slice.end() == -1) { // For non-range. Erase dimension
+      if (!slice.isRange()) { // For non-range. Erase dimension
         base_dims.erase(it);
       } else {
         it->second =

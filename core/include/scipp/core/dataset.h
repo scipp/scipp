@@ -394,8 +394,8 @@ public:
     // attributes.
     for (const auto &s : m_slices) {
       const auto slice = s.first;
-      if (slice.end() ==
-          -1) { // The slice represents a point not a range. Dimension removed.
+      if (!slice.isRange()) { // The slice represents a point not a range.
+                              // Dimension removed.
         for (auto it = m_items.begin(); it != m_items.end();) {
           auto erase = [slice](const auto it2) {
             if constexpr (std::is_same_v<Key, Dim>)

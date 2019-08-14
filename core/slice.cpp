@@ -14,7 +14,7 @@ void validate_begin(const scipp::index begin_) {
 }
 } // namespace
 
-/// Constructor
+/// Constructor for range slice
 /// \param dim_ Slice Dimension
 /// \param begin_ start index or single index of the slice
 /// \param end_ end index for the range. Note that -1 indicates a point slice,
@@ -29,6 +29,11 @@ Slice::Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_)
                              std::to_string(end_));
 }
 
+/**
+ * Constructor for point slice
+/// \param dim_ Slice Dimension
+/// \param begin_ start index or single index of the slice
+ */
 Slice::Slice(const Dim dim_, const index begin_)
     : m_dim(dim_), m_begin(begin_), m_end(-1) {
   validate_begin(begin_);
@@ -36,6 +41,8 @@ Slice::Slice(const Dim dim_, const index begin_)
 scipp::index Slice::begin() const { return m_begin; }
 scipp::index Slice::end() const { return m_end; }
 Dim Slice::dim() const { return m_dim; }
+
+bool Slice::isRange() const { return m_end != -1; }
 
 bool Slice::operator==(const Slice &other) const {
   return m_dim == other.dim() && m_begin == other.m_begin &&
