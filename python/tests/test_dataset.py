@@ -254,22 +254,27 @@ def test_slice():
 
 
 def test_chained_slicing():
-    d = sc.Dataset()
-    d.set_coord(Dim.X, sc.Variable([Dim.X], values=np.arange(11.0)))
-    d.set_coord(Dim.Y, sc.Variable([Dim.Y], values=np.arange(11.0)))
-    d.set_coord(Dim.Z, sc.Variable([Dim.Z], values=np.arange(11.0)))
-    d["a"] = sc.Variable([Dim.Z, Dim.Y, Dim.X],
-                         values=np.arange(1000.0).reshape(10, 10, 10))
-    d["b"] = sc.Variable([Dim.X, Dim.Z],
-                         values=np.arange(0.0, 10.0, 0.1).reshape(10, 10))
+    d = sc.Dataset(
+        {
+            'a':
+            sc.Variable([Dim.Z, Dim.Y, Dim.X],
+                        values=np.arange(1000.0).reshape(10, 10, 10)),
+            'b':
+            sc.Variable([Dim.X, Dim.Z],
+                        values=np.arange(0.0, 10.0, 0.1).reshape(10, 10))
+        },
+        coords={
+            Dim.X: sc.Variable([Dim.X], values=np.arange(11.0)),
+            Dim.Y: sc.Variable([Dim.Y], values=np.arange(11.0)),
+            Dim.Z: sc.Variable([Dim.Z], values=np.arange(11.0))
+        })
 
     expected = sc.Dataset()
-    expected.set_coord(Dim.Y, sc.Variable([Dim.Y], values=np.arange(11.0)))
+    expected.coords[Dim.Y] = sc.Variable([Dim.Y], values=np.arange(11.0))
     expected["a"] = sc.Variable([Dim.Y], values=np.arange(501.0, 600.0, 10.0))
     expected["b"] = sc.Variable(1.5)
 
     assert d[Dim.X, 1][Dim.Z, 5] == expected
-
 
 def test_coords_proxy_comparison_operators():
     d = sc.Dataset(
