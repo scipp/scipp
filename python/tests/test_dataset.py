@@ -276,6 +276,7 @@ def test_chained_slicing():
 
     assert d[Dim.X, 1][Dim.Z, 5] == expected
 
+
 def test_coords_proxy_comparison_operators():
     d = sc.Dataset(
         {
@@ -326,12 +327,8 @@ def test_dataset_histogram():
 
 
 def test_dataset_merge():
-    a = sc.Dataset({
-        'd1': sc.Variable([Dim.X], values=np.array([1, 2, 3]))
-    })
-    b = sc.Dataset({
-        'd2': sc.Variable([Dim.X], values=np.array([4, 5, 6]))
-    })
+    a = sc.Dataset({'d1': sc.Variable([Dim.X], values=np.array([1, 2, 3]))})
+    b = sc.Dataset({'d2': sc.Variable([Dim.X], values=np.array([4, 5, 6]))})
     c = sc.merge(a, b)
     assert a['d1'] == c['d1']
     assert b['d2'] == c['d2']
