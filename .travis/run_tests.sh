@@ -16,8 +16,8 @@ make -j2 install || exit 1
 # Neutron tests
 ./neutron/test/scipp-neutron-test
 
-# Python tests
-python3 -m pip install -r ../python/requirements.txt
+# Python tests (exit early if dependencies could not be installed)
+python3 -m pip install -r ../python/requirements.txt || exit 1
 export PYTHONPATH=$PYTHONPATH:../install
 cd ../python
 python3 -m pytest
