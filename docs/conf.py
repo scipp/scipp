@@ -214,10 +214,3 @@ texinfo_documents = [
      author, 'scipp', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-# -- Option to allow errors in jupyter notebooks --------------------------
-
-# TODO: this is temporary as long as the demo notebooks are not fully
-# functional. It should be removed when all errors have been resolved.
-nbsphinx_allow_errors = True
