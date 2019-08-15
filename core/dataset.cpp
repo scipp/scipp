@@ -481,7 +481,7 @@ void DataProxy::setUnit(const units::Unit unit) const {
 
 DType DataProxy::dtype() const {
   if (m_mutableData) {
-    const auto &data = m_mutableData->data;
+    const auto &data = m_mutableData->second.data;
     return data ? data->dtype() : DType::Unknown;
   }
   return DType::Unknown;

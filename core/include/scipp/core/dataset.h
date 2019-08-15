@@ -173,7 +173,7 @@ public:
   /// Total number of elements in data
   scipp::index size() const {
     if (m_mutableData) {
-      const auto &data = m_mutableData->data;
+      const auto &data = m_mutableData->second.data;
       return data ? data->data().size() : 0;
     }
     return 0;
@@ -181,7 +181,7 @@ public:
 
   /// Sets variances to data
   template <class T> void setVariances(Vector<T> &&v) {
-    auto &data = m_mutableData->data;
+    auto &data = m_mutableData->second.data;
     if (data)
       data->setVariances(std::move(v));
   }
