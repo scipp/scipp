@@ -232,12 +232,22 @@ public:
 
   template <class T> void setVariances(Vector<T> &&v) {
     using TT = underlying_type_t<T>;
-    return std::visit(
-        [&](auto &&arg) {
-          return requireT<VariableConceptT<TT>>(*arg).setVariances(
-              std::move(v));
-        },
-        m_object);
+    if constexpr (std::is_same_v<T, TT>) {
+      return std::visit(
+          [&](auto &&arg) {
+            return requireT<VariableConceptT<T>>(*arg).setVariances(
+                std::move(v));
+          },
+          m_object);
+    } else {
+      Vector<TT> vv(v.begin(), v.end());
+      return std::visit(
+          [&](auto &&arg) {
+            return requireT<VariableConceptT<TT>>(*arg).setVariances(
+                std::move(vv));
+          },
+          m_object);
+    }
   }
 
   // Due to provide a kind of const correctness for variant() function, which
@@ -760,6 +770,7 @@ public:
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;
+  scipp::index size() const { return data().size(); }
 
 private:
   friend class Variable;
