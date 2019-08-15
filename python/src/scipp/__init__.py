@@ -6,10 +6,4 @@ from ._scipp import *
 from ._scipp import __version__
 from .show import show
 from .table import table
-from .plot_matplotlib import plot
-# try:
-    
-# except ImportError:
-#     print("Warning: the plotting module for scipp was not imported. Check "
-#           "that plotly is installed on your system. You can still use scipp "
-#           "without its plotting functionality enabled.")
+from .plot import plot, config as plot_config
