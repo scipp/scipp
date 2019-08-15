@@ -95,29 +95,6 @@ scipp::core::DType scipp_dtype(const py::object &type) {
 }
 } // namespace scippy
 
-template <class T> struct SetVariances {
-  static void apply(VariableProxy &var, py::array &variances) {
-    py::array_t<T> variancesT(variances);
-    py::buffer_info info = variancesT.request();
-    auto dims = var.dims();
-    auto labels = dims.labels();
-    Vector<T> tmp(var.data().size());
-    copy_flattened<T>(variancesT, tmp);
-    if (Dimensions(std::vector<Dim>(labels.begin(), labels.end()),
-                   info.shape) != dims)
-      throw std::logic_error(
-          "The shape of variances should match the shape of variable");
-    if (!var.hasVariances())
-      var.setVariances(std::move(tmp));
-  }
-};
-
-void doSetVariances(VariableProxy &var, py::array &variances) {
-  const auto dtypeTag = var.dtype();
-  return CallDType<double, float, int64_t, int32_t, bool>::apply<SetVariances>(
-      dtypeTag, var, variances);
-}
-
 Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                         std::optional<py::array> &variances,
                         const units::Unit unit, const py::object &dtype) {
@@ -127,12 +104,6 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                                         : scippy::scipp_dtype(dtype);
   return CallDType<double, float, int64_t, int32_t, bool>::apply<MakeVariable>(
       dtypeTag, labels, values, variances, unit);
-}
-
-template <class Var> void doSetVariances(Var &var, py::array &variances) {
-  const auto dtypeTag = var.dType();
-  return CallDType<double, float, int64_t, int32_t, bool>::apply<SetVariances>(
-      var, dtypeTag, variances);
 }
 
 Variable makeVariableDefaultInit(const std::vector<Dim> &labels,

@@ -152,6 +152,21 @@ public:
   AttrsProxy attrs() const noexcept;
 
   void setUnit(const units::Unit unit) const;
+  DType dtype() const;
+
+  scipp::index size() const {
+    if (m_mutableData) {
+      const auto &data = m_mutableData->data;
+      return data ? data->data().size() : 0;
+    }
+    return 0;
+  }
+
+  template <class T> void setVariances(Vector<T> &&v) {
+    auto &data = m_mutableData->data;
+    if (data)
+      data->setVariances(std::move(v));
+  }
 
   /// Return untyped proxy for data (values and optional variances).
   VariableProxy data() const {
