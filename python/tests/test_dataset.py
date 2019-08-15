@@ -267,6 +267,27 @@ def test_dataset_data_access():
     ds.set_sparse_coord("sparse", var)
     assert ds["sparse"].values is None
 
+
+def make_simple_dataset():
+    return sp.Dataset(
+        {'a': sp.Variable(dims=[Dim.X, Dim.Y],
+                          values=np.random.rand(2, 3)),
+         'b': sp.Variable(1.0)},
+        coords={
+            Dim.X: sp.Variable([Dim.X], values=np.arange(2.0),
+                               unit=sp.units.m),
+            Dim.Y: sp.Variable([Dim.Y], values=np.arange(3.0),
+                               unit=sp.units.m)},
+        labels={
+            'aux': sp.Variable([Dim.Y], values=np.random.rand(3))})
+
+
+def test_dataset_proxy_set_variance():
+    d = make_simple_dataset()
+    vr = np.arange(6).reshape(2, 3)
+    d["a"].variances = vr
+    assert (vr == d["a"].variances).sum() == 6
+
 # def test_delitem(self):
 #    dataset = sp.Dataset()
 #    dataset[sp.Data.Value, "data"] = ([sp.Dim.Z, sp.Dim.Y, sp.Dim.X],

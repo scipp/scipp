@@ -431,3 +431,13 @@ def test_variance_acess():
     v = sp.Variable()
     assert v.variance is None
     assert v.variances is None
+
+
+def test_set_variance():
+    var1 = sp.Variable(dims=[Dim.X, Dim.Y], shape=[2, 3])
+    var2 = sp.Variable(dims=[Dim.X, Dim.Y], shape=[2, 3])
+    vr = np.arange(6).reshape(2, 3)
+    var1.variances = vr
+    assert (var1.variances == vr).sum() == 6
+    var2.variances = var1.variances
+    assert (var2.variances == vr).sum() == 6
