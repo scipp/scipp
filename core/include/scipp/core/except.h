@@ -103,15 +103,15 @@ using VariableMismatchError = MismatchError<Variable>;
 // We need deduction guides such that, e.g., the exception for a Variable
 // mismatch and VariableProxy mismatch are the same type.
 template <class T>
-MismatchError(const units::Unit &, const T &)->UnitMismatchError;
+MismatchError(const units::Unit &, const T &)->MismatchError<units::Unit>;
 template <class T>
-MismatchError(const VariableConstProxy &, const T &)->VariableMismatchError;
+MismatchError(const VariableConstProxy &, const T &)->MismatchError<Variable>;
 template <class T>
-MismatchError(const DatasetConstProxy &, const T &)->DatasetMismatchError;
+MismatchError(const DatasetConstProxy &, const T &)->MismatchError<Dataset>;
 template <class T>
-MismatchError(const DataConstProxy &, const T &)->DataArrayMismatchError;
+MismatchError(const DataConstProxy &, const T &)->MismatchError<DataArray>;
 template <class T>
-MismatchError(const Dimensions &, const T &)->DimensionMismatchError;
+MismatchError(const Dimensions &, const T &)->MismatchError<Dimensions>;
 
 struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
   DimensionNotFoundError(const Dimensions &expected, const Dim actual);
