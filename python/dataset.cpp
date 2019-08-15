@@ -24,6 +24,7 @@ void bind_mutable_proxy(py::module &m, const std::string &name) {
   proxy.def("__len__", &T::size)
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
+      .def("__setitem__", &T::set)
       .def("__iter__",
            [](T &self) {
              return py::make_iterator(self.begin(), self.end(),
@@ -91,6 +92,28 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray");
+  dataArray.def(py::init([](const std::optional<Variable> &data,
+                            const std::map<Dim, Variable> &coords,
+                            const std::map<std::string, Variable> &labels) {
+                  Dataset d;
+                  const std::string name = "";
+                  if (data)
+                    d.setData(name, *data);
+                  for (const auto & [ dim, item ] : coords)
+                    if (item.dims().sparse())
+                      d.setSparseCoord(name, item);
+                    else
+                      d.setCoord(dim, item);
+                  for (const auto & [ n, item ] : labels)
+                    if (item.dims().sparse())
+                      d.setSparseLabels(name, n, item);
+                    else
+                      d.setLabels(n, item);
+                  return DataArray(d[name]);
+                }),
+                py::arg("data") = std::nullopt,
+                py::arg("coords") = std::map<Dim, Variable>{},
+                py::arg("labels") = std::map<std::string, Variable>{});
   py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
   dataProxy.def_property_readonly(
@@ -151,12 +174,7 @@ void init_dataset(py::module &m) {
            [](Dataset &self, const std::string &name, const DataArray &data) {
              self.setData(name, data);
            })
-      .def("clear", &Dataset::clear)
-      .def("set_sparse_coord", &Dataset::setSparseCoord)
-      .def("set_sparse_labels", &Dataset::setSparseLabels)
-      .def("set_coord", &Dataset::setCoord)
-      .def("set_labels", &Dataset::setLabels)
-      .def("set_attr", &Dataset::setAttr);
+      .def("clear", &Dataset::clear);
 
   bind_dataset_proxy_methods(dataset);
   bind_dataset_proxy_methods(datasetProxy);

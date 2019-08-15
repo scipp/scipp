@@ -209,7 +209,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 
     # Create temporary Dataset
     ds = sp.Dataset()
-    ds.set_coord(dim, sp.Variable([dim], values=coords[dim].values))
+    ds.coords[dim] = sp.Variable([dim], values=coords[dim].values)
     # A dictionary to hold the DataProxy objects
     data = dict()
 

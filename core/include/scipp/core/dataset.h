@@ -9,7 +9,6 @@
 #include <iosfwd>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 
 #include <boost/iterator/transform_iterator.hpp>
@@ -37,11 +36,11 @@ using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
 /// Proxy for accessing coordinates of Dataset and DataProxy.
 using CoordsProxy = MutableProxy<CoordsConstProxy>;
 /// Proxy for accessing labels of const Dataset and DataConstProxy.
-using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string_view>;
+using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string>;
 /// Proxy for accessing labels of Dataset and DataProxy.
 using LabelsProxy = MutableProxy<LabelsConstProxy>;
 /// Proxy for accessing attributes of const Dataset and DataConstProxy.
-using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string_view>;
+using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string>;
 /// Proxy for accessing attributes of Dataset and DataProxy.
 using AttrsProxy = MutableProxy<AttrsConstProxy>;
 
@@ -495,10 +494,19 @@ private:
     }
   };
 
-  explicit MutableProxy(Base &&base) : Base(std::move(base)) {}
+  MutableProxy(Dataset *parent, const std::string *name, Base &&base)
+      : Base(std::move(base)), m_parent(parent), m_name(name) {}
+
+  Dataset *m_parent;
+  const std::string *m_name;
 
 public:
-  using Base::Base;
+  MutableProxy(
+      Dataset *parent, const std::string *name,
+      std::unordered_map<typename Base::key_type,
+                         std::pair<const Variable *, Variable *>> &&items,
+      const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
 
   /// Return a proxy to the coordinate for given dimension.
   VariableProxy operator[](const typename Base::key_type key) const {
@@ -524,7 +532,8 @@ public:
   }
 
   MutableProxy slice(const Slice slice1) const {
-    return MutableProxy(Base::slice(slice1));
+    // parent = nullptr since adding coords via slice is not supported.
+    return MutableProxy(nullptr, m_name, Base::slice(slice1));
   }
 
   MutableProxy slice(const Slice slice1, const Slice slice2) const {
@@ -535,14 +544,37 @@ public:
                      const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
-};
 
-namespace detail {
-constexpr Dim key(const Dim dim) { return dim; }
-inline std::string key(const std::string_view &name) {
-  return std::string{name};
-}
-} // namespace detail
+  void set(const typename Base::key_type key, Variable var) {
+    if (!m_parent || !Base::m_slices.empty())
+      throw std::runtime_error(
+          "Cannot add coord/labels/attr field to a slice.");
+    if (var.dims().sparse()) {
+      if (!m_name)
+        throw std::runtime_error("Sparse coord/labels/attr must be added to "
+                                 "coords of dataset items, not coords of "
+                                 "dataset.");
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->setSparseCoord(*m_name, var);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->setSparseLabels(*m_name, key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        throw std::runtime_error("Attributes cannot be sparse.");
+    } else {
+      if (m_name)
+        throw std::runtime_error(
+            "Dense coord/labels/attr must be added to "
+            "coords of dataset, not coords of dataset items.");
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->setCoord(key, var);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->setLabels(key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        m_parent->setAttr(key, var);
+    }
+    // TODO rebuild *this?!
+  }
+};
 
 template <class Id, class Key>
 auto union_(const ConstProxy<Id, Key> &a, const ConstProxy<Id, Key> &b) {
@@ -551,12 +583,12 @@ auto union_(const ConstProxy<Id, Key> &a, const ConstProxy<Id, Key> &b) {
       out;
 
   for (const auto & [ key, item ] : a)
-    out[detail::key(key)] = item;
+    out[key] = item;
   for (const auto & [ key, item ] : b) {
     if (const auto it = a.find(key); it != a.end())
       expect::variablesMatch(item, it->second);
     else
-      out[detail::key(key)] = item;
+      out[key] = item;
   }
   return out;
 }
