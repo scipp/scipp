@@ -1,41 +1,40 @@
-branches:
-  only:
-    - master
 language: cpp
 dist: xenial
 cache: ccache
+
 env:
   global:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
+
 jobs:
   include:
       # Check clang format and flake8 in the first stage
     - stage: "Code formatting"
       name: "Clang-format"
-      before_install: sh .travis/before_install.sh
-      script: sh .travis/check_clang_format.sh
+      before_install: .travis/before_install.sh
+      script: .travis/check_clang_format.sh
     - name: "Flake8"
-      before_install: sh .travis/before_install.sh
-      script: sh .travis/check_flake8.sh
+      before_install: .travis/before_install.sh
+      script: .travis/check_flake8.sh
       # Then start parallel build of gcc and clang in the Test stage
     - stage: "Unit tests"
       compiler: gcc
       name: "gcc"
-      before_install: sh .travis/before_install.sh
-      install: sh .travis/install_linux_toolchain.sh
-      script: sh .travis/run_tests.sh
+      before_install: .travis/before_install.sh
+      install: .travis/install_linux_toolchain.sh
+      script: .travis/run_tests.sh
     - compiler: clang
       name: "clang"
-      before_install: sh .travis/before_install.sh
-      install: sh .travis/install_linux_toolchain.sh
-      script: sh .travis/run_tests.sh
+      before_install: .travis/before_install.sh
+      install: .travis/install_linux_toolchain.sh
+      script: .travis/run_tests.sh
     - os: osx
       name: "apple clang"
       osx_image: xcode10.2
-      before_install: brew install ccache 
+      before_install: brew install ccache
       env:
         - PYTHON_EXECUTABLE="/usr/local/bin/python3"
-      script: sh .travis/run_tests.sh
+      script: .travis/run_tests.sh
     - stage: "Deploy"
       name: "conda linux"
       if: branch = master AND NOT type = pull_request
@@ -43,8 +42,10 @@ jobs:
         depth: false
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
-      install: sh .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
-      script: sh .travis/conda_build_and_deploy.sh
+      install: .travis/install_conda.sh "Miniconda3-latest-Linux-x86_64.sh"
+      script:
+        - .travis/conda_build_and_deploy.sh
+        - .travis/trigger_docker_build.sh
     - os: osx
       osx_image: xcode10.2
       name: "conda osx"
@@ -54,8 +55,8 @@ jobs:
       env:
         - PATH="$HOME/miniconda/bin:$PATH"
         - CC=/usr/bin/clang
-        - CXX=/usr/bin/clang++ 
+        - CXX=/usr/bin/clang++
         - OSX_VERSION=10.14
-      install: 
-        - sh .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
-      script: sh .travis/conda_build_and_deploy.sh
+      install:
+        - .travis/install_conda.sh "Miniconda3-latest-MacOSX-x86_64.sh"
+      script: .travis/conda_build_and_deploy.sh
