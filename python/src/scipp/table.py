@@ -21,7 +21,7 @@ def value_to_string(val, precision=3):
     return text
 
 
-def table_from_dataset(dataset, coord_dim=None, is_hist=False):
+def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
     # border style
     bstyle = "style='border: 1px solid black;"
     cstyle = [bstyle + "background-color: #ADF3E0;'",
@@ -29,31 +29,34 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False):
     bstyle += "'"
 
     # Declare table
-    html = "<table style='border-collapse: collapse;'><tr>"
-    # Table headers
-    if coord_dim is not None:
-        coord = dataset.coords[coord_dim]
-        html += "<th {} colspan='{}'>Coord: {}</th>".format(
-            cstyle[0].replace("style='", "style='text-align: center;"),
-            1 + coord.has_variances, axis_label(coord))
+    html = "<table style='border-collapse: collapse;'>"
     for key, val in dataset:
         if len(val.shape) > 0:
             size = val.shape[0]
         else:
             size = None
-        html += "<th {} colspan='{}'>{}</th>".format(
-            bstyle.replace("style='", "style='text-align: center;"),
-            1 + val.has_variances, axis_label(val, name=key))
-    html += "</tr><tr>"
-    if coord_dim is not None:
-        html += "<th {}>Values</th>".format(cstyle[1])
-        if coord.has_variances:
-            html += "<th {}>Variances</th>".format(cstyle[1])
-    for key, val in dataset:
-        html += "<th {}>Values</th>".format(bstyle)
-        if val.has_variances:
-            html += "<th {}>Variances</th>".format(bstyle)
-    html += "</tr>"
+    # Table headers
+    if headers:
+        html += "<tr>"
+        if coord_dim is not None:
+            coord = dataset.coords[coord_dim]
+            html += "<th {} colspan='{}'>Coord: {}</th>".format(
+                cstyle[0].replace("style='", "style='text-align: center;"),
+                1 + coord.has_variances, axis_label(coord))
+        for key, val in dataset:
+            html += "<th {} colspan='{}'>{}</th>".format(
+                bstyle.replace("style='", "style='text-align: center;"),
+                1 + val.has_variances, axis_label(val, name=key))
+        html += "</tr><tr>"
+        if coord_dim is not None:
+            html += "<th {}>Values</th>".format(cstyle[1])
+            if coord.has_variances:
+                html += "<th {}>Variances</th>".format(cstyle[1])
+        for key, val in dataset:
+            html += "<th {}>Values</th>".format(bstyle)
+            if val.has_variances:
+                html += "<th {}>Variances</th>".format(bstyle)
+        html += "</tr>"
     if size is None:
         html += "<tr>"
         for key, val in dataset:
@@ -64,7 +67,7 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False):
         html += "</tr>"
     else:
         for i in range(size):
-            html += "<tr>"
+            html += '<tr style="font-weight:normal">'
             if coord_dim is not None:
                 text = value_to_string(coord.values[i])
                 if is_hist:
@@ -99,9 +102,9 @@ def table(dataset):
     coord_1d = {}
     is_histogram = {}
     coord_def = None
+    headers = True
 
     tp = type(dataset)
-    count = 0
     if (tp is sc.Dataset) or (tp is sc.DatasetProxy):
         for name, var in dataset:
             if len(var.dims) == 1:
@@ -124,21 +127,23 @@ def table(dataset):
                     tabledict["1D Variables"][key][name] = var
             else:
                 tabledict["0D Variables"][name] = var
-    else:
+    elif (tp is sc.DataArray) or (tp is sc.DataProxy) or (tp is sc.Variable) or (tp is sc.VariableProxy):
         try:
             key = dataset.name
         except AttributeError:
-            count += 1
-            key = "Unnamed variable {}".format(count)
+            key = ""
         tabledict["default"][key] = dataset
         if (tp is sc.DataProxy) and (len(dataset.dims) > 0):
             if len(dataset.coords) > 0:
                 coord_def = dataset.dims[0]
+    else:
+        tabledict["default"][""] = sc.Variable([sc.Dim.X], values=dataset)
+        headers = False
 
     subtitle = "<h6 style='font-weight: normal; color: grey'>"
     output = ""
     if len(tabledict["default"]) > 0:
-        output += table_from_dataset(tabledict["default"], coord_dim=coord_def)
+        output += table_from_dataset(tabledict["default"], coord_dim=coord_def, headers=headers)
     if len(tabledict["0D Variables"]) > 0:
         output += subtitle + "0D Variables</h6>"
         output += table_from_dataset(tabledict["0D Variables"])
