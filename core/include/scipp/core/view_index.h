@@ -93,9 +93,9 @@ private:
   // loops are used.
 
   scipp::index m_index{0};
-  std::array<scipp::index, NDIM_MAX> m_delta = {0, 0, 0, 0, 0, 0};
-  std::array<scipp::index, NDIM_MAX> m_coord = {0, 0, 0, 0, 0, 0};
-  std::array<scipp::index, NDIM_MAX> m_extent = {0, 0, 0, 0, 0, 0};
+  std::array<scipp::index, NDIM_MAX> m_delta = {};
+  std::array<scipp::index, NDIM_MAX> m_coord = {};
+  std::array<scipp::index, NDIM_MAX> m_extent = {};
   scipp::index m_fullIndex;
   int32_t m_dims;
   int32_t m_subdims = 0;

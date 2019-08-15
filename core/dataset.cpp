@@ -60,19 +60,8 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   return items;
 }
 
-Dataset::Dataset(const DatasetConstProxy &proxy) {
-  for (const auto & [ dim, coord ] : proxy.coords())
-    setCoord(dim, coord);
-  for (const auto & [ name, labels ] : proxy.labels())
-    setLabels(std::string(name), labels);
-  for (const auto & [ name, attr ] : proxy.attrs())
-    setAttr(std::string(name), attr);
-  for (const auto & [ name, item ] : proxy)
-    setData(std::string(name), item);
-}
-
-Dataset::operator DatasetConstProxy() const { return DatasetConstProxy(*this); }
-Dataset::operator DatasetProxy() { return DatasetProxy(*this); }
+Dataset::Dataset(const DatasetConstProxy &proxy)
+    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs()) {}
 
 /// Removes all data items from the Dataset.
 ///
@@ -161,6 +150,11 @@ scipp::index makeUnknownEdgeState(const scipp::index extent) {
 }
 scipp::index shrink(const scipp::index extent) { return extent - 1; }
 bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
+scipp::index decodeExtent(const scipp::index extent) {
+  if (isUnknownEdgeState(extent))
+    return -extent - 1;
+  return extent;
+}
 bool isSame(const scipp::index extent, const scipp::index reference) {
   return reference == -extent - 1;
 }
@@ -279,7 +273,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
       setSparseCoord(name, coord);
     } else {
       if (const auto it = m_coords.find(dim); it != m_coords.end())
-        expect::variablesMatch(coord, it->second);
+        expect::equals(coord, it->second);
       else
         setCoord(dim, coord);
     }
@@ -289,14 +283,14 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
       setSparseLabels(name, std::string(nm), labs);
     } else {
       if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
-        expect::variablesMatch(labs, it->second);
+        expect::equals(labs, it->second);
       else
         setLabels(std::string(nm), labs);
     }
   }
   for (const auto & [ nm, attr ] : data.attrs()) {
     if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
-      expect::variablesMatch(attr, it->second);
+      expect::equals(attr, it->second);
     else
       setAttr(std::string(nm), attr);
   }
@@ -730,7 +724,7 @@ bool DatasetConstProxy::operator==(const DatasetConstProxy &other) const {
   return dataset_equals(*this, other);
 }
 
-/// Return true if the datasets have mismatching content.
+/// Return true if the datasets have mismatching content./
 bool Dataset::operator!=(const Dataset &other) const {
   return !dataset_equals(*this, other);
 }
@@ -748,6 +742,25 @@ bool DatasetConstProxy::operator!=(const Dataset &other) const {
 /// Return true if the datasets have mismatching content.
 bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
+}
+
+std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions() const {
+
+  auto base_dims = m_dataset->dimensions();
+  // Note current slices are ordered, but NOT unique
+  for (const auto & [ slice, extents ] : m_slices) {
+    (void)extents;
+    auto it = base_dims.find(slice.dim());
+    if (!slice.isRange()) { // For non-range. Erase dimension
+      base_dims.erase(it);
+    } else {
+      it->second =
+          slice.end() -
+          slice.begin(); // Take extent from slice. This is the effect that
+                         // the successful slice range will have
+    }
+  }
+  return base_dims;
 }
 
 constexpr static auto plus = [](const auto &a, const auto &b) { return a + b; };
@@ -878,6 +891,14 @@ Dataset &Dataset::operator*=(const Dataset &other) {
 
 Dataset &Dataset::operator/=(const Dataset &other) {
   return apply(divide_equals, *this, other);
+}
+
+std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
+  std::unordered_map<Dim, scipp::index> all;
+  for (const auto &dim : this->m_dims) {
+    all[dim.first] = extents::decodeExtent(dim.second);
+  }
+  return all;
 }
 
 DatasetProxy DatasetProxy::operator+=(const DataConstProxy &other) const {
@@ -1155,79 +1176,9 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   return histogram(dataset, bins);
 }
 
-template <class A, class B>
-void merge_validate_proxies(const A &lhs, const B &rhs) {
-  for (const auto & [ k, v ] : lhs) {
-    /* Throw if an item is present in both proxies but they are not equal */
-    if (rhs.contains(k) && rhs[k] != v) {
-      throw std::runtime_error("Both datasets contain an item with the same "
-                               "key that does not match.");
-    }
-  }
-}
-
-template <class T> void merge_copy_data(Dataset &dest, const T &src) {
-  for (const auto & [ name, data ] : src) {
-    if (!dest.contains(name)) {
-      dest.setData(std::string(name), data);
-    }
-  }
-}
-
-template <class T> void merge_copy_coords(Dataset &dest, const T &src) {
-  for (const auto & [ dim, coord ] : src.coords()) {
-    if (!dest.coords().contains(dim)) {
-      dest.setCoord(dim, coord);
-    }
-  }
-}
-
-template <class T> void merge_copy_labels(Dataset &dest, const T &src) {
-  for (const auto & [ name, label ] : src.labels()) {
-    if (!dest.labels().contains(name)) {
-      dest.setLabels(std::string(name), label);
-    }
-  }
-}
-
-template <class T> void merge_copy_attrs(Dataset &dest, const T &src) {
-  for (const auto & [ name, attr ] : src.attrs()) {
-    if (!dest.attrs().contains(name)) {
-      dest.setAttr(std::string(name), attr);
-    }
-  }
-}
-
-template <class A, class B> Dataset merge_datasets(const A &lhs, const B &rhs) {
-  merge_validate_proxies(lhs.coords(), rhs.coords());
-  merge_validate_proxies(lhs.labels(), rhs.labels());
-  merge_validate_proxies(lhs.attrs(), rhs.attrs());
-  merge_validate_proxies(lhs, rhs);
-
-  Dataset d;
-  merge_copy_data(d, lhs);
-  merge_copy_data(d, rhs);
-  merge_copy_coords(d, lhs);
-  merge_copy_coords(d, rhs);
-  merge_copy_labels(d, lhs);
-  merge_copy_labels(d, rhs);
-  merge_copy_attrs(d, lhs);
-  merge_copy_attrs(d, rhs);
-
-  return d;
-}
-
-Dataset merge(const Dataset &lhs, const Dataset &rhs) {
-  return merge_datasets(lhs, rhs);
-}
-Dataset merge(const DatasetConstProxy &lhs, const Dataset &rhs) {
-  return merge_datasets(lhs, rhs);
-}
-Dataset merge(const Dataset &lhs, const DatasetConstProxy &rhs) {
-  return merge_datasets(lhs, rhs);
-}
-Dataset merge(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
-  return merge_datasets(lhs, rhs);
+Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
+  return Dataset(union_(a, b), union_(a.coords(), b.coords()),
+                 union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
 } // namespace scipp::core

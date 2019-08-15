@@ -105,8 +105,7 @@ bool Variable::operator!=(const VariableConstProxy &other) const {
 
 template <class T> VariableProxy VariableProxy::assign(const T &other) const {
   setUnit(other.unit());
-  if (dims() != other.dims())
-    throw except::DimensionMismatchError(dims(), other.dims());
+  expect::equals(dims(), other.dims());
   data().copy(other.data(), Dim::Invalid, 0, 0, 1);
   return *this;
 }
@@ -146,7 +145,7 @@ void VariableProxy::expectCanSetUnit(const units::Unit &unit) const {
 }
 
 VariableConstProxy Variable::slice(const Slice slice) const & {
-  return {*this, slice.dim, slice.begin, slice.end};
+  return {*this, slice.dim(), slice.begin(), slice.end()};
 }
 
 Variable Variable::slice(const Slice slice) const && {
@@ -154,7 +153,7 @@ Variable Variable::slice(const Slice slice) const && {
 }
 
 VariableProxy Variable::slice(const Slice slice) & {
-  return {*this, slice.dim, slice.begin, slice.end};
+  return {*this, slice.dim(), slice.begin(), slice.end()};
 }
 
 Variable Variable::slice(const Slice slice) && { return {this->slice(slice)}; }

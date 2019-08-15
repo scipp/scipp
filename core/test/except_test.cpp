@@ -11,30 +11,6 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(DimensionMismatchError, what) {
-  Dimensions dims{{Dim::X, 1}, {Dim::Y, 2}};
-  except::DimensionMismatchError error(dims, Dimensions{});
-  EXPECT_EQ(
-      error.what(),
-      std::string("Expected dimensions {{Dim.X, 1}, {Dim.Y, 2}}, got {}."));
-}
-
-TEST(DimensionNotFoundError, what) {
-  Dimensions dims{{Dim::X, 1}, {Dim::Y, 2}};
-  except::DimensionNotFoundError error(dims, Dim::Z);
-  EXPECT_EQ(error.what(),
-            std::string("Expected dimension to be a non-sparse dimension of "
-                        "{{Dim.X, 1}, {Dim.Y, 2}}, got Dim.Z."));
-}
-
-TEST(DimensionLengthError, what) {
-  Dimensions dims{{Dim::X, 1}, {Dim::Y, 2}};
-  except::DimensionLengthError error(dims, Dim::Y, 3);
-  EXPECT_EQ(error.what(),
-            std::string("Expected dimension to be in {{Dim.X, 1}, {Dim.Y, "
-                        "2}}, got Dim.Y with mismatching length 3."));
-}
-
 TEST(StringFormattingTest, to_string_Dataset) {
   Dataset a;
   a.setData("a", makeVariable<double>({}));
@@ -52,4 +28,20 @@ TEST(StringFormattingTest, to_string_sparse_Dataset) {
   a.setSparseCoord(
       "a", makeVariable<double>({Dim::Y, Dim::X}, {4, Dimensions::Sparse}));
   ASSERT_NO_THROW(to_string(a));
+}
+
+TEST(ValidSliceTest, test_slice_range) {
+  Dimensions dims{Dim::X, 3};
+  EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 0)));
+  EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 2)));
+  EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 0, 3)));
+  EXPECT_THROW(expect::validSlice(dims, Slice(Dim::X, 3)), except::SliceError);
+  EXPECT_THROW(expect::validSlice(dims, Slice(Dim::X, -1)), except::SliceError);
+  EXPECT_THROW(expect::validSlice(dims, Slice(Dim::X, 0, 4)),
+               except::SliceError);
+}
+TEST(ValidSliceTest, test_dimension_contained) {
+  Dimensions dims{{Dim::X, 3}, {Dim::Z, 3}};
+  EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 0)));
+  EXPECT_THROW(expect::validSlice(dims, Slice(Dim::Y, 0)), except::SliceError);
 }

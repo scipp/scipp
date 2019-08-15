@@ -10,24 +10,17 @@
 
 #include <Eigen/Dense>
 
+#include "scipp-core_export.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/index.h"
+#include "scipp/core/slice.h"
 #include "scipp/core/span.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
-
-/// Helper for passing slicing parameters.
-struct SCIPP_CORE_EXPORT Slice {
-  Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_ = -1)
-      : dim(dim_), begin(begin_), end(end_) {}
-  Dim dim;
-  scipp::index begin;
-  scipp::index end;
-};
 
 template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
@@ -568,7 +561,7 @@ public:
   }
 
   VariableConstProxy slice(const Slice slice) const {
-    return VariableConstProxy(*this, slice.dim, slice.begin, slice.end);
+    return VariableConstProxy(*this, slice.dim(), slice.begin(), slice.end());
   }
 
   // Note the return type. Reshaping a non-contiguous slice cannot return a
@@ -674,7 +667,7 @@ public:
   }
 
   VariableProxy slice(const Slice slice) const {
-    return VariableProxy(*this, slice.dim, slice.begin, slice.end);
+    return VariableProxy(*this, slice.dim(), slice.begin(), slice.end());
   }
 
   using VariableConstProxy::data;
