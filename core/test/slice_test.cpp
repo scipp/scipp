@@ -261,7 +261,7 @@ protected:
 template <int max> constexpr auto valid_ranges() {
   using scipp::index;
   const auto size = max + 1;
-  std::array<std::pair<index, index>, (size * size + size) / 2> pairs;
+  std::array<std::pair<index, index>, ((size * size + size) / 2) - 1> pairs;
   index i = 0;
   for (index first = 0; first < max; ++first)
     for (index second = first + 0; second <= max; ++second) {

@@ -29,11 +29,10 @@ Slice::Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_)
                              std::to_string(end_));
 }
 
-/**
- * Constructor for point slice
+/// Constructor for point slice
 /// \param dim_ Slice Dimension
 /// \param begin_ start index or single index of the slice
- */
+///
 Slice::Slice(const Dim dim_, const index begin_)
     : m_dim(dim_), m_begin(begin_), m_end(-1) {
   validate_begin(begin_);
