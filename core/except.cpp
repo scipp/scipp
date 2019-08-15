@@ -256,16 +256,6 @@ void dimensionMatches(const Dimensions &dims, const Dim dim,
     throw except::DimensionLengthError(dims, dim, length);
 }
 
-void equals(const units::Unit &a, const units::Unit &b) {
-  if (!(a == b))
-    throw except::UnitMismatchError(a, b);
-}
-
-void equals(const Dimensions &a, const Dimensions &b) {
-  if (!(a == b))
-    throw except::DimensionMismatchError(a, b);
-}
-
 void validSlice(const Dimensions &dims, const Slice &slice) {
   if (!dims.contains(slice.dim) || slice.begin < 0 ||
       slice.begin >= std::min(slice.end >= 0 ? slice.end + 1 : dims[slice.dim],

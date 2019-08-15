@@ -100,6 +100,19 @@ using DimensionMismatchError = MismatchError<Dimensions>;
 using UnitMismatchError = MismatchError<units::Unit>;
 using VariableMismatchError = MismatchError<Variable>;
 
+// We need deduction guides such that, e.g., the exception for a Variable
+// mismatch and VariableProxy mismatch are the same type.
+template <class T>
+MismatchError(const units::Unit &, const T &)->UnitMismatchError;
+template <class T>
+MismatchError(const VariableConstProxy &, const T &)->VariableMismatchError;
+template <class T>
+MismatchError(const DatasetConstProxy &, const T &)->DatasetMismatchError;
+template <class T>
+MismatchError(const DataConstProxy &, const T &)->DataArrayMismatchError;
+template <class T>
+MismatchError(const Dimensions &, const T &)->DimensionMismatchError;
+
 struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
   DimensionNotFoundError(const Dimensions &expected, const Dim actual);
 };
@@ -137,15 +150,11 @@ struct SCIPP_CORE_EXPORT SparseDataError : public std::runtime_error {
 } // namespace except
 
 namespace expect {
-template <class A, class B> void variablesMatch(const A &a, const B &b) {
-  if (a != b) {
-    if constexpr (std::is_same_v<A, Variable> ||
-                  std::is_same_v<A, VariableConstProxy>)
-      throw except::VariableMismatchError(a, b);
-    else
-      throw except::DataArrayMismatchError(a, b);
-  }
+template <class A, class B> void equals(const A &a, const B &b) {
+  if (a != b)
+    throw except::MismatchError(a, b);
 }
+
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
                                         const scipp::index length);
 
@@ -154,8 +163,6 @@ void sizeMatches(const T &range, const Ts &... other) {
   if (((scipp::size(range) != scipp::size(other)) || ...))
     throw except::SizeError("Expected matching sizes.");
 }
-SCIPP_CORE_EXPORT void equals(const units::Unit &a, const units::Unit &b);
-SCIPP_CORE_EXPORT void equals(const Dimensions &a, const Dimensions &b);
 
 template <class T> void contains(const T &a, const T &b) {
   if (!a.contains(b))

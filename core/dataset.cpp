@@ -268,7 +268,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
       setSparseCoord(name, coord);
     } else {
       if (const auto it = m_coords.find(dim); it != m_coords.end())
-        expect::variablesMatch(coord, it->second);
+        expect::equals(coord, it->second);
       else
         setCoord(dim, coord);
     }
@@ -278,14 +278,14 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
       setSparseLabels(name, std::string(nm), labs);
     } else {
       if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
-        expect::variablesMatch(labs, it->second);
+        expect::equals(labs, it->second);
       else
         setLabels(std::string(nm), labs);
     }
   }
   for (const auto & [ nm, attr ] : data.attrs()) {
     if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
-      expect::variablesMatch(attr, it->second);
+      expect::equals(attr, it->second);
     else
       setAttr(std::string(nm), attr);
   }

@@ -595,7 +595,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
     out.emplace(key, item);
   for (const auto & [ key, item ] : b) {
     if (const auto it = a.find(key); it != a.end())
-      expect::variablesMatch(item, it->second);
+      expect::equals(item, it->second);
     else
       out.emplace(key, item);
   }
