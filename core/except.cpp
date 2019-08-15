@@ -252,26 +252,6 @@ DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                      " with mismatching length " + std::to_string(length) +
                      ".") {}
 
-DatasetError::DatasetError(const Dataset &dataset, const std::string &message)
-    : std::runtime_error(to_string(dataset) + message) {}
-DatasetError::DatasetError(const DatasetConstProxy &dataset,
-                           const std::string &message)
-    : std::runtime_error(to_string(dataset) + message) {}
-
-VariableError::VariableError(const Variable &variable,
-                             const std::string &message)
-    : std::runtime_error(to_string(variable) + message) {}
-VariableError::VariableError(const VariableConstProxy &variable,
-                             const std::string &message)
-    : std::runtime_error(to_string(variable) + message) {}
-
-DataArrayError::DataArrayError(const DataArray &data,
-                               const std::string &message)
-    : std::runtime_error(to_string(data) + message) {}
-DataArrayError::DataArrayError(const DataConstProxy &data,
-                               const std::string &message)
-    : std::runtime_error(to_string(data) + message) {}
-
 UnitMismatchError::UnitMismatchError(const units::Unit &a, const units::Unit &b)
     : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +
                 ".") {}

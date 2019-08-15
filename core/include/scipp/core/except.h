@@ -75,9 +75,18 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_EXPORT DimensionError : public std::runtime_error {
+template <class T> struct Error : public std::runtime_error {
   using std::runtime_error::runtime_error;
+  template <class T2>
+  Error(const T2 &object, const std::string &message)
+      : std::runtime_error(to_string(object) + message) {}
 };
+
+using DataArrayError = Error<DataArray>;
+using DatasetError = Error<Dataset>;
+using DimensionError = Error<Dimensions>;
+using UnitError = Error<units::Unit>;
+using VariableError = Error<Variable>;
 
 struct SCIPP_CORE_EXPORT DimensionMismatchError : public DimensionError {
   DimensionMismatchError(const Dimensions &expected, const Dimensions &actual);
@@ -97,35 +106,16 @@ struct SCIPP_CORE_EXPORT SparseDimensionError : public DimensionError {
       : DimensionError("Unsupported operation for sparse dimensions.") {}
 };
 
-struct SCIPP_CORE_EXPORT DatasetError : public std::runtime_error {
-  DatasetError(const Dataset &dataset, const std::string &message);
-  DatasetError(const DatasetConstProxy &dataset, const std::string &message);
-};
-
-struct SCIPP_CORE_EXPORT VariableError : public std::runtime_error {
-  VariableError(const Variable &variable, const std::string &message);
-  VariableError(const VariableConstProxy &variable, const std::string &message);
-};
-
 struct SCIPP_CORE_EXPORT VariableMismatchError : public VariableError {
   template <class A, class B>
   VariableMismatchError(const A &a, const B &b)
       : VariableError(a, "expected to match\n" + to_string(b)) {}
 };
 
-struct SCIPP_CORE_EXPORT DataArrayError : public std::runtime_error {
-  DataArrayError(const DataArray &data, const std::string &message);
-  DataArrayError(const DataConstProxy &data, const std::string &message);
-};
-
 struct SCIPP_CORE_EXPORT DataArrayMismatchError : public DataArrayError {
   template <class A, class B>
   DataArrayMismatchError(const A &a, const B &b)
       : DataArrayError(a, "expected to match\n" + to_string(b)) {}
-};
-
-struct SCIPP_CORE_EXPORT UnitError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
 };
 
 struct SCIPP_CORE_EXPORT SizeError : public std::runtime_error {
