@@ -88,9 +88,17 @@ using DimensionError = Error<Dimensions>;
 using UnitError = Error<units::Unit>;
 using VariableError = Error<Variable>;
 
-struct SCIPP_CORE_EXPORT DimensionMismatchError : public DimensionError {
-  DimensionMismatchError(const Dimensions &expected, const Dimensions &actual);
+template <class T> struct MismatchError : public Error<T> {
+  template <class A, class B>
+  MismatchError(const A &a, const B &b)
+      : Error<T>(a, " expected to be equal to " + to_string(b)) {}
 };
+
+using DataArrayMismatchError = MismatchError<DataArray>;
+using DatasetMismatchError = MismatchError<Dataset>;
+using DimensionMismatchError = MismatchError<Dimensions>;
+using UnitMismatchError = MismatchError<units::Unit>;
+using VariableMismatchError = MismatchError<Variable>;
 
 struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
   DimensionNotFoundError(const Dimensions &expected, const Dim actual);
@@ -106,24 +114,8 @@ struct SCIPP_CORE_EXPORT SparseDimensionError : public DimensionError {
       : DimensionError("Unsupported operation for sparse dimensions.") {}
 };
 
-struct SCIPP_CORE_EXPORT VariableMismatchError : public VariableError {
-  template <class A, class B>
-  VariableMismatchError(const A &a, const B &b)
-      : VariableError(a, "expected to match\n" + to_string(b)) {}
-};
-
-struct SCIPP_CORE_EXPORT DataArrayMismatchError : public DataArrayError {
-  template <class A, class B>
-  DataArrayMismatchError(const A &a, const B &b)
-      : DataArrayError(a, "expected to match\n" + to_string(b)) {}
-};
-
 struct SCIPP_CORE_EXPORT SizeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
-};
-
-struct SCIPP_CORE_EXPORT UnitMismatchError : public UnitError {
-  UnitMismatchError(const units::Unit &a, const units::Unit &b);
 };
 
 struct SCIPP_CORE_EXPORT SliceError : public std::out_of_range {

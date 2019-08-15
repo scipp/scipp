@@ -233,11 +233,6 @@ std::string to_string(const DatasetConstProxy &dataset) {
 
 namespace except {
 
-DimensionMismatchError::DimensionMismatchError(const Dimensions &expected,
-                                               const Dimensions &actual)
-    : DimensionError("Expected dimensions " + to_string(expected) + ", got " +
-                     to_string(actual) + ".") {}
-
 DimensionNotFoundError::DimensionNotFoundError(const Dimensions &expected,
                                                const Dim actual)
     : DimensionError("Expected dimension to be a non-sparse dimension of " +
@@ -251,10 +246,6 @@ DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                      ", got " + to_string(actual) +
                      " with mismatching length " + std::to_string(length) +
                      ".") {}
-
-UnitMismatchError::UnitMismatchError(const units::Unit &a, const units::Unit &b)
-    : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +
-                ".") {}
 
 } // namespace except
 
