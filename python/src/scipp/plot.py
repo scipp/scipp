@@ -24,7 +24,7 @@ class Config:
     def __init__(self):
 
         # Select plotting backend
-        self.backend = "matplotlib"
+        self.backend = "plotly"
         # The colorbar properties
         self.cb = {"name": "viridis", "log": False, "min": None, "max": None,
                    "min_var": None, "max_var": None}
