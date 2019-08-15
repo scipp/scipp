@@ -321,61 +321,61 @@ def test_plot_sliceviewer_with_axes():
 
 # Using matplotlib backend ====================================================
 
-def test_plot_1d():
+def test_plot_1d_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_1d()
 
 
-def test_plot_1d_with_variances():
+def test_plot_1d_with_variances_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_1d_with_variances()
 
 
-def test_plot_1d_bin_edges():
+def test_plot_1d_bin_edges_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_1d_bin_edges()
 
 
-def test_plot_1d_bin_edges_with_variances():
+def test_plot_1d_bin_edges_with_variances_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_1d_bin_edges_with_variances()
 
 
-def test_plot_1d_two_entries():
+def test_plot_1d_two_entries_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_1d_bin_edges_with_variances()
 
 
-def test_plot_1d_list_of_datasets():
+def test_plot_1d_list_of_datasets_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_1d_list_of_datasets()
 
 
-def test_plot_2d_image():
+def test_plot_2d_image_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_2d_image()
 
 
-def test_plot_2d_image_with_axes():
+def test_plot_2d_image_with_axes_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_2d_image_with_axes()
 
 
-def test_plot_2d_image_with_variances():
+def test_plot_2d_image_with_variances_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_2d_image_with_variances()
 
 
-def test_plot_2d_image_with_filename():
+def test_plot_2d_image_with_filename_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_2d_image_with_filename("image.pdf")
 
 
-def test_plot_2d_image_with_variances_with_filename():
+def test_plot_2d_image_with_variances_with_filename_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_2d_image_with_variances_with_filename("val_and_var.pdf")
 
 
-def test_plot_collapse():
+def test_plot_collapse_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_collapse()
