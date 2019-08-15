@@ -24,8 +24,10 @@ def value_to_string(val, precision=3):
 def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
     # border style
     bstyle = "style='border: 1px solid black;"
-    cstyle = [bstyle + "background-color: #ADF3E0;'",
-              bstyle + "background-color: #B9FFEC;'"]
+    cstyle = [
+        bstyle + "background-color: #ADF3E0;'",
+        bstyle + "background-color: #B9FFEC;'"
+    ]
     bstyle += "'"
 
     # Declare table
@@ -93,12 +95,15 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
 
 def table(dataset):
 
-    title = "<h3>{}</h3>".format(str(type(dataset)).replace(
-        "<class 'scipp._scipp.", "").replace("'>", ""))
+    title = "<h3>{}</h3>".format(
+        str(type(dataset)).replace("<class 'scipp._scipp.",
+                                   "").replace("'>", ""))
 
-    tabledict = {"default": sc.Dataset(),
-                 "0D Variables": sc.Dataset(),
-                 "1D Variables": {}}
+    tabledict = {
+        "default": sc.Dataset(),
+        "0D Variables": sc.Dataset(),
+        "1D Variables": {}
+    }
     coord_1d = {}
     is_histogram = {}
     coord_def = None
@@ -113,8 +118,9 @@ def table(dataset):
                     temp_dict = {"data": {name: dataset[name].data}}
                     if len(var.coords) > 0:
                         coord_1d[key] = var.dims[0]
-                        temp_dict["coords"] = {var.dims[0]:
-                                               var.coords[var.dims[0]]}
+                        temp_dict["coords"] = {
+                            var.dims[0]: var.coords[var.dims[0]]
+                        }
                         if len(var.coords[var.dims[0]].values) == \
                            len(var.values) + 1:
                             is_histogram[key] = True
@@ -127,7 +133,8 @@ def table(dataset):
                     tabledict["1D Variables"][key][name] = var
             else:
                 tabledict["0D Variables"][name] = var
-    elif (tp is sc.DataArray) or (tp is sc.DataProxy) or (tp is sc.Variable) or (tp is sc.VariableProxy):
+    elif (tp is sc.DataArray) or (tp is sc.DataProxy) or (
+            tp is sc.Variable) or (tp is sc.VariableProxy):
         try:
             key = dataset.name
         except AttributeError:
@@ -143,14 +150,17 @@ def table(dataset):
     subtitle = "<h6 style='font-weight: normal; color: grey'>"
     output = ""
     if len(tabledict["default"]) > 0:
-        output += table_from_dataset(tabledict["default"], coord_dim=coord_def, headers=headers)
+        output += table_from_dataset(tabledict["default"],
+                                     coord_dim=coord_def,
+                                     headers=headers)
     if len(tabledict["0D Variables"]) > 0:
         output += subtitle + "0D Variables</h6>"
         output += table_from_dataset(tabledict["0D Variables"])
     if len(tabledict["1D Variables"].keys()) > 0:
         output += subtitle + "1D Variables</h6>"
         for key, val in sorted(tabledict["1D Variables"].items()):
-            output += table_from_dataset(val, coord_dim=coord_1d[key],
+            output += table_from_dataset(val,
+                                         coord_dim=coord_1d[key],
                                          is_hist=is_histogram[key])
 
     display(HTML(title + output))
