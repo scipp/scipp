@@ -5,13 +5,54 @@
 
 #include <numeric>
 
+#include "dataset_test_common.h"
 #include "scipp/core/dataset.h"
 #include "scipp/core/dimensions.h"
-
-#include "dataset_test_common.h"
+#include "scipp/core/except.h"
+#include "scipp/core/slice.h"
 
 using namespace scipp;
 using namespace scipp::core;
+
+TEST(SliceTest, test_construction) {
+  Slice point(Dim::X, 0);
+  EXPECT_EQ(point.dim(), Dim::X);
+  EXPECT_EQ(point.begin(), 0);
+  EXPECT_EQ(point.end(), -1);
+  EXPECT_TRUE(!point.isRange());
+
+  Slice range(Dim::X, 0, 1);
+  EXPECT_EQ(range.dim(), Dim::X);
+  EXPECT_EQ(range.begin(), 0);
+  EXPECT_EQ(range.end(), 1);
+  EXPECT_TRUE(range.isRange());
+}
+
+TEST(SliceTest, test_equals) {
+  Slice ref{Dim::X, 1, 2};
+
+  EXPECT_EQ(ref, ref);
+  EXPECT_EQ(ref, (Slice{Dim::X, 1, 2}));
+  EXPECT_NE(ref, (Slice{Dim::Y, 1, 2}));
+  EXPECT_NE(ref, (Slice{Dim::X, 0, 2}));
+  EXPECT_NE(ref, (Slice{Dim::X, 1, 3}));
+}
+
+TEST(SliceTest, test_assignment) {
+  Slice a{Dim::X, 1, 2};
+  Slice b{Dim::Y, 2, 3};
+  a = b;
+  EXPECT_EQ(a, b);
+}
+
+TEST(SliceTest, test_begin_valid) {
+  EXPECT_THROW((Slice{Dim::X, -1 /*invalid begin index*/, 1}),
+               except::SliceError);
+}
+
+TEST(SliceTest, test_end_valid) {
+  EXPECT_THROW((Slice{Dim::X, 2, 1 /*invalid end index*/}), except::SliceError);
+}
 
 TEST(DatasetTest, simple_sparse_slice) {
   Dataset dataset;
@@ -220,9 +261,9 @@ protected:
 template <int max> constexpr auto valid_ranges() {
   using scipp::index;
   const auto size = max + 1;
-  std::array<std::pair<index, index>, (size * size + size) / 2> pairs;
+  std::array<std::pair<index, index>, ((size * size + size) / 2) - 1> pairs;
   index i = 0;
-  for (index first = 0; first <= max; ++first)
+  for (index first = 0; first < max; ++first)
     for (index second = first + 0; second <= max; ++second) {
       pairs[i].first = first;
       pairs[i].second = second;

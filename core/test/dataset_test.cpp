@@ -250,3 +250,50 @@ TEST(DatasetTest, slice_temporary) {
   auto dataset = factory.make().slice({Dim::X, 1});
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
+
+template <typename T> void do_test_slice_validation(const T &container) {
+  EXPECT_THROW(container.slice(Slice{Dim::Y, 0, 1}), except::SliceError);
+  EXPECT_THROW(container.slice(Slice{Dim::X, 0, 3}), except::SliceError);
+  EXPECT_THROW(container.slice(Slice{Dim::X, -1, 0}), except::SliceError);
+  EXPECT_NO_THROW(container.slice(Slice{Dim::X, 0, 1}));
+}
+
+TEST(DatasetTest, slice_validation_simple) {
+  Dataset dataset;
+  auto var = makeVariable<double>({Dim::X, 2}, {1, 2});
+  dataset.setCoord(Dim::X, var);
+  do_test_slice_validation(dataset);
+
+  // Make sure correct via const proxies
+  DatasetConstProxy constproxy(dataset);
+  do_test_slice_validation(constproxy);
+
+  // Make sure correct via proxies
+  DatasetProxy proxy(dataset);
+  do_test_slice_validation(proxy);
+}
+
+TEST(DatasetTest, slice_with_no_coords) {
+  Dataset ds;
+  auto var = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
+  ds.setData("a", var);
+  // No dataset coords. slicing should still work.
+  auto slice = ds.slice(Slice{Dim::X, 0, 2});
+  auto extents = slice["a"].data().dims()[Dim::X];
+  EXPECT_EQ(extents, 2);
+}
+
+TEST(DatasetTest, slice_validation_complex) {
+
+  Dataset ds;
+  auto var1 = makeVariable<double>({Dim::X, 4}, {1, 2, 3, 4});
+  ds.setCoord(Dim::X, var1);
+  auto var2 = makeVariable<double>({Dim::Y, 4}, {1, 2, 3, 4});
+  ds.setCoord(Dim::Y, var2);
+
+  // Slice arguments applied in order.
+  EXPECT_NO_THROW(ds.slice(Slice{Dim::X, 0, 3}, Slice{Dim::X, 1, 2}));
+  // Reverse order. Invalid slice creation should be caught up front.
+  EXPECT_THROW(ds.slice(Slice{Dim::X, 1, 2}, Slice{Dim::X, 0, 3}),
+               except::SliceError);
+}

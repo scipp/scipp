@@ -150,6 +150,11 @@ scipp::index makeUnknownEdgeState(const scipp::index extent) {
 }
 scipp::index shrink(const scipp::index extent) { return extent - 1; }
 bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
+scipp::index decodeExtent(const scipp::index extent) {
+  if (isUnknownEdgeState(extent))
+    return -extent - 1;
+  return extent;
+}
 bool isSame(const scipp::index extent, const scipp::index reference) {
   return reference == -extent - 1;
 }
@@ -719,7 +724,7 @@ bool DatasetConstProxy::operator==(const DatasetConstProxy &other) const {
   return dataset_equals(*this, other);
 }
 
-/// Return true if the datasets have mismatching content.
+/// Return true if the datasets have mismatching content./
 bool Dataset::operator!=(const Dataset &other) const {
   return !dataset_equals(*this, other);
 }
@@ -737,6 +742,25 @@ bool DatasetConstProxy::operator!=(const Dataset &other) const {
 /// Return true if the datasets have mismatching content.
 bool DatasetConstProxy::operator!=(const DatasetConstProxy &other) const {
   return !dataset_equals(*this, other);
+}
+
+std::unordered_map<Dim, scipp::index> DatasetConstProxy::dimensions() const {
+
+  auto base_dims = m_dataset->dimensions();
+  // Note current slices are ordered, but NOT unique
+  for (const auto & [ slice, extents ] : m_slices) {
+    (void)extents;
+    auto it = base_dims.find(slice.dim());
+    if (!slice.isRange()) { // For non-range. Erase dimension
+      base_dims.erase(it);
+    } else {
+      it->second =
+          slice.end() -
+          slice.begin(); // Take extent from slice. This is the effect that
+                         // the successful slice range will have
+    }
+  }
+  return base_dims;
 }
 
 constexpr static auto plus = [](const auto &a, const auto &b) { return a + b; };
@@ -867,6 +891,14 @@ Dataset &Dataset::operator*=(const Dataset &other) {
 
 Dataset &Dataset::operator/=(const Dataset &other) {
   return apply(divide_equals, *this, other);
+}
+
+std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
+  std::unordered_map<Dim, scipp::index> all;
+  for (const auto &dim : this->m_dims) {
+    all[dim.first] = extents::decodeExtent(dim.second);
+  }
+  return all;
 }
 
 DatasetProxy DatasetProxy::operator+=(const DataConstProxy &other) const {
