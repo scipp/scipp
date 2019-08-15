@@ -46,6 +46,7 @@ jobs:
       script:
         - .travis/conda_build_and_deploy.sh
         - .travis/trigger_docker_build.sh
+        - .travis/trigger_readthedocs_build.sh
     - os: osx
       osx_image: xcode10.2
       name: "conda osx"
