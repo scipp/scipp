@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 #include "scipp-core_export.h"
 #include "scipp/core/dtype.h"
@@ -22,7 +23,7 @@ class DataArray;
 class Dimensions;
 class Variable;
 class VariableConstProxy;
-struct Slice;
+class Slice;
 
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
@@ -180,6 +181,8 @@ template <class T> void countsOrCountsDensity(const T &object) {
 }
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
+void SCIPP_CORE_EXPORT validSlice(
+    const std::unordered_map<Dim, scipp::index> &dims, const Slice &slice);
 
 void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                                   const DataConstProxy &b);

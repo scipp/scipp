@@ -5,13 +5,13 @@
 #ifndef SCIPPY_BIND_SLICE_METHODS_H
 #define SCIPPY_BIND_SLICE_METHODS_H
 
-#include "scipp/core/dataset.h"
-#include "scipp/core/dtype.h"
-#include "scipp/core/tag_util.h"
-#include "scipp/core/variable.h"
-
 #include "numpy.h"
 #include "pybind11.h"
+#include "scipp/core/dataset.h"
+#include "scipp/core/dtype.h"
+#include "scipp/core/slice.h"
+#include "scipp/core/tag_util.h"
+#include "scipp/core/variable.h"
 
 namespace py = pybind11;
 using namespace scipp;
