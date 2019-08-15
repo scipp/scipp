@@ -307,4 +307,3 @@ TEST(DataProxyTest, set_variances) {
   EXPECT_EQ(equals(d["a"].variances<bool>(), Vector<bool>{true, true, true}),
             true);
 }
-
