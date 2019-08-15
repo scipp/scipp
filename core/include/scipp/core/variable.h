@@ -232,22 +232,19 @@ public:
 
   template <class T> void setVariances(Vector<T> &&v) {
     using TT = underlying_type_t<T>;
-    if constexpr (std::is_same_v<T, TT>) {
-      return std::visit(
-          [&](auto &&arg) {
-            return requireT<VariableConceptT<T>>(*arg).setVariances(
-                std::move(v));
-          },
-          m_object);
-    } else {
-      Vector<TT> vv(v.begin(), v.end());
+    auto lmb = [this](auto &&vect) {
       return std::visit(
           [&](auto &&arg) {
             return requireT<VariableConceptT<TT>>(*arg).setVariances(
-                std::move(vv));
+                std::move(vect));
           },
           m_object);
-    }
+    };
+
+    if constexpr (std::is_same_v<T, TT>)
+      return lmb(std::move(v));
+    else
+      return lmb(Vector<TT>(v.begin(), v.end()));
   }
 
   // Due to provide a kind of const correctness for variant() function, which
