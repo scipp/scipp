@@ -151,9 +151,13 @@ public:
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
 
+  /// Sets units to data
   void setUnit(const units::Unit unit) const;
+
+  /// Type of data
   DType dtype() const;
 
+  /// Total number of elements in data
   scipp::index size() const {
     if (m_mutableData) {
       const auto &data = m_mutableData->data;
@@ -162,6 +166,7 @@ public:
     return 0;
   }
 
+  /// Sets variances to data
   template <class T> void setVariances(Vector<T> &&v) {
     auto &data = m_mutableData->data;
     if (data)
