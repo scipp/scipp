@@ -29,3 +29,12 @@ Effecting/contributing such fundamental changes to an existing framework is a lo
 Furthermore, some of the requirements are unlikely to be obtainable within xarray.
 
 We should note that at least some of our additional requirements, in particular physical units, are being pursued also by the xarray developers.
+
+What about performance?
+-----------------------
+
+In its current state (around the 0.1 milestone) scipp does not support multi-threading and many parts of the implementation are not yet written to deliver optimal performance.
+This was a deliberate choice for this early milestone.
+We chose to focus first on delivering a decent API and tested implementation.
+After these basics and the codebase have been consolidated, our roadmap contains various performance-related work.
+Rest assured that we have undertaken steps during the design and prototyping process to ensure that the architecture and data structures are compatible with higher performance needs.
