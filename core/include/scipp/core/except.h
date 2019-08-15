@@ -18,6 +18,7 @@ namespace scipp::core {
 class DataConstProxy;
 class DatasetConstProxy;
 class Dataset;
+class DataArray;
 class Dimensions;
 class Variable;
 class VariableConstProxy;
@@ -29,6 +30,7 @@ SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const units::Unit &unit);
 SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
 SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable);
+SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
 SCIPP_CORE_EXPORT std::string to_string(const DataConstProxy &data);
 SCIPP_CORE_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_CORE_EXPORT std::string to_string(const DatasetConstProxy &dataset);
@@ -73,13 +75,43 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-struct SCIPP_CORE_EXPORT DimensionError : public std::runtime_error {
+template <class T> struct Error : public std::runtime_error {
   using std::runtime_error::runtime_error;
+  template <class T2>
+  Error(const T2 &object, const std::string &message)
+      : std::runtime_error(to_string(object) + message) {}
 };
 
-struct SCIPP_CORE_EXPORT DimensionMismatchError : public DimensionError {
-  DimensionMismatchError(const Dimensions &expected, const Dimensions &actual);
+using DataArrayError = Error<DataArray>;
+using DatasetError = Error<Dataset>;
+using DimensionError = Error<Dimensions>;
+using UnitError = Error<units::Unit>;
+using VariableError = Error<Variable>;
+
+template <class T> struct MismatchError : public Error<T> {
+  template <class A, class B>
+  MismatchError(const A &a, const B &b)
+      : Error<T>(a, " expected to be equal to " + to_string(b)) {}
 };
+
+using DataArrayMismatchError = MismatchError<DataArray>;
+using DatasetMismatchError = MismatchError<Dataset>;
+using DimensionMismatchError = MismatchError<Dimensions>;
+using UnitMismatchError = MismatchError<units::Unit>;
+using VariableMismatchError = MismatchError<Variable>;
+
+// We need deduction guides such that, e.g., the exception for a Variable
+// mismatch and VariableProxy mismatch are the same type.
+template <class T>
+MismatchError(const units::Unit &, const T &)->MismatchError<units::Unit>;
+template <class T>
+MismatchError(const VariableConstProxy &, const T &)->MismatchError<Variable>;
+template <class T>
+MismatchError(const DatasetConstProxy &, const T &)->MismatchError<Dataset>;
+template <class T>
+MismatchError(const DataConstProxy &, const T &)->MismatchError<DataArray>;
+template <class T>
+MismatchError(const Dimensions &, const T &)->MismatchError<Dimensions>;
 
 struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
   DimensionNotFoundError(const Dimensions &expected, const Dim actual);
@@ -95,32 +127,8 @@ struct SCIPP_CORE_EXPORT SparseDimensionError : public DimensionError {
       : DimensionError("Unsupported operation for sparse dimensions.") {}
 };
 
-struct SCIPP_CORE_EXPORT DatasetError : public std::runtime_error {
-  DatasetError(const Dataset &dataset, const std::string &message);
-  DatasetError(const DatasetConstProxy &dataset, const std::string &message);
-};
-
-struct SCIPP_CORE_EXPORT VariableError : public std::runtime_error {
-  VariableError(const Variable &variable, const std::string &message);
-  VariableError(const VariableConstProxy &variable, const std::string &message);
-};
-
-struct SCIPP_CORE_EXPORT VariableMismatchError : public VariableError {
-  template <class A, class B>
-  VariableMismatchError(const A &a, const B &b)
-      : VariableError(a, "expected to match\n" + to_string(b)) {}
-};
-
-struct SCIPP_CORE_EXPORT UnitError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
 struct SCIPP_CORE_EXPORT SizeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
-};
-
-struct SCIPP_CORE_EXPORT UnitMismatchError : public UnitError {
-  UnitMismatchError(const units::Unit &a, const units::Unit &b);
 };
 
 struct SCIPP_CORE_EXPORT SliceError : public std::out_of_range {
@@ -142,10 +150,11 @@ struct SCIPP_CORE_EXPORT SparseDataError : public std::runtime_error {
 } // namespace except
 
 namespace expect {
-template <class A, class B> void variablesMatch(const A &a, const B &b) {
+template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
-    throw except::VariableMismatchError(a, b);
+    throw except::MismatchError(a, b);
 }
+
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
                                         const scipp::index length);
 
@@ -154,8 +163,6 @@ void sizeMatches(const T &range, const Ts &... other) {
   if (((scipp::size(range) != scipp::size(other)) || ...))
     throw except::SizeError("Expected matching sizes.");
 }
-SCIPP_CORE_EXPORT void equals(const units::Unit &a, const units::Unit &b);
-SCIPP_CORE_EXPORT void equals(const Dimensions &a, const Dimensions &b);
 
 template <class T> void contains(const T &a, const T &b) {
   if (!a.contains(b))

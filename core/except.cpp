@@ -159,6 +159,10 @@ std::string to_string(const VariableConstProxy &variable) {
   return format_variable("<scipp.VariableProxy>", variable);
 }
 
+std::string to_string(const DataArray &data) {
+  return to_string(DataConstProxy(data));
+}
+
 std::string to_string(const DataConstProxy &data) {
   return format_data_proxy("<scipp.DataProxy>", data);
 }
@@ -229,11 +233,6 @@ std::string to_string(const DatasetConstProxy &dataset) {
 
 namespace except {
 
-DimensionMismatchError::DimensionMismatchError(const Dimensions &expected,
-                                               const Dimensions &actual)
-    : DimensionError("Expected dimensions " + to_string(expected) + ", got " +
-                     to_string(actual) + ".") {}
-
 DimensionNotFoundError::DimensionNotFoundError(const Dimensions &expected,
                                                const Dim actual)
     : DimensionError("Expected dimension to be a non-sparse dimension of " +
@@ -248,23 +247,6 @@ DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                      " with mismatching length " + std::to_string(length) +
                      ".") {}
 
-DatasetError::DatasetError(const Dataset &dataset, const std::string &message)
-    : std::runtime_error(to_string(dataset) + message) {}
-DatasetError::DatasetError(const DatasetConstProxy &dataset,
-                           const std::string &message)
-    : std::runtime_error(to_string(dataset) + message) {}
-
-VariableError::VariableError(const Variable &variable,
-                             const std::string &message)
-    : std::runtime_error(to_string(variable) + message) {}
-VariableError::VariableError(const VariableConstProxy &variable,
-                             const std::string &message)
-    : std::runtime_error(to_string(variable) + message) {}
-
-UnitMismatchError::UnitMismatchError(const units::Unit &a, const units::Unit &b)
-    : UnitError("Expected " + to_string(a) + " to be equal to " + to_string(b) +
-                ".") {}
-
 } // namespace except
 
 namespace expect {
@@ -272,16 +254,6 @@ void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const scipp::index length) {
   if (dims[dim] != length)
     throw except::DimensionLengthError(dims, dim, length);
-}
-
-void equals(const units::Unit &a, const units::Unit &b) {
-  if (!(a == b))
-    throw except::UnitMismatchError(a, b);
-}
-
-void equals(const Dimensions &a, const Dimensions &b) {
-  if (!(a == b))
-    throw except::DimensionMismatchError(a, b);
 }
 
 void validSlice(const Dimensions &dims, const Slice &slice) {
