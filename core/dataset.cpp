@@ -60,19 +60,17 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
   return items;
 }
 
-Dataset::Dataset(const DatasetConstProxy &proxy) {
-  for (const auto & [ dim, coord ] : proxy.coords())
-    setCoord(dim, coord);
-  for (const auto & [ name, labels ] : proxy.labels())
-    setLabels(std::string(name), labels);
-  for (const auto & [ name, attr ] : proxy.attrs())
-    setAttr(std::string(name), attr);
-  for (const auto & [ name, item ] : proxy)
-    setData(std::string(name), item);
-}
+Dataset::Dataset(const DatasetConstProxy &proxy)
+    : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs()) {}
 
-Dataset::operator DatasetConstProxy() const { return DatasetConstProxy(*this); }
-Dataset::operator DatasetProxy() { return DatasetProxy(*this); }
+/// Removes all data items from the Dataset.
+///
+/// Coordinates, labels and attributes are not modified.
+/// This operation invalidates any proxy objects creeated from this dataset.
+void Dataset::clear() {
+  m_data.clear();
+  rebuildDims();
+}
 
 /// Return a const proxy to all coordinates of the dataset.
 ///
@@ -87,31 +85,43 @@ CoordsConstProxy Dataset::coords() const noexcept {
 /// This proxy includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsProxy Dataset::coords() noexcept {
-  return CoordsProxy(makeProxyItems<Dim>(m_coords));
+  return CoordsProxy(this, nullptr, makeProxyItems<Dim>(m_coords));
 }
 
 /// Return a const proxy to all labels of the dataset.
 LabelsConstProxy Dataset::labels() const noexcept {
-  return LabelsConstProxy(makeProxyItems<std::string_view>(m_labels));
+  return LabelsConstProxy(makeProxyItems<std::string>(m_labels));
 }
 
 /// Return a proxy to all labels of the dataset.
 LabelsProxy Dataset::labels() noexcept {
-  return LabelsProxy(makeProxyItems<std::string_view>(m_labels));
+  return LabelsProxy(this, nullptr, makeProxyItems<std::string>(m_labels));
 }
 
 /// Return a const proxy to all attributes of the dataset.
 AttrsConstProxy Dataset::attrs() const noexcept {
-  return AttrsConstProxy(makeProxyItems<std::string_view>(m_attrs));
+  return AttrsConstProxy(makeProxyItems<std::string>(m_attrs));
 }
 
 /// Return a proxy to all attributes of the dataset.
 AttrsProxy Dataset::attrs() noexcept {
-  return AttrsProxy(makeProxyItems<std::string_view>(m_attrs));
+  return AttrsProxy(this, nullptr, makeProxyItems<std::string>(m_attrs));
 }
 
 bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.count(name) == 1;
+}
+
+/// Removes a data item from the Dataset
+///
+/// Coordinates, labels and attributes are not modified.
+/// This operation invalidates any proxy objects creeated from this dataset.
+void Dataset::erase(const std::string_view name) {
+  if (m_data.erase(std::string(name)) == 0) {
+    throw except::DatasetError(*this, "Could not find data with name " +
+                                          std::string(name) + ".");
+  }
+  rebuildDims();
 }
 
 /// Return a const proxy to data and coordinates with given name.
@@ -197,6 +207,24 @@ void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   m_dims = tmp;
 }
 
+void Dataset::rebuildDims() {
+  /* Clear old extents */
+  m_dims.clear();
+
+  for (const auto &d : *this) {
+    setDims(d.second.dims());
+  }
+  for (const auto &c : m_coords) {
+    setDims(c.second.dims(), c.first);
+  }
+  for (const auto &l : m_labels) {
+    setDims(l.second.dims());
+  }
+  for (const auto &a : m_attrs) {
+    setDims(a.second.dims());
+  }
+}
+
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   setDims(coord.dims(), dim);
@@ -245,7 +273,7 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
       setSparseCoord(name, coord);
     } else {
       if (const auto it = m_coords.find(dim); it != m_coords.end())
-        expect::variablesMatch(coord, it->second);
+        expect::equals(coord, it->second);
       else
         setCoord(dim, coord);
     }
@@ -255,14 +283,14 @@ void Dataset::setData(const std::string &name, const DataConstProxy &data) {
       setSparseLabels(name, std::string(nm), labs);
     } else {
       if (const auto it = m_labels.find(std::string(nm)); it != m_labels.end())
-        expect::variablesMatch(labs, it->second);
+        expect::equals(labs, it->second);
       else
         setLabels(std::string(nm), labs);
     }
   }
   for (const auto & [ nm, attr ] : data.attrs()) {
     if (const auto it = m_attrs.find(std::string(nm)); it != m_attrs.end())
-      expect::variablesMatch(attr, it->second);
+      expect::equals(attr, it->second);
     else
       setAttr(std::string(nm), attr);
   }
@@ -468,16 +496,16 @@ CoordsConstProxy DataConstProxy::coords() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsConstProxy DataConstProxy::labels() const noexcept {
-  return LabelsConstProxy(
-      makeProxyItems<std::string_view>(dims(), m_dataset->m_labels,
-                                       &m_data->second.labels),
-      slices());
+  return LabelsConstProxy(makeProxyItems<std::string>(dims(),
+                                                      m_dataset->m_labels,
+                                                      &m_data->second.labels),
+                          slices());
 }
 
 /// Return a const proxy to all attributes of the data proxy.
 AttrsConstProxy DataConstProxy::attrs() const noexcept {
   return AttrsConstProxy(
-      makeProxyItems<std::string_view>(dims(), m_dataset->m_attrs), slices());
+      makeProxyItems<std::string>(dims(), m_dataset->m_attrs), slices());
 }
 
 /// Return a proxy to all coordinates of the data proxy.
@@ -485,7 +513,8 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's coordinates that depends on the sparse dimension.
 CoordsProxy DataProxy::coords() const noexcept {
-  return CoordsProxy(makeProxyItems<Dim>(dims(), m_mutableDataset->m_coords,
+  return CoordsProxy(m_mutableDataset, &name(),
+                     makeProxyItems<Dim>(dims(), m_mutableDataset->m_coords,
                                          m_mutableData->second.coord
                                              ? &*m_mutableData->second.coord
                                              : nullptr),
@@ -497,17 +526,18 @@ CoordsProxy DataProxy::coords() const noexcept {
 /// If the data has a sparse dimension the returned proxy will not contain any
 /// of the dataset's labels that depends on the sparse dimension.
 LabelsProxy DataProxy::labels() const noexcept {
-  return LabelsProxy(
-      makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_labels,
-                                       &m_mutableData->second.labels),
-      slices());
+  return LabelsProxy(m_mutableDataset, &name(),
+                     makeProxyItems<std::string>(dims(),
+                                                 m_mutableDataset->m_labels,
+                                                 &m_mutableData->second.labels),
+                     slices());
 }
 
 /// Return a const proxy to all attributes of the data proxy.
 AttrsProxy DataProxy::attrs() const noexcept {
   return AttrsProxy(
-      makeProxyItems<std::string_view>(dims(), m_mutableDataset->m_attrs),
-      slices());
+      m_mutableDataset, &name(),
+      makeProxyItems<std::string>(dims(), m_mutableDataset->m_attrs), slices());
 }
 
 DataProxy DataProxy::assign(const DataConstProxy &other) const {
@@ -578,30 +608,36 @@ CoordsConstProxy DatasetConstProxy::coords() const noexcept {
 /// This proxy includes only "dimension-coordinates". To access
 /// non-dimension-coordinates" see labels().
 CoordsProxy DatasetProxy::coords() const noexcept {
-  return CoordsProxy(makeProxyItems<Dim>(m_mutableDataset->m_coords), slices());
+  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
+  return CoordsProxy(parent, nullptr,
+                     makeProxyItems<Dim>(m_mutableDataset->m_coords), slices());
 }
 
 /// Return a const proxy to all labels of the dataset slice.
 LabelsConstProxy DatasetConstProxy::labels() const noexcept {
-  return LabelsConstProxy(makeProxyItems<std::string_view>(m_dataset->m_labels),
+  return LabelsConstProxy(makeProxyItems<std::string>(m_dataset->m_labels),
                           slices());
 }
 
 /// Return a proxy to all labels of the dataset slice.
 LabelsProxy DatasetProxy::labels() const noexcept {
-  return LabelsProxy(
-      makeProxyItems<std::string_view>(m_mutableDataset->m_labels), slices());
+  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
+  return LabelsProxy(parent, nullptr,
+                     makeProxyItems<std::string>(m_mutableDataset->m_labels),
+                     slices());
 }
 
 /// Return a const proxy to all attributes of the dataset slice.
 AttrsConstProxy DatasetConstProxy::attrs() const noexcept {
-  return AttrsConstProxy(makeProxyItems<std::string_view>(m_dataset->m_attrs),
+  return AttrsConstProxy(makeProxyItems<std::string>(m_dataset->m_attrs),
                          slices());
 }
 
 /// Return a proxy to all attributes of the dataset slice.
 AttrsProxy DatasetProxy::attrs() const noexcept {
-  return AttrsProxy(makeProxyItems<std::string_view>(m_mutableDataset->m_attrs),
+  auto *parent = slices().empty() ? m_mutableDataset : nullptr;
+  return AttrsProxy(parent, nullptr,
+                    makeProxyItems<std::string>(m_mutableDataset->m_attrs),
                     slices());
 }
 
@@ -1138,6 +1174,11 @@ Dataset histogram(const Dataset &dataset, const Variable &bins) {
 Dataset histogram(const Dataset &dataset, const Dim &dim) {
   auto bins = dataset.coords()[dim];
   return histogram(dataset, bins);
+}
+
+Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
+  return Dataset(union_(a, b), union_(a.coords(), b.coords()),
+                 union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
 } // namespace scipp::core

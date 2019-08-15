@@ -59,9 +59,9 @@ TYPED_TEST(DatasetProxyTest, name) {
   auto &&proxy = TestFixture::access(d);
 
   for (const auto &name : {"a", "b", "c"})
-    EXPECT_EQ(d[name].name(), name);
+    EXPECT_EQ(proxy[name].name(), name);
   for (const auto &name : {"a", "b", "c"})
-    EXPECT_EQ(d.find(name)->second.name(), name);
+    EXPECT_EQ(proxy.find(name)->second.name(), name);
 }
 
 TYPED_TEST(DatasetProxyTest, find_and_contains) {

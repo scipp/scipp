@@ -9,7 +9,6 @@
 #include <iosfwd>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 
 #include <boost/iterator/transform_iterator.hpp>
@@ -38,11 +37,11 @@ using CoordsConstProxy = ConstProxy<ProxyId::Coords, Dim>;
 /// Proxy for accessing coordinates of Dataset and DataProxy.
 using CoordsProxy = MutableProxy<CoordsConstProxy>;
 /// Proxy for accessing labels of const Dataset and DataConstProxy.
-using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string_view>;
+using LabelsConstProxy = ConstProxy<ProxyId::Labels, std::string>;
 /// Proxy for accessing labels of Dataset and DataProxy.
 using LabelsProxy = MutableProxy<LabelsConstProxy>;
 /// Proxy for accessing attributes of const Dataset and DataConstProxy.
-using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string_view>;
+using AttrsConstProxy = ConstProxy<ProxyId::Attrs, std::string>;
 /// Proxy for accessing attributes of Dataset and DataProxy.
 using AttrsProxy = MutableProxy<AttrsConstProxy>;
 
@@ -241,13 +240,24 @@ class DatasetProxy;
 /// Collection of data arrays.
 class SCIPP_CORE_EXPORT Dataset {
 public:
+  using key_type = std::string;
+  using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataConstProxy>;
 
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
 
-  operator DatasetConstProxy() const;
-  operator DatasetProxy();
+  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
+  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
+    for (auto && [ dim, coord ] : coords)
+      setCoord(dim, std::move(coord));
+    for (auto && [ name, labs ] : labels)
+      setLabels(std::string(name), std::move(labs));
+    for (auto && [ name, attr ] : attrs)
+      setAttr(std::string(name), std::move(attr));
+    for (auto && [ name, item ] : data)
+      setData(std::string(name), std::move(item));
+  }
 
   /// Return the number of data items in the dataset.
   ///
@@ -257,6 +267,8 @@ public:
   index size() const noexcept { return scipp::size(m_data); }
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+
+  void clear();
 
   CoordsConstProxy coords() const noexcept;
   CoordsProxy coords() noexcept;
@@ -268,6 +280,8 @@ public:
   AttrsProxy attrs() noexcept;
 
   bool contains(const std::string &name) const noexcept;
+
+  void erase(const std::string_view name);
 
   auto find() const && = delete;
   auto find() && = delete;
@@ -360,6 +374,7 @@ private:
 
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
+  void rebuildDims();
 
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;
@@ -381,6 +396,7 @@ private:
 
 public:
   using key_type = Key;
+  using mapped_type = Variable;
 
   ConstProxy(
       std::unordered_map<Key, std::pair<const Variable *, Variable *>> &&items,
@@ -498,10 +514,19 @@ private:
     }
   };
 
-  explicit MutableProxy(Base &&base) : Base(std::move(base)) {}
+  MutableProxy(Dataset *parent, const std::string *name, Base &&base)
+      : Base(std::move(base)), m_parent(parent), m_name(name) {}
+
+  Dataset *m_parent;
+  const std::string *m_name;
 
 public:
-  using Base::Base;
+  MutableProxy(
+      Dataset *parent, const std::string *name,
+      std::unordered_map<typename Base::key_type,
+                         std::pair<const Variable *, Variable *>> &&items,
+      const std::vector<std::pair<Slice, scipp::index>> &slices = {})
+      : Base(std::move(items), slices), m_parent(parent), m_name(name) {}
 
   /// Return a proxy to the coordinate for given dimension.
   VariableProxy operator[](const typename Base::key_type key) const {
@@ -527,7 +552,8 @@ public:
   }
 
   MutableProxy slice(const Slice slice1) const {
-    return MutableProxy(Base::slice(slice1));
+    // parent = nullptr since adding coords via slice is not supported.
+    return MutableProxy(nullptr, m_name, Base::slice(slice1));
   }
 
   MutableProxy slice(const Slice slice1, const Slice slice2) const {
@@ -538,28 +564,48 @@ public:
                      const Slice slice3) const {
     return slice(slice1, slice2).slice(slice3);
   }
+
+  void set(const typename Base::key_type key, Variable var) {
+    if (!m_parent || !Base::m_slices.empty())
+      throw std::runtime_error(
+          "Cannot add coord/labels/attr field to a slice.");
+    if (var.dims().sparse()) {
+      if (!m_name)
+        throw std::runtime_error("Sparse coord/labels/attr must be added to "
+                                 "coords of dataset items, not coords of "
+                                 "dataset.");
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->setSparseCoord(*m_name, var);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->setSparseLabels(*m_name, key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        throw std::runtime_error("Attributes cannot be sparse.");
+    } else {
+      if (m_name)
+        throw std::runtime_error(
+            "Dense coord/labels/attr must be added to "
+            "coords of dataset, not coords of dataset items.");
+      if constexpr (std::is_same_v<Base, CoordsConstProxy>)
+        m_parent->setCoord(key, var);
+      if constexpr (std::is_same_v<Base, LabelsConstProxy>)
+        m_parent->setLabels(key, var);
+      if constexpr (std::is_same_v<Base, AttrsConstProxy>)
+        m_parent->setAttr(key, var);
+    }
+    // TODO rebuild *this?!
+  }
 };
 
-namespace detail {
-constexpr Dim key(const Dim dim) { return dim; }
-inline std::string key(const std::string_view &name) {
-  return std::string{name};
-}
-} // namespace detail
-
-template <class Id, class Key>
-auto union_(const ConstProxy<Id, Key> &a, const ConstProxy<Id, Key> &b) {
-  std::map<std::conditional_t<std::is_same_v<Key, Dim>, Dim, std::string>,
-           Variable>
-      out;
+template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
+  std::map<typename T1::key_type, typename T1::mapped_type> out;
 
   for (const auto & [ key, item ] : a)
-    out[detail::key(key)] = item;
+    out.emplace(key, item);
   for (const auto & [ key, item ] : b) {
     if (const auto it = a.find(key); it != a.end())
-      expect::variablesMatch(item, it->second);
+      expect::equals(item, it->second);
     else
-      out[detail::key(key)] = item;
+      out.emplace(key, item);
   }
   return out;
 }
@@ -569,7 +615,10 @@ class SCIPP_CORE_EXPORT DatasetConstProxy {
   explicit DatasetConstProxy() : m_dataset(nullptr) {}
 
 public:
-  explicit DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
+  using key_type = std::string;
+  using mapped_type = DataArray;
+
+  DatasetConstProxy(const Dataset &dataset) : m_dataset(&dataset) {
     for (const auto &item : dataset.m_data)
       m_indices.emplace_back(item.first);
   }
@@ -671,7 +720,7 @@ private:
       : DatasetConstProxy(std::move(base)), m_mutableDataset(dataset) {}
 
 public:
-  explicit DatasetProxy(Dataset &dataset)
+  DatasetProxy(Dataset &dataset)
       : DatasetConstProxy(dataset), m_mutableDataset(&dataset) {}
 
   CoordsProxy coords() const noexcept;
@@ -882,6 +931,9 @@ SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
                                     const Variable &bins);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
+
+SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
+                                const DatasetConstProxy &b);
 
 } // namespace scipp::core
 

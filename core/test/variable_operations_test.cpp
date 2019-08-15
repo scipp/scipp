@@ -76,7 +76,7 @@ TEST(Variable, operator_plus_equal_different_unit) {
   auto different_unit(a);
   different_unit.setUnit(units::m);
   EXPECT_THROW_MSG(a += different_unit, except::UnitMismatchError,
-                   "Expected dimensionless to be equal to m.");
+                   "dimensionless expected to be equal to m");
 }
 
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
