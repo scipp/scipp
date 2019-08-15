@@ -9,7 +9,7 @@ The dataset concept
 The core data structure of scipp is :py:class:`scipp.Dataset`.
 A dataset is essentially a dict-like container of multi-dimensional arrays with common associated coordinates.
 Each item in a dataset is accessed with a name string.
-For a more detailed explanation we refer to the :ref:`documentation of Dataset <data-structures-dataset>`.
+For a more detailed explanation we refer to the `documentation of Dataset <../user-guide/data-structures.html#dataset>`_.
 
 Scipp labels dimensions and their associated coordinates using pre-defined dimension labels such as ``Dim.X``, ``Dim.Temperature``, or ``Dim.Wavelength``.
 

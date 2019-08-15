@@ -38,7 +38,13 @@ Documentation
    user-guide/units
    user-guide/dtype
    user-guide/error-propagation
-   user-guide/test
+
+.. toctree::
+   :caption: Jupyter Tutorials
+   :maxdepth: 2
+
+   jupyter/introduction
+   jupyter/multi-d-datasets
 
 .. toctree::
    :caption: Python Reference

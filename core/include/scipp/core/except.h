@@ -135,6 +135,10 @@ struct SCIPP_CORE_EXPORT VariancesError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+struct SCIPP_CORE_EXPORT SparseDataError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 } // namespace except
 
 namespace expect {
@@ -169,21 +173,6 @@ template <class T> void countsOrCountsDensity(const T &object) {
 }
 
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
-
-void SCIPP_CORE_EXPORT sparseCoordsAndLabelsMatch(const DataConstProxy &a,
-                                                  const DataConstProxy &b);
-
-template <typename A, typename B>
-void coordsAndLabelsMatch(const A &a, const B &b) {
-  if (a.coords() != b.coords() || a.labels() != b.labels())
-    throw except::CoordMismatchError("Expected coords and labels to match.");
-
-  for (const auto & [ name, item ] : b) {
-    if (a.contains(name)) {
-      sparseCoordsAndLabelsMatch(a[name], item);
-    }
-  }
-}
 
 void SCIPP_CORE_EXPORT coordsAndLabelsAreSuperset(const DataConstProxy &a,
                                                   const DataConstProxy &b);

@@ -1,11 +1,11 @@
 #!/bin/sh
 
-# Build scipp
+# Build scipp (exit early if either the configure or build step fails)
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} -DCMAKE_INSTALL_PREFIX=../install ..
-make -j2 install
+cmake -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE} -DCMAKE_INSTALL_PREFIX=../install .. || exit 1
+make -j2 install || exit 1
 
 # Units tests
 ./units/test/scipp-units-test
@@ -16,8 +16,8 @@ make -j2 install
 # Neutron tests
 ./neutron/test/scipp-neutron-test
 
-# Python tests
-python3 -m pip install -r ../python/requirements.txt
+# Python tests (exit early if dependencies could not be installed)
+python3 -m pip install -r ../python/requirements.txt || exit 1
 export PYTHONPATH=$PYTHONPATH:../install
 cd ../python
 python3 -m pytest

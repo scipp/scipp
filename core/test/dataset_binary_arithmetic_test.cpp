@@ -50,7 +50,7 @@ TYPED_TEST(DataProxyBinaryEqualsOpTest, other_data_unchanged) {
     const auto original_a(dataset_a);
     auto target = dataset_a["data_zyx"];
 
-    ASSERT_NO_THROW(target = TestFixture::op(target, item.second));
+    ASSERT_NO_THROW(TestFixture::op(target, item.second));
 
     for (const auto & [ name, data ] : dataset_a) {
       if (name != "data_zyx") {
@@ -301,6 +301,13 @@ Dataset make_sparse_2d(std::initializer_list<double> values,
   var.sparseValues<double>()[1] = values;
   ds.setData(key, var);
   return ds;
+}
+
+TYPED_TEST(DatasetBinaryEqualsOpTest, coord_only_sparse_fails) {
+  auto var = makeVariable<double>({Dim::X, Dim::Y}, {2, Dimensions::Sparse});
+  Dataset d;
+  d.setSparseCoord("a", var);
+  ASSERT_THROW(TestFixture::op(d, d), except::SparseDataError);
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest,
@@ -564,6 +571,22 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   EXPECT_EQ(res.labels(), dataset_a.labels());
 }
 
+TYPED_TEST(DatasetBinaryOpTest, broadcast) {
+  const auto x = makeVariable<double>({Dim::X, 3}, {1, 2, 3});
+  const auto y = makeVariable<double>({Dim::Y, 2}, {1, 2});
+  const auto c = makeVariable<double>(2.0);
+  Dataset a;
+  Dataset b;
+  a.setCoord(Dim::X, x);
+  a.setData("data1", x);
+  a.setData("data2", x);
+  b.setData("data1", c);
+  b.setData("data2", c + c);
+  const auto res = TestFixture::op(a, b);
+  EXPECT_EQ(res["data1"].data(), TestFixture::op(x, c));
+  EXPECT_EQ(res["data2"].data(), TestFixture::op(x, c + c));
+}
+
 TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   const auto dataset_a =
       make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
@@ -586,6 +609,89 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataset_sparse_rhs) {
   EXPECT_EQ(dataset_a["sparse"].coords(), res["sparse"].coords());
 }
 
+TYPED_TEST(DatasetBinaryOpTest, dataset_sparse_lhs_dataconstproxy_sparse_rhs) {
+  const auto dataset_a =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+  const auto dataset_b =
+      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
+
+  const auto res = TestFixture::op(dataset_a, dataset_b["sparse"]);
+
+  EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense_fail) {
+  Dataset dense;
+  dense.setData("a", makeVariable<double>({Dim::X, 2}, {1, 2}));
+  Dataset sparse;
+  sparse.setData("a", makeVariable<double>({Dim::X}, {Dimensions::Sparse}));
+
+  ASSERT_THROW(TestFixture::op(sparse, dense), except::DimensionError);
+}
+
+TYPED_TEST(DatasetBinaryOpTest, sparse_with_dense) {
+  Dataset dense;
+  dense.setData("a", makeVariable<double>(2.0));
+  const auto sparse =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
+
+  const auto res = TestFixture::op(sparse, dense);
+
+  EXPECT_EQ(res.size(), 1);
+  EXPECT_TRUE(res.contains("a"));
+  EXPECT_EQ(res["a"].data(),
+            TestFixture::op(sparse["a"].data(), dense["a"].data()));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, dense_with_sparse) {
+  Dataset dense;
+  dense.setData("a", makeVariable<double>(2.0));
+  const auto sparse =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
+
+  const auto res = TestFixture::op(dense, sparse);
+
+  EXPECT_EQ(res.size(), 1);
+  EXPECT_TRUE(res.contains("a"));
+  EXPECT_EQ(res["a"].data(),
+            TestFixture::op(dense["a"].data(), sparse["a"].data()));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, dataconstproxy_sparse_lhs_dataset_sparse_rhs) {
+  const auto dataset_a =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+  const auto dataset_b =
+      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
+
+  const auto res = TestFixture::op(dataset_a["sparse"], dataset_b);
+
+  EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
+}
+
+TYPED_TEST(DatasetBinaryOpTest, sparse_dataconstproxy_coord_mismatch) {
+  const auto dataset_a =
+      make_sparse_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
+  const auto dataset_b =
+      make_sparse_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
+
+  ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["sparse"]),
+               except::VariableMismatchError);
+  ASSERT_THROW(TestFixture::op(dataset_a["sparse"], dataset_b),
+               except::VariableMismatchError);
+}
+
+TYPED_TEST(DatasetBinaryOpTest, sparse_data_presense_mismatch) {
+  Dataset a;
+  a.setSparseCoord("sparse",
+                   makeVariable<double>({Dim::X, Dimensions::Sparse}));
+  auto b(a);
+  a.setData("sparse", makeVariable<double>({Dim::X, Dimensions::Sparse}));
+
+  EXPECT_THROW(TestFixture::op(a, b), except::SparseDataError);
+  EXPECT_THROW(TestFixture::op(a, b["sparse"]), except::SparseDataError);
+  EXPECT_THROW(TestFixture::op(a["sparse"], b), except::SparseDataError);
+}
+
 TYPED_TEST(DatasetBinaryOpTest,
            dataset_sparse_lhs_dataset_sparse_rhs_fail_when_coords_mismatch) {
   auto dataset_a = make_simple_sparse({1.1, 2.2});
@@ -604,7 +710,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::CoordMismatchError);
+               except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -625,7 +731,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::CoordMismatchError);
+               except::VariableMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstproxy_rhs) {
@@ -691,39 +797,10 @@ Dataset non_trivial_2d_sparse(std::string_view name) {
   auto dvar = makeVariable<double>({Dim::X, Dim::Y}, {3, Dimensions::Sparse});
   dvar.sparseValues<double>()[0] = {1, 2, 3, 4, 5};
   dvar.sparseValues<double>()[1] = {3, 4, 5, 6, 7};
-  dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  dvar.sparseValues<double>()[2] = {1, 1, 1, 1, 1, 100, 1, 1, 1, 1, 1, 1};
   sparse.setData(std::string(name), dvar);
   sparse.setSparseCoord(std::string(name), var);
   return sparse;
-}
-
-TEST(DatasetHistogram, simple_variabe_histogram) {
-  auto sparse = non_trivial_2d_sparse("sparse");
-  auto hist = core::histogram(
-      sparse["sparse"], makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6}));
-  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
-  std::vector<double> res{hist.values<double>().begin(),
-                          hist.values<double>().end()};
-  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
-    EXPECT_EQ(ref[i], res[i]);
-}
-
-TEST(DatasetHistogram, simple_dataset_histogram) {
-  auto sparse = non_trivial_2d_sparse("sparse");
-  sparse.setSparseCoord(
-      "sparse1",
-      sparse["sparse"].coords()[sparse["sparse"].dims().sparseDim()]);
-  auto hist = core::histogram(
-      sparse, makeVariable<double>({Dim::Y, 6}, {1, 2, 3, 4, 5, 6}));
-  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
-  std::vector<double> res{hist["sparse"].values<double>().begin(),
-                          hist["sparse"].values<double>().end()};
-  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
-    EXPECT_EQ(ref[i], res[i]);
-  std::vector<double> res1{hist["sparse1"].values<double>().begin(),
-                           hist["sparse1"].values<double>().end()};
-  for (scipp::index i = 0; i < static_cast<scipp::index>(res.size()); ++i)
-    EXPECT_EQ(ref[i], res1[i]);
 }
 
 TEST(DatasetSetData, sparse_to_sparse) {
@@ -736,9 +813,14 @@ TEST(DatasetSetData, sparse_to_sparse) {
 
 TEST(DatasetSetData, sparse_to_dense) {
   auto base = non_trivial_2d_sparse("base");
+  auto var = makeVariable<double>({Dim::Y}, {Dimensions::Sparse});
+  var.sparseValues<double>()[0] = {1, 2, 3};
+  base.setSparseLabels("base", "l", var);
+
   auto dense = datasetFactory.make();
   dense.setData("sparse", base["base"]);
   EXPECT_EQ(base["base"].data(), dense["sparse"].data());
+  EXPECT_EQ(dense["sparse"].labels().items().count("l"), 1);
 }
 
 TEST(DatasetSetData, dense_to_dense) {
@@ -747,7 +829,8 @@ TEST(DatasetSetData, dense_to_dense) {
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
-  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
+  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]),
+               except::VariableMismatchError);
 }
 
 TEST(DatasetSetData, dense_to_empty) {
@@ -756,4 +839,19 @@ TEST(DatasetSetData, dense_to_empty) {
   ds.setData("data_x", dense["data_x"]);
   EXPECT_EQ(dense["data_x"].coords(), ds["data_x"].coords());
   EXPECT_EQ(dense["data_x"].data(), ds["data_x"].data());
+}
+
+TEST(DatasetSetData, labels) {
+  auto dense = datasetFactory.make();
+  dense.setLabels(
+      "l", makeVariable<double>(
+               {Dim::X}, {dense.coords()[Dim::X].values<double>().size()}));
+  auto d = Dataset(dense.slice({Dim::Y, 0}));
+  dense.setData("data_x_1", dense["data_x"]);
+  EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
+
+  d.setLabels(
+      "l1", makeVariable<double>({Dim::X},
+                                 {d.coords()[Dim::X].values<double>().size()}));
+  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
 }

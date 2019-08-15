@@ -46,7 +46,12 @@ def plot(input_data, **kwargs):
     # 1d sp.Data.
     # TODO: 0D data is currently ignored -> find a nice way of
     # displaying it?
-    if not isinstance(input_data, list):
+    tp = type(input_data)
+    if tp is sp.DataProxy:
+        ds = sp.Dataset()
+        ds[input_data.name] = input_data
+        input_data = ds
+    if tp is not list:
         input_data = [input_data]
 
     tobeplotted = dict()
@@ -55,9 +60,7 @@ def plot(input_data, **kwargs):
             coords = var.coords
             ndims = len(coords)
             if ndims == 1:
-                # TODO: change this to lab = coords[0] by adding a getitem
-                for c in coords:
-                    lab = c[0]
+                lab = coords[var.dims[0]]
                 # Make a unique key from the dataset id in case there are more
                 # than one dataset with 1D variables with the same coordinates
                 key = "{}_{}".format(str(id(ds)), lab)
@@ -206,7 +209,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
 
     # Create temporary Dataset
     ds = sp.Dataset()
-    ds.set_coord(dim, sp.Variable([dim], values=coords[dim].values))
+    ds.coords[dim] = sp.Variable([dim], values=coords[dim].values)
     # A dictionary to hold the DataProxy objects
     data = dict()
 
