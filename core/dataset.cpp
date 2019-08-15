@@ -1144,13 +1144,9 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
   return histogram(dataset, bins);
 }
 
-template <class A, class B> Dataset merge_datasets(const A &a, const B &b) {
+Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
-}
-
-Dataset merge(const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
-  return merge_datasets(lhs, rhs);
 }
 
 } // namespace scipp::core
