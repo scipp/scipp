@@ -4,9 +4,9 @@
 # @author Neil Vaytet
 
 import numpy as np
-import scipp as sp
 import matplotlib.pyplot as plt
-from .tools import *
+from .tools import edges_to_centers, axis_label, parse_colorbar, \
+                   process_dimensions
 
 
 def plot_matplotlib(input_data, ndim=0, name=None, config=None, **kwargs):
@@ -46,7 +46,6 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    data = []
     color_count = 0
     for name, var in input_data.items():
         xcoord = var.coords[var.dims[0]]
@@ -64,22 +63,22 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
                 yerr = np.sqrt(var.variances)
             else:
                 yerr = None
-            line = ax.bar(x, y, width=w, yerr=yerr, label=ylab, alpha=0.6,
-                          color=color[color_count], ecolor=color[color_count])
+            ax.bar(x, y, width=w, yerr=yerr, label=ylab, alpha=0.6,
+                   color=color[color_count], ecolor=color[color_count])
             ax.step(xe, ye, color=color[color_count])
             ax.plot([xe[-1], xe[-1]], [ye[-1], 0], color=color[color_count])
         else:
             # Include variance if present
             if var.has_variances:
-                err = ax.errorbar(x, y, yerr=np.sqrt(var.variances),
-                                  label=ylab, color=color[color_count],
-                                  ecolor=color[color_count])
+                ax.errorbar(x, y, yerr=np.sqrt(var.variances),
+                            label=ylab, color=color[color_count],
+                            ecolor=color[color_count])
             else:
-                line, = ax.plot(x, y, label=ylab, color=color[color_count])
+                ax.plot(x, y, label=ylab, color=color[color_count])
         color_count += 1
 
     ax.set_xlabel(xlab)
-    leg = ax.legend()
+    ax.legend()
     if title is not None:
         ax.set_title(title)
     if filename is not None:
@@ -141,14 +140,14 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
         args = {"vmin": cbar[val["cbmin"]], "vmax": cbar[val["cbmax"]],
                 "cmap": cbar["name"]}
         if contours:
-            img = ax[i].contourf(xc, yc ,z, **args)
+            img = ax[i].contourf(xc, yc, z, **args)
         else:
             img = ax[i].imshow(z, extent=[xe[0], xe[-1], ye[0], ye[-1]],
                                origin="lower", aspect="auto", **args)
         cb = plt.colorbar(img, ax=ax[i])
         cb.ax.set_ylabel(axis_label(var=input_data, name=val["name"],
                          log=cbar["log"]))
-        cb.ax.yaxis.set_label_coords(-1.1,0.5)
+        cb.ax.yaxis.set_label_coords(-1.1, 0.5)
 
     if filename is not None:
         fig.savefig(filename, bbox_inches="tight")

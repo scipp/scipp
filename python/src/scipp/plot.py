@@ -13,7 +13,7 @@ import scipp as sp
 # in the notebook output, and apparently this needs to happen before the cell
 # is executed. Importing matplotlib here is a workaround, for lack of a better
 # fix.
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # noqa
 
 
 class Config:

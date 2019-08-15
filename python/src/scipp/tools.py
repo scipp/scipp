@@ -89,7 +89,7 @@ def process_dimensions(input_data, coords, axes):
         raise RuntimeError(
             "Dimension of either x ({}) or y ({}) array was not "
             "found in z ({}) array.".format(
-                xdims, ydims, zdims))
+                xlabs, ylabs, zlabs))
     if nx[0] == nz[ix]:
         xe = centers_to_edges(x)
         xc = x

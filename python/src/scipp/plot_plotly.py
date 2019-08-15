@@ -4,8 +4,8 @@
 
 import numpy as np
 from collections import namedtuple
-import scipp as sp
-from .tools import *
+from .tools import edges_to_centers, axis_label, parse_colorbar, \
+                   process_dimensions
 
 # Plotly imports
 from IPython.display import display
