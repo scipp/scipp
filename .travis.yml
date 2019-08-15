@@ -2,6 +2,10 @@ language: cpp
 dist: xenial
 cache: ccache
 
+branches:
+  only:
+    - master
+
 env:
   global:
     - PYTHON_EXECUTABLE="/usr/bin/python3"
