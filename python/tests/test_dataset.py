@@ -429,6 +429,26 @@ def test_name():
     assert array.name == ''
 
 
+def make_simple_dataset():
+    return sc.Dataset(
+        {'a': sc.Variable(dims=[Dim.X, Dim.Y],
+                          values=np.random.rand(2, 3)),
+         'b': sc.Variable(1.0)},
+        coords={
+            Dim.X: sc.Variable([Dim.X], values=np.arange(2.0),
+                               unit=sc.units.m),
+            Dim.Y: sc.Variable([Dim.Y], values=np.arange(3.0),
+                               unit=sc.units.m)},
+        labels={
+            'aux': sc.Variable([Dim.Y], values=np.random.rand(3))})
+
+
+def test_dataset_proxy_set_variance():
+    d = make_simple_dataset()
+    vr = np.arange(6).reshape(2, 3)
+    d["a"].variances = vr
+    assert (vr == d["a"].variances).sum() == 6
+
 # def test_delitem(self):
 #    dataset = sc.Dataset()
 #    dataset[sc.Data.Value, "data"] = ([sc.Dim.Z, sc.Dim.Y, sc.Dim.X],
