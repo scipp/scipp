@@ -452,9 +452,18 @@ void Dataset::rename(const Dim from, const Dim to) {
 /// Return the name of the proxy.
 ///
 /// The name of the proxy is equal to the name of the item in a Dataset, or the
-/// name of a DataArray. Note that comparison operations igore the name.
+/// name of a DataArray. Note that comparison operations ignore the name.
 const std::string &DataConstProxy::name() const noexcept {
   return m_data->first;
+}
+
+DType DataConstProxy::dtype() const {
+  if (m_data) {
+    const auto &data = m_data->second.data;
+    return data ? data->dtype() : DType::Unknown;
+  }
+  throw std::runtime_error(std::string("m_data ptr is not valid: ") +
+                           __PRETTY_FUNCTION__);
 }
 
 /// Return an ordered mapping of dimension labels to extents, excluding a
@@ -477,14 +486,6 @@ void DataProxy::setUnit(const units::Unit unit) const {
   if (hasData())
     return data().setUnit(unit);
   throw std::runtime_error("Data without values, cannot set unit.");
-}
-
-DType DataProxy::dtype() const {
-  if (m_mutableData) {
-    const auto &data = m_mutableData->second.data;
-    return data ? data->dtype() : DType::Unknown;
-  }
-  return DType::Unknown;
 }
 
 /// Return a const proxy to all coordinates of the data proxy.

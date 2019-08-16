@@ -91,6 +91,9 @@ public:
   Dimensions dims() const noexcept;
   units::Unit unit() const;
 
+  /// Type of data
+  DType dtype() const;
+
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
   AttrsConstProxy attrs() const noexcept;
@@ -166,9 +169,6 @@ public:
 
   /// Sets units to data
   void setUnit(const units::Unit unit) const;
-
-  /// Type of data
-  DType dtype() const;
 
   /// Total number of elements in data
   scipp::index size() const {
