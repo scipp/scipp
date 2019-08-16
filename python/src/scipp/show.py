@@ -117,10 +117,7 @@ class VariableDrawer():
                 for dim, coord in self._variable.coords:
                     if dim == sparse_dim:
                         extra_item_count += 1
-        try:
-            # temporary hack until `has_data` or `has_values` is available
-            self._variable.unit
-        except Exception:
+        if self._variable.values is None:
             # No data
             extra_item_count -= 1
         depth += extra_item_count*(depth + 1)
@@ -226,14 +223,10 @@ class VariableDrawer():
         svg = '<g>'
         svg += self._draw_info(offset, title)
         items = []
-        if self._variable.has_variances:
+        if self._variable.variances is not None:
             items.append(('variances', self._variable.variances, color))
-        try:
-            # temporary hack until `has_data` or `has_values` is available
-            self._variable.unit
+        if self._variable.values is not None:
             items.append(('values', self._variable.values, color))
-        except Exception:
-            pass
         if isinstance(self._variable, sc.DataConstProxy):
             if self._variable.sparse:
                 for name, label in self._variable.labels:
