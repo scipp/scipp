@@ -922,8 +922,7 @@ template <typename Var> void test_set_variances(Var &var) {
   ASSERT_TRUE(equals(var.template variances<double>(), {1.0, 2.0, 3.0}));
   EXPECT_THROW(var.setVariances(Vector<double>{1.0, 2.0, 3.0, 4.0}),
                except::SizeError);
-  EXPECT_THROW(var.setVariances(Vector<float>{1.0, 2.0, 3.0}),
-               except::TypeError);
+  EXPECT_NO_THROW(var.setVariances(Vector<float>{1.0, 2.0, 3.0}));
 }
 
 TEST(VariableTest, set_variances) {

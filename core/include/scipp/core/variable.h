@@ -412,22 +412,19 @@ public:
   template <class... Tags> friend class ZipView;
 
   template <class T> void setVariances(Vector<T> &&v) {
-    using TT = underlying_type_t<T>;
-    if constexpr (std::is_same_v<T, TT>) {
-      auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
-        using TTT =
-            typename std::remove_reference_t<decltype(*model)>::value_type;
-        if constexpr (std::is_same_v<TTT, T>)
-          model->setVariances(std::move(v));
-        else
-          model->setVariances(Vector<TTT>(v.begin(), v.end()));
-      };
+    auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
+      using TT = underlying_type_t<T>;
+      using TTT = typename std::decay_t<decltype(*model)>::value_type;
+      if constexpr (std::is_same_v<TTT, T> && std::is_same_v<T, TT>)
+        model->setVariances(std::move(v));
+      else
+        model->setVariances(Vector<TTT>(v.begin(), v.end()));
+    };
+    try {
       apply_in_place<double, float>(lmb, *this);
-    } else {
-      auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
-        model->setVariances({v.begin(), v.end()});
-      };
-      apply_in_place<double, float>(lmb, *this);
+    } catch (std::bad_variant_access &e) {
+      throw except::TypeError(std::string("Can't set variance for the type: ") +
+                              to_string(this->dtype()));
     }
   }
 
