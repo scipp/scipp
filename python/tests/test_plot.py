@@ -43,7 +43,7 @@ def make_2d_dataset(variances=False):
     return d1
 
 
-def do_test_plot_1d():
+def do_test_plot_1d(**kwargs):
     d1 = sp.Dataset()
     N = 100
     d1.coords[sp.Dim.Tof] = sp.Variable([sp.Dim.Tof],
@@ -52,7 +52,7 @@ def do_test_plot_1d():
     d1["Sample"] = sp.Variable([sp.Dim.Tof],
                                values=10.0 * np.random.rand(N),
                                unit=sp.units.counts)
-    do_plot(d1)
+    do_plot(d1, **kwargs)
 
 
 def do_test_plot_1d_with_variances():
@@ -379,3 +379,7 @@ def test_plot_2d_image_with_variances_with_filename_mpl():
 def test_plot_collapse_mpl():
     sp.plot_config.backend = "matplotlib"
     do_test_plot_collapse()
+
+
+def test_plot_1d_mpl_as_keyword_arg():
+    do_test_plot_1d(backend="matplotlib")

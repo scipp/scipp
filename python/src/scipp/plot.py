@@ -37,7 +37,7 @@ class Config:
 config = Config()
 
 
-def plot(input_data, collapse=None, **kwargs):
+def plot(input_data, collapse=None, backend=None, **kwargs):
     """
     Wrapper function to plot any kind of dataset
     """
@@ -84,6 +84,7 @@ def plot(input_data, collapse=None, **kwargs):
             color = []
             for l in val[1].keys():
                 color.append(dispatch_to_backend(get_color=True,
+                                                 backend=backend,
                                                  index=color_count))
                 color_count += 1
             name = None
@@ -92,26 +93,29 @@ def plot(input_data, collapse=None, **kwargs):
             name = key
         if collapse is not None:
             plot_collapse(input_data=val[1], dim=collapse, name=name,
-                          config=config, **kwargs)
+                          backend=backend, config=config, **kwargs)
         else:
-            dispatch_to_backend(get_color=False, input_data=val[1],
-                                ndim=val[0], name=name, color=color,
-                                config=config, **kwargs)
+            dispatch_to_backend(get_color=False, backend=backend,
+                                input_data=val[1], ndim=val[0], name=name,
+                                color=color, config=config, **kwargs)
 
     return
 
 
-def dispatch_to_backend(get_color=False, **kwargs):
+def dispatch_to_backend(get_color=False, backend=None, **kwargs):
 
     from .plot_matplotlib import plot_matplotlib, get_mpl_color
     from .plot_plotly import plot_plotly, get_plotly_color
 
-    if config.backend == "matplotlib":
+    if backend is None:
+        backend = config.backend
+
+    if backend == "matplotlib":
         if get_color:
             return get_mpl_color(**kwargs)
         else:
             plot_matplotlib(**kwargs)
-    elif config.backend == "plotly":
+    elif backend == "plotly":
         if get_color:
             return get_plotly_color(**kwargs)
         else:
@@ -119,11 +123,12 @@ def dispatch_to_backend(get_color=False, **kwargs):
     else:
         raise RuntimeError("Unknown backend {}. Currently supported "
                            "backends are 'plotly' and "
-                           "'matplotlib'".format(config.backend))
+                           "'matplotlib'".format(backend))
     return
 
 
-def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
+def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
+                  **kwargs):
     """
     Collapse higher dimensions into a 1D plot.
     """
@@ -204,10 +209,11 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, **kwargs):
         ds[key] = sp.Variable([dim], values=ds_temp.values,
                               variances=variances)
         data[key] = ds[key]
-        color.append(dispatch_to_backend(get_color=True, index=i))
+        color.append(dispatch_to_backend(get_color=True, backend=backend,
+                                         index=i))
 
     # Send the newly created dictionary of DataProxy to the plot_1d function
-    dispatch_to_backend(get_color=False, input_data=data, ndim=1, color=color,
-                        **kwargs)
+    dispatch_to_backend(get_color=False, backend=backend, input_data=data,
+                        ndim=1, color=color, **kwargs)
 
     return
