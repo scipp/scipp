@@ -917,13 +917,11 @@ TEST(VariableTest, values_variances) {
 
 template <typename Var> void test_set_variances(Var &var) {
   var.setVariances(Vector<double>{5.0, 6.0, 7.0});
-  for (auto &&v : var.template variances<double>())
-    std::cout << v << "\n";
   ASSERT_TRUE(equals(var.template variances<double>(), {5.0, 6.0, 7.0}));
   var.setVariances(Vector<double>{1.0, 2.0, 3.0});
   ASSERT_TRUE(equals(var.template variances<double>(), {1.0, 2.0, 3.0}));
   EXPECT_THROW(var.setVariances(Vector<double>{1.0, 2.0, 3.0, 4.0}),
-               except::VariancesError);
+               except::SizeError);
   EXPECT_THROW(var.setVariances(Vector<float>{1.0, 2.0, 3.0}),
                except::TypeError);
 }
