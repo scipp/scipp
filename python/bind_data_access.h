@@ -22,26 +22,15 @@ using namespace scipp::core;
 
 template <class Var> struct VarianceSetter {
   template <class T> struct SetVariances {
-    static void apply(Var &var, py::array variances) {
-      py::array_t<T> variancesT(variances);
-      py::buffer_info info = variancesT.request();
-      auto dims = var.dims();
-      auto labels = dims.labels();
-      Vector<T> tmp(var.data().size());
-      copy_flattened<T>(variancesT, tmp);
-      if (Dimensions(std::vector<Dim>(labels.begin(), labels.end()),
-                     info.shape) != dims)
-        throw std::logic_error(
-            "The shape of variances should match the shape of variable");
-      if (!var.hasVariances())
-        var.setVariances(std::move(tmp));
+    static void apply(Var &var) {
+      var.setVariances(Vector<T>(var.data().size()));
     }
   };
 
-  static void doSetVariances(Var &var, py::array variances) {
+  static void doSetVariances(Var &var) {
     const auto dtypeTag = var.dtype();
     return CallDType<double, float, int64_t, int32_t,
-                     bool>::apply<SetVariances>(dtypeTag, var, variances);
+                     bool>::apply<SetVariances>(dtypeTag, var);
   }
 };
 
@@ -261,20 +250,17 @@ public:
   }
 
   template <class Var>
-  static void set_values(py::object &obj, const py::array &data) {
-    auto &view = obj.cast<Var &>();
+  static void set_values(Var &view, const py::array &data) {
     expect_shape_compatible(view, data);
     set(get<get_values>(view), data);
   }
   template <class Var>
-  static void set_variances(py::object &obj, const py::array &data) {
-    auto &view = obj.cast<Var &>();
-    if (view.hasVariances()) {
-      expect_shape_compatible(view, data);
-      set(get<get_variances>(view), data);
-    } else {
-      VarianceSetter<Var>::doSetVariances(view, data);
-    }
+  static void set_variances(Var &view, const py::array &data) {
+    if (!view.hasVariances())
+      VarianceSetter<Var>::doSetVariances(view);
+
+    expect_shape_compatible(view, data);
+    set(get<get_variances>(view), data);
   }
 
   // Return a scalar value from a variable, implicitly requiring that the
@@ -322,19 +308,16 @@ public:
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var>
-  static void set_variance(py::object &obj, const py::object &o) {
-    auto &view = obj.cast<Var &>();
+  static void set_variance(Var &view, const py::object &o) {
     expect::equals(Dimensions(), view.dims());
-    if (view.hasVariances()) {
-      std::visit(
-          [&o](const auto &data) {
-            data[0] =
-                o.cast<typename std::decay_t<decltype(data)>::value_type>();
-          },
-          get<get_variances>(view));
-    } else {
-      VarianceSetter<Var>::doSetVariances(view, py::array(o));
-    }
+    if (!view.hasVariances())
+      VarianceSetter<Var>::doSetVariances(view);
+
+    std::visit(
+        [&o](const auto &data) {
+          data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();
+        },
+        get<get_variances>(view));
   }
 };
 

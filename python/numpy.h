@@ -60,8 +60,7 @@ void copy_flattened_4d(const py::array_t<T> &data, Proxy &&proxy) {
 
 template <class T, class Proxy>
 void copy_flattened(const py::array_t<T> &data, Proxy &&proxy) {
-  if (static_cast<scipp::index>(proxy.size()) !=
-      static_cast<scipp::index>(data.size()))
+  if (scipp::size(proxy) != data.size())
     throw std::runtime_error(
         "Numpy data size does not match size of target object.");
   switch (data.ndim()) {
