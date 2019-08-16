@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 
 #include "scipp-core_export.h"
+#include "scipp/core/apply.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/index.h"
@@ -19,7 +20,6 @@
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
-#include "scipp/core/apply.h"
 
 namespace scipp::core {
 
@@ -415,15 +415,15 @@ public:
     using TT = underlying_type_t<T>;
     if constexpr (std::is_same_v<T, TT>) {
       auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
-        using TTT = typename std::remove_reference_t<decltype(*model)>::value_type;
+        using TTT =
+            typename std::remove_reference_t<decltype(*model)>::value_type;
         if constexpr (std::is_same_v<TTT, T>)
           model->setVariances(std::move(v));
         else
           model->setVariances(Vector<TTT>(v.begin(), v.end()));
       };
       apply_in_place<double, float>(lmb, *this);
-    }
-    else {
+    } else {
       auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
         model->setVariances({v.begin(), v.end()});
       };
