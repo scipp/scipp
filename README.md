@@ -6,11 +6,14 @@
 
 # Scipp
 
-See https://scipp.readthedocs.io for documentation of **scipp**.
+See https://scipp.readthedocs.io on how to use and install the **scipp** Python module.
 
 Scipp mainly provides the `Dataset` container, which is inspired by `xarray.Dataset`.
 
 ## Build instructions
+
+It is not necessary to build `scipp` from source if only the Python package is required.
+See https://scipp.readthedocs.io/en/latest/getting-started/installation.html on how to install using `conda` or `docker` instead.
 
 ### Prerequisites (OSX only)
 
