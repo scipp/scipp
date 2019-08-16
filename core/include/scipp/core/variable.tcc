@@ -295,36 +295,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   }
 }
 
-template <class T, class... Args>
-bool checkSize(const T &t, Args &&... args) noexcept {
-  constexpr bool isCollection = sizeof...(Args) == 1;
-  constexpr bool isIterators = sizeof...(Args) == 2;
-  static_assert(isCollection || isIterators);
-  auto tp = std::forward_as_tuple(args...);
-  // treat a collecition
-  if constexpr (isCollection) {
-    return t.size() == static_cast<scipp::index>(std::get<0>(tp).size());
-  }
-  // treat two iterators
-  if constexpr (isIterators) {
-    return t.size() == static_cast<scipp::index>(
-                           std::distance(std::get<0>(tp), std::get<1>(tp)));
-  }
-}
-
 /// Implementation of VariableConcept that holds data.
 template <class T>
 class DataModel : public VariableConceptT<typename T::value_type> {
-  template <class... Args> void setVarianceT(Args &&... args) {
-    if (checkSize(*this, std::forward<Args>(args)...)) {
-      if (m_variances)
-        m_variances.reset();
-      m_variances.emplace(std::forward<Args>(args)...);
-    } else {
-      throw except::VariancesError("The size should match to set the variance");
-    }
-  }
-
 public:
   using value_type = std::remove_const_t<typename T::value_type>;
 
@@ -337,7 +310,12 @@ public:
                                "volume given by dimension extents");
   }
 
-  void setVariances(Vector<value_type> &&v) override { setVarianceT(v); }
+  void setVariances(Vector<value_type> &&v) override {
+    if (v.size() != m_values.size())
+      throw except::SizeError(std::string("Sizes should match in ") +
+                              __PRETTY_FUNCTION__);
+    m_variances.emplace(std::move(v));
+  }
 
   scipp::span<value_type> values() override {
     return scipp::span(m_values.data(), m_values.data() + size());
