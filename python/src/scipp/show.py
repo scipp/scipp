@@ -58,11 +58,8 @@ class VariableDrawer():
             "origin_y", str(origin_y)).replace("xlen", str(xlen))
 
     def _variance_offset(self):
-        shape = self._variable.shape
-        if len(shape) <= 2:
-            depth = 2
-        else:
-            depth = shape[-3] + 1
+        shape = self._extents()
+        depth = shape[-3] + 1
         return 0.3 * depth
 
     def _extents(self):
@@ -106,7 +103,7 @@ class VariableDrawer():
         depth = shape[-3]
 
         extra_item_count = 0
-        if self._variable.has_variances:
+        if self._variable.variances is not None:
             extra_item_count += 1
         if isinstance(self._variable, sc.DataConstProxy):
             if self._variable.sparse:
@@ -120,7 +117,7 @@ class VariableDrawer():
         if self._variable.values is None:
             # No data
             extra_item_count -= 1
-        depth += extra_item_count*(depth + 1)
+        depth += extra_item_count * (depth + 1)
         width += 0.3 * depth
         height += 0.3 * depth
         return [width, height]
@@ -206,7 +203,7 @@ class VariableDrawer():
             unit = '(undefined)'
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
             self._variable.dims, self._variable.shape, unit,
-            self._variable.has_variances)
+            self._variable.variances is not None)
         if title is not None:
             svg = '<text x="{}" y="{}" \
                     style="font-size:#normal-font">{}</text>'.format(
