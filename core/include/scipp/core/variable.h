@@ -771,12 +771,13 @@ public:
   VariableProxy operator/=(const double value) const;
 
   template <class T> void setVariances(Vector<T> &&v) {
-    if (dims() != m_mutableVariable->dims())
-      throw except::VariancesError(
+    // This check rely on the optimization: no view if proxy wraps the whole
+    // variable this is done instead of checking dimensions matching check
+    // between proxy and wrapped variable.
+    if (m_view)
+      throw except::DimensionLengthError(
           "Can set variances only to the whole variable.");
     m_mutableVariable->setVariances(std::move(v));
-    if (m_view)
-      m_view = m_mutableVariable->data().reshape(dims());
   }
 
   void setUnit(const units::Unit &unit) const;
