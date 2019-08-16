@@ -462,8 +462,7 @@ DType DataConstProxy::dtype() const {
     const auto &data = m_data->second.data;
     return data ? data->dtype() : DType::Unknown;
   }
-  throw std::runtime_error(std::string("m_data ptr is not valid: ") +
-                           __PRETTY_FUNCTION__);
+  throw std::logic_error(std::string(" m_data ptr is not valid, no data found: ") + __PRETTY_FUNCTION__);
 }
 
 /// Return an ordered mapping of dimension labels to extents, excluding a

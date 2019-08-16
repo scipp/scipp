@@ -180,10 +180,11 @@ public:
   }
 
   /// Sets variances to data
-  template <class T> void setVariances(Vector<T> &&v) {
+  template <class T> void setVariances(Vector<T> &&v) const {
     auto &data = m_mutableData->second.data;
     if (data)
       data->setVariances(std::move(v));
+    throw std::logic_error(std::string("no data can be found: ") + __PRETTY_FUNCTION__);
   }
 
   /// Return untyped proxy for data (values and optional variances).
