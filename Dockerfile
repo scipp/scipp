@@ -17,8 +17,12 @@ RUN conda install --yes -c scipp/label/dev scipp
 # Add the demo notebooks and Python examples
 ADD 'python/demo/' "/home/$NB_USER/demo"
 ADD 'python/examples/' "/home/$NB_USER/examples"
+ADD 'docs/tutorials/' "/home/$NB_USER/tutorials"
+ADD 'docs/user-guide/' "/home/$NB_USER/user-guide"
 USER root
 RUN chown -R "$NB_USER" \
       "/home/$NB_USER/demo" \
-      "/home/$NB_USER/examples"
+      "/home/$NB_USER/examples" \
+      "/home/$NB_USER/tutorials" \
+      "/home/$NB_USER/user-guide"
 USER $NB_USER
