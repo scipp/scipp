@@ -775,7 +775,7 @@ public:
     // variable this is done instead of checking dimensions matching check
     // between proxy and wrapped variable.
     if (m_view)
-      throw except::DimensionLengthError(
+      throw except::VariancesError(
           "Can set variances only to the whole variable.");
     m_mutableVariable->setVariances(std::move(v));
   }
