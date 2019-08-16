@@ -932,7 +932,7 @@ TEST(VariableTest, set_variances) {
 
 TEST(VariableProxyTest, set_variances) {
   Variable var = makeVariable<double>({Dim::X, 3}, units::m, {1.0, 2.0, 3.0});
-  auto proxy = var.slice({Dim::X, 0, 3});
+  auto proxy = VariableProxy(var);
   test_set_variances(proxy);
 }
 
