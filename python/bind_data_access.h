@@ -27,7 +27,7 @@ template <class Var> struct VarianceSetter {
     }
   };
 
-  static void doSetVariances(Var &var) {
+  static void initVariances(Var &var) {
     const auto dtypeTag = var.dtype();
     return CallDType<double, float, int64_t, int32_t,
                      bool>::apply<SetVariances>(dtypeTag, var);
@@ -257,7 +257,7 @@ public:
   template <class Var>
   static void set_variances(Var &view, const py::array &data) {
     if (!view.hasVariances())
-      VarianceSetter<Var>::doSetVariances(view);
+      VarianceSetter<Var>::initVariances(view);
 
     expect_shape_compatible(view, data);
     set(get<get_variances>(view), data);
@@ -295,9 +295,7 @@ public:
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var>
-  static void set_value(py::object &obj, const py::object &o) {
-    auto &view = obj.cast<Var &>();
+  template <class Var> static void set_value(Var &view, const py::object &o) {
     expect::equals(Dimensions(), view.dims());
     std::visit(
         [&o](const auto &data) {
@@ -311,7 +309,7 @@ public:
   static void set_variance(Var &view, const py::object &o) {
     expect::equals(Dimensions(), view.dims());
     if (!view.hasVariances())
-      VarianceSetter<Var>::doSetVariances(view);
+      VarianceSetter<Var>::initVariances(view);
 
     std::visit(
         [&o](const auto &data) {
