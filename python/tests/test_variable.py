@@ -48,6 +48,12 @@ def test_create_with_variances():
     assert sp.Variable(dims=[Dim.X], shape=[2], variances=True).has_variances
 
 
+def test_create_with_shape_and_variances():
+    # If no values are given, variances must be Bool, cannot pass array.
+    with pytest.raises(TypeError):
+        var = sp.Variable(dims=[Dim.X], shape=[2], variances=np.arange(2))
+
+
 def test_create_sparse():
     var = sp.Variable([sp.Dim.X, sp.Dim.Y], [4, sp.Dimensions.Sparse])
     assert var.dtype == sp.dtype.double
