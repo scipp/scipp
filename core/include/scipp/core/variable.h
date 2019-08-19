@@ -395,7 +395,7 @@ public:
         model->setVariances(Vector<TTT>(v.begin(), v.end()));
     };
     try {
-      apply_in_place<double, float>(lmb, *this);
+      apply_in_place<double, float, int64_t, int32_t>(lmb, *this);
     } catch (std::bad_variant_access &e) {
       throw except::TypeError(std::string("Can't set variance for the type: ") +
                               to_string(dtype()));

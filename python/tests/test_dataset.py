@@ -431,23 +431,26 @@ def test_name():
 
 def make_simple_dataset():
     return sc.Dataset(
-        {'a': sc.Variable(dims=[Dim.X, Dim.Y],
-                          values=np.random.rand(2, 3)),
-         'b': sc.Variable(1.0)},
+        {
+            'a': sc.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
+            'b': sc.Variable(1.0)
+        },
         coords={
             Dim.X: sc.Variable([Dim.X], values=np.arange(2.0),
                                unit=sc.units.m),
-            Dim.Y: sc.Variable([Dim.Y], values=np.arange(3.0),
-                               unit=sc.units.m)},
-        labels={
-            'aux': sc.Variable([Dim.Y], values=np.random.rand(3))})
+            Dim.Y: sc.Variable([Dim.Y], values=np.arange(3.0), unit=sc.units.m)
+        },
+        labels={'aux': sc.Variable([Dim.Y], values=np.random.rand(3))})
 
 
 def test_dataset_proxy_set_variance():
     d = make_simple_dataset()
-    vr = np.arange(6).reshape(2, 3)
-    d["a"].variances = vr
-    assert (vr == d["a"].variances).sum() == 6
+    variances = np.arange(6).reshape(2, 3)
+    assert d["a"].variances is None
+    d["a"].variances = variances
+    assert d["a"].variances is not None
+    np.testing.assert_array_equal(d["a"].variances, variances)
+
 
 # def test_delitem(self):
 #    dataset = sc.Dataset()

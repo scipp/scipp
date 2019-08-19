@@ -29,8 +29,8 @@ template <class Var> struct VarianceSetter {
 
   static void initVariances(Var &var) {
     const auto dtypeTag = var.dtype();
-    return CallDType<double, float, int64_t, int32_t,
-                     bool>::apply<SetVariances>(dtypeTag, var);
+    return CallDType<double, float, int64_t, int32_t>::apply<SetVariances>(
+        dtypeTag, var);
   }
 };
 

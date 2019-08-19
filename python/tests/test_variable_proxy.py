@@ -82,17 +82,3 @@ def test_correct_temporaries():
     assert len(b.values) == 10
     b = b[Dim.X, 2:5]
     assert len(b.values) == 3
-
-
-def test_set_variance():
-    ds = sp.Dataset({
-        'a': sp.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3)),
-        'b': sp.Variable(dims=[Dim.X, Dim.Y], values=np.random.rand(2, 3))
-    })
-    var1 = ds['a']
-    var2 = ds['b']
-    vr = np.arange(6).reshape(2, 3)
-    var1.variances = vr
-    assert (var1.variances == vr).sum() == 6
-    var2.variances = var1.variances
-    assert (var2.variances == vr).sum() == 6

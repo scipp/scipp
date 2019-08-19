@@ -434,10 +434,52 @@ def test_variance_acess():
 
 
 def test_set_variance():
-    var1 = sp.Variable(dims=[Dim.X, Dim.Y], shape=[2, 3])
-    var2 = sp.Variable(dims=[Dim.X, Dim.Y], shape=[2, 3])
-    vr = np.arange(6).reshape(2, 3)
-    var1.variances = vr
-    assert (var1.variances == vr).sum() == 6
-    var2.variances = var1.variances
-    assert (var2.variances == vr).sum() == 6
+    values = np.random.rand(2, 3)
+    variances = np.random.rand(2, 3)
+    var = sp.Variable(dims=[Dim.X, Dim.Y], values=values)
+    expected = sp.Variable(dims=[Dim.X, Dim.Y],
+                           values=values,
+                           variances=variances)
+
+    assert var.variances is None
+    assert var != expected
+
+    var.variances = variances
+
+    assert var.variances is not None
+    assert var == expected
+
+
+def test_copy_variance():
+    values = np.random.rand(2, 3)
+    variances = np.random.rand(2, 3)
+    var = sp.Variable(dims=[Dim.X, Dim.Y], values=values)
+    expected = sp.Variable(dims=[Dim.X, Dim.Y],
+                           values=values,
+                           variances=variances)
+
+    assert var.variances is None
+    assert var != expected
+
+    var.variances = expected.variances
+
+    assert var.variances is not None
+    assert var == expected
+
+
+def test_set_variance_convert_dtype():
+    values = np.random.rand(2, 3)
+    variances = np.arange(6).reshape(2, 3)
+    assert variances.dtype == np.int
+    var = sp.Variable(dims=[Dim.X, Dim.Y], values=values)
+    expected = sp.Variable(dims=[Dim.X, Dim.Y],
+                           values=values,
+                           variances=variances)
+
+    assert var.variances is None
+    assert var != expected
+
+    var.variances = variances
+
+    assert var.variances is not None
+    assert var == expected
