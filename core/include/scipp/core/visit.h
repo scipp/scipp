@@ -87,22 +87,28 @@ decltype(auto) invoke_active(F &&f, V1 &&v1, V2 &&v2, const std::tuple<T1...> &,
 template <class T, class... V> bool holds_alternative(V &&... v) {
   return (std::holds_alternative<T>(v) && ...);
 }
-template <class T, class F, class... V> auto invoke(F &&f, V &&... v) {
-  return std::invoke(std::forward<F>(f), std::get<T>(std::forward<V>(v))...);
+template <class T1, class Ts, class F, class V1, class... V>
+auto invoke(F &&f, V1 &&v1, V &&... v) {
+  return std::invoke(std::forward<F>(f), std::get<T1>(std::forward<V1>(v1)),
+                     std::get<Ts>(std::forward<V>(v))...);
 }
 
-template <class F, class... Ts, class... V>
-decltype(auto) invoke_active(F &&f, const std::tuple<Ts...> &, V &&... v) {
-  using Ret = decltype(std::invoke(
-      std::forward<F>(f), std::get<std::tuple_element_t<0, std::tuple<Ts...>>>(
-                              std::forward<V>(v))...));
+template <class F, class... T1, class... Ts, class V1, class... V>
+decltype(auto) invoke_active(F &&f, const std::tuple<T1...> &,
+                             const std::tuple<Ts...> &, V1 &&v1, V &&... v) {
+  using Ret =
+      decltype(std::invoke(std::forward<F>(f),
+                           std::get<std::tuple_element_t<0, std::tuple<T1...>>>(
+                               std::forward<V1>(v1)),
+                           std::get<std::tuple_element_t<0, std::tuple<Ts...>>>(
+                               std::forward<V>(v))...));
 
   if constexpr (!std::is_same_v<void, Ret>) {
     Ret ret;
-    // For now we only support same type in both variants. Eventually this will
-    // be generalized.
-    if (!((holds_alternative<Ts>(v...)
-               ? (ret = invoke<Ts>(std::forward<F>(f), std::forward<V>(v)...),
+    // All but the first variant must have identical alternative type.
+    if (!((std::holds_alternative<T1>(v1) && holds_alternative<Ts>(v...)
+               ? (ret = invoke<T1, Ts>(std::forward<F>(f), std::forward<V1>(v1),
+                                       std::forward<V>(v)...),
                   true)
                : false) ||
           ...))
@@ -110,8 +116,10 @@ decltype(auto) invoke_active(F &&f, const std::tuple<Ts...> &, V &&... v) {
 
     return ret;
   } else {
-    if (!((holds_alternative<Ts>(v...)
-               ? (invoke<Ts>(std::forward<F>(f), std::forward<V>(v)...), true)
+    if (!((std::holds_alternative<T1>(v1) && holds_alternative<Ts>(v...)
+               ? (invoke<T1, Ts>(std::forward<F>(f), std::forward<V1>(v1),
+                                 std::forward<V>(v)...),
+                  true)
                : false) ||
           ...))
       throw std::bad_variant_access{};
@@ -126,11 +134,6 @@ struct alternatives_are_const_ptr<std::variant<T, Ts...>> : std::true_type {};
 template <class T, class... Ts>
 struct alternatives_are_const_ptr<std::variant<std::unique_ptr<T>, Ts...>>
     : std::false_type {};
-
-// template <class T, class... Ts>
-// constexpr bool alternatives_are_const_ptr(const std::variant<T, Ts...> &) {
-//  return std::is_const_v<decltype(*std::declval<T>())>;
-//}
 
 template <class Variant, class T>
 using alternative = std::conditional_t<
@@ -152,11 +155,12 @@ template <class... Ts> struct visit_impl {
         std::tuple<alternative<V2, typename Ts::second_type>...>());
   }
   // Arbitrary number of variants, but only same alternative for all supported.
-  template <class F, class... V> static decltype(auto) apply(F &&f, V &&... v) {
-    return;
-    // return invoke_active(std::forward<F>(f),
-    //                     std::tuple<alternative<V, Ts>...>(),
-    //                     std::forward<V>(v)...);
+  template <class F, class V1, class V2, class... V>
+  static decltype(auto) apply(F &&f, V1 &&v1, V2 &&v2, V &&... v) {
+    return invoke_active(
+        std::forward<F>(f), std::tuple<alternative<V1, Ts>...>(),
+        std::tuple<alternative<V2, Ts>...>(), std::forward<V1>(v1),
+        std::forward<V2>(v2), std::forward<V>(v)...);
   }
 };
 template <class... Ts> auto visit(const std::tuple<Ts...> &) {
