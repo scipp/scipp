@@ -441,41 +441,40 @@ template <class Op> struct TransformInPlace {
       do_transform_in_place(view, op);
   }
 
-  template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
-    // std::unique_ptr::operator*() is const but returns mutable reference, need
-    // to artificially put const to we call the correct overloads of ViewModel.
-    // See #278.
-    const auto &b = *b_ptr;
+  template <class A, class B> void operator()(A &&a, B &&b) const {
     const auto &dimsA = a->dims();
-    const auto &dimsB = b.dims();
-    if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
-      if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
+    const auto &dimsB = b->dims();
+    if constexpr (std::is_same_v<typename std::remove_reference_t<decltype(
+                                     *a)>::value_type,
+                                 typename std::remove_reference_t<decltype(
+                                     *b)>::value_type>) {
+      if (a->valuesView(dimsA).overlaps(b->valuesView(dimsA))) {
         // If there is an overlap between lhs and rhs we copy the rhs before
         // applying the operation.
-        return operator()(a, b.copyT());
+        return operator()(a, b->copyT());
       }
     }
 
     if (a->isContiguous() && dimsA.contains(dimsB)) {
-      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-        do_transform_in_place(*a, b, op);
+      if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(*a, *b, op);
       } else {
-        do_transform_in_place(*a, as_view{b, dimsA}, op);
+        do_transform_in_place(*a, as_view{*b, dimsA}, op);
       }
     } else if (dimsA.contains(dimsB)) {
       auto a_view = as_view{*a, dimsA};
-      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-        do_transform_in_place(a_view, b, op);
+      if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(a_view, *b, op);
       } else {
-        do_transform_in_place(a_view, as_view{b, dimsA}, op);
+        do_transform_in_place(a_view, as_view{*b, dimsA}, op);
       }
     } else {
       // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
       auto a_view = as_view{*a, dimsB};
-      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-        do_transform_in_place(a_view, b, op);
+      if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(a_view, *b, op);
       } else {
-        do_transform_in_place(a_view, as_view{b, dimsB}, op);
+        do_transform_in_place(a_view, as_view{*b, dimsB}, op);
       }
     }
   }
