@@ -764,6 +764,34 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   return requireT<DataModel<Vector<TT>>>(data()).variancesView(dims());
 }
 
+template <class T> void Variable::setVariances(Vector<T> &&v) {
+  auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
+    using TT = underlying_type_t<T>;
+    // Handle, e.g., float input if Variable dtype is double.
+    using TTT = typename std::decay_t<decltype(*model)>::value_type;
+    if constexpr (std::is_same_v<TTT, T> && std::is_same_v<T, TT>)
+      model->setVariances(std::move(v));
+    else
+      model->setVariances(Vector<TTT>(v.begin(), v.end()));
+  };
+  try {
+    apply_in_place<double, float, int64_t, int32_t>(lmb, *this);
+  } catch (std::bad_variant_access &e) {
+    throw except::TypeError(std::string("Can't set variance for the type: ") +
+                            to_string(dtype()));
+  }
+}
+
+template <class T> void VariableProxy::setVariances(Vector<T> &&v) const {
+  // If the proxy wraps the whole variable (common case: iterating a dataset)
+  // m_view is not set. A more complex check would be to verify dimensions,
+  // shape, and strides, but this should be sufficient for now.
+  if (m_view)
+    throw except::VariancesError(
+        "Cannot add variances via sliced or reshaped view of Variable.");
+  m_mutableVariable->setVariances(std::move(v));
+}
+
 /**
   Support explicit instantiations for templates for generic Variable and
   VariableConstProxy
@@ -786,5 +814,10 @@ VariableView<underlying_type_t<T>> VariableProxy::castVariances() const {
   VariableProxy::cast<__VA_ARGS__>() const;                                    \
   template VariableView<underlying_type_t<__VA_ARGS__>>                        \
   VariableProxy::castVariances<__VA_ARGS__>() const;
+
+#define INSTANTIATE_SET_VARIANCES(...)                                         \
+  template void Variable::setVariances<__VA_ARGS__>(Vector<__VA_ARGS__> &&);   \
+  template void VariableProxy::setVariances<__VA_ARGS__>(                      \
+      Vector<__VA_ARGS__> &&) const;
 
 } // namespace scipp::core

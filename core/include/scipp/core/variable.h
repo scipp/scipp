@@ -11,7 +11,6 @@
 #include <Eigen/Dense>
 
 #include "scipp-core_export.h"
-#include "scipp/core/apply.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/index.h"
@@ -38,8 +37,9 @@ template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 using VariableConceptHandle = VariableConceptHandle_impl<
-    double, float, int64_t, Eigen::Vector3d, sparse_container<double>,
-    sparse_container<float>, sparse_container<int64_t>>;
+    double, float, int64_t, int32_t, Eigen::Vector3d, sparse_container<double>,
+    sparse_container<float>, sparse_container<int64_t>,
+    sparse_container<int32_t>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called
@@ -384,23 +384,7 @@ public:
 
   template <class... Tags> friend class ZipView;
 
-  template <class T> void setVariances(Vector<T> &&v) {
-    auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
-      using TT = underlying_type_t<T>;
-      // Handle, e.g., float input if Variable dtype is double.
-      using TTT = typename std::decay_t<decltype(*model)>::value_type;
-      if constexpr (std::is_same_v<TTT, T> && std::is_same_v<T, TT>)
-        model->setVariances(std::move(v));
-      else
-        model->setVariances(Vector<TTT>(v.begin(), v.end()));
-    };
-    try {
-      apply_in_place<double, float, int64_t, int32_t>(lmb, *this);
-    } catch (std::bad_variant_access &e) {
-      throw except::TypeError(std::string("Can't set variance for the type: ") +
-                              to_string(dtype()));
-    }
-  }
+  template <class T> void setVariances(Vector<T> &&v);
 
 private:
   template <class T>
@@ -744,15 +728,7 @@ public:
   VariableProxy operator/=(const VariableConstProxy &other) const;
   VariableProxy operator/=(const double value) const;
 
-  template <class T> void setVariances(Vector<T> &&v) {
-    // If the proxy wraps the whole variable (common case: iterating a dataset)
-    // m_view is not set. A more complex check would be to verify dimensions,
-    // shape, and strides, but this should be sufficient for now.
-    if (m_view)
-      throw except::VariancesError(
-          "Cannot add variances via sliced or reshaped view of Variable.");
-    m_mutableVariable->setVariances(std::move(v));
-  }
+  template <class T> void setVariances(Vector<T> &&v) const;
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;
