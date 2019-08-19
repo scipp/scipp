@@ -346,6 +346,10 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
 
+  /// Return variant of pointers to underlying data.
+  ///
+  /// This is intended for internal use (such as implementing transform
+  /// algorithms) and should not need to be used directly by higher-level code.
   auto dataHandle() const && = delete;
   auto dataHandle() const & { return m_object.variant(); }
   const auto &dataHandle() && = delete;
