@@ -457,16 +457,6 @@ const std::string &DataConstProxy::name() const noexcept {
   return m_data->first;
 }
 
-DType DataConstProxy::dtype() const {
-  if (m_data) {
-    const auto &data = m_data->second.data;
-    return data ? data->dtype() : DType::Unknown;
-  }
-  throw std::logic_error(
-      std::string(" m_data ptr is not valid, no data found: ") +
-      __PRETTY_FUNCTION__);
-}
-
 /// Return an ordered mapping of dimension labels to extents, excluding a
 /// potentialy sparse dimensions.
 Dimensions DataConstProxy::dims() const noexcept {
@@ -474,6 +464,9 @@ Dimensions DataConstProxy::dims() const noexcept {
     return data().dims();
   return detail::makeSlice(*m_data->second.coord, slices()).dims();
 }
+
+/// Return the dtype of the data. Throws if there is no data.
+DType DataConstProxy::dtype() const { return data().dtype(); }
 
 /// Return the unit of the data values.
 ///

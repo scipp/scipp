@@ -89,10 +89,8 @@ public:
   const std::string &name() const noexcept;
 
   Dimensions dims() const noexcept;
-  units::Unit unit() const;
-
-  /// Type of data
   DType dtype() const;
+  units::Unit unit() const;
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
