@@ -387,6 +387,7 @@ public:
   template <class T> void setVariances(Vector<T> &&v) {
     auto lmb = [v = std::forward<decltype(v)>(v)](auto &&model) mutable {
       using TT = underlying_type_t<T>;
+      // Handle, e.g., float input if Variable dtype is double.
       using TTT = typename std::decay_t<decltype(*model)>::value_type;
       if constexpr (std::is_same_v<TTT, T> && std::is_same_v<T, TT>)
         model->setVariances(std::move(v));
@@ -397,7 +398,7 @@ public:
       apply_in_place<double, float>(lmb, *this);
     } catch (std::bad_variant_access &e) {
       throw except::TypeError(std::string("Can't set variance for the type: ") +
-                              to_string(this->dtype()));
+                              to_string(dtype()));
     }
   }
 
@@ -744,12 +745,12 @@ public:
   VariableProxy operator/=(const double value) const;
 
   template <class T> void setVariances(Vector<T> &&v) {
-    // This check rely on the optimization: no view if proxy wraps the whole
-    // variable this is done instead of checking dimensions matching check
-    // between proxy and wrapped variable.
+    // If the proxy wraps the whole variable (common case: iterating a dataset)
+    // m_view is not set. A more complex check would be to verify dimensions,
+    // shape, and strides, but this should be sufficient for now.
     if (m_view)
       throw except::VariancesError(
-          "Can set variances only to the whole variable.");
+          "Cannot add variances via sliced or reshaped view of Variable.");
     m_mutableVariable->setVariances(std::move(v));
   }
 
