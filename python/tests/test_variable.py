@@ -52,7 +52,7 @@ def test_create_with_variances():
 def test_create_with_shape_and_variances():
     # If no values are given, variances must be Bool, cannot pass array.
     with pytest.raises(TypeError):
-        var = sp.Variable(dims=[Dim.X], shape=[2], variances=np.arange(2))
+        sp.Variable(dims=[Dim.X], shape=[2], variances=np.arange(2))
 
 
 def test_create_sparse():
