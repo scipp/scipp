@@ -1,4 +1,5 @@
 import scipp as sc
+import numpy as np
 
 
 def get_pos(pos):
@@ -71,24 +72,25 @@ def ConvertEventWorkspaceToDataset(ws, name, drop_pulse_times):
     initPosSpectrumNo(d, nHist, ws)
 
     coords = sc.Variable([sc.Dim.Position, sc.Dim.Tof],
-                         values=[nHist, sc.Dimensions.Sparse])
+                         shape=[nHist, sc.Dimensions.Sparse])
     if not drop_pulse_times:
         labs = sc.Variable([sc.Dim.Position, sc.Dim.Tof],
-                           values=[nHist, sc.Dimensions.Sparse])
+                           shape=[nHist, sc.Dimensions.Sparse])
     for i in range(nHist):
         coords[sc.Dim.Position, i].values = ws.getSpectrum(i).getTofs()
         if not drop_pulse_times:
+            # Pulse times have a Mantid-specific format so the conversion is
+            # very slow.
+            # TODO: Find a more efficient way to do this.
             pt = ws.getSpectrum(i).getPulseTimes()
-            labs[sc.Dim.Position, i].values = np.asarray([p.total_nanoseconds() for p in pt])
+            labs[sc.Dim.Position, i].values = np.asarray([p.total_nanoseconds()
+                                                          for p in pt])
 
     coords_and_labs = {"coords": {sc.Dim.Tof: coords}}
     if not drop_pulse_times:
         coords_and_labs["labels"] = {"pulse_times": labs}
     d[name] = sc.DataArray(**coords_and_labs)
     return d
-
-# Pulse times have a Mantid-specific format so the conversion is very slow.
-# Dataset is flexible and can work without pulse times, so we can drop them.
 
 
 def to_dataset(ws, name='', drop_pulse_times=False):
