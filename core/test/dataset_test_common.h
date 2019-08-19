@@ -47,4 +47,51 @@ private:
   Dataset base;
 };
 
+Dataset make_empty();
+
+template <class T, class T2>
+auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
+                  const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setCoord(dim, makeVariable<T>(dims, unit, data));
+  return d;
+}
+
+template <class T, class T2>
+auto make_1_labels(const std::string &name, const Dimensions &dims,
+                   const units::Unit unit,
+                   const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setLabels(name, makeVariable<T>(dims, unit, data));
+  return d;
+}
+
+template <class T, class T2>
+auto make_1_attr(const std::string &name, const Dimensions &dims,
+                 const units::Unit unit,
+                 const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setAttr(name, makeVariable<T>(dims, unit, data));
+  return d;
+}
+
+template <class T, class T2>
+auto make_1_values(const std::string &name, const Dimensions &dims,
+                   const units::Unit unit,
+                   const std::initializer_list<T2> &data) {
+  auto d = make_empty();
+  d.setData(name, makeVariable<T>(dims, unit, data));
+  return d;
+}
+
+template <class T, class T2>
+auto make_1_values_and_variances(const std::string &name,
+                                 const Dimensions &dims, const units::Unit unit,
+                                 const std::initializer_list<T2> &values,
+                                 const std::initializer_list<T2> &variances) {
+  auto d = make_empty();
+  d.setData(name, makeVariable<T>(dims, unit, values, variances));
+  return d;
+}
+
 #endif // DATASET_TEST_COMMON_H

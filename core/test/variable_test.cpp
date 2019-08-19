@@ -915,6 +915,27 @@ TEST(VariableTest, values_variances) {
   ASSERT_TRUE(equals(var.variances<double>(), {0.1}));
 }
 
+template <typename Var> void test_set_variances(Var &var) {
+  var.setVariances(Vector<double>{5.0, 6.0, 7.0});
+  ASSERT_TRUE(equals(var.template variances<double>(), {5.0, 6.0, 7.0}));
+  var.setVariances(Vector<double>{1.0, 2.0, 3.0});
+  ASSERT_TRUE(equals(var.template variances<double>(), {1.0, 2.0, 3.0}));
+  EXPECT_THROW(var.setVariances(Vector<double>{1.0, 2.0, 3.0, 4.0}),
+               except::SizeError);
+  EXPECT_NO_THROW(var.setVariances(Vector<float>{1.0, 2.0, 3.0}));
+}
+
+TEST(VariableTest, set_variances) {
+  Variable var = makeVariable<double>({Dim::X, 3}, units::m, {1.0, 2.0, 3.0});
+  test_set_variances(var);
+}
+
+TEST(VariableProxyTest, set_variances) {
+  Variable var = makeVariable<double>({Dim::X, 3}, units::m, {1.0, 2.0, 3.0});
+  auto proxy = VariableProxy(var);
+  test_set_variances(proxy);
+}
+
 TEST(VariableProxyTest, create_with_variance) {
   const auto var = makeVariable<double>({Dim::X, 2}, {1.0, 2.0}, {0.1, 0.2});
   ASSERT_NO_THROW(var.slice({Dim::X, 1, 2}));

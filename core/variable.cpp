@@ -79,6 +79,11 @@ INSTANTIATE_VARIABLE(sparse_container<Bool>)
 INSTANTIATE_VARIABLE(sparse_container<Dataset>)
 INSTANTIATE_VARIABLE(sparse_container<Eigen::Vector3d>)
 
+INSTANTIATE_SET_VARIANCES(double)
+INSTANTIATE_SET_VARIANCES(float)
+INSTANTIATE_SET_VARIANCES(int64_t)
+INSTANTIATE_SET_VARIANCES(int32_t)
+
 template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
   if (!a || !b)
     return static_cast<bool>(a) == static_cast<bool>(b);
