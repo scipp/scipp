@@ -36,3 +36,76 @@ def axis_label(var, name=None, log=False):
     if var.unit != sp.units.dimensionless:
         label += " [{}]".format(var.unit)
     return label
+
+
+def parse_colorbar(default, cb, plotly=False):
+    """
+    Construct the colorbar using default and input values
+    """
+    cbar = default.copy()
+    if cb is not None:
+        for key, val in cb.items():
+            cbar[key] = val
+    # In plotly, colorbar names start with an uppercase letter
+    if plotly:
+        cbar["name"] = "{}{}".format(cbar["name"][0].upper(), cbar["name"][1:])
+    return cbar
+
+
+def process_dimensions(input_data, coords, axes):
+    """
+    Make x and y arrays from dimensions and check for bins edges
+    """
+    zlabs = input_data.dims
+    nz = input_data.shape
+
+    if axes is None:
+        axes = input_data.dims
+    else:
+        axes = axes[-2:]
+
+    # Get coordinate arrays
+    xcoord = coords[axes[-1]]
+    ycoord = coords[axes[-2]]
+    x = xcoord.values
+    y = ycoord.values
+
+    # Check for bin edges
+    # TODO: find a better way to handle edges. Currently, we convert from
+    # edges to centers and then back to edges afterwards inside the plotly
+    # object. This is not optimal and could lead to precision loss issues.
+    ylabs = ycoord.dims
+    ny = ycoord.shape
+    xlabs = xcoord.dims
+    nx = xcoord.shape
+    # Find the dimension in z that corresponds to x and y
+    ix = iy = None
+    for i in range(len(zlabs)):
+        if zlabs[i] == xlabs[0]:
+            ix = i
+        if zlabs[i] == ylabs[0]:
+            iy = i
+    if (ix is None) or (iy is None):
+        raise RuntimeError(
+            "Dimension of either x ({}) or y ({}) array was not "
+            "found in z ({}) array.".format(
+                xlabs, ylabs, zlabs))
+    if nx[0] == nz[ix]:
+        xe = centers_to_edges(x)
+        xc = x
+    elif nx[0] == nz[ix] + 1:
+        xe = x
+        xc = edges_to_centers(x)[0]
+    else:
+        raise RuntimeError("Dimensions of x Coord ({}) and Value ({}) do not "
+                           "match.".format(nx[0], nz[ix]))
+    if ny[0] == nz[iy]:
+        ye = centers_to_edges(y)
+        yc = y
+    elif ny[0] == nz[iy] + 1:
+        ye = y
+        yc = edges_to_centers(y)[0]
+    else:
+        raise RuntimeError("Dimensions of y Coord ({}) and Value ({}) do not "
+                           "match.".format(ny[0], nz[iy]))
+    return xcoord, ycoord, xe, ye, xc, yc, xlabs, ylabs, zlabs
