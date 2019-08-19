@@ -59,7 +59,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             xe = x.copy()
             ye = np.concatenate(([0], y))
             x, w = edges_to_centers(x)
-            if var.has_variances:
+            if var.variances is not None:
                 yerr = np.sqrt(var.variances)
             else:
                 yerr = None
@@ -69,7 +69,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             ax.plot([xe[-1], xe[-1]], [ye[-1], 0], color=color[color_count])
         else:
             # Include variance if present
-            if var.has_variances:
+            if var.variances is not None:
                 ax.errorbar(x, y, yerr=np.sqrt(var.variances),
                             label=ylab, color=color[color_count],
                             ecolor=color[color_count])
@@ -110,7 +110,7 @@ def plot_2d(input_data, name=None, axes=None, contours=False, cb=None,
     # Prepare dictionary for holding key parameters
     data = {"values": {"cbmin": "min", "cbmax": "max", "name": name}}
 
-    if input_data.has_variances and show_variances:
+    if input_data.variances is not None and show_variances:
         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
         # Append parameters to data dictionary
         data["variances"] = {"cbmin": "min_var", "cbmax": "max_var",

@@ -374,11 +374,6 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       &as_VariableView::set_variance<T>,
       "The only variance for 0-dimensional data. Raises an exception if the "
       "data is not 0-dimensional.");
-  c.def_property_readonly(
-      "has_variances", [](T &v) { return v.hasVariances(); },
-      py::return_value_policy::
-          copy); // Cannot bind to member directly, see
-                 // https://github.com/pybind/pybind11/issues/580#issuecomment-269836784
 }
 
 #endif // SCIPPY_BIND_DATA_ACCESS_H

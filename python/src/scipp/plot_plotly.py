@@ -86,7 +86,7 @@ def plot_1d(input_data, logx=False, logy=False, logxy=False, axes=None,
             trace["marker"]["color"] = color[color_count]
             color_count += 1
         # Include variance if present
-        if var.has_variances:
+        if var.variances is not None:
             trace["error_y"] = dict(
                 type='data',
                 array=np.sqrt(var.variances),
@@ -159,7 +159,7 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
         height=figsize[1],
         width=figsize[0]
     )
-    if input_data.has_variances and show_variances:
+    if input_data.variances is not None and show_variances:
         layout["width"] *= 0.5
         layout["height"] = 0.8 * layout["width"]
 
@@ -169,7 +169,7 @@ def plot_image(input_data, name=None, axes=None, contours=False, cb=None,
         data = {"values": None, "variances": None}
         params = {"values": {"cbmin": "min", "cbmax": "max"},
                   "variances": None}
-        if input_data.has_variances and show_variances:
+        if input_data.variances is not None and show_variances:
             params["variances"] = {"cbmin": "min_var", "cbmax": "max_var"}
 
         for i, (key, val) in enumerate(sorted(params.items())):

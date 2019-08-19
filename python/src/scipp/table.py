@@ -44,26 +44,26 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
             coord = dataset.coords[coord_dim]
             html += "<th {} colspan='{}'>Coord: {}</th>".format(
                 cstyle[0].replace("style='", "style='text-align: center;"),
-                1 + coord.has_variances, axis_label(coord))
+                1 + (coord.variances is not None), axis_label(coord))
         for key, val in dataset:
             html += "<th {} colspan='{}'>{}</th>".format(
                 bstyle.replace("style='", "style='text-align: center;"),
-                1 + val.has_variances, axis_label(val, name=key))
+                1 + (val.variances is not None), axis_label(val, name=key))
         html += "</tr><tr>"
         if coord_dim is not None:
             html += "<th {}>Values</th>".format(cstyle[1])
-            if coord.has_variances:
+            if coord.variances is not None:
                 html += "<th {}>Variances</th>".format(cstyle[1])
         for key, val in dataset:
             html += "<th {}>Values</th>".format(bstyle)
-            if val.has_variances:
+            if val.variances is not None:
                 html += "<th {}>Variances</th>".format(bstyle)
         html += "</tr>"
     if size is None:
         html += "<tr>"
         for key, val in dataset:
             html += "<td {}>{}</td>".format(bstyle, value_to_string(val.value))
-            if val.has_variances:
+            if val.variances is not None:
                 html += "<td {}>{}</td>".format(bstyle,
                                                 value_to_string(val.variance))
         html += "</tr>"
@@ -76,7 +76,7 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
                     text = '[{}; {}]'.format(
                         text, value_to_string(coord.values[i + 1]))
                 html += "<td {}>{}</td>".format(cstyle[i % 2], text)
-                if coord.has_variances:
+                if coord.variances is not None:
                     text = value_to_string(coord.variances[i])
                     if is_hist:
                         text = '[{}; {}]'.format(
@@ -85,7 +85,7 @@ def table_from_dataset(dataset, coord_dim=None, is_hist=False, headers=True):
             for key, val in dataset:
                 html += "<td {}>{}</td>".format(bstyle,
                                                 value_to_string(val.values[i]))
-                if val.has_variances:
+                if val.variances is not None:
                     html += "<td {}>{}</td>".format(
                         bstyle, value_to_string(val.variances[i]))
             html += "</tr>"
