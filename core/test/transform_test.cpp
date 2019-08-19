@@ -284,7 +284,7 @@ TEST(TransformTest, mixed_precision_in_place) {
 
 TEST(TransformTest, combined_uncertainty_propagation) {
   auto a = makeVariable<double>({Dim::X, 1}, {2.0}, {0.1});
-  const auto a_2_step(a);
+  auto a_2_step(a);
   const auto b = makeVariable<double>(3.0, 0.2);
 
   const auto abb = transform<pair_self_t<double>>(

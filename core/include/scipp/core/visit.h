@@ -119,24 +119,44 @@ decltype(auto) invoke_active(F &&f, const std::tuple<Ts...> &, V &&... v) {
 }
 
 template <class T> class VariableConceptT;
-template <class T> using alternative = std::unique_ptr<VariableConceptT<T>>;
+
+template <class Variant> struct alternatives_are_const_ptr;
+template <class T, class... Ts>
+struct alternatives_are_const_ptr<std::variant<T, Ts...>> : std::true_type {};
+template <class T, class... Ts>
+struct alternatives_are_const_ptr<std::variant<std::unique_ptr<T>, Ts...>>
+    : std::false_type {};
+
+// template <class T, class... Ts>
+// constexpr bool alternatives_are_const_ptr(const std::variant<T, Ts...> &) {
+//  return std::is_const_v<decltype(*std::declval<T>())>;
+//}
+
+template <class Variant, class T>
+using alternative = std::conditional_t<
+    alternatives_are_const_ptr<
+        std::remove_const_t<std::remove_reference_t<Variant>>>::value,
+    const VariableConceptT<T> *, std::unique_ptr<VariableConceptT<T>>>;
+
 template <class... Ts> struct visit_impl {
   template <class F, class Variant>
   static decltype(auto) apply(F &&f, Variant &&var) {
     return invoke_active(std::forward<F>(f), std::forward<Variant>(var),
-                         std::tuple<alternative<Ts>...>());
+                         std::tuple<alternative<Variant, Ts>...>());
   }
   template <class F, class V1, class V2>
   static decltype(auto) apply(F &&f, V1 &&v1, V2 &&v2) {
     return invoke_active(
         std::forward<F>(f), std::forward<V1>(v1), std::forward<V2>(v2),
-        std::tuple<alternative<typename Ts::first_type>...>(),
-        std::tuple<alternative<typename Ts::second_type>...>());
+        std::tuple<alternative<V1, typename Ts::first_type>...>(),
+        std::tuple<alternative<V2, typename Ts::second_type>...>());
   }
   // Arbitrary number of variants, but only same alternative for all supported.
   template <class F, class... V> static decltype(auto) apply(F &&f, V &&... v) {
-    return invoke_active(std::forward<F>(f), std::tuple<alternative<Ts>...>(),
-                         std::forward<V>(v)...);
+    return;
+    // return invoke_active(std::forward<F>(f),
+    //                     std::tuple<alternative<V, Ts>...>(),
+    //                     std::forward<V>(v)...);
   }
 };
 template <class... Ts> auto visit(const std::tuple<Ts...> &) {
