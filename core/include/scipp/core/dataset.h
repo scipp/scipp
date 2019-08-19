@@ -165,26 +165,11 @@ public:
   LabelsProxy labels() const noexcept;
   AttrsProxy attrs() const noexcept;
 
-  /// Sets units to data
   void setUnit(const units::Unit unit) const;
-
-  /// Total number of elements in data
-  scipp::index size() const {
-    if (m_mutableData) {
-      const auto &data = m_mutableData->second.data;
-      return data ? data->data().size() : 0;
-    }
-    return 0;
-  }
 
   /// Sets variances to data
   template <class T> void setVariances(Vector<T> &&v) const {
-    auto &data = m_mutableData->second.data;
-    if (data)
-      data->setVariances(std::move(v));
-    else
-      throw std::logic_error(std::string("no data can be found: ") +
-                             __PRETTY_FUNCTION__);
+    data().setVariances(std::move(v));
   }
 
   /// Return untyped proxy for data (values and optional variances).
