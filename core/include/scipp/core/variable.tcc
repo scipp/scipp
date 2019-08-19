@@ -11,6 +11,16 @@
 
 namespace scipp::core {
 
+template <class T, class C> auto &requireT(C &concept) {
+  try {
+    return dynamic_cast<T &>(concept);
+  } catch (const std::bad_cast &) {
+    throw except::TypeError("Expected item dtype " +
+                            to_string(T::static_dtype()) + ", got " +
+                            to_string(concept.dtype()) + '.');
+  }
+}
+
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }

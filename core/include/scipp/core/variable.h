@@ -23,16 +23,6 @@
 
 namespace scipp::core {
 
-template <class T, class C> auto &requireT(C &concept) {
-  try {
-    return dynamic_cast<T &>(concept);
-  } catch (const std::bad_cast &) {
-    throw except::TypeError("Expected item dtype " +
-                            to_string(T::static_dtype()) + ", got " +
-                            to_string(concept.dtype()) + '.');
-  }
-}
-
 template <class T> struct is_sparse_container : std::false_type {};
 template <class T>
 struct is_sparse_container<sparse_container<T>> : std::true_type {};
@@ -229,23 +219,6 @@ public:
     return std::visit(
         [](auto &&arg) -> VariableConcept * { return arg.operator->(); },
         m_object);
-  }
-
-  template <class T> void setVariances(Vector<T> &&v) {
-    using TT = underlying_type_t<T>;
-    auto lmb = [this](auto &&vect) {
-      return std::visit(
-          [&](auto &&arg) {
-            return requireT<VariableConceptT<TT>>(*arg).setVariances(
-                std::move(vect));
-          },
-          m_object);
-    };
-
-    if constexpr (std::is_same_v<T, TT>)
-      return lmb(std::move(v));
-    else
-      return lmb(Vector<TT>(v.begin(), v.end()));
   }
 
   // Due to provide a kind of const correctness for variant() function, which
