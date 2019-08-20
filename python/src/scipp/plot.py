@@ -7,13 +7,20 @@ import scipp as sp
 # The need for importing matplotlib.pyplot here is a little strange, but the
 # reason is the following. We want to delay the imports of plot_matplotlib and
 # plot_plotly to inside dispatch_to_backend() in order to hide them from the
-# user in the ntoebook. However, by doing this, the firt time a plot is made
+# user in the notebook. However, by doing this, the first time a plot is made
 # it is not displayed. Re-runnnig the cell will display it. So when
 # matplotlib is imported, some magic must happen which enables plots to appear
 # in the notebook output, and apparently this needs to happen before the cell
 # is executed. Importing matplotlib here is a workaround, for lack of a better
-# fix.
-import matplotlib.pyplot as plt # noqa
+# fix. See here: https://github.com/jupyter/notebook/issues/3691
+# One could also add %matplotlib inline to the notebooks, but that would also
+# not be the prettiest solution.
+# Finally, note that this workaround will not work if the import of scipp
+# happens inside the same cell as the call to plot.
+try:
+    import matplotlib.pyplot as plt # noqa
+except ImportError: # Catch error in case matplotlib is not installed
+    pass
 
 
 class Config:
@@ -103,19 +110,22 @@ def plot(input_data, collapse=None, backend=None, **kwargs):
 
 
 def dispatch_to_backend(get_color=False, backend=None, **kwargs):
-
-    from .plot_matplotlib import plot_matplotlib, get_mpl_color
-    from .plot_plotly import plot_plotly, get_plotly_color
+    """
+    Select the appropriate backend for plotting (plotly or matplotlib) and
+    send the data to be plotted to the appropriate function.
+    """
 
     if backend is None:
         backend = config.backend
 
     if backend == "matplotlib":
+        from .plot_matplotlib import plot_matplotlib, get_mpl_color
         if get_color:
             return get_mpl_color(**kwargs)
         else:
             plot_matplotlib(**kwargs)
     elif backend == "plotly":
+        from .plot_plotly import plot_plotly, get_plotly_color
         if get_color:
             return get_plotly_color(**kwargs)
         else:
