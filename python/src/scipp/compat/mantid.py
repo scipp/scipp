@@ -67,6 +67,11 @@ def ConvertWorkspace2DToDataset(ws):
 
 
 def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
+
+    if ws.getAxis(0).getUnit().unitID() != "TOF":
+        raise RuntimeError("Converting an EventWorkspace with non-Tof X-axis "
+                           "to a Dataset is currently not supported.")
+
     nHist = ws.getNumberHistograms()
     comp_info = convert_instrument(ws)
     pos, num = initPosSpectrumNo(nHist, ws)

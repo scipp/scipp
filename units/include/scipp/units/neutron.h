@@ -152,7 +152,7 @@ using Unit = Unit_impl<supported_units, counts_unit>;
 
 SCIPP_UNITS_DECLARE_DIMENSIONS(DSpacing, Energy, EnergyTransfer, Position, Q,
                                Qx, Qy, Qz, Row, Spectrum, Time, Tof, Wavelength,
-                               X, Y, Z, BeamlineComponent)
+                               X, Y, Z)
 
 } // namespace neutron
 } // namespace scipp::units
