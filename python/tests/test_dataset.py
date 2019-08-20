@@ -358,6 +358,22 @@ def test_dataset_merge():
     assert b['d2'] == c['d2']
 
 
+def test_dataset_concatenate():
+    a = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=np.array([11, 12]))},
+        coords={Dim.X: sc.Variable([Dim.X], values=np.array([1, 2]))}
+    )
+    b = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=np.array([13, 14]))},
+        coords={Dim.X: sc.Variable([Dim.X], values=np.array([3, 4]))}
+    )
+
+    c = sc.concatenate(a, b, Dim.X)
+
+    assert np.array_equal(c.coords[Dim.X].values, np.array([1, 2, 3, 4]))
+    assert np.array_equal(c["data"].values, np.array([11, 12, 13, 14]))
+
+
 def test_dataset_set_data():
     d1 = sc.Dataset(
         {

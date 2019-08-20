@@ -250,6 +250,12 @@ void init_dataset(py::module &m) {
         :return: A new dataset that contains the union of all data items, coords, labels, and attributes.
         :rtype: Dataset)");
 
+  m.def("concatenate",
+        [](const DatasetConstProxy &lhs, const DatasetConstProxy &rhs,
+           const Dim dim) { return core::concatenate(lhs, rhs, dim); },
+        py::call_guard<py::gil_scoped_release>(),
+        "Returns the concatenation of two datasets");
+
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();
 }

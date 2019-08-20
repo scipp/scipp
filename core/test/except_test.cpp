@@ -40,6 +40,7 @@ TEST(ValidSliceTest, test_slice_range) {
   EXPECT_THROW(expect::validSlice(dims, Slice(Dim::X, 0, 4)),
                except::SliceError);
 }
+
 TEST(ValidSliceTest, test_dimension_contained) {
   Dimensions dims{{Dim::X, 3}, {Dim::Z, 3}};
   EXPECT_NO_THROW(expect::validSlice(dims, Slice(Dim::X, 0)));

@@ -966,6 +966,10 @@ SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
                                 const DatasetConstProxy &b);
 
+SCIPP_CORE_EXPORT Dataset concatenate(const DatasetConstProxy &a,
+                                      const DatasetConstProxy &b,
+                                      const Dim dim);
+
 } // namespace scipp::core
 
 #endif // SCIPP_DATASET_H
