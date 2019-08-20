@@ -13,7 +13,6 @@ pybind11_add_module(_scipp
                     variable.cpp
                     variable_view.cpp)
 target_link_libraries(_scipp LINK_PRIVATE scipp-core scipp-neutron)
-target_include_directories(_scipp SYSTEM PRIVATE "../range-v3/include")
 
 # Set symbol visibility to hidden to reduce binary size, as recommended in pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)

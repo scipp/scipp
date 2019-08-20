@@ -20,8 +20,7 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${TARGET_NAME} SYSTEM
-                           PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
-                           PRIVATE "../range-v3/include")
+                           PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src)
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
