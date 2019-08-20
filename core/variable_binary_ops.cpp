@@ -238,15 +238,14 @@ Variable operator/(const double a, const VariableConstProxy &b_proxy) {
   Variable b(b_proxy);
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
   transform_in_place<double, float>(
-      b, overloaded{[](units::Unit &b_) {
-                      b_ = units::Unit(units::dimensionless) / b_;
-                    },
-                    [a](double &b_) { b_ = a / b_; },
-                    [a](float &b_) { b_ = static_cast<float>(a / b_); },
-                    [a](auto &b_) {
-                      b_ = static_cast<std::remove_reference_t<decltype(b_)>>(
-                          a / b_);
-                    }});
+      b,
+      overloaded{
+          [](units::Unit &b_) { b_ = units::Unit(units::dimensionless) / b_; },
+          [a](double &b_) { b_ = a / b_; },
+          [a](float &b_) { b_ = static_cast<float>(a / b_); },
+          [a](auto &b_) {
+            b_ = static_cast<std::remove_reference_t<decltype(b_)>>(a / b_);
+          }});
   return b;
 }
 
