@@ -312,9 +312,7 @@ template <class Op> struct TransformSparse {
 template <class T1, class Op> void do_transform_in_place(T1 &a, Op op) {
   auto a_val = a.values();
   if (a.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T1::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T1::value_type>()) {
       auto a_var = a.variances();
       transform_in_place_with_variance_impl(op,
                                             ValuesAndVariances{a_val, a_var});
@@ -331,9 +329,7 @@ void do_transform(const T1 &a, Out &out, Op op) {
   auto a_val = a.values();
   auto out_val = out.values();
   if (a.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T1::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T1::value_type>()) {
       auto a_var = a.variances();
       auto out_var = out.variances();
       transform_elements_with_variance(op, ValuesAndVariances{out_val, out_var},
@@ -352,10 +348,8 @@ void do_transform_in_place(T1 &a, const T2 &b, Op op) {
   auto a_val = a.values();
   auto b_val = b.values();
   if (a.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T1::value_type> ||
-                  is_eigen_type_v<typename T2::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T1::value_type>() &&
+                  canHaveVariances<typename T2::value_type>()) {
       auto a_var = a.variances();
       if (b.hasVariances()) {
         auto b_var = b.variances();
@@ -384,10 +378,8 @@ void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
   auto b_val = b.values();
   auto out_val = out.values();
   if (a.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T1::value_type> ||
-                  is_eigen_type_v<typename T2::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T1::value_type>() &&
+                  canHaveVariances<typename T2::value_type>()) {
       auto a_var = a.variances();
       auto out_var = out.variances();
       if (b.hasVariances()) {
@@ -402,9 +394,7 @@ void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
       }
     }
   } else if (b.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T2::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T2::value_type>()) {
       auto b_var = b.variances();
       auto out_var = out.variances();
       transform_elements_with_variance(op, ValuesAndVariances{out_val, out_var},

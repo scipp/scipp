@@ -946,3 +946,9 @@ TEST(VariableProxyTest, create_with_variance) {
   const auto reference = makeVariable<double>({Dim::X, 1}, {2.0}, {0.2});
   ASSERT_EQ(slice, reference);
 }
+
+TEST(VariableTest, variances_unsupported_type_fail) {
+  ASSERT_NO_THROW(makeVariable<std::string>({Dim::X, 1}, {"a"}));
+  ASSERT_THROW(makeVariable<std::string>({Dim::X, 1}, {"a"}, {"variances"}),
+               except::VariancesError);
+}
