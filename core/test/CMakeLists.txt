@@ -25,7 +25,6 @@ add_executable(${TARGET_NAME}
                variable_test.cpp
                variable_view_test.cpp
                view_index_test.cpp
-               #zip_view_test.cpp
                )
 target_link_libraries(${TARGET_NAME}
                       LINK_PRIVATE
@@ -34,8 +33,6 @@ target_link_libraries(${TARGET_NAME}
                       scipp_test_helpers
                       ${GTEST_LIBRARIES}
                       ${GMOCK_LIBRARIES})
-target_include_directories(${TARGET_NAME} SYSTEM
-                           PRIVATE "../../range-v3/include")
 set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ${INTERPROCEDURAL_OPTIMIZATION_TESTS})
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})

@@ -49,3 +49,5 @@ Dataset DatasetFactory3D::make() {
 
   return dataset;
 }
+
+Dataset make_empty() { return Dataset(); }

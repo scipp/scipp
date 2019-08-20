@@ -20,6 +20,20 @@ namespace py = pybind11;
 using namespace scipp;
 using namespace scipp::core;
 
+template <class Var> struct VarianceSetter {
+  template <class T> struct SetVariances {
+    static void apply(Var &var) {
+      var.setVariances(Vector<T>(var.data().size()));
+    }
+  };
+
+  static void initVariances(Var &var) {
+    const auto dtypeTag = var.dtype();
+    return CallDType<double, float, int64_t, int32_t>::apply<SetVariances>(
+        dtypeTag, var);
+  }
+};
+
 /// Add element size as factor to strides.
 template <class T>
 std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
@@ -242,6 +256,9 @@ public:
   }
   template <class Var>
   static void set_variances(Var &view, const py::array &data) {
+    if (!view.hasVariances())
+      VarianceSetter<Var>::initVariances(view);
+
     expect_shape_compatible(view, data);
     set(get<get_variances>(view), data);
   }
@@ -291,6 +308,9 @@ public:
   template <class Var>
   static void set_variance(Var &view, const py::object &o) {
     expect::equals(Dimensions(), view.dims());
+    if (!view.hasVariances())
+      VarianceSetter<Var>::initVariances(view);
+
     std::visit(
         [&o](const auto &data) {
           data[0] = o.cast<typename std::decay_t<decltype(data)>::value_type>();

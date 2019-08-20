@@ -6,7 +6,6 @@ set(INC_FILES
     include/scipp/core/dataset.h
     include/scipp/core/dataset_index.h
     include/scipp/core/dimensions.h
-    include/scipp/core/events.h
     include/scipp/core/except.h
     include/scipp/core/index.h
     include/scipp/core/memory_pool.h
@@ -26,7 +25,6 @@ set(SRC_FILES
     data_array.cpp
     dataset.cpp
     dimensions.cpp
-    #events.cpp
     except.cpp
     slice.cpp
     variable.cpp
@@ -56,8 +54,7 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${TARGET_NAME} SYSTEM
-                           PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
-                           PRIVATE "../range-v3/include")
+                           PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src)
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 add_subdirectory(test)

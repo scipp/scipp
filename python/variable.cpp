@@ -97,7 +97,6 @@ scipp::core::DType scipp_dtype(const py::object &type) {
 Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                         std::optional<py::array> &variances,
                         const units::Unit unit, const py::object &dtype) {
-  const py::buffer_info info = values.request();
   // Use custom dtype, otherwise dtype of data.
   const auto dtypeTag = dtype.is_none() ? scippy::scipp_dtype(values.dtype())
                                         : scippy::scipp_dtype(dtype);

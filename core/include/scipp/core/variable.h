@@ -37,8 +37,9 @@ template <class... Known> class VariableConceptHandle_impl;
 // Any item type that is listed here explicitly can be used with the templated
 // `transform`, i.e., we can pass arbitrary functors/lambdas to process data.
 using VariableConceptHandle = VariableConceptHandle_impl<
-    double, float, int64_t, Eigen::Vector3d, sparse_container<double>,
-    sparse_container<float>, sparse_container<int64_t>>;
+    double, float, int64_t, int32_t, Eigen::Vector3d, sparse_container<double>,
+    sparse_container<float>, sparse_container<int64_t>,
+    sparse_container<int32_t>>;
 
 /// Abstract base class for any data that can be held by Variable. Also used to
 /// hold views to data by (Const)VariableProxy. This is using so-called
@@ -52,7 +53,6 @@ public:
   virtual ~VariableConcept() = default;
 
   virtual DType dtype(bool sparse = false) const noexcept = 0;
-
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle clone(const Dimensions &dims) const = 0;
   virtual VariableConceptHandle makeView() const = 0;
@@ -107,6 +107,8 @@ public:
     std::terminate();
   }
   static DType static_dtype() noexcept { return scipp::core::dtype<T>; }
+
+  virtual void setVariances(Vector<T> &&v) = 0;
 
   virtual scipp::span<T> values() = 0;
   virtual scipp::span<T> values(const Dim dim, const scipp::index begin,
@@ -381,6 +383,8 @@ public:
   const VariableConceptHandle &dataHandle() const & { return m_object; }
 
   template <class... Tags> friend class ZipView;
+
+  template <class T> void setVariances(Vector<T> &&v);
 
 private:
   template <class T>
@@ -724,8 +728,11 @@ public:
   VariableProxy operator/=(const VariableConstProxy &other) const;
   VariableProxy operator/=(const double value) const;
 
+  template <class T> void setVariances(Vector<T> &&v) const;
+
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;
+  scipp::index size() const { return data().size(); }
 
 private:
   friend class Variable;

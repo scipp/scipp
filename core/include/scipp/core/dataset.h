@@ -89,6 +89,7 @@ public:
   const std::string &name() const noexcept;
 
   Dimensions dims() const noexcept;
+  DType dtype() const;
   units::Unit unit() const;
 
   CoordsConstProxy coords() const noexcept;
@@ -165,6 +166,12 @@ public:
   AttrsProxy attrs() const noexcept;
 
   void setUnit(const units::Unit unit) const;
+
+  /// Set variances for the data. If the data has no variances array, it is
+  /// created.
+  template <class T> void setVariances(Vector<T> &&v) const {
+    data().setVariances(std::move(v));
+  }
 
   /// Return untyped proxy for data (values and optional variances).
   VariableProxy data() const {

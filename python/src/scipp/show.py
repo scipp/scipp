@@ -58,11 +58,8 @@ class VariableDrawer():
             "origin_y", str(origin_y)).replace("xlen", str(xlen))
 
     def _variance_offset(self):
-        shape = self._variable.shape
-        if len(shape) <= 2:
-            depth = 2
-        else:
-            depth = shape[-3] + 1
+        shape = self._extents()
+        depth = shape[-3] + 1
         return 0.3 * depth
 
     def _extents(self):
@@ -106,7 +103,7 @@ class VariableDrawer():
         depth = shape[-3]
 
         extra_item_count = 0
-        if self._variable.has_variances:
+        if self._variable.variances is not None:
             extra_item_count += 1
         if isinstance(self._variable, sc.DataConstProxy):
             if self._variable.sparse:
@@ -117,13 +114,10 @@ class VariableDrawer():
                 for dim, coord in self._variable.coords:
                     if dim == sparse_dim:
                         extra_item_count += 1
-        try:
-            # temporary hack until `has_data` or `has_values` is available
-            self._variable.unit
-        except Exception:
+        if self._variable.values is None:
             # No data
             extra_item_count -= 1
-        depth += extra_item_count*(depth + 1)
+        depth += extra_item_count * (depth + 1)
         width += 0.3 * depth
         height += 0.3 * depth
         return [width, height]
@@ -209,7 +203,7 @@ class VariableDrawer():
             unit = '(undefined)'
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
             self._variable.dims, self._variable.shape, unit,
-            self._variable.has_variances)
+            self._variable.variances is not None)
         if title is not None:
             svg = '<text x="{}" y="{}" \
                     style="font-size:#normal-font">{}</text>'.format(
@@ -226,14 +220,10 @@ class VariableDrawer():
         svg = '<g>'
         svg += self._draw_info(offset, title)
         items = []
-        if self._variable.has_variances:
+        if self._variable.variances is not None:
             items.append(('variances', self._variable.variances, color))
-        try:
-            # temporary hack until `has_data` or `has_values` is available
-            self._variable.unit
+        if self._variable.values is not None:
             items.append(('values', self._variable.values, color))
-        except Exception:
-            pass
         if isinstance(self._variable, sc.DataConstProxy):
             if self._variable.sparse:
                 for name, label in self._variable.labels:

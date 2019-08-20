@@ -13,9 +13,7 @@ requirements:
     - git
     - python {{ python }}
   run:
-    - ipywidgets 7.*
     - numpy {{ numpy }}
-    - plotly 3.*
     - python {{ python }}
 
 build:
