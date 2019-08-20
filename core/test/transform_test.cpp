@@ -283,6 +283,18 @@ TEST_F(TransformBinaryTest, in_place_unit_change) {
                except::UnitError);
 }
 
+TEST(AccumulateTest, in_place) {
+  const auto var = makeVariable<double>({Dim::X, 2}, units::m, {1.0, 2.0});
+  const auto expected = makeVariable<double>(3.0);
+  auto op_ = [](auto &&a, auto &&b) { a += b; };
+  Variable result;
+
+  // Note how accumulate is ignoring the unit.
+  result = makeVariable<double>({});
+  accumulate_in_place<pair_self_t<double>>(result, var, op_);
+  EXPECT_EQ(result, expected);
+}
+
 TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
   const auto var = makeVariable<Eigen::Vector3d>(
       {Dim::X, 2},

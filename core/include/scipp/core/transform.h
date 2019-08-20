@@ -623,7 +623,7 @@ void transform_in_place(Var &&var, Op op) {
   using namespace detail;
   auto unit = var.unit();
   op(unit);
-  // Stop early in bad cases of changing units (if `variable` is a slice):
+  // Stop early in bad cases of changing units (if `var` is a slice):
   var.expectCanSetUnit(unit);
   try {
     // If a sparse_container<T> is specified explicitly as a type we assume that
@@ -684,7 +684,7 @@ void transform_in_place(Var &&var, const Var1 &other, Op op) {
   expect::contains(var.dims(), other.dims());
   auto unit = var.unit();
   op(unit, other.unit());
-  // Stop early in bad cases of changing units (if `variable` is a slice):
+  // Stop early in bad cases of changing units (if `var` is a slice):
   var.expectCanSetUnit(unit);
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   detail::transform_in_place(std::tuple_cat(TypePairs{}...),
@@ -699,6 +699,10 @@ void transform_in_place(Var &&var, const Var1 &other, Op op) {
 /// to broadcast the dimension of the first argument to that of the other
 /// argument. As a consequence, the operation may be applied multiple times to
 /// the same output element, effectively accumulating the result.
+///
+/// WARNING: In contrast to the transform algorithms, accumulate does not touch
+/// the unit, since it would be hard to track, e.g., in multiplication
+/// operations.
 template <class... TypePairs, class Var, class Var1, class Op>
 void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
   expect::contains(other.dims(), var.dims());
