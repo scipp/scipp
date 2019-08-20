@@ -39,10 +39,16 @@ def ConvertWorkspace2DToDataset(ws):
     pos, num = initPosSpectrumNo(nHist, ws)
 
     # TODO More cases?
-    # tag = sc.Dim.EnergyTransfer if ws.getAxis(
-    #     0).getUnit().unitID() == 'DeltaE' else sc.Dim.Tof
-    dim = sc.Dim.EnergyTransfer if ws.getAxis(
-        0).getUnit().unitID() == 'DeltaE' else sc.Dim.Tof
+    allowed_units = {"DeltaE": sc.Dim.EnergyTransfer, "TOF": sc.Dim.Tof}
+    xunit = ws.getAxis(0).getUnit().unitID()
+    if xunit not in allowed_units.keys():
+        raise RuntimeError("X-axis unit not currently supported for "
+                           "Workspace2D. Possible values are: {}, "
+                           "got '{}'. ".format(
+                               [k for k in allowed_units.keys()], xunit))
+    else:
+        dim = allowed_units[xunit]
+
     if cb:
         coords = sc.Variable([dim], values=ws.readX(0))
     else:
@@ -68,18 +74,24 @@ def ConvertWorkspace2DToDataset(ws):
 
 def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
 
-    if ws.getAxis(0).getUnit().unitID() != "TOF":
-        raise RuntimeError("Converting an EventWorkspace with non-Tof X-axis "
-                           "to a Dataset is currently not supported.")
+    allowed_units = {"TOF": sc.Dim.Tof}
+    xunit = ws.getAxis(0).getUnit().unitID()
+    if xunit not in allowed_units.keys():
+        raise RuntimeError("X-axis unit not currently supported for "
+                           "EventWorkspace. Possible values are: {}, "
+                           "got '{}'. ".format(
+                               [k for k in allowed_units.keys()], xunit))
+    else:
+        dim = allowed_units[xunit]
 
     nHist = ws.getNumberHistograms()
     comp_info = convert_instrument(ws)
     pos, num = initPosSpectrumNo(nHist, ws)
 
-    coords = sc.Variable([sc.Dim.Position, sc.Dim.Tof],
+    coords = sc.Variable([sc.Dim.Position, dim],
                          shape=[nHist, sc.Dimensions.Sparse])
     if not drop_pulse_times:
-        labs = sc.Variable([sc.Dim.Position, sc.Dim.Tof],
+        labs = sc.Variable([sc.Dim.Position, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
     for i in range(nHist):
         coords[sc.Dim.Position, i].values = ws.getSpectrum(i).getTofs()
@@ -91,7 +103,7 @@ def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
             labs[sc.Dim.Position, i].values = np.asarray([p.total_nanoseconds()
                                                           for p in pt])
 
-    coords_and_labs = {"coords": {sc.Dim.Tof: coords, sc.Dim.Position: pos},
+    coords_and_labs = {"coords": {dim: coords, sc.Dim.Position: pos},
                        "labels": {"spectrum_number": num,
                                   "component_info": comp_info}}
     if not drop_pulse_times:
