@@ -90,6 +90,23 @@ TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
   ASSERT_NO_THROW(transform_in_place<double>(a, op_in_place));
 }
 
+TEST_F(TransformUnaryTest, in_place_unit_change) {
+  const auto var = makeVariable<double>({Dim::X, 2}, units::m, {1.0, 2.0});
+  const auto expected =
+      makeVariable<double>({Dim::X, 2}, units::m * units::m, {1.0, 4.0});
+  auto op_ = [](auto &&a) { a *= a; };
+  Variable result;
+
+  result = var;
+  transform_in_place<double>(result, op_);
+  EXPECT_EQ(result, expected);
+
+  // Unit changes but we are transforming only parts of data -> not possible.
+  result = var;
+  EXPECT_THROW(transform_in_place<double>(result.slice({Dim::X, 1}), op_),
+               except::UnitError);
+}
+
 TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var = makeVariable<float>({Dim::X, 2}, {1.1, 2.2});
   // The functor returns double, so the output type is also double.
@@ -246,6 +263,24 @@ TEST_F(TransformBinaryTest, sparse_size_fail) {
                          except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
                except::SizeError);
+}
+
+TEST_F(TransformBinaryTest, in_place_unit_change) {
+  const auto var = makeVariable<double>({Dim::X, 2}, units::m, {1.0, 2.0});
+  const auto expected =
+      makeVariable<double>({Dim::X, 2}, units::m * units::m, {1.0, 4.0});
+  auto op_ = [](auto &&a, auto &&b) { a *= b; };
+  Variable result;
+
+  result = var;
+  transform_in_place<pair_self_t<double>>(result, var, op_);
+  EXPECT_EQ(result, expected);
+
+  // Unit changes but we are transforming only parts of data -> not possible.
+  result = var;
+  EXPECT_THROW(transform_in_place<pair_self_t<double>>(
+                   result.slice({Dim::X, 1}), var.slice({Dim::X, 1}), op_),
+               except::UnitError);
 }
 
 TEST(TransformTest, Eigen_Vector3d_pass_by_value) {

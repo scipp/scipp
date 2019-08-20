@@ -619,7 +619,7 @@ template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 /// equivalent to std::transform with a single input range and an output range
 /// identical to the input range, but avoids potentially costly element copies.
 template <class... Ts, class Var, class Op>
-void transform_in_place(Var &var, Op op) {
+void transform_in_place(Var &&var, Op op) {
   using namespace detail;
   auto unit = var.unit();
   op(unit);
