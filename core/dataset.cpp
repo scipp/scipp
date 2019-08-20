@@ -1217,6 +1217,80 @@ Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
+Dataset concatenate(const DatasetConstProxy &a, const DatasetConstProxy &b,
+                    const Dim dim) {
+  Dataset result;
+
+  for (const auto & [ name, item ] : a) {
+    /* Skip data items that are not common to both datasets */
+    if (!b.contains(name))
+      continue;
+
+    /* Check if both data items depend on the concatenation dimension */
+    if (item.dims().contains(dim) && b[name].dims().contains(dim)) {
+      /* Determine if the data items are both histograms */
+      const bool isHistogram = item.isHistogram(dim);
+      if (isHistogram != b[name].isHistogram(dim)) {
+        throw std::runtime_error(
+            "Expected items to both be histograms or neither be histograms");
+      }
+
+      if (isHistogram) {
+        const auto axisA = a.coords()[dim];
+        const auto axisB = b.coords()[dim];
+
+        /* Check that the edge of the last bin of the first data item match the
+         * edge of the first bin of the second data item */
+        expect::equals(axisA.slice({dim, axisA.dims()[dim] - 1}),
+                       axisB.slice({dim, 0}));
+
+        /* Concatenate the binned coordinate, removing the duplicated bin edge
+         */
+        result.setCoord(
+            dim, concatenate(axisA,
+                             axisB.slice({dim, 1, b.coords()[dim].dims()[dim]}),
+                             dim));
+      } else {
+        result.setCoord(dim,
+                        concatenate(a.coords()[dim], b.coords()[dim], dim));
+      }
+
+      result.setData(std::string(name),
+                     concatenate(item.data(), b[name].data(), dim));
+    } else {
+      if (item == b[name]) {
+        /* Simply copy the data if it is identical in both datasets */
+        result.setData(name, item);
+      } else {
+        if (a.dimensions().find(dim) != a.dimensions().end()) {
+          /* Dataset contains concatenation dimension but variable does not */
+          /* Broadcast before concatenation */
+          auto broadcastDimensionsForA = item.dims();
+          broadcastDimensionsForA.add(dim, a.dimensions()[dim]);
+
+          auto broadcastDimensionsForB = b[name].dims();
+          if (b.dimensions().find(dim) != b.dimensions().end() &&
+              !b[name].dims().contains(dim)) {
+            broadcastDimensionsForB.add(dim, b.dimensions()[dim]);
+          }
+
+          result.setData(
+              name,
+              concatenate(broadcast(item.data(), broadcastDimensionsForA),
+                          broadcast(b[name].data(), broadcastDimensionsForB),
+                          dim));
+        } else {
+          /* Dataset does not contain concatenation dimension, insert a new
+           * dimension by concatenating variables */
+          result.setData(name, concatenate(item.data(), b[name].data(), dim));
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 template <class DS, class Func>
 Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
   if (containsSparse(ds))

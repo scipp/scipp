@@ -989,6 +989,10 @@ SCIPP_CORE_EXPORT DataArray rebin(const DataConstProxy &a, const Dim dim,
 SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
                                 const VariableConstProxy &coord);
 
+SCIPP_CORE_EXPORT Dataset concatenate(const DatasetConstProxy &a,
+                                      const DatasetConstProxy &b,
+                                      const Dim dim);
+
 } // namespace scipp::core
 
 #endif // SCIPP_DATASET_H
