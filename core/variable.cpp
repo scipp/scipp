@@ -398,11 +398,9 @@ Variable filter(const Variable &var, const Variable &filter) {
 }
 
 Variable sum(const Variable &var, const Dim dim) {
-  auto summed(var);
-  auto dims = summed.dims();
+  auto dims = var.dims();
   dims.erase(dim);
-  // setDims zeros the data
-  summed.setDims(dims);
+  Variable summed(var, dims);
   accumulate_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
       summed, var, [](auto &&a, auto &&b) { a += b; });
   return summed;

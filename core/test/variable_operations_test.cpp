@@ -485,14 +485,14 @@ TEST(Variable, rebin) {
 #endif
 
 TEST(Variable, sum) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
-  auto sumX = sum(var, Dim::X);
-  ASSERT_EQ(sumX.dims(), (Dimensions{Dim::Y, 2}));
-  EXPECT_TRUE(equals(sumX.values<double>(), {3.0, 7.0}));
-  auto sumY = sum(var, Dim::Y);
-  ASSERT_EQ(sumY.dims(), (Dimensions{Dim::X, 2}));
-  EXPECT_TRUE(equals(sumY.values<double>(), {4.0, 6.0}));
+  const auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                                        {1.0, 2.0, 3.0, 4.0});
+  const auto expectedX =
+      makeVariable<double>({{Dim::Y, 2}}, units::m, {3.0, 7.0});
+  const auto expectedY =
+      makeVariable<double>({{Dim::X, 2}}, units::m, {4.0, 6.0});
+  EXPECT_EQ(sum(var, Dim::X), expectedX);
+  EXPECT_EQ(sum(var, Dim::Y), expectedY);
 }
 
 TEST(Variable, mean) {
