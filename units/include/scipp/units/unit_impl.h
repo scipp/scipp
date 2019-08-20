@@ -83,6 +83,10 @@ template <class T, class Counts>
 Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b);
 template <class T, class Counts>
+Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a);
+template <class T, class Counts>
+Unit_impl<T, Counts> abs(const Unit_impl<T, Counts> &a);
+template <class T, class Counts>
 Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a);
 
 } // namespace scipp::units

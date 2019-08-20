@@ -418,8 +418,9 @@ Variable abs(const Variable &var) {
 }
 
 Variable norm(const Variable &var) {
-  Variable result =
-      transform<Eigen::Vector3d>(var, [](auto &&x) { return x.norm(); });
+  Variable result = transform<Eigen::Vector3d>(
+      var, overloaded{[](const auto &x) { return x.norm(); },
+                      [](const units::Unit &x) { return x; }});
   result.setUnit(var.unit());
   return result;
 }
@@ -434,7 +435,11 @@ Variable sqrt(const Variable &var) {
 
 Variable dot(const Variable &a, const Variable &b) {
   auto result = transform<pair_self_t<Eigen::Vector3d>>(
-      a, b, [](const auto &a_, const auto &b_) { return a_.dot(b_); });
+      a, b,
+      overloaded{[](const auto &a_, const auto &b_) { return a_.dot(b_); },
+                 [](const units::Unit &a_, const units::Unit &b_) {
+                   return a_ * b_;
+                 }});
   result.setUnit(a.unit() * b.unit());
   return result;
 }

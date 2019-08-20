@@ -15,7 +15,9 @@ using namespace scipp::core;
 class TransformUnaryTest : public ::testing::Test {
 protected:
   static constexpr auto op_in_place{[](auto &x) { x *= 2.0; }};
-  static constexpr auto op{[](const auto x) { return x * 2.0; }};
+  static constexpr auto op{
+      overloaded{[](const auto x) { return x * 2.0; },
+                 [](const units::Unit &unit) { return unit; }}};
 };
 
 TEST_F(TransformUnaryTest, dense) {
@@ -90,7 +92,9 @@ TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
 TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var = makeVariable<float>({Dim::X, 2}, {1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out = transform<float>(var, [](const auto x) { return -1.0 * x; });
+  auto out = transform<float>(
+      var, overloaded{[](const auto x) { return -1.0 * x; },
+                      [](const units::Unit &unit) { return unit; }});
   EXPECT_TRUE(equals(out.values<double>(), {-1.1f, -2.2f}));
 }
 
@@ -677,13 +681,17 @@ constexpr auto user_op(const double) { return 123.0; }
 constexpr auto user_op(const scipp::core::detail::ValueAndVariance<double>) {
   return scipp::core::detail::ValueAndVariance<double>{123.0, 456.0};
 }
+constexpr auto user_op(const units::Unit &) { return units::s; }
+
 TEST(TransformTest, user_op_with_variances) {
-  auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {1.1, 3.0});
+  auto var =
+      makeVariable<double>({Dim::X, 2}, units::m, {1.1, 2.2}, {1.1, 3.0});
 
   const auto result = transform<double>(var, [](auto x) { return user_op(x); });
   transform_in_place<double>(var, [](auto &x) { x = user_op(x); });
 
-  EXPECT_TRUE(equals(var.values<double>(), {123, 123}));
-  EXPECT_TRUE(equals(var.variances<double>(), {456, 456}));
+  auto expected =
+      makeVariable<double>({Dim::X, 2}, units::s, {123, 123}, {456, 456});
+  EXPECT_EQ(result, expected);
   EXPECT_EQ(result, var);
 }

@@ -705,19 +705,23 @@ void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
 template <class... Ts, class Var, class Op>
 [[nodiscard]] Variable transform(const Var &var, Op op) {
   using namespace detail;
+  auto unit = op(var.unit());
+  Variable result;
   try {
     if constexpr ((is_sparse_v<Ts> || ...)) {
-      return scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                   var.dataHandle());
+      result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
+                                                     var.dataHandle());
     } else {
-      return scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-          .apply(
-              Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
-              var.dataHandle());
+      result = scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+                   .apply(Transform{detail::overloaded_sparse{
+                              op, TransformSparse<Op>{op}}},
+                          var.dataHandle());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
+  result.setUnit(unit);
+  return result;
 }
 
 namespace detail {
@@ -753,8 +757,12 @@ Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
 /// need for, e.g., std::back_inserter.
 template <class... TypePairs, class Var1, class Var2, class Op>
 [[nodiscard]] Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
+  auto unit = op(var1.unit(), var2.unit());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  return detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
+  auto result =
+      detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
+  result.setUnit(unit);
+  return result;
 }
 
 } // namespace scipp::core
