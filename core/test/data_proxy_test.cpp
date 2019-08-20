@@ -235,6 +235,19 @@ TYPED_TEST(DataProxyTest, hasData_hasVariances) {
   ASSERT_TRUE(d_ref["b"].hasVariances());
 }
 
+TYPED_TEST(DataProxyTest, isHistogram) {
+  Dataset d;
+  typename TestFixture::dataset_type &d_ref(d);
+
+  d.setCoord(Dim::X, makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
+
+  d.setData("histogram", makeVariable<int>({Dim::X, 4}, {1, 2, 3, 4}));
+  d.setData("point", makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
+
+  ASSERT_TRUE(d_ref["histogram"].isHistogram(Dim::X));
+  ASSERT_FALSE(d_ref["point"].isHistogram(Dim::X));
+}
+
 TYPED_TEST(DataProxyTest, values_variances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
