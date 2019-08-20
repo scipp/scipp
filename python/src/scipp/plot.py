@@ -19,7 +19,7 @@ import scipp as sp
 # happens inside the same cell as the call to plot.
 try:
     import matplotlib.pyplot as plt # noqa
-except ImportError: # Catch error in case matplotlib is not installed
+except ImportError:  # Catch error in case matplotlib is not installed
     pass
 
 
