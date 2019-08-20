@@ -103,6 +103,8 @@ public:
     return hasData() && m_data->second.data->hasVariances();
   }
 
+  bool isHistogram(const Dim dim) const;
+
   /// Return untyped const proxy for data (values and optional variances).
   VariableConstProxy data() const {
     if (!hasData())

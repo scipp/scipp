@@ -520,6 +520,13 @@ AttrsConstProxy DataConstProxy::attrs() const noexcept {
       makeProxyItems<std::string>(dims(), m_dataset->m_attrs), slices());
 }
 
+/// Determine if this data is a histogram along a given depenant dimension
+bool DataConstProxy::isHistogram(const Dim dim) const {
+  const auto axisSize = m_dataset->coords()[dim].dims()[dim];
+  const auto dataSize = m_data->second.data->dims()[dim];
+  return axisSize - 1 == dataSize;
+}
+
 /// Return a proxy to all coordinates of the data proxy.
 ///
 /// If the data has a sparse dimension the returned proxy will not contain any
