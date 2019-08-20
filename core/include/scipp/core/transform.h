@@ -676,6 +676,22 @@ void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
 /// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
+  expect::contains(var.dims(), other.dims());
+  // Wrapped implementation to convert multiple tuples into a parameter pack.
+  detail::transform_in_place(std::tuple_cat(TypePairs{}...),
+                             std::forward<Var>(var), other, op);
+}
+
+/// Accumulate data elements of a variable in-place.
+///
+/// This is equivalent to `transform_in_place`, with the only difference that
+/// the dimension check of the inputs is reversed. That is, it must be possible
+/// to broadcast the dimension of the first argument to that of the other
+/// argument. As a consequence, the operation may be applied multiple times to
+/// the same output element, effectively accumulating the result.
+template <class... TypePairs, class Var, class Var1, class Op>
+void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
+  expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   detail::transform_in_place(std::tuple_cat(TypePairs{}...),
                              std::forward<Var>(var), other, op);

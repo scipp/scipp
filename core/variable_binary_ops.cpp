@@ -15,7 +15,6 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
   expect::equals(variable.unit(), other.unit());
-  expect::contains(variable.dims(), other.dims());
   // Note: This will broadcast/transpose the RHS if required. We do not support
   // changing the dimensions of the LHS though!
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
@@ -61,7 +60,6 @@ Variable &Variable::operator+=(const double value) & {
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
   expect::equals(variable.unit(), other.unit());
-  expect::contains(variable.dims(), other.dims());
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
       variable, other, [](auto &&a, auto &&b) { a -= b; });
   return variable;
@@ -86,7 +84,6 @@ Variable &Variable::operator-=(const double value) & {
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  expect::contains(variable.dims(), other.dims());
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.expectCanSetUnit(variable.unit() * other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
@@ -116,7 +113,6 @@ Variable &Variable::operator*=(const double value) & {
 }
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
-  expect::contains(variable.dims(), other.dims());
   // setUnit is catching bad cases of changing units (if `variable` is a slice).
   variable.expectCanSetUnit(variable.unit() / other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,

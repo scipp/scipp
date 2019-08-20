@@ -123,6 +123,15 @@ TEST_F(TransformBinaryTest, dense) {
   EXPECT_EQ(ba, a);
 }
 
+TEST_F(TransformBinaryTest, dims_and_shape_fail_in_place) {
+  auto a = makeVariable<double>({Dim::X, 2});
+  auto b = makeVariable<double>({Dim::Y, 2});
+  auto c = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}});
+
+  EXPECT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place));
+  EXPECT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, c, op_in_place));
+}
+
 TEST_F(TransformBinaryTest, dense_mixed_type) {
   auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
   const auto b = makeVariable<float>(3.3);
