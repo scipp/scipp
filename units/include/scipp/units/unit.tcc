@@ -64,6 +64,26 @@ bool Unit_impl<T, Counts>::operator!=(const Unit_impl<T, Counts> &other) const {
 }
 
 template <class T, class Counts>
+Unit_impl<T, Counts> Unit_impl<T, Counts>::operator+=(const Unit_impl &other) {
+  return *this = *this + other;
+}
+
+template <class T, class Counts>
+Unit_impl<T, Counts> Unit_impl<T, Counts>::operator-=(const Unit_impl &other) {
+  return *this = *this - other;
+}
+
+template <class T, class Counts>
+Unit_impl<T, Counts> Unit_impl<T, Counts>::operator*=(const Unit_impl &other) {
+  return *this = *this * other;
+}
+
+template <class T, class Counts>
+Unit_impl<T, Counts> Unit_impl<T, Counts>::operator/=(const Unit_impl &other) {
+  return *this = *this / other;
+}
+
+template <class T, class Counts>
 Unit_impl<T, Counts> operator+(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b) {
   if (a == b)
@@ -152,10 +172,14 @@ Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
 }
 
 template <class T, class Counts>
-Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a) { return a; }
+Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a) {
+  return a;
+}
 
 template <class T, class Counts>
-Unit_impl<T, Counts> abs(const Unit_impl<T, Counts> &a) { return a; }
+Unit_impl<T, Counts> abs(const Unit_impl<T, Counts> &a) {
+  return a;
+}
 
 template <class T, class Counts>
 Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a) {

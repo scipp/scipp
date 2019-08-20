@@ -14,7 +14,8 @@ using namespace scipp::core;
 
 class TransformUnaryTest : public ::testing::Test {
 protected:
-  static constexpr auto op_in_place{[](auto &x) { x *= 2.0; }};
+  static constexpr auto op_in_place{
+      overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
   static constexpr auto op{
       overloaded{[](const auto x) { return x * 2.0; },
                  [](const units::Unit &unit) { return unit; }}};
@@ -330,7 +331,8 @@ TEST(TransformTest, unary_on_sparse_container) {
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
-  transform_in_place<sparse_container<double>>(a, [](auto &x) { x.clear(); });
+  transform_in_place<sparse_container<double>>(
+      a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}});
   EXPECT_TRUE(a_[0].empty());
   EXPECT_TRUE(a_[1].empty());
 }
@@ -347,7 +349,8 @@ TEST(TransformTest, unary_on_sparse_container_with_variance) {
   vars[0] = {1.1, 2.2, 3.3};
   vars[1] = {4.4};
 
-  transform_in_place<sparse_container<double>>(a, [](auto &x) { x.clear(); });
+  transform_in_place<sparse_container<double>>(
+      a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}});
   EXPECT_TRUE(vals[0].empty());
   EXPECT_TRUE(vals[1].empty());
   EXPECT_TRUE(vars[0].empty());
@@ -370,9 +373,10 @@ TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
   // If an exception occures due to a size mismatch between values and variances
   // we give a strong exception guarantee, i.e., data is untouched. Note that
   // there is no such guarantee if an exception occurs in the provided lambda.
-  ASSERT_THROW(transform_in_place<sparse_container<double>>(
-                   a, [](auto &x) { x.clear(); }),
-               except::SizeError);
+  ASSERT_THROW(
+      transform_in_place<sparse_container<double>>(
+          a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}}),
+      except::SizeError);
   EXPECT_EQ(a, expected);
 }
 
@@ -393,7 +397,9 @@ TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
   // we give a strong exception guarantee, i.e., data is untouched. Note that
   // there is no such guarantee if an exception occurs in the provided lambda.
   ASSERT_THROW(transform_in_place<pair_self_t<sparse_container<double>>>(
-                   a, a, [](auto &x, const auto &) { x.clear(); }),
+                   a, a,
+                   overloaded{[](auto &x, const auto &) { x.clear(); },
+                              [](units::Unit &, const units::Unit &) {}}),
                except::SizeError);
   EXPECT_EQ(a, expected);
 }
@@ -416,7 +422,9 @@ TEST(TransformTest,
   // Size mismatch between a and b is allowed for a user-defined operation on
   // the sparse container.
   ASSERT_NO_THROW(transform_in_place<pair_self_t<sparse_container<double>>>(
-      a, b, [](auto &x, const auto &) { x.clear(); }));
+      a, b,
+      overloaded{[](auto &x, const auto &) { x.clear(); },
+                 [](units::Unit &, const units::Unit &) {}}));
   EXPECT_EQ(a, expected);
 }
 

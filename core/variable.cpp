@@ -218,7 +218,12 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
     Variable out(a1);
     transform_in_place<pair_self_t<sparse_container<double>>>(
         out, a2,
-        [](auto &a, const auto &b) { a.insert(a.end(), b.begin(), b.end()); });
+        overloaded{[](auto &a, const auto &b) {
+                     a.insert(a.end(), b.begin(), b.end());
+                   },
+                   [](units::Unit &a, const units::Unit &b) {
+                     expect::equals(a, b);
+                   }});
     return out;
   }
 
@@ -411,37 +416,27 @@ Variable mean(const Variable &var, const Dim dim) {
 
 Variable abs(const Variable &var) {
   using std::abs;
-  Variable result =
-      transform<double, float>(var, [](const auto x) { return abs(x); });
-  result.setUnit(var.unit());
-  return result;
+  return transform<double, float>(var, [](const auto x) { return abs(x); });
 }
 
 Variable norm(const Variable &var) {
-  Variable result = transform<Eigen::Vector3d>(
+  return transform<Eigen::Vector3d>(
       var, overloaded{[](const auto &x) { return x.norm(); },
                       [](const units::Unit &x) { return x; }});
-  result.setUnit(var.unit());
-  return result;
 }
 
 Variable sqrt(const Variable &var) {
   using std::sqrt;
-  Variable result =
-      transform<double, float>(var, [](const auto x) { return sqrt(x); });
-  result.setUnit(sqrt(var.unit()));
-  return result;
+  return transform<double, float>(var, [](const auto x) { return sqrt(x); });
 }
 
 Variable dot(const Variable &a, const Variable &b) {
-  auto result = transform<pair_self_t<Eigen::Vector3d>>(
+  return transform<pair_self_t<Eigen::Vector3d>>(
       a, b,
       overloaded{[](const auto &a_, const auto &b_) { return a_.dot(b_); },
                  [](const units::Unit &a_, const units::Unit &b_) {
                    return a_ * b_;
                  }});
-  result.setUnit(a.unit() * b.unit());
-  return result;
 }
 
 Variable broadcast(Variable var, const Dimensions &dims) {

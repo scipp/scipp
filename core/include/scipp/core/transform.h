@@ -621,6 +621,10 @@ template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &var, Op op) {
   using namespace detail;
+  auto unit = var.unit();
+  op(unit);
+  // Stop early in bad cases of changing units (if `variable` is a slice):
+  var.expectCanSetUnit(unit);
   try {
     // If a sparse_container<T> is specified explicitly as a type we assume that
     // the caller provides a matching overload. Otherwise we assume the provided
@@ -639,6 +643,7 @@ void transform_in_place(Var &var, Op op) {
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
+  var.setUnit(unit);
 }
 
 namespace detail {
@@ -677,9 +682,14 @@ void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
   expect::contains(var.dims(), other.dims());
+  auto unit = var.unit();
+  op(unit, other.unit());
+  // Stop early in bad cases of changing units (if `variable` is a slice):
+  var.expectCanSetUnit(unit);
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   detail::transform_in_place(std::tuple_cat(TypePairs{}...),
                              std::forward<Var>(var), other, op);
+  var.setUnit(unit);
 }
 
 /// Accumulate data elements of a variable in-place.

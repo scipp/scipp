@@ -64,6 +64,11 @@ public:
   bool operator==(const Unit_impl<T, Counts> &other) const;
   bool operator!=(const Unit_impl<T, Counts> &other) const;
 
+  Unit_impl operator+=(const Unit_impl &other);
+  Unit_impl operator-=(const Unit_impl &other);
+  Unit_impl operator*=(const Unit_impl &other);
+  Unit_impl operator/=(const Unit_impl &other);
+
 private:
   unit_t m_unit{units::dimensionless};
   static constexpr auto m_lut{detail::make_lut(T{})};

@@ -14,7 +14,6 @@ template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
   // Addition with different Variable type is supported, mismatch of underlying
   // element types is handled in DataModel::operator+=.
   // Different name is ok for addition.
-  expect::equals(variable.unit(), other.unit());
   // Note: This will broadcast/transpose the RHS if required. We do not support
   // changing the dimensions of the LHS though!
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
@@ -31,15 +30,13 @@ using arithmetic_and_matrix_type_pairs = decltype(
                    std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 template <class T1, class T2> Variable plus(const T1 &a, const T2 &b) {
-  auto result = transform<arithmetic_and_matrix_type_pairs>(
+  return transform<arithmetic_and_matrix_type_pairs>(
       a, b, [](const auto a_, const auto b_) { return a_ + b_; });
-  return result;
 }
 
 Variable Variable::operator-() const {
-  auto result = transform<double, float, int64_t, Eigen::Vector3d>(
+  return transform<double, float, int64_t, Eigen::Vector3d>(
       *this, [](const auto a) { return -a; });
-  return result;
 }
 
 Variable &Variable::operator+=(const Variable &other) & {
@@ -56,16 +53,14 @@ Variable &Variable::operator+=(const double value) & {
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
-  expect::equals(variable.unit(), other.unit());
   transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
       variable, other, [](auto &&a, auto &&b) { a -= b; });
   return variable;
 }
 
 template <class T1, class T2> Variable minus(const T1 &a, const T2 &b) {
-  auto result = transform<arithmetic_and_matrix_type_pairs>(
+  return transform<arithmetic_and_matrix_type_pairs>(
       a, b, [](const auto a_, const auto b_) { return a_ - b_; });
-  return result;
 }
 
 Variable &Variable::operator-=(const Variable &other) & {
@@ -79,19 +74,15 @@ Variable &Variable::operator-=(const double value) & {
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  // setUnit is catching bad cases of changing units (if `variable` is a slice).
-  variable.expectCanSetUnit(variable.unit() * other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       variable, other, [](auto &&a, auto &&b) { a *= b; });
-  variable.setUnit(variable.unit() * other.unit());
   return variable;
 }
 
 template <class T1, class T2> Variable times(const T1 &a, const T2 &b) {
-  auto result = transform<arithmetic_type_pairs>(
+  return transform<arithmetic_type_pairs>(
       a, b, [](const auto a_, const auto b_) { return a_ * b_; });
-  return result;
 }
 
 Variable &Variable::operator*=(const Variable &other) & {
@@ -107,19 +98,15 @@ Variable &Variable::operator*=(const double value) & {
 }
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
-  // setUnit is catching bad cases of changing units (if `variable` is a slice).
-  variable.expectCanSetUnit(variable.unit() / other.unit());
   transform_in_place<pair_self_t<double, float, int64_t>,
                      pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
       variable, other, [](auto &&a, auto &&b) { a /= b; });
-  variable.setUnit(variable.unit() / other.unit());
   return variable;
 }
 
 template <class T1, class T2> Variable divide(const T1 &a, const T2 &b) {
-  auto result = transform<arithmetic_type_pairs>(
+  return transform<arithmetic_type_pairs>(
       a, b, [](const auto a_, const auto b_) { return a_ / b_; });
-  return result;
 }
 
 Variable &Variable::operator/=(const Variable &other) & {
@@ -251,7 +238,10 @@ Variable operator/(const double a, const VariableConstProxy &b_proxy) {
   Variable b(b_proxy);
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
   transform_in_place<double, float>(
-      b, overloaded{[a](double &b_) { b_ = a / b_; },
+      b, overloaded{[](units::Unit &b_) {
+                      b_ = units::Unit(units::dimensionless) / b_;
+                    },
+                    [a](double &b_) { b_ = a / b_; },
                     [a](float &b_) { b_ = static_cast<float>(a / b_); },
                     [a](auto &b_) {
                       b_ = static_cast<std::remove_reference_t<decltype(b_)>>(
