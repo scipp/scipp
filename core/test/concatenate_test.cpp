@@ -12,10 +12,12 @@ TEST(ConcatenateTest, simple_1d) {
   Dataset a;
   a.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
   a.setData("data_1", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
+  a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
 
   Dataset b;
   b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {4, 5, 6}));
   b.setData("data_1", makeVariable<int>({Dim::X, 3}, {14, 15, 16}));
+  b.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {24, 25, 26}));
 
   const auto d = concatenate(a, b, Dim::X);
 
@@ -23,16 +25,20 @@ TEST(ConcatenateTest, simple_1d) {
             makeVariable<int>({Dim::X, 6}, {1, 2, 3, 4, 5, 6}));
   EXPECT_EQ(d["data_1"].data(),
             makeVariable<int>({Dim::X, 6}, {11, 12, 13, 14, 15, 16}));
+  EXPECT_EQ(d.labels()["label_1"],
+            makeVariable<int>({Dim::X, 6}, {21, 22, 23, 24, 25, 26}));
 }
 
 TEST(ConcatenateTest, simple_1d_histogram) {
   Dataset a;
   a.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
   a.setData("data_1", makeVariable<int>({Dim::X, 2}, {11, 12}));
+  a.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {21, 22, 23}));
 
   Dataset b;
   b.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {3, 4, 5}));
   b.setData("data_1", makeVariable<int>({Dim::X, 2}, {13, 14}));
+  b.setLabels("label_1", makeVariable<int>({Dim::X, 3}, {24, 25, 26}));
 
   const auto d = concatenate(a, b, Dim::X);
 
@@ -40,6 +46,8 @@ TEST(ConcatenateTest, simple_1d_histogram) {
             makeVariable<int>({Dim::X, 5}, {1, 2, 3, 4, 5}));
   EXPECT_EQ(d["data_1"].data(),
             makeVariable<int>({Dim::X, 4}, {11, 12, 13, 14}));
+  EXPECT_EQ(d.labels()["label_1"],
+            makeVariable<int>({Dim::X, 5}, {21, 22, 23, 24, 25}));
 }
 
 TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
