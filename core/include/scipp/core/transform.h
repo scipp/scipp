@@ -428,6 +428,11 @@ template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
+/// Helper class wrapping functions for in-place transform.
+///
+/// The dry_run template argument can be used to disable any actual modification
+/// of data. This is used to implement operations on datasets with a strong
+/// exception guarantee.
 template <bool dry_run> struct in_place {
   template <class Op, class T, class... Ts>
   static void transform_in_place_with_variance_impl(
@@ -447,6 +452,8 @@ template <bool dry_run> struct in_place {
           static_cast<void>((value_and_maybe_variance(other, i), ...));
       }
     }
+    if constexpr (dry_run)
+      return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
     for (scipp::index i = 0; i < scipp::size(vals); ++i) {
@@ -482,6 +489,8 @@ template <bool dry_run> struct in_place {
                   std::is_base_of_v<SparseFlag, Op>)
       for (scipp::index i = 0; i < scipp::size(vals); ++i)
         static_cast<void>(check_and_get_size(vals[i], other[i]...));
+    if constexpr (dry_run)
+      return;
     // WARNING: Do not parallelize this loop in all cases! The output may have a
     // dimension with stride zero so parallelization must be done with care.
     for (scipp::index i = 0; i < scipp::size(vals); ++i)
@@ -641,6 +650,8 @@ template <bool dry_run> struct in_place {
     } catch (const std::bad_variant_access &) {
       throw std::runtime_error("Operation not implemented for this type.");
     }
+    if constexpr (dry_run)
+      return;
     var.setUnit(unit);
   }
 
@@ -669,6 +680,21 @@ template <bool dry_run> struct in_place {
                               to_string(other.dtype()) + '.');
     }
   }
+  template <class... TypePairs, class Var, class Var1, class Op>
+  static void transform(Var &&var, const Var1 &other, Op op) {
+    using namespace detail;
+    expect::contains(var.dims(), other.dims());
+    auto unit = var.unit();
+    op(unit, other.unit());
+    // Stop early in bad cases of changing units (if `var` is a slice):
+    var.expectCanSetUnit(unit);
+    // Wrapped implementation to convert multiple tuples into a parameter pack.
+    transform(std::tuple_cat(TypePairs{}...), std::forward<Var>(var), other,
+              op);
+    if constexpr (dry_run)
+      return;
+    var.setUnit(unit);
+  }
 };
 
 /// Transform the data elements of a variable in-place.
@@ -689,15 +715,7 @@ void transform_in_place(Var &&var, Op op) {
 /// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
-  expect::contains(var.dims(), other.dims());
-  auto unit = var.unit();
-  op(unit, other.unit());
-  // Stop early in bad cases of changing units (if `var` is a slice):
-  var.expectCanSetUnit(unit);
-  // Wrapped implementation to convert multiple tuples into a parameter pack.
-  in_place<false>::transform(std::tuple_cat(TypePairs{}...),
-                             std::forward<Var>(var), other, op);
-  var.setUnit(unit);
+  in_place<false>::transform<TypePairs...>(std::forward<Var>(var), other, op);
 }
 
 /// Accumulate data elements of a variable in-place.
@@ -723,6 +741,10 @@ namespace dry_run {
 template <class... Ts, class Var, class Op>
 void transform_in_place(Var &&var, Op op) {
   in_place<true>::transform<Ts...>(std::forward<Var>(var), op);
+}
+template <class... TypePairs, class Var, class Var1, class Op>
+void transform_in_place(Var &&var, const Var1 &other, Op op) {
+  in_place<true>::transform<TypePairs...>(std::forward<Var>(var), other, op);
 }
 } // namespace dry_run
 

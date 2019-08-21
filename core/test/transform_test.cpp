@@ -753,11 +753,18 @@ TEST(TransformTest, user_op_with_variances) {
 
 TEST(TransformTest, in_place_dry_run) {
   auto a = make_sparse_variable_with_variance();
-  a.setUnit(units::m * units::m);
+  a.setUnit(units::m);
   set_sparse_values(a, {{1, 2, 3}, {4}});
   set_sparse_variances(a, {{5, 6, 7}, {8}});
   const auto original(a);
+  // TODO
+  // test that all possible errors are caught
+  // test with slices (special unit check)
+  // test without variances
 
-  dry_run::transform_in_place<double>(a, [](auto &a_) { a_ = sqrt(a_); });
+  dry_run::transform_in_place<double>(a, [](auto &a_) { a_ *= a_; });
+  EXPECT_EQ(a, original);
+  dry_run::transform_in_place<pair_self_t<double>>(
+      a, a, [](auto &a_, auto &&b_) { a_ *= b_; });
   EXPECT_EQ(a, original);
 }
