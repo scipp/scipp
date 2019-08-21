@@ -214,7 +214,7 @@ def plot_collapse(input_data, dim=None, name=None, filename=None, backend=None,
             key += "{}-{}-".format(str(s[0]), s[1])
         # Add variances
         variances = None
-        if ds_temp.has_variances:
+        if ds_temp.variances is not None:
             variances = ds_temp.variances
         ds[key] = sp.Variable([dim], values=ds_temp.values,
                               variances=variances)

@@ -136,7 +136,7 @@ public:
     return std::equal(begin(), end(), other.begin());
   }
 
-  bool overlaps(const VariableView<const T> &other) const {
+  template <class T2> bool overlaps(const VariableView<T2> &other) const {
     // TODO We could be less restrictive here and use a more sophisticated check
     // based on offsets and dimensions, if there is a performance issue due to
     // this current stricter requirement.

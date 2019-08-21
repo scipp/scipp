@@ -15,8 +15,8 @@ namespace scipp::core {
 template <class... Ts, class Op, class Var, class... Vars>
 void apply_in_place(Op op, Var &&var, const Vars &... vars) {
   try {
-    scipp::core::visit_impl<Ts...>::apply(op, var.dataHandle().variant(),
-                                          vars.dataHandle().variant()...);
+    scipp::core::visit_impl<Ts...>::apply(op, var.dataHandle(),
+                                          vars.dataHandle()...);
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("");
   }

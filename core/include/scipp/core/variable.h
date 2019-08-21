@@ -166,26 +166,6 @@ public:
             const scipp::index otherEnd) override;
 };
 
-// Forward declaration for friend functions.
-template <class... Ts, class Var, class Op>
-[[nodiscard]] Variable transform(const Var &var, Op op);
-
-template <class... Ts, class Var, class Op>
-void transform_in_place(Var &var, Op op);
-
-template <class... Ts, class Op, class Var, class... Vars>
-void apply_in_place(Op op, Var &&var, const Vars &... vars);
-
-namespace detail {
-template <class... Ts, class Var1, class Var2, class Op>
-Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
-                   Op op);
-
-template <class... Ts, class Var, class Var1, class Op>
-void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
-                        Op op);
-} // namespace detail
-
 template <class... Known> class VariableConceptHandle_impl {
 public:
   VariableConceptHandle_impl()
@@ -221,29 +201,16 @@ public:
         m_object);
   }
 
-  // Due to provide a kind of const correctness for variant() function, which
-  // exposes the Variant of non const types. The idea is, at least not to expose
-  // this function to the API, the alternative includes writing the  overloads
-  // for Variant<const Type>.
-  template <class... Ts, class Var, class Op>
-  friend Variable transform(const Var &var, Op op);
+  const auto &mutableVariant() const noexcept { return m_object; }
 
-  template <class... Ts, class Var, class Op>
-  friend void transform_in_place(Var &var, Op op);
-
-  template <class... Ts, class Var, class Var1, class Op>
-  friend void detail::transform_in_place(std::tuple<Ts...> &&, Var &&var,
-                                         const Var1 &other, Op op);
-
-  template <class... Ts, class Var1, class Var2, class Op>
-  friend Variable detail::transform(std::tuple<Ts...> &&, const Var1 &var1,
-                                    const Var2 &var2, Op op);
-
-  template <class... Ts, class Op, class Var, class... Vars>
-  friend void apply_in_place(Op op, Var &&var, const Vars &... vars);
-
-private:
-  const auto &variant() const noexcept { return m_object; }
+  auto variant() const noexcept {
+    return std::visit(
+        [](auto &&arg) {
+          return std::variant<const VariableConcept *,
+                              const VariableConceptT<Known> *...>{arg.get()};
+        },
+        m_object);
+  }
 
 private:
   std::variant<std::unique_ptr<VariableConcept>,
@@ -379,8 +346,14 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
 
-  const VariableConceptHandle &dataHandle() const && = delete;
-  const VariableConceptHandle &dataHandle() const & { return m_object; }
+  /// Return variant of pointers to underlying data.
+  ///
+  /// This is intended for internal use (such as implementing transform
+  /// algorithms) and should not need to be used directly by higher-level code.
+  auto dataHandle() const && = delete;
+  auto dataHandle() const & { return m_object.variant(); }
+  const auto &dataHandle() && = delete;
+  const auto &dataHandle() & { return m_object.mutableVariant(); }
 
   template <class... Tags> friend class ZipView;
 
@@ -602,10 +575,10 @@ public:
       return m_variable->data();
   }
 
-  const VariableConceptHandle &dataHandle() const && = delete;
-  const VariableConceptHandle &dataHandle() const & {
+  auto dataHandle() const && = delete;
+  auto dataHandle() const & {
     if (m_view)
-      return m_view;
+      return m_view.variant();
     else
       return m_variable->dataHandle();
   }
@@ -683,11 +656,11 @@ public:
     return *m_view;
   }
 
-  const VariableConceptHandle &dataHandle() const && = delete;
-  const VariableConceptHandle &dataHandle() const & {
+  const auto &dataHandle() const && = delete;
+  const auto &dataHandle() const & {
     if (!m_view)
       return m_mutableVariable->dataHandle();
-    return m_view;
+    return m_view.mutableVariant();
   }
 
   // Note: No need to delete rvalue overloads here, see VariableConstProxy.

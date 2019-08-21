@@ -441,41 +441,40 @@ template <class Op> struct TransformInPlace {
       do_transform_in_place(view, op);
   }
 
-  template <class A, class B> void operator()(A &&a, B &&b_ptr) const {
-    // std::unique_ptr::operator*() is const but returns mutable reference, need
-    // to artificially put const to we call the correct overloads of ViewModel.
-    // See #278.
-    const auto &b = *b_ptr;
+  template <class A, class B> void operator()(A &&a, B &&b) const {
     const auto &dimsA = a->dims();
-    const auto &dimsB = b.dims();
-    if constexpr (std::is_same_v<decltype(*a), decltype(*b_ptr)>) {
-      if (a->valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
+    const auto &dimsB = b->dims();
+    if constexpr (std::is_same_v<typename std::remove_reference_t<decltype(
+                                     *a)>::value_type,
+                                 typename std::remove_reference_t<decltype(
+                                     *b)>::value_type>) {
+      if (a->valuesView(dimsA).overlaps(b->valuesView(dimsA))) {
         // If there is an overlap between lhs and rhs we copy the rhs before
         // applying the operation.
-        return operator()(a, b.copyT());
+        return operator()(a, b->copyT());
       }
     }
 
     if (a->isContiguous() && dimsA.contains(dimsB)) {
-      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-        do_transform_in_place(*a, b, op);
+      if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(*a, *b, op);
       } else {
-        do_transform_in_place(*a, as_view{b, dimsA}, op);
+        do_transform_in_place(*a, as_view{*b, dimsA}, op);
       }
     } else if (dimsA.contains(dimsB)) {
       auto a_view = as_view{*a, dimsA};
-      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-        do_transform_in_place(a_view, b, op);
+      if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(a_view, *b, op);
       } else {
-        do_transform_in_place(a_view, as_view{b, dimsA}, op);
+        do_transform_in_place(a_view, as_view{*b, dimsA}, op);
       }
     } else {
       // LHS has fewer dimensions than RHS, e.g., for computing sum. Use view.
       auto a_view = as_view{*a, dimsB};
-      if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-        do_transform_in_place(a_view, b, op);
+      if (b->isContiguous() && dimsA.isContiguousIn(dimsB)) {
+        do_transform_in_place(a_view, *b, op);
       } else {
-        do_transform_in_place(a_view, as_view{b, dimsB}, op);
+        do_transform_in_place(a_view, as_view{*b, dimsB}, op);
       }
     }
   }
@@ -534,16 +533,6 @@ template <template <typename...> class C, typename... Ts1, typename... Ts2,
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
     : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
 
-/// Augment a tuple of types with the corresponding sparse types, if they exist.
-template <class... Ts, class... Known>
-auto insert_sparse(const std::tuple<Ts...> &,
-                   const VariableConceptHandle_impl<Known...> &) {
-  return
-      typename tuple_cat<std::tuple<Ts...>,
-                         typename optional_sparse<sparse_container<Ts>,
-                                                  Known...>::type...>::type{};
-}
-
 template <class T1, class T2, class... Known> struct optional_sparse_pair {
   using type =
       std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
@@ -551,35 +540,47 @@ template <class T1, class T2, class... Known> struct optional_sparse_pair {
                          std::tuple<std::pair<T1, T2>>, std::tuple<>>;
 };
 
-/// Augment a tuple of type pairs with the corresponding sparse types, if they
-/// exist.
-template <class... Ts, class... Known>
-auto insert_sparse_in_place_pairs(
-    const std::tuple<Ts...> &, const VariableConceptHandle_impl<Known...> &) {
-  return std::tuple_cat(
-      std::tuple<Ts...>{},
-      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
-                                    typename Ts::second_type,
-                                    Known...>::type{}...,
-      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
-                                    sparse_container<typename Ts::second_type>,
-                                    Known...>::type{}...);
-}
-template <class... Ts, class... Known>
-auto insert_sparse_pairs(const std::tuple<Ts...> &,
-                         const VariableConceptHandle_impl<Known...> &) {
-  return std::tuple_cat(
-      std::tuple<Ts...>{},
-      typename optional_sparse_pair<typename Ts::first_type,
-                                    sparse_container<typename Ts::second_type>,
-                                    Known...>::type{}...,
-      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
-                                    typename Ts::second_type,
-                                    Known...>::type{}...,
-      typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
-                                    sparse_container<typename Ts::second_type>,
-                                    Known...>::type{}...);
-}
+/// Augment a tuple of types with the corresponding sparse types, if they exist.
+template <class Handle> struct augment_tuple;
+
+template <class... Known>
+struct augment_tuple<VariableConceptHandle_impl<Known...>> {
+  template <class... Ts> static auto insert_sparse(const std::tuple<Ts...> &) {
+    return
+        typename tuple_cat<std::tuple<Ts...>,
+                           typename optional_sparse<sparse_container<Ts>,
+                                                    Known...>::type...>::type{};
+  }
+
+  /// Augment a tuple of type pairs with the corresponding sparse types, if they
+  /// exist.
+  template <class... Ts>
+  static auto insert_sparse_in_place_pairs(const std::tuple<Ts...> &) {
+    return std::tuple_cat(
+        std::tuple<Ts...>{},
+        typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
+                                      typename Ts::second_type,
+                                      Known...>::type{}...,
+        typename optional_sparse_pair<
+            sparse_container<typename Ts::first_type>,
+            sparse_container<typename Ts::second_type>, Known...>::type{}...);
+  }
+  template <class... Ts>
+  static auto insert_sparse_pairs(const std::tuple<Ts...> &) {
+    return std::tuple_cat(
+        std::tuple<Ts...>{},
+        typename optional_sparse_pair<
+            typename Ts::first_type, sparse_container<typename Ts::second_type>,
+            Known...>::type{}...,
+        typename optional_sparse_pair<sparse_container<typename Ts::first_type>,
+                                      typename Ts::second_type,
+                                      Known...>::type{}...,
+        typename optional_sparse_pair<
+            sparse_container<typename Ts::first_type>,
+            sparse_container<typename Ts::second_type>, Known...>::type{}...);
+  }
+};
+using augment = augment_tuple<VariableConceptHandle>;
 
 template <class T> struct remove_cvref {
   using type = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -628,12 +629,12 @@ void transform_in_place(Var &var, Op op) {
     // processing.
     if constexpr ((is_sparse_v<Ts> || ...)) {
       scipp::core::visit_impl<Ts...>::apply(TransformInPlace{op},
-                                            var.dataHandle().variant());
+                                            var.dataHandle());
     } else {
-      scipp::core::visit(insert_sparse(std::tuple<Ts...>{}, var.dataHandle()))
+      scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
           .apply(TransformInPlace{detail::overloaded_sparse{
                      op, TransformSparseInPlace<Op>{op}}},
-                 var.dataHandle().variant());
+                 var.dataHandle());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
@@ -649,17 +650,16 @@ void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
     if constexpr (((is_sparse_v<typename Ts::first_type> ||
                     is_sparse_v<typename Ts::second_type>) ||
                    ...)) {
-      scipp::core::visit_impl<Ts...>::apply(TransformInPlace{op},
-                                            var.dataHandle().variant(),
-                                            other.dataHandle().variant());
+      scipp::core::visit_impl<Ts...>::apply(
+          TransformInPlace{op}, var.dataHandle(), other.dataHandle());
     } else {
       // Note that if only one of the inputs is sparse it must be the one being
       // transformed in-place, so there are only three cases here.
       scipp::core::visit(
-          insert_sparse_in_place_pairs(std::tuple<Ts...>{}, var.dataHandle()))
+          augment::insert_sparse_in_place_pairs(std::tuple<Ts...>{}))
           .apply(TransformInPlace{detail::overloaded_sparse{
                      op, TransformSparseInPlace<Op>{op}}},
-                 var.dataHandle().variant(), other.dataHandle().variant());
+                 var.dataHandle(), other.dataHandle());
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes " +
@@ -676,6 +676,22 @@ void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
 /// costly element copies.
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
+  expect::contains(var.dims(), other.dims());
+  // Wrapped implementation to convert multiple tuples into a parameter pack.
+  detail::transform_in_place(std::tuple_cat(TypePairs{}...),
+                             std::forward<Var>(var), other, op);
+}
+
+/// Accumulate data elements of a variable in-place.
+///
+/// This is equivalent to `transform_in_place`, with the only difference that
+/// the dimension check of the inputs is reversed. That is, it must be possible
+/// to broadcast the dimension of the first argument to that of the other
+/// argument. As a consequence, the operation may be applied multiple times to
+/// the same output element, effectively accumulating the result.
+template <class... TypePairs, class Var, class Var1, class Op>
+void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
+  expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   detail::transform_in_place(std::tuple_cat(TypePairs{}...),
                              std::forward<Var>(var), other, op);
@@ -692,13 +708,12 @@ template <class... Ts, class Var, class Op>
   try {
     if constexpr ((is_sparse_v<Ts> || ...)) {
       return scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                   var.dataHandle().variant());
+                                                   var.dataHandle());
     } else {
-      return scipp::core::visit(
-                 insert_sparse(std::tuple<Ts...>{}, var.dataHandle()))
+      return scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
           .apply(
               Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
-              var.dataHandle().variant());
+              var.dataHandle());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
@@ -714,15 +729,14 @@ Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
     if constexpr (((is_sparse_v<typename Ts::first_type> ||
                     is_sparse_v<typename Ts::second_type>) ||
                    ...)) {
-      return scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                   var1.dataHandle().variant(),
-                                                   var2.dataHandle().variant());
+      return scipp::core::visit_impl<Ts...>::apply(
+          Transform{op}, var1.dataHandle(), var2.dataHandle());
     } else {
       return scipp::core::visit(
-                 insert_sparse_pairs(std::tuple<Ts...>{}, var1.dataHandle()))
+                 augment::insert_sparse_pairs(std::tuple<Ts...>{}))
           .apply(
               Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
-              var1.dataHandle().variant(), var2.dataHandle().variant());
+              var1.dataHandle(), var2.dataHandle());
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes " +

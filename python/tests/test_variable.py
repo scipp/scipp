@@ -42,10 +42,17 @@ def test_create_with_numpy_dtype():
 
 
 def test_create_with_variances():
-    assert not sp.Variable(dims=[Dim.X], shape=[2]).has_variances
-    assert not sp.Variable(dims=[Dim.X], shape=[2],
-                           variances=False).has_variances
-    assert sp.Variable(dims=[Dim.X], shape=[2], variances=True).has_variances
+    assert sp.Variable(dims=[Dim.X], shape=[2]).variances is None
+    assert sp.Variable(dims=[Dim.X], shape=[2],
+                       variances=False).variances is None
+    assert sp.Variable(dims=[Dim.X], shape=[2],
+                       variances=True).variances is not None
+
+
+def test_create_with_shape_and_variances():
+    # If no values are given, variances must be Bool, cannot pass array.
+    with pytest.raises(TypeError):
+        sp.Variable(dims=[Dim.X], shape=[2], variances=np.arange(2))
 
 
 def test_create_sparse():

@@ -166,7 +166,7 @@ void init_variable(py::module &m) {
            py::arg("shape") = std::vector<scipp::index>{},
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::dtype::of<double>(),
-           py::arg("variances") = false)
+           py::arg("variances").noconvert() = false)
       .def(py::init(&doMakeVariable), py::arg("dims"), py::arg("values"),
            py::arg("variances") = std::nullopt,
            py::arg("unit") = units::Unit(units::dimensionless),

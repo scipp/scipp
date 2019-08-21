@@ -396,7 +396,7 @@ Variable sum(const Variable &var, const Dim dim) {
   dims.erase(dim);
   // setDims zeros the data
   summed.setDims(dims);
-  transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+  accumulate_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
       summed, var, [](auto &&a, auto &&b) { a += b; });
   return summed;
 }
