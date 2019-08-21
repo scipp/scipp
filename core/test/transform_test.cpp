@@ -751,20 +751,114 @@ TEST(TransformTest, user_op_with_variances) {
   EXPECT_EQ(result, var);
 }
 
-TEST(TransformTest, in_place_dry_run) {
+class TransformInPlaceDryRunTest : public ::testing::Test {
+protected:
+  static constexpr auto unary{[](auto &x) { x *= x; }};
+  static constexpr auto binary{[](auto &x, const auto &y) { x *= y; }};
+};
+
+// Strictly speaking we should not have to test the failure cases --- even
+// without dry-run, transform_in_place should not touch the data if there is a
+// failure. Maybe this should be a parametrized test?
+TEST_F(TransformInPlaceDryRunTest, unit_fail) {
+  auto a = makeVariable<double>({}, units::m * units::m);
+  const auto original(a);
+
+  EXPECT_THROW(dry_run::transform_in_place<double>(a, unary),
+               std::runtime_error);
+  EXPECT_EQ(a, original);
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, a, binary),
+               std::runtime_error);
+  EXPECT_EQ(a, original);
+}
+
+TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
+  auto a = makeVariable<double>({Dim::X, 2}, units::m);
+  const auto original(a);
+
+  EXPECT_THROW(dry_run::transform_in_place<double>(a.slice({Dim::X, 0}), unary),
+               except::UnitError);
+  EXPECT_EQ(a, original);
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(
+                   a.slice({Dim::X, 0}), a.slice({Dim::X, 0}), binary),
+               except::UnitError);
+  EXPECT_EQ(a, original);
+}
+
+TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
+  auto a = makeVariable<double>({Dim::X, 2}, units::m);
+  auto b = makeVariable<double>({Dim::Y, 2}, units::m);
+  const auto original(a);
+
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
+               std::runtime_error);
+  EXPECT_EQ(a, original);
+}
+
+TEST_F(TransformInPlaceDryRunTest, variances_fail) {
+  auto a = makeVariable<double>({Dim::X, 2}, units::m);
+  auto b = makeVariableWithVariances<double>({Dim::X, 2}, units::m);
+  const auto original(a);
+
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
+               std::runtime_error);
+  EXPECT_EQ(a, original);
+}
+
+TEST_F(TransformInPlaceDryRunTest, sparse_variance_length_fail) {
+  auto a = make_sparse_variable_with_variance();
+  a.setUnit(units::m);
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8, 9}});
+  const auto original(a);
+
+  EXPECT_THROW(dry_run::transform_in_place<double>(a, unary),
+               except::SizeError);
+  EXPECT_EQ(a, original);
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, a, binary),
+               except::SizeError);
+  EXPECT_EQ(a, original);
+}
+
+TEST_F(TransformInPlaceDryRunTest, sparse_length_fail) {
+  auto a = make_sparse_variable_with_variance();
+  a.setUnit(units::m);
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto b = make_sparse_variable_with_variance();
+  b.setUnit(units::m);
+  set_sparse_values(b, {{1, 2, 3}, {4, 5}});
+  set_sparse_variances(b, {{5, 6, 7}, {8, 9}});
+  const auto original(a);
+
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
+               except::SizeError);
+  EXPECT_EQ(a, original);
+}
+
+TEST_F(TransformInPlaceDryRunTest, sparse_no_variances_length_fail) {
+  auto a = make_sparse_variable();
+  a.setUnit(units::m);
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  auto b = make_sparse_variable();
+  b.setUnit(units::m);
+  set_sparse_values(b, {{1, 2, 3}, {4, 5}});
+  const auto original(a);
+
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
+               except::SizeError);
+  EXPECT_EQ(a, original);
+}
+
+TEST_F(TransformInPlaceDryRunTest, unchanged_if_success) {
   auto a = make_sparse_variable_with_variance();
   a.setUnit(units::m);
   set_sparse_values(a, {{1, 2, 3}, {4}});
   set_sparse_variances(a, {{5, 6, 7}, {8}});
   const auto original(a);
-  // TODO
-  // test that all possible errors are caught
-  // test with slices (special unit check)
-  // test without variances
 
-  dry_run::transform_in_place<double>(a, [](auto &a_) { a_ *= a_; });
+  dry_run::transform_in_place<double>(a, unary);
   EXPECT_EQ(a, original);
-  dry_run::transform_in_place<pair_self_t<double>>(
-      a, a, [](auto &a_, auto &&b_) { a_ *= b_; });
+  dry_run::transform_in_place<pair_self_t<double>>(a, a, binary);
   EXPECT_EQ(a, original);
 }
