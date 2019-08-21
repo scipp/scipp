@@ -29,6 +29,10 @@ _small_font = round(0.8 * _svg_em, 2)
 _smaller_font = round(0.6 * _svg_em, 2)
 
 
+def is_data_array(obj):
+    return isinstance(obj, sc.DataArray) or isinstance(obj, sc.DataConstProxy)
+
+
 class VariableDrawer():
     def __init__(self, variable, margin=1.0, target_dims=None):
         self._margin = margin
@@ -79,7 +83,7 @@ class VariableDrawer():
 
     def _sparse_extent(self):
         extent = 0
-        if isinstance(self._variable, sc.DataConstProxy):
+        if is_data_array(self._variable):
             # Sparse items in a dataset should always have a coord,
             # but may have not data
             coord = self._variable.coords[self._variable.dims[-1]]
@@ -105,7 +109,7 @@ class VariableDrawer():
         extra_item_count = 0
         if self._variable.variances is not None:
             extra_item_count += 1
-        if isinstance(self._variable, sc.DataConstProxy):
+        if is_data_array(self._variable):
             if self._variable.sparse:
                 for name, label in self._variable.labels:
                     if label.sparse:
@@ -224,7 +228,7 @@ class VariableDrawer():
             items.append(('variances', self._variable.variances, color))
         if self._variable.values is not None:
             items.append(('values', self._variable.values, color))
-        if isinstance(self._variable, sc.DataConstProxy):
+        if is_data_array(self._variable):
             if self._variable.sparse:
                 for name, label in self._variable.labels:
                     if label.sparse:
@@ -277,7 +281,7 @@ class DatasetDrawer():
         # consistent ordering. We simply use that of the item with highest
         # dimension count.
         count = -1
-        if isinstance(self._dataset, sc.DataConstProxy):
+        if is_data_array(self._dataset):
             dims = self._dataset.dims
             count = len(dims)
         else:
@@ -319,7 +323,7 @@ class DatasetDrawer():
         area_z = []
         area_xy = []
         area_0d = []
-        if isinstance(self._dataset, sc.DataConstProxy):
+        if is_data_array(self._dataset):
             area_xy.append(('', self._dataset, _colors['data']))
         else:
             # Render highest-dimension items last so coords are optically

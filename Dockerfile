@@ -11,8 +11,12 @@ RUN rm -r "/home/$NB_USER/work"
 # Enable Plotly JupyterLab extension
 RUN jupyter labextension install @jupyterlab/plotly-extension@0.18.1
 
-# Install Scipp
-RUN conda install --yes -c scipp/label/dev scipp
+# Install Scipp and dependencies
+RUN conda install --yes \
+      -c scipp/label/dev \
+      matplotlib \
+      plotly \
+      scipp
 
 # Add the demo notebooks and Python examples
 ADD 'python/demo/' "/home/$NB_USER/demo"
