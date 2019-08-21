@@ -96,10 +96,11 @@ class DataAccessHelper {
   template <class Getter, class T, class Var>
   static py::object as_py_array_t_impl(py::object &obj, Var &view) {
     std::vector<scipp::index> strides;
-    if constexpr (!std::is_same_v<Var, DataProxy>) {
-      strides = VariableProxy(view).strides();
-    } else {
+    if constexpr (std::is_same_v<Var, DataArray> ||
+                  std::is_same_v<Var, DataProxy>) {
       strides = VariableProxy(view.data()).strides();
+    } else {
+      strides = VariableProxy(view).strides();
     }
     const auto &dims = view.dims();
     using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
@@ -115,7 +116,8 @@ class DataAccessHelper {
 
     template <class Proxy> static bool valid(py::object &obj) {
       auto &proxy = obj.cast<Proxy &>();
-      if constexpr (std::is_base_of_v<DataConstProxy, Proxy>)
+      if constexpr (std::is_same_v<DataArray, Proxy> ||
+                    std::is_base_of_v<DataConstProxy, Proxy>)
         return proxy.hasData() && bool(proxy.data());
       else
         return bool(proxy);
@@ -146,7 +148,8 @@ template <class... Ts> class as_VariableViewImpl {
   template <class Getter, class Proxy>
   static outVariant_t<Proxy> get(Proxy &proxy) {
     DType type = proxy.data().dtype();
-    if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
+    if constexpr (std::is_same_v<DataArray, Proxy> ||
+                  std::is_base_of_v<DataConstProxy, Proxy>) {
       const auto &view = proxy.data();
       type = view.data().dtype();
     }
@@ -203,7 +206,8 @@ template <class... Ts> class as_VariableViewImpl {
   static py::object get_py_array_t(py::object &obj) {
     auto &proxy = obj.cast<Proxy &>();
     DType type = proxy.data().dtype();
-    if constexpr (std::is_base_of_v<DataConstProxy, Proxy>) {
+    if constexpr (std::is_same_v<DataArray, Proxy> ||
+                  std::is_base_of_v<DataConstProxy, Proxy>) {
       const auto &view = proxy.data();
       type = view.data().dtype();
     }

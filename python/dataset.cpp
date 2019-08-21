@@ -182,6 +182,7 @@ void init_dataset(py::module &m) {
 
   bind_coord_properties(dataset);
   bind_coord_properties(datasetProxy);
+  bind_coord_properties(dataArray);
   bind_coord_properties(dataProxy);
 
   bind_slice_methods(dataset);
@@ -212,6 +213,7 @@ void init_dataset(py::module &m) {
   bind_binary<DatasetProxy>(dataProxy);
   bind_binary<DataProxy>(dataProxy);
 
+  bind_data_properties(dataArray);
   bind_data_properties(dataProxy);
 
   m.def("histogram",

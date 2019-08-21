@@ -805,9 +805,14 @@ public:
   AttrsProxy attrs() noexcept { return get().attrs(); }
 
   Dimensions dims() const noexcept { return get().dims(); }
+  DType dtype() const { return get().dtype(); }
   units::Unit unit() const { return get().unit(); }
 
   void setUnit(const units::Unit unit) { get().setUnit(unit); }
+
+  template <class T> void setVariances(Vector<T> &&v) {
+    get().setVariances(std::move(v));
+  }
 
   /// Return true if the data array contains data values.
   bool hasData() const noexcept { return get().hasData(); }
