@@ -750,3 +750,14 @@ TEST(TransformTest, user_op_with_variances) {
   EXPECT_EQ(result, expected);
   EXPECT_EQ(result, var);
 }
+
+TEST(TransformTest, in_place_dry_run) {
+  auto a = make_sparse_variable_with_variance();
+  a.setUnit(units::m * units::m);
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  const auto original(a);
+
+  dry_run::transform_in_place<double>(a, [](auto &a_) { a_ = sqrt(a_); });
+  EXPECT_EQ(a, original);
+}

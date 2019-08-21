@@ -719,6 +719,13 @@ void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
                              std::forward<Var>(var), other, op);
 }
 
+namespace dry_run {
+template <class... Ts, class Var, class Op>
+void transform_in_place(Var &&var, Op op) {
+  in_place<true>::transform<Ts...>(std::forward<Var>(var), op);
+}
+} // namespace dry_run
+
 /// Transform the data elements of a variable and return a new Variable.
 ///
 /// This overload is equivalent to std::transform with a single input range, but
