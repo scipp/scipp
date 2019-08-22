@@ -16,5 +16,11 @@ void init_neutron(py::module &m) {
   auto neutron = m.def_submodule("neutron");
 
   neutron.def("convert", convert, py::call_guard<py::gil_scoped_release>(),
-              "Convert coordinates from one dimension (unit) to another.");
+              R"(
+    Convert dimension (unit) into another.
+
+    Currently only conversion from time-of-flight (Dim.Tof) to other time-of-flight-derived units such as d-spacing (Dim.DSpacing) is supported.
+
+    :return: New dataset with converted dimension (dimension labels, coordinate values, and units)
+    :rtype: Dataset)");
 }

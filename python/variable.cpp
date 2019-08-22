@@ -259,7 +259,7 @@ void init_variable(py::module &m) {
 
   m.def("abs", [](const Variable &self) { return abs(self); },
         py::call_guard<py::gil_scoped_release>(), R"(
-        The element-wise absolute value.
+        Element-wise absolute value.
 
         :raises: If the dtype has no absolute value, e.g., if it is a string
         :seealso: :py:class:`scipp.norm` for vector-like dtype
@@ -267,7 +267,7 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
   m.def("dot", py::overload_cast<const Variable &, const Variable &>(&dot),
         py::call_guard<py::gil_scoped_release>(), R"(
-        The element-wise dot-product.
+        Element-wise dot-product.
 
         :raises: If the dtype is not a vector such as :py:class:`scipp.dtype.vector_3_double`
         :return: New variable with scalar elements based on the two inputs.
@@ -290,7 +290,7 @@ void init_variable(py::module &m) {
         py::call_guard<py::gil_scoped_release>());
   m.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>(), R"(
-        The element-wise mean over the specified dimension.
+        Element-wise mean over the specified dimension.
 
         :raises: If the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.sum`
@@ -298,9 +298,9 @@ void init_variable(py::module &m) {
         :rtype: Variable)");
   m.def("norm", py::overload_cast<const Variable &>(&norm),
         py::call_guard<py::gil_scoped_release>(), R"(
-        The element-wise norm.
+        Element-wise norm.
 
-        :raises: If the dtype does not norm, i.e., if it is not a vector
+        :raises: If the dtype has no norm, i.e., if it is not a vector
         :seealso: :py:class:`scipp.abs` for scalar dtype
         :return: New variable with scalar elements computed as the norm values if the input elements.
         :rtype: Variable)");
@@ -316,14 +316,14 @@ void init_variable(py::module &m) {
         "Split a Variable along a given Dimension.");
   m.def("sqrt", [](const Variable &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>(), R"(
-        The element-wise square-root.
+        Element-wise square-root.
 
         :raises: If the dtype has no square-root, e.g., if it is a string
         :return: Copy of the input with values replaced by the square-root.
         :rtype: Variable)");
   m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>(), R"(
-        The element-wise sum over the specified dimension.
+        Element-wise sum over the specified dimension.
 
         :raises: If the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
