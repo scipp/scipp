@@ -6,6 +6,7 @@
 #include "test_macros.h"
 
 #include "../operators.h"
+#include "make_sparse.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
@@ -549,32 +550,6 @@ TEST_F(TransformTest_sparse_binary_values_variances_size_fail,
                          except::SizeError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
                except::SizeError);
-}
-
-auto make_sparse_variable_with_variance() {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  return makeVariable<double>(
-      dims, {sparse_container<double>(), sparse_container<double>()},
-      {sparse_container<double>(), sparse_container<double>()});
-}
-
-auto make_sparse_variable() {
-  Dimensions dims({Dim::Y, Dim::X}, {2, Dimensions::Sparse});
-  return makeVariable<double>(dims);
-}
-
-void set_sparse_values(Variable &var,
-                       const std::vector<sparse_container<double>> &data) {
-  auto vals = var.sparseValues<double>();
-  for (scipp::index i = 0; i < scipp::size(data); ++i)
-    vals[i] = data[i];
-}
-
-void set_sparse_variances(Variable &var,
-                          const std::vector<sparse_container<double>> &data) {
-  auto vals = var.sparseVariances<double>();
-  for (scipp::index i = 0; i < scipp::size(data); ++i)
-    vals[i] = data[i];
 }
 
 TEST_F(TransformBinaryTest, sparse_val_var_with_sparse_val_var) {

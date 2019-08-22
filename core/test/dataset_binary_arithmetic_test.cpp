@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+#include <initializer_list>
+
 #include "test_macros.h"
 #include "test_operations.h"
 #include <gtest/gtest-matchers.h>
@@ -9,7 +11,7 @@
 #include "scipp/core/dimensions.h"
 
 #include "dataset_test_common.h"
-#include <initializer_list>
+#include "make_sparse.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -854,4 +856,37 @@ TEST(DatasetSetData, labels) {
       "l1", makeVariable<double>({Dim::X},
                                  {d.coords()[Dim::X].values<double>().size()}));
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
+}
+
+TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
+  auto a = make_sparse_variable_with_variance();
+  set_sparse_values(a, {{1, 2, 3}, {4}});
+  set_sparse_variances(a, {{5, 6, 7}, {8}});
+  auto b = make_sparse_variable_with_variance();
+  set_sparse_values(b, {{0.1, 0.2, 0.3}, {0.4}});
+  set_sparse_variances(b, {{0.5, 0.6}, {0.8}});
+
+  Dataset d1;
+  d1.setData("a", a);
+  d1.setData("b", b);
+  auto original(d1);
+
+  ASSERT_ANY_THROW(d1 += d1);
+  ASSERT_EQ(d1, original);
+
+  Dataset d2;
+  d2.setData("b", a);
+  d2.setData("a", b);
+  original = d2;
+
+  ASSERT_ANY_THROW(d2 += d2);
+  ASSERT_EQ(d2, original);
+
+  Dataset d3;
+  d3.setData("a", b);
+  d3.setData("b", a);
+  original = d3;
+
+  ASSERT_ANY_THROW(d3 += d3);
+  ASSERT_EQ(d3, original);
 }

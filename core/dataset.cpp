@@ -784,12 +784,10 @@ constexpr static auto divide = [](const auto &a, const auto &b) {
 
 template <class Op, class A, class B>
 auto &apply(const Op &op, A &a, const B &b) {
-  // auto dry_run = [&]() {
-  //  for (const auto & [ name, item ] : b) {
-  //    expect::coordsAndLabelsAreSuperset(*this, other);
-  //    dry_run::transform_in_place(a[name].data(), item.data(), op);
-  //  }
-  //}();
+  // for (const auto & [ name, item ] : b) {
+  //  expect::coordsAndLabelsAreSuperset(a[name], item);
+  //  dry_run::transform_in_place(a[name].data(), item.data(), op);
+  //}
   for (const auto & [ name, item ] : b)
     op(a[name], item);
   return a;
