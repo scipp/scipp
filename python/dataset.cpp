@@ -42,15 +42,24 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "coords",
       py::cpp_function([](T &self) { return self.coords(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()));
+                       py::return_value_policy::move, py::keep_alive<0, 1>()),
+      R"(
+      Dict of coordinates.)");
   c.def_property_readonly(
       "labels",
       py::cpp_function([](T &self) { return self.labels(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()));
+                       py::return_value_policy::move, py::keep_alive<0, 1>()),
+      R"(
+      Dict of labels.
+
+      Labels are very similar to coordinates, except that they are identified
+      using custom names instead of dimension labels.)");
   c.def_property_readonly("attrs",
                           py::cpp_function([](T &self) { return self.attrs(); },
                                            py::return_value_policy::move,
-                                           py::keep_alive<0, 1>()));
+                                           py::keep_alive<0, 1>()),
+                          R"(
+      Dict of attributes.)");
 }
 
 template <class T, class... Ignored>
@@ -76,7 +85,7 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("__ne__",
         [](const T &self, const DatasetProxy &other) { return self == other; });
   c.def("copy", [](const T &self) { return Dataset(self); },
-        "Make a copy of a Dataset or DatasetProxy and return it as a Dataset.");
+        "Return a (deep) copy.");
 }
 
 template <class T, class... Ignored>
@@ -248,8 +257,12 @@ void init_dataset(py::module &m) {
         [](const DatasetConstProxy &lhs, const DatasetConstProxy &rhs) {
           return core::merge(lhs, rhs);
         },
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns the union (outer merge) of two datasets");
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Union of two datasets.
+
+        :raises: If there are conflicting items with different content.
+        :return: A new dataset that contains the union of all data items, coords, labels, and attributes.
+        :rtype: Dataset)");
 
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();
