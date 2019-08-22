@@ -566,6 +566,14 @@ DataProxy DataProxy::assign(const VariableConstProxy &other) const {
   return *this;
 }
 
+template <class Op>
+void dry_run_op(const DataProxy &a, const DataConstProxy &b, Op op) {
+  expect::coordsAndLabelsAreSuperset(a, b);
+  // This dry run relies on the knowledge that the implementation of operations
+  // fro variable simply calls transform_in_place and nothing else.
+  dry_run::transform_in_place(a.data(), b.data(), op);
+}
+
 DataProxy DataProxy::operator+=(const DataConstProxy &other) const {
   expect::coordsAndLabelsAreSuperset(*this, other);
   data() += other.data();
@@ -784,10 +792,8 @@ constexpr static auto divide = [](const auto &a, const auto &b) {
 
 template <class Op, class A, class B>
 auto &apply(const Op &op, A &a, const B &b) {
-  // for (const auto & [ name, item ] : b) {
-  //  expect::coordsAndLabelsAreSuperset(a[name], item);
-  //  dry_run::transform_in_place(a[name].data(), item.data(), op);
-  //}
+  for (const auto & [ name, item ] : b)
+    dry_run_op(a[name], item, op);
   for (const auto & [ name, item ] : b)
     op(a[name], item);
   return a;
@@ -795,6 +801,8 @@ auto &apply(const Op &op, A &a, const B &b) {
 
 template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
+  for (const auto &item : a)
+    dry_run_op(item.second, b, op);
   // For `b` referencing data in `a` we delay operation. The alternative would
   // be to make a deep copy of `other` before starting the iteration over items.
   std::optional<DataProxy> delayed;

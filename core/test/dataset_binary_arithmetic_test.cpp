@@ -859,34 +859,30 @@ TEST(DatasetSetData, labels) {
 }
 
 TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
-  auto a = make_sparse_variable_with_variance();
-  set_sparse_values(a, {{1, 2, 3}, {4}});
-  set_sparse_variances(a, {{5, 6, 7}, {8}});
-  auto b = make_sparse_variable_with_variance();
-  set_sparse_values(b, {{0.1, 0.2, 0.3}, {0.4}});
-  set_sparse_variances(b, {{0.5, 0.6}, {0.8}});
+  auto good = make_sparse_variable_with_variance();
+  set_sparse_values(good, {{1, 2, 3}, {4}});
+  set_sparse_variances(good, {{5, 6, 7}, {8}});
+  auto bad = make_sparse_variable_with_variance();
+  set_sparse_values(bad, {{0.1, 0.2, 0.3}, {0.4}});
+  set_sparse_variances(bad, {{0.5, 0.6}, {0.8}});
+  DataArray good_array(good, {}, {});
 
-  Dataset d1;
-  d1.setData("a", a);
-  d1.setData("b", b);
-  auto original(d1);
+  for (const auto &keys : {std::pair{"a", "b"}, std::pair{"b", "a"}}) {
+    auto & [ key1, key2 ] = keys;
+    for (const auto &values : {std::pair{good, bad}, std::pair{bad, good}}) {
+      auto & [ value1, value2 ] = values;
+      Dataset d;
+      d.setData(key1, value1);
+      d.setData(key2, value2);
+      auto original(d);
 
-  ASSERT_ANY_THROW(d1 += d1);
-  ASSERT_EQ(d1, original);
-
-  Dataset d2;
-  d2.setData("b", a);
-  d2.setData("a", b);
-  original = d2;
-
-  ASSERT_ANY_THROW(d2 += d2);
-  ASSERT_EQ(d2, original);
-
-  Dataset d3;
-  d3.setData("a", b);
-  d3.setData("b", a);
-  original = d3;
-
-  ASSERT_ANY_THROW(d3 += d3);
-  ASSERT_EQ(d3, original);
+      ASSERT_ANY_THROW(d += d);
+      ASSERT_EQ(d, original);
+      // Note that we should not use an item of d in this test, since then
+      // operation is delayed and we me end up bypassing the problem that the
+      // "dry run" fixes.
+      ASSERT_ANY_THROW(d += good_array);
+      ASSERT_EQ(d, original);
+    }
+  }
 }
