@@ -5,6 +5,7 @@
 #include <cmath>
 #include <string>
 
+#include "operators.h"
 #include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"

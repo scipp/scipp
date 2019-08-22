@@ -5,6 +5,7 @@
 
 #include "test_macros.h"
 
+#include "../operators.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"

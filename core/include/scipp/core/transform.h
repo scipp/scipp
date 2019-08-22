@@ -428,6 +428,14 @@ template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
+template <class... TypePairs, class Op>
+static constexpr auto type_pairs(Op) noexcept {
+  if constexpr (sizeof...(TypePairs) == 0)
+    return typename Op::types{};
+  else
+    return std::tuple_cat(TypePairs{}...);
+}
+
 /// Helper class wrapping functions for in-place transform.
 ///
 /// The dry_run template argument can be used to disable any actual modification
@@ -689,8 +697,7 @@ template <bool dry_run> struct in_place {
     // Stop early in bad cases of changing units (if `var` is a slice):
     var.expectCanSetUnit(unit);
     // Wrapped implementation to convert multiple tuples into a parameter pack.
-    transform(std::tuple_cat(TypePairs{}...), std::forward<Var>(var), other,
-              op);
+    transform(type_pairs<TypePairs...>(op), std::forward<Var>(var), other, op);
     if constexpr (dry_run)
       return;
     var.setUnit(unit);
