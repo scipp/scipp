@@ -67,7 +67,7 @@ std::string to_string(const Slice &slice) {
 
 std::string to_string(const units::Unit &unit) { return unit.name(); }
 
-std::string make_dims_labels(const Variable &variable,
+std::string make_dims_labels(const VariableConstProxy &variable,
                              const Dimensions &datasetDims) {
   const auto &dims = variable.dims();
   if (dims.empty())

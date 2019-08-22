@@ -339,6 +339,28 @@ public:
   void setSparseLabels(const std::string &name, const std::string &labelName,
                        Variable labels);
 
+  void setCoord(const Dim dim, const VariableConstProxy &coord) {
+    setCoord(dim, Variable(coord));
+  }
+  void setLabels(const std::string &labelName,
+                 const VariableConstProxy &labels) {
+    setLabels(labelName, Variable(labels));
+  }
+  void setAttr(const std::string &attrName, const VariableConstProxy &attr) {
+    setAttr(attrName, Variable(attr));
+  }
+  void setData(const std::string &name, const VariableConstProxy &data) {
+    setData(name, Variable(data));
+  }
+  void setSparseCoord(const std::string &name,
+                      const VariableConstProxy &coord) {
+    setSparseCoord(name, Variable(coord));
+  }
+  void setSparseLabels(const std::string &name, const std::string &labelName,
+                       const VariableConstProxy &labels) {
+    setSparseLabels(name, labelName, Variable(labels));
+  }
+
   DatasetConstProxy slice(const Slice slice1) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2) const &;
   DatasetConstProxy slice(const Slice slice1, const Slice slice2,

@@ -226,16 +226,36 @@ Variable operator*(const VariableConstProxy &a, const VariableConstProxy &b) {
 Variable operator/(const VariableConstProxy &a, const VariableConstProxy &b) {
   return divide(a, b);
 }
-// Note: The std::move here is necessary because RVO does not work for variables
-// that are function parameters.
-Variable operator+(Variable a, const double b) { return std::move(a += b); }
-Variable operator-(Variable a, const double b) { return std::move(a -= b); }
-Variable operator*(Variable a, const double b) { return std::move(a *= b); }
-Variable operator/(Variable a, const double b) { return std::move(a /= b); }
-Variable operator+(const double a, Variable b) { return std::move(b += a); }
-Variable operator-(const double a, Variable b) { return -(b -= a); }
-Variable operator*(const double a, Variable b) { return std::move(b *= a); }
-Variable operator/(const double a, Variable b) {
+Variable operator+(const VariableConstProxy &a_, const double b) {
+  Variable a(a_);
+  return a += b;
+}
+Variable operator-(const VariableConstProxy &a_, const double b) {
+  Variable a(a_);
+  return a -= b;
+}
+Variable operator*(const VariableConstProxy &a_, const double b) {
+  Variable a(a_);
+  return a *= b;
+}
+Variable operator/(const VariableConstProxy &a_, const double b) {
+  Variable a(a_);
+  return a /= b;
+}
+Variable operator+(const double a, const VariableConstProxy &b_) {
+  Variable b(b_);
+  return b += a;
+}
+Variable operator-(const double a, const VariableConstProxy &b_) {
+  Variable b(b_);
+  return -(b -= a);
+}
+Variable operator*(const double a, const VariableConstProxy &b_) {
+  Variable b(b_);
+  return b *= a;
+}
+Variable operator/(const double a, const VariableConstProxy &b_proxy) {
+  Variable b(b_proxy);
   b.setUnit(units::Unit(units::dimensionless) / b.unit());
   transform_in_place<double, float>(
       b, overloaded{[a](double &b_) { b_ = a / b_; },
