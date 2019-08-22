@@ -74,6 +74,8 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
   throw std::runtime_error("Unsupported numpy dtype.");
 }
 
+// temporary solution untill https://github.com/pybind/pybind11/issues/1538
+// is not solved
 scipp::core::DType scipp_dtype_fall_back(const py::object &type) {
   py::object numpy = py::module::import("numpy");
   py::object maketype = numpy.attr("dtype");
