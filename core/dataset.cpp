@@ -1182,4 +1182,13 @@ Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
+
+Dataset sum(const Dataset &ds, const Dim dimension) {
+  return sum_<Dataset>(ds, dimension);
+}
+
+Dataset sum(const DatasetConstProxy &ds, const Dim dimension) {
+  return sum_<DatasetConstProxy>(ds, dimension);
+}
+
 } // namespace scipp::core
