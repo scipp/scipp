@@ -67,11 +67,20 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
   if (type.is(py::dtype::of<std::int64_t>()) ||
       (type.kind() == 'i' && type.itemsize() == 8))
     return scipp::core::dtype<int64_t>;
-  if (type.is(py::dtype::of<int32_t>()))
+  if (type.is(py::dtype::of<std::int32_t>()))
     return scipp::core::dtype<int32_t>;
   if (type.is(py::dtype::of<bool>()))
     return scipp::core::dtype<bool>;
   throw std::runtime_error("Unsupported numpy dtype.");
+}
+
+// temporary solution untill https://github.com/pybind/pybind11/issues/1538
+// is not solved
+scipp::core::DType scipp_dtype_fall_back(const py::object &type) {
+  py::object numpy = py::module::import("numpy");
+  py::object maketype = numpy.attr("dtype");
+  py::object new_type = maketype(type);
+  return scipp_dtype(new_type.cast<py::dtype>());
 }
 
 scipp::core::DType scipp_dtype(const py::object &type) {
@@ -89,7 +98,11 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   try {
     return type.cast<DType>();
   } catch (const py::cast_error &) {
-    return scippy::scipp_dtype(type.cast<py::dtype>());
+    try {
+      return scippy::scipp_dtype(type.cast<py::dtype>());
+    } catch (...) {
+      return scipp_dtype_fall_back(type);
+    }
   }
 }
 } // namespace scippy
