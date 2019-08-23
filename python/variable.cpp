@@ -212,7 +212,8 @@ void init_variable(py::module &m) {
   bind_init_1D<int32_t>(variable);
   bind_init_1D<double>(variable);
 
-  py::class_<VariableConstProxy>(m, "VariableConstProxy");
+  py::class_<VariableConstProxy>(m, "VariableConstProxy")
+      .def(py::init<const Variable &>());
   py::class_<VariableProxy, VariableConstProxy> variableProxy(
       m, "VariableProxy", py::buffer_protocol());
   variableProxy.def_buffer(&make_py_buffer_info);
@@ -266,9 +267,7 @@ void init_variable(py::module &m) {
   bind_data_properties(variable);
   bind_data_properties(variableProxy);
 
-  // Implicit conversion VariableProxy -> Variable. Reduces need for excessive
-  // operator overload definitions
-  py::implicitly_convertible<VariableProxy, Variable>();
+  py::implicitly_convertible<Variable, VariableConstProxy>();
 
   m.def("abs", [](const Variable &self) { return abs(self); },
         py::call_guard<py::gil_scoped_release>(), R"(

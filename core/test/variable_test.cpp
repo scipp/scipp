@@ -575,19 +575,19 @@ TEST(VariableProxy, variable_assign_from_slice) {
                            {11, 12, 13, 21, 22, 23, 31, 32, 33},
                            {44, 45, 46, 54, 55, 56, 64, 65, 66});
 
-  target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
+  target = Variable(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}));
   EXPECT_EQ(target, makeVariable<double>(dims, units::m, {11, 12, 21, 22},
                                          {44, 45, 54, 55}));
 
-  target = source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2});
+  target = Variable(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}));
   EXPECT_EQ(target, makeVariable<double>(dims, units::m, {12, 13, 22, 23},
                                          {45, 46, 55, 56}));
 
-  target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3});
+  target = Variable(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}));
   EXPECT_EQ(target, makeVariable<double>(dims, units::m, {21, 22, 31, 32},
                                          {54, 55, 64, 65}));
 
-  target = source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
+  target = Variable(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}));
   EXPECT_EQ(target, makeVariable<double>(dims, units::m, {22, 23, 32, 33},
                                          {55, 56, 65, 66}));
 }
@@ -599,7 +599,7 @@ TEST(VariableProxy, variable_assign_from_slice_clears_variances) {
       makeVariable<double>({{Dim::Y, 3}, {Dim::X, 3}}, units::m,
                            {11, 12, 13, 21, 22, 23, 31, 32, 33});
 
-  target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
+  target = Variable(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}));
   EXPECT_EQ(target, makeVariable<double>(dims, units::m, {11, 12, 21, 22}));
 }
 
@@ -608,7 +608,7 @@ TEST(VariableProxy, variable_self_assign_via_slice) {
                                      {11, 12, 13, 21, 22, 23, 31, 32, 33},
                                      {44, 45, 46, 54, 55, 56, 64, 65, 66});
 
-  target = target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
+  target = Variable(target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}));
   // Note: This test does not actually fail if self-assignment is broken. Had to
   // run address sanitizer to see that it is reading from free'ed memory.
   EXPECT_EQ(target, makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
@@ -754,7 +754,7 @@ TEST(VariableTest, reshape_mutable) {
 TEST(VariableTest, rename) {
   auto var = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}},
                                   {1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12});
-  const Variable expected = var.reshape({{Dim::X, 2}, {Dim::Z, 3}});
+  const Variable expected(var.reshape({{Dim::X, 2}, {Dim::Z, 3}}));
 
   var.rename(Dim::Y, Dim::Z);
   ASSERT_EQ(var, expected);

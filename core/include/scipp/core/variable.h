@@ -245,7 +245,7 @@ public:
   // Having this non-explicit is convenient when passing (potential)
   // variable slices to functions that do not support slices, but implicit
   // conversion may introduce risks, so there is a trade-of here.
-  Variable(const VariableConstProxy &slice);
+  explicit Variable(const VariableConstProxy &slice);
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const VariableConstProxy &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
@@ -519,8 +519,7 @@ Variable makeVariable(const Dimensions &dimensions, Args &&... args) {
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_CORE_EXPORT VariableConstProxy {
 public:
-  explicit VariableConstProxy(const Variable &variable)
-      : m_variable(&variable) {}
+  VariableConstProxy(const Variable &variable) : m_variable(&variable) {}
   VariableConstProxy(const Variable &variable, const Dimensions &dims)
       : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
   VariableConstProxy(const VariableConstProxy &other) = default;
@@ -623,7 +622,7 @@ protected:
  * VariableConstProxy will automatically work also for this mutable variant. */
 class SCIPP_CORE_EXPORT VariableProxy : public VariableConstProxy {
 public:
-  explicit VariableProxy(Variable &variable)
+  VariableProxy(Variable &variable)
       : VariableConstProxy(variable), m_mutableVariable(&variable) {}
   // Note that we use the basic constructor of VariableConstProxy to avoid
   // creation of a const m_view, which would be overwritten immediately.
@@ -748,14 +747,22 @@ SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
 // Note: If the left-hand-side in an addition is a VariableProxy this simply
 // implicitly converts it to a Variable. A copy for the return value is required
 // anyway so this is a convenient way to avoid defining more overloads.
-SCIPP_CORE_EXPORT Variable operator+(Variable a, const double b);
-SCIPP_CORE_EXPORT Variable operator-(Variable a, const double b);
-SCIPP_CORE_EXPORT Variable operator*(Variable a, const double b);
-SCIPP_CORE_EXPORT Variable operator/(Variable a, const double b);
-SCIPP_CORE_EXPORT Variable operator+(const double a, Variable b);
-SCIPP_CORE_EXPORT Variable operator-(const double a, Variable b);
-SCIPP_CORE_EXPORT Variable operator*(const double a, Variable b);
-SCIPP_CORE_EXPORT Variable operator/(const double a, Variable b);
+SCIPP_CORE_EXPORT Variable operator+(const VariableConstProxy &a,
+                                     const double b);
+SCIPP_CORE_EXPORT Variable operator-(const VariableConstProxy &a,
+                                     const double b);
+SCIPP_CORE_EXPORT Variable operator*(const VariableConstProxy &a,
+                                     const double b);
+SCIPP_CORE_EXPORT Variable operator/(const VariableConstProxy &a,
+                                     const double b);
+SCIPP_CORE_EXPORT Variable operator+(const double a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator-(const double a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator*(const double a,
+                                     const VariableConstProxy &b);
+SCIPP_CORE_EXPORT Variable operator/(const double a,
+                                     const VariableConstProxy &b);
 template <class T>
 Variable operator*(Variable a, const boost::units::quantity<T> &quantity) {
   return std::move(a *= quantity);

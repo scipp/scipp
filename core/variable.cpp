@@ -154,14 +154,16 @@ VariableConstProxy Variable::slice(const Slice slice) const & {
 }
 
 Variable Variable::slice(const Slice slice) const && {
-  return {this->slice(slice)};
+  return Variable{this->slice(slice)};
 }
 
 VariableProxy Variable::slice(const Slice slice) & {
   return {*this, slice.dim(), slice.begin(), slice.end()};
 }
 
-Variable Variable::slice(const Slice slice) && { return {this->slice(slice)}; }
+Variable Variable::slice(const Slice slice) && {
+  return Variable{this->slice(slice)};
+}
 
 VariableConstProxy Variable::reshape(const Dimensions &dims) const & {
   return {*this, dims};
@@ -458,7 +460,7 @@ Variable broadcast(Variable var, const Dimensions &dims) {
 
 void swap(Variable &var, const Dim dim, const scipp::index a,
           const scipp::index b) {
-  const Variable tmp = var.slice({dim, a});
+  const Variable tmp(var.slice({dim, a}));
   var.slice({dim, a}).assign(var.slice({dim, b}));
   var.slice({dim, b}).assign(tmp);
 }
