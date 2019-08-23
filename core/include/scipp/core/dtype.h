@@ -34,6 +34,7 @@ enum class DType {
   SparseDouble,
   SparseFloat,
   SparseInt64,
+  SparseInt32,
   Dataset,
   EigenVector3d,
   Unknown
@@ -51,6 +52,8 @@ constexpr DType dtype<sparse_container<double>> = DType::SparseDouble;
 template <> constexpr DType dtype<sparse_container<float>> = DType::SparseFloat;
 template <>
 constexpr DType dtype<sparse_container<int64_t>> = DType::SparseInt64;
+template <>
+constexpr DType dtype<sparse_container<int32_t>> = DType::SparseInt32;
 template <> constexpr DType dtype<Dataset> = DType::Dataset;
 template <> constexpr DType dtype<Eigen::Vector3d> = DType::EigenVector3d;
 
