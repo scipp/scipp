@@ -70,8 +70,7 @@ static void rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
         iold++; /* old and new bins do not overlap */
       else {
         // delta is the overlap of the bins on the x axis
-        auto delta = xo_high < xn_high ? xo_high : xn_high;
-        delta -= xo_low > xn_low ? xo_low : xn_low;
+        auto delta = std::min(xn_high, xo_high) - std::max(xn_low, xo_low);
 
         auto owidth = xo_high - xo_low;
         newData[newOffset + inew] += oldData[oldOffset + iold] * delta / owidth;
@@ -110,8 +109,7 @@ void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
       iold++; /* old and new bins do not overlap */
     else {
       // delta is the overlap of the bins on the x axis
-      auto delta = xo_high < xn_high ? xo_high : xn_high;
-      delta -= xo_low > xn_low ? xo_low : xn_low;
+      auto delta = std::min(xn_high, xo_high) - std::max(xn_low, xo_low);
 
       auto owidth = xo_high - xo_low;
       newT.slice({dim, inew}) += oldT.slice({dim, iold}) * delta / owidth;
