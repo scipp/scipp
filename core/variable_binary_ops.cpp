@@ -236,7 +236,6 @@ Variable operator*(const double a, const VariableConstProxy &b_) {
 }
 Variable operator/(const double a, const VariableConstProxy &b_proxy) {
   Variable b(b_proxy);
-  b.setUnit(units::Unit(units::dimensionless) / b.unit());
   transform_in_place<double, float>(
       b,
       overloaded{
