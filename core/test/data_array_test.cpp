@@ -35,31 +35,3 @@ TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
   dataset.setData("sum", sum);
   EXPECT_EQ(dataset["sum"], dataset["data_zyx"]);
 }
-
-TEST(DataArrayTest, rebin) {
-  DataArray a(makeVariable<double>({{Dim::Y, 2}, {Dim::X, 4}}, units::counts,
-                                   {1, 2, 3, 4, 5, 6, 7, 8}),
-              {{Dim::X, makeVariable<double>({Dim::X, 5}, {1, 2, 3, 4, 5})}},
-              {});
-  auto edges = makeVariable<double>({Dim::X, 3}, {1, 3, 5});
-  DataArray expected(makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
-                                          units::counts, {3, 7, 11, 15}),
-                     {{Dim::X, edges}}, {});
-
-  ASSERT_EQ(rebin(a, Dim::X, edges), expected);
-}
-
-TEST(DataArrayTest, rebin_with_variances) {
-  DataArray a(makeVariable<double>({{Dim::Y, 2}, {Dim::X, 4}}, units::counts,
-                                   {1, 2, 3, 4, 5, 6, 7, 8},
-                                   {9, 10, 11, 12, 13, 14, 15, 16}),
-              {{Dim::X, makeVariable<double>({Dim::X, 5}, {1, 2, 3, 4, 5})}},
-              {});
-  auto edges = makeVariable<double>({Dim::X, 3}, {1, 3, 5});
-  DataArray expected(makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
-                                          units::counts, {3, 7, 11, 15},
-                                          {19, 23, 27, 31}),
-                     {{Dim::X, edges}}, {});
-
-  ASSERT_EQ(rebin(a, Dim::X, edges), expected);
-}
