@@ -570,7 +570,7 @@ template <class Op>
 void dry_run_op(const DataProxy &a, const DataConstProxy &b, Op op) {
   expect::coordsAndLabelsAreSuperset(a, b);
   // This dry run relies on the knowledge that the implementation of operations
-  // fro variable simply calls transform_in_place and nothing else.
+  // for variable simply calls transform_in_place and nothing else.
   dry_run::transform_in_place(a.data(), b.data(), op);
 }
 

@@ -12,15 +12,9 @@ namespace scipp::core {
 template <class... Ts> struct pair_self {
   using type = std::tuple<std::pair<Ts, Ts>...>;
 };
-// template <class... Ts> struct pair_product {
-//  using type = decltype(std::tuple_cat(std::tuple<std::pair<Ts,
-//  Ts...>>{}...));
-//};
 template <class... Ts> struct pair_custom { using type = std::tuple<Ts...>; };
 
 template <class... Ts> using pair_self_t = typename pair_self<Ts...>::type;
-// template <class... Ts>
-// using pair_product_t = typename pair_product<Ts...>::type;
 template <class... Ts> using pair_custom_t = typename pair_custom<Ts...>::type;
 
 namespace operator_detail {
