@@ -165,14 +165,6 @@ void init_dataset(py::module &m) {
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const DataConstProxy &data) { self.setData(name, data); })
-      // TODO: nvaytet: I do not understand why this is not covered by the
-      // py::implicitly_convertible<VariableProxy, Variable>();
-      // statement in variable.cpp, but this is needed if a VariableProxy is
-      // used instead of a Variable.
-      // Maybe it's because it's in a different file?
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name,
-              const VariableProxy &data) { self.setData(name, data); })
       .def("__setitem__",
            [](Dataset &self, const std::tuple<Dim, scipp::index> &index,
               DatasetProxy &other) {
