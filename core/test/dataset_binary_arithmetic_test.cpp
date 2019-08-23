@@ -867,6 +867,13 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
   set_sparse_variances(bad, {{0.5, 0.6}, {0.8}});
   DataArray good_array(good, {}, {});
 
+  // We have no control over the iteration order in the implementation of binary
+  // operations. All we know that data is in some sort of (unordered) map.
+  // Therefore, we try all permutations of key names and insertion order, hoping
+  // to cover also those that first process good items, then bad items (if bad
+  // items are processed first, the exception guarantees of the underlying
+  // binary operations for Variable are doing the job on their own, but we need
+  // to exercise those for Dataset here).
   for (const auto &keys : {std::pair{"a", "b"}, std::pair{"b", "a"}}) {
     auto & [ key1, key2 ] = keys;
     for (const auto &values : {std::pair{good, bad}, std::pair{bad, good}}) {
