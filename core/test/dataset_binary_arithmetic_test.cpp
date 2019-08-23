@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
+#include <initializer_list>
+
 #include "test_macros.h"
 #include "test_operations.h"
 #include <gtest/gtest-matchers.h>
@@ -9,7 +11,7 @@
 #include "scipp/core/dimensions.h"
 
 #include "dataset_test_common.h"
-#include <initializer_list>
+#include "make_sparse.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -854,4 +856,40 @@ TEST(DatasetSetData, labels) {
       "l1", makeVariable<double>({Dim::X},
                                  {d.coords()[Dim::X].values<double>().size()}));
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), std::logic_error);
+}
+
+TEST(DatasetInPlaceStrongExceptionGuarantee, sparse) {
+  auto good = make_sparse_variable_with_variance();
+  set_sparse_values(good, {{1, 2, 3}, {4}});
+  set_sparse_variances(good, {{5, 6, 7}, {8}});
+  auto bad = make_sparse_variable_with_variance();
+  set_sparse_values(bad, {{0.1, 0.2, 0.3}, {0.4}});
+  set_sparse_variances(bad, {{0.5, 0.6}, {0.8}});
+  DataArray good_array(good, {}, {});
+
+  // We have no control over the iteration order in the implementation of binary
+  // operations. All we know that data is in some sort of (unordered) map.
+  // Therefore, we try all permutations of key names and insertion order, hoping
+  // to cover also those that first process good items, then bad items (if bad
+  // items are processed first, the exception guarantees of the underlying
+  // binary operations for Variable are doing the job on their own, but we need
+  // to exercise those for Dataset here).
+  for (const auto &keys : {std::pair{"a", "b"}, std::pair{"b", "a"}}) {
+    auto & [ key1, key2 ] = keys;
+    for (const auto &values : {std::pair{good, bad}, std::pair{bad, good}}) {
+      auto & [ value1, value2 ] = values;
+      Dataset d;
+      d.setData(key1, value1);
+      d.setData(key2, value2);
+      auto original(d);
+
+      ASSERT_ANY_THROW(d += d);
+      ASSERT_EQ(d, original);
+      // Note that we should not use an item of d in this test, since then
+      // operation is delayed and we me end up bypassing the problem that the
+      // "dry run" fixes.
+      ASSERT_ANY_THROW(d += good_array);
+      ASSERT_EQ(d, original);
+    }
+  }
 }

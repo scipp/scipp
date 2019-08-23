@@ -875,13 +875,6 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DatasetProxy &dataset);
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dataset &dataset);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableConstProxy &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const VariableProxy &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                           const Variable &variable);
-SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 
 SCIPP_CORE_EXPORT DataArray operator+(const DataConstProxy &a,
                                       const DataConstProxy &b);

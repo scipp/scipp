@@ -804,6 +804,14 @@ SCIPP_CORE_EXPORT Variable sum(const Variable &var, const Dim dim);
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);
 
+SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
+                                           const VariableConstProxy &variable);
+SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
+                                           const VariableProxy &variable);
+SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
+                                           const Variable &variable);
+SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
+
 } // namespace scipp::core
 
 #endif // VARIABLE_H

@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <cmath>
 
+#include "operators.h"
 #include "scipp/core/except.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
@@ -11,13 +12,9 @@
 namespace scipp::core {
 
 template <class T1, class T2> T1 &plus_equals(T1 &variable, const T2 &other) {
-  // Addition with different Variable type is supported, mismatch of underlying
-  // element types is handled in DataModel::operator+=.
-  // Different name is ok for addition.
   // Note: This will broadcast/transpose the RHS if required. We do not support
   // changing the dimensions of the LHS though!
-  transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      variable, other, [](auto &&a, auto &&b) { a += b; });
+  transform_in_place(variable, other, operator_detail::plus_equals{});
   return variable;
 }
 
@@ -53,8 +50,7 @@ Variable &Variable::operator+=(const double value) & {
 }
 
 template <class T1, class T2> T1 &minus_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
-      variable, other, [](auto &&a, auto &&b) { a -= b; });
+  transform_in_place(variable, other, operator_detail::minus_equals{});
   return variable;
 }
 
@@ -74,9 +70,7 @@ Variable &Variable::operator-=(const double value) & {
 }
 
 template <class T1, class T2> T1 &times_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<double, float, int64_t>,
-                     pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
-      variable, other, [](auto &&a, auto &&b) { a *= b; });
+  transform_in_place(variable, other, operator_detail::times_equals{});
   return variable;
 }
 
@@ -98,9 +92,7 @@ Variable &Variable::operator*=(const double value) & {
 }
 
 template <class T1, class T2> T1 &divide_equals(T1 &variable, const T2 &other) {
-  transform_in_place<pair_self_t<double, float, int64_t>,
-                     pair_custom_t<std::pair<Eigen::Vector3d, double>>>(
-      variable, other, [](auto &&a, auto &&b) { a /= b; });
+  transform_in_place(variable, other, operator_detail::divide_equals{});
   return variable;
 }
 
