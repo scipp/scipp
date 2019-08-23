@@ -280,22 +280,16 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   return out;
 }
 
-Variable rebin(const Variable &var, const Variable &oldCoord,
+Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
                const Variable &newCoord) {
-// TODO Disabled since it is using neutron-specific units. Should be moved
-// into scipp-neutron? On the other hand, counts is actually more generic than
-// neutron data, but requiring this unit to be part of all supported unit
-// systems does not make sense either, I think.
-#ifndef SCIPP_UNITS_NEUTRON
-  throw std::runtime_error("rebin is disabled for this set of units");
-#else
-  expect::countsOrCountsDensity(var);
-  Dim dim = Dim::Invalid;
-  for (const auto d : oldCoord.dims().labels())
-    if (oldCoord.dims()[d] == var.dims()[d] + 1) {
-      dim = d;
-      break;
-    }
+  expect::notSparse(var);
+  expect::notSparse(oldCoord);
+  expect::notSparse(newCoord);
+
+  // Rebin could also implemented for count-densities. However, it may be better
+  // to avoid this since it increases complexity. Instead, densities could
+  // always be computed on-the-fly for visualization, if required.
+  expect::unit(var, units::counts);
 
   auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
                         auto &&newCoord_) {
@@ -317,51 +311,28 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
     }
   };
 
-  if (var.unit() == units::counts) {
-    auto dims = var.dims();
-    dims.resize(dim, newCoord.dims()[dim] - 1);
-    Variable rebinned(var, dims);
-    if (rebinned.dims().inner() == dim) {
-      apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord,
-                                    newCoord);
-    } else {
-      if (newCoord.dims().shape().size() > 1)
-        throw std::runtime_error(
-            "Not inner rebin works only for 1d coordinates for now.");
-      switch (rebinned.dtype()) {
-      case dtype<double>:
-        RebinGeneralHelper<double>::rebin(dim, var, rebinned, oldCoord,
-                                          newCoord);
-        break;
-      case dtype<float>:
-        RebinGeneralHelper<float>::rebin(dim, var, rebinned, oldCoord,
-                                         newCoord);
-        break;
-      default:
-        throw std::runtime_error(
-            "Rebinning is possible only for double and float types.");
-      }
-    }
-    return rebinned;
+  auto dims = var.dims();
+  dims.resize(dim, newCoord.dims()[dim] - 1);
+  Variable rebinned(var, dims);
+  if (rebinned.dims().inner() == dim) {
+    apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord, newCoord);
   } else {
-    // TODO This will currently fail if the data is a multi-dimensional density.
-    // Would need a conversion that converts only the rebinned dimension.
-    // TODO This could be done more efficiently without a temporary Dataset.
-    throw std::runtime_error("Temporarily disabled for refactor");
-    /*
-    Dataset density;
-    density.insert(dimensionCoord(dim), oldCoord);
-    density.insert(Data::Value, var);
-    auto cnts = counts::fromDensity(std::move(density), dim).erase(Data::Value);
-    Dataset rebinnedCounts;
-    rebinnedCounts.insert(dimensionCoord(dim), newCoord);
-    rebinnedCounts.insert(Data::Value,
-                          rebin(std::get<Variable>(cnts), oldCoord, newCoord));
-    return std::get<Variable>(
-        counts::toDensity(std::move(rebinnedCounts), dim).erase(Data::Value));
-    */
+    if (newCoord.dims().shape().size() > 1)
+      throw std::runtime_error(
+          "Not inner rebin works only for 1d coordinates for now.");
+    switch (rebinned.dtype()) {
+    case dtype<double>:
+      rebin_non_inner<double>(dim, var, rebinned, oldCoord, newCoord);
+      break;
+    case dtype<float>:
+      rebin_non_inner<float>(dim, var, rebinned, oldCoord, newCoord);
+      break;
+    default:
+      throw std::runtime_error(
+          "Rebinning is possible only for double and float types.");
+    }
   }
-#endif
+  return rebinned;
 }
 
 Variable permute(const Variable &var, const Dim dim,

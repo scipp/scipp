@@ -83,44 +83,43 @@ template <class T> struct RebinHelper {
   }
 };
 
-template <typename T> struct RebinGeneralHelper {
-  static void rebin(const Dim dim, const Variable &oldT, Variable &newT,
-                    const Variable &oldCoordT, const Variable &newCoordT) {
-    const auto oldSize = oldT.dims()[dim];
-    const auto newSize = newT.dims()[dim];
+template <typename T>
+void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
+                     const Variable &oldCoordT, const Variable &newCoordT) {
+  const auto oldSize = oldT.dims()[dim];
+  const auto newSize = newT.dims()[dim];
 
-    const auto *xold = oldCoordT.values<T>().data();
-    const auto *xnew = newCoordT.values<T>().data();
-    // This function assumes that dimensions between coord and data
-    // coord is 1D.
-    int iold = 0;
-    int inew = 0;
-    while ((iold < oldSize) && (inew < newSize)) {
-      auto xo_low = xold[iold];
-      auto xo_high = xold[iold + 1];
-      auto xn_low = xnew[inew];
-      auto xn_high = xnew[inew + 1];
+  const auto *xold = oldCoordT.values<T>().data();
+  const auto *xnew = newCoordT.values<T>().data();
+  // This function assumes that dimensions between coord and data
+  // coord is 1D.
+  int iold = 0;
+  int inew = 0;
+  while ((iold < oldSize) && (inew < newSize)) {
+    auto xo_low = xold[iold];
+    auto xo_high = xold[iold + 1];
+    auto xn_low = xnew[inew];
+    auto xn_high = xnew[inew + 1];
 
-      if (xn_high <= xo_low)
-        inew++; /* old and new bins do not overlap */
-      else if (xo_high <= xn_low)
-        iold++; /* old and new bins do not overlap */
-      else {
-        // delta is the overlap of the bins on the x axis
-        auto delta = xo_high < xn_high ? xo_high : xn_high;
-        delta -= xo_low > xn_low ? xo_low : xn_low;
+    if (xn_high <= xo_low)
+      inew++; /* old and new bins do not overlap */
+    else if (xo_high <= xn_low)
+      iold++; /* old and new bins do not overlap */
+    else {
+      // delta is the overlap of the bins on the x axis
+      auto delta = xo_high < xn_high ? xo_high : xn_high;
+      delta -= xo_low > xn_low ? xo_low : xn_low;
 
-        auto owidth = xo_high - xo_low;
-        newT.slice({dim, inew}) += oldT.slice({dim, iold}) * delta / owidth;
-        if (xn_high > xo_high) {
-          iold++;
-        } else {
-          inew++;
-        }
+      auto owidth = xo_high - xo_low;
+      newT.slice({dim, inew}) += oldT.slice({dim, iold}) * delta / owidth;
+      if (xn_high > xo_high) {
+        iold++;
+      } else {
+        inew++;
       }
     }
   }
-};
+}
 
 template <class T> class ViewModel;
 

@@ -787,7 +787,8 @@ SCIPP_CORE_EXPORT Variable mean(const Variable &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable norm(const Variable &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
                                    const std::vector<scipp::index> &indices);
-SCIPP_CORE_EXPORT Variable rebin(const Variable &var, const Variable &oldCoord,
+SCIPP_CORE_EXPORT Variable rebin(const Variable &var, const Dim dim,
+                                 const Variable &oldCoord,
                                  const Variable &newCoord);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
