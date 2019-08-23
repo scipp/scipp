@@ -312,9 +312,7 @@ template <class Op> struct TransformSparse {
 template <class T1, class Op> void do_transform_in_place(T1 &a, Op op) {
   auto a_val = a.values();
   if (a.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T1::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T1::value_type>()) {
       auto a_var = a.variances();
       transform_in_place_with_variance_impl(op,
                                             ValuesAndVariances{a_val, a_var});
@@ -331,9 +329,7 @@ void do_transform(const T1 &a, Out &out, Op op) {
   auto a_val = a.values();
   auto out_val = out.values();
   if (a.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T1::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T1::value_type>()) {
       auto a_var = a.variances();
       auto out_var = out.variances();
       transform_elements_with_variance(op, ValuesAndVariances{out_val, out_var},
@@ -352,10 +348,8 @@ void do_transform_in_place(T1 &a, const T2 &b, Op op) {
   auto a_val = a.values();
   auto b_val = b.values();
   if (a.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T1::value_type> ||
-                  is_eigen_type_v<typename T2::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T1::value_type>() &&
+                  canHaveVariances<typename T2::value_type>()) {
       auto a_var = a.variances();
       if (b.hasVariances()) {
         auto b_var = b.variances();
@@ -384,10 +378,8 @@ void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
   auto b_val = b.values();
   auto out_val = out.values();
   if (a.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T1::value_type> ||
-                  is_eigen_type_v<typename T2::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T1::value_type>() &&
+                  canHaveVariances<typename T2::value_type>()) {
       auto a_var = a.variances();
       auto out_var = out.variances();
       if (b.hasVariances()) {
@@ -402,9 +394,7 @@ void do_transform(const T1 &a, const T2 &b, Out &out, Op op) {
       }
     }
   } else if (b.hasVariances()) {
-    if constexpr (is_eigen_type_v<typename T2::value_type>) {
-      throw std::runtime_error("This dtype cannot have a variance.");
-    } else {
+    if constexpr (canHaveVariances<typename T2::value_type>()) {
       auto b_var = b.variances();
       auto out_var = out.variances();
       transform_elements_with_variance(op, ValuesAndVariances{out_val, out_var},
@@ -619,8 +609,12 @@ template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 /// equivalent to std::transform with a single input range and an output range
 /// identical to the input range, but avoids potentially costly element copies.
 template <class... Ts, class Var, class Op>
-void transform_in_place(Var &var, Op op) {
+void transform_in_place(Var &&var, Op op) {
   using namespace detail;
+  auto unit = var.unit();
+  op(unit);
+  // Stop early in bad cases of changing units (if `var` is a slice):
+  var.expectCanSetUnit(unit);
   try {
     // If a sparse_container<T> is specified explicitly as a type we assume that
     // the caller provides a matching overload. Otherwise we assume the provided
@@ -639,6 +633,7 @@ void transform_in_place(Var &var, Op op) {
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
+  var.setUnit(unit);
 }
 
 namespace detail {
@@ -677,9 +672,14 @@ void transform_in_place(std::tuple<Ts...> &&, Var &&var, const Var1 &other,
 template <class... TypePairs, class Var, class Var1, class Op>
 void transform_in_place(Var &&var, const Var1 &other, Op op) {
   expect::contains(var.dims(), other.dims());
+  auto unit = var.unit();
+  op(unit, other.unit());
+  // Stop early in bad cases of changing units (if `var` is a slice):
+  var.expectCanSetUnit(unit);
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   detail::transform_in_place(std::tuple_cat(TypePairs{}...),
                              std::forward<Var>(var), other, op);
+  var.setUnit(unit);
 }
 
 /// Accumulate data elements of a variable in-place.
@@ -689,6 +689,10 @@ void transform_in_place(Var &&var, const Var1 &other, Op op) {
 /// to broadcast the dimension of the first argument to that of the other
 /// argument. As a consequence, the operation may be applied multiple times to
 /// the same output element, effectively accumulating the result.
+///
+/// WARNING: In contrast to the transform algorithms, accumulate does not touch
+/// the unit, since it would be hard to track, e.g., in multiplication
+/// operations.
 template <class... TypePairs, class Var, class Var1, class Op>
 void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
   expect::contains(other.dims(), var.dims());
@@ -705,19 +709,23 @@ void accumulate_in_place(Var &&var, const Var1 &other, Op op) {
 template <class... Ts, class Var, class Op>
 [[nodiscard]] Variable transform(const Var &var, Op op) {
   using namespace detail;
+  auto unit = op(var.unit());
+  Variable result;
   try {
     if constexpr ((is_sparse_v<Ts> || ...)) {
-      return scipp::core::visit_impl<Ts...>::apply(Transform{op},
-                                                   var.dataHandle());
+      result = scipp::core::visit_impl<Ts...>::apply(Transform{op},
+                                                     var.dataHandle());
     } else {
-      return scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
-          .apply(
-              Transform{detail::overloaded_sparse{op, TransformSparse<Op>{op}}},
-              var.dataHandle());
+      result = scipp::core::visit(augment::insert_sparse(std::tuple<Ts...>{}))
+                   .apply(Transform{detail::overloaded_sparse{
+                              op, TransformSparse<Op>{op}}},
+                          var.dataHandle());
     }
   } catch (const std::bad_variant_access &) {
     throw std::runtime_error("Operation not implemented for this type.");
   }
+  result.setUnit(unit);
+  return result;
 }
 
 namespace detail {
@@ -753,8 +761,12 @@ Variable transform(std::tuple<Ts...> &&, const Var1 &var1, const Var2 &var2,
 /// need for, e.g., std::back_inserter.
 template <class... TypePairs, class Var1, class Var2, class Op>
 [[nodiscard]] Variable transform(const Var1 &var1, const Var2 &var2, Op op) {
+  auto unit = op(var1.unit(), var2.unit());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  return detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
+  auto result =
+      detail::transform(std::tuple_cat(TypePairs{}...), var1, var2, op);
+  result.setUnit(unit);
+  return result;
 }
 
 } // namespace scipp::core

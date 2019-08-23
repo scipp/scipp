@@ -87,6 +87,16 @@ private:
   Dimensions m_dimensions;
 };
 
+template <class T> constexpr bool canHaveVariances() noexcept {
+  using U = std::remove_const_t<T>;
+  return std::is_same_v<U, double> || std::is_same_v<U, float> ||
+         std::is_same_v<U, int64_t> || std::is_same_v<U, int32_t> ||
+         std::is_same_v<U, sparse_container<double>> ||
+         std::is_same_v<U, sparse_container<float>> ||
+         std::is_same_v<U, sparse_container<int64_t>> ||
+         std::is_same_v<U, sparse_container<int32_t>>;
+}
+
 /// Partially typed implementation of VariableConcept. This is a common base
 /// class for DataModel<T> and ViewModel<T>. The former holds data in a
 /// contiguous array, whereas the latter is a (potentially non-contiguous) view

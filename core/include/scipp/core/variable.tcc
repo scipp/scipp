@@ -316,12 +316,16 @@ public:
             std::optional<T> variances = std::nullopt)
       : VariableConceptT<typename T::value_type>(std::move(dimensions)),
         m_values(std::move(model)), m_variances(std::move(variances)) {
+    if (m_variances && !canHaveVariances<value_type>())
+      throw except::VariancesError("This data type cannot have variances.");
     if (this->dims().volume() != scipp::size(m_values))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
   }
 
   void setVariances(Vector<value_type> &&v) override {
+    if (!canHaveVariances<value_type>())
+      throw except::VariancesError("This data type cannot have variances.");
     if (v.size() != m_values.size())
       throw except::SizeError(std::string("Sizes should match in ") +
                               __PRETTY_FUNCTION__);

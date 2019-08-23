@@ -14,8 +14,11 @@ using namespace scipp::core;
 
 class TransformUnaryTest : public ::testing::Test {
 protected:
-  static constexpr auto op_in_place{[](auto &x) { x *= 2.0; }};
-  static constexpr auto op{[](const auto x) { return x * 2.0; }};
+  static constexpr auto op_in_place{
+      overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
+  static constexpr auto op{
+      overloaded{[](const auto x) { return x * 2.0; },
+                 [](const units::Unit &unit) { return unit; }}};
 };
 
 TEST_F(TransformUnaryTest, dense) {
@@ -87,10 +90,29 @@ TEST_F(TransformUnaryTest, sparse_values_variances_size_fail) {
   ASSERT_NO_THROW(transform_in_place<double>(a, op_in_place));
 }
 
+TEST_F(TransformUnaryTest, in_place_unit_change) {
+  const auto var = makeVariable<double>({Dim::X, 2}, units::m, {1.0, 2.0});
+  const auto expected =
+      makeVariable<double>({Dim::X, 2}, units::m * units::m, {1.0, 4.0});
+  auto op_ = [](auto &&a) { a *= a; };
+  Variable result;
+
+  result = var;
+  transform_in_place<double>(result, op_);
+  EXPECT_EQ(result, expected);
+
+  // Unit changes but we are transforming only parts of data -> not possible.
+  result = var;
+  EXPECT_THROW(transform_in_place<double>(result.slice({Dim::X, 1}), op_),
+               except::UnitError);
+}
+
 TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var = makeVariable<float>({Dim::X, 2}, {1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out = transform<float>(var, [](const auto x) { return -1.0 * x; });
+  auto out = transform<float>(
+      var, overloaded{[](const auto x) { return -1.0 * x; },
+                      [](const units::Unit &unit) { return unit; }});
   EXPECT_TRUE(equals(out.values<double>(), {-1.1f, -2.2f}));
 }
 
@@ -243,6 +265,36 @@ TEST_F(TransformBinaryTest, sparse_size_fail) {
                except::SizeError);
 }
 
+TEST_F(TransformBinaryTest, in_place_unit_change) {
+  const auto var = makeVariable<double>({Dim::X, 2}, units::m, {1.0, 2.0});
+  const auto expected =
+      makeVariable<double>({Dim::X, 2}, units::m * units::m, {1.0, 4.0});
+  auto op_ = [](auto &&a, auto &&b) { a *= b; };
+  Variable result;
+
+  result = var;
+  transform_in_place<pair_self_t<double>>(result, var, op_);
+  EXPECT_EQ(result, expected);
+
+  // Unit changes but we are transforming only parts of data -> not possible.
+  result = var;
+  EXPECT_THROW(transform_in_place<pair_self_t<double>>(
+                   result.slice({Dim::X, 1}), var.slice({Dim::X, 1}), op_),
+               except::UnitError);
+}
+
+TEST(AccumulateTest, in_place) {
+  const auto var = makeVariable<double>({Dim::X, 2}, units::m, {1.0, 2.0});
+  const auto expected = makeVariable<double>(3.0);
+  auto op_ = [](auto &&a, auto &&b) { a += b; };
+  Variable result;
+
+  // Note how accumulate is ignoring the unit.
+  result = makeVariable<double>({});
+  accumulate_in_place<pair_self_t<double>>(result, var, op_);
+  EXPECT_EQ(result, expected);
+}
+
 TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
   const auto var = makeVariable<Eigen::Vector3d>(
       {Dim::X, 2},
@@ -326,7 +378,8 @@ TEST(TransformTest, unary_on_sparse_container) {
   a_[0] = {1, 4, 9};
   a_[1] = {4};
 
-  transform_in_place<sparse_container<double>>(a, [](auto &x) { x.clear(); });
+  transform_in_place<sparse_container<double>>(
+      a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}});
   EXPECT_TRUE(a_[0].empty());
   EXPECT_TRUE(a_[1].empty());
 }
@@ -343,7 +396,8 @@ TEST(TransformTest, unary_on_sparse_container_with_variance) {
   vars[0] = {1.1, 2.2, 3.3};
   vars[1] = {4.4};
 
-  transform_in_place<sparse_container<double>>(a, [](auto &x) { x.clear(); });
+  transform_in_place<sparse_container<double>>(
+      a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}});
   EXPECT_TRUE(vals[0].empty());
   EXPECT_TRUE(vals[1].empty());
   EXPECT_TRUE(vars[0].empty());
@@ -366,9 +420,10 @@ TEST(TransformTest, unary_on_sparse_container_with_variance_size_fail) {
   // If an exception occures due to a size mismatch between values and variances
   // we give a strong exception guarantee, i.e., data is untouched. Note that
   // there is no such guarantee if an exception occurs in the provided lambda.
-  ASSERT_THROW(transform_in_place<sparse_container<double>>(
-                   a, [](auto &x) { x.clear(); }),
-               except::SizeError);
+  ASSERT_THROW(
+      transform_in_place<sparse_container<double>>(
+          a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}}),
+      except::SizeError);
   EXPECT_EQ(a, expected);
 }
 
@@ -389,7 +444,9 @@ TEST(TransformTest, binary_on_sparse_container_with_variance_size_fail) {
   // we give a strong exception guarantee, i.e., data is untouched. Note that
   // there is no such guarantee if an exception occurs in the provided lambda.
   ASSERT_THROW(transform_in_place<pair_self_t<sparse_container<double>>>(
-                   a, a, [](auto &x, const auto &) { x.clear(); }),
+                   a, a,
+                   overloaded{[](auto &x, const auto &) { x.clear(); },
+                              [](units::Unit &, const units::Unit &) {}}),
                except::SizeError);
   EXPECT_EQ(a, expected);
 }
@@ -412,7 +469,9 @@ TEST(TransformTest,
   // Size mismatch between a and b is allowed for a user-defined operation on
   // the sparse container.
   ASSERT_NO_THROW(transform_in_place<pair_self_t<sparse_container<double>>>(
-      a, b, [](auto &x, const auto &) { x.clear(); }));
+      a, b,
+      overloaded{[](auto &x, const auto &) { x.clear(); },
+                 [](units::Unit &, const units::Unit &) {}}));
   EXPECT_EQ(a, expected);
 }
 
@@ -677,13 +736,17 @@ constexpr auto user_op(const double) { return 123.0; }
 constexpr auto user_op(const scipp::core::detail::ValueAndVariance<double>) {
   return scipp::core::detail::ValueAndVariance<double>{123.0, 456.0};
 }
+constexpr auto user_op(const units::Unit &) { return units::s; }
+
 TEST(TransformTest, user_op_with_variances) {
-  auto var = makeVariable<double>({Dim::X, 2}, {1.1, 2.2}, {1.1, 3.0});
+  auto var =
+      makeVariable<double>({Dim::X, 2}, units::m, {1.1, 2.2}, {1.1, 3.0});
 
   const auto result = transform<double>(var, [](auto x) { return user_op(x); });
   transform_in_place<double>(var, [](auto &x) { x = user_op(x); });
 
-  EXPECT_TRUE(equals(var.values<double>(), {123, 123}));
-  EXPECT_TRUE(equals(var.variances<double>(), {456, 456}));
+  auto expected =
+      makeVariable<double>({Dim::X, 2}, units::s, {123, 123}, {456, 456});
+  EXPECT_EQ(result, expected);
   EXPECT_EQ(result, var);
 }

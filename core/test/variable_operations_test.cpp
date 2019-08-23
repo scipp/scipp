@@ -13,20 +13,18 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(Variable, operator_unary_minus) {
-  const auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  const auto a = makeVariable<double>({Dim::X, 2}, units::m, {1.1, 2.2});
+  const auto expected =
+      makeVariable<double>({Dim::X, 2}, units::m, {-1.1, -2.2});
   auto b = -a;
-  EXPECT_EQ(a.values<double>()[0], 1.1);
-  EXPECT_EQ(a.values<double>()[1], 2.2);
-  EXPECT_EQ(b.values<double>()[0], -1.1);
-  EXPECT_EQ(b.values<double>()[1], -2.2);
+  EXPECT_EQ(b, expected);
 }
 
 TEST(VariableProxy, unary_minus) {
-  const auto a = makeVariable<double>({Dim::X, 2}, {1.1, 2.2});
+  const auto a = makeVariable<double>({Dim::X, 2}, units::m, {1.1, 2.2});
+  const auto expected = makeVariable<double>({}, units::m, {-2.2});
   auto b = -a.slice({Dim::X, 1});
-  EXPECT_EQ(a.values<double>()[0], 1.1);
-  EXPECT_EQ(a.values<double>()[1], 2.2);
-  EXPECT_EQ(b.values<double>()[0], -2.2);
+  EXPECT_EQ(b, expected);
 }
 
 TEST(Variable, operator_plus_equal) {
@@ -75,8 +73,7 @@ TEST(Variable, operator_plus_equal_different_unit) {
 
   auto different_unit(a);
   different_unit.setUnit(units::m);
-  EXPECT_THROW_MSG(a += different_unit, except::UnitMismatchError,
-                   "dimensionless expected to be equal to m");
+  EXPECT_ANY_THROW(a += different_unit);
 }
 
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
@@ -135,6 +132,16 @@ TEST(Variable, operator_plus) {
   vars[2] = {4.0, 4.0};
   vars[3] = {4.0};
   EXPECT_EQ(sum, expected);
+}
+
+TEST(Variable, operator_plus_unit_fail) {
+  auto a = makeVariable<double>({Dim::X, 2}, {1.0, 2.0}, {3.0, 4.0});
+  a.setUnit(units::m);
+  auto b = makeVariable<double>({Dim::X, 2}, {1.0, 2.0}, {3.0, 4.0});
+  b.setUnit(units::s);
+  ASSERT_ANY_THROW(a + b);
+  b.setUnit(units::m);
+  ASSERT_NO_THROW(a + b);
 }
 
 TEST(Variable, operator_plus_eigen_type) {
@@ -478,14 +485,14 @@ TEST(Variable, rebin) {
 #endif
 
 TEST(Variable, sum) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
-  auto sumX = sum(var, Dim::X);
-  ASSERT_EQ(sumX.dims(), (Dimensions{Dim::Y, 2}));
-  EXPECT_TRUE(equals(sumX.values<double>(), {3.0, 7.0}));
-  auto sumY = sum(var, Dim::Y);
-  ASSERT_EQ(sumY.dims(), (Dimensions{Dim::X, 2}));
-  EXPECT_TRUE(equals(sumY.values<double>(), {4.0, 6.0}));
+  const auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                                        {1.0, 2.0, 3.0, 4.0});
+  const auto expectedX =
+      makeVariable<double>({{Dim::Y, 2}}, units::m, {3.0, 7.0});
+  const auto expectedY =
+      makeVariable<double>({{Dim::X, 2}}, units::m, {4.0, 6.0});
+  EXPECT_EQ(sum(var, Dim::X), expectedX);
+  EXPECT_EQ(sum(var, Dim::Y), expectedY);
 }
 
 TEST(Variable, mean) {

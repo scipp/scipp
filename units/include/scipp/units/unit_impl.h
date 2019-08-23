@@ -64,6 +64,11 @@ public:
   bool operator==(const Unit_impl<T, Counts> &other) const;
   bool operator!=(const Unit_impl<T, Counts> &other) const;
 
+  Unit_impl operator+=(const Unit_impl &other);
+  Unit_impl operator-=(const Unit_impl &other);
+  Unit_impl operator*=(const Unit_impl &other);
+  Unit_impl operator/=(const Unit_impl &other);
+
 private:
   unit_t m_unit{units::dimensionless};
   static constexpr auto m_lut{detail::make_lut(T{})};
@@ -82,6 +87,10 @@ Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
 template <class T, class Counts>
 Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b);
+template <class T, class Counts>
+Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a);
+template <class T, class Counts>
+Unit_impl<T, Counts> abs(const Unit_impl<T, Counts> &a);
 template <class T, class Counts>
 Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a);
 
