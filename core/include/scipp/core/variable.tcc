@@ -86,8 +86,9 @@ static void rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
 }
 
 template <typename T>
-void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
-                     const Variable &oldCoordT, const Variable &newCoordT) {
+void rebin_non_inner(const Dim dim, const VariableConstProxy &oldT,
+                     Variable &newT, const VariableConstProxy &oldCoordT,
+                     const VariableConstProxy &newCoordT) {
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
 

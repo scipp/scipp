@@ -280,8 +280,9 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   return out;
 }
 
-Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
-               const Variable &newCoord) {
+Variable rebin(const VariableConstProxy &var, const Dim dim,
+               const VariableConstProxy &oldCoord,
+               const VariableConstProxy &newCoord) {
   expect::notSparse(var);
   expect::notSparse(oldCoord);
   expect::notSparse(newCoord);
@@ -317,7 +318,7 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
   if (rebinned.dims().inner() == dim) {
     apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord, newCoord);
   } else {
-    if (newCoord.dims().shape().size() > 1)
+    if (newCoord.dims().ndims() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
     switch (rebinned.dtype()) {

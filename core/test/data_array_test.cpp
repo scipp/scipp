@@ -46,7 +46,7 @@ TEST(DataArrayTest, rebin) {
                                           units::counts, {3, 7, 11, 15}),
                      {{Dim::X, edges}}, {});
 
-  ASSERT_EQ(rebin(a, Dim::X, VariableConstProxy(edges)), expected);
+  ASSERT_EQ(rebin(a, Dim::X, edges), expected);
 }
 
 TEST(DataArrayTest, rebin_with_variances) {
@@ -61,5 +61,5 @@ TEST(DataArrayTest, rebin_with_variances) {
                                           {19, 23, 27, 31}),
                      {{Dim::X, edges}}, {});
 
-  ASSERT_EQ(rebin(a, Dim::X, VariableConstProxy(edges)), expected);
+  ASSERT_EQ(rebin(a, Dim::X, edges), expected);
 }
