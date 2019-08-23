@@ -256,14 +256,19 @@ public:
   explicit Dataset(const DataConstProxy &data);
   explicit Dataset(const std::map<std::string, DataConstProxy> &data);
 
-  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
-  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
-    for (auto && [ dim, coord ] : coords)
-      setCoord(dim, std::move(coord));
+  template <class LabelsMap, class AttrMap>
+  Dataset(LabelsMap labels, AttrMap attrs) {
     for (auto && [ name, labs ] : labels)
       setLabels(std::string(name), std::move(labs));
     for (auto && [ name, attr ] : attrs)
       setAttr(std::string(name), std::move(attr));
+  }
+
+  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
+  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs)
+      : Dataset(labels, attrs) {
+    for (auto && [ dim, coord ] : coords)
+      setCoord(dim, std::move(coord));
     for (auto && [ name, item ] : data)
       setData(std::string(name), std::move(item));
   }
@@ -963,22 +968,18 @@ SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 
 SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
                                 const DatasetConstProxy &b);
-
-template<class DS>
-Dataset sum_(const DS &ds, const Dim dimension) {
-  Dataset res;
-  for (auto && [ dim, coord ] : ds.coords()) {
+namespace detail {
+template <class DS> Dataset sum_impl(const DS &ds, const Dim dimension) {
+  Dataset res(ds.labels(), ds.attrs());
+  for (auto && [ dim, coord ] : ds.coords())
     if (dimension != dim)
       res.setCoord(dim, std::move(coord));
-  }
-  for (auto && [ name, labs ] : ds.labels())
-      res.setLabels(std::string(name), std::move(labs));
-  for (auto && [ name, attr ] : ds.attrs())
-    res.setAttr(std::string(name), std::move(attr));
-  for (auto && [ name, item ] : ds) //item is DataConstproxy
-    res.setData(std::string(name), sum(Variable(item.data()), dimension));
+  for (auto && [ name, item ] : ds) // item is DataConstProxy
+    res.setData(std::string(name),
+                sum(Variable(item.data()), dimension)); // TODO sparse data
   return res;
 }
+} // namespace detail
 
 SCIPP_CORE_EXPORT Dataset sum(const Dataset &ds, const Dim dimension);
 SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &ds, const Dim dimension);
