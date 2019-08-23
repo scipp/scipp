@@ -26,62 +26,65 @@ template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
 
-template <class T> class DataModel;
 template <class T> class VariableConceptT;
-template <class T> struct RebinHelper {
-  // Special rebin version for rebinning inner dimension to a joint new coord.
-  static void rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
-                         VariableConceptT<T> &newT,
-                         const VariableConceptT<T> &oldCoordT,
-                         const VariableConceptT<T> &newCoordT) {
-    const auto &oldData = oldT.values();
-    auto newData = newT.values();
-    const auto oldSize = oldT.dims()[dim];
-    const auto newSize = newT.dims()[dim];
-    const auto count = oldT.dims().volume() / oldSize;
-    const auto *xold = &*oldCoordT.values().begin();
-    const auto *xnew = &*newCoordT.values().begin();
-    // This function assumes that dimensions between coord and data either
-    // match, or coord is 1D.
-    const bool jointOld = oldCoordT.dims().shape().size() == 1;
-    const bool jointNew = newCoordT.dims().shape().size() == 1;
-#pragma omp parallel for
-    for (scipp::index c = 0; c < count; ++c) {
-      scipp::index iold = 0;
-      scipp::index inew = 0;
-      const scipp::index oldEdgeOffset = jointOld ? 0 : c * (oldSize + 1);
-      const scipp::index newEdgeOffset = jointNew ? 0 : c * (newSize + 1);
-      const auto oldOffset = c * oldSize;
-      const auto newOffset = c * newSize;
-      while ((iold < oldSize) && (inew < newSize)) {
-        auto xo_low = xold[oldEdgeOffset + iold];
-        auto xo_high = xold[oldEdgeOffset + iold + 1];
-        auto xn_low = xnew[newEdgeOffset + inew];
-        auto xn_high = xnew[newEdgeOffset + inew + 1];
+template <class T>
+// Special rebin version for rebinning inner dimension to a joint new coord.
+static void rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
+                       VariableConceptT<T> &newT,
+                       const VariableConceptT<T> &oldCoordT,
+                       const VariableConceptT<T> &newCoordT, bool variances=false) {
+  scipp::span<const T> oldData;
+  scipp::span<T> newData;
+  if(variances) {
+    oldData = oldT.variances();
+    newData = newT.variances();
+  } else {
+    oldData = oldT.values();
+    newData = newT.values();
+  }
+  const auto oldSize = oldT.dims()[dim];
+  const auto newSize = newT.dims()[dim];
+  const auto count = oldT.dims().volume() / oldSize;
+  const auto *xold = &*oldCoordT.values().begin();
+  const auto *xnew = &*newCoordT.values().begin();
+  // This function assumes that dimensions between coord and data either
+  // match, or coord is 1D.
+  const bool jointOld = oldCoordT.dims().shape().size() == 1;
+  const bool jointNew = newCoordT.dims().shape().size() == 1;
+  for (scipp::index c = 0; c < count; ++c) {
+    scipp::index iold = 0;
+    scipp::index inew = 0;
+    const scipp::index oldEdgeOffset = jointOld ? 0 : c * (oldSize + 1);
+    const scipp::index newEdgeOffset = jointNew ? 0 : c * (newSize + 1);
+    const auto oldOffset = c * oldSize;
+    const auto newOffset = c * newSize;
+    while ((iold < oldSize) && (inew < newSize)) {
+      auto xo_low = xold[oldEdgeOffset + iold];
+      auto xo_high = xold[oldEdgeOffset + iold + 1];
+      auto xn_low = xnew[newEdgeOffset + inew];
+      auto xn_high = xnew[newEdgeOffset + inew + 1];
 
-        if (xn_high <= xo_low)
-          inew++; /* old and new bins do not overlap */
-        else if (xo_high <= xn_low)
-          iold++; /* old and new bins do not overlap */
-        else {
-          // delta is the overlap of the bins on the x axis
-          auto delta = xo_high < xn_high ? xo_high : xn_high;
-          delta -= xo_low > xn_low ? xo_low : xn_low;
+      if (xn_high <= xo_low)
+        inew++; /* old and new bins do not overlap */
+      else if (xo_high <= xn_low)
+        iold++; /* old and new bins do not overlap */
+      else {
+        // delta is the overlap of the bins on the x axis
+        auto delta = xo_high < xn_high ? xo_high : xn_high;
+        delta -= xo_low > xn_low ? xo_low : xn_low;
 
-          auto owidth = xo_high - xo_low;
-          newData[newOffset + inew] +=
-              oldData[oldOffset + iold] * delta / owidth;
+        auto owidth = xo_high - xo_low;
+        newData[newOffset + inew] += oldData[oldOffset + iold] * delta / owidth;
 
-          if (xn_high > xo_high) {
-            iold++;
-          } else {
-            inew++;
-          }
+        if (xn_high > xo_high) {
+          iold++;
+        } else {
+          inew++;
         }
       }
     }
   }
-};
+}
 
 template <typename T>
 void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,

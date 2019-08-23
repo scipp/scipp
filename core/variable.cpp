@@ -302,9 +302,9 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
     if (dims.inner() == dim &&
         isMatchingOr1DBinEdge(dim, oldCoordT.dims(), oldT.dims()) &&
         isMatchingOr1DBinEdge(dim, newCoordT.dims(), dims)) {
-      RebinHelper<typename std::remove_reference_t<decltype(
-          outT)>::value_type>::rebinInner(dim, oldT, outT, oldCoordT,
-                                          newCoordT);
+      rebinInner(dim, oldT, outT, oldCoordT, newCoordT);
+      if (oldT.hasVariances())
+        rebinInner(dim, oldT, outT, oldCoordT, newCoordT, true);
     } else {
       throw std::runtime_error(
           "TODO the new coord should be 1D or the same dim as newCoord.");

@@ -1210,4 +1210,12 @@ DataArray rebin(const DataConstProxy &a, const Dim dim,
   return {std::move(rebinned), std::move(coords), std::move(labels)};
 }
 
+Dataset rebin(const DatasetConstProxy &d, const Dim dim,
+              const VariableConstProxy &coord) {
+  Dataset rebinned;
+  for (const auto & [ name, data ] : d)
+    rebinned.setData(name, rebin(data, dim, coord));
+  return rebinned;
+}
+
 } // namespace scipp::core
