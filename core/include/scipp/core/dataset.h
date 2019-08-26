@@ -983,8 +983,7 @@ template <class DS> Dataset sum_impl(const DS &ds, const Dim dimension) {
     if (!item.data().dims().contains(dimension))
       res.setData(name, item.data());
     else
-      res.setData(std::string(name),
-                  sum(item.data(), dimension));
+      res.setData(std::string(name), sum(item.data(), dimension));
   }
   return res;
 }
