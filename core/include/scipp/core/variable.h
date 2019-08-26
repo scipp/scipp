@@ -792,6 +792,7 @@ SCIPP_CORE_EXPORT Variable rebin(const Variable &var, const Variable &oldCoord,
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
 SCIPP_CORE_EXPORT Variable sum(const Variable &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);
