@@ -407,6 +407,15 @@ Variable sum(const Variable &var, const Dim dim) {
   return summed;
 }
 
+Variable sum(const VariableConstProxy &var, const Dim dim) {
+  auto dims = var.dims();
+  dims.erase(dim);
+  Variable summed(var, dims);
+  accumulate_in_place<pair_self_t<double, float, int64_t, Eigen::Vector3d>>(
+      summed, var, [](auto &&a, auto &&b) { a += b; });
+  return summed;
+}
+
 Variable mean(const Variable &var, const Dim dim) {
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
