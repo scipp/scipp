@@ -86,6 +86,7 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         [](const T &self, const DatasetProxy &other) { return self == other; });
   c.def("copy", [](const T &self) { return Dataset(self); },
         "Return a (deep) copy.");
+  c.def("sum", [](const T &self, const Dim &dim) { return sum(self, dim); });
 }
 
 template <class T, class... Ignored>

@@ -846,6 +846,19 @@ auto apply_with_broadcast(const Op &op, const DataConstProxy &a, const B &b) {
   return res;
 }
 
+bool Dataset::containsSparse() const noexcept {
+  for (auto &&item : m_data) {
+    const auto &data = item.second.data;
+    if (data) {
+      if (data->dims().sparse())
+        return true;
+    }
+    if (item.second.coord || !item.second.labels.empty())
+      return true;
+  }
+  return false;
+}
+
 Dataset &Dataset::operator+=(const DataConstProxy &other) {
   return apply_with_delay(operator_detail::plus_equals{}, *this, other);
 }
@@ -900,6 +913,10 @@ std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
     all[dim.first] = extents::decodeExtent(dim.second);
   }
   return all;
+}
+
+bool DatasetConstProxy::containsSparse() const noexcept {
+  return m_dataset ? m_dataset->containsSparse() : false;
 }
 
 DatasetProxy DatasetProxy::operator+=(const DataConstProxy &other) const {
