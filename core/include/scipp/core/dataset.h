@@ -281,6 +281,7 @@ public:
   index size() const noexcept { return scipp::size(m_data); }
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+  [[nodiscard]] bool containsSparse() const noexcept;
 
   void clear();
 
@@ -667,6 +668,7 @@ public:
 
   index size() const noexcept { return m_indices.size(); }
   [[nodiscard]] bool empty() const noexcept { return m_indices.empty(); }
+  [[nodiscard]] bool containsSparse() const noexcept;
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
@@ -970,13 +972,22 @@ SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
                                 const DatasetConstProxy &b);
 namespace detail {
 template <class DS> Dataset sum_impl(const DS &ds, const Dim dimension) {
+  if (ds.containsSparse())
+    throw std::logic_error("Can't sum Dataset with sparse data");
+  if (!ds.dimensions().count(dimension))
+    throw std::logic_error("Can't sum Dataset on non existing dimension.");
   Dataset res(ds.labels(), ds.attrs());
   for (auto && [ dim, coord ] : ds.coords())
     if (dimension != dim)
       res.setCoord(dim, std::move(coord));
   for (auto && [ name, item ] : ds) // item is DataConstProxy
-    res.setData(std::string(name),
-                sum(Variable(item.data()), dimension)); // TODO sparse data
+  {
+    if (!item.data().dims().contains(dimension))
+      res.setData(name, item.data());
+    else
+      res.setData(std::string(name),
+                  sum(item.data(), dimension));
+  }
   return res;
 }
 } // namespace detail
