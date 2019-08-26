@@ -952,3 +952,9 @@ TEST(VariableTest, variances_unsupported_type_fail) {
   ASSERT_THROW(makeVariable<std::string>({Dim::X, 1}, {"a"}, {"variances"}),
                except::VariancesError);
 }
+
+TEST(VariableTest, construct_proxy_dims) {
+  auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, 3});
+  Variable vv(var.slice({Dim::X, 0, 2}));
+  Variable svar = Variable(var.slice({Dim::X, 0, 2}), Dimensions(Dim::Y, 2));
+}

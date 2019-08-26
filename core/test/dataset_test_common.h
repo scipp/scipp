@@ -94,4 +94,15 @@ auto make_1_values_and_variances(const std::string &name,
   return d;
 }
 
+Dataset make_simple_sparse(std::initializer_list<double> values,
+                           std::string key = "sparse");
+
+Dataset make_sparse_with_coords_and_labels(
+    std::initializer_list<double> values,
+    std::initializer_list<double> coords_and_labels,
+    std::string key = "sparse");
+
+Dataset make_sparse_2d(std::initializer_list<double> values,
+                       std::string key = "sparse");
+
 #endif // DATASET_TEST_COMMON_H
