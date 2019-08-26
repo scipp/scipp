@@ -491,6 +491,11 @@ TEST(Variable, sum) {
   EXPECT_EQ(sum(var, Dim::Y), expectedY);
 }
 
+TEST(VariableConstProxy, sum) {
+  const auto var = makeVariable<float>({Dim::X, 4}, {1.0, 2.0, 3.0, 4.0});
+  EXPECT_EQ(sum(var.slice({Dim::X, 0, 2}), Dim::X), makeVariable<float>(3));
+}
+
 TEST(Variable, mean) {
   auto var =
       makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
