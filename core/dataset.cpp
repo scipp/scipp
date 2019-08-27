@@ -1120,8 +1120,8 @@ Dataset operator/(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
 
 // For now this implementation is only for the simplest case of 2 dims (inner
 // stands for sparse)
-Variable histogram(const DataConstProxy &sparse,
-                   const VariableConstProxy &binEdges) {
+DataArray histogram(const DataConstProxy &sparse,
+                    const VariableConstProxy &binEdges) {
   if (sparse.hasData())
     throw except::SparseDataError(
         "`histogram` is not implemented for sparse data with values yet.");
@@ -1151,10 +1151,14 @@ Variable histogram(const DataConstProxy &sparse,
   }
   std::copy(result.values<double>().begin(), result.values<double>().end(),
             result.variances<double>().begin());
-  return result;
+
+  std::map<Dim, Variable> coords;
+  coords.emplace(dim, binEdges);
+  return {std::move(result), std::move(coords),
+          std::map<std::string, Variable>()};
 }
 
-Variable histogram(const DataConstProxy &sparse, const Variable &binEdges) {
+DataArray histogram(const DataConstProxy &sparse, const Variable &binEdges) {
   return histogram(sparse, VariableConstProxy(binEdges));
 }
 

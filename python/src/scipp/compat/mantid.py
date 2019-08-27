@@ -20,15 +20,19 @@ def convert_instrument(ws):
 
 
 def initPosSpectrumNo(nHist, ws):
-    try:
-        pos = sc.Variable(
-            [sc.Dim.Position], values=[
-                get_pos(ws.spectrumInfo().position(j)) for j in range(nHist)])
-    except RuntimeError:
-        pos = None
-    num = sc.Variable(
-        [sc.Dim.Position],
-        values=[ws.getSpectrum(j).getSpectrumNo() for j in range(nHist)])
+
+    pos = np.zeros([nHist, 3])
+    num = np.zeros([nHist], dtype=np.int32)
+
+    spec_info = ws.spectrumInfo()
+    for i in range(nHist):
+        p = spec_info.position(i)
+        pos[i, :] = [p.X(), p.Y(), p.Z()]
+        # For V20, geometry x and y are swapped:
+        # pos[i, :] = [p.Y(), p.X(), p.Z()]
+        num[i] = ws.getSpectrum(i).getSpectrumNo()
+    pos = sc.Variable([sc.Dim.Position], values=pos, unit=sc.units.m)
+    num = sc.Variable([sc.Dim.Position], values=num)
     return pos, num
 
 
@@ -65,7 +69,7 @@ def ConvertWorkspace2DToDataset(ws):
 
     for i in range(ws.getNumberHistograms()):
         var[sc.Dim.Position, i].values = ws.readY(i)
-        var[sc.Dim.Position, i].variances = ws.readE(i) * ws.readE(i)
+        var[sc.Dim.Position, i].variances = np.power(ws.readE(i), 2)
 
     return sc.DataArray(data=var, coords={dim: coords, sc.Dim.Position: pos},
                         labels={"spectrum_number": num,
@@ -88,8 +92,10 @@ def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
     comp_info = convert_instrument(ws)
     pos, num = initPosSpectrumNo(nHist, ws)
 
+    # TODO Use unit information in workspace, if available.
     coords = sc.Variable([sc.Dim.Position, dim],
-                         shape=[nHist, sc.Dimensions.Sparse])
+                         shape=[nHist, sc.Dimensions.Sparse],
+                         unit=sc.units.counts)
     if not drop_pulse_times:
         labs = sc.Variable([sc.Dim.Position, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
@@ -111,13 +117,17 @@ def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
     return sc.DataArray(**coords_and_labs)
 
 
-def load(filename="", drop_pulse_times=False, **kwargs):
+def load(filename="", drop_pulse_times=False, instrument_filename=None,
+         **kwargs):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
     specific code from the scipp interface.
     """
     import mantid.simpleapi as mantid
     ws = mantid.LoadEventNexus(filename, **kwargs)
+    if instrument_filename is not None:
+        mantid.LoadInstrument(ws, FileName=instrument_filename,
+                              RewriteSpectraMap=True)
     if ws.id() == 'Workspace2D':
         return ConvertWorkspace2DToDataset(ws)
     if ws.id() == 'EventWorkspace':
