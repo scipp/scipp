@@ -333,7 +333,7 @@ void init_variable(py::module &m) {
         :raises: If the dtype has no square-root, e.g., if it is a string
         :return: Copy of the input with values replaced by the square-root.
         :rtype: Variable)");
-  m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
+  m.def("sum", py::overload_cast<const VariableConstProxy &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise sum over the specified dimension.
 
