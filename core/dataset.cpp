@@ -65,6 +65,13 @@ auto makeProxyItems(const Dimensions &dims, T1 &coords, T2 *sparse = nullptr) {
 Dataset::Dataset(const DatasetConstProxy &proxy)
     : Dataset(proxy, proxy.coords(), proxy.labels(), proxy.attrs()) {}
 
+Dataset::Dataset(const DataConstProxy &data) { setData(data.name(), data); }
+
+Dataset::Dataset(const std::map<std::string, DataConstProxy> &data) {
+  for (const auto & [ name, item ] : data)
+    setData(name, item);
+}
+
 /// Removes all data items from the Dataset.
 ///
 /// Coordinates, labels and attributes are not modified.
