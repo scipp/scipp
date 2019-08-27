@@ -144,7 +144,7 @@ auto optionalVariancesView(T &concept, Args &&... args) {
              : std::nullopt;
 }
 template <class T>
-VariableConceptHandle VariableConceptT<T>::clone(const Dimensions &dims) const {
+VariableConceptHandle VariableConceptT<T>::makeDefaultFromParent(const Dimensions &dims) const {
   using TT = Vector<std::decay_t<T>>;
   if (hasVariances())
     return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()),
