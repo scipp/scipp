@@ -367,7 +367,7 @@ Variable rebin(const Variable &var, const Variable &oldCoord,
 Variable permute(const Variable &var, const Dim dim,
                  const std::vector<scipp::index> &indices) {
   auto permuted(var);
-  for (size_t i = 0; i < indices.size(); ++i)
+  for (scipp::index i = 0; i < scipp::size(indices); ++i)
     permuted.data().copy(var.data(), dim, i, indices[i], indices[i] + 1);
   return permuted;
 }
