@@ -15,10 +15,10 @@
 
 namespace scipp::units {
 
-// Helper to check whether type is a member of a given std::variant
+// Helper to check whether type is a member of a given std::tuple
 template <typename T, typename VARIANT_T> struct isVariantMember;
 template <typename T, typename... ALL_T>
-struct isVariantMember<T, std::variant<ALL_T...>>
+struct isVariantMember<T, std::tuple<ALL_T...>>
     : public std::disjunction<std::is_same<T, ALL_T>...> {};
 // Helper to make checking for allowed units more compact
 template <class Units, class T> constexpr bool isKnownUnit(const T &) {
@@ -31,7 +31,7 @@ template <class T> std::string to_string(const T &unit) {
 }
 } // namespace units
 
-template <class... Ts> auto make_name_lut(std::variant<Ts...>) {
+template <class... Ts> auto make_name_lut(std::tuple<Ts...>) {
   return std::array{units::to_string(Ts{})...};
 }
 
@@ -46,7 +46,7 @@ template <class T, class Counts> bool Unit_impl<T, Counts>::isCounts() const {
 }
 
 template <class Counts, class... Ts>
-constexpr auto make_count_density_lut(std::variant<Ts...>) {
+constexpr auto make_count_density_lut(std::tuple<Ts...>) {
   if constexpr (std::is_same_v<Counts, decltype(dimensionless)>) {
     // Can we do anything better here? Checking for `dimensionless` in the
     // nominator could be one option, but actually it would not be correct in
@@ -111,47 +111,48 @@ Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a,
 }
 
 template <class T, class... Ts>
-constexpr auto make_times_inner(std::variant<Ts...>) {
-  using V = std::variant<Ts...>;
+constexpr auto make_times_inner(std::tuple<Ts...>) {
+  using V = std::tuple<Ts...>;
   constexpr auto times_ = [](auto x, auto y) -> int64_t {
     using resultT = typename decltype(x * y)::unit_type;
     if constexpr (isKnownUnit<V>(resultT{}))
-      return V(resultT{}).index();
+      return common::index_in_tuple<resultT, V>::value;
     return -1;
   };
   return std::array{times_(T{}, Ts{})...};
 }
 
-template <class... Ts> constexpr auto make_times_lut(std::variant<Ts...>) {
-  return std::array{make_times_inner<Ts>(std::variant<Ts...>{})...};
+template <class... Ts> constexpr auto make_times_lut(std::tuple<Ts...>) {
+  return std::array{make_times_inner<Ts>(std::tuple<Ts...>{})...};
 }
 
 template <class T, class... Ts>
-constexpr auto make_divide_inner(std::variant<Ts...>) {
-  using V = std::variant<Ts...>;
+constexpr auto make_divide_inner(std::tuple<Ts...>) {
+  using V = std::tuple<Ts...>;
   constexpr auto divide_ = [](auto x, auto y) -> int64_t {
     // It is done here to have the si::dimensionless then the units are
     // the same, but is the si::dimensionless valid for non si types? TODO
     if constexpr (std::is_same_v<decltype(x), decltype(y)>)
-      return V(dimensionless).index();
+      return common::index_in_tuple<std::decay_t<decltype(dimensionless)>,
+                                    V>::value;
     using resultT = typename decltype(x / y)::unit_type;
     if constexpr (isKnownUnit<V>(resultT{}))
-      return V(resultT{}).index();
+      return common::index_in_tuple<resultT, V>::value;
     return -1;
   };
   return std::array{divide_(T{}, Ts{})...};
 }
 
-template <class... Ts> constexpr auto make_divide_lut(std::variant<Ts...>) {
-  return std::array{make_divide_inner<Ts>(std::variant<Ts...>{})...};
+template <class... Ts> constexpr auto make_divide_lut(std::tuple<Ts...>) {
+  return std::array{make_divide_inner<Ts>(std::tuple<Ts...>{})...};
 }
 
-template <class... Ts> constexpr auto make_sqrt_lut(std::variant<Ts...>) {
-  using T = std::variant<Ts...>;
+template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
+  using T = std::tuple<Ts...>;
   constexpr auto sqrt_ = [](auto x) -> int64_t {
     using resultT = typename decltype(sqrt(1.0 * x))::unit_type;
     if constexpr (isKnownUnit<T>(resultT{}))
-      return T(resultT{}).index();
+      return common::index_in_tuple<resultT, T>::value;
     return -1;
   };
   return std::array{sqrt_(Ts{})...};

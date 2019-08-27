@@ -7,12 +7,12 @@
 #define SCIPP_UNITS_UNIT_IMPL_H
 
 #include <tuple>
-#include <variant>
 
 #include <boost/units/systems/si.hpp>
 #include <boost/units/unit.hpp>
 
 #include "scipp/common/index.h"
+#include "scipp/common/traits.h"
 
 namespace scipp::units {
 // Helper variables to make the declaration units more succinct.
@@ -27,16 +27,12 @@ static constexpr boost::units::si::temperature K;
 // std::runtime_error during operations such as multiplication or division.
 namespace detail {
 template <class... Ts, class... Extra>
-std::variant<Ts...,
-             decltype(std::declval<std::remove_cv_t<Ts>>() *
-                      std::declval<std::remove_cv_t<Ts>>())...,
-             std::remove_cv_t<Extra>...>
+std::tuple<Ts...,
+           decltype(std::declval<std::remove_cv_t<Ts>>() *
+                    std::declval<std::remove_cv_t<Ts>>())...,
+           std::remove_cv_t<Extra>...>
 make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
   return {};
-}
-
-template <class... Ts> constexpr auto make_lut(std::variant<Ts...>) {
-  return std::array{std::variant<Ts...>(Ts{})...};
 }
 
 } // namespace detail
@@ -48,13 +44,16 @@ public:
   constexpr Unit_impl() = default;
   // TODO should this be explicit?
   template <class Dim, class System, class Enable>
-  Unit_impl(boost::units::unit<Dim, System, Enable> unit) : m_unit(unit) {}
-  explicit Unit_impl(const unit_t &unit) : m_unit(unit) {}
+  Unit_impl(boost::units::unit<Dim, System, Enable> unit) {
+    m_index = common::index_in_tuple<decltype(unit), T>::value;
+  }
   static constexpr Unit_impl fromIndex(const int64_t index) {
-    return Unit_impl(m_lut[index]);
+    Unit_impl u;
+    u.m_index = index;
+    return u;
   }
 
-  constexpr scipp::index index() const noexcept { return m_unit.index(); }
+  constexpr scipp::index index() const noexcept { return m_index; }
 
   std::string name() const;
 
@@ -70,8 +69,8 @@ public:
   Unit_impl operator/=(const Unit_impl &other);
 
 private:
-  unit_t m_unit{units::dimensionless};
-  static constexpr auto m_lut{detail::make_lut(T{})};
+  scipp::index m_index{
+      common::index_in_tuple<std::decay_t<decltype(dimensionless)>, T>::value};
   // TODO need to support scale
 };
 
