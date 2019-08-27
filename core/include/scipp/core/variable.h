@@ -795,7 +795,7 @@ SCIPP_CORE_EXPORT Variable concatenate(const Variable &a1, const Variable &a2,
                                        const Dim dim);
 SCIPP_CORE_EXPORT Variable dot(const Variable &a, const Variable &b);
 SCIPP_CORE_EXPORT Variable filter(const Variable &var, const Variable &filter);
-SCIPP_CORE_EXPORT Variable mean(const Variable &var, const Dim dim);
+SCIPP_CORE_EXPORT Variable mean(const VariableConstProxy &var, const Dim dim);
 SCIPP_CORE_EXPORT Variable norm(const Variable &var);
 SCIPP_CORE_EXPORT Variable permute(const Variable &var, const Dim dim,
                                    const std::vector<scipp::index> &indices);
