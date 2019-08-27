@@ -799,7 +799,7 @@ SCIPP_CORE_EXPORT Variable rebin(const Variable &var, const Variable &oldCoord,
                                  const Variable &newCoord);
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
-SCIPP_CORE_EXPORT Variable sum(const Variable &var, const Dim dim);
+
 SCIPP_CORE_EXPORT Variable sum(const VariableConstProxy &var, const Dim dim);
 
 template <class T>
