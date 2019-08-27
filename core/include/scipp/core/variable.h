@@ -54,7 +54,7 @@ public:
 
   virtual DType dtype(bool sparse = false) const noexcept = 0;
   virtual VariableConceptHandle clone() const = 0;
-  virtual VariableConceptHandle clone(const Dimensions &dims) const = 0;
+  virtual VariableConceptHandle makeDefaultFromParent(const Dimensions &dims) const = 0;
   virtual VariableConceptHandle makeView() const = 0;
   virtual VariableConceptHandle makeView() = 0;
   virtual VariableConceptHandle makeView(const Dim dim,
@@ -156,7 +156,7 @@ public:
 
   virtual std::unique_ptr<VariableConceptT> copyT() const = 0;
 
-  VariableConceptHandle clone(const Dimensions &dims) const override;
+  VariableConceptHandle makeDefaultFromParent(const Dimensions &dims) const override;
 
   VariableConceptHandle makeView() const override;
 
