@@ -28,8 +28,6 @@ def initPosSpectrumNo(nHist, ws):
     for i in range(nHist):
         p = spec_info.position(i)
         pos[i, :] = [p.X(), p.Y(), p.Z()]
-        # For V20, geometry x and y are swapped:
-        # pos[i, :] = [p.Y(), p.X(), p.Z()]
         num[i] = ws.getSpectrum(i).getSpectrumNo()
     pos = sc.Variable([sc.Dim.Position], values=pos, unit=sc.units.m)
     num = sc.Variable([sc.Dim.Position], values=num)
