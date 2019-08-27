@@ -156,6 +156,8 @@ public:
 
   virtual std::unique_ptr<VariableConceptT> copyT() const = 0;
 
+  VariableConceptHandle clone(const Dimensions &dims) const override;
+
   VariableConceptHandle makeView() const override;
 
   VariableConceptHandle makeView() override;
