@@ -31,28 +31,37 @@ template <class T> std::string to_string(const T &unit) {
 }
 } // namespace units
 
+template <class... Ts> auto make_name_lut(std::variant<Ts...>) {
+  return std::array{units::to_string(Ts{})...};
+}
+
 template <class T, class Counts>
 std::string Unit_impl<T, Counts>::name() const {
-  return std::visit([](auto &&unit) { return units::to_string(unit); }, m_unit);
+  static const auto names = make_name_lut(T{});
+  return names[m_unit.index()];
 }
 
 template <class T, class Counts> bool Unit_impl<T, Counts>::isCounts() const {
   return *this == Counts();
 }
 
-template <class T, class Counts>
-bool Unit_impl<T, Counts>::isCountDensity() const {
+template <class Counts, class... Ts>
+constexpr auto make_count_density_lut(std::variant<Ts...>) {
   if constexpr (std::is_same_v<Counts, decltype(dimensionless)>) {
     // Can we do anything better here? Checking for `dimensionless` in the
     // nominator could be one option, but actually it would not be correct in
     // general, e.g., for counts / velocity = s/m.
-    return !isCounts();
+    return std::array{!std::is_same_v<Ts, std::decay_t<Counts>>...};
   } else {
-    return !isCounts() &&
-           std::visit(
-               [](auto &&unit) { return getExponent(unit, Counts()) == 1; },
-               m_unit);
+    return std::array{(!std::is_same_v<Ts, std::decay_t<Counts>> &&
+                       getExponent(Ts{}, Counts()) == 1)...};
   }
+}
+
+template <class T, class Counts>
+bool Unit_impl<T, Counts>::isCountDensity() const {
+  static constexpr auto lut = make_count_density_lut<Counts>(T{});
+  return lut[m_unit.index()];
 }
 
 template <class T, class Counts>
@@ -148,8 +157,6 @@ template <class... Ts> constexpr auto make_sqrt_lut(std::variant<Ts...>) {
   return std::array{sqrt_(Ts{})...};
 }
 
-// Mutliplying two units together using std::visit to run through the contents
-// of the std::variant
 template <class T, class Counts>
 Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b) {
