@@ -7,7 +7,7 @@
 
 namespace scipp::units {
 
-INSTANTIATE(dummy::supported_units, dummy::counts_unit)
+INSTANTIATE(dummy::Unit)
 SCIPP_UNITS_DEFINE_DIMENSIONS(dummy)
 
 } // namespace scipp::units

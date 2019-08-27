@@ -29,14 +29,13 @@ template <class... Ts> auto make_name_lut(std::tuple<Ts...>) {
   return std::array{std::string(boost::lexical_cast<std::string>(Ts{}))...};
 }
 
-template <class T, class Counts>
-std::string Unit_impl<T, Counts>::name() const {
-  static const auto names = make_name_lut(T{});
+template <class Derived> std::string Unit_impl<Derived>::name() const {
+  static const auto names = make_name_lut(supported_units_t<Derived>{});
   return names[index()];
 }
 
-template <class T, class Counts> bool Unit_impl<T, Counts>::isCounts() const {
-  return *this == Counts();
+template <class Derived> bool Unit_impl<Derived>::isCounts() const {
+  return *this == counts_unit_t<Derived>();
 }
 
 template <class Counts, class... Ts>
@@ -52,52 +51,52 @@ constexpr auto make_count_density_lut(std::tuple<Ts...>) {
   }
 }
 
-template <class T, class Counts>
-bool Unit_impl<T, Counts>::isCountDensity() const {
-  static constexpr auto lut = make_count_density_lut<Counts>(T{});
+template <class Derived> bool Unit_impl<Derived>::isCountDensity() const {
+  static constexpr auto lut = make_count_density_lut<counts_unit_t<Derived>>(
+      supported_units_t<Derived>{});
   return lut[index()];
 }
 
-template <class T, class Counts>
-bool Unit_impl<T, Counts>::operator==(const Unit_impl<T, Counts> &other) const {
+template <class Derived>
+bool Unit_impl<Derived>::operator==(const Unit_impl<Derived> &other) const {
   return index() == other.index();
 }
-template <class T, class Counts>
-bool Unit_impl<T, Counts>::operator!=(const Unit_impl<T, Counts> &other) const {
+template <class Derived>
+bool Unit_impl<Derived>::operator!=(const Unit_impl<Derived> &other) const {
   return !(*this == other);
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> Unit_impl<T, Counts>::operator+=(const Unit_impl &other) {
+template <class Derived>
+Unit_impl<Derived> &Unit_impl<Derived>::operator+=(const Unit_impl &other) {
   return *this = *this + other;
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> Unit_impl<T, Counts>::operator-=(const Unit_impl &other) {
+template <class Derived>
+Unit_impl<Derived> &Unit_impl<Derived>::operator-=(const Unit_impl &other) {
   return *this = *this - other;
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> Unit_impl<T, Counts>::operator*=(const Unit_impl &other) {
+template <class Derived>
+Unit_impl<Derived> &Unit_impl<Derived>::operator*=(const Unit_impl &other) {
   return *this = *this * other;
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> Unit_impl<T, Counts>::operator/=(const Unit_impl &other) {
+template <class Derived>
+Unit_impl<Derived> &Unit_impl<Derived>::operator/=(const Unit_impl &other) {
   return *this = *this / other;
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> operator+(const Unit_impl<T, Counts> &a,
-                               const Unit_impl<T, Counts> &b) {
+template <class Derived>
+Unit_impl<Derived> operator+(const Unit_impl<Derived> &a,
+                             const Unit_impl<Derived> &b) {
   if (a == b)
     return a;
   throw except::UnitError("Cannot add " + a.name() + " and " + b.name() + ".");
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a,
-                               const Unit_impl<T, Counts> &b) {
+template <class Derived>
+Unit_impl<Derived> operator-(const Unit_impl<Derived> &a,
+                             const Unit_impl<Derived> &b) {
   if (a == b)
     return a;
   throw except::UnitError("Cannot subtract " + a.name() + " and " + b.name() +
@@ -152,63 +151,75 @@ template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
   return std::array{sqrt_(Ts{})...};
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
-                               const Unit_impl<T, Counts> &b) {
-  static constexpr auto lut = make_times_lut(T{});
+template <class Derived>
+Unit_impl<Derived> operator*(const Unit_impl<Derived> &a,
+                             const Unit_impl<Derived> &b) {
+  static constexpr auto lut = make_times_lut(supported_units_t<Derived>{});
   auto resultIndex = lut[a.index()][b.index()];
   if (resultIndex < 0)
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
-  return Unit_impl<T, Counts>::fromIndex(resultIndex);
+  return Unit_impl<Derived>::fromIndex(resultIndex);
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
-                               const Unit_impl<T, Counts> &b) {
-  static constexpr auto lut = make_divide_lut(T{});
+template <class Derived>
+Unit_impl<Derived> operator/(const Unit_impl<Derived> &a,
+                             const Unit_impl<Derived> &b) {
+  static constexpr auto lut = make_divide_lut(supported_units_t<Derived>{});
   auto resultIndex = lut[a.index()][b.index()];
   if (resultIndex < 0)
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
-  return Unit_impl<T, Counts>::fromIndex(resultIndex);
+  return Unit_impl<Derived>::fromIndex(resultIndex);
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a) {
+template <class Derived>
+Unit_impl<Derived> operator-(const Unit_impl<Derived> &a) {
   return a;
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> abs(const Unit_impl<T, Counts> &a) {
+template <class Derived> Unit_impl<Derived> abs(const Unit_impl<Derived> &a) {
   return a;
 }
 
-template <class T, class Counts>
-Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a) {
-  static constexpr auto lut = make_sqrt_lut(T{});
+template <class Derived> Unit_impl<Derived> sqrt(const Unit_impl<Derived> &a) {
+  static constexpr auto lut = make_sqrt_lut(supported_units_t<Derived>{});
   auto resultIndex = lut[a.index()];
   if (resultIndex < 0)
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
-  return Unit_impl<T, Counts>::fromIndex(resultIndex);
+  return Unit_impl<Derived>::fromIndex(resultIndex);
 }
 
-#define INSTANTIATE(Units, Counts)                                             \
-  template class SCIPP_UNITS_EXPORT Unit_impl<Units, Counts>;                  \
-  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator+(              \
-      const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator-(              \
-      const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator*(              \
-      const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator/(              \
-      const Unit_impl<Units, Counts> &, const Unit_impl<Units, Counts> &);     \
-  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> operator-(              \
-      const Unit_impl<Units, Counts> &);                                       \
-  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> abs(                    \
-      const Unit_impl<Units, Counts> &a);                                      \
-  template SCIPP_UNITS_EXPORT Unit_impl<Units, Counts> sqrt(                   \
-      const Unit_impl<Units, Counts> &a);
+#define INSTANTIATE(Derived)                                                   \
+  template SCIPP_UNITS_EXPORT std::string Unit_impl<Derived>::name() const;    \
+  template SCIPP_UNITS_EXPORT bool Unit_impl<Derived>::isCounts() const;       \
+  template SCIPP_UNITS_EXPORT bool Unit_impl<Derived>::isCountDensity() const; \
+  template SCIPP_UNITS_EXPORT bool Unit_impl<Derived>::operator==(             \
+      const Unit_impl<Derived> &) const;                                       \
+  template SCIPP_UNITS_EXPORT bool Unit_impl<Derived>::operator!=(             \
+      const Unit_impl<Derived> &) const;                                       \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived>                               \
+      &Unit_impl<Derived>::operator+=(const Unit_impl<Derived> &);             \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived>                               \
+      &Unit_impl<Derived>::operator-=(const Unit_impl<Derived> &);             \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived>                               \
+      &Unit_impl<Derived>::operator*=(const Unit_impl<Derived> &);             \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived>                               \
+      &Unit_impl<Derived>::operator/=(const Unit_impl<Derived> &);             \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator+(                    \
+      const Unit_impl<Derived> &, const Unit_impl<Derived> &);                 \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator-(                    \
+      const Unit_impl<Derived> &, const Unit_impl<Derived> &);                 \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator*(                    \
+      const Unit_impl<Derived> &, const Unit_impl<Derived> &);                 \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator/(                    \
+      const Unit_impl<Derived> &, const Unit_impl<Derived> &);                 \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator-(                    \
+      const Unit_impl<Derived> &);                                             \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived> abs(                          \
+      const Unit_impl<Derived> &a);                                            \
+  template SCIPP_UNITS_EXPORT Unit_impl<Derived> sqrt(                         \
+      const Unit_impl<Derived> &a);
 
 } // namespace scipp::units

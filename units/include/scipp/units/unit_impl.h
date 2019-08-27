@@ -37,13 +37,20 @@ make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
 
 } // namespace detail
 
-template <class T, class Counts> class Unit_impl {
+template <class Unit> struct supported_units;
+template <class Unit> struct counts_unit;
+template <class Unit>
+using supported_units_t = typename supported_units<Unit>::type;
+template <class Unit> using counts_unit_t = typename counts_unit<Unit>::type;
+
+template <class Derived> class SCIPP_UNITS_EXPORT Unit_impl {
 public:
   constexpr Unit_impl() = default;
   // TODO should this be explicit?
   template <class Dim, class System, class Enable>
   Unit_impl(boost::units::unit<Dim, System, Enable> unit) {
-    m_index = common::index_in_tuple<decltype(unit), T>::value;
+    m_index = common::index_in_tuple<decltype(unit),
+                                     supported_units_t<Derived>>::value;
   }
   static constexpr Unit_impl fromIndex(const int64_t index) {
     Unit_impl u;
@@ -58,38 +65,37 @@ public:
   bool isCounts() const;
   bool isCountDensity() const;
 
-  bool operator==(const Unit_impl<T, Counts> &other) const;
-  bool operator!=(const Unit_impl<T, Counts> &other) const;
+  bool operator==(const Unit_impl &other) const;
+  bool operator!=(const Unit_impl &other) const;
 
-  Unit_impl operator+=(const Unit_impl &other);
-  Unit_impl operator-=(const Unit_impl &other);
-  Unit_impl operator*=(const Unit_impl &other);
-  Unit_impl operator/=(const Unit_impl &other);
+  Unit_impl &operator+=(const Unit_impl &other);
+  Unit_impl &operator-=(const Unit_impl &other);
+  Unit_impl &operator*=(const Unit_impl &other);
+  Unit_impl &operator/=(const Unit_impl &other);
 
 private:
   scipp::index m_index{
-      common::index_in_tuple<std::decay_t<decltype(dimensionless)>, T>::value};
+      common::index_in_tuple<std::decay_t<decltype(dimensionless)>,
+                             supported_units_t<Derived>>::value};
   // TODO need to support scale
 };
 
-template <class T, class Counts>
-Unit_impl<T, Counts> operator+(const Unit_impl<T, Counts> &a,
-                               const Unit_impl<T, Counts> &b);
-template <class T, class Counts>
-Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a,
-                               const Unit_impl<T, Counts> &b);
-template <class T, class Counts>
-Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
-                               const Unit_impl<T, Counts> &b);
-template <class T, class Counts>
-Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
-                               const Unit_impl<T, Counts> &b);
-template <class T, class Counts>
-Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a);
-template <class T, class Counts>
-Unit_impl<T, Counts> abs(const Unit_impl<T, Counts> &a);
-template <class T, class Counts>
-Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a);
+template <class Derived>
+Unit_impl<Derived> operator+(const Unit_impl<Derived> &a,
+                             const Unit_impl<Derived> &b);
+template <class Derived>
+Unit_impl<Derived> operator-(const Unit_impl<Derived> &a,
+                             const Unit_impl<Derived> &b);
+template <class Derived>
+Unit_impl<Derived> operator*(const Unit_impl<Derived> &a,
+                             const Unit_impl<Derived> &b);
+template <class Derived>
+Unit_impl<Derived> operator/(const Unit_impl<Derived> &a,
+                             const Unit_impl<Derived> &b);
+template <class Derived>
+Unit_impl<Derived> operator-(const Unit_impl<Derived> &a);
+template <class Derived> Unit_impl<Derived> abs(const Unit_impl<Derived> &a);
+template <class Derived> Unit_impl<Derived> sqrt(const Unit_impl<Derived> &a);
 
 } // namespace scipp::units
 
