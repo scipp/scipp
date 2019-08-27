@@ -11,11 +11,11 @@
 #include <Eigen/Dense>
 
 #include "scipp-core_export.h"
+#include "scipp/common/index.h"
+#include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/index.h"
 #include "scipp/core/slice.h"
-#include "scipp/core/span.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"

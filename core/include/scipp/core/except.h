@@ -10,8 +10,8 @@
 #include <unordered_map>
 
 #include "scipp-core_export.h"
+#include "scipp/common/index.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/index.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
