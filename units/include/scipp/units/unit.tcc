@@ -10,6 +10,7 @@
 #include <boost/units/io.hpp>
 
 #include "scipp/units/boost_units_util.h"
+#include "scipp/units/except.h"
 #include "scipp/units/unit_impl.h"
 
 namespace scipp::units {
@@ -88,7 +89,7 @@ Unit_impl<T, Counts> operator+(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b) {
   if (a == b)
     return a;
-  throw std::runtime_error("Cannot add " + a.name() + " and " + b.name() + ".");
+  throw except::UnitError("Cannot add " + a.name() + " and " + b.name() + ".");
 }
 
 template <class T, class Counts>
@@ -96,8 +97,8 @@ Unit_impl<T, Counts> operator-(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b) {
   if (a == b)
     return a;
-  throw std::runtime_error("Cannot subtract " + a.name() + " and " + b.name() +
-                           ".");
+  throw except::UnitError("Cannot subtract " + a.name() + " and " + b.name() +
+                          ".");
 }
 
 template <class T, class... Ts>
@@ -155,8 +156,8 @@ Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
   static constexpr auto lut = make_times_lut(T{});
   auto resultIndex = lut[a().index()][b().index()];
   if (resultIndex < 0)
-    throw std::runtime_error("Unsupported unit as result of multiplication: (" +
-                             a.name() + ") * (" + b.name() + ')');
+    throw except::UnitError("Unsupported unit as result of multiplication: (" +
+                            a.name() + ") * (" + b.name() + ')');
   return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 
@@ -166,8 +167,8 @@ Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
   static constexpr auto lut = make_divide_lut(T{});
   auto resultIndex = lut[a().index()][b().index()];
   if (resultIndex < 0)
-    throw std::runtime_error("Unsupported unit as result of division: (" +
-                             a.name() + ") / (" + b.name() + ')');
+    throw except::UnitError("Unsupported unit as result of division: (" +
+                            a.name() + ") / (" + b.name() + ')');
   return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 
@@ -186,8 +187,8 @@ Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a) {
   static constexpr auto lut = make_sqrt_lut(T{});
   auto resultIndex = lut[a().index()];
   if (resultIndex < 0)
-    throw std::runtime_error("Unsupported unit as result of sqrt: sqrt(" +
-                             a.name() + ").");
+    throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
+                            a.name() + ").");
   return Unit_impl<T, Counts>::fromIndex(resultIndex);
 }
 

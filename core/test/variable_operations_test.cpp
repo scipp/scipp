@@ -46,18 +46,14 @@ TEST(Variable, operator_plus_equal_automatic_broadcast_of_rhs) {
 }
 
 TEST(Variable, operator_plus_equal_transpose) {
-  auto a = makeVariable<double>(Dimensions({{Dim::Y, 3}, {Dim::X, 2}}),
+  auto a = makeVariable<double>({{Dim::Y, 3}, {Dim::X, 2}}, units::m,
                                 {1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-  auto transpose = makeVariable<double>(Dimensions({{Dim::X, 2}, {Dim::Y, 3}}),
+  auto transpose = makeVariable<double>({{Dim::X, 2}, {Dim::Y, 3}}, units::m,
                                         {1.0, 3.0, 5.0, 2.0, 4.0, 6.0});
 
   EXPECT_NO_THROW(a += transpose);
-  EXPECT_EQ(a.values<double>()[0], 2.0);
-  EXPECT_EQ(a.values<double>()[1], 4.0);
-  EXPECT_EQ(a.values<double>()[2], 6.0);
-  EXPECT_EQ(a.values<double>()[3], 8.0);
-  EXPECT_EQ(a.values<double>()[4], 10.0);
-  EXPECT_EQ(a.values<double>()[5], 12.0);
+  ASSERT_EQ(a, makeVariable<double>({{Dim::Y, 3}, {Dim::X, 2}}, units::m,
+                                    {2.0, 4.0, 6.0, 8.0, 10.0, 12.0}));
 }
 
 TEST(Variable, operator_plus_equal_different_dimensions) {
@@ -73,7 +69,7 @@ TEST(Variable, operator_plus_equal_different_unit) {
 
   auto different_unit(a);
   different_unit.setUnit(units::m);
-  EXPECT_ANY_THROW(a += different_unit);
+  EXPECT_THROW(a += different_unit, except::UnitError);
 }
 
 TEST(Variable, operator_plus_equal_non_arithmetic_type) {
