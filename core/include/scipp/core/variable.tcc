@@ -659,8 +659,13 @@ public:
     return std::make_unique<ViewModel<T>>(this->dims(), m_values, m_variances);
   }
 
-  VariableConceptHandle clone(const Dimensions &) const override {
-    throw std::runtime_error("Cannot resize view.");
+  VariableConceptHandle clone(const Dimensions &dims) const override {
+    using TT = Vector<std::decay_t<typename T::value_type>>;
+    if (hasVariances())
+      return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()),
+                                             TT(dims.volume()));
+    else
+      return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()));
   }
 
   bool isContiguous() const override {
