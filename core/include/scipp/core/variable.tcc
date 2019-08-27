@@ -143,12 +143,13 @@ auto optionalVariancesView(T &concept, Args &&... args) {
              ? std::optional(concept.variancesView(std::forward<Args>(args)...))
              : std::nullopt;
 }
-template <class T> VariableConceptHandle VariableConceptT<T>::clone(const Dimensions &dims) const {
-    using TT = Vector<std::decay_t<T>>;
-    if (hasVariances())
+template <class T>
+VariableConceptHandle VariableConceptT<T>::clone(const Dimensions &dims) const {
+  using TT = Vector<std::decay_t<T>>;
+  if (hasVariances())
     return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()),
-    TT(dims.volume()));
-    else
+                                           TT(dims.volume()));
+  else
     return std::make_unique<DataModel<TT>>(dims, TT(dims.volume()));
 }
 
@@ -658,7 +659,6 @@ public:
   VariableConceptHandle clone() const override {
     return std::make_unique<ViewModel<T>>(this->dims(), m_values, m_variances);
   }
-
 
   bool isContiguous() const override {
     return this->dims().isContiguousIn(m_values.parentDimensions());
