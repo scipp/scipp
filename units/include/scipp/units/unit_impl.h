@@ -22,9 +22,9 @@ static constexpr boost::units::si::time s;
 static constexpr boost::units::si::mass kg;
 static constexpr boost::units::si::temperature K;
 
-// Define a std::variant which will hold the set of allowed units. Any unit that
-// does not exist in the variant will either fail to compile or throw a
-// std::runtime_error during operations such as multiplication or division.
+// Define a std::tuple which will hold the set of allowed units. Any unit that
+// does not exist in the variant will either fail to compile or throw during
+// operations such as multiplication or division.
 namespace detail {
 template <class... Ts, class... Extra>
 std::tuple<Ts...,
@@ -39,8 +39,6 @@ make_unit(const std::tuple<Ts...> &, const std::tuple<Extra...> &) {
 
 template <class T, class Counts> class Unit_impl {
 public:
-  using unit_t = T;
-
   constexpr Unit_impl() = default;
   // TODO should this be explicit?
   template <class Dim, class System, class Enable>
