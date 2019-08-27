@@ -52,8 +52,8 @@ public:
     m_index = common::index_in_tuple<decltype(unit),
                                      supported_units_t<Derived>>::value;
   }
-  static constexpr Unit_impl fromIndex(const int64_t index) {
-    Unit_impl u;
+  static constexpr Derived fromIndex(const int64_t index) {
+    Derived u;
     u.m_index = index;
     return u;
   }
@@ -65,13 +65,13 @@ public:
   bool isCounts() const;
   bool isCountDensity() const;
 
-  bool operator==(const Unit_impl &other) const;
-  bool operator!=(const Unit_impl &other) const;
+  bool operator==(const Unit_impl<Derived> &other) const;
+  bool operator!=(const Unit_impl<Derived> &other) const;
 
-  Unit_impl &operator+=(const Unit_impl &other);
-  Unit_impl &operator-=(const Unit_impl &other);
-  Unit_impl &operator*=(const Unit_impl &other);
-  Unit_impl &operator/=(const Unit_impl &other);
+  Derived &operator+=(const Unit_impl<Derived> &other);
+  Derived &operator-=(const Unit_impl<Derived> &other);
+  Derived &operator*=(const Unit_impl<Derived> &other);
+  Derived &operator/=(const Unit_impl<Derived> &other);
 
 private:
   scipp::index m_index{
@@ -81,21 +81,16 @@ private:
 };
 
 template <class Derived>
-Unit_impl<Derived> operator+(const Unit_impl<Derived> &a,
-                             const Unit_impl<Derived> &b);
+Derived operator+(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b);
 template <class Derived>
-Unit_impl<Derived> operator-(const Unit_impl<Derived> &a,
-                             const Unit_impl<Derived> &b);
+Derived operator-(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b);
 template <class Derived>
-Unit_impl<Derived> operator*(const Unit_impl<Derived> &a,
-                             const Unit_impl<Derived> &b);
+Derived operator*(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b);
 template <class Derived>
-Unit_impl<Derived> operator/(const Unit_impl<Derived> &a,
-                             const Unit_impl<Derived> &b);
-template <class Derived>
-Unit_impl<Derived> operator-(const Unit_impl<Derived> &a);
-template <class Derived> Unit_impl<Derived> abs(const Unit_impl<Derived> &a);
-template <class Derived> Unit_impl<Derived> sqrt(const Unit_impl<Derived> &a);
+Derived operator/(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b);
+template <class Derived> Derived operator-(const Unit_impl<Derived> &a);
+template <class Derived> Derived abs(const Unit_impl<Derived> &a);
+template <class Derived> Derived sqrt(const Unit_impl<Derived> &a);
 
 } // namespace scipp::units
 

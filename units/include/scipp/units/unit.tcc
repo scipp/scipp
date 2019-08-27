@@ -67,38 +67,36 @@ bool Unit_impl<Derived>::operator!=(const Unit_impl<Derived> &other) const {
 }
 
 template <class Derived>
-Unit_impl<Derived> &Unit_impl<Derived>::operator+=(const Unit_impl &other) {
-  return *this = *this + other;
+Derived &Unit_impl<Derived>::operator+=(const Unit_impl &other) {
+  return static_cast<Derived &>(*this = *this + other);
 }
 
 template <class Derived>
-Unit_impl<Derived> &Unit_impl<Derived>::operator-=(const Unit_impl &other) {
-  return *this = *this - other;
+Derived &Unit_impl<Derived>::operator-=(const Unit_impl &other) {
+  return static_cast<Derived &>(*this = *this - other);
 }
 
 template <class Derived>
-Unit_impl<Derived> &Unit_impl<Derived>::operator*=(const Unit_impl &other) {
-  return *this = *this * other;
+Derived &Unit_impl<Derived>::operator*=(const Unit_impl &other) {
+  return static_cast<Derived &>(*this = *this * other);
 }
 
 template <class Derived>
-Unit_impl<Derived> &Unit_impl<Derived>::operator/=(const Unit_impl &other) {
-  return *this = *this / other;
+Derived &Unit_impl<Derived>::operator/=(const Unit_impl &other) {
+  return static_cast<Derived &>(*this = *this / other);
 }
 
 template <class Derived>
-Unit_impl<Derived> operator+(const Unit_impl<Derived> &a,
-                             const Unit_impl<Derived> &b) {
+Derived operator+(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b) {
   if (a == b)
-    return a;
+    return static_cast<const Derived &>(a);
   throw except::UnitError("Cannot add " + a.name() + " and " + b.name() + ".");
 }
 
 template <class Derived>
-Unit_impl<Derived> operator-(const Unit_impl<Derived> &a,
-                             const Unit_impl<Derived> &b) {
+Derived operator-(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b) {
   if (a == b)
-    return a;
+    return static_cast<const Derived &>(a);
   throw except::UnitError("Cannot subtract " + a.name() + " and " + b.name() +
                           ".");
 }
@@ -152,8 +150,7 @@ template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
 }
 
 template <class Derived>
-Unit_impl<Derived> operator*(const Unit_impl<Derived> &a,
-                             const Unit_impl<Derived> &b) {
+Derived operator*(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b) {
   static constexpr auto lut = make_times_lut(supported_units_t<Derived>{});
   auto resultIndex = lut[a.index()][b.index()];
   if (resultIndex < 0)
@@ -163,8 +160,7 @@ Unit_impl<Derived> operator*(const Unit_impl<Derived> &a,
 }
 
 template <class Derived>
-Unit_impl<Derived> operator/(const Unit_impl<Derived> &a,
-                             const Unit_impl<Derived> &b) {
+Derived operator/(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b) {
   static constexpr auto lut = make_divide_lut(supported_units_t<Derived>{});
   auto resultIndex = lut[a.index()][b.index()];
   if (resultIndex < 0)
@@ -173,16 +169,15 @@ Unit_impl<Derived> operator/(const Unit_impl<Derived> &a,
   return Unit_impl<Derived>::fromIndex(resultIndex);
 }
 
-template <class Derived>
-Unit_impl<Derived> operator-(const Unit_impl<Derived> &a) {
-  return a;
+template <class Derived> Derived operator-(const Unit_impl<Derived> &a) {
+  return static_cast<const Derived &>(a);
 }
 
-template <class Derived> Unit_impl<Derived> abs(const Unit_impl<Derived> &a) {
-  return a;
+template <class Derived> Derived abs(const Unit_impl<Derived> &a) {
+  return static_cast<const Derived &>(a);
 }
 
-template <class Derived> Unit_impl<Derived> sqrt(const Unit_impl<Derived> &a) {
+template <class Derived> Derived sqrt(const Unit_impl<Derived> &a) {
   static constexpr auto lut = make_sqrt_lut(supported_units_t<Derived>{});
   auto resultIndex = lut[a.index()];
   if (resultIndex < 0)
@@ -199,27 +194,24 @@ template <class Derived> Unit_impl<Derived> sqrt(const Unit_impl<Derived> &a) {
       const Unit_impl<Derived> &) const;                                       \
   template SCIPP_UNITS_EXPORT bool Unit_impl<Derived>::operator!=(             \
       const Unit_impl<Derived> &) const;                                       \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived>                               \
-      &Unit_impl<Derived>::operator+=(const Unit_impl<Derived> &);             \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived>                               \
-      &Unit_impl<Derived>::operator-=(const Unit_impl<Derived> &);             \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived>                               \
-      &Unit_impl<Derived>::operator*=(const Unit_impl<Derived> &);             \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived>                               \
-      &Unit_impl<Derived>::operator/=(const Unit_impl<Derived> &);             \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator+(                    \
-      const Unit_impl<Derived> &, const Unit_impl<Derived> &);                 \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator-(                    \
-      const Unit_impl<Derived> &, const Unit_impl<Derived> &);                 \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator*(                    \
-      const Unit_impl<Derived> &, const Unit_impl<Derived> &);                 \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator/(                    \
-      const Unit_impl<Derived> &, const Unit_impl<Derived> &);                 \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived> operator-(                    \
+  template SCIPP_UNITS_EXPORT Derived &Unit_impl<Derived>::operator+=(         \
       const Unit_impl<Derived> &);                                             \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived> abs(                          \
-      const Unit_impl<Derived> &a);                                            \
-  template SCIPP_UNITS_EXPORT Unit_impl<Derived> sqrt(                         \
-      const Unit_impl<Derived> &a);
+  template SCIPP_UNITS_EXPORT Derived &Unit_impl<Derived>::operator-=(         \
+      const Unit_impl<Derived> &);                                             \
+  template SCIPP_UNITS_EXPORT Derived &Unit_impl<Derived>::operator*=(         \
+      const Unit_impl<Derived> &);                                             \
+  template SCIPP_UNITS_EXPORT Derived &Unit_impl<Derived>::operator/=(         \
+      const Unit_impl<Derived> &);                                             \
+  template SCIPP_UNITS_EXPORT Derived operator+(const Unit_impl<Derived> &,    \
+                                                const Unit_impl<Derived> &);   \
+  template SCIPP_UNITS_EXPORT Derived operator-(const Unit_impl<Derived> &,    \
+                                                const Unit_impl<Derived> &);   \
+  template SCIPP_UNITS_EXPORT Derived operator*(const Unit_impl<Derived> &,    \
+                                                const Unit_impl<Derived> &);   \
+  template SCIPP_UNITS_EXPORT Derived operator/(const Unit_impl<Derived> &,    \
+                                                const Unit_impl<Derived> &);   \
+  template SCIPP_UNITS_EXPORT Derived operator-(const Unit_impl<Derived> &);   \
+  template SCIPP_UNITS_EXPORT Derived abs(const Unit_impl<Derived> &a);        \
+  template SCIPP_UNITS_EXPORT Derived sqrt(const Unit_impl<Derived> &a);
 
 } // namespace scipp::units
