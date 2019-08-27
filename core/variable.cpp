@@ -41,10 +41,12 @@ bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
 }
 
 Variable::Variable(const Variable &parent, const Dimensions &dims)
-    : m_unit(parent.unit()), m_object(parent.m_object->makeDefaultFromParent(dims)) {}
+    : m_unit(parent.unit()),
+      m_object(parent.m_object->makeDefaultFromParent(dims)) {}
 
 Variable::Variable(const VariableConstProxy &parent, const Dimensions &dims)
-    : m_unit(parent.unit()), m_object(parent.data().makeDefaultFromParent(dims)) {}
+    : m_unit(parent.unit()),
+      m_object(parent.data().makeDefaultFromParent(dims)) {}
 
 Variable::Variable(const Variable &parent, VariableConceptHandle data)
     : m_unit(parent.unit()), m_object(std::move(data)) {}
