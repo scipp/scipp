@@ -228,7 +228,6 @@ private:
       m_object;
 };
 
-template <class... Tags> class ZipView;
 class VariableConstProxy;
 class VariableProxy;
 
@@ -365,8 +364,6 @@ public:
   const auto &dataHandle() && = delete;
   const auto &dataHandle() & { return m_object.mutableVariant(); }
 
-  template <class... Tags> friend class ZipView;
-
   template <class T> void setVariances(Vector<T> &&v);
 
 private:
@@ -374,10 +371,6 @@ private:
   const Vector<underlying_type_t<T>> &cast(const bool variances = false) const;
   template <class T>
   Vector<underlying_type_t<T>> &cast(const bool variances = false);
-
-  // Used by ZipView. Need to find a better way instead of having everyone as
-  // friend.
-  Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
   units::Unit m_unit;
   VariableConceptHandle m_object;
@@ -718,7 +711,6 @@ public:
 
 private:
   friend class Variable;
-  template <class... Tags> friend class ZipView;
 
   template <class T> VariableView<underlying_type_t<T>> cast() const;
   template <class T> VariableView<underlying_type_t<T>> castVariances() const;
