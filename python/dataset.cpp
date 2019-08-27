@@ -79,6 +79,7 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
   c.def("copy", [](const T &self) { return Dataset(self); },
         "Return a (deep) copy.");
   c.def("sum", [](const T &self, const Dim &dim) { return sum(self, dim); });
+  c.def("mean", [](const T &self, const Dim &dim) { return mean(self, dim); });
 }
 
 template <class T, class... Ignored>
@@ -259,9 +260,19 @@ void init_dataset(py::module &m) {
         Sum all variables through given dimension.
 
         :raises: If given dim is sparse dim or not existing one, sum is not valid for type.
-        :return: A new dataset that cotains the sums though given dimension.
+        :return: A new dataset that cotains the sums through given dimension.
         :rtype: Dataset)");
 
+  m.def("mean",
+        [](const DatasetConstProxy &self, const Dim &dim) {
+          return sum(self, dim);
+        },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Calculate mean for all variables through given dimension.
+
+        :raises: If given dim is sparse dim or not existing one, sum is not valid for type.
+        :return: A new dataset that cotains the mean values through given dimension.
+        :rtype: Dataset)");
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();
 }

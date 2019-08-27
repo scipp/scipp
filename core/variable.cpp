@@ -409,7 +409,7 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   return summed;
 }
 
-Variable mean(const Variable &var, const Dim dim) {
+Variable mean(const VariableConstProxy &var, const Dim dim) {
   auto summed = sum(var, dim);
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
   return summed * makeVariable<double>(scale);

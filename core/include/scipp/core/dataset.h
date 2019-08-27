@@ -258,10 +258,10 @@ public:
 
   template <class LabelsMap, class AttrMap>
   Dataset(LabelsMap labels, AttrMap attrs) {
-    for (auto && [ name, labs ] : labels)
-      setLabels(std::string(name), std::move(labs));
     for (auto && [ name, attr ] : attrs)
       setAttr(std::string(name), std::move(attr));
+    for (auto && [ name, labs ] : labels)
+      setLabels(std::string(name), std::move(labs));
   }
 
   template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
@@ -971,28 +971,36 @@ SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
                                 const DatasetConstProxy &b);
 namespace detail {
-template <class DS> Dataset sum_impl(const DS &ds, const Dim dimension) {
+template <class DS, class Func>
+Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
   if (ds.containsSparse())
     throw std::logic_error("Can't sum Dataset with sparse data");
   if (!ds.dimensions().count(dimension))
     throw std::logic_error("Can't sum Dataset on non existing dimension.");
-  Dataset res(ds.labels(), ds.attrs());
-  for (auto && [ dim, coord ] : ds.coords())
+  Dataset res;
+  for (auto && [ name, attr ] : ds.attrs())
+    res.setAttr(std::string(name), attr);
+  for (auto && [ dim, coord ] : ds.coords()) {
     if (dimension != dim)
-      res.setCoord(dim, std::move(coord));
-  for (auto && [ name, item ] : ds) // item is DataConstProxy
-  {
+      res.setCoord(dim, coord);
+  }
+  for (auto && [ name, label ] : ds.labels()) {
+    if (label.dims().inner() != dimension)
+      res.setLabels(std::string(name), label);
+  }
+  for (auto && [ name, item ] : ds) {
     if (!item.data().dims().contains(dimension))
       res.setData(name, item.data());
     else
-      res.setData(std::string(name), sum(item.data(), dimension));
+      res.setData(std::string(name), func(item.data(), dimension));
   }
   return res;
 }
 } // namespace detail
 
-SCIPP_CORE_EXPORT Dataset sum(const Dataset &ds, const Dim dimension);
 SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &ds, const Dim dimension);
+SCIPP_CORE_EXPORT Dataset mean(const DatasetConstProxy &ds,
+                               const Dim dimension);
 
 } // namespace scipp::core
 
