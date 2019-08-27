@@ -251,6 +251,17 @@ void init_dataset(py::module &m) {
         :return: A new dataset that contains the union of all data items, coords, labels, and attributes.
         :rtype: Dataset)");
 
+  m.def("sum",
+        [](const DatasetConstProxy &self, const Dim &dim) {
+          return sum(self, dim);
+        },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Sum all variables through given dimension.
+
+        :raises: If given dim is sparse dim or not existing one, sum is not valid for type.
+        :return: A new dataset that cotains the sums though given dimension.
+        :rtype: Dataset)");
+
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();
 }
