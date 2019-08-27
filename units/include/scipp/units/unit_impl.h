@@ -12,6 +12,8 @@
 #include <boost/units/systems/si.hpp>
 #include <boost/units/unit.hpp>
 
+#include "scipp/common/index.h"
+
 namespace scipp::units {
 // Helper variables to make the declaration units more succinct.
 static constexpr boost::units::si::dimensionless dimensionless;
@@ -52,9 +54,7 @@ public:
     return Unit_impl(m_lut[index]);
   }
 
-  constexpr const Unit_impl::unit_t &operator()() const noexcept {
-    return m_unit;
-  }
+  constexpr scipp::index index() const noexcept { return m_unit.index(); }
 
   std::string name() const;
 

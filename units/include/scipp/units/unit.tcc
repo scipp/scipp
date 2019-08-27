@@ -38,7 +38,7 @@ template <class... Ts> auto make_name_lut(std::variant<Ts...>) {
 template <class T, class Counts>
 std::string Unit_impl<T, Counts>::name() const {
   static const auto names = make_name_lut(T{});
-  return names[m_unit.index()];
+  return names[index()];
 }
 
 template <class T, class Counts> bool Unit_impl<T, Counts>::isCounts() const {
@@ -61,12 +61,12 @@ constexpr auto make_count_density_lut(std::variant<Ts...>) {
 template <class T, class Counts>
 bool Unit_impl<T, Counts>::isCountDensity() const {
   static constexpr auto lut = make_count_density_lut<Counts>(T{});
-  return lut[m_unit.index()];
+  return lut[index()];
 }
 
 template <class T, class Counts>
 bool Unit_impl<T, Counts>::operator==(const Unit_impl<T, Counts> &other) const {
-  return operator()() == other();
+  return index() == other.index();
 }
 template <class T, class Counts>
 bool Unit_impl<T, Counts>::operator!=(const Unit_impl<T, Counts> &other) const {
@@ -161,7 +161,7 @@ template <class T, class Counts>
 Unit_impl<T, Counts> operator*(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b) {
   static constexpr auto lut = make_times_lut(T{});
-  auto resultIndex = lut[a().index()][b().index()];
+  auto resultIndex = lut[a.index()][b.index()];
   if (resultIndex < 0)
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
@@ -172,7 +172,7 @@ template <class T, class Counts>
 Unit_impl<T, Counts> operator/(const Unit_impl<T, Counts> &a,
                                const Unit_impl<T, Counts> &b) {
   static constexpr auto lut = make_divide_lut(T{});
-  auto resultIndex = lut[a().index()][b().index()];
+  auto resultIndex = lut[a.index()][b.index()];
   if (resultIndex < 0)
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
@@ -192,7 +192,7 @@ Unit_impl<T, Counts> abs(const Unit_impl<T, Counts> &a) {
 template <class T, class Counts>
 Unit_impl<T, Counts> sqrt(const Unit_impl<T, Counts> &a) {
   static constexpr auto lut = make_sqrt_lut(T{});
-  auto resultIndex = lut[a().index()];
+  auto resultIndex = lut[a.index()];
   if (resultIndex < 0)
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
