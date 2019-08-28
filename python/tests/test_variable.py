@@ -110,6 +110,12 @@ def test_create_scalar_quantity():
     assert var.unit == sp.units.m
 
 
+def test_create_via_unit():
+    expected = sp.Variable(1.2, unit=sp.units.m)
+    var = 1.2 * sp.units.m
+    assert var == expected
+
+
 def test_create_1D_string():
     var = sp.Variable(dims=[Dim.Row], values=['a', 'bb'], unit=sp.units.m)
     assert len(var.values) == 2

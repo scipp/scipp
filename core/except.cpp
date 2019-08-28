@@ -65,8 +65,6 @@ std::string to_string(const Slice &slice) {
          std::to_string(slice.begin()) + end + ")\n";
 }
 
-std::string to_string(const units::Unit &unit) { return unit.name(); }
-
 std::string make_dims_labels(const VariableConstProxy &variable,
                              const Dimensions &datasetDims) {
   const auto &dims = variable.dims();
@@ -231,16 +229,17 @@ std::string to_string(const Dataset &dataset) {
 std::string to_string(const DatasetConstProxy &dataset) {
   return do_to_string(dataset, "<scipp.DatasetProxy>", dimensions(dataset));
 }
+} // namespace scipp::core
 
-namespace except {
+namespace scipp::except {
 
-DimensionNotFoundError::DimensionNotFoundError(const Dimensions &expected,
+DimensionNotFoundError::DimensionNotFoundError(const core::Dimensions &expected,
                                                const Dim actual)
     : DimensionError("Expected dimension to be a non-sparse dimension of " +
                      to_string(expected) + ", got " + to_string(actual) + ".") {
 }
 
-DimensionLengthError::DimensionLengthError(const Dimensions &expected,
+DimensionLengthError::DimensionLengthError(const core::Dimensions &expected,
                                            const Dim actual,
                                            const scipp::index length)
     : DimensionError("Expected dimension to be in " + to_string(expected) +
@@ -248,9 +247,9 @@ DimensionLengthError::DimensionLengthError(const Dimensions &expected,
                      " with mismatching length " + std::to_string(length) +
                      ".") {}
 
-} // namespace except
+} // namespace scipp::except
 
-namespace expect {
+namespace scipp::core::expect {
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const scipp::index length) {
   if (dims[dim] != length)
@@ -305,5 +304,4 @@ void validExtent(const scipp::index size) {
     throw except::DimensionError("Dimension size cannot be negative.");
 }
 
-} // namespace expect
-} // namespace scipp::core
+} // namespace scipp::core::expect

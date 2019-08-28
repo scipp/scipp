@@ -10,8 +10,10 @@
 #include <unordered_map>
 
 #include "scipp-core_export.h"
+#include "scipp/common/except.h"
+#include "scipp/common/index.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/index.h"
+#include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {
@@ -28,7 +30,6 @@ class Slice;
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
-SCIPP_CORE_EXPORT std::string to_string(const units::Unit &unit);
 SCIPP_CORE_EXPORT std::string to_string(const Variable &variable);
 SCIPP_CORE_EXPORT std::string to_string(const VariableConstProxy &variable);
 SCIPP_CORE_EXPORT std::string to_string(const DataArray &data);
@@ -69,57 +70,43 @@ template <class T> std::string array_to_string(const T &arr) {
   s += "]";
   return s;
 }
+} // namespace scipp::core
 
-namespace except {
+namespace scipp::except {
 
 struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-template <class T> struct Error : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-  template <class T2>
-  Error(const T2 &object, const std::string &message)
-      : std::runtime_error(to_string(object) + message) {}
-};
+using DataArrayError = Error<core::DataArray>;
+using DatasetError = Error<core::Dataset>;
+using DimensionError = Error<core::Dimensions>;
+using VariableError = Error<core::Variable>;
 
-using DataArrayError = Error<DataArray>;
-using DatasetError = Error<Dataset>;
-using DimensionError = Error<Dimensions>;
-using UnitError = Error<units::Unit>;
-using VariableError = Error<Variable>;
+using DataArrayMismatchError = MismatchError<core::DataArray>;
+using DatasetMismatchError = MismatchError<core::Dataset>;
+using DimensionMismatchError = MismatchError<core::Dimensions>;
+using VariableMismatchError = MismatchError<core::Variable>;
 
-template <class T> struct MismatchError : public Error<T> {
-  template <class A, class B>
-  MismatchError(const A &a, const B &b)
-      : Error<T>(a, " expected to be equal to " + to_string(b)) {}
-};
-
-using DataArrayMismatchError = MismatchError<DataArray>;
-using DatasetMismatchError = MismatchError<Dataset>;
-using DimensionMismatchError = MismatchError<Dimensions>;
-using UnitMismatchError = MismatchError<units::Unit>;
-using VariableMismatchError = MismatchError<Variable>;
-
-// We need deduction guides such that, e.g., the exception for a Variable
-// mismatch and VariableProxy mismatch are the same type.
 template <class T>
-MismatchError(const units::Unit &, const T &)->MismatchError<units::Unit>;
+MismatchError(const core::VariableConstProxy &, const T &)
+    ->MismatchError<core::Variable>;
 template <class T>
-MismatchError(const VariableConstProxy &, const T &)->MismatchError<Variable>;
+MismatchError(const core::DatasetConstProxy &, const T &)
+    ->MismatchError<core::Dataset>;
 template <class T>
-MismatchError(const DatasetConstProxy &, const T &)->MismatchError<Dataset>;
+MismatchError(const core::DataConstProxy &, const T &)
+    ->MismatchError<core::DataArray>;
 template <class T>
-MismatchError(const DataConstProxy &, const T &)->MismatchError<DataArray>;
-template <class T>
-MismatchError(const Dimensions &, const T &)->MismatchError<Dimensions>;
+MismatchError(const core::Dimensions &, const T &)
+    ->MismatchError<core::Dimensions>;
 
 struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
-  DimensionNotFoundError(const Dimensions &expected, const Dim actual);
+  DimensionNotFoundError(const core::Dimensions &expected, const Dim actual);
 };
 
 struct SCIPP_CORE_EXPORT DimensionLengthError : public DimensionError {
-  DimensionLengthError(const Dimensions &expected, const Dim actual,
+  DimensionLengthError(const core::Dimensions &expected, const Dim actual,
                        const scipp::index length);
 };
 
@@ -148,12 +135,12 @@ struct SCIPP_CORE_EXPORT SparseDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-} // namespace except
+} // namespace scipp::except
 
-namespace expect {
+namespace scipp::core::expect {
 template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
-    throw except::MismatchError(a, b);
+    throw scipp::except::MismatchError(a, b);
 }
 
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
@@ -190,7 +177,6 @@ void SCIPP_CORE_EXPORT notSparse(const Dimensions &dims);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
 
-} // namespace expect
-} // namespace scipp::core
+} // namespace scipp::core::expect
 
 #endif // EXCEPT_H
