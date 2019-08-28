@@ -38,6 +38,7 @@ Documentation
    user-guide/units
    user-guide/dtype
    user-guide/error-propagation
+   user-guide/plotting
 
 .. toctree::
    :caption: Tutorials
