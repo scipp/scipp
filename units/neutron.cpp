@@ -6,6 +6,6 @@
 #include "scipp/units/unit.tcc"
 
 namespace scipp::units {
-INSTANTIATE(neutron::supported_units, neutron::counts_unit)
+INSTANTIATE(neutron::Unit)
 SCIPP_UNITS_DEFINE_DIMENSIONS(neutron)
 } // namespace scipp::units
