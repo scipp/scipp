@@ -861,6 +861,15 @@ public:
   /// Return typed proxy for data variances.
   template <class T> auto variances() { return get().variances<T>(); }
 
+  DataArray &operator+=(const DataConstProxy &other);
+  DataArray &operator-=(const DataConstProxy &other);
+  DataArray &operator*=(const DataConstProxy &other);
+  DataArray &operator/=(const DataConstProxy &other);
+  DataArray &operator+=(const Variable &other);
+  DataArray &operator-=(const Variable &other);
+  DataArray &operator*=(const Variable &other);
+  DataArray &operator/=(const Variable &other);
+
 private:
   DataConstProxy get() const noexcept { return m_holder.begin()->second; }
   DataProxy get() noexcept { return m_holder.begin()->second; }

@@ -28,6 +28,50 @@ DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
 DataArray::operator DataConstProxy() const { return get(); }
 DataArray::operator DataProxy() { return get(); }
 
+DataArray &DataArray::operator+=(const DataConstProxy &other) {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  data() += other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator-=(const DataConstProxy &other) {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  data() -= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator*=(const DataConstProxy &other) {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  data() *= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator/=(const DataConstProxy &other) {
+  expect::coordsAndLabelsAreSuperset(*this, other);
+  data() /= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator+=(const Variable &other) {
+  data() += other;
+  return *this;
+}
+
+DataArray &DataArray::operator-=(const Variable &other) {
+  data() -= other;
+  return *this;
+}
+
+DataArray &DataArray::operator*=(const Variable &other) {
+  data() *= other;
+  return *this;
+}
+
+DataArray &DataArray::operator/=(const Variable &other) {
+  data() /= other;
+  return *this;
+}
+
 DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
   return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
                    union_(a.labels(), b.labels()));

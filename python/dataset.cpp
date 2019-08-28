@@ -83,6 +83,9 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
 template <class T, class... Ignored>
 void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def_property_readonly("name", &T::name);
+  c.def("__repr__", [](const T &self) { return to_string(self); });
+  c.def("copy", [](const T &self) { return DataArray(self); },
+        "Return a (deep) copy.");
 }
 
 void init_dataset(py::module &m) {
@@ -127,8 +130,6 @@ void init_dataset(py::module &m) {
       [](const DataProxy &self, const VariableConstProxy &data) {
         self.data().assign(data);
       });
-  dataProxy.def("__repr__",
-                [](const DataProxy &self) { return to_string(self); });
 
   bind_data_array_properties(dataArray);
   bind_data_array_properties(dataProxy);
@@ -198,6 +199,8 @@ void init_dataset(py::module &m) {
   bind_in_place_binary<DataProxy>(datasetProxy);
   bind_in_place_binary<DataProxy>(dataProxy);
   bind_in_place_binary<Variable>(dataProxy);
+  bind_in_place_binary<DataProxy>(dataArray);
+  bind_in_place_binary<Variable>(dataArray);
 
   bind_binary<Dataset>(dataset);
   bind_binary<DatasetProxy>(dataset);
@@ -252,5 +255,6 @@ void init_dataset(py::module &m) {
         :rtype: Dataset)");
 
   py::implicitly_convertible<DataArray, DataConstProxy>();
+  py::implicitly_convertible<DataArray, DataProxy>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();
 }
