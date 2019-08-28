@@ -210,6 +210,8 @@ public:
   DataProxy operator-=(const DataConstProxy &other) const;
   DataProxy operator*=(const DataConstProxy &other) const;
   DataProxy operator/=(const DataConstProxy &other) const;
+  DataProxy operator+=(const Variable &other) const;
+  DataProxy operator-=(const Variable &other) const;
   DataProxy operator*=(const Variable &other) const;
   DataProxy operator/=(const Variable &other) const;
 
@@ -816,6 +818,7 @@ public:
             std::map<std::string, Variable> labels);
 
   operator DataConstProxy() const;
+  operator DataProxy();
 
   const std::string &name() const noexcept { return m_holder.begin()->first; }
 

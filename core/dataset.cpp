@@ -605,6 +605,16 @@ DataProxy DataProxy::operator/=(const DataConstProxy &other) const {
   return *this;
 }
 
+DataProxy DataProxy::operator+=(const Variable &other) const {
+  data() += other;
+  return *this;
+}
+
+DataProxy DataProxy::operator-=(const Variable &other) const {
+  data() -= other;
+  return *this;
+}
+
 DataProxy DataProxy::operator*=(const Variable &other) const {
   data() *= other;
   return *this;

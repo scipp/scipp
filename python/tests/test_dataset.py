@@ -428,6 +428,19 @@ def test_binary_with_broadcast():
     assert d == d2
 
 
+def test_binary_of_item_with_variable():
+    d = sc.Dataset(
+        {'data': sc.Variable([Dim.X], values=np.arange(10.0))},
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(10.0))})
+    copy = d.copy()
+
+    d['data'] += 2.0 * sc.units.dimensionless
+    d['data'] *= 2.0 * sc.units.m
+    d['data'] -= 4.0 * sc.units.m
+    d['data'] /= 2.0 * sc.units.m
+    assert d == copy
+
+
 def test_add_sum_of_columns():
     d = sc.Dataset({
         'a': sc.Variable([Dim.X], values=np.arange(10.0)),

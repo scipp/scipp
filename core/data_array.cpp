@@ -26,6 +26,7 @@ DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
 }
 
 DataArray::operator DataConstProxy() const { return get(); }
+DataArray::operator DataProxy() { return get(); }
 
 DataArray operator+(const DataConstProxy &a, const DataConstProxy &b) {
   return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
