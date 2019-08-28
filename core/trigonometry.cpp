@@ -10,17 +10,21 @@
 
 namespace scipp::core {
 
-constexpr auto inverse_trigonometric = overloaded{
-    [](const scipp::core::detail::ValueAndVariance<double>)
-        -> scipp::core::detail::ValueAndVariance<double> {
-      // TODO A better way for disabling operations with variances is needed.
-      throw std::runtime_error(
-          "Inverse trigonometric operation requires dimensionless input.");
-    },
-    [](const units::Unit &u) {
-      expect::equals(u, units::Unit(units::dimensionless));
-      return units::rad;
-    }};
+struct fail_if_variance {
+  template <class T>
+  scipp::core::detail::ValueAndVariance<T>
+  operator()(const scipp::core::detail::ValueAndVariance<T> &) const {
+    // TODO A better way for disabling operations with variances is needed.
+    throw std::runtime_error(
+        "Inverse trigonometric operation requires dimensionless input.");
+  }
+};
+
+constexpr auto inverse_trigonometric =
+    overloaded{fail_if_variance{}, [](const units::Unit &u) {
+                 expect::equals(u, units::Unit(units::dimensionless));
+                 return units::rad;
+               }};
 
 Variable acos(const Variable &var) {
   using std::acos;
