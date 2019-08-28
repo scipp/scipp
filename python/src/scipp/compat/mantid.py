@@ -41,7 +41,8 @@ def ConvertWorkspace2DToDataset(ws):
     pos, num = initPosSpectrumNo(nHist, ws)
 
     # TODO More cases?
-    allowed_units = {"DeltaE": sc.Dim.EnergyTransfer, "TOF": sc.Dim.Tof}
+    allowed_units = {"DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
+                     "TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
         raise RuntimeError("X-axis unit not currently supported for "
@@ -49,14 +50,15 @@ def ConvertWorkspace2DToDataset(ws):
                            "got '{}'. ".format(
                                [k for k in allowed_units.keys()], xunit))
     else:
-        dim = allowed_units[xunit]
+        [dim, unit] = allowed_units[xunit]
 
     if cb:
-        coords = sc.Variable([dim], values=ws.readX(0))
+        coords = sc.Variable([dim], values=ws.readX(0), unit=unit)
     else:
         coords = sc.Variable([sc.Dim.Position, dim],
                              shape=(ws.getNumberHistograms(),
-                                    len(ws.readX(0))))
+                                    len(ws.readX(0))),
+                             unit=unit)
         for i in range(ws.getNumberHistograms()):
             coords[sc.Dim.Position, i].values = ws.readX(i)
 
@@ -76,7 +78,7 @@ def ConvertWorkspace2DToDataset(ws):
 
 def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
 
-    allowed_units = {"TOF": sc.Dim.Tof}
+    allowed_units = {"TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
         raise RuntimeError("X-axis unit not currently supported for "
@@ -84,7 +86,7 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
                            "got '{}'. ".format(
                                [k for k in allowed_units.keys()], xunit))
     else:
-        dim = allowed_units[xunit]
+        [dim, unit] = allowed_units[xunit]
 
     nHist = ws.getNumberHistograms()
     comp_info = convert_instrument(ws)
@@ -93,7 +95,7 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
     # TODO Use unit information in workspace, if available.
     coords = sc.Variable([sc.Dim.Position, dim],
                          shape=[nHist, sc.Dimensions.Sparse],
-                         unit=sc.units.counts)
+                         unit=unit)
     if load_pulse_times:
         labs = sc.Variable([sc.Dim.Position, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
