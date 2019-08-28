@@ -301,8 +301,8 @@ TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
   const auto var = makeVariable<Eigen::Vector3d>(
       {Dim::X, 2},
       {Eigen::Vector3d{1.1, 2.2, 3.3}, Eigen::Vector3d{0.1, 0.2, 0.3}});
-  const auto expected =
-      makeVariable<Eigen::Vector3d>({}, {Eigen::Vector3d{1.0, 2.0, 3.0}});
+  const auto expected = makeVariable<Eigen::Vector3d>(
+      Dimensions{}, {Eigen::Vector3d{1.0, 2.0, 3.0}});
   // Passing Eigen types by value often causes issues, ensure that it works.
   auto op = [](const auto x, const auto y) { return x - y; };
 

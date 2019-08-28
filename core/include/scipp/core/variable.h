@@ -462,6 +462,10 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
       Vector<underlying_type_t<T>>(variances.begin(), variances.end()));
 }
 
+template <class T> Variable makeVariable(DType tp, const T &val) {
+  MAKE_VARIABLE_DTYPED(tp, val)
+}
+
 namespace detail {
 template <class... N> struct is_vector : std::false_type {};
 template <class N, class A>
