@@ -1,0 +1,11 @@
+name: scipp
+
+channels:
+  - conda-forge
+  - scipp/label/dev
+
+dependencies:
+  - python>=3
+  - scipp
+  - matplotlib
+  - plotly
