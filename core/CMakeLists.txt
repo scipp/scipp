@@ -24,6 +24,7 @@ set(SRC_FILES
     dimensions.cpp
     except.cpp
     slice.cpp
+    trigonometry.cpp
     variable.cpp
     variable_binary_ops.cpp
     view_index.cpp)
