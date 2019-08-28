@@ -45,6 +45,11 @@ TEST_F(BeamlineTest, basics) {
   ASSERT_EQ(l1(dataset), makeVariable<double>({}, units::m, {10.0}));
 }
 
+TEST_F(BeamlineTest, l2) {
+  ASSERT_EQ(l2(dataset),
+            makeVariable<double>({Dim::Position, 2}, units::m, {1.0, 1.0}));
+}
+
 template <class T> constexpr T pi = T(3.1415926535897932385L);
 
 TEST_F(BeamlineTest, scattering_angle) {

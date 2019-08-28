@@ -66,4 +66,6 @@ void init_units_neutron(py::module &m) {
   units.attr("angstrom") = units::Unit(units::angstrom);
   units.attr("meV") = units::Unit(units::meV);
   units.attr("us") = units::Unit(units::us);
+  units.attr("rad") = units::Unit(units::rad);
+  units.attr("deg") = units::Unit(units::deg);
 }
