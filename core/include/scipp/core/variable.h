@@ -778,6 +778,7 @@ SCIPP_CORE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);
 SCIPP_CORE_EXPORT Variable abs(const Variable &var);
+SCIPP_CORE_EXPORT Variable acos(const Variable &var);
 SCIPP_CORE_EXPORT Variable broadcast(Variable var, const Dimensions &dims);
 SCIPP_CORE_EXPORT Variable concatenate(const Variable &a1, const Variable &a2,
                                        const Dim dim);

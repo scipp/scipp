@@ -8,6 +8,7 @@
 
 #include <tuple>
 
+#include <boost/units/systems/angle/degrees.hpp>
 #include <boost/units/systems/si.hpp>
 #include <boost/units/unit.hpp>
 
@@ -21,6 +22,8 @@ static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
 static constexpr boost::units::si::mass kg;
 static constexpr boost::units::si::temperature K;
+static constexpr boost::units::si::plane_angle rad;
+static constexpr boost::units::degree::plane_angle deg;
 
 // Define a std::tuple which will hold the set of allowed units. Any unit that
 // does not exist in the variant will either fail to compile or throw during

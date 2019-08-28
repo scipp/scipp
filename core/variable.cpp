@@ -418,6 +418,24 @@ Variable abs(const Variable &var) {
   return transform<double, float>(var, [](const auto x) { return abs(x); });
 }
 
+constexpr auto inverse_trigonometric = overloaded{
+    [](const scipp::core::detail::ValueAndVariance<double>)
+        -> scipp::core::detail::ValueAndVariance<double> {
+      throw std::runtime_error(
+          "Inverse trigonometric operation requires dimensionless input.");
+    },
+    [](const units::Unit &u) {
+      expect::equals(u, units::Unit(units::dimensionless));
+      return units::rad;
+    }};
+
+Variable acos(const Variable &var) {
+  using std::acos;
+  return transform<double>(
+      var,
+      overloaded{inverse_trigonometric, [](const auto &x) { return acos(x); }});
+}
+
 Variable norm(const Variable &var) {
   return transform<Eigen::Vector3d>(
       var, overloaded{[](const auto &x) { return x.norm(); },
