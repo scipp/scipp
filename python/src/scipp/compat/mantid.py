@@ -74,7 +74,7 @@ def ConvertWorkspace2DToDataset(ws):
                                 "component_info": comp_info})
 
 
-def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
+def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
 
     allowed_units = {"TOF": sc.Dim.Tof}
     xunit = ws.getAxis(0).getUnit().unitID()
@@ -94,12 +94,12 @@ def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
     coords = sc.Variable([sc.Dim.Position, dim],
                          shape=[nHist, sc.Dimensions.Sparse],
                          unit=sc.units.counts)
-    if not drop_pulse_times:
+    if load_pulse_times:
         labs = sc.Variable([sc.Dim.Position, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
     for i in range(nHist):
         coords[sc.Dim.Position, i].values = ws.getSpectrum(i).getTofs()
-        if not drop_pulse_times:
+        if load_pulse_times:
             # Pulse times have a Mantid-specific format so the conversion is
             # very slow.
             # TODO: Find a more efficient way to do this.
@@ -110,12 +110,12 @@ def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
     coords_and_labs = {"coords": {dim: coords, sc.Dim.Position: pos},
                        "labels": {"spectrum_number": num,
                                   "component_info": comp_info}}
-    if not drop_pulse_times:
+    if load_pulse_times:
         coords_and_labs["labels"]["pulse_times"] = labs
     return sc.DataArray(**coords_and_labs)
 
 
-def load(filename="", drop_pulse_times=False, instrument_filename=None,
+def load(filename="", load_pulse_times=True, instrument_filename=None,
          **kwargs):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
@@ -129,5 +129,5 @@ def load(filename="", drop_pulse_times=False, instrument_filename=None,
     if ws.id() == 'Workspace2D':
         return ConvertWorkspace2DToDataset(ws)
     if ws.id() == 'EventWorkspace':
-        return ConvertEventWorkspaceToDataset(ws, drop_pulse_times)
+        return ConvertEventWorkspaceToDataset(ws, load_pulse_times)
     raise RuntimeError('Unsupported workspace type')
