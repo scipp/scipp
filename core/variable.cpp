@@ -411,8 +411,12 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
 
 Variable mean(const VariableConstProxy &var, const Dim dim) {
   auto summed = sum(var, dim);
+  auto tp = var.dtype();
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
-  return summed * makeVariable<double>(scale);
+  if (isInt(tp) || isBool(tp))
+    return summed * makeVariable<double>(scale);
+  else
+    return summed * makeVariable(tp, scale);
 }
 
 Variable abs(const Variable &var) {

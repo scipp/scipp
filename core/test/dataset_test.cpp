@@ -311,15 +311,14 @@ TEST(DataProxyTest, set_variances) {
 
 TEST(DatasetTest, sum_and_mean) {
   auto ds = make_1_values_and_variances<float>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {4, 5, 6});
-  EXPECT_EQ(core::sum(ds, Dim::X)["a"].data(), makeVariable<float>(6, 15));
+      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+  EXPECT_EQ(core::sum(ds, Dim::X)["a"].data(), makeVariable<float>(6, 45));
   EXPECT_EQ(core::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(3, 9));
+            makeVariable<float>(3, 27));
 
-  EXPECT_EQ(core::mean(ds, Dim::X)["a"].data(),
-            makeVariable<float>(2, 5.0 / 3.0));
+  EXPECT_EQ(core::mean(ds, Dim::X)["a"].data(), makeVariable<float>(2, 5.0));
   EXPECT_EQ(core::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(1.5, 2.25));
+            makeVariable<float>(1.5, 6.75));
 
   EXPECT_THROW(core::sum(make_sparse_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
                std::logic_error);

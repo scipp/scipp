@@ -144,8 +144,8 @@ TEST(Variable, operator_plus_eigen_type) {
   const auto var = makeVariable<Eigen::Vector3d>(
       {Dim::X, 2},
       {Eigen::Vector3d{1.0, 2.0, 3.0}, Eigen::Vector3d{0.1, 0.2, 0.3}});
-  const auto expected =
-      makeVariable<Eigen::Vector3d>({}, {Eigen::Vector3d{1.1, 2.2, 3.3}});
+  const auto expected = makeVariable<Eigen::Vector3d>(
+      Dimensions{}, {Eigen::Vector3d{1.1, 2.2, 3.3}});
 
   const auto result = var.slice({Dim::X, 0}) + var.slice({Dim::X, 1});
 
