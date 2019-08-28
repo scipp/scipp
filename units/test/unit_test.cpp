@@ -4,6 +4,7 @@
 
 #include "test_macros.h"
 
+#include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
 using namespace scipp;
@@ -48,12 +49,12 @@ TEST(Unit, add) {
   EXPECT_EQ(a + a, a);
   EXPECT_EQ(b + b, b);
   EXPECT_EQ(c + c, c);
-  EXPECT_ANY_THROW(a + b);
-  EXPECT_ANY_THROW(a + c);
-  EXPECT_ANY_THROW(b + a);
-  EXPECT_ANY_THROW(b + c);
-  EXPECT_ANY_THROW(c + a);
-  EXPECT_ANY_THROW(c + b);
+  EXPECT_THROW(a + b, except::UnitError);
+  EXPECT_THROW(a + c, except::UnitError);
+  EXPECT_THROW(b + a, except::UnitError);
+  EXPECT_THROW(b + c, except::UnitError);
+  EXPECT_THROW(c + a, except::UnitError);
+  EXPECT_THROW(c + b, except::UnitError);
 }
 
 TEST(Unit, multiply) {
@@ -68,7 +69,7 @@ TEST(Unit, multiply) {
   EXPECT_EQ(b * b, c);
   EXPECT_EQ(b * c, units::m * units::m * units::m);
   EXPECT_EQ(c * b, units::m * units::m * units::m);
-  EXPECT_ANY_THROW(c * c);
+  EXPECT_THROW(c * c, except::UnitError);
 }
 
 TEST(Unit, multiply_counts) {
@@ -87,7 +88,7 @@ TEST(Unit, divide) {
   EXPECT_EQ(t / one, t);
   EXPECT_EQ(l / l, one);
   EXPECT_EQ(l / t, v);
-  EXPECT_ANY_THROW(one / v);
+  EXPECT_THROW(one / v, except::UnitError);
 }
 
 TEST(Unit, conversion_factors) {
@@ -133,7 +134,7 @@ TEST(Unit, sqrt) {
 
 TEST(Unit, sqrt_fail) {
   Unit m{units::m};
-  EXPECT_THROW_MSG(sqrt(m), std::runtime_error,
+  EXPECT_THROW_MSG(sqrt(m), except::UnitError,
                    "Unsupported unit as result of sqrt: sqrt(m).");
 }
 

@@ -3,7 +3,7 @@
 /// @file
 /// @author Owen Arnold
 #include "scipp-core_export.h"
-#include "scipp/core/index.h"
+#include "scipp/common/index.h"
 #include "scipp/units/unit.h"
 
 #ifndef SLICE_H
