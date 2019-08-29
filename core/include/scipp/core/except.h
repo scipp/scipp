@@ -26,7 +26,6 @@ class VariableConstProxy;
 class Slice;
 
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
-// SCIPP_CORE_EXPORT std::string to_string(const Bool b);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const units::Unit &unit);
