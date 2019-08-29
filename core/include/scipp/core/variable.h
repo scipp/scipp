@@ -464,6 +464,7 @@ Variable makeVariable(const Dimensions &dimensions, const units::Unit unit,
 
 template <class T> Variable makeVariable(DType tp, const T &val) {
   MAKE_VARIABLE_DTYPED(tp, val)
+  return {}; // to prevent warning
 }
 
 namespace detail {
