@@ -10,9 +10,11 @@ DataArray::DataArray(const DataConstProxy &proxy) {
   m_holder.setData(proxy.name(), proxy);
 }
 
-DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
+DataArray::DataArray(std::optional<Variable> data,
+                     std::map<Dim, Variable> coords,
                      std::map<std::string, Variable> labels) {
-  m_holder.setData("", std::move(data));
+  if (data)
+    m_holder.setData("", std::move(*data));
   for (auto & [ dim, c ] : coords)
     if (c.dims().sparse())
       m_holder.setSparseCoord("", std::move(c));
@@ -23,6 +25,9 @@ DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
       m_holder.setSparseLabels("", name, std::move(l));
     else
       m_holder.setLabels(name, std::move(l));
+  if (!m_holder.contains(""))
+    throw std::runtime_error("Cannot construct DataArray without either data "
+                             "or sparse coordinates.");
 }
 
 DataArray::operator DataConstProxy() const { return get(); }

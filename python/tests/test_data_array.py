@@ -18,8 +18,4 @@ def test_in_place_binary_with_variable():
     a *= 2.0 * sc.units.m
     a -= 4.0 * sc.units.m
     a /= 2.0 * sc.units.m
-    print(a)
-    print(copy)
     assert a == copy
-
-

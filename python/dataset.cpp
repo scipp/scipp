@@ -86,6 +86,11 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("copy", [](const T &self) { return DataArray(self); },
         "Return a (deep) copy.");
+  bind_coord_properties(c);
+  bind_comparison<DataConstProxy>(c);
+  bind_in_place_binary<DataProxy>(c);
+  bind_in_place_binary<Variable>(c);
+  bind_data_properties(c);
 }
 
 void init_dataset(py::module &m) {
@@ -96,30 +101,19 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray");
-  dataArray.def(py::init([](const std::optional<Variable> &data,
-                            const std::map<Dim, Variable> &coords,
-                            const std::map<std::string, Variable> &labels) {
-                  Dataset d;
-                  const std::string name = "";
-                  if (data)
-                    d.setData(name, *data);
-                  for (const auto & [ dim, item ] : coords)
-                    if (item.dims().sparse())
-                      d.setSparseCoord(name, item);
-                    else
-                      d.setCoord(dim, item);
-                  for (const auto & [ n, item ] : labels)
-                    if (item.dims().sparse())
-                      d.setSparseLabels(name, n, item);
-                    else
-                      d.setLabels(n, item);
-                  return DataArray(d[name]);
-                }),
-                py::arg("data") = std::nullopt,
-                py::arg("coords") = std::map<Dim, Variable>{},
-                py::arg("labels") = std::map<std::string, Variable>{});
-  py::class_<DataConstProxy>(m, "DataConstProxy");
+  dataArray.def(py::init<const DataConstProxy &>());
+  dataArray.def(
+      py::init<const std::optional<Variable> &, const std::map<Dim, Variable> &,
+               const std::map<std::string, Variable> &>(),
+      py::arg("data") = std::nullopt,
+      py::arg("coords") = std::map<Dim, Variable>{},
+      py::arg("labels") = std::map<std::string, Variable>{});
+
+  py::class_<DataConstProxy>(m, "DataConstProxy")
+      .def(py::init<const DataArray &>());
+
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
+  dataProxy.def(py::init<DataArray &>());
   dataProxy.def_property(
       "data",
       py::cpp_function(
@@ -178,8 +172,6 @@ void init_dataset(py::module &m) {
 
   bind_coord_properties(dataset);
   bind_coord_properties(datasetProxy);
-  bind_coord_properties(dataArray);
-  bind_coord_properties(dataProxy);
 
   bind_slice_methods(dataset);
   bind_slice_methods(datasetProxy);
@@ -189,7 +181,6 @@ void init_dataset(py::module &m) {
   bind_comparison<DatasetProxy>(dataset);
   bind_comparison<Dataset>(datasetProxy);
   bind_comparison<DatasetProxy>(datasetProxy);
-  bind_comparison<DataProxy>(dataProxy);
 
   bind_in_place_binary<Dataset>(dataset);
   bind_in_place_binary<DatasetProxy>(dataset);
@@ -197,10 +188,6 @@ void init_dataset(py::module &m) {
   bind_in_place_binary<Dataset>(datasetProxy);
   bind_in_place_binary<DatasetProxy>(datasetProxy);
   bind_in_place_binary<DataProxy>(datasetProxy);
-  bind_in_place_binary<DataProxy>(dataProxy);
-  bind_in_place_binary<Variable>(dataProxy);
-  bind_in_place_binary<DataProxy>(dataArray);
-  bind_in_place_binary<Variable>(dataArray);
 
   bind_binary<Dataset>(dataset);
   bind_binary<DatasetProxy>(dataset);
@@ -211,9 +198,6 @@ void init_dataset(py::module &m) {
   bind_binary<Dataset>(dataProxy);
   bind_binary<DatasetProxy>(dataProxy);
   bind_binary<DataProxy>(dataProxy);
-
-  bind_data_properties(dataArray);
-  bind_data_properties(dataProxy);
 
   m.def("histogram",
         [](const DataConstProxy &ds, const Variable &bins) {

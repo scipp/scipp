@@ -814,7 +814,7 @@ private:
 class SCIPP_CORE_EXPORT DataArray {
 public:
   explicit DataArray(const DataConstProxy &proxy);
-  DataArray(Variable data, std::map<Dim, Variable> coords,
+  DataArray(std::optional<Variable> data, std::map<Dim, Variable> coords,
             std::map<std::string, Variable> labels);
 
   operator DataConstProxy() const;
