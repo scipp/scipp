@@ -88,7 +88,7 @@ inline py::buffer_info make_py_buffer_info(VariableProxy &view) {
                    bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
-template <class... Ts> struct as_VariableViewImpl;
+template <class... Ts> class as_VariableViewImpl;
 
 class DataAccessHelper {
   template <class... Ts> friend struct as_VariableViewImpl;

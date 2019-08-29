@@ -99,29 +99,6 @@ template <class T1, class T2> struct castHelper<T1, T2, true> {
   static T1 cast(const T2 &arg) { return T1(arg); }
 };
 
-#define CAST_CASE(tp, x, PREFIX, POSTFIX)                                      \
-  case DType::tp:                                                              \
-    PREFIX castHelper<TypeMap<DType::tp>::type, decltype(x)>::cast(x)          \
-        POSTFIX break;
-
-#define CAST(tp, x, PREFIX, POSTFIX)                                           \
-  switch (tp) {                                                                \
-    CAST_CASE(Double, x, PREFIX, POSTFIX)                                      \
-    CAST_CASE(Float, x, PREFIX, POSTFIX)                                       \
-    CAST_CASE(Int32, x, PREFIX, POSTFIX)                                       \
-    CAST_CASE(Int64, x, PREFIX, POSTFIX)                                       \
-    CAST_CASE(String, x, PREFIX, POSTFIX)                                      \
-    CAST_CASE(Bool, x, PREFIX, POSTFIX)                                        \
-    CAST_CASE(SparseDouble, x, PREFIX, POSTFIX)                                \
-    CAST_CASE(SparseFloat, x, PREFIX, POSTFIX)                                 \
-    CAST_CASE(SparseInt64, x, PREFIX, POSTFIX)                                 \
-    CAST_CASE(SparseInt32, x, PREFIX, POSTFIX)                                 \
-    CAST_CASE(Dataset, x, PREFIX, POSTFIX)                                     \
-    CAST_CASE(EigenVector3d, x, PREFIX, POSTFIX)                               \
-  case DType::Unknown:                                                         \
-    throw std::logic_error("Can't convert to Unknown type");                   \
-  }
-
 #define MAKE_VARIABLE_CASE(tp, x)                                              \
   case DType::tp:                                                              \
     return makeVariable<TypeMap<DType::tp>::type>(                             \
@@ -144,29 +121,7 @@ template <class T1, class T2> struct castHelper<T1, T2, true> {
     MAKE_VARIABLE_CASE(EigenVector3d, x)                                       \
   case DType::Unknown:                                                         \
     throw std::logic_error("Can't convert to Unknown type");                   \
-  }
-
-#define CASE(tp, PREFIX, POSTFIX)                                              \
-  case DType::tp:                                                              \
-    PREFIX TypeMap<DType::tp>::type POSTFIX;                                   \
-    break;
-
-#define APPLY_RUNTIME_DTYPED(tp, PREFIX, POSTFIX)                              \
-  switch (tp) {                                                                \
-    CASE(Double, PREFIX, POSTFIX)                                              \
-    CASE(Float, PREFIX, POSTFIX)                                               \
-    CASE(Int32, PREFIX, POSTFIX)                                               \
-    CASE(Int64, PREFIX, POSTFIX)                                               \
-    CASE(String, PREFIX, POSTFIX)                                              \
-    CASE(Bool, PREFIX, POSTFIX)                                                \
-    CASE(SparseDouble, PREFIX, POSTFIX)                                        \
-    CASE(SparseFloat, PREFIX, POSTFIX)                                         \
-    CASE(SparseInt64, PREFIX, POSTFIX)                                         \
-    CASE(SparseInt32, PREFIX, POSTFIX)                                         \
-    CASE(Dataset, PREFIX, POSTFIX)                                             \
-    CASE(EigenVector3d, PREFIX, POSTFIX)                                       \
-  case DType::Unknown:                                                         \
-    throw std::logic_error("Can't convert to Unknown type");                   \
+    return {};                                                                 \
   }
 
 bool isInt(DType tp);
