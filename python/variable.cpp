@@ -300,7 +300,7 @@ void init_variable(py::module &m) {
   m.def("filter",
         py::overload_cast<const Variable &, const Variable &>(&filter),
         py::call_guard<py::gil_scoped_release>());
-  m.def("mean", py::overload_cast<const Variable &, const Dim>(&mean),
+  m.def("mean", py::overload_cast<const VariableConstProxy &, const Dim>(&mean),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise mean over the specified dimension.
 
