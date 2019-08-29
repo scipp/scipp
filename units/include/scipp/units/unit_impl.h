@@ -6,6 +6,7 @@
 #ifndef SCIPP_UNITS_UNIT_IMPL_H
 #define SCIPP_UNITS_UNIT_IMPL_H
 
+#include <array>
 #include <tuple>
 
 #include <boost/units/systems/angle/degrees.hpp>
