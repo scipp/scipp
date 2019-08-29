@@ -106,9 +106,7 @@ constexpr auto make_times_inner(std::tuple<Ts...>) {
   using Tuple = std::tuple<Ts...>;
   constexpr auto times_ = [](auto x, auto y) -> int64_t {
     using resultT = typename decltype(x * y)::unit_type;
-    if constexpr (isKnownUnit<Tuple>(resultT{}))
-      return common::index_in_tuple<resultT, Tuple>::value;
-    return -1;
+    return detail::unit_index(resultT{}, Tuple{});
   };
   return std::array{times_(T{}, Ts{})...};
 }
@@ -121,15 +119,8 @@ template <class T, class... Ts>
 constexpr auto make_divide_inner(std::tuple<Ts...>) {
   using Tuple = std::tuple<Ts...>;
   constexpr auto divide_ = [](auto x, auto y) -> int64_t {
-    // It is done here to have the si::dimensionless then the units are
-    // the same, but is the si::dimensionless valid for non si types? TODO
-    if constexpr (std::is_same_v<decltype(x), decltype(y)>)
-      return common::index_in_tuple<std::decay_t<decltype(dimensionless)>,
-                                    Tuple>::value;
     using resultT = typename decltype(x / y)::unit_type;
-    if constexpr (isKnownUnit<Tuple>(resultT{}))
-      return common::index_in_tuple<resultT, Tuple>::value;
-    return -1;
+    return detail::unit_index(resultT{}, Tuple{});
   };
   return std::array{divide_(T{}, Ts{})...};
 }
@@ -139,12 +130,10 @@ template <class... Ts> constexpr auto make_divide_lut(std::tuple<Ts...>) {
 }
 
 template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
-  using T = std::tuple<Ts...>;
+  using Tuple = std::tuple<Ts...>;
   constexpr auto sqrt_ = [](auto x) -> int64_t {
     using resultT = typename decltype(sqrt(1.0 * x))::unit_type;
-    if constexpr (isKnownUnit<T>(resultT{}))
-      return common::index_in_tuple<resultT, T>::value;
-    return -1;
+    return detail::unit_index(resultT{}, Tuple{});
   };
   return std::array{sqrt_(Ts{})...};
 }

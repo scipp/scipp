@@ -28,6 +28,13 @@ TEST(units, c) {
   EXPECT_EQ(si_c.value(), 299792458.0);
 }
 
+TEST(Units, cancellation) {
+  EXPECT_EQ(Unit(units::deg / units::deg), units::dimensionless);
+  EXPECT_EQ(Unit(units::deg) / Unit(units::deg), units::dimensionless);
+  EXPECT_EQ(Unit(units::deg * units::rad / units::deg), units::rad);
+  EXPECT_EQ(Unit(units::deg) * Unit(units::rad / units::deg), units::rad);
+}
+
 TEST(Units, sin) {
   EXPECT_EQ(sin(Unit(units::rad)), units::dimensionless);
   EXPECT_EQ(sin(Unit(units::deg)), units::dimensionless);
@@ -131,6 +138,11 @@ TEST(Unit, divide) {
   EXPECT_EQ(l / l, one);
   EXPECT_EQ(l / t, v);
   EXPECT_THROW(one / v, except::UnitError);
+}
+
+TEST(Unit, divide_counts) {
+  Unit counts{units::counts};
+  EXPECT_EQ(counts / counts, units::dimensionless);
 }
 
 TEST(Unit, conversion_factors) {
