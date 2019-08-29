@@ -28,6 +28,48 @@ TEST(units, c) {
   EXPECT_EQ(si_c.value(), 299792458.0);
 }
 
+TEST(Units, sin) {
+  EXPECT_EQ(sin(Unit(units::rad)), units::dimensionless);
+  EXPECT_EQ(sin(Unit(units::deg)), units::dimensionless);
+  EXPECT_THROW(sin(Unit(units::m)), except::UnitError);
+  EXPECT_THROW(sin(Unit(units::dimensionless)), except::UnitError);
+}
+
+TEST(Units, cos) {
+  EXPECT_EQ(cos(Unit(units::rad)), units::dimensionless);
+  EXPECT_EQ(cos(Unit(units::deg)), units::dimensionless);
+  EXPECT_THROW(cos(Unit(units::m)), except::UnitError);
+  EXPECT_THROW(cos(Unit(units::dimensionless)), except::UnitError);
+}
+
+TEST(Units, tan) {
+  EXPECT_EQ(tan(Unit(units::rad)), units::dimensionless);
+  EXPECT_EQ(tan(Unit(units::deg)), units::dimensionless);
+  EXPECT_THROW(tan(Unit(units::m)), except::UnitError);
+  EXPECT_THROW(tan(Unit(units::dimensionless)), except::UnitError);
+}
+
+TEST(Units, asin) {
+  EXPECT_EQ(asin(Unit(units::dimensionless)), units::rad);
+  EXPECT_THROW(asin(Unit(units::m)), except::UnitError);
+  EXPECT_THROW(asin(Unit(units::rad)), except::UnitError);
+  EXPECT_THROW(asin(Unit(units::deg)), except::UnitError);
+}
+
+TEST(Units, acos) {
+  EXPECT_EQ(acos(Unit(units::dimensionless)), units::rad);
+  EXPECT_THROW(acos(Unit(units::m)), except::UnitError);
+  EXPECT_THROW(acos(Unit(units::rad)), except::UnitError);
+  EXPECT_THROW(acos(Unit(units::deg)), except::UnitError);
+}
+
+TEST(Units, atan) {
+  EXPECT_EQ(atan(Unit(units::dimensionless)), units::rad);
+  EXPECT_THROW(atan(Unit(units::m)), except::UnitError);
+  EXPECT_THROW(atan(Unit(units::rad)), except::UnitError);
+  EXPECT_THROW(atan(Unit(units::deg)), except::UnitError);
+}
+
 TEST(Unit, construct) { ASSERT_NO_THROW(Unit u{units::dimensionless}); }
 
 TEST(Unit, construct_default) {

@@ -94,6 +94,12 @@ Derived operator/(const Unit_impl<Derived> &a, const Unit_impl<Derived> &b);
 template <class Derived> Derived operator-(const Unit_impl<Derived> &a);
 template <class Derived> Derived abs(const Unit_impl<Derived> &a);
 template <class Derived> Derived sqrt(const Unit_impl<Derived> &a);
+template <class Derived> Derived sin(const Unit_impl<Derived> &a);
+template <class Derived> Derived cos(const Unit_impl<Derived> &a);
+template <class Derived> Derived tan(const Unit_impl<Derived> &a);
+template <class Derived> Derived asin(const Unit_impl<Derived> &a);
+template <class Derived> Derived acos(const Unit_impl<Derived> &a);
+template <class Derived> Derived atan(const Unit_impl<Derived> &a);
 
 } // namespace scipp::units
 
