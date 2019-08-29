@@ -265,7 +265,7 @@ void init_dataset(py::module &m) {
 
   m.def("mean",
         [](const DatasetConstProxy &self, const Dim &dim) {
-          return sum(self, dim);
+          return mean(self, dim);
         },
         py::call_guard<py::gil_scoped_release>(), R"(
         Calculate mean for all variables through given dimension.
