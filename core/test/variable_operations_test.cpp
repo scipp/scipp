@@ -509,6 +509,9 @@ TEST(Variable, mean) {
   auto meanY = mean(var, Dim::Y);
   ASSERT_EQ(meanY.dims(), (Dimensions{Dim::X, 2}));
   EXPECT_TRUE(equals(meanY.values<double>(), {2.0, 3.0}));
+
+  var = makeVariable<int32_t>({Dim::X, 4}, {1, 2, 3, 4});
+  EXPECT_EQ(mean(var.slice({Dim::X, 0, 2}), Dim::X), makeVariable<double>(1.5));
 }
 
 TEST(Variable, abs) {
