@@ -294,6 +294,34 @@ def test_coords_proxy_comparison_operators():
     assert d1['a'].coords == d['a'].coords
 
 
+def test_sum_mean():
+    d = sc.Dataset(
+        {
+            'a': sc.Variable([Dim.X, Dim.Y], values=np.arange(6).reshape(2,
+                                                                         3)),
+            'b': sc.Variable(1.0)
+        },
+        coords={
+            Dim.X: sc.Variable([Dim.X], values=np.arange(2)),
+            Dim.Y: sc.Variable([Dim.Y], values=np.arange(3))
+        },
+        labels={
+            "l1": sc.Variable([Dim.X, Dim.Y],
+                              values=np.arange(6).reshape(2, 3)),
+            "l2": sc.Variable([Dim.X], values=np.arange(2))
+        })
+    d_ref = sc.Dataset(
+        {
+            'a': sc.Variable([Dim.X], values=np.array([3, 12])),
+            'b': sc.Variable(1.0)
+        },
+        coords={Dim.X: sc.Variable([Dim.X], values=np.arange(2))},
+        labels={"l2": sc.Variable([Dim.X], values=np.arange(2))})
+
+    assert sc.sum(d, Dim.Y) == d_ref
+    assert (sc.mean(d, Dim.Y)["a"].values == [1.0, 4.0]).all()
+
+
 def test_variable_histogram():
     var = sc.Variable(dims=[Dim.X, Dim.Y], shape=[2, sc.Dimensions.Sparse])
     var[Dim.X, 0].values = np.arange(3)
