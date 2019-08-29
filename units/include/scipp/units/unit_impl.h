@@ -44,7 +44,8 @@ constexpr scipp::index unit_index(Unit unit, std::tuple<Units...>) {
   // We cannot rely on matching *types* in boost units so a simple lookup of
   // `Unit` in the tuple of `Units` would often not succeed. Instead, we need to
   // use the comparison operator.
-  constexpr auto match = std::array{(unit == Units{})...};
+  constexpr auto match =
+      std::array<bool, sizeof...(Units)>{(unit == Units{})...};
   for (size_t i = 0; i < sizeof...(Units); ++i)
     if (match[i])
       return i;
