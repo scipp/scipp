@@ -264,14 +264,6 @@ public:
       setLabels(std::string(name), std::move(labs));
   }
 
-  template <class LabelsMap, class AttrMap>
-  Dataset(LabelsMap labels, AttrMap attrs) {
-    for (auto && [ name, attr ] : attrs)
-      setAttr(std::string(name), std::move(attr));
-    for (auto && [ name, labs ] : labels)
-      setLabels(std::string(name), std::move(labs));
-  }
-
   template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
   Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs)
       : Dataset(labels, attrs) {
