@@ -20,17 +20,11 @@ struct fail_if_variance {
   }
 };
 
-constexpr auto inverse_trigonometric =
-    overloaded{fail_if_variance{}, [](const units::Unit &u) {
-                 expect::equals(u, units::Unit(units::dimensionless));
-                 return units::rad;
-               }};
-
 Variable acos(const Variable &var) {
   using std::acos;
   return transform<double>(
       var,
-      overloaded{inverse_trigonometric, [](const auto &x) { return acos(x); }});
+      overloaded{fail_if_variance{}, [](const auto &x) { return acos(x); }});
 }
 
 } // namespace scipp::core
