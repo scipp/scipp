@@ -1205,9 +1205,16 @@ DataArray rebin(const DataConstProxy &a, const Dim dim,
     if (item.dims().inner() != dim)
       labels.emplace(key, item);
 
+  std::map<std::string, Variable> attrs;
+  // Drop attrs for rebinned dimension.
+  for (const auto & [ key, item ] : a.attrs())
+    if (item.dims().inner() != dim)
+      attrs.emplace(key, item);
+
   auto rebinned = rebin(a.data(), dim, a.coords()[dim], coord);
 
-  return {std::move(rebinned), std::move(coords), std::move(labels)};
+  return {std::move(rebinned), std::move(coords), std::move(labels),
+          std::move(attrs)};
 }
 
 Dataset rebin(const DatasetConstProxy &d, const Dim dim,
