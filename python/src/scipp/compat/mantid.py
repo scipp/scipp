@@ -99,6 +99,9 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
     if load_pulse_times:
         labs = sc.Variable([sc.Dim.Position, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
+    weights = sc.Variable([sc.Dim.Position, dim],
+                          shape=[nHist, sc.Dimensions.Sparse])
+    contains_weighted_events = False
     for i in range(nHist):
         coords[sc.Dim.Position, i].values = ws.getSpectrum(i).getTofs()
         if load_pulse_times:
@@ -108,13 +111,20 @@ def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
             pt = ws.getSpectrum(i).getPulseTimes()
             labs[sc.Dim.Position, i].values = np.asarray([p.total_nanoseconds()
                                                           for p in pt])
+        w = ws.getSpectrum(i).getWeights()
+        weights[sc.Dim.Position, i].values = w
+        if not contains_weighted_events and (len(w) > 0):
+            if np.amax(w) > 1.0:
+                contains_weighted_events = True
 
-    coords_and_labs = {"coords": {dim: coords, sc.Dim.Position: pos},
-                       "labels": {"spectrum_number": num,
-                                  "component_info": comp_info}}
+    coords_labs_data = {"coords": {dim: coords, sc.Dim.Position: pos},
+                        "labels": {"spectrum_number": num,
+                                   "component_info": comp_info}}
     if load_pulse_times:
-        coords_and_labs["labels"]["pulse_times"] = labs
-    return sc.DataArray(**coords_and_labs)
+        coords_labs_data["labels"]["pulse_times"] = labs
+    if contains_weighted_events:
+        coords_labs_data["data"] = weights
+    return sc.DataArray(**coords_labs_data)
 
 
 def load(filename="", load_pulse_times=True, instrument_filename=None,
