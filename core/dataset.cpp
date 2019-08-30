@@ -1196,14 +1196,40 @@ Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
+template <class DS, class Func>
+Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
+  if (containsSparse(ds))
+    throw std::logic_error("Can't sum Dataset with sparse data");
+  if (!ds.dimensions().count(dimension))
+    throw std::logic_error("Can't sum Dataset on non existing dimension.");
+  Dataset res;
+  for (auto && [ name, attr ] : ds.attrs())
+    res.setAttr(std::string(name), attr);
+  for (auto && [ dim, coord ] : ds.coords()) {
+    if (dimension != dim)
+      res.setCoord(dim, coord);
+  }
+  for (auto && [ name, label ] : ds.labels()) {
+    if (label.dims().inner() != dimension)
+      res.setLabels(std::string(name), label);
+  }
+  for (auto && [ name, item ] : ds) {
+    if (!item.data().dims().contains(dimension))
+      res.setData(name, item.data());
+    else
+      res.setData(std::string(name), func(item.data(), dimension));
+  }
+  return res;
+}
+
 Dataset sum(const DatasetConstProxy &ds, const Dim dimension) {
-  return detail::apply_through_dimension(
+  return apply_through_dimension(
       ds, dimension,
       [](const VariableConstProxy &v, const Dim dim) { return sum(v, dim); });
 }
 
 Dataset mean(const DatasetConstProxy &ds, const Dim dimension) {
-  return detail::apply_through_dimension(
+  return apply_through_dimension(
       ds, dimension,
       [](const VariableConstProxy &v, const Dim dim) { return mean(v, dim); });
 }
