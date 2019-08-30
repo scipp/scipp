@@ -138,23 +138,31 @@ static constexpr decltype(detail::tof::energy{} * dimensionless) meV;
 static constexpr decltype(detail::tof::tof{} * dimensionless) us;
 static constexpr decltype(detail::tof::velocity{} * dimensionless) c;
 
-using supported_units = decltype(detail::make_unit(
-    std::make_tuple(m, dimensionless / m),
-    std::make_tuple(dimensionless, counts, s, kg, angstrom, meV, us,
-                    dimensionless / us, dimensionless / s, counts / us,
-                    counts / angstrom, counts / meV, m *m *m,
-                    meV *us *us / (m * m), meV *us *us *dimensionless,
-                    kg *m / s, m / s, c, c *m, meV / c, dimensionless / c, K,
-                    us / angstrom, us / (m * angstrom))));
-
-using counts_unit = decltype(counts);
-using Unit = Unit_impl<supported_units, counts_unit>;
+class Unit : public Unit_impl<Unit> {
+public:
+  using Unit_impl<Unit>::Unit_impl;
+};
 
 SCIPP_UNITS_DECLARE_DIMENSIONS(DSpacing, Energy, EnergyTransfer, Position, Q,
                                Qx, Qy, Qz, Row, Spectrum, Time, Tof, Wavelength,
                                X, Y, Z)
 
 } // namespace neutron
+
+template <> struct supported_units<neutron::Unit> {
+  using type = decltype(detail::make_unit(
+      std::make_tuple(m, dimensionless / m),
+      std::make_tuple(
+          dimensionless, rad, deg, rad / deg, deg / rad, counts, s, kg,
+          angstrom, meV, us, dimensionless / us, dimensionless / s, counts / us,
+          counts / angstrom, counts / meV, m *m *m, meV *us *us / (m * m),
+          meV *us *us *dimensionless, kg *m / s, m / s, c, c *m, meV / c,
+          dimensionless / c, K, us / angstrom, us / (m * angstrom))));
+};
+template <> struct counts_unit<neutron::Unit> {
+  using type = decltype(counts);
+};
+
 } // namespace scipp::units
 
 #endif // SCIPP_UNITS_NEUTRON_H

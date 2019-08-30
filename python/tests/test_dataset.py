@@ -26,6 +26,30 @@ def test_create():
     assert d['x'].data == x
 
 
+def test_create_from_data_array():
+    var = sc.Variable([Dim.X], values=np.arange(4))
+    base = sc.Dataset({'a': var}, coords={Dim.X: var}, labels={'aux': var})
+    d = sc.Dataset(base['a'])
+    assert d == base
+
+
+def test_create_from_data_arrays():
+    var1 = sc.Variable([Dim.X], values=np.arange(4))
+    var2 = sc.Variable([Dim.X], values=np.ones(4))
+    base = sc.Dataset({
+        'a': var1,
+        'b': var2
+    },
+                      coords={Dim.X: var1},
+                      labels={'aux': var1})
+    d = sc.Dataset({'a': base['a'], 'b': base['b']})
+    assert d == base
+    swapped = sc.Dataset({'a': base['b'], 'b': base['a']})
+    assert swapped != base
+    assert swapped['a'] == base['b']
+    assert swapped['b'] == base['a']
+
+
 def test_clear():
     d = sc.Dataset()
     d['a'] = sc.Variable([Dim.X], values=np.arange(3))

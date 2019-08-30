@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "scipp-core_export.h"
-#include "scipp/core/index.h"
-#include "scipp/core/span.h"
+#include "scipp/common/index.h"
+#include "scipp/common/span.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core {

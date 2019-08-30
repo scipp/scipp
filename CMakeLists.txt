@@ -104,6 +104,7 @@ add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
 
 enable_testing()
 
+add_subdirectory(common)
 add_subdirectory(benchmark)
 add_subdirectory(units)
 add_subdirectory(core)

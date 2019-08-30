@@ -11,11 +11,11 @@
 #include <Eigen/Dense>
 
 #include "scipp-core_export.h"
+#include "scipp/common/index.h"
+#include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/index.h"
 #include "scipp/core/slice.h"
-#include "scipp/core/span.h"
 #include "scipp/core/variable_view.h"
 #include "scipp/core/vector.h"
 #include "scipp/units/unit.h"
@@ -228,7 +228,6 @@ private:
       m_object;
 };
 
-template <class... Tags> class ZipView;
 class VariableConstProxy;
 class VariableProxy;
 
@@ -365,8 +364,6 @@ public:
   const auto &dataHandle() && = delete;
   const auto &dataHandle() & { return m_object.mutableVariant(); }
 
-  template <class... Tags> friend class ZipView;
-
   template <class T> void setVariances(Vector<T> &&v);
 
 private:
@@ -374,10 +371,6 @@ private:
   const Vector<underlying_type_t<T>> &cast(const bool variances = false) const;
   template <class T>
   Vector<underlying_type_t<T>> &cast(const bool variances = false);
-
-  // Used by ZipView. Need to find a better way instead of having everyone as
-  // friend.
-  Dimensions &mutableDimensions() { return m_object->m_dimensions; }
 
   units::Unit m_unit;
   VariableConceptHandle m_object;
@@ -718,7 +711,6 @@ public:
 
 private:
   friend class Variable;
-  template <class... Tags> friend class ZipView;
 
   template <class T> VariableView<underlying_type_t<T>> cast() const;
   template <class T> VariableView<underlying_type_t<T>> castVariances() const;
@@ -800,6 +792,14 @@ SCIPP_CORE_EXPORT Variable rebin(const Variable &var, const Variable &oldCoord,
 SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
 SCIPP_CORE_EXPORT Variable sum(const Variable &var, const Dim dim);
+
+// Trigonometrics
+SCIPP_CORE_EXPORT Variable sin(const Variable &var);
+SCIPP_CORE_EXPORT Variable cos(const Variable &var);
+SCIPP_CORE_EXPORT Variable tan(const Variable &var);
+SCIPP_CORE_EXPORT Variable asin(const Variable &var);
+SCIPP_CORE_EXPORT Variable acos(const Variable &var);
+SCIPP_CORE_EXPORT Variable atan(const Variable &var);
 
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);

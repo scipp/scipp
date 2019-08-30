@@ -7,13 +7,10 @@ set(INC_FILES
     include/scipp/core/dataset_index.h
     include/scipp/core/dimensions.h
     include/scipp/core/except.h
-    include/scipp/core/index.h
     include/scipp/core/memory_pool.h
-    include/scipp/core/span.h
     include/scipp/core/tag_util.h
     include/scipp/core/counts.h
     include/scipp/core/slice.h
-    include/scipp/core/traits.h
     include/scipp/core/variable_view.h
     include/scipp/core/variable.h
     include/scipp/core/variable.tcc
@@ -27,10 +24,10 @@ set(SRC_FILES
     dimensions.cpp
     except.cpp
     slice.cpp
+    trigonometry.cpp
     variable.cpp
     variable_binary_ops.cpp
     view_index.cpp)
-
 
 set(LINK_TYPE "STATIC")
 if(DYNAMIC_LIB)
@@ -40,7 +37,7 @@ endif(DYNAMIC_LIB)
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_link_libraries(${TARGET_NAME}
-                      PUBLIC scipp-units Boost::boost)
+                      PUBLIC scipp-common scipp-units Boost::boost)
 # Include tcb/span as system header to avoid compiler warnings.
 target_include_directories(
   ${TARGET_NAME} SYSTEM

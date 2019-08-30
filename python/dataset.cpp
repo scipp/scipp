@@ -76,14 +76,6 @@ void bind_dataset_proxy_methods(py::class_<T, Ignored...> &c) {
         [](T &self, const std::string &name) { return self[name]; },
         py::keep_alive<0, 1>());
   c.def("__contains__", &T::contains);
-  c.def("__eq__",
-        [](const T &self, const Dataset &other) { return self == other; });
-  c.def("__eq__",
-        [](const T &self, const DatasetProxy &other) { return self == other; });
-  c.def("__ne__",
-        [](const T &self, const Dataset &other) { return self == other; });
-  c.def("__ne__",
-        [](const T &self, const DatasetProxy &other) { return self == other; });
   c.def("copy", [](const T &self) { return Dataset(self); },
         "Return a (deep) copy.");
 }
@@ -147,7 +139,8 @@ void init_dataset(py::module &m) {
   datasetProxy.def(py::init<Dataset &>());
 
   py::class_<Dataset> dataset(m, "Dataset");
-  dataset.def(py::init<>())
+  dataset.def(py::init<const std::map<std::string, DataConstProxy> &>())
+      .def(py::init<const DataConstProxy &>())
       .def(py::init([](const std::map<std::string, VariableConstProxy> &data,
                        const std::map<Dim, VariableConstProxy> &coords,
                        const std::map<std::string, VariableConstProxy> &labels,

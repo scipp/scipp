@@ -24,6 +24,7 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
+#include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/variable.h"
@@ -424,9 +425,6 @@ template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
 template <class... Ts> overloaded_sparse(Ts...)->overloaded_sparse<Ts...>;
 
 } // namespace detail
-
-template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
 
 template <class... TypePairs, class Op>
 static constexpr auto type_pairs(Op) noexcept {

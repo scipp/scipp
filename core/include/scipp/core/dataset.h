@@ -253,6 +253,8 @@ public:
 
   Dataset() = default;
   explicit Dataset(const DatasetConstProxy &proxy);
+  explicit Dataset(const DataConstProxy &data);
+  explicit Dataset(const std::map<std::string, DataConstProxy> &data);
 
   template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
   Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {

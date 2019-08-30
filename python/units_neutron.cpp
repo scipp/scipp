@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/variable.h"
 #include "scipp/units/unit.h"
 
 #include "bind_enum.h"
@@ -24,6 +25,13 @@ void init_units_neutron(py::module &m) {
       .def(py::self - py::self)
       .def(py::self * py::self)
       .def(py::self / py::self)
+      .def("__rmul__",
+           [](const units::Unit &self, double factor) {
+             auto var = core::makeVariable<double>(factor);
+             var.setUnit(self);
+             return var;
+           },
+           "Return a scalar Variable with value and unit.")
       .def("__pow__",
            [](const units::Unit &self, int power) -> units::Unit {
              switch (power) {
@@ -58,4 +66,6 @@ void init_units_neutron(py::module &m) {
   units.attr("angstrom") = units::Unit(units::angstrom);
   units.attr("meV") = units::Unit(units::meV);
   units.attr("us") = units::Unit(units::us);
+  units.attr("rad") = units::Unit(units::rad);
+  units.attr("deg") = units::Unit(units::deg);
 }
