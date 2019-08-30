@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#ifndef SCIPPY_BIND_DATA_ACCESS_H
-#define SCIPPY_BIND_DATA_ACCESS_H
+#ifndef SCIPP_PYTHON_BIND_DATA_ACCESS_H
+#define SCIPP_PYTHON_BIND_DATA_ACCESS_H
 
 #include <variant>
 
@@ -377,4 +377,4 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       "data is not 0-dimensional.");
 }
 
-#endif // SCIPPY_BIND_DATA_ACCESS_H
+#endif // SCIPP_PYTHON_BIND_DATA_ACCESS_H
