@@ -7,6 +7,7 @@ add_executable(${TARGET_NAME}
                #Run_test.cpp
                #TableWorkspace_test.cpp
                #Workspace2D_test.cpp
+               beamline_test.cpp
                convert_test.cpp
                )
 target_link_libraries(${TARGET_NAME}

@@ -316,11 +316,6 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.abs` for scalar dtype
         :return: New variable with scalar elements computed as the norm values if the input elements.
         :rtype: Variable)");
-  m.def("rebin",
-        py::overload_cast<const Variable &, const Variable &, const Variable &>(
-            &rebin),
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable whose data is rebinned with new bin edges.");
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<scipp::index> &>(&split),
@@ -340,5 +335,53 @@ void init_variable(py::module &m) {
         :raises: If the dtype cannot be summed, e.g., if it is a string
         :seealso: :py:class:`scipp.mean`
         :return: New variable containing the sum.
+        :rtype: Variable)");
+
+  m.def("sin", [](const Variable &self) { return sin(self); },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise sin.
+
+        :raises: If the unit is not a plane-angle unit, or if the dtype has no sin, e.g., if it is an integer
+        :return: Copy of the input with values replaced by the sin.
+        :rtype: Variable)");
+
+  m.def("cos", [](const Variable &self) { return cos(self); },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise cos.
+
+        :raises: If the unit is not a plane-angle unit, or if the dtype has no cos, e.g., if it is an integer
+        :return: Copy of the input with values replaced by the cos.
+        :rtype: Variable)");
+
+  m.def("tan", [](const Variable &self) { return tan(self); },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise tan.
+
+        :raises: If the unit is not a plane-angle unit, or if the dtype has no tan, e.g., if it is an integer
+        :return: Copy of the input with values replaced by the tan.
+        :rtype: Variable)");
+
+  m.def("asin", [](const Variable &self) { return asin(self); },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise asin.
+
+        :raises: If the unit is dimensionless, or if the dtype has no asin, e.g., if it is an integer
+        :return: Copy of the input with values replaced by the asin. Output unit is rad.
+        :rtype: Variable)");
+
+  m.def("acos", [](const Variable &self) { return acos(self); },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise acos.
+
+        :raises: If the unit is dimensionless, or if the dtype has no acos, e.g., if it is an integer
+        :return: Copy of the input with values replaced by the acos. Output unit is rad.
+        :rtype: Variable)");
+
+  m.def("atan", [](const Variable &self) { return atan(self); },
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Element-wise atan.
+
+        :raises: If the unit is dimensionless, or if the dtype has no atan, e.g., if it is an integer
+        :return: Copy of the input with values replaced by the atan. Output unit is rad.
         :rtype: Variable)");
 }

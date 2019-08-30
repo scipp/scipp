@@ -20,15 +20,17 @@ def convert_instrument(ws):
 
 
 def initPosSpectrumNo(nHist, ws):
-    try:
-        pos = sc.Variable(
-            [sc.Dim.Position], values=[
-                get_pos(ws.spectrumInfo().position(j)) for j in range(nHist)])
-    except RuntimeError:
-        pos = None
-    num = sc.Variable(
-        [sc.Dim.Position],
-        values=[ws.getSpectrum(j).getSpectrumNo() for j in range(nHist)])
+
+    pos = np.zeros([nHist, 3])
+    num = np.zeros([nHist], dtype=np.int32)
+
+    spec_info = ws.spectrumInfo()
+    for i in range(nHist):
+        p = spec_info.position(i)
+        pos[i, :] = [p.X(), p.Y(), p.Z()]
+        num[i] = ws.getSpectrum(i).getSpectrumNo()
+    pos = sc.Variable([sc.Dim.Position], values=pos, unit=sc.units.m)
+    num = sc.Variable([sc.Dim.Position], values=num)
     return pos, num
 
 
@@ -39,7 +41,8 @@ def ConvertWorkspace2DToDataset(ws):
     pos, num = initPosSpectrumNo(nHist, ws)
 
     # TODO More cases?
-    allowed_units = {"DeltaE": sc.Dim.EnergyTransfer, "TOF": sc.Dim.Tof}
+    allowed_units = {"DeltaE": [sc.Dim.EnergyTransfer, sc.units.meV],
+                     "TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
         raise RuntimeError("X-axis unit not currently supported for "
@@ -47,14 +50,15 @@ def ConvertWorkspace2DToDataset(ws):
                            "got '{}'. ".format(
                                [k for k in allowed_units.keys()], xunit))
     else:
-        dim = allowed_units[xunit]
+        [dim, unit] = allowed_units[xunit]
 
     if cb:
-        coords = sc.Variable([dim], values=ws.readX(0))
+        coords = sc.Variable([dim], values=ws.readX(0), unit=unit)
     else:
         coords = sc.Variable([sc.Dim.Position, dim],
                              shape=(ws.getNumberHistograms(),
-                                    len(ws.readX(0))))
+                                    len(ws.readX(0))),
+                             unit=unit)
         for i in range(ws.getNumberHistograms()):
             coords[sc.Dim.Position, i].values = ws.readX(i)
 
@@ -65,16 +69,16 @@ def ConvertWorkspace2DToDataset(ws):
 
     for i in range(ws.getNumberHistograms()):
         var[sc.Dim.Position, i].values = ws.readY(i)
-        var[sc.Dim.Position, i].variances = ws.readE(i) * ws.readE(i)
+        var[sc.Dim.Position, i].variances = np.power(ws.readE(i), 2)
 
     return sc.DataArray(data=var, coords={dim: coords, sc.Dim.Position: pos},
                         labels={"spectrum_number": num,
                                 "component_info": comp_info})
 
 
-def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
+def ConvertEventWorkspaceToDataset(ws, load_pulse_times):
 
-    allowed_units = {"TOF": sc.Dim.Tof}
+    allowed_units = {"TOF": [sc.Dim.Tof, sc.units.us]}
     xunit = ws.getAxis(0).getUnit().unitID()
     if xunit not in allowed_units.keys():
         raise RuntimeError("X-axis unit not currently supported for "
@@ -82,20 +86,22 @@ def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
                            "got '{}'. ".format(
                                [k for k in allowed_units.keys()], xunit))
     else:
-        dim = allowed_units[xunit]
+        [dim, unit] = allowed_units[xunit]
 
     nHist = ws.getNumberHistograms()
     comp_info = convert_instrument(ws)
     pos, num = initPosSpectrumNo(nHist, ws)
 
+    # TODO Use unit information in workspace, if available.
     coords = sc.Variable([sc.Dim.Position, dim],
-                         shape=[nHist, sc.Dimensions.Sparse])
-    if not drop_pulse_times:
+                         shape=[nHist, sc.Dimensions.Sparse],
+                         unit=unit)
+    if load_pulse_times:
         labs = sc.Variable([sc.Dim.Position, dim],
                            shape=[nHist, sc.Dimensions.Sparse])
     for i in range(nHist):
         coords[sc.Dim.Position, i].values = ws.getSpectrum(i).getTofs()
-        if not drop_pulse_times:
+        if load_pulse_times:
             # Pulse times have a Mantid-specific format so the conversion is
             # very slow.
             # TODO: Find a more efficient way to do this.
@@ -106,20 +112,24 @@ def ConvertEventWorkspaceToDataset(ws, drop_pulse_times):
     coords_and_labs = {"coords": {dim: coords, sc.Dim.Position: pos},
                        "labels": {"spectrum_number": num,
                                   "component_info": comp_info}}
-    if not drop_pulse_times:
+    if load_pulse_times:
         coords_and_labs["labels"]["pulse_times"] = labs
     return sc.DataArray(**coords_and_labs)
 
 
-def load(filename="", drop_pulse_times=False, **kwargs):
+def load(filename="", load_pulse_times=True, instrument_filename=None,
+         **kwargs):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
     specific code from the scipp interface.
     """
     import mantid.simpleapi as mantid
     ws = mantid.LoadEventNexus(filename, **kwargs)
+    if instrument_filename is not None:
+        mantid.LoadInstrument(ws, FileName=instrument_filename,
+                              RewriteSpectraMap=True)
     if ws.id() == 'Workspace2D':
         return ConvertWorkspace2DToDataset(ws)
     if ws.id() == 'EventWorkspace':
-        return ConvertEventWorkspaceToDataset(ws, drop_pulse_times)
+        return ConvertEventWorkspaceToDataset(ws, load_pulse_times)
     raise RuntimeError('Unsupported workspace type')

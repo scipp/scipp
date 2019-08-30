@@ -106,9 +106,7 @@ constexpr auto make_times_inner(std::tuple<Ts...>) {
   using Tuple = std::tuple<Ts...>;
   constexpr auto times_ = [](auto x, auto y) -> int64_t {
     using resultT = typename decltype(x * y)::unit_type;
-    if constexpr (isKnownUnit<Tuple>(resultT{}))
-      return common::index_in_tuple<resultT, Tuple>::value;
-    return -1;
+    return detail::unit_index(resultT{}, Tuple{});
   };
   return std::array{times_(T{}, Ts{})...};
 }
@@ -121,15 +119,8 @@ template <class T, class... Ts>
 constexpr auto make_divide_inner(std::tuple<Ts...>) {
   using Tuple = std::tuple<Ts...>;
   constexpr auto divide_ = [](auto x, auto y) -> int64_t {
-    // It is done here to have the si::dimensionless then the units are
-    // the same, but is the si::dimensionless valid for non si types? TODO
-    if constexpr (std::is_same_v<decltype(x), decltype(y)>)
-      return common::index_in_tuple<std::decay_t<decltype(dimensionless)>,
-                                    Tuple>::value;
     using resultT = typename decltype(x / y)::unit_type;
-    if constexpr (isKnownUnit<Tuple>(resultT{}))
-      return common::index_in_tuple<resultT, Tuple>::value;
-    return -1;
+    return detail::unit_index(resultT{}, Tuple{});
   };
   return std::array{divide_(T{}, Ts{})...};
 }
@@ -139,12 +130,10 @@ template <class... Ts> constexpr auto make_divide_lut(std::tuple<Ts...>) {
 }
 
 template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
-  using T = std::tuple<Ts...>;
+  using Tuple = std::tuple<Ts...>;
   constexpr auto sqrt_ = [](auto x) -> int64_t {
     using resultT = typename decltype(sqrt(1.0 * x))::unit_type;
-    if constexpr (isKnownUnit<T>(resultT{}))
-      return common::index_in_tuple<resultT, T>::value;
-    return -1;
+    return detail::unit_index(resultT{}, Tuple{});
   };
   return std::array{sqrt_(Ts{})...};
 }
@@ -186,6 +175,43 @@ template <class Derived> Derived sqrt(const Unit_impl<Derived> &a) {
   return Unit_impl<Derived>::fromIndex(resultIndex);
 }
 
+template <class Derived> Derived trigonometric(const Unit_impl<Derived> &a) {
+  if (a == units::rad || a == units::deg)
+    // This should just resolve into units::dimensionless
+    return {typename decltype(sin(1.0 * units::rad))::unit_type{}};
+  throw except::UnitError(
+      "Trigonometric function requires rad or deg unit, got " + a.name() + ".");
+}
+
+template <class Derived>
+Derived inverse_trigonometric(const Unit_impl<Derived> &a) {
+  if (a == units::dimensionless)
+    // This should just resolve into units::rad
+    return {typename decltype(asin(1.0 * units::dimensionless))::unit_type{}};
+  throw except::UnitError(
+      "Inverse trigonometric function requires dimensionless unit, got " +
+      a.name() + ".");
+}
+
+template <class Derived> Derived sin(const Unit_impl<Derived> &a) {
+  return trigonometric(a);
+}
+template <class Derived> Derived cos(const Unit_impl<Derived> &a) {
+  return trigonometric(a);
+}
+template <class Derived> Derived tan(const Unit_impl<Derived> &a) {
+  return trigonometric(a);
+}
+template <class Derived> Derived asin(const Unit_impl<Derived> &a) {
+  return inverse_trigonometric(a);
+}
+template <class Derived> Derived acos(const Unit_impl<Derived> &a) {
+  return inverse_trigonometric(a);
+}
+template <class Derived> Derived atan(const Unit_impl<Derived> &a) {
+  return inverse_trigonometric(a);
+}
+
 #define INSTANTIATE(Derived)                                                   \
   template SCIPP_UNITS_EXPORT std::string Unit_impl<Derived>::name() const;    \
   template SCIPP_UNITS_EXPORT bool Unit_impl<Derived>::isCounts() const;       \
@@ -212,6 +238,12 @@ template <class Derived> Derived sqrt(const Unit_impl<Derived> &a) {
                                                 const Unit_impl<Derived> &);   \
   template SCIPP_UNITS_EXPORT Derived operator-(const Unit_impl<Derived> &);   \
   template SCIPP_UNITS_EXPORT Derived abs(const Unit_impl<Derived> &a);        \
-  template SCIPP_UNITS_EXPORT Derived sqrt(const Unit_impl<Derived> &a);
+  template SCIPP_UNITS_EXPORT Derived sqrt(const Unit_impl<Derived> &a);       \
+  template SCIPP_UNITS_EXPORT Derived sin(const Unit_impl<Derived> &a);        \
+  template SCIPP_UNITS_EXPORT Derived cos(const Unit_impl<Derived> &a);        \
+  template SCIPP_UNITS_EXPORT Derived tan(const Unit_impl<Derived> &a);        \
+  template SCIPP_UNITS_EXPORT Derived asin(const Unit_impl<Derived> &a);       \
+  template SCIPP_UNITS_EXPORT Derived acos(const Unit_impl<Derived> &a);       \
+  template SCIPP_UNITS_EXPORT Derived atan(const Unit_impl<Derived> &a);
 
 } // namespace scipp::units
