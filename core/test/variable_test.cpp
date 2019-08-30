@@ -956,5 +956,5 @@ TEST(VariableTest, variances_unsupported_type_fail) {
 TEST(VariableTest, construct_proxy_dims) {
   auto var = makeVariable<double>({Dim::Y, Dim::X}, {2, 3});
   Variable vv(var.slice({Dim::X, 0, 2}));
-  Variable svar = Variable(var.slice({Dim::X, 0, 2}), Dimensions(Dim::Y, 2));
+  ASSERT_NO_THROW(Variable(var.slice({Dim::X, 0, 2}), Dimensions(Dim::Y, 2)));
 }

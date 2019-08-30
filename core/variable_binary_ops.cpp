@@ -28,11 +28,6 @@ template <class... Ts> struct pair_product {
 template <class... Ts>
 using pair_product_t = typename pair_product<Ts...>::type;
 
-// using arithmetic_type_pairs =
-//    std::tuple<std::pair<double, double>, std::pair<float, float>,
-//               std::pair<int64_t, int64_t>, std::pair<double, float>,
-//               std::pair<float, double>>;
-
 using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 
 using arithmetic_and_matrix_type_pairs = decltype(
