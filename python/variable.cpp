@@ -266,6 +266,20 @@ void init_variable(py::module &m) {
 
   py::implicitly_convertible<Variable, VariableConstProxy>();
 
+  m.def("reshape",
+        [](const VariableProxy &self, const std::vector<Dim> &labels,
+           const py::tuple &shape) {
+          Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
+          return self.reshape(dims);
+        },
+        py::arg("variable"), py::arg("dims"), py::arg("shape"),
+        R"(
+        Reshape a variable.
+
+        :raises: If the volume of the old shape is not equal to the volume of the new shape.
+        :return: New variable with requested dimension labels and shape.
+        :rtype: Variable)");
+
   m.def("abs", [](const Variable &self) { return abs(self); },
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise absolute value.
@@ -313,27 +327,11 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.abs` for scalar dtype
         :return: New variable with scalar elements computed as the norm values if the input elements.
         :rtype: Variable)");
-
   m.def("rebin",
         py::overload_cast<const Variable &, const Variable &, const Variable &>(
             &rebin),
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Variable whose data is rebinned with new bin edges.");
-
-  m.def("reshape",
-        [](const VariableProxy &self, const std::vector<Dim> &labels,
-           const py::tuple &shape) {
-          Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-          return self.reshape(dims);
-        },
-        py::arg("variable"), py::arg("dims"), py::arg("shape"),
-        R"(
-        Reshape a variable.
-
-        :raises: If the volume of the old shape is not equal to the volume of the new shape.
-        :return: New variable with requested dimension labels and shape.
-        :rtype: Variable)");
-
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<scipp::index> &>(&split),
