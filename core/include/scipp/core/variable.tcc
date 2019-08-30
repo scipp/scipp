@@ -45,8 +45,8 @@ static void rebinInner(const Dim dim, const VariableConceptT<T> &oldT,
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
   const auto count = oldT.dims().volume() / oldSize;
-  const auto *xold = &*oldCoordT.values().begin();
-  const auto *xnew = &*newCoordT.values().begin();
+  const auto &xold = oldCoordT.values();
+  const auto &xnew = newCoordT.values();
   // This function assumes that dimensions between coord and data either
   // match, or coord is 1D.
   const bool jointOld = oldCoordT.dims().shape().size() == 1;
