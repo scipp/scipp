@@ -348,7 +348,7 @@ Variable mean(const VariableConstProxy &var, const Dim dim) {
                                 tp, scale);
   if (res.hasVariances())
     transform_in_place<double, float>(
-        res, overloaded{multiply_variance{scale}, [](const auto &x) {}});
+        res, overloaded{multiply_variance{scale}, [](const auto &) {}});
   return res;
 }
 
