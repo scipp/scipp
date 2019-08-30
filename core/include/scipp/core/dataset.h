@@ -814,8 +814,9 @@ private:
 class SCIPP_CORE_EXPORT DataArray {
 public:
   explicit DataArray(const DataConstProxy &proxy);
-  DataArray(std::optional<Variable> data, std::map<Dim, Variable> coords,
-            std::map<std::string, Variable> labels);
+  DataArray(std::optional<Variable> data, std::map<Dim, Variable> coords = {},
+            std::map<std::string, Variable> labels = {},
+            std::map<std::string, Variable> attrs = {});
 
   operator DataConstProxy() const;
   operator DataProxy();
@@ -963,10 +964,10 @@ SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
 SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 
-SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
-                                     const Variable &binEdges);
-SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
-                                     const VariableConstProxy &binEdges);
+SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,
+                                      const Variable &binEdges);
+SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,
+                                      const VariableConstProxy &binEdges);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
                                     const VariableConstProxy &bins);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
@@ -975,6 +976,11 @@ SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset, const Dim &dim);
 
 SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
                                 const DatasetConstProxy &b);
+
+SCIPP_CORE_EXPORT DataArray rebin(const DataConstProxy &a, const Dim dim,
+                                  const VariableConstProxy &coord);
+SCIPP_CORE_EXPORT Dataset rebin(const DatasetConstProxy &d, const Dim dim,
+                                const VariableConstProxy &coord);
 
 } // namespace scipp::core
 

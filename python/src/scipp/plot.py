@@ -60,7 +60,7 @@ def plot(input_data, collapse=None, backend=None, color=None, **kwargs):
     # TODO: 0D data is currently ignored -> find a nice way of
     # displaying it?
     tp = type(input_data)
-    if tp is sp.DataProxy:
+    if tp is sp.DataProxy or tp is sp.DataArray:
         ds = sp.Dataset()
         ds[input_data.name] = input_data
         input_data = ds

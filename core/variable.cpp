@@ -32,14 +32,6 @@ Variable::Variable(const VariableConstProxy &slice)
   }
 }
 
-bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
-                           const Dimensions &toMatch) {
-  if (edges.shape().size() == 1)
-    return true;
-  edges.resize(dim, edges[dim] - 1);
-  return edges == toMatch;
-}
-
 Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_unit(parent.unit()), m_object(parent.m_object->clone(dims)) {}
 
@@ -278,90 +270,6 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   out.data().copy(a2.data(), dim, extent1, 0, extent2);
 
   return out;
-}
-
-Variable rebin(const Variable &var, const Variable &oldCoord,
-               const Variable &newCoord) {
-// TODO Disabled since it is using neutron-specific units. Should be moved
-// into scipp-neutron? On the other hand, counts is actually more generic than
-// neutron data, but requiring this unit to be part of all supported unit
-// systems does not make sense either, I think.
-#ifndef SCIPP_UNITS_NEUTRON
-  throw std::runtime_error("rebin is disabled for this set of units");
-#else
-  expect::countsOrCountsDensity(var);
-  Dim dim = Dim::Invalid;
-  for (const auto d : oldCoord.dims().labels())
-    if (oldCoord.dims()[d] == var.dims()[d] + 1) {
-      dim = d;
-      break;
-    }
-
-  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
-                        auto &&newCoord_) {
-    // Dimensions of *this and old are guaranteed to be the same.
-    const auto &oldT = *old;
-    const auto &oldCoordT = *oldCoord_;
-    const auto &newCoordT = *newCoord_;
-    auto &outT = *out;
-    const auto &dims = outT.dims();
-    if (dims.inner() == dim &&
-        isMatchingOr1DBinEdge(dim, oldCoordT.dims(), oldT.dims()) &&
-        isMatchingOr1DBinEdge(dim, newCoordT.dims(), dims)) {
-      RebinHelper<typename std::remove_reference_t<decltype(
-          outT)>::value_type>::rebinInner(dim, oldT, outT, oldCoordT,
-                                          newCoordT);
-    } else {
-      throw std::runtime_error(
-          "TODO the new coord should be 1D or the same dim as newCoord.");
-    }
-  };
-
-  if (var.unit() == units::counts) {
-    auto dims = var.dims();
-    dims.resize(dim, newCoord.dims()[dim] - 1);
-    Variable rebinned(var, dims);
-    if (rebinned.dims().inner() == dim) {
-      apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord,
-                                    newCoord);
-    } else {
-      if (newCoord.dims().shape().size() > 1)
-        throw std::runtime_error(
-            "Not inner rebin works only for 1d coordinates for now.");
-      switch (rebinned.dtype()) {
-      case dtype<double>:
-        RebinGeneralHelper<double>::rebin(dim, var, rebinned, oldCoord,
-                                          newCoord);
-        break;
-      case dtype<float>:
-        RebinGeneralHelper<float>::rebin(dim, var, rebinned, oldCoord,
-                                         newCoord);
-        break;
-      default:
-        throw std::runtime_error(
-            "Rebinning is possible only for double and float types.");
-      }
-    }
-    return rebinned;
-  } else {
-    // TODO This will currently fail if the data is a multi-dimensional density.
-    // Would need a conversion that converts only the rebinned dimension.
-    // TODO This could be done more efficiently without a temporary Dataset.
-    throw std::runtime_error("Temporarily disabled for refactor");
-    /*
-    Dataset density;
-    density.insert(dimensionCoord(dim), oldCoord);
-    density.insert(Data::Value, var);
-    auto cnts = counts::fromDensity(std::move(density), dim).erase(Data::Value);
-    Dataset rebinnedCounts;
-    rebinnedCounts.insert(dimensionCoord(dim), newCoord);
-    rebinnedCounts.insert(Data::Value,
-                          rebin(std::get<Variable>(cnts), oldCoord, newCoord));
-    return std::get<Variable>(
-        counts::toDensity(std::move(rebinnedCounts), dim).erase(Data::Value));
-    */
-  }
-#endif
 }
 
 Variable permute(const Variable &var, const Dim dim,

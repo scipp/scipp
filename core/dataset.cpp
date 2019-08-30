@@ -1137,8 +1137,8 @@ Dataset operator/(const DataConstProxy &lhs, const DatasetConstProxy &rhs) {
 
 // For now this implementation is only for the simplest case of 2 dims (inner
 // stands for sparse)
-Variable histogram(const DataConstProxy &sparse,
-                   const VariableConstProxy &binEdges) {
+DataArray histogram(const DataConstProxy &sparse,
+                    const VariableConstProxy &binEdges) {
   if (sparse.hasData())
     throw except::SparseDataError(
         "`histogram` is not implemented for sparse data with values yet.");
@@ -1168,10 +1168,14 @@ Variable histogram(const DataConstProxy &sparse,
   }
   std::copy(result.values<double>().begin(), result.values<double>().end(),
             result.variances<double>().begin());
-  return result;
+
+  std::map<Dim, Variable> coords;
+  coords.emplace(dim, binEdges);
+  return {std::move(result), std::move(coords),
+          std::map<std::string, Variable>()};
 }
 
-Variable histogram(const DataConstProxy &sparse, const Variable &binEdges) {
+DataArray histogram(const DataConstProxy &sparse, const Variable &binEdges) {
   return histogram(sparse, VariableConstProxy(binEdges));
 }
 
@@ -1197,6 +1201,42 @@ Dataset histogram(const Dataset &dataset, const Dim &dim) {
 Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
+}
+
+DataArray rebin(const DataConstProxy &a, const Dim dim,
+                const VariableConstProxy &coord) {
+  std::map<Dim, Variable> coords;
+  // Replace rebinned coord.
+  for (const auto & [ key, item ] : a.coords())
+    if (key == dim)
+      coords.emplace(key, coord);
+    else
+      coords.emplace(key, item);
+
+  std::map<std::string, Variable> labels;
+  // Drop labels for rebinned dimension.
+  for (const auto & [ key, item ] : a.labels())
+    if (item.dims().inner() != dim)
+      labels.emplace(key, item);
+
+  std::map<std::string, Variable> attrs;
+  // Drop attrs for rebinned dimension.
+  for (const auto & [ key, item ] : a.attrs())
+    if (item.dims().inner() != dim)
+      attrs.emplace(key, item);
+
+  auto rebinned = rebin(a.data(), dim, a.coords()[dim], coord);
+
+  return {std::move(rebinned), std::move(coords), std::move(labels),
+          std::move(attrs)};
+}
+
+Dataset rebin(const DatasetConstProxy &d, const Dim dim,
+              const VariableConstProxy &coord) {
+  Dataset rebinned;
+  for (const auto & [ name, data ] : d)
+    rebinned.setData(name, rebin(data, dim, coord));
+  return rebinned;
 }
 
 } // namespace scipp::core

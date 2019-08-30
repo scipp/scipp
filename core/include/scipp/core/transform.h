@@ -196,8 +196,7 @@ template <class T> struct broadcast {
 template <class T> broadcast(T)->broadcast<T>;
 
 template <class T> decltype(auto) maybe_broadcast(T &&value) {
-  if constexpr (transform_detail::is_sparse_v<
-                    std::remove_const_t<std::remove_reference_t<T>>>)
+  if constexpr (transform_detail::is_sparse_v<std::decay_t<T>>)
     return std::forward<T>(value);
   else
     return broadcast{value};
@@ -399,18 +398,11 @@ struct augment_tuple<VariableConceptHandle_impl<Known...>> {
 };
 using augment = augment_tuple<VariableConceptHandle>;
 
-template <class T> struct remove_cvref {
-  using type = std::remove_cv_t<std::remove_reference_t<T>>;
-};
-template <class T> using remove_cvref_t = typename remove_cvref<T>::type;
-
 template <class Op, class SparseOp> struct overloaded_sparse : Op, SparseOp {
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
-    if constexpr ((transform_detail::is_sparse_v<
-                       std::remove_const_t<std::remove_reference_t<Ts>>> ||
-                   ...))
+    if constexpr ((transform_detail::is_sparse_v<std::decay_t<Ts>> || ...))
       return SparseOp::operator()(std::forward<Ts>(args)...);
-    else if constexpr ((is_eigen_type_v<remove_cvref_t<Ts>> || ...))
+    else if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
       // WARNING! The explicit specification of the template arguments of
       // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
       // passed BY REFERENCE and NOT BY VALUE. Passing by value leads to
