@@ -410,14 +410,27 @@ Variable sum(const VariableConstProxy &var, const Dim dim) {
   return summed;
 }
 
+struct multiply_variance {
+  template <class T>
+  scipp::core::detail::ValueAndVariance<T>
+  operator()(const scipp::core::detail::ValueAndVariance<T> &vv) const {
+    auto res{vv};
+    res.variance *= multiplier;
+    return res;
+  }
+  double multiplier;
+};
+
 Variable mean(const VariableConstProxy &var, const Dim dim) {
   auto summed = sum(var, dim);
   auto tp = var.dtype();
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
-  if (isInt(tp) || isBool(tp))
-    return summed * makeVariable<double>(scale);
-  else
-    return summed * makeVariable(tp, scale);
+  auto res = (isInt(tp) || isBool(tp)) ? summed * makeVariable<double>(scale)
+                                       : summed * makeVariable(tp, scale);
+  if (res.hasVariances())
+    transform_in_place<double, float>(
+        res, overloaded{multiply_variance{scale}, [](const auto &x) {}});
+  return res;
 }
 
 Variable abs(const Variable &var) {

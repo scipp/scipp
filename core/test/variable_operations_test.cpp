@@ -497,14 +497,16 @@ TEST(VariableConstProxy, sum) {
 }
 
 TEST(Variable, mean) {
-  auto var =
-      makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}}, {1.0, 2.0, 3.0, 4.0});
+  auto var = makeVariable<double>({{Dim::Y, 2}, {Dim::X, 2}},
+                                  {1.0, 2.0, 3.0, 4.0}, {1.0, 2.0, 3.0, 4.0});
   auto meanX = mean(var, Dim::X);
   ASSERT_EQ(meanX.dims(), (Dimensions{Dim::Y, 2}));
   EXPECT_TRUE(equals(meanX.values<double>(), {1.5, 3.5}));
+  EXPECT_TRUE(equals(meanX.variances<double>(), {0.75, 1.75}));
   auto meanY = mean(var, Dim::Y);
   ASSERT_EQ(meanY.dims(), (Dimensions{Dim::X, 2}));
   EXPECT_TRUE(equals(meanY.values<double>(), {2.0, 3.0}));
+  EXPECT_TRUE(equals(meanY.variances<double>(), {1.0, 1.5}));
 
   var = makeVariable<int32_t>({Dim::X, 4}, {1, 2, 3, 4});
   EXPECT_EQ(mean(var.slice({Dim::X, 0, 2}), Dim::X), makeVariable<double>(1.5));
