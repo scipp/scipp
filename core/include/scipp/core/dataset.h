@@ -256,17 +256,12 @@ public:
   explicit Dataset(const DataConstProxy &data);
   explicit Dataset(const std::map<std::string, DataConstProxy> &data);
 
-  template <class LabelsMap, class AttrMap>
-  Dataset(LabelsMap labels, AttrMap attrs) {
+  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
+  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs) {
     for (auto && [ name, attr ] : attrs)
       setAttr(std::string(name), std::move(attr));
     for (auto && [ name, labs ] : labels)
       setLabels(std::string(name), std::move(labs));
-  }
-
-  template <class DataMap, class CoordMap, class LabelsMap, class AttrMap>
-  Dataset(DataMap data, CoordMap coords, LabelsMap labels, AttrMap attrs)
-      : Dataset(labels, attrs) {
     for (auto && [ dim, coord ] : coords)
       setCoord(dim, std::move(coord));
     for (auto && [ name, item ] : data)
@@ -281,7 +276,6 @@ public:
   index size() const noexcept { return scipp::size(m_data); }
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
-  [[nodiscard]] bool containsSparse() const noexcept;
 
   void clear();
 
@@ -668,7 +662,6 @@ public:
 
   index size() const noexcept { return m_indices.size(); }
   [[nodiscard]] bool empty() const noexcept { return m_indices.empty(); }
-  [[nodiscard]] bool containsSparse() const noexcept;
 
   CoordsConstProxy coords() const noexcept;
   LabelsConstProxy labels() const noexcept;
@@ -973,7 +966,7 @@ SCIPP_CORE_EXPORT Dataset merge(const DatasetConstProxy &a,
 namespace detail {
 template <class DS, class Func>
 Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
-  if (ds.containsSparse())
+  if (containsSparse(ds))
     throw std::logic_error("Can't sum Dataset with sparse data");
   if (!ds.dimensions().count(dimension))
     throw std::logic_error("Can't sum Dataset on non existing dimension.");
@@ -998,6 +991,7 @@ Dataset apply_through_dimension(const DS &ds, const Dim dimension, Func func) {
 }
 } // namespace detail
 
+[[nodiscard]] bool containsSparse(const DatasetConstProxy &ds) noexcept;
 SCIPP_CORE_EXPORT Dataset sum(const DatasetConstProxy &ds, const Dim dimension);
 SCIPP_CORE_EXPORT Dataset mean(const DatasetConstProxy &ds,
                                const Dim dimension);
