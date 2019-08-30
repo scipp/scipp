@@ -240,12 +240,6 @@ void init_variable(py::module &m) {
            py::is_operator())
       .def("__rmul__", [](VariableProxy &a, double &b) { return a * b; },
            py::is_operator())
-      .def("reshape",
-           [](const VariableProxy &self, const std::vector<Dim> &labels,
-              const py::tuple &shape) {
-             Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-             return self.reshape(dims);
-           })
       .def("__repr__",
            [](const VariableProxy &self) { return to_string(self); });
 
@@ -319,16 +313,33 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.abs` for scalar dtype
         :return: New variable with scalar elements computed as the norm values if the input elements.
         :rtype: Variable)");
+
   m.def("rebin",
         py::overload_cast<const Variable &, const Variable &, const Variable &>(
             &rebin),
         py::call_guard<py::gil_scoped_release>(),
         "Returns a new Variable whose data is rebinned with new bin edges.");
+
+  m.def("reshape",
+        [](const VariableProxy &self, const std::vector<Dim> &labels,
+           const py::tuple &shape) {
+          Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
+          return self.reshape(dims);
+        },
+        py::arg("variable"), py::arg("dims"), py::arg("shape"),
+        R"(
+        Reshape a variable.
+
+        :raises: If the volume of the old shape is not equal to the volume of the new shape.
+        :return: New variable with requested dimension labels and shape.
+        :rtype: Variable)");
+
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<scipp::index> &>(&split),
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
+
   m.def("sqrt", [](const Variable &self) { return sqrt(self); },
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise square-root.
@@ -336,6 +347,7 @@ void init_variable(py::module &m) {
         :raises: If the dtype has no square-root, e.g., if it is a string
         :return: Copy of the input with values replaced by the square-root.
         :rtype: Variable)");
+
   m.def("sum", py::overload_cast<const Variable &, const Dim>(&sum),
         py::call_guard<py::gil_scoped_release>(), R"(
         Element-wise sum over the specified dimension.
