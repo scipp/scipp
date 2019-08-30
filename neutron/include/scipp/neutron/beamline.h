@@ -13,7 +13,7 @@
 namespace scipp::core {
 class Dataset;
 class Variable;
-}
+} // namespace scipp::core
 
 namespace scipp::neutron {
 
