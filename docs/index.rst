@@ -26,6 +26,7 @@ Documentation
    getting-started/overview
    getting-started/faq
    getting-started/installation
+   getting-started/quick-start
 
 .. toctree::
    :caption: User Guide
