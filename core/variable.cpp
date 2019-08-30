@@ -32,14 +32,6 @@ Variable::Variable(const VariableConstProxy &slice)
   }
 }
 
-bool isMatchingOr1DBinEdge(const Dim dim, Dimensions edges,
-                           const Dimensions &toMatch) {
-  if (edges.shape().size() == 1)
-    return true;
-  edges.resize(dim, edges[dim] - 1);
-  return edges == toMatch;
-}
-
 Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_unit(parent.unit()), m_object(parent.m_object->clone(dims)) {}
 
@@ -278,62 +270,6 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   out.data().copy(a2.data(), dim, extent1, 0, extent2);
 
   return out;
-}
-
-Variable rebin(const VariableConstProxy &var, const Dim dim,
-               const VariableConstProxy &oldCoord,
-               const VariableConstProxy &newCoord) {
-  expect::notSparse(var);
-  expect::notSparse(oldCoord);
-  expect::notSparse(newCoord);
-
-  // Rebin could also implemented for count-densities. However, it may be better
-  // to avoid this since it increases complexity. Instead, densities could
-  // always be computed on-the-fly for visualization, if required.
-  expect::unit(var, units::counts);
-
-  auto do_rebin = [dim](auto &&out, auto &&old, auto &&oldCoord_,
-                        auto &&newCoord_) {
-    // Dimensions of *this and old are guaranteed to be the same.
-    const auto &oldT = *old;
-    const auto &oldCoordT = *oldCoord_;
-    const auto &newCoordT = *newCoord_;
-    auto &outT = *out;
-    const auto &dims = outT.dims();
-    if (dims.inner() == dim &&
-        isMatchingOr1DBinEdge(dim, oldCoordT.dims(), oldT.dims()) &&
-        isMatchingOr1DBinEdge(dim, newCoordT.dims(), dims)) {
-      rebinInner(dim, oldT, outT, oldCoordT, newCoordT);
-      if (oldT.hasVariances())
-        rebinInner(dim, oldT, outT, oldCoordT, newCoordT, true);
-    } else {
-      throw std::runtime_error(
-          "TODO the new coord should be 1D or the same dim as newCoord.");
-    }
-  };
-
-  auto dims = var.dims();
-  dims.resize(dim, newCoord.dims()[dim] - 1);
-  Variable rebinned(var, dims);
-  if (rebinned.dims().inner() == dim) {
-    apply_in_place<double, float>(do_rebin, rebinned, var, oldCoord, newCoord);
-  } else {
-    if (newCoord.dims().ndims() > 1)
-      throw std::runtime_error(
-          "Not inner rebin works only for 1d coordinates for now.");
-    switch (rebinned.dtype()) {
-    case dtype<double>:
-      rebin_non_inner<double>(dim, var, rebinned, oldCoord, newCoord);
-      break;
-    case dtype<float>:
-      rebin_non_inner<float>(dim, var, rebinned, oldCoord, newCoord);
-      break;
-    default:
-      throw std::runtime_error(
-          "Rebinning is possible only for double and float types.");
-    }
-  }
-  return rebinned;
 }
 
 Variable permute(const Variable &var, const Dim dim,
