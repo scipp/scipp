@@ -951,10 +951,10 @@ SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
 SCIPP_CORE_EXPORT Dataset operator/(const DataConstProxy &lhs,
                                     const DatasetConstProxy &rhs);
 
-SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
-                                     const Variable &binEdges);
-SCIPP_CORE_EXPORT Variable histogram(const DataConstProxy &sparse,
-                                     const VariableConstProxy &binEdges);
+SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,
+                                      const Variable &binEdges);
+SCIPP_CORE_EXPORT DataArray histogram(const DataConstProxy &sparse,
+                                      const VariableConstProxy &binEdges);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
                                     const VariableConstProxy &bins);
 SCIPP_CORE_EXPORT Dataset histogram(const Dataset &dataset,
