@@ -25,8 +25,9 @@ SCIPP_UNITS_DECLARE_DIMENSIONS(X, Y, Z)
 
 template <> struct supported_units<dummy::Unit> {
   using type = decltype(detail::make_unit(
-      std::make_tuple(m), std::make_tuple(dimensionless, dimensionless / m, s,
-                                          dimensionless / s, m / s)));
+      std::make_tuple(m),
+      std::make_tuple(dimensionless, rad, deg, dimensionless / m, s,
+                      dimensionless / s, m / s)));
 };
 template <> struct counts_unit<dummy::Unit> {
   using type = decltype(dimensionless);

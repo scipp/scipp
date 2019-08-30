@@ -793,6 +793,14 @@ SCIPP_CORE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_CORE_EXPORT Variable sqrt(const Variable &var);
 SCIPP_CORE_EXPORT Variable sum(const Variable &var, const Dim dim);
 
+// Trigonometrics
+SCIPP_CORE_EXPORT Variable sin(const Variable &var);
+SCIPP_CORE_EXPORT Variable cos(const Variable &var);
+SCIPP_CORE_EXPORT Variable tan(const Variable &var);
+SCIPP_CORE_EXPORT Variable asin(const Variable &var);
+SCIPP_CORE_EXPORT Variable acos(const Variable &var);
+SCIPP_CORE_EXPORT Variable atan(const Variable &var);
+
 template <class T>
 VariableView<const T> getView(const Variable &var, const Dimensions &dims);
 

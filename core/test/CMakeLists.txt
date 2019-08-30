@@ -23,6 +23,7 @@ add_executable(${TARGET_NAME}
                variable_custom_type_test.cpp
                variable_operations_test.cpp
                variable_test.cpp
+               variable_trigonometry_test.cpp
                variable_view_test.cpp
                view_index_test.cpp
                )
