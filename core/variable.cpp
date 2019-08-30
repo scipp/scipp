@@ -9,7 +9,9 @@
 #include "scipp/core/apply.h"
 #include "scipp/core/counts.h"
 #include "scipp/core/dataset.h"
+#include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/core/transform.h"
 #include "scipp/core/variable.h"
 #include "scipp/core/variable.tcc"
@@ -329,12 +331,21 @@ struct multiply_variance {
   double multiplier;
 };
 
+template <class T1> struct MakeVariableFromValue {
+  template <class T2> struct MakeVariable {
+    static Variable apply(T1 value) { return makeVariable<T2>(value); }
+  };
+};
+
 Variable mean(const VariableConstProxy &var, const Dim dim) {
   auto summed = sum(var, dim);
   auto tp = var.dtype();
   double scale = 1.0 / static_cast<double>(var.dims()[dim]);
-  auto res = (isInt(tp) || isBool(tp)) ? summed * makeVariable<double>(scale)
-                                       : summed * makeVariable(tp, scale);
+  auto res = (isInt(tp) || isBool(tp))
+                 ? summed * makeVariable<double>(scale)
+                 : summed * CallDType<double, float>::apply<
+                                MakeVariableFromValue<double>::MakeVariable>(
+                                tp, scale);
   if (res.hasVariances())
     transform_in_place<double, float>(
         res, overloaded{multiply_variance{scale}, [](const auto &x) {}});
