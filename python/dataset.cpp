@@ -250,6 +250,25 @@ void init_dataset(py::module &m) {
         :return: A new dataset that contains the union of all data items, coords, labels, and attributes.
         :rtype: Dataset)");
 
+  m.def("rebin",
+        py::overload_cast<const DataConstProxy &, const Dim,
+                          const VariableConstProxy &>(&rebin),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Rebin a dimension of a data array.
+
+        :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
+        :return: A new data array with data rebinned according to the new coordinate.
+        :rtype: DataArray)");
+  m.def("rebin",
+        py::overload_cast<const DatasetConstProxy &, const Dim,
+                          const VariableConstProxy &>(&rebin),
+        py::call_guard<py::gil_scoped_release>(), R"(
+        Rebin a dimension of a dataset.
+
+        :raises: If data cannot be rebinned, e.g., if the unit is not counts, or the existing coordinate is not a bin-edge coordinate.
+        :return: A new dataset with data rebinned according to the new coordinate.
+        :rtype: Dataset)");
+
   py::implicitly_convertible<DataArray, DataConstProxy>();
   py::implicitly_convertible<Dataset, DatasetConstProxy>();
 }

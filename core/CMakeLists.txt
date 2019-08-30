@@ -23,6 +23,7 @@ set(SRC_FILES
     dataset.cpp
     dimensions.cpp
     except.cpp
+    rebin.cpp
     slice.cpp
     trigonometry.cpp
     variable.cpp

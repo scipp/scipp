@@ -11,7 +11,8 @@ DataArray::DataArray(const DataConstProxy &proxy) {
 }
 
 DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
-                     std::map<std::string, Variable> labels) {
+                     std::map<std::string, Variable> labels,
+                     std::map<std::string, Variable> attrs) {
   m_holder.setData("", std::move(data));
   for (auto & [ dim, c ] : coords)
     if (c.dims().sparse())
@@ -23,6 +24,8 @@ DataArray::DataArray(Variable data, std::map<Dim, Variable> coords,
       m_holder.setSparseLabels("", name, std::move(l));
     else
       m_holder.setLabels(name, std::move(l));
+  for (auto & [ name, a ] : attrs)
+    m_holder.setAttr(name, std::move(a));
 }
 
 DataArray::operator DataConstProxy() const { return get(); }

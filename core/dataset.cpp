@@ -1193,4 +1193,40 @@ Dataset merge(const DatasetConstProxy &a, const DatasetConstProxy &b) {
                  union_(a.labels(), b.labels()), union_(a.attrs(), b.attrs()));
 }
 
+DataArray rebin(const DataConstProxy &a, const Dim dim,
+                const VariableConstProxy &coord) {
+  std::map<Dim, Variable> coords;
+  // Replace rebinned coord.
+  for (const auto & [ key, item ] : a.coords())
+    if (key == dim)
+      coords.emplace(key, coord);
+    else
+      coords.emplace(key, item);
+
+  std::map<std::string, Variable> labels;
+  // Drop labels for rebinned dimension.
+  for (const auto & [ key, item ] : a.labels())
+    if (item.dims().inner() != dim)
+      labels.emplace(key, item);
+
+  std::map<std::string, Variable> attrs;
+  // Drop attrs for rebinned dimension.
+  for (const auto & [ key, item ] : a.attrs())
+    if (item.dims().inner() != dim)
+      attrs.emplace(key, item);
+
+  auto rebinned = rebin(a.data(), dim, a.coords()[dim], coord);
+
+  return {std::move(rebinned), std::move(coords), std::move(labels),
+          std::move(attrs)};
+}
+
+Dataset rebin(const DatasetConstProxy &d, const Dim dim,
+              const VariableConstProxy &coord) {
+  Dataset rebinned;
+  for (const auto & [ name, data ] : d)
+    rebinned.setData(name, rebin(data, dim, coord));
+  return rebinned;
+}
+
 } // namespace scipp::core
