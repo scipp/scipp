@@ -47,6 +47,9 @@ auto optionalVariancesView(T &concept, Args &&... args) {
              ? std::optional(concept.variancesView(std::forward<Args>(args)...))
              : std::nullopt;
 }
+
+template <class T> class DataModel;
+
 template <class T>
 VariableConceptHandle
 VariableConceptT<T>::makeDefaultFromParent(const Dimensions &dims) const {
