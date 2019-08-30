@@ -17,6 +17,7 @@ add_executable(${TARGET_NAME}
                except_test.cpp
                histogram_test.cpp
                merge_test.cpp
+               rebin_test.cpp
                slice_test.cpp
                transform_test.cpp
                value_and_variance_test.cpp

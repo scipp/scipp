@@ -327,11 +327,6 @@ void init_variable(py::module &m) {
         :seealso: :py:class:`scipp.abs` for scalar dtype
         :return: New variable with scalar elements computed as the norm values if the input elements.
         :rtype: Variable)");
-  m.def("rebin",
-        py::overload_cast<const Variable &, const Variable &, const Variable &>(
-            &rebin),
-        py::call_guard<py::gil_scoped_release>(),
-        "Returns a new Variable whose data is rebinned with new bin edges.");
   m.def("split",
         py::overload_cast<const Variable &, const Dim,
                           const std::vector<scipp::index> &>(&split),
