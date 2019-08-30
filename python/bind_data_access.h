@@ -346,9 +346,6 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                           },
                           "Shape of the data (read-only).",
                           py::return_value_policy::move);
-  c.def_property_readonly(
-      "sparse", [](const T &self) { return self.dims().sparse(); },
-      "True if there is a sparse dimension.", py::return_value_policy::copy);
   c.def_property_readonly("sparse_dim",
                           [](const T &self) {
                             return self.dims().sparse()

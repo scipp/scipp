@@ -186,7 +186,7 @@ void init_variable(py::module &m) {
            py::arg("unit") = units::Unit(units::dimensionless),
            py::arg("dtype") = py::none())
       .def("copy", [](const Variable &self) { return self; },
-           "Make a copy of a Variable.")
+           "Return a (deep) copy.")
       .def("__copy__", [](Variable &self) { return Variable(self); })
       .def("__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); })
@@ -222,7 +222,7 @@ void init_variable(py::module &m) {
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy
       .def("copy", [](const VariableProxy &self) { return Variable(self); },
-           "Make a copy of a VariableProxy and return it as a Variable.")
+           "Return a (deep) copy.")
       .def("__copy__", [](VariableProxy &self) { return Variable(self); })
       .def("__deepcopy__",
            [](VariableProxy &self, py::dict) { return Variable(self); })
