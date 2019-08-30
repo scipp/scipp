@@ -217,8 +217,7 @@ void init_variable(py::module &m) {
       .def(py::init<const Variable &>());
   py::class_<VariableProxy, VariableConstProxy> variableProxy(
       m, "VariableProxy", py::buffer_protocol(), R"(
-        Proxy for Variable, representing a sliced or transposed view onto a variable.
-
+        Proxy for Variable, representing a sliced or transposed view onto a variable;
         Mostly equivalent to Variable, see there for details.)");
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy

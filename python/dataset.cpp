@@ -118,8 +118,7 @@ void init_dataset(py::module &m) {
                 py::arg("labels") = std::map<std::string, Variable>{});
   py::class_<DataConstProxy>(m, "DataConstProxy");
   py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy", R"(
-        Proxy for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset.
-
+        Proxy for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
         Mostly equivalent to DataArray, see there for details.)");
 
   dataProxy.def_property(
@@ -142,8 +141,7 @@ void init_dataset(py::module &m) {
       .def(py::init<const Dataset &>());
   py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy",
                                                            R"(
-        Proxy for Dataset, representing a sliced view onto a Dataset.
-
+        Proxy for Dataset, representing a sliced view onto a Dataset;
         Mostly equivalent to Dataset, see there for details.)");
   datasetProxy.def(py::init<Dataset &>());
 
