@@ -164,7 +164,8 @@ template <class T> void bind_init_1D(py::class_<Variable> &c) {
 }
 
 void init_variable(py::module &m) {
-  py::class_<Variable> variable(m, "Variable");
+  py::class_<Variable> variable(m, "Variable", R"(
+    Array of values with dimension labels and a unit, optionally including an array of variances.)");
   bind_init_0D<Dataset>(variable);
   bind_init_0D<int64_t>(variable);
   bind_init_0D<int32_t>(variable);
@@ -215,7 +216,10 @@ void init_variable(py::module &m) {
   py::class_<VariableConstProxy>(m, "VariableConstProxy")
       .def(py::init<const Variable &>());
   py::class_<VariableProxy, VariableConstProxy> variableProxy(
-      m, "VariableProxy", py::buffer_protocol());
+      m, "VariableProxy", py::buffer_protocol(), R"(
+        Proxy for Variable, representing a sliced or transposed view onto a variable.
+
+        Mostly equivalent to Variable, see there for details.)");
   variableProxy.def_buffer(&make_py_buffer_info);
   variableProxy
       .def("copy", [](const VariableProxy &self) { return Variable(self); },

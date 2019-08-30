@@ -92,7 +92,8 @@ void init_dataset(py::module &m) {
   bind_mutable_proxy<LabelsProxy, LabelsConstProxy>(m, "Labels");
   bind_mutable_proxy<AttrsProxy, AttrsConstProxy>(m, "Attrs");
 
-  py::class_<DataArray> dataArray(m, "DataArray");
+  py::class_<DataArray> dataArray(m, "DataArray", R"(
+    Named variable with associated coords, labels, and attributes.)");
   dataArray.def(py::init([](const std::optional<Variable> &data,
                             const std::map<Dim, Variable> &coords,
                             const std::map<std::string, Variable> &labels) {
@@ -116,7 +117,11 @@ void init_dataset(py::module &m) {
                 py::arg("coords") = std::map<Dim, Variable>{},
                 py::arg("labels") = std::map<std::string, Variable>{});
   py::class_<DataConstProxy>(m, "DataConstProxy");
-  py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy");
+  py::class_<DataProxy, DataConstProxy> dataProxy(m, "DataProxy", R"(
+        Proxy for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset.
+
+        Mostly equivalent to DataArray, see there for details.)");
+
   dataProxy.def_property(
       "data",
       py::cpp_function(
@@ -135,10 +140,16 @@ void init_dataset(py::module &m) {
 
   py::class_<DatasetConstProxy>(m, "DatasetConstProxy")
       .def(py::init<const Dataset &>());
-  py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy");
+  py::class_<DatasetProxy, DatasetConstProxy> datasetProxy(m, "DatasetProxy",
+                                                           R"(
+        Proxy for Dataset, representing a sliced view onto a Dataset.
+
+        Mostly equivalent to Dataset, see there for details.)");
   datasetProxy.def(py::init<Dataset &>());
 
-  py::class_<Dataset> dataset(m, "Dataset");
+  py::class_<Dataset> dataset(m, "Dataset", R"(
+    Dict of data arrays with aligned dimensions.)");
+
   dataset.def(py::init<const std::map<std::string, DataConstProxy> &>())
       .def(py::init<const DataConstProxy &>())
       .def(py::init([](const std::map<std::string, VariableConstProxy> &data,
