@@ -67,12 +67,12 @@ TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
 
 TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
   Dataset pointData;
-  pointData.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {1, 2, 3}));
-  pointData.setData("data_1", makeVariable<int>({Dim::X, 3}, {11, 12, 13}));
+  pointData.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}));
+  pointData.setData("data_1", makeVariable<int>({Dim::X, 3}));
 
   Dataset histogram;
-  histogram.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {4, 5, 6}));
-  histogram.setData("data_1", makeVariable<int>({Dim::X, 2}, {13, 14}));
+  histogram.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}));
+  histogram.setData("data_1", makeVariable<int>({Dim::X, 2}));
 
   EXPECT_THROW(concatenate(pointData, histogram, Dim::X), except::BinEdgeError);
 }

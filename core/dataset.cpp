@@ -1238,18 +1238,17 @@ template <class T1, class T2>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const Dimensions &dimsA,
             const Dimensions &dimsB) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
-  for (const auto & [ key, item ] : a) {
+  for (const auto & [ key, a_ ] : a) {
     if (dim_of_coord_or_labels(a, key) == dim) {
-      if ((item.dims()[dim] == dimsA[dim]) !=
-          (b[key].dims()[dim] == dimsB[dim]))
+      if ((a_.dims()[dim] == dimsA[dim]) != (b[key].dims()[dim] == dimsB[dim]))
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      if (item.dims()[dim] == dimsA[dim])
-        out.emplace(key, concatenate(item, b[key], dim));
+      if (a_.dims()[dim] == dimsA[dim])
+        out.emplace(key, concatenate(a_, b[key], dim));
       else
-        out.emplace(key, join_edges(item, b[key], dim));
+        out.emplace(key, join_edges(a_, b[key], dim));
     } else {
-      out.emplace(key, same(item, b[key]));
+      out.emplace(key, same(a_, b[key]));
     }
   }
   return out;
