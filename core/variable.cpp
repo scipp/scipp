@@ -203,7 +203,8 @@ std::vector<Variable> split(const Variable &var, const Dim dim,
   return vars;
 }
 
-Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
+Variable concatenate(const VariableConstProxy &a1, const VariableConstProxy &a2,
+                     const Dim dim) {
   if (a1.dtype() != a2.dtype())
     throw std::runtime_error(
         "Cannot concatenate Variables: Data types do not match.");
@@ -256,7 +257,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
     throw std::runtime_error(
         "Cannot concatenate Variables: Dimensions do not match.");
 
-  auto out(a1);
+  Variable out(a1);
   auto dims(dims1);
   scipp::index extent1 = 1;
   scipp::index extent2 = 1;
@@ -370,9 +371,9 @@ Variable dot(const Variable &a, const Variable &b) {
                  }});
 }
 
-Variable broadcast(Variable var, const Dimensions &dims) {
+Variable broadcast(const VariableConstProxy &var, const Dimensions &dims) {
   if (var.dims().contains(dims))
-    return var;
+    return Variable{var};
   auto newDims = var.dims();
   const auto labels = dims.labels();
   for (auto it = labels.end(); it != labels.begin();) {
