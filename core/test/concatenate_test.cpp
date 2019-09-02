@@ -74,7 +74,7 @@ TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
   histogram.setCoord(Dim::X, makeVariable<int>({Dim::X, 3}, {4, 5, 6}));
   histogram.setData("data_1", makeVariable<int>({Dim::X, 2}, {13, 14}));
 
-  EXPECT_THROW(concatenate(pointData, histogram, Dim::X), std::runtime_error);
+  EXPECT_THROW(concatenate(pointData, histogram, Dim::X), except::BinEdgeError);
 }
 
 TEST(ConcatenateTest, identical_non_dependant_data_is_copied) {
